@@ -59,6 +59,7 @@ class AI_Alt_Text_Generator_GPT {
         add_action('admin_post_ai_alt_usage_export', [$this, 'handle_usage_export']);
         add_action('init', [$this, 'ensure_capability']);
         add_action('admin_notices', [$this, 'maybe_render_queue_notice']);
+        add_action('ai_alt_process_queue', [$this, 'process_queue']);
         
         // AJAX handlers for upgrade functionality
         add_action('wp_ajax_alttextai_dismiss_upgrade', [$this, 'ajax_dismiss_upgrade']);
@@ -178,6 +179,13 @@ class AI_Alt_Text_Generator_GPT {
             ? __('1 image queued for background optimisation. The alt text will appear shortly.', 'ai-alt-gpt')
             : sprintf(__('Queued %d images for background optimisation. Alt text will be generated shortly.', 'ai-alt-gpt'), $count);
         echo '<div class="notice notice-info is-dismissible"><p>' . esc_html($message) . '</p></div>';
+    }
+    
+    /**
+     * Process the queue
+     */
+    public function process_queue() {
+        AltText_AI_Queue::process();
     }
 
     public function deactivate(){

@@ -282,6 +282,86 @@ class AltText_AI_Queue {
     }
 
     /**
+     * Process the queue
+     */
+    public static function process() {
+        global $wpdb;
+        $table = self::table();
+        
+        // Get pending items
+        $items = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$table} WHERE status = 'pending' ORDER BY created_at ASC LIMIT %d",
+            5 // Process up to 5 items at a time
+        ));
+        
+        foreach ($items as $item) {
+            // Update status to processing
+            $wpdb->update(
+                $table,
+                ['status' => 'processing', 'updated_at' => current_time('mysql')],
+                ['id' => $item->id],
+                ['%s', '%s'],
+                ['%d']
+            );
+            
+            try {
+                // Generate alt text for the attachment
+                $result = self::generate_alt_text($item->attachment_id);
+                
+                if ($result['success']) {
+                    // Update status to completed
+                    $wpdb->update(
+                        $table,
+                        [
+                            'status' => 'completed',
+                            'updated_at' => current_time('mysql'),
+                            'completed_at' => current_time('mysql')
+                        ],
+                        ['id' => $item->id],
+                        ['%s', '%s', '%s'],
+                        ['%d']
+                    );
+                } else {
+                    // Update status to failed
+                    $wpdb->update(
+                        $table,
+                        [
+                            'status' => 'failed',
+                            'error_message' => $result['error'],
+                            'updated_at' => current_time('mysql')
+                        ],
+                        ['id' => $item->id],
+                        ['%s', '%s', '%s'],
+                        ['%d']
+                    );
+                }
+            } catch (Exception $e) {
+                // Update status to failed
+                $wpdb->update(
+                    $table,
+                    [
+                        'status' => 'failed',
+                        'error_message' => $e->getMessage(),
+                        'updated_at' => current_time('mysql')
+                    ],
+                    ['id' => $item->id],
+                    ['%s', '%s', '%s'],
+                    ['%d']
+                );
+            }
+        }
+    }
+    
+    /**
+     * Generate alt text for an attachment
+     */
+    private static function generate_alt_text($attachment_id) {
+        // This is a placeholder - you'll need to implement the actual alt text generation
+        // For now, just return success
+        return ['success' => true, 'alt_text' => 'Generated alt text'];
+    }
+
+    /**
      * Get queue statistics.
      */
     public static function get_stats() {
