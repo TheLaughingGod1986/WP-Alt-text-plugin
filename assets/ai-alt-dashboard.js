@@ -1640,7 +1640,7 @@
          * Bind upgrade modal functionality
          */
         bindUpgradeModal() {
-            const enhancements = this;
+            const enhancements = AiAltDashboard;
             const dashboard = AiAltDashboard;
 
             const handleRegenerate = function(e) {
