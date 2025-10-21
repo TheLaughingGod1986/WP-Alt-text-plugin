@@ -116,7 +116,7 @@ class AI_Alt_Text_Generator_GPT {
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin']);
         add_action('admin_init', [$this, 'maybe_display_threshold_notice']);
         add_action('admin_post_ai_alt_usage_export', [$this, 'handle_usage_export']);
-        add_action('init', [$this, 'ensure_capability']);
+        // ensure_capability hook removed to prevent fatal error
         
         // AJAX handlers for upgrade functionality
         add_action('wp_ajax_alttextai_dismiss_upgrade', [$this, 'ajax_dismiss_upgrade']);
@@ -2916,6 +2916,14 @@ class AI_Alt_Text_Generator_GPT {
 // Initialize the plugin after WordPress is fully loaded
 add_action('plugins_loaded', function() {
     new AI_Alt_Text_Generator_GPT();
+});
+
+// Add ensure_capability hook manually to avoid fatal error
+add_action('init', function() {
+    $role = get_role('administrator');
+    if ($role && !$role->has_cap('manage_ai_alt_text')) {
+        $role->add_cap('manage_ai_alt_text');
+    }
 });
 
 // Inline JS fallback to add row-action behaviour
