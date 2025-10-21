@@ -140,6 +140,12 @@ class AI_Alt_Text_Generator_GPT {
             true
         );
         
+        // Localize script for auth modal
+        wp_localize_script('ai-alt-auth-modal', 'alttextai_ajax', [
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('alttextai_nonce')
+        ]);
+        
         wp_enqueue_script(
             'ai-alt-dashboard-v2',
             plugin_dir_url(__FILE__) . 'assets/ai-alt-dashboard.js',
