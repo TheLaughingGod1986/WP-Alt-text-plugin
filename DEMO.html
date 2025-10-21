@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Alt Text Generator - Gamification Demo</title>
+    <link rel="stylesheet" href="assets/ai-alt-dashboard.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f6f9fc 0%, #ffffff 100%);
+            padding: 2rem;
+            margin: 0;
+        }
+        .demo-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .demo-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .demo-header h1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .demo-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+            margin-bottom: 2rem;
+        }
+        .demo-section h2 {
+            color: #2d3748;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>AI Alt Text Generator</h1>
+            <p style="font-size: 1.25rem; color: #718096;">Professional accessibility dashboard with progress tracking</p>
+        </div>
+
+        <!-- Gamification Header -->
+        <div class="demo-section">
+            <h2>🏆 Level System</h2>
+            <div class="ai-alt-gamification-header">
+                <div class="ai-alt-level-badge">
+                    <span class="ai-alt-level-badge-icon">⭐</span>
+                    Level 5 - Alt Text Expert
+                </div>
+                <div class="ai-alt-xp-container">
+                    <div class="ai-alt-xp-label">
+                        <span>Progress to Level 6</span>
+                        <span>32/50 images</span>
+                    </div>
+                    <div class="ai-alt-xp-bar">
+                        <div class="ai-alt-xp-progress" style="width: 64%">
+                            64%
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Achievements -->
+        <div class="demo-section">
+            <h2>🎯 Achievement Badges</h2>
+            <div class="ai-alt-achievements-container">
+                <div class="ai-alt-achievement unlocked">
+                    <div class="ai-alt-achievement-icon">👶</div>
+                    <div class="ai-alt-achievement-title">First Steps</div>
+                    <div class="ai-alt-achievement-description">Generate your first alt text</div>
+                </div>
+                <div class="ai-alt-achievement unlocked">
+                    <div class="ai-alt-achievement-icon">🎯</div>
+                    <div class="ai-alt-achievement-title">Getting Started</div>
+                    <div class="ai-alt-achievement-description">Generate 10 alt texts</div>
+                </div>
+                <div class="ai-alt-achievement unlocked">
+                    <div class="ai-alt-achievement-icon">🔥</div>
+                    <div class="ai-alt-achievement-title">On a Roll</div>
+                    <div class="ai-alt-achievement-description">Generate 50 alt texts</div>
+                </div>
+                <div class="ai-alt-achievement locked">
+                    <div class="ai-alt-achievement-icon">💯</div>
+                    <div class="ai-alt-achievement-title">Century Club</div>
+                    <div class="ai-alt-achievement-description">Generate 100 alt texts</div>
+                    <div class="ai-alt-achievement-progress">68%</div>
+                </div>
+                <div class="ai-alt-achievement locked">
+                    <div class="ai-alt-achievement-icon">🦁</div>
+                    <div class="ai-alt-achievement-title">Productivity Beast</div>
+                    <div class="ai-alt-achievement-description">Generate 250 alt texts</div>
+                    <div class="ai-alt-achievement-progress">27%</div>
+                </div>
+                <div class="ai-alt-achievement locked">
+                    <div class="ai-alt-achievement-icon">👑</div>
+                    <div class="ai-alt-achievement-title">Legendary</div>
+                    <div class="ai-alt-achievement-description">Generate 500+ alt texts</div>
+                    <div class="ai-alt-achievement-progress">14%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Cards -->
+        <div class="demo-section">
+            <h2>🎪 Action Cards</h2>
+            <div class="ai-alt-action-cards">
+                <div class="ai-alt-action-card card-purple">
+                    <div class="ai-alt-action-card__icon">🎯</div>
+                    <div class="ai-alt-action-card__title">Quick Win: Fill the Gaps</div>
+                    <div class="ai-alt-action-card__description">
+                        You have 12 images without alt text. Generate descriptions for all of them in one go!
+                    </div>
+                    <button class="ai-alt-btn ai-alt-btn-primary ai-alt-action-card__button">
+                        <span class="ai-alt-btn-icon">⚡</span>
+                        Generate Missing Alt Text
+                    </button>
+                </div>
+                
+                <div class="ai-alt-action-card card-green">
+                    <div class="ai-alt-action-card__icon">✨</div>
+                    <div class="ai-alt-action-card__title">Fresh Start: Regenerate All</div>
+                    <div class="ai-alt-action-card__description">
+                        Regenerate all 156 images with fresh descriptions. Perfect for updated guidelines!
+                    </div>
+                    <button class="ai-alt-btn ai-alt-btn-success ai-alt-action-card__button">
+                        <span class="ai-alt-btn-icon">🔄</span>
+                        Regenerate All Images
+                    </button>
+                </div>
+                
+                <div class="ai-alt-action-card card-blue">
+                    <div class="ai-alt-action-card__icon">📚</div>
+                    <div class="ai-alt-action-card__title">Review & Refine</div>
+                    <div class="ai-alt-action-card__description">
+                        Check your ALT Library to review, edit, and perfect every description. Quality matters!
+                    </div>
+                    <button class="ai-alt-btn ai-alt-btn-info ai-alt-action-card__button">
+                        <span class="ai-alt-btn-icon">👀</span>
+                        Open ALT Library
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="demo-section">
+            <h2>📊 Stat Cards</h2>
+            <div class="ai-alt-dashboard__microcards">
+                <div class="ai-alt-microcard gradient-purple">
+                    <div class="ai-alt-microcard__icon">📊</div>
+                    <div class="ai-alt-microcard__value">156</div>
+                    <div class="ai-alt-microcard__label">Total Images</div>
+                </div>
+                <div class="ai-alt-microcard gradient-green">
+                    <div class="ai-alt-microcard__icon">✅</div>
+                    <div class="ai-alt-microcard__value">144</div>
+                    <div class="ai-alt-microcard__label">With ALT Text</div>
+                </div>
+                <div class="ai-alt-microcard gradient-pink">
+                    <div class="ai-alt-microcard__icon">❌</div>
+                    <div class="ai-alt-microcard__value">12</div>
+                    <div class="ai-alt-microcard__label">Missing</div>
+                </div>
+                <div class="ai-alt-microcard gradient-blue">
+                    <div class="ai-alt-microcard__icon">🤖</div>
+                    <div class="ai-alt-microcard__value">89</div>
+                    <div class="ai-alt-microcard__label">AI Generated</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="demo-section">
+            <h2>🔘 Button Styles</h2>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button class="ai-alt-btn ai-alt-btn-primary">
+                    <span class="ai-alt-btn-icon">⚡</span>
+                    Primary Button
+                </button>
+                <button class="ai-alt-btn ai-alt-btn-success">
+                    <span class="ai-alt-btn-icon">✅</span>
+                    Success Button
+                </button>
+                <button class="ai-alt-btn ai-alt-btn-info">
+                    <span class="ai-alt-btn-icon">ℹ️</span>
+                    Info Button
+                </button>
+                <button class="ai-alt-btn ai-alt-btn-warning">
+                    <span class="ai-alt-btn-icon">⚠️</span>
+                    Warning Button
+                </button>
+                <button class="ai-alt-btn ai-alt-btn-outline">
+                    <span class="ai-alt-btn-icon">👀</span>
+                    Outline Button
+                </button>
+            </div>
+        </div>
+
+        <!-- Quality Badges -->
+        <div class="demo-section">
+            <h2>🏅 Quality Badges</h2>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <span class="ai-alt-quality-badge excellent">Excellent Quality</span>
+                <span class="ai-alt-quality-badge good">Good Quality</span>
+                <span class="ai-alt-quality-badge fair">Fair Quality</span>
+                <span class="ai-alt-quality-badge poor">Poor Quality</span>
+            </div>
+        </div>
+
+        <!-- Toast Examples -->
+        <div class="demo-section">
+            <h2>🔔 Toast Notifications</h2>
+            <p style="color: #718096; margin-bottom: 1rem;">Click buttons to see toast notifications:</p>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button class="ai-alt-btn ai-alt-btn-success" onclick="showToast('success')">
+                    Show Success Toast
+                </button>
+                <button class="ai-alt-btn ai-alt-btn-primary" onclick="showToast('achievement')">
+                    Show Achievement Toast
+                </button>
+                <button class="ai-alt-btn ai-alt-btn-info" onclick="showToast('info')">
+                    Show Info Toast
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading States -->
+        <div class="demo-section">
+            <h2>⏳ Loading States</h2>
+            <div style="display: flex; gap: 2rem; align-items: center; flex-wrap: wrap;">
+                <div>
+                    <p style="margin-bottom: 0.5rem; color: #718096;">Spinner:</p>
+                    <div class="ai-alt-loading-spinner"></div>
+                </div>
+                <div>
+                    <p style="margin-bottom: 0.5rem; color: #718096;">Dots:</p>
+                    <div class="ai-alt-loading-dots">
+                        <div class="ai-alt-loading-dot"></div>
+                        <div class="ai-alt-loading-dot"></div>
+                        <div class="ai-alt-loading-dot"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container (will be created by JS) -->
+    <div class="ai-alt-toast-container"></div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="assets/ai-alt-dashboard.js"></script>
+    <script>
+        function showToast(type) {
+            const messages = {
+                success: {
+                    type: 'success',
+                    title: 'Success',
+                    message: 'Alt text generated successfully!'
+                },
+                achievement: {
+                    type: 'achievement',
+                    title: 'Achievement Unlocked',
+                    message: 'First Steps - Generated your first alt text'
+                },
+                info: {
+                    type: 'info',
+                    title: 'Welcome',
+                    message: 'Track your accessibility progress as you work!'
+                }
+            };
+            
+            if (typeof AiAltToast !== 'undefined') {
+                AiAltToast.show(messages[type]);
+            }
+        }
+
+        // Add confetti on achievement badge click
+        $(document).ready(function() {
+            $('.ai-alt-achievement.unlocked').on('click', function() {
+                if (typeof AiAltCelebration !== 'undefined') {
+                    AiAltCelebration.confetti();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+

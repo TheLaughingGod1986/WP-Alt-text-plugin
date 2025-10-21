@@ -1,0 +1,22 @@
+# Backend directory (separate repository)
+backend/
+
+# Local test environment
+local-test/
+
+# WordPress specific
+wp-config.php
+.htaccess
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
