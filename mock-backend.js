@@ -14,6 +14,16 @@ app.use(express.json());
 // Mock endpoints for testing
 app.post('/auth/register', (req, res) => {
     console.log('Registration attempt:', req.body);
+    
+    // Check if user already exists (simple mock)
+    if (req.body.email === 'test@example.com' || req.body.email === 'benoats@gmail.com') {
+        return res.status(200).json({
+            success: false,
+            error: 'User already exists with this email',
+            code: 'USER_EXISTS'
+        });
+    }
+    
     res.json({
         success: true,
         token: 'mock-jwt-token-' + Date.now(),
