@@ -68,6 +68,7 @@ class AI_Alt_Text_Generator_GPT {
         add_action('wp_ajax_alttextai_queue_retry_failed', [$this, 'ajax_queue_retry_failed']);
         add_action('wp_ajax_alttextai_queue_retry_job', [$this, 'ajax_queue_retry_job']);
         add_action('wp_ajax_alttextai_queue_clear_completed', [$this, 'ajax_queue_clear_completed']);
+        add_action('wp_ajax_alttextai_queue_stats', [$this, 'ajax_queue_stats']);
         add_action('wp_ajax_alttextai_track_upgrade', [$this, 'ajax_track_upgrade']);
 
         if (defined('WP_CLI') && WP_CLI) {
@@ -2782,6 +2783,21 @@ class AI_Alt_Text_Generator_GPT {
         }
         AltText_AI_Queue::clear_completed();
         wp_send_json_success(['message' => __('Cleared completed jobs.', 'ai-alt-gpt')]);
+    }
+
+    public function ajax_queue_stats() {
+        check_ajax_referer('alttextai_upgrade_nonce', 'nonce');
+        if (!$this->user_can_manage()) {
+            wp_send_json_error(['message' => __('Unauthorized', 'ai-alt-gpt')]);
+        }
+        
+        $stats = AltText_AI_Queue::get_stats();
+        $failures = AltText_AI_Queue::get_failures();
+        
+        wp_send_json_success([
+            'stats' => $stats,
+            'failures' => $failures
+        ]);
     }
 
     public function ajax_track_upgrade() {

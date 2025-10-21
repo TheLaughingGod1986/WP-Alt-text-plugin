@@ -390,6 +390,24 @@ class AltText_AI_Queue {
     }
 
     /**
+     * Get failed jobs with details.
+     */
+    public static function get_failures() {
+        global $wpdb;
+        $table = self::table();
+
+        $failures = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, attachment_id, error_message, created_at FROM {$table} 
+             WHERE status = 'failed' 
+             ORDER BY created_at DESC 
+             LIMIT %d",
+            10
+        ));
+
+        return $failures ?: [];
+    }
+
+    /**
      * Fetch recent queue entries for display.
      */
     public static function get_recent($limit = 20) {
