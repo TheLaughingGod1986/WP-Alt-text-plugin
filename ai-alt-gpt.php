@@ -180,13 +180,6 @@ class AI_Alt_Text_Generator_GPT {
             : sprintf(__('Queued %d images for background optimisation. Alt text will be generated shortly.', 'ai-alt-gpt'), $count);
         echo '<div class="notice notice-info is-dismissible"><p>' . esc_html($message) . '</p></div>';
     }
-    
-    /**
-     * Process the queue
-     */
-    public function process_queue() {
-        AltText_AI_Queue::process();
-    }
 
     public function deactivate(){
         wp_clear_scheduled_hook(AltText_AI_Queue::CRON_HOOK);
