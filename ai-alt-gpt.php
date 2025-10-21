@@ -74,7 +74,7 @@ class AI_Alt_Text_Generator_GPT {
         // Clean up if needed
     }
 
-    private function ensure_capability() {
+    public function ensure_capability() {
         $role = get_role('administrator');
         if ($role && !$role->has_cap(self::CAPABILITY)) {
             $role->add_cap(self::CAPABILITY);
