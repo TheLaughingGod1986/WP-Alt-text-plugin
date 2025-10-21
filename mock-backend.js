@@ -26,11 +26,13 @@ app.post('/auth/register', (req, res) => {
     
     res.json({
         success: true,
-        token: 'mock-jwt-token-' + Date.now(),
-        user: {
-            id: 1,
-            email: req.body.email,
-            plan: 'free'
+        data: {
+            token: 'mock-jwt-token-' + Date.now(),
+            user: {
+                id: 1,
+                email: req.body.email,
+                plan: 'free'
+            }
         }
     });
 });
@@ -39,11 +41,13 @@ app.post('/auth/login', (req, res) => {
     console.log('Login attempt:', req.body);
     res.json({
         success: true,
-        token: 'mock-jwt-token-' + Date.now(),
-        user: {
-            id: 1,
-            email: req.body.email,
-            plan: 'free'
+        data: {
+            token: 'mock-jwt-token-' + Date.now(),
+            user: {
+                id: 1,
+                email: req.body.email,
+                plan: 'free'
+            }
         }
     });
 });
