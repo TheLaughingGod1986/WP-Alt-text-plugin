@@ -14,7 +14,7 @@
 if (!defined('ABSPATH')) { exit; }
 
 // Load API client and usage tracker
-require_once plugin_dir_path(__FILE__) . 'includes/class-api-client.php';
+require_once plugin_dir_path(__FILE__) . 'includes/class-api-client-v2.php';
 require_once plugin_dir_path(__FILE__) . 'includes/class-usage-tracker.php';
 
 class AI_Alt_Text_Generator_GPT {
@@ -33,8 +33,68 @@ class AI_Alt_Text_Generator_GPT {
         return current_user_can(self::CAPABILITY) || current_user_can('manage_options');
     }
 
+    /**
+     * REST helper: enforce media management permissions.
+     *
+     * @return bool|\WP_Error
+     */
+    public function rest_permission_check() {
+        if ($this->user_can_manage() || current_user_can('upload_files')) {
+            return true;
+        }
+        return new \WP_Error(
+            'rest_forbidden',
+            __('You do not have permission to manage AltText AI resources.', 'ai-alt-gpt'),
+            ['status' => 403]
+        );
+    }
+
+    /**
+     * Ensure REST errors always include an HTTP status.
+     *
+     * @param \WP_Error $error
+     * @param int       $default_status
+     * @return \WP_Error
+     */
+    private function with_rest_status(\WP_Error $error, int $default_status = 400): \WP_Error {
+        $data = $error->get_error_data();
+        if (!is_array($data)) {
+            $error->add_data(['status' => $default_status]);
+            return $error;
+        }
+        if (!array_key_exists('status', $data)) {
+            $data['status'] = $default_status;
+            $error->add_data($data);
+        }
+        return $error;
+    }
+
+    /**
+     * Validate an attachment ID for REST/AJAX use.
+     *
+     * @param mixed $raw_id
+     * @return int|\WP_Error
+     */
+    private function validate_managed_attachment($raw_id) {
+        $id = intval($raw_id);
+        if ($id <= 0) {
+            return new \WP_Error('invalid_attachment', __('Invalid attachment ID.', 'ai-alt-gpt'), ['status' => 400]);
+        }
+
+        $post = get_post($id);
+        if (!$post || $post->post_type !== 'attachment') {
+            return new \WP_Error('invalid_attachment', __('Attachment not found.', 'ai-alt-gpt'), ['status' => 404]);
+        }
+
+        if (!current_user_can('edit_post', $id)) {
+            return new \WP_Error('forbidden_attachment', __('You are not allowed to edit this attachment.', 'ai-alt-gpt'), ['status' => 403]);
+        }
+
+        return $id;
+    }
+
     public function __construct() {
-        $this->api_client = new AltText_AI_API_Client();
+        $this->api_client = new AltText_AI_API_Client_V2();
         
         register_activation_hook(__FILE__, [$this, 'activate']);
         register_deactivation_hook(__FILE__, [$this, 'deactivate']);
@@ -62,6 +122,11 @@ class AI_Alt_Text_Generator_GPT {
         add_action('wp_ajax_alttextai_dismiss_upgrade', [$this, 'ajax_dismiss_upgrade']);
         add_action('wp_ajax_alttextai_refresh_usage', [$this, 'ajax_refresh_usage']);
         add_action('wp_ajax_alttextai_regenerate_single', [$this, 'ajax_regenerate_single']);
+        
+        // Authentication AJAX handlers
+        add_action('wp_ajax_alttextai_register', [$this, 'ajax_register']);
+        add_action('wp_ajax_alttextai_login', [$this, 'ajax_login']);
+        add_action('wp_ajax_alttextai_verify_token', [$this, 'ajax_verify_token']);
 
         if (defined('WP_CLI') && WP_CLI) {
             \WP_CLI::add_command('ai-alt', [$this, 'wpcli_command']);
@@ -355,7 +420,12 @@ class AI_Alt_Text_Generator_GPT {
                 <div class="alttextai-dashboard-shell max-w-5xl mx-auto px-6">
                     <?php
                         $plan_label = $usage_stats['plan_label'] ?? __('Free', 'ai-alt-gpt');
-                        $manage_billing_url = apply_filters('alttextai_manage_billing_url', AltText_AI_Usage_Tracker::get_upgrade_url());
+                        $billing_portal = AltText_AI_Usage_Tracker::get_billing_portal_url();
+                        if (empty($billing_portal)) {
+                            $billing_portal = AltText_AI_Usage_Tracker::get_upgrade_url();
+                        }
+                        $manage_billing_url = apply_filters('alttextai_manage_billing_url', $billing_portal);
+                        $upgrade_url = AltText_AI_Usage_Tracker::get_upgrade_url();
                     ?>
                     <div class="alttextai-plan-banner <?php echo $usage_stats['is_free'] ? 'alttextai-plan-banner--free' : 'alttextai-plan-banner--pro'; ?>">
                         <div class="alttextai-plan-banner__copy">
@@ -371,8 +441,67 @@ class AI_Alt_Text_Generator_GPT {
                             <?php if (!empty($usage_stats['is_free'])) : ?>
                                 <button type="button" class="alttextai-plan-upgrade" data-action="show-upgrade-modal"><?php esc_html_e('Upgrade →', 'ai-alt-gpt'); ?></button>
                             <?php else : ?>
-                                <a href="<?php echo esc_url($manage_billing_url); ?>" target="_blank" rel="noopener noreferrer" class="alttextai-plan-manage"><?php esc_html_e('Manage Billing', 'ai-alt-gpt'); ?></a>
+                                <?php if (!empty($manage_billing_url)) : ?>
+                                    <a href="<?php echo esc_url($manage_billing_url); ?>" target="_blank" rel="noopener noreferrer" class="alttextai-plan-manage"><?php esc_html_e('Manage Billing', 'ai-alt-gpt'); ?></a>
+                                <?php else : ?>
+                                    <button type="button" class="alttextai-plan-upgrade alttextai-plan-upgrade--secondary" data-action="show-upgrade-modal"><?php esc_html_e('Upgrade Options', 'ai-alt-gpt'); ?></button>
+                                <?php endif; ?>
                             <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- Authentication Section -->
+                    <div class="alttextai-auth-section" id="alttextai-auth-section" style="display: none;">
+                        <div class="alttextai-auth-card bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+                            <h2 class="text-xl font-semibold text-slate-800 mb-4"><?php esc_html_e('Account Setup', 'ai-alt-gpt'); ?></h2>
+                            <p class="text-slate-600 mb-6"><?php esc_html_e('Create an account to track your usage and manage your subscription.', 'ai-alt-gpt'); ?></p>
+                            
+                            <div class="alttextai-auth-forms">
+                                <!-- Registration Form -->
+                                <div id="alttextai-register-form" class="alttextai-auth-form">
+                                    <h3 class="text-lg font-medium text-slate-700 mb-4"><?php esc_html_e('Create Account', 'ai-alt-gpt'); ?></h3>
+                                    <form id="alttextai-register" class="space-y-4">
+                                        <div>
+                                            <label for="register-email" class="block text-sm font-medium text-slate-700 mb-2"><?php esc_html_e('Email', 'ai-alt-gpt'); ?></label>
+                                            <input type="email" id="register-email" name="email" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                                        </div>
+                                        <div>
+                                            <label for="register-password" class="block text-sm font-medium text-slate-700 mb-2"><?php esc_html_e('Password', 'ai-alt-gpt'); ?></label>
+                                            <input type="password" id="register-password" name="password" required minlength="8" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                                        </div>
+                                        <button type="submit" class="w-full bg-teal-600 text-white py-2 px-4 rounded-lg hover:bg-teal-700 transition-colors">
+                                            <?php esc_html_e('Create Account', 'ai-alt-gpt'); ?>
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <!-- Login Form -->
+                                <div id="alttextai-login-form" class="alttextai-auth-form" style="display: none;">
+                                    <h3 class="text-lg font-medium text-slate-700 mb-4"><?php esc_html_e('Sign In', 'ai-alt-gpt'); ?></h3>
+                                    <form id="alttextai-login" class="space-y-4">
+                                        <div>
+                                            <label for="login-email" class="block text-sm font-medium text-slate-700 mb-2"><?php esc_html_e('Email', 'ai-alt-gpt'); ?></label>
+                                            <input type="email" id="login-email" name="email" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                                        </div>
+                                        <div>
+                                            <label for="login-password" class="block text-sm font-medium text-slate-700 mb-2"><?php esc_html_e('Password', 'ai-alt-gpt'); ?></label>
+                                            <input type="password" id="login-password" name="password" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                                        </div>
+                                        <button type="submit" class="w-full bg-teal-600 text-white py-2 px-4 rounded-lg hover:bg-teal-700 transition-colors">
+                                            <?php esc_html_e('Sign In', 'ai-alt-gpt'); ?>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <div class="alttextai-auth-switch mt-4 text-center">
+                                <button type="button" id="alttextai-switch-to-login" class="text-teal-600 hover:text-teal-700 font-medium">
+                                    <?php esc_html_e('Already have an account? Sign in', 'ai-alt-gpt'); ?>
+                                </button>
+                                <button type="button" id="alttextai-switch-to-register" class="text-teal-600 hover:text-teal-700 font-medium" style="display: none;">
+                                    <?php esc_html_e('Need an account? Create one', 'ai-alt-gpt'); ?>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -513,16 +642,14 @@ class AI_Alt_Text_Generator_GPT {
                         </div>
                     </div>
 
-                        <?php if ($usage_stats['remaining'] > 0) : ?>
-                            <!-- Progress Bar (Hidden by default) -->
-                            <div class="ai-alt-bulk-progress" data-bulk-progress hidden>
-                                <div class="ai-alt-bulk-progress__header">
-                                    <span class="ai-alt-bulk-progress__label" data-bulk-progress-label><?php esc_html_e('Preparing bulk run…', 'ai-alt-gpt'); ?></span>
-                                    <span class="ai-alt-bulk-progress__counts" data-bulk-progress-counts></span>
-                                </div>
-                                <div class="ai-alt-bulk-progress__bar"><span data-bulk-progress-bar></span></div>
+                        <!-- Progress Bar (Hidden by default) -->
+                        <div class="ai-alt-bulk-progress" data-bulk-progress hidden>
+                            <div class="ai-alt-bulk-progress__header">
+                                <span class="ai-alt-bulk-progress__label" data-bulk-progress-label><?php esc_html_e('Preparing bulk run…', 'ai-alt-gpt'); ?></span>
+                                <span class="ai-alt-bulk-progress__counts" data-bulk-progress-counts></span>
                             </div>
-                        <?php endif; ?>
+                            <div class="ai-alt-bulk-progress__bar"><span data-bulk-progress-bar></span></div>
+                        </div>
 
                     <?php if ($usage_stats['remaining'] <= 0) : ?>
                         <div class="alttextai-limit-reached">
@@ -2258,180 +2385,205 @@ class AI_Alt_Text_Generator_GPT {
 
     public function register_rest_routes(){
         register_rest_route('ai-alt/v1', '/generate/(?P<id>\d+)', [
-            'methods'  => 'POST',
-            'callback' => function($req){
-                if (!current_user_can('upload_files')) return new \WP_Error('forbidden', 'No permission', ['status' => 403]);
-                $id = intval($req['id']);
-                $alt = $this->generate_and_save($id, 'ajax');
-                if (is_wp_error($alt)) {
-                    if ($alt->get_error_code() === 'ai_alt_dry_run'){
-                        return [
-                            'id'      => $id,
-                            'code'    => $alt->get_error_code(),
-                            'message' => $alt->get_error_message(),
-                            'prompt'  => $alt->get_error_data()['prompt'] ?? '',
-                            'stats'   => $this->get_media_stats(),
-                        ];
-                    }
-                    return $alt;
-                }
-                return [
-                    'id'   => $id,
-                    'alt'  => $alt,
-                    'meta' => $this->prepare_attachment_snapshot($id),
-                    'stats'=> $this->get_media_stats(),
-                ];
-            },
-            'permission_callback' => '__return_true',
+            'methods'             => \WP_REST_Server::CREATABLE,
+            'callback'            => [$this, 'rest_generate_alt'],
+            'permission_callback' => [$this, 'rest_permission_check'],
+            'args'                => [
+                'id' => [
+                    'sanitize_callback' => 'absint',
+                ],
+            ],
         ]);
 
         register_rest_route('ai-alt/v1', '/alt/(?P<id>\d+)', [
-            'methods'  => 'POST',
-            'callback' => function($req){
-                if (!current_user_can('upload_files')) {
-                    return new \WP_Error('forbidden', 'No permission', ['status' => 403]);
-                }
-
-                $id  = intval($req['id']);
-                $alt = trim((string) $req->get_param('alt'));
-
-                if ($id <= 0) {
-                    return new \WP_Error('invalid_attachment', 'Invalid attachment ID.', ['status' => 400]);
-                }
-
-                if ($alt === '') {
-                    return new \WP_Error('invalid_alt', __('ALT text cannot be empty.', 'ai-alt-gpt'), ['status' => 400]);
-                }
-
-                $alt_sanitized = wp_strip_all_tags($alt);
-
-                $usage = [
-                    'prompt' => 0,
-                    'completion' => 0,
-                    'total' => 0,
-                ];
-
-                $post = get_post($id);
-                $file_path = get_attached_file($id);
-                $context = [
-                    'filename' => $file_path ? basename($file_path) : '',
-                    'title' => get_the_title($id),
-                    'caption' => $post->post_excerpt ?? '',
-                    'post_title' => '',
-                ];
-
-                if ($post && $post->post_parent) {
-                    $parent = get_post($post->post_parent);
-                    if ($parent) {
-                        $context['post_title'] = $parent->post_title;
-                    }
-                }
-
-                $review_result = null;
-                if ($this->api_client) {
-                    $review_response = $this->api_client->review_alt_text($id, $alt_sanitized, $context);
-                    if (!is_wp_error($review_response) && !empty($review_response['review'])) {
-                        $review = $review_response['review'];
-                        $issues = [];
-                        if (!empty($review['issues']) && is_array($review['issues'])) {
-                            foreach ($review['issues'] as $issue) {
-                                if (is_string($issue) && $issue !== '') {
-                                    $issues[] = sanitize_text_field($issue);
-                                }
-                            }
-                        }
-
-                        $review_usage = [
-                            'prompt' => intval($review['usage']['prompt_tokens'] ?? 0),
-                            'completion' => intval($review['usage']['completion_tokens'] ?? 0),
-                            'total' => intval($review['usage']['total_tokens'] ?? 0),
-                        ];
-
-                        $review_result = [
-                            'score' => intval($review['score'] ?? 0),
-                            'status' => sanitize_key($review['status'] ?? ''),
-                            'grade' => sanitize_text_field($review['grade'] ?? ''),
-                            'summary' => isset($review['summary']) ? sanitize_text_field($review['summary']) : '',
-                            'issues' => $issues,
-                            'model' => sanitize_text_field($review['model'] ?? ''),
-                            'usage' => $review_usage,
-                        ];
-                    }
-                }
-
-                $this->persist_generation_result(
-                    $id,
-                    $alt_sanitized,
-                    $usage,
-                    'manual-edit',
-                    'manual-input',
-                    'manual',
-                    $review_result
-                );
-
-                return [
-                    'id'   => $id,
-                    'alt'  => $alt_sanitized,
-                    'meta' => $this->prepare_attachment_snapshot($id),
-                    'stats'=> $this->get_media_stats(),
-                    'source' => 'manual-edit',
-                ];
-            },
-            'permission_callback' => function(){ return current_user_can('upload_files'); },
+            'methods'             => \WP_REST_Server::CREATABLE,
+            'callback'            => [$this, 'rest_save_alt'],
+            'permission_callback' => [$this, 'rest_permission_check'],
+            'args'                => [
+                'id'  => [
+                    'sanitize_callback' => 'absint',
+                ],
+                'alt' => [
+                    'sanitize_callback' => 'wp_kses_post',
+                ],
+            ],
         ]);
 
         register_rest_route('ai-alt/v1', '/list', [
-            'methods'  => 'GET',
-            'callback' => function($req){
-                if (!current_user_can('upload_files')){
-                    return new \WP_Error('forbidden', 'No permission', ['status' => 403]);
-                }
-
-                $scope = $req->get_param('scope') === 'all' ? 'all' : 'missing';
-                $limit = max(1, min(500, intval($req->get_param('limit') ?: 100)));
-
-                if ($scope === 'missing'){
-                    $ids = $this->get_missing_attachment_ids($limit);
-                } else {
-                    $ids = $this->get_all_attachment_ids($limit, 0);
-                }
-
-                return ['ids' => array_map('intval', $ids)];
-            },
-            'permission_callback' => function(){ return current_user_can('upload_files'); },
+            'methods'             => \WP_REST_Server::READABLE,
+            'callback'            => [$this, 'rest_list_images'],
+            'permission_callback' => [$this, 'rest_permission_check'],
         ]);
 
         register_rest_route('ai-alt/v1', '/stats', [
-            'methods'  => 'GET',
-            'callback' => function($req){
-                if (!current_user_can('upload_files')){
-                    return new \WP_Error('forbidden', 'No permission', ['status' => 403]);
-                }
-
-                $fresh = $req->get_param('fresh');
-                if ($fresh && filter_var($fresh, FILTER_VALIDATE_BOOLEAN)) {
-                    $this->invalidate_stats_cache();
-                }
-
-                return $this->get_media_stats();
-            },
-            'permission_callback' => function(){ return current_user_can('upload_files'); },
+            'methods'             => \WP_REST_Server::READABLE,
+            'callback'            => [$this, 'rest_get_stats'],
+            'permission_callback' => [$this, 'rest_permission_check'],
         ]);
 
         register_rest_route('ai-alt/v1', '/usage', [
-            'methods'  => 'GET',
-            'callback' => function(){
-                if (!current_user_can('upload_files')){
-                    return new \WP_Error('forbidden', 'No permission', ['status' => 403]);
-                }
-                $usage = $this->api_client->get_usage();
-                if (is_wp_error($usage)) {
-                    return $usage;
-                }
-                return $usage;
-            },
-            'permission_callback' => function(){ return current_user_can('upload_files'); },
+            'methods'             => \WP_REST_Server::READABLE,
+            'callback'            => [$this, 'rest_get_usage'],
+            'permission_callback' => [$this, 'rest_permission_check'],
         ]);
+    }
+
+    public function rest_generate_alt(\WP_REST_Request $request){
+        $id = $this->validate_managed_attachment($request->get_param('id'));
+        if (is_wp_error($id)) {
+            return $this->with_rest_status($id, $id->get_error_data()['status'] ?? 400);
+        }
+
+        $result = $this->generate_and_save($id, 'rest');
+        if (is_wp_error($result)) {
+            if ($result->get_error_code() === 'ai_alt_dry_run') {
+                $data = $result->get_error_data();
+                return rest_ensure_response([
+                    'id'      => $id,
+                    'code'    => $result->get_error_code(),
+                    'message' => $result->get_error_message(),
+                    'prompt'  => is_array($data) && isset($data['prompt']) ? $data['prompt'] : '',
+                    'stats'   => $this->get_media_stats(),
+                ]);
+            }
+            return $this->with_rest_status($result, 500);
+        }
+
+        return rest_ensure_response([
+            'id'    => $id,
+            'alt'   => $result,
+            'meta'  => $this->prepare_attachment_snapshot($id),
+            'stats' => $this->get_media_stats(),
+        ]);
+    }
+
+    public function rest_save_alt(\WP_REST_Request $request){
+        $id = $this->validate_managed_attachment($request->get_param('id'));
+        if (is_wp_error($id)) {
+            return $this->with_rest_status($id, $id->get_error_data()['status'] ?? 400);
+        }
+
+        $raw_alt = (string) $request->get_param('alt');
+        $alt = trim(wp_strip_all_tags($raw_alt));
+
+        if ($alt === '') {
+            return new \WP_Error('invalid_alt', __('ALT text cannot be empty.', 'ai-alt-gpt'), ['status' => 400]);
+        }
+
+        $usage = [
+            'prompt'     => 0,
+            'completion' => 0,
+            'total'      => 0,
+        ];
+
+        $post      = get_post($id);
+        $file_path = get_attached_file($id);
+        $context   = [
+            'filename'   => $file_path ? basename($file_path) : '',
+            'title'      => get_the_title($id),
+            'caption'    => $post && isset($post->post_excerpt) ? $post->post_excerpt : '',
+            'post_title' => '',
+        ];
+
+        if ($post && $post->post_parent) {
+            $parent = get_post($post->post_parent);
+            if ($parent) {
+                $context['post_title'] = $parent->post_title;
+            }
+        }
+
+        $review_result = null;
+        if ($this->api_client) {
+            $review_response = $this->api_client->review_alt_text($id, $alt, $context);
+            if (!is_wp_error($review_response) && !empty($review_response['review'])) {
+                $review = $review_response['review'];
+                $issues = [];
+                if (!empty($review['issues']) && is_array($review['issues'])) {
+                    foreach ($review['issues'] as $issue) {
+                        if (is_string($issue) && $issue !== '') {
+                            $issues[] = sanitize_text_field($issue);
+                        }
+                    }
+                }
+
+                $review_usage = [
+                    'prompt'     => intval($review['usage']['prompt_tokens'] ?? 0),
+                    'completion' => intval($review['usage']['completion_tokens'] ?? 0),
+                    'total'      => intval($review['usage']['total_tokens'] ?? 0),
+                ];
+
+                $review_result = [
+                    'score'   => intval($review['score'] ?? 0),
+                    'status'  => sanitize_key($review['status'] ?? ''),
+                    'grade'   => sanitize_text_field($review['grade'] ?? ''),
+                    'summary' => isset($review['summary']) ? sanitize_text_field($review['summary']) : '',
+                    'issues'  => $issues,
+                    'model'   => sanitize_text_field($review['model'] ?? ''),
+                    'usage'   => $review_usage,
+                ];
+            }
+        }
+
+        $this->persist_generation_result(
+            $id,
+            $alt,
+            $usage,
+            'manual-edit',
+            'manual-input',
+            'manual',
+            $review_result
+        );
+
+        return rest_ensure_response([
+            'id'     => $id,
+            'alt'    => $alt,
+            'meta'   => $this->prepare_attachment_snapshot($id),
+            'stats'  => $this->get_media_stats(),
+            'source' => 'manual-edit',
+        ]);
+    }
+
+    public function rest_list_images(\WP_REST_Request $request){
+        $scope_raw = $request->get_param('scope');
+        $scope     = is_string($scope_raw) ? strtolower($scope_raw) : 'missing';
+        $scope     = $scope === 'all' ? 'all' : 'missing';
+
+        $limit_raw = $request->get_param('limit');
+        $limit     = is_numeric($limit_raw) ? intval($limit_raw) : 100;
+        $limit     = max(1, min(500, $limit));
+
+        if ($scope === 'missing') {
+            $ids = $this->get_missing_attachment_ids($limit);
+        } else {
+            $ids = $this->get_all_attachment_ids($limit, 0);
+        }
+
+        return rest_ensure_response([
+            'ids' => array_map('intval', $ids),
+        ]);
+    }
+
+    public function rest_get_stats(\WP_REST_Request $request){
+        $fresh = $request->get_param('fresh');
+        if (!empty($fresh) && filter_var($fresh, FILTER_VALIDATE_BOOLEAN)) {
+            $this->invalidate_stats_cache();
+        }
+
+        return rest_ensure_response($this->get_media_stats());
+    }
+
+    public function rest_get_usage() {
+        $usage = $this->api_client->get_usage();
+        if (is_wp_error($usage)) {
+            return $this->with_rest_status($usage, 502);
+        }
+
+        if (empty($usage)) {
+            return new \WP_Error('usage_unavailable', __('Usage data is currently unavailable.', 'ai-alt-gpt'), ['status' => 503]);
+        }
+
+        AltText_AI_Usage_Tracker::update_usage($usage);
+        return rest_ensure_response(AltText_AI_Usage_Tracker::get_stats_display());
     }
 
     public function enqueue_admin($hook){
@@ -2468,6 +2620,7 @@ class AI_Alt_Text_Generator_GPT {
                 'restRoot'  => esc_url_raw( rest_url() ),
                 'l10n'      => $l10n_common,
                 'upgradeUrl'=> esc_url( AltText_AI_Usage_Tracker::get_upgrade_url() ),
+                'billingPortalUrl'=> esc_url( AltText_AI_Usage_Tracker::get_billing_portal_url() ),
             ]);
         }
 
@@ -2497,7 +2650,8 @@ class AI_Alt_Text_Generator_GPT {
                 'restMissing'=> esc_url_raw( add_query_arg(['scope' => 'missing'], rest_url('ai-alt/v1/list')) ),
                 'restAll'    => esc_url_raw( add_query_arg(['scope' => 'all'], rest_url('ai-alt/v1/list')) ),
                 'restRoot'  => esc_url_raw( rest_url() ),
-                'upgradeUrl'=> AltText_AI_Usage_Tracker::get_upgrade_url(),
+                'upgradeUrl'=> esc_url( AltText_AI_Usage_Tracker::get_upgrade_url() ),
+                'billingPortalUrl'=> esc_url( AltText_AI_Usage_Tracker::get_billing_portal_url() ),
                 'l10n'      => $l10n_common,
             ]);
 
@@ -2552,7 +2706,8 @@ class AI_Alt_Text_Generator_GPT {
                 'nonce' => wp_create_nonce('alttextai_upgrade_nonce'),
                 'ajaxurl' => admin_url('admin-ajax.php'),
                 'usage' => $usage_data,
-                'upgradeUrl' => AltText_AI_Usage_Tracker::get_upgrade_url(),
+                'upgradeUrl' => esc_url( AltText_AI_Usage_Tracker::get_upgrade_url() ),
+                'billingPortalUrl' => esc_url( AltText_AI_Usage_Tracker::get_billing_portal_url() ),
             ]);
         }
     }
@@ -2644,9 +2799,9 @@ class AI_Alt_Text_Generator_GPT {
         
         if ($result['success']) {
             // Update usage after successful generation
-            $this->api_client->increment_usage();
             $this->invalidate_stats_cache();
-            
+            AltText_AI_Usage_Tracker::clear_cache();
+
             wp_send_json_success([
                 'message' => 'Alt text generated successfully',
                 'alt_text' => $result['alt_text'],
@@ -2676,6 +2831,85 @@ class AI_Alt_Text_Generator_GPT {
         if ($post instanceof \WP_Post && $post->post_type === 'attachment') {
             $this->invalidate_stats_cache();
         }
+    }
+
+    /**
+     * AJAX handler for user registration
+     */
+    public function ajax_register() {
+        check_ajax_referer('alttextai_auth', 'nonce');
+        
+        $email = sanitize_email($_POST['email'] ?? '');
+        $password = sanitize_text_field($_POST['password'] ?? '');
+        
+        if (empty($email) || empty($password)) {
+            wp_send_json_error('Email and password are required');
+        }
+        
+        if (strlen($password) < 8) {
+            wp_send_json_error('Password must be at least 8 characters');
+        }
+
+        $result = $this->api_client->register($email, $password);
+        
+        if (is_wp_error($result)) {
+            wp_send_json_error($result->get_error_message());
+        }
+
+        wp_send_json_success([
+            'token' => $result['token'] ?? '',
+            'user' => $result['user'] ?? null
+        ]);
+    }
+
+    /**
+     * AJAX handler for user login
+     */
+    public function ajax_login() {
+        check_ajax_referer('alttextai_auth', 'nonce');
+        
+        $email = sanitize_email($_POST['email'] ?? '');
+        $password = sanitize_text_field($_POST['password'] ?? '');
+        
+        if (empty($email) || empty($password)) {
+            wp_send_json_error('Email and password are required');
+        }
+
+        $result = $this->api_client->login($email, $password);
+        
+        if (is_wp_error($result)) {
+            wp_send_json_error($result->get_error_message());
+        }
+
+        wp_send_json_success([
+            'token' => $result['token'] ?? '',
+            'user' => $result['user'] ?? null
+        ]);
+    }
+
+    /**
+     * AJAX handler for token verification
+     */
+    public function ajax_verify_token() {
+        check_ajax_referer('alttextai_auth', 'nonce');
+        
+        $token = sanitize_text_field($_POST['token'] ?? '');
+        
+        if (empty($token)) {
+            wp_send_json_error('Token is required');
+        }
+
+        // Set the token in the API client
+        $this->api_client->set_jwt_token($token);
+        
+        // Try to get usage stats to verify the token
+        $result = $this->api_client->get_usage_stats();
+        
+        if (is_wp_error($result)) {
+            wp_send_json_error('Invalid token');
+        }
+
+        wp_send_json_success(['valid' => true]);
     }
 }
 
@@ -2851,6 +3085,118 @@ add_action('admin_footer-upload.php', function(){
                     pushNotice('error', message);
                 })
                 .then(function(){ restore(btn); });
+        });
+
+        // Authentication handling
+        function initAuth() {
+            // Switch between login and register forms
+            $('#alttextai-switch-to-login').on('click', function() {
+                $('#alttextai-register-form').hide();
+                $('#alttextai-login-form').show();
+                $('#alttextai-switch-to-login').hide();
+                $('#alttextai-switch-to-register').show();
+            });
+
+            $('#alttextai-switch-to-register').on('click', function() {
+                $('#alttextai-login-form').hide();
+                $('#alttextai-register-form').show();
+                $('#alttextai-switch-to-register').hide();
+                $('#alttextai-switch-to-login').show();
+            });
+
+            // Registration form
+            $('#alttextai-register').on('submit', function(e) {
+                e.preventDefault();
+                const email = $('#register-email').val();
+                const password = $('#register-password').val();
+                
+                if (!email || !password) {
+                    alert('Please fill in all fields');
+                    return;
+                }
+
+                // Call WordPress AJAX to register
+                $.post(ajaxurl, {
+                    action: 'alttextai_register',
+                    email: email,
+                    password: password,
+                    nonce: '<?php echo wp_create_nonce('alttextai_auth'); ?>'
+                }, function(response) {
+                    if (response.success) {
+                        // Store JWT token
+                        localStorage.setItem('alttextai_jwt_token', response.data.token);
+                        // Hide auth section and show dashboard
+                        $('#alttextai-auth-section').hide();
+                        $('#alttextai-main-content').show();
+                        // Refresh the page to load user data
+                        location.reload();
+                    } else {
+                        alert('Registration failed: ' + (response.data || 'Unknown error'));
+                    }
+                });
+            });
+
+            // Login form
+            $('#alttextai-login').on('submit', function(e) {
+                e.preventDefault();
+                const email = $('#login-email').val();
+                const password = $('#login-password').val();
+                
+                if (!email || !password) {
+                    alert('Please fill in all fields');
+                    return;
+                }
+
+                // Call WordPress AJAX to login
+                $.post(ajaxurl, {
+                    action: 'alttextai_login',
+                    email: email,
+                    password: password,
+                    nonce: '<?php echo wp_create_nonce('alttextai_auth'); ?>'
+                }, function(response) {
+                    if (response.success) {
+                        // Store JWT token
+                        localStorage.setItem('alttextai_jwt_token', response.data.token);
+                        // Hide auth section and show dashboard
+                        $('#alttextai-auth-section').hide();
+                        $('#alttextai-main-content').show();
+                        // Refresh the page to load user data
+                        location.reload();
+                    } else {
+                        alert('Login failed: ' + (response.data || 'Invalid credentials'));
+                    }
+                });
+            });
+
+            // Check if user is already authenticated
+            const token = localStorage.getItem('alttextai_jwt_token');
+            if (token) {
+                // Verify token is still valid
+                $.post(ajaxurl, {
+                    action: 'alttextai_verify_token',
+                    token: token,
+                    nonce: '<?php echo wp_create_nonce('alttextai_auth'); ?>'
+                }, function(response) {
+                    if (response.success) {
+                        // Token is valid, hide auth section
+                        $('#alttextai-auth-section').hide();
+                        $('#alttextai-main-content').show();
+                    } else {
+                        // Token invalid, show auth section
+                        $('#alttextai-auth-section').show();
+                        $('#alttextai-main-content').hide();
+                    }
+                });
+            } else {
+                // No token, show auth section
+                $('#alttextai-auth-section').show();
+                $('#alttextai-main-content').hide();
+            }
+        }
+
+        // Initialize auth when document is ready
+        $(document).ready(function() {
+            initAuth();
         });
     })(jQuery);
     </script>

@@ -1765,17 +1765,10 @@
          */
         initCountdown() {
             const $countdown = $('.alttextai-countdown');
-            if (!$countdown.length) return;
+            if (!$countdown.length) { return; }
 
             const secondsUntilReset = parseInt($countdown.data('countdown') || 0, 10);
-            console.log('Countdown data:', {
-                element: $countdown.length,
-                dataCountdown: $countdown.data('countdown'),
-                secondsUntilReset: secondsUntilReset
-            });
-            
             if (secondsUntilReset <= 0) {
-                console.log('No countdown data or already expired');
                 $countdown.find('[data-days]').text('0');
                 $countdown.find('[data-hours]').text('0');
                 $countdown.find('[data-minutes]').text('0');

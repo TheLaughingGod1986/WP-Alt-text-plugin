@@ -132,8 +132,17 @@ class AltText_AI_Usage_Tracker {
      * Get upgrade URL
      */
     public static function get_upgrade_url() {
-        // TODO: Replace with actual upgrade URL (Gumroad, Lemonsqueak, etc.)
-        return 'https://alttextai.com/pricing';
+        $default = 'https://alttextai.com/pricing';
+        $stored  = get_option('alttextai_upgrade_url', $default);
+        return apply_filters('alttextai_upgrade_url', $stored ?: $default);
+    }
+
+    /**
+     * Get billing portal URL (Stripe customer portal, etc.)
+     */
+    public static function get_billing_portal_url() {
+        $stored = get_option('alttextai_billing_portal_url', '');
+        return apply_filters('alttextai_billing_portal_url', $stored);
     }
     
     /**

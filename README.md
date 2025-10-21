@@ -38,6 +38,21 @@ Professional WordPress plugin for generating accessible ALT text using OpenAI's 
 - **Hooks & Filters** - Customize prompts and behavior
 - **Dry Run Mode** - Test configurations without updating images
 
+#### SaaS / Billing Customisation
+- **Upgrade URL** – Set the target pricing/checkout page with the `alttextai_upgrade_url` option or hook into the `alttextai_upgrade_url` filter:
+  ```php
+  update_option( 'alttextai_upgrade_url', 'https://app.alttextai.com/pricing' );
+  // or
+  add_filter( 'alttextai_upgrade_url', fn() => 'https://example.com/upgrade' );
+  ```
+- **Billing Portal** – Provide a Stripe customer portal (or alternative) via the `alttextai_billing_portal_url` option/filter:
+  ```php
+  update_option( 'alttextai_billing_portal_url', 'https://billing.stripe.com/session/...'); 
+  ```
+  Free plans automatically surface the upgrade CTA, while paid plans display a “Manage Billing” link when the portal URL is available.
+
+These hooks keep the WordPress dashboard in sync with your SaaS checkout/portal without editing plugin code.
+
 ### ⚙️ Flexible Configuration
 - **Model Selection** - Choose between gpt-4o-mini, gpt-4o, or gpt-4.1-mini
 - **Language Support** - Generate ALT text in any language
