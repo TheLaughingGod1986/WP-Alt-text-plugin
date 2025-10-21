@@ -5,7 +5,7 @@
 
 class AltTextAuthModal {
     constructor() {
-        this.apiUrl = window.alttextai_ajax?.api_url || 'https://alttext-ai-backend.onrender.com';
+        this.apiUrl = window.alttextai_ajax?.api_url || 'http://localhost:3001';
         this.token = this.getStoredToken();
         this.init();
     }
@@ -147,12 +147,17 @@ class AltTextAuthModal {
         this.setLoading(form, true);
 
         try {
-            const response = await fetch(`${this.apiUrl}/auth/login`, {
+            const response = await fetch(window.alttextai_ajax?.ajax_url || '/wp-admin/admin-ajax.php', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/x-www-form-urlencoded'
                 },
-                body: JSON.stringify({ email, password })
+                body: new URLSearchParams({
+                    action: 'alttextai_login',
+                    email: email,
+                    password: password,
+                    nonce: window.alttextai_ajax?.nonce || ''
+                })
             });
 
             const data = await response.json();
@@ -188,12 +193,17 @@ class AltTextAuthModal {
         this.setLoading(form, true);
 
         try {
-            const response = await fetch(`${this.apiUrl}/auth/register`, {
+            const response = await fetch(window.alttextai_ajax?.ajax_url || '/wp-admin/admin-ajax.php', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/x-www-form-urlencoded'
                 },
-                body: JSON.stringify({ email, password })
+                body: new URLSearchParams({
+                    action: 'alttextai_register',
+                    email: email,
+                    password: password,
+                    nonce: window.alttextai_ajax?.nonce || ''
+                })
             });
 
             const data = await response.json();
