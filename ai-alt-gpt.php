@@ -2,7 +2,7 @@
 /**
  * Plugin Name: AI Alt Text Generator
  * Description: Automatically generate high-quality, accessible alt text for images using AI. Get 10 free generations per month. Improve accessibility, SEO, and user experience effortlessly.
- * Version: 4.0.1
+ * Version: 4.0.2
  * Author: Benjamin Oats
  * License: GPL2
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -138,7 +138,7 @@ class AI_Alt_Text_Generator_GPT {
             'ai-alt-auth-modal',
             plugin_dir_url(__FILE__) . 'assets/auth-modal.js',
             ['jquery'],
-            '4.0.1',
+            '4.0.2',
             true
         );
         
@@ -152,7 +152,7 @@ class AI_Alt_Text_Generator_GPT {
             'ai-alt-dashboard-v2',
             plugin_dir_url(__FILE__) . 'assets/ai-alt-dashboard.js',
             ['jquery'],
-            '4.0.1',
+            '4.0.2',
             true
         );
 
