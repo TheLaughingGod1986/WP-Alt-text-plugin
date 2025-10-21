@@ -151,7 +151,7 @@ class AI_Alt_Text_Generator_GPT {
         wp_localize_script('ai-alt-dashboard-v2', 'alttextai_ajax', [
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('alttextai_nonce'),
-            'api_url' => $this->api_client->api_url ?? 'https://alttext-ai-backend.onrender.com',
+            'api_url' => $this->api_client->api_url ?? 'http://localhost:3001',
             'is_authenticated' => $this->api_client->is_authenticated(),
             'user_data' => $this->api_client->get_user_data(),
         ]);

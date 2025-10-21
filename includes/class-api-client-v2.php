@@ -14,7 +14,7 @@ class AltText_AI_API_Client_V2 {
     
     public function __construct() {
         $options = get_option('ai_alt_gpt_settings', []);
-        $this->api_url = $options['api_url'] ?? 'https://alttext-ai-backend.onrender.com';
+        $this->api_url = $options['api_url'] ?? 'http://localhost:3001';
     }
     
     /**
