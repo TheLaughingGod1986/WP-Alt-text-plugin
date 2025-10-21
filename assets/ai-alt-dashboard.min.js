@@ -429,6 +429,11 @@
         stats: null,
         previousStats: null,
         usage: null,
+        queue: null,
+        queueRefreshTimer: null,
+        queueControlsBound: false,
+        billingControlsBound: false,
+        isQueueRefreshing: false,
         bulkButtonBound: false,
         isBulkProcessing: false,
         isRefreshing: false,
@@ -456,7 +461,11 @@
             this.initializeBulkButton();
             this.cacheProgressEls();
             this.updateBulkButtonState();
+            this.bindBillingControls();
+            this.bindQueueControls();
             this.refreshStats();
+            this.refreshQueueStatus();
+            this.startQueuePolling();
         },
 
         /**
@@ -1042,6 +1051,298 @@
             this.updateBulkButtonState();
         },
 
+        bindBillingControls() {
+            if (this.billingControlsBound) { return; }
+            $(document).on('click', '[data-action="open-billing-portal"]', function(e){
+                e.preventDefault();
+                const portalUrl = (window.AltTextAI && window.AltTextAI.billingPortalUrl) || '';
+                const upgradeUrl = (window.AltTextAI && window.AltTextAI.upgradeUrl) || '';
+                if (portalUrl) {
+                    AiAltDashboard.trackUpgrade('billing-portal');
+                    window.open(portalUrl, '_blank', 'noopener');
+                    return;
+                }
+                if (upgradeUrl) {
+                    AiAltDashboard.trackUpgrade('billing-fallback');
+                    window.open(upgradeUrl, '_blank', 'noopener');
+                    return;
+                }
+                AiAltToast.show({
+                    type: 'info',
+                    title: 'Billing',
+                    message: 'Billing portal is not configured yet.',
+                    duration: 3600
+                });
+            });
+            this.billingControlsBound = true;
+        },
+
+        bindQueueControls() {
+            if (this.queueControlsBound) { return; }
+            const self = this;
+
+            $(document).on('click', '[data-action="refresh-queue"]', function(e){
+                e.preventDefault();
+                const $btn = $(this);
+                $btn.prop('disabled', true).addClass('is-refreshing');
+                self.refreshQueueStatus({ force: true }).finally(() => {
+                    $btn.prop('disabled', false).removeClass('is-refreshing');
+                });
+            });
+
+            $(document).on('click', '[data-action="retry-failed"]', function(e){
+                e.preventDefault();
+                const $btn = $(this);
+                self.performQueueAction(
+                    { action: 'alttextai_queue_retry_failed' },
+                    $btn,
+                    'Retrying failed jobs…',
+                    'Failed jobs re-queued.',
+                    'Unable to retry failed jobs.'
+                );
+            });
+
+            $(document).on('click', '[data-action="retry-job"]', function(e){
+                e.preventDefault();
+                const $btn = $(this);
+                const jobId = parseInt($btn.data('jobId'), 10);
+                if (!jobId) { return; }
+                self.performQueueAction(
+                    { action: 'alttextai_queue_retry_job', job_id: jobId },
+                    $btn,
+                    'Retrying job…',
+                    'Job re-queued.',
+                    'Unable to retry this job.'
+                );
+            });
+
+            $(document).on('click', '[data-action="clear-completed"]', function(e){
+                e.preventDefault();
+                const $btn = $(this);
+                self.performQueueAction(
+                    { action: 'alttextai_queue_clear_completed' },
+                    $btn,
+                    'Clearing completed jobs…',
+                    'Cleared completed jobs.',
+                    'Unable to clear completed jobs.'
+                );
+            });
+
+            this.queueControlsBound = true;
+        },
+
+        performQueueAction(payload, $button, workingMessage, successMessage, errorMessage) {
+            const ajaxConfig = window.alttextai_ajax || {};
+            if (!$button) { $button = $(); }
+
+            if (!ajaxConfig.ajaxurl || !ajaxConfig.nonce) {
+                AiAltToast.show({
+                    type: 'error',
+                    title: 'Queue action failed',
+                    message: 'AJAX configuration missing.',
+                    duration: 4000
+                });
+                return $.Deferred().reject().promise();
+            }
+
+            const requestData = Object.assign({ nonce: ajaxConfig.nonce }, payload || {});
+            if (!requestData.action) {
+                AiAltToast.show({
+                    type: 'error',
+                    title: 'Queue action failed',
+                    message: 'No action specified.',
+                    duration: 4000
+                });
+                return $.Deferred().reject().promise();
+            }
+
+            if ($button.length) {
+                $button.prop('disabled', true).addClass('is-refreshing');
+            }
+
+            if (workingMessage) {
+                AiAltToast.show({
+                    type: 'info',
+                    title: 'Queue',
+                    message: workingMessage,
+                    duration: 2000
+                });
+            }
+
+            return $.post(ajaxConfig.ajaxurl, requestData)
+            .done((resp) => {
+                if (resp && resp.success) {
+                    AiAltToast.show({
+                        type: 'success',
+                        title: 'Queue',
+                        message: successMessage || 'Action completed.',
+                        duration: 3200
+                    });
+                    this.refreshQueueStatus({ force: true, silent: true });
+                } else {
+                    const message = resp?.data?.message || resp?.data || errorMessage || 'Action failed.';
+                    AiAltToast.show({
+                        type: 'error',
+                        title: 'Queue',
+                        message,
+                        duration: 4200
+                    });
+                }
+            })
+            .fail(() => {
+                AiAltToast.show({
+                    type: 'error',
+                    title: 'Queue',
+                    message: errorMessage || 'Network error while performing queue action.',
+                    duration: 4200
+                });
+            })
+            .always(() => {
+                if ($button.length) {
+                    $button.prop('disabled', false).removeClass('is-refreshing');
+                }
+            });
+        },
+
+        startQueuePolling() {
+            this.stopQueuePolling();
+            const config = this.config || getRestConfig();
+            if (!config || !config.restQueue) { return; }
+            this.queueRefreshTimer = setInterval(() => this.refreshQueueStatus({ silent: true }), 60000);
+        },
+
+        stopQueuePolling() {
+            if (this.queueRefreshTimer) {
+                clearInterval(this.queueRefreshTimer);
+                this.queueRefreshTimer = null;
+            }
+        },
+
+        refreshQueueStatus(options = {}) {
+            const config = this.config || getRestConfig();
+            if (!config || !config.restQueue) { return Promise.resolve(); }
+            if (this.isQueueRefreshing && !options.force) { return Promise.resolve(); }
+
+            this.isQueueRefreshing = true;
+            const request = apiRequest(config, config.restQueue)
+                .then(data => {
+                    this.queue = data || null;
+                    this.renderQueue();
+                })
+                .catch(error => {
+                    if (!options.silent) {
+                        AiAltToast.show({
+                            type: 'error',
+                            title: 'Queue status',
+                            message: formatError(error),
+                            duration: 4200
+                        });
+                    }
+                })
+                .finally(() => {
+                    this.isQueueRefreshing = false;
+                });
+
+            return request;
+        },
+
+        renderQueue() {
+            const $card = $('.alttextai-queue-card');
+            if (!$card.length) { return; }
+
+            const data = this.queue || {};
+            const stats = data.stats || {};
+            const format = (value) => formatNumber(parseInt(value || 0, 10));
+
+            $('[data-queue-pending]').text(format(stats.pending));
+            $('[data-queue-processing]').text(format(stats.processing));
+            $('[data-queue-failed]').text(format(stats.failed));
+            const completedValue = (typeof stats.completed_recent !== 'undefined') ? stats.completed_recent : stats.completed;
+            $('[data-queue-completed]').text(format(completedValue));
+
+            $card.toggleClass('has-failures', (stats.failed || 0) > 0);
+
+            const $failWrapper = $('[data-queue-failures-wrapper]');
+            const $failList = $('[data-queue-failures]');
+            const failures = Array.isArray(data.failures) ? data.failures : [];
+            if (failures.length) {
+                $failList.html(failures.map(job => this.renderQueueItem(job, true)).join(''));
+                $failWrapper.show();
+            } else {
+                $failList.empty();
+                $failWrapper.hide();
+            }
+
+            const $recent = $('[data-queue-recent]');
+            const recent = Array.isArray(data.recent) ? data.recent : [];
+            if (recent.length) {
+                $recent.html(recent.map(job => this.renderQueueItem(job, false)).join(''));
+            } else {
+                $recent.html('<p class="alttextai-queue-empty">Jobs will appear here when the queue runs.</p>');
+            }
+        },
+
+        renderQueueItem(job, isFailure = false) {
+            const id = parseInt(job.id || job.attachment_id || 0, 10);
+            const attachmentId = parseInt(job.attachment_id || 0, 10);
+            const title = job.attachment_title || `Attachment #${attachmentId || id}`;
+            const status = (job.status || '').toUpperCase();
+            const attempts = parseInt(job.attempts || 0, 10);
+            const source = job.source ? job.source.toUpperCase() : '';
+            const enqueued = this.formatQueueDate(job.enqueued_at);
+            const locked = this.formatQueueDate(job.locked_at);
+            const completed = this.formatQueueDate(job.completed_at);
+            const editUrl = job.edit_url ? escapeHtml(job.edit_url) : '';
+
+           const metaParts = [];
+           if (status) { metaParts.push(`Status: ${status}`); }
+           if (source) { metaParts.push(`Source: ${source}`); }
+           if (attempts) { metaParts.push(`Attempts: ${attempts}`); }
+           if (enqueued) { metaParts.push(`Queued: ${enqueued}`); }
+           if (locked) { metaParts.push(`Locked: ${locked}`); }
+           if (completed) { metaParts.push(`Completed: ${completed}`); }
+           if (!metaParts.length && (id || attachmentId)) {
+               metaParts.push(`Job #${id || attachmentId}`);
+           }
+           const metaHtml = metaParts.length ? metaParts.map(part => escapeHtml(part)).join(' • ') : '';
+
+            const error = job.last_error ? `<p class="alttextai-queue-item__error">${escapeHtml(job.last_error)}</p>` : '';
+            const link = editUrl ? `<a class="alttextai-queue-item__link" href="${editUrl}" target="_blank" rel="noopener noreferrer">View attachment</a>` : '';
+            const retryBtn = isFailure && id
+                ? `<button type="button" class="alttextai-queue-btn alttextai-queue-btn--ghost" data-action="retry-job" data-job-id="${id}">Retry job</button>`
+                : '';
+
+            return `
+                <div class="alttextai-queue-item ${isFailure ? 'alttextai-queue-item--failed' : ''}">
+                    <p class="alttextai-queue-item__title">${escapeHtml(title)}</p>
+                    <div class="alttextai-queue-item__meta">${metaHtml}</div>
+                    ${link}
+                    ${retryBtn}
+                    ${error}
+                </div>
+            `;
+        },
+
+        trackUpgrade(source = 'dashboard') {
+            const ajaxConfig = window.alttextai_ajax || {};
+            if (!ajaxConfig.ajaxurl || !ajaxConfig.nonce) { return; }
+            $.post(ajaxConfig.ajaxurl, {
+                action: 'alttextai_track_upgrade',
+                nonce: ajaxConfig.nonce,
+                source
+            });
+        },
+
+        formatQueueDate(value) {
+            if (!value) { return ''; }
+            const normalised = String(value).replace(' ', 'T');
+            const date = new Date(normalised);
+            if (Number.isNaN(date.getTime())) {
+                return value;
+            }
+            return date.toLocaleString();
+        },
+
         renderStatsToDom() {
             if (!this.stats) { return; }
             const formatter = value => formatNumber(parseInt(value || 0, 10));
@@ -1372,6 +1673,7 @@
                 }).done(function(response) {
                     if (!response || !response.success) {
                         if (response?.data?.code === 'limit_reached') {
+                            dashboard.trackUpgrade('limit-reached');
                             enhancements.showUpgradeModal();
                             return;
                         }
@@ -1431,6 +1733,8 @@
 
             $(document).on('click', '[data-action="show-upgrade-modal"]', function(e) {
                 e.preventDefault();
+                const source = $(this).data('upgradeSource') || 'dashboard';
+                dashboard.trackUpgrade(source);
                 enhancements.showUpgradeModal();
             });
 
@@ -1889,6 +2193,11 @@
             if (usage && typeof usage === 'object') {
                 AiAltDashboard.usage = usage;
                 AiAltDashboard.renderUsage();
+            }
+        });
+        window.addEventListener('beforeunload', function() {
+            if (window.AiAltDashboard && typeof window.AiAltDashboard.stopQueuePolling === 'function') {
+                window.AiAltDashboard.stopQueuePolling();
             }
         });
     }

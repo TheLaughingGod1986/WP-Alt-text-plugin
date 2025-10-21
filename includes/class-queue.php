@@ -181,6 +181,25 @@ class AltText_AI_Queue {
     }
 
     /**
+     * Retry a single job by ID.
+     */
+    public static function retry_job($job_id) {
+        global $wpdb;
+        $table = self::table();
+        $wpdb->update(
+            $table,
+            [
+                'status'     => 'pending',
+                'locked_at'  => null,
+                'last_error' => null,
+            ],
+            ['id' => intval($job_id)],
+            ['%s', '%s', '%s'],
+            ['%d']
+        );
+    }
+
+    /**
      * Mark job for retry.
      */
     public static function mark_retry($job_id, $message = '') {
@@ -219,6 +238,34 @@ class AltText_AI_Queue {
     }
 
     /**
+     * Retry all failed jobs.
+     */
+    public static function retry_failed() {
+        global $wpdb;
+        $table = self::table();
+        $wpdb->query(
+            "UPDATE {$table}
+             SET status = 'pending', locked_at = NULL
+             WHERE status = 'failed'"
+        );
+    }
+
+    /**
+     * Clear completed jobs (optionally only older than age).
+     */
+    public static function clear_completed($age_seconds = 0) {
+        global $wpdb;
+        $table = self::table();
+        $sql = "DELETE FROM {$table} WHERE status = 'completed'";
+        if ($age_seconds > 0) {
+            $threshold = gmdate('Y-m-d H:i:s', time() - intval($age_seconds));
+            $wpdb->query($wpdb->prepare("{$sql} AND completed_at IS NOT NULL AND completed_at < %s", $threshold));
+        } else {
+            $wpdb->query($sql);
+        }
+    }
+
+    /**
      * Reset stale processing jobs back to pending.
      */
     public static function reset_stale($timeout = 600) {
@@ -247,11 +294,17 @@ class AltText_AI_Queue {
         $failed      = isset($counts['failed']) ? intval($counts['failed']->total) : 0;
         $completed   = isset($counts['completed']) ? intval($counts['completed']->total) : 0;
 
+        $recent_completed = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table} WHERE status = 'completed' AND completed_at IS NOT NULL AND completed_at > %s",
+            gmdate('Y-m-d H:i:s', time() - DAY_IN_SECONDS)
+        ));
+
         return [
             'pending'    => $pending,
             'processing' => $processing,
             'failed'     => $failed,
             'completed'  => $completed,
+            'completed_recent' => intval($recent_completed),
             'has_jobs'   => ($pending + $processing) > 0,
         ];
     }
@@ -265,6 +318,21 @@ class AltText_AI_Queue {
         return $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT * FROM {$table} ORDER BY id DESC LIMIT %d",
+                max(1, intval($limit))
+            ),
+            ARRAY_A
+        );
+    }
+
+    /**
+     * Fetch recent failed jobs.
+     */
+    public static function get_recent_failures($limit = 10) {
+        global $wpdb;
+        $table = self::table();
+        return $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$table} WHERE status = 'failed' ORDER BY id DESC LIMIT %d",
                 max(1, intval($limit))
             ),
             ARRAY_A

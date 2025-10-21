@@ -57,6 +57,89 @@
         $('<style id="ai-alt-slide-in">@keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }</style>').appendTo('head');
     }
 
+    const LibraryQueueIndicator = {
+        config: null,
+        $badge: null,
+        timer: null,
+
+        init(config) {
+            if (!config || !config.restQueue) { return; }
+            this.config = config;
+            if (this.$badge && this.$badge.length) { return; }
+
+            this.$badge = $(
+                '<button type="button" class="ai-alt-queue-mini" data-action="refresh-queue-badge">' +
+                '<span class="ai-alt-queue-mini__dot"></span>' +
+                '<span class="ai-alt-queue-mini__label">Queue</span>' +
+                '<span class="ai-alt-queue-mini__counts"><span data-queue-badge-pending>0</span> / <span data-queue-badge-processing>0</span></span>' +
+                '</button>'
+            );
+
+            const $header = $('#wpbody-content').find('.wrap h1').first();
+            if ($header.length) {
+                $header.append(this.$badge);
+            } else {
+                $('#wpbody-content .wrap').first().prepend(this.$badge);
+            }
+
+            const self = this;
+            this.$badge.on('click', function(e){
+                e.preventDefault();
+                self.refresh(true);
+            });
+
+            this.refresh(true);
+            this.start();
+        },
+
+        start() {
+            this.stop();
+            if (!this.config || !this.config.restQueue) { return; }
+            this.timer = setInterval(() => this.refresh(true), 45000);
+        },
+
+        stop() {
+            if (this.timer) {
+                clearInterval(this.timer);
+                this.timer = null;
+            }
+        },
+
+        refresh(silent = false) {
+            if (!this.config || !this.config.restQueue) { return; }
+            const headers = {};
+            const nonce = this.config.nonce || (window.wpApiSettings ? wpApiSettings.nonce : '');
+            if (nonce) { headers['X-WP-Nonce'] = nonce; }
+
+            fetch(this.config.restQueue, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers
+            })
+            .then(res => res.ok ? res.json() : Promise.reject(res))
+            .then(data => {
+                const stats = data && data.stats ? data.stats : {};
+                const pending = parseInt(stats.pending || 0, 10);
+                const processing = parseInt(stats.processing || 0, 10);
+                const failed = parseInt(stats.failed || 0, 10);
+                this.updateBadge(pending, processing, failed);
+            })
+            .catch(() => {
+                if (!silent) {
+                    MiniToast.show('Unable to refresh queue status.', 'warning');
+                }
+            });
+        },
+
+        updateBadge(pending, processing, failed) {
+            if (!this.$badge || !this.$badge.length) { return; }
+            this.$badge.toggleClass('ai-alt-queue-mini--busy', (pending + processing) > 0);
+            this.$badge.toggleClass('ai-alt-queue-mini--error', failed > 0);
+            this.$badge.find('[data-queue-badge-pending]').text(pending);
+            this.$badge.find('[data-queue-badge-processing]').text(processing);
+        }
+    };
+
     // ========================================
     // 📋 ALT PREVIEW MODAL
     // ========================================
@@ -867,6 +950,13 @@
         initLibraryRegenerate();
         initKeyboardShortcuts();
         addVisualEnhancements();
+        
+        const config = window.AI_ALT_GPT || {};
+        LibraryQueueIndicator.init(config);
+        
+        $(window).on('beforeunload', function(){
+            LibraryQueueIndicator.stop();
+        });
         
         // Add sparkle on any AI Alt button click
         $(document).on('click', '[class*="ai-alt"]', function(e) {

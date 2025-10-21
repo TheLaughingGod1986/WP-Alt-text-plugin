@@ -15,7 +15,7 @@ Professional WordPress plugin for generating accessible ALT text using OpenAI's 
 - **Real-time Updates** - Instant feedback on all actions
 
 ### 🤖 Intelligent ALT Text Generation
-- **Automatic on Upload** - Generate ALT text when images are uploaded
+- **Automatic on Upload** - Generate ALT text when images are uploaded (now queued in the background)
 - **Bulk Processing** - Handle multiple images at once via Media Library
 - **Manual Control** - Generate or regenerate for individual images
 - **Smart Context** - Uses image filename, title, caption, and parent post for better descriptions
@@ -65,6 +65,7 @@ These hooks keep the WordPress dashboard in sync with your SaaS checkout/portal 
 - **Usage Audit** - Detailed CSV export of all API usage
 - **Source Tracking** - Know how each ALT text was generated (auto, bulk, manual, etc.)
 - **Recent Activity** - View and regenerate recently processed images
+- **Background Queue** - Automatic processing queue with live dashboard status and retry tools
 
 ## Installation
 
