@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Alt Text Generator - Upgrade Modal</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f0f0f1;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+        .modal-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 32px;
+        }
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1d2327;
+            margin-bottom: 15px;
+        }
+        .modal-subtitle {
+            font-size: 16px;
+            color: #646970;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+        .upgrade-features {
+            text-align: left;
+            margin-bottom: 30px;
+        }
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        .feature-icon {
+            width: 20px;
+            height: 20px;
+            background: #00a32a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .pricing {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .price {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1d2327;
+            margin-bottom: 5px;
+        }
+        .price-period {
+            color: #646970;
+            font-size: 14px;
+        }
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .btn-secondary {
+            background: #f0f0f1;
+            color: #1d2327;
+        }
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #646970;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="modal-overlay">
+        <div class="modal">
+            <button class="close-btn">&times;</button>
+            
+            <div class="modal-icon">🚀</div>
+            
+            <h2 class="modal-title">Upgrade to Pro</h2>
+            <p class="modal-subtitle">
+                You've reached your free limit! Upgrade to continue generating high-quality alt text for your images.
+            </p>
+            
+            <div class="upgrade-features">
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <span>1,000 generations per month</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <span>Priority support</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <span>Advanced customization</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <span>Bulk processing</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    <span>API access</span>
+                </div>
+            </div>
+            
+            <div class="pricing">
+                <div class="price">$9.99</div>
+                <div class="price-period">per month</div>
+            </div>
+            
+            <div class="button-group">
+                <a href="#" class="btn btn-primary">Upgrade Now</a>
+                <button class="btn btn-secondary">Maybe Later</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
