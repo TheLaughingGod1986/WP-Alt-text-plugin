@@ -13,9 +13,10 @@
 
 if (!defined('ABSPATH')) { exit; }
 
-// Load Phase 2 API client and usage tracker
+// Load Phase 2 API client, usage tracker, and queue
 require_once plugin_dir_path(__FILE__) . 'includes/class-api-client-v2.php';
 require_once plugin_dir_path(__FILE__) . 'includes/class-usage-tracker.php';
+require_once plugin_dir_path(__FILE__) . 'includes/class-queue.php';
 
 class AI_Alt_Text_Generator_GPT {
     const OPTION_KEY = 'ai_alt_gpt_settings';
@@ -23,6 +24,7 @@ class AI_Alt_Text_Generator_GPT {
     const CAPABILITY = 'manage_ai_alt_text';
 
     private $api_client = null;
+    private $queue = null;
 
     private function user_can_manage(){
         return current_user_can(self::CAPABILITY) || current_user_can('manage_options');
@@ -158,7 +160,7 @@ class AI_Alt_Text_Generator_GPT {
         wp_localize_script('ai-alt-dashboard-v2', 'alttextai_ajax', [
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('alttextai_nonce'),
-            'api_url' => $this->api_client->api_url ?? 'http://localhost:3001',
+            'api_url' => $this->api_client->api_url ?? 'http://host.docker.internal:3001',
             'is_authenticated' => $this->api_client->is_authenticated(),
             'user_data' => $this->api_client->get_user_data(),
         ]);

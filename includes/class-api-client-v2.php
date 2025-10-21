@@ -14,7 +14,11 @@ class AltText_AI_API_Client_V2 {
     
     public function __construct() {
         $options = get_option('ai_alt_gpt_settings', []);
-        $this->api_url = $options['api_url'] ?? 'http://localhost:3001';
+        // Use host.docker.internal for Docker environments, localhost for local development
+        $default_url = (defined('WP_CLI') || strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false) 
+            ? 'http://host.docker.internal:3001' 
+            : 'http://localhost:3001';
+        $this->api_url = $options['api_url'] ?? $default_url;
     }
     
     /**

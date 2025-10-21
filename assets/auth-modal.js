@@ -5,7 +5,7 @@
 
 class AltTextAuthModal {
     constructor() {
-        this.apiUrl = window.alttextai_ajax?.api_url || 'http://localhost:3001';
+        this.apiUrl = window.alttextai_ajax?.api_url || 'http://host.docker.internal:3001';
         this.token = this.getStoredToken();
         this.init();
     }
