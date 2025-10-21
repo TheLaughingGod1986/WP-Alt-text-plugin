@@ -1,8 +1,18 @@
-# Farlo AI Alt Text Generator (GPT)
+# AI Alt Text Generator
 
-Automatically generate concise, accessible ALT text for your WordPress images using OpenAI's GPT models. Improve accessibility and SEO with AI-powered image descriptions.
+Professional WordPress plugin for generating accessible ALT text using OpenAI's GPT models. Features progress tracking, achievement system, and comprehensive analytics to improve accessibility and SEO.
+
+**NEW in v3.1: Professional Gamification!** Track progress with levels and achievements. Modern, engaging interface that makes accessibility work rewarding.
 
 ## Features
+
+### 🎮 Progress Tracking & Achievements (NEW!)
+- **Level System** - Track expertise from beginner to expert (20+ levels)
+- **Achievement System** - Unlock 8 milestones as you improve coverage
+- **Progress Visualization** - Clear XP tracking and goal management
+- **Visual Feedback** - Professional animations and status indicators
+- **Modern Interface** - Clean gradients, smooth animations, responsive design
+- **Real-time Updates** - Instant feedback on all actions
 
 ### 🤖 Intelligent ALT Text Generation
 - **Automatic on Upload** - Generate ALT text when images are uploaded
@@ -207,10 +217,6 @@ See `CHANGELOG.md` for version history and updates.
 
 GPL-2.0-or-later
 
-## Credits
-
-Developed by **Farlo** with ❤️ for the WordPress community.
-
 ---
 
-**Make your site more accessible, one image at a time.** 🌟
+**Professional accessibility solution for WordPress.** 🌟
