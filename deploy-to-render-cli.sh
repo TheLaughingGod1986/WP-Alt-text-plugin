@@ -32,12 +32,12 @@ echo ""
 
 # Login to Render
 echo "🔐 Logging into Render..."
-render auth login
+render login
 
 # Get service information
 echo ""
 echo "📋 Getting your services..."
-SERVICES=$(render services list --format json)
+SERVICES=$(render services --output json)
 
 if [ -z "$SERVICES" ]; then
     echo "❌ No services found. Please check your Render account."
@@ -93,18 +93,18 @@ echo "🔧 Updating build and start commands..."
 
 # Update build command
 echo "Setting build command..."
-render service update "$BACKEND_SERVICE" --build-command "cd backend && npm install && npx prisma generate && npx prisma db push"
+render services update "$BACKEND_SERVICE" --build-command "cd backend && npm install && npx prisma generate && npx prisma db push"
 
 # Update start command  
 echo "Setting start command..."
-render service update "$BACKEND_SERVICE" --start-command "cd backend && node server-v2.js"
+render services update "$BACKEND_SERVICE" --start-command "cd backend && node server-v2.js"
 
 echo "✅ Build and start commands updated!"
 
 # Trigger deployment
 echo ""
 echo "🚀 Triggering deployment..."
-render service deploy "$BACKEND_SERVICE"
+render services deploy "$BACKEND_SERVICE"
 
 echo ""
 echo "🎉 Deployment initiated!"
