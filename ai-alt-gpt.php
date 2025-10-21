@@ -2913,7 +2913,10 @@ class AI_Alt_Text_Generator_GPT {
     }
 }
 
-new AI_Alt_Text_Generator_GPT();
+// Initialize the plugin after WordPress is fully loaded
+add_action('plugins_loaded', function() {
+    new AI_Alt_Text_Generator_GPT();
+});
 
 // Inline JS fallback to add row-action behaviour
 add_action('admin_footer-upload.php', function(){
