@@ -285,6 +285,18 @@ class AltTextAuthModal {
 
     storeToken(token) {
         localStorage.setItem('alttextai_token', token);
+        // Also store in WordPress for server-side access
+        fetch(window.alttextai_ajax?.ajax_url || '/wp-admin/admin-ajax.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({
+                action: 'alttextai_store_token',
+                token: token,
+                nonce: window.alttextai_ajax?.nonce || ''
+            })
+        });
     }
 
     getStoredToken() {

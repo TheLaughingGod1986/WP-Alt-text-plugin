@@ -55,6 +55,7 @@ class AI_Alt_Text_Generator_GPT {
         add_action('wp_ajax_alttextai_register', [$this, 'ajax_register']);
         add_action('wp_ajax_alttextai_login', [$this, 'ajax_login']);
         add_action('wp_ajax_alttextai_logout', [$this, 'ajax_logout']);
+        add_action('wp_ajax_alttextai_store_token', [$this, 'ajax_store_token']);
         add_action('wp_ajax_alttextai_refresh_usage', [$this, 'ajax_refresh_usage']);
         add_action('wp_ajax_alttextai_regenerate_single', [$this, 'ajax_regenerate_single']);
         add_action('wp_ajax_alttextai_get_billing_info', [$this, 'ajax_get_billing_info']);
@@ -615,6 +616,22 @@ class AI_Alt_Text_Generator_GPT {
 
     public function wpcli_command($args, $assoc_args) {
         // Phase 2 CLI implementation
+    }
+
+    /**
+     * AJAX handler for storing token
+     */
+    public function ajax_store_token() {
+        check_ajax_referer('alttextai_nonce', 'nonce');
+        
+        $token = sanitize_text_field($_POST['token'] ?? '');
+        
+        if (empty($token)) {
+            wp_send_json_error('Token is required');
+        }
+
+        $this->api_client->set_token($token);
+        wp_send_json_success(['stored' => true]);
     }
 }
 
