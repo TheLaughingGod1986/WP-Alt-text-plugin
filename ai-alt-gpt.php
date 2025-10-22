@@ -408,38 +408,38 @@ class AI_Alt_Text_Generator_GPT {
                 <!-- Clean Dashboard Design -->
                 <div class="alttextai-dashboard-shell max-w-5xl mx-auto px-6">
 
-                    <?php if (!$this->api_client->is_authenticated()) : ?>
-                    <!-- Authentication Required Banner -->
-                    <style>
-                        @keyframes alttextai-pulse {
-                            0%, 100% { transform: scale(1); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
-                            50% { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
-                        }
-                        #alttextai-show-auth-banner-btn {
-                            animation: alttextai-pulse 2s ease-in-out infinite;
-                        }
-                        #alttextai-show-auth-banner-btn:hover {
-                            animation: none;
-                            transform: scale(1.05);
-                        }
-                    </style>
-                    <div class="alttextai-auth-banner" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 24px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
-                        <div style="display: flex; align-items: center; gap: 16px;">
-                            <div style="font-size: 32px;">🔐</div>
-                            <div style="flex: 1;">
-                                <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: white;">
-                                    <?php esc_html_e('Unlock Full Features with Your Free Account', 'ai-alt-gpt'); ?>
-                                </h3>
-                                <p style="margin: 0; opacity: 0.95; font-size: 14px;">
-                                    <?php esc_html_e('Create a free account to track your usage, access 10 free generations per month, and upgrade to Pro when you need more.', 'ai-alt-gpt'); ?>
-                                </p>
-                            </div>
-                            <button type="button" class="button button-primary button-large" id="alttextai-show-auth-banner-btn" style="background: white; color: #667eea; border: none; padding: 12px 24px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s ease;">
-                                <?php esc_html_e('Sign Up / Login', 'ai-alt-gpt'); ?>
-                            </button>
-                        </div>
-                    </div>
-                    <?php endif; ?>
+                     <?php if (!$this->api_client->is_authenticated() && !defined('WP_LOCAL_DEV')) : ?>
+                     <!-- Authentication Required Banner - Hidden in local development -->
+                     <style>
+                         @keyframes alttextai-pulse {
+                             0%, 100% { transform: scale(1); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+                             50% { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
+                         }
+                         #alttextai-show-auth-banner-btn {
+                             animation: alttextai-pulse 2s ease-in-out infinite;
+                         }
+                         #alttextai-show-auth-banner-btn:hover {
+                             animation: none;
+                             transform: scale(1.05);
+                         }
+                     </style>
+                     <div class="alttextai-auth-banner" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 24px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+                         <div style="display: flex; align-items: center; gap: 16px;">
+                             <div style="font-size: 32px;">🔐</div>
+                             <div style="flex: 1;">
+                                 <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: white;">
+                                     <?php esc_html_e('Unlock Full Features with Your Free Account', 'ai-alt-gpt'); ?>
+                                 </h3>
+                                 <p style="margin: 0; opacity: 0.95; font-size: 14px;">
+                                     <?php esc_html_e('Create a free account to track your usage, access 10 free generations per month, and upgrade to Pro when you need more.', 'ai-alt-gpt'); ?>
+                                 </p>
+                             </div>
+                             <button type="button" class="button button-primary button-large" id="alttextai-show-auth-banner-btn" style="background: white; color: #667eea; border: none; padding: 12px 24px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s ease;">
+                                 <?php esc_html_e('Sign Up / Login', 'ai-alt-gpt'); ?>
+                             </button>
+                         </div>
+                     </div>
+                     <?php endif; ?>
 
                     <?php
                         $plan_label = $usage_stats['plan_label'] ?? __('Free', 'ai-alt-gpt');
@@ -2741,7 +2741,10 @@ class AI_Alt_Text_Generator_GPT {
             
             wp_enqueue_script('ai-alt-gpt-dashboard', $base_url . $js_file, ['jquery', 'wp-api-fetch'], $js_version, true);
             wp_enqueue_script('ai-alt-gpt-upgrade', $base_url . $upgrade_js, ['jquery'], $upgrade_js_version, true);
-            wp_enqueue_script('ai-alt-gpt-auth', $base_url . $auth_js, ['jquery'], $auth_js_version, true);
+            // Only load auth JavaScript in production
+            if (!defined('WP_LOCAL_DEV') || !WP_LOCAL_DEV) {
+                wp_enqueue_script('ai-alt-gpt-auth', $base_url . $auth_js, ['jquery'], $auth_js_version, true);
+            }
 
             wp_localize_script('ai-alt-gpt-dashboard', 'AI_ALT_GPT_DASH', [
                 'nonce'       => wp_create_nonce('wp_rest'),
