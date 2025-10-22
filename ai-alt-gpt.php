@@ -2269,7 +2269,7 @@ class AI_Alt_Text_Generator_GPT {
         
         if (is_wp_error($api_response)) {
             // If authentication failed, fall back to old API client for unauthenticated users
-            if ($api_response->get_error_code() === 'not_authenticated' || 
+            if ($api_response->get_error_code() === 'auth_required' || 
                 $api_response->get_error_code() === 'api_error') {
                 
                 // Fall back to old API client
