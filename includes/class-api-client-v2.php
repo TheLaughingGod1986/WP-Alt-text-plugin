@@ -83,6 +83,11 @@ class AltText_AI_API_Client_V2 {
             return false;
         }
 
+        // In local development, just check if token exists
+        if (defined('WP_LOCAL_DEV') && WP_LOCAL_DEV) {
+            return true;
+        }
+
         // Validate token is still valid (check periodically, not every request)
         $last_check = get_transient('alttextai_token_last_check');
         $should_validate = $last_check === false;
