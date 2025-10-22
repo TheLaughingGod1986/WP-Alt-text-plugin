@@ -408,8 +408,8 @@ class AI_Alt_Text_Generator_GPT {
                 <!-- Clean Dashboard Design -->
                 <div class="alttextai-dashboard-shell max-w-5xl mx-auto px-6">
 
-                     <?php if (!$this->api_client->is_authenticated() && !defined('WP_LOCAL_DEV')) : ?>
-                     <!-- Authentication Required Banner - Hidden in local development -->
+                     <?php if (!$this->api_client->is_authenticated()) : ?>
+                     <!-- Authentication Required Banner -->
                      <style>
                          @keyframes alttextai-pulse {
                              0%, 100% { transform: scale(1); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
@@ -2741,10 +2741,7 @@ class AI_Alt_Text_Generator_GPT {
             
             wp_enqueue_script('ai-alt-gpt-dashboard', $base_url . $js_file, ['jquery', 'wp-api-fetch'], $js_version, true);
             wp_enqueue_script('ai-alt-gpt-upgrade', $base_url . $upgrade_js, ['jquery'], $upgrade_js_version, true);
-            // Only load auth JavaScript in production
-            if (!defined('WP_LOCAL_DEV') || !WP_LOCAL_DEV) {
-                wp_enqueue_script('ai-alt-gpt-auth', $base_url . $auth_js, ['jquery'], $auth_js_version, true);
-            }
+            wp_enqueue_script('ai-alt-gpt-auth', $base_url . $auth_js, ['jquery'], $auth_js_version, true);
 
             wp_localize_script('ai-alt-gpt-dashboard', 'AI_ALT_GPT_DASH', [
                 'nonce'       => wp_create_nonce('wp_rest'),
@@ -2763,7 +2760,8 @@ class AI_Alt_Text_Generator_GPT {
             
             // Add AJAX variables for regenerate functionality and auth
             $options = get_option(self::OPTION_KEY, []);
-            $api_url = $options['api_url'] ?? 'http://localhost:3001';
+            // Use mock backend for local development
+            $api_url = defined('WP_LOCAL_DEV') && WP_LOCAL_DEV ? 'http://localhost:3001' : ($options['api_url'] ?? 'https://alttext-ai-backend.onrender.com');
 
             wp_localize_script('ai-alt-gpt-dashboard', 'alttextai_ajax', [
                 'ajaxurl' => admin_url('admin-ajax.php'),
