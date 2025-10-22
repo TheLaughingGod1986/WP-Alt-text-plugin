@@ -2442,7 +2442,7 @@ class AI_Alt_Text_Generator_GPT {
         register_rest_route('ai-alt/v1', '/generate/(?P<id>\d+)', [
             'methods'  => 'POST',
             'callback' => function($req){
-                if (!current_user_can('upload_files')) return new \WP_Error('forbidden', 'No permission', ['status' => 403]);
+                if (!current_user_can('edit_posts')) return new \WP_Error('forbidden', 'No permission', ['status' => 403]);
                 $id = intval($req['id']);
                 $alt = $this->generate_and_save($id, 'ajax');
                 if (is_wp_error($alt)) {
@@ -2470,7 +2470,7 @@ class AI_Alt_Text_Generator_GPT {
         register_rest_route('ai-alt/v1', '/alt/(?P<id>\d+)', [
             'methods'  => 'POST',
             'callback' => function($req){
-                if (!current_user_can('upload_files')) {
+                if (!current_user_can('edit_posts')) {
                     return new \WP_Error('forbidden', 'No permission', ['status' => 403]);
                 }
 
@@ -2559,13 +2559,13 @@ class AI_Alt_Text_Generator_GPT {
                     'source' => 'manual-edit',
                 ];
             },
-            'permission_callback' => function(){ return current_user_can('upload_files'); },
+            'permission_callback' => function(){ return current_user_can('edit_posts'); },
         ]);
 
         register_rest_route('ai-alt/v1', '/list', [
             'methods'  => 'GET',
             'callback' => function($req){
-                if (!current_user_can('upload_files')){
+                if (!current_user_can('edit_posts')){
                     return new \WP_Error('forbidden', 'No permission', ['status' => 403]);
                 }
 
@@ -2580,13 +2580,13 @@ class AI_Alt_Text_Generator_GPT {
 
                 return ['ids' => array_map('intval', $ids)];
             },
-            'permission_callback' => function(){ return current_user_can('upload_files'); },
+            'permission_callback' => function(){ return current_user_can('edit_posts'); },
         ]);
 
         register_rest_route('ai-alt/v1', '/stats', [
             'methods'  => 'GET',
             'callback' => function($req){
-                if (!current_user_can('upload_files')){
+                if (!current_user_can('edit_posts')){
                     return new \WP_Error('forbidden', 'No permission', ['status' => 403]);
                 }
 
@@ -2597,13 +2597,13 @@ class AI_Alt_Text_Generator_GPT {
 
                 return $this->get_media_stats();
             },
-            'permission_callback' => function(){ return current_user_can('upload_files'); },
+            'permission_callback' => function(){ return current_user_can('edit_posts'); },
         ]);
 
         register_rest_route('ai-alt/v1', '/usage', [
             'methods'  => 'GET',
             'callback' => function(){
-                if (!current_user_can('upload_files')){
+                if (!current_user_can('edit_posts')){
                     return new \WP_Error('forbidden', 'No permission', ['status' => 403]);
                 }
                 $usage = $this->api_client->get_usage();
@@ -2612,13 +2612,13 @@ class AI_Alt_Text_Generator_GPT {
                 }
                 return $usage;
             },
-            'permission_callback' => function(){ return current_user_can('upload_files'); },
+            'permission_callback' => function(){ return current_user_can('edit_posts'); },
         ]);
 
         register_rest_route('ai-alt/v1', '/queue', [
             'methods'  => 'GET',
             'callback' => function(){
-                if (!current_user_can('upload_files')){
+                if (!current_user_can('edit_posts')){
                     return new \WP_Error('forbidden', 'No permission', ['status' => 403]);
                 }
 
@@ -2648,7 +2648,7 @@ class AI_Alt_Text_Generator_GPT {
                     'failures' => array_map($sanitize_job, $failures),
                 ];
             },
-            'permission_callback' => function(){ return current_user_can('upload_files'); },
+            'permission_callback' => function(){ return current_user_can('edit_posts'); },
         ]);
     }
 
