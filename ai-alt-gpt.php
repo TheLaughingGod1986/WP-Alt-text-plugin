@@ -2223,12 +2223,15 @@ class AI_Alt_Text_Generator_GPT {
 
     public function generate_and_save($attachment_id, $source='manual', int $retry_count = 0, array $feedback = []){
         $opts = get_option(self::OPTION_KEY, []);
-        
-        // Check if at usage limit
-        if ($this->api_client->has_reached_limit()) {
-            return new \WP_Error('limit_reached', __('Monthly generation limit reached. Please upgrade to continue.', 'ai-alt-gpt'));
+
+        // Skip authentication check in local development mode
+        if (!defined('WP_LOCAL_DEV') || !WP_LOCAL_DEV) {
+            // Check if at usage limit (only in production)
+            if ($this->api_client->has_reached_limit()) {
+                return new \WP_Error('limit_reached', __('Monthly generation limit reached. Please upgrade to continue.', 'ai-alt-gpt'));
+            }
         }
-        
+
         if (!$this->is_image($attachment_id)) return new \WP_Error('not_image', 'Attachment is not an image.');
 
         // Prefer higher-quality default for better accuracy

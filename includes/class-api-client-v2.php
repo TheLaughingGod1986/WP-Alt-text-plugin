@@ -240,21 +240,54 @@ class AltText_AI_API_Client_V2 {
      */
     public function get_usage() {
         $response = $this->make_request('/usage');
-        
+
         if (is_wp_error($response)) {
             return $response;
         }
-        
+
         if ($response['success']) {
             return $response['data']['usage'];
         }
-        
+
         return new WP_Error(
             'usage_failed',
             $response['data']['error'] ?? __('Failed to get usage info', 'ai-alt-gpt')
         );
     }
-    
+
+    /**
+     * Check if user has reached their limit
+     */
+    public function has_reached_limit() {
+        $usage = $this->get_usage();
+
+        // If there was an error getting usage, assume not at limit
+        if (is_wp_error($usage)) {
+            return false;
+        }
+
+        // Check if remaining is 0 or less
+        return isset($usage['remaining']) && $usage['remaining'] <= 0;
+    }
+
+    /**
+     * Get percentage of quota used
+     */
+    public function get_usage_percentage() {
+        $usage = $this->get_usage();
+
+        // If there was an error getting usage, return 0
+        if (is_wp_error($usage)) {
+            return 0;
+        }
+
+        $used = $usage['used'] ?? 0;
+        $limit = $usage['limit'] ?? 10;
+
+        if ($limit == 0) return 0;
+        return min(100, round(($used / $limit) * 100));
+    }
+
     /**
      * Generate alt text via API (Phase 2)
      */
