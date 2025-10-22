@@ -13,12 +13,27 @@ class AltText_AI_API_Client_V2 {
     private $user_option_key = 'alttextai_user_data';
     
     public function __construct() {
+        // ALWAYS use production API by default
+        $production_url = 'https://alttext-ai-backend.onrender.com';
+
+        // Allow developers to override for local development via wp-config.php
+        if (defined('ALTTEXT_AI_API_URL')) {
+            // Custom URL defined in wp-config.php
+            $this->api_url = ALTTEXT_AI_API_URL;
+        } elseif (defined('WP_DEBUG') && WP_DEBUG && defined('WP_LOCAL_DEV') && WP_LOCAL_DEV) {
+            // Local development mode (requires both WP_DEBUG and WP_LOCAL_DEV constants)
+            $this->api_url = 'http://localhost:3001';
+        } else {
+            // Production for all normal users
+            $this->api_url = $production_url;
+        }
+
+        // Force update WordPress settings to production (clean up legacy configs)
         $options = get_option('ai_alt_gpt_settings', []);
-        // Use host.docker.internal for Docker environments, localhost for local development
-        $default_url = (defined('WP_CLI') || strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false) 
-            ? 'http://host.docker.internal:3001' 
-            : 'http://localhost:3001';
-        $this->api_url = $options['api_url'] ?? $default_url;
+        if (!isset($options['api_url']) || $options['api_url'] !== $production_url) {
+            $options['api_url'] = $production_url;
+            update_option('ai_alt_gpt_settings', $options);
+        }
     }
     
     /**
@@ -59,10 +74,34 @@ class AltText_AI_API_Client_V2 {
     
     /**
      * Check if user is authenticated
+     * Also validates the token by checking with backend
      */
     public function is_authenticated() {
         $token = $this->get_token();
-        return !empty($token);
+
+        if (empty($token)) {
+            return false;
+        }
+
+        // Validate token is still valid (check periodically, not every request)
+        $last_check = get_transient('alttextai_token_last_check');
+        $should_validate = $last_check === false;
+
+        if ($should_validate) {
+            // Try to fetch user info to validate token
+            $user_info = $this->get_user_info();
+
+            if (is_wp_error($user_info)) {
+                // Token is invalid, clear it
+                $this->clear_token();
+                return false;
+            }
+
+            // Token is valid, cache result for 5 minutes
+            set_transient('alttextai_token_last_check', time(), 5 * MINUTE_IN_SECONDS);
+        }
+
+        return true;
     }
     
     /**
