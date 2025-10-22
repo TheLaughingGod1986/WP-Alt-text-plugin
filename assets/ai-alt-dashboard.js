@@ -850,7 +850,11 @@
             this.updateBulkButtonState();
             
             // Refresh usage stats to update the remaining credits display
-            this.refreshUsageStats({ silentToast: true });
+            if (typeof this.refreshUsageStats === 'function') {
+                this.refreshUsageStats({ silentToast: true });
+            } else if (typeof AiAltDashboard.refreshUsageStats === 'function') {
+                AiAltDashboard.refreshUsageStats({ silentToast: true });
+            }
             
             // Add completion log entry and hide after delay
             if (this.progressStats) {
