@@ -65,6 +65,16 @@ app.get('/usage', (req, res) => {
 
 app.post('/api/generate', (req, res) => {
     console.log('Alt text generation:', req.body);
+    
+    // Accept any Bearer token for testing
+    const authHeader = req.headers.authorization;
+    if (authHeader && !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({
+            error: 'Access token required',
+            code: 'MISSING_TOKEN'
+        });
+    }
+    
     res.json({
         success: true,
         alt_text: 'Mock alt text for testing purposes',
