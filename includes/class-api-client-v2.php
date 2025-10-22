@@ -22,7 +22,7 @@ class AltText_AI_API_Client_V2 {
             $this->api_url = ALTTEXT_AI_API_URL;
         } elseif (defined('WP_DEBUG') && WP_DEBUG && defined('WP_LOCAL_DEV') && WP_LOCAL_DEV) {
             // Local development mode (requires both WP_DEBUG and WP_LOCAL_DEV constants)
-            $this->api_url = 'http://localhost:3001';
+            $this->api_url = 'http://host.docker.internal:3001';
         } else {
             // Production for all normal users
             $this->api_url = $production_url;

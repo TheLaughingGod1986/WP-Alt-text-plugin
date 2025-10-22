@@ -18,6 +18,11 @@ if (!defined('WP_LOCAL_DEV')) {
     define('WP_LOCAL_DEV', true); // Set to false for production
 }
 
+// Enable debug mode for local development
+if (!defined('WP_DEBUG')) {
+    define('WP_DEBUG', true); // Set to false for production
+}
+
 // Load API clients, usage tracker, and queue infrastructure
 require_once plugin_dir_path(__FILE__) . 'includes/class-api-client.php';
 require_once plugin_dir_path(__FILE__) . 'includes/class-api-client-v2.php';
@@ -2761,7 +2766,7 @@ class AI_Alt_Text_Generator_GPT {
             // Add AJAX variables for regenerate functionality and auth
             $options = get_option(self::OPTION_KEY, []);
             // Use mock backend for local development
-            $api_url = defined('WP_LOCAL_DEV') && WP_LOCAL_DEV ? 'http://localhost:3001' : ($options['api_url'] ?? 'https://alttext-ai-backend.onrender.com');
+            $api_url = defined('WP_LOCAL_DEV') && WP_LOCAL_DEV ? 'http://host.docker.internal:3001' : ($options['api_url'] ?? 'https://alttext-ai-backend.onrender.com');
 
             wp_localize_script('ai-alt-gpt-dashboard', 'alttextai_ajax', [
                 'ajaxurl' => admin_url('admin-ajax.php'),
