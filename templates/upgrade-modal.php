@@ -49,33 +49,39 @@ if ($remaining <= 0) {
                     <li>🎯 <?php esc_html_e('Smart, descriptive alt text', 'ai-alt-gpt'); ?></li>
                     <li>📸 <?php esc_html_e('Media Library integration', 'ai-alt-gpt'); ?></li>
                 </ul>
+                <button type="button" class="alttextai-plan-button alttextai-plan-button--current" disabled>
+                    <?php esc_html_e('Current Plan', 'ai-alt-gpt'); ?>
+                </button>
             </div>
             <div class="alttextai-plan-card alttextai-plan-card--featured">
                 <div class="alttextai-plan-pill"><?php esc_html_e('Best Value', 'ai-alt-gpt'); ?></div>
                 <div class="alttextai-plan-card__label"><?php esc_html_e('Pro', 'ai-alt-gpt'); ?></div>
                 <div class="alttextai-plan-card__price">£12.99<span><?php esc_html_e('/month', 'ai-alt-gpt'); ?></span></div>
                 <ul>
-                    <li>♾️ <?php esc_html_e('Unlimited AI generations', 'ai-alt-gpt'); ?></li>
+                    <li>♾️ <?php esc_html_e('1000 images per month', 'ai-alt-gpt'); ?></li>
                     <li>⚡ <?php esc_html_e('Priority processing & reviews', 'ai-alt-gpt'); ?></li>
                     <li>🔑 <?php esc_html_e('Keyword optimisation booster', 'ai-alt-gpt'); ?></li>
                 </ul>
+                <button type="button" class="alttextai-plan-button alttextai-plan-button--primary" data-action="upgrade-plan">
+                    <?php esc_html_e('Upgrade to Pro', 'ai-alt-gpt'); ?>
+                </button>
             </div>
             <div class="alttextai-plan-card">
                 <div class="alttextai-plan-card__label"><?php esc_html_e('Agency', 'ai-alt-gpt'); ?></div>
                 <div class="alttextai-plan-card__price">£29<span><?php esc_html_e('/month', 'ai-alt-gpt'); ?></span></div>
                 <ul>
-                    <li>🏢 <?php esc_html_e('Up to 5 connected sites', 'ai-alt-gpt'); ?></li>
-                    <li>👥 <?php esc_html_e('Team seats & approvals', 'ai-alt-gpt'); ?></li>
-                    <li>📈 <?php esc_html_e('Client-ready analytics', 'ai-alt-gpt'); ?></li>
+                    <li>🏢 <?php esc_html_e('10,000 images per month', 'ai-alt-gpt'); ?></li>
+                    <li>👥 <?php esc_html_e('Multi-site license', 'ai-alt-gpt'); ?></li>
+                    <li>📈 <?php esc_html_e('Priority support', 'ai-alt-gpt'); ?></li>
                 </ul>
+                <button type="button" class="alttextai-plan-button alttextai-plan-button--secondary" data-action="upgrade-agency">
+                    <?php esc_html_e('Upgrade to Agency', 'ai-alt-gpt'); ?>
+                </button>
             </div>
         </div>
         <div class="alttextai-upgrade-modal__actions">
-            <button type="button" class="alttextai-upgrade-primary" data-action="upgrade-plan" data-checkout-url="<?php echo $pro_checkout_url; ?>">
-                <?php esc_html_e('Upgrade for £12.99/month', 'ai-alt-gpt'); ?>
-            </button>
-            <button type="button" class="alttextai-upgrade-secondary" data-action="buy-credits" data-checkout-url="<?php echo $credits_checkout_url; ?>">
-                <?php esc_html_e('Buy 100 extra credits (£5)', 'ai-alt-gpt'); ?>
+            <button type="button" class="alttextai-upgrade-secondary" data-action="buy-credits">
+                <?php esc_html_e('Or buy 100 credits for £9.99 (one-time)', 'ai-alt-gpt'); ?>
             </button>
             <p class="alttextai-upgrade-modal__footnote"><?php esc_html_e('No contracts. Cancel anytime.', 'ai-alt-gpt'); ?></p>
         </div>

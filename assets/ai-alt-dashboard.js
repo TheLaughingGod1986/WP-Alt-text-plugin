@@ -1843,18 +1843,79 @@
                 }
             });
 
-            $(document).on('click', '[data-action="upgrade-plan"], [data-action="buy-credits"]', function(e) {
+            // Billing portal button handler - opens Stripe customer portal
+            $(document).on('click', '[data-action="open-billing-portal"]', function(e) {
+                e.preventDefault();
+                const $btn = $(this);
+
+                // Check if user is authenticated
+                const isAuthenticated = window.alttextai_ajax?.is_authenticated || false;
+
+                if (!isAuthenticated) {
+                    AiAltToast.show({
+                        type: 'info',
+                        title: 'Account Required',
+                        message: 'Please sign in to manage your billing.',
+                        duration: 4000
+                    });
+                    return;
+                }
+
+                // Disable button during request
+                const originalText = $btn.text();
+                $btn.text('Opening...').css('opacity', '0.6');
+
+                $.ajax({
+                    url: window.alttextai_ajax?.ajaxurl || '/wp-admin/admin-ajax.php',
+                    method: 'POST',
+                    data: {
+                        action: 'alttextai_create_portal',
+                        nonce: window.alttextai_ajax?.nonce || ''
+                    },
+                    success: function(response) {
+                        if (response.success && response.data.url) {
+                            // Redirect to Stripe customer portal
+                            window.location.href = response.data.url;
+                        } else {
+                            AiAltToast.show({
+                                type: 'error',
+                                title: 'Portal Error',
+                                message: response.data?.message || 'Failed to open billing portal',
+                                duration: 5000
+                            });
+                            $btn.text(originalText).css('opacity', '1');
+                        }
+                    },
+                    error: function() {
+                        AiAltToast.show({
+                            type: 'error',
+                            title: 'Connection Error',
+                            message: 'Unable to open billing portal. Please try again.',
+                            duration: 5000
+                        });
+                        $btn.text(originalText).css('opacity', '1');
+                    }
+                });
+            });
+
+            // Upgrade button handler - supports plan upgrades, agency plan, and credit purchases
+            $(document).on('click', '[data-action="upgrade-plan"], [data-action="upgrade-agency"], [data-action="buy-credits"]', function(e) {
                 e.preventDefault();
                 const $btn = $(this);
                 const action = $btn.data('action');
 
-                // Get price ID from data attribute or button
-                let priceId;
-                if (action === 'upgrade-plan') {
-                    // Pro plan by default, could be made configurable
-                    priceId = 'price_1SKgtuJl9Rm418cMtcxOZRCR'; // Pro monthly
-                } else if (action === 'buy-credits') {
-                    priceId = 'price_1SKgu2Jl9Rm418cM3b1Z9tUW'; // Credits one-time
+                // Get price ID from data attribute or default based on action
+                let priceId = $btn.data('price-id') || $btn.data('priceId');
+
+                if (!priceId) {
+                    // Fallback to hardcoded IDs if not specified
+                    if (action === 'upgrade-plan') {
+                        priceId = 'price_1SKgtuJl9Rm418cMtcxOZRCR'; // Pro monthly
+                    } else if (action === 'upgrade-agency') {
+                        priceId = 'price_1SKgu9Jl9Rm418cMVhg3ZBZS'; // Agency monthly
+                    } else if (action === 'buy-credits') {
+                        priceId = 'price_1SKgu2Jl9Rm418cM3b1Z9tUW'; // Credits one-time
+                    }
                 }
 
                 if (!priceId) {
