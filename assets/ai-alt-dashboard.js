@@ -1738,6 +1738,21 @@
                 enhancements.showUpgradeModal();
             });
 
+            // Auth banner button - show authentication modal
+            $(document).on('click', '#alttextai-show-auth-banner-btn', function(e) {
+                e.preventDefault();
+                if (window.AltTextAuthModal && typeof window.AltTextAuthModal.show === 'function') {
+                    window.AltTextAuthModal.show();
+                } else {
+                    AiAltToast.show({
+                        type: 'info',
+                        title: 'Authentication',
+                        message: 'Please wait while the authentication modal loads...',
+                        duration: 3000
+                    });
+                }
+            });
+
             $(document).on('click', '[data-action="close-modal"]', function(e) {
                 e.preventDefault();
                 enhancements.hideUpgradeModal();
@@ -1826,10 +1841,76 @@
 
             $(document).on('click', '[data-action="upgrade-plan"], [data-action="buy-credits"]', function(e) {
                 e.preventDefault();
-                const checkoutUrl = $(this).data('checkout-url');
-                if (checkoutUrl) {
-                    window.location.href = checkoutUrl;
+                const $btn = $(this);
+                const action = $btn.data('action');
+
+                // Get price ID from data attribute or button
+                let priceId;
+                if (action === 'upgrade-plan') {
+                    // Pro plan by default, could be made configurable
+                    priceId = 'price_1SKgtuJl9Rm418cMtcxOZRCR'; // Pro monthly
+                } else if (action === 'buy-credits') {
+                    priceId = 'price_1SKgu2Jl9Rm418cM3b1Z9tUW'; // Credits one-time
                 }
+
+                if (!priceId) {
+                    console.error('No price ID specified');
+                    return;
+                }
+
+                // Check if user is authenticated
+                const isAuthenticated = window.alttextai_ajax?.is_authenticated || false;
+
+                if (!isAuthenticated) {
+                    // Show auth modal if user isn't logged in
+                    if (window.AltTextAuthModal && typeof window.AltTextAuthModal.show === 'function') {
+                        window.AltTextAuthModal.show();
+                    } else {
+                        AiAltToast.show({
+                            type: 'info',
+                            title: 'Account Required',
+                            message: 'Please create an account or sign in to upgrade.',
+                            duration: 4000
+                        });
+                    }
+                    return;
+                }
+
+                // User is authenticated - create Stripe checkout session
+                $btn.prop('disabled', true).addClass('loading');
+
+                $.ajax({
+                    url: window.alttextai_ajax?.ajaxurl || '/wp-admin/admin-ajax.php',
+                    method: 'POST',
+                    data: {
+                        action: 'alttextai_create_checkout',
+                        nonce: window.alttextai_ajax?.nonce || '',
+                        price_id: priceId
+                    },
+                    success: function(response) {
+                        if (response.success && response.data.url) {
+                            // Redirect to Stripe checkout
+                            window.location.href = response.data.url;
+                        } else {
+                            AiAltToast.show({
+                                type: 'error',
+                                title: 'Checkout Error',
+                                message: response.data?.message || 'Failed to create checkout session',
+                                duration: 5000
+                            });
+                            $btn.prop('disabled', false).removeClass('loading');
+                        }
+                    },
+                    error: function() {
+                        AiAltToast.show({
+                            type: 'error',
+                            title: 'Connection Error',
+                            message: 'Unable to start checkout. Please try again.',
+                            duration: 5000
+                        });
+                        $btn.prop('disabled', false).removeClass('loading');
+                    }
+                });
             });
         },
 

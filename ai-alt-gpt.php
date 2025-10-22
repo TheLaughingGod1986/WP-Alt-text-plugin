@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: AI Alt Text Generator
- * Description: Automatically generate high-quality, accessible alt text for images using AI. Get 10 free generations per month. Improve accessibility, SEO, and user experience effortlessly.
- * Version: 3.1.0
+ * Description: Automatically generate high-quality, accessible alt text for images using AI. Create your free account to get started. Improve accessibility, SEO, and user experience effortlessly.
+ * Version: 4.1.0
  * Author: Benjamin Oats
  * License: GPL2
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -13,10 +13,12 @@
 
 if (!defined('ABSPATH')) { exit; }
 
-// Load API client, usage tracker, and queue infrastructure
+// Load API clients, usage tracker, and queue infrastructure
 require_once plugin_dir_path(__FILE__) . 'includes/class-api-client.php';
+require_once plugin_dir_path(__FILE__) . 'includes/class-api-client-v2.php';
 require_once plugin_dir_path(__FILE__) . 'includes/class-usage-tracker.php';
 require_once plugin_dir_path(__FILE__) . 'includes/class-queue.php';
+require_once plugin_dir_path(__FILE__) . 'fix-api-url.php';
 
 class AI_Alt_Text_Generator_GPT {
     const OPTION_KEY = 'ai_alt_gpt_settings';
@@ -35,8 +37,9 @@ class AI_Alt_Text_Generator_GPT {
     }
 
     public function __construct() {
-        $this->api_client = new AltText_AI_API_Client();
-        
+        // Use Phase 2 API client (JWT-based authentication)
+        $this->api_client = new AltText_AI_API_Client_V2();
+
         register_activation_hook(__FILE__, [$this, 'activate']);
         register_deactivation_hook(__FILE__, [$this, 'deactivate']);
 
@@ -70,6 +73,14 @@ class AI_Alt_Text_Generator_GPT {
         add_action('wp_ajax_alttextai_queue_clear_completed', [$this, 'ajax_queue_clear_completed']);
         add_action('wp_ajax_alttextai_queue_stats', [$this, 'ajax_queue_stats']);
         add_action('wp_ajax_alttextai_track_upgrade', [$this, 'ajax_track_upgrade']);
+
+        // Phase 2 Authentication AJAX actions
+        add_action('wp_ajax_alttextai_register', [$this, 'ajax_register']);
+        add_action('wp_ajax_alttextai_login', [$this, 'ajax_login']);
+        add_action('wp_ajax_alttextai_logout', [$this, 'ajax_logout']);
+        add_action('wp_ajax_alttextai_get_user_info', [$this, 'ajax_get_user_info']);
+        add_action('wp_ajax_alttextai_create_checkout', [$this, 'ajax_create_checkout']);
+        add_action('wp_ajax_alttextai_create_portal', [$this, 'ajax_create_portal']);
 
         if (defined('WP_CLI') && WP_CLI) {
             \WP_CLI::add_command('ai-alt', [$this, 'wpcli_command']);
@@ -188,13 +199,13 @@ class AI_Alt_Text_Generator_GPT {
 
     public function activate() {
         global $wpdb;
-        
+
         AltText_AI_Queue::create_table();
         AltText_AI_Queue::schedule_processing(10);
 
         // Create database indexes for performance
         $this->create_performance_indexes();
-        
+
         $defaults = [
             'api_url'          => 'https://alttext-ai-backend.onrender.com',
             'model'            => 'gpt-4o-mini',
@@ -212,7 +223,17 @@ class AI_Alt_Text_Generator_GPT {
             'usage'            => $this->default_usage(),
         ];
         $existing = get_option(self::OPTION_KEY, []);
-        update_option(self::OPTION_KEY, wp_parse_args($existing, $defaults), false);
+        $updated = wp_parse_args($existing, $defaults);
+
+        // ALWAYS force production API URL (never use saved localhost URLs)
+        $updated['api_url'] = 'https://alttext-ai-backend.onrender.com';
+
+        update_option(self::OPTION_KEY, $updated, false);
+
+        // Clear any invalid cached tokens
+        delete_option('alttextai_jwt_token');
+        delete_option('alttextai_user_data');
+        delete_transient('alttextai_token_last_check');
 
         $role = get_role('administrator');
         if ($role && !$role->has_cap(self::CAPABILITY)){
@@ -381,6 +402,40 @@ class AI_Alt_Text_Generator_GPT {
                 
                 <!-- Clean Dashboard Design -->
                 <div class="alttextai-dashboard-shell max-w-5xl mx-auto px-6">
+
+                    <?php if (!$this->api_client->is_authenticated()) : ?>
+                    <!-- Authentication Required Banner -->
+                    <style>
+                        @keyframes alttextai-pulse {
+                            0%, 100% { transform: scale(1); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+                            50% { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
+                        }
+                        #alttextai-show-auth-banner-btn {
+                            animation: alttextai-pulse 2s ease-in-out infinite;
+                        }
+                        #alttextai-show-auth-banner-btn:hover {
+                            animation: none;
+                            transform: scale(1.05);
+                        }
+                    </style>
+                    <div class="alttextai-auth-banner" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 24px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <div style="font-size: 32px;">🔐</div>
+                            <div style="flex: 1;">
+                                <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: white;">
+                                    <?php esc_html_e('Unlock Full Features with Your Free Account', 'ai-alt-gpt'); ?>
+                                </h3>
+                                <p style="margin: 0; opacity: 0.95; font-size: 14px;">
+                                    <?php esc_html_e('Create a free account to track your usage, access 10 free generations per month, and upgrade to Pro when you need more.', 'ai-alt-gpt'); ?>
+                                </p>
+                            </div>
+                            <button type="button" class="button button-primary button-large" id="alttextai-show-auth-banner-btn" style="background: white; color: #667eea; border: none; padding: 12px 24px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s ease;">
+                                <?php esc_html_e('Sign Up / Login', 'ai-alt-gpt'); ?>
+                            </button>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
                     <?php
                         $plan_label = $usage_stats['plan_label'] ?? __('Free', 'ai-alt-gpt');
                         $billing_portal = AltText_AI_Usage_Tracker::get_billing_portal_url();
@@ -2213,7 +2268,20 @@ class AI_Alt_Text_Generator_GPT {
         $api_response = $this->api_client->generate_alt_text($attachment_id, $context);
         
         if (is_wp_error($api_response)) {
-            return $api_response;
+            // If authentication failed, fall back to old API client for unauthenticated users
+            if ($api_response->get_error_code() === 'not_authenticated' || 
+                $api_response->get_error_code() === 'api_error') {
+                
+                // Fall back to old API client
+                $old_client = new AltText_AI_API_Client();
+                $api_response = $old_client->generate_alt_text($attachment_id, $context);
+                
+                if (is_wp_error($api_response)) {
+                    return $api_response;
+                }
+            } else {
+                return $api_response;
+            }
         }
         
         if (!isset($api_response['success']) || !$api_response['success']) {
@@ -2629,16 +2697,21 @@ class AI_Alt_Text_Generator_GPT {
             $admin_file = "assets/ai-alt-admin{$suffix}.js";
             $upgrade_css = "assets/upgrade-modal.css";
             $upgrade_js = "assets/upgrade-modal.js";
-            
+            $auth_css = "assets/auth-modal.css";
+            $auth_js = "assets/auth-modal.js";
+
             $css_version = file_exists($base_path . $css_file) ? filemtime($base_path . $css_file) : '3.0.0';
             $js_version  = file_exists($base_path . $js_file) ? filemtime($base_path . $js_file) : '3.0.0';
             $admin_version = file_exists($base_path . $admin_file) ? filemtime($base_path . $admin_file) : '3.0.0';
             $upgrade_css_version = file_exists($base_path . $upgrade_css) ? filemtime($base_path . $upgrade_css) : '3.1.0';
             $upgrade_js_version = file_exists($base_path . $upgrade_js) ? filemtime($base_path . $upgrade_js) : '3.1.0';
-            
+            $auth_css_version = file_exists($base_path . $auth_css) ? filemtime($base_path . $auth_css) : '4.0.0';
+            $auth_js_version = file_exists($base_path . $auth_js) ? filemtime($base_path . $auth_js) : '4.0.0';
+
             wp_enqueue_style('ai-alt-gpt-dashboard', $base_url . $css_file, [], $css_version);
             wp_enqueue_style('ai-alt-gpt-modern', $base_url . 'assets/modern-style.css', ['ai-alt-gpt-dashboard'], filemtime($base_path . 'assets/modern-style.css'));
             wp_enqueue_style('ai-alt-gpt-upgrade', $base_url . $upgrade_css, [], $upgrade_css_version);
+            wp_enqueue_style('ai-alt-gpt-auth', $base_url . $auth_css, [], $auth_css_version);
             wp_enqueue_script('ai-alt-gpt-admin', $base_url . $admin_file, ['jquery'], $admin_version, true);
             wp_localize_script('ai-alt-gpt-admin', 'AI_ALT_GPT', [
                 'nonce'     => wp_create_nonce('wp_rest'),
@@ -2660,7 +2733,8 @@ class AI_Alt_Text_Generator_GPT {
             
             wp_enqueue_script('ai-alt-gpt-dashboard', $base_url . $js_file, ['jquery', 'wp-api-fetch'], $js_version, true);
             wp_enqueue_script('ai-alt-gpt-upgrade', $base_url . $upgrade_js, ['jquery'], $upgrade_js_version, true);
-            
+            wp_enqueue_script('ai-alt-gpt-auth', $base_url . $auth_js, ['jquery'], $auth_js_version, true);
+
             wp_localize_script('ai-alt-gpt-dashboard', 'AI_ALT_GPT_DASH', [
                 'nonce'       => wp_create_nonce('wp_rest'),
                 'rest'        => esc_url_raw( rest_url('ai-alt/v1/generate/') ),
@@ -2676,10 +2750,16 @@ class AI_Alt_Text_Generator_GPT {
                 'initialUsage'=> $usage_data,
             ]);
             
-            // Add AJAX variables for regenerate functionality
+            // Add AJAX variables for regenerate functionality and auth
+            $options = get_option(self::OPTION_KEY, []);
+            $api_url = $options['api_url'] ?? 'http://localhost:3001';
+
             wp_localize_script('ai-alt-gpt-dashboard', 'alttextai_ajax', [
                 'ajaxurl' => admin_url('admin-ajax.php'),
                 'nonce'   => wp_create_nonce('alttextai_upgrade_nonce'),
+                'api_url' => $api_url,
+                'is_authenticated' => $this->api_client->is_authenticated(),
+                'user_data' => $this->api_client->get_user_data(),
             ]);
             
             wp_localize_script('ai-alt-gpt-dashboard', 'AI_ALT_GPT_DASH_L10N', [
@@ -2972,6 +3052,155 @@ class AI_Alt_Text_Generator_GPT {
                 AltText_AI_Queue::schedule_processing(20);
             }
         }
+    }
+
+    /**
+     * Phase 2 Authentication AJAX Handlers
+     */
+
+    /**
+     * AJAX handler: User registration
+     */
+    public function ajax_register() {
+        check_ajax_referer('alttextai_upgrade_nonce', 'nonce');
+
+        $email = sanitize_email($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
+
+        if (empty($email) || empty($password)) {
+            wp_send_json_error(['message' => __('Email and password are required', 'ai-alt-gpt')]);
+        }
+
+        $result = $this->api_client->register($email, $password);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error(['message' => $result->get_error_message()]);
+        }
+
+        wp_send_json_success([
+            'message' => __('Account created successfully', 'ai-alt-gpt'),
+            'user' => $result['user'] ?? null
+        ]);
+    }
+
+    /**
+     * AJAX handler: User login
+     */
+    public function ajax_login() {
+        check_ajax_referer('alttextai_upgrade_nonce', 'nonce');
+
+        $email = sanitize_email($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
+
+        if (empty($email) || empty($password)) {
+            wp_send_json_error(['message' => __('Email and password are required', 'ai-alt-gpt')]);
+        }
+
+        $result = $this->api_client->login($email, $password);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error(['message' => $result->get_error_message()]);
+        }
+
+        wp_send_json_success([
+            'message' => __('Logged in successfully', 'ai-alt-gpt'),
+            'user' => $result['user'] ?? null
+        ]);
+    }
+
+    /**
+     * AJAX handler: User logout
+     */
+    public function ajax_logout() {
+        check_ajax_referer('alttextai_upgrade_nonce', 'nonce');
+
+        $this->api_client->clear_token();
+
+        wp_send_json_success(['message' => __('Logged out successfully', 'ai-alt-gpt')]);
+    }
+
+    /**
+     * AJAX handler: Get user info
+     */
+    public function ajax_get_user_info() {
+        check_ajax_referer('alttextai_upgrade_nonce', 'nonce');
+
+        if (!$this->api_client->is_authenticated()) {
+            wp_send_json_error([
+                'message' => __('Not authenticated', 'ai-alt-gpt'),
+                'code' => 'not_authenticated'
+            ]);
+        }
+
+        $user_info = $this->api_client->get_user_info();
+        $usage = $this->api_client->get_usage();
+
+        if (is_wp_error($user_info)) {
+            wp_send_json_error(['message' => $user_info->get_error_message()]);
+        }
+
+        wp_send_json_success([
+            'user' => $user_info,
+            'usage' => is_wp_error($usage) ? null : $usage
+        ]);
+    }
+
+    /**
+     * AJAX handler: Create Stripe checkout session
+     */
+    public function ajax_create_checkout() {
+        check_ajax_referer('alttextai_upgrade_nonce', 'nonce');
+
+        if (!$this->api_client->is_authenticated()) {
+            wp_send_json_error([
+                'message' => __('Please login to upgrade', 'ai-alt-gpt'),
+                'code' => 'not_authenticated'
+            ]);
+        }
+
+        $price_id = sanitize_text_field($_POST['price_id'] ?? '');
+        if (empty($price_id)) {
+            wp_send_json_error(['message' => __('Price ID is required', 'ai-alt-gpt')]);
+        }
+
+        $success_url = admin_url('upload.php?page=ai-alt-gpt&checkout=success');
+        $cancel_url = admin_url('upload.php?page=ai-alt-gpt&checkout=cancel');
+
+        $result = $this->api_client->create_checkout_session($price_id, $success_url, $cancel_url);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error(['message' => $result->get_error_message()]);
+        }
+
+        wp_send_json_success([
+            'url' => $result['url'] ?? '',
+            'session_id' => $result['sessionId'] ?? ''
+        ]);
+    }
+
+    /**
+     * AJAX handler: Create customer portal session
+     */
+    public function ajax_create_portal() {
+        check_ajax_referer('alttextai_upgrade_nonce', 'nonce');
+
+        if (!$this->api_client->is_authenticated()) {
+            wp_send_json_error([
+                'message' => __('Please login to manage billing', 'ai-alt-gpt'),
+                'code' => 'not_authenticated'
+            ]);
+        }
+
+        $return_url = admin_url('upload.php?page=ai-alt-gpt');
+        $result = $this->api_client->create_customer_portal_session($return_url);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error(['message' => $result->get_error_message()]);
+        }
+
+        wp_send_json_success([
+            'url' => $result['url'] ?? ''
+        ]);
     }
 }
 

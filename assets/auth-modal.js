@@ -30,14 +30,14 @@ class AltTextAuthModal {
                             <!-- Login Form -->
                             <div id="alttext-login-form" class="alttext-auth-form">
                                 <h3>Sign In</h3>
-                                <form id="login-form">
+                                <form id="login-form" autocomplete="on">
                                     <div class="alttext-form-group">
                                         <label for="login-email">Email</label>
-                                        <input type="email" id="login-email" name="email" required>
+                                        <input type="email" id="login-email" name="email" autocomplete="username" required>
                                     </div>
                                     <div class="alttext-form-group">
                                         <label for="login-password">Password</label>
-                                        <input type="password" id="login-password" name="password" required>
+                                        <input type="password" id="login-password" name="password" autocomplete="current-password" required>
                                     </div>
                                     <button type="submit" class="alttext-btn alttext-btn--primary">
                                         <span class="alttext-btn__text">Sign In</span>
@@ -45,7 +45,7 @@ class AltTextAuthModal {
                                     </button>
                                 </form>
                                 <p class="alttext-auth-switch">
-                                    Don't have an account? 
+                                    Don't have an account?
                                     <a href="#" id="show-register">Create one here</a>
                                 </p>
                             </div>
@@ -53,19 +53,19 @@ class AltTextAuthModal {
                             <!-- Register Form -->
                             <div id="alttext-register-form" class="alttext-auth-form" style="display: none;">
                                 <h3>Create Account</h3>
-                                <form id="register-form">
+                                <form id="register-form" autocomplete="off">
                                     <div class="alttext-form-group">
                                         <label for="register-email">Email</label>
-                                        <input type="email" id="register-email" name="email" required>
+                                        <input type="email" id="register-email" name="email" autocomplete="off" required>
                                     </div>
                                     <div class="alttext-form-group">
                                         <label for="register-password">Password</label>
-                                        <input type="password" id="register-password" name="password" minlength="8" required>
+                                        <input type="password" id="register-password" name="password" autocomplete="new-password" minlength="8" required>
                                         <small>Minimum 8 characters</small>
                                     </div>
                                     <div class="alttext-form-group">
                                         <label for="register-confirm">Confirm Password</label>
-                                        <input type="password" id="register-confirm" name="confirmPassword" required>
+                                        <input type="password" id="register-confirm" name="confirmPassword" autocomplete="new-password" required>
                                     </div>
                                     <button type="submit" class="alttext-btn alttext-btn--primary">
                                         <span class="alttext-btn__text">Create Account</span>
@@ -73,7 +73,7 @@ class AltTextAuthModal {
                                     </button>
                                 </form>
                                 <p class="alttext-auth-switch">
-                                    Already have an account? 
+                                    Already have an account?
                                     <a href="#" id="show-login">Sign in here</a>
                                 </p>
                             </div>
@@ -87,34 +87,63 @@ class AltTextAuthModal {
     }
 
     bindEvents() {
-        // Close modal
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('alttext-auth-modal__close') || 
-                e.target.classList.contains('alttext-auth-modal__overlay')) {
-                this.hide();
+        const self = this;
+
+        // Use event delegation from document for all modal events
+        document.addEventListener('click', function(e) {
+            // Close button
+            if (e.target.closest('.alttext-auth-modal__close')) {
+                e.preventDefault();
+                e.stopPropagation();
+                self.hide();
+                return;
             }
-        });
 
-        // Form switching
-        document.getElementById('show-register')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.showRegisterForm();
-        });
+            // Click on overlay background (not the content)
+            if (e.target.classList.contains('alttext-auth-modal__overlay')) {
+                self.hide();
+                return;
+            }
 
-        document.getElementById('show-login')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.showLoginForm();
-        });
+            // Form switching links
+            if (e.target.id === 'show-register' || e.target.closest('#show-register')) {
+                e.preventDefault();
+                e.stopPropagation();
+                self.showRegisterForm();
+                return;
+            }
+
+            if (e.target.id === 'show-login' || e.target.closest('#show-login')) {
+                e.preventDefault();
+                e.stopPropagation();
+                self.showLoginForm();
+                return;
+            }
+        }, true); // Use capture phase
 
         // Form submissions
-        document.getElementById('login-form')?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleLogin();
-        });
+        document.addEventListener('submit', function(e) {
+            if (e.target.id === 'login-form') {
+                e.preventDefault();
+                e.stopPropagation();
+                self.handleLogin();
+                return;
+            }
 
-        document.getElementById('register-form')?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleRegister();
+            if (e.target.id === 'register-form') {
+                e.preventDefault();
+                e.stopPropagation();
+                self.handleRegister();
+                return;
+            }
+        }, true); // Use capture phase
+
+        // ESC key to close
+        document.addEventListener('keydown', function(e) {
+            const modal = document.getElementById('alttext-auth-modal');
+            if (e.key === 'Escape' && modal && modal.style.display === 'block') {
+                self.hide();
+            }
         });
     }
 
@@ -163,15 +192,22 @@ class AltTextAuthModal {
             const data = await response.json();
 
             if (data.success) {
-                this.storeToken(data.token);
-                this.token = data.token;
+                // WordPress AJAX success response
+                const userData = data.data?.user || {};
                 this.hide();
                 this.showSuccess('Welcome back! You are now signed in.');
-                this.onAuthSuccess(data.user);
+
+                // Reload page to refresh authentication state
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
             } else {
-                this.showError(data.error || 'Login failed');
+                // WordPress AJAX error response - message is in data.data.message
+                const errorMessage = data.data?.message || data.message || 'Login failed';
+                this.showError(errorMessage);
             }
         } catch (error) {
+            console.error('Login error:', error);
             this.showError('Network error. Please try again.');
         } finally {
             this.setLoading(form, false);
@@ -209,15 +245,22 @@ class AltTextAuthModal {
             const data = await response.json();
 
             if (data.success) {
-                this.storeToken(data.token);
-                this.token = data.token;
+                // WordPress AJAX success response
+                const userData = data.data?.user || {};
                 this.hide();
                 this.showSuccess('Account created successfully! Welcome to AltText AI.');
-                this.onAuthSuccess(data.user);
+
+                // Reload page to refresh authentication state
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
             } else {
-                this.showError(data.error || 'Registration failed');
+                // WordPress AJAX error response - message is in data.data.message
+                const errorMessage = data.data?.message || data.message || 'Registration failed';
+                this.showError(errorMessage);
             }
         } catch (error) {
+            console.error('Registration error:', error);
             this.showError('Network error. Please try again.');
         } finally {
             this.setLoading(form, false);
