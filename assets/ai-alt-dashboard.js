@@ -466,6 +466,32 @@
             this.refreshStats();
             this.refreshQueueStatus();
             this.startQueuePolling();
+
+            // Auto-show authentication modal if user is not logged in
+            this.autoShowAuthModal();
+        },
+
+        /**
+         * Automatically show auth modal if user is not authenticated
+         */
+        autoShowAuthModal() {
+            // Check if logged out banner is visible
+            const $loggedOutBanner = $('.alttextai-auth-status--logged-out');
+
+            // Only auto-show once per session to avoid annoyance
+            const hasShownAuthModal = sessionStorage.getItem('alttextai_auth_modal_shown');
+
+            if ($loggedOutBanner.length && !hasShownAuthModal) {
+                // Mark as shown for this session
+                sessionStorage.setItem('alttextai_auth_modal_shown', 'true');
+
+                // Wait a brief moment for page to fully load, then show modal
+                setTimeout(function() {
+                    if (window.AltTextAuthModal && typeof window.AltTextAuthModal.show === 'function') {
+                        window.AltTextAuthModal.show();
+                    }
+                }, 1000); // 1 second delay so user sees the warning banner first
+            }
         },
 
         /**
@@ -728,11 +754,28 @@
             const $button = $('[data-action="generate-missing"]');
 
             const self = this;
+
+            // Bind "Optimize Missing" button
             $(document)
                 .off('click.aiAltBulk', '[data-action="generate-missing"]')
                 .on('click.aiAltBulk', '[data-action="generate-missing"]', function(e) {
                     e.preventDefault();
-                    self.handleBulkButtonClick($(this));
+                    self.handleBulkButtonClick($(this), false); // false = only missing
+                });
+
+            // Bind "Regenerate All" button
+            $(document)
+                .off('click.aiAltRegenerateAll', '[data-action="regenerate-all"]')
+                .on('click.aiAltRegenerateAll', '[data-action="regenerate-all"]', function(e) {
+                    e.preventDefault();
+
+                    // Confirm before regenerating all
+                    const totalImages = self.stats?.total || 0;
+                    const confirmMessage = `Regenerate alt text for ALL ${totalImages} images?\n\nThis will replace existing alt text. This action cannot be undone.`;
+
+                    if (confirm(confirmMessage)) {
+                        self.handleBulkButtonClick($(this), true); // true = regenerate all
+                    }
                 });
 
             this.bulkButtonBound = true;
@@ -749,7 +792,7 @@
             this.updateBulkButtonState();
         },
 
-        handleBulkButtonClick($button) {
+        handleBulkButtonClick($button, regenerateAll = false) {
             if (this.isBulkProcessing || !$button.length || $button.prop('disabled')) {
                 return;
             }
@@ -767,7 +810,7 @@
 
             const config = getRestConfig();
 
-            if (!config || !config.restMissing || !config.rest || !config.nonce) {
+            if (!config || !config.restMissing || !config.restAll || !config.rest || !config.nonce) {
                 AiAltToast.show({
                     type: 'error',
                     title: 'Configuration error',
@@ -778,10 +821,20 @@
             }
 
             this.config = config;
+            this.regenerateAll = regenerateAll; // Store for use in processing
 
+            this.bulkCancelled = false; // Reset cancellation flag
             this.isBulkProcessing = true;
             $button.prop('disabled', true).addClass('loading').text('Processing Images...');
-            
+
+            // Initialize progress stats
+            this.progressStats = {
+                total: 0,
+                processed: 0,
+                success: 0,
+                errors: 0
+            };
+
             // Update button state to ensure it's properly disabled
             this.updateBulkButtonState();
 
@@ -794,20 +847,31 @@
 
             if (typeof this.addProgressLog === 'function') {
                 this.addProgressLog('info', 'Starting bulk optimization...');
-                this.addProgressLog('info', 'Collecting images without ALT text...');
+                if (regenerateAll) {
+                    this.addProgressLog('info', 'Collecting ALL images for regeneration...');
+                } else {
+                    this.addProgressLog('info', 'Collecting images without ALT text...');
+                }
             } else {
                 console.error('addProgressLog method not found on this object:', this);
             }
 
             const self = this;
 
-            apiRequest(config, config.restMissing)
+            // Use the appropriate endpoint based on regenerateAll flag
+            const endpoint = regenerateAll ? config.restAll : config.restMissing;
+
+            apiRequest(config, endpoint)
                 .then(function(response) {
                     const ids = Array.isArray(response?.ids) ? response.ids : [];
 
                     if (!ids.length) {
-                        self.addProgressLog('info', 'No images found without ALT text');
-                        self.addProgressLog('success', 'All images already have alt text!');
+                        if (self.regenerateAll) {
+                            self.addProgressLog('info', 'No images found in your media library');
+                        } else {
+                            self.addProgressLog('info', 'No images found without ALT text');
+                            self.addProgressLog('success', 'All images already have alt text!');
+                        }
                         setTimeout(() => {
                             self.hideProgressLog();
                             self.finishBulk($button);
@@ -846,6 +910,13 @@
             if ($button && $button.length) {
                 $button.prop('disabled', false).removeClass('loading');
             }
+
+            // Hide progress bar
+            const $progressContainer = $('[data-bulk-progress]');
+            if ($progressContainer.length) {
+                $progressContainer.prop('hidden', true);
+            }
+
             // Note: AiAltProgressIndicator removed to prevent fadeOut errors
             this.updateBulkButtonState();
             
@@ -890,22 +961,27 @@
         },
 
         updateBulkButtonState() {
-            const $button = $('.alttextai-bulk-btn');
-            if (!$button.length) {
+            const $primaryButton = $('.alttextai-bulk-btn--primary');
+            const $secondaryButton = $('.alttextai-bulk-btn--secondary');
+
+            if (!$primaryButton.length && !$secondaryButton.length) {
                 return;
             }
 
             const missing = parseInt(this.stats?.missing || 0, 10);
+            const total = parseInt(this.stats?.total || 0, 10);
             const usageRemaining = this.usage && typeof this.usage.remaining !== 'undefined'
                 ? parseInt(this.usage.remaining, 10)
                 : null;
 
             if (this.isBulkProcessing) {
-                $button
+                $primaryButton.add($secondaryButton)
                     .prop('disabled', true)
                     .addClass('loading')
-                    .removeClass('ai-alt-btn-disabled')
-                    .text('Processing Images...');
+                    .removeClass('ai-alt-btn-disabled');
+
+                $primaryButton.html('<span class="btn-icon">✨</span> Processing Images...');
+                $secondaryButton.html('<span class="btn-icon">🔄</span> Processing Images...');
                 return;
             }
 
@@ -914,26 +990,40 @@
                     ? `Upgrade to Unlock (${missing} images waiting) →`
                     : 'Upgrade to Unlock →';
 
-                $button
+                $primaryButton.add($secondaryButton)
                     .prop('disabled', false)
                     .removeClass('loading ai-alt-btn-disabled')
                     .addClass('alttextai-bulk-btn--limit')
                     .attr('data-action', 'show-upgrade-modal')
-                    .text(waitingText);
+                    .html(waitingText);
                 return;
             }
 
-            const shouldEnable = missing > 0;
-            const label = shouldEnable
-                ? `Optimize ${missing} Remaining Images`
-                : 'All Images Optimized!';
+            // Update "Generate Missing" button
+            const shouldEnablePrimary = missing > 0;
+            const primaryLabel = shouldEnablePrimary
+                ? `<span class="btn-icon">✨</span> Generate Missing Alt Text (${missing} ${missing === 1 ? 'image' : 'images'})`
+                : '<span class="btn-icon">✨</span> All Images Have Alt Text';
 
-            $button
+            $primaryButton
                 .attr('data-action', 'generate-missing')
                 .removeClass('alttextai-bulk-btn--limit loading')
-                .prop('disabled', !shouldEnable)
-                .toggleClass('ai-alt-btn-disabled', !shouldEnable)
-                .text(label);
+                .prop('disabled', !shouldEnablePrimary)
+                .toggleClass('ai-alt-btn-disabled', !shouldEnablePrimary)
+                .html(primaryLabel);
+
+            // Update "Regenerate All" button
+            const shouldEnableSecondary = total > 0;
+            const secondaryLabel = shouldEnableSecondary
+                ? `<span class="btn-icon">🔄</span> Regenerate All Alt Text (${total} ${total === 1 ? 'image' : 'images'})`
+                : '<span class="btn-icon">🔄</span> No Images Found';
+
+            $secondaryButton
+                .attr('data-action', 'regenerate-all')
+                .removeClass('alttextai-bulk-btn--limit loading')
+                .prop('disabled', !shouldEnableSecondary)
+                .toggleClass('ai-alt-btn-disabled', !shouldEnableSecondary)
+                .html(secondaryLabel);
         },
 
         cacheProgressEls() {
@@ -1430,16 +1520,27 @@
             const generateBase = config && config.rest ? config.rest.replace(/\/$/, '') : '';
 
             const processNext = function() {
+                // Check for cancellation FIRST
+                if (self.bulkCancelled) {
+                    self.addProgressLog('info', 'Bulk optimization cancelled by user');
+                    self.progressStats.processed = processed;
+                    self.progressStats.success = successes;
+                    self.progressStats.errors = failures;
+                    self.updateProgressStats();
+                    deferred.resolve({ successes, failures, cancelled: true });
+                    return;
+                }
+
                 if (!ids.length) {
                     // Update progress stats
                     self.progressStats.processed = processed;
                     self.progressStats.success = successes;
                     self.progressStats.errors = failures;
                     self.updateProgressStats();
-                    
+
                     const summaryMessage = `Bulk run completed: ${successes} success · ${failures} failed.`;
                     self.addProgressLog('success', summaryMessage);
-                    
+
                     deferred.resolve({ successes, failures });
                     return;
                 }
@@ -1580,18 +1681,18 @@
          */
         updateProgressStats() {
             if (!this.progressStats) return;
-            
+
             const { total, processed, success, errors } = this.progressStats;
             const percentage = total > 0 ? Math.round((processed / total) * 100) : 0;
-            
+
             // Update percentage
-            $('.alttextai-progress-stat__percentage').text(`${percentage}%`);
-            
-            // Update counts
-            $('.alttextai-progress-stat__count').text(processed);
-            $('.alttextai-progress-stat__success').text(success);
-            $('.alttextai-progress-stat__errors').text(errors);
-            
+            $('.alttextai-progress-percentage').text(`${percentage}%`);
+
+            // Update counts - match the actual HTML classes
+            $('.alttextai-progress-count').text(`${processed} / ${total}`);
+            $('.alttextai-progress-success').text(success);
+            $('.alttextai-progress-errors').text(errors);
+
             // Update progress bar
             $('.alttextai-progress-bar-fill').css('width', `${percentage}%`);
         }
@@ -1678,7 +1779,7 @@
                     if (!response || !response.success) {
                         if (response?.data?.code === 'limit_reached') {
                             dashboard.trackUpgrade('limit-reached');
-                            enhancements.showUpgradeModal();
+                            AiAltEnhancements.showUpgradeModal();
                             return;
                         }
                         const message = response?.data?.message || 'Failed to regenerate alt text';
@@ -1739,11 +1840,11 @@
                 e.preventDefault();
                 const source = $(this).data('upgradeSource') || 'dashboard';
                 dashboard.trackUpgrade(source);
-                enhancements.showUpgradeModal();
+                AiAltEnhancements.showUpgradeModal();
             });
 
-            // Auth banner button - show authentication modal
-            $(document).on('click', '#alttextai-show-auth-banner-btn', function(e) {
+            // Auth banner buttons - show authentication modal
+            $(document).on('click', '#alttextai-show-auth-banner-btn, #alttextai-show-auth-login-btn', function(e) {
                 e.preventDefault();
                 if (window.AltTextAuthModal && typeof window.AltTextAuthModal.show === 'function') {
                     window.AltTextAuthModal.show();
@@ -1757,22 +1858,77 @@
                 }
             });
 
+            // Logout button handler
+            $(document).on('click', '#alttextai-logout-btn', function(e) {
+                e.preventDefault();
+
+                const confirmLogout = confirm('Are you sure you want to logout?');
+                if (!confirmLogout) {
+                    return;
+                }
+
+                const $btn = $(this);
+                const originalText = $btn.text();
+                $btn.prop('disabled', true).text('Logging out...');
+
+                // Call logout endpoint
+                $.ajax({
+                    url: alttextai_ajax?.ajaxurl || ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'alttextai_logout',
+                        nonce: alttextai_ajax?.nonce || ''
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            AiAltToast.show({
+                                type: 'success',
+                                title: 'Logged Out',
+                                message: 'You have been successfully logged out.',
+                                duration: 2000
+                            });
+
+                            // Reload page after short delay to show logged out state
+                            setTimeout(function() {
+                                window.location.reload();
+                            }, 1500);
+                        } else {
+                            AiAltToast.show({
+                                type: 'error',
+                                title: 'Logout Failed',
+                                message: response.data?.message || 'Could not logout. Please try again.',
+                                duration: 3500
+                            });
+                            $btn.prop('disabled', false).text(originalText);
+                        }
+                    },
+                    error: function() {
+                        AiAltToast.show({
+                            type: 'error',
+                            title: 'Network Error',
+                            message: 'Could not connect to server. Please try again.',
+                            duration: 3500
+                        });
+                        $btn.prop('disabled', false).text(originalText);
+                    }
+                });
+            });
+
+            // Close button handler only - no backdrop clicks!
             $(document).on('click', '[data-action="close-modal"]', function(e) {
                 e.preventDefault();
-                enhancements.hideUpgradeModal();
+                e.stopPropagation();
+                AiAltEnhancements.hideUpgradeModal();
             });
 
-            $(document).on('click', '.alttextai-modal-backdrop', function(e) {
-                if (e.target === this) {
-                    enhancements.hideUpgradeModal();
-                }
-            });
-
+            // ESC key handler
             $(document).on('keydown.alttextaiModal', function(e) {
                 if (e.key === 'Escape') {
-                    enhancements.hideUpgradeModal();
+                    AiAltEnhancements.hideUpgradeModal();
                 }
             });
+
+            // NO backdrop click handler - let buttons work!
 
             $(document).on('click', '[data-action="refresh-usage"]', function(e) {
                 e.preventDefault();
@@ -1825,22 +1981,32 @@
 
             $(document).on('click', '.alttextai-progress-close', function(e) {
                 e.preventDefault();
-                enhancements.hideProgressLog();
+                AiAltEnhancements.hideProgressLog();
             });
 
             $(document).on('click', '.alttextai-progress-overlay', function(e) {
                 if (e.target === this) {
-                    enhancements.hideProgressLog();
+                    AiAltEnhancements.hideProgressLog();
                 }
             });
 
             $(document).on('click', '.alttextai-progress-cancel', function(e) {
                 e.preventDefault();
-                if (dashboard.isBulkProcessing) {
-                    dashboard.addProgressLog('warning', '🛑 Cancelling bulk optimization...');
-                    dashboard.isBulkProcessing = false;
-                    dashboard.finishBulk($('[data-action="generate-missing"]'));
+
+                if (!dashboard.isBulkProcessing) {
+                    return;
                 }
+
+                // Confirm cancellation
+                if (!confirm('Cancel bulk optimization?\n\nThe current image will complete, but no new images will start processing.')) {
+                    return;
+                }
+
+                // Set cancellation flag
+                dashboard.bulkCancelled = true;
+                dashboard.addProgressLog('warning', '🛑 Cancellation requested... Current image will complete.');
+
+                // Don't call finishBulk() here - let the process loop handle it
             });
 
             // Billing portal button handler - opens Stripe customer portal
@@ -1901,8 +2067,13 @@
             // Upgrade button handler - supports plan upgrades, agency plan, and credit purchases
             $(document).on('click', '[data-action="upgrade-plan"], [data-action="upgrade-agency"], [data-action="buy-credits"]', function(e) {
                 e.preventDefault();
+                e.stopPropagation(); // Prevent modal from closing
+                e.stopImmediatePropagation(); // Stop all other handlers
+
                 const $btn = $(this);
                 const action = $btn.data('action');
+
+                console.log('[AltText AI] Upgrade button clicked:', action);
 
                 // Get price ID from data attribute or default based on action
                 let priceId = $btn.data('price-id') || $btn.data('priceId');
@@ -1910,11 +2081,11 @@
                 if (!priceId) {
                     // Fallback to hardcoded IDs if not specified
                     if (action === 'upgrade-plan') {
-                        priceId = 'price_1SKgtuJl9Rm418cMtcxOZRCR'; // Pro monthly
+                        priceId = 'price_1SMrxaJl9Rm418cMM4iikjlJ'; // Pro monthly
                     } else if (action === 'upgrade-agency') {
-                        priceId = 'price_1SKgu9Jl9Rm418cMVhg3ZBZS'; // Agency monthly
+                        priceId = 'price_1SMrxaJl9Rm418cMnJTShXSY'; // Agency monthly
                     } else if (action === 'buy-credits') {
-                        priceId = 'price_1SKgu2Jl9Rm418cM3b1Z9tUW'; // Credits one-time
+                        priceId = 'price_1SMrxbJl9Rm418cM0gkzZQZt'; // Credits one-time
                     }
                 }
 
@@ -1966,13 +2137,53 @@
                             $btn.prop('disabled', false).removeClass('loading');
                         }
                     },
-                    error: function() {
+                    error: function(xhr, status, error) {
+                        // Log for debugging
+                        console.error('[AltText AI] Checkout failed:', {
+                            status: xhr.status,
+                            statusText: xhr.statusText,
+                            responseText: xhr.responseText,
+                            error: error
+                        });
+
+                        let title = 'Checkout Error';
+                        let message = '';
+                        let duration = 7000;
+
+                        // Provide specific guidance based on error type
+                        if (xhr.status === 0) {
+                            title = 'Connection Lost';
+                            message = 'Unable to connect to payment service.\n\n' +
+                                     'Please check:\n' +
+                                     '• Your internet connection\n' +
+                                     '• Ad blockers or VPN settings\n' +
+                                     '• Firewall settings';
+                            duration = 10000;
+                        } else if (xhr.status === 401 || xhr.status === 403) {
+                            title = 'Session Expired';
+                            message = 'Your session has expired. Please refresh the page and try again.';
+                        } else if (xhr.status >= 500) {
+                            title = 'Service Temporarily Unavailable';
+                            message = 'Our payment service is experiencing issues.\n\n' +
+                                     'Our team has been notified. Please try again in a few minutes.';
+                            duration = 10000;
+                        } else {
+                            title = 'Unable to Start Checkout';
+                            message = 'Something went wrong.\n\n' +
+                                     'Please try:\n' +
+                                     '• Refreshing the page\n' +
+                                     '• Clearing your browser cache\n' +
+                                     '• Contacting support if the problem persists';
+                            duration = 10000;
+                        }
+
                         AiAltToast.show({
                             type: 'error',
-                            title: 'Connection Error',
-                            message: 'Unable to start checkout. Please try again.',
-                            duration: 5000
+                            title: title,
+                            message: message,
+                            duration: duration
                         });
+
                         $btn.prop('disabled', false).removeClass('loading');
                     }
                 });
@@ -2284,13 +2495,15 @@
     // 🚀 INITIALIZATION
     // ========================================
     $(document).ready(function() {
-        // Only initialize on dashboard page
+        // Bind upgrade modal and lightweight enhancements globally
+        AiAltEnhancements.bindUpgradeModal();
+        AiAltEnhancements.addSparkleOnClick();
+        AiAltEnhancements.addKeyboardShortcuts();
+        AiAltEnhancements.initCountdown();
+
+        // Only initialize full dashboard experience when present
         if ($('.alttextai-clean-dashboard').length) {
             AiAltDashboard.init();
-            AiAltEnhancements.addSparkleOnClick();
-            AiAltEnhancements.addKeyboardShortcuts();
-            AiAltEnhancements.bindUpgradeModal();
-            AiAltEnhancements.initCountdown();
             
             // Check usage state on page load and set button state accordingly
             // Use setTimeout to ensure the object is fully initialized
