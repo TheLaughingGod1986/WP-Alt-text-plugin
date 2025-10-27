@@ -31,6 +31,7 @@ class AI_Alt_Text_Generator_GPT {
     private $stats_cache = null;
     private $token_notice = null;
     private $api_client = null;
+    private $checkout_price_cache = null;
 
     private function user_can_manage(){
         return current_user_can(self::CAPABILITY) || current_user_can('manage_options');
@@ -222,28 +223,61 @@ class AI_Alt_Text_Generator_GPT {
     }
 
     /**
-     * Retrieve checkout price IDs (merge defaults with stored overrides)
+     * Retrieve checkout price IDs sourced from the backend
      */
     public function get_checkout_price_ids() {
-        $defaults = [
+        if (is_array($this->checkout_price_cache)) {
+            return $this->checkout_price_cache;
+        }
+
+        $prices = [
             'pro'     => 'price_1SMrxaJl9Rm418cMM4iikjlJ',
             'agency'  => 'price_1SMrxaJl9Rm418cMnJTShXSY',
             'credits' => 'price_1SMrxbJl9Rm418cM0gkzZQZt',
         ];
 
-        $stored = get_option('alttextai_checkout_prices', []);
-        if (is_array($stored) && !empty($stored)) {
-            $sanitized = [];
-            foreach ($stored as $key => $value) {
-                $key = sanitize_key($key);
-                if (!empty($value)) {
-                    $sanitized[$key] = sanitize_text_field($value);
+        $cached = get_transient('alttextai_remote_price_ids');
+        if (!is_array($cached)) {
+            $plans = $this->api_client->get_plans();
+            if (!is_wp_error($plans) && !empty($plans)) {
+                $remote = [];
+                foreach ($plans as $plan) {
+                    if (!is_array($plan)) {
+                        continue;
+                    }
+                    $plan_id = sanitize_key($plan['id'] ?? '');
+                    $price_id = !empty($plan['priceId']) ? sanitize_text_field($plan['priceId']) : '';
+                    if ($plan_id && $price_id) {
+                        $remote[$plan_id] = $price_id;
+                    }
+                }
+                if (!empty($remote)) {
+                    set_transient('alttextai_remote_price_ids', $remote, 10 * MINUTE_IN_SECONDS);
+                    $cached = $remote;
                 }
             }
-            $defaults = array_merge($defaults, $sanitized);
         }
 
-        return apply_filters('alttextai_checkout_price_ids', $defaults);
+        if (is_array($cached)) {
+            $prices = array_merge($prices, $cached);
+        }
+
+        // Backwards compatibility: allow legacy option override if API returned nothing.
+        if (!array_filter($prices)) {
+            $stored = get_option('alttextai_checkout_prices', []);
+            if (is_array($stored) && !empty($stored)) {
+                foreach ($stored as $key => $value) {
+                    $key = sanitize_key($key);
+                    if (!empty($value)) {
+                        $prices[$key] = sanitize_text_field($value);
+                    }
+                }
+            }
+        }
+
+        $prices = apply_filters('alttextai_checkout_price_ids', $prices);
+        $this->checkout_price_cache = $prices;
+        return $prices;
     }
 
     /**
@@ -482,6 +516,7 @@ class AI_Alt_Text_Generator_GPT {
                 $notify = sanitize_text_field($input['notify_email'] ?? ($existing['notify_email'] ?? get_option('admin_email')));
                 $out['notify_email'] = is_email($notify) ? $notify : ($existing['notify_email'] ?? get_option('admin_email'));
                 $out['usage']            = $existing['usage'] ?? $this->default_usage();
+
                 return $out;
             }
         ]);
@@ -570,32 +605,44 @@ class AI_Alt_Text_Generator_GPT {
             ?>
             <div class="notice notice-info alttextai-upgrade-test-links" style="padding:16px;margin-bottom:20px;">
                 <p style="margin:0;font-weight:600;"><?php esc_html_e('Checkout Diagnostics', 'ai-alt-gpt'); ?></p>
-                <p style="margin:8px 0 0;">
-                    <a href="<?php echo $pro_test_url; ?>"
-                       data-plan="pro"
-                       data-price-id="price_1SMrxaJl9Rm418cMM4iikjlJ"
-                       class="alttextai-upgrade-test-link"
-                       target="_blank" rel="noopener" style="margin-right:16px;">
-                        <?php esc_html_e('Pro Plan Checkout', 'ai-alt-gpt'); ?>
-                    </a>
-                    <a href="<?php echo $agency_test_url; ?>"
-                       data-plan="agency"
-                       data-price-id="price_1SMrxaJl9Rm418cMnJTShXSY"
-                       class="alttextai-upgrade-test-link"
-                       target="_blank" rel="noopener" style="margin-right:16px;">
-                        <?php esc_html_e('Agency Plan Checkout', 'ai-alt-gpt'); ?>
-                    </a>
-                    <a href="<?php echo $credits_test_url; ?>"
-                       data-plan="credits"
-                       data-price-id="price_1SMrxbJl9Rm418cM0gkzZQZt"
-                       class="alttextai-upgrade-test-link"
-                       target="_blank" rel="noopener">
-                        <?php esc_html_e('Credits Checkout', 'ai-alt-gpt'); ?>
-                    </a>
-                </p>
-                <p style="margin:8px 0 0;font-size:12px;color:#475569;">
-                    <?php esc_html_e('Click to confirm the destinations load correctly. They open in a new tab.', 'ai-alt-gpt'); ?>
-                </p>
+                <?php if (!empty($price_ids['pro']) || !empty($price_ids['agency']) || !empty($price_ids['credits'])) : ?>
+                    <p style="margin:8px 0 0;">
+                        <?php if (!empty($price_ids['pro'])) : ?>
+                            <a href="<?php echo $pro_test_url; ?>"
+                               data-plan="pro"
+                               data-price-id="<?php echo esc_attr($price_ids['pro']); ?>"
+                               class="alttextai-upgrade-test-link"
+                               target="_blank" rel="noopener" style="margin-right:16px;">
+                                <?php esc_html_e('Pro Plan Checkout', 'ai-alt-gpt'); ?>
+                            </a>
+                        <?php endif; ?>
+                        <?php if (!empty($price_ids['agency'])) : ?>
+                            <a href="<?php echo $agency_test_url; ?>"
+                               data-plan="agency"
+                               data-price-id="<?php echo esc_attr($price_ids['agency']); ?>"
+                               class="alttextai-upgrade-test-link"
+                               target="_blank" rel="noopener" style="margin-right:16px;">
+                                <?php esc_html_e('Agency Plan Checkout', 'ai-alt-gpt'); ?>
+                            </a>
+                        <?php endif; ?>
+                        <?php if (!empty($price_ids['credits'])) : ?>
+                            <a href="<?php echo $credits_test_url; ?>"
+                               data-plan="credits"
+                               data-price-id="<?php echo esc_attr($price_ids['credits']); ?>"
+                               class="alttextai-upgrade-test-link"
+                               target="_blank" rel="noopener">
+                                <?php esc_html_e('Credits Checkout', 'ai-alt-gpt'); ?>
+                            </a>
+                        <?php endif; ?>
+                    </p>
+                    <p style="margin:8px 0 0;font-size:12px;color:#475569;">
+                        <?php esc_html_e('Click to confirm the destinations load correctly. They open in a new tab.', 'ai-alt-gpt'); ?>
+                    </p>
+                <?php else : ?>
+                    <p style="margin:8px 0 0;font-size:12px;color:#b91c1c;">
+                        <?php esc_html_e('Stripe price IDs are not available yet. Configure them in your backend environment (STRIPE_PRICE_*) so checkout can start.', 'ai-alt-gpt'); ?>
+                    </p>
+                <?php endif; ?>
             </div>
 
             <div class="alttextai-clean-dashboard" data-stats='<?php echo esc_attr(wp_json_encode($stats)); ?>'>
@@ -3253,6 +3300,20 @@ class AI_Alt_Text_Generator_GPT {
             'permission_callback' => function(){ return current_user_can('edit_posts'); },
         ]);
 
+        register_rest_route('ai-alt/v1', '/plans', [
+            'methods'  => 'GET',
+            'callback' => function(){
+                if (!current_user_can('edit_posts')){
+                    return new \WP_Error('forbidden', 'No permission', ['status' => 403]);
+                }
+
+                return [
+                    'prices' => $this->get_checkout_price_ids(),
+                ];
+            },
+            'permission_callback' => function(){ return current_user_can('edit_posts'); },
+        ]);
+
         register_rest_route('ai-alt/v1', '/queue', [
             'methods'  => 'GET',
             'callback' => function(){
@@ -3305,6 +3366,8 @@ class AI_Alt_Text_Generator_GPT {
         $admin_file = "assets/ai-alt-admin{$suffix}.js";
         $admin_version = $asset_version($admin_file, '3.0.0');
         
+        $checkout_prices = $this->get_checkout_price_ids();
+
         $l10n_common = [
             'reviewCue'           => __('Visit the ALT Library to double-check the wording.', 'ai-alt-gpt'),
             'statusReady'         => '',
@@ -3329,9 +3392,11 @@ class AI_Alt_Text_Generator_GPT {
                 'restAll'    => esc_url_raw( add_query_arg(['scope' => 'all'], rest_url('ai-alt/v1/list')) ),
                 'restQueue'  => esc_url_raw( rest_url('ai-alt/v1/queue') ),
                 'restRoot'  => esc_url_raw( rest_url() ),
+                'restPlans' => esc_url_raw( rest_url('ai-alt/v1/plans') ),
                 'l10n'      => $l10n_common,
                 'upgradeUrl'=> esc_url( AltText_AI_Usage_Tracker::get_upgrade_url() ),
                 'billingPortalUrl' => esc_url( AltText_AI_Usage_Tracker::get_billing_portal_url() ),
+                'checkoutPrices' => $checkout_prices,
             ]);
         }
 
@@ -3431,8 +3496,10 @@ class AI_Alt_Text_Generator_GPT {
                 'restAll'     => esc_url_raw( add_query_arg(['scope' => 'all'], rest_url('ai-alt/v1/list')) ),
                 'restQueue'   => esc_url_raw( rest_url('ai-alt/v1/queue') ),
                 'restRoot'    => esc_url_raw( rest_url() ),
+                'restPlans'   => esc_url_raw( rest_url('ai-alt/v1/plans') ),
                 'upgradeUrl'  => esc_url( AltText_AI_Usage_Tracker::get_upgrade_url() ),
                 'billingPortalUrl'=> esc_url( AltText_AI_Usage_Tracker::get_billing_portal_url() ),
+                'checkoutPrices' => $checkout_prices,
                 'stats'       => $stats_data,
                 'initialUsage'=> $usage_data,
             ]);
@@ -3478,6 +3545,8 @@ class AI_Alt_Text_Generator_GPT {
                 'usage' => $usage_data,
                 'upgradeUrl' => esc_url( AltText_AI_Usage_Tracker::get_upgrade_url() ),
                 'billingPortalUrl' => esc_url( AltText_AI_Usage_Tracker::get_billing_portal_url() ),
+                'priceIds' => $checkout_prices,
+                'restPlans' => esc_url_raw( rest_url('ai-alt/v1/plans') ),
             ]);
         }
     }
