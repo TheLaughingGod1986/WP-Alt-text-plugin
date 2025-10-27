@@ -6,11 +6,6 @@
 (function($) {
     'use strict';
 
-    
-    // Test: Add a simple click handler to see if JS is working
-    $(document).on('click', 'button', function() {
-    });
-    
     // Ensure progress elements are hidden on page load
     $(document).ready(function() {
         $('.ai-alt-dashboard__status').hide();
@@ -26,6 +21,21 @@
     function getRestRoot(config) {
         if (!config) { return (window.wpApiSettings && window.wpApiSettings.root) || ''; }
         return config.restRoot || (window.wpApiSettings && window.wpApiSettings.root) || '';
+    }
+
+    function normalizePriceMap(source) {
+        if (!source || typeof source !== 'object') {
+            return {};
+        }
+
+        return Object.entries(source).reduce((acc, [rawPlan, rawPrice]) => {
+            const plan = String(rawPlan || '').trim();
+            const price = String(rawPrice || '').trim();
+            if (plan && price) {
+                acc[plan] = price;
+            }
+            return acc;
+        }, {});
     }
 
     function toApiPath(config, url) {
@@ -122,12 +132,20 @@
     }
 
     function getInitialCheckoutPrices() {
-        return (
-            (window.AI_ALT_GPT_DASH && window.AI_ALT_GPT_DASH.checkoutPrices) ||
-            (window.AltTextAI && window.AltTextAI.priceIds) ||
-            (window.AI_ALT_GPT && window.AI_ALT_GPT.checkoutPrices) ||
-            {}
-        );
+        const sources = [
+            window.AI_ALT_GPT_DASH && window.AI_ALT_GPT_DASH.checkoutPrices,
+            window.AltTextAI && window.AltTextAI.priceIds,
+            window.AI_ALT_GPT && window.AI_ALT_GPT.checkoutPrices
+        ];
+
+        for (const source of sources) {
+            const normalized = normalizePriceMap(source);
+            if (Object.keys(normalized).length) {
+                return normalized;
+            }
+        }
+
+        return {};
     }
 
     let checkoutPricesCache = null;
@@ -135,13 +153,13 @@
 
     function ensureCheckoutPrices() {
         if (checkoutPricesCache) {
-            return Promise.resolve(checkoutPricesCache);
+            return Promise.resolve({ ...checkoutPricesCache });
         }
 
         const initial = getInitialCheckoutPrices();
-        if (initial && Object.values(initial).some(Boolean)) {
-            checkoutPricesCache = initial;
-            return Promise.resolve(checkoutPricesCache);
+        if (Object.keys(initial).length) {
+            checkoutPricesCache = { ...initial };
+            return Promise.resolve({ ...checkoutPricesCache });
         }
 
         if (checkoutPricesPromise) {
@@ -155,19 +173,21 @@
             (window.AI_ALT_GPT && window.AI_ALT_GPT.restPlans);
 
         if (!endpoint) {
-            checkoutPricesCache = initial || {};
-            return Promise.resolve(checkoutPricesCache);
+            checkoutPricesCache = { ...initial };
+            return Promise.resolve({ ...checkoutPricesCache });
         }
 
         checkoutPricesPromise = apiRequest(config, endpoint)
             .then((data) => {
-                const prices = data && data.prices ? data.prices : initial || {};
-                checkoutPricesCache = prices;
-                return prices;
+                const remotePrices = normalizePriceMap(data && data.prices);
+                checkoutPricesCache = Object.keys(remotePrices).length
+                    ? { ...initial, ...remotePrices }
+                    : { ...initial };
+                return { ...checkoutPricesCache };
             })
             .catch(() => {
-                checkoutPricesCache = initial || {};
-                return checkoutPricesCache;
+                checkoutPricesCache = { ...initial };
+                return { ...checkoutPricesCache };
             })
             .finally(() => {
                 checkoutPricesPromise = null;
@@ -2127,9 +2147,6 @@
 
                 const $btn = $(this);
                 const action = $btn.data('action');
-
-                console.log('[AltText AI] Upgrade button clicked:', action);
-
                 ensureCheckoutPrices().then((priceMap) => {
                     let priceId = $btn.data('price-id') || $btn.data('priceId');
 

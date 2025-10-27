@@ -25,8 +25,11 @@ class AI_Alt_Text_Generator_GPT {
     const NONCE_KEY  = 'ai_alt_gpt_nonce';
     const CAPABILITY = 'manage_ai_alt_text';
 
-    private const QA_MAX_RETRY = 1;
-    private const QA_RETRY_THRESHOLD = 70;
+    private const DEFAULT_CHECKOUT_PRICE_IDS = [
+        'pro'     => 'price_1SMrxaJl9Rm418cMM4iikjlJ',
+        'agency'  => 'price_1SMrxaJl9Rm418cMnJTShXSY',
+        'credits' => 'price_1SMrxbJl9Rm418cM0gkzZQZt',
+    ];
 
     private $stats_cache = null;
     private $token_notice = null;
@@ -230,11 +233,7 @@ class AI_Alt_Text_Generator_GPT {
             return $this->checkout_price_cache;
         }
 
-        $prices = [
-            'pro'     => 'price_1SMrxaJl9Rm418cMM4iikjlJ',
-            'agency'  => 'price_1SMrxaJl9Rm418cMnJTShXSY',
-            'credits' => 'price_1SMrxbJl9Rm418cM0gkzZQZt',
-        ];
+        $prices = self::DEFAULT_CHECKOUT_PRICE_IDS;
 
         $cached = get_transient('alttextai_remote_price_ids');
         if (!is_array($cached)) {
@@ -259,18 +258,23 @@ class AI_Alt_Text_Generator_GPT {
         }
 
         if (is_array($cached)) {
-            $prices = array_merge($prices, $cached);
+            foreach ($cached as $plan_id => $price_id) {
+                $plan_id = sanitize_key($plan_id);
+                $price_id = sanitize_text_field($price_id);
+                if ($plan_id && $price_id) {
+                    $prices[$plan_id] = $price_id;
+                }
+            }
         }
 
-        // Backwards compatibility: allow legacy option override if API returned nothing.
-        if (!array_filter($prices)) {
-            $stored = get_option('alttextai_checkout_prices', []);
-            if (is_array($stored) && !empty($stored)) {
-                foreach ($stored as $key => $value) {
-                    $key = sanitize_key($key);
-                    if (!empty($value)) {
-                        $prices[$key] = sanitize_text_field($value);
-                    }
+        // Backwards compatibility: use saved overrides when a plan is missing a mapped price.
+        $stored = get_option('alttextai_checkout_prices', []);
+        if (is_array($stored) && !empty($stored)) {
+            foreach ($stored as $key => $value) {
+                $key = sanitize_key($key);
+                $value = sanitize_text_field($value);
+                if ($key && $value && empty($prices[$key])) {
+                    $prices[$key] = $value;
                 }
             }
         }
