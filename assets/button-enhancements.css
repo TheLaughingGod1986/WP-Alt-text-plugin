@@ -1,0 +1,154 @@
+/**
+ * Button Enhancements CSS
+ * Styles for the two-button action layout
+ */
+
+/* Action Buttons Container */
+.alttextai-action-buttons {
+    display: flex;
+    gap: var(--alttextai-space-4);
+    flex-wrap: wrap;
+    align-items: stretch;
+}
+
+/* Primary Button - Optimize Missing */
+.alttextai-bulk-btn--primary {
+    background: var(--alttextai-gradient-primary);
+    color: var(--alttextai-text-inverse);
+    border: none;
+    padding: var(--alttextai-button-padding-y) var(--alttextai-button-padding-x);
+    font-size: var(--alttextai-text-base);
+    font-weight: var(--alttextai-button-font-weight);
+    border-radius: var(--alttextai-button-border-radius);
+    cursor: pointer;
+    transition: var(--alttextai-transition);
+    box-shadow: var(--alttextai-shadow-button);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--alttextai-space-2);
+}
+
+.alttextai-bulk-btn--primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--alttextai-shadow-button-hover);
+}
+
+.alttextai-bulk-btn--primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Secondary Button - Regenerate All */
+.alttextai-bulk-btn--secondary {
+    background: var(--alttextai-gradient-secondary);
+    color: var(--alttextai-text-inverse);
+    border: none;
+    padding: var(--alttextai-button-padding-y) var(--alttextai-button-padding-x);
+    font-size: var(--alttextai-text-base);
+    font-weight: var(--alttextai-button-font-weight);
+    border-radius: var(--alttextai-button-border-radius);
+    cursor: pointer;
+    transition: var(--alttextai-transition);
+    box-shadow: var(--alttextai-shadow-button);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--alttextai-space-2);
+}
+
+.alttextai-bulk-btn--secondary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--alttextai-shadow-button-hover);
+}
+
+.alttextai-bulk-btn--secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Button Icons */
+.btn-icon {
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+/* Action Hint Text */
+.alttextai-action-hint {
+    margin-top: var(--alttextai-space-3);
+    font-size: var(--alttextai-text-sm);
+    color: var(--alttextai-text-muted);
+    text-align: center;
+    line-height: var(--alttextai-leading-relaxed);
+}
+
+.alttextai-action-hint strong {
+    color: var(--alttextai-text-secondary);
+    font-weight: var(--alttextai-font-semibold);
+}
+
+/* Loading State */
+.alttextai-bulk-btn.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.alttextai-bulk-btn.loading::after {
+    content: '';
+    width: 16px;
+    height: 16px;
+    margin-left: 0.5rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: button-spin 0.6s linear infinite;
+}
+
+@keyframes button-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .alttextai-action-buttons {
+        flex-direction: column;
+    }
+
+    .alttextai-bulk-btn--primary,
+    .alttextai-bulk-btn--secondary {
+        width: 100%;
+        min-width: 100%;
+    }
+
+    .alttextai-action-hint {
+        font-size: 0.8125rem;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .alttextai-bulk-btn--primary {
+        background: var(--alttextai-primary-dark);
+        border: 2px solid var(--alttextai-text-secondary);
+    }
+
+    .alttextai-bulk-btn--secondary {
+        background: var(--alttextai-danger);
+        border: 2px solid var(--alttextai-text-secondary);
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .alttextai-bulk-btn--primary,
+    .alttextai-bulk-btn--secondary {
+        transition: none;
+    }
+
+    .alttextai-bulk-btn--primary:hover:not(:disabled),
+    .alttextai-bulk-btn--secondary:hover:not(:disabled) {
+        transform: none;
+    }
+}

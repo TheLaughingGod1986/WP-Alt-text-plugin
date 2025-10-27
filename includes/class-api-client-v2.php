@@ -266,9 +266,10 @@ class AltText_AI_API_Client_V2 {
     public function has_reached_limit() {
         $usage = $this->get_usage();
 
-        // If there was an error getting usage, assume not at limit
+        // If there was an error getting usage, fail securely (assume limit reached)
+        // This prevents bypassing limits when API is temporarily unavailable
         if (is_wp_error($usage)) {
-            return false;
+            return true;
         }
 
         // Check if remaining is 0 or less
@@ -392,6 +393,26 @@ class AltText_AI_API_Client_V2 {
             $response['data']['error'] ?? __('Failed to get billing info', 'ai-alt-gpt')
         );
     }
+
+    /**
+     * Retrieve available plans (includes Stripe price IDs)
+     */
+    public function get_plans() {
+        $response = $this->make_request('/billing/plans');
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        if ($response['success']) {
+            return $response['data']['plans'] ?? [];
+        }
+
+        return new WP_Error(
+            'plans_failed',
+            $response['data']['error'] ?? __('Failed to fetch pricing plans', 'ai-alt-gpt')
+        );
+    }
     
     /**
      * Create checkout session
@@ -410,10 +431,24 @@ class AltText_AI_API_Client_V2 {
         if ($response['success']) {
             return $response['data'];
         }
-        
+
+        $error_message = '';
+        if (isset($response['data']['error']) && is_string($response['data']['error'])) {
+            $error_message = $response['data']['error'];
+        } elseif (isset($response['data']['message']) && is_string($response['data']['message'])) {
+            $error_message = $response['data']['message'];
+        } elseif (!empty($response['data']) && is_array($response['data'])) {
+            $error_message = wp_json_encode($response['data']);
+        }
+
+        if (!$error_message) {
+            $error_message = __('Failed to create checkout session', 'ai-alt-gpt');
+        }
+
         return new WP_Error(
             'checkout_failed',
-            $response['data']['error'] ?? __('Failed to create checkout session', 'ai-alt-gpt')
+            $error_message,
+            ['response' => $response]
         );
     }
     
@@ -444,7 +479,7 @@ class AltText_AI_API_Client_V2 {
      */
     private function prepare_image_payload($image_id, $image_url, $title, $caption, $filename) {
         $payload = [
-            'image_id' => $image_id,
+            'image_id' => (string) $image_id,  // Cast to string for Prisma compatibility
             'title' => $title,
             'caption' => $caption,
             'filename' => $filename

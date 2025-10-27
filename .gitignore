@@ -1,5 +1,9 @@
 # Backend directory (separate repository)
 backend/
+backend/db.json
+backend/output.log
+deploy-package/
+dist/
 
 # Local test environment
 local-test/
@@ -20,3 +24,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Build artefacts
+*.zip

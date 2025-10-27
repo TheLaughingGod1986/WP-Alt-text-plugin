@@ -11,33 +11,14 @@
     // ========================================
     const MiniToast = {
         show(message, type = 'success') {
-            // Check if main toast system is available
+            // Use main toast system (AiAltToast is globally available)
             if (typeof window.AiAltToast !== 'undefined') {
                 window.AiAltToast.show({
                     type: type,
                     message: message,
                     duration: 3000
                 });
-                return;
             }
-
-            // Fallback to simple notification
-            const toast = $(`
-                <div class="notice notice-${type} is-dismissible" style="position: fixed; top: 32px; right: 32px; z-index: 999999; min-width: 300px; animation: slideIn 0.3s ease-out;">
-                    <p><strong>${message}</strong></p>
-                    <button type="button" class="notice-dismiss"><span class="screen-reader-text">Dismiss</span></button>
-                </div>
-            `);
-            
-            $('body').append(toast);
-            
-            toast.find('.notice-dismiss').on('click', function() {
-                toast.fadeOut(300, function() { $(this).remove(); });
-            });
-            
-            setTimeout(() => {
-                toast.fadeOut(300, function() { $(this).remove(); });
-            }, 3000);
         }
     };
 
@@ -659,7 +640,7 @@
             const action = $(this).val();
             if (action === 'generate_alt_text_ai') {
                 // Add visual indicator
-                $(this).css('border-color', '#667eea');
+                $(this).css('border-color', '#14b8a6');
             }
         });
     }
@@ -691,7 +672,7 @@
             
             // Style the button
             $button.css({
-                'background': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                'background': 'linear-gradient(135deg, #14b8a6 0%, #84cc16 100%)',
                 'color': 'white',
                 'border': 'none',
                 'padding': '8px 16px',
@@ -797,7 +778,7 @@
                         ">
                             <div class="ai-alt-progress-fill" style="
                                 height: 100%;
-                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                background: linear-gradient(135deg, #14b8a6 0%, #84cc16 100%);
                                 width: 0%;
                                 transition: width 0.3s ease;
                             "></div>
@@ -839,7 +820,7 @@
     // ========================================
     function celebrateBatchCompletion(count) {
         // Create mini confetti effect
-        const colors = ['#667eea', '#43e97b', '#4facfe', '#ffd700'];
+        const colors = ['#14b8a6', '#84cc16', '#4facfe', '#ffd700'];
         for (let i = 0; i < 20; i++) {
             const confetti = $('<div></div>').css({
                 position: 'fixed',

@@ -1,0 +1,686 @@
+/**
+ * Guide & Settings Pages - Modern Design Styles
+ * Beautiful, CRO-focused design for How to Use and Settings pages
+ */
+
+/* ========================================
+   HOW TO USE PAGE (GUIDE)
+   ======================================== */
+
+.alttextai-guide-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--alttextai-space-8) var(--alttextai-space-4);
+}
+
+/* Header Section */
+.alttextai-guide-header {
+    text-align: center;
+    margin-bottom: var(--alttextai-space-12);
+}
+
+.alttextai-guide-header-icon {
+    display: inline-flex;
+    margin-bottom: var(--alttextai-space-6);
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.alttextai-guide-title {
+    font-size: 2.5rem;
+    font-weight: var(--alttextai-font-bold);
+    color: var(--alttextai-gray-900);
+    margin: 0 0 var(--alttextai-space-2);
+    letter-spacing: -0.025em;
+}
+
+.alttextai-guide-subtitle {
+    font-size: var(--alttextai-text-lg);
+    color: var(--alttextai-text-muted);
+    margin: 0;
+}
+
+/* Cards */
+.alttextai-guide-card {
+    background: var(--alttextai-white);
+    border: 1px solid var(--alttextai-gray-200);
+    border-radius: var(--alttextai-radius-2xl);
+    padding: var(--alttextai-space-8);
+    margin-bottom: var(--alttextai-space-6);
+    box-shadow: var(--alttextai-shadow-sm);
+    transition: var(--alttextai-transition);
+}
+
+.alttextai-guide-card:hover {
+    box-shadow: var(--alttextai-shadow-lg);
+    transform: translateY(-2px);
+}
+
+.alttextai-guide-card--featured {
+    background: linear-gradient(135deg, #f0fdfa 0%, var(--alttextai-white) 100%);
+    border: 2px solid var(--alttextai-primary);
+    position: relative;
+}
+
+.alttextai-guide-card-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--alttextai-gradient-primary);
+    color: var(--alttextai-white);
+    font-size: var(--alttextai-text-xs);
+    font-weight: var(--alttextai-font-bold);
+    padding: 0.35rem 0.85rem;
+    border-radius: var(--alttextai-radius-full);
+    letter-spacing: 0.05em;
+}
+
+.alttextai-guide-card-title {
+    font-size: var(--alttextai-text-2xl);
+    font-weight: var(--alttextai-font-semibold);
+    color: var(--alttextai-gray-900);
+    margin: 0 0 var(--alttextai-space-6);
+    display: flex;
+    align-items: center;
+    gap: var(--alttextai-space-3);
+}
+
+.alttextai-guide-emoji {
+    font-size: 1.75rem;
+}
+
+/* Steps */
+.alttextai-guide-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--alttextai-space-6);
+}
+
+.alttextai-guide-step {
+    display: flex;
+    gap: var(--alttextai-space-4);
+    align-items: flex-start;
+}
+
+.alttextai-guide-step-number {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: var(--alttextai-radius-xl);
+    background: var(--alttextai-gradient-primary);
+    color: var(--alttextai-white);
+    font-size: var(--alttextai-text-xl);
+    font-weight: var(--alttextai-font-bold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+}
+
+.alttextai-guide-step-content h3 {
+    font-size: var(--alttextai-text-lg);
+    font-weight: var(--alttextai-font-semibold);
+    color: var(--alttextai-gray-900);
+    margin: 0 0 var(--alttextai-space-2);
+}
+
+.alttextai-guide-step-content p {
+    font-size: 0.9375rem;
+    color: var(--alttextai-text-muted);
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* Grid Layout */
+.alttextai-guide-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--alttextai-space-6);
+    margin-bottom: var(--alttextai-space-6);
+}
+
+/* Tips */
+.alttextai-guide-tips {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--alttextai-space-5);
+}
+
+.alttextai-guide-tip {
+    display: flex;
+    gap: var(--alttextai-space-4);
+    align-items: flex-start;
+}
+
+.alttextai-guide-tip-icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--alttextai-primary);
+    color: var(--alttextai-white);
+    font-size: var(--alttextai-text-xs);
+    font-weight: var(--alttextai-font-bold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.alttextai-guide-tip strong {
+    display: block;
+    font-size: var(--alttextai-text-base);
+    color: var(--alttextai-gray-900);
+    margin-bottom: var(--alttextai-space-1);
+}
+
+.alttextai-guide-tip p {
+    font-size: var(--alttextai-text-sm);
+    color: var(--alttextai-text-muted);
+    margin: 0;
+}
+
+/* Features */
+.alttextai-guide-features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--alttextai-space-5);
+}
+
+.alttextai-guide-features li {
+    display: flex;
+    gap: var(--alttextai-space-4);
+    align-items: flex-start;
+}
+
+.alttextai-guide-feature-icon {
+    flex-shrink: 0;
+    font-size: var(--alttextai-text-2xl);
+}
+
+.alttextai-guide-features strong {
+    display: block;
+    font-size: var(--alttextai-text-base);
+    color: var(--alttextai-gray-900);
+    margin-bottom: var(--alttextai-space-1);
+}
+
+.alttextai-guide-features p {
+    font-size: var(--alttextai-text-sm);
+    color: var(--alttextai-text-muted);
+    margin: 0;
+}
+
+/* CTA Card */
+.alttextai-guide-card--cta {
+    background: var(--alttextai-gradient-primary);
+    color: var(--alttextai-white);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--alttextai-space-8);
+    overflow: hidden;
+    position: relative;
+}
+
+.alttextai-guide-cta-content {
+    flex: 1;
+    z-index: 1;
+}
+
+.alttextai-guide-cta-title {
+    font-size: 1.75rem;
+    font-weight: var(--alttextai-font-bold);
+    color: var(--alttextai-white);
+    margin: 0 0 var(--alttextai-space-3);
+}
+
+.alttextai-guide-cta-text {
+    font-size: var(--alttextai-text-base);
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0 0 var(--alttextai-space-6);
+    line-height: 1.6;
+}
+
+.alttextai-guide-cta-button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--alttextai-space-2);
+    background: var(--alttextai-white);
+    color: var(--alttextai-primary);
+    font-size: var(--alttextai-text-base);
+    font-weight: var(--alttextai-font-semibold);
+    padding: 0.875rem var(--alttextai-space-6);
+    border: none;
+    border-radius: var(--alttextai-radius-xl);
+    cursor: pointer;
+    transition: var(--alttextai-transition);
+    box-shadow: var(--alttextai-shadow-button);
+}
+
+.alttextai-guide-cta-button:hover {
+    background: #f0fdfa;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.alttextai-guide-cta-decoration {
+    flex-shrink: 0;
+    opacity: 0.3;
+}
+
+/* ========================================
+   SETTINGS PAGE
+   ======================================== */
+
+.alttextai-settings-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--alttextai-space-8) var(--alttextai-space-4);
+}
+
+/* Header */
+.alttextai-settings-header {
+    margin-bottom: var(--alttextai-space-8);
+}
+
+.alttextai-settings-title {
+    font-size: var(--alttextai-text-4xl);
+    font-weight: var(--alttextai-font-bold);
+    color: var(--alttextai-gray-900);
+    margin: 0 0 var(--alttextai-space-2);
+    letter-spacing: -0.025em;
+}
+
+.alttextai-settings-subtitle {
+    font-size: var(--alttextai-text-base);
+    color: var(--alttextai-text-muted);
+    margin: 0;
+}
+
+/* Plan Card */
+.alttextai-settings-plan-card {
+    background: linear-gradient(135deg, var(--alttextai-gray-50) 0%, var(--alttextai-white) 100%);
+    border: 2px solid var(--alttextai-gray-200);
+    border-radius: var(--alttextai-radius-2xl);
+    padding: var(--alttextai-space-6);
+    margin-bottom: var(--alttextai-space-8);
+    box-shadow: var(--alttextai-shadow-sm);
+}
+
+.alttextai-settings-plan-card--pro {
+    background: linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%);
+    border-color: #fbbf24;
+}
+
+.alttextai-settings-plan-header {
+    display: flex;
+    align-items: center;
+    gap: var(--alttextai-space-4);
+    margin-bottom: var(--alttextai-space-6);
+}
+
+.alttextai-settings-plan-badge {
+    background: var(--alttextai-gray-500);
+    color: var(--alttextai-white);
+    font-size: var(--alttextai-text-xs);
+    font-weight: var(--alttextai-font-bold);
+    padding: 0.35rem var(--alttextai-space-3);
+    border-radius: var(--alttextai-radius-full);
+    letter-spacing: 0.05em;
+}
+
+.alttextai-settings-plan-badge--pro {
+    background: var(--alttextai-gradient-warning);
+}
+
+.alttextai-settings-plan-name {
+    font-size: var(--alttextai-text-xl);
+    font-weight: var(--alttextai-font-semibold);
+    color: var(--alttextai-gray-900);
+    margin: 0;
+}
+
+/* Usage Bar */
+.alttextai-settings-usage-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--alttextai-gray-200);
+    border-radius: var(--alttextai-radius-full);
+    overflow: hidden;
+    margin-bottom: var(--alttextai-space-4);
+}
+
+.alttextai-settings-usage-bar-fill {
+    height: 100%;
+    background: var(--alttextai-gradient-primary);
+    border-radius: var(--alttextai-radius-full);
+    transition: width 0.6s ease;
+}
+
+.alttextai-settings-plan-card--pro .alttextai-settings-usage-bar-fill {
+    background: var(--alttextai-gradient-warning);
+}
+
+/* Usage Stats */
+.alttextai-settings-usage-stats {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--alttextai-space-4);
+    margin-bottom: var(--alttextai-space-6);
+}
+
+.alttextai-settings-usage-stat {
+    display: flex;
+    flex-direction: column;
+    gap: var(--alttextai-space-1);
+}
+
+.alttextai-settings-usage-label {
+    font-size: var(--alttextai-text-xs);
+    color: var(--alttextai-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: var(--alttextai-font-semibold);
+}
+
+.alttextai-settings-usage-value {
+    font-size: var(--alttextai-text-xl);
+    font-weight: var(--alttextai-font-bold);
+    color: var(--alttextai-gray-900);
+}
+
+/* Upgrade Button */
+.alttextai-settings-upgrade-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--alttextai-space-2);
+    background: var(--alttextai-gradient-primary);
+    color: var(--alttextai-white);
+    font-size: var(--alttextai-text-base);
+    font-weight: var(--alttextai-font-semibold);
+    padding: 0.875rem var(--alttextai-space-6);
+    border: none;
+    border-radius: var(--alttextai-radius-xl);
+    cursor: pointer;
+    transition: var(--alttextai-transition);
+    box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+}
+
+.alttextai-settings-upgrade-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(20, 184, 166, 0.4);
+}
+
+/* Settings Form */
+.alttextai-settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--alttextai-space-6);
+}
+
+/* Settings Card */
+.alttextai-settings-card {
+    background: var(--alttextai-white);
+    border: 1px solid var(--alttextai-gray-200);
+    border-radius: var(--alttextai-radius-2xl);
+    padding: var(--alttextai-space-6);
+    box-shadow: var(--alttextai-shadow-sm);
+}
+
+.alttextai-settings-card-header {
+    margin-bottom: var(--alttextai-space-6);
+}
+
+.alttextai-settings-card-title {
+    font-size: var(--alttextai-text-xl);
+    font-weight: var(--alttextai-font-semibold);
+    color: var(--alttextai-gray-900);
+    margin: 0 0 var(--alttextai-space-2);
+    display: flex;
+    align-items: center;
+    gap: var(--alttextai-space-2);
+}
+
+.alttextai-settings-icon {
+    font-size: var(--alttextai-text-2xl);
+}
+
+.alttextai-settings-card-desc {
+    font-size: var(--alttextai-text-sm);
+    color: var(--alttextai-text-muted);
+    margin: 0;
+}
+
+/* Settings Field */
+.alttextai-settings-field {
+    margin-bottom: var(--alttextai-space-6);
+}
+
+.alttextai-settings-field:last-child {
+    margin-bottom: 0;
+}
+
+.alttextai-settings-label {
+    display: block;
+    font-size: 0.9375rem;
+    font-weight: var(--alttextai-font-semibold);
+    color: var(--alttextai-gray-900);
+    margin-bottom: var(--alttextai-space-2);
+}
+
+/* Toggle Switch */
+.alttextai-settings-toggle-wrapper {
+    display: flex;
+    align-items: center;
+    gap: var(--alttextai-space-4);
+}
+
+.alttextai-settings-toggle {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 24px;
+}
+
+.alttextai-settings-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.alttextai-settings-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--alttextai-gray-300);
+    transition: 0.3s;
+    border-radius: 24px;
+}
+
+.alttextai-settings-toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.alttextai-settings-toggle input:checked + .alttextai-settings-toggle-slider {
+    background: var(--alttextai-gradient-primary);
+}
+
+.alttextai-settings-toggle input:checked + .alttextai-settings-toggle-slider:before {
+    transform: translateX(24px);
+}
+
+.alttextai-settings-toggle-label {
+    font-size: 0.9375rem;
+    color: var(--alttextai-gray-900);
+}
+
+/* Input Fields */
+.alttextai-settings-input,
+.alttextai-settings-textarea {
+    width: 100%;
+    padding: var(--alttextai-space-3) var(--alttextai-space-4);
+    font-size: 0.9375rem;
+    color: var(--alttextai-gray-900);
+    background: var(--alttextai-white);
+    border: 1px solid var(--alttextai-gray-300);
+    border-radius: var(--alttextai-radius-lg);
+    transition: var(--alttextai-transition-colors);
+    font-family: inherit;
+}
+
+.alttextai-settings-input:focus,
+.alttextai-settings-textarea:focus {
+    outline: none;
+    border-color: var(--alttextai-primary);
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+}
+
+.alttextai-settings-textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* Help Text */
+.alttextai-settings-help {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--alttextai-space-2);
+    font-size: var(--alttextai-text-sm);
+    color: var(--alttextai-text-muted);
+    margin: var(--alttextai-space-2) 0 0;
+    line-height: 1.5;
+}
+
+.alttextai-settings-help svg {
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+    color: var(--alttextai-gray-400);
+}
+
+/* Actions */
+.alttextai-settings-actions {
+    margin-top: var(--alttextai-space-2);
+}
+
+.alttextai-settings-save-button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--alttextai-space-2);
+    background: var(--alttextai-gradient-primary);
+    color: var(--alttextai-white);
+    font-size: var(--alttextai-text-base);
+    font-weight: var(--alttextai-font-semibold);
+    padding: 0.875rem var(--alttextai-space-8);
+    border: none;
+    border-radius: var(--alttextai-radius-xl);
+    cursor: pointer;
+    transition: var(--alttextai-transition);
+    box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+}
+
+.alttextai-settings-save-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(20, 184, 166, 0.4);
+}
+
+.alttextai-settings-save-note {
+    font-size: var(--alttextai-text-sm);
+    color: var(--alttextai-text-muted);
+    margin: var(--alttextai-space-3) 0 0;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
+@media (max-width: 768px) {
+    .alttextai-guide-container,
+    .alttextai-settings-container {
+        padding: var(--alttextai-space-4);
+    }
+
+    .alttextai-guide-title {
+        font-size: var(--alttextai-text-4xl);
+    }
+
+    .alttextai-guide-subtitle {
+        font-size: var(--alttextai-text-base);
+    }
+
+    .alttextai-guide-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .alttextai-guide-card--cta {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .alttextai-guide-cta-decoration {
+        display: none;
+    }
+
+    .alttextai-settings-title {
+        font-size: var(--alttextai-text-2xl);
+    }
+
+    .alttextai-settings-usage-stats {
+        flex-direction: column;
+        gap: var(--alttextai-space-3);
+    }
+
+    .alttextai-settings-usage-stat {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .alttextai-guide-card {
+        padding: var(--alttextai-space-6);
+    }
+
+    .alttextai-guide-step-number {
+        width: 40px;
+        height: 40px;
+        font-size: var(--alttextai-text-lg);
+    }
+
+    .alttextai-settings-card {
+        padding: var(--alttextai-space-4);
+    }
+
+    .alttextai-settings-save-button {
+        width: 100%;
+        justify-content: center;
+    }
+}

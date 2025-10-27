@@ -104,6 +104,30 @@ jQuery(document).ready(function($) {
             <h2><?php esc_html_e('Unlock More AI-Powered Alt Text', 'ai-alt-gpt'); ?></h2>
             <p><?php esc_html_e('Choose a plan that fits your needs and start generating professional alt text at scale.', 'ai-alt-gpt'); ?></p>
         </div>
+        <?php
+            $missing_plans = [];
+            if (empty($pro_price_id)) {
+                $missing_plans[] = __('Pro', 'ai-alt-gpt');
+            }
+            if (empty($agency_price_id)) {
+                $missing_plans[] = __('Agency', 'ai-alt-gpt');
+            }
+            if (empty($credits_price_id)) {
+                $missing_plans[] = __('Credits', 'ai-alt-gpt');
+            }
+            if (!empty($missing_plans)) :
+        ?>
+            <div class="notice notice-warning" style="margin:0 0 16px 0;padding:12px 16px;">
+                <p style="margin:0;font-size:13px;">
+                    <?php
+                        printf(
+                            esc_html__('Stripe price IDs are missing for: %s. Set the matching values in your backend environment configuration to enable checkout.', 'ai-alt-gpt'),
+                            esc_html(implode(', ', $missing_plans))
+                        );
+                    ?>
+                </p>
+            </div>
+        <?php endif; ?>
 
         <div class="alttextai-plan-grid">
             <!-- Free Plan -->
@@ -138,7 +162,7 @@ jQuery(document).ready(function($) {
                 <a href="<?php echo esc_url($pro_url); ?>"
                    class="alttextai-plan-button alttextai-plan-button--primary alttextai-upgrade-test-link"
                    data-plan="pro"
-                   data-price-id="price_1SMrxaJl9Rm418cMM4iikjlJ"
+                   data-price-id="<?php echo esc_attr($pro_price_id); ?>"
                    target="_blank"
                    rel="noopener"
                    style="display: inline-block; text-decoration: none; text-align: center;">
@@ -161,7 +185,7 @@ jQuery(document).ready(function($) {
                 <a href="<?php echo esc_url($agency_url); ?>"
                    class="alttextai-plan-button alttextai-plan-button--secondary alttextai-upgrade-test-link"
                    data-plan="agency"
-                   data-price-id="price_1SMrxaJl9Rm418cMnJTShXSY"
+                   data-price-id="<?php echo esc_attr($agency_price_id); ?>"
                    target="_blank"
                    rel="noopener"
                    style="display: inline-block; text-decoration: none; text-align: center;">
@@ -175,7 +199,7 @@ jQuery(document).ready(function($) {
             <a href="<?php echo esc_url($credits_url); ?>"
                class="alttextai-plan-button alttextai-plan-button--credits alttextai-upgrade-test-link"
                data-plan="credits"
-               data-price-id="price_1SMrxbJl9Rm418cM0gkzZQZt"
+               data-price-id="<?php echo esc_attr($credits_price_id); ?>"
                target="_blank"
                rel="noopener"
                style="display: inline-block; text-decoration: none; text-align: center;">
