@@ -174,9 +174,9 @@ If something goes wrong:
 ### Backend Rollback
 \`\`\`bash
 cd backend
-# Restore original server
-cp server.js server-v2.js
-# Restore original .env
+# Restore API server to the previous release
+git checkout -- server-v2.js
+# Restore original .env if you kept a backup
 cp .env.backup .env
 \`\`\`
 
