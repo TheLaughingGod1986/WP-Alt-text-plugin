@@ -45,19 +45,33 @@
         },
 
         registerDismissTracking() {
-            const markDismissed = () => this.markDismissed();
+            const self = this;
+            const markDismissed = () => {
+                self.closeModal();
+                self.markDismissed();
+            };
 
-            $(document).on('click.alttextaiUpgrade', '[data-action="close-modal"]', markDismissed);
-            $(document).on('click.alttextaiUpgrade', '.alttextai-modal-backdrop', function(event) {
-                if (event.target === this) {
-                    markDismissed();
-                }
+            // Close button handler ONLY
+            $(document).on('click.alttextaiUpgrade', '[data-action="close-modal"]', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                markDismissed();
             });
+
+            // ESC key handler
             $(document).on('keydown.alttextaiUpgrade', (event) => {
                 if (event.key === 'Escape' && $('#alttextai-upgrade-modal').is(':visible')) {
                     markDismissed();
                 }
             });
+
+            // DO NOT close on backdrop clicks - let buttons work!
+            // DO NOT prevent propagation - let onclick handlers fire!
+        },
+
+        closeModal() {
+            this.modal.fadeOut(280);
+            $('body').css('overflow', '');
         },
 
         markDismissed() {

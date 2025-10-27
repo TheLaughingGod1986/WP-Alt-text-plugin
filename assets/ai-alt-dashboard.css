@@ -4,55 +4,52 @@
  */
 
 /* ========================================
-   🎨 COLOR PALETTE & DESIGN TOKENS
+   🎨 DESIGN TOKENS - Using Global Design System
    ======================================== */
+/* All design tokens now come from design-system.css */
+/* Legacy variable mappings for backward compatibility */
 :root {
-    /* Primary Gradient Colors */
-    --ai-alt-gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --ai-alt-gradient-danger: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    --ai-alt-gradient-info: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    --ai-alt-gradient-success: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-    --ai-alt-gradient-warning: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-    --ai-alt-gradient-achievement: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
-    
-    /* Accent Colors */
-    --ai-alt-purple: #667eea;
-    --ai-alt-pink: #f5576c;
-    --ai-alt-blue: #4facfe;
-    --ai-alt-green: #43e97b;
-    --ai-alt-orange: #ff6b6b;
-    --ai-alt-gold: #ffd700;
-    
-    /* Neutral Colors */
-    --ai-alt-dark: #2d3748;
-    --ai-alt-gray: #718096;
-    --ai-alt-light-gray: #e2e8f0;
-    --ai-alt-white: #ffffff;
-    
-    /* Shadows */
-    --ai-alt-shadow-sm: 0 2px 4px rgba(0,0,0,0.06);
-    --ai-alt-shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
-    --ai-alt-shadow-lg: 0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05);
-    --ai-alt-shadow-xl: 0 20px 25px rgba(0,0,0,0.15), 0 10px 10px rgba(0,0,0,0.04);
-    --ai-alt-shadow-focus: 0 0 0 3px rgba(102, 126, 234, 0.15);
-    
-    /* Spacing */
-    --ai-alt-spacing-xs: 0.25rem;
-    --ai-alt-spacing-sm: 0.5rem;
-    --ai-alt-spacing-md: 1rem;
-    --ai-alt-spacing-lg: 1.5rem;
-    --ai-alt-spacing-xl: 2rem;
-    --ai-alt-spacing-2xl: 3rem;
-    
-    /* Border Radius */
-    --ai-alt-radius-sm: 0.375rem;
-    --ai-alt-radius-md: 0.5rem;
-    --ai-alt-radius-lg: 0.75rem;
-    --ai-alt-radius-xl: 1rem;
-    --ai-alt-radius-full: 9999px;
-    
-    /* Transitions */
-    --ai-alt-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Map old variables to new global design system */
+    --ai-alt-gradient-primary: var(--alttextai-gradient-primary);
+    --ai-alt-gradient-danger: var(--alttextai-gradient-secondary);
+    --ai-alt-gradient-info: var(--alttextai-gradient-primary);
+    --ai-alt-gradient-success: var(--alttextai-gradient-success);
+    --ai-alt-gradient-warning: var(--alttextai-gradient-warning);
+    --ai-alt-gradient-achievement: var(--alttextai-gradient-warning);
+
+    --ai-alt-primary: var(--alttextai-primary);
+    --ai-alt-purple: var(--alttextai-primary);
+    --ai-alt-pink: var(--alttextai-danger);
+    --ai-alt-blue: var(--alttextai-info);
+    --ai-alt-green: var(--alttextai-success);
+    --ai-alt-orange: var(--alttextai-warning);
+    --ai-alt-gold: var(--alttextai-warning);
+
+    --ai-alt-dark: var(--alttextai-text-primary);
+    --ai-alt-gray: var(--alttextai-text-muted);
+    --ai-alt-light-gray: var(--alttextai-border-color);
+    --ai-alt-white: var(--alttextai-white);
+
+    --ai-alt-shadow-sm: var(--alttextai-shadow-sm);
+    --ai-alt-shadow-md: var(--alttextai-shadow-md);
+    --ai-alt-shadow-lg: var(--alttextai-shadow-lg);
+    --ai-alt-shadow-xl: var(--alttextai-shadow-xl);
+    --ai-alt-shadow-focus: var(--alttextai-input-focus-ring);
+
+    --ai-alt-spacing-xs: var(--alttextai-space-1);
+    --ai-alt-spacing-sm: var(--alttextai-space-2);
+    --ai-alt-spacing-md: var(--alttextai-space-4);
+    --ai-alt-spacing-lg: var(--alttextai-space-6);
+    --ai-alt-spacing-xl: var(--alttextai-space-8);
+    --ai-alt-spacing-2xl: var(--alttextai-space-12);
+
+    --ai-alt-radius-sm: var(--alttextai-radius-md);
+    --ai-alt-radius-md: var(--alttextai-radius-lg);
+    --ai-alt-radius-lg: var(--alttextai-radius-xl);
+    --ai-alt-radius-xl: var(--alttextai-radius-2xl);
+    --ai-alt-radius-full: var(--alttextai-radius-full);
+
+    --ai-alt-transition: var(--alttextai-transition);
     --ai-alt-transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
@@ -90,8 +87,8 @@
     display: inline-flex;
     align-items: center;
     gap: var(--ai-alt-spacing-sm);
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.9);
+    /* backdrop-filter removed to prevent blur */
     padding: var(--ai-alt-spacing-sm) var(--ai-alt-spacing-md);
     border-radius: var(--ai-alt-radius-full);
     font-weight: 700;
@@ -712,6 +709,11 @@
 
 .ai-alt-toast.error {
     border-left-color: var(--ai-alt-orange);
+}
+
+.ai-alt-toast.warning {
+    border-left-color: #f59e0b;
+    background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
 }
 
 .ai-alt-toast.info {

@@ -244,9 +244,13 @@ class AltText_AI_Queue {
         global $wpdb;
         $table = self::table();
         $wpdb->query(
-            "UPDATE {$table}
-             SET status = 'pending', locked_at = NULL
-             WHERE status = 'failed'"
+            $wpdb->prepare(
+                "UPDATE {$table}
+                 SET status = %s, locked_at = NULL, last_error = NULL
+                 WHERE status = %s",
+                'pending',
+                'failed'
+            )
         );
     }
 
@@ -266,6 +270,39 @@ class AltText_AI_Queue {
     }
 
     /**
+     * Clean up pending jobs for attachments that already have alt text.
+     * This removes stale jobs that are no longer needed.
+     */
+    public static function cleanup_redundant_jobs() {
+        global $wpdb;
+        $table = self::table();
+
+        // Get all pending jobs
+        $pending_jobs = $wpdb->get_results(
+            "SELECT id, attachment_id FROM {$table} WHERE status = 'pending'",
+            ARRAY_A
+        );
+
+        if (empty($pending_jobs)) {
+            return 0;
+        }
+
+        $cleaned = 0;
+        foreach ($pending_jobs as $job) {
+            $attachment_id = intval($job['attachment_id']);
+            $alt_text = get_post_meta($attachment_id, '_wp_attachment_image_alt', true);
+
+            // If the image already has alt text, mark this job as completed
+            if (!empty($alt_text)) {
+                self::mark_complete($job['id']);
+                $cleaned++;
+            }
+        }
+
+        return $cleaned;
+    }
+
+    /**
      * Reset stale processing jobs back to pending.
      */
     public static function reset_stale($timeout = 600) {
@@ -282,91 +319,19 @@ class AltText_AI_Queue {
     }
 
     /**
-     * Process the queue
-     */
-    public static function process() {
-        global $wpdb;
-        $table = self::table();
-        
-        // Get pending items
-        $items = $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM {$table} WHERE status = 'pending' ORDER BY created_at ASC LIMIT %d",
-            5 // Process up to 5 items at a time
-        ));
-        
-        foreach ($items as $item) {
-            // Update status to processing
-            $wpdb->update(
-                $table,
-                ['status' => 'processing', 'updated_at' => current_time('mysql')],
-                ['id' => $item->id],
-                ['%s', '%s'],
-                ['%d']
-            );
-            
-            try {
-                // Generate alt text for the attachment
-                $result = self::generate_alt_text($item->attachment_id);
-                
-                if ($result['success']) {
-                    // Update status to completed
-                    $wpdb->update(
-                        $table,
-                        [
-                            'status' => 'completed',
-                            'updated_at' => current_time('mysql'),
-                            'completed_at' => current_time('mysql')
-                        ],
-                        ['id' => $item->id],
-                        ['%s', '%s', '%s'],
-                        ['%d']
-                    );
-                } else {
-                    // Update status to failed
-                    $wpdb->update(
-                        $table,
-                        [
-                            'status' => 'failed',
-                            'error_message' => $result['error'],
-                            'updated_at' => current_time('mysql')
-                        ],
-                        ['id' => $item->id],
-                        ['%s', '%s', '%s'],
-                        ['%d']
-                    );
-                }
-            } catch (Exception $e) {
-                // Update status to failed
-                $wpdb->update(
-                    $table,
-                    [
-                        'status' => 'failed',
-                        'error_message' => $e->getMessage(),
-                        'updated_at' => current_time('mysql')
-                    ],
-                    ['id' => $item->id],
-                    ['%s', '%s', '%s'],
-                    ['%d']
-                );
-            }
-        }
-    }
-    
-    /**
-     * Generate alt text for an attachment
-     */
-    private static function generate_alt_text($attachment_id) {
-        // This is a placeholder - you'll need to implement the actual alt text generation
-        // For now, just return success
-        return ['success' => true, 'alt_text' => 'Generated alt text'];
-    }
-
-    /**
      * Get queue statistics.
      */
     public static function get_stats() {
         global $wpdb;
         $table = self::table();
+
+        // Auto-cleanup redundant pending jobs (images that already have alt text)
+        // This runs every hour to keep the queue clean
+        $last_cleanup = get_transient('alttextai_queue_last_cleanup');
+        if (false === $last_cleanup) {
+            self::cleanup_redundant_jobs();
+            set_transient('alttextai_queue_last_cleanup', time(), HOUR_IN_SECONDS);
+        }
 
         $counts = $wpdb->get_results("SELECT status, COUNT(*) as total FROM {$table} GROUP BY status", OBJECT_K);
         $pending     = isset($counts['pending']) ? intval($counts['pending']->total) : 0;
@@ -393,18 +358,7 @@ class AltText_AI_Queue {
      * Get failed jobs with details.
      */
     public static function get_failures() {
-        global $wpdb;
-        $table = self::table();
-
-        $failures = $wpdb->get_results($wpdb->prepare(
-            "SELECT id, attachment_id, error_message, created_at FROM {$table} 
-             WHERE status = 'failed' 
-             ORDER BY created_at DESC 
-             LIMIT %d",
-            10
-        ));
-
-        return $failures ?: [];
+        return self::get_recent_failures(10);
     }
 
     /**
@@ -428,13 +382,20 @@ class AltText_AI_Queue {
     public static function get_recent_failures($limit = 10) {
         global $wpdb;
         $table = self::table();
+        $limit = max(1, intval($limit));
+
         return $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$table} WHERE status = 'failed' ORDER BY id DESC LIMIT %d",
-                max(1, intval($limit))
+                "SELECT id, attachment_id, status, attempts, source, last_error, enqueued_at, locked_at, completed_at
+                 FROM {$table}
+                 WHERE status = %s
+                 ORDER BY id DESC
+                 LIMIT %d",
+                'failed',
+                $limit
             ),
             ARRAY_A
-        );
+        ) ?: [];
     }
 
     /**

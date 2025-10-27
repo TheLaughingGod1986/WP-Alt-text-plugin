@@ -5,9 +5,26 @@
 
 class AltTextAuthModal {
     constructor() {
-        this.apiUrl = window.alttextai_ajax?.api_url || 'http://host.docker.internal:3001';
+        this.apiUrl = this.getApiUrl();
         this.token = this.getStoredToken();
         this.init();
+    }
+
+    getApiUrl() {
+        // First check for configured API URL
+        if (window.alttextai_ajax?.api_url) {
+            return window.alttextai_ajax.api_url;
+        }
+
+        // Environment-based fallback for development
+        const hostname = window.location.hostname;
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+            return 'http://localhost:3001';
+        }
+
+        // No fallback for production - fail explicitly
+        console.error('[AltText AI] API URL not configured');
+        return null;
     }
 
     init() {
@@ -175,8 +192,16 @@ class AltTextAuthModal {
 
         this.setLoading(form, true);
 
+        // Validate AJAX config exists
+        if (!window.alttextai_ajax?.ajaxurl) {
+            console.error('[AltText AI] AJAX configuration not loaded');
+            this.showError('Configuration error. Please refresh the page and try again.');
+            this.setLoading(form, false);
+            return;
+        }
+
         try {
-            const response = await fetch(window.alttextai_ajax?.ajax_url || '/wp-admin/admin-ajax.php', {
+            const response = await fetch(window.alttextai_ajax.ajaxurl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
@@ -185,7 +210,7 @@ class AltTextAuthModal {
                     action: 'alttextai_login',
                     email: email,
                     password: password,
-                    nonce: window.alttextai_ajax?.nonce || ''
+                    nonce: window.alttextai_ajax.nonce
                 })
             });
 
@@ -228,8 +253,16 @@ class AltTextAuthModal {
 
         this.setLoading(form, true);
 
+        // Validate AJAX config exists
+        if (!window.alttextai_ajax?.ajaxurl) {
+            console.error('[AltText AI] AJAX configuration not loaded');
+            this.showError('Configuration error. Please refresh the page and try again.');
+            this.setLoading(form, false);
+            return;
+        }
+
         try {
-            const response = await fetch(window.alttextai_ajax?.ajax_url || '/wp-admin/admin-ajax.php', {
+            const response = await fetch(window.alttextai_ajax.ajaxurl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
@@ -238,7 +271,7 @@ class AltTextAuthModal {
                     action: 'alttextai_register',
                     email: email,
                     password: password,
-                    nonce: window.alttextai_ajax?.nonce || ''
+                    nonce: window.alttextai_ajax.nonce
                 })
             });
 

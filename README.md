@@ -218,6 +218,23 @@ A: Yes, the plugin updates the standard WordPress ALT text field used by all the
 **Q: Can I customize the prompts?**  
 A: Yes, use the "Additional instructions" field in Settings to add custom requirements.
 
+## Build & Release
+
+Generate a WordPress-ready package with the helper script:
+
+```bash
+./build-plugin.sh
+```
+
+The build outputs `dist/ai-alt-text-generator-<version>.zip`, removing local tooling and development artefacts.  
+Install it via the WordPress admin (**Plugins → Add New → Upload Plugin**) or with WP‑CLI:
+
+```bash
+wp plugin install dist/ai-alt-text-generator-<version>.zip --activate
+```
+
+Backend deployment guidance lives in `backend/README.md`; Render configuration is provided in `backend/render-phase2.yaml`.
+
 ## Support
 
 For support, feature requests, or bug reports:

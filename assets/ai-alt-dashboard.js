@@ -121,6 +121,61 @@
             .replace(/'/g, '&#39;');
     }
 
+    function getInitialCheckoutPrices() {
+        return (
+            (window.AI_ALT_GPT_DASH && window.AI_ALT_GPT_DASH.checkoutPrices) ||
+            (window.AltTextAI && window.AltTextAI.priceIds) ||
+            (window.AI_ALT_GPT && window.AI_ALT_GPT.checkoutPrices) ||
+            {}
+        );
+    }
+
+    let checkoutPricesCache = null;
+    let checkoutPricesPromise = null;
+
+    function ensureCheckoutPrices() {
+        if (checkoutPricesCache) {
+            return Promise.resolve(checkoutPricesCache);
+        }
+
+        const initial = getInitialCheckoutPrices();
+        if (initial && Object.values(initial).some(Boolean)) {
+            checkoutPricesCache = initial;
+            return Promise.resolve(checkoutPricesCache);
+        }
+
+        if (checkoutPricesPromise) {
+            return checkoutPricesPromise;
+        }
+
+        const config = getRestConfig();
+        const endpoint =
+            (config && config.restPlans) ||
+            (window.AltTextAI && window.AltTextAI.restPlans) ||
+            (window.AI_ALT_GPT && window.AI_ALT_GPT.restPlans);
+
+        if (!endpoint) {
+            checkoutPricesCache = initial || {};
+            return Promise.resolve(checkoutPricesCache);
+        }
+
+        checkoutPricesPromise = apiRequest(config, endpoint)
+            .then((data) => {
+                const prices = data && data.prices ? data.prices : initial || {};
+                checkoutPricesCache = prices;
+                return prices;
+            })
+            .catch(() => {
+                checkoutPricesCache = initial || {};
+                return checkoutPricesCache;
+            })
+            .finally(() => {
+                checkoutPricesPromise = null;
+            });
+
+        return checkoutPricesPromise;
+    }
+
     // ========================================
     // 🎮 GAMIFICATION SYSTEM
     // ========================================
@@ -2075,69 +2130,73 @@
 
                 console.log('[AltText AI] Upgrade button clicked:', action);
 
-                // Get price ID from data attribute or default based on action
-                let priceId = $btn.data('price-id') || $btn.data('priceId');
+                ensureCheckoutPrices().then((priceMap) => {
+                    let priceId = $btn.data('price-id') || $btn.data('priceId');
 
-                if (!priceId) {
-                    // Fallback to hardcoded IDs if not specified
-                    if (action === 'upgrade-plan') {
-                        priceId = 'price_1SMrxaJl9Rm418cMM4iikjlJ'; // Pro monthly
-                    } else if (action === 'upgrade-agency') {
-                        priceId = 'price_1SMrxaJl9Rm418cMnJTShXSY'; // Agency monthly
-                    } else if (action === 'buy-credits') {
-                        priceId = 'price_1SMrxbJl9Rm418cM0gkzZQZt'; // Credits one-time
+                    if (!priceId) {
+                        if (action === 'upgrade-plan') {
+                            priceId = priceMap.pro || '';
+                        } else if (action === 'upgrade-agency') {
+                            priceId = priceMap.agency || '';
+                        } else if (action === 'buy-credits') {
+                            priceId = priceMap.credits || '';
+                        }
                     }
-                }
 
-                if (!priceId) {
-                    console.error('No price ID specified');
-                    return;
-                }
-
-                // Check if user is authenticated
-                const isAuthenticated = window.alttextai_ajax?.is_authenticated || false;
-
-                if (!isAuthenticated) {
-                    // Show auth modal if user isn't logged in
-                    if (window.AltTextAuthModal && typeof window.AltTextAuthModal.show === 'function') {
-                        window.AltTextAuthModal.show();
-                    } else {
+                    if (!priceId) {
+                        console.error('[AltText AI] No price ID available. Check backend configuration.');
                         AiAltToast.show({
-                            type: 'info',
-                            title: 'Account Required',
-                            message: 'Please create an account or sign in to upgrade.',
-                            duration: 4000
+                            type: 'error',
+                            title: 'Missing price ID',
+                            message: 'Checkout cannot start because the price ID is not available. Please verify your backend Stripe configuration.',
+                            duration: 7000
                         });
+                        return;
                     }
-                    return;
-                }
 
-                // User is authenticated - create Stripe checkout session
-                $btn.prop('disabled', true).addClass('loading');
+                    // Check if user is authenticated
+                    const isAuthenticated = window.alttextai_ajax?.is_authenticated || false;
 
-                $.ajax({
-                    url: window.alttextai_ajax?.ajaxurl || '/wp-admin/admin-ajax.php',
-                    method: 'POST',
-                    data: {
-                        action: 'alttextai_create_checkout',
-                        nonce: window.alttextai_ajax?.nonce || '',
-                        price_id: priceId
-                    },
-                    success: function(response) {
-                        if (response.success && response.data.url) {
-                            // Redirect to Stripe checkout
-                            window.location.href = response.data.url;
+                    if (!isAuthenticated) {
+                        if (window.AltTextAuthModal && typeof window.AltTextAuthModal.show === 'function') {
+                            window.AltTextAuthModal.show();
                         } else {
                             AiAltToast.show({
-                                type: 'error',
-                                title: 'Checkout Error',
-                                message: response.data?.message || 'Failed to create checkout session',
-                                duration: 5000
+                                type: 'info',
+                                title: 'Account Required',
+                                message: 'Please create an account or sign in to upgrade.',
+                                duration: 4000
                             });
-                            $btn.prop('disabled', false).removeClass('loading');
                         }
-                    },
-                    error: function(xhr, status, error) {
+                        return;
+                    }
+
+                    // User is authenticated - create Stripe checkout session
+                    $btn.prop('disabled', true).addClass('loading');
+
+                    $.ajax({
+                        url: window.alttextai_ajax?.ajaxurl || '/wp-admin/admin-ajax.php',
+                        method: 'POST',
+                        data: {
+                            action: 'alttextai_create_checkout',
+                            nonce: window.alttextai_ajax?.nonce || '',
+                            price_id: priceId
+                        },
+                        success: function(response) {
+                            if (response.success && response.data.url) {
+                                // Redirect to Stripe checkout
+                                window.location.href = response.data.url;
+                            } else {
+                                AiAltToast.show({
+                                    type: 'error',
+                                    title: 'Checkout Error',
+                                    message: response.data?.message || 'Failed to create checkout session',
+                                    duration: 5000
+                                });
+                                $btn.prop('disabled', false).removeClass('loading');
+                            }
+                        },
+                        error: function(xhr, status, error) {
                         // Log for debugging
                         console.error('[AltText AI] Checkout failed:', {
                             status: xhr.status,
@@ -2185,7 +2244,15 @@
                         });
 
                         $btn.prop('disabled', false).removeClass('loading');
-                    }
+                        }
+                    });
+                }).catch(() => {
+                    AiAltToast.show({
+                        type: 'error',
+                        title: 'Pricing Unavailable',
+                        message: 'We could not load the pricing configuration. Please refresh and try again.',
+                        duration: 6000
+                    });
                 });
             });
         },
