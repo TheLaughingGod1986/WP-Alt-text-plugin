@@ -607,6 +607,7 @@ class AI_Alt_Text_Generator_GPT {
                 $agency_test_url  = esc_url(add_query_arg($agency_plan, $checkout_base));
                 $credits_test_url = esc_url(add_query_arg($credits_plan, $checkout_base));
             ?>
+            <?php if (defined('WP_DEBUG') && WP_DEBUG) : ?>
             <div class="notice notice-info alttextai-upgrade-test-links" style="padding:16px;margin-bottom:20px;">
                 <p style="margin:0;font-weight:600;"><?php esc_html_e('Checkout Diagnostics', 'ai-alt-gpt'); ?></p>
                 <?php if (!empty($price_ids['pro']) || !empty($price_ids['agency']) || !empty($price_ids['credits'])) : ?>
@@ -648,6 +649,7 @@ class AI_Alt_Text_Generator_GPT {
                     </p>
                 <?php endif; ?>
             </div>
+            <?php endif; ?>
 
             <div class="alttextai-clean-dashboard" data-stats='<?php echo esc_attr(wp_json_encode($stats)); ?>'>
                 <?php
