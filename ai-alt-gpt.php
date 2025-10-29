@@ -2386,9 +2386,9 @@ class AI_Alt_Text_Generator_GPT {
             'audit' => $this->get_usage_rows(10),
         ];
 
-        // Cache for 5 minutes (300 seconds)
-        wp_cache_set($cache_key, $this->stats_cache, $cache_group, 5 * MINUTE_IN_SECONDS);
-        set_transient($transient_key, $this->stats_cache, 5 * MINUTE_IN_SECONDS);
+        // Cache for 15 minutes (optimized - stats don't change frequently)
+        wp_cache_set($cache_key, $this->stats_cache, $cache_group, 15 * MINUTE_IN_SECONDS);
+        set_transient($transient_key, $this->stats_cache, 15 * MINUTE_IN_SECONDS);
 
         return $this->stats_cache;
     }
