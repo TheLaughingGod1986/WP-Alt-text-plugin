@@ -659,9 +659,19 @@
     border: 1px solid rgba(99,102,241,0.2);
     padding: 14px 16px;
     color: #312e81;
-    display: flex;
+    display: none; /* Hidden by default - only show when bulk operation is active */
     flex-direction: column;
     gap: 10px;
+}
+
+/* Show only when hidden attribute is removed (when bulk operation starts) */
+.ai-alt-bulk-progress[hidden] {
+    display: none !important;
+}
+
+/* Show when hidden attribute is removed */
+.ai-alt-bulk-progress:not([hidden]) {
+    display: flex !important;
 }
 
 .ai-alt-bulk-progress__header {

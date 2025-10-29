@@ -1019,6 +1019,672 @@
 }
 
 /* ========================================
+   🔐 COMPACT AUTH STATUS STYLES
+   ======================================== */
+
+.alttextai-auth-status--compact {
+    background: var(--alttextai-success-light);
+    border: 1px solid var(--alttextai-success);
+    border-radius: var(--alttextai-radius-lg);
+    padding: var(--alttextai-space-3);
+    margin-bottom: var(--alttextai-space-4);
+}
+
+.alttextai-auth-status--compact .alttextai-auth-status__content {
+    display: flex;
+    align-items: center;
+    gap: var(--alttextai-space-3);
+}
+
+.alttextai-auth-status--compact .alttextai-auth-status__icon {
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.alttextai-auth-status--compact .alttextai-auth-status__text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.alttextai-auth-status--compact .alttextai-auth-status__title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--alttextai-success-dark);
+    margin: 0;
+}
+
+.alttextai-auth-status--compact .alttextai-auth-status__user-email {
+    font-size: 12px;
+    color: var(--alttextai-text-muted);
+    margin: 0;
+}
+
+.alttextai-auth-status--compact .alttextai-auth-status__logout-btn {
+    background: var(--alttextai-white);
+    border: 1px solid var(--alttextai-border-color);
+    color: var(--alttextai-text-primary);
+    padding: var(--alttextai-space-2) var(--alttextai-space-3);
+    border-radius: var(--alttextai-radius-md);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.alttextai-auth-status--compact .alttextai-auth-status__logout-btn:hover {
+    background: var(--alttextai-gray-50);
+    border-color: var(--alttextai-gray-300);
+}
+
+/* ========================================
+   🏷️ COMPACT AUTH BADGE (Logged In)
+   ======================================== */
+
+.alttextai-auth-badge {
+    position: fixed;
+    top: 32px;
+    right: 160px;
+    z-index: 1000;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--alttextai-space-2);
+    padding: var(--alttextai-space-2) var(--alttextai-space-3);
+    background: var(--alttextai-white);
+    border: 1px solid var(--alttextai-border-color);
+    border-radius: var(--alttextai-radius-md);
+    box-shadow: var(--alttextai-shadow-sm);
+    font-size: var(--alttextai-text-sm);
+    line-height: 1.4;
+}
+
+.alttextai-auth-badge__user {
+    color: var(--alttextai-text-primary);
+    font-weight: var(--alttextai-font-medium);
+}
+
+.alttextai-auth-badge__logout {
+    padding: 2px 8px;
+    background: transparent;
+    border: none;
+    color: var(--alttextai-text-muted);
+    font-size: var(--alttextai-text-xs);
+    font-weight: var(--alttextai-font-medium);
+    cursor: pointer;
+    text-decoration: underline;
+    transition: color 0.2s ease;
+    pointer-events: auto !important;
+    position: relative;
+    z-index: 1;
+}
+
+.alttextai-auth-badge__logout:hover {
+    color: var(--alttextai-danger);
+    text-decoration: none;
+}
+
+/* Responsive: Move to top left on small screens */
+@media (max-width: 782px) {
+    .alttextai-auth-badge {
+        right: auto;
+        left: 20px;
+        top: 10px;
+    }
+}
+
+/* ========================================
+   📋 PLAN BANNER STYLES
+   ======================================== */
+
+.alttextai-plan-banner {
+    background: var(--alttextai-success-light);
+    border: 1px solid var(--alttextai-success);
+    border-radius: var(--alttextai-radius-lg);
+    padding: var(--alttextai-space-4);
+    margin-bottom: var(--alttextai-space-6);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    overflow: visible;
+}
+
+.alttextai-plan-banner--pro {
+    background: var(--alttextai-primary-light);
+    border-color: var(--alttextai-primary);
+}
+
+.alttextai-plan-banner__copy {
+    display: flex;
+    flex-direction: column;
+    gap: var(--alttextai-space-2);
+}
+
+.alttextai-plan-badge {
+    background: var(--alttextai-success);
+    color: var(--alttextai-white);
+    padding: var(--alttextai-space-1) var(--alttextai-space-3);
+    border-radius: var(--alttextai-radius-full);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-block;
+    width: fit-content;
+    position: relative;
+    z-index: 1;
+}
+
+.alttextai-plan-badge--pro {
+    background: var(--alttextai-primary);
+}
+
+/* ========================================
+   ⏱️ TIME SAVED SECTION
+   ======================================== */
+
+.alttextai-time-saved-card {
+    margin-top: var(--alttextai-space-6);
+    margin-bottom: var(--alttextai-space-6);
+}
+
+.alttextai-time-saved-card .alttextai-dashboard-card-header {
+    margin-bottom: var(--alttextai-space-4);
+}
+
+.alttextai-seo-impact {
+    margin-top: var(--alttextai-space-2);
+    font-size: var(--alttextai-text-sm);
+    color: var(--alttextai-success);
+    font-weight: var(--alttextai-font-medium);
+}
+
+.alttextai-remaining-optimization {
+    margin-top: var(--alttextai-space-4);
+    padding-top: var(--alttextai-space-4);
+    border-top: 1px solid var(--alttextai-border-color);
+    display: flex;
+    flex-direction: column;
+    gap: var(--alttextai-space-3);
+}
+
+.alttextai-remaining-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--alttextai-space-2) 0;
+}
+
+.alttextai-remaining-label {
+    font-size: var(--alttextai-text-sm);
+    color: var(--alttextai-text-muted);
+    font-weight: var(--alttextai-font-medium);
+}
+
+.alttextai-remaining-count {
+    font-size: var(--alttextai-text-lg);
+    font-weight: var(--alttextai-font-bold);
+    color: var(--alttextai-text-primary);
+    background: var(--alttextai-info-light);
+    padding: var(--alttextai-space-1) var(--alttextai-space-3);
+    border-radius: var(--alttextai-radius-md);
+}
+
+.alttextai-hours-estimate {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--alttextai-space-3);
+    background: var(--alttextai-success-light);
+    border-radius: var(--alttextai-radius-md);
+    border: 1px solid var(--alttextai-success);
+}
+
+.alttextai-estimate-label {
+    font-size: var(--alttextai-text-sm);
+    color: var(--alttextai-success-dark);
+    font-weight: var(--alttextai-font-medium);
+}
+
+.alttextai-estimate-value {
+    font-size: var(--alttextai-text-lg);
+    font-weight: var(--alttextai-font-bold);
+    color: var(--alttextai-success-dark);
+}
+
+.alttextai-all-optimized {
+    margin-top: var(--alttextai-space-4);
+    padding: var(--alttextai-space-4);
+    background: var(--alttextai-success-light);
+    border: 1px solid var(--alttextai-success);
+    border-radius: var(--alttextai-radius-md);
+    text-align: center;
+}
+
+.alttextai-optimized-message {
+    margin: 0;
+    font-size: var(--alttextai-text-base);
+    font-weight: var(--alttextai-font-semibold);
+    color: var(--alttextai-success-dark);
+}
+
+/* ========================================
+   🎯 EMPTY STATE STYLES
+   ======================================== */
+
+.alttextai-empty-state {
+    text-align: center;
+    padding: var(--alttextai-space-8) var(--alttextai-space-4);
+}
+
+.alttextai-empty-state-text {
+    margin: 0 0 var(--alttextai-space-6) 0;
+    font-size: var(--alttextai-text-base);
+    color: var(--alttextai-text-muted);
+    line-height: 1.6;
+}
+
+/* ========================================
+   ⚡ UPGRADE CTA CARD (CRO)
+   ======================================== */
+
+.alttextai-upgrade-cta-card {
+    background: linear-gradient(135deg, var(--alttextai-primary-light) 0%, var(--alttextai-info-light) 100%);
+    border: 2px solid var(--alttextai-primary);
+    border-radius: var(--alttextai-radius-lg);
+    padding: var(--alttextai-space-6);
+    margin-top: var(--alttextai-space-6);
+    box-shadow: var(--alttextai-shadow-lg);
+}
+
+.alttextai-upgrade-cta-content {
+    display: flex;
+    align-items: center;
+    gap: var(--alttextai-space-4);
+    flex-wrap: wrap;
+}
+
+.alttextai-upgrade-cta-icon {
+    font-size: var(--alttextai-text-3xl);
+    flex-shrink: 0;
+}
+
+.alttextai-upgrade-cta-text {
+    flex: 1;
+    min-width: 200px;
+}
+
+.alttextai-upgrade-cta-text h3 {
+    margin: 0 0 var(--alttextai-space-1) 0;
+    font-size: var(--alttextai-text-xl);
+    font-weight: var(--alttextai-font-bold);
+    color: var(--alttextai-text-primary);
+}
+
+.alttextai-upgrade-cta-text p {
+    margin: 0;
+    font-size: var(--alttextai-text-sm);
+    color: var(--alttextai-text-muted);
+    line-height: 1.5;
+}
+
+.alttextai-upgrade-cta-content .alttextai-btn-primary {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+/* ========================================
+   🎨 MAIN ACTION BUTTONS
+   ======================================== */
+
+.alttextai-main-cta {
+    margin-top: var(--alttextai-space-8);
+    display: flex;
+    flex-direction: column;
+    gap: var(--alttextai-space-4);
+    align-items: center;
+}
+
+.alttextai-main-action-btn {
+    min-width: 300px;
+    width: 100%;
+    max-width: 500px;
+}
+
+.alttextai-action-hint {
+    margin-top: var(--alttextai-space-2);
+    font-size: var(--alttextai-text-sm);
+    color: var(--alttextai-text-muted);
+    text-align: center;
+    font-style: italic;
+}
+
+@media (max-width: 768px) {
+    .alttextai-upgrade-cta-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .alttextai-upgrade-cta-text {
+        min-width: auto;
+    }
+    
+    .alttextai-main-action-btn {
+        min-width: auto;
+        width: 100%;
+    }
+}
+
+.alttextai-plan-banner__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--alttextai-space-3);
+}
+
+.alttextai-plan-upgrade,
+.alttextai-plan-manage {
+    background: var(--alttextai-white);
+    border: 1px solid var(--alttextai-border-color);
+    color: var(--alttextai-text-primary);
+    padding: var(--alttextai-space-2) var(--alttextai-space-4);
+    border-radius: var(--alttextai-radius-md);
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-block;
+}
+
+.alttextai-plan-upgrade:hover,
+.alttextai-plan-manage:hover {
+    background: var(--alttextai-gray-50);
+    border-color: var(--alttextai-gray-300);
+    text-decoration: none;
+}
+
+/* ========================================
+   📊 DASHBOARD CONSISTENT STYLING
+   ======================================== */
+
+.alttextai-dashboard-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--alttextai-space-8) var(--alttextai-space-4);
+}
+
+/* Dashboard Header Section */
+.alttextai-dashboard-header {
+    text-align: center;
+    margin-bottom: var(--alttextai-space-12);
+}
+
+.alttextai-dashboard-header-icon {
+    display: inline-flex;
+    margin-bottom: var(--alttextai-space-6);
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.alttextai-dashboard-title {
+    font-size: 2.5rem;
+    font-weight: var(--alttextai-font-bold);
+    color: var(--alttextai-gray-900);
+    margin: 0 0 var(--alttextai-space-2);
+    letter-spacing: -0.025em;
+}
+
+.alttextai-dashboard-subtitle {
+    font-size: var(--alttextai-text-lg);
+    color: var(--alttextai-text-muted);
+    margin: 0;
+}
+
+/* Dashboard Cards */
+.alttextai-dashboard-card {
+    background: var(--alttextai-white);
+    border: 1px solid var(--alttextai-gray-200);
+    border-radius: var(--alttextai-radius-xl);
+    padding: var(--alttextai-space-8);
+    margin-bottom: var(--alttextai-space-8);
+    box-shadow: var(--alttextai-shadow-sm);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.alttextai-dashboard-card:hover {
+    box-shadow: var(--alttextai-shadow-md);
+    transform: translateY(-2px);
+}
+
+.alttextai-dashboard-card--featured {
+    background: linear-gradient(135deg, var(--alttextai-white) 0%, var(--alttextai-gray-50) 100%);
+    border-color: var(--alttextai-primary);
+    border-width: 2px;
+}
+
+.alttextai-dashboard-card-header {
+    margin-bottom: var(--alttextai-space-6);
+}
+
+.alttextai-dashboard-card-badge {
+    background: var(--alttextai-primary);
+    color: var(--alttextai-white);
+    padding: var(--alttextai-space-1) var(--alttextai-space-3);
+    border-radius: var(--alttextai-radius-full);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-block;
+    margin-bottom: var(--alttextai-space-4);
+}
+
+.alttextai-dashboard-card-title {
+    font-size: 1.5rem;
+    font-weight: var(--alttextai-font-bold);
+    color: var(--alttextai-gray-900);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--alttextai-space-3);
+}
+
+.alttextai-dashboard-emoji {
+    font-size: 1.25rem;
+}
+
+/* Usage Bar */
+.alttextai-dashboard-usage-bar {
+    background: var(--alttextai-gray-200);
+    border-radius: var(--alttextai-radius-full);
+    height: 8px;
+    margin-bottom: var(--alttextai-space-6);
+    overflow: hidden;
+}
+
+.alttextai-dashboard-usage-bar-fill {
+    background: linear-gradient(90deg, var(--alttextai-primary) 0%, var(--alttextai-success) 100%);
+    height: 100%;
+    border-radius: var(--alttextai-radius-full);
+    transition: width 0.3s ease;
+}
+
+/* Usage Stats */
+.alttextai-dashboard-usage-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--alttextai-space-4);
+    margin-bottom: var(--alttextai-space-6);
+}
+
+.alttextai-dashboard-usage-stat {
+    text-align: center;
+}
+
+.alttextai-dashboard-usage-label {
+    display: block;
+    font-size: var(--alttextai-text-sm);
+    color: var(--alttextai-text-muted);
+    margin-bottom: var(--alttextai-space-1);
+}
+
+.alttextai-dashboard-usage-value {
+    display: block;
+    font-size: 1.25rem;
+    font-weight: var(--alttextai-font-bold);
+    color: var(--alttextai-gray-900);
+}
+
+/* Upgrade Prompt */
+.alttextai-dashboard-upgrade-prompt {
+    background: var(--alttextai-warning-light);
+    border: 1px solid var(--alttextai-warning);
+    border-radius: var(--alttextai-radius-lg);
+    padding: var(--alttextai-space-4);
+    text-align: center;
+}
+
+.alttextai-dashboard-upgrade-prompt p {
+    margin: 0 0 var(--alttextai-space-3);
+    color: var(--alttextai-warning-dark);
+    font-weight: 500;
+}
+
+.alttextai-dashboard-upgrade-button {
+    background: var(--alttextai-primary);
+    color: var(--alttextai-white);
+    border: none;
+    border-radius: var(--alttextai-radius-md);
+    padding: var(--alttextai-space-3) var(--alttextai-space-6);
+    font-size: var(--alttextai-text-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--alttextai-space-2);
+}
+
+.alttextai-dashboard-upgrade-button:hover {
+    background: var(--alttextai-primary-dark);
+    transform: translateY(-1px);
+}
+
+/* ========================================
+   🎯 UNIFIED BUTTON SYSTEM
+   ======================================== */
+
+/* Primary Button - Used across all tabs */
+.alttextai-btn-primary {
+    background: var(--alttextai-primary);
+    color: var(--alttextai-white);
+    border: none;
+    border-radius: var(--alttextai-radius-md);
+    padding: var(--alttextai-space-3) var(--alttextai-space-6);
+    font-size: var(--alttextai-text-sm);
+    font-weight: var(--alttextai-font-semibold);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--alttextai-space-2);
+    text-decoration: none;
+    text-align: center;
+    justify-content: center;
+    min-height: 44px;
+}
+
+.alttextai-btn-primary:hover {
+    background: var(--alttextai-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--alttextai-shadow-md);
+    text-decoration: none;
+    color: var(--alttextai-white);
+}
+
+.alttextai-btn-primary:active {
+    transform: translateY(0);
+    box-shadow: var(--alttextai-shadow-sm);
+}
+
+/* Secondary Button */
+.alttextai-btn-secondary {
+    background: var(--alttextai-white);
+    color: var(--alttextai-text-primary);
+    border: 1px solid var(--alttextai-border-color);
+    border-radius: var(--alttextai-radius-md);
+    padding: var(--alttextai-space-3) var(--alttextai-space-6);
+    font-size: var(--alttextai-text-sm);
+    font-weight: var(--alttextai-font-semibold);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--alttextai-space-2);
+    text-decoration: none;
+    text-align: center;
+    justify-content: center;
+    min-height: 44px;
+}
+
+.alttextai-btn-secondary:hover {
+    background: var(--alttextai-gray-50);
+    border-color: var(--alttextai-gray-300);
+    transform: translateY(-1px);
+    text-decoration: none;
+    color: var(--alttextai-text-primary);
+}
+
+/* Success Button */
+.alttextai-btn-success {
+    background: var(--alttextai-success);
+    color: var(--alttextai-white);
+    border: none;
+    border-radius: var(--alttextai-radius-md);
+    padding: var(--alttextai-space-3) var(--alttextai-space-6);
+    font-size: var(--alttextai-text-sm);
+    font-weight: var(--alttextai-font-semibold);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--alttextai-space-2);
+    text-decoration: none;
+    text-align: center;
+    justify-content: center;
+    min-height: 44px;
+}
+
+.alttextai-btn-success:hover {
+    background: var(--alttextai-success-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--alttextai-shadow-md);
+    text-decoration: none;
+    color: var(--alttextai-white);
+}
+
+/* Button with Icon */
+.alttextai-btn-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--alttextai-space-2);
+}
+
+.alttextai-btn-icon svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+/* ========================================
    🌟 SPARKLE EFFECT
    ======================================== */
 @keyframes ai-alt-sparkle {
@@ -1030,5 +1696,221 @@
     position: absolute;
     pointer-events: none;
     animation: ai-alt-sparkle 1s ease-out forwards;
+}
+
+/* ========================================
+   🔧 WORDPRESS ADMIN FOOTER FIX
+   ======================================== */
+/* Ensure plugin doesn't interfere with WordPress admin footer layout */
+#wpbody-content .alttextai-dashboard-container,
+#wpbody-content .alttextai-guide-container,
+#wpbody-content .alttextai-settings-container {
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Preserve WordPress admin footer layout */
+#wpfooter {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    clear: both !important;
+}
+
+/* Ensure plugin content doesn't break footer flow */
+.media_page_ai-alt-gpt #wpfooter,
+.toplevel_page_ai-alt-gpt #wpfooter {
+    margin-top: 0 !important;
+    padding-top: 20px !important;
+}
+
+/* ========================================
+   🎬 DEMO PREVIEW (For Non-Authenticated Users)
+   ======================================== */
+
+.alttextai-demo-preview {
+    margin-top: var(--alttextai-space-8);
+    margin-bottom: var(--alttextai-space-16);
+    position: relative;
+}
+
+/* Demo Badge Overlay */
+.alttextai-demo-badge-overlay {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 10;
+    background: linear-gradient(135deg, var(--alttextai-primary) 0%, var(--alttextai-primary-dark) 100%);
+    color: var(--alttextai-white);
+    padding: var(--alttextai-space-2) var(--alttextai-space-4);
+    border-radius: 0 0 0 var(--alttextai-radius-md);
+    box-shadow: var(--alttextai-shadow-md);
+    font-size: var(--alttextai-text-xs);
+    font-weight: var(--alttextai-font-bold);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.alttextai-demo-badge-text {
+    position: relative;
+    z-index: 1;
+}
+
+/* Demo Mode - Grey out the real dashboard cards */
+.alttextai-demo-mode {
+    position: relative;
+    opacity: 0.75;
+    filter: grayscale(30%);
+    pointer-events: none;
+    user-select: none;
+}
+
+.alttextai-demo-mode::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.6) 0%,
+        rgba(255, 255, 255, 0.4) 50%,
+        rgba(255, 255, 255, 0.6) 100%
+    );
+    pointer-events: none;
+    border-radius: var(--alttextai-radius-lg);
+    z-index: 1;
+}
+
+.alttextai-demo-mode > * {
+    position: relative;
+    z-index: 2;
+}
+
+/* Ensure proper spacing for demo cards */
+.alttextai-demo-preview .alttextai-dashboard-card {
+    margin-bottom: var(--alttextai-space-6);
+}
+
+/* Demo CTA - Prominent and not greyed out */
+.alttextai-demo-cta {
+    text-align: center;
+    margin-top: var(--alttextai-space-10);
+    margin-bottom: var(--alttextai-space-8);
+    padding: var(--alttextai-space-8) var(--alttextai-space-6);
+    background: linear-gradient(135deg, var(--alttextai-primary-light) 0%, rgba(139, 92, 246, 0.15) 100%);
+    border-radius: var(--alttextai-radius-xl);
+    border: 2px solid var(--alttextai-primary);
+    box-shadow: var(--alttextai-shadow-lg);
+    position: relative;
+    z-index: 5;
+    opacity: 1 !important;
+    filter: none !important;
+    pointer-events: auto !important;
+}
+
+.alttextai-demo-cta-text {
+    font-size: var(--alttextai-text-xl);
+    font-weight: var(--alttextai-font-bold);
+    color: var(--alttextai-text-primary);
+    margin: 0 0 var(--alttextai-space-5) 0;
+    line-height: 1.4;
+}
+
+.alttextai-demo-cta .alttextai-btn-primary {
+    margin: 0 auto;
+    display: inline-flex;
+    font-size: var(--alttextai-text-base);
+    padding: var(--alttextai-space-3) var(--alttextai-space-8);
+    min-height: 48px;
+    box-shadow: var(--alttextai-shadow-md);
+    transition: all 0.2s ease;
+}
+
+.alttextai-demo-cta .alttextai-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--alttextai-shadow-lg);
+}
+
+/* ========================================
+   🔒 SETTINGS REQUIRED (For Non-Authenticated Users)
+   ======================================== */
+
+.alttextai-settings-required {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    padding: var(--alttextai-space-12);
+}
+
+.alttextai-settings-required-content {
+    text-align: center;
+    max-width: 500px;
+    padding: var(--alttextai-space-8);
+    background: var(--alttextai-white);
+    border-radius: var(--alttextai-radius-xl);
+    box-shadow: var(--alttextai-shadow-lg);
+    border: 2px solid var(--alttextai-border-color);
+}
+
+.alttextai-settings-required-icon {
+    font-size: 64px;
+    margin-bottom: var(--alttextai-space-4);
+    line-height: 1;
+}
+
+.alttextai-settings-required-content h2 {
+    font-size: var(--alttextai-text-2xl);
+    font-weight: var(--alttextai-font-bold);
+    color: var(--alttextai-text-primary);
+    margin: 0 0 var(--alttextai-space-4) 0;
+}
+
+.alttextai-settings-required-content p {
+    font-size: var(--alttextai-text-base);
+    color: var(--alttextai-text-muted);
+    margin: 0 0 var(--alttextai-space-6) 0;
+    line-height: 1.6;
+}
+
+.alttextai-settings-required-content .alttextai-btn-primary {
+    display: inline-flex;
+}
+
+/* ========================================
+   📐 IMPROVED SPACING & FOOTER
+   ======================================== */
+
+.alttextai-footer {
+    margin-top: var(--alttextai-space-12);
+    margin-bottom: var(--alttextai-space-8);
+    padding-top: var(--alttextai-space-6);
+    text-align: center;
+}
+
+.alttextai-upgrade-link {
+    display: inline-block;
+    color: var(--alttextai-primary);
+    font-size: var(--alttextai-text-sm);
+    font-weight: var(--alttextai-font-semibold);
+    text-decoration: none;
+    padding: var(--alttextai-space-2) var(--alttextai-space-4);
+    border-radius: var(--alttextai-radius-md);
+    transition: all 0.2s ease;
+}
+
+.alttextai-upgrade-link:hover {
+    color: var(--alttextai-primary-dark);
+    background: var(--alttextai-primary-light);
+    text-decoration: none;
+}
+
+/* Ensure proper bottom spacing */
+.alttextai-dashboard-container,
+.alttextai-demo-preview {
+    padding-bottom: var(--alttextai-space-8);
 }
 
