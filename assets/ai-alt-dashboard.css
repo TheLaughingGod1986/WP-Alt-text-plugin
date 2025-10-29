@@ -1100,6 +1100,30 @@
     line-height: 1.4;
 }
 
+/* When auth badge is in header, use relative positioning */
+.alttextai-header .alttextai-auth-badge {
+    position: relative;
+    top: auto;
+    right: auto;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--alttextai-white);
+    backdrop-filter: blur(8px);
+}
+
+.alttextai-header .alttextai-auth-badge__user {
+    color: var(--alttextai-white);
+}
+
+.alttextai-header .alttextai-auth-badge__logout {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.alttextai-header .alttextai-auth-badge__logout:hover {
+    color: var(--alttextai-white);
+    background: rgba(255, 255, 255, 0.1);
+}
+
 .alttextai-auth-badge__user {
     color: var(--alttextai-text-primary);
     font-weight: var(--alttextai-font-medium);
