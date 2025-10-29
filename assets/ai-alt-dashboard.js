@@ -74,18 +74,27 @@
         // Handle retry subscription fetch
         $(document).on('click', '#alttextai-retry-subscription', function(e) {
             e.preventDefault();
-            loadSubscriptionInfo();
+            loadSubscriptionInfo(true); // Force refresh
         });
     });
 
     /**
      * Load subscription information from backend
      */
-    function loadSubscriptionInfo() {
+    function loadSubscriptionInfo(forceRefresh) {
         const $loading = $('#alttextai-subscription-loading');
         const $error = $('#alttextai-subscription-error');
         const $info = $('#alttextai-subscription-info');
         const $freeMessage = $('#alttextai-free-plan-message');
+
+        // Check cache first (unless force refresh)
+        if (!forceRefresh) {
+            const cached = getCachedSubscriptionInfo();
+            if (cached) {
+                displaySubscriptionInfo(cached.data);
+                return;
+            }
+        }
 
         // Show loading state
         $loading.show();
@@ -109,6 +118,11 @@
                 $loading.hide();
 
                 if (response.success && response.data) {
+                    // Reset retry attempts on success
+                    resetRetryAttempts();
+                    
+                    // Cache the subscription info (5 minutes)
+                    cacheSubscriptionInfo(response.data);
                     displaySubscriptionInfo(response.data);
                     
                     // Show success notice if redirected from portal
@@ -120,12 +134,16 @@
                         if (cleanUrl !== window.location.pathname + window.location.search) {
                             window.history.replaceState({}, document.title, cleanUrl);
                         }
+                        // Force refresh cache after portal update
+                        setTimeout(function() {
+                            loadSubscriptionInfo(true);
+                        }, 2000);
                     }
-            } else {
+                } else {
                     const plan = response.data?.plan || 'free';
                     if (plan === 'free') {
                         $freeMessage.show();
-                } else {
+            } else {
                         // Provide better error messages
                         let errorMessage = response.data?.message || 'Failed to load subscription information.';
                         
@@ -147,14 +165,21 @@
                 
                 if (xhr.status === 401 || xhr.status === 403) {
                     errorMessage = 'Please log in to view your subscription information.';
+                    showSubscriptionError(errorMessage);
+                    return; // Don't retry auth errors
                 } else if (xhr.status === 404) {
                     errorMessage = 'Subscription information not found. If you just signed up, please wait a moment and refresh.';
-                } else if (xhr.status >= 500) {
-                    errorMessage = 'Service temporarily unavailable. Please try again in a few minutes.';
-                } else if (status === 'timeout') {
-                    errorMessage = 'Request timed out. Please check your internet connection and try again.';
-                }
-                
+                    showSubscriptionError(errorMessage);
+                    return; // Don't retry 404 errors
+                } else if (xhr.status >= 500 || status === 'timeout' || status === 'error') {
+                    errorMessage = 'Service temporarily unavailable. Retrying automatically...';
+                    showSubscriptionError(errorMessage);
+                    
+                    // Retry with exponential backoff
+                    retrySubscriptionLoad();
+                return;
+            }
+
                 showSubscriptionError(errorMessage);
             }
         });
@@ -175,8 +200,8 @@
         // Handle free plan
         if (!data.plan || data.plan === 'free' || data.status === 'free') {
             $freeMessage.show();
-                return;
-            }
+                    return;
+                }
 
         // Display subscription status
         const status = data.status || 'active';
@@ -209,7 +234,7 @@
                 month: 'long', 
                 day: 'numeric' 
             }));
-                } else {
+            } else {
             $('#alttextai-next-billing').text('-');
         }
 
@@ -245,6 +270,51 @@
     }
 
     /**
+     * Retry subscription load with exponential backoff
+     */
+    let retryAttempts = 0;
+    const maxRetries = 5;
+    let retryTimeout = null;
+
+    function retrySubscriptionLoad() {
+        if (retryAttempts >= maxRetries) {
+            showSubscriptionError('Service unavailable after multiple attempts. Please try again later or refresh the page.');
+            retryAttempts = 0;
+                return;
+            }
+
+        retryAttempts++;
+        
+        // Exponential backoff: 1s, 2s, 4s, 8s, 16s
+        const delay = Math.min(1000 * Math.pow(2, retryAttempts - 1), 16000);
+        
+        const $error = $('#alttextai-subscription-error');
+        $error.find('.alttextai-error-message').text(
+            'Service temporarily unavailable. Retrying in ' + Math.ceil(delay / 1000) + ' seconds... (Attempt ' + retryAttempts + '/' + maxRetries + ')'
+        );
+
+        // Clear any existing timeout
+        if (retryTimeout) {
+            clearTimeout(retryTimeout);
+        }
+
+        retryTimeout = setTimeout(function() {
+            loadSubscriptionInfo(true); // Force refresh, bypass cache
+        }, delay);
+    }
+
+    /**
+     * Reset retry attempts on successful load
+     */
+    function resetRetryAttempts() {
+        retryAttempts = 0;
+        if (retryTimeout) {
+            clearTimeout(retryTimeout);
+            retryTimeout = null;
+        }
+    }
+
+    /**
      * Show subscription error
      */
     function showSubscriptionError(message) {
@@ -272,6 +342,46 @@
             'unionpay': '💳'
         };
         return icons[brand.toLowerCase()] || '💳';
+    }
+
+    /**
+     * Cache subscription info in localStorage
+     */
+    function cacheSubscriptionInfo(data) {
+        try {
+            const cacheData = {
+                data: data,
+                timestamp: Date.now(),
+                expiry: 5 * 60 * 1000 // 5 minutes
+            };
+            localStorage.setItem('alttextai_subscription_cache', JSON.stringify(cacheData));
+        } catch (e) {
+            console.warn('[AltText AI] Could not cache subscription info:', e);
+        }
+    }
+
+    /**
+     * Get cached subscription info if still valid
+     */
+    function getCachedSubscriptionInfo() {
+        try {
+            const cached = localStorage.getItem('alttextai_subscription_cache');
+            if (!cached) return null;
+
+            const cacheData = JSON.parse(cached);
+            const age = Date.now() - cacheData.timestamp;
+
+            if (age < cacheData.expiry) {
+                return cacheData;
+            } else {
+                // Cache expired, remove it
+                localStorage.removeItem('alttextai_subscription_cache');
+                return null;
+            }
+        } catch (e) {
+            console.warn('[AltText AI] Could not read subscription cache:', e);
+            return null;
+        }
     }
 
     /**

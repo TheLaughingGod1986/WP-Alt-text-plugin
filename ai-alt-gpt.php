@@ -341,6 +341,44 @@ class AI_Alt_Text_Generator_GPT {
             </div>
             <?php
         }
+
+        // Password reset notices
+        if (!empty($_GET['password_reset']) && $_GET['password_reset'] === 'requested') {
+            ?>
+            <div class="notice notice-success is-dismissible">
+                <p><strong><?php esc_html_e('Password Reset Email Sent', 'ai-alt-gpt'); ?></strong></p>
+                <p><?php esc_html_e('Check your email inbox (and spam folder) for password reset instructions. The link will expire in 1 hour.', 'ai-alt-gpt'); ?></p>
+            </div>
+            <?php
+        }
+
+        if (!empty($_GET['password_reset']) && $_GET['password_reset'] === 'success') {
+            ?>
+            <div class="notice notice-success is-dismissible">
+                <p><strong><?php esc_html_e('Password Reset Successful', 'ai-alt-gpt'); ?></strong></p>
+                <p><?php esc_html_e('Your password has been updated. You can now sign in with your new password.', 'ai-alt-gpt'); ?></p>
+            </div>
+            <?php
+        }
+
+        // Subscription update notices
+        if (!empty($_GET['subscription_updated'])) {
+            ?>
+            <div class="notice notice-success is-dismissible">
+                <p><strong><?php esc_html_e('Subscription Updated', 'ai-alt-gpt'); ?></strong></p>
+                <p><?php esc_html_e('Your subscription information has been refreshed.', 'ai-alt-gpt'); ?></p>
+            </div>
+            <?php
+        }
+
+        if (!empty($_GET['portal_return']) && $_GET['portal_return'] === 'success') {
+            ?>
+            <div class="notice notice-success is-dismissible">
+                <p><strong><?php esc_html_e('Billing Updated', 'ai-alt-gpt'); ?></strong></p>
+                <p><?php esc_html_e('Your billing information has been updated successfully. Changes may take a few moments to reflect.', 'ai-alt-gpt'); ?></p>
+            </div>
+            <?php
+        }
     }
 
     public function render_token_notice(){

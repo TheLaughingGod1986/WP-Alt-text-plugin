@@ -47,6 +47,62 @@ class AltTextAuthModal {
         }
     }
 
+    checkPasswordStrength(fieldId, password) {
+        const strengthContainer = document.getElementById(fieldId.replace('-password', '-password-strength'));
+        const strengthFill = document.getElementById(fieldId.replace('-password', '-password-strength-fill'));
+        const strengthLabel = document.getElementById(fieldId.replace('-password', '-password-strength-label'));
+        const hint = document.getElementById(fieldId.replace('-password', '-password-hint'));
+
+        if (!strengthContainer || !strengthFill || !strengthLabel) {
+            return;
+        }
+
+        if (!password || password.length === 0) {
+            strengthContainer.style.display = 'none';
+            if (hint) hint.style.display = 'block';
+            return;
+        }
+
+        strengthContainer.style.display = 'block';
+        if (hint) hint.style.display = 'none';
+
+        let strength = 0;
+        let label = '';
+        let color = '';
+
+        // Length check
+        if (password.length >= 8) strength++;
+        if (password.length >= 12) strength++;
+
+        // Complexity checks
+        if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+        if (/\d/.test(password)) strength++;
+        if (/[^a-zA-Z\d]/.test(password)) strength++;
+
+        // Determine strength level
+        if (strength <= 1) {
+            label = 'Weak';
+            color = '#ef4444'; // red
+            strengthFill.style.width = '25%';
+        } else if (strength === 2) {
+            label = 'Fair';
+            color = '#f59e0b'; // orange
+            strengthFill.style.width = '50%';
+        } else if (strength === 3) {
+            label = 'Good';
+            color = '#3b82f6'; // blue
+            strengthFill.style.width = '75%';
+        } else {
+            label = 'Strong';
+            color = '#10b981'; // green
+            strengthFill.style.width = '100%';
+        }
+
+        strengthFill.style.backgroundColor = color;
+        strengthLabel.textContent = label;
+        strengthLabel.style.color = color;
+    }
+
     createModalHTML() {
         const modalHTML = `
             <div id="alttext-auth-modal" class="alttext-auth-modal" style="display: none;">
@@ -93,7 +149,13 @@ class AltTextAuthModal {
                                     <div class="alttext-form-group">
                                         <label for="register-password">Password</label>
                                         <input type="password" id="register-password" name="password" autocomplete="new-password" minlength="8" required>
-                                        <small>Minimum 8 characters</small>
+                                        <div class="alttext-password-strength" id="register-password-strength" style="display: none;">
+                                            <div class="alttext-password-strength-bar">
+                                                <div class="alttext-password-strength-fill" id="register-password-strength-fill"></div>
+                                            </div>
+                                            <span class="alttext-password-strength-label" id="register-password-strength-label"></span>
+                                        </div>
+                                        <small id="register-password-hint">Minimum 8 characters</small>
                                     </div>
                                     <div class="alttext-form-group">
                                         <label for="register-confirm">Confirm Password</label>
@@ -146,7 +208,13 @@ class AltTextAuthModal {
                                     <div class="alttext-form-group">
                                         <label for="reset-password">New Password</label>
                                         <input type="password" id="reset-password" name="password" autocomplete="new-password" minlength="8" required>
-                                        <small>Minimum 8 characters</small>
+                                        <div class="alttext-password-strength" id="reset-password-strength" style="display: none;">
+                                            <div class="alttext-password-strength-bar">
+                                                <div class="alttext-password-strength-fill" id="reset-password-strength-fill"></div>
+                                            </div>
+                                            <span class="alttext-password-strength-label" id="reset-password-strength-label"></span>
+                                        </div>
+                                        <small id="reset-password-hint">Minimum 8 characters</small>
                                     </div>
                                     <div class="alttext-form-group">
                                         <label for="reset-confirm">Confirm New Password</label>
@@ -263,6 +331,13 @@ class AltTextAuthModal {
             const modal = document.getElementById('alttext-auth-modal');
             if (e.key === 'Escape' && modal && modal.style.display === 'block') {
                 self.hide();
+            }
+        });
+
+        // Password strength indicator
+        document.addEventListener('input', function(e) {
+            if (e.target.id === 'reset-password' || e.target.id === 'register-password') {
+                self.checkPasswordStrength(e.target.id, e.target.value);
             }
         });
     }
@@ -507,7 +582,6 @@ class AltTextAuthModal {
             }
             
             this.showError(errorMessage);
-        } finally {
             this.setLoading(form, false);
         }
     }
