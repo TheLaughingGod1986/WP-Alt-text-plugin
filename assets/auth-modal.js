@@ -135,7 +135,7 @@ class AltTextAuthModal {
                             <!-- Login Form -->
                             <div id="alttext-login-form" class="alttext-auth-form">
                                 <h3>Sign In</h3>
-                                <form id="login-form" autocomplete="on" aria-label="Sign in to your AltText AI account">
+                                <form id="login-form" autocomplete="on" aria-label="Sign in to your SEO AI Alt Text account">
                                     <div class="alttext-form-group">
                                         <label for="login-email">Email</label>
                                         <input type="email" id="login-email" name="email" autocomplete="username" required aria-required="true">
@@ -159,7 +159,7 @@ class AltTextAuthModal {
                             <!-- Register Form -->
                             <div id="alttext-register-form" class="alttext-auth-form" style="display: none;">
                                 <h3>Create Account</h3>
-                                <form id="register-form" autocomplete="off" aria-label="Create a new AltText AI account">
+                                <form id="register-form" autocomplete="off" aria-label="Create a new SEO AI Alt Text account">
                                     <div class="alttext-form-group">
                                         <label for="register-email">Email</label>
                                         <input type="email" id="register-email" name="email" autocomplete="off" required aria-required="true">
