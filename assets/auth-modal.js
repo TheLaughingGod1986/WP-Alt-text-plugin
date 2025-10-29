@@ -628,7 +628,11 @@ class AltTextAuthModal {
                 let userMessage = rawMessage;
                 
                 // Provide actionable error messages
-                if (rawMessage.toLowerCase().includes('not found') || rawMessage.toLowerCase().includes('does not exist')) {
+                if (rawMessage.toLowerCase().includes('not yet available') || rawMessage.toLowerCase().includes('being set up') || rawMessage.toLowerCase().includes('endpoint_not_found')) {
+                    userMessage = 'Password reset is currently being set up. This feature is not yet available on our backend. Please contact support for assistance or try again later.';
+                } else if (rawMessage.toLowerCase().includes('not found') && !rawMessage.toLowerCase().includes('account')) {
+                    userMessage = 'Password reset endpoint is not available. Please contact support for assistance.';
+                } else if (rawMessage.toLowerCase().includes('not found') || rawMessage.toLowerCase().includes('does not exist')) {
                     userMessage = 'No account found with this email address. Please check the spelling or sign up for a new account.';
                 } else if (rawMessage.toLowerCase().includes('too many') || rawMessage.toLowerCase().includes('rate limit')) {
                     userMessage = 'Too many reset requests. Please wait 15 minutes before requesting another password reset.';
