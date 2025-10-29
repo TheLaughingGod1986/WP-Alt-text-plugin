@@ -1,6 +1,6 @@
-=== AI Alt Text Generator - Automatic Image Accessibility & SEO ===
+=== SEO AI Alt Text Generator - Auto Image SEO & Accessibility ===
 Contributors: benjaminoats
-Tags: accessibility, alt text, SEO, images, AI, WCAG, screen reader, image optimization, bulk edit, WooCommerce, artificial intelligence, automatic alt text, image accessibility, SEO optimization, bulk processing, accessibility compliance, image descriptions, WordPress SEO, GPT, OpenAI, image alt attribute, media library, WCAG compliant, ADA compliant, screen reader compatible, image SEO, automated alt text, bulk alt text, image accessibility tool
+Tags: SEO, SEO AI, image SEO, alt text SEO, SEO optimization, Google image SEO, image search ranking, keyword optimization, automated SEO, SEO tool, search engine optimization, image meta tags, AI alt text, artificial intelligence, accessibility, alt text, images, AI, WCAG, screen reader, image optimization, bulk edit, WooCommerce, automatic alt text, image accessibility, bulk processing, accessibility compliance, image descriptions, WordPress SEO, GPT, OpenAI, image alt attribute, media library, WCAG compliant, ADA compliant, screen reader compatible, automated alt text, bulk alt text, image accessibility tool
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
@@ -8,11 +8,11 @@ Stable tag: 4.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-🚀 Automatically generate high-quality, SEO-optimized alt text for WordPress images using advanced AI technology. Improve website accessibility (WCAG 2.1 compliant), boost search engine rankings, enhance user experience, and save hours of manual work. **Free tier includes 50 AI-generated alt texts per month—no credit card required!**
+🚀 Advanced SEO AI automatically generates keyword-optimized alt text for WordPress images. Boost Google image search rankings, improve accessibility (WCAG 2.1 compliant), enhance SEO performance, and save hours of manual work. **The #1 SEO-powered AI alt text plugin for WordPress. Free tier includes 50 AI-generated SEO-optimized alt texts per month—no credit card required!**
 
 == Description ==
 
-**AI Alt Text Generator** uses advanced artificial intelligence (GPT-4 technology) to automatically create descriptive, accessible, and SEO-optimized alt text for all your WordPress images. The #1 WordPress plugin for automatic alt text generation. Make your website WCAG 2.1 Level AA compliant, improve Google search rankings, boost image SEO, and provide a better experience for all users—no technical knowledge required.
+**SEO AI Alt Text Generator** uses advanced artificial intelligence (GPT-4 technology) to automatically create SEO-optimized, keyword-rich, and accessible alt text for all your WordPress images. The #1 WordPress plugin for AI-powered image SEO and automatic alt text generation. Significantly improve Google image search rankings, boost website SEO, make your website WCAG 2.1 Level AA compliant, and provide a better experience for all users—no technical knowledge required.
 
 **Perfect for:** WordPress websites, blogs, e-commerce stores (WooCommerce), news sites, content creators, and anyone who wants to improve their site's accessibility and SEO without spending hours manually writing alt text.
 

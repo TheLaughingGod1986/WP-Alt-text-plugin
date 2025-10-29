@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: AI Alt Text Generator - Automatic Image Accessibility & SEO
+ * Plugin Name: SEO AI Alt Text Generator - Auto Image SEO & Accessibility
  * Plugin URI: https://wordpress.org/plugins/ai-alt-text-generator/
- * Description: Automatically generate high-quality, SEO-optimized alt text for WordPress images using AI. Improve accessibility (WCAG compliant), boost search rankings, and save hours of manual work. Free tier: 50 generations/month. Perfect for accessibility, SEO, e-commerce, and content creators.
+ * Description: Advanced SEO AI automatically generates keyword-optimized alt text for WordPress images. Boost Google image rankings, improve accessibility (WCAG compliant), and enhance SEO with AI-powered descriptions. Free tier: 50 AI generations/month. Perfect for SEO optimization, image search rankings, accessibility, e-commerce, and content creators.
  * Version: 4.2.0
  * Author: Benjamin Oats
  * License: GPLv2 or later
@@ -13,7 +13,7 @@
  * Tested up to: 6.7
  * Requires PHP: 7.4
  * Network: false
- * Tags: accessibility, alt text, SEO, images, AI, WCAG, screen reader, image optimization, bulk edit, WooCommerce, artificial intelligence, automatic alt text, image accessibility, SEO optimization, bulk processing, accessibility compliance, image descriptions, WordPress SEO
+ * Tags: SEO, SEO AI, image SEO, alt text SEO, SEO optimization, Google image SEO, image search ranking, AI alt text, artificial intelligence, automated SEO, keyword optimization, accessibility, alt text, images, AI, WCAG, screen reader, image optimization, bulk edit, WooCommerce, automatic alt text, image accessibility, bulk processing, accessibility compliance, image descriptions, WordPress SEO, SEO tool, image meta tags, search engine optimization
  */
 
 if (!defined('ABSPATH')) { exit; }
@@ -606,7 +606,7 @@ class AI_Alt_Text_Generator_GPT {
                             <path d="M12 10L16 22L20 10" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             <path d="M13 18H19" stroke="white" stroke-width="2" stroke-linecap="round"/>
                         </svg>
-                        <span class="alttextai-logo-text">AltText AI</span>
+                        <span class="alttextai-logo-text">SEO AI Alt Text</span>
                     </div>
                     <?php if (!empty($tabs) && count($tabs) > 1) : ?>
                     <nav class="alttextai-nav">

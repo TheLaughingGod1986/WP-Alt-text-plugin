@@ -23,8 +23,8 @@ $is_authenticated = $this->api_client->is_authenticated();
     <div class="alttextai-upgrade-modal__content">
         <div class="alttextai-upgrade-modal__header">
             <div class="alttextai-upgrade-modal__header-content">
-                <h2 id="alttextai-upgrade-modal-title"><?php esc_html_e('Unlock Unlimited AI Alt Text Generation', 'ai-alt-gpt'); ?></h2>
-                <p class="alttextai-upgrade-modal__subtitle" id="alttextai-upgrade-modal-desc"><?php esc_html_e('Save hours of manual work and boost your SEO instantly', 'ai-alt-gpt'); ?></p>
+                <h2 id="alttextai-upgrade-modal-title"><?php esc_html_e('Unlock Unlimited SEO AI Alt Text Generation', 'ai-alt-gpt'); ?></h2>
+                <p class="alttextai-upgrade-modal__subtitle" id="alttextai-upgrade-modal-desc"><?php esc_html_e('Boost Google image rankings, improve SEO, and save hours of manual work', 'ai-alt-gpt'); ?></p>
             </div>
             <button type="button" class="alttextai-modal-close" onclick="alttextaiCloseModal();" aria-label="<?php esc_attr_e('Close upgrade modal', 'ai-alt-gpt'); ?>">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -38,7 +38,7 @@ $is_authenticated = $this->api_client->is_authenticated();
                 <!-- Not Authenticated - Show Pricing with Sign Up Note -->
                 <div class="alttextai-auth-notice">
                     <div class="alttextai-auth-notice__icon">💡</div>
-                    <p><strong><?php esc_html_e('New to AltText AI?', 'ai-alt-gpt'); ?></strong> <?php esc_html_e('You\'ll create your account during checkout. Existing users can', 'ai-alt-gpt'); ?> <a href="#" onclick="triggerSignIn(); return false;"><?php esc_html_e('sign in here', 'ai-alt-gpt'); ?></a>.</p>
+                    <p><strong><?php esc_html_e('New to SEO AI Alt Text?', 'ai-alt-gpt'); ?></strong> <?php esc_html_e('You\'ll create your account during checkout. Existing users can', 'ai-alt-gpt'); ?> <a href="#" onclick="triggerSignIn(); return false;"><?php esc_html_e('sign in here', 'ai-alt-gpt'); ?></a>.</p>
                 </div>
             <?php endif; ?>
             

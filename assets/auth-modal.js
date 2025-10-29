@@ -127,7 +127,7 @@ class AltTextAuthModal {
                 <div class="alttext-auth-modal__overlay">
                     <div class="alttext-auth-modal__content">
                         <div class="alttext-auth-modal__header">
-                            <h2 class="alttext-auth-modal__title" id="alttext-auth-modal-title">AltText AI Account</h2>
+                            <h2 class="alttext-auth-modal__title" id="alttext-auth-modal-title">SEO AI Alt Text Account</h2>
                             <button class="alttext-auth-modal__close" type="button" aria-label="Close dialog">&times;</button>
                         </div>
                         
@@ -476,7 +476,7 @@ class AltTextAuthModal {
                 // WordPress AJAX success response
                 const userData = data.data?.user || {};
                 this.hide();
-                this.showSuccess('Welcome back! You are now signed in.');
+                this.showSuccess('Welcome back! You are now signed in to SEO AI Alt Text.');
 
                 // Reload page to refresh authentication state
                 setTimeout(() => {
@@ -541,7 +541,7 @@ class AltTextAuthModal {
                 // WordPress AJAX success response
                 const userData = data.data?.user || {};
                 this.hide();
-                this.showSuccess('Account created successfully! Welcome to AltText AI.');
+                this.showSuccess('Account created successfully! Welcome to SEO AI Alt Text.');
 
                 // Reload page to refresh authentication state
                 setTimeout(() => {
