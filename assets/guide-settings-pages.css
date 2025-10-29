@@ -287,18 +287,25 @@
    ======================================== */
 
 .alttextai-settings-container {
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
     padding: var(--alttextai-space-8) var(--alttextai-space-4);
 }
 
 /* Header */
 .alttextai-settings-header {
-    margin-bottom: var(--alttextai-space-8);
+    text-align: center;
+    margin-bottom: var(--alttextai-space-12);
+}
+
+.alttextai-settings-header-icon {
+    display: inline-flex;
+    margin-bottom: var(--alttextai-space-6);
+    animation: float 3s ease-in-out infinite;
 }
 
 .alttextai-settings-title {
-    font-size: var(--alttextai-text-4xl);
+    font-size: 2.5rem;
     font-weight: var(--alttextai-font-bold);
     color: var(--alttextai-gray-900);
     margin: 0 0 var(--alttextai-space-2);
@@ -306,7 +313,7 @@
 }
 
 .alttextai-settings-subtitle {
-    font-size: var(--alttextai-text-base);
+    font-size: var(--alttextai-text-lg);
     color: var(--alttextai-text-muted);
     margin: 0;
 }

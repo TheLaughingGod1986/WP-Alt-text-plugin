@@ -333,6 +333,7 @@ class AltText_AI_Queue {
             set_transient('alttextai_queue_last_cleanup', time(), HOUR_IN_SECONDS);
         }
 
+        // Table name is already sanitized via table() method, so safe to use directly
         $counts = $wpdb->get_results("SELECT status, COUNT(*) as total FROM {$table} GROUP BY status", OBJECT_K);
         $pending     = isset($counts['pending']) ? intval($counts['pending']->total) : 0;
         $processing  = isset($counts['processing']) ? intval($counts['processing']->total) : 0;

@@ -1,216 +1,330 @@
 <?php
 /**
- * Upgrade Modal Template - Simple Redirect Version
- * @package AI_Alt_Text_Generator_GPT
+ * Upgrade Modal Template
+ * Uses JavaScript to bypass WordPress CSP restrictions
  */
 
-if (!defined('ABSPATH')) { exit; }
-
-// Currency display
-$currency = [
-    'symbol' => '$',
-    'pro' => 12.99,
-    'agency' => 49.99,
-    'credits' => 9.99
+// Get the real Stripe payment links
+$stripe_links = [
+    'pro' => 'https://buy.stripe.com/dRm28s4rc5Raf0GbY77ss02',
+    'agency' => 'https://buy.stripe.com/28E14og9U0wQ19Q4vF7ss01',
+    'credits' => 'https://buy.stripe.com/6oU9AUf5Q2EYaKq0fp7ss00'
 ];
 
-$price_ids = isset($checkout_prices) && is_array($checkout_prices) ? $checkout_prices : [];
-$pro_price_id = $price_ids['pro'] ?? '';
-$agency_price_id = $price_ids['agency'] ?? '';
-$credits_price_id = $price_ids['credits'] ?? '';
+$pro_url = $stripe_links['pro'];
+$agency_url = $stripe_links['agency'];
+$credits_url = $stripe_links['credits'];
 
-$direct_checkout_nonce = wp_create_nonce('alttextai_direct_checkout');
-$checkout_base = admin_url('admin.php');
-
-$pro_url = add_query_arg([
-    'page'               => 'ai-alt-gpt-checkout',
-    'plan'               => 'pro',
-    'price_id'           => $pro_price_id,
-    '_alttextai_nonce'   => $direct_checkout_nonce,
-], $checkout_base);
-$agency_url = add_query_arg([
-    'page'               => 'ai-alt-gpt-checkout',
-    'plan'               => 'agency',
-    'price_id'           => $agency_price_id,
-    '_alttextai_nonce'   => $direct_checkout_nonce,
-], $checkout_base);
-$credits_url = add_query_arg([
-    'page'               => 'ai-alt-gpt-checkout',
-    'type'               => 'credits',
-    'price_id'           => $credits_price_id,
-    '_alttextai_nonce'   => $direct_checkout_nonce,
-], $checkout_base);
+// Check if user is authenticated
+$is_authenticated = $this->api_client->is_authenticated();
 ?>
 
-<script>
-// Close modal function
-window.alttextaiCloseModal = function() {
-    console.log('[AltText AI] Closing modal');
-    jQuery('#alttextai-upgrade-modal').fadeOut(280);
-    jQuery('body').css('overflow', '');
-    return false;
-};
-
-// Prevent clicks inside modal content from closing modal, BUT allow links to work
-jQuery(document).ready(function($) {
-    $('.alttextai-upgrade-modal__content').on('click', function(e) {
-        // Don't stop propagation for links - let them navigate
-        if (!$(e.target).closest('a').length) {
-            e.stopPropagation();
-        }
-    });
-
-    $(document).on('click', '.alttextai-upgrade-test-link', function() {
-        const $link = $(this);
-        console.group('[AltText AI] Checkout Link Clicked');
-        console.log('Plan:', $link.data('plan'));
-        console.log('Price ID:', $link.data('price-id'));
-        console.log('Destination href:', $link.attr('href'));
-        console.log('Timestamp:', new Date().toISOString());
-        console.log('Target window:', $link.attr('target') || 'same window');
-        console.groupEnd();
-
-        setTimeout(function() {
-            console.warn('[AltText AI] If no new tab opened or you saw a 404/blank page, copy the URL above and share it so we can trace the backend call.');
-        }, 2000);
-    });
-
-    (function checkForErrors() {
-        try {
-            const params = new URLSearchParams(window.location.search);
-            const errorMessage = params.get('checkout_error');
-            if (errorMessage) {
-                console.error('[AltText AI] Checkout error:', decodeURIComponent(errorMessage));
-            }
-        } catch (err) {
-            console.error('[AltText AI] Unable to parse checkout error:', err);
-        }
-    })();
-});
-</script>
-
-<div id="alttextai-upgrade-modal" class="alttextai-modal" style="display:none;">
-    <div class="alttextai-modal-backdrop" onclick="window.alttextaiCloseModal();"></div>
+<div id="alttextai-upgrade-modal" class="alttextai-modal-backdrop" style="display: none;">
     <div class="alttextai-upgrade-modal__content">
-        <button class="alttextai-modal__close" onclick="window.alttextaiCloseModal(); return false;" aria-label="<?php esc_attr_e('Close upgrade modal', 'ai-alt-gpt'); ?>">×</button>
         <div class="alttextai-upgrade-modal__header">
-            <div class="alttextai-upgrade-modal__icon-wrapper">
-                <svg class="alttextai-upgrade-modal__rocket" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-                    <path fill="#EF4444" d="M32 4 c8 0 16 8 20 16 s4 16 0 24 c-4 8-12 16-20 16 s-16-8-20-16 s-4-16 0-24 C16 12 24 4 32 4z"/>
-                    <circle cx="32" cy="28" r="6" fill="#FEE2E2"/>
-                    <path fill="#DC2626" d="M20 48 c0-4 4-8 12-8 s12 4 12 8 l-24 0z"/>
+            <div class="alttextai-upgrade-modal__header-content">
+                <h2><?php esc_html_e('Unlock Unlimited AI Alt Text Generation', 'ai-alt-gpt'); ?></h2>
+                <p class="alttextai-upgrade-modal__subtitle"><?php esc_html_e('Save hours of manual work and boost your SEO instantly', 'ai-alt-gpt'); ?></p>
+            </div>
+            <button type="button" class="alttextai-modal-close" onclick="alttextaiCloseModal();" aria-label="<?php esc_attr_e('Close', 'ai-alt-gpt'); ?>">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
-            </div>
-            <h2><?php esc_html_e('Unlock More AI-Powered Alt Text', 'ai-alt-gpt'); ?></h2>
-            <p><?php esc_html_e('Choose a plan that fits your needs and start generating professional alt text at scale.', 'ai-alt-gpt'); ?></p>
+            </button>
         </div>
-        <?php
-            $missing_plans = [];
-            if (empty($pro_price_id)) {
-                $missing_plans[] = __('Pro', 'ai-alt-gpt');
-            }
-            if (empty($agency_price_id)) {
-                $missing_plans[] = __('Agency', 'ai-alt-gpt');
-            }
-            if (empty($credits_price_id)) {
-                $missing_plans[] = __('Credits', 'ai-alt-gpt');
-            }
-            if (!empty($missing_plans)) :
-        ?>
-            <div class="notice notice-warning" style="margin:0 0 16px 0;padding:12px 16px;">
-                <p style="margin:0;font-size:13px;">
-                    <?php
-                        printf(
-                            esc_html__('Stripe price IDs are missing for: %s. Set the matching values in your backend environment configuration to enable checkout.', 'ai-alt-gpt'),
-                            esc_html(implode(', ', $missing_plans))
-                        );
-                    ?>
-                </p>
-            </div>
-        <?php endif; ?>
-
-        <div class="alttextai-plan-grid">
-            <!-- Free Plan -->
-            <div class="alttextai-plan-card">
-                <div class="alttextai-plan-card__label"><?php esc_html_e('Free', 'ai-alt-gpt'); ?></div>
-                <div class="alttextai-plan-card__price">
-                    <?php echo esc_html($currency['symbol']); ?>0<span><?php esc_html_e('/month', 'ai-alt-gpt'); ?></span>
+        
+        <div class="alttextai-upgrade-modal__body">
+            <?php if (!$is_authenticated) : ?>
+                <!-- Not Authenticated - Show Pricing with Sign Up Note -->
+                <div class="alttextai-auth-notice">
+                    <div class="alttextai-auth-notice__icon">💡</div>
+                    <p><strong><?php esc_html_e('New to AltText AI?', 'ai-alt-gpt'); ?></strong> <?php esc_html_e('You\'ll create your account during checkout. Existing users can', 'ai-alt-gpt'); ?> <a href="#" onclick="triggerSignIn(); return false;"><?php esc_html_e('sign in here', 'ai-alt-gpt'); ?></a>.</p>
                 </div>
-                <ul>
-                    <li>🎯 <?php esc_html_e('10 images / month', 'ai-alt-gpt'); ?></li>
-                    <li>✨ <?php esc_html_e('AI-powered alt text', 'ai-alt-gpt'); ?></li>
-                    <li>📊 <?php esc_html_e('Basic analytics', 'ai-alt-gpt'); ?></li>
-                </ul>
-                <button type="button" class="alttextai-plan-button alttextai-plan-button--current" disabled>
-                    <?php esc_html_e('Current Plan', 'ai-alt-gpt'); ?>
-                </button>
-            </div>
-
-            <!-- Pro Plan -->
-            <div class="alttextai-plan-card alttextai-plan-card--featured">
-                <div class="alttextai-plan-pill"><?php esc_html_e('Most Popular', 'ai-alt-gpt'); ?></div>
-                <div class="alttextai-plan-card__label"><?php esc_html_e('Pro', 'ai-alt-gpt'); ?></div>
-                <div class="alttextai-plan-card__price">
-                    <?php echo esc_html($currency['symbol'] . number_format($currency['pro'], 2)); ?><span><?php esc_html_e('/month', 'ai-alt-gpt'); ?></span>
+            <?php endif; ?>
+            
+            <!-- Pricing Plans -->
+            <div class="alttextai-pricing-container">
+                <!-- Top Row: Pro & Agency Plans -->
+                <div class="alttextai-pricing-grid-top">
+                    <!-- Pro Plan -->
+                    <div class="alttextai-plan-card alttextai-plan-card--pro">
+                        <div class="alttextai-plan-header">
+                            <h3><?php esc_html_e('Pro Plan', 'ai-alt-gpt'); ?></h3>
+                            <div class="alttextai-plan-price">
+                                <span class="alttextai-price-amount">£12.99</span>
+                                <span class="alttextai-price-period"><?php esc_html_e('/month', 'ai-alt-gpt'); ?></span>
+                            </div>
+                            <p class="alttextai-plan-value"><?php esc_html_e('Perfect for growing websites', 'ai-alt-gpt'); ?></p>
+                        </div>
+                        
+                        <div class="alttextai-plan-features">
+                            <ul>
+                                <li>
+                                    <span class="alttextai-feature-highlight"><?php esc_html_e('1,000', 'ai-alt-gpt'); ?></span>
+                                    <?php esc_html_e('AI-generated alt texts per month', 'ai-alt-gpt'); ?>
+                                </li>
+                                <li><?php esc_html_e('✅ Advanced quality scoring for SEO', 'ai-alt-gpt'); ?></li>
+                                <li><?php esc_html_e('⚡ Bulk process unlimited images', 'ai-alt-gpt'); ?></li>
+                                <li><?php esc_html_e('🎯 Priority support & assistance', 'ai-alt-gpt'); ?></li>
+                                <li><?php esc_html_e('🔌 Full API access included', 'ai-alt-gpt'); ?></li>
+                            </ul>
+                        </div>
+                        
+                        <button type="button" 
+                                class="alttextai-btn-primary alttextai-btn-icon alttextai-plan-cta"
+                                onclick="openStripeLink('<?php echo esc_js($pro_url); ?>'); return false;">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M8 2L6 6H2L6 9L4 14L8 11L12 14L10 9L14 6H10L8 2Z" fill="currentColor"/>
+                            </svg>
+                            <span><?php esc_html_e('Get Started with Pro', 'ai-alt-gpt'); ?></span>
+                        </button>
+                    </div>
+                    
+                    <!-- Agency Plan -->
+                    <div class="alttextai-plan-card alttextai-plan-card--featured alttextai-plan-card--agency">
+                        <div class="alttextai-plan-badge"><?php esc_html_e('MOST POPULAR', 'ai-alt-gpt'); ?></div>
+                        <div class="alttextai-plan-header">
+                            <h3><?php esc_html_e('Agency Plan', 'ai-alt-gpt'); ?></h3>
+                            <div class="alttextai-plan-price">
+                                <span class="alttextai-price-amount">£49.99</span>
+                                <span class="alttextai-price-period"><?php esc_html_e('/month', 'ai-alt-gpt'); ?></span>
+                            </div>
+                            <p class="alttextai-plan-value"><?php esc_html_e('Best value for agencies & professionals', 'ai-alt-gpt'); ?></p>
+                        </div>
+                        
+                        <div class="alttextai-plan-features">
+                            <ul>
+                                <li>
+                                    <span class="alttextai-feature-highlight"><?php esc_html_e('10,000', 'ai-alt-gpt'); ?></span>
+                                    <?php esc_html_e('AI-generated alt texts per month', 'ai-alt-gpt'); ?>
+                                </li>
+                                <li><?php esc_html_e('✅ Advanced quality scoring for SEO', 'ai-alt-gpt'); ?></li>
+                                <li><?php esc_html_e('⚡ Bulk process unlimited images', 'ai-alt-gpt'); ?></li>
+                                <li><?php esc_html_e('🎯 Priority support & assistance', 'ai-alt-gpt'); ?></li>
+                                <li><?php esc_html_e('🔌 Full API access included', 'ai-alt-gpt'); ?></li>
+                                <li><?php esc_html_e('🎨 White-label options for clients', 'ai-alt-gpt'); ?></li>
+                            </ul>
+                        </div>
+                        
+                        <div class="alttextai-plan-savings">
+                            <?php esc_html_e('💡 Save 15+ hours/month with automation', 'ai-alt-gpt'); ?>
+                        </div>
+                        
+                        <button type="button" 
+                                class="alttextai-btn-success alttextai-btn-icon alttextai-plan-cta"
+                                onclick="openStripeLink('<?php echo esc_js($agency_url); ?>'); return false;">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M8 2L6 6H2L6 9L4 14L8 11L12 14L10 9L14 6H10L8 2Z" fill="currentColor"/>
+                            </svg>
+                            <span><?php esc_html_e('Upgrade to Agency', 'ai-alt-gpt'); ?></span>
+                        </button>
+                    </div>
                 </div>
-                <div class="alttextai-plan-card__daily"><?php esc_html_e('~33 images per day', 'ai-alt-gpt'); ?></div>
-                <ul>
-                    <li>⭐ <?php esc_html_e('1000 images / mth', 'ai-alt-gpt'); ?></li>
-                    <li>⚡ <?php esc_html_e('Priority AI processing', 'ai-alt-gpt'); ?></li>
-                    <li>🔧 <?php esc_html_e('Keyword optimization booster', 'ai-alt-gpt'); ?></li>
-                </ul>
-                <a href="<?php echo esc_url($pro_url); ?>"
-                   class="alttextai-plan-button alttextai-plan-button--primary alttextai-upgrade-test-link"
-                   data-plan="pro"
-                   data-price-id="<?php echo esc_attr($pro_price_id); ?>"
-                   target="_blank"
-                   rel="noopener"
-                   style="display: inline-block; text-decoration: none; text-align: center;">
-                    <?php esc_html_e('Unlock 1000 AI Tags Now', 'ai-alt-gpt'); ?> →
-                </a>
-                <p class="alttextai-plan-card__badge"><?php esc_html_e('🔥 Most users choose this plan', 'ai-alt-gpt'); ?></p>
-            </div>
-
-            <!-- Agency Plan -->
-            <div class="alttextai-plan-card">
-                <div class="alttextai-plan-card__label"><?php esc_html_e('Agency', 'ai-alt-gpt'); ?></div>
-                <div class="alttextai-plan-card__price">
-                    <?php echo esc_html($currency['symbol'] . number_format($currency['agency'], 2)); ?><span><?php esc_html_e('/month', 'ai-alt-gpt'); ?></span>
+                
+                <!-- Bottom Row: Credits Pack (Full Width) -->
+                <div class="alttextai-pricing-grid-bottom">
+                    <div class="alttextai-plan-card alttextai-plan-card--credits">
+                        <div class="alttextai-plan-card-content">
+                            <div class="alttextai-plan-header">
+                                <div class="alttextai-credits-header-left">
+                                    <h3><?php esc_html_e('Credits Pack', 'ai-alt-gpt'); ?></h3>
+                                    <p class="alttextai-plan-value"><?php esc_html_e('Top up when you need more', 'ai-alt-gpt'); ?></p>
+                                </div>
+                                <div class="alttextai-plan-price">
+                                    <span class="alttextai-price-amount">£9.99</span>
+                                    <span class="alttextai-price-period"><?php esc_html_e('one-time', 'ai-alt-gpt'); ?></span>
+                                </div>
+                            </div>
+                            
+                            <div class="alttextai-plan-features alttextai-plan-features--horizontal">
+                                <ul>
+                                    <li>
+                                        <span class="alttextai-feature-highlight"><?php esc_html_e('100', 'ai-alt-gpt'); ?></span>
+                                        <?php esc_html_e('AI-generated alt texts', 'ai-alt-gpt'); ?>
+                                    </li>
+                                    <li><?php esc_html_e('⏰ Never expires - use anytime', 'ai-alt-gpt'); ?></li>
+                                    <li><?php esc_html_e('➕ Works with any plan', 'ai-alt-gpt'); ?></li>
+                                    <li><?php esc_html_e('💰 Perfect for occasional use', 'ai-alt-gpt'); ?></li>
+                                </ul>
+                            </div>
+                            
+                            <button type="button" 
+                                    class="alttextai-btn-secondary alttextai-btn-icon alttextai-plan-cta"
+                                    onclick="openStripeLink('<?php echo esc_js($credits_url); ?>'); return false;">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                    <path d="M8 2L6 6H2L6 9L4 14L8 11L12 14L10 9L14 6H10L8 2Z" fill="currentColor"/>
+                                </svg>
+                                <span><?php esc_html_e('Buy Credits', 'ai-alt-gpt'); ?></span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <ul>
-                    <li>🏢 <?php esc_html_e('10 000 images / month', 'ai-alt-gpt'); ?></li>
-                    <li>🌐 <?php esc_html_e('Multi-site license', 'ai-alt-gpt'); ?></li>
-                    <li>💬 <?php esc_html_e('Priority support', 'ai-alt-gpt'); ?></li>
-                </ul>
-                <a href="<?php echo esc_url($agency_url); ?>"
-                   class="alttextai-plan-button alttextai-plan-button--secondary alttextai-upgrade-test-link"
-                   data-plan="agency"
-                   data-price-id="<?php echo esc_attr($agency_price_id); ?>"
-                   target="_blank"
-                   rel="noopener"
-                   style="display: inline-block; text-decoration: none; text-align: center;">
-                    <?php esc_html_e('Upgrade to Agency', 'ai-alt-gpt'); ?>
-                </a>
             </div>
-        </div>
-
-        <div class="alttextai-upgrade-modal__credits">
-            <p><?php printf(esc_html__('Need a quick top-up? Buy 100 extra credits for %s (one-time, no subscription).', 'ai-alt-gpt'), esc_html($currency['symbol'] . number_format($currency['credits'], 2))); ?></p>
-            <a href="<?php echo esc_url($credits_url); ?>"
-               class="alttextai-plan-button alttextai-plan-button--credits alttextai-upgrade-test-link"
-               data-plan="credits"
-               data-price-id="<?php echo esc_attr($credits_price_id); ?>"
-               target="_blank"
-               rel="noopener"
-               style="display: inline-block; text-decoration: none; text-align: center;">
-                <?php esc_html_e('Buy 100 Credits – $11.99', 'ai-alt-gpt'); ?> →
-            </a>
-        </div>
-
-        <div class="alttextai-upgrade-modal__trust">
-            <p>🔒 <?php esc_html_e('Secure payment via Stripe', 'ai-alt-gpt'); ?></p>
-            <p>💳 <?php esc_html_e('Cancel anytime', 'ai-alt-gpt'); ?></p>
-            <p>✨ <?php esc_html_e('Instant activation', 'ai-alt-gpt'); ?></p>
+                
+                <!-- Trust Elements -->
+                <div class="alttextai-upgrade-modal__footer">
+                    <div class="alttextai-trust-elements">
+                        <div class="alttextai-trust-item">
+                            <span class="alttextai-trust-icon">🔒</span>
+                            <span class="alttextai-trust-text"><?php esc_html_e('Secure checkout via Stripe', 'ai-alt-gpt'); ?></span>
+                        </div>
+                        <div class="alttextai-trust-item">
+                            <span class="alttextai-trust-icon">✅</span>
+                            <span class="alttextai-trust-text"><?php esc_html_e('Cancel anytime', 'ai-alt-gpt'); ?></span>
+                        </div>
+                        <div class="alttextai-trust-item">
+                            <span class="alttextai-trust-icon">⚡</span>
+                            <span class="alttextai-trust-text"><?php esc_html_e('Instant activation', 'ai-alt-gpt'); ?></span>
+                        </div>
+                    </div>
+                </div>
         </div>
     </div>
 </div>
+
+<script>
+function openStripeLink(url) {
+    console.log('[AltText AI] Opening Stripe link:', url);
+    window.open(url, '_blank');
+}
+
+function alttextaiCloseModal() {
+    const modal = document.getElementById('alttextai-upgrade-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function alttextaiShowModal() {
+    const modal = document.getElementById('alttextai-upgrade-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+function triggerSignIn() {
+    console.log('[AltText AI] Triggering sign in...');
+    
+    // Close upgrade modal first
+    alttextaiCloseModal();
+    
+    // Try multiple methods to trigger auth modal
+    setTimeout(function() {
+        console.log('[AltText AI] Attempting to open auth modal...');
+        
+        // Method 1: Try to find and click the existing auth button
+        const authBtn = document.getElementById('alttextai-show-auth-login-btn');
+        if (authBtn) {
+            console.log('[AltText AI] Found auth button, clicking it');
+            authBtn.click();
+            return;
+        }
+        
+        // Method 2: Try to find and click the auth banner button
+        const bannerBtn = document.getElementById('alttextai-show-auth-banner-btn');
+        if (bannerBtn) {
+            console.log('[AltText AI] Found banner button, clicking it');
+            bannerBtn.click();
+            return;
+        }
+        
+        // Method 3: Try to trigger auth modal directly
+        if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
+            console.log('[AltText AI] Using authModal.show()');
+            window.authModal.show();
+            return;
+        }
+        
+        // Method 4: Try to find auth modal and show it
+        const authModal = document.getElementById('alttext-auth-modal');
+        if (authModal) {
+            console.log('[AltText AI] Found auth modal, showing it');
+            authModal.style.display = 'block';
+            return;
+        }
+        
+        // Method 5: Create a simple auth modal if none exists
+        console.log('[AltText AI] Creating simple auth modal');
+        createSimpleAuthModal();
+        
+    }, 100);
+}
+
+function createSimpleAuthModal() {
+    // Create a simple auth modal
+    const modalHTML = `
+        <div id="simple-auth-modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999999; display: flex; align-items: center; justify-content: center;">
+            <div style="background: white; padding: 30px; border-radius: 8px; max-width: 400px; width: 90%;">
+                <h3 style="margin-top: 0;">Sign In Required</h3>
+                <p>Please use the sign-in button in the dashboard to authenticate.</p>
+                <div style="text-align: center; margin-top: 20px;">
+                    <button onclick="document.getElementById('simple-auth-modal').remove();" style="padding: 10px 20px; background: #0073aa; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+// Close modal when clicking backdrop (but not content)
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('alttextai-upgrade-modal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                alttextaiCloseModal();
+            }
+        });
+        
+        // Prevent clicks on content from closing modal
+        const content = modal.querySelector('.alttextai-upgrade-modal__content');
+        if (content) {
+            content.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        }
+    }
+});
+</script>
+
+<style>
+.alttextai-auth-required {
+    text-align: center;
+    padding: 40px 20px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border: 1px solid #e1e5e9;
+}
+
+.alttextai-auth-required__icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.alttextai-auth-required h3 {
+    margin: 0 0 12px 0;
+    font-size: 24px;
+    color: #1a1a1a;
+}
+
+.alttextai-auth-required p {
+    margin: 0 0 24px 0;
+    color: #666;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.alttextai-auth-required__actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.alttextai-auth-required__actions .alttextai-upgrade-button {
+    min-width: 120px;
+}
+</style>

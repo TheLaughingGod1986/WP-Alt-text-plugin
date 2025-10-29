@@ -48,7 +48,12 @@ class AltText_AI_Usage_Tracker {
     /**
      * Get cached usage data
      */
-    public static function get_cached_usage() {
+    public static function get_cached_usage($force_refresh = false) {
+        // If force refresh, clear cache first
+        if ($force_refresh) {
+            delete_transient(self::CACHE_KEY);
+        }
+        
         $cached = get_transient(self::CACHE_KEY);
         
         if ($cached === false) {
@@ -97,8 +102,8 @@ class AltText_AI_Usage_Tracker {
     /**
      * Get usage stats for display
      */
-    public static function get_stats_display() {
-        $usage = self::get_cached_usage();
+    public static function get_stats_display($force_refresh = false) {
+        $usage = self::get_cached_usage($force_refresh);
         $limit = max(1, intval($usage['limit']));
         $used = max(0, intval($usage['used']));
         if ($used > $limit) { $used = $limit; }
@@ -157,5 +162,30 @@ class AltText_AI_Usage_Tracker {
      */
     public static function is_upgrade_dismissed() {
         return get_transient('alttextai_upgrade_dismissed') === true;
+    }
+    
+    /**
+     * Refresh usage data from API and update cache
+     */
+    public static function refresh_from_api($api_client = null) {
+        if (!$api_client) {
+            // Try to get API client from global instance
+            global $alttextai_plugin;
+            if (isset($alttextai_plugin) && isset($alttextai_plugin->api_client)) {
+                $api_client = $alttextai_plugin->api_client;
+            }
+        }
+        
+        if (!$api_client) {
+            return false;
+        }
+        
+        $live_usage = $api_client->get_usage();
+        if (is_array($live_usage) && !empty($live_usage)) {
+            self::update_usage($live_usage);
+            return true;
+        }
+        
+        return false;
     }
 }

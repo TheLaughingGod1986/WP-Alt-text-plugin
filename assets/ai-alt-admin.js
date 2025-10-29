@@ -1,974 +1,680 @@
 /**
- * AiAlt AI Alt Text Generator - Admin JS
- * Media Library Integration with Gamification 🎮
+ * AI Alt Text Admin JavaScript
+ * Handles bulk generate, regenerate all, and individual regenerate buttons
  */
 
 (function($) {
     'use strict';
 
-    // ========================================
-    // 🎨 MINI TOAST FOR MEDIA LIBRARY
-    // ========================================
-    const MiniToast = {
-        show(message, type = 'success') {
-            // Use main toast system (AiAltToast is globally available)
-            if (typeof window.AiAltToast !== 'undefined') {
-                window.AiAltToast.show({
-                    type: type,
-                    message: message,
-                    duration: 3000
-                });
-            }
-        }
-    };
-
-    // ========================================
-    // ✨ SPARKLE ANIMATION
-    // ========================================
-    function addSparkle(x, y) {
-        const sparkle = $('<div style="position: fixed; pointer-events: none; z-index: 999999; font-size: 1.5rem; animation: sparkleAnim 1s ease-out forwards;">✨</div>');
-        sparkle.css({ left: x + 'px', top: y + 'px' });
-        $('body').append(sparkle);
-        setTimeout(() => sparkle.remove(), 1000);
+    // Ensure AI_ALT_GPT_DASH exists (from dashboard) or use AI_ALT_GPT
+    var config = window.AI_ALT_GPT_DASH || window.AI_ALT_GPT || {};
+    
+    if (!config.rest || !config.nonce) {
+        console.error('[AI Alt Text] JavaScript configuration missing. REST URL or nonce not found.');
+        return;
     }
 
-    // Add sparkle animation CSS if not already present
-    if (!$('#ai-alt-sparkle-animation').length) {
-        $('<style id="ai-alt-sparkle-animation">@keyframes sparkleAnim { 0% { opacity: 0; transform: scale(0) rotate(0deg); } 50% { opacity: 1; transform: scale(1) rotate(180deg); } 100% { opacity: 0; transform: scale(0.5) rotate(360deg); } }</style>').appendTo('head');
-        $('<style id="ai-alt-slide-in">@keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }</style>').appendTo('head');
-    }
-
-    const LibraryQueueIndicator = {
-        config: null,
-        $badge: null,
-        timer: null,
-
-        init(config) {
-            if (!config || !config.restQueue) { return; }
-            this.config = config;
-            if (this.$badge && this.$badge.length) { return; }
-
-            this.$badge = $(
-                '<button type="button" class="ai-alt-queue-mini" data-action="refresh-queue-badge">' +
-                '<span class="ai-alt-queue-mini__dot"></span>' +
-                '<span class="ai-alt-queue-mini__label">Queue</span>' +
-                '<span class="ai-alt-queue-mini__counts"><span data-queue-badge-pending>0</span> / <span data-queue-badge-processing>0</span></span>' +
-                '</button>'
-            );
-
-            const $header = $('#wpbody-content').find('.wrap h1').first();
-            if ($header.length) {
-                $header.append(this.$badge);
-            } else {
-                $('#wpbody-content .wrap').first().prepend(this.$badge);
-            }
-
-            const self = this;
-            this.$badge.on('click', function(e){
-                e.preventDefault();
-                self.refresh(true);
-            });
-
-            this.refresh(true);
-            this.start();
-        },
-
-        start() {
-            this.stop();
-            if (!this.config || !this.config.restQueue) { return; }
-            this.timer = setInterval(() => this.refresh(true), 45000);
-        },
-
-        stop() {
-            if (this.timer) {
-                clearInterval(this.timer);
-                this.timer = null;
-            }
-        },
-
-        refresh(silent = false) {
-            if (!this.config || !this.config.restQueue) { return; }
-            const headers = {};
-            const nonce = this.config.nonce || (window.wpApiSettings ? wpApiSettings.nonce : '');
-            if (nonce) { headers['X-WP-Nonce'] = nonce; }
-
-            fetch(this.config.restQueue, {
-                method: 'GET',
-                credentials: 'same-origin',
-                headers
-            })
-            .then(res => res.ok ? res.json() : Promise.reject(res))
-            .then(data => {
-                const stats = data && data.stats ? data.stats : {};
-                const pending = parseInt(stats.pending || 0, 10);
-                const processing = parseInt(stats.processing || 0, 10);
-                const failed = parseInt(stats.failed || 0, 10);
-                this.updateBadge(pending, processing, failed);
-            })
-            .catch(() => {
-                if (!silent) {
-                    MiniToast.show('Unable to refresh queue status.', 'warning');
-                }
-            });
-        },
-
-        updateBadge(pending, processing, failed) {
-            if (!this.$badge || !this.$badge.length) { return; }
-            this.$badge.toggleClass('ai-alt-queue-mini--busy', (pending + processing) > 0);
-            this.$badge.toggleClass('ai-alt-queue-mini--error', failed > 0);
-            this.$badge.find('[data-queue-badge-pending]').text(pending);
-            this.$badge.find('[data-queue-badge-processing]').text(processing);
-        }
-    };
-
-    // ========================================
-    // 📋 ALT PREVIEW MODAL
-    // ========================================
-    const AltPreviewModal = (function() {
-        const MODAL_ID = 'ai-alt-preview-modal';
-        let currentAttachmentId = null;
-        let currentMeta = null;
-
-        function escapeHtml(text) {
-            return $('<div>').text(text || '').html();
-        }
-
-        function buildModal(payload) {
-            const stats = payload.meta.analysis || {};
-            const grade = stats.grade || '';
-            const score = typeof stats.score === 'number' ? stats.score : null;
-            const issues = Array.isArray(stats.issues) ? stats.issues : [];
-            const duplicateNotice = payload.duplicate
-                ? '<div class="ai-alt-modal__notice">This matches the existing ALT text. You can tweak it below and save.</div>'
-                : '';
-
-            return $(`
-                <div class="ai-alt-modal-overlay" id="${MODAL_ID}" role="dialog" aria-modal="true">
-                    <div class="ai-alt-modal" role="document">
-                        <button type="button" class="ai-alt-modal__close" aria-label="Close">×</button>
-                        <h2 class="ai-alt-modal__title">Fresh ALT text ready</h2>
-                        <p class="ai-alt-modal__subtitle">Fine-tune the description or apply it as-is.</p>
-                        ${duplicateNotice}
-                        <label class="ai-alt-modal__label" for="ai-alt-modal-textarea">ALT text</label>
-                        <textarea id="ai-alt-modal-textarea" class="ai-alt-modal__textarea" name="ai_alt_modal_text" rows="4">${escapeHtml(payload.alt)}</textarea>
-                        <div class="ai-alt-modal__actions">
-                            <button type="button" class="button button-primary ai-alt-modal__apply">Save ALT text</button>
-                            <button type="button" class="button ai-alt-modal__copy">Copy ALT text</button>
-                            <button type="button" class="button ai-alt-modal__dismiss">Close</button>
-                        </div>
-                        <div class="ai-alt-modal__meta">
-                            ${score !== null ? `<span class="ai-alt-modal__badge">Score: ${score}</span>` : ''}
-                            ${grade ? `<span class="ai-alt-modal__badge">${grade}</span>` : ''}
-                        </div>
-                        ${issues.length ? `<ul class="ai-alt-modal__issues">${issues.map(issue => `<li>${escapeHtml(issue)}</li>`).join('')}</ul>` : ''}
-                    </div>
-                </div>
-            `);
-        }
-
-        function copyAltText($modal) {
-            const $textarea = $modal.find('textarea[name="ai_alt_modal_text"]');
-            const altText = ($textarea.val() || '').trim();
-            if (!altText) {
-                MiniToast.show('Nothing to copy yet.', 'warning');
-                return;
-            }
-            const temp = $('<textarea style="position:absolute;left:-9999px;"></textarea>').val(altText);
-            $('body').append(temp);
-            temp[0].select();
-            try { document.execCommand('copy'); } catch (e) {}
-            temp.remove();
-            MiniToast.show('Copied ALT text to clipboard ✔️', 'success');
-        }
-
-        function submitAlt($modal) {
-            if (!currentAttachmentId || !AI_ALT_GPT.restAlt) {
-                MiniToast.show('ALT endpoint unavailable.', 'error');
-                return;
-            }
-
-            const $textarea = $modal.find('textarea[name="ai_alt_modal_text"]');
-            const newAlt = ($textarea.val() || '').trim();
-
-            if (newAlt === '') {
-                MiniToast.show('ALT text cannot be empty.', 'error');
-                return;
-            }
-
-            const $apply = $modal.find('.ai-alt-modal__apply');
-            const originalLabel = $apply.text();
-            $apply.prop('disabled', true).text('Saving…');
-
-            $.ajax({
-                url: AI_ALT_GPT.restAlt + currentAttachmentId,
-                method: 'POST',
-                data: { alt: newAlt },
-                beforeSend: function(xhr) {
-                    xhr.setRequestHeader('X-WP-Nonce', AI_ALT_GPT.nonce);
-                }
-            }).done(function(response) {
-                if (!response || !response.alt) {
-                    MiniToast.show('Something went wrong saving ALT text.', 'error');
-                    return;
-                }
-
-                MiniToast.show('ALT text updated successfully!', 'success');
-
-                const $row = findLibraryRow(response.id);
-                if ($row && $row.length) {
-                    updateLibraryRow($row, response.meta || { alt: response.alt });
-                    $row.addClass('ai-alt-library__row--updated');
-                    setTimeout(() => $row.removeClass('ai-alt-library__row--updated'), 2000);
-                }
-
-                if (response.stats) {
-                    updateGlobalStats(response.stats);
-                }
-
-                close();
-            }).fail(function(xhr) {
-                const message = xhr && xhr.responseJSON && xhr.responseJSON.message
-                    ? xhr.responseJSON.message
-                    : 'Failed to save ALT text';
-                MiniToast.show('❌ ' + message, 'error');
-            }).always(function() {
-                $apply.prop('disabled', false).text(originalLabel);
-            });
-        }
-
-        function wireEvents($modal) {
-            $modal.on('click', '.ai-alt-modal__close, .ai-alt-modal__dismiss', function() {
-                close();
-            });
-
-            $modal.on('click', '.ai-alt-modal__copy', function() {
-                copyAltText($modal);
-            });
-
-            $modal.on('click', '.ai-alt-modal__apply', function() {
-                submitAlt($modal);
-            });
-
-            $modal.on('click', function(e) {
-                if ($(e.target).is($modal)) {
-                    close();
-                }
-            });
-        }
-
-        function open(payload = {}) {
-            close();
-
-            currentAttachmentId = payload.id || null;
-            currentMeta = payload.meta || {};
-
-            const altText = payload.alt || '';
-            const modalPayload = {
-                alt: altText,
-                meta: currentMeta,
-                duplicate: !!payload.duplicate,
-            };
-
-            const $modal = buildModal(modalPayload);
-            wireEvents($modal);
-            $('body').append($modal);
-            setTimeout(() => {
-                $modal.addClass('is-visible');
-                $modal.find('textarea[name="ai_alt_modal_text"]').trigger('focus').select();
-            }, 10);
-        }
-
-        function close() {
-            const $modal = $('#' + MODAL_ID);
-            if ($modal.length) {
-                $modal.removeClass('is-visible');
-                setTimeout(() => $modal.remove(), 150);
-            }
-            currentAttachmentId = null;
-            currentMeta = null;
-        }
-
-        function handleKeydown(e) {
-            if (e.key === 'Escape') {
-                close();
-            }
-        }
-
-        $(document).on('keydown', handleKeydown);
-
-        return { open, close };
-    })();
-
-    // ========================================
-    // 🎮 MEDIA LIBRARY ROW ACTION
-    // ========================================
-    function initRowActions() {
-        $('.ai-alt-generate-row-action').on('click', function(e) {
-            e.preventDefault();
-            
-            const $link = $(this);
-            const postId = $link.data('post-id');
-            const $row = $link.closest('tr');
-            
-            if (!postId) {
-                MiniToast.show('Invalid attachment ID', 'error');
-                return;
-            }
-            
-            // Add loading state
-            $link.text('Generating... ✨');
-            $link.css('pointer-events', 'none');
-            
-            // Add sparkle effect
-            const offset = $link.offset();
-            addSparkle(offset.left, offset.top);
-            
-            // Make API request
-            $.ajax({
-                url: AI_ALT_GPT.rest + postId,
-                method: 'POST',
-                beforeSend: function(xhr) {
-                    xhr.setRequestHeader('X-WP-Nonce', AI_ALT_GPT.nonce);
-                },
-                success: function(response) {
-                    if (response && response.alt) {
-                        MiniToast.show('🎉 Alt text generated successfully!', 'success');
-                        $link.text('Regenerate Alt Text (AI)');
-                        
-                        // Highlight the row briefly
-                        $row.css('background', '#d4edda');
-                        setTimeout(() => {
-                            $row.css('background', '');
-                        }, 2000);
-                        
-                        // Update stats if available
-                        updateGlobalStats();
-                    } else {
-                        MiniToast.show('⚠️ Generated, but no alt text returned', 'warning');
-                        $link.text('Generate Alt Text (AI)');
-                    }
-                },
-                error: function(xhr) {
-                    const message = xhr.responseJSON && xhr.responseJSON.message 
-                        ? xhr.responseJSON.message 
-                        : 'Failed to generate alt text';
-                    MiniToast.show('❌ ' + message, 'error');
-                    $link.text('Generate Alt Text (AI)');
-                },
-                complete: function() {
-                    $link.css('pointer-events', '');
-                }
-            });
-        });
-    }
-
-    // ========================================
-    // 🔁 ALT LIBRARY + DASHBOARD REGENERATE
-    // ========================================
-    function setLoadingState($btn, isLoading) {
-        if (isLoading) {
-            if (!$btn.data('original-text')) {
-                $btn.data('original-text', $.trim($btn.text()));
-            }
-            $btn.prop('disabled', true).addClass('loading').text('Regenerating…');
-        } else {
-            const original = $btn.data('original-text');
-            if (original) {
-                $btn.text(original);
-            }
-            $btn.prop('disabled', false).removeClass('loading');
-        }
-    }
-
-    function formatNumber(value) {
-        if (typeof value !== 'number' || !isFinite(value)) {
-            return '0';
-        }
-        try {
-            return value.toLocaleString();
-        } catch (e) {
-            return String(value);
-        }
-    }
-
-    function recalcLibrarySummary() {
-        const $rows = $('.ai-alt-library__table tbody tr');
-        if (!$rows.length) {
-            return;
-        }
-
-        let total = 0;
-        let scoreSum = 0;
-        let healthy = 0;
-        let review = 0;
-        let critical = 0;
-
-        $rows.each(function() {
-            const $row = $(this);
-            const $scoreCell = $row.find('.ai-alt-library__score');
-            if (!$scoreCell.length) {
-                return;
-            }
-            total += 1;
-
-            const badgeText = $.trim($scoreCell.find('.ai-alt-score-badge').text());
-            const numericScore = parseInt(badgeText, 10);
-            if (!isNaN(numericScore)) {
-                scoreSum += numericScore;
-            }
-
-            const status = $scoreCell.attr('data-status');
-            if (status === 'great' || status === 'good') {
-                healthy += 1;
-            } else if (status === 'review') {
-                review += 1;
-            } else {
-                critical += 1;
-            }
-        });
-
-        const average = total > 0 ? Math.round(scoreSum / total) : 0;
-        $('[data-library-summary-average]').text(formatNumber(average));
-        $('[data-library-summary-healthy]').text(formatNumber(healthy));
-        $('[data-library-summary-review]').text(formatNumber(review));
-        $('[data-library-summary-critical]').text(formatNumber(critical));
-        $('[data-library-summary-total]').text(formatNumber(total));
-    }
-
-    function updateLibraryRow($row, meta) {
-        if (!$row || !$row.length || !meta) {
-            return;
-        }
-
-        const analysis = meta.analysis || {};
-        const score = typeof analysis.score === 'number' ? analysis.score : meta.score;
-        const status = analysis.status || meta.score_status || 'review';
-        const grade = analysis.grade || meta.score_grade || '';
-        const altText = (meta.alt || '').trim();
-
-        const $altCell = $row.find('.ai-alt-library__alt');
-        if ($altCell.length) {
-            $altCell.empty();
-            if (altText) {
-                $altCell.text(altText);
-            } else {
-                $altCell.text('(empty)');
-                $('<span class="ai-alt-library__flag"></span>')
-                    .text('Needs ALT review')
-                    .appendTo($altCell);
-            }
-        }
-
-        $row.toggleClass('ai-alt-library__row--missing', !altText);
-
-        const $scoreCell = $row.find('.ai-alt-library__score');
-        if ($scoreCell.length) {
-            $scoreCell.attr('data-status', status);
-            $scoreCell.attr('data-score', typeof score === 'number' ? score : '');
-
-            const $badge = $scoreCell.find('.ai-alt-score-badge');
-            if ($badge.length) {
-                $badge
-                    .removeClass(function(index, className) {
-                        return (className || '').split(' ')
-                            .filter(cls => cls.indexOf('ai-alt-score-badge--') === 0)
-                            .join(' ');
-                    })
-                    .addClass('ai-alt-score-badge--' + status)
-                    .text(typeof score === 'number' ? score : '—');
-            }
-
-            const $label = $scoreCell.find('.ai-alt-score-label');
-            if ($label.length) {
-                $label.text(grade || '');
-            }
-
-            const $issuesList = $scoreCell.find('.ai-alt-score-issues');
-            if (Array.isArray(analysis.issues) && analysis.issues.length) {
-                let $list = $issuesList;
-                if (!$list.length) {
-                    $list = $('<ul class="ai-alt-score-issues"></ul>').appendTo($scoreCell);
-                } else {
-                    $list.empty();
-                }
-                analysis.issues.forEach(issue => {
-                    $('<li></li>').text(issue).appendTo($list);
-                });
-            } else if ($issuesList.length) {
-                $issuesList.remove();
-            }
-        }
-
-        recalcLibrarySummary();
-    }
-
-    function findLibraryRow(id, $btnContext) {
-        if ($btnContext && $btnContext.length) {
-            const $contextRow = $btnContext.closest('tr');
-            if ($contextRow.length && parseInt($contextRow.data('id'), 10) === parseInt(id, 10)) {
-                return $contextRow;
-            }
-        }
-        const selector = `.ai-alt-library__table tbody tr[data-id="${id}"]`;
-        return $(selector).first();
-    }
-
-    function updateDashboardRow($btn, meta) {
-        if (!$btn.length || !meta) {
-            return;
-        }
-
-        const altText = (meta.alt || '').trim();
-        const $cell = $('.new-alt-cell-' + meta.id);
-        if ($cell.length) {
-            $cell.empty();
-            if (altText) {
-                $('<strong></strong>').text(altText).appendTo($cell);
-            } else {
-                $('<span class="text-muted"></span>')
-                    .text('No alt text returned')
-                    .appendTo($cell);
-            }
-        }
-    }
-
-    function handleRegenerateClick(e) {
+    /**
+     * Generate alt text for missing images
+     */
+    function handleGenerateMissing(e) {
         e.preventDefault();
-        const $btn = $(this);
-        const attachmentId = parseInt($btn.data('id') || $btn.data('attachment-id'), 10);
-
-        if (!attachmentId) {
-            MiniToast.show('Attachment ID missing', 'error');
-            return;
+        var $btn = $(this);
+        var originalText = $btn.text();
+        
+        if ($btn.prop('disabled')) {
+            return false;
         }
 
-        setLoadingState($btn, true);
+        $btn.prop('disabled', true);
+        $btn.text('Loading...');
 
-        const offset = $btn.offset();
-        if (offset) {
-            addSparkle(offset.left + ($btn.outerWidth() / 2), offset.top);
-        }
-
+        // Get list of images missing alt text
         $.ajax({
-            url: AI_ALT_GPT.rest + attachmentId,
-            method: 'POST',
-            beforeSend: function(xhr) {
-                xhr.setRequestHeader('X-WP-Nonce', AI_ALT_GPT.nonce);
+            url: config.restMissing || (config.restRoot + 'ai-alt/v1/list?scope=missing'),
+            method: 'GET',
+            headers: {
+                'X-WP-Nonce': config.nonce
+            },
+            data: {
+                limit: 500
             }
-        }).done(function(response) {
-            let handled = false;
-
-            if (response && response.alt) {
-                MiniToast.show('✨ Alt text regenerated successfully!', 'success');
-                handled = true;
-                AltPreviewModal.open({
-                    id: response.id,
-                    alt: response.alt,
-                    meta: response.meta || response.analysis || {}
-                });
-
-                if ($btn.hasClass('ai-alt-regenerate-single')) {
-                    const $row = findLibraryRow(response.id, $btn);
-                    updateLibraryRow($row, response.meta || {
-                        alt: response.alt,
-                        analysis: response.analysis || {}
-                    });
-                    if ($row && $row.length) {
-                        $row.addClass('ai-alt-library__row--updated');
-                        setTimeout(() => $row.removeClass('ai-alt-library__row--updated'), 2000);
-                    }
-                } else if ($btn.hasClass('alttextai-btn-regenerate')) {
-                    updateDashboardRow($btn, response.meta || {});
-                }
-
-                if (response.stats) {
-                    updateGlobalStats(response.stats);
-                } else {
-                    updateGlobalStats();
-                }
-            } else if (response && response.code === 'duplicate_alt') {
-                const existing = response.data && response.data.existing ? response.data.existing : '(none)';
-                MiniToast.show(`ℹ️ Alt text already matches: “${existing}”`, 'warning');
-                handled = true;
-            }
-
-            if (!handled) {
-                MiniToast.show('⚠️ No alt text was returned. Try again.', 'warning');
-            }
-        }).fail(function(xhr) {
-            const payload = xhr && xhr.responseJSON ? xhr.responseJSON : null;
-
-            if (payload && payload.code === 'duplicate_alt') {
-                const existing = payload.data && payload.data.existing ? payload.data.existing : '(no change)';
-                MiniToast.show(`ℹ️ Alt text already matches: “${existing}”`, 'info');
-
-                const $row = findLibraryRow(attachmentId, $btn);
-                if ($row && $row.length) {
-                    $row.addClass('ai-alt-library__row--updated');
-                    setTimeout(() => $row.removeClass('ai-alt-library__row--updated'), 2000);
-                }
-                AltPreviewModal.open({
-                    id: attachmentId,
-                    alt: existing,
-                    meta: payload.data || {},
-                    duplicate: true
-                });
-                setLoadingState($btn, false);
+        })
+        .done(function(response) {
+            if (!response || !response.ids || response.ids.length === 0) {
+                alert('No images found that need alt text.');
+                $btn.prop('disabled', false);
+                $btn.text(originalText);
                 return;
             }
 
-            const message = payload && payload.message
-                ? payload.message
-                : 'Failed to regenerate alt text';
-
-            MiniToast.show('❌ ' + message, 'error');
-        }).always(function() {
-            setLoadingState($btn, false);
-        });
-    }
-
-    function initLibraryRegenerate() {
-        $(document).on('click', '.ai-alt-regenerate-single, .alttextai-btn-regenerate', handleRegenerateClick);
-    }
-
-    // ========================================
-    // 📦 BULK ACTION HANDLER
-    // ========================================
-    function initBulkAction() {
-        // Monitor bulk action dropdown
-        $('select[name="action"], select[name="action2"]').on('change', function() {
-            const action = $(this).val();
-            if (action === 'generate_alt_text_ai') {
-                // Add visual indicator
-                $(this).css('border-color', '#14b8a6');
-            }
-        });
-    }
-
-    // ========================================
-    // 🎨 ATTACHMENT DETAILS MODAL
-    // ========================================
-    function initAttachmentModal() {
-        // Hook into WordPress media modal
-        if (typeof wp !== 'undefined' && wp.media) {
-            wp.media.view.Attachment.Details.prototype.on('ready', function() {
-                setTimeout(initModalButton, 100);
-            });
-        }
-        
-        // Also try direct button injection
-        setTimeout(initModalButton, 1000);
-        
-        // Watch for modal changes
-        $(document).on('DOMNodeInserted', '.attachment-details', function() {
-            setTimeout(initModalButton, 100);
-        });
-    }
-
-    function initModalButton() {
-        const $button = $('.ai-alt-generate-button');
-        if ($button.length && !$button.data('initialized')) {
-            $button.data('initialized', true);
+            var ids = response.ids || [];
+            var count = ids.length;
             
-            // Style the button
-            $button.css({
-                'background': 'linear-gradient(135deg, #14b8a6 0%, #84cc16 100%)',
-                'color': 'white',
-                'border': 'none',
-                'padding': '8px 16px',
-                'border-radius': '8px',
-                'font-weight': '700',
-                'cursor': 'pointer',
-                'transition': 'all 0.3s ease',
-                'box-shadow': '0 2px 4px rgba(0,0,0,0.1)'
-            });
-            
-            $button.on('mouseenter', function() {
-                $(this).css('transform', 'translateY(-2px)');
-                $(this).css('box-shadow', '0 4px 8px rgba(102, 126, 234, 0.3)');
-            });
-            
-            $button.on('mouseleave', function() {
-                $(this).css('transform', 'translateY(0)');
-                $(this).css('box-shadow', '0 2px 4px rgba(0,0,0,0.1)');
-            });
-            
-            $button.on('click', function(e) {
-                e.preventDefault();
-                const offset = $button.offset();
-                addSparkle(offset.left + 50, offset.top);
-            });
-        }
-    }
+            // Show progress bar
+            showBulkProgress('Preparing bulk run...', count, 0);
 
-    // ========================================
-    // 📊 STATS UPDATE
-    // ========================================
-    function updateGlobalStats(forcedStats) {
-        const applyStats = function(stats) {
-            if (typeof window.AiAltDashboard !== 'undefined' && stats) {
-                window.AiAltDashboard.updateStats(stats);
-            }
-
-            $('.ai-alt-stats-counter').each(function() {
-                const $counter = $(this);
-                const metric = $counter.data('metric');
-
-                if (metric && stats && typeof stats[metric] !== 'undefined') {
-                    const numeric = parseInt(stats[metric], 10);
-                    $counter.text(formatNumber(isNaN(numeric) ? 0 : numeric));
+            // Queue all images
+            queueImages(ids, 'bulk', function(success, queued, error) {
+                $btn.prop('disabled', false);
+                $btn.text(originalText);
+                
+                if (success && queued > 0) {
+                    hideBulkProgress();
+                    alert('Successfully queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' for alt text generation. Processing will start shortly.');
+                    
+                    // Refresh page after a delay to show updated stats
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 2000);
+                } else if (success && queued === 0) {
+                    hideBulkProgress();
+                    alert('All images are already in queue or processing. Please check the queue status.');
+                    // Refresh to show current queue state
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    hideBulkProgress();
+                    
+                    // Error logging (keep minimal for production)
+                    if (error && error.code) {
+                        console.error('[AI Alt Text] Error:', error.code, error.message || 'Unknown error');
+                    }
+                    
+                    // Check for insufficient credits FIRST, before any other error handling
+                    if (error && error.code === 'insufficient_credits' && error.remaining !== null && error.remaining > 0) {
+                        var remainingCount = error.remaining;
+                        var totalRequested = count;
+                        var errorMsg = error.message || 'You only have ' + remainingCount + ' generations remaining.';
+                        
+                        // Offer to generate with remaining credits or upgrade
+                        var generateWithRemaining = confirm(
+                            errorMsg + '\n\n' +
+                            'Would you like to generate ' + remainingCount + ' image' + (remainingCount !== 1 ? 's' : '') + 
+                            ' now using your remaining ' + remainingCount + ' credit' + (remainingCount !== 1 ? 's' : '') + '?\n\n' +
+                            '(Click "OK" to generate now, or "Cancel" to upgrade)'
+                        );
+                        
+                        if (generateWithRemaining) {
+                            // Generate with remaining credits
+                            var limitedIds = ids.slice(0, remainingCount);
+                            $btn.prop('disabled', true);
+                            $btn.text('Loading...');
+                            showBulkProgress('Queueing ' + remainingCount + ' image' + (remainingCount !== 1 ? 's' : '') + '...', remainingCount, 0);
+                            
+                            queueImages(limitedIds, 'bulk', function(success, queued, queueError) {
+                                $btn.prop('disabled', false);
+                                $btn.text(originalText);
+                                
+                                if (success && queued > 0) {
+                                    hideBulkProgress();
+                                    alert('Successfully queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' for alt text generation. Processing will start shortly.');
+                                    setTimeout(function() {
+                                        window.location.reload();
+                                    }, 2000);
+                                } else {
+                                    hideBulkProgress();
+                                    var errorMsg = 'Failed to queue images.';
+                                    if (queueError && queueError.message) {
+                                        errorMsg = queueError.message;
+                                    }
+                                    alert(errorMsg);
+                                }
+                            });
+                            return; // Exit early
+                        } else {
+                            // User clicked Cancel - offer upgrade
+                            var confirmUpgrade = confirm(
+                                'Would you like to upgrade to get more credits and generate all ' + totalRequested + 
+                                ' image' + (totalRequested !== 1 ? 's' : '') + '?'
+                            );
+                            
+                            if (confirmUpgrade) {
+                                // Upgrade
+                                if (typeof alttextaiShowModal === 'function') {
+                                    alttextaiShowModal();
+                                } else if (typeof window.alttextai_ajax !== 'undefined' && window.alttextai_ajax.is_authenticated) {
+                                    var upgradeBtn = document.querySelector('[data-action="show-upgrade-modal"]');
+                                    if (upgradeBtn) {
+                                        upgradeBtn.click();
+                                    }
+                                } else {
+                                    if (typeof showAuthLogin === 'function') {
+                                        showAuthLogin();
+                                    }
+                                }
+                            }
+                            return; // Exit early
+                        }
+                    }
+                    
+                    // Handle other errors
+                    var errorMsg = 'Failed to queue images.';
+                    if (error && error.message) {
+                        errorMsg = error.message;
+                    } else {
+                        if (count > 0) {
+                            errorMsg += ' Please check your browser console for details and try again.';
+                        } else {
+                            errorMsg += ' No images were found to queue.';
+                        }
+                    }
+                    
+                    if (error && error.message) {
+                        console.error('[AI Alt Text] Error details:', error);
+                    } else {
+                        console.error('[AI Alt Text] Queue failed for generate missing - no error details');
+                    }
+                    alert(errorMsg);
                 }
-
-                $counter.css({
-                    'transform': 'scale(1.2)',
-                    'color': '#43e97b'
-                });
-                setTimeout(() => {
-                    $counter.css({
-                        'transform': 'scale(1)',
-                        'color': ''
-                    });
-                }, 300);
             });
+        })
+        .fail(function(xhr, status, error) {
+            console.error('[AI Alt Text] Failed to get missing images:', error, xhr);
+            $btn.prop('disabled', false);
+            $btn.text(originalText);
+            alert('Failed to load images. Please try again.');
+            hideBulkProgress();
+        });
+    }
 
-            $(document).trigger('ai-alt:statsUpdated', [stats]);
-        };
+    /**
+     * Regenerate alt text for all images
+     */
+    function handleRegenerateAll(e) {
+        e.preventDefault();
+        
+        if (!confirm('This will regenerate alt text for ALL images, replacing existing alt text. Are you sure?')) {
+            return false;
+        }
 
-        if (forcedStats) {
-            applyStats(forcedStats);
+        var $btn = $(this);
+        var originalText = $btn.text();
+        
+        if ($btn.prop('disabled')) {
+            return false;
+        }
+
+        $btn.prop('disabled', true);
+        $btn.text('Loading...');
+
+        // Get list of all images
+        $.ajax({
+            url: config.restAll || (config.restRoot + 'ai-alt/v1/list?scope=all'),
+            method: 'GET',
+            headers: {
+                'X-WP-Nonce': config.nonce
+            },
+            data: {
+                limit: 500
+            }
+        })
+        .done(function(response) {
+            if (!response || !response.ids || response.ids.length === 0) {
+                alert('No images found.');
+                $btn.prop('disabled', false);
+                $btn.text(originalText);
+                return;
+            }
+
+            var ids = response.ids || [];
+            var count = ids.length;
+            
+            // Show progress bar
+            showBulkProgress('Preparing bulk regeneration...', count, 0);
+
+            // Queue all images
+            queueImages(ids, 'bulk-regenerate', function(success, queued, error) {
+                $btn.prop('disabled', false);
+                $btn.text(originalText);
+                
+                if (success && queued > 0) {
+                    hideBulkProgress();
+                    alert('Successfully queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' for alt text regeneration. Processing will start shortly.');
+                    
+                    // Refresh page after a delay to show updated stats
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 2000);
+                } else if (success && queued === 0) {
+                    hideBulkProgress();
+                    alert('All images are already in queue or processing. Please check the queue status.');
+                    // Refresh to show current queue state
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    hideBulkProgress();
+                    
+                    // Error logging (keep minimal for production)
+                    if (error && error.code) {
+                        console.error('[AI Alt Text] Error:', error.code, error.message || 'Unknown error');
+                    }
+                    
+                    // Check for insufficient credits FIRST, before any other error handling
+                    if (error && error.code === 'insufficient_credits' && error.remaining !== null && error.remaining > 0) {
+                        var remainingCount = error.remaining;
+                        var totalRequested = count;
+                        var errorMsg = error.message || 'You only have ' + remainingCount + ' generations remaining.';
+                        
+                        // Offer to regenerate with remaining credits or upgrade
+                        var regenerateWithRemaining = confirm(
+                            errorMsg + '\n\n' +
+                            'Would you like to regenerate ' + remainingCount + ' image' + (remainingCount !== 1 ? 's' : '') + 
+                            ' now using your remaining ' + remainingCount + ' credit' + (remainingCount !== 1 ? 's' : '') + '?\n\n' +
+                            '(Click "OK" to regenerate now, or "Cancel" to upgrade)'
+                        );
+                        
+                        if (regenerateWithRemaining) {
+                            // Regenerate with remaining credits
+                            var limitedIds = ids.slice(0, remainingCount);
+                            $btn.prop('disabled', true);
+                            $btn.text('Loading...');
+                            showBulkProgress('Queueing ' + remainingCount + ' image' + (remainingCount !== 1 ? 's' : '') + ' for regeneration...', remainingCount, 0);
+                            
+                            queueImages(limitedIds, 'bulk-regenerate', function(success, queued, queueError) {
+                                $btn.prop('disabled', false);
+                                $btn.text(originalText);
+                                
+                                if (success && queued > 0) {
+                                    hideBulkProgress();
+                                    alert('Successfully queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' for alt text regeneration. Processing will start shortly.');
+                                    setTimeout(function() {
+                                        window.location.reload();
+                                    }, 2000);
+                                } else {
+                                    hideBulkProgress();
+                                    var errorMsg = 'Failed to queue images.';
+                                    if (queueError && queueError.message) {
+                                        errorMsg = queueError.message;
+                                    }
+                                    alert(errorMsg);
+                                }
+                            });
+                            return; // Exit early
+                        } else {
+                            // User clicked Cancel - offer upgrade
+                            var confirmUpgrade = confirm(
+                                'Would you like to upgrade to get more credits and regenerate all ' + totalRequested + 
+                                ' image' + (totalRequested !== 1 ? 's' : '') + '?'
+                            );
+                            
+                            if (confirmUpgrade) {
+                                // Upgrade
+                                if (typeof alttextaiShowModal === 'function') {
+                                    alttextaiShowModal();
+                                } else if (typeof window.alttextai_ajax !== 'undefined' && window.alttextai_ajax.is_authenticated) {
+                                    var upgradeBtn = document.querySelector('[data-action="show-upgrade-modal"]');
+                                    if (upgradeBtn) {
+                                        upgradeBtn.click();
+                                    }
+                                } else {
+                                    if (typeof showAuthLogin === 'function') {
+                                        showAuthLogin();
+                                    }
+                                }
+                            }
+                            return; // Exit early
+                        }
+                    }
+                    
+                    // Handle other errors
+                    var errorMsg = 'Failed to queue images.';
+                    if (error && error.message) {
+                        errorMsg = error.message;
+                    } else {
+                        if (count > 0) {
+                            errorMsg += ' Please check your browser console for details and try again.';
+                        } else {
+                            errorMsg += ' No images were found to queue.';
+                        }
+                    }
+                    
+                    if (error && error.message) {
+                        console.error('[AI Alt Text] Error details:', error);
+                    } else {
+                        console.error('[AI Alt Text] Queue failed for regenerate all - no error details');
+                    }
+                    alert(errorMsg);
+                }
+            });
+        })
+        .fail(function(xhr, status, error) {
+            console.error('[AI Alt Text] Failed to get all images:', error, xhr);
+            $btn.prop('disabled', false);
+            $btn.text(originalText);
+            alert('Failed to load images. Please try again.');
+            hideBulkProgress();
+        });
+    }
+
+    /**
+     * Regenerate alt text for a single image
+     */
+    function handleRegenerateSingle(e) {
+        e.preventDefault();
+        
+        var $btn = $(this);
+        var attachmentId = $btn.data('attachment-id');
+        
+        if (!attachmentId || $btn.prop('disabled')) {
+            return false;
+        }
+
+        var originalText = $btn.text();
+        $btn.prop('disabled', true);
+        $btn.text('Generating...');
+
+        // Use AJAX endpoint for single regeneration
+        var ajaxUrl = (window.alttextai_ajax && window.alttextai_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php');
+        var nonceValue = (window.alttextai_ajax && window.alttextai_ajax.nonce) || config.nonce;
+        
+        $.ajax({
+            url: ajaxUrl,
+            method: 'POST',
+            data: {
+                action: 'alttextai_regenerate_single',
+                attachment_id: attachmentId,
+                nonce: nonceValue
+            }
+        })
+        .done(function(response) {
+            $btn.prop('disabled', false);
+            $btn.text(originalText);
+            
+            if (response && response.success) {
+                // Update the alt text in the table if it exists
+                var $row = $btn.closest('tr');
+                var $altCell = $row.find('.alttextai-table__cell--alt');
+                if ($altCell.length && response.data && response.data.alt_text) {
+                    $altCell.text(response.data.alt_text);
+                }
+                
+                // Show success message
+                showNotification('Alt text regenerated successfully!', 'success');
+                
+                // Refresh usage stats if available
+                if (typeof refreshUsageStats === 'function') {
+                    refreshUsageStats();
+                }
+            } else {
+                var message = (response && response.data && response.data.message) || 'Failed to regenerate alt text';
+                showNotification(message, 'error');
+            }
+        })
+        .fail(function(xhr, status, error) {
+            console.error('[AI Alt Text] Failed to regenerate:', error, xhr);
+            $btn.prop('disabled', false);
+            $btn.text(originalText);
+            
+            var message = 'Failed to regenerate alt text';
+            if (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message) {
+                message = xhr.responseJSON.data.message;
+            }
+            showNotification(message, 'error');
+        });
+    }
+
+    /**
+     * Queue multiple images for processing
+     * Uses AJAX endpoint to queue images without generating immediately
+     */
+    function queueImages(ids, source, callback) {
+        if (!ids || ids.length === 0) {
+            callback(false, 0);
             return;
         }
 
-        if (AI_ALT_GPT.restStats) {
-            $.get(AI_ALT_GPT.restStats, function(stats) {
-                applyStats(stats);
-            });
-        } else {
-            applyStats(null);
-        }
-    }
-
-    // ========================================
-    // 🎯 PROGRESS INDICATOR
-    // ========================================
-    const ProgressIndicator = {
-        $indicator: null,
+        var total = ids.length;
+        var queued = 0;
         
-        init() {
-            if (!this.$indicator) {
-                this.$indicator = $(`
-                    <div class="ai-alt-progress-indicator" style="
-                        position: fixed;
-                        bottom: 32px;
-                        right: 32px;
-                        background: white;
-                        border-radius: 12px;
-                        padding: 16px 24px;
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                        z-index: 999998;
-                        display: none;
-                        min-width: 300px;
-                    ">
-                        <div class="ai-alt-progress-title" style="font-weight: 700; margin-bottom: 8px; color: #2d3748;">Processing...</div>
-                        <div class="ai-alt-progress-bar" style="
-                            height: 8px;
-                            background: #e2e8f0;
-                            border-radius: 4px;
-                            overflow: hidden;
-                        ">
-                            <div class="ai-alt-progress-fill" style="
-                                height: 100%;
-                                background: linear-gradient(135deg, #14b8a6 0%, #84cc16 100%);
-                                width: 0%;
-                                transition: width 0.3s ease;
-                            "></div>
-                        </div>
-                        <div class="ai-alt-progress-text" style="font-size: 12px; color: #718096; margin-top: 8px;">0 / 0</div>
-                    </div>
-                `);
-                $('body').append(this.$indicator);
-            }
-        },
+        // Use AJAX to queue images
+        // We'll create a single AJAX call that queues all images
+        var ajaxUrl = (window.alttextai_ajax && window.alttextai_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php');
+        var nonceValue = (window.alttextai_ajax && window.alttextai_ajax.nonce) || config.nonce;
         
-        show(total) {
-            this.init();
-            this.total = total;
-            this.current = 0;
-            this.$indicator.find('.ai-alt-progress-text').text(`0 / ${total}`);
-            this.$indicator.find('.ai-alt-progress-fill').css('width', '0%');
-            this.$indicator.fadeIn(300);
-        },
+        // Queueing images (debug info removed for production)
         
-        update(current) {
-            this.current = current;
-            const percentage = (current / this.total) * 100;
-            this.$indicator.find('.ai-alt-progress-fill').css('width', percentage + '%');
-            this.$indicator.find('.ai-alt-progress-text').text(`${current} / ${this.total}`);
+        $.ajax({
+            url: ajaxUrl,
+            method: 'POST',
+            data: {
+                action: 'alttextai_bulk_queue',
+                attachment_ids: ids,
+                source: source || 'bulk',
+                nonce: nonceValue
+            },
+            dataType: 'json'
+        })
+        .done(function(response) {
             
-            if (current >= this.total) {
-                setTimeout(() => this.hide(), 1000);
-            }
-        },
-        
-        hide() {
-            this.$indicator.fadeOut(300);
-        }
-    };
-
-    // ========================================
-    // 🎊 BATCH COMPLETION CELEBRATION
-    // ========================================
-    function celebrateBatchCompletion(count) {
-        // Create mini confetti effect
-        const colors = ['#14b8a6', '#84cc16', '#4facfe', '#ffd700'];
-        for (let i = 0; i < 20; i++) {
-            const confetti = $('<div></div>').css({
-                position: 'fixed',
-                width: '6px',
-                height: '6px',
-                background: colors[Math.floor(Math.random() * colors.length)],
-                top: '50%',
-                left: '50%',
-                'z-index': '999999',
-                'border-radius': '50%',
-                'pointer-events': 'none'
-            });
-            
-            $('body').append(confetti);
-            
-            confetti.animate({
-                top: Math.random() * 100 + '%',
-                left: Math.random() * 100 + '%',
-                opacity: 0
-            }, 2000, function() {
-                $(this).remove();
-            });
-        }
-        
-        MiniToast.show(`🎉 ${count} images processed successfully!`, 'success');
-    }
-
-    // ========================================
-    // 💾 LOCAL STORAGE ACHIEVEMENTS
-    // ========================================
-    const Achievements = {
-        increment(key) {
-            const current = parseInt(localStorage.getItem(key) || '0');
-            const newValue = current + 1;
-            localStorage.setItem(key, newValue.toString());
-            
-            // Check for milestone achievements
-            if (newValue === 1) {
-                MiniToast.show('🎯 First alt text generated!', 'success');
-            } else if (newValue === 10) {
-                MiniToast.show('🔥 10 alt texts generated!', 'success');
-            } else if (newValue === 50) {
-                MiniToast.show('💯 50 alt texts generated! On fire!', 'success');
-            } else if (newValue === 100) {
-                MiniToast.show('🏆 Century club! 100 alt texts!', 'success');
-            }
-            
-            return newValue;
-        },
-        
-        get(key) {
-            return parseInt(localStorage.getItem(key) || '0');
-        }
-    };
-
-    // ========================================
-    // ⌨️ KEYBOARD SHORTCUTS
-    // ========================================
-    function initKeyboardShortcuts() {
-        $(document).on('keydown', function(e) {
-            // Alt + G = Generate alt text for selected items
-            if (e.altKey && e.key === 'g') {
-                e.preventDefault();
-                const $selected = $('.media-frame input[name="media[]"]:checked').first();
-                if ($selected.length) {
-                    const postId = $selected.val();
-                    const $generateBtn = $(`.ai-alt-generate-row-action[data-post-id="${postId}"]`);
-                    if ($generateBtn.length) {
-                        $generateBtn.click();
+            if (response && response.success) {
+                // WordPress wp_send_json_success returns {success: true, data: {...}}
+                var responseData = response.data || {};
+                queued = responseData.queued || 0;
+                
+                if (queued > 0) {
+                    callback(true, queued, null);
+                } else {
+                    console.warn('[AI Alt Text] No images were queued. Response:', response);
+                    // Still might be success if 0 queued but they were already in queue
+                    callback(true, queued, null);
+                }
+            } else {
+                // Error response from server
+                var errorMessage = 'Failed to queue images';
+                var errorCode = null;
+                var errorRemaining = null;
+                
+                // WordPress wp_send_json_error wraps data in response.data
+                if (response && response.data) {
+                    // Check if data is an object with properties
+                    if (typeof response.data === 'object' && response.data !== null) {
+                        if (response.data.message) {
+                            errorMessage = response.data.message;
+                        }
+                        if (response.data.code) {
+                            errorCode = response.data.code;
+                        }
+                        if (response.data.remaining !== undefined && response.data.remaining !== null) {
+                            errorRemaining = parseInt(response.data.remaining, 10);
+                        }
                     }
                 }
+                
+                console.error('[AI Alt Text] Queue failed:', errorMessage, errorCode ? '(Code: ' + errorCode + ')' : '');
+                
+                // Pass error message to callback
+                callback(false, 0, {
+                    message: errorMessage,
+                    code: errorCode,
+                    remaining: errorRemaining
+                });
             }
+        })
+        .fail(function(xhr, status, error) {
+            console.error('[AI Alt Text] AJAX request failed:', {
+                status: status,
+                error: error,
+                xhr: xhr,
+                responseText: xhr.responseText,
+                statusCode: xhr.status
+            });
+            
+            // Try to parse error response
+            var errorData = null;
+            try {
+                var parsed = JSON.parse(xhr.responseText);
+                if (parsed && parsed.data) {
+                    errorData = {
+                        message: parsed.data.message || 'Failed to queue images',
+                        code: parsed.data.code || null,
+                        remaining: parsed.data.remaining || null
+                    };
+                }
+            } catch (e) {
+                // Not JSON, use default error
+            }
+            
+            // Check if it's a nonce error
+            if (xhr.status === 403) {
+                console.error('[AI Alt Text] Authentication error - check nonce');
+                callback(false, 0, errorData || { message: 'Authentication error. Please refresh the page and try again.' });
+                return;
+            }
+            
+            // If we have a specific error message, use it instead of falling back
+            if (errorData && errorData.message) {
+                callback(false, 0, errorData);
+                return;
+            }
+            
+            // Fallback: queue images individually via REST API
+            // This is slower but more reliable
+            // Falling back to REST API method
+            queueImagesFallback(ids, source, function(success, queued) {
+                callback(success, queued, null);
+            });
         });
     }
 
-    // ========================================
-    // 🎨 VISUAL ENHANCEMENTS
-    // ========================================
-    function addVisualEnhancements() {
-        // Add gradient to admin notices
-        $('.notice.notice-success').css({
-            'border-left': '4px solid #43e97b',
-            'box-shadow': '0 2px 4px rgba(0,0,0,0.05)'
-        });
+    /**
+     * Fallback: Queue images one by one via REST API
+     */
+    function queueImagesFallback(ids, source, callback) {
+        var total = ids.length;
+        var queued = 0;
+        var failed = 0;
+        var batchSize = 5; // Smaller batches for fallback
+        var processed = 0;
         
-        // Enhance existing buttons
-        $('.ai-alt-generate-button, .ai-alt-generate-row-action').css({
-            'transition': 'all 0.3s ease'
-        });
-        
-        // Add hover effects to media grid items
-        $('.attachment').on('mouseenter', function() {
-            $(this).css('transform', 'scale(1.02)');
-        }).on('mouseleave', function() {
-            $(this).css('transform', 'scale(1)');
-        });
+        function processBatch(startIndex) {
+            var endIndex = Math.min(startIndex + batchSize, total);
+            var batch = ids.slice(startIndex, endIndex);
+            
+            // Queue this batch using REST generate endpoint (which will queue if busy)
+            var promises = batch.map(function(id) {
+                return $.ajax({
+                    url: config.rest || (config.restRoot + 'ai-alt/v1/generate/' + id),
+                    method: 'POST',
+                    headers: {
+                        'X-WP-Nonce': config.nonce
+                    }
+                })
+                .done(function() {
+                    queued++;
+                    processed++;
+                    updateBulkProgress(processed, total);
+                })
+                .fail(function() {
+                    failed++;
+                    processed++;
+                    updateBulkProgress(processed, total);
+                });
+            });
+            
+            // Wait for batch to complete, then process next batch
+            $.when.apply($, promises)
+            .then(function() {
+                if (endIndex < total) {
+                    // Small delay between batches to avoid overwhelming the server
+                    setTimeout(function() {
+                        processBatch(endIndex);
+                    }, 500);
+                } else {
+                    // All batches processed
+                    var success = queued > 0;
+                    callback(success, queued, null);
+                }
+            })
+            .fail(function() {
+                console.error('[AI Alt Text] Fallback batch failed');
+                // Continue processing even if batch fails
+                if (endIndex < total) {
+                    setTimeout(function() {
+                        processBatch(endIndex);
+                    }, 500);
+                } else {
+                    var success = queued > 0;
+                    callback(success, queued, null);
+                }
+            });
+        }
+
+        // Start processing
+        processBatch(0);
     }
 
-    // ========================================
-    // 🚀 INITIALIZATION
-    // ========================================
+    /**
+     * Show bulk progress bar
+     */
+    function showBulkProgress(label, total, current) {
+        var $progress = $('[data-bulk-progress]');
+        if ($progress.length) {
+            $progress.removeAttr('hidden');
+            $('[data-bulk-progress-label]').text(label || 'Processing...');
+        }
+        updateBulkProgress(current, total);
+    }
+
+    /**
+     * Update bulk progress bar
+     */
+    function updateBulkProgress(current, total) {
+        var $progress = $('[data-bulk-progress]');
+        var $bar = $('[data-bulk-progress-bar]');
+        var $counts = $('[data-bulk-progress-counts]');
+        
+        if ($progress.length && $bar.length) {
+            var percentage = total > 0 ? Math.round((current / total) * 100) : 0;
+            $bar.css('width', percentage + '%');
+        }
+        
+        if ($counts.length) {
+            $counts.text(current + ' / ' + total);
+        }
+    }
+
+    /**
+     * Hide bulk progress bar
+     */
+    function hideBulkProgress() {
+        var $progress = $('[data-bulk-progress]');
+        if ($progress.length) {
+            $progress.attr('hidden', 'hidden');
+        }
+    }
+
+    /**
+     * Show notification message
+     */
+    function showNotification(message, type) {
+        type = type || 'info';
+        var $notice = $('<div class="notice notice-' + type + ' is-dismissible"><p>' + message + '</p></div>');
+        $('.wrap').first().prepend($notice);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(function() {
+            $notice.fadeOut(function() {
+                $notice.remove();
+            });
+        }, 5000);
+    }
+
+    // Initialize on document ready
     $(document).ready(function() {
+        // AI Alt Text Admin JavaScript loaded
         
-        // Initialize all features
-        initRowActions();
-        initBulkAction();
-        initAttachmentModal();
-        initLibraryRegenerate();
-        initKeyboardShortcuts();
-        addVisualEnhancements();
+        // Handle generate missing button
+        $(document).on('click', '[data-action="generate-missing"]', handleGenerateMissing);
         
-        const config = window.AI_ALT_GPT || {};
-        LibraryQueueIndicator.init(config);
+        // Handle regenerate all button
+        $(document).on('click', '[data-action="regenerate-all"]', handleRegenerateAll);
         
-        $(window).on('beforeunload', function(){
-            LibraryQueueIndicator.stop();
-        });
-        
-        // Add sparkle on any AI Alt button click
-        $(document).on('click', '[class*="ai-alt"]', function(e) {
-            const offset = $(this).offset();
-            addSparkle(offset.left + 20, offset.top);
-        });
-        
-        // Monitor for batch processing
-        if (typeof wp !== 'undefined' && wp.media) {
-            // Hook into media library batch actions
-            $(document).on('click', '#doaction, #doaction2', function() {
-                const action = $('select[name="action"]').val() || $('select[name="action2"]').val();
-                if (action === 'generate_alt_text_ai') {
-                    const count = $('.media-frame input[name="media[]"]:checked').length;
-                    if (count > 0) {
-                        setTimeout(() => {
-                            ProgressIndicator.show(count);
-                            MiniToast.show(`🚀 Processing ${count} images...`, 'info');
-                        }, 500);
-                    }
-                }
-            });
-        }
+        // Handle individual regenerate buttons
+        $(document).on('click', '[data-action="regenerate-single"]', handleRegenerateSingle);
     });
-
-    // Export for global access
-    window.AiAltMiniToast = MiniToast;
-    window.AiAltProgressIndicator = ProgressIndicator;
-    window.AiAltAchievements = Achievements;
-    window.updateLibraryRow = updateLibraryRow;
-    window.findLibraryRow = findLibraryRow;
 
 })(jQuery);
 

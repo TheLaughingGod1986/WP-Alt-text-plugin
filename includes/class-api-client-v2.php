@@ -145,12 +145,26 @@ class AltText_AI_API_Client_V2 {
         $response = wp_remote_request($url, $args);
         
         if (is_wp_error($response)) {
-            return new WP_Error('api_error', $response->get_error_message());
+            $error_message = $response->get_error_message();
+            if (strpos($error_message, 'timeout') !== false) {
+                return new WP_Error('api_timeout', __('Authentication server is taking too long to respond. Please try again in a few minutes.', 'ai-alt-gpt'));
+            } elseif (strpos($error_message, 'could not resolve') !== false) {
+                return new WP_Error('api_unreachable', __('Unable to reach authentication server. Please check your internet connection and try again.', 'ai-alt-gpt'));
+            }
+            return new WP_Error('api_error', $error_message);
         }
         
         $status_code = wp_remote_retrieve_response_code($response);
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
+        
+        // Handle server errors
+        if ($status_code >= 500) {
+            return new WP_Error(
+                'server_error',
+                __('Authentication server is temporarily unavailable. Please try again in a few minutes.', 'ai-alt-gpt')
+            );
+        }
         
         // Handle authentication errors
         if ($status_code === 401 || $status_code === 403) {

@@ -1,14 +1,19 @@
 <?php
 /**
- * Plugin Name: AI Alt Text Generator
- * Description: Automatically generate high-quality, accessible alt text for images using AI. Create your free account to get started. Improve accessibility, SEO, and user experience effortlessly.
+ * Plugin Name: AI Alt Text Generator - Automatic Image Accessibility & SEO
+ * Plugin URI: https://wordpress.org/plugins/ai-alt-text-generator/
+ * Description: Automatically generate high-quality, SEO-optimized alt text for WordPress images using AI. Improve accessibility (WCAG compliant), boost search rankings, and save hours of manual work. Free tier: 50 generations/month. Perfect for accessibility, SEO, e-commerce, and content creators.
  * Version: 4.1.0
  * Author: Benjamin Oats
- * License: GPL2
+ * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: ai-alt-gpt
+ * Domain Path: /languages
  * Requires at least: 5.8
+ * Tested up to: 6.7
  * Requires PHP: 7.4
+ * Network: false
+ * Tags: accessibility, alt text, SEO, images, AI, WCAG, screen reader, image optimization, bulk edit, WooCommerce, artificial intelligence, automatic alt text, image accessibility, SEO optimization, bulk processing, accessibility compliance, image descriptions, WordPress SEO
  */
 
 if (!defined('ABSPATH')) { exit; }
@@ -72,6 +77,7 @@ class AI_Alt_Text_Generator_GPT {
         add_action('wp_ajax_alttextai_dismiss_upgrade', [$this, 'ajax_dismiss_upgrade']);
         add_action('wp_ajax_alttextai_refresh_usage', [$this, 'ajax_refresh_usage']);
         add_action('wp_ajax_alttextai_regenerate_single', [$this, 'ajax_regenerate_single']);
+        add_action('wp_ajax_alttextai_bulk_queue', [$this, 'ajax_bulk_queue']);
         add_action('wp_ajax_alttextai_queue_retry_failed', [$this, 'ajax_queue_retry_failed']);
         add_action('wp_ajax_alttextai_queue_retry_job', [$this, 'ajax_queue_retry_job']);
         add_action('wp_ajax_alttextai_queue_clear_completed', [$this, 'ajax_queue_clear_completed']);
@@ -221,7 +227,9 @@ class AI_Alt_Text_Generator_GPT {
             exit;
         }
 
-        wp_redirect($result['url']);
+        // Use JavaScript instead of redirect for CSP compliance
+        echo "<script>window.open(\"" . $result["url"] . "\", \"_blank\");</script>";
+        exit;
         exit;
     }
 
@@ -479,7 +487,9 @@ class AI_Alt_Text_Generator_GPT {
         }
 
         if (!empty($result['url'])) {
-            wp_redirect($result['url']);
+            // Use JavaScript instead of redirect for CSP compliance
+        echo "<script>window.open(\"" . $result["url"] . "\", \"_blank\");</script>";
+        exit;
             exit;
         }
 
@@ -532,11 +542,16 @@ class AI_Alt_Text_Generator_GPT {
         $stats = $this->get_media_stats();
         $nonce = wp_create_nonce(self::NONCE_KEY);
         $tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'dashboard';
+        // Build tabs - hide settings if not authenticated
         $tabs = [
             'dashboard' => __('Dashboard', 'ai-alt-gpt'),
             'guide'     => __('How to', 'ai-alt-gpt'),
-            'settings'  => __('Settings', 'ai-alt-gpt'),
         ];
+        
+        // Only show settings tab if user is authenticated
+        if ($this->api_client->is_authenticated()) {
+            $tabs['settings'] = __('Settings', 'ai-alt-gpt');
+        }
         $export_url = wp_nonce_url(admin_url('admin-post.php?action=ai_alt_usage_export'), 'ai_alt_usage_export');
         $audit_rows = $stats['audit'] ?? [];
         ?>
@@ -812,26 +827,16 @@ class AI_Alt_Text_Generator_GPT {
                          $user_info = $this->api_client->get_user_info();
                          $user_email = !empty($user_info['email']) ? $user_info['email'] : __('Logged In', 'ai-alt-gpt');
                      ?>
-                     <!-- Authenticated - Success -->
-                     <div class="alttextai-auth-status alttextai-auth-status--logged-in">
-                         <div class="alttextai-auth-status__icon">✅</div>
-                         <div class="alttextai-auth-status__content">
-                             <h2 class="alttextai-auth-status__title">
-                                 <?php esc_html_e('You\'re all set!', 'ai-alt-gpt'); ?>
-                             </h2>
-                             <p class="alttextai-auth-status__message">
-                                 <?php esc_html_e('Your account is connected and ready to generate AI-powered alt text for your images.', 'ai-alt-gpt'); ?>
-                             </p>
-                         </div>
-                         <div class="alttextai-auth-status__user-info">
-                             <span class="alttextai-auth-status__user-email"><?php echo esc_html($user_email); ?></span>
-                             <button type="button" class="alttextai-auth-status__logout-btn" id="alttextai-logout-btn">
-                                 <?php esc_html_e('Logout', 'ai-alt-gpt'); ?>
-                             </button>
-                         </div>
+                     <!-- Authenticated - Minimal Badge -->
+                     <div class="alttextai-auth-badge">
+                         <span class="alttextai-auth-badge__user"><?php echo esc_html($user_email); ?></span>
+                         <button type="button" class="alttextai-auth-badge__logout" id="alttextai-logout-btn" title="<?php esc_attr_e('Logout', 'ai-alt-gpt'); ?>">
+                             <?php esc_html_e('Logout', 'ai-alt-gpt'); ?>
+                         </button>
                      </div>
                      <?php endif; ?>
 
+                    <?php if ($this->api_client->is_authenticated()) : ?>
                     <?php
                         $plan_label = $usage_stats['plan_label'] ?? __('Free', 'ai-alt-gpt');
                         $billing_portal = AltText_AI_Usage_Tracker::get_billing_portal_url();
@@ -865,160 +870,348 @@ class AI_Alt_Text_Generator_GPT {
                             <?php endif; ?>
                         </div>
                     </div>
+                    <?php endif; ?>
 
-                    <div class="alttextai-main-content">
-                    <h1 class="alttextai-main-title"><?php esc_html_e('Generate perfect SEO alt text automatically', 'ai-alt-gpt'); ?></h1>
-                    
-                    <!-- Usage Display -->
-                    <div class="alttextai-usage-display shadow-sm hover:shadow-md transition-shadow rounded-2xl bg-white p-6">
-                        <div class="alttextai-usage-display__header">
-                            <div class="alttextai-usage-display__text">
-                                <p class="alttextai-usage-text text-slate-800 font-semibold" data-usage-text>
-                                    <?php printf(esc_html__('%1$d of %2$d free generations used', 'ai-alt-gpt'), $usage_stats['used'], $usage_stats['limit']); ?>
-                                </p>
-                                <div class="alttextai-usage-meta text-sm text-slate-500 flex items-center gap-3">
-                                    <?php if ($usage_stats['remaining'] <= 0) : ?>
-                                        <span class="inline-flex items-center gap-1 alttextai-reset-info" title="<?php esc_attr_e('Your allowance refreshes at the start of each billing cycle.', 'ai-alt-gpt'); ?>">
-                                            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false" class="text-slate-400">
-                                                <path fill="currentColor" d="M8 1.333a6.667 6.667 0 1 0 6.667 6.667A6.675 6.675 0 0 0 8 1.333Zm0 12A5.333 5.333 0 1 1 13.333 8 5.339 5.339 0 0 1 8 13.333Zm.667-8H8a.667.667 0 0 0-.667.667v3.333a.667.667 0 0 0 .667.667h2a.667.667 0 0 0 0-1.333H8.667V6a.667.667 0 0 0-.667-.667Z"/>
-                                            </svg>
-                                            <?php 
-                                                $days_until_reset = $usage_stats['days_until_reset'] ?? 0;
-                                                $reset_date = $usage_stats['reset_date'] ?? '';
-                                                if ($days_until_reset > 0) {
-                                                    printf(
-                                                        esc_html__('Resets in %d days (%s)', 'ai-alt-gpt'),
-                                                        $days_until_reset,
-                                                        $reset_date
-                                                    );
-                                                } elseif (!empty($reset_date)) {
-                                                    printf(
-                                                        esc_html__('Resets %s', 'ai-alt-gpt'),
-                                                        $reset_date
-                                                    );
-                                                }
-                                            ?>
-                                        </span>
-                                    <?php endif; ?>
-                                    <button type="button" class="alttextai-refresh-status inline-flex items-center gap-1 text-teal-600 font-medium" data-action="refresh-usage">
-                                        <span aria-hidden="true">🔄</span><?php esc_html_e('Refresh status', 'ai-alt-gpt'); ?>
-                                    </button>
+                    <!-- Dashboard Container -->
+                    <div class="alttextai-dashboard-container">
+                        <!-- Header Section -->
+                        <div class="alttextai-dashboard-header">
+                            <div class="alttextai-dashboard-header-icon">
+                                <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <rect width="48" height="48" rx="12" fill="url(#dashboard-gradient)"/>
+                                    <path d="M24 8L16 16V32L24 40L32 32V16L24 8Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M24 8V40M16 16L32 32M32 16L16 32" stroke="white" stroke-width="2" opacity="0.5"/>
+                                    <defs>
+                                        <linearGradient id="dashboard-gradient" x1="0" y1="0" x2="48" y2="48">
+                                            <stop stop-color="#8b5cf6"/>
+                                            <stop offset="1" stop-color="#a855f7"/>
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                            </div>
+                            <h1 class="alttextai-dashboard-title"><?php esc_html_e('Dashboard', 'ai-alt-gpt'); ?></h1>
+                            <p class="alttextai-dashboard-subtitle"><?php esc_html_e('Generate perfect SEO alt text automatically', 'ai-alt-gpt'); ?></p>
+                        </div>
+
+                        <?php if ($this->api_client->is_authenticated()) : ?>
+                        <!-- Usage Card -->
+                        <div class="alttextai-dashboard-card alttextai-dashboard-card--featured">
+                            <div class="alttextai-dashboard-card-header">
+                                <div class="alttextai-dashboard-card-badge"><?php esc_html_e('USAGE STATUS', 'ai-alt-gpt'); ?></div>
+                                <h2 class="alttextai-dashboard-card-title">
+                                    <span class="alttextai-dashboard-emoji">📊</span>
+                                    <?php printf(esc_html__('%1$d of %2$d generations used', 'ai-alt-gpt'), $usage_stats['used'], $usage_stats['limit']); ?>
+                                </h2>
+                            </div>
+                            
+                            <div class="alttextai-dashboard-usage-bar">
+                                <div class="alttextai-dashboard-usage-bar-fill" style="width: <?php echo esc_attr($usage_stats['percentage']); ?>%;"></div>
+                            </div>
+                            
+                            <div class="alttextai-dashboard-usage-stats">
+                                <div class="alttextai-dashboard-usage-stat">
+                                    <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Used', 'ai-alt-gpt'); ?></span>
+                                    <span class="alttextai-dashboard-usage-value"><?php echo esc_html($usage_stats['used']); ?></span>
+                                </div>
+                                <div class="alttextai-dashboard-usage-stat">
+                                    <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Remaining', 'ai-alt-gpt'); ?></span>
+                                    <span class="alttextai-dashboard-usage-value"><?php echo esc_html($usage_stats['remaining']); ?></span>
+                                </div>
+                                <div class="alttextai-dashboard-usage-stat">
+                                    <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Resets', 'ai-alt-gpt'); ?></span>
+                                    <span class="alttextai-dashboard-usage-value"><?php echo esc_html($usage_stats['reset_date'] ?? ''); ?></span>
                                 </div>
                             </div>
-                            <p class="alttextai-usage-alert text-sm text-emerald-600 font-medium">
-                                <?php if ($usage_stats['remaining'] <= 0) : ?>
-                                    <?php esc_html_e('🎯 You’ve reached your free limit — upgrade for more AI power!', 'ai-alt-gpt'); ?>
-                                <?php else : ?>
-                                    <?php printf(esc_html__('%d credits remain this cycle. Keep the momentum going!', 'ai-alt-gpt'), $usage_stats['remaining']); ?>
-                                <?php endif; ?>
-                            </p>
-                        </div>
-                        <div class="alttextai-progress-bar-container">
-                            <div class="alttextai-progress-bar-fill alttextai-progress-bar-fill--animated bg-gradient-to-r from-teal-400 to-lime-400" data-usage-bar style="width: <?php echo esc_attr($usage_stats['percentage']); ?>%"></div>
-                        </div>
-                        <?php
-                            $minutes_saved = max(0, intval($stats['with_alt'] ?? 0) * 2);
-                            $hours_saved = $minutes_saved / 60;
-                            $hours_precision = $hours_saved >= 10 ? 0 : 1;
-                            $savings_value = number_format_i18n($hours_saved, $hours_precision);
-                        ?>
-                        <p class="alttextai-savings text-sm text-slate-500 mt-3" data-savings-copy>
-                            <?php printf(
-                                esc_html__('You’ve saved %s hours of manual work! (est. 2 min/image)', 'ai-alt-gpt'),
-                                esc_html($savings_value)
-                            ); ?>
-                        </p>
-                    </div>
-
-                    <!-- Optimization Progress -->
-                    <div class="alttextai-optimization-progress shadow-sm hover:shadow-md transition-shadow rounded-2xl bg-white p-6 mt-8">
-                        <div class="alttextai-optimization-stats">
-                            <div class="alttextai-optimization-item">
-                                <span class="alttextai-optimization-number"><?php echo esc_html($stats['with_alt'] ?? 0); ?></span>
-                                <span class="alttextai-optimization-label"><?php esc_html_e('Optimized', 'ai-alt-gpt'); ?></span>
-                            </div>
-                            <div class="alttextai-optimization-separator">/</div>
-                            <div class="alttextai-optimization-item">
-                                <span class="alttextai-optimization-number"><?php echo esc_html(($stats['with_alt'] ?? 0) + ($stats['missing'] ?? 0)); ?></span>
-                                <span class="alttextai-optimization-label"><?php esc_html_e('Total Images', 'ai-alt-gpt'); ?></span>
-                            </div>
-                        </div>
-                        <div class="alttextai-optimization-bar">
-                            <div class="alttextai-optimization-bar-fill bg-gradient-to-r from-teal-400 to-lime-400 transition-all" style="width: <?php echo esc_attr($stats['coverage'] ?? 0); ?>%"></div>
-                        </div>
-                        <div class="alttextai-optimization-text">
-                            <?php 
-                            $total_images = ($stats['with_alt'] ?? 0) + ($stats['missing'] ?? 0);
-                            $optimized = $stats['with_alt'] ?? 0;
-                            $remaining = $stats['missing'] ?? 0;
                             
-                            if ($total_images > 0) {
-                                if ($remaining > 0) {
-                                    printf(
-                                        esc_html__('%1$d of %2$d images optimized (%3$d remaining)', 'ai-alt-gpt'),
-                                        $optimized,
-                                        $total_images,
-                                        $remaining
-                                    );
-                                } else {
-                                    printf(
-                                        esc_html__('All %1$d images optimized! 🎉', 'ai-alt-gpt'),
-                                        $total_images
-                                    );
-                                }
-                            } else {
-                                esc_html_e('No images found. Upload some images to get started!', 'ai-alt-gpt');
-                            }
-                            ?>
-                        </div>
-                    </div>
-
-                    <!-- Main CTA Buttons -->
-                    <div class="alttextai-main-cta mt-8">
-                        <?php
-                        $remaining_images = $stats['missing'] ?? 0;
-                        $total_images = $stats['total'] ?? 0;
-                        $optimized_images = $stats['with_alt'] ?? 0;
-
-                        $missing_text = $remaining_images > 0
-                            ? sprintf(esc_html__('Generate Missing Alt Text (%d images)', 'ai-alt-gpt'), $remaining_images)
-                            : esc_html__('All Images Have Alt Text', 'ai-alt-gpt');
-
-                        $regenerate_text = $total_images > 0
-                            ? sprintf(esc_html__('Regenerate All Alt Text (%d images)', 'ai-alt-gpt'), $total_images)
-                            : esc_html__('No Images Found', 'ai-alt-gpt');
-
-                        $waiting_text = $remaining_images > 0
-                            ? sprintf(esc_html__('Upgrade to Unlock (%d images waiting) →', 'ai-alt-gpt'), $remaining_images)
-                            : esc_html__('Upgrade to Unlock →', 'ai-alt-gpt');
-                        ?>
-
-                        <div class="alttextai-action-buttons" style="display: flex; gap: 1rem; flex-wrap: wrap;">
                             <?php if ($usage_stats['remaining'] <= 0) : ?>
-                                <!-- Show upgrade button when out of credits -->
-                                <button type="button" class="alttextai-bulk-btn alttextai-bulk-btn--limit" data-action="show-upgrade-modal" data-upgrade-source="bulk-limit" style="flex: 1; min-width: 250px;">
-                                    <?php echo esc_html($waiting_text); ?>
+                            <div class="alttextai-dashboard-upgrade-prompt">
+                                <p><?php esc_html_e('🎯 You\'ve reached your free limit — upgrade for more AI power!', 'ai-alt-gpt'); ?></p>
+                                <button type="button" class="alttextai-btn-primary alttextai-btn-icon" data-action="show-upgrade-modal" data-upgrade-source="usage-limit">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                        <path d="M8 2L6 6H2L6 9L4 14L8 11L12 14L10 9L14 6H10L8 2Z" fill="currentColor"/>
+                                    </svg>
+                                    <span><?php esc_html_e('Upgrade to Pro', 'ai-alt-gpt'); ?></span>
                                 </button>
-                            <?php else : ?>
-                                <!-- Generate Missing Alt Text Button -->
-                                <button type="button" class="alttextai-bulk-btn alttextai-bulk-btn--primary" data-action="generate-missing" <?php echo $remaining_images <= 0 ? 'disabled' : ''; ?> style="flex: 1; min-width: 250px;" title="Generate alt text for images that don't have any (only missing images)">
-                                    <span class="btn-icon">✨</span>
-                                    <?php echo esc_html($missing_text); ?>
-                                </button>
-
-                                <!-- Regenerate All Alt Text Button -->
-                                <button type="button" class="alttextai-bulk-btn alttextai-bulk-btn--secondary" data-action="regenerate-all" <?php echo $total_images <= 0 ? 'disabled' : ''; ?> style="flex: 1; min-width: 250px;" title="Regenerate alt text for ALL images in your media library (replaces existing alt text)">
-                                    <span class="btn-icon">🔄</span>
-                                    <?php echo esc_html($regenerate_text); ?>
-                                </button>
+                            </div>
                             <?php endif; ?>
                         </div>
 
-                        <?php if ($usage_stats['remaining'] > 0 && $total_images > 0) : ?>
-                            <p class="alttextai-action-hint" style="margin-top: 0.75rem; font-size: 0.875rem; color: #6b7280; text-align: center;">
-                                <strong>Generate Missing:</strong> Only images without alt text •
-                                <strong>Regenerate All:</strong> Replace all existing alt text in your media library
-                            </p>
+                        <!-- Time Saved Section -->
+                        <?php
+                        // Calculate time saved metrics
+                        $alt_texts_generated = $usage_stats['used'] ?? 0;
+                        $minutes_per_alt_text = 2.5; // Average time to manually create an alt text
+                        $hours_saved = round(($alt_texts_generated * $minutes_per_alt_text) / 60, 1);
+                        $remaining_images = $stats['missing'] ?? 0;
+                        $estimated_hours_for_remaining = round(($remaining_images * $minutes_per_alt_text) / 60, 1);
+                        ?>
+                        
+                        <?php if ($alt_texts_generated > 0 || $remaining_images > 0) : ?>
+                        <div class="alttextai-dashboard-card alttextai-time-saved-card">
+                            <div class="alttextai-dashboard-card-header">
+                                <div class="alttextai-dashboard-card-badge"><?php esc_html_e('TIME SAVED', 'ai-alt-gpt'); ?></div>
+                                <?php if ($alt_texts_generated > 0) : ?>
+                                    <h2 class="alttextai-dashboard-card-title">
+                                        <span class="alttextai-dashboard-emoji">⏱️</span>
+                                        <?php 
+                                        printf(
+                                            esc_html__('%1$d alt text%2$s added has saved you %3$s hour%4$s', 'ai-alt-gpt'),
+                                            $alt_texts_generated,
+                                            $alt_texts_generated === 1 ? '' : 's',
+                                            $hours_saved,
+                                            $hours_saved == 1 ? '' : 's'
+                                        );
+                                        ?>
+                                    </h2>
+                                    <p class="alttextai-seo-impact"><?php esc_html_e('✨ This has had a positive SEO impact on your website', 'ai-alt-gpt'); ?></p>
+                                <?php else : ?>
+                                    <h2 class="alttextai-dashboard-card-title">
+                                        <span class="alttextai-dashboard-emoji">📊</span>
+                                        <?php esc_html_e('Ready to optimize your images', 'ai-alt-gpt'); ?>
+                                    </h2>
+                                    <p class="alttextai-seo-impact"><?php esc_html_e('Start generating alt text to improve SEO and accessibility', 'ai-alt-gpt'); ?></p>
+                                <?php endif; ?>
+                            </div>
+                            
+                            <?php if ($remaining_images > 0) : ?>
+                            <div class="alttextai-remaining-optimization">
+                                <div class="alttextai-remaining-info">
+                                    <span class="alttextai-remaining-label"><?php esc_html_e('Images left to optimize:', 'ai-alt-gpt'); ?></span>
+                                    <span class="alttextai-remaining-count"><?php echo esc_html($remaining_images); ?></span>
+                                </div>
+                                <div class="alttextai-hours-estimate">
+                                    <span class="alttextai-estimate-label"><?php esc_html_e('Estimated time saved:', 'ai-alt-gpt'); ?></span>
+                                    <span class="alttextai-estimate-value"><?php 
+                                        printf(
+                                            esc_html__('%1$s hour%2$s', 'ai-alt-gpt'),
+                                            $estimated_hours_for_remaining,
+                                            $estimated_hours_for_remaining == 1 ? '' : 's'
+                                        );
+                                    ?></span>
+                                </div>
+                            </div>
+                            <?php elseif ($alt_texts_generated > 0) : ?>
+                            <div class="alttextai-all-optimized">
+                                <p class="alttextai-optimized-message"><?php esc_html_e('🎉 All images are optimized! Great job!', 'ai-alt-gpt'); ?></p>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                        <?php endif; ?>
+
+                    <!-- Optimization Progress -->
+                    <?php
+                    $total_images = ($stats['with_alt'] ?? 0) + ($stats['missing'] ?? 0);
+                    $optimized = $stats['with_alt'] ?? 0;
+                    $remaining = $stats['missing'] ?? 0;
+                    ?>
+                    <div class="alttextai-dashboard-card">
+                        <div class="alttextai-dashboard-card-header">
+                            <div class="alttextai-dashboard-card-badge"><?php esc_html_e('IMAGE OPTIMIZATION', 'ai-alt-gpt'); ?></div>
+                            <h2 class="alttextai-dashboard-card-title">
+                                <span class="alttextai-dashboard-emoji">📊</span>
+                                <?php 
+                                if ($total_images > 0) {
+                                    if ($remaining > 0) {
+                                        printf(
+                                            esc_html__('%1$d of %2$d images optimized', 'ai-alt-gpt'),
+                                            $optimized,
+                                            $total_images
+                                        );
+                                    } else {
+                                        printf(
+                                            esc_html__('All %1$d images optimized! 🎉', 'ai-alt-gpt'),
+                                            $total_images
+                                        );
+                                    }
+                                } else {
+                                    esc_html_e('Ready to optimize images', 'ai-alt-gpt');
+                                }
+                                ?>
+                            </h2>
+                        </div>
+                        
+                        <?php if ($total_images > 0) : ?>
+                            <div class="alttextai-dashboard-usage-bar">
+                                <div class="alttextai-dashboard-usage-bar-fill" style="width: <?php echo esc_attr($stats['coverage'] ?? 0); ?>%;"></div>
+                            </div>
+                            
+                            <div class="alttextai-dashboard-usage-stats">
+                                <div class="alttextai-dashboard-usage-stat">
+                                    <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Optimized', 'ai-alt-gpt'); ?></span>
+                                    <span class="alttextai-dashboard-usage-value"><?php echo esc_html($optimized); ?></span>
+                                </div>
+                                <div class="alttextai-dashboard-usage-stat">
+                                    <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Remaining', 'ai-alt-gpt'); ?></span>
+                                    <span class="alttextai-dashboard-usage-value"><?php echo esc_html($remaining); ?></span>
+                                </div>
+                                <div class="alttextai-dashboard-usage-stat">
+                                    <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Total', 'ai-alt-gpt'); ?></span>
+                                    <span class="alttextai-dashboard-usage-value"><?php echo esc_html($total_images); ?></span>
+                                </div>
+                            </div>
+                        <?php else : ?>
+                            <div class="alttextai-empty-state">
+                                <p class="alttextai-empty-state-text"><?php esc_html_e('Upload images to your WordPress Media Library to get started with AI-powered alt text generation.', 'ai-alt-gpt'); ?></p>
+                                <a href="<?php echo esc_url(admin_url('upload.php')); ?>" class="alttextai-btn-primary alttextai-btn-icon">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                        <path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                    <span><?php esc_html_e('Go to Media Library', 'ai-alt-gpt'); ?></span>
+                                </a>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                    </div> <!-- End Dashboard Container -->
+                    <?php else : ?>
+                        <!-- Not Authenticated - Demo Preview (Using Real Dashboard Structure) -->
+                        <div class="alttextai-demo-preview">
+                            <!-- Demo Badge Overlay -->
+                            <div class="alttextai-demo-badge-overlay">
+                                <span class="alttextai-demo-badge-text"><?php esc_html_e('DEMO PREVIEW', 'ai-alt-gpt'); ?></span>
+                            </div>
+                            
+                            <!-- Usage Card (Demo) -->
+                            <div class="alttextai-dashboard-card alttextai-dashboard-card--featured alttextai-demo-mode">
+                                <div class="alttextai-dashboard-card-header">
+                                    <div class="alttextai-dashboard-card-badge"><?php esc_html_e('USAGE STATUS', 'ai-alt-gpt'); ?></div>
+                                    <h2 class="alttextai-dashboard-card-title">
+                                        <span class="alttextai-dashboard-emoji">📊</span>
+                                        <?php esc_html_e('0 of 10 generations used', 'ai-alt-gpt'); ?>
+                                    </h2>
+                                </div>
+                                
+                                <div class="alttextai-dashboard-usage-bar">
+                                    <div class="alttextai-dashboard-usage-bar-fill" style="width: 0%;"></div>
+                                </div>
+                                
+                                <div class="alttextai-dashboard-usage-stats">
+                                    <div class="alttextai-dashboard-usage-stat">
+                                        <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Used', 'ai-alt-gpt'); ?></span>
+                                        <span class="alttextai-dashboard-usage-value">0</span>
+                                    </div>
+                                    <div class="alttextai-dashboard-usage-stat">
+                                        <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Remaining', 'ai-alt-gpt'); ?></span>
+                                        <span class="alttextai-dashboard-usage-value">10</span>
+                                    </div>
+                                    <div class="alttextai-dashboard-usage-stat">
+                                        <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Resets', 'ai-alt-gpt'); ?></span>
+                                        <span class="alttextai-dashboard-usage-value"><?php echo esc_html(date_i18n('F j, Y', strtotime('first day of next month'))); ?></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Time Saved Card (Demo) -->
+                            <div class="alttextai-dashboard-card alttextai-time-saved-card alttextai-demo-mode">
+                                <div class="alttextai-dashboard-card-header">
+                                    <div class="alttextai-dashboard-card-badge"><?php esc_html_e('TIME SAVED', 'ai-alt-gpt'); ?></div>
+                                    <h2 class="alttextai-dashboard-card-title">
+                                        <span class="alttextai-dashboard-emoji">⏱️</span>
+                                        <?php esc_html_e('Ready to optimize your images', 'ai-alt-gpt'); ?>
+                                    </h2>
+                                    <p class="alttextai-seo-impact"><?php esc_html_e('✨ Start generating alt text to improve SEO and accessibility', 'ai-alt-gpt'); ?></p>
+                                </div>
+                            </div>
+
+                            <!-- Image Optimization Card (Demo) -->
+                            <div class="alttextai-dashboard-card alttextai-demo-mode">
+                                <div class="alttextai-dashboard-card-header">
+                                    <div class="alttextai-dashboard-card-badge"><?php esc_html_e('IMAGE OPTIMIZATION', 'ai-alt-gpt'); ?></div>
+                                    <h2 class="alttextai-dashboard-card-title">
+                                        <span class="alttextai-dashboard-emoji">📊</span>
+                                        <?php esc_html_e('Ready to optimize images', 'ai-alt-gpt'); ?>
+                                    </h2>
+                                </div>
+                                
+                                <div class="alttextai-dashboard-usage-bar">
+                                    <div class="alttextai-dashboard-usage-bar-fill" style="width: 0%;"></div>
+                                </div>
+                                
+                                <div class="alttextai-dashboard-usage-stats">
+                                    <div class="alttextai-dashboard-usage-stat">
+                                        <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Optimized', 'ai-alt-gpt'); ?></span>
+                                        <span class="alttextai-dashboard-usage-value">0</span>
+                                    </div>
+                                    <div class="alttextai-dashboard-usage-stat">
+                                        <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Remaining', 'ai-alt-gpt'); ?></span>
+                                        <span class="alttextai-dashboard-usage-value">—</span>
+                                    </div>
+                                    <div class="alttextai-dashboard-usage-stat">
+                                        <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Total', 'ai-alt-gpt'); ?></span>
+                                        <span class="alttextai-dashboard-usage-value">—</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Demo CTA -->
+                            <div class="alttextai-demo-cta">
+                                <p class="alttextai-demo-cta-text"><?php esc_html_e('✨ Sign up now to start generating alt text for your images!', 'ai-alt-gpt'); ?></p>
+                                <button type="button" class="alttextai-btn-primary alttextai-btn-icon" id="alttextai-demo-signup-btn">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                        <path d="M8 2L6 6H2L6 9L4 14L8 11L12 14L10 9L14 6H10L8 2Z" fill="currentColor"/>
+                                    </svg>
+                                    <span><?php esc_html_e('Get Started Free', 'ai-alt-gpt'); ?></span>
+                                </button>
+                            </div>
+                        </div>
+                    <?php endif; // End is_authenticated check for usage/stats cards ?>
+
+                    <?php if ($this->api_client->is_authenticated()) : ?>
+                    <!-- Main CTA Buttons -->
+                    <div class="alttextai-main-cta">
+                        <?php
+                        $remaining_images = $stats['missing'] ?? 0;
+                        $total_images = $stats['total'] ?? 0;
+
+                        // Show CTAs only when there are images
+                        if ($total_images > 0) :
+                            if ($usage_stats['remaining'] <= 0) : ?>
+                                <!-- Upgrade CTA when out of credits -->
+                                <div class="alttextai-upgrade-cta-card">
+                                    <div class="alttextai-upgrade-cta-content">
+                                        <div class="alttextai-upgrade-cta-icon">⚡</div>
+                                        <div class="alttextai-upgrade-cta-text">
+                                            <h3><?php printf(esc_html__('%d images waiting for alt text', 'ai-alt-gpt'), $remaining_images); ?></h3>
+                                            <p><?php esc_html_e('Upgrade to Pro to generate alt text for all your images', 'ai-alt-gpt'); ?></p>
+                                        </div>
+                                        <button type="button" class="alttextai-btn-primary alttextai-btn-icon" data-action="show-upgrade-modal" data-upgrade-source="bulk-limit">
+                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                                <path d="M8 2L6 6H2L6 9L4 14L8 11L12 14L10 9L14 6H10L8 2Z" fill="currentColor"/>
+                                            </svg>
+                                            <span><?php esc_html_e('Upgrade to Pro', 'ai-alt-gpt'); ?></span>
+                                        </button>
+                                    </div>
+                                </div>
+                            <?php else : ?>
+                                <!-- Generate Missing Alt Text Button -->
+                                <button type="button" class="alttextai-btn-primary alttextai-btn-icon alttextai-main-action-btn" data-action="generate-missing" <?php echo $remaining_images <= 0 ? 'disabled' : ''; ?>>
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                        <path d="M8 2L6 6H2L6 9L4 14L8 11L12 14L10 9L14 6H10L8 2Z" fill="currentColor"/>
+                                    </svg>
+                                    <span><?php 
+                                        if ($remaining_images > 0) {
+                                            printf(esc_html__('Generate Alt Text for %d Images', 'ai-alt-gpt'), $remaining_images);
+                                        } else {
+                                            esc_html_e('All Images Have Alt Text', 'ai-alt-gpt');
+                                        }
+                                    ?></span>
+                                </button>
+
+                                <!-- Secondary: Regenerate All -->
+                                <?php if ($optimized > 0) : ?>
+                                <button type="button" class="alttextai-btn-secondary alttextai-btn-icon" data-action="regenerate-all" title="<?php esc_attr_e('Regenerate alt text for all images (replaces existing)', 'ai-alt-gpt'); ?>">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                        <path d="M8 1v4M8 11v4M3 8h4M9 8h4M4.5 4.5L7 7M9 7l2.5-2.5M4.5 11.5L7 9M9 9l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                    </svg>
+                                    <span><?php printf(esc_html__('Regenerate All (%d)', 'ai-alt-gpt'), $total_images); ?></span>
+                                </button>
+                                <?php endif; ?>
+
+                                <?php if ($remaining_images > 0) : ?>
+                                <p class="alttextai-action-hint">
+                                    <?php esc_html_e('This will generate alt text only for images that don\'t have any yet.', 'ai-alt-gpt'); ?>
+                                </p>
+                                <?php endif; ?>
+                            <?php endif; ?>
                         <?php endif; ?>
                     </div>
 
@@ -1132,9 +1325,10 @@ class AI_Alt_Text_Generator_GPT {
                             </div>
                         </div>
                     <?php endif; ?>
-                </div>
+                    </div> <!-- End Main CTA -->
+                    <?php endif; // End is_authenticated check for main CTA buttons ?>
 
-                
+                    <?php if ($this->api_client->is_authenticated()) : ?>
                 <!-- ALT Library Table -->
                 <?php
                 // Pagination setup
@@ -1367,14 +1561,17 @@ class AI_Alt_Text_Generator_GPT {
                             </div>
                         </div>
                     <?php endif; ?>
-                </div>
+                    </div> <!-- End ALT Library -->
+                    <?php endif; // End is_authenticated check for ALT Library ?>
                 
-                <!-- Upgrade Footer -->
-                <div class="alttextai-footer">
-                    <a href="<?php echo esc_url(AltText_AI_Usage_Tracker::get_upgrade_url()); ?>" class="alttextai-upgrade-link show-upgrade-modal" data-upgrade-source="footer">
-                        <?php esc_html_e('Upgrade to Pro for unlimited AI generations', 'ai-alt-gpt'); ?> →
-                    </a>
-                </div>
+                    <?php if ($this->api_client->is_authenticated()) : ?>
+                    <!-- Upgrade Footer -->
+                    <div class="alttextai-footer">
+                        <a href="#" class="alttextai-upgrade-link" data-action="show-upgrade-modal" data-upgrade-source="footer">
+                            <?php esc_html_e('Upgrade to Pro for unlimited AI generations', 'ai-alt-gpt'); ?> →
+                        </a>
+                    </div>
+                    <?php endif; ?>
                 
                 <!-- Status for AJAX operations -->
                 <div class="ai-alt-dashboard__status" data-progress-status role="status" aria-live="polite" style="display: none;"></div>
@@ -1669,6 +1866,22 @@ class AI_Alt_Text_Generator_GPT {
                 </div>
             </div>
             <?php elseif ($tab === 'settings') : ?>
+            <?php if (!$this->api_client->is_authenticated()) : ?>
+                <!-- Settings not available for non-authenticated users -->
+                <div class="alttextai-settings-required">
+                    <div class="alttextai-settings-required-content">
+                        <div class="alttextai-settings-required-icon">🔒</div>
+                        <h2><?php esc_html_e('Sign up required', 'ai-alt-gpt'); ?></h2>
+                        <p><?php esc_html_e('Please create a free account to access settings and configure your alt text generation preferences.', 'ai-alt-gpt'); ?></p>
+                        <button type="button" class="alttextai-btn-primary alttextai-btn-icon" id="alttextai-settings-signup-btn">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M8 2L6 6H2L6 9L4 14L8 11L12 14L10 9L14 6H10L8 2Z" fill="currentColor"/>
+                            </svg>
+                            <span><?php esc_html_e('Sign Up Free', 'ai-alt-gpt'); ?></span>
+                        </button>
+                    </div>
+                </div>
+            <?php else : ?>
             <!-- Settings Page - Modern Design -->
             <div class="alttextai-settings-container">
                 <?php
@@ -1685,6 +1898,19 @@ class AI_Alt_Text_Generator_GPT {
 
                 <!-- Header Section -->
                 <div class="alttextai-settings-header">
+                    <div class="alttextai-settings-header-icon">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="48" height="48" rx="12" fill="url(#settings-gradient)"/>
+                            <path d="M24 8C15.163 8 8 15.163 8 24s7.163 16 16 16 16-7.163 16-16S32.837 8 24 8zm0 28c-6.627 0-12-5.373-12-12s5.373-12 12-12 12 5.373 12 12-5.373 12-12 12z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M24 16v8l6 4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <defs>
+                                <linearGradient id="settings-gradient" x1="0" y1="0" x2="48" y2="48">
+                                    <stop stop-color="#f59e0b"/>
+                                    <stop offset="1" stop-color="#d97706"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
                     <div>
                         <h1 class="alttextai-settings-title"><?php esc_html_e('Settings', 'ai-alt-gpt'); ?></h1>
                         <p class="alttextai-settings-subtitle"><?php esc_html_e('Configure your alt text generation preferences', 'ai-alt-gpt'); ?></p>
@@ -1720,7 +1946,7 @@ class AI_Alt_Text_Generator_GPT {
                     </div>
 
                     <?php if (!$is_pro) : ?>
-                    <button type="button" class="alttextai-settings-upgrade-button" data-action="show-upgrade-modal">
+                    <button type="button" class="alttextai-btn-primary alttextai-btn-icon" data-action="show-upgrade-modal">
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                             <path d="M8 2L6 6H2L6 9L4 14L8 11L12 14L10 9L14 6H10L8 2Z" fill="currentColor"/>
                         </svg>
@@ -1834,9 +2060,10 @@ class AI_Alt_Text_Generator_GPT {
                     </div>
                 </form>
             </div>
-                <?php endif; ?>
+            <?php endif; ?>
+            <?php endif; ?>
             
-                                <?php
+            <?php
             // Set up currency for upgrade modal
             $locale = get_locale();
             // Default to USD
@@ -3723,6 +3950,72 @@ class AI_Alt_Text_Generator_GPT {
             'alt_text'       => $result,
             'attachment_id'  => $attachment_id,
         ]);
+    }
+
+    /**
+     * AJAX handler: Bulk queue images for processing
+     */
+    public function ajax_bulk_queue() {
+        check_ajax_referer('alttextai_upgrade_nonce', 'nonce');
+        
+        if (!$this->user_can_manage()) {
+            wp_send_json_error(['message' => 'Unauthorized']);
+        }
+        
+        $attachment_ids = isset($_POST['attachment_ids']) ? $_POST['attachment_ids'] : [];
+        $source = sanitize_text_field($_POST['source'] ?? 'bulk');
+        
+        if (!is_array($attachment_ids) || empty($attachment_ids)) {
+            wp_send_json_error(['message' => 'Invalid attachment IDs']);
+        }
+        
+        // Sanitize all IDs
+        $ids = array_map('intval', $attachment_ids);
+        $ids = array_filter($ids, function($id) {
+            return $id > 0 && $this->is_image($id);
+        });
+        
+        if (empty($ids)) {
+            wp_send_json_error(['message' => 'No valid images found']);
+        }
+        
+        // Check if user has remaining usage
+        $usage = $this->api_client->get_usage();
+        if (!$usage || $usage['remaining'] <= 0) {
+            wp_send_json_error([
+                'message' => 'Monthly limit reached',
+                'code' => 'limit_reached',
+                'usage' => $usage
+            ]);
+        }
+        
+        // Check how many we can queue
+        $remaining = $usage['remaining'] ?? 0;
+        if (count($ids) > $remaining) {
+            wp_send_json_error([
+                'message' => sprintf(__('You only have %d generations remaining. Please upgrade or select fewer images.', 'ai-alt-gpt'), $remaining),
+                'code' => 'insufficient_credits',
+                'remaining' => $remaining
+            ]);
+        }
+        
+        // Queue images
+        $queued = AltText_AI_Queue::enqueue_many($ids, $source);
+        
+        if ($queued > 0) {
+            // Schedule queue processing
+            AltText_AI_Queue::schedule_processing();
+            
+            wp_send_json_success([
+                'message' => sprintf(__('%d image(s) queued for processing', 'ai-alt-gpt'), $queued),
+                'queued' => $queued,
+                'total' => count($ids)
+            ]);
+        } else {
+            wp_send_json_error([
+                'message' => __('Failed to queue images. They may already be queued or processing.', 'ai-alt-gpt')
+            ]);
+        }
     }
 
     public function process_queue() {

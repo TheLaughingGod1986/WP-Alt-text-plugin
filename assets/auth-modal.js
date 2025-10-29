@@ -233,7 +233,11 @@ class AltTextAuthModal {
             }
         } catch (error) {
             console.error('Login error:', error);
-            this.showError('Network error. Please try again.');
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                this.showError('Unable to connect to authentication server. The service may be temporarily unavailable. Please try again in a few minutes.');
+            } else {
+                this.showError('Network error. Please try again.');
+            }
         } finally {
             this.setLoading(form, false);
         }
@@ -432,6 +436,7 @@ class AltTextAuthModal {
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.AltTextAuthModal = new AltTextAuthModal();
+    window.authModal = window.AltTextAuthModal; // Alias for compatibility
 });
 
 // Export for use in other scripts
