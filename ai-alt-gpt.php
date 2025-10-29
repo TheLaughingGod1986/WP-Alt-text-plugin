@@ -4390,7 +4390,8 @@ class AI_Alt_Text_Generator_GPT {
         }
 
         wp_send_json_success([
-            'message' => __('Password reset link has been sent to your email. Please check your inbox and spam folder.', 'ai-alt-gpt')
+            'message' => __('Password reset link has been sent to your email. Please check your inbox and spam folder.', 'ai-alt-gpt'),
+            'redirect' => admin_url('upload.php?page=ai-alt-gpt&password_reset=requested')
         ]);
     }
 
@@ -4431,7 +4432,8 @@ class AI_Alt_Text_Generator_GPT {
         }
 
         wp_send_json_success([
-            'message' => __('Password reset successfully. You can now sign in with your new password.', 'ai-alt-gpt')
+            'message' => __('Password reset successfully. You can now sign in with your new password.', 'ai-alt-gpt'),
+            'redirect' => admin_url('upload.php?page=ai-alt-gpt&password_reset=success')
         ]);
     }
 
