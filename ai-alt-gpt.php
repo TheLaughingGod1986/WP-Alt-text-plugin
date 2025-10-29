@@ -3741,8 +3741,8 @@ class AI_Alt_Text_Generator_GPT {
             return file_exists($path) ? (string) filemtime($path) : $fallback;
         };
 
-        // Always use full versions to ensure latest behavior (minified asset drift)
-        $suffix = '';
+        // Use minified files in production, full files in development
+        $suffix = (defined('SCRIPT_DEBUG') && SCRIPT_DEBUG) ? '' : '.min';
         $admin_file = "assets/ai-alt-admin{$suffix}.js";
         $admin_version = $asset_version($admin_file, '3.0.0');
         
@@ -3783,25 +3783,25 @@ class AI_Alt_Text_Generator_GPT {
         if ($hook === 'media_page_ai-alt-gpt'){
             $css_file = "assets/ai-alt-dashboard{$suffix}.css";
             $js_file = "assets/ai-alt-dashboard{$suffix}.js";
-            $upgrade_css = "assets/upgrade-modal.css";
-            $upgrade_js = "assets/upgrade-modal.js";
-            $auth_css = "assets/auth-modal.css";
-            $auth_js = "assets/auth-modal.js";
+            $upgrade_css = "assets/upgrade-modal{$suffix}.css";
+            $upgrade_js = "assets/upgrade-modal{$suffix}.js";
+            $auth_css = "assets/auth-modal{$suffix}.css";
+            $auth_js = "assets/auth-modal{$suffix}.js";
 
             // Enqueue design system (FIRST - foundation for all styles)
             wp_enqueue_style(
                 'ai-alt-gpt-design-system',
-                $base_url . 'assets/design-system.css',
+                $base_url . "assets/design-system{$suffix}.css",
                 [],
-                $asset_version('assets/design-system.css', '1.0.0')
+                $asset_version("assets/design-system{$suffix}.css", '1.0.0')
             );
 
             // Enqueue reusable components (SECOND - uses design tokens)
             wp_enqueue_style(
                 'ai-alt-gpt-components',
-                $base_url . 'assets/components.css',
+                $base_url . "assets/components{$suffix}.css",
                 ['ai-alt-gpt-design-system'],
-                $asset_version('assets/components.css', '1.0.0')
+                $asset_version("assets/components{$suffix}.css", '1.0.0')
             );
 
             // Enqueue page-specific styles (use design system + components)
@@ -3813,9 +3813,9 @@ class AI_Alt_Text_Generator_GPT {
             );
             wp_enqueue_style(
                 'ai-alt-gpt-modern',
-                $base_url . 'assets/modern-style.css',
+                $base_url . "assets/modern-style{$suffix}.css",
                 ['ai-alt-gpt-components'],
-                $asset_version('assets/modern-style.css', '4.1.0')
+                $asset_version("assets/modern-style{$suffix}.css", '4.1.0')
             );
             wp_enqueue_style(
                 'ai-alt-gpt-upgrade',
@@ -3831,15 +3831,15 @@ class AI_Alt_Text_Generator_GPT {
             );
             wp_enqueue_style(
                 'ai-alt-gpt-button-enhancements',
-                $base_url . 'assets/button-enhancements.css',
+                $base_url . "assets/button-enhancements{$suffix}.css",
                 ['ai-alt-gpt-components'],
-                $asset_version('assets/button-enhancements.css', '1.0.0')
+                $asset_version("assets/button-enhancements{$suffix}.css", '1.0.0')
             );
             wp_enqueue_style(
                 'ai-alt-gpt-guide-settings',
-                $base_url . 'assets/guide-settings-pages.css',
+                $base_url . "assets/guide-settings-pages{$suffix}.css",
                 ['ai-alt-gpt-components'],
-                $asset_version('assets/guide-settings-pages.css', '1.0.0')
+                $asset_version("assets/guide-settings-pages{$suffix}.css", '1.0.0')
             );
 
             $stats_data = $this->get_media_stats();

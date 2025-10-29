@@ -1,4 +1,17 @@
 {
+  "name": "ai-alt-text-generator",
+  "version": "4.2.0",
+  "description": "WordPress plugin for AI-powered alt text generation",
+  "scripts": {
+    "build:js": "node scripts/minify-js.js",
+    "build:css": "node scripts/minify-css.js",
+    "build:assets": "npm run build:js && npm run build:css",
+    "build": "npm run build:assets"
+  },
+  "devDependencies": {
+    "cssnano-cli": "^1.0.5",
+    "terser": "^5.24.0"
+  },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^5.1.0"

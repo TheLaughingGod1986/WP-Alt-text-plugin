@@ -30,6 +30,23 @@ rm -rf "$BUILD_DIR"
 mkdir -p "$PLUGIN_DIR"
 mkdir -p "$DIST_DIR"
 
+echo "🔧 Building minified assets (Phase 2 optimization)"
+# Check if node_modules exist, if not install
+if [ ! -d "node_modules" ]; then
+    echo "📦 Installing build dependencies..."
+    npm install --quiet
+fi
+
+# Run minification if script exists
+if [ -f "scripts/minify-js.js" ] && [ -f "scripts/minify-css.js" ]; then
+    echo "🚀 Running asset minification..."
+    npm run build:assets 2>/dev/null || {
+        echo "⚠️  Minification failed, continuing with unminified assets"
+    }
+else
+    echo "⚠️  Minification scripts not found, skipping..."
+fi
+
 echo "📋 Copying core files"
 rsync -a \
   ai-alt-gpt.php LICENSE readme.txt \
@@ -38,6 +55,8 @@ rsync -a \
 rsync -a \
   --exclude='wordpress-org' \
   --exclude='wordpress-org/**' \
+  --include='*.min.js' \
+  --include='*.min.css' \
   assets includes templates \
   "$PLUGIN_DIR/"
 
