@@ -52,9 +52,12 @@ rsync -a \
   ai-alt-gpt.php LICENSE readme.txt \
   "$PLUGIN_DIR/"
 
+# Copy assets with exclusions - only include minified files in production
 rsync -a \
   --exclude='wordpress-org' \
   --exclude='wordpress-org/**' \
+  --exclude='*.js' \
+  --exclude='*.css' \
   --include='*.min.js' \
   --include='*.min.css' \
   assets includes templates \
