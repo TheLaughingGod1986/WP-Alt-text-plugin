@@ -9,33 +9,53 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 999999;
-    pointer-events: none;
+    pointer-events: auto;
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .alttextai-upgrade-modal__content {
     background: var(--alttextai-white);
-    border-radius: var(--alttextai-radius-lg);
-    box-shadow: var(--alttextai-shadow-xl);
-    max-width: 900px;
+    border-radius: var(--alttextai-radius-xl);
+    box-shadow: var(--alttextai-shadow-2xl);
+    max-width: 1000px;
     width: 90%;
     max-height: 90vh;
     overflow-y: auto;
     position: relative;
-    z-index: 1000001;
+    z-index: 1000000;
     pointer-events: auto;
+    animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .alttextai-upgrade-modal__header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding: var(--alttextai-space-6);
+    padding: var(--alttextai-space-8) var(--alttextai-space-6);
     border-bottom: 1px solid var(--alttextai-border-color);
+    background: linear-gradient(135deg, var(--alttextai-white) 0%, var(--alttextai-gray-50) 100%);
 }
 
 .alttextai-upgrade-modal__header-content {
@@ -43,19 +63,20 @@
 }
 
 .alttextai-upgrade-modal__header h2 {
-    margin: 0 0 var(--alttextai-space-2) 0;
-    font-size: var(--alttextai-text-2xl);
-    font-weight: var(--alttextai-font-bold);
+    margin: 0 0 var(--alttextai-space-3) 0;
+    font-size: var(--alttextai-text-3xl);
+    font-weight: var(--alttextai-font-extrabold);
     color: var(--alttextai-text-primary);
     line-height: 1.2;
+    letter-spacing: -0.02em;
 }
 
 .alttextai-upgrade-modal__subtitle {
     margin: 0;
-    font-size: var(--alttextai-text-base);
-    color: var(--alttextai-text-muted);
+    font-size: var(--alttextai-text-lg);
+    color: var(--alttextai-text-secondary);
     font-weight: var(--alttextai-font-medium);
-    line-height: 1.5;
+    line-height: 1.6;
 }
 
 .alttextai-modal-close {
@@ -87,7 +108,7 @@
 }
 
 .alttextai-upgrade-modal__body {
-    padding: var(--alttextai-space-6);
+    padding: var(--alttextai-space-8) var(--alttextai-space-6);
 }
 
 /* Auth Notice for Non-Authenticated Users */
@@ -156,6 +177,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    overflow: visible;
 }
 
 .alttextai-plan-card:hover {
@@ -249,20 +271,21 @@
 }
 
 .alttextai-plan-price {
-    margin-bottom: var(--alttextai-space-2);
+    margin-bottom: var(--alttextai-space-3);
 }
 
 .alttextai-price-amount {
-    font-size: var(--alttextai-text-4xl);
+    font-size: var(--alttextai-text-5xl);
     font-weight: var(--alttextai-font-extrabold);
     color: var(--alttextai-success);
-    line-height: 1.2;
+    line-height: 1;
+    letter-spacing: -0.03em;
 }
 
 .alttextai-price-period {
-    font-size: var(--alttextai-text-base);
+    font-size: var(--alttextai-text-lg);
     color: var(--alttextai-text-muted);
-    margin-left: var(--alttextai-space-1);
+    margin-left: var(--alttextai-space-2);
     font-weight: var(--alttextai-font-medium);
 }
 
@@ -279,13 +302,13 @@
 }
 
 .alttextai-plan-features li {
-    padding: var(--alttextai-space-2) 0;
+    padding: var(--alttextai-space-3) 0;
     border-bottom: 1px solid var(--alttextai-border-color);
     position: relative;
-    padding-left: var(--alttextai-space-5);
-    font-size: var(--alttextai-text-sm);
+    padding-left: var(--alttextai-space-6);
+    font-size: var(--alttextai-text-base);
     color: var(--alttextai-text-primary);
-    line-height: 1.5;
+    line-height: 1.6;
 }
 
 .alttextai-plan-features li:last-child {
@@ -388,32 +411,64 @@
     width: 100%;
     justify-content: center;
     margin-top: auto;
-    padding: var(--alttextai-space-3) var(--alttextai-space-6);
+    padding: var(--alttextai-space-4) var(--alttextai-space-6);
     font-size: var(--alttextai-text-base);
     font-weight: var(--alttextai-font-semibold);
     transition: all 0.2s ease;
-    box-shadow: var(--alttextai-shadow-sm);
+    box-shadow: var(--alttextai-shadow-md);
+    position: relative;
+    z-index: 10;
+    display: inline-flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 .alttextai-plan-cta:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--alttextai-shadow-md);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: var(--alttextai-shadow-lg);
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.alttextai-plan-cta:active {
+    transform: translateY(0) scale(0.98);
 }
 
 .alttextai-plan-card--pro .alttextai-plan-cta {
-    background: var(--alttextai-primary);
-    border-color: var(--alttextai-primary);
+    background: var(--alttextai-gradient-primary);
+    border: none;
+    color: var(--alttextai-white);
 }
 
 .alttextai-plan-card--pro .alttextai-plan-cta:hover {
     background: var(--alttextai-primary-dark);
-    border-color: var(--alttextai-primary-dark);
+    box-shadow: 0 8px 24px rgba(20, 184, 166, 0.4);
+}
+
+.alttextai-plan-card--featured .alttextai-plan-cta {
+    background: var(--alttextai-gradient-success);
+    border: none;
+    color: var(--alttextai-white);
+}
+
+.alttextai-plan-card--featured .alttextai-plan-cta:hover {
+    background: var(--alttextai-success-dark);
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
 }
 
 .alttextai-plan-card--credits .alttextai-plan-cta {
     margin-top: var(--alttextai-space-4);
     max-width: 300px;
     align-self: center;
+    background: var(--alttextai-white);
+    border: 2px solid var(--alttextai-border-secondary);
+    color: var(--alttextai-text-primary);
+}
+
+.alttextai-plan-card--credits .alttextai-plan-cta:hover {
+    background: var(--alttextai-gray-50);
+    border-color: var(--alttextai-primary);
+    color: var(--alttextai-primary);
 }
 
 /* ========================================
