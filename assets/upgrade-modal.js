@@ -12,7 +12,7 @@
     
     $(document).ready(function() {
         // No-op: functionality is in ai-alt-dashboard.js
-        console.log('[AI Alt Text] Upgrade modal JavaScript loaded');
+        // Removed console.log for production
     });
     
 })(jQuery);

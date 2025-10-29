@@ -2,6 +2,61 @@
 
 All notable changes to Farlo AI Alt Text Generator will be documented in this file.
 
+## [4.2.0] - 2025-01-XX
+
+### ✨ New Features
+
+#### Password Reset & Account Management
+- **Forgot Password** - Users can request password reset via email
+- **Password Reset Flow** - Secure token-based password reset with email verification
+- **Account Management Section** - New Settings tab section for subscription management
+- **Subscription Information Display** - View current plan, billing cycle, next charge date
+- **Payment Method Display** - Shows saved payment method details (card brand, last 4 digits, expiry)
+- **Stripe Customer Portal Integration** - Direct access to update payment methods and manage subscriptions
+- **Password Strength Indicator** - Real-time feedback on password strength during registration and reset
+- **Subscription Status Badges** - Clear visual indicators for active, cancelled, or trial subscriptions
+
+#### Enhanced User Experience
+- **WordPress Admin Notices** - Professional success/error notifications for all operations
+- **Improved Error Messages** - Actionable, user-friendly error messages throughout
+- **Subscription Info Caching** - Faster page loads with 5-minute localStorage cache
+- **Automatic Retry Logic** - Exponential backoff retry for failed API requests
+- **Portal Return Detection** - Automatically refreshes subscription info after billing updates
+
+#### Security & Performance
+- **Production Code Cleanup** - Removed debug console.log statements
+- **Secure Password Reset** - Token-based reset with expiration and single-use validation
+- **Rate Limiting Awareness** - UI feedback for rate-limited operations
+- **Error Recovery** - Graceful handling of network failures and backend outages
+
+#### Developer Experience
+- **Backend Integration Documentation** - Complete API specification for backend team
+- **Improved Code Quality** - Debug mode support, better error handling
+- **Comprehensive Documentation** - Detailed implementation guides
+
+### 🔧 Technical Improvements
+- Added AJAX handlers: `ajax_forgot_password`, `ajax_reset_password`, `ajax_get_subscription_info`
+- Added API client methods: `forgot_password()`, `reset_password()`, `get_subscription_info()`
+- Enhanced authentication modal with forgot password and reset password forms
+- Improved error parsing and user-friendly message translation
+- Added subscription info caching with localStorage
+- Implemented exponential backoff retry mechanism (1s → 2s → 4s → 8s → 16s)
+- Password strength checker with visual feedback (Weak/Fair/Good/Strong)
+
+### 📝 Documentation
+- Added `ACCOUNT_MANAGEMENT_IMPLEMENTATION_PLAN.md`
+- Added `BACKEND_INTEGRATION.md` - Complete API contract specification
+- Added `RECOMMENDATIONS.md` - Implementation recommendations
+- Added `ADDITIONAL_RECOMMENDATIONS.md` - Additional production improvements
+
+## [4.1.0] - 2025-01-XX
+
+### Added
+- SEO-optimized plugin metadata for WordPress.org
+- Improved plugin title and description for better discoverability
+- Enhanced `readme.txt` with comprehensive tags and FAQ
+- Production-ready code cleanup
+
 ## [3.0.0] - 2025-10-15
 
 ### 🎉 Major Release - Complete UI/UX Overhaul

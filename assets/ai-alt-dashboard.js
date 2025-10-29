@@ -462,43 +462,46 @@ function alttextaiCloseModal() {
     }
 }
 
+// Debug mode check
+var alttextaiDebug = (typeof window.alttextai_ajax !== 'undefined' && window.alttextai_ajax.debug) || false;
+
 function openStripeLink(url) {
-    console.log('[AltText AI] Opening Stripe link:', url);
+    if (alttextaiDebug) console.log('[AltText AI] Opening Stripe link:', url);
     window.open(url, '_blank');
 }
 
 function showAuthBanner() {
-    console.log('[AltText AI] Showing auth banner');
+    if (alttextaiDebug) console.log('[AltText AI] Showing auth banner');
     
     // Try to show the auth modal
     if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
-        console.log('[AltText AI] Using authModal.show()');
+        if (alttextaiDebug) console.log('[AltText AI] Using authModal.show()');
         window.authModal.show();
                         } else {
         // Try to find and show the auth modal directly
         const authModal = document.getElementById('alttext-auth-modal');
         if (authModal) {
-            console.log('[AltText AI] Showing auth modal directly');
+            if (alttextaiDebug) console.log('[AltText AI] Showing auth modal directly');
             authModal.style.display = 'block';
         } else {
-            console.log('[AltText AI] Auth modal not found');
+            if (alttextaiDebug) console.log('[AltText AI] Auth modal not found');
             alert('Authentication system not available. Please refresh the page.');
         }
     }
 }
 
 function showAuthLogin() {
-    console.log('[AltText AI] Showing auth login');
+    if (alttextaiDebug) console.log('[AltText AI] Showing auth login');
     
     // Try multiple methods to show auth modal
     if (typeof window.AltTextAuthModal !== 'undefined' && window.AltTextAuthModal && typeof window.AltTextAuthModal.show === 'function') {
-        console.log('[AltText AI] Using AltTextAuthModal.show()');
+        if (alttextaiDebug) console.log('[AltText AI] Using AltTextAuthModal.show()');
                         window.AltTextAuthModal.show();
                     return;
                 }
 
     if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
-        console.log('[AltText AI] Using authModal.show()');
+        if (alttextaiDebug) console.log('[AltText AI] Using authModal.show()');
         window.authModal.show();
         return;
     }
@@ -508,7 +511,7 @@ function showAuthLogin() {
 }
 
 function handleLogout() {
-    console.log('[AltText AI] Handling logout');
+    if (alttextaiDebug) console.log('[AltText AI] Handling logout');
     
     // Make AJAX request to logout
     if (typeof window.alttextai_ajax === 'undefined') {
@@ -530,7 +533,7 @@ function handleLogout() {
         return;
     }
     
-    console.log('[AltText AI] Calling logout AJAX:', ajaxUrl);
+    if (alttextaiDebug) console.log('[AltText AI] Calling logout AJAX:', ajaxUrl);
     
     // Try jQuery first, fallback to vanilla JS
     if (typeof jQuery !== 'undefined' && jQuery.ajax) {
@@ -542,7 +545,7 @@ function handleLogout() {
                 nonce: nonce
             },
             success: function(response) {
-                console.log('[AltText AI] Logout successful', response);
+                if (alttextaiDebug) console.log('[AltText AI] Logout successful', response);
                 // Clear any local storage
                 if (typeof localStorage !== 'undefined') {
                     localStorage.removeItem('alttextai_token');
@@ -572,11 +575,11 @@ function handleLogout() {
             credentials: 'same-origin'
         })
         .then(response => {
-            console.log('[AltText AI] Logout response status:', response.status);
+            if (alttextaiDebug) console.log('[AltText AI] Logout response status:', response.status);
             return response.json().catch(() => ({}));
         })
         .then(data => {
-            console.log('[AltText AI] Logout successful', data);
+            if (alttextaiDebug) console.log('[AltText AI] Logout successful', data);
             // Clear any local storage
             if (typeof localStorage !== 'undefined') {
                 localStorage.removeItem('alttextai_token');
@@ -597,7 +600,7 @@ function handleLogout() {
 
 // Initialize auth modal when page loads
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('[AltText AI] DOM loaded, initializing auth system');
+    if (alttextaiDebug) console.log('[AltText AI] DOM loaded, initializing auth system');
     
     // Vanilla JS fallback for logout button (in case jQuery isn't ready)
     const logoutBtn = document.getElementById('alttextai-logout-btn');
@@ -610,26 +613,28 @@ document.addEventListener('DOMContentLoaded', function() {
         newLogoutBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            console.log('[AltText AI] Logout button clicked (Vanilla JS)');
+            if (alttextaiDebug) console.log('[AltText AI] Logout button clicked (Vanilla JS)');
             handleLogout();
         });
-        console.log('[AltText AI] Logout button found and listener attached');
+        if (alttextaiDebug) console.log('[AltText AI] Logout button found and listener attached');
     } else {
-        console.log('[AltText AI] Logout button not found');
+        if (alttextaiDebug) console.log('[AltText AI] Logout button not found');
     }
     
-    // Check if auth modal exists and initialize it
-    const authModal = document.getElementById('alttext-auth-modal');
-    if (authModal) {
-        console.log('[AltText AI] Auth modal found');
-    } else {
-        console.log('[AltText AI] Auth modal not found - may need to be created');
-    }
-    
-    // Check if authModal object exists
-    if (typeof window.authModal !== 'undefined') {
-        console.log('[AltText AI] authModal object found');
-    } else {
-        console.log('[AltText AI] authModal object not found');
+    // Check if auth modal exists and initialize it (debug only)
+    if (alttextaiDebug) {
+        const authModal = document.getElementById('alttext-auth-modal');
+        if (authModal) {
+            console.log('[AltText AI] Auth modal found');
+        } else {
+            console.log('[AltText AI] Auth modal not found - may need to be created');
+        }
+        
+        // Check if authModal object exists
+        if (typeof window.authModal !== 'undefined') {
+            console.log('[AltText AI] authModal object found');
+        } else {
+            console.log('[AltText AI] authModal object not found');
+        }
     }
 });
