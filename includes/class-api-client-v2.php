@@ -557,7 +557,8 @@ class AltText_AI_API_Client_V2 {
         $response = $this->make_request('/auth/reset-password', 'POST', [
             'email' => $email,
             'token' => $token,
-            'newPassword' => $new_password
+            'newPassword' => $new_password,
+            'password' => $new_password // Also send as 'password' for compatibility
         ]);
         
         // Restore token if it existed
