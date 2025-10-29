@@ -158,6 +158,21 @@ class AltText_AI_API_Client_V2 {
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
         
+        // Handle 404 - endpoint not found
+        if ($status_code === 404) {
+            // Check if it's an HTML error page (means endpoint doesn't exist)
+            if (strpos($body, '<html') !== false || strpos($body, 'Cannot POST') !== false || strpos($body, 'Cannot GET') !== false) {
+                return new WP_Error(
+                    'endpoint_not_found',
+                    __('This feature is not yet available. The password reset functionality is currently being set up on our backend. Please contact support for assistance or try again later.', 'ai-alt-gpt')
+                );
+            }
+            return new WP_Error(
+                'not_found',
+                $data['error'] ?? $data['message'] ?? __('The requested resource was not found.', 'ai-alt-gpt')
+            );
+        }
+        
         // Handle server errors
         if ($status_code >= 500) {
             return new WP_Error(
@@ -513,9 +528,21 @@ class AltText_AI_API_Client_V2 {
             return $response['data'];
         }
         
+        // Extract error message with better context
+        $error_message = $response['data']['error'] ?? $response['data']['message'] ?? __('Failed to send password reset email', 'ai-alt-gpt');
+        
+        // Check for specific error cases
+        if ($response['status_code'] === 404) {
+            $error_message = __('Password reset is currently being set up. This feature is not yet available on our backend. Please contact support for assistance.', 'ai-alt-gpt');
+        } elseif ($response['status_code'] === 429) {
+            $error_message = __('Too many password reset requests. Please wait 15 minutes before trying again.', 'ai-alt-gpt');
+        } elseif ($response['status_code'] >= 500) {
+            $error_message = __('The authentication server is temporarily unavailable. Please try again in a few minutes.', 'ai-alt-gpt');
+        }
+        
         return new WP_Error(
             'forgot_password_failed',
-            $response['data']['error'] ?? $response['data']['message'] ?? __('Failed to send password reset email', 'ai-alt-gpt')
+            $error_message
         );
     }
     
