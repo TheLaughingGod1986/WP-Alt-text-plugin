@@ -39,14 +39,56 @@ rsync -a \
   assets includes templates \
   "$PLUGIN_DIR/"
 
-echo "🧼 Stripping development artefacts"
+echo "🧼 Stripping development artefacts and test files"
+# Remove backup files
 find "$PLUGIN_DIR" -name "*.backup" -delete
 find "$PLUGIN_DIR" -name "*.bak" -delete
+
+# Remove development scripts
 find "$PLUGIN_DIR" -name "*.sh" -delete
 find "$PLUGIN_DIR" -name "*.py" -delete
+
+# Remove logs and temporary files
 find "$PLUGIN_DIR" -name "*.log" -delete
-find "$PLUGIN_DIR" -name "*.md" -delete
 find "$PLUGIN_DIR" -name ".DS_Store" -delete
+find "$PLUGIN_DIR" -name "Thumbs.db" -delete
+find "$PLUGIN_DIR" -name ".gitkeep" -delete
+
+# Remove documentation (keep only readme.txt for WordPress.org)
+find "$PLUGIN_DIR" -name "*.md" -delete
+find "$PLUGIN_DIR" -name "*.txt" -not -name "readme.txt" -delete
+
+# Remove test files and directories
+find "$PLUGIN_DIR" -path "*/tests/*" -delete
+find "$PLUGIN_DIR" -name "*test*.php" -delete
+find "$PLUGIN_DIR" -name "*Test.php" -delete
+find "$PLUGIN_DIR" -name "*spec*.js" -delete
+
+# Remove WordPress.org submission assets (not needed at runtime)
+find "$PLUGIN_DIR" -path "*/wordpress-org/*" -delete
+
+# Remove test images and demo files
+find "$PLUGIN_DIR" -name "demo*.html" -delete
+find "$PLUGIN_DIR" -name "DEMO.*" -delete
+find "$PLUGIN_DIR" -name "test*.jpg" -delete
+find "$PLUGIN_DIR" -name "test*.png" -delete
+find "$PLUGIN_DIR" -name "test*.gif" -delete
+
+# Remove configuration examples and env files
+find "$PLUGIN_DIR" -name ".env*" -delete
+find "$PLUGIN_DIR" -name "env.example" -delete
+find "$PLUGIN_DIR" -name "*example*" -type f -delete
+
+# Remove docker and deployment files
+find "$PLUGIN_DIR" -name "docker-compose.yml" -delete
+find "$PLUGIN_DIR" -name "Dockerfile*" -delete
+find "$PLUGIN_DIR" -name ".dockerignore" -delete
+
+# Remove node_modules if any were accidentally copied
+find "$PLUGIN_DIR" -type d -name "node_modules" -exec rm -rf {} + 2>/dev/null || true
+
+# Remove any hidden files except essential ones
+find "$PLUGIN_DIR" -name ".*" -not -name ".git" -type f -delete 2>/dev/null || true
 
 echo "🗜️  Creating ZIP archive"
 pushd "$BUILD_DIR" > /dev/null
