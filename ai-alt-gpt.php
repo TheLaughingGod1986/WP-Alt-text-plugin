@@ -2312,12 +2312,12 @@ class AI_Alt_Text_Generator_GPT {
             return $cached;
         }
 
-        // Check transient cache (5 minute TTL for DB queries)
+        // Check transient cache (15 minute TTL for DB queries - optimized for performance)
         $transient_key = 'ai_alt_stats_v3';
         $cached = get_transient($transient_key);
         if (false !== $cached && is_array($cached)){
             // Also populate object cache for next request
-            wp_cache_set($cache_key, $cached, $cache_group, 5 * MINUTE_IN_SECONDS);
+            wp_cache_set($cache_key, $cached, $cache_group, 15 * MINUTE_IN_SECONDS);
             $this->stats_cache = $cached;
             return $cached;
         }
