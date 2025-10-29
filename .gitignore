@@ -28,5 +28,15 @@ Thumbs.db
 # Build artefacts
 *.zip
 
+# Environment variables and secrets
+*.env
+*.env.*
+.env
+.env.local
+.env.production
+.env.development
+render-env-vars.txt
+*-env-vars.txt
+
 # Dependencies
 node_modules/
