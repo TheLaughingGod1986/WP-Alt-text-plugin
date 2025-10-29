@@ -36,6 +36,7 @@ rsync -a \
   "$PLUGIN_DIR/"
 
 rsync -a \
+  --exclude 'wordpress-org' \
   assets includes templates \
   "$PLUGIN_DIR/"
 
