@@ -26,8 +26,8 @@ $is_authenticated = $this->api_client->is_authenticated();
                 <h2 id="alttextai-upgrade-modal-title"><?php esc_html_e('Unlock Unlimited AI Alt Text Generation', 'ai-alt-gpt'); ?></h2>
                 <p class="alttextai-upgrade-modal__subtitle" id="alttextai-upgrade-modal-desc"><?php esc_html_e('Save hours of manual work and boost your SEO instantly', 'ai-alt-gpt'); ?></p>
             </div>
-            <button type="button" class="alttextai-modal-close" onclick="alttextaiCloseModal();" aria-label="<?php esc_attr_e('Close', 'ai-alt-gpt'); ?>">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <button type="button" class="alttextai-modal-close" onclick="alttextaiCloseModal();" aria-label="<?php esc_attr_e('Close upgrade modal', 'ai-alt-gpt'); ?>">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                     <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
             </button>
@@ -72,8 +72,9 @@ $is_authenticated = $this->api_client->is_authenticated();
                         
                         <button type="button" 
                                 class="alttextai-btn-primary alttextai-btn-icon alttextai-plan-cta"
-                                onclick="openStripeLink('<?php echo esc_js($pro_url); ?>'); return false;">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                onclick="openStripeLink('<?php echo esc_js($pro_url); ?>'); return false;"
+                                aria-label="<?php esc_attr_e('Purchase Pro plan - Unlimited monthly generations', 'ai-alt-gpt'); ?>">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                                 <path d="M8 2L6 6H2L6 9L4 14L8 11L12 14L10 9L14 6H10L8 2Z" fill="currentColor"/>
                             </svg>
                             <span><?php esc_html_e('Get Started with Pro', 'ai-alt-gpt'); ?></span>
@@ -112,8 +113,9 @@ $is_authenticated = $this->api_client->is_authenticated();
                         
                         <button type="button" 
                                 class="alttextai-btn-success alttextai-btn-icon alttextai-plan-cta"
-                                onclick="openStripeLink('<?php echo esc_js($agency_url); ?>'); return false;">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                onclick="openStripeLink('<?php echo esc_js($agency_url); ?>'); return false;"
+                                aria-label="<?php esc_attr_e('Purchase Agency plan - Best value for agencies and professionals', 'ai-alt-gpt'); ?>">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                                 <path d="M8 2L6 6H2L6 9L4 14L8 11L12 14L10 9L14 6H10L8 2Z" fill="currentColor"/>
                             </svg>
                             <span><?php esc_html_e('Upgrade to Agency', 'ai-alt-gpt'); ?></span>
