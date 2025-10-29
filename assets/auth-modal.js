@@ -569,9 +569,25 @@ class AltTextAuthModal {
                 })
             });
 
+            // Check if response is OK before parsing JSON
+            if (!response.ok) {
+                // Try to parse error response
+                let errorData;
+                try {
+                    errorData = await response.json();
+                } catch (e) {
+                    errorData = { message: `Server error (${response.status})` };
+                }
+                this.setLoading(form, false);
+                const errorMessage = errorData.data?.message || errorData.message || `Request failed with status ${response.status}`;
+                this.showError(errorMessage);
+                return;
+            }
+
             const data = await response.json();
 
             if (data.success) {
+                this.setLoading(form, false);
                 this.showSuccess('Reset link sent! Please check your email (including spam folder) for instructions. The link will expire in 1 hour.');
                 // Clear form
                 form.reset();
@@ -587,6 +603,7 @@ class AltTextAuthModal {
                     }, 3000);
                 }
             } else {
+                this.setLoading(form, false);
                 // Parse error message for better UX
                 const rawMessage = data.data?.message || data.message || 'Failed to send reset link';
                 let userMessage = rawMessage;
@@ -598,6 +615,8 @@ class AltTextAuthModal {
                     userMessage = 'Too many reset requests. Please wait 15 minutes before requesting another password reset.';
                 } else if (rawMessage.toLowerCase().includes('temporarily unavailable') || rawMessage.toLowerCase().includes('unable to connect')) {
                     userMessage = 'The service is temporarily unavailable. Please try again in a few minutes.';
+                } else if (rawMessage.toLowerCase().includes('not implemented') || rawMessage.toLowerCase().includes('404') || rawMessage.toLowerCase().includes('endpoint')) {
+                    userMessage = 'Password reset is currently being set up. Please contact support or try again later.';
                 }
                 
                 this.showError(userMessage);
@@ -660,9 +679,25 @@ class AltTextAuthModal {
                 })
             });
 
+            // Check if response is OK before parsing JSON
+            if (!response.ok) {
+                // Try to parse error response
+                let errorData;
+                try {
+                    errorData = await response.json();
+                } catch (e) {
+                    errorData = { message: `Server error (${response.status})` };
+                }
+                this.setLoading(form, false);
+                const errorMessage = errorData.data?.message || errorData.message || `Request failed with status ${response.status}`;
+                this.showError(errorMessage);
+                return;
+            }
+
             const data = await response.json();
 
             if (data.success) {
+                this.setLoading(form, false);
                 this.showSuccess('Password reset successfully! Redirecting to sign in...');
                 // Clear form
                 form.reset();
@@ -681,6 +716,7 @@ class AltTextAuthModal {
                     }, 2000);
                 }
             } else {
+                this.setLoading(form, false);
                 // Parse error message for better UX
                 const rawMessage = data.data?.message || data.message || 'Failed to reset password';
                 let userMessage = rawMessage;
@@ -694,6 +730,8 @@ class AltTextAuthModal {
                     userMessage = 'Password is too weak. Please choose a stronger password with at least 8 characters, including letters and numbers.';
                 } else if (rawMessage.toLowerCase().includes('network') || rawMessage.toLowerCase().includes('unable to connect')) {
                     userMessage = 'Unable to connect to the server. Please check your internet connection and try again.';
+                } else if (rawMessage.toLowerCase().includes('not implemented') || rawMessage.toLowerCase().includes('404') || rawMessage.toLowerCase().includes('endpoint')) {
+                    userMessage = 'Password reset is currently being set up. Please contact support or try again later.';
                 }
                 
                 this.showError(userMessage);
