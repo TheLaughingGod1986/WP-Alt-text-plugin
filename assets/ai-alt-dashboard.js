@@ -228,7 +228,7 @@
         const $cancelWarning = getCachedElement('#alttextai-cancel-warning');
         if (data.cancelAtPeriodEnd) {
             $cancelWarning.show();
-        } else {
+                } else {
             $cancelWarning.hide();
         }
 
@@ -247,7 +247,7 @@
                 month: 'long', 
                 day: 'numeric' 
             }));
-        } else {
+            } else {
             getCachedElement('#alttextai-next-billing').text('-');
         }
 
@@ -256,7 +256,7 @@
             const currency = data.currency || 'GBP';
             const symbol = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : '£';
             getCachedElement('#alttextai-next-charge').text(symbol + parseFloat(data.nextChargeAmount).toFixed(2));
-        } else {
+            } else {
             getCachedElement('#alttextai-next-charge').text('-');
         }
 
@@ -516,9 +516,9 @@ function showAuthLogin() {
     if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
         if (alttextaiDebug) console.log('[AltText AI] Using authModal.show()');
         window.authModal.show();
-        return;
-    }
-    
+                    return;
+                }
+
     // Fallback to showAuthBanner method
     showAuthBanner();
 }
@@ -534,18 +534,18 @@ function handleLogout() {
             localStorage.removeItem('alttextai_token');
         }
         window.location.reload();
-        return;
-    }
-    
+                    return;
+                }
+
     const ajaxUrl = window.alttextai_ajax.ajax_url || window.alttextai_ajax.ajaxurl || ajaxurl;
     const nonce = window.alttextai_ajax.nonce || '';
     
     if (!ajaxUrl) {
         console.error('[AltText AI] AJAX URL not found');
         window.location.reload();
-        return;
-    }
-    
+                    return;
+                }
+
     if (alttextaiDebug) console.log('[AltText AI] Calling logout AJAX:', ajaxUrl);
     
     // Try jQuery first, fallback to vanilla JS
@@ -553,11 +553,11 @@ function handleLogout() {
         jQuery.ajax({
             url: ajaxUrl,
                 type: 'POST',
-                data: {
+                    data: {
                 action: 'alttextai_logout',
                 nonce: nonce
-            },
-            success: function(response) {
+                    },
+                    success: function(response) {
                 if (alttextaiDebug) console.log('[AltText AI] Logout successful', response);
                 // Clear any local storage
                 if (typeof localStorage !== 'undefined') {
@@ -565,8 +565,8 @@ function handleLogout() {
                 }
                 // Reload the page to update the UI
                 window.location.reload();
-            },
-            error: function(xhr, status, error) {
+                    },
+                    error: function(xhr, status, error) {
                 console.error('[AltText AI] Logout failed:', error, xhr.responseText);
                 // Even on error, clear local storage and reload
                 if (typeof localStorage !== 'undefined') {
@@ -576,7 +576,7 @@ function handleLogout() {
                 window.location.reload();
             }
         });
-    } else {
+                        } else {
         // Vanilla JS fallback
         const formData = new FormData();
         formData.append('action', 'alttextai_logout');
@@ -650,4 +650,96 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('[AltText AI] authModal object not found');
         }
     }
+    
+    // Initialize countdown timer
+    initCountdownTimer();
 });
+
+/**
+ * Initialize and update countdown timer for limit reset
+ */
+function initCountdownTimer() {
+    const countdownElement = document.querySelector('.alttextai-countdown[data-countdown]');
+    if (!countdownElement) {
+        return; // No countdown on this page
+    }
+
+    const totalSeconds = parseInt(countdownElement.getAttribute('data-countdown'), 10) || 0;
+    const daysEl = countdownElement.querySelector('[data-days]');
+    const hoursEl = countdownElement.querySelector('[data-hours]');
+    const minutesEl = countdownElement.querySelector('[data-minutes]');
+
+    if (!daysEl || !hoursEl || !minutesEl) {
+        if (alttextaiDebug) console.warn('[AltText AI] Countdown elements not found');
+        return;
+    }
+
+    // Store initial seconds and start time for accurate recalculation
+    countdownElement.setAttribute('data-initial-seconds', totalSeconds.toString());
+    countdownElement.setAttribute('data-start-time', (Date.now() / 1000).toString());
+
+    if (alttextaiDebug) {
+        console.log('[AltText AI] Countdown initialized:', {
+            totalSeconds: totalSeconds,
+            days: Math.floor(totalSeconds / 86400),
+            hours: Math.floor((totalSeconds % 86400) / 3600),
+            minutes: Math.floor((totalSeconds % 3600) / 60)
+        });
+    }
+
+    function updateCountdown() {
+        // Get the initial seconds from when page loaded
+        const initialSeconds = parseInt(countdownElement.getAttribute('data-initial-seconds'), 10) || 0;
+        
+        // Calculate elapsed time since page load
+        const startTime = parseFloat(countdownElement.getAttribute('data-start-time')) || (Date.now() / 1000);
+        const currentTime = Date.now() / 1000;
+        const elapsed = Math.floor(currentTime - startTime);
+        
+        // Calculate remaining seconds
+        let remaining = Math.max(0, initialSeconds - elapsed);
+
+        if (remaining <= 0) {
+            daysEl.textContent = '0';
+            hoursEl.textContent = '0';
+            minutesEl.textContent = '0';
+            countdownElement.setAttribute('data-countdown', '0');
+            return;
+        }
+
+        // Calculate days, hours, minutes
+        const days = Math.floor(remaining / 86400);
+        const hours = Math.floor((remaining % 86400) / 3600);
+        const minutes = Math.floor((remaining % 3600) / 60);
+
+        // Update display
+        daysEl.textContent = days.toString();
+        hoursEl.textContent = hours.toString();
+        minutesEl.textContent = minutes.toString();
+        
+        // Update the data-countdown attribute for debugging
+        countdownElement.setAttribute('data-countdown', remaining);
+    }
+
+    // Update immediately
+    updateCountdown();
+
+    // Update every minute (60 seconds)
+    const intervalId = setInterval(function() {
+        updateCountdown();
+        // Stop if countdown reaches zero
+        const remaining = parseInt(countdownElement.getAttribute('data-countdown'), 10) || 0;
+        if (remaining <= 0) {
+            clearInterval(intervalId);
+        }
+    }, 60000); // Update every 60 seconds
+
+    // Also update every second for the first minute to show real-time updates
+    const secondIntervalId = setInterval(function() {
+            updateCountdown();
+        const remaining = parseInt(countdownElement.getAttribute('data-countdown'), 10) || 0;
+        if (remaining <= 60) { // Stop second-by-second after 1 minute remaining
+            clearInterval(secondIntervalId);
+        }
+    }, 1000); // Update every second
+}
