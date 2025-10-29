@@ -91,6 +91,8 @@ class AI_Alt_Text_Generator_GPT {
         add_action('wp_ajax_alttextai_get_user_info', [$this, 'ajax_get_user_info']);
         add_action('wp_ajax_alttextai_create_checkout', [$this, 'ajax_create_checkout']);
         add_action('wp_ajax_alttextai_create_portal', [$this, 'ajax_create_portal']);
+        add_action('wp_ajax_alttextai_forgot_password', [$this, 'ajax_forgot_password']);
+        add_action('wp_ajax_alttextai_reset_password', [$this, 'ajax_reset_password']);
 
         if (defined('WP_CLI') && WP_CLI) {
             \WP_CLI::add_command('ai-alt', [$this, 'wpcli_command']);
@@ -4256,6 +4258,74 @@ class AI_Alt_Text_Generator_GPT {
 
         wp_send_json_success([
             'url' => $result['url'] ?? ''
+        ]);
+    }
+
+    /**
+     * AJAX handler: Forgot password request
+     */
+    public function ajax_forgot_password() {
+        check_ajax_referer('alttextai_upgrade_nonce', 'nonce');
+
+        $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+        
+        if (empty($email) || !is_email($email)) {
+            wp_send_json_error([
+                'message' => __('Please enter a valid email address', 'ai-alt-gpt')
+            ]);
+        }
+
+        $result = $this->api_client->forgot_password($email);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error([
+                'message' => $result->get_error_message()
+            ]);
+        }
+
+        wp_send_json_success([
+            'message' => __('Password reset link has been sent to your email. Please check your inbox and spam folder.', 'ai-alt-gpt')
+        ]);
+    }
+
+    /**
+     * AJAX handler: Reset password with token
+     */
+    public function ajax_reset_password() {
+        check_ajax_referer('alttextai_upgrade_nonce', 'nonce');
+
+        $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+        $token = isset($_POST['token']) ? sanitize_text_field($_POST['token']) : '';
+        $password = isset($_POST['password']) ? $_POST['password'] : '';
+        
+        if (empty($email) || !is_email($email)) {
+            wp_send_json_error([
+                'message' => __('Please enter a valid email address', 'ai-alt-gpt')
+            ]);
+        }
+
+        if (empty($token)) {
+            wp_send_json_error([
+                'message' => __('Reset token is required', 'ai-alt-gpt')
+            ]);
+        }
+
+        if (empty($password) || strlen($password) < 8) {
+            wp_send_json_error([
+                'message' => __('Password must be at least 8 characters long', 'ai-alt-gpt')
+            ]);
+        }
+
+        $result = $this->api_client->reset_password($email, $token, $password);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error([
+                'message' => $result->get_error_message()
+            ]);
+        }
+
+        wp_send_json_success([
+            'message' => __('Password reset successfully. You can now sign in with your new password.', 'ai-alt-gpt')
         ]);
     }
 }

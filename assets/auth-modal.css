@@ -123,6 +123,32 @@
     margin-top: var(--alttextai-space-1);
 }
 
+.alttext-forgot-password-link {
+    display: inline-block;
+    margin-top: var(--alttextai-space-2);
+    color: var(--alttextai-primary);
+    font-size: var(--alttextai-text-sm);
+    text-decoration: none;
+    font-weight: var(--alttextai-font-medium);
+}
+
+.alttext-forgot-password-link:hover {
+    text-decoration: underline;
+}
+
+.alttext-forgot-password-info,
+.alttext-reset-password-info {
+    color: var(--alttextai-text-muted);
+    font-size: var(--alttextai-text-sm);
+    margin-bottom: var(--alttextai-space-5);
+    line-height: 1.5;
+}
+
+.alttext-form-group input[readonly] {
+    background-color: var(--alttextai-bg-secondary);
+    cursor: not-allowed;
+}
+
 .alttext-btn {
     display: inline-flex;
     align-items: center;
