@@ -618,6 +618,18 @@ class AI_Alt_Text_Generator_GPT {
                 <?php endforeach; ?>
                     </nav>
                     <?php endif; ?>
+                    <?php if ($this->api_client->is_authenticated()) : 
+                        $user_info = $this->api_client->get_user_info();
+                        $user_email = !empty($user_info['email']) ? $user_info['email'] : __('Logged In', 'ai-alt-gpt');
+                    ?>
+                    <!-- Logout Button (Appears on All Tabs) -->
+                    <div class="alttextai-auth-badge">
+                        <span class="alttextai-auth-badge__user"><?php echo esc_html($user_email); ?></span>
+                        <button type="button" class="alttextai-auth-badge__logout" id="alttextai-logout-btn" title="<?php esc_attr_e('Logout', 'ai-alt-gpt'); ?>">
+                            <?php esc_html_e('Logout', 'ai-alt-gpt'); ?>
+                        </button>
+                    </div>
+                    <?php endif; ?>
                 </div>
                 </div>
             </div>
