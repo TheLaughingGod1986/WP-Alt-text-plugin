@@ -691,3 +691,246 @@
         justify-content: center;
     }
 }
+
+/* ========================================
+   ACCOUNT MANAGEMENT SECTION
+   ======================================== */
+
+.alttextai-account-management-card {
+    margin-bottom: var(--alttextai-space-8);
+}
+
+.alttextai-account-management-content {
+    position: relative;
+    min-height: 200px;
+}
+
+/* Loading State */
+.alttextai-account-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--alttextai-space-8);
+    text-align: center;
+}
+
+.alttextai-loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--alttextai-gray-200);
+    border-top-color: var(--alttextai-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: var(--alttextai-space-4);
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.alttextai-account-loading p {
+    color: var(--alttextai-text-muted);
+    font-size: var(--alttextai-text-sm);
+    margin: 0;
+}
+
+/* Error State */
+.alttextai-account-error {
+    padding: var(--alttextai-space-6);
+    text-align: center;
+}
+
+.alttextai-error-message {
+    color: var(--alttextai-danger);
+    font-size: var(--alttextai-text-sm);
+    margin-bottom: var(--alttextai-space-4);
+}
+
+.alttextai-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--alttextai-space-2);
+    background: var(--alttextai-gray-100);
+    color: var(--alttextai-gray-900);
+    font-size: var(--alttextai-text-sm);
+    font-weight: var(--alttextai-font-medium);
+    padding: 0.625rem var(--alttextai-space-4);
+    border: 1px solid var(--alttextai-gray-300);
+    border-radius: var(--alttextai-radius-lg);
+    cursor: pointer;
+    transition: var(--alttextai-transition);
+}
+
+.alttextai-btn-secondary:hover {
+    background: var(--alttextai-gray-200);
+    border-color: var(--alttextai-gray-400);
+}
+
+/* Subscription Info */
+.alttextai-subscription-info {
+    padding: var(--alttextai-space-2) 0;
+}
+
+.alttextai-subscription-status {
+    margin-bottom: var(--alttextai-space-6);
+}
+
+.alttextai-subscription-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem var(--alttextai-space-4);
+    border-radius: var(--alttextai-radius-full);
+    font-size: var(--alttextai-text-sm);
+    font-weight: var(--alttextai-font-semibold);
+    margin-bottom: var(--alttextai-space-3);
+}
+
+.alttextai-subscription-status-badge.alttextai-status-active {
+    background: var(--alttextai-success-bg);
+    color: var(--alttextai-success);
+}
+
+.alttextai-subscription-status-badge.alttextai-status-cancelled {
+    background: var(--alttextai-danger-bg);
+    color: var(--alttextai-danger);
+}
+
+.alttextai-subscription-status-badge.alttextai-status-trial {
+    background: var(--alttextai-primary-bg);
+    color: var(--alttextai-primary);
+}
+
+.alttextai-subscription-cancel-warning {
+    display: flex;
+    align-items: center;
+    gap: var(--alttextai-space-2);
+    padding: var(--alttextai-space-3) var(--alttextai-space-4);
+    background: var(--alttextai-warning-bg);
+    color: var(--alttextai-warning);
+    border: 1px solid var(--alttextai-warning-light);
+    border-radius: var(--alttextai-radius-lg);
+    font-size: var(--alttextai-text-sm);
+}
+
+.alttextai-subscription-cancel-warning svg {
+    flex-shrink: 0;
+}
+
+/* Subscription Details */
+.alttextai-subscription-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--alttextai-space-4);
+    margin-bottom: var(--alttextai-space-6);
+    padding: var(--alttextai-space-4);
+    background: var(--alttextai-gray-50);
+    border-radius: var(--alttextai-radius-lg);
+}
+
+.alttextai-subscription-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--alttextai-space-1);
+}
+
+.alttextai-detail-label {
+    font-size: var(--alttextai-text-xs);
+    color: var(--alttextai-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: var(--alttextai-font-semibold);
+}
+
+.alttextai-detail-value {
+    font-size: var(--alttextai-text-lg);
+    font-weight: var(--alttextai-font-semibold);
+    color: var(--alttextai-gray-900);
+}
+
+/* Payment Method */
+.alttextai-payment-method {
+    margin-bottom: var(--alttextai-space-6);
+    padding: var(--alttextai-space-4);
+    background: var(--alttextai-gray-50);
+    border-radius: var(--alttextai-radius-lg);
+}
+
+.alttextai-payment-method-header {
+    margin-bottom: var(--alttextai-space-3);
+}
+
+.alttextai-payment-method-info {
+    display: flex;
+    align-items: center;
+    gap: var(--alttextai-space-3);
+    flex-wrap: wrap;
+}
+
+.alttextai-card-brand {
+    font-size: var(--alttextai-text-sm);
+    font-weight: var(--alttextai-font-semibold);
+    color: var(--alttextai-gray-900);
+}
+
+.alttextai-card-last4 {
+    font-size: var(--alttextai-text-base);
+    font-weight: var(--alttextai-font-medium);
+    color: var(--alttextai-gray-700);
+    font-family: monospace;
+}
+
+.alttextai-card-expiry {
+    font-size: var(--alttextai-text-sm);
+    color: var(--alttextai-text-muted);
+}
+
+/* Account Actions */
+.alttextai-account-actions {
+    display: flex;
+    gap: var(--alttextai-space-3);
+    flex-wrap: wrap;
+}
+
+.alttextai-account-actions .alttextai-btn-primary,
+.alttextai-account-actions .alttextai-btn-secondary {
+    flex: 1;
+    min-width: 160px;
+}
+
+/* Free Plan Message */
+.alttextai-free-plan-message {
+    padding: var(--alttextai-space-6);
+    text-align: center;
+    background: var(--alttextai-gray-50);
+    border-radius: var(--alttextai-radius-lg);
+}
+
+.alttextai-free-plan-message p {
+    color: var(--alttextai-text-muted);
+    font-size: var(--alttextai-text-sm);
+    margin-bottom: var(--alttextai-space-4);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .alttextai-subscription-details {
+        grid-template-columns: 1fr;
+    }
+
+    .alttextai-account-actions {
+        flex-direction: column;
+    }
+
+    .alttextai-account-actions .alttextai-btn-primary,
+    .alttextai-account-actions .alttextai-btn-secondary {
+        width: 100%;
+        min-width: auto;
+    }
+
+    .alttextai-payment-method-info {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

@@ -59,7 +59,226 @@
             e.preventDefault();
             showAuthLogin();
         });
+
+        // Load subscription info if on Settings page
+        if ($('#alttextai-account-management').length) {
+            loadSubscriptionInfo();
+        }
+
+        // Handle account management buttons
+        $(document).on('click', '#alttextai-update-payment-method, #alttextai-manage-subscription', function(e) {
+            e.preventDefault();
+            openCustomerPortal();
+        });
+
+        // Handle retry subscription fetch
+        $(document).on('click', '#alttextai-retry-subscription', function(e) {
+            e.preventDefault();
+            loadSubscriptionInfo();
+        });
     });
+
+    /**
+     * Load subscription information from backend
+     */
+    function loadSubscriptionInfo() {
+        const $loading = $('#alttextai-subscription-loading');
+        const $error = $('#alttextai-subscription-error');
+        const $info = $('#alttextai-subscription-info');
+        const $freeMessage = $('#alttextai-free-plan-message');
+
+        // Show loading state
+        $loading.show();
+        $error.hide();
+        $info.hide();
+        $freeMessage.hide();
+
+        if (!window.alttextai_ajax || !window.alttextai_ajax.ajaxurl) {
+            showSubscriptionError('Configuration error. Please refresh the page.');
+            return;
+        }
+
+        $.ajax({
+            url: window.alttextai_ajax.ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'alttextai_get_subscription_info',
+                nonce: window.alttextai_ajax.nonce
+            },
+            success: function(response) {
+                $loading.hide();
+
+                if (response.success && response.data) {
+                    displaySubscriptionInfo(response.data);
+                } else {
+                    const plan = response.data?.plan || 'free';
+                    if (plan === 'free') {
+                        $freeMessage.show();
+                    } else {
+                        showSubscriptionError(response.data?.message || 'Failed to load subscription information.');
+                    }
+                }
+            },
+            error: function(xhr, status, error) {
+                $loading.hide();
+                showSubscriptionError('Network error. Please try again.');
+            }
+        });
+    }
+
+    /**
+     * Display subscription information
+     */
+    function displaySubscriptionInfo(data) {
+        const $info = $('#alttextai-subscription-info');
+        const $error = $('#alttextai-subscription-error');
+        const $freeMessage = $('#alttextai-free-plan-message');
+
+        // Hide other states
+        $error.hide();
+        $freeMessage.hide();
+
+        // Handle free plan
+        if (!data.plan || data.plan === 'free' || data.status === 'free') {
+            $freeMessage.show();
+            return;
+        }
+
+        // Display subscription status
+        const status = data.status || 'active';
+        const statusBadge = $('#alttextai-status-badge');
+        const statusLabel = statusBadge.find('.alttextai-status-label');
+        
+        statusBadge.removeClass('alttextai-status-active alttextai-status-cancelled alttextai-status-trial');
+        statusBadge.addClass('alttextai-status-' + status);
+        statusLabel.text(status.charAt(0).toUpperCase() + status.slice(1));
+
+        // Show cancel warning if needed
+        if (data.cancelAtPeriodEnd) {
+            $('#alttextai-cancel-warning').show();
+        } else {
+            $('#alttextai-cancel-warning').hide();
+        }
+
+        // Display plan details
+        const planName = data.plan ? data.plan.charAt(0).toUpperCase() + data.plan.slice(1) : '-';
+        $('#alttextai-plan-name').text(planName);
+
+        const billingCycle = data.billingCycle ? data.billingCycle.charAt(0).toUpperCase() + data.billingCycle.slice(1) : '-';
+        $('#alttextai-billing-cycle').text(billingCycle);
+
+        // Format next billing date
+        if (data.nextBillingDate) {
+            const date = new Date(data.nextBillingDate);
+            $('#alttextai-next-billing').text(date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            }));
+        } else {
+            $('#alttextai-next-billing').text('-');
+        }
+
+        // Format next charge amount
+        if (data.nextChargeAmount !== undefined && data.nextChargeAmount !== null) {
+            const currency = data.currency || 'GBP';
+            const symbol = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : '£';
+            $('#alttextai-next-charge').text(symbol + parseFloat(data.nextChargeAmount).toFixed(2));
+        } else {
+            $('#alttextai-next-charge').text('-');
+        }
+
+        // Display payment method if available
+        if (data.paymentMethod && data.paymentMethod.last4) {
+            const $paymentMethod = $('#alttextai-payment-method');
+            const brand = data.paymentMethod.brand || 'card';
+            const last4 = data.paymentMethod.last4;
+            const expMonth = data.paymentMethod.expMonth;
+            const expYear = data.paymentMethod.expYear;
+
+            $('#alttextai-card-brand').text(getCardBrandIcon(brand) + ' ' + brand.toUpperCase());
+            $('#alttextai-card-last4').text('•••• ' + last4);
+            if (expMonth && expYear) {
+                $('#alttextai-card-expiry').text(expMonth + '/' + expYear.toString().slice(-2));
+            }
+            $paymentMethod.show();
+        } else {
+            $('#alttextai-payment-method').hide();
+        }
+
+        // Show subscription info
+        $info.show();
+    }
+
+    /**
+     * Show subscription error
+     */
+    function showSubscriptionError(message) {
+        const $error = $('#alttextai-subscription-error');
+        const $info = $('#alttextai-subscription-info');
+        const $freeMessage = $('#alttextai-free-plan-message');
+
+        $error.find('.alttextai-error-message').text(message);
+        $error.show();
+        $info.hide();
+        $freeMessage.hide();
+    }
+
+    /**
+     * Get card brand icon/emoji
+     */
+    function getCardBrandIcon(brand) {
+        const icons = {
+            'visa': '💳',
+            'mastercard': '💳',
+            'amex': '💳',
+            'discover': '💳',
+            'diners': '💳',
+            'jcb': '💳',
+            'unionpay': '💳'
+        };
+        return icons[brand.toLowerCase()] || '💳';
+    }
+
+    /**
+     * Open Stripe Customer Portal
+     */
+    function openCustomerPortal() {
+        if (!window.alttextai_ajax || !window.alttextai_ajax.ajaxurl) {
+            alert('Configuration error. Please refresh the page.');
+            return;
+        }
+
+        // Show loading state
+        const $buttons = $('#alttextai-update-payment-method, #alttextai-manage-subscription');
+        $buttons.prop('disabled', true);
+
+        $.ajax({
+            url: window.alttextai_ajax.ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'alttextai_create_portal',
+                nonce: window.alttextai_ajax.nonce
+            },
+            success: function(response) {
+                $buttons.prop('disabled', false);
+
+                if (response.success && response.data && response.data.url) {
+                    window.open(response.data.url, '_blank');
+                    // Reload subscription info after a delay (user may update info)
+                    setTimeout(function() {
+                        loadSubscriptionInfo();
+                    }, 5000);
+                } else {
+                    alert(response.data?.message || 'Failed to open customer portal. Please try again.');
+                }
+            },
+            error: function(xhr, status, error) {
+                $buttons.prop('disabled', false);
+                alert('Network error. Please try again.');
+            }
+        });
+    }
 
 })(jQuery);
 
