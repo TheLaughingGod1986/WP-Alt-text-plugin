@@ -1,5 +1,6 @@
 === SEO AI Alt Text Generator - Auto Image SEO & Accessibility ===
 Contributors: benjaminoats
+Donate link: https://alttextai.com
 Tags: SEO, SEO AI, image SEO, alt text SEO, SEO optimization, Google image SEO, image search ranking, keyword optimization, automated SEO, SEO tool, search engine optimization, image meta tags, AI alt text, artificial intelligence, accessibility, alt text, images, AI, WCAG, screen reader, image optimization, bulk edit, WooCommerce, automatic alt text, image accessibility, bulk processing, accessibility compliance, image descriptions, WordPress SEO, GPT, OpenAI, image alt attribute, media library, WCAG compliant, ADA compliant, screen reader compatible, automated alt text, bulk alt text, image accessibility tool
 Requires at least: 5.8
 Tested up to: 6.7
@@ -189,7 +190,7 @@ Our AI generates alt text following industry best practices:
 ### Automatic Installation (Recommended)
 
 1. Go to **Plugins > Add New** in your WordPress admin panel
-2. Search for **"AI Alt Text Generator"**
+2. Search for **"SEO AI Alt Text Generator"** or **"AI Alt Text Generator SEO"**
 3. Click **Install Now** on this plugin
 4. Click **Activate** after installation completes
 5. Navigate to **Media > AI Alt Text** in your admin menu
@@ -442,19 +443,45 @@ We'd love your help!
 
 == Screenshots ==
 
-1. **Dashboard** - Accessibility coverage tracking with gamification. See your progress at a glance with beautiful visualizations, level badges, and achievement celebrations.
+1. **SEO AI Dashboard** - Professional dashboard showing accessibility coverage, SEO impact metrics, usage tracking, and time saved calculations. Beautiful visualizations with coverage percentage, images optimized, hours saved, and SEO impact messaging.
 
-2. **Usage Widget** - Monitor your monthly generation quota. The free tier includes 50 generations per month with clear usage tracking and automatic monthly resets.
+2. **Bulk Image Processing** - Generate or regenerate alt text for multiple images at once with progress tracking. Queue system handles hundreds of images in the background without slowing your site.
 
-3. **ALT Library** - Manage all your image alt text in one place. View quality scores, edit descriptions, and use bulk actions to regenerate multiple images at once.
+3. **Settings & Account Management** - Configure plugin preferences, view subscription details, manage billing, and update payment methods. Complete account management with Stripe Customer Portal integration.
 
-4. **Media Library Integration** - Generate alt text with one click directly from the WordPress Media Library. Seamless integration with your existing workflow.
+4. **ALT Library** - Centralized management of all image alt text with quality scores, inline editing, filtering, and bulk actions. Review and refine AI-generated descriptions before publishing.
 
-5. **Gamification** - Level up as you improve accessibility! Earn XP, unlock achievement badges, and celebrate milestones with animated rewards.
+5. **Upgrade Modal** - SEO-optimized upgrade flow featuring Pro, Agency, and Credit Pack options. Clear value propositions emphasizing Google image SEO benefits and conversion-optimized design.
 
-6. **Upgrade Modal** - Transparent pricing with clear feature comparison. Upgrade to Pro for higher limits and advanced features—no hidden fees or commitments.
+6. **Authentication Flow** - Secure login, registration, and password reset flows. Modern modal design with password strength indicators, account recovery, and seamless user experience.
 
 == Changelog ==
+
+= 4.2.0 - 2025-10-28 =
+**Password Reset & SEO AI Branding Update:**
+* **NEW**: Password reset functionality - Request reset link via email, set new password securely
+* **NEW**: Account management section in Settings - View subscription details, billing info, payment methods
+* **NEW**: Subscription info endpoint integration - Real-time subscription status and billing details
+* Enhanced error handling for missing backend endpoints with user-friendly messages
+* Improved upgrade modal spacing and visual design for better conversion
+* Updated branding to emphasize SEO AI focus throughout plugin
+* Plugin name updated to "SEO AI Alt Text Generator" for better WordPress.org SEO
+* Enhanced SEO-focused keywords and tags for better discoverability
+* Password reset email service (currently logs to console - ready for production email service)
+* Rate limiting for password reset requests (3 per hour)
+* Secure token-based password reset with 1-hour expiration
+
+**UI/UX Improvements:**
+* Better margins and padding in upgrade modal for professional polish
+* Consistent logout button placement across all tabs
+* Improved countdown timer for free limit reset
+* Enhanced account management display with subscription details
+
+**Technical:**
+* Added PasswordResetToken database model
+* Backend endpoints: /auth/forgot-password, /auth/reset-password, /billing/subscription
+* Multi-site support - password reset works on any WordPress installation
+* No FRONTEND_URL environment variable needed - WordPress sends its own URL
 
 = 4.1.0 - 2025-10-27 =
 **Major Release - User Authentication & SEO Optimization:**
@@ -547,6 +574,9 @@ We'd love your help!
 [View full changelog →](https://github.com/benjaminoats/wp-alt-text-ai/blob/main/CHANGELOG.md)
 
 == Upgrade Notice ==
+
+= 4.2.0 =
+New password reset feature and SEO AI branding update. Password reset emails currently log to backend console (ready for production email service integration). All existing functionality remains unchanged.
 
 = 4.1.0 =
 Major update with user authentication and subscription system. Existing users will need to create a free account to continue using the plugin. All previous alt text remains unchanged.
