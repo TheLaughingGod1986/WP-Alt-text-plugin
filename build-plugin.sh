@@ -60,8 +60,9 @@ rsync -a \
   "$PLUGIN_DIR/"
 
 # Remove unminified JS/CSS files (only keep .min versions in production)
-find "$PLUGIN_DIR/assets" -name "*.js" ! -name "*.min.js" -type f -delete 2>/dev/null || true
-find "$PLUGIN_DIR/assets" -name "*.css" ! -name "*.min.css" -type f -delete 2>/dev/null || true
+echo "🗑️  Removing unminified source files (keeping only .min versions)..."
+find "$PLUGIN_DIR/assets" -type f \( -name "*.js" ! -name "*.min.js" \) -delete 2>/dev/null || true
+find "$PLUGIN_DIR/assets" -type f \( -name "*.css" ! -name "*.min.css" \) -delete 2>/dev/null || true
 
 echo "🧼 Stripping development artefacts and test files"
 # Remove WordPress.org submission assets FIRST (not needed at runtime)
