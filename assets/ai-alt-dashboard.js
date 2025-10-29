@@ -95,13 +95,13 @@
 
         if (!window.alttextai_ajax || !window.alttextai_ajax.ajaxurl) {
             showSubscriptionError('Configuration error. Please refresh the page.');
-            return;
-        }
+                return;
+            }
 
         $.ajax({
             url: window.alttextai_ajax.ajaxurl,
             type: 'POST',
-            data: {
+                data: {
                 action: 'alttextai_get_subscription_info',
                 nonce: window.alttextai_ajax.nonce
             },
@@ -110,18 +110,52 @@
 
                 if (response.success && response.data) {
                     displaySubscriptionInfo(response.data);
-                } else {
+                    
+                    // Show success notice if redirected from portal
+                    const urlParams = new URLSearchParams(window.location.search);
+                    if (urlParams.get('portal_return') === 'success') {
+                        // Notice will be shown by WordPress admin notice
+                        // Clean up URL
+                        const cleanUrl = window.location.pathname + window.location.search.replace(/[?&]portal_return=success/, '').replace(/^&/, '?');
+                        if (cleanUrl !== window.location.pathname + window.location.search) {
+                            window.history.replaceState({}, document.title, cleanUrl);
+                        }
+                    }
+            } else {
                     const plan = response.data?.plan || 'free';
                     if (plan === 'free') {
                         $freeMessage.show();
-                    } else {
-                        showSubscriptionError(response.data?.message || 'Failed to load subscription information.');
+                } else {
+                        // Provide better error messages
+                        let errorMessage = response.data?.message || 'Failed to load subscription information.';
+                        
+                        if (errorMessage.toLowerCase().includes('not authenticated') || errorMessage.toLowerCase().includes('login')) {
+                            errorMessage = 'Please log in to view your subscription information.';
+                        } else if (errorMessage.toLowerCase().includes('not found')) {
+                            errorMessage = 'Subscription not found. If you just upgraded, please wait a moment and refresh.';
+                        }
+                        
+                        showSubscriptionError(errorMessage);
                     }
                 }
             },
             error: function(xhr, status, error) {
                 $loading.hide();
-                showSubscriptionError('Network error. Please try again.');
+                
+                // Provide better error messages
+                let errorMessage = 'Network error. Please try again.';
+                
+                if (xhr.status === 401 || xhr.status === 403) {
+                    errorMessage = 'Please log in to view your subscription information.';
+                } else if (xhr.status === 404) {
+                    errorMessage = 'Subscription information not found. If you just signed up, please wait a moment and refresh.';
+                } else if (xhr.status >= 500) {
+                    errorMessage = 'Service temporarily unavailable. Please try again in a few minutes.';
+                } else if (status === 'timeout') {
+                    errorMessage = 'Request timed out. Please check your internet connection and try again.';
+                }
+                
+                showSubscriptionError(errorMessage);
             }
         });
     }
@@ -141,8 +175,8 @@
         // Handle free plan
         if (!data.plan || data.plan === 'free' || data.status === 'free') {
             $freeMessage.show();
-            return;
-        }
+                return;
+            }
 
         // Display subscription status
         const status = data.status || 'active';
@@ -156,7 +190,7 @@
         // Show cancel warning if needed
         if (data.cancelAtPeriodEnd) {
             $('#alttextai-cancel-warning').show();
-        } else {
+                } else {
             $('#alttextai-cancel-warning').hide();
         }
 
@@ -175,7 +209,7 @@
                 month: 'long', 
                 day: 'numeric' 
             }));
-        } else {
+                } else {
             $('#alttextai-next-billing').text('-');
         }
 
@@ -184,7 +218,7 @@
             const currency = data.currency || 'GBP';
             const symbol = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : '£';
             $('#alttextai-next-charge').text(symbol + parseFloat(data.nextChargeAmount).toFixed(2));
-        } else {
+            } else {
             $('#alttextai-next-charge').text('-');
         }
 
@@ -202,7 +236,7 @@
                 $('#alttextai-card-expiry').text(expMonth + '/' + expYear.toString().slice(-2));
             }
             $paymentMethod.show();
-        } else {
+            } else {
             $('#alttextai-payment-method').hide();
         }
 
@@ -246,17 +280,17 @@
     function openCustomerPortal() {
         if (!window.alttextai_ajax || !window.alttextai_ajax.ajaxurl) {
             alert('Configuration error. Please refresh the page.');
-            return;
-        }
+                    return;
+                }
 
         // Show loading state
         const $buttons = $('#alttextai-update-payment-method, #alttextai-manage-subscription');
         $buttons.prop('disabled', true);
 
-        $.ajax({
+                $.ajax({
             url: window.alttextai_ajax.ajaxurl,
-            type: 'POST',
-            data: {
+                    type: 'POST',
+                    data: {
                 action: 'alttextai_create_portal',
                 nonce: window.alttextai_ajax.nonce
             },
@@ -265,12 +299,33 @@
 
                 if (response.success && response.data && response.data.url) {
                     window.open(response.data.url, '_blank');
-                    // Reload subscription info after a delay (user may update info)
-                    setTimeout(function() {
-                        loadSubscriptionInfo();
-                    }, 5000);
+                    // Reload subscription info after user returns (check every 2 seconds for page focus)
+                    let checkCount = 0;
+                    const maxChecks = 150; // 5 minutes max
+                    
+                    const checkInterval = setInterval(function() {
+                        checkCount++;
+                        if (document.hasFocus() || checkCount >= maxChecks) {
+                            clearInterval(checkInterval);
+                            // Reload subscription info when user returns
+                            loadSubscriptionInfo();
+                            // Update URL to show success notice
+                            const url = new URL(window.location);
+                            url.searchParams.set('portal_return', 'success');
+                            window.history.replaceState({}, document.title, url.toString());
+                        }
+                    }, 2000);
                 } else {
-                    alert(response.data?.message || 'Failed to open customer portal. Please try again.');
+                    // Provide better error messages
+                    let errorMessage = response.data?.message || 'Failed to open customer portal. Please try again.';
+                    
+                    if (errorMessage.toLowerCase().includes('not authenticated') || errorMessage.toLowerCase().includes('login')) {
+                        errorMessage = 'Please log in to manage your billing.';
+                    } else if (errorMessage.toLowerCase().includes('not found') || errorMessage.toLowerCase().includes('subscription')) {
+                        errorMessage = 'No active subscription found. Please upgrade first to manage billing.';
+                    }
+                    
+                    alert(errorMessage);
                 }
             },
             error: function(xhr, status, error) {
@@ -309,7 +364,7 @@ function showAuthBanner() {
     if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
         console.log('[AltText AI] Using authModal.show()');
         window.authModal.show();
-    } else {
+                        } else {
         // Try to find and show the auth modal directly
         const authModal = document.getElementById('alttext-auth-modal');
         if (authModal) {
@@ -328,10 +383,10 @@ function showAuthLogin() {
     // Try multiple methods to show auth modal
     if (typeof window.AltTextAuthModal !== 'undefined' && window.AltTextAuthModal && typeof window.AltTextAuthModal.show === 'function') {
         console.log('[AltText AI] Using AltTextAuthModal.show()');
-        window.AltTextAuthModal.show();
-        return;
-    }
-    
+                        window.AltTextAuthModal.show();
+                    return;
+                }
+
     if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
         console.log('[AltText AI] Using authModal.show()');
         window.authModal.show();
@@ -371,8 +426,8 @@ function handleLogout() {
     if (typeof jQuery !== 'undefined' && jQuery.ajax) {
         jQuery.ajax({
             url: ajaxUrl,
-            type: 'POST',
-            data: {
+                type: 'POST',
+                data: {
                 action: 'alttextai_logout',
                 nonce: nonce
             },

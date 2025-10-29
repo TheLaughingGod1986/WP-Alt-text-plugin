@@ -466,24 +466,47 @@ class AltTextAuthModal {
             const data = await response.json();
 
             if (data.success) {
-                this.showSuccess('Reset link sent! Please check your email for instructions. If you don\'t see it, check your spam folder.');
+                this.showSuccess('Reset link sent! Please check your email (including spam folder) for instructions. The link will expire in 1 hour.');
                 // Clear form
                 form.reset();
-                // Return to login after 3 seconds
-                setTimeout(() => {
-                    this.showLoginForm();
-                }, 3000);
+                // Redirect or close modal
+                if (data.data?.redirect) {
+                    setTimeout(() => {
+                        window.location.href = data.data.redirect;
+                    }, 2000);
+                } else {
+                    // Return to login after 3 seconds
+                    setTimeout(() => {
+                        this.showLoginForm();
+                    }, 3000);
+                }
             } else {
-                const errorMessage = data.data?.message || data.message || 'Failed to send reset link';
-                this.showError(errorMessage);
+                // Parse error message for better UX
+                const rawMessage = data.data?.message || data.message || 'Failed to send reset link';
+                let userMessage = rawMessage;
+                
+                // Provide actionable error messages
+                if (rawMessage.toLowerCase().includes('not found') || rawMessage.toLowerCase().includes('does not exist')) {
+                    userMessage = 'No account found with this email address. Please check the spelling or sign up for a new account.';
+                } else if (rawMessage.toLowerCase().includes('too many') || rawMessage.toLowerCase().includes('rate limit')) {
+                    userMessage = 'Too many reset requests. Please wait 15 minutes before requesting another password reset.';
+                } else if (rawMessage.toLowerCase().includes('temporarily unavailable') || rawMessage.toLowerCase().includes('unable to connect')) {
+                    userMessage = 'The service is temporarily unavailable. Please try again in a few minutes.';
+                }
+                
+                this.showError(userMessage);
             }
         } catch (error) {
             console.error('Forgot password error:', error);
+            let errorMessage = 'Network error. Please try again.';
+            
             if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                this.showError('Unable to connect to authentication server. The service may be temporarily unavailable. Please try again in a few minutes.');
-            } else {
-                this.showError('Network error. Please try again.');
+                errorMessage = 'Unable to connect to the server. Please check your internet connection and try again. If the problem persists, the service may be temporarily unavailable.';
+            } else if (error.message && error.message.includes('timeout')) {
+                errorMessage = 'Request timed out. Please check your internet connection and try again.';
             }
+            
+            this.showError(errorMessage);
         } finally {
             this.setLoading(form, false);
         }
@@ -538,20 +561,49 @@ class AltTextAuthModal {
                 this.showSuccess('Password reset successfully! Redirecting to sign in...');
                 // Clear form
                 form.reset();
-                // Show login form and reload page after 2 seconds
-                setTimeout(() => {
-                    this.showLoginForm();
+                // Redirect if provided, otherwise reload
+                if (data.data?.redirect) {
                     setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                }, 2000);
+                        window.location.href = data.data.redirect;
+                    }, 1500);
+                } else {
+                    // Show login form and reload page after 2 seconds
+                    setTimeout(() => {
+                        this.showLoginForm();
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    }, 2000);
+                }
             } else {
-                const errorMessage = data.data?.message || data.message || 'Failed to reset password';
-                this.showError(errorMessage);
+                // Parse error message for better UX
+                const rawMessage = data.data?.message || data.message || 'Failed to reset password';
+                let userMessage = rawMessage;
+                
+                // Provide actionable error messages
+                if (rawMessage.toLowerCase().includes('expired') || rawMessage.toLowerCase().includes('invalid') && rawMessage.toLowerCase().includes('token')) {
+                    userMessage = 'This password reset link has expired or is invalid. Please request a new password reset link.';
+                } else if (rawMessage.toLowerCase().includes('token')) {
+                    userMessage = 'Invalid reset token. Please check the link from your email or request a new one.';
+                } else if (rawMessage.toLowerCase().includes('password') && rawMessage.toLowerCase().includes('weak') || rawMessage.toLowerCase().includes('strength')) {
+                    userMessage = 'Password is too weak. Please choose a stronger password with at least 8 characters, including letters and numbers.';
+                } else if (rawMessage.toLowerCase().includes('network') || rawMessage.toLowerCase().includes('unable to connect')) {
+                    userMessage = 'Unable to connect to the server. Please check your internet connection and try again.';
+                }
+                
+                this.showError(userMessage);
             }
         } catch (error) {
             console.error('Reset password error:', error);
-            this.showError('Network error. Please try again.');
+            let errorMessage = 'Network error. Please try again.';
+            
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                errorMessage = 'Unable to connect to the server. Please check your internet connection and try again. If the problem persists, the service may be temporarily unavailable.';
+            } else if (error.message && error.message.includes('timeout')) {
+                errorMessage = 'Request timed out. Please check your internet connection and try again.';
+            }
+            
+            this.showError(errorMessage);
         } finally {
             this.setLoading(form, false);
         }
