@@ -511,8 +511,12 @@ class AltText_AI_API_Client_V2 {
         $temp_token = $this->get_token();
         $this->clear_token();
         
+        // Get the WordPress site URL for the reset link
+        $site_url = admin_url('upload.php?page=ai-alt-gpt');
+        
         $response = $this->make_request('/auth/forgot-password', 'POST', [
-            'email' => $email
+            'email' => $email,
+            'siteUrl' => $site_url
         ]);
         
         // Restore token if it existed
