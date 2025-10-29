@@ -48,6 +48,10 @@ class AI_Alt_Text_Generator_GPT {
     public function __construct() {
         // Use Phase 2 API client (JWT-based authentication)
         $this->api_client = new AltText_AI_API_Client_V2();
+        
+        // Override plugin information to prevent WordPress from fetching wrong plugin from .org
+        add_filter('plugins_api', [$this, 'override_plugin_information'], 10, 3);
+        add_filter('plugin_row_meta', [$this, 'plugin_row_meta'], 10, 4);
 
         register_activation_hook(__FILE__, [$this, 'activate']);
         register_deactivation_hook(__FILE__, [$this, 'deactivate']);
@@ -4428,10 +4432,61 @@ class AI_Alt_Text_Generator_GPT {
             ]);
         }
 
-        wp_send_json_success([
+        // Pass through all data from backend, including reset link if provided
+        $response_data = [
             'message' => __('Password reset link has been sent to your email. Please check your inbox and spam folder.', 'ai-alt-gpt'),
-            'redirect' => admin_url('upload.php?page=ai-alt-gpt&password_reset=requested')
-        ]);
+        ];
+        
+        // Include reset link if provided (for development/testing when email service isn't configured)
+        if (isset($result['resetLink'])) {
+            $response_data['resetLink'] = $result['resetLink'];
+            $response_data['note'] = $result['note'] ?? __('Email service is in development mode. Use this link to reset your password.', 'ai-alt-gpt');
+        }
+        
+        wp_send_json_success($response_data);
+    }
+    
+    /**
+     * Override plugin information to use our local readme.txt instead of fetching from WordPress.org
+     * This prevents WordPress from showing wrong plugin details from repository
+     */
+    public function override_plugin_information($result, $action, $args) {
+        // Get our plugin file path
+        $plugin_file = plugin_basename(__FILE__);
+        $plugin_slug = dirname($plugin_file);
+        
+        // Check if this request is for our plugin
+        $is_our_plugin = false;
+        if (isset($args->slug)) {
+            // Check against various possible slugs
+            $possible_slugs = [
+                $plugin_slug,
+                'ai-alt-text-generator',
+                'seo-ai-alt-text-generator',
+                'seo-ai-alt-text-generator-auto-image-seo-accessibility',
+                'ai-alt-gpt'
+            ];
+            $is_our_plugin = in_array($args->slug, $possible_slugs, true);
+        }
+        
+        // If it's our plugin, return false to use local readme.txt
+        // Returning false tells WordPress to use the local readme.txt file
+        if ($is_our_plugin) {
+            return false;
+        }
+        
+        return $result;
+    }
+    
+    /**
+     * Filter plugin row meta to use our information
+     */
+    public function plugin_row_meta($plugin_meta, $plugin_file, $plugin_data, $status) {
+        if ($plugin_file === plugin_basename(__FILE__)) {
+            // Ensure our plugin uses local data
+            // WordPress will use readme.txt from the plugin directory
+        }
+        return $plugin_meta;
     }
 
     /**

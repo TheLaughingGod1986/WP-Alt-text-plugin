@@ -529,7 +529,8 @@ class AltText_AI_API_Client_V2 {
         }
         
         if ($response['success']) {
-            return $response['data'];
+            // Return the full data object, which may include resetLink for development
+            return $response['data'] ?? [];
         }
         
         // Extract error message with better context

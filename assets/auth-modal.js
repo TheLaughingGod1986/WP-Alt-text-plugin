@@ -607,20 +607,26 @@ class AltTextAuthModal {
 
             if (data.success) {
                 this.setLoading(form, false);
-                this.showSuccess('Reset link sent! Please check your email (including spam folder) for instructions. The link will expire in 1 hour.');
-                // Clear form
-                form.reset();
-                // Redirect or close modal
-                if (data.data?.redirect) {
-                    setTimeout(() => {
-                        window.location.href = data.data.redirect;
-                    }, 2000);
+                
+                // Build success message
+                let successMessage = 'Reset link sent! ';
+                
+                // If reset link is provided in response (for testing/development), show it prominently
+                if (data.data?.resetLink) {
+                    successMessage = 'Password reset link generated! ';
+                    successMessage += data.data.note || 'Email service is in development mode. ';
+                    successMessage += '\n\nClick this link to reset your password:\n';
+                    // Create a clickable link element
+                    const resetLink = data.data.resetLink;
+                    successMessage += resetLink;
                 } else {
-                    // Return to login after 3 seconds
-                    setTimeout(() => {
-                        this.showLoginForm();
-                    }, 3000);
+                    successMessage += 'Please check your email (including spam folder) for instructions. The link will expire in 1 hour.';
                 }
+                
+                this.showSuccess(successMessage);
+                // Clear form but keep modal open so user can see the message
+                form.reset();
+                // Don't auto-close modal - let user close it manually
             } else {
                 this.setLoading(form, false);
                 // Parse error message for better UX
