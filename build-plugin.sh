@@ -63,6 +63,10 @@ rsync -a \
   assets includes templates \
   "$PLUGIN_DIR/"
 
+# Remove any remaining unminified JS/CSS files (safety check)
+find "$PLUGIN_DIR/assets" -name "*.js" ! -name "*.min.js" -delete 2>/dev/null || true
+find "$PLUGIN_DIR/assets" -name "*.css" ! -name "*.min.css" -delete 2>/dev/null || true
+
 echo "🧼 Stripping development artefacts and test files"
 # Remove WordPress.org submission assets FIRST (not needed at runtime)
 rm -rf "$PLUGIN_DIR/assets/wordpress-org" 2>/dev/null || true
