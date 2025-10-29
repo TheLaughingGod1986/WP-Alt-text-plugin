@@ -40,6 +40,9 @@ rsync -a \
   "$PLUGIN_DIR/"
 
 echo "🧼 Stripping development artefacts and test files"
+# Remove WordPress.org submission assets FIRST (not needed at runtime)
+rm -rf "$PLUGIN_DIR/assets/wordpress-org" 2>/dev/null || true
+
 # Remove backup files
 find "$PLUGIN_DIR" -name "*.backup" -delete
 find "$PLUGIN_DIR" -name "*.bak" -delete
@@ -64,9 +67,6 @@ find "$PLUGIN_DIR" -name "*test*.php" -delete
 find "$PLUGIN_DIR" -name "*Test.php" -delete
 find "$PLUGIN_DIR" -name "*spec*.js" -delete
 
-# Remove WordPress.org submission assets (not needed at runtime)
-find "$PLUGIN_DIR" -path "*/wordpress-org/*" -delete
-
 # Remove test images and demo files
 find "$PLUGIN_DIR" -name "demo*.html" -delete
 find "$PLUGIN_DIR" -name "DEMO.*" -delete
@@ -89,6 +89,9 @@ find "$PLUGIN_DIR" -type d -name "node_modules" -exec rm -rf {} + 2>/dev/null ||
 
 # Remove any hidden files except essential ones
 find "$PLUGIN_DIR" -name ".*" -not -name ".git" -type f -delete 2>/dev/null || true
+
+# Final cleanup: ensure wordpress-org is completely removed
+rm -rf "$PLUGIN_DIR/assets/wordpress-org" 2>/dev/null || true
 
 echo "🗜️  Creating ZIP archive"
 pushd "$BUILD_DIR" > /dev/null
