@@ -553,6 +553,26 @@ class AltText_AI_API_Client_V2 {
     }
     
     /**
+     * Get subscription information
+     */
+    public function get_subscription_info() {
+        $response = $this->make_request('/billing/subscription');
+        
+        if (is_wp_error($response)) {
+            return $response;
+        }
+        
+        if ($response['success']) {
+            return $response['data'];
+        }
+        
+        return new WP_Error(
+            'subscription_info_failed',
+            $response['data']['error'] ?? __('Failed to fetch subscription information', 'ai-alt-gpt')
+        );
+    }
+    
+    /**
      * Prepare image payload for API
      */
     private function prepare_image_payload($image_id, $image_url, $title, $caption, $filename) {

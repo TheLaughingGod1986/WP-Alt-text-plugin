@@ -93,6 +93,7 @@ class AI_Alt_Text_Generator_GPT {
         add_action('wp_ajax_alttextai_create_portal', [$this, 'ajax_create_portal']);
         add_action('wp_ajax_alttextai_forgot_password', [$this, 'ajax_forgot_password']);
         add_action('wp_ajax_alttextai_reset_password', [$this, 'ajax_reset_password']);
+        add_action('wp_ajax_alttextai_get_subscription_info', [$this, 'ajax_get_subscription_info']);
 
         if (defined('WP_CLI') && WP_CLI) {
             \WP_CLI::add_command('ai-alt', [$this, 'wpcli_command']);
@@ -1956,6 +1957,111 @@ class AI_Alt_Text_Generator_GPT {
                     </button>
                     <?php endif; ?>
                 </div>
+
+                <!-- Account Management Card -->
+                <?php if ($this->api_client->is_authenticated()) : ?>
+                <div class="alttextai-settings-card alttextai-account-management-card" id="alttextai-account-management">
+                    <div class="alttextai-settings-card-header">
+                        <h2 class="alttextai-settings-card-title">
+                            <span class="alttextai-settings-icon">💳</span>
+                            <?php esc_html_e('Account Management', 'ai-alt-gpt'); ?>
+                        </h2>
+                        <p class="alttextai-settings-card-desc"><?php esc_html_e('Manage your subscription, billing, and payment methods', 'ai-alt-gpt'); ?></p>
+                    </div>
+
+                    <div class="alttextai-account-management-content">
+                        <!-- Loading State -->
+                        <div class="alttextai-account-loading" id="alttextai-subscription-loading">
+                            <div class="alttextai-loading-spinner"></div>
+                            <p><?php esc_html_e('Loading subscription information...', 'ai-alt-gpt'); ?></p>
+                        </div>
+
+                        <!-- Error State -->
+                        <div class="alttextai-account-error" id="alttextai-subscription-error" style="display: none;">
+                            <p class="alttextai-error-message"></p>
+                            <button type="button" class="alttextai-btn-secondary" id="alttextai-retry-subscription">
+                                <?php esc_html_e('Retry', 'ai-alt-gpt'); ?>
+                            </button>
+                        </div>
+
+                        <!-- Subscription Info -->
+                        <div class="alttextai-subscription-info" id="alttextai-subscription-info" style="display: none;">
+                            <!-- Subscription Status -->
+                            <div class="alttextai-subscription-status">
+                                <div class="alttextai-subscription-status-badge" id="alttextai-status-badge">
+                                    <span class="alttextai-status-label"></span>
+                                </div>
+                                <div class="alttextai-subscription-cancel-warning" id="alttextai-cancel-warning" style="display: none;">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                        <path d="M8 1L1 3v6c0 4.418 3.582 8 8 8s8-3.582 8-8V3L8 1z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                                        <path d="M8 5v4M8 11h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                    </svg>
+                                    <span><?php esc_html_e('Your subscription will cancel at the end of the current billing period.', 'ai-alt-gpt'); ?></span>
+                                </div>
+                            </div>
+
+                            <!-- Plan Details -->
+                            <div class="alttextai-subscription-details">
+                                <div class="alttextai-subscription-detail-item">
+                                    <span class="alttextai-detail-label"><?php esc_html_e('Current Plan', 'ai-alt-gpt'); ?></span>
+                                    <span class="alttextai-detail-value" id="alttextai-plan-name">-</span>
+                                </div>
+                                <div class="alttextai-subscription-detail-item">
+                                    <span class="alttextai-detail-label"><?php esc_html_e('Billing Cycle', 'ai-alt-gpt'); ?></span>
+                                    <span class="alttextai-detail-value" id="alttextai-billing-cycle">-</span>
+                                </div>
+                                <div class="alttextai-subscription-detail-item">
+                                    <span class="alttextai-detail-label"><?php esc_html_e('Next Billing Date', 'ai-alt-gpt'); ?></span>
+                                    <span class="alttextai-detail-value" id="alttextai-next-billing">-</span>
+                                </div>
+                                <div class="alttextai-subscription-detail-item">
+                                    <span class="alttextai-detail-label"><?php esc_html_e('Next Charge', 'ai-alt-gpt'); ?></span>
+                                    <span class="alttextai-detail-value" id="alttextai-next-charge">-</span>
+                                </div>
+                            </div>
+
+                            <!-- Payment Method -->
+                            <div class="alttextai-payment-method" id="alttextai-payment-method" style="display: none;">
+                                <div class="alttextai-payment-method-header">
+                                    <span class="alttextai-detail-label"><?php esc_html_e('Payment Method', 'ai-alt-gpt'); ?></span>
+                                </div>
+                                <div class="alttextai-payment-method-info">
+                                    <span class="alttextai-card-brand" id="alttextai-card-brand"></span>
+                                    <span class="alttextai-card-last4" id="alttextai-card-last4"></span>
+                                    <span class="alttextai-card-expiry" id="alttextai-card-expiry"></span>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="alttextai-account-actions">
+                                <button type="button" class="alttextai-btn-primary alttextai-btn-icon" id="alttextai-update-payment-method">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                        <path d="M8 1L1 3v6c0 4.418 3.582 8 8 8s8-3.582 8-8V3L8 1z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                                    </svg>
+                                    <span><?php esc_html_e('Update Payment Method', 'ai-alt-gpt'); ?></span>
+                                </button>
+                                <button type="button" class="alttextai-btn-secondary alttextai-btn-icon" id="alttextai-manage-subscription">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                        <path d="M8 2L6 6H2L6 9L4 14L8 11L12 14L10 9L14 6H10L8 2Z" fill="currentColor"/>
+                                    </svg>
+                                    <span><?php esc_html_e('Manage Subscription', 'ai-alt-gpt'); ?></span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Free Plan Message -->
+                        <div class="alttextai-free-plan-message" id="alttextai-free-plan-message" style="display: none;">
+                            <p><?php esc_html_e('You are currently on the Free plan. Upgrade to access more features and unlimited alt text generation.', 'ai-alt-gpt'); ?></p>
+                            <button type="button" class="alttextai-btn-primary alttextai-btn-icon" data-action="show-upgrade-modal">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                    <path d="M8 2L6 6H2L6 9L4 14L8 11L12 14L10 9L14 6H10L8 2Z" fill="currentColor"/>
+                                </svg>
+                                <span><?php esc_html_e('Upgrade Now', 'ai-alt-gpt'); ?></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <!-- Settings Form -->
                 <form method="post" action="options.php" class="alttextai-settings-form">
@@ -4327,6 +4433,30 @@ class AI_Alt_Text_Generator_GPT {
         wp_send_json_success([
             'message' => __('Password reset successfully. You can now sign in with your new password.', 'ai-alt-gpt')
         ]);
+    }
+
+    /**
+     * AJAX handler: Get subscription information
+     */
+    public function ajax_get_subscription_info() {
+        check_ajax_referer('alttextai_upgrade_nonce', 'nonce');
+
+        if (!$this->api_client->is_authenticated()) {
+            wp_send_json_error([
+                'message' => __('Please login to view subscription information', 'ai-alt-gpt'),
+                'code' => 'not_authenticated'
+            ]);
+        }
+
+        $subscription_info = $this->api_client->get_subscription_info();
+
+        if (is_wp_error($subscription_info)) {
+            wp_send_json_error([
+                'message' => $subscription_info->get_error_message()
+            ]);
+        }
+
+        wp_send_json_success($subscription_info);
     }
 }
 
