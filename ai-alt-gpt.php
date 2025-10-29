@@ -3,7 +3,7 @@
  * Plugin Name: AI Alt Text Generator - Automatic Image Accessibility & SEO
  * Plugin URI: https://wordpress.org/plugins/ai-alt-text-generator/
  * Description: Automatically generate high-quality, SEO-optimized alt text for WordPress images using AI. Improve accessibility (WCAG compliant), boost search rankings, and save hours of manual work. Free tier: 50 generations/month. Perfect for accessibility, SEO, e-commerce, and content creators.
- * Version: 4.1.0
+ * Version: 4.2.0
  * Author: Benjamin Oats
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
