@@ -31,6 +31,20 @@ class AltTextAuthModal {
         this.createModalHTML();
         this.bindEvents();
         this.checkAuthStatus();
+        this.checkResetPasswordParams();
+    }
+
+    checkResetPasswordParams() {
+        // Check if URL contains reset token and email params
+        const urlParams = new URLSearchParams(window.location.search);
+        const resetToken = urlParams.get('reset-token');
+        const resetEmail = urlParams.get('email');
+        
+        if (resetToken && resetEmail) {
+            // Show reset password form
+            this.show();
+            this.showResetPasswordForm(resetEmail, resetToken);
+        }
     }
 
     createModalHTML() {
@@ -55,6 +69,7 @@ class AltTextAuthModal {
                                     <div class="alttext-form-group">
                                         <label for="login-password">Password</label>
                                         <input type="password" id="login-password" name="password" autocomplete="current-password" required>
+                                        <a href="#" id="show-forgot-password" class="alttext-forgot-password-link">Forgot password?</a>
                                     </div>
                                     <button type="submit" class="alttext-btn alttext-btn--primary">
                                         <span class="alttext-btn__text">Sign In</span>
@@ -92,6 +107,58 @@ class AltTextAuthModal {
                                 <p class="alttext-auth-switch">
                                     Already have an account?
                                     <a href="#" id="show-login">Sign in here</a>
+                                </p>
+                            </div>
+
+                            <!-- Forgot Password Form -->
+                            <div id="alttext-forgot-password-form" class="alttext-auth-form" style="display: none;">
+                                <h3>Reset Password</h3>
+                                <p class="alttext-forgot-password-info">Enter your email address and we'll send you a link to reset your password.</p>
+                                <form id="forgot-password-form" autocomplete="on">
+                                    <div class="alttext-form-group">
+                                        <label for="forgot-email">Email</label>
+                                        <input type="email" id="forgot-email" name="email" autocomplete="username" required>
+                                    </div>
+                                    <button type="submit" class="alttext-btn alttext-btn--primary">
+                                        <span class="alttext-btn__text">Send Reset Link</span>
+                                        <span class="alttext-btn__spinner" style="display: none;">⏳</span>
+                                    </button>
+                                </form>
+                                <p class="alttext-auth-switch">
+                                    Remember your password?
+                                    <a href="#" id="show-login-from-forgot">Sign in here</a>
+                                </p>
+                            </div>
+
+                            <!-- Reset Password Form -->
+                            <div id="alttext-reset-password-form" class="alttext-auth-form" style="display: none;">
+                                <h3>Set New Password</h3>
+                                <p class="alttext-reset-password-info">Enter your new password below.</p>
+                                <form id="reset-password-form" autocomplete="off">
+                                    <div class="alttext-form-group">
+                                        <label for="reset-email">Email</label>
+                                        <input type="email" id="reset-email" name="email" autocomplete="username" required readonly>
+                                    </div>
+                                    <div class="alttext-form-group">
+                                        <label for="reset-token">Reset Token</label>
+                                        <input type="text" id="reset-token" name="token" required readonly>
+                                    </div>
+                                    <div class="alttext-form-group">
+                                        <label for="reset-password">New Password</label>
+                                        <input type="password" id="reset-password" name="password" autocomplete="new-password" minlength="8" required>
+                                        <small>Minimum 8 characters</small>
+                                    </div>
+                                    <div class="alttext-form-group">
+                                        <label for="reset-confirm">Confirm New Password</label>
+                                        <input type="password" id="reset-confirm" name="confirmPassword" autocomplete="new-password" required>
+                                    </div>
+                                    <button type="submit" class="alttext-btn alttext-btn--primary">
+                                        <span class="alttext-btn__text">Reset Password</span>
+                                        <span class="alttext-btn__spinner" style="display: none;">⏳</span>
+                                    </button>
+                                </form>
+                                <p class="alttext-auth-switch">
+                                    <a href="#" id="show-login-from-reset">Back to sign in</a>
                                 </p>
                             </div>
                         </div>
@@ -136,6 +203,28 @@ class AltTextAuthModal {
                 self.showLoginForm();
                 return;
             }
+
+            // Forgot password links
+            if (e.target.id === 'show-forgot-password' || e.target.closest('#show-forgot-password')) {
+                e.preventDefault();
+                e.stopPropagation();
+                self.showForgotPasswordForm();
+                return;
+            }
+
+            if (e.target.id === 'show-login-from-forgot' || e.target.closest('#show-login-from-forgot')) {
+                e.preventDefault();
+                e.stopPropagation();
+                self.showLoginForm();
+                return;
+            }
+
+            if (e.target.id === 'show-login-from-reset' || e.target.closest('#show-login-from-reset')) {
+                e.preventDefault();
+                e.stopPropagation();
+                self.showLoginForm();
+                return;
+            }
         }, true); // Use capture phase
 
         // Form submissions
@@ -151,6 +240,20 @@ class AltTextAuthModal {
                 e.preventDefault();
                 e.stopPropagation();
                 self.handleRegister();
+                return;
+            }
+
+            if (e.target.id === 'forgot-password-form') {
+                e.preventDefault();
+                e.stopPropagation();
+                self.handleForgotPassword();
+                return;
+            }
+
+            if (e.target.id === 'reset-password-form') {
+                e.preventDefault();
+                e.stopPropagation();
+                self.handleResetPassword();
                 return;
             }
         }, true); // Use capture phase
@@ -177,11 +280,39 @@ class AltTextAuthModal {
     showLoginForm() {
         document.getElementById('alttext-login-form').style.display = 'block';
         document.getElementById('alttext-register-form').style.display = 'none';
+        document.getElementById('alttext-forgot-password-form').style.display = 'none';
+        document.getElementById('alttext-reset-password-form').style.display = 'none';
     }
 
     showRegisterForm() {
         document.getElementById('alttext-login-form').style.display = 'none';
         document.getElementById('alttext-register-form').style.display = 'block';
+        document.getElementById('alttext-forgot-password-form').style.display = 'none';
+        document.getElementById('alttext-reset-password-form').style.display = 'none';
+    }
+
+    showForgotPasswordForm() {
+        document.getElementById('alttext-login-form').style.display = 'none';
+        document.getElementById('alttext-register-form').style.display = 'none';
+        document.getElementById('alttext-forgot-password-form').style.display = 'block';
+        document.getElementById('alttext-reset-password-form').style.display = 'none';
+    }
+
+    showResetPasswordForm(email, token) {
+        document.getElementById('alttext-login-form').style.display = 'none';
+        document.getElementById('alttext-register-form').style.display = 'none';
+        document.getElementById('alttext-forgot-password-form').style.display = 'none';
+        document.getElementById('alttext-reset-password-form').style.display = 'block';
+        
+        // Pre-fill email and token from URL params
+        const resetEmail = document.getElementById('reset-email');
+        const resetToken = document.getElementById('reset-token');
+        if (resetEmail && email) {
+            resetEmail.value = email;
+        }
+        if (resetToken && token) {
+            resetToken.value = token;
+        }
     }
 
     async handleLogin() {
@@ -298,6 +429,128 @@ class AltTextAuthModal {
             }
         } catch (error) {
             console.error('Registration error:', error);
+            this.showError('Network error. Please try again.');
+        } finally {
+            this.setLoading(form, false);
+        }
+    }
+
+    async handleForgotPassword() {
+        const form = document.getElementById('forgot-password-form');
+        const formData = new FormData(form);
+        const email = formData.get('email');
+
+        this.setLoading(form, true);
+
+        // Validate AJAX config exists
+        if (!window.alttextai_ajax?.ajaxurl) {
+            console.error('[AltText AI] AJAX configuration not loaded');
+            this.showError('Configuration error. Please refresh the page and try again.');
+            this.setLoading(form, false);
+            return;
+        }
+
+        try {
+            const response = await fetch(window.alttextai_ajax.ajaxurl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    action: 'alttextai_forgot_password',
+                    email: email,
+                    nonce: window.alttextai_ajax.nonce
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showSuccess('Reset link sent! Please check your email for instructions. If you don\'t see it, check your spam folder.');
+                // Clear form
+                form.reset();
+                // Return to login after 3 seconds
+                setTimeout(() => {
+                    this.showLoginForm();
+                }, 3000);
+            } else {
+                const errorMessage = data.data?.message || data.message || 'Failed to send reset link';
+                this.showError(errorMessage);
+            }
+        } catch (error) {
+            console.error('Forgot password error:', error);
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                this.showError('Unable to connect to authentication server. The service may be temporarily unavailable. Please try again in a few minutes.');
+            } else {
+                this.showError('Network error. Please try again.');
+            }
+        } finally {
+            this.setLoading(form, false);
+        }
+    }
+
+    async handleResetPassword() {
+        const form = document.getElementById('reset-password-form');
+        const formData = new FormData(form);
+        const email = formData.get('email');
+        const token = formData.get('token');
+        const password = formData.get('password');
+        const confirmPassword = formData.get('confirmPassword');
+
+        if (password !== confirmPassword) {
+            this.showError('Passwords do not match');
+            return;
+        }
+
+        if (password.length < 8) {
+            this.showError('Password must be at least 8 characters long');
+            return;
+        }
+
+        this.setLoading(form, true);
+
+        // Validate AJAX config exists
+        if (!window.alttextai_ajax?.ajaxurl) {
+            console.error('[AltText AI] AJAX configuration not loaded');
+            this.showError('Configuration error. Please refresh the page and try again.');
+            this.setLoading(form, false);
+            return;
+        }
+
+        try {
+            const response = await fetch(window.alttextai_ajax.ajaxurl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    action: 'alttextai_reset_password',
+                    email: email,
+                    token: token,
+                    password: password,
+                    nonce: window.alttextai_ajax.nonce
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showSuccess('Password reset successfully! Redirecting to sign in...');
+                // Clear form
+                form.reset();
+                // Show login form and reload page after 2 seconds
+                setTimeout(() => {
+                    this.showLoginForm();
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                }, 2000);
+            } else {
+                const errorMessage = data.data?.message || data.message || 'Failed to reset password';
+                this.showError(errorMessage);
+            }
+        } catch (error) {
+            console.error('Reset password error:', error);
             this.showError('Network error. Please try again.');
         } finally {
             this.setLoading(form, false);

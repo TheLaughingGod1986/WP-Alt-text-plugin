@@ -39,7 +39,7 @@ class AltText_AI_API_Client_V2 {
     /**
      * Get stored JWT token
      */
-    private function get_token() {
+    protected function get_token() {
         return get_option($this->token_option_key, '');
     }
     
@@ -485,6 +485,70 @@ class AltText_AI_API_Client_V2 {
         return new WP_Error(
             'portal_failed',
             $response['data']['error'] ?? __('Failed to create customer portal session', 'ai-alt-gpt')
+        );
+    }
+    
+    /**
+     * Request password reset
+     */
+    public function forgot_password($email) {
+        // Temporarily clear token for unauthenticated request
+        $temp_token = $this->get_token();
+        $this->clear_token();
+        
+        $response = $this->make_request('/auth/forgot-password', 'POST', [
+            'email' => $email
+        ]);
+        
+        // Restore token if it existed
+        if ($temp_token) {
+            $this->set_token($temp_token);
+        }
+        
+        if (is_wp_error($response)) {
+            return $response;
+        }
+        
+        if ($response['success']) {
+            return $response['data'];
+        }
+        
+        return new WP_Error(
+            'forgot_password_failed',
+            $response['data']['error'] ?? $response['data']['message'] ?? __('Failed to send password reset email', 'ai-alt-gpt')
+        );
+    }
+    
+    /**
+     * Reset password with token
+     */
+    public function reset_password($email, $token, $new_password) {
+        // Temporarily clear auth token for unauthenticated request
+        $temp_token = $this->get_token();
+        $this->clear_token();
+        
+        $response = $this->make_request('/auth/reset-password', 'POST', [
+            'email' => $email,
+            'token' => $token,
+            'newPassword' => $new_password
+        ]);
+        
+        // Restore token if it existed
+        if ($temp_token) {
+            $this->set_token($temp_token);
+        }
+        
+        if (is_wp_error($response)) {
+            return $response;
+        }
+        
+        if ($response['success']) {
+            return $response['data'];
+        }
+        
+        return new WP_Error(
+            'reset_password_failed',
+            $response['data']['error'] ?? $response['data']['message'] ?? __('Failed to reset password', 'ai-alt-gpt')
         );
     }
     
