@@ -2017,9 +2017,9 @@ class AI_Alt_Text_Generator_GPT {
                         <!-- Error State -->
                         <div class="alttextai-account-error" id="alttextai-subscription-error" style="display: none;">
                             <p class="alttextai-error-message"></p>
-                            <button type="button" class="alttextai-btn-secondary" id="alttextai-retry-subscription">
-                                <?php esc_html_e('Retry', 'ai-alt-gpt'); ?>
-                            </button>
+                        <button type="button" class="alttextai-btn-secondary" id="alttextai-retry-subscription" aria-label="<?php esc_attr_e('Retry loading subscription information', 'ai-alt-gpt'); ?>">
+                            <?php esc_html_e('Retry', 'ai-alt-gpt'); ?>
+                        </button>
                         </div>
 
                         <!-- Subscription Info -->
@@ -2072,14 +2072,14 @@ class AI_Alt_Text_Generator_GPT {
 
                             <!-- Action Buttons -->
                             <div class="alttextai-account-actions">
-                                <button type="button" class="alttextai-btn-primary alttextai-btn-icon" id="alttextai-update-payment-method">
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <button type="button" class="alttextai-btn-primary alttextai-btn-icon" id="alttextai-update-payment-method" aria-label="<?php esc_attr_e('Update payment method in Stripe Customer Portal', 'ai-alt-gpt'); ?>">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                                         <path d="M8 1L1 3v6c0 4.418 3.582 8 8 8s8-3.582 8-8V3L8 1z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                     </svg>
                                     <span><?php esc_html_e('Update Payment Method', 'ai-alt-gpt'); ?></span>
                                 </button>
-                                <button type="button" class="alttextai-btn-secondary alttextai-btn-icon" id="alttextai-manage-subscription">
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <button type="button" class="alttextai-btn-secondary alttextai-btn-icon" id="alttextai-manage-subscription" aria-label="<?php esc_attr_e('Manage subscription, change plan, or cancel in Stripe Customer Portal', 'ai-alt-gpt'); ?>">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                                         <path d="M8 2L6 6H2L6 9L4 14L8 11L12 14L10 9L14 6H10L8 2Z" fill="currentColor"/>
                                     </svg>
                                     <span><?php esc_html_e('Manage Subscription', 'ai-alt-gpt'); ?></span>

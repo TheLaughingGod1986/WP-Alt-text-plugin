@@ -105,53 +105,53 @@ class AltTextAuthModal {
 
     createModalHTML() {
         const modalHTML = `
-            <div id="alttext-auth-modal" class="alttext-auth-modal" style="display: none;">
+            <div id="alttext-auth-modal" class="alttext-auth-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="alttext-auth-modal-title" aria-describedby="alttext-auth-modal-desc">
                 <div class="alttext-auth-modal__overlay">
                     <div class="alttext-auth-modal__content">
                         <div class="alttext-auth-modal__header">
-                            <h2 class="alttext-auth-modal__title">AltText AI Account</h2>
-                            <button class="alttext-auth-modal__close" type="button">&times;</button>
+                            <h2 class="alttext-auth-modal__title" id="alttext-auth-modal-title">AltText AI Account</h2>
+                            <button class="alttext-auth-modal__close" type="button" aria-label="Close dialog">&times;</button>
                         </div>
                         
                         <div class="alttext-auth-modal__body">
                             <!-- Login Form -->
                             <div id="alttext-login-form" class="alttext-auth-form">
                                 <h3>Sign In</h3>
-                                <form id="login-form" autocomplete="on">
+                                <form id="login-form" autocomplete="on" aria-label="Sign in to your AltText AI account">
                                     <div class="alttext-form-group">
                                         <label for="login-email">Email</label>
-                                        <input type="email" id="login-email" name="email" autocomplete="username" required>
+                                        <input type="email" id="login-email" name="email" autocomplete="username" required aria-required="true">
                                     </div>
                                     <div class="alttext-form-group">
                                         <label for="login-password">Password</label>
-                                        <input type="password" id="login-password" name="password" autocomplete="current-password" required>
-                                        <a href="#" id="show-forgot-password" class="alttext-forgot-password-link">Forgot password?</a>
+                                        <input type="password" id="login-password" name="password" autocomplete="current-password" required aria-required="true">
+                                        <a href="#" id="show-forgot-password" class="alttext-forgot-password-link" aria-label="Reset your password">Forgot password?</a>
                                     </div>
-                                    <button type="submit" class="alttext-btn alttext-btn--primary">
+                                    <button type="submit" class="alttext-btn alttext-btn--primary" aria-label="Sign in">
                                         <span class="alttext-btn__text">Sign In</span>
-                                        <span class="alttext-btn__spinner" style="display: none;">⏳</span>
+                                        <span class="alttext-btn__spinner" style="display: none;" aria-hidden="true">⏳</span>
                                     </button>
                                 </form>
                                 <p class="alttext-auth-switch">
                                     Don't have an account?
-                                    <a href="#" id="show-register">Create one here</a>
+                                    <a href="#" id="show-register" aria-label="Switch to registration form">Create one here</a>
                                 </p>
                             </div>
 
                             <!-- Register Form -->
                             <div id="alttext-register-form" class="alttext-auth-form" style="display: none;">
                                 <h3>Create Account</h3>
-                                <form id="register-form" autocomplete="off">
+                                <form id="register-form" autocomplete="off" aria-label="Create a new AltText AI account">
                                     <div class="alttext-form-group">
                                         <label for="register-email">Email</label>
-                                        <input type="email" id="register-email" name="email" autocomplete="off" required>
+                                        <input type="email" id="register-email" name="email" autocomplete="off" required aria-required="true">
                                     </div>
                                     <div class="alttext-form-group">
                                         <label for="register-password">Password</label>
-                                        <input type="password" id="register-password" name="password" autocomplete="new-password" minlength="8" required>
-                                        <div class="alttext-password-strength" id="register-password-strength" style="display: none;">
-                                            <div class="alttext-password-strength-bar">
-                                                <div class="alttext-password-strength-fill" id="register-password-strength-fill"></div>
+                                        <input type="password" id="register-password" name="password" autocomplete="new-password" minlength="8" required aria-required="true" aria-describedby="register-password-strength-label register-password-hint">
+                                        <div class="alttext-password-strength" id="register-password-strength" style="display: none;" role="status" aria-live="polite" aria-atomic="true">
+                                            <div class="alttext-password-strength-bar" aria-hidden="true">
+                                                <div class="alttext-password-strength-fill" id="register-password-strength-fill" aria-hidden="true"></div>
                                             </div>
                                             <span class="alttext-password-strength-label" id="register-password-strength-label"></span>
                                         </div>
@@ -159,36 +159,36 @@ class AltTextAuthModal {
                                     </div>
                                     <div class="alttext-form-group">
                                         <label for="register-confirm">Confirm Password</label>
-                                        <input type="password" id="register-confirm" name="confirmPassword" autocomplete="new-password" required>
+                                        <input type="password" id="register-confirm" name="confirmPassword" autocomplete="new-password" required aria-required="true">
                                     </div>
-                                    <button type="submit" class="alttext-btn alttext-btn--primary">
+                                    <button type="submit" class="alttext-btn alttext-btn--primary" aria-label="Create account">
                                         <span class="alttext-btn__text">Create Account</span>
-                                        <span class="alttext-btn__spinner" style="display: none;">⏳</span>
+                                        <span class="alttext-btn__spinner" style="display: none;" aria-hidden="true">⏳</span>
                                     </button>
                                 </form>
                                 <p class="alttext-auth-switch">
                                     Already have an account?
-                                    <a href="#" id="show-login">Sign in here</a>
+                                    <a href="#" id="show-login" aria-label="Switch to sign in form">Sign in here</a>
                                 </p>
                             </div>
 
                             <!-- Forgot Password Form -->
                             <div id="alttext-forgot-password-form" class="alttext-auth-form" style="display: none;">
                                 <h3>Reset Password</h3>
-                                <p class="alttext-forgot-password-info">Enter your email address and we'll send you a link to reset your password.</p>
-                                <form id="forgot-password-form" autocomplete="on">
+                                <p class="alttext-forgot-password-info" id="alttext-auth-modal-desc">Enter your email address and we'll send you a link to reset your password.</p>
+                                <form id="forgot-password-form" autocomplete="on" aria-label="Request password reset">
                                     <div class="alttext-form-group">
                                         <label for="forgot-email">Email</label>
-                                        <input type="email" id="forgot-email" name="email" autocomplete="username" required>
+                                        <input type="email" id="forgot-email" name="email" autocomplete="username" required aria-required="true">
                                     </div>
-                                    <button type="submit" class="alttext-btn alttext-btn--primary">
+                                    <button type="submit" class="alttext-btn alttext-btn--primary" aria-label="Send password reset link">
                                         <span class="alttext-btn__text">Send Reset Link</span>
-                                        <span class="alttext-btn__spinner" style="display: none;">⏳</span>
+                                        <span class="alttext-btn__spinner" style="display: none;" aria-hidden="true">⏳</span>
                                     </button>
                                 </form>
                                 <p class="alttext-auth-switch">
                                     Remember your password?
-                                    <a href="#" id="show-login-from-forgot">Sign in here</a>
+                                    <a href="#" id="show-login-from-forgot" aria-label="Switch to sign in form">Sign in here</a>
                                 </p>
                             </div>
 
@@ -196,21 +196,21 @@ class AltTextAuthModal {
                             <div id="alttext-reset-password-form" class="alttext-auth-form" style="display: none;">
                                 <h3>Set New Password</h3>
                                 <p class="alttext-reset-password-info">Enter your new password below.</p>
-                                <form id="reset-password-form" autocomplete="off">
+                                <form id="reset-password-form" autocomplete="off" aria-label="Reset your password">
                                     <div class="alttext-form-group">
                                         <label for="reset-email">Email</label>
-                                        <input type="email" id="reset-email" name="email" autocomplete="username" required readonly>
+                                        <input type="email" id="reset-email" name="email" autocomplete="username" required readonly aria-readonly="true">
                                     </div>
                                     <div class="alttext-form-group">
                                         <label for="reset-token">Reset Token</label>
-                                        <input type="text" id="reset-token" name="token" required readonly>
+                                        <input type="text" id="reset-token" name="token" required readonly aria-readonly="true">
                                     </div>
                                     <div class="alttext-form-group">
                                         <label for="reset-password">New Password</label>
-                                        <input type="password" id="reset-password" name="password" autocomplete="new-password" minlength="8" required>
-                                        <div class="alttext-password-strength" id="reset-password-strength" style="display: none;">
-                                            <div class="alttext-password-strength-bar">
-                                                <div class="alttext-password-strength-fill" id="reset-password-strength-fill"></div>
+                                        <input type="password" id="reset-password" name="password" autocomplete="new-password" minlength="8" required aria-required="true" aria-describedby="reset-password-strength-label reset-password-hint">
+                                        <div class="alttext-password-strength" id="reset-password-strength" style="display: none;" role="status" aria-live="polite" aria-atomic="true">
+                                            <div class="alttext-password-strength-bar" aria-hidden="true">
+                                                <div class="alttext-password-strength-fill" id="reset-password-strength-fill" aria-hidden="true"></div>
                                             </div>
                                             <span class="alttext-password-strength-label" id="reset-password-strength-label"></span>
                                         </div>
@@ -218,15 +218,15 @@ class AltTextAuthModal {
                                     </div>
                                     <div class="alttext-form-group">
                                         <label for="reset-confirm">Confirm New Password</label>
-                                        <input type="password" id="reset-confirm" name="confirmPassword" autocomplete="new-password" required>
+                                        <input type="password" id="reset-confirm" name="confirmPassword" autocomplete="new-password" required aria-required="true">
                                     </div>
-                                    <button type="submit" class="alttext-btn alttext-btn--primary">
+                                    <button type="submit" class="alttext-btn alttext-btn--primary" aria-label="Reset password">
                                         <span class="alttext-btn__text">Reset Password</span>
-                                        <span class="alttext-btn__spinner" style="display: none;">⏳</span>
+                                        <span class="alttext-btn__spinner" style="display: none;" aria-hidden="true">⏳</span>
                                     </button>
                                 </form>
                                 <p class="alttext-auth-switch">
-                                    <a href="#" id="show-login-from-reset">Back to sign in</a>
+                                    <a href="#" id="show-login-from-reset" aria-label="Switch to sign in form">Back to sign in</a>
                                 </p>
                             </div>
                         </div>
@@ -332,6 +332,25 @@ class AltTextAuthModal {
             if (e.key === 'Escape' && modal && modal.style.display === 'block') {
                 self.hide();
             }
+            
+            // Focus trapping: keep focus within modal when open
+            if (modal && modal.style.display === 'block') {
+                const focusableElements = modal.querySelectorAll(
+                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                );
+                const firstElement = focusableElements[0];
+                const lastElement = focusableElements[focusableElements.length - 1];
+                
+                if (e.key === 'Tab') {
+                    if (e.shiftKey && document.activeElement === firstElement) {
+                        e.preventDefault();
+                        lastElement.focus();
+                    } else if (!e.shiftKey && document.activeElement === lastElement) {
+                        e.preventDefault();
+                        firstElement.focus();
+                    }
+                }
+            }
         });
 
         // Password strength indicator
@@ -343,13 +362,25 @@ class AltTextAuthModal {
     }
 
     show() {
-        document.getElementById('alttext-auth-modal').style.display = 'block';
-        document.body.style.overflow = 'hidden';
+        const modal = document.getElementById('alttext-auth-modal');
+        if (modal) {
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            
+            // Focus trap: focus on first input or close button
+            const firstInput = modal.querySelector('input[type="email"], input[type="password"], button');
+            if (firstInput) {
+                firstInput.focus();
+            }
+        }
     }
 
     hide() {
-        document.getElementById('alttext-auth-modal').style.display = 'none';
-        document.body.style.overflow = '';
+        const modal = document.getElementById('alttext-auth-modal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
     }
 
     showLoginForm() {

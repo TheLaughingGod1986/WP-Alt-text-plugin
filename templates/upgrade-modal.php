@@ -19,12 +19,12 @@ $credits_url = $stripe_links['credits'];
 $is_authenticated = $this->api_client->is_authenticated();
 ?>
 
-<div id="alttextai-upgrade-modal" class="alttextai-modal-backdrop" style="display: none;">
+<div id="alttextai-upgrade-modal" class="alttextai-modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="alttextai-upgrade-modal-title" aria-describedby="alttextai-upgrade-modal-desc">
     <div class="alttextai-upgrade-modal__content">
         <div class="alttextai-upgrade-modal__header">
             <div class="alttextai-upgrade-modal__header-content">
-                <h2><?php esc_html_e('Unlock Unlimited AI Alt Text Generation', 'ai-alt-gpt'); ?></h2>
-                <p class="alttextai-upgrade-modal__subtitle"><?php esc_html_e('Save hours of manual work and boost your SEO instantly', 'ai-alt-gpt'); ?></p>
+                <h2 id="alttextai-upgrade-modal-title"><?php esc_html_e('Unlock Unlimited AI Alt Text Generation', 'ai-alt-gpt'); ?></h2>
+                <p class="alttextai-upgrade-modal__subtitle" id="alttextai-upgrade-modal-desc"><?php esc_html_e('Save hours of manual work and boost your SEO instantly', 'ai-alt-gpt'); ?></p>
             </div>
             <button type="button" class="alttextai-modal-close" onclick="alttextaiCloseModal();" aria-label="<?php esc_attr_e('Close', 'ai-alt-gpt'); ?>">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -150,8 +150,9 @@ $is_authenticated = $this->api_client->is_authenticated();
                             
                             <button type="button" 
                                     class="alttextai-btn-secondary alttextai-btn-icon alttextai-plan-cta"
-                                    onclick="openStripeLink('<?php echo esc_js($credits_url); ?>'); return false;">
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                    onclick="openStripeLink('<?php echo esc_js($credits_url); ?>'); return false;"
+                                    aria-label="<?php esc_attr_e('Purchase credit pack - 100 AI-generated alt texts', 'ai-alt-gpt'); ?>">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                                     <path d="M8 2L6 6H2L6 9L4 14L8 11L12 14L10 9L14 6H10L8 2Z" fill="currentColor"/>
                                 </svg>
                                 <span><?php esc_html_e('Buy Credits', 'ai-alt-gpt'); ?></span>
@@ -184,7 +185,7 @@ $is_authenticated = $this->api_client->is_authenticated();
 
 <script>
 function openStripeLink(url) {
-    console.log('[AltText AI] Opening Stripe link:', url);
+    // Debug: console.log('[AltText AI] Opening Stripe link:', url);
     window.open(url, '_blank');
 }
 
@@ -203,19 +204,19 @@ function alttextaiShowModal() {
 }
 
 function triggerSignIn() {
-    console.log('[AltText AI] Triggering sign in...');
+    // Debug: console.log('[AltText AI] Triggering sign in...');
     
     // Close upgrade modal first
     alttextaiCloseModal();
     
     // Try multiple methods to trigger auth modal
     setTimeout(function() {
-        console.log('[AltText AI] Attempting to open auth modal...');
+        // Debug: console.log('[AltText AI] Attempting to open auth modal...');
         
         // Method 1: Try to find and click the existing auth button
         const authBtn = document.getElementById('alttextai-show-auth-login-btn');
         if (authBtn) {
-            console.log('[AltText AI] Found auth button, clicking it');
+            // Debug: console.log('[AltText AI] Found auth button, clicking it');
             authBtn.click();
             return;
         }
@@ -223,14 +224,14 @@ function triggerSignIn() {
         // Method 2: Try to find and click the auth banner button
         const bannerBtn = document.getElementById('alttextai-show-auth-banner-btn');
         if (bannerBtn) {
-            console.log('[AltText AI] Found banner button, clicking it');
+            // Debug: console.log('[AltText AI] Found banner button, clicking it');
             bannerBtn.click();
             return;
         }
         
         // Method 3: Try to trigger auth modal directly
         if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
-            console.log('[AltText AI] Using authModal.show()');
+            // Debug: console.log('[AltText AI] Using authModal.show()');
             window.authModal.show();
             return;
         }
@@ -238,13 +239,13 @@ function triggerSignIn() {
         // Method 4: Try to find auth modal and show it
         const authModal = document.getElementById('alttext-auth-modal');
         if (authModal) {
-            console.log('[AltText AI] Found auth modal, showing it');
+            // Debug: console.log('[AltText AI] Found auth modal, showing it');
             authModal.style.display = 'block';
             return;
         }
         
         // Method 5: Create a simple auth modal if none exists
-        console.log('[AltText AI] Creating simple auth modal');
+        // Debug: console.log('[AltText AI] Creating simple auth modal');
         createSimpleAuthModal();
         
     }, 100);
