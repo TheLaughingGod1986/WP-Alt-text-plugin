@@ -52,20 +52,16 @@ rsync -a \
   ai-alt-gpt.php LICENSE readme.txt \
   "$PLUGIN_DIR/"
 
-# Copy assets with exclusions - only include minified files in production
+# Copy assets - we'll filter out unminified files after
 rsync -a \
   --exclude='wordpress-org' \
   --exclude='wordpress-org/**' \
-  --exclude='*.js' \
-  --exclude='*.css' \
-  --include='*.min.js' \
-  --include='*.min.css' \
   assets includes templates \
   "$PLUGIN_DIR/"
 
-# Remove any remaining unminified JS/CSS files (safety check)
-find "$PLUGIN_DIR/assets" -name "*.js" ! -name "*.min.js" -delete 2>/dev/null || true
-find "$PLUGIN_DIR/assets" -name "*.css" ! -name "*.min.css" -delete 2>/dev/null || true
+# Remove unminified JS/CSS files (only keep .min versions in production)
+find "$PLUGIN_DIR/assets" -name "*.js" ! -name "*.min.js" -type f -delete 2>/dev/null || true
+find "$PLUGIN_DIR/assets" -name "*.css" ! -name "*.min.css" -type f -delete 2>/dev/null || true
 
 echo "🧼 Stripping development artefacts and test files"
 # Remove WordPress.org submission assets FIRST (not needed at runtime)
