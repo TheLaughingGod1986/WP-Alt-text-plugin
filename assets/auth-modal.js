@@ -7,6 +7,9 @@ class AltTextAuthModal {
     constructor() {
         this.apiUrl = this.getApiUrl();
         this.token = this.getStoredToken();
+        // Cache DOM elements for better performance
+        this.modalElement = null;
+        this.formElements = {};
         this.init();
     }
 
@@ -29,6 +32,15 @@ class AltTextAuthModal {
 
     init() {
         this.createModalHTML();
+        // Cache modal element after creation
+        this.modalElement = document.getElementById('alttext-auth-modal');
+        // Cache form elements
+        this.formElements = {
+            login: document.getElementById('alttext-login-form'),
+            register: document.getElementById('alttext-register-form'),
+            forgotPassword: document.getElementById('alttext-forgot-password-form'),
+            resetPassword: document.getElementById('alttext-reset-password-form')
+        };
         this.bindEvents();
         this.checkAuthStatus();
         this.checkResetPasswordParams();
@@ -48,10 +60,16 @@ class AltTextAuthModal {
     }
 
     checkPasswordStrength(fieldId, password) {
-        const strengthContainer = document.getElementById(fieldId.replace('-password', '-password-strength'));
-        const strengthFill = document.getElementById(fieldId.replace('-password', '-password-strength-fill'));
-        const strengthLabel = document.getElementById(fieldId.replace('-password', '-password-strength-label'));
-        const hint = document.getElementById(fieldId.replace('-password', '-password-hint'));
+        // Cache these lookups (called frequently during typing)
+        const strengthId = fieldId.replace('-password', '-password-strength');
+        const fillId = fieldId.replace('-password', '-password-strength-fill');
+        const labelId = fieldId.replace('-password', '-password-strength-label');
+        const hintId = fieldId.replace('-password', '-password-hint');
+        
+        const strengthContainer = document.getElementById(strengthId);
+        const strengthFill = document.getElementById(fillId);
+        const strengthLabel = document.getElementById(labelId);
+        const hint = document.getElementById(hintId);
 
         if (!strengthContainer || !strengthFill || !strengthLabel) {
             return;
@@ -328,14 +346,13 @@ class AltTextAuthModal {
 
         // ESC key to close
         document.addEventListener('keydown', function(e) {
-            const modal = document.getElementById('alttext-auth-modal');
-            if (e.key === 'Escape' && modal && modal.style.display === 'block') {
+            if (e.key === 'Escape' && self.modalElement && self.modalElement.style.display === 'block') {
                 self.hide();
             }
             
             // Focus trapping: keep focus within modal when open
-            if (modal && modal.style.display === 'block') {
-                const focusableElements = modal.querySelectorAll(
+            if (self.modalElement && self.modalElement.style.display === 'block') {
+                const focusableElements = self.modalElement.querySelectorAll(
                     'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
                 );
                 const firstElement = focusableElements[0];
@@ -362,13 +379,12 @@ class AltTextAuthModal {
     }
 
     show() {
-        const modal = document.getElementById('alttext-auth-modal');
-        if (modal) {
-            modal.style.display = 'block';
+        if (this.modalElement) {
+            this.modalElement.style.display = 'block';
             document.body.style.overflow = 'hidden';
             
             // Focus trap: focus on first input or close button
-            const firstInput = modal.querySelector('input[type="email"], input[type="password"], button');
+            const firstInput = this.modalElement.querySelector('input[type="email"], input[type="password"], button');
             if (firstInput) {
                 firstInput.focus();
             }
@@ -376,39 +392,42 @@ class AltTextAuthModal {
     }
 
     hide() {
-        const modal = document.getElementById('alttext-auth-modal');
-        if (modal) {
-            modal.style.display = 'none';
+        if (this.modalElement) {
+            this.modalElement.style.display = 'none';
             document.body.style.overflow = '';
         }
     }
 
     showLoginForm() {
-        document.getElementById('alttext-login-form').style.display = 'block';
-        document.getElementById('alttext-register-form').style.display = 'none';
-        document.getElementById('alttext-forgot-password-form').style.display = 'none';
-        document.getElementById('alttext-reset-password-form').style.display = 'none';
+        // Use cached form elements
+        if (this.formElements.login) this.formElements.login.style.display = 'block';
+        if (this.formElements.register) this.formElements.register.style.display = 'none';
+        if (this.formElements.forgotPassword) this.formElements.forgotPassword.style.display = 'none';
+        if (this.formElements.resetPassword) this.formElements.resetPassword.style.display = 'none';
     }
 
     showRegisterForm() {
-        document.getElementById('alttext-login-form').style.display = 'none';
-        document.getElementById('alttext-register-form').style.display = 'block';
-        document.getElementById('alttext-forgot-password-form').style.display = 'none';
-        document.getElementById('alttext-reset-password-form').style.display = 'none';
+        // Use cached form elements
+        if (this.formElements.login) this.formElements.login.style.display = 'none';
+        if (this.formElements.register) this.formElements.register.style.display = 'block';
+        if (this.formElements.forgotPassword) this.formElements.forgotPassword.style.display = 'none';
+        if (this.formElements.resetPassword) this.formElements.resetPassword.style.display = 'none';
     }
 
     showForgotPasswordForm() {
-        document.getElementById('alttext-login-form').style.display = 'none';
-        document.getElementById('alttext-register-form').style.display = 'none';
-        document.getElementById('alttext-forgot-password-form').style.display = 'block';
-        document.getElementById('alttext-reset-password-form').style.display = 'none';
+        // Use cached form elements
+        if (this.formElements.login) this.formElements.login.style.display = 'none';
+        if (this.formElements.register) this.formElements.register.style.display = 'none';
+        if (this.formElements.forgotPassword) this.formElements.forgotPassword.style.display = 'block';
+        if (this.formElements.resetPassword) this.formElements.resetPassword.style.display = 'none';
     }
 
     showResetPasswordForm(email, token) {
-        document.getElementById('alttext-login-form').style.display = 'none';
-        document.getElementById('alttext-register-form').style.display = 'none';
-        document.getElementById('alttext-forgot-password-form').style.display = 'none';
-        document.getElementById('alttext-reset-password-form').style.display = 'block';
+        // Use cached form elements
+        if (this.formElements.login) this.formElements.login.style.display = 'none';
+        if (this.formElements.register) this.formElements.register.style.display = 'none';
+        if (this.formElements.forgotPassword) this.formElements.forgotPassword.style.display = 'none';
+        if (this.formElements.resetPassword) this.formElements.resetPassword.style.display = 'block';
         
         // Pre-fill email and token from URL params
         const resetEmail = document.getElementById('reset-email');

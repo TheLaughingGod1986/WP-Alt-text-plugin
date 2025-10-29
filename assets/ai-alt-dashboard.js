@@ -6,6 +6,16 @@
 (function($) {
     'use strict';
 
+    // Cache commonly used DOM elements (performance optimization)
+    var $cachedElements = {};
+
+    function getCachedElement(selector) {
+        if (!$cachedElements[selector]) {
+            $cachedElements[selector] = $(selector);
+        }
+        return $cachedElements[selector];
+    }
+
     // Initialize when DOM is ready
     $(document).ready(function() {
         // Handle upgrade CTA: if not authenticated, open auth modal instead
@@ -82,10 +92,11 @@
      * Load subscription information from backend
      */
     function loadSubscriptionInfo(forceRefresh) {
-        const $loading = $('#alttextai-subscription-loading');
-        const $error = $('#alttextai-subscription-error');
-        const $info = $('#alttextai-subscription-info');
-        const $freeMessage = $('#alttextai-free-plan-message');
+        // Use cached DOM elements for better performance
+        const $loading = getCachedElement('#alttextai-subscription-loading');
+        const $error = getCachedElement('#alttextai-subscription-error');
+        const $info = getCachedElement('#alttextai-subscription-info');
+        const $freeMessage = getCachedElement('#alttextai-free-plan-message');
 
         // Check cache first (unless force refresh)
         if (!forceRefresh) {
@@ -121,7 +132,7 @@
                     // Reset retry attempts on success
                     resetRetryAttempts();
                     
-                    // Cache the subscription info (5 minutes)
+                    // Cache the subscription info (15 minutes - optimized)
                     cacheSubscriptionInfo(response.data);
                     displaySubscriptionInfo(response.data);
                     
@@ -189,9 +200,10 @@
      * Display subscription information
      */
     function displaySubscriptionInfo(data) {
-        const $info = $('#alttextai-subscription-info');
-        const $error = $('#alttextai-subscription-error');
-        const $freeMessage = $('#alttextai-free-plan-message');
+        // Use cached DOM elements for better performance
+        const $info = getCachedElement('#alttextai-subscription-info');
+        const $error = getCachedElement('#alttextai-subscription-error');
+        const $freeMessage = getCachedElement('#alttextai-free-plan-message');
 
         // Hide other states
         $error.hide();
@@ -203,9 +215,9 @@
                     return;
                 }
 
-        // Display subscription status
+        // Display subscription status (using cached elements)
         const status = data.status || 'active';
-        const statusBadge = $('#alttextai-status-badge');
+        const statusBadge = getCachedElement('#alttextai-status-badge');
         const statusLabel = statusBadge.find('.alttextai-status-label');
         
         statusBadge.removeClass('alttextai-status-active alttextai-status-cancelled alttextai-status-trial');
@@ -213,56 +225,57 @@
         statusLabel.text(status.charAt(0).toUpperCase() + status.slice(1));
 
         // Show cancel warning if needed
+        const $cancelWarning = getCachedElement('#alttextai-cancel-warning');
         if (data.cancelAtPeriodEnd) {
-            $('#alttextai-cancel-warning').show();
-                } else {
-            $('#alttextai-cancel-warning').hide();
+            $cancelWarning.show();
+        } else {
+            $cancelWarning.hide();
         }
 
-        // Display plan details
+        // Display plan details (using cached elements)
         const planName = data.plan ? data.plan.charAt(0).toUpperCase() + data.plan.slice(1) : '-';
-        $('#alttextai-plan-name').text(planName);
+        getCachedElement('#alttextai-plan-name').text(planName);
 
         const billingCycle = data.billingCycle ? data.billingCycle.charAt(0).toUpperCase() + data.billingCycle.slice(1) : '-';
-        $('#alttextai-billing-cycle').text(billingCycle);
+        getCachedElement('#alttextai-billing-cycle').text(billingCycle);
 
         // Format next billing date
         if (data.nextBillingDate) {
             const date = new Date(data.nextBillingDate);
-            $('#alttextai-next-billing').text(date.toLocaleDateString('en-US', { 
+            getCachedElement('#alttextai-next-billing').text(date.toLocaleDateString('en-US', { 
                 year: 'numeric', 
                 month: 'long', 
                 day: 'numeric' 
             }));
-            } else {
-            $('#alttextai-next-billing').text('-');
+        } else {
+            getCachedElement('#alttextai-next-billing').text('-');
         }
 
         // Format next charge amount
         if (data.nextChargeAmount !== undefined && data.nextChargeAmount !== null) {
             const currency = data.currency || 'GBP';
             const symbol = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : '£';
-            $('#alttextai-next-charge').text(symbol + parseFloat(data.nextChargeAmount).toFixed(2));
-            } else {
-            $('#alttextai-next-charge').text('-');
+            getCachedElement('#alttextai-next-charge').text(symbol + parseFloat(data.nextChargeAmount).toFixed(2));
+        } else {
+            getCachedElement('#alttextai-next-charge').text('-');
         }
 
-        // Display payment method if available
+        // Display payment method if available (using cached elements)
         if (data.paymentMethod && data.paymentMethod.last4) {
-            const $paymentMethod = $('#alttextai-payment-method');
+            const $paymentMethod = getCachedElement('#alttextai-payment-method');
             const brand = data.paymentMethod.brand || 'card';
             const last4 = data.paymentMethod.last4;
             const expMonth = data.paymentMethod.expMonth;
             const expYear = data.paymentMethod.expYear;
 
-            $('#alttextai-card-brand').text(getCardBrandIcon(brand) + ' ' + brand.toUpperCase());
-            $('#alttextai-card-last4').text('•••• ' + last4);
+            getCachedElement('#alttextai-card-brand').text(getCardBrandIcon(brand) + ' ' + brand.toUpperCase());
+            getCachedElement('#alttextai-card-last4').text('•••• ' + last4);
             if (expMonth && expYear) {
-                $('#alttextai-card-expiry').text(expMonth + '/' + expYear.toString().slice(-2));
+                getCachedElement('#alttextai-card-expiry').text(expMonth + '/' + expYear.toString().slice(-2));
             }
             $paymentMethod.show();
-            } else {
-            $('#alttextai-payment-method').hide();
+        } else {
+            getCachedElement('#alttextai-payment-method').hide();
         }
 
         // Show subscription info
@@ -352,7 +365,7 @@
             const cacheData = {
                 data: data,
                 timestamp: Date.now(),
-                expiry: 5 * 60 * 1000 // 5 minutes
+                expiry: 15 * 60 * 1000 // 15 minutes (optimized - subscription info doesn't change frequently)
             };
             localStorage.setItem('alttextai_subscription_cache', JSON.stringify(cacheData));
         } catch (e) {
