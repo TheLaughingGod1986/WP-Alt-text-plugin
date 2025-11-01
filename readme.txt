@@ -3,9 +3,15 @@ Contributors: benjaminoats
 Donate link: https://alttextai.com
 Tags: SEO, SEO AI, image SEO, alt text SEO, SEO optimization, Google image SEO, image search ranking, keyword optimization, automated SEO, SEO tool, search engine optimization, image meta tags, AI alt text, artificial intelligence, accessibility, alt text, images, AI, WCAG, screen reader, image optimization, bulk edit, WooCommerce, automatic alt text, image accessibility, bulk processing, accessibility compliance, image descriptions, WordPress SEO, GPT, OpenAI, image alt attribute, media library, WCAG compliant, ADA compliant, screen reader compatible, automated alt text, bulk alt text, image accessibility tool
 Requires at least: 5.8
+<<<<<<< HEAD
+Tested up to: 6.8
+Requires PHP: 7.4
+Stable tag: 4.2.1
+=======
 Tested up to: 6.7
 Requires PHP: 7.4
 Stable tag: 4.2.0
+>>>>>>> origin/main
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -457,6 +463,15 @@ We'd love your help!
 
 == Changelog ==
 
+<<<<<<< HEAD
+= 4.2.1 - 2025-11-01 =
+**Packaging & Free Tier Enhancements:**
+* Increased the free-plan allowance to 50 AI-generated alt texts per month across plugin UI and backend integrations
+* Removed backend service sources from the plugin bundle to comply with WordPress.org repository guidelines
+* Added an auto-generated `languages/ai-alt-gpt.pot` catalog and lightweight extractor script to streamline localization contributions
+
+=======
+>>>>>>> origin/main
 = 4.2.0 - 2025-10-28 =
 **Password Reset & SEO AI Branding Update:**
 * **NEW**: Password reset functionality - Request reset link via email, set new password securely
