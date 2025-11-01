@@ -1,87 +1,43 @@
 <?php
 /**
- * Plugin Name: SEO AI Alt Text Generator - Auto Image SEO & Accessibility
- * Plugin URI: https://wordpress.org/plugins/ai-alt-text-generator/
- * Description: Advanced SEO AI automatically generates keyword-optimized alt text for WordPress images. Boost Google image rankings, improve accessibility (WCAG compliant), and enhance SEO with AI-powered descriptions. Free tier: 50 AI generations/month. Perfect for SEO optimization, image search rankings, accessibility, e-commerce, and content creators.
-<<<<<<< HEAD
- * Version: 4.2.1
-=======
- * Version: 4.2.0
->>>>>>> origin/main
- * Author: Benjamin Oats
- * License: GPLv2 or later
- * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: ai-alt-gpt
-<<<<<<< HEAD
- * Requires at least: 5.8
- * Tested up to: 6.8
- * Requires PHP: 7.4
- * Tags: SEO, SEO AI, image SEO, alt text SEO, SEO optimization, Google image SEO, image search ranking, AI alt text, artificial intelligence, automated SEO, keyword optimization, accessibility, alt text, images, AI, WCAG, screen reader, image optimization, bulk edit, WooCommerce, automatic alt text, image accessibility, bulk processing, accessibility compliance, image descriptions, WordPress SEO, SEO tool, image meta tags, search engine optimization
- */
-
-if ( ! defined( 'WPINC' ) ) {
-	die;
-}
-
-define( 'AI_ALT_GPT_VERSION', '4.2.1' );
-define( 'AI_ALT_GPT_PLUGIN_FILE', __FILE__ );
-define( 'AI_ALT_GPT_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
-define( 'AI_ALT_GPT_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
-define( 'AI_ALT_GPT_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
-
-require_once AI_ALT_GPT_PLUGIN_DIR . 'includes/class-api-client-v2.php';
-require_once AI_ALT_GPT_PLUGIN_DIR . 'includes/class-usage-tracker.php';
-require_once AI_ALT_GPT_PLUGIN_DIR . 'includes/class-queue.php';
-require_once AI_ALT_GPT_PLUGIN_DIR . 'admin/class-ai-alt-gpt-core.php';
-require_once AI_ALT_GPT_PLUGIN_DIR . 'admin/class-ai-alt-gpt-admin-hooks.php';
-
-/**
- * Register the activation hook.
- */
-function activate_ai_alt_gpt() {
-	require_once AI_ALT_GPT_PLUGIN_DIR . 'includes/class-ai-alt-gpt-activator.php';
-	Ai_Alt_Gpt_Activator::activate();
-}
-
-/**
- * Register the deactivation hook.
- */
-function deactivate_ai_alt_gpt() {
-	require_once AI_ALT_GPT_PLUGIN_DIR . 'includes/class-ai-alt-gpt-deactivator.php';
-	Ai_Alt_Gpt_Deactivator::deactivate();
-}
-
-register_activation_hook( __FILE__, 'activate_ai_alt_gpt' );
-register_deactivation_hook( __FILE__, 'deactivate_ai_alt_gpt' );
-
-require_once AI_ALT_GPT_PLUGIN_DIR . 'includes/class-ai-alt-gpt.php';
-
-/**
- * Kick off the plugin.
- */
-function run_ai_alt_gpt() {
-	$plugin = new Ai_Alt_Gpt();
-	$plugin->run();
-}
-
-run_ai_alt_gpt();
-=======
- * Domain Path: /languages
- * Requires at least: 5.8
- * Tested up to: 6.7
- * Requires PHP: 7.4
- * Network: false
- * Tags: SEO, SEO AI, image SEO, alt text SEO, SEO optimization, Google image SEO, image search ranking, AI alt text, artificial intelligence, automated SEO, keyword optimization, accessibility, alt text, images, AI, WCAG, screen reader, image optimization, bulk edit, WooCommerce, automatic alt text, image accessibility, bulk processing, accessibility compliance, image descriptions, WordPress SEO, SEO tool, image meta tags, search engine optimization
+ * Core implementation for the Alt Text AI plugin.
+ *
+ * This file contains the original plugin implementation and is loaded
+ * by the WordPress Plugin Boilerplate friendly bootstrap.
  */
 
 if (!defined('ABSPATH')) { exit; }
 
+if (!defined('AI_ALT_GPT_PLUGIN_FILE')) {
+    define('AI_ALT_GPT_PLUGIN_FILE', dirname(__FILE__, 2) . '/ai-alt-gpt.php');
+}
+
+if (!defined('AI_ALT_GPT_PLUGIN_DIR')) {
+    define('AI_ALT_GPT_PLUGIN_DIR', plugin_dir_path(AI_ALT_GPT_PLUGIN_FILE));
+}
+
+if (!defined('AI_ALT_GPT_PLUGIN_URL')) {
+    define('AI_ALT_GPT_PLUGIN_URL', plugin_dir_url(AI_ALT_GPT_PLUGIN_FILE));
+}
+
+if (!defined('AI_ALT_GPT_PLUGIN_BASENAME')) {
+    define('AI_ALT_GPT_PLUGIN_BASENAME', plugin_basename(AI_ALT_GPT_PLUGIN_FILE));
+}
+
+// Suppress PHP 8.3 deprecation warnings from WordPress core
+// WordPress core has PHP 8.3 compatibility issues (wp-includes/functions.php lines 7360, 2195)
+// These errors originate from WordPress core itself, not this plugin
+// This is a temporary workaround until WordPress core is fully PHP 8.3 compatible
+if (PHP_VERSION_ID >= 80300) {
+    $old_error_reporting = error_reporting();
+    // Suppress only E_DEPRECATED, keep all other error reporting
+    error_reporting($old_error_reporting & ~E_DEPRECATED);
+}
+
 // Load API clients, usage tracker, and queue infrastructure
-require_once plugin_dir_path(__FILE__) . 'includes/class-api-client-v2.php';
-require_once plugin_dir_path(__FILE__) . 'includes/class-usage-tracker.php';
-require_once plugin_dir_path(__FILE__) . 'includes/class-queue.php';
-// Development only - fix-api-url.php excluded from production build
-// require_once plugin_dir_path(__FILE__) . 'fix-api-url.php';
+require_once AI_ALT_GPT_PLUGIN_DIR . 'includes/class-api-client-v2.php';
+require_once AI_ALT_GPT_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+require_once AI_ALT_GPT_PLUGIN_DIR . 'includes/class-queue.php';
 
 class AI_Alt_Text_Generator_GPT {
     const OPTION_KEY = 'ai_alt_gpt_settings';
@@ -106,62 +62,6 @@ class AI_Alt_Text_Generator_GPT {
     public function __construct() {
         // Use Phase 2 API client (JWT-based authentication)
         $this->api_client = new AltText_AI_API_Client_V2();
-        
-        // Override plugin information to prevent WordPress from fetching wrong plugin from .org
-        add_filter('plugins_api', [$this, 'override_plugin_information'], 10, 3);
-        add_filter('plugin_row_meta', [$this, 'plugin_row_meta'], 10, 4);
-
-        register_activation_hook(__FILE__, [$this, 'activate']);
-        register_deactivation_hook(__FILE__, [$this, 'deactivate']);
-
-        add_action('admin_menu', [$this, 'add_settings_page']);
-        add_action('admin_init', [$this, 'register_settings']);
-        add_action('add_attachment', [$this, 'handle_media_change'], 5);
-        add_action('delete_attachment', [$this, 'handle_media_change'], 5);
-        add_action('attachment_updated', [$this, 'handle_attachment_updated'], 5, 3);
-        add_action('save_post', [$this, 'handle_post_save'], 5, 3);
-        add_filter('wp_update_attachment_metadata', [$this, 'handle_media_metadata_update'], 5, 2);
-
-        add_filter('bulk_actions-upload', [$this, 'register_bulk_action']);
-        add_filter('handle_bulk_actions-upload', [$this, 'handle_bulk_action'], 10, 3);
-
-        add_filter('media_row_actions', [$this, 'row_action_link'], 10, 2);
-        add_filter('attachment_fields_to_edit', [$this, 'attachment_fields_to_edit'], 15, 2);
-        add_action('rest_api_init', [$this, 'register_rest_routes']);
-        add_action('admin_enqueue_scripts', [$this, 'enqueue_admin']);
-        add_action('admin_init', [$this, 'maybe_display_threshold_notice']);
-        add_action('admin_init', [$this, 'maybe_handle_direct_checkout']);
-        add_action('admin_notices', [$this, 'maybe_render_checkout_notices']);
-        add_action('admin_post_ai_alt_usage_export', [$this, 'handle_usage_export']);
-        add_action('init', [$this, 'ensure_capability']);
-        add_action('admin_notices', [$this, 'maybe_render_queue_notice']);
-        // AJAX handlers for upgrade functionality
-        add_action('wp_ajax_alttextai_dismiss_upgrade', [$this, 'ajax_dismiss_upgrade']);
-        add_action('wp_ajax_alttextai_refresh_usage', [$this, 'ajax_refresh_usage']);
-        add_action('wp_ajax_alttextai_regenerate_single', [$this, 'ajax_regenerate_single']);
-        add_action('wp_ajax_alttextai_bulk_queue', [$this, 'ajax_bulk_queue']);
-        add_action('wp_ajax_alttextai_queue_retry_failed', [$this, 'ajax_queue_retry_failed']);
-        add_action('wp_ajax_alttextai_queue_retry_job', [$this, 'ajax_queue_retry_job']);
-        add_action('wp_ajax_alttextai_queue_clear_completed', [$this, 'ajax_queue_clear_completed']);
-        add_action('wp_ajax_alttextai_queue_stats', [$this, 'ajax_queue_stats']);
-        add_action('wp_ajax_alttextai_track_upgrade', [$this, 'ajax_track_upgrade']);
-
-        // Phase 2 Authentication AJAX actions
-        add_action('wp_ajax_alttextai_register', [$this, 'ajax_register']);
-        add_action('wp_ajax_alttextai_login', [$this, 'ajax_login']);
-        add_action('wp_ajax_alttextai_logout', [$this, 'ajax_logout']);
-        add_action('wp_ajax_alttextai_get_user_info', [$this, 'ajax_get_user_info']);
-        add_action('wp_ajax_alttextai_create_checkout', [$this, 'ajax_create_checkout']);
-        add_action('wp_ajax_alttextai_create_portal', [$this, 'ajax_create_portal']);
-        add_action('wp_ajax_alttextai_forgot_password', [$this, 'ajax_forgot_password']);
-        add_action('wp_ajax_alttextai_reset_password', [$this, 'ajax_reset_password']);
-        add_action('wp_ajax_alttextai_get_subscription_info', [$this, 'ajax_get_subscription_info']);
-
-        if (defined('WP_CLI') && WP_CLI) {
-            \WP_CLI::add_command('ai-alt', [$this, 'wpcli_command']);
-        }
-
-        add_action(AltText_AI_Queue::CRON_HOOK, [$this, 'process_queue']);
     }
 
     private function default_usage(){
@@ -255,13 +155,13 @@ class AI_Alt_Text_Generator_GPT {
             wp_die(__('You do not have permission to perform this action.', 'ai-alt-gpt'));
         }
 
-        $nonce = isset($_GET['_alttextai_nonce']) ? sanitize_text_field(wp_unslash($_GET['_alttextai_nonce'])) : '';
+        $nonce = isset($_GET['_alttextai_nonce']) && $_GET['_alttextai_nonce'] !== null ? sanitize_text_field(wp_unslash($_GET['_alttextai_nonce'])) : '';
         if (!$nonce || !wp_verify_nonce($nonce, 'alttextai_direct_checkout')) {
             wp_die(__('Security check failed. Please try again from the dashboard.', 'ai-alt-gpt'));
         }
 
         $plan_param = sanitize_key($_GET['plan'] ?? $_GET['type'] ?? '');
-        $price_id = isset($_GET['price_id']) ? sanitize_text_field(wp_unslash($_GET['price_id'])) : '';
+        $price_id = isset($_GET['price_id']) && $_GET['price_id'] !== null ? sanitize_text_field(wp_unslash($_GET['price_id'])) : '';
         $fallback = AltText_AI_Usage_Tracker::get_upgrade_url();
 
         if ($plan_param) {
@@ -283,11 +183,15 @@ class AI_Alt_Text_Generator_GPT {
 
         if (is_wp_error($result) || empty($result['url'])) {
             $message = is_wp_error($result) ? $result->get_error_message() : __('Unable to start checkout. Please try again.', 'ai-alt-gpt');
-            $redirect = add_query_arg([
+            $plan_param = sanitize_key($_GET['plan'] ?? $_GET['type'] ?? '');
+            $query_args = [
                 'page'            => 'ai-alt-gpt',
                 'checkout_error'  => rawurlencode($message),
-                'plan'            => sanitize_key($_GET['plan'] ?? $_GET['type'] ?? ''),
-            ], admin_url('upload.php'));
+            ];
+            if (!empty($plan_param)) {
+                $query_args['plan'] = $plan_param;
+            }
+            $redirect = add_query_arg($query_args, admin_url('upload.php'));
             wp_safe_redirect($redirect);
             exit;
         }
@@ -317,8 +221,8 @@ class AI_Alt_Text_Generator_GPT {
                     if (!is_array($plan)) {
                         continue;
                     }
-                    $plan_id = sanitize_key($plan['id'] ?? '');
-                    $price_id = !empty($plan['priceId']) ? sanitize_text_field($plan['priceId']) : '';
+                    $plan_id = isset($plan['id']) && is_string($plan['id']) ? sanitize_key($plan['id']) : '';
+                    $price_id = !empty($plan['priceId']) && is_string($plan['priceId']) ? sanitize_text_field($plan['priceId']) : '';
                     if ($plan_id && $price_id) {
                         $remote[$plan_id] = $price_id;
                     }
@@ -332,8 +236,8 @@ class AI_Alt_Text_Generator_GPT {
 
         if (is_array($cached)) {
             foreach ($cached as $plan_id => $price_id) {
-                $plan_id = sanitize_key($plan_id);
-                $price_id = sanitize_text_field($price_id);
+                $plan_id = is_string($plan_id) ? sanitize_key($plan_id) : '';
+                $price_id = is_string($price_id) ? sanitize_text_field($price_id) : '';
                 if ($plan_id && $price_id) {
                     $prices[$plan_id] = $price_id;
                 }
@@ -344,8 +248,8 @@ class AI_Alt_Text_Generator_GPT {
         $stored = get_option('alttextai_checkout_prices', []);
         if (is_array($stored) && !empty($stored)) {
             foreach ($stored as $key => $value) {
-                $key = sanitize_key($key);
-                $value = sanitize_text_field($value);
+                $key = is_string($key) ? sanitize_key($key) : '';
+                $value = is_string($value) ? sanitize_text_field($value) : '';
                 if ($key && $value && empty($prices[$key])) {
                     $prices[$key] = $value;
                 }
@@ -362,7 +266,7 @@ class AI_Alt_Text_Generator_GPT {
      */
     public function get_checkout_price_id($plan) {
         $prices = $this->get_checkout_price_ids();
-        $plan = sanitize_key($plan);
+        $plan = is_string($plan) ? sanitize_key($plan) : '';
         $price_id = $prices[$plan] ?? '';
         return apply_filters('alttextai_checkout_price_id', $price_id, $plan, $prices);
     }
@@ -376,8 +280,8 @@ class AI_Alt_Text_Generator_GPT {
         }
 
         if (!empty($_GET['checkout_error'])) {
-            $message = sanitize_text_field(wp_unslash($_GET['checkout_error']));
-            $plan    = sanitize_text_field(wp_unslash($_GET['plan'] ?? ''));
+            $message = !empty($_GET['checkout_error']) && $_GET['checkout_error'] !== null ? sanitize_text_field(wp_unslash($_GET['checkout_error'])) : '';
+            $plan    = !empty($_GET['plan']) && $_GET['plan'] !== null ? sanitize_text_field(wp_unslash($_GET['plan'])) : '';
             ?>
             <div class="notice notice-error">
                 <p>
@@ -663,12 +567,26 @@ class AI_Alt_Text_Generator_GPT {
             <div class="alttextai-header">
                 <div class="alttextai-header-content">
                     <div class="alttextai-logo">
-                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect width="32" height="32" rx="8" fill="#10B981"/>
-                            <path d="M12 10L16 22L20 10" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M13 18H19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" class="alttextai-logo-icon">
+                            <rect width="40" height="40" rx="10" fill="url(#logo-gradient)"/>
+                            <!-- AI/Sparkle icon representing intelligence -->
+                            <circle cx="20" cy="20" r="8" fill="white" opacity="0.15"/>
+                            <path d="M20 12L20.8 15.2L24 16L20.8 16.8L20 20L19.2 16.8L16 16L19.2 15.2L20 12Z" fill="white"/>
+                            <path d="M28 22L28.6 24.2L30.8 24.8L28.6 25.4L28 28L27.4 25.4L25.2 24.8L27.4 24.2L28 22Z" fill="white" opacity="0.8"/>
+                            <path d="M12 26L12.4 27.4L13.8 27.8L12.4 28.2L12 30L11.6 28.2L10.2 27.8L11.6 27.4L12 26Z" fill="white" opacity="0.6"/>
+                            <!-- Image frame representing image optimization -->
+                            <rect x="14" y="18" width="12" height="8" rx="1" stroke="white" stroke-width="1.5" fill="none"/>
+                            <defs>
+                                <linearGradient id="logo-gradient" x1="0" y1="0" x2="40" y2="40">
+                                    <stop stop-color="#14b8a6"/>
+                                    <stop offset="1" stop-color="#10b981"/>
+                                </linearGradient>
+                            </defs>
                         </svg>
-                        <span class="alttextai-logo-text">SEO AI Alt Text</span>
+                        <div class="alttextai-logo-content">
+                            <span class="alttextai-logo-text">AltText AI</span>
+                            <span class="alttextai-logo-tagline">Auto Image SEO & Accessibility</span>
+                        </div>
                     </div>
                     <?php if (!empty($tabs) && count($tabs) > 1) : ?>
                     <nav class="alttextai-nav">
@@ -737,56 +655,13 @@ class AI_Alt_Text_Generator_GPT {
                 $agency_test_url  = esc_url(add_query_arg($agency_plan, $checkout_base));
                 $credits_test_url = esc_url(add_query_arg($credits_plan, $checkout_base));
             ?>
-            <?php if (defined('WP_DEBUG') && WP_DEBUG) : ?>
-            <div class="notice notice-info alttextai-upgrade-test-links" style="padding:16px;margin-bottom:20px;">
-                <p style="margin:0;font-weight:600;"><?php esc_html_e('Checkout Diagnostics', 'ai-alt-gpt'); ?></p>
-                <?php if (!empty($price_ids['pro']) || !empty($price_ids['agency']) || !empty($price_ids['credits'])) : ?>
-                    <p style="margin:8px 0 0;">
-                        <?php if (!empty($price_ids['pro'])) : ?>
-                            <a href="<?php echo $pro_test_url; ?>"
-                               data-plan="pro"
-                               data-price-id="<?php echo esc_attr($price_ids['pro']); ?>"
-                               class="alttextai-upgrade-test-link"
-                               target="_blank" rel="noopener" style="margin-right:16px;">
-                                <?php esc_html_e('Pro Plan Checkout', 'ai-alt-gpt'); ?>
-                            </a>
-                        <?php endif; ?>
-                        <?php if (!empty($price_ids['agency'])) : ?>
-                            <a href="<?php echo $agency_test_url; ?>"
-                               data-plan="agency"
-                               data-price-id="<?php echo esc_attr($price_ids['agency']); ?>"
-                               class="alttextai-upgrade-test-link"
-                               target="_blank" rel="noopener" style="margin-right:16px;">
-                                <?php esc_html_e('Agency Plan Checkout', 'ai-alt-gpt'); ?>
-                            </a>
-                        <?php endif; ?>
-                        <?php if (!empty($price_ids['credits'])) : ?>
-                            <a href="<?php echo $credits_test_url; ?>"
-                               data-plan="credits"
-                               data-price-id="<?php echo esc_attr($price_ids['credits']); ?>"
-                               class="alttextai-upgrade-test-link"
-                               target="_blank" rel="noopener">
-                                <?php esc_html_e('Credits Checkout', 'ai-alt-gpt'); ?>
-                            </a>
-                        <?php endif; ?>
-                    </p>
-                    <p style="margin:8px 0 0;font-size:12px;color:#475569;">
-                        <?php esc_html_e('Click to confirm the destinations load correctly. They open in a new tab.', 'ai-alt-gpt'); ?>
-                    </p>
-                <?php else : ?>
-                    <p style="margin:8px 0 0;font-size:12px;color:#b91c1c;">
-                        <?php esc_html_e('Stripe price IDs are not available yet. Configure them in your backend environment (STRIPE_PRICE_*) so checkout can start.', 'ai-alt-gpt'); ?>
-                    </p>
-                <?php endif; ?>
-            </div>
-            <?php endif; ?>
 
             <div class="alttextai-clean-dashboard" data-stats='<?php echo esc_attr(wp_json_encode($stats)); ?>'>
                 <?php
                 // Get usage stats
                 $usage_stats = AltText_AI_Usage_Tracker::get_stats_display();
                 
-                // Force a live refresh when loading the dashboard to avoid stale 0/10
+                // Force a live refresh when loading the dashboard to avoid stale usage bars
                 if (isset($this->api_client)) { 
                     $live_usage = $this->api_client->get_usage();
                     if (is_array($live_usage) && !empty($live_usage)) { AltText_AI_Usage_Tracker::update_usage($live_usage); $usage_stats = AltText_AI_Usage_Tracker::get_stats_display(); }
@@ -807,134 +682,98 @@ class AI_Alt_Text_Generator_GPT {
                 <!-- Clean Dashboard Design -->
                 <div class="alttextai-dashboard-shell max-w-5xl mx-auto px-6">
 
-                     <!-- Authentication Status Bar -->
+                     <!-- HERO Section Styles -->
                      <style>
-                         .alttextai-auth-status {
-                             border-radius: 16px;
+                         .alttextai-hero-section {
+                             background: linear-gradient(to bottom, #f7fee7 0%, #ffffff 100%);
+                             border-radius: 24px;
                              margin-bottom: 32px;
                              padding: 48px 40px;
                              text-align: center;
                              box-shadow: 0 4px 16px rgba(0,0,0,0.08);
                          }
-                         .alttextai-auth-status--logged-out {
-                             background: linear-gradient(135deg, #e0f7f4 0%, #d1f2ed 100%);
-                             border: 2px solid #14b8a6;
+                         .alttextai-hero-content {
+                             margin-bottom: 32px;
                          }
-                         .alttextai-auth-status--logged-in {
-                             background: linear-gradient(135deg, #e0f7f4 0%, #d1f2ed 100%);
-                             border: 2px solid #10b981;
-                         }
-                         .alttextai-auth-status__icon {
-                             font-size: 48px;
-                             line-height: 1;
-                             margin-bottom: 24px;
-                         }
-                         .alttextai-auth-status__content {
-                             margin-bottom: 24px;
-                         }
-                         .alttextai-auth-status__title {
-                             margin: 0 0 12px 0;
-                             font-size: 32px;
+                         .alttextai-hero-title {
+                             margin: 0 0 16px 0;
+                             font-size: 2.5rem;
                              font-weight: 700;
                              color: #0f172a;
                              line-height: 1.2;
                          }
-                         .alttextai-auth-status__message {
-                             margin: 0 auto;
-                             font-size: 16px;
+                         .alttextai-hero-subtitle {
+                             margin: 0;
+                             font-size: 1.125rem;
                              color: #475569;
-                             line-height: 1.5;
-                             max-width: 560px;
+                             line-height: 1.6;
+                             max-width: 600px;
+                             margin-left: auto;
+                             margin-right: auto;
                          }
-                         .alttextai-auth-status__actions {
+                         .alttextai-hero-actions {
                              display: flex;
-                             gap: 16px;
+                             flex-direction: column;
                              align-items: center;
-                             justify-content: center;
-                             flex-wrap: wrap;
+                             gap: 16px;
+                             margin-bottom: 24px;
                          }
-                         .alttextai-auth-status__btn {
-                             background: #14b8a6;
+                         .alttextai-hero-btn-primary {
+                             background: linear-gradient(135deg, #14b8a6 0%, #84cc16 100%);
+                             color: white;
                              border: none;
-                             padding: 14px 32px;
-                             border-radius: 10px;
+                             padding: 16px 32px;
+                             border-radius: 16px;
+                             font-size: 16px;
                              font-weight: 600;
                              cursor: pointer;
-                             transition: all 0.2s ease;
-                             white-space: nowrap;
-                             font-size: 16px;
-                             color: white;
-                             box-shadow: 0 2px 8px rgba(20,184,166,0.3);
+                             transition: opacity 0.2s ease;
+                             box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
                          }
-                         .alttextai-auth-status__btn:hover {
-                             background: #0d9488;
-                             transform: translateY(-2px);
-                             box-shadow: 0 4px 12px rgba(20,184,166,0.4);
+                         .alttextai-hero-btn-primary:hover {
+                             opacity: 0.9;
                          }
-                         .alttextai-auth-status__btn-secondary {
+                         .alttextai-hero-link-secondary {
                              background: transparent;
-                             color: #14b8a6;
-                             box-shadow: none;
-                             padding: 12px 24px;
-                             text-decoration: underline;
-                         }
-                         .alttextai-auth-status__btn-secondary:hover {
-                             background: rgba(20,184,166,0.1);
-                             box-shadow: none;
-                             transform: none;
-                         }
-                         .alttextai-auth-status__user-info {
-                             margin-top: 16px;
-                             padding-top: 16px;
-                             border-top: 1px solid rgba(20,184,166,0.2);
-                             display: flex;
-                             gap: 16px;
-                             align-items: center;
-                             justify-content: center;
-                         }
-                         .alttextai-auth-status__user-email {
-                             background: white;
-                             padding: 8px 16px;
-                             border-radius: 8px;
-                             font-size: 14px;
-                             font-weight: 500;
-                             color: #0f172a;
-                             border: 1px solid rgba(20,184,166,0.2);
-                         }
-                         .alttextai-auth-status__logout-btn {
-                             background: transparent;
-                             color: #64748b;
-                             font-size: 14px;
-                             padding: 6px 12px;
-                             text-decoration: underline;
                              border: none;
+                             color: #6b7280;
+                             text-decoration: underline;
+                             font-size: 14px;
                              cursor: pointer;
-                             font-weight: 500;
+                             transition: color 0.2s ease;
+                             padding: 0;
                          }
-                         .alttextai-auth-status__logout-btn:hover {
-                             color: #0f172a;
+                         .alttextai-hero-link-secondary:hover {
+                             color: #14b8a6;
+                         }
+                         .alttextai-hero-micro-copy {
+                             font-size: 14px;
+                             color: #64748b;
+                             font-weight: 500;
                          }
                      </style>
 
                      <?php if (!$this->api_client->is_authenticated()) : ?>
-                     <!-- Not Authenticated - Call to Action -->
-                     <div class="alttextai-auth-status alttextai-auth-status--logged-out">
-                         <div class="alttextai-auth-status__icon">🎉</div>
-                         <div class="alttextai-auth-status__content">
-                             <h2 class="alttextai-auth-status__title">
-                                 <?php esc_html_e('Start using AI Alt Text for free', 'ai-alt-gpt'); ?>
+                     <!-- HERO Section - Not Authenticated -->
+                     <div class="alttextai-hero-section">
+                         <div class="alttextai-hero-content">
+                             <h2 class="alttextai-hero-title">
+                                 <?php esc_html_e('🎉 Boost Your Site\'s SEO Automatically', 'ai-alt-gpt'); ?>
                              </h2>
-                             <p class="alttextai-auth-status__message">
-                                 <?php esc_html_e('Create a free account to generate up to 10 AI-powered image descriptions each month.', 'ai-alt-gpt'); ?>
+                             <p class="alttextai-hero-subtitle">
+                                 <?php esc_html_e('Let AI write perfect, accessibility-friendly alt text for every image — free each month.', 'ai-alt-gpt'); ?>
                              </p>
                          </div>
-                         <div class="alttextai-auth-status__actions">
-                             <button type="button" class="alttextai-auth-status__btn" id="alttextai-show-auth-banner-btn">
-                                 <?php esc_html_e('Sign Up Free', 'ai-alt-gpt'); ?>
+                         <div class="alttextai-hero-actions">
+                             <button type="button" class="alttextai-hero-btn-primary" id="alttextai-show-auth-banner-btn">
+                                <?php esc_html_e('Start Free — Generate 50 AI Descriptions', 'ai-alt-gpt'); ?>
                              </button>
-                             <button type="button" class="alttextai-auth-status__btn alttextai-auth-status__btn-secondary" id="alttextai-show-auth-login-btn">
-                                 <?php esc_html_e('Log In', 'ai-alt-gpt'); ?>
+                             <button type="button" class="alttextai-hero-link-secondary" id="alttextai-show-auth-login-btn">
+                                 <?php esc_html_e('Already a user? Log in', 'ai-alt-gpt'); ?>
                              </button>
+                         </div>
+                         <div class="alttextai-hero-micro-copy">
+                             <?php esc_html_e('⚡ SEO Boost · 🦾 Accessibility · 🕒 Saves Hours', 'ai-alt-gpt'); ?>
                          </div>
                      </div>
                      <?php endif; ?>
@@ -1104,7 +943,7 @@ class AI_Alt_Text_Generator_GPT {
 
                     <!-- Optimization Progress -->
                     <?php
-                    $total_images = ($stats['with_alt'] ?? 0) + ($stats['missing'] ?? 0);
+                    $total_images = $stats['total'] ?? 0;
                     $optimized = $stats['with_alt'] ?? 0;
                     $remaining = $stats['missing'] ?? 0;
                     ?>
@@ -1180,7 +1019,7 @@ class AI_Alt_Text_Generator_GPT {
                                     <div class="alttextai-dashboard-card-badge"><?php esc_html_e('USAGE STATUS', 'ai-alt-gpt'); ?></div>
                                     <h2 class="alttextai-dashboard-card-title">
                                         <span class="alttextai-dashboard-emoji">📊</span>
-                                        <?php esc_html_e('0 of 10 generations used', 'ai-alt-gpt'); ?>
+                                        <?php esc_html_e('0 of 50 generations used', 'ai-alt-gpt'); ?>
                                     </h2>
                                 </div>
                                 
@@ -1195,7 +1034,7 @@ class AI_Alt_Text_Generator_GPT {
                                     </div>
                                     <div class="alttextai-dashboard-usage-stat">
                                         <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Remaining', 'ai-alt-gpt'); ?></span>
-                                        <span class="alttextai-dashboard-usage-value">10</span>
+                                        <span class="alttextai-dashboard-usage-value">50</span>
                                     </div>
                                     <div class="alttextai-dashboard-usage-stat">
                                         <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Resets', 'ai-alt-gpt'); ?></span>
@@ -2289,7 +2128,7 @@ class AI_Alt_Text_Generator_GPT {
             
             // Include upgrade modal on all tabs
             $checkout_prices = $this->get_checkout_price_ids();
-            include plugin_dir_path(__FILE__) . 'templates/upgrade-modal.php';
+            include AI_ALT_GPT_PLUGIN_DIR . 'templates/upgrade-modal.php';
             ?>
             </div><!-- .alttextai-container -->
         </div>
@@ -2412,13 +2251,19 @@ class AI_Alt_Text_Generator_GPT {
         $opts = get_option(self::OPTION_KEY, []);
         $usage = $opts['usage'] ?? $this->default_usage();
         if (!empty($usage['last_request'])){
-            $usage['last_request_formatted'] = mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $usage['last_request']);
+            $date_format = get_option('date_format');
+            $time_format = get_option('time_format');
+            $format = (!empty($date_format) && !empty($time_format)) ? $date_format . ' ' . $time_format : 'Y-m-d H:i:s';
+            $usage['last_request_formatted'] = mysql2date($format, $usage['last_request']);
         }
 
         $latest_generated_raw = $wpdb->get_var(
             "SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key = '_ai_alt_generated_at' ORDER BY meta_value DESC LIMIT 1"
         );
-        $latest_generated = $latest_generated_raw ? mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $latest_generated_raw) : '';
+        $date_format = get_option('date_format');
+        $time_format = get_option('time_format');
+        $format = (!empty($date_format) && !empty($time_format)) ? $date_format . ' ' . $time_format : 'Y-m-d H:i:s';
+        $latest_generated = $latest_generated_raw ? mysql2date($format, $latest_generated_raw) : '';
 
         $top_source_row = $wpdb->get_row(
             "SELECT meta_value AS source, COUNT(*) AS count
@@ -3037,7 +2882,11 @@ class AI_Alt_Text_Generator_GPT {
             return false;
         }
 
-        $message = strtolower($error->get_error_message());
+        $error_message = $error->get_error_message();
+        if (!is_string($error_message) || empty($error_message)) {
+            return false;
+        }
+        $message = strtolower($error_message);
         $needles = ['error while downloading', 'failed to download', 'unsupported image url'];
         foreach ($needles as $needle){
             if (strpos($message, $needle) !== false){
@@ -3155,7 +3004,7 @@ class AI_Alt_Text_Generator_GPT {
             $context_lines[] = sprintf(__('Filename: %s', 'ai-alt-gpt'), $filename);
         }
 
-        $quoted_alt = str_replace('"', '\"', $alt);
+        $quoted_alt = str_replace('"', '\"', (string)($alt ?? ''));
 
         $instructions = "You are an accessibility QA assistant. Review the provided ALT text for the accompanying image. "
             . "Flag hallucinated details, inaccurate descriptions, missing primary subjects, demographic assumptions, or awkward phrasing. "
@@ -3794,8 +3643,8 @@ class AI_Alt_Text_Generator_GPT {
     }
 
     public function enqueue_admin($hook){
-        $base_path = plugin_dir_path(__FILE__);
-        $base_url  = plugin_dir_url(__FILE__);
+        $base_path = AI_ALT_GPT_PLUGIN_DIR;
+        $base_url  = AI_ALT_GPT_PLUGIN_URL;
 
         $asset_version = static function(string $relative, string $fallback = '1.0.0') use ($base_path): string {
             $relative = ltrim($relative, '/');
@@ -4329,7 +4178,7 @@ class AI_Alt_Text_Generator_GPT {
     public function ajax_register() {
         check_ajax_referer('alttextai_upgrade_nonce', 'nonce');
 
-        $email = sanitize_email($_POST['email'] ?? '');
+        $email = isset($_POST['email']) && is_string($_POST['email']) ? sanitize_email($_POST['email']) : '';
         $password = $_POST['password'] ?? '';
 
         if (empty($email) || empty($password)) {
@@ -4354,7 +4203,7 @@ class AI_Alt_Text_Generator_GPT {
     public function ajax_login() {
         check_ajax_referer('alttextai_upgrade_nonce', 'nonce');
 
-        $email = sanitize_email($_POST['email'] ?? '');
+        $email = isset($_POST['email']) && is_string($_POST['email']) ? sanitize_email($_POST['email']) : '';
         $password = $_POST['password'] ?? '';
 
         if (empty($email) || empty($password)) {
@@ -4474,7 +4323,7 @@ class AI_Alt_Text_Generator_GPT {
     public function ajax_forgot_password() {
         check_ajax_referer('alttextai_upgrade_nonce', 'nonce');
 
-        $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+        $email = isset($_POST['email']) && is_string($_POST['email']) ? sanitize_email($_POST['email']) : '';
         
         if (empty($email) || !is_email($email)) {
             wp_send_json_error([
@@ -4510,7 +4359,7 @@ class AI_Alt_Text_Generator_GPT {
      */
     public function override_plugin_information($result, $action, $args) {
         // Get our plugin file path
-        $plugin_file = plugin_basename(__FILE__);
+        $plugin_file = AI_ALT_GPT_PLUGIN_BASENAME;
         $plugin_slug = dirname($plugin_file);
         
         // Check if this request is for our plugin
@@ -4540,7 +4389,7 @@ class AI_Alt_Text_Generator_GPT {
      * Filter plugin row meta to use our information
      */
     public function plugin_row_meta($plugin_meta, $plugin_file, $plugin_data, $status) {
-        if ($plugin_file === plugin_basename(__FILE__)) {
+        if ($plugin_file === AI_ALT_GPT_PLUGIN_BASENAME) {
             // Ensure our plugin uses local data
             // WordPress will use readme.txt from the plugin directory
         }
@@ -4553,7 +4402,7 @@ class AI_Alt_Text_Generator_GPT {
     public function ajax_reset_password() {
         check_ajax_referer('alttextai_upgrade_nonce', 'nonce');
 
-        $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+        $email = isset($_POST['email']) && is_string($_POST['email']) ? sanitize_email($_POST['email']) : '';
         $token = isset($_POST['token']) ? sanitize_text_field($_POST['token']) : '';
         $password = isset($_POST['password']) ? $_POST['password'] : '';
         
@@ -4614,7 +4463,8 @@ class AI_Alt_Text_Generator_GPT {
     }
 }
 
-new AI_Alt_Text_Generator_GPT();
+// Class instantiation moved to class-ai-alt-gpt-admin.php bootstrap_core()
+// to prevent duplicate menu registration
 
 // Inline JS fallback to add row-action behaviour
 add_action('admin_footer-upload.php', function(){
@@ -4848,4 +4698,3 @@ add_action('admin_head', function(){
     if (!$screen || $screen->base !== 'upload') { return; }
     echo '<style>.attachment-details .ai-alt-generate{display:none!important;}</style>';
 });
->>>>>>> origin/main

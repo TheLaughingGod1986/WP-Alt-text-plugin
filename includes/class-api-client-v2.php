@@ -30,6 +30,10 @@ class AltText_AI_API_Client_V2 {
 
         // Force update WordPress settings to production (clean up legacy configs)
         $options = get_option('ai_alt_gpt_settings', []);
+<<<<<<< HEAD
+        $options = is_array($options) ? $options : [];
+=======
+>>>>>>> origin/main
         if (!isset($options['api_url']) || $options['api_url'] !== $production_url) {
             $options['api_url'] = $production_url;
             update_option('ai_alt_gpt_settings', $options);
@@ -40,7 +44,12 @@ class AltText_AI_API_Client_V2 {
      * Get stored JWT token
      */
     protected function get_token() {
+<<<<<<< HEAD
+        $token = get_option($this->token_option_key, '');
+        return is_string($token) ? $token : '';
+=======
         return get_option($this->token_option_key, '');
+>>>>>>> origin/main
     }
     
     /**
@@ -62,7 +71,12 @@ class AltText_AI_API_Client_V2 {
      * Get stored user data
      */
     public function get_user_data() {
+<<<<<<< HEAD
+        $data = get_option($this->user_option_key, null);
+        return ($data !== false && $data !== null) ? $data : null;
+=======
         return get_option($this->user_option_key, null);
+>>>>>>> origin/main
     }
     
     /**
@@ -317,7 +331,11 @@ class AltText_AI_API_Client_V2 {
         }
 
         $used = $usage['used'] ?? 0;
+<<<<<<< HEAD
+        $limit = $usage['limit'] ?? 50;
+=======
         $limit = $usage['limit'] ?? 10;
+>>>>>>> origin/main
 
         if ($limit == 0) return 0;
         return min(100, round(($used / $limit) * 100));
