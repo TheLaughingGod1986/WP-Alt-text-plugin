@@ -355,16 +355,23 @@
     function handleRegenerateSingle(e) {
         e.preventDefault();
         
+        console.log('[AI Alt Text] Regenerate button clicked');
         var $btn = $(this);
         var attachmentId = $btn.data('attachment-id');
         
+        console.log('[AI Alt Text] Attachment ID:', attachmentId);
+        console.log('[AI Alt Text] Button disabled?', $btn.prop('disabled'));
+        
         if (!attachmentId || $btn.prop('disabled')) {
+            console.warn('[AI Alt Text] Cannot regenerate - missing ID or button disabled');
             return false;
         }
 
         var originalText = $btn.text();
         $btn.prop('disabled', true);
         $btn.text('Generating...');
+        
+        console.log('[AI Alt Text] Starting AJAX request...');
 
         // Use AJAX endpoint for single regeneration
         var ajaxUrl = (window.alttextai_ajax && window.alttextai_ajax.ajaxurl) || 
@@ -385,18 +392,26 @@
         })
         .done(function(response) {
             console.log('[AI Alt Text] Regenerate response:', response);
+            console.log('[AI Alt Text] Response success?', response && response.success);
+            console.log('[AI Alt Text] Response data:', response && response.data);
+            
             $btn.prop('disabled', false);
             $btn.text(originalText);
             
             if (response && response.success) {
                 // Update the alt text in the table if it exists
                 var $row = $btn.closest('tr');
+                console.log('[AI Alt Text] Found row:', $row.length > 0);
+                
                 var attachmentId = $btn.data('attachment-id');
                 var newAltText = response.data && response.data.alt_text ? response.data.alt_text : '';
+                
+                console.log('[AI Alt Text] New alt text:', newAltText);
                 
                 if (newAltText) {
                     // Find the new alt text cell (has class alttextai-table__cell--new)
                     var $newAltCell = $row.find('.alttextai-table__cell--new');
+                    console.log('[AI Alt Text] Found new alt cell:', $newAltCell.length > 0);
                     
                     if ($newAltCell.length) {
                         // Check if there's a copy button (existing alt text) or just a span (no alt text)
