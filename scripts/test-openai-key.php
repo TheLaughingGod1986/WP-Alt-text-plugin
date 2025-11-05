@@ -3,7 +3,13 @@
  * Test OpenAI API Key Validity
  */
 
-$api_key = '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';
+// Get API key from command line argument or environment variable
+$api_key = $argv[1] ?? $_ENV['OPENAI_API_KEY'] ?? getenv('OPENAI_API_KEY') ?? '';
+if (empty($api_key)) {
+    echo "Usage: php test-openai-key.php <api_key>\n";
+    echo "Or set OPENAI_API_KEY environment variable\n";
+    exit(1);
+}
 
 echo "Testing OpenAI API Key\n";
 echo str_repeat("=", 50) . "\n\n";
