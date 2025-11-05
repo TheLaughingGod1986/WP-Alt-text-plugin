@@ -619,14 +619,44 @@ class AltText_AI_API_Client_V2 {
             'filename' => $filename
         ];
         
+        // Try to get image dimensions
+        $metadata = wp_get_attachment_metadata($image_id);
+        if ($metadata && isset($metadata['width'], $metadata['height'])) {
+            $payload['width'] = $metadata['width'];
+            $payload['height'] = $metadata['height'];
+        }
+        
         if ($image_url) {
-            $payload['url'] = $image_url;
+            // Check if URL is localhost - if so, encode as base64
+            $parsed_url = parse_url($image_url);
+            $is_localhost = isset($parsed_url['host']) && 
+                           (in_array($parsed_url['host'], ['localhost', '127.0.0.1', 'host.docker.internal']) ||
+                            strpos($parsed_url['host'], '.local') !== false ||
+                            strpos($parsed_url['host'], 'localhost') !== false);
             
-            // Try to get image dimensions
-            $metadata = wp_get_attachment_metadata($image_id);
-            if ($metadata && isset($metadata['width'], $metadata['height'])) {
-                $payload['width'] = $metadata['width'];
-                $payload['height'] = $metadata['height'];
+            if ($is_localhost) {
+                // For localhost URLs, encode image as base64 so backend can access it
+                $file_path = get_attached_file($image_id);
+                if ($file_path && file_exists($file_path)) {
+                    $file_contents = file_get_contents($file_path);
+                    if ($file_contents !== false) {
+                        $mime_type = get_post_mime_type($image_id) ?: 'image/jpeg';
+                        $base64 = base64_encode($file_contents);
+                        $payload['base64'] = $base64;
+                        $payload['mime_type'] = $mime_type;
+                        // Still include URL for reference
+                        $payload['url'] = $image_url;
+                    } else {
+                        // Fallback to URL if file read fails
+                        $payload['url'] = $image_url;
+                    }
+                } else {
+                    // Fallback to URL if file doesn't exist
+                    $payload['url'] = $image_url;
+                }
+            } else {
+                // For public URLs, use URL method
+                $payload['url'] = $image_url;
             }
         }
         
