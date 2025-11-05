@@ -15,12 +15,18 @@ class Ai_Alt_Gpt_Admin_Hooks {
 	private $core;
 
 	/**
+	 * @var Ai_Alt_Gpt_REST_Controller
+	 */
+	private $rest_controller;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param AI_Alt_Text_Generator_GPT $core Core implementation instance.
 	 */
 	public function __construct( AI_Alt_Text_Generator_GPT $core ) {
-		$this->core = $core;
+		$this->core            = $core;
+		$this->rest_controller = new Ai_Alt_Gpt_REST_Controller( $core );
 	}
 
 	/**
@@ -43,7 +49,7 @@ class Ai_Alt_Gpt_Admin_Hooks {
 		add_filter( 'media_row_actions', [ $this->core, 'row_action_link' ], 10, 2 );
 		add_filter( 'attachment_fields_to_edit', [ $this->core, 'attachment_fields_to_edit' ], 15, 2 );
 
-		add_action( 'rest_api_init', [ $this->core, 'register_rest_routes' ] );
+		add_action( 'rest_api_init', [ $this->rest_controller, 'register_routes' ] );
 		add_action( 'admin_enqueue_scripts', [ $this->core, 'enqueue_admin' ] );
 		add_action( 'admin_init', [ $this->core, 'maybe_display_threshold_notice' ] );
 		add_action( 'admin_init', [ $this->core, 'maybe_handle_direct_checkout' ] );

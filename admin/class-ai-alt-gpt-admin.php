@@ -8,6 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once AI_ALT_GPT_PLUGIN_DIR . 'admin/class-ai-alt-gpt-core.php';
+require_once AI_ALT_GPT_PLUGIN_DIR . 'admin/class-ai-alt-gpt-rest-controller.php';
 require_once AI_ALT_GPT_PLUGIN_DIR . 'admin/class-ai-alt-gpt-admin-hooks.php';
 
 class Ai_Alt_Gpt_Admin {

@@ -9,17 +9,20 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 const assetsDir = path.join(__dirname, '..', 'assets');
+const srcDir = path.join(assetsDir, 'src', 'js');
+const distDir = path.join(assetsDir, 'dist', 'js');
 const jsFiles = [
     'ai-alt-admin.js',
     'ai-alt-dashboard.js',
     'auth-modal.js',
-    'upgrade-modal.js'
+    'upgrade-modal.js',
+    'ai-alt-queue-monitor.js'
 ];
 
 function minifyFile(inputFile) {
-    const inputPath = path.join(assetsDir, inputFile);
+    const inputPath = path.join(srcDir, inputFile);
     const outputFile = inputFile.replace('.js', '.min.js');
-    const outputPath = path.join(assetsDir, outputFile);
+    const outputPath = path.join(distDir, outputFile);
 
     console.log(`📦 Minifying ${inputFile}...`);
 
@@ -54,8 +57,12 @@ function formatSize(bytes) {
 function main() {
     console.log('🚀 Starting JavaScript minification...\n');
 
+    if (!fs.existsSync(distDir)) {
+        fs.mkdirSync(distDir, { recursive: true });
+    }
+
     jsFiles.forEach(file => {
-        const inputPath = path.join(assetsDir, file);
+        const inputPath = path.join(srcDir, file);
         if (!fs.existsSync(inputPath)) {
             console.warn(`  ⚠️  ${file} not found, skipping...`);
             return;
@@ -67,4 +74,3 @@ function main() {
 }
 
 main();
-

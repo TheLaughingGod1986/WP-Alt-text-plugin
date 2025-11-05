@@ -367,8 +367,12 @@
         $btn.text('Generating...');
 
         // Use AJAX endpoint for single regeneration
-        var ajaxUrl = (window.alttextai_ajax && window.alttextai_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php');
-        var nonceValue = (window.alttextai_ajax && window.alttextai_ajax.nonce) || config.nonce;
+        var ajaxUrl = (window.alttextai_ajax && window.alttextai_ajax.ajaxurl) || 
+                     (window.AI_ALT_GPT && window.AI_ALT_GPT.restRoot ? window.AI_ALT_GPT.restRoot.replace(/\/$/, '') + '/admin-ajax.php' : null) ||
+                     (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php');
+        var nonceValue = (window.alttextai_ajax && window.alttextai_ajax.nonce) || 
+                       (window.AI_ALT_GPT && window.AI_ALT_GPT.nonce) ||
+                       '';
         
         $.ajax({
             url: ajaxUrl,

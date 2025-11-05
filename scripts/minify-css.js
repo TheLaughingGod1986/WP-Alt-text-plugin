@@ -9,6 +9,8 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 const assetsDir = path.join(__dirname, '..', 'assets');
+const srcDir = path.join(assetsDir, 'src', 'css');
+const distDir = path.join(assetsDir, 'dist', 'css');
 const cssFiles = [
     'ai-alt-dashboard.css',
     'auth-modal.css',
@@ -22,9 +24,9 @@ const cssFiles = [
 ];
 
 function minifyFile(inputFile) {
-    const inputPath = path.join(assetsDir, inputFile);
+    const inputPath = path.join(srcDir, inputFile);
     const outputFile = inputFile.replace('.css', '.min.css');
-    const outputPath = path.join(assetsDir, outputFile);
+    const outputPath = path.join(distDir, outputFile);
 
     console.log(`📦 Minifying ${inputFile}...`);
 
@@ -60,10 +62,13 @@ function formatSize(bytes) {
 function main() {
     console.log('🚀 Starting CSS minification...\n');
 
+    if (!fs.existsSync(distDir)) {
+        fs.mkdirSync(distDir, { recursive: true });
+    }
+
     cssFiles.forEach(minifyFile);
 
     console.log('\n✅ CSS minification complete!');
 }
 
 main();
-

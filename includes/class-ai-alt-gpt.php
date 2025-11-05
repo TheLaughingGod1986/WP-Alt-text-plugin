@@ -40,7 +40,6 @@ class Ai_Alt_Gpt {
 		$this->load_dependencies();
 		$this->set_locale();
 		$this->define_admin_hooks();
-		$this->define_public_hooks();
 	}
 
 	/**
@@ -50,7 +49,6 @@ class Ai_Alt_Gpt {
 		require_once AI_ALT_GPT_PLUGIN_DIR . 'includes/class-ai-alt-gpt-loader.php';
 		require_once AI_ALT_GPT_PLUGIN_DIR . 'includes/class-ai-alt-gpt-i18n.php';
 		require_once AI_ALT_GPT_PLUGIN_DIR . 'admin/class-ai-alt-gpt-admin.php';
-		require_once AI_ALT_GPT_PLUGIN_DIR . 'public/class-ai-alt-gpt-public.php';
 
 		$this->loader = new Ai_Alt_Gpt_Loader();
 	}
@@ -71,13 +69,6 @@ class Ai_Alt_Gpt {
 		$plugin_admin = new Ai_Alt_Gpt_Admin( $this->get_plugin_name(), $this->get_version() );
 
 		$this->loader->add_action( 'init', $plugin_admin, 'bootstrap_core', 0 );
-	}
-
-	/**
-	 * Register hooks for the public-facing functionality.
-	 */
-	private function define_public_hooks() {
-		// Current plugin does not ship public-facing assets, so no hooks required.
 	}
 
 	/**

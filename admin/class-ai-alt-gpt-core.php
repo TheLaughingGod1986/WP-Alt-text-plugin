@@ -3477,9 +3477,15 @@ class AI_Alt_Text_Generator_GPT {
             return file_exists($path) ? (string) filemtime($path) : $fallback;
         };
 
-        // Use minified files in production, full files in development
-        $suffix = (defined('SCRIPT_DEBUG') && SCRIPT_DEBUG) ? '' : '.min';
-        $admin_file = "assets/ai-alt-admin{$suffix}.js";
+        $use_debug_assets = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG;
+        $js_base  = $use_debug_assets ? 'assets/src/js/' : 'assets/dist/js/';
+        $css_base = $use_debug_assets ? 'assets/src/css/' : 'assets/dist/css/';
+        $asset_path = static function(string $base, string $name, bool $debug, string $type): string {
+            $extension = $debug ? ".$type" : ".min.$type";
+            return $base . $name . $extension;
+        };
+
+        $admin_file    = $asset_path($js_base, 'ai-alt-admin', $use_debug_assets, 'js');
         $admin_version = $asset_version($admin_file, '3.0.0');
         
         $checkout_prices = $this->get_checkout_price_ids();
@@ -3514,30 +3520,35 @@ class AI_Alt_Text_Generator_GPT {
                 'billingPortalUrl' => esc_url( AltText_AI_Usage_Tracker::get_billing_portal_url() ),
                 'checkoutPrices' => $checkout_prices,
             ]);
+            // Also add alttextai_ajax for regenerate functionality
+            wp_localize_script('ai-alt-gpt-admin', 'alttextai_ajax', [
+                'ajaxurl' => admin_url('admin-ajax.php'),
+                'nonce'   => wp_create_nonce('alttextai_upgrade_nonce'),
+            ]);
         }
 
         if ($hook === 'media_page_ai-alt-gpt'){
-            $css_file = "assets/ai-alt-dashboard{$suffix}.css";
-            $js_file = "assets/ai-alt-dashboard{$suffix}.js";
-            $upgrade_css = "assets/upgrade-modal{$suffix}.css";
-            $upgrade_js = "assets/upgrade-modal{$suffix}.js";
-            $auth_css = "assets/auth-modal{$suffix}.css";
-            $auth_js = "assets/auth-modal{$suffix}.js";
+            $css_file    = $asset_path($css_base, 'ai-alt-dashboard', $use_debug_assets, 'css');
+            $js_file     = $asset_path($js_base, 'ai-alt-dashboard', $use_debug_assets, 'js');
+            $upgrade_css = $asset_path($css_base, 'upgrade-modal', $use_debug_assets, 'css');
+            $upgrade_js  = $asset_path($js_base, 'upgrade-modal', $use_debug_assets, 'js');
+            $auth_css    = $asset_path($css_base, 'auth-modal', $use_debug_assets, 'css');
+            $auth_js     = $asset_path($js_base, 'auth-modal', $use_debug_assets, 'js');
 
             // Enqueue design system (FIRST - foundation for all styles)
             wp_enqueue_style(
                 'ai-alt-gpt-design-system',
-                $base_url . "assets/design-system{$suffix}.css",
+                $base_url . $asset_path($css_base, 'design-system', $use_debug_assets, 'css'),
                 [],
-                $asset_version("assets/design-system{$suffix}.css", '1.0.0')
+                $asset_version($asset_path($css_base, 'design-system', $use_debug_assets, 'css'), '1.0.0')
             );
 
             // Enqueue reusable components (SECOND - uses design tokens)
             wp_enqueue_style(
                 'ai-alt-gpt-components',
-                $base_url . "assets/components{$suffix}.css",
+                $base_url . $asset_path($css_base, 'components', $use_debug_assets, 'css'),
                 ['ai-alt-gpt-design-system'],
-                $asset_version("assets/components{$suffix}.css", '1.0.0')
+                $asset_version($asset_path($css_base, 'components', $use_debug_assets, 'css'), '1.0.0')
             );
 
             // Enqueue page-specific styles (use design system + components)
@@ -3549,9 +3560,9 @@ class AI_Alt_Text_Generator_GPT {
             );
             wp_enqueue_style(
                 'ai-alt-gpt-modern',
-                $base_url . "assets/modern-style{$suffix}.css",
+                $base_url . $asset_path($css_base, 'modern-style', $use_debug_assets, 'css'),
                 ['ai-alt-gpt-components'],
-                $asset_version("assets/modern-style{$suffix}.css", '4.1.0')
+                $asset_version($asset_path($css_base, 'modern-style', $use_debug_assets, 'css'), '4.1.0')
             );
             wp_enqueue_style(
                 'ai-alt-gpt-upgrade',
@@ -3567,15 +3578,15 @@ class AI_Alt_Text_Generator_GPT {
             );
             wp_enqueue_style(
                 'ai-alt-gpt-button-enhancements',
-                $base_url . "assets/button-enhancements{$suffix}.css",
+                $base_url . $asset_path($css_base, 'button-enhancements', $use_debug_assets, 'css'),
                 ['ai-alt-gpt-components'],
-                $asset_version("assets/button-enhancements{$suffix}.css", '1.0.0')
+                $asset_version($asset_path($css_base, 'button-enhancements', $use_debug_assets, 'css'), '1.0.0')
             );
             wp_enqueue_style(
                 'ai-alt-gpt-guide-settings',
-                $base_url . "assets/guide-settings-pages{$suffix}.css",
+                $base_url . $asset_path($css_base, 'guide-settings-pages', $use_debug_assets, 'css'),
                 ['ai-alt-gpt-components'],
-                $asset_version("assets/guide-settings-pages{$suffix}.css", '1.0.0')
+                $asset_version($asset_path($css_base, 'guide-settings-pages', $use_debug_assets, 'css'), '1.0.0')
             );
 
             $stats_data = $this->get_media_stats();

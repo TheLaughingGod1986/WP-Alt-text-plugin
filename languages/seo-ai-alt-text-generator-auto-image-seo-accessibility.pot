@@ -1,0 +1,9 @@
+msgid ""
+msgstr ""
+Project-Id-Version: SEO AI Alt Text Generator 
+POT-Creation-Date: 2025-11-01 01:23:23+0000
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+X-Generator: scripts/make-pot.php
+
