@@ -55,7 +55,7 @@ class AI_Alt_Text_Generator_GPT {
     private $api_client = null;
     private $checkout_price_cache = null;
 
-    private function user_can_manage(){
+    public function user_can_manage(){
         return current_user_can(self::CAPABILITY) || current_user_can('manage_options');
     }
 
@@ -64,7 +64,16 @@ class AI_Alt_Text_Generator_GPT {
         $this->api_client = new AltText_AI_API_Client_V2();
     }
 
-    private function default_usage(){
+    /**
+     * Expose API client for collaborators (REST controller, admin UI, etc.).
+     *
+     * @return AltText_AI_API_Client_V2
+     */
+    public function get_api_client() {
+        return $this->api_client;
+    }
+
+    public function default_usage(){
         return [
             'prompt'      => 0,
             'completion'  => 0,
@@ -2227,13 +2236,13 @@ class AI_Alt_Text_Generator_GPT {
         return strpos((string)$mime, 'image/') === 0;
     }
 
-    private function invalidate_stats_cache(){
+    public function invalidate_stats_cache(){
         wp_cache_delete('ai_alt_stats', 'ai_alt_gpt');
         delete_transient('ai_alt_stats_v3');
         $this->stats_cache = null;
     }
 
-    private function get_media_stats(){
+    public function get_media_stats(){
         // Check in-memory cache first
         if (is_array($this->stats_cache)){
             return $this->stats_cache;
@@ -2335,7 +2344,7 @@ class AI_Alt_Text_Generator_GPT {
         return $this->stats_cache;
     }
 
-    private function prepare_attachment_snapshot($attachment_id){
+    public function prepare_attachment_snapshot($attachment_id){
         $attachment_id = intval($attachment_id);
         if ($attachment_id <= 0){
             return [];
@@ -2654,7 +2663,7 @@ class AI_Alt_Text_Generator_GPT {
         return $first_weight >= $second_weight ? $first : $second;
     }
 
-    private function get_missing_attachment_ids($limit = 5){
+    public function get_missing_attachment_ids($limit = 5){
         global $wpdb;
         $limit = intval($limit);
         if ($limit <= 0){
@@ -2678,7 +2687,7 @@ class AI_Alt_Text_Generator_GPT {
         return array_map('intval', (array) $wpdb->get_col($sql));
     }
 
-    private function get_all_attachment_ids($limit = 5, $offset = 0){
+    public function get_all_attachment_ids($limit = 5, $offset = 0){
         global $wpdb;
         $limit  = max(1, intval($limit));
         $offset = max(0, intval($offset));
@@ -3172,7 +3181,7 @@ class AI_Alt_Text_Generator_GPT {
         ];
     }
 
-    private function persist_generation_result(int $attachment_id, string $alt, array $usage_summary, string $source, string $model, string $image_strategy, $review_result): void{
+    public function persist_generation_result(int $attachment_id, string $alt, array $usage_summary, string $source, string $model, string $image_strategy, $review_result): void{
         update_post_meta($attachment_id, '_wp_attachment_image_alt', wp_strip_all_tags($alt));
         update_post_meta($attachment_id, '_ai_alt_source', $source);
         update_post_meta($attachment_id, '_ai_alt_model', $model);
@@ -3224,7 +3233,7 @@ class AI_Alt_Text_Generator_GPT {
         $this->generate_and_save($attachment_id, 'auto');
     }
 
-    public function generate_and_save($attachment_id, $source='manual', int $retry_count = 0, array $feedback = []){
+    public function generate_and_save($attachment_id, $source='manual', int $retry_count = 0, array $feedback = [], $regenerate = false){
         $opts = get_option(self::OPTION_KEY, []);
 
         // Skip authentication check in local development mode
@@ -3283,7 +3292,7 @@ class AI_Alt_Text_Generator_GPT {
             ];
         } else {
             // Call proxy API to generate alt text
-            $api_response = $this->api_client->generate_alt_text($attachment_id, $context);
+            $api_response = $this->api_client->generate_alt_text($attachment_id, $context, $regenerate);
             
             if (is_wp_error($api_response)) {
                 return $api_response;
@@ -3447,235 +3456,16 @@ class AI_Alt_Text_Generator_GPT {
         return $fields;
     }
 
-    public function register_rest_routes(){
-        register_rest_route('ai-alt/v1', '/generate/(?P<id>\d+)', [
-            'methods'  => 'POST',
-            'callback' => function($req){
-                if (!current_user_can('edit_posts')) return new \WP_Error('forbidden', 'No permission', ['status' => 403]);
-                $id = intval($req['id']);
-                $alt = $this->generate_and_save($id, 'ajax');
-                if (is_wp_error($alt)) {
-                    if ($alt->get_error_code() === 'ai_alt_dry_run'){
-                        return [
-                            'id'      => $id,
-                            'code'    => $alt->get_error_code(),
-                            'message' => $alt->get_error_message(),
-                            'prompt'  => $alt->get_error_data()['prompt'] ?? '',
-                            'stats'   => $this->get_media_stats(),
-                        ];
-                    }
-                    return $alt;
-                }
-                return [
-                    'id'   => $id,
-                    'alt'  => $alt,
-                    'meta' => $this->prepare_attachment_snapshot($id),
-                    'stats'=> $this->get_media_stats(),
-                ];
-            },
-            'permission_callback' => function() {
-                return current_user_can('edit_posts');
-            },
-        ]);
+	/**
+	 * @deprecated 4.3.0 Use Ai_Alt_Gpt_REST_Controller::register_routes().
+	 */
+	public function register_rest_routes(){
+		if ( ! class_exists( 'Ai_Alt_Gpt_REST_Controller' ) ) {
+			require_once AI_ALT_GPT_PLUGIN_DIR . 'admin/class-ai-alt-gpt-rest-controller.php';
+		}
 
-        register_rest_route('ai-alt/v1', '/alt/(?P<id>\d+)', [
-            'methods'  => 'POST',
-            'callback' => function($req){
-                if (!current_user_can('edit_posts')) {
-                    return new \WP_Error('forbidden', 'No permission', ['status' => 403]);
-                }
-
-                $id  = intval($req['id']);
-                $alt = trim((string) $req->get_param('alt'));
-
-                if ($id <= 0) {
-                    return new \WP_Error('invalid_attachment', 'Invalid attachment ID.', ['status' => 400]);
-                }
-
-                if ($alt === '') {
-                    return new \WP_Error('invalid_alt', __('ALT text cannot be empty.', 'ai-alt-gpt'), ['status' => 400]);
-                }
-
-                $alt_sanitized = wp_strip_all_tags($alt);
-
-                $usage = [
-                    'prompt' => 0,
-                    'completion' => 0,
-                    'total' => 0,
-                ];
-
-                $post = get_post($id);
-                $file_path = get_attached_file($id);
-                $context = [
-                    'filename' => $file_path ? basename($file_path) : '',
-                    'title' => get_the_title($id),
-                    'caption' => $post->post_excerpt ?? '',
-                    'post_title' => '',
-                ];
-
-                if ($post && $post->post_parent) {
-                    $parent = get_post($post->post_parent);
-                    if ($parent) {
-                        $context['post_title'] = $parent->post_title;
-                    }
-                }
-
-                $review_result = null;
-                if ($this->api_client) {
-                    $review_response = $this->api_client->review_alt_text($id, $alt_sanitized, $context);
-                    if (!is_wp_error($review_response) && !empty($review_response['review'])) {
-                        $review = $review_response['review'];
-                        $issues = [];
-                        if (!empty($review['issues']) && is_array($review['issues'])) {
-                            foreach ($review['issues'] as $issue) {
-                                if (is_string($issue) && $issue !== '') {
-                                    $issues[] = sanitize_text_field($issue);
-                                }
-                            }
-                        }
-
-                        $review_usage = [
-                            'prompt' => intval($review['usage']['prompt_tokens'] ?? 0),
-                            'completion' => intval($review['usage']['completion_tokens'] ?? 0),
-                            'total' => intval($review['usage']['total_tokens'] ?? 0),
-                        ];
-
-                        $review_result = [
-                            'score' => intval($review['score'] ?? 0),
-                            'status' => sanitize_key($review['status'] ?? ''),
-                            'grade' => sanitize_text_field($review['grade'] ?? ''),
-                            'summary' => isset($review['summary']) ? sanitize_text_field($review['summary']) : '',
-                            'issues' => $issues,
-                            'model' => sanitize_text_field($review['model'] ?? ''),
-                            'usage' => $review_usage,
-                        ];
-                    }
-                }
-
-                $this->persist_generation_result(
-                    $id,
-                    $alt_sanitized,
-                    $usage,
-                    'manual-edit',
-                    'manual-input',
-                    'manual',
-                    $review_result
-                );
-
-                return [
-                    'id'   => $id,
-                    'alt'  => $alt_sanitized,
-                    'meta' => $this->prepare_attachment_snapshot($id),
-                    'stats'=> $this->get_media_stats(),
-                    'source' => 'manual-edit',
-                ];
-            },
-            'permission_callback' => function(){ return current_user_can('edit_posts'); },
-        ]);
-
-        register_rest_route('ai-alt/v1', '/list', [
-            'methods'  => 'GET',
-            'callback' => function($req){
-                if (!current_user_can('edit_posts')){
-                    return new \WP_Error('forbidden', 'No permission', ['status' => 403]);
-                }
-
-                $scope = $req->get_param('scope') === 'all' ? 'all' : 'missing';
-                $limit = max(1, min(500, intval($req->get_param('limit') ?: 100)));
-
-                if ($scope === 'missing'){
-                    $ids = $this->get_missing_attachment_ids($limit);
-                } else {
-                    $ids = $this->get_all_attachment_ids($limit, 0);
-                }
-
-                return ['ids' => array_map('intval', $ids)];
-            },
-            'permission_callback' => function(){ return current_user_can('edit_posts'); },
-        ]);
-
-        register_rest_route('ai-alt/v1', '/stats', [
-            'methods'  => 'GET',
-            'callback' => function($req){
-                if (!current_user_can('edit_posts')){
-                    return new \WP_Error('forbidden', 'No permission', ['status' => 403]);
-                }
-
-                $fresh = $req->get_param('fresh');
-                if ($fresh && filter_var($fresh, FILTER_VALIDATE_BOOLEAN)) {
-                    $this->invalidate_stats_cache();
-                }
-
-                return $this->get_media_stats();
-            },
-            'permission_callback' => function(){ return current_user_can('edit_posts'); },
-        ]);
-
-        register_rest_route('ai-alt/v1', '/usage', [
-            'methods'  => 'GET',
-            'callback' => function(){
-                if (!current_user_can('edit_posts')){
-                    return new \WP_Error('forbidden', 'No permission', ['status' => 403]);
-                }
-                $usage = $this->api_client->get_usage();
-                if (is_wp_error($usage)) {
-                    return $usage;
-                }
-                return $usage;
-            },
-            'permission_callback' => function(){ return current_user_can('edit_posts'); },
-        ]);
-
-        register_rest_route('ai-alt/v1', '/plans', [
-            'methods'  => 'GET',
-            'callback' => function(){
-                if (!current_user_can('edit_posts')){
-                    return new \WP_Error('forbidden', 'No permission', ['status' => 403]);
-                }
-
-                return [
-                    'prices' => $this->get_checkout_price_ids(),
-                ];
-            },
-            'permission_callback' => function(){ return current_user_can('edit_posts'); },
-        ]);
-
-        register_rest_route('ai-alt/v1', '/queue', [
-            'methods'  => 'GET',
-            'callback' => function(){
-                if (!current_user_can('edit_posts')){
-                    return new \WP_Error('forbidden', 'No permission', ['status' => 403]);
-                }
-
-                $stats = AltText_AI_Queue::get_stats();
-                $recent = AltText_AI_Queue::get_recent(apply_filters('ai_alt_queue_recent_limit', 10));
-                $failures = AltText_AI_Queue::get_recent_failures(apply_filters('ai_alt_queue_fail_limit', 5));
-
-                $sanitize_job = function($row){
-                    return [
-                        'id'            => intval($row['id'] ?? 0),
-                        'attachment_id' => intval($row['attachment_id'] ?? 0),
-                        'status'        => sanitize_key($row['status'] ?? ''),
-                        'attempts'      => intval($row['attempts'] ?? 0),
-                        'source'        => sanitize_key($row['source'] ?? ''),
-                        'last_error'    => isset($row['last_error']) ? wp_kses_post($row['last_error']) : '',
-                        'enqueued_at'   => $row['enqueued_at'] ?? '',
-                        'locked_at'     => $row['locked_at'] ?? '',
-                        'completed_at'  => $row['completed_at'] ?? '',
-                        'attachment_title' => get_the_title(intval($row['attachment_id'] ?? 0)),
-                        'edit_url'      => esc_url_raw(add_query_arg('item', intval($row['attachment_id'] ?? 0), admin_url('upload.php'))),
-                    ];
-                };
-
-                return [
-                    'stats'    => $stats,
-                    'recent'   => array_map($sanitize_job, $recent),
-                    'failures' => array_map($sanitize_job, $failures),
-                ];
-            },
-            'permission_callback' => function(){ return current_user_can('edit_posts'); },
-        ]);
-    }
+		( new Ai_Alt_Gpt_REST_Controller( $this ) )->register_routes();
+	}
 
     public function enqueue_admin($hook){
         $base_path = AI_ALT_GPT_PLUGIN_DIR;
@@ -4026,7 +3816,7 @@ class AI_Alt_Text_Generator_GPT {
             ]);
         }
         
-        $result = $this->generate_and_save($attachment_id, 'ajax');
+        $result = $this->generate_and_save($attachment_id, 'ajax', 1, [], true);
 
         if (is_wp_error($result)) {
             wp_send_json_error([

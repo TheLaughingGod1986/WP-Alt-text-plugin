@@ -399,8 +399,23 @@
                     refreshUsageStats();
                 }
             } else {
-                var message = (response && response.data && response.data.message) || 'Failed to regenerate alt text';
-                showNotification(message, 'error');
+                // Check for limit_reached error
+                var errorData = response && response.data ? response.data : {};
+                if (errorData.code === 'limit_reached') {
+                    // Show upgrade modal instead of error notification
+                    if (typeof showUpgradeModal === 'function') {
+                        showUpgradeModal(errorData.usage);
+                    } else if (typeof window.alttextai_show_upgrade_modal === 'function') {
+                        window.alttextai_show_upgrade_modal(errorData.usage);
+                    } else {
+                        // Fallback: try to trigger via event
+                        $(document).trigger('alttextai:show-upgrade-modal', [errorData.usage]);
+                        showNotification(errorData.message || 'Monthly limit reached. Please upgrade to continue.', 'error');
+                    }
+                } else {
+                    var message = errorData.message || 'Failed to regenerate alt text';
+                    showNotification(message, 'error');
+                }
             }
         })
         .fail(function(xhr, status, error) {
@@ -408,11 +423,23 @@
             $btn.prop('disabled', false);
             $btn.text(originalText);
             
-            var message = 'Failed to regenerate alt text';
-            if (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message) {
-                message = xhr.responseJSON.data.message;
+            // Check for limit_reached error in response
+            var errorData = xhr.responseJSON && xhr.responseJSON.data ? xhr.responseJSON.data : {};
+            if (errorData.code === 'limit_reached') {
+                // Show upgrade modal instead of error notification
+                if (typeof showUpgradeModal === 'function') {
+                    showUpgradeModal(errorData.usage);
+                } else if (typeof window.alttextai_show_upgrade_modal === 'function') {
+                    window.alttextai_show_upgrade_modal(errorData.usage);
+                } else {
+                    // Fallback: try to trigger via event
+                    $(document).trigger('alttextai:show-upgrade-modal', [errorData.usage]);
+                    showNotification(errorData.message || 'Monthly limit reached. Please upgrade to continue.', 'error');
+                }
+            } else {
+                var message = errorData.message || 'Failed to regenerate alt text';
+                showNotification(message, 'error');
             }
-            showNotification(message, 'error');
         });
     }
 
