@@ -636,19 +636,95 @@ class AltText_AI_API_Client_V2 {
             
             if ($is_localhost) {
                 // For localhost URLs, encode image as base64 so backend can access it
+                // Resize to max 1024px on longest side to reduce payload size (doesn't affect token count)
                 $file_path = get_attached_file($image_id);
                 if ($file_path && file_exists($file_path)) {
-                    $file_contents = file_get_contents($file_path);
-                    if ($file_contents !== false) {
-                        $mime_type = get_post_mime_type($image_id) ?: 'image/jpeg';
-                        $base64 = base64_encode($file_contents);
-                        $payload['base64'] = $base64;
-                        $payload['mime_type'] = $mime_type;
-                        // Still include URL for reference
-                        $payload['url'] = $image_url;
+                    $mime_type = get_post_mime_type($image_id) ?: 'image/jpeg';
+                    
+                    // Get original dimensions
+                    $metadata = wp_get_attachment_metadata($image_id);
+                    $orig_width = $metadata['width'] ?? 0;
+                    $orig_height = $metadata['height'] ?? 0;
+                    
+                    // Resize if image is larger than 1024px on longest side
+                    $max_size = 1024;
+                    $needs_resize = ($orig_width > $max_size || $orig_height > $max_size);
+                    
+                    if ($needs_resize && function_exists('wp_get_image_editor')) {
+                        $editor = wp_get_image_editor($file_path);
+                        if (!is_wp_error($editor)) {
+                            // Calculate new dimensions maintaining aspect ratio
+                            if ($orig_width > $orig_height) {
+                                $new_width = $max_size;
+                                $new_height = intval(($orig_height / $orig_width) * $max_size);
+                            } else {
+                                $new_height = $max_size;
+                                $new_width = intval(($orig_width / $orig_height) * $max_size);
+                            }
+                            
+                            $editor->resize($new_width, $new_height, false);
+                            
+                            // Save to temporary file
+                            $upload_dir = wp_upload_dir();
+                            $temp_filename = 'alttext-ai-temp-' . $image_id . '-' . time() . '.jpg';
+                            $temp_path = $upload_dir['path'] . '/' . $temp_filename;
+                            $saved = $editor->save($temp_path, 'image/jpeg');
+                            
+                            if (!is_wp_error($saved) && isset($saved['path'])) {
+                                $file_contents = file_get_contents($saved['path']);
+                                @unlink($saved['path']); // Clean up temp file
+                                if ($file_contents !== false) {
+                                    $base64 = base64_encode($file_contents);
+                                    $payload['base64'] = $base64;
+                                    $payload['mime_type'] = 'image/jpeg'; // Resized images saved as JPEG
+                                    $payload['url'] = $image_url;
+                                } else {
+                                    // Fallback to original file
+                                    $file_contents = file_get_contents($file_path);
+                                    if ($file_contents !== false) {
+                                        $base64 = base64_encode($file_contents);
+                                        $payload['base64'] = $base64;
+                                        $payload['mime_type'] = $mime_type;
+                                        $payload['url'] = $image_url;
+                                    } else {
+                                        $payload['url'] = $image_url;
+                                    }
+                                }
+                            } else {
+                                // Fallback to original file if resize fails
+                                $file_contents = file_get_contents($file_path);
+                                if ($file_contents !== false) {
+                                    $base64 = base64_encode($file_contents);
+                                    $payload['base64'] = $base64;
+                                    $payload['mime_type'] = $mime_type;
+                                    $payload['url'] = $image_url;
+                                } else {
+                                    $payload['url'] = $image_url;
+                                }
+                            }
+                        } else {
+                            // Fallback to original file if editor fails
+                            $file_contents = file_get_contents($file_path);
+                            if ($file_contents !== false) {
+                                $base64 = base64_encode($file_contents);
+                                $payload['base64'] = $base64;
+                                $payload['mime_type'] = $mime_type;
+                                $payload['url'] = $image_url;
+                            } else {
+                                $payload['url'] = $image_url;
+                            }
+                        }
                     } else {
-                        // Fallback to URL if file read fails
-                        $payload['url'] = $image_url;
+                        // No resize needed or editor not available - use original file
+                        $file_contents = file_get_contents($file_path);
+                        if ($file_contents !== false) {
+                            $base64 = base64_encode($file_contents);
+                            $payload['base64'] = $base64;
+                            $payload['mime_type'] = $mime_type;
+                            $payload['url'] = $image_url;
+                        } else {
+                            $payload['url'] = $image_url;
+                        }
                     }
                 } else {
                     // Fallback to URL if file doesn't exist
