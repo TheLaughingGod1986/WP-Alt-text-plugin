@@ -17,13 +17,8 @@ class AltText_AI_Usage_Tracker {
     public static function update_usage($usage_data) {
         if (!is_array($usage_data)) { return; }
         $used  = isset($usage_data['used']) ? max(0, intval($usage_data['used'])) : 0;
-<<<<<<< HEAD
         $limit = isset($usage_data['limit']) ? intval($usage_data['limit']) : 50;
         if ($limit <= 0) { $limit = 50; }
-=======
-        $limit = isset($usage_data['limit']) ? intval($usage_data['limit']) : 10;
-        if ($limit <= 0) { $limit = 10; }
->>>>>>> origin/main
         $remaining = isset($usage_data['remaining']) ? intval($usage_data['remaining']) : ($limit - $used);
         if ($remaining < 0) { $remaining = 0; }
 
@@ -66,13 +61,8 @@ class AltText_AI_Usage_Tracker {
             $reset_ts = strtotime('first day of next month');
             return [
                 'used' => 0,
-<<<<<<< HEAD
                 'limit' => 50,
                 'remaining' => 50,
-=======
-                'limit' => 10,
-                'remaining' => 10,
->>>>>>> origin/main
                 'plan' => 'free',
                 'resetDate' => date('Y-m-01', $reset_ts),
                 'reset_timestamp' => $reset_ts,
@@ -122,7 +112,6 @@ class AltText_AI_Usage_Tracker {
         // Calculate days until reset
         $reset_timestamp = isset($usage['reset_timestamp']) ? intval($usage['reset_timestamp']) : 0;
         if ($reset_timestamp <= 0 && !empty($usage['resetDate'])) {
-<<<<<<< HEAD
             // Try parsing the reset date - handle both Y-m-d and other formats
             $reset_date_str = $usage['resetDate'];
             $reset_timestamp = strtotime($reset_date_str);
@@ -148,13 +137,6 @@ class AltText_AI_Usage_Tracker {
             $seconds_until_reset = max(0, $end_of_day - $current_timestamp);
             $days_until_reset = (int) floor($seconds_until_reset / DAY_IN_SECONDS);
         }
-=======
-            $reset_timestamp = strtotime($usage['resetDate']);
-        }
-        $current_timestamp = current_time('timestamp');
-        $seconds_until_reset = $reset_timestamp > 0 ? max(0, $reset_timestamp - $current_timestamp) : 0;
-        $days_until_reset = (int) floor($seconds_until_reset / DAY_IN_SECONDS);
->>>>>>> origin/main
 
         return [
             'used' => $used,
