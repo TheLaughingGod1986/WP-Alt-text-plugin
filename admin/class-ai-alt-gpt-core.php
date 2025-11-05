@@ -661,22 +661,57 @@ class AI_Alt_Text_Generator_GPT {
                 // Get usage stats
                 $usage_stats = AltText_AI_Usage_Tracker::get_stats_display();
                 
-                // Force a live refresh when loading the dashboard to avoid stale usage bars
-                if (isset($this->api_client)) { 
+                // Pull fresh usage from backend to avoid stale cache - same logic as Settings tab
+                if (isset($this->api_client)) {
                     $live_usage = $this->api_client->get_usage();
-                    if (is_array($live_usage) && !empty($live_usage)) { AltText_AI_Usage_Tracker::update_usage($live_usage); $usage_stats = AltText_AI_Usage_Tracker::get_stats_display(); }
+                    if (is_array($live_usage) && !empty($live_usage) && !is_wp_error($live_usage)) {
+                        // Update cache with fresh API data
+                        AltText_AI_Usage_Tracker::update_usage($live_usage);
+                    }
+                }
+                // Get stats - will use the just-updated cache
+                $usage_stats = AltText_AI_Usage_Tracker::get_stats_display(false);
+                
+                // If stats show 0 but we have API data, use API data directly
+                if (isset($live_usage) && is_array($live_usage) && !empty($live_usage) && !is_wp_error($live_usage)) {
+                    if (($usage_stats['used'] ?? 0) == 0 && ($live_usage['used'] ?? 0) > 0) {
+                        // Cache hasn't updated yet, use API data directly
+                        $usage_stats['used'] = max(0, intval($live_usage['used'] ?? 0));
+                        $usage_stats['limit'] = max(1, intval($live_usage['limit'] ?? 50));
+                        $usage_stats['remaining'] = max(0, intval($live_usage['remaining'] ?? 50));
+                        // Recalculate percentage
+                        $usage_stats['percentage'] = $usage_stats['limit'] > 0 ? round(($usage_stats['used'] / $usage_stats['limit']) * 100) : 0;
+                    }
                 }
                 
-                // Calculate percentage properly
-                $used = max(0, intval($usage_stats['used']));
-                $limit = max(1, intval($usage_stats['limit']));
-                $percentage = min(100, round(($used / $limit) * 100));
+                // Get raw values directly from the stats array - same calculation method as Settings tab
+                $dashboard_used = max(0, intval($usage_stats['used'] ?? 0));
+                $dashboard_limit = max(1, intval($usage_stats['limit'] ?? 50));
+                $dashboard_remaining = max(0, intval($usage_stats['remaining'] ?? 50));
                 
-                // Update the stats with calculated values
-                $usage_stats['used'] = $used;
-                $usage_stats['limit'] = $limit;
+                // Recalculate remaining to ensure accuracy
+                $dashboard_remaining = max(0, $dashboard_limit - $dashboard_used);
+                
+                // Cap used at limit to prevent showing > 100%
+                if ($dashboard_used > $dashboard_limit) {
+                    $dashboard_used = $dashboard_limit;
+                    $dashboard_remaining = 0;
+                }
+                
+                // Calculate percentage - same way as Settings tab
+                $percentage = $dashboard_limit > 0 ? round(($dashboard_used / $dashboard_limit) * 100) : 0;
+                $percentage = min(100, max(0, $percentage));
+                
+                // If at limit, ensure it shows 100%
+                if ($dashboard_used >= $dashboard_limit && $dashboard_remaining <= 0) {
+                    $percentage = 100;
+                }
+                
+                // Update the stats with calculated values for display
+                $usage_stats['used'] = $dashboard_used;
+                $usage_stats['limit'] = $dashboard_limit;
+                $usage_stats['remaining'] = $dashboard_remaining;
                 $usage_stats['percentage'] = $percentage;
-                $usage_stats['remaining'] = max(0, $limit - $used);
                 ?>
                 
                 <!-- Clean Dashboard Design -->
