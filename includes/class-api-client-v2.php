@@ -313,14 +313,19 @@ class AltText_AI_API_Client_V2 {
     /**
      * Make authenticated API request
      */
-    private function make_request($endpoint, $method = 'GET', $data = null) {
+    private function make_request($endpoint, $method = 'GET', $data = null, $timeout = null) {
         $url = trailingslashit($this->api_url) . ltrim($endpoint, '/');
         $headers = $this->get_auth_headers();
+        
+        // Use longer timeout for generation requests (OpenAI can take time)
+        if ($timeout === null) {
+            $timeout = (strpos($endpoint, '/api/generate') !== false) ? 90 : 30;
+        }
         
         $args = [
             'method' => $method,
             'headers' => $headers,
-            'timeout' => 30,
+            'timeout' => $timeout,
         ];
         
         if ($data && in_array($method, ['POST', 'PUT', 'PATCH'])) {
@@ -458,6 +463,74 @@ class AltText_AI_API_Client_V2 {
             'data' => $data,
             'success' => $status_code >= 200 && $status_code < 300
         ];
+    }
+
+    /**
+     * Wrapper that retries transient failures (502, 503, timeouts) with backoff.
+     */
+    private function request_with_retry($endpoint, $method = 'GET', $data = null, $max_attempts = 3) {
+        $attempt = 0;
+        $last_error = null;
+
+        while ($attempt < $max_attempts) {
+            $response = $this->make_request($endpoint, $method, $data);
+            if (!is_wp_error($response)) {
+                if ($attempt > 0 && class_exists('AltText_AI_Debug_Log')) {
+                    AltText_AI_Debug_Log::log('info', 'API request recovered after retry', [
+                        'endpoint' => $endpoint,
+                        'attempt' => $attempt + 1,
+                    ], 'api');
+                }
+                return $response;
+            }
+
+            if (!$this->should_retry_api_error($response)) {
+                return $response;
+            }
+
+            $attempt++;
+            $last_error = $response;
+
+            if ($attempt < $max_attempts) {
+                $delay = min(3, $attempt); // 1s, 2s
+                if (class_exists('AltText_AI_Debug_Log')) {
+                    AltText_AI_Debug_Log::log('warning', 'Retrying API request after transient failure', [
+                        'endpoint'    => $endpoint,
+                        'attempt'     => $attempt + 1,
+                        'error_code'  => $response->get_error_code(),
+                        'status_code' => $response->get_error_data()['status_code'] ?? null,
+                    ], 'api');
+                }
+                usleep($delay * 1000000);
+            }
+        }
+
+        return $last_error ?: new WP_Error('api_error', __('Unknown API error', 'wp-alt-text-plugin'));
+    }
+
+    /**
+     * Determine whether a request should be retried.
+     */
+    private function should_retry_api_error($error) {
+        if (!is_wp_error($error)) {
+            return false;
+        }
+
+        $retryable_codes = ['server_error', 'api_timeout', 'api_unreachable'];
+        $code = $error->get_error_code();
+        if (!in_array($code, $retryable_codes, true)) {
+            return false;
+        }
+
+        $data = $error->get_error_data();
+        $status = isset($data['status_code']) ? intval($data['status_code']) : 0;
+
+        // Retry network errors without status codes, and HTTP 5xx responses.
+        if ($status === 0) {
+            return true;
+        }
+
+        return in_array($status, [500, 502, 503, 504], true);
     }
     
     /**
