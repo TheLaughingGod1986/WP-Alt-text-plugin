@@ -7,7 +7,7 @@
 
 /* Production Dashboard Improvements */
 :root {
-    --alttextai-dashboard-max-width: 1200px;
+    --alttextai-dashboard-max-width: 1400px;
     --alttextai-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     --alttextai-card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
 }

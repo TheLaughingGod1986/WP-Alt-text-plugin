@@ -1435,7 +1435,7 @@
    ======================================== */
 
 .alttextai-dashboard-container {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: var(--alttextai-space-12) var(--alttextai-space-6);
 }
