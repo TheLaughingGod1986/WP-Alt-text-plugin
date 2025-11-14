@@ -6733,7 +6733,18 @@ class Opptiai_Alt_Core {
             wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
         }
 
+        // Clear JWT token (for authenticated users)
         $this->api_client->clear_token();
+        
+        // Clear license key (for agency/license-based users)
+        // This prevents automatic reconnection when using license keys
+        $this->api_client->clear_license_key();
+        
+        // Clear user data
+        delete_option('opptiai_alt_user_data');
+        delete_option('opptiai_alt_site_id');
+        
+        // Clear usage cache
         AltText_AI_Usage_Tracker::clear_cache();
         delete_transient('opptiai_alt_usage_cache');
         delete_transient('opptiai_alt_token_last_check');
