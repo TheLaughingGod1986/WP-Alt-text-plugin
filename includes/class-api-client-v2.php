@@ -542,8 +542,12 @@ class AltText_AI_API_Client_V2 {
      * Returns sites using the license and their generation counts
      */
     public function get_license_sites() {
-        if (!$this->is_authenticated()) {
-            return new WP_Error('not_authenticated', __('Must be authenticated to view license site usage', 'opptiai-alt-text-generator'));
+        // Allow if authenticated (JWT) OR has active license (license key auth)
+        $is_authenticated = $this->is_authenticated();
+        $has_license = $this->has_active_license();
+        
+        if (!$is_authenticated && !$has_license) {
+            return new WP_Error('not_authenticated', __('Must be authenticated or have an active license to view license site usage', 'opptiai-alt-text-generator'));
         }
 
         $response = $this->make_request('/api/licenses/sites', 'GET');

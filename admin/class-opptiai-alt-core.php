@@ -3036,11 +3036,13 @@ class Opptiai_Alt_Core {
                         </div>
                         
                         <?php 
-                        // Show site usage for agency licenses when authenticated
+                        // Show site usage for agency licenses (can use license key or JWT auth)
                         $is_authenticated = $this->api_client->is_authenticated();
+                        $has_license = $this->api_client->has_active_license();
                         $is_agency_license = isset($license_data['organization']['plan']) && $license_data['organization']['plan'] === 'agency';
                         
-                        if ($is_agency_license && $is_authenticated) :
+                        // Show for agency licenses with either JWT auth or license key
+                        if ($is_agency_license && ($is_authenticated || $has_license)) :
                         ?>
                         <!-- License Site Usage Section -->
                         <div class="alttextai-settings-license-sites" id="alttextai-license-sites">
@@ -3059,16 +3061,6 @@ class Opptiai_Alt_Core {
                                     <?php esc_html_e('Loading site usage...', 'opptiai-alt-text-generator'); ?>
                                 </div>
                             </div>
-                        </div>
-                        <?php elseif ($is_agency_license && !$is_authenticated) : ?>
-                        <!-- Prompt to login for site usage -->
-                        <div class="alttextai-settings-license-sites-auth">
-                            <p class="alttextai-settings-license-sites-auth-text">
-                                <?php esc_html_e('Log in to view site usage and generation statistics for this license.', 'opptiai-alt-text-generator'); ?>
-                            </p>
-                            <button type="button" class="alttextai-settings-license-sites-auth-btn" data-action="show-auth-modal" data-auth-tab="login">
-                                <?php esc_html_e('Log In', 'opptiai-alt-text-generator'); ?>
-                            </button>
                         </div>
                         <?php endif; ?>
                         

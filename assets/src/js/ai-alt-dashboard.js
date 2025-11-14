@@ -857,8 +857,7 @@
             return; // Not on settings page or not agency license
         }
 
-        // Check if user is authenticated - in Admin tab, admin session is separate
-        // For Admin tab, we assume authenticated if we got this far (admin login was successful)
+        // Check if user is authenticated (JWT) or has active license (license key auth)
         const isAuthenticated = window.alttextai_ajax && (
             window.alttextai_ajax.is_authenticated === true ||
             (window.alttextai_ajax.user_data && Object.keys(window.alttextai_ajax.user_data).length > 0)
@@ -868,9 +867,16 @@
         const isAdminTab = $('.alttextai-admin-content').length > 0;
         const isAdminAuthenticated = isAdminTab; // If we're in admin content, admin is authenticated
 
-        if (!isAuthenticated && !isAdminAuthenticated) {
-            console.log('[AltText AI] Not authenticated, skipping license sites load');
-            return; // Don't load if not authenticated
+        // Check if there's an active license (license key authentication)
+        // Note: We can't directly check this from JS, but the backend will handle it
+        // So we'll always attempt the request if we're on the license page (it means license is active)
+
+        // Allow if authenticated (JWT) OR admin authenticated OR on license settings page (has license)
+        const isOnLicensePage = $sitesContent.length > 0; // If this element exists, we're on license page
+        
+        if (!isAuthenticated && !isAdminAuthenticated && !isOnLicensePage) {
+            console.log('[AltText AI] Not authenticated and not on license page, skipping license sites load');
+            return; // Don't load if not authenticated and not on license page
         }
 
         console.log('[AltText AI] Loading license site usage...', {
