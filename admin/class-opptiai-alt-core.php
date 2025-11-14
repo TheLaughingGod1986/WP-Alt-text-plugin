@@ -681,6 +681,7 @@ class Opptiai_Alt_Core {
             }
             
             $is_agency = ($plan_slug === 'agency');
+            $is_pro = ($plan_slug === 'pro' || $plan_slug === 'agency');
             
             // Show all tabs for registered users
             $tabs = [
@@ -689,9 +690,9 @@ class Opptiai_Alt_Core {
                 'guide'     => __('How to', 'opptiai-alt-text-generator'),
             ];
             
-            // For agency: add Admin tab (contains Debug Logs and Settings)
-            // For non-agency authenticated users: show Debug Logs and Settings tabs
-            if ($is_agency) {
+            // For agency and pro: add Admin tab (contains Debug Logs and Settings)
+            // For non-premium authenticated users: show Debug Logs and Settings tabs
+            if ($is_pro) {
                 $tabs['admin'] = __('Admin', 'opptiai-alt-text-generator');
             } elseif ($is_authenticated) {
                 $tabs['debug'] = __('Debug Logs', 'opptiai-alt-text-generator');
@@ -2040,8 +2041,8 @@ class Opptiai_Alt_Core {
                                 </div>
                     </div> <!-- End Table Card -->
                     
-                    <!-- Upgrade Card - Full Width -->
-                    <?php if (!$is_pro && !$is_agency) : ?>
+                    <!-- Upgrade Card - Full Width (hidden only for Agency, visible for Pro) -->
+                    <?php if (!$is_agency) : ?>
                     <div class="alttextai-library-upgrade-card">
                         <h3 class="alttextai-library-upgrade-title">
                             <?php esc_html_e('Upgrade to Pro', 'opptiai-alt-text-generator'); ?>
@@ -3005,6 +3006,20 @@ class Opptiai_Alt_Core {
                                 <div>
                                     <div class="alttextai-settings-license-title"><?php esc_html_e('License Active', 'opptiai-alt-text-generator'); ?></div>
                                     <div class="alttextai-settings-license-subtitle"><?php echo esc_html($org['name'] ?? ''); ?></div>
+                                    <?php 
+                                    // Display license key for Pro and Agency users
+                                    $license_key = $this->api_client->get_license_key();
+                                    if (!empty($license_key)) :
+                                        $license_plan = strtolower($org['plan'] ?? 'free');
+                                        if ($license_plan === 'pro' || $license_plan === 'agency') :
+                                    ?>
+                                    <div class="alttextai-settings-license-key" style="margin-top: 8px; font-size: 12px; color: #6b7280; font-family: monospace; word-break: break-all;">
+                                        <strong><?php esc_html_e('License Key:', 'opptiai-alt-text-generator'); ?></strong> <?php echo esc_html($license_key); ?>
+                                    </div>
+                                    <?php 
+                                        endif;
+                                    endif; 
+                                    ?>
                                 </div>
                             </div>
                             <button type="button" class="alttextai-settings-license-deactivate-btn" data-action="deactivate-license">
@@ -3228,8 +3243,8 @@ class Opptiai_Alt_Core {
                 </script>
 
                 <!-- Pro Upsell Banner -->
-                <?php if (!$is_pro && !$is_agency) : ?>
-                <div class="alttextai-settings-pro-upsell-banner">
+                    <?php if (!$is_agency) : ?>
+                    <div class="alttextai-settings-pro-upsell-banner">
                     <div class="alttextai-settings-pro-upsell-content">
                         <h3 class="alttextai-settings-pro-upsell-title">
                             <?php esc_html_e('Want unlimited AI alt text and faster processing?', 'opptiai-alt-text-generator'); ?>
@@ -3262,8 +3277,8 @@ class Opptiai_Alt_Core {
                 <?php endif; ?>
             </div>
             <?php endif; // End if/else for authentication check in settings tab ?>
-            <?php elseif ($tab === 'admin' && $is_agency) : ?>
-            <!-- Admin Tab - Debug Logs and Settings for Agency -->
+            <?php elseif ($tab === 'admin' && $is_pro_for_admin) : ?>
+            <!-- Admin Tab - Debug Logs and Settings for Pro and Agency -->
             <?php
             $admin_authenticated = $this->is_admin_authenticated();
             ?>
@@ -3280,7 +3295,13 @@ class Opptiai_Alt_Core {
                                 <?php esc_html_e('Admin Access', 'opptiai-alt-text-generator'); ?>
                             </h2>
                             <p class="alttextai-admin-login-subtitle">
-                                <?php esc_html_e('Enter your agency credentials to access Debug Logs and Settings.', 'opptiai-alt-text-generator'); ?>
+                                <?php 
+                                if ($is_agency_for_admin) {
+                                    esc_html_e('Enter your agency credentials to access Debug Logs and Settings.', 'opptiai-alt-text-generator');
+                                } else {
+                                    esc_html_e('Enter your pro credentials to access Debug Logs and Settings.', 'opptiai-alt-text-generator');
+                                }
+                                ?>
                             </p>
                         </div>
                         
