@@ -429,7 +429,9 @@ class AltText_AI_API_Client_V2 {
             // Provide more specific error message based on endpoint and error details
             $error_message = __('The server encountered an error processing your request. Please try again in a few minutes.', 'wp-alt-text-plugin');
             
-            if (strpos($endpoint, '/api/generate') !== false) {
+            // Check for generate endpoint (with or without leading slash)
+            $is_generate_endpoint = (strpos($endpoint, '/api/generate') !== false) || (strpos($endpoint, 'api/generate') !== false);
+            if ($is_generate_endpoint) {
                 // Check if it's an OpenAI API key issue (backend configuration problem)
                 if (strpos(strtolower($error_details), 'incorrect api key') !== false || 
                     strpos(strtolower($error_details), 'invalid api key') !== false ||
