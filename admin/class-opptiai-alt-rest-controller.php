@@ -237,7 +237,7 @@ class Opptiai_Alt_REST_Controller {
 		}
 
 		if ( '' === $alt ) {
-			return new \WP_Error( 'invalid_alt', __( 'ALT text cannot be empty.', 'opptiai-alt-text-generator' ), [ 'status' => 400 ] );
+			return new \WP_Error( 'invalid_alt', __( 'ALT text cannot be empty.', 'wp-alt-text-plugin' ), [ 'status' => 400 ] );
 		}
 
 		$alt_sanitized = wp_strip_all_tags( $alt );

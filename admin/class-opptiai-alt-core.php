@@ -138,9 +138,9 @@ class Opptiai_Alt_Core {
                 'limit' => $opts['token_limit'],
             ], DAY_IN_SECONDS);
             $this->send_notification(
-                __('AI Alt Text token usage alert', 'opptiai-alt-text-generator'),
+                __('AI Alt Text token usage alert', 'wp-alt-text-plugin'),
                 sprintf(
-                    __('Cumulative token usage has reached %1$d (threshold %2$d). Consider reviewing your OpenAI usage.', 'opptiai-alt-text-generator'),
+                    __('Cumulative token usage has reached %1$d (threshold %2$d). Consider reviewing your OpenAI usage.', 'wp-alt-text-plugin'),
                     $current['total'],
                     $opts['token_limit']
                 )
@@ -250,12 +250,12 @@ class Opptiai_Alt_Core {
         if ($page !== 'opptiai-alt-checkout') { return; }
 
         if (!$this->user_can_manage()) {
-            wp_die(__('You do not have permission to perform this action.', 'opptiai-alt-text-generator'));
+            wp_die(__('You do not have permission to perform this action.', 'wp-alt-text-plugin'));
         }
 
         $nonce = isset($_GET['_opptiai_alt_nonce']) && $_GET['_opptiai_alt_nonce'] !== null ? sanitize_text_field(wp_unslash($_GET['_opptiai_alt_nonce'])) : '';
         if (!$nonce || !wp_verify_nonce($nonce, 'opptiai_alt_direct_checkout')) {
-            wp_die(__('Security check failed. Please try again from the dashboard.', 'opptiai-alt-text-generator'));
+            wp_die(__('Security check failed. Please try again from the dashboard.', 'wp-alt-text-plugin'));
         }
 
         $plan_param = sanitize_key($_GET['plan'] ?? $_GET['type'] ?? '');
@@ -280,10 +280,10 @@ class Opptiai_Alt_Core {
         $result = $this->api_client->create_checkout_session($price_id, $success_url, $cancel_url);
 
         if (is_wp_error($result) || empty($result['url'])) {
-            $message = is_wp_error($result) ? $result->get_error_message() : __('Unable to start checkout. Please try again.', 'opptiai-alt-text-generator');
+            $message = is_wp_error($result) ? $result->get_error_message() : __('Unable to start checkout. Please try again.', 'wp-alt-text-plugin');
             $plan_param = sanitize_key($_GET['plan'] ?? $_GET['type'] ?? '');
             $query_args = [
-                'page'            => 'opptiai-alt-text-generator',
+                'page'            => 'wp-alt-text-plugin',
                 'checkout_error'  => rawurlencode($message),
             ];
             if (!empty($plan_param)) {
@@ -373,7 +373,7 @@ class Opptiai_Alt_Core {
      * Surface checkout success/error notices in WP Admin
      */
     public function maybe_render_checkout_notices() {
-        if (!isset($_GET['page']) || $_GET['page'] !== 'opptiai-alt-text-generator') {
+        if (!isset($_GET['page']) || $_GET['page'] !== 'wp-alt-text-plugin') {
             return;
         }
 
@@ -383,25 +383,25 @@ class Opptiai_Alt_Core {
             ?>
             <div class="notice notice-error">
                 <p>
-                    <strong><?php esc_html_e('Checkout Failed', 'opptiai-alt-text-generator'); ?>:</strong>
+                    <strong><?php esc_html_e('Checkout Failed', 'wp-alt-text-plugin'); ?>:</strong>
                     <?php echo esc_html($message); ?>
                     <?php if ($plan) : ?>
-                        (<?php echo esc_html(sprintf(__('Plan: %s', 'opptiai-alt-text-generator'), $plan)); ?>)
+                        (<?php echo esc_html(sprintf(__('Plan: %s', 'wp-alt-text-plugin'), $plan)); ?>)
                     <?php endif; ?>
                 </p>
-                <p><?php esc_html_e('Verify your AltText AI account credentials and Stripe configuration, then try again.', 'opptiai-alt-text-generator'); ?></p>
+                <p><?php esc_html_e('Verify your AltText AI account credentials and Stripe configuration, then try again.', 'wp-alt-text-plugin'); ?></p>
             </div>
             <?php
         } elseif (!empty($_GET['checkout']) && $_GET['checkout'] === 'success') {
             ?>
             <div class="notice notice-success is-dismissible">
-                <p><?php esc_html_e('Checkout session started. Complete the payment in the newly opened tab.', 'opptiai-alt-text-generator'); ?></p>
+                <p><?php esc_html_e('Checkout session started. Complete the payment in the newly opened tab.', 'wp-alt-text-plugin'); ?></p>
             </div>
             <?php
         } elseif (!empty($_GET['checkout']) && $_GET['checkout'] === 'cancel') {
             ?>
             <div class="notice notice-warning is-dismissible">
-                <p><?php esc_html_e('Checkout was cancelled. No changes were made to your plan.', 'opptiai-alt-text-generator'); ?></p>
+                <p><?php esc_html_e('Checkout was cancelled. No changes were made to your plan.', 'wp-alt-text-plugin'); ?></p>
             </div>
             <?php
         }
@@ -410,8 +410,8 @@ class Opptiai_Alt_Core {
         if (!empty($_GET['password_reset']) && $_GET['password_reset'] === 'requested') {
             ?>
             <div class="notice notice-success is-dismissible">
-                <p><strong><?php esc_html_e('Password Reset Email Sent', 'opptiai-alt-text-generator'); ?></strong></p>
-                <p><?php esc_html_e('Check your email inbox (and spam folder) for password reset instructions. The link will expire in 1 hour.', 'opptiai-alt-text-generator'); ?></p>
+                <p><strong><?php esc_html_e('Password Reset Email Sent', 'wp-alt-text-plugin'); ?></strong></p>
+                <p><?php esc_html_e('Check your email inbox (and spam folder) for password reset instructions. The link will expire in 1 hour.', 'wp-alt-text-plugin'); ?></p>
             </div>
             <?php
         }
@@ -419,8 +419,8 @@ class Opptiai_Alt_Core {
         if (!empty($_GET['password_reset']) && $_GET['password_reset'] === 'success') {
             ?>
             <div class="notice notice-success is-dismissible">
-                <p><strong><?php esc_html_e('Password Reset Successful', 'opptiai-alt-text-generator'); ?></strong></p>
-                <p><?php esc_html_e('Your password has been updated. You can now sign in with your new password.', 'opptiai-alt-text-generator'); ?></p>
+                <p><strong><?php esc_html_e('Password Reset Successful', 'wp-alt-text-plugin'); ?></strong></p>
+                <p><?php esc_html_e('Your password has been updated. You can now sign in with your new password.', 'wp-alt-text-plugin'); ?></p>
             </div>
             <?php
         }
@@ -429,8 +429,8 @@ class Opptiai_Alt_Core {
         if (!empty($_GET['subscription_updated'])) {
             ?>
             <div class="notice notice-success is-dismissible">
-                <p><strong><?php esc_html_e('Subscription Updated', 'opptiai-alt-text-generator'); ?></strong></p>
-                <p><?php esc_html_e('Your subscription information has been refreshed.', 'opptiai-alt-text-generator'); ?></p>
+                <p><strong><?php esc_html_e('Subscription Updated', 'wp-alt-text-plugin'); ?></strong></p>
+                <p><?php esc_html_e('Your subscription information has been refreshed.', 'wp-alt-text-plugin'); ?></p>
             </div>
             <?php
         }
@@ -438,8 +438,8 @@ class Opptiai_Alt_Core {
         if (!empty($_GET['portal_return']) && $_GET['portal_return'] === 'success') {
             ?>
             <div class="notice notice-success is-dismissible">
-                <p><strong><?php esc_html_e('Billing Updated', 'opptiai-alt-text-generator'); ?></strong></p>
-                <p><?php esc_html_e('Your billing information has been updated successfully. Changes may take a few moments to reflect.', 'opptiai-alt-text-generator'); ?></p>
+                <p><strong><?php esc_html_e('Billing Updated', 'wp-alt-text-plugin'); ?></strong></p>
+                <p><?php esc_html_e('Your billing information has been updated successfully. Changes may take a few moments to reflect.', 'wp-alt-text-plugin'); ?></p>
             </div>
             <?php
         }
@@ -453,7 +453,7 @@ class Opptiai_Alt_Core {
         delete_transient('opptiai_alt_token_notice');
         $total = number_format_i18n($this->token_notice['total'] ?? 0);
         $limit = number_format_i18n($this->token_notice['limit'] ?? 0);
-        echo '<div class="notice notice-warning is-dismissible"><p>' . esc_html(sprintf(__('AI Alt Text Generator has used %1$s tokens (threshold %2$s). Consider reviewing usage.', 'opptiai-alt-text-generator'), $total, $limit)) . '</p></div>';
+        echo '<div class="notice notice-warning is-dismissible"><p>' . esc_html(sprintf(__('AI Alt Text Generator has used %1$s tokens (threshold %2$s). Consider reviewing usage.', 'wp-alt-text-plugin'), $total, $limit)) . '</p></div>';
         $this->token_notice = null;
     }
 
@@ -466,9 +466,169 @@ class Opptiai_Alt_Core {
             return;
         }
         $message = $count === 1
-            ? __('1 image queued for background optimisation. The alt text will appear shortly.', 'opptiai-alt-text-generator')
-            : sprintf(__('Queued %d images for background optimisation. Alt text will be generated shortly.', 'opptiai-alt-text-generator'), $count);
+            ? __('1 image queued for background optimisation. The alt text will appear shortly.', 'wp-alt-text-plugin')
+            : sprintf(__('Queued %d images for background optimisation. Alt text will be generated shortly.', 'wp-alt-text-plugin'), $count);
         echo '<div class="notice notice-info is-dismissible"><p>' . esc_html($message) . '</p></div>';
+    }
+
+    /**
+     * Display external API compliance modal (WordPress.org requirement).
+     * Shows once as a popup after activation to inform users about external service usage.
+     * Rendered in admin_footer so it appears as a modal overlay.
+     */
+    public function maybe_render_external_api_notice() {
+        // Only show on plugin admin pages
+        $screen = get_current_screen();
+        if (!$screen || strpos($screen->id, 'opptiai-alt') === false && strpos($screen->id, 'ai-alt') === false) {
+            return;
+        }
+
+        // Check if modal has been dismissed (site-wide option, shows once for all users)
+        $dismissed = get_option('wp_alt_text_api_notice_dismissed', false);
+        if ($dismissed) {
+            return;
+        }
+
+        // Show modal popup if not dismissed
+        $api_url = 'https://alttext-ai-backend.onrender.com';
+        $privacy_url = 'https://oppti.ai/privacy';
+        $terms_url = 'https://oppti.ai/terms';
+        $nonce = wp_create_nonce('wp_alt_text_dismiss_api_notice');
+        ?>
+        <div id="wp-alt-text-api-notice-modal" class="alttextai-modal-backdrop" style="display: none; opacity: 0;" role="dialog" aria-modal="true" aria-labelledby="wp-alt-text-api-notice-title" aria-describedby="wp-alt-text-api-notice-desc">
+            <div class="alttextai-upgrade-modal__content wp-alt-text-api-notice-modal-content" style="max-width: 600px;">
+                <div class="alttextai-upgrade-modal__header">
+                    <div class="alttextai-upgrade-modal__header-content">
+                        <h2 id="wp-alt-text-api-notice-title"><?php esc_html_e('External Service Notice', 'wp-alt-text-plugin'); ?></h2>
+                    </div>
+                    <button type="button" class="alttextai-modal-close" onclick="wpAltTextCloseApiNotice();" aria-label="<?php esc_attr_e('Close notice', 'wp-alt-text-plugin'); ?>">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                            <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="alttextai-upgrade-modal__body" id="wp-alt-text-api-notice-desc" style="padding: 24px;">
+                    <p style="margin: 0 0 20px 0; color: #374151; line-height: 1.6; font-size: 14px;">
+                        <?php esc_html_e('This plugin connects to an external API service to generate alt text. Image data is transmitted securely to process generation. No personal user data is collected.', 'wp-alt-text-plugin'); ?>
+                    </p>
+                    
+                    <div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 16px; margin-bottom: 0;">
+                        <p style="margin: 0 0 12px 0; font-weight: 600; color: #111827; font-size: 14px;">
+                            <?php esc_html_e('API Endpoint:', 'wp-alt-text-plugin'); ?>
+                        </p>
+                        <p style="margin: 0 0 16px 0; color: #6B7280; font-size: 13px; font-family: monospace; word-break: break-all; line-height: 1.5;">
+                            <?php echo esc_html($api_url); ?>
+                        </p>
+                        
+                        <p style="margin: 0 0 8px 0; font-weight: 600; color: #111827; font-size: 14px;">
+                            <?php esc_html_e('Privacy Policy:', 'wp-alt-text-plugin'); ?>
+                        </p>
+                        <p style="margin: 0 0 16px 0;">
+                            <a href="<?php echo esc_url($privacy_url); ?>" target="_blank" rel="noopener" style="color: #2563EB; text-decoration: underline; font-size: 13px;">
+                                <?php echo esc_html($privacy_url); ?>
+                            </a>
+                        </p>
+                        
+                        <p style="margin: 0 0 8px 0; font-weight: 600; color: #111827; font-size: 14px;">
+                            <?php esc_html_e('Terms of Service:', 'wp-alt-text-plugin'); ?>
+                        </p>
+                        <p style="margin: 0;">
+                            <a href="<?php echo esc_url($terms_url); ?>" target="_blank" rel="noopener" style="color: #2563EB; text-decoration: underline; font-size: 13px;">
+                                <?php echo esc_html($terms_url); ?>
+                            </a>
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="alttextai-upgrade-modal__footer" style="padding: 20px 24px; border-top: 1px solid #E5E7EB; text-align: right; background: #FFFFFF;">
+                    <button type="button" class="button button-primary" onclick="wpAltTextCloseApiNotice();" style="min-width: 100px;">
+                        <?php esc_html_e('Got it', 'wp-alt-text-plugin'); ?>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+        (function($) {
+            // Ensure jQuery and ajaxurl are available
+            if (typeof $ === 'undefined') {
+                console.error('[WP Alt Text AI] jQuery is required for the API notice modal');
+                return;
+            }
+            
+            // Show modal on page load with a small delay to ensure styles are loaded
+            $(document).ready(function() {
+                var $modal = $('#wp-alt-text-api-notice-modal');
+                if ($modal.length === 0) {
+                    return;
+                }
+                
+                // Small delay to ensure CSS is loaded
+                setTimeout(function() {
+                    $modal.css({
+                        'display': 'flex',
+                        'opacity': '0'
+                    }).animate({
+                        'opacity': '1'
+                    }, 300);
+                }, 500);
+            });
+            
+            // Handle close button
+            window.wpAltTextCloseApiNotice = function() {
+                var $modal = $('#wp-alt-text-api-notice-modal');
+                if ($modal.length === 0) {
+                    return;
+                }
+                
+                // Fade out and remove
+                $modal.animate({
+                    'opacity': '0'
+                }, 200, function() {
+                    // Dismiss via AJAX
+                    var ajaxUrl = (typeof ajaxurl !== 'undefined') ? ajaxurl : '<?php echo esc_js(admin_url('admin-ajax.php')); ?>';
+                    $.ajax({
+                        url: ajaxUrl,
+                        type: 'POST',
+                        data: {
+                            action: 'wp_alt_text_dismiss_api_notice',
+                            nonce: '<?php echo esc_js($nonce); ?>'
+                        },
+                        success: function(response) {
+                            console.log('[WP Alt Text AI] API notice dismissed');
+                        },
+                        error: function() {
+                            console.log('[WP Alt Text AI] Failed to dismiss notice');
+                        }
+                    });
+                    
+                    // Remove modal from DOM
+                    $modal.remove();
+                });
+            };
+            
+            // Close on backdrop click (use event delegation)
+            $(document).on('click', '#wp-alt-text-api-notice-modal.alttextai-modal-backdrop', function(e) {
+                if (e.target === this) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    wpAltTextCloseApiNotice();
+                }
+            });
+            
+            // Close on ESC key
+            $(document).on('keydown', function(e) {
+                if (e.key === 'Escape' || e.keyCode === 27) {
+                    var $modal = $('#wp-alt-text-api-notice-modal');
+                    if ($modal.length > 0 && $modal.is(':visible')) {
+                        wpAltTextCloseApiNotice();
+                    }
+                }
+            });
+        })(jQuery);
+        </script>
+        <?php
     }
 
     public function deactivate(){
@@ -656,13 +816,13 @@ class Opptiai_Alt_Core {
         // Build tabs - show only Dashboard and How to if no registered user
         if (!$has_registered_user) {
             $tabs = [
-                'dashboard' => __('Dashboard', 'opptiai-alt-text-generator'),
-                'guide'     => __('How to', 'opptiai-alt-text-generator'),
+                'dashboard' => __('Dashboard', 'wp-alt-text-plugin'),
+                'guide'     => __('How to', 'wp-alt-text-plugin'),
             ];
             
             // Force dashboard tab if trying to access restricted tabs
             $allowed_tabs = ['dashboard', 'guide'];
-            $tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'dashboard';
+        $tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'dashboard';
             if (!in_array($tab, $allowed_tabs)) {
                 $tab = 'dashboard';
             }
@@ -688,23 +848,23 @@ class Opptiai_Alt_Core {
             $is_pro = ($plan_slug === 'pro' || $plan_slug === 'agency');
             
             // Show all tabs for registered users
-            $tabs = [
-                'dashboard' => __('Dashboard', 'opptiai-alt-text-generator'),
-                'library'   => __('ALT Library', 'opptiai-alt-text-generator'),
-                'guide'     => __('How to', 'opptiai-alt-text-generator'),
+        $tabs = [
+                'dashboard' => __('Dashboard', 'wp-alt-text-plugin'),
+                'library'   => __('ALT Library', 'wp-alt-text-plugin'),
+                'guide'     => __('How to', 'wp-alt-text-plugin'),
             ];
             
             // For agency and pro: add Admin tab (contains Debug Logs and Settings)
             // For non-premium authenticated users: show Debug Logs and Settings tabs
             if ($is_pro) {
-                $tabs['admin'] = __('Admin', 'opptiai-alt-text-generator');
+                $tabs['admin'] = __('Admin', 'wp-alt-text-plugin');
             } elseif ($is_authenticated) {
-                $tabs['debug'] = __('Debug Logs', 'opptiai-alt-text-generator');
-                $tabs['settings'] = __('Settings', 'opptiai-alt-text-generator');
+                $tabs['debug'] = __('Debug Logs', 'wp-alt-text-plugin');
+                $tabs['settings'] = __('Settings', 'wp-alt-text-plugin');
             }
             
             $tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'dashboard';
-            
+
             // If trying to access restricted tabs, redirect to dashboard
             if (!in_array($tab, array_keys($tabs))) {
                 $tab = 'dashboard';
@@ -740,8 +900,8 @@ class Opptiai_Alt_Core {
                             </defs>
                         </svg>
                         <div class="alttextai-logo-content">
-                            <span class="alttextai-logo-text"><?php esc_html_e('AltText AI by OpptiAI', 'opptiai-alt-text-generator'); ?></span>
-                            <span class="alttextai-logo-tagline"><?php esc_html_e('WordPress AI Tools', 'opptiai-alt-text-generator'); ?></span>
+                            <span class="alttextai-logo-text"><?php esc_html_e('AltText AI by OpptiAI', 'wp-alt-text-plugin'); ?></span>
+                            <span class="alttextai-logo-tagline"><?php esc_html_e('WordPress AI Tools', 'wp-alt-text-plugin'); ?></span>
                         </div>
                     </div>
                     <nav class="alttextai-nav">
@@ -769,25 +929,25 @@ class Opptiai_Alt_Core {
                             // If license-only mode (no personal login), show license info
                             if ($has_license && !$is_authenticated) {
                                 $license_data = $this->api_client->get_license_data();
-                                $connected_email = $license_data['organization']['name'] ?? __('License Active', 'opptiai-alt-text-generator');
+                                $connected_email = $license_data['organization']['name'] ?? __('License Active', 'wp-alt-text-plugin');
                             }
                         ?>
                             <!-- Compact Account Bar in Header -->
                             <div class="alttextai-header-account-bar">
-                                <span class="alttextai-header-account-email"><?php echo esc_html($connected_email ?: __('Connected', 'opptiai-alt-text-generator')); ?></span>
+                                <span class="alttextai-header-account-email"><?php echo esc_html($connected_email ?: __('Connected', 'wp-alt-text-plugin')); ?></span>
                                 <span class="alttextai-header-plan-badge"><?php echo esc_html($plan_label); ?></span>
                                 <?php if ($plan_slug === 'free' && !$has_license) : ?>
                                     <button type="button" class="alttextai-header-upgrade-btn" data-action="show-upgrade-modal">
-                                        <?php esc_html_e('Upgrade Plan', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Upgrade Plan', 'wp-alt-text-plugin'); ?>
                                     </button>
                                 <?php elseif (!empty($billing_portal) && $is_authenticated) : ?>
                                     <button type="button" class="alttextai-header-manage-btn" data-action="open-billing-portal">
-                                        <?php esc_html_e('Manage', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Manage', 'wp-alt-text-plugin'); ?>
                                     </button>
                                 <?php endif; ?>
                                 <?php if ($is_authenticated) : ?>
                                 <button type="button" class="alttextai-header-disconnect-btn" data-action="disconnect-account">
-                                    <?php esc_html_e('Disconnect', 'opptiai-alt-text-generator'); ?>
+                                    <?php esc_html_e('Disconnect', 'wp-alt-text-plugin'); ?>
                                 </button>
                                 <?php endif; ?>
                             </div>
@@ -798,7 +958,7 @@ class Opptiai_Alt_Core {
                                     <path d="M5 11L2 8L5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                                     <path d="M2 8H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                                 </svg>
-                                <span><?php esc_html_e('Login', 'opptiai-alt-text-generator'); ?></span>
+                                <span><?php esc_html_e('Login', 'wp-alt-text-plugin'); ?></span>
                             </button>
                         <?php endif; ?>
                 </div>
@@ -816,7 +976,7 @@ class Opptiai_Alt_Core {
                 /* translators: %s: Percentage value */
                 $coverage_text = $coverage_display . '%';
                 /* translators: %s: Percentage value */
-                $coverage_value_text = sprintf(__('ALT coverage at %s', 'opptiai-alt-text-generator'), $coverage_text);
+                $coverage_value_text = sprintf(__('ALT coverage at %s', 'wp-alt-text-plugin'), $coverage_text);
             ?>
 
             <?php
@@ -988,22 +1148,22 @@ class Opptiai_Alt_Core {
                      <div class="alttextai-hero-section">
                          <div class="alttextai-hero-content">
                              <h2 class="alttextai-hero-title">
-                                 <?php esc_html_e('🎉 Boost Your Site\'s SEO Automatically', 'opptiai-alt-text-generator'); ?>
+                                 <?php esc_html_e('🎉 Boost Your Site\'s SEO Automatically', 'wp-alt-text-plugin'); ?>
                              </h2>
                              <p class="alttextai-hero-subtitle">
-                                 <?php esc_html_e('Let AI write perfect, accessibility-friendly alt text for every image — free each month.', 'opptiai-alt-text-generator'); ?>
+                                 <?php esc_html_e('Let AI write perfect, accessibility-friendly alt text for every image — free each month.', 'wp-alt-text-plugin'); ?>
                              </p>
                          </div>
                          <div class="alttextai-hero-actions">
                              <button type="button" class="alttextai-hero-btn-primary" id="alttextai-show-auth-banner-btn">
-                                <?php esc_html_e('Start Free — Generate 50 AI Descriptions', 'opptiai-alt-text-generator'); ?>
+                                <?php esc_html_e('Start Free — Generate 50 AI Descriptions', 'wp-alt-text-plugin'); ?>
                              </button>
                              <button type="button" class="alttextai-hero-link-secondary" id="alttextai-show-auth-login-btn">
-                                 <?php esc_html_e('Already a user? Log in', 'opptiai-alt-text-generator'); ?>
+                                 <?php esc_html_e('Already a user? Log in', 'wp-alt-text-plugin'); ?>
                              </button>
                          </div>
                          <div class="alttextai-hero-micro-copy">
-                             <?php esc_html_e('⚡ SEO Boost · 🦾 Accessibility · 🕒 Saves Hours', 'opptiai-alt-text-generator'); ?>
+                             <?php esc_html_e('⚡ SEO Boost · 🦾 Accessibility · 🕒 Saves Hours', 'wp-alt-text-plugin'); ?>
                          </div>
                      </div>
                      <?php endif; ?>
@@ -1016,8 +1176,8 @@ class Opptiai_Alt_Core {
                     <div class="alttextai-premium-dashboard">
                         <!-- Subtle Header Section -->
                         <div class="alttextai-dashboard-header-section">
-                            <h1 class="alttextai-dashboard-title"><?php esc_html_e('Dashboard', 'opptiai-alt-text-generator'); ?></h1>
-                            <p class="alttextai-dashboard-subtitle"><?php esc_html_e('Automated, accessible alt text generation for your WordPress media library.', 'opptiai-alt-text-generator'); ?></p>
+                            <h1 class="alttextai-dashboard-title"><?php esc_html_e('Dashboard', 'wp-alt-text-plugin'); ?></h1>
+                            <p class="alttextai-dashboard-subtitle"><?php esc_html_e('Automated, accessible alt text generation for your WordPress media library.', 'wp-alt-text-plugin'); ?></p>
                         </div>
 
                         <?php 
@@ -1041,13 +1201,13 @@ class Opptiai_Alt_Core {
                             $is_pro = ($plan_slug === 'pro' || $plan_slug === 'agency');
                             
                             if ($plan_slug === 'agency') {
-                                $plan_badge_text = esc_html__('AGENCY', 'opptiai-alt-text-generator');
+                                $plan_badge_text = esc_html__('AGENCY', 'wp-alt-text-plugin');
                                 $plan_badge_class .= ' alttextai-usage-plan-badge--agency';
                             } elseif ($plan_slug === 'pro') {
-                                $plan_badge_text = esc_html__('PRO', 'opptiai-alt-text-generator');
+                                $plan_badge_text = esc_html__('PRO', 'wp-alt-text-plugin');
                                 $plan_badge_class .= ' alttextai-usage-plan-badge--pro';
                             } else {
-                                $plan_badge_text = esc_html__('FREE', 'opptiai-alt-text-generator');
+                                $plan_badge_text = esc_html__('FREE', 'wp-alt-text-plugin');
                                 $plan_badge_class .= ' alttextai-usage-plan-badge--free';
                             }
                         ?>
@@ -1057,7 +1217,7 @@ class Opptiai_Alt_Core {
                             <div class="alttextai-premium-card alttextai-usage-card<?php echo $is_agency ? ' alttextai-usage-card--full-width' : ''; ?>">
                                 <?php if ($is_agency) : ?>
                                 <!-- Soft purple gradient badge for Agency -->
-                                <span class="alttextai-usage-plan-badge alttextai-usage-plan-badge--agency-polished"><?php echo esc_html__('AGENCY', 'opptiai-alt-text-generator'); ?></span>
+                                <span class="alttextai-usage-plan-badge alttextai-usage-plan-badge--agency-polished"><?php echo esc_html__('AGENCY', 'wp-alt-text-plugin'); ?></span>
                                 <?php else : ?>
                                 <span class="<?php echo esc_attr($plan_badge_class); ?>"><?php echo $plan_badge_text; ?></span>
                                 <?php endif; ?>
@@ -1074,21 +1234,21 @@ class Opptiai_Alt_Core {
                                 <!-- Full-width agency layout - Polished Design -->
                                 <div class="alttextai-usage-card-layout-full">
                                     <div class="alttextai-usage-card-left">
-                                        <h3 class="alttextai-usage-card-title"><?php esc_html_e('Alt Text Generated This Month', 'opptiai-alt-text-generator'); ?></h3>
+                                        <h3 class="alttextai-usage-card-title"><?php esc_html_e('Alt Text Generated This Month', 'wp-alt-text-plugin'); ?></h3>
                                         <div class="alttextai-usage-card-stats">
                                             <div class="alttextai-usage-stat-item">
                                                 <div class="alttextai-usage-stat-value"><?php echo esc_html(number_format_i18n($usage_stats['used'])); ?></div>
-                                                <div class="alttextai-usage-stat-label"><?php esc_html_e('Generated', 'opptiai-alt-text-generator'); ?></div>
+                                                <div class="alttextai-usage-stat-label"><?php esc_html_e('Generated', 'wp-alt-text-plugin'); ?></div>
                                             </div>
                                             <div class="alttextai-usage-stat-divider"></div>
                                             <div class="alttextai-usage-stat-item">
                                                 <div class="alttextai-usage-stat-value"><?php echo esc_html(number_format_i18n($usage_stats['limit'])); ?></div>
-                                                <div class="alttextai-usage-stat-label"><?php esc_html_e('Monthly Limit', 'opptiai-alt-text-generator'); ?></div>
+                                                <div class="alttextai-usage-stat-label"><?php esc_html_e('Monthly Limit', 'wp-alt-text-plugin'); ?></div>
                                             </div>
                                             <div class="alttextai-usage-stat-divider"></div>
                                             <div class="alttextai-usage-stat-item">
                                                 <div class="alttextai-usage-stat-value"><?php echo esc_html(number_format_i18n($usage_stats['remaining'] ?? 0)); ?></div>
-                                                <div class="alttextai-usage-stat-label"><?php esc_html_e('Remaining', 'opptiai-alt-text-generator'); ?></div>
+                                                <div class="alttextai-usage-stat-label"><?php esc_html_e('Remaining', 'wp-alt-text-plugin'); ?></div>
                                             </div>
                                         </div>
                                         <div class="alttextai-usage-card-reset">
@@ -1103,12 +1263,12 @@ class Opptiai_Alt_Core {
                                                 $reset_timestamp = strtotime($reset_date);
                                                 if ($reset_timestamp !== false) {
                                                     $formatted_date = date_i18n('F j, Y', $reset_timestamp);
-                                                    printf(esc_html__('Resets %s', 'opptiai-alt-text-generator'), esc_html($formatted_date));
+                                                    printf(esc_html__('Resets %s', 'wp-alt-text-plugin'), esc_html($formatted_date));
                                                 } else {
-                                                    printf(esc_html__('Resets %s', 'opptiai-alt-text-generator'), esc_html($reset_date));
+                                                    printf(esc_html__('Resets %s', 'wp-alt-text-plugin'), esc_html($reset_date));
                                                 }
                                             } else {
-                                                esc_html_e('Resets monthly', 'opptiai-alt-text-generator');
+                                                esc_html_e('Resets monthly', 'wp-alt-text-plugin');
                                             }
                                             ?>
                                             </span>
@@ -1124,14 +1284,14 @@ class Opptiai_Alt_Core {
                                                     <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                                     <circle cx="8" cy="8" r="2" fill="currentColor"/>
                                                 </svg>
-                                                <?php esc_html_e('Manage Billing', 'opptiai-alt-text-generator'); ?>
+                                                <?php esc_html_e('Manage Billing', 'wp-alt-text-plugin'); ?>
                                             </a>
                                         </div>
                                         <?php endif; ?>
                                     </div>
                                     <div class="alttextai-usage-card-divider" aria-hidden="true"></div>
                                     <div class="alttextai-usage-card-right">
-                                        <div class="alttextai-usage-ring-wrapper">
+                                <div class="alttextai-usage-ring-wrapper">
                                             <?php
                                             // Modern thin stroke ring gauge for agency
                                             $agency_radius = 60;
@@ -1141,7 +1301,7 @@ class Opptiai_Alt_Core {
                                             ?>
                                             <div class="alttextai-circular-progress alttextai-circular-progress--agency" 
                                                  data-percentage="<?php echo esc_attr($percentage); ?>"
-                                                 aria-label="<?php printf(esc_attr__('Credits used: %s%%', 'opptiai-alt-text-generator'), esc_attr($percentage_display)); ?>"
+                                                 aria-label="<?php printf(esc_attr__('Credits used: %s%%', 'wp-alt-text-plugin'), esc_attr($percentage_display)); ?>"
                                                  role="progressbar"
                                                  aria-valuenow="<?php echo esc_attr($percentage); ?>"
                                                  aria-valuemin="0"
@@ -1155,10 +1315,10 @@ class Opptiai_Alt_Core {
                                                     </defs>
                                                     <!-- Background circle -->
                                                     <circle 
-                                                        cx="70" 
-                                                        cy="70" 
+                                                    cx="70" 
+                                                    cy="70" 
                                                         r="<?php echo esc_attr($agency_radius); ?>" 
-                                                        fill="none" 
+                                                    fill="none"
                                                         stroke="#f3f4f6" 
                                                         stroke-width="8" 
                                                         class="alttextai-circular-progress-bg" />
@@ -1170,7 +1330,7 @@ class Opptiai_Alt_Core {
                                                         fill="none"
                                                         stroke="url(#<?php echo esc_attr($agency_gradient_id); ?>)"
                                                         stroke-width="8"
-                                                        stroke-linecap="round"
+                                                    stroke-linecap="round"
                                                         stroke-dasharray="<?php echo esc_attr($agency_circumference); ?>"
                                                         stroke-dashoffset="<?php echo esc_attr($agency_stroke_dashoffset); ?>"
                                                         class="alttextai-circular-progress-bar"
@@ -1180,7 +1340,7 @@ class Opptiai_Alt_Core {
                                                 </svg>
                                                 <div class="alttextai-circular-progress-text">
                                                     <div class="alttextai-circular-progress-percent"><?php echo esc_html($percentage_display); ?>%</div>
-                                                    <div class="alttextai-circular-progress-label"><?php esc_html_e('Credits Used', 'opptiai-alt-text-generator'); ?></div>
+                                                    <div class="alttextai-circular-progress-label"><?php esc_html_e('Credits Used', 'wp-alt-text-plugin'); ?></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1188,7 +1348,7 @@ class Opptiai_Alt_Core {
                                 </div>
                                 <?php else : ?>
                                 <!-- Standard vertical layout -->
-                                <h3 class="alttextai-usage-card-title"><?php esc_html_e('Alt Text Generated This Month', 'opptiai-alt-text-generator'); ?></h3>
+                                <h3 class="alttextai-usage-card-title"><?php esc_html_e('Alt Text Generated This Month', 'wp-alt-text-plugin'); ?></h3>
                                 <div class="alttextai-usage-ring-wrapper">
                                     <div class="alttextai-circular-progress" data-percentage="<?php echo esc_attr($percentage); ?>">
                                         <svg class="alttextai-circular-progress-svg" viewBox="0 0 120 120">
@@ -1224,10 +1384,10 @@ class Opptiai_Alt_Core {
                                         </svg>
                                         <div class="alttextai-circular-progress-text">
                                             <div class="alttextai-circular-progress-percent"><?php echo esc_html($percentage_display); ?>%</div>
-                                            <div class="alttextai-circular-progress-label"><?php esc_html_e('credits used', 'opptiai-alt-text-generator'); ?></div>
+                                            <div class="alttextai-circular-progress-label"><?php esc_html_e('credits used', 'wp-alt-text-plugin'); ?></div>
                                         </div>
                                     </div>
-                                    <button type="button" class="alttextai-usage-tooltip" aria-label="<?php esc_attr_e('How quotas work', 'opptiai-alt-text-generator'); ?>" title="<?php esc_attr_e('Your monthly quota resets on the first of each month. Upgrade to Pro for unlimited generations.', 'opptiai-alt-text-generator'); ?>">
+                                    <button type="button" class="alttextai-usage-tooltip" aria-label="<?php esc_attr_e('How quotas work', 'wp-alt-text-plugin'); ?>" title="<?php esc_attr_e('Your monthly quota resets on the first of each month. Upgrade to Pro for unlimited generations.', 'wp-alt-text-plugin'); ?>">
                                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                             <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                             <path d="M8 5V5.01M8 11H8.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -1247,17 +1407,17 @@ class Opptiai_Alt_Core {
                                             if ($reset_timestamp !== false) {
                                                 $formatted_date = date_i18n('F j, Y', $reset_timestamp);
                                                 printf(
-                                                    esc_html__('Resets %s', 'opptiai-alt-text-generator'),
+                                                    esc_html__('Resets %s', 'wp-alt-text-plugin'),
                                                     esc_html($formatted_date)
                                                 );
                                             } else {
                                                 printf(
-                                                    esc_html__('Resets %s', 'opptiai-alt-text-generator'),
+                                                    esc_html__('Resets %s', 'wp-alt-text-plugin'),
                                                     esc_html($reset_date)
                                                 );
                                             }
                                         } else {
-                                            esc_html_e('Resets monthly', 'opptiai-alt-text-generator');
+                                            esc_html_e('Resets monthly', 'wp-alt-text-plugin');
                                         }
                                         ?>
                                     </div>
@@ -1267,12 +1427,12 @@ class Opptiai_Alt_Core {
                                     $is_pro = ($plan_slug === 'pro' || $plan_slug === 'agency');
                                     ?>
                                     <?php if (!$is_pro) : ?>
-                                        <a href="#" class="alttextai-usage-upgrade-link" data-action="show-upgrade-modal">
-                                            <?php esc_html_e('Upgrade for unlimited images', 'opptiai-alt-text-generator'); ?> →
-                                        </a>
+                                    <a href="#" class="alttextai-usage-upgrade-link" data-action="show-upgrade-modal">
+                                            <?php esc_html_e('Upgrade for unlimited images', 'wp-alt-text-plugin'); ?> →
+                                    </a>
                                     <?php elseif (!empty($billing_portal)) : ?>
                                         <a href="#" class="alttextai-usage-billing-link" data-action="open-billing-portal">
-                                            <?php esc_html_e('Manage billing & invoices', 'opptiai-alt-text-generator'); ?> →
+                                            <?php esc_html_e('Manage billing & invoices', 'wp-alt-text-plugin'); ?> →
                                         </a>
                                     <?php endif; ?>
                                 </div>
@@ -1282,49 +1442,49 @@ class Opptiai_Alt_Core {
                             <!-- Premium Upsell Card -->
                             <?php if (!$is_agency) : ?>
                             <div class="alttextai-premium-card alttextai-upsell-card">
-                                <h3 class="alttextai-upsell-title"><?php esc_html_e('Upgrade to Pro — Unlock Unlimited AI Power', 'opptiai-alt-text-generator'); ?></h3>
+                                <h3 class="alttextai-upsell-title"><?php esc_html_e('Upgrade to Pro — Unlock Unlimited AI Power', 'wp-alt-text-plugin'); ?></h3>
                                 <ul class="alttextai-upsell-features">
                                     <li>
                                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                                             <circle cx="10" cy="10" r="10" fill="#0EAD4B"/>
                                             <path d="M6 10l2.5 2.5L14 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                         </svg>
-                                        <?php esc_html_e('Unlimited image generations', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Unlimited image generations', 'wp-alt-text-plugin'); ?>
                                     </li>
                                     <li>
                                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                                             <circle cx="10" cy="10" r="10" fill="#0EAD4B"/>
                                             <path d="M6 10l2.5 2.5L14 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                         </svg>
-                                        <?php esc_html_e('Priority queue processing', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Priority queue processing', 'wp-alt-text-plugin'); ?>
                                     </li>
                                     <li>
                                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                                             <circle cx="10" cy="10" r="10" fill="#0EAD4B"/>
                                             <path d="M6 10l2.5 2.5L14 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                         </svg>
-                                        <?php esc_html_e('Bulk optimisation for large libraries', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Bulk optimisation for large libraries', 'wp-alt-text-plugin'); ?>
                                     </li>
                                     <li>
                                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                                             <circle cx="10" cy="10" r="10" fill="#0EAD4B"/>
                                             <path d="M6 10l2.5 2.5L14 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                         </svg>
-                                        <?php esc_html_e('Multilingual AI alt text', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Multilingual AI alt text', 'wp-alt-text-plugin'); ?>
                                     </li>
                                     <li>
                                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                                             <circle cx="10" cy="10" r="10" fill="#0EAD4B"/>
                                             <path d="M6 10l2.5 2.5L14 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                         </svg>
-                                        <?php esc_html_e('Faster & more descriptive alt text from improved Vision models', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Faster & more descriptive alt text from improved Vision models', 'wp-alt-text-plugin'); ?>
                                     </li>
                                 </ul>
                                 <button type="button" class="alttextai-upsell-cta alttextai-upsell-cta--large" data-action="show-upgrade-modal">
-                                    <?php esc_html_e('Pro or Agency', 'opptiai-alt-text-generator'); ?>
+                                    <?php esc_html_e('Pro or Agency', 'wp-alt-text-plugin'); ?>
                                 </button>
                                 <p class="alttextai-upsell-microcopy">
-                                    <?php esc_html_e('Save 15+ hours/month with automated SEO alt generation.', 'opptiai-alt-text-generator'); ?>
+                                    <?php esc_html_e('Save 15+ hours/month with automated SEO alt generation.', 'wp-alt-text-plugin'); ?>
                                 </p>
                             </div>
                             <?php endif; ?>
@@ -1350,8 +1510,8 @@ class Opptiai_Alt_Core {
                                     </svg>
                                 </div>
                                 <div class="alttextai-metric-value"><?php echo esc_html($hours_saved); ?> hrs</div>
-                                <div class="alttextai-metric-label"><?php esc_html_e('TIME SAVED', 'opptiai-alt-text-generator'); ?></div>
-                                <div class="alttextai-metric-description"><?php esc_html_e('vs manual optimisation', 'opptiai-alt-text-generator'); ?></div>
+                                <div class="alttextai-metric-label"><?php esc_html_e('TIME SAVED', 'wp-alt-text-plugin'); ?></div>
+                                <div class="alttextai-metric-description"><?php esc_html_e('vs manual optimisation', 'wp-alt-text-plugin'); ?></div>
                             </div>
                             
                             <!-- Images Optimized Card -->
@@ -1363,8 +1523,8 @@ class Opptiai_Alt_Core {
                                     </svg>
                                 </div>
                                 <div class="alttextai-metric-value"><?php echo esc_html($optimized); ?></div>
-                                <div class="alttextai-metric-label"><?php esc_html_e('IMAGES OPTIMIZED', 'opptiai-alt-text-generator'); ?></div>
-                                <div class="alttextai-metric-description"><?php esc_html_e('with generated alt text', 'opptiai-alt-text-generator'); ?></div>
+                                <div class="alttextai-metric-label"><?php esc_html_e('IMAGES OPTIMIZED', 'wp-alt-text-plugin'); ?></div>
+                                <div class="alttextai-metric-description"><?php esc_html_e('with generated alt text', 'wp-alt-text-plugin'); ?></div>
                             </div>
                             
                             <!-- Estimated SEO Impact Card -->
@@ -1375,7 +1535,7 @@ class Opptiai_Alt_Core {
                                     </svg>
                                 </div>
                                 <div class="alttextai-metric-value"><?php echo esc_html($coverage_percent); ?>%</div>
-                                <div class="alttextai-metric-label"><?php esc_html_e('ESTIMATED SEO IMPACT', 'opptiai-alt-text-generator'); ?></div>
+                                <div class="alttextai-metric-label"><?php esc_html_e('ESTIMATED SEO IMPACT', 'wp-alt-text-plugin'); ?></div>
                             </div>
                         </div>
                         
@@ -1388,9 +1548,9 @@ class Opptiai_Alt_Core {
                             <span>
                                 <?php 
                                 $site_name = trim(get_bloginfo('name'));
-                                $site_label = $site_name !== '' ? $site_name : __('this WordPress site', 'opptiai-alt-text-generator');
+                                $site_label = $site_name !== '' ? $site_name : __('this WordPress site', 'wp-alt-text-plugin');
                                 printf(
-                                    esc_html__('Quota shared across all users on %s', 'opptiai-alt-text-generator'),
+                                    esc_html__('Quota shared across all users on %s', 'wp-alt-text-plugin'),
                                     '<strong>' . esc_html($site_label) . '</strong>'
                                 );
                                 ?>
@@ -1427,7 +1587,7 @@ class Opptiai_Alt_Core {
                                     if ($total_images > 0) {
                                         if ($remaining_imgs > 0) {
                                             printf(
-                                                esc_html__('%1$d of %2$d images optimized', 'opptiai-alt-text-generator'),
+                                                esc_html__('%1$d of %2$d images optimized', 'wp-alt-text-plugin'),
                                                 $optimized,
                                                 $total_images
                                             );
@@ -1435,12 +1595,12 @@ class Opptiai_Alt_Core {
                                             // Show checkmark icon for "All images optimized!"
                                             echo '<span class="alttextai-optimization-check-icon">✔</span> ';
                                             printf(
-                                                esc_html__('All %1$d images optimized!', 'opptiai-alt-text-generator'),
+                                                esc_html__('All %1$d images optimized!', 'wp-alt-text-plugin'),
                                                 $total_images
                                             );
                                         }
                                     } else {
-                                        esc_html_e('Ready to optimize images', 'opptiai-alt-text-generator');
+                                        esc_html_e('Ready to optimize images', 'wp-alt-text-plugin');
                                     }
                                     ?>
                                 </h2>
@@ -1453,47 +1613,47 @@ class Opptiai_Alt_Core {
                                     </div>
                                     <div class="alttextai-optimization-stats">
                                         <div class="alttextai-optimization-stat">
-                                            <span class="alttextai-optimization-stat-label"><?php esc_html_e('Optimized', 'opptiai-alt-text-generator'); ?></span>
+                                            <span class="alttextai-optimization-stat-label"><?php esc_html_e('Optimized', 'wp-alt-text-plugin'); ?></span>
                                             <span class="alttextai-optimization-stat-value"><?php echo esc_html($optimized); ?></span>
                                         </div>
                                         <div class="alttextai-optimization-stat">
-                                            <span class="alttextai-optimization-stat-label"><?php esc_html_e('Remaining', 'opptiai-alt-text-generator'); ?></span>
+                                            <span class="alttextai-optimization-stat-label"><?php esc_html_e('Remaining', 'wp-alt-text-plugin'); ?></span>
                                             <span class="alttextai-optimization-stat-value"><?php echo esc_html($remaining_imgs); ?></span>
                                         </div>
                                         <div class="alttextai-optimization-stat">
-                                            <span class="alttextai-optimization-stat-label"><?php esc_html_e('Total', 'opptiai-alt-text-generator'); ?></span>
+                                            <span class="alttextai-optimization-stat-label"><?php esc_html_e('Total', 'wp-alt-text-plugin'); ?></span>
                                             <span class="alttextai-optimization-stat-value"><?php echo esc_html($total_images); ?></span>
                                         </div>
                                     </div>
                                     <div class="alttextai-optimization-actions">
-                                        <button type="button" class="alttextai-optimization-cta alttextai-optimization-cta--primary <?php echo (!$can_generate) ? 'alttextai-optimization-cta--locked' : ''; ?>" data-action="generate-missing" <?php echo (!$can_generate) ? 'disabled title="' . esc_attr__('Unlock unlimited alt text with Pro →', 'opptiai-alt-text-generator') . '"' : ''; ?>>
+                                        <button type="button" class="alttextai-optimization-cta alttextai-optimization-cta--primary <?php echo (!$can_generate) ? 'alttextai-optimization-cta--locked' : ''; ?>" data-action="generate-missing" <?php echo (!$can_generate) ? 'disabled title="' . esc_attr__('Unlock unlimited alt text with Pro →', 'wp-alt-text-plugin') . '"' : ''; ?>>
                                             <?php if (!$can_generate) : ?>
                                                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" class="alttextai-btn-icon">
                                                     <path d="M12 6V4a4 4 0 00-8 0v2M4 6h8l1 8H3L4 6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                                                 </svg>
-                                                <span><?php esc_html_e('Generate Missing Alt Text', 'opptiai-alt-text-generator'); ?></span>
+                                                <span><?php esc_html_e('Generate Missing Alt Text', 'wp-alt-text-plugin'); ?></span>
                                             <?php else : ?>
                                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="alttextai-btn-icon">
                                                     <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                                     <path d="M6 6H10M6 10H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                                                 </svg>
-                                                <span><?php esc_html_e('Generate Missing Alt Text', 'opptiai-alt-text-generator'); ?></span>
+                                                <span><?php esc_html_e('Generate Missing Alt Text', 'wp-alt-text-plugin'); ?></span>
                                             <?php endif; ?>
                                         </button>
-                                        <button type="button" class="alttextai-optimization-cta alttextai-optimization-cta--secondary <?php echo (!$can_generate) ? 'alttextai-optimization-cta--locked' : ''; ?>" data-action="regenerate-all" <?php echo (!$can_generate) ? 'disabled title="' . esc_attr__('Unlock unlimited alt text with Pro →', 'opptiai-alt-text-generator') . '"' : ''; ?>>
+                                        <button type="button" class="alttextai-optimization-cta alttextai-optimization-cta--secondary <?php echo (!$can_generate) ? 'alttextai-optimization-cta--locked' : ''; ?>" data-action="regenerate-all" <?php echo (!$can_generate) ? 'disabled title="' . esc_attr__('Unlock unlimited alt text with Pro →', 'wp-alt-text-plugin') . '"' : ''; ?>>
                                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="alttextai-btn-icon">
                                                 <path d="M8 2L10 6L14 8L10 10L8 14L6 10L2 8L6 6L8 2Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                                 <circle cx="8" cy="8" r="2" fill="currentColor"/>
                                             </svg>
-                                            <span><?php esc_html_e('Re-optimize All Alt Text', 'opptiai-alt-text-generator'); ?></span>
+                                            <span><?php esc_html_e('Re-optimize All Alt Text', 'wp-alt-text-plugin'); ?></span>
                                         </button>
                                     </div>
                                 </div>
                             <?php else : ?>
                                 <div class="alttextai-optimization-empty">
-                                    <p><?php esc_html_e('Upload images to your WordPress Media Library to get started with AI-powered alt text generation.', 'opptiai-alt-text-generator'); ?></p>
+                                    <p><?php esc_html_e('Upload images to your WordPress Media Library to get started with AI-powered alt text generation.', 'wp-alt-text-plugin'); ?></p>
                                     <a href="<?php echo esc_url(admin_url('upload.php')); ?>" class="alttextai-btn-primary">
-                                        <?php esc_html_e('Go to Media Library', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Go to Media Library', 'wp-alt-text-plugin'); ?>
                                     </a>
                                 </div>
                             <?php endif; ?>
@@ -1502,20 +1662,20 @@ class Opptiai_Alt_Core {
                         <!-- Footer Cross-Sell -->
                         <div class="alttextai-premium-footer-cta">
                             <p class="alttextai-footer-cta-text">
-                                <?php esc_html_e('Complete your SEO stack', 'opptiai-alt-text-generator'); ?> 
+                                <?php esc_html_e('Complete your SEO stack', 'wp-alt-text-plugin'); ?> 
                                 <span class="alttextai-footer-cta-link alttextai-footer-cta-link--coming-soon">
-                                    <?php esc_html_e('Try our SEO Meta Generator AI', 'opptiai-alt-text-generator'); ?>
-                                    <span class="alttextai-footer-cta-badge-new"><?php esc_html_e('New', 'opptiai-alt-text-generator'); ?></span>
-                                    <span class="alttextai-footer-cta-badge-coming-soon"><?php esc_html_e('Coming Soon', 'opptiai-alt-text-generator'); ?></span>
+                                    <?php esc_html_e('Try our SEO Meta Generator AI', 'wp-alt-text-plugin'); ?>
+                                    <span class="alttextai-footer-cta-badge-new"><?php esc_html_e('New', 'wp-alt-text-plugin'); ?></span>
+                                    <span class="alttextai-footer-cta-badge-coming-soon"><?php esc_html_e('Coming Soon', 'wp-alt-text-plugin'); ?></span>
                                 </span>
-                                <span class="alttextai-footer-cta-badge"><?php esc_html_e('(included in free plan)', 'opptiai-alt-text-generator'); ?></span>
+                                <span class="alttextai-footer-cta-badge"><?php esc_html_e('(included in free plan)', 'wp-alt-text-plugin'); ?></span>
                             </p>
                         </div>
                         
                         <!-- Powered by OpttiAI -->
                         <div class="alttextai-premium-footer-divider"></div>
                         <div class="alttextai-premium-footer-branding">
-                            <span><?php esc_html_e('Powered by', 'opptiai-alt-text-generator'); ?> <strong>OpttiAI</strong></span>
+                            <span><?php esc_html_e('Powered by', 'wp-alt-text-plugin'); ?> <strong>OpttiAI</strong></span>
                         </div>
                         
                         <!-- Circular Progress Animation Script -->
@@ -1552,19 +1712,19 @@ class Opptiai_Alt_Core {
                         <div class="alttextai-demo-preview">
                             <!-- Demo Badge Overlay -->
                             <div class="alttextai-demo-badge-overlay">
-                                <span class="alttextai-demo-badge-text"><?php esc_html_e('DEMO PREVIEW', 'opptiai-alt-text-generator'); ?></span>
+                                <span class="alttextai-demo-badge-text"><?php esc_html_e('DEMO PREVIEW', 'wp-alt-text-plugin'); ?></span>
                             </div>
                             
                             <!-- Usage Card (Demo) -->
                             <div class="alttextai-dashboard-card alttextai-dashboard-card--featured alttextai-demo-mode">
                                 <div class="alttextai-dashboard-card-header">
-                                    <div class="alttextai-dashboard-card-badge"><?php esc_html_e('USAGE STATUS', 'opptiai-alt-text-generator'); ?></div>
+                                    <div class="alttextai-dashboard-card-badge"><?php esc_html_e('USAGE STATUS', 'wp-alt-text-plugin'); ?></div>
                                     <h2 class="alttextai-dashboard-card-title">
                                         <span class="alttextai-dashboard-emoji">📊</span>
-                                        <?php esc_html_e('0 of 50 image descriptions generated this month.', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('0 of 50 image descriptions generated this month.', 'wp-alt-text-plugin'); ?>
                                     </h2>
                                     <p style="margin: 12px 0 0 0; font-size: 14px; color: #6b7280;">
-                                        <?php esc_html_e('Sign in to track your usage and access premium features.', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Sign in to track your usage and access premium features.', 'wp-alt-text-plugin'); ?>
                                     </p>
                                 </div>
                                 
@@ -1574,15 +1734,15 @@ class Opptiai_Alt_Core {
                                 
                                 <div class="alttextai-dashboard-usage-stats">
                                     <div class="alttextai-dashboard-usage-stat">
-                                        <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Used', 'opptiai-alt-text-generator'); ?></span>
+                                        <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Used', 'wp-alt-text-plugin'); ?></span>
                                         <span class="alttextai-dashboard-usage-value">0</span>
                                     </div>
                                     <div class="alttextai-dashboard-usage-stat">
-                                        <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Remaining', 'opptiai-alt-text-generator'); ?></span>
+                                        <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Remaining', 'wp-alt-text-plugin'); ?></span>
                                         <span class="alttextai-dashboard-usage-value">50</span>
                                     </div>
                                     <div class="alttextai-dashboard-usage-stat">
-                                        <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Resets', 'opptiai-alt-text-generator'); ?></span>
+                                        <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Resets', 'wp-alt-text-plugin'); ?></span>
                                         <span class="alttextai-dashboard-usage-value"><?php echo esc_html(date_i18n('F j, Y', strtotime('first day of next month'))); ?></span>
                                     </div>
                                 </div>
@@ -1591,22 +1751,22 @@ class Opptiai_Alt_Core {
                             <!-- Time Saved Card (Demo) -->
                             <div class="alttextai-dashboard-card alttextai-time-saved-card alttextai-demo-mode">
                                 <div class="alttextai-dashboard-card-header">
-                                    <div class="alttextai-dashboard-card-badge"><?php esc_html_e('TIME SAVED', 'opptiai-alt-text-generator'); ?></div>
+                                    <div class="alttextai-dashboard-card-badge"><?php esc_html_e('TIME SAVED', 'wp-alt-text-plugin'); ?></div>
                                     <h2 class="alttextai-dashboard-card-title">
                                         <span class="alttextai-dashboard-emoji">⏱️</span>
-                                        <?php esc_html_e('Ready to optimize your images', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Ready to optimize your images', 'wp-alt-text-plugin'); ?>
                                     </h2>
-                                    <p class="alttextai-seo-impact" style="margin-top: 8px; font-size: 14px; color: #6b7280;"><?php esc_html_e('Start generating alt text to improve SEO and accessibility', 'opptiai-alt-text-generator'); ?></p>
+                                    <p class="alttextai-seo-impact" style="margin-top: 8px; font-size: 14px; color: #6b7280;"><?php esc_html_e('Start generating alt text to improve SEO and accessibility', 'wp-alt-text-plugin'); ?></p>
                                 </div>
                             </div>
 
                             <!-- Image Optimization Card (Demo) -->
                             <div class="alttextai-dashboard-card alttextai-demo-mode">
                                 <div class="alttextai-dashboard-card-header">
-                                    <div class="alttextai-dashboard-card-badge"><?php esc_html_e('IMAGE OPTIMIZATION', 'opptiai-alt-text-generator'); ?></div>
+                                    <div class="alttextai-dashboard-card-badge"><?php esc_html_e('IMAGE OPTIMIZATION', 'wp-alt-text-plugin'); ?></div>
                                     <h2 class="alttextai-dashboard-card-title">
                                         <span class="alttextai-dashboard-emoji">📊</span>
-                                        <?php esc_html_e('Ready to optimize images', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Ready to optimize images', 'wp-alt-text-plugin'); ?>
                                     </h2>
                                 </div>
                                 
@@ -1616,15 +1776,15 @@ class Opptiai_Alt_Core {
                                 
                                 <div class="alttextai-dashboard-usage-stats">
                                     <div class="alttextai-dashboard-usage-stat">
-                                        <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Optimized', 'opptiai-alt-text-generator'); ?></span>
+                                        <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Optimized', 'wp-alt-text-plugin'); ?></span>
                                         <span class="alttextai-dashboard-usage-value">0</span>
                                     </div>
                                     <div class="alttextai-dashboard-usage-stat">
-                                        <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Remaining', 'opptiai-alt-text-generator'); ?></span>
+                                        <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Remaining', 'wp-alt-text-plugin'); ?></span>
                                         <span class="alttextai-dashboard-usage-value">—</span>
                                     </div>
                                     <div class="alttextai-dashboard-usage-stat">
-                                        <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Total', 'opptiai-alt-text-generator'); ?></span>
+                                        <span class="alttextai-dashboard-usage-label"><?php esc_html_e('Total', 'wp-alt-text-plugin'); ?></span>
                                         <span class="alttextai-dashboard-usage-value">—</span>
                                     </div>
                                 </div>
@@ -1632,12 +1792,12 @@ class Opptiai_Alt_Core {
                             
                             <!-- Demo CTA -->
                             <div class="alttextai-demo-cta">
-                                <p class="alttextai-demo-cta-text"><?php esc_html_e('✨ Sign up now to start generating alt text for your images!', 'opptiai-alt-text-generator'); ?></p>
+                                <p class="alttextai-demo-cta-text"><?php esc_html_e('✨ Sign up now to start generating alt text for your images!', 'wp-alt-text-plugin'); ?></p>
                                 <button type="button" class="alttextai-btn-primary alttextai-btn-icon" id="alttextai-demo-signup-btn">
                                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                         <path d="M8 2L6 6H2L6 9L4 14L8 11L12 14L10 9L14 6H10L8 2Z" fill="currentColor"/>
                                     </svg>
-                                    <span><?php esc_html_e('Get Started Free', 'opptiai-alt-text-generator'); ?></span>
+                                    <span><?php esc_html_e('Get Started Free', 'wp-alt-text-plugin'); ?></span>
                                 </button>
                             </div>
                         </div>
@@ -1650,12 +1810,12 @@ class Opptiai_Alt_Core {
                                     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
                             </div>
-                            <h3 class="alttextai-limit-title"><?php esc_html_e('Monthly limit reached — keep the momentum going!', 'opptiai-alt-text-generator'); ?></h3>
+                            <h3 class="alttextai-limit-title"><?php esc_html_e('Monthly limit reached — keep the momentum going!', 'wp-alt-text-plugin'); ?></h3>
                             <p class="alttextai-limit-description">
                                 <?php
                                     $reset_label = $usage_stats['reset_date'] ?? '';
                                     printf(
-                                        esc_html__('You\'ve used all %1$d free generations this month. Your quota resets on %2$s.', 'opptiai-alt-text-generator'),
+                                        esc_html__('You\'ve used all %1$d free generations this month. Your quota resets on %2$s.', 'wp-alt-text-plugin'),
                                         $usage_stats['limit'],
                                         esc_html($reset_label)
                                     );
@@ -1665,23 +1825,23 @@ class Opptiai_Alt_Core {
                             <div class="alttextai-countdown" data-countdown="<?php echo esc_attr($usage_stats['seconds_until_reset'] ?? 0); ?>" data-reset-timestamp="<?php echo esc_attr($usage_stats['reset_timestamp'] ?? 0); ?>">
                                 <div class="alttextai-countdown-item">
                                     <div class="alttextai-countdown-number" data-days>0</div>
-                                    <div class="alttextai-countdown-label"><?php esc_html_e('days', 'opptiai-alt-text-generator'); ?></div>
+                                    <div class="alttextai-countdown-label"><?php esc_html_e('days', 'wp-alt-text-plugin'); ?></div>
                                 </div>
                                 <div class="alttextai-countdown-separator">—</div>
                                 <div class="alttextai-countdown-item">
                                     <div class="alttextai-countdown-number" data-hours>0</div>
-                                    <div class="alttextai-countdown-label"><?php esc_html_e('hours', 'opptiai-alt-text-generator'); ?></div>
+                                    <div class="alttextai-countdown-label"><?php esc_html_e('hours', 'wp-alt-text-plugin'); ?></div>
                                 </div>
                                 <div class="alttextai-countdown-separator">—</div>
                                 <div class="alttextai-countdown-item">
                                     <div class="alttextai-countdown-number" data-minutes>0</div>
-                                    <div class="alttextai-countdown-label"><?php esc_html_e('mins', 'opptiai-alt-text-generator'); ?></div>
+                                    <div class="alttextai-countdown-label"><?php esc_html_e('mins', 'wp-alt-text-plugin'); ?></div>
                                 </div>
                             </div>
 
                             <div class="alttextai-limit-cta">
                                 <button type="button" class="alttextai-limit-upgrade-btn alttextai-limit-upgrade-btn--full" data-action="show-upgrade-modal" data-upgrade-source="upgrade-modal">
-                                    <?php esc_html_e('Upgrade to Pro', 'opptiai-alt-text-generator'); ?>
+                                    <?php esc_html_e('Upgrade to Pro', 'wp-alt-text-plugin'); ?>
                                 </button>
                             </div>
                         </div>
@@ -1692,21 +1852,21 @@ class Opptiai_Alt_Core {
                         <div class="alttextai-testimonial-block">
                             <div class="alttextai-testimonial-stars">⭐️⭐️⭐️⭐️⭐️</div>
                             <blockquote class="alttextai-testimonial-quote">
-                                <?php esc_html_e('"Generated 1,200 alt texts for our agency in minutes."', 'opptiai-alt-text-generator'); ?>
+                                <?php esc_html_e('"Generated 1,200 alt texts for our agency in minutes."', 'wp-alt-text-plugin'); ?>
                             </blockquote>
                             <div class="alttextai-testimonial-author-wrapper">
                                 <div class="alttextai-testimonial-avatar">SW</div>
-                                <cite class="alttextai-testimonial-author"><?php esc_html_e('Sarah W.', 'opptiai-alt-text-generator'); ?></cite>
+                                <cite class="alttextai-testimonial-author"><?php esc_html_e('Sarah W.', 'wp-alt-text-plugin'); ?></cite>
                             </div>
                         </div>
                         <div class="alttextai-testimonial-block">
                             <div class="alttextai-testimonial-stars">⭐️⭐️⭐️⭐️⭐️</div>
                             <blockquote class="alttextai-testimonial-quote">
-                                <?php esc_html_e('"We automated 4,800 alt text entries for our WooCommerce store."', 'opptiai-alt-text-generator'); ?>
+                                <?php esc_html_e('"We automated 4,800 alt text entries for our WooCommerce store."', 'wp-alt-text-plugin'); ?>
                             </blockquote>
                             <div class="alttextai-testimonial-author-wrapper">
                                 <div class="alttextai-testimonial-avatar">MP</div>
-                                <cite class="alttextai-testimonial-author"><?php esc_html_e('Martin P.', 'opptiai-alt-text-generator'); ?></cite>
+                                <cite class="alttextai-testimonial-author"><?php esc_html_e('Martin P.', 'wp-alt-text-plugin'); ?></cite>
                             </div>
                         </div>
                     </div>
@@ -1786,18 +1946,18 @@ class Opptiai_Alt_Core {
                 <div class="alttextai-dashboard-container">
                     <!-- Header Section -->
                     <div class="alttextai-library-header">
-                        <h1 class="alttextai-library-title"><?php esc_html_e('ALT Library', 'opptiai-alt-text-generator'); ?></h1>
-                        <p class="alttextai-library-subtitle"><?php esc_html_e('Browse, search, and regenerate AI-generated alt text for images in your media library.', 'opptiai-alt-text-generator'); ?></p>
+                        <h1 class="alttextai-library-title"><?php esc_html_e('ALT Library', 'wp-alt-text-plugin'); ?></h1>
+                        <p class="alttextai-library-subtitle"><?php esc_html_e('Browse, search, and regenerate AI-generated alt text for images in your media library.', 'wp-alt-text-plugin'); ?></p>
                         
                         <!-- Optimization Notice -->
                         <?php if ($optimization_percentage >= 100) : ?>
                             <div class="alttextai-library-success-notice">
                                 <span class="alttextai-library-success-text">
-                                    <?php esc_html_e('100% of your library is fully optimized — great progress!', 'opptiai-alt-text-generator'); ?>
+                                    <?php esc_html_e('100% of your library is fully optimized — great progress!', 'wp-alt-text-plugin'); ?>
                                 </span>
                                 <?php if (!$is_pro) : ?>
                                     <button type="button" class="alttextai-library-success-btn" data-action="show-upgrade-modal">
-                                        <?php esc_html_e('Pro or Agency', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Pro or Agency', 'wp-alt-text-plugin'); ?>
                                     </button>
                                 <?php endif; ?>
                             </div>
@@ -1805,13 +1965,13 @@ class Opptiai_Alt_Core {
                             <div class="alttextai-library-notice">
                                 <?php 
                                 printf(
-                                    esc_html__('%1$d%% of your library is fully optimized — great progress!', 'opptiai-alt-text-generator'),
+                                    esc_html__('%1$d%% of your library is fully optimized — great progress!', 'wp-alt-text-plugin'),
                                     $optimization_percentage
                                 );
                                 ?>
                                 <?php if (!$is_pro) : ?>
                                     <button type="button" class="alttextai-library-notice-link" data-action="show-upgrade-modal">
-                                        <?php esc_html_e('Pro or Agency', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Pro or Agency', 'wp-alt-text-plugin'); ?>
                                     </button>
                                 <?php endif; ?>
                             </div>
@@ -1828,19 +1988,19 @@ class Opptiai_Alt_Core {
                             <input type="text" 
                                    id="alttextai-library-search" 
                                    class="alttextai-library-search-input" 
-                                   placeholder="<?php esc_attr_e('Search images or alt text…', 'opptiai-alt-text-generator'); ?>"
+                                   placeholder="<?php esc_attr_e('Search images or alt text…', 'wp-alt-text-plugin'); ?>"
                             />
                         </div>
                         <select id="alttextai-status-filter" class="alttextai-library-filter-select">
-                            <option value="all"><?php esc_html_e('All', 'opptiai-alt-text-generator'); ?></option>
-                            <option value="optimized"><?php esc_html_e('Optimized', 'opptiai-alt-text-generator'); ?></option>
-                            <option value="missing"><?php esc_html_e('Missing ALT', 'opptiai-alt-text-generator'); ?></option>
-                            <option value="errors"><?php esc_html_e('Errors', 'opptiai-alt-text-generator'); ?></option>
+                            <option value="all"><?php esc_html_e('All', 'wp-alt-text-plugin'); ?></option>
+                            <option value="optimized"><?php esc_html_e('Optimized', 'wp-alt-text-plugin'); ?></option>
+                            <option value="missing"><?php esc_html_e('Missing ALT', 'wp-alt-text-plugin'); ?></option>
+                            <option value="errors"><?php esc_html_e('Errors', 'wp-alt-text-plugin'); ?></option>
                         </select>
                         <select id="alttextai-time-filter" class="alttextai-library-filter-select">
-                            <option value="this-month"><?php esc_html_e('This month', 'opptiai-alt-text-generator'); ?></option>
-                            <option value="last-month"><?php esc_html_e('Last month', 'opptiai-alt-text-generator'); ?></option>
-                            <option value="all-time"><?php esc_html_e('All time', 'opptiai-alt-text-generator'); ?></option>
+                            <option value="this-month"><?php esc_html_e('This month', 'wp-alt-text-plugin'); ?></option>
+                            <option value="last-month"><?php esc_html_e('Last month', 'wp-alt-text-plugin'); ?></option>
+                            <option value="all-time"><?php esc_html_e('All time', 'wp-alt-text-plugin'); ?></option>
                         </select>
                     </div>
                     
@@ -1850,11 +2010,11 @@ class Opptiai_Alt_Core {
                             <table class="alttextai-library-table">
                                 <thead>
                                     <tr>
-                                        <th><?php esc_html_e('IMAGE', 'opptiai-alt-text-generator'); ?></th>
-                                        <th><?php esc_html_e('STATUS', 'opptiai-alt-text-generator'); ?></th>
-                                        <th><?php esc_html_e('DATE', 'opptiai-alt-text-generator'); ?></th>
-                                        <th><?php esc_html_e('ALT TEXT', 'opptiai-alt-text-generator'); ?></th>
-                                        <th><?php esc_html_e('ACTIONS', 'opptiai-alt-text-generator'); ?></th>
+                                        <th><?php esc_html_e('IMAGE', 'wp-alt-text-plugin'); ?></th>
+                                        <th><?php esc_html_e('STATUS', 'wp-alt-text-plugin'); ?></th>
+                                        <th><?php esc_html_e('DATE', 'wp-alt-text-plugin'); ?></th>
+                                        <th><?php esc_html_e('ALT TEXT', 'wp-alt-text-plugin'); ?></th>
+                                        <th><?php esc_html_e('ACTIONS', 'wp-alt-text-plugin'); ?></th>
                                     </tr>
                                 </thead>
                         <tbody>
@@ -1874,10 +2034,10 @@ class Opptiai_Alt_Core {
                                     $has_alt = !empty($clean_current_alt);
                                     
                                     $status_key = $has_alt ? 'optimized' : 'missing';
-                                    $status_label = $has_alt ? __('✅ Optimized', 'opptiai-alt-text-generator') : __('🟠 Missing', 'opptiai-alt-text-generator');
+                                    $status_label = $has_alt ? __('✅ Optimized', 'wp-alt-text-plugin') : __('🟠 Missing', 'wp-alt-text-plugin');
                                     if ($has_alt && $clean_old_alt && strcasecmp($clean_old_alt, $clean_current_alt) !== 0) {
                                         $status_key = 'regenerated';
-                                        $status_label = __('🔁 Regenerated', 'opptiai-alt-text-generator');
+                                        $status_label = __('🔁 Regenerated', 'wp-alt-text-plugin');
                                     }
                                     
                                     // Get the date alt text was generated (use modified date)
@@ -1909,18 +2069,18 @@ class Opptiai_Alt_Core {
                                                 <img src="<?php echo esc_url($thumb_url[0]); ?>" alt="<?php echo esc_attr($attachment_title); ?>" class="alttextai-library-thumbnail" />
                                             <?php else : ?>
                                                 <div class="alttextai-library-thumbnail-placeholder">
-                                                    <?php esc_html_e('—', 'opptiai-alt-text-generator'); ?>
+                                                    <?php esc_html_e('—', 'wp-alt-text-plugin'); ?>
                                                 </div>
                                             <?php endif; ?>
                                         </td>
                                         <td class="alttextai-library-cell alttextai-library-cell--status">
                                             <span class="<?php echo esc_attr($status_class); ?>">
                                                 <?php if ($status_key === 'optimized') : ?>
-                                                    <?php esc_html_e('Optimised', 'opptiai-alt-text-generator'); ?>
+                                                    <?php esc_html_e('Optimised', 'wp-alt-text-plugin'); ?>
                                                 <?php elseif ($status_key === 'missing') : ?>
-                                                    <?php esc_html_e('Missing', 'opptiai-alt-text-generator'); ?>
+                                                    <?php esc_html_e('Missing', 'wp-alt-text-plugin'); ?>
                                                 <?php else : ?>
-                                                    <?php esc_html_e('Regenerated', 'opptiai-alt-text-generator'); ?>
+                                                    <?php esc_html_e('Regenerated', 'wp-alt-text-plugin'); ?>
                                                 <?php endif; ?>
                                             </span>
                                         </td>
@@ -1933,7 +2093,7 @@ class Opptiai_Alt_Core {
                                                     <?php echo esc_html($truncated_alt); ?>
                                                 </div>
                                             <?php else : ?>
-                                                <span class="alttextai-library-no-alt"><?php esc_html_e('No alt text', 'opptiai-alt-text-generator'); ?></span>
+                                                <span class="alttextai-library-no-alt"><?php esc_html_e('No alt text', 'wp-alt-text-plugin'); ?></span>
                                             <?php endif; ?>
                                         </td>
                                         <td class="alttextai-library-cell alttextai-library-cell--actions">
@@ -1945,8 +2105,8 @@ class Opptiai_Alt_Core {
                                                     class="alttextai-btn-regenerate" 
                                                     data-action="regenerate-single" 
                                                     data-attachment-id="<?php echo esc_attr($attachment_id); ?>"
-                                                    <?php echo !$can_regenerate ? 'disabled title="' . esc_attr__('Please log in to regenerate alt text', 'opptiai-alt-text-generator') . '"' : ''; ?>>
-                                                <?php esc_html_e('Regenerate', 'opptiai-alt-text-generator'); ?>
+                                                    <?php echo !$can_regenerate ? 'disabled title="' . esc_attr__('Please log in to regenerate alt text', 'wp-alt-text-plugin') . '"' : ''; ?>>
+                                                <?php esc_html_e('Regenerate', 'wp-alt-text-plugin'); ?>
                                             </button>
                                         </td>
                                     </tr>
@@ -1956,16 +2116,16 @@ class Opptiai_Alt_Core {
                                     <td colspan="5" class="alttextai-library-empty-state">
                                         <div class="alttextai-library-empty-content">
                                             <div class="alttextai-library-empty-title">
-                                                <?php esc_html_e('No images found', 'opptiai-alt-text-generator'); ?>
+                                                <?php esc_html_e('No images found', 'wp-alt-text-plugin'); ?>
                                             </div>
                                             <div class="alttextai-library-empty-subtitle">
-                                                <?php esc_html_e('Upload images to your Media Library to get started.', 'opptiai-alt-text-generator'); ?>
+                                                <?php esc_html_e('Upload images to your Media Library to get started.', 'wp-alt-text-plugin'); ?>
                                             </div>
                                             <a href="<?php echo esc_url(admin_url('upload.php')); ?>" class="alttextai-library-empty-btn">
                                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                                     <path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                                                 </svg>
-                                                <?php esc_html_e('Upload Images', 'opptiai-alt-text-generator'); ?>
+                                                <?php esc_html_e('Upload Images', 'wp-alt-text-plugin'); ?>
                                             </a>
                                         </div>
                                     </td>
@@ -1982,7 +2142,7 @@ class Opptiai_Alt_Core {
                                 $start = $offset + 1;
                                 $end = min($offset + $per_page, $total_count);
                                 printf(
-                                    esc_html__('Showing %1$d-%2$d of %3$d images', 'opptiai-alt-text-generator'),
+                                    esc_html__('Showing %1$d-%2$d of %3$d images', 'wp-alt-text-plugin'),
                                     $start,
                                     $end,
                                     $total_count
@@ -1992,15 +2152,15 @@ class Opptiai_Alt_Core {
                             
                             <div class="alttextai-pagination-controls">
                                 <?php if ($current_page > 1) : ?>
-                                    <a href="<?php echo esc_url(add_query_arg('alt_page', 1)); ?>" class="alttextai-pagination-btn alttextai-pagination-btn--first" title="<?php esc_attr_e('First page', 'opptiai-alt-text-generator'); ?>">
-                                        <?php esc_html_e('First', 'opptiai-alt-text-generator'); ?>
+                                    <a href="<?php echo esc_url(add_query_arg('alt_page', 1)); ?>" class="alttextai-pagination-btn alttextai-pagination-btn--first" title="<?php esc_attr_e('First page', 'wp-alt-text-plugin'); ?>">
+                                        <?php esc_html_e('First', 'wp-alt-text-plugin'); ?>
                                     </a>
-                                    <a href="<?php echo esc_url(add_query_arg('alt_page', $current_page - 1)); ?>" class="alttextai-pagination-btn alttextai-pagination-btn--prev" title="<?php esc_attr_e('Previous page', 'opptiai-alt-text-generator'); ?>">
-                                        <?php esc_html_e('Previous', 'opptiai-alt-text-generator'); ?>
+                                    <a href="<?php echo esc_url(add_query_arg('alt_page', $current_page - 1)); ?>" class="alttextai-pagination-btn alttextai-pagination-btn--prev" title="<?php esc_attr_e('Previous page', 'wp-alt-text-plugin'); ?>">
+                                        <?php esc_html_e('Previous', 'wp-alt-text-plugin'); ?>
                                     </a>
                                 <?php else : ?>
-                                    <span class="alttextai-pagination-btn alttextai-pagination-btn--disabled"><?php esc_html_e('First', 'opptiai-alt-text-generator'); ?></span>
-                                    <span class="alttextai-pagination-btn alttextai-pagination-btn--disabled"><?php esc_html_e('Previous', 'opptiai-alt-text-generator'); ?></span>
+                                    <span class="alttextai-pagination-btn alttextai-pagination-btn--disabled"><?php esc_html_e('First', 'wp-alt-text-plugin'); ?></span>
+                                    <span class="alttextai-pagination-btn alttextai-pagination-btn--disabled"><?php esc_html_e('Previous', 'wp-alt-text-plugin'); ?></span>
                                 <?php endif; ?>
                                 
                                 <div class="alttextai-pagination-pages">
@@ -2033,15 +2193,15 @@ class Opptiai_Alt_Core {
                                 </div>
                                 
                                 <?php if ($current_page < $total_pages) : ?>
-                                    <a href="<?php echo esc_url(add_query_arg('alt_page', $current_page + 1)); ?>" class="alttextai-pagination-btn alttextai-pagination-btn--next" title="<?php esc_attr_e('Next page', 'opptiai-alt-text-generator'); ?>">
-                                        <?php esc_html_e('Next', 'opptiai-alt-text-generator'); ?>
+                                    <a href="<?php echo esc_url(add_query_arg('alt_page', $current_page + 1)); ?>" class="alttextai-pagination-btn alttextai-pagination-btn--next" title="<?php esc_attr_e('Next page', 'wp-alt-text-plugin'); ?>">
+                                        <?php esc_html_e('Next', 'wp-alt-text-plugin'); ?>
                                     </a>
-                                    <a href="<?php echo esc_url(add_query_arg('alt_page', $total_pages)); ?>" class="alttextai-pagination-btn alttextai-pagination-btn--last" title="<?php esc_attr_e('Last page', 'opptiai-alt-text-generator'); ?>">
-                                        <?php esc_html_e('Last', 'opptiai-alt-text-generator'); ?>
+                                    <a href="<?php echo esc_url(add_query_arg('alt_page', $total_pages)); ?>" class="alttextai-pagination-btn alttextai-pagination-btn--last" title="<?php esc_attr_e('Last page', 'wp-alt-text-plugin'); ?>">
+                                        <?php esc_html_e('Last', 'wp-alt-text-plugin'); ?>
                                     </a>
                                 <?php else : ?>
-                                    <span class="alttextai-pagination-btn alttextai-pagination-btn--disabled"><?php esc_html_e('Next', 'opptiai-alt-text-generator'); ?></span>
-                                    <span class="alttextai-pagination-btn alttextai-pagination-btn--disabled"><?php esc_html_e('Last', 'opptiai-alt-text-generator'); ?></span>
+                                    <span class="alttextai-pagination-btn alttextai-pagination-btn--disabled"><?php esc_html_e('Next', 'wp-alt-text-plugin'); ?></span>
+                                    <span class="alttextai-pagination-btn alttextai-pagination-btn--disabled"><?php esc_html_e('Last', 'wp-alt-text-plugin'); ?></span>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -2053,38 +2213,38 @@ class Opptiai_Alt_Core {
                     <?php if (!$is_agency) : ?>
                     <div class="alttextai-library-upgrade-card">
                         <h3 class="alttextai-library-upgrade-title">
-                            <?php esc_html_e('Upgrade to Pro', 'opptiai-alt-text-generator'); ?>
+                            <?php esc_html_e('Upgrade to Pro', 'wp-alt-text-plugin'); ?>
                         </h3>
                         <div class="alttextai-library-upgrade-features">
                             <div class="alttextai-library-upgrade-feature">
                                 <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
                                     <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
-                                <span><?php esc_html_e('Bulk ALT optimisation', 'opptiai-alt-text-generator'); ?></span>
+                                <span><?php esc_html_e('Bulk ALT optimisation', 'wp-alt-text-plugin'); ?></span>
                             </div>
                             <div class="alttextai-library-upgrade-feature">
                                 <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
                                     <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
-                                <span><?php esc_html_e('Unlimited background queue', 'opptiai-alt-text-generator'); ?></span>
+                                <span><?php esc_html_e('Unlimited background queue', 'wp-alt-text-plugin'); ?></span>
                             </div>
                             <div class="alttextai-library-upgrade-feature">
                                 <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
                                     <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
-                                <span><?php esc_html_e('Smart tone tuning', 'opptiai-alt-text-generator'); ?></span>
+                                <span><?php esc_html_e('Smart tone tuning', 'wp-alt-text-plugin'); ?></span>
                             </div>
                             <div class="alttextai-library-upgrade-feature">
                                 <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
                                     <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
-                                <span><?php esc_html_e('Priority support', 'opptiai-alt-text-generator'); ?></span>
+                                <span><?php esc_html_e('Priority support', 'wp-alt-text-plugin'); ?></span>
                             </div>
                         </div>
                         <button type="button" 
                                 class="alttextai-library-upgrade-btn"
                                 data-action="show-upgrade-modal">
-                            <?php esc_html_e('View Plans', 'opptiai-alt-text-generator'); ?>
+                            <?php esc_html_e('View Plans', 'wp-alt-text-plugin'); ?>
                         </button>
                     </div>
                     <?php endif; ?>
@@ -2102,24 +2262,24 @@ class Opptiai_Alt_Core {
         <div class="alttextai-settings-required">
             <div class="alttextai-settings-required-content">
                 <div class="alttextai-settings-required-icon">🔒</div>
-                <h2><?php esc_html_e('Authentication Required', 'opptiai-alt-text-generator'); ?></h2>
-                <p><?php esc_html_e('Debug Logs are only available to authenticated agency users. Please log in with your agency credentials to access this section.', 'opptiai-alt-text-generator'); ?></p>
+                <h2><?php esc_html_e('Authentication Required', 'wp-alt-text-plugin'); ?></h2>
+                <p><?php esc_html_e('Debug Logs are only available to authenticated agency users. Please log in with your agency credentials to access this section.', 'wp-alt-text-plugin'); ?></p>
                 <p style="margin-top: 12px; font-size: 14px; color: #6b7280;">
-                    <?php esc_html_e('If you don\'t have agency credentials, please contact your agency administrator or log in with the correct account.', 'opptiai-alt-text-generator'); ?>
+                    <?php esc_html_e('If you don\'t have agency credentials, please contact your agency administrator or log in with the correct account.', 'wp-alt-text-plugin'); ?>
                 </p>
                 <button type="button" class="alttextai-btn-primary alttextai-btn-icon" data-action="show-auth-modal" data-auth-tab="login" style="margin-top: 20px;">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                         <circle cx="8" cy="8" r="2" fill="currentColor"/>
                     </svg>
-                    <?php esc_html_e('Log In', 'opptiai-alt-text-generator'); ?>
+                    <?php esc_html_e('Log In', 'wp-alt-text-plugin'); ?>
                 </button>
             </div>
         </div>
     <?php elseif (!class_exists('AltText_AI_Debug_Log')) : ?>
         <div class="alttextai-section">
             <div class="notice notice-warning">
-                <p><?php esc_html_e('Debug logging is not available on this site. Please reinstall the logging module.', 'opptiai-alt-text-generator'); ?></p>
+                <p><?php esc_html_e('Debug logging is not available on this site. Please reinstall the logging module.', 'wp-alt-text-plugin'); ?></p>
             </div>
         </div>
     <?php else : ?>
@@ -2156,15 +2316,15 @@ class Opptiai_Alt_Core {
         <div class="alttextai-dashboard-container" data-alttextai-debug-panel>
             <!-- Header Section -->
             <div class="alttextai-debug-header">
-                <h1 class="alttextai-dashboard-title"><?php esc_html_e('Debug Logs', 'opptiai-alt-text-generator'); ?></h1>
-                <p class="alttextai-dashboard-subtitle"><?php esc_html_e('Monitor API calls, queue events, and any errors generated by the plugin.', 'opptiai-alt-text-generator'); ?></p>
-                
+                <h1 class="alttextai-dashboard-title"><?php esc_html_e('Debug Logs', 'wp-alt-text-plugin'); ?></h1>
+                <p class="alttextai-dashboard-subtitle"><?php esc_html_e('Monitor API calls, queue events, and any errors generated by the plugin.', 'wp-alt-text-plugin'); ?></p>
+            
                 <!-- Usage Info -->
-                <?php if (isset($usage_stats)) : ?>
+            <?php if (isset($usage_stats)) : ?>
                 <div class="alttextai-debug-usage-info">
                     <?php 
                     printf(
-                        esc_html__('%1$d of %2$d image descriptions generated this month', 'opptiai-alt-text-generator'),
+                        esc_html__('%1$d of %2$d image descriptions generated this month', 'wp-alt-text-plugin'),
                         $usage_stats['used'] ?? 0,
                         $usage_stats['limit'] ?? 0
                     ); 
@@ -2176,28 +2336,28 @@ class Opptiai_Alt_Core {
                         $reset_timestamp = strtotime($reset_date);
                         if ($reset_timestamp !== false) {
                             $formatted_reset = date_i18n('F j, Y', $reset_timestamp);
-                            printf(esc_html__('Resets %s', 'opptiai-alt-text-generator'), esc_html($formatted_reset));
+                            printf(esc_html__('Resets %s', 'wp-alt-text-plugin'), esc_html($formatted_reset));
                         } else {
-                            printf(esc_html__('Resets %s', 'opptiai-alt-text-generator'), esc_html($reset_date));
+                            printf(esc_html__('Resets %s', 'wp-alt-text-plugin'), esc_html($reset_date));
                         }
                     }
                     ?>
-                </div>
-                <?php endif; ?>
+            </div>
+            <?php endif; ?>
             </div>
 
             <!-- Log Statistics Card -->
             <div class="alttextai-debug-stats-card">
                 <div class="alttextai-debug-stats-header">
                     <div class="alttextai-debug-stats-title">
-                        <h3><?php esc_html_e('Log Statistics', 'opptiai-alt-text-generator'); ?></h3>
+                        <h3><?php esc_html_e('Log Statistics', 'wp-alt-text-plugin'); ?></h3>
                     </div>
                     <div class="alttextai-debug-stats-actions">
                         <button type="button" class="alttextai-debug-btn alttextai-debug-btn--secondary" data-debug-clear>
-                            <?php esc_html_e('Clear Logs', 'opptiai-alt-text-generator'); ?>
+                            <?php esc_html_e('Clear Logs', 'wp-alt-text-plugin'); ?>
                         </button>
                         <a href="<?php echo esc_url($debug_export_url); ?>" class="alttextai-debug-btn alttextai-debug-btn--primary">
-                            <?php esc_html_e('Export CSV', 'opptiai-alt-text-generator'); ?>
+                            <?php esc_html_e('Export CSV', 'wp-alt-text-plugin'); ?>
                         </a>
                     </div>
                 </div>
@@ -2205,25 +2365,25 @@ class Opptiai_Alt_Core {
                 <!-- Stats Grid -->
                 <div class="alttextai-debug-stats-grid">
                     <div class="alttextai-debug-stat-item">
-                        <div class="alttextai-debug-stat-label"><?php esc_html_e('TOTAL LOGS', 'opptiai-alt-text-generator'); ?></div>
+                        <div class="alttextai-debug-stat-label"><?php esc_html_e('TOTAL LOGS', 'wp-alt-text-plugin'); ?></div>
                         <div class="alttextai-debug-stat-value" data-debug-stat="total">
                             <?php echo esc_html(number_format_i18n(intval($debug_stats['total'] ?? 0))); ?>
                         </div>
                     </div>
                     <div class="alttextai-debug-stat-item alttextai-debug-stat-item--warning">
-                        <div class="alttextai-debug-stat-label"><?php esc_html_e('WARNINGS', 'opptiai-alt-text-generator'); ?></div>
+                        <div class="alttextai-debug-stat-label"><?php esc_html_e('WARNINGS', 'wp-alt-text-plugin'); ?></div>
                         <div class="alttextai-debug-stat-value alttextai-debug-stat-value--warning" data-debug-stat="warnings">
                             <?php echo esc_html(number_format_i18n(intval($debug_stats['warnings'] ?? 0))); ?>
                         </div>
                     </div>
                     <div class="alttextai-debug-stat-item alttextai-debug-stat-item--error">
-                        <div class="alttextai-debug-stat-label"><?php esc_html_e('ERRORS', 'opptiai-alt-text-generator'); ?></div>
+                        <div class="alttextai-debug-stat-label"><?php esc_html_e('ERRORS', 'wp-alt-text-plugin'); ?></div>
                         <div class="alttextai-debug-stat-value alttextai-debug-stat-value--error" data-debug-stat="errors">
                             <?php echo esc_html(number_format_i18n(intval($debug_stats['errors'] ?? 0))); ?>
                         </div>
                     </div>
                     <div class="alttextai-debug-stat-item">
-                        <div class="alttextai-debug-stat-label"><?php esc_html_e('LAST API EVENT', 'opptiai-alt-text-generator'); ?></div>
+                        <div class="alttextai-debug-stat-label"><?php esc_html_e('LAST API EVENT', 'wp-alt-text-plugin'); ?></div>
                         <div class="alttextai-debug-stat-value alttextai-debug-stat-value--small" data-debug-stat="last_api">
                             <?php echo esc_html($debug_stats['last_api'] ?? '—'); ?>
                         </div>
@@ -2236,39 +2396,39 @@ class Opptiai_Alt_Core {
                 <form data-debug-filter class="alttextai-debug-filters-form">
                     <div class="alttextai-debug-filter-group">
                         <label for="alttextai-debug-level" class="alttextai-debug-filter-label">
-                            <?php esc_html_e('Level', 'opptiai-alt-text-generator'); ?>
+                            <?php esc_html_e('Level', 'wp-alt-text-plugin'); ?>
                         </label>
                         <select id="alttextai-debug-level" name="level" class="alttextai-debug-filter-input">
-                            <option value=""><?php esc_html_e('All levels', 'opptiai-alt-text-generator'); ?></option>
-                            <option value="info"><?php esc_html_e('Info', 'opptiai-alt-text-generator'); ?></option>
-                            <option value="warning"><?php esc_html_e('Warning', 'opptiai-alt-text-generator'); ?></option>
-                            <option value="error"><?php esc_html_e('Error', 'opptiai-alt-text-generator'); ?></option>
+                            <option value=""><?php esc_html_e('All levels', 'wp-alt-text-plugin'); ?></option>
+                            <option value="info"><?php esc_html_e('Info', 'wp-alt-text-plugin'); ?></option>
+                            <option value="warning"><?php esc_html_e('Warning', 'wp-alt-text-plugin'); ?></option>
+                            <option value="error"><?php esc_html_e('Error', 'wp-alt-text-plugin'); ?></option>
                         </select>
                     </div>
                     <div class="alttextai-debug-filter-group">
                         <label for="alttextai-debug-date" class="alttextai-debug-filter-label">
-                            <?php esc_html_e('Date', 'opptiai-alt-text-generator'); ?>
+                            <?php esc_html_e('Date', 'wp-alt-text-plugin'); ?>
                         </label>
                         <input type="date" id="alttextai-debug-date" name="date" class="alttextai-debug-filter-input" placeholder="dd/mm/yyyy">
                     </div>
                     <div class="alttextai-debug-filter-group alttextai-debug-filter-group--search">
                         <label for="alttextai-debug-search" class="alttextai-debug-filter-label">
-                            <?php esc_html_e('Search', 'opptiai-alt-text-generator'); ?>
+                            <?php esc_html_e('Search', 'wp-alt-text-plugin'); ?>
                         </label>
                         <div class="alttextai-debug-search-wrapper">
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="alttextai-debug-search-icon">
                                 <circle cx="7" cy="7" r="4" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                 <path d="M10 10L13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                             </svg>
-                            <input type="search" id="alttextai-debug-search" name="search" placeholder="<?php esc_attr_e('Search logs…', 'opptiai-alt-text-generator'); ?>" class="alttextai-debug-filter-input alttextai-debug-filter-input--search">
+                            <input type="search" id="alttextai-debug-search" name="search" placeholder="<?php esc_attr_e('Search logs…', 'wp-alt-text-plugin'); ?>" class="alttextai-debug-filter-input alttextai-debug-filter-input--search">
                         </div>
                     </div>
                     <div class="alttextai-debug-filter-actions">
                         <button type="submit" class="alttextai-debug-btn alttextai-debug-btn--primary">
-                            <?php esc_html_e('Apply', 'opptiai-alt-text-generator'); ?>
+                            <?php esc_html_e('Apply', 'wp-alt-text-plugin'); ?>
                         </button>
                         <button type="button" class="alttextai-debug-btn alttextai-debug-btn--ghost" data-debug-reset>
-                            <?php esc_html_e('Reset', 'opptiai-alt-text-generator'); ?>
+                            <?php esc_html_e('Reset', 'wp-alt-text-plugin'); ?>
                         </button>
                     </div>
                 </form>
@@ -2279,10 +2439,10 @@ class Opptiai_Alt_Core {
                 <table class="alttextai-debug-table">
                     <thead>
                         <tr>
-                            <th><?php esc_html_e('TIMESTAMP', 'opptiai-alt-text-generator'); ?></th>
-                            <th><?php esc_html_e('LEVEL', 'opptiai-alt-text-generator'); ?></th>
-                            <th><?php esc_html_e('MESSAGE', 'opptiai-alt-text-generator'); ?></th>
-                            <th><?php esc_html_e('CONTEXT', 'opptiai-alt-text-generator'); ?></th>
+                            <th><?php esc_html_e('TIMESTAMP', 'wp-alt-text-plugin'); ?></th>
+                            <th><?php esc_html_e('LEVEL', 'wp-alt-text-plugin'); ?></th>
+                            <th><?php esc_html_e('MESSAGE', 'wp-alt-text-plugin'); ?></th>
+                            <th><?php esc_html_e('CONTEXT', 'wp-alt-text-plugin'); ?></th>
                         </tr>
                     </thead>
                     <tbody data-debug-rows>
@@ -2342,7 +2502,7 @@ class Opptiai_Alt_Core {
                                                 class="alttextai-debug-context-btn" 
                                                 data-context-data="<?php echo esc_attr($context_attr); ?>"
                                                 data-row-index="<?php echo esc_attr($row_index); ?>">
-                                            <?php esc_html_e('Log Context', 'opptiai-alt-text-generator'); ?>
+                                            <?php esc_html_e('Log Context', 'wp-alt-text-plugin'); ?>
                                         </button>
                                     <?php else : ?>
                                         <span class="alttextai-debug-context-empty">—</span>
@@ -2362,31 +2522,31 @@ class Opptiai_Alt_Core {
                         <?php else : ?>
                             <tr>
                                 <td colspan="4" class="alttextai-debug-table-empty">
-                                    <?php esc_html_e('No logs recorded yet.', 'opptiai-alt-text-generator'); ?>
+                                    <?php esc_html_e('No logs recorded yet.', 'wp-alt-text-plugin'); ?>
                                 </td>
                             </tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
             </div>
-
+            
             <!-- Pagination -->
             <?php if ($debug_pages > 1) : ?>
             <div class="alttextai-debug-pagination">
                 <button type="button" class="alttextai-debug-pagination-btn" data-debug-page="prev" <?php disabled($debug_page <= 1); ?>>
-                    <?php esc_html_e('Previous', 'opptiai-alt-text-generator'); ?>
+                    <?php esc_html_e('Previous', 'wp-alt-text-plugin'); ?>
                 </button>
                 <span class="alttextai-debug-pagination-info" data-debug-page-indicator>
                     <?php
                         printf(
-                            esc_html__('Page %1$s of %2$s', 'opptiai-alt-text-generator'),
+                            esc_html__('Page %1$s of %2$s', 'wp-alt-text-plugin'),
                             esc_html(number_format_i18n($debug_page)),
                             esc_html(number_format_i18n($debug_pages))
                         );
                     ?>
                 </span>
                 <button type="button" class="alttextai-debug-pagination-btn" data-debug-page="next" <?php disabled($debug_page >= $debug_pages); ?>>
-                    <?php esc_html_e('Next', 'opptiai-alt-text-generator'); ?>
+                    <?php esc_html_e('Next', 'wp-alt-text-plugin'); ?>
                 </button>
             </div>
             <?php endif; ?>
@@ -2394,46 +2554,46 @@ class Opptiai_Alt_Core {
             <!-- Pro Upsell Section -->
             <?php if (!$is_pro) : ?>
             <div class="alttextai-debug-upsell-card">
-                <h3 class="alttextai-debug-upsell-title"><?php esc_html_e('Unlock Pro Debug Console', 'opptiai-alt-text-generator'); ?></h3>
+                <h3 class="alttextai-debug-upsell-title"><?php esc_html_e('Unlock Pro Debug Console', 'wp-alt-text-plugin'); ?></h3>
                 <ul class="alttextai-debug-upsell-features">
                     <li class="alttextai-debug-upsell-feature">
                         <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
                             <circle cx="8" cy="8" r="8" fill="#16a34a"/>
                             <path d="M5 8l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                        <span><?php esc_html_e('Long-term log retention', 'opptiai-alt-text-generator'); ?></span>
+                        <span><?php esc_html_e('Long-term log retention', 'wp-alt-text-plugin'); ?></span>
                     </li>
                     <li class="alttextai-debug-upsell-feature">
                         <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
                             <circle cx="8" cy="8" r="8" fill="#16a34a"/>
                             <path d="M5 8l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                        <span><?php esc_html_e('Priority support', 'opptiai-alt-text-generator'); ?></span>
+                        <span><?php esc_html_e('Priority support', 'wp-alt-text-plugin'); ?></span>
                     </li>
                     <li class="alttextai-debug-upsell-feature">
                         <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
                             <circle cx="8" cy="8" r="8" fill="#16a34a"/>
                             <path d="M5 8l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                        <span><?php esc_html_e('High-speed global search', 'opptiai-alt-text-generator'); ?></span>
+                        <span><?php esc_html_e('High-speed global search', 'wp-alt-text-plugin'); ?></span>
                     </li>
                     <li class="alttextai-debug-upsell-feature">
                         <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
                             <circle cx="8" cy="8" r="8" fill="#16a34a"/>
                             <path d="M5 8l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                        <span><?php esc_html_e('Full CSV export of all logs', 'opptiai-alt-text-generator'); ?></span>
+                        <span><?php esc_html_e('Full CSV export of all logs', 'wp-alt-text-plugin'); ?></span>
                     </li>
                     <li class="alttextai-debug-upsell-feature">
                         <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
                             <circle cx="8" cy="8" r="8" fill="#16a34a"/>
                             <path d="M5 8l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                        <span><?php esc_html_e('API performance insights', 'opptiai-alt-text-generator'); ?></span>
+                        <span><?php esc_html_e('API performance insights', 'wp-alt-text-plugin'); ?></span>
                     </li>
                 </ul>
                 <button type="button" class="alttextai-debug-upsell-btn" data-action="show-upgrade-modal">
-                    <?php esc_html_e('Upgrade to Pro', 'opptiai-alt-text-generator'); ?> →
+                    <?php esc_html_e('Upgrade to Pro', 'wp-alt-text-plugin'); ?> →
                 </button>
             </div>
             <?php endif; ?>
@@ -2585,15 +2745,15 @@ class Opptiai_Alt_Core {
             <div class="alttextai-guide-container">
                 <!-- Header Section -->
                 <div class="alttextai-guide-header">
-                    <h1 class="alttextai-guide-title"><?php esc_html_e('How to Use AltText AI', 'opptiai-alt-text-generator'); ?></h1>
-                    <p class="alttextai-guide-subtitle"><?php esc_html_e('Learn how to generate and manage alt text for your images.', 'opptiai-alt-text-generator'); ?></p>
+                    <h1 class="alttextai-guide-title"><?php esc_html_e('How to Use AltText AI', 'wp-alt-text-plugin'); ?></h1>
+                    <p class="alttextai-guide-subtitle"><?php esc_html_e('Learn how to generate and manage alt text for your images.', 'wp-alt-text-plugin'); ?></p>
                 </div>
 
                 <!-- Pro Features Card (LOCKED) -->
                 <?php if (!$is_pro) : ?>
                 <div class="alttextai-guide-pro-card">
                     <div class="alttextai-guide-pro-ribbon">
-                        <?php esc_html_e('LOCKED PRO FEATURES', 'opptiai-alt-text-generator'); ?>
+                        <?php esc_html_e('LOCKED PRO FEATURES', 'wp-alt-text-plugin'); ?>
                     </div>
                     <div class="alttextai-guide-pro-features">
                         <div class="alttextai-guide-pro-feature">
@@ -2601,40 +2761,40 @@ class Opptiai_Alt_Core {
                                 <circle cx="8" cy="8" r="8" fill="#16a34a"/>
                                 <path d="M5 8l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <span><?php esc_html_e('Priority queue generation', 'opptiai-alt-text-generator'); ?></span>
+                            <span><?php esc_html_e('Priority queue generation', 'wp-alt-text-plugin'); ?></span>
                         </div>
                         <div class="alttextai-guide-pro-feature">
                             <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
                                 <circle cx="8" cy="8" r="8" fill="#16a34a"/>
                                 <path d="M5 8l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <span><?php esc_html_e('Bulk optimisation for large libraries', 'opptiai-alt-text-generator'); ?></span>
+                            <span><?php esc_html_e('Bulk optimisation for large libraries', 'wp-alt-text-plugin'); ?></span>
                         </div>
                         <div class="alttextai-guide-pro-feature">
                             <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
                                 <circle cx="8" cy="8" r="8" fill="#16a34a"/>
                                 <path d="M5 8l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <span><?php esc_html_e('Multilingual alt text', 'opptiai-alt-text-generator'); ?></span>
+                            <span><?php esc_html_e('Multilingual alt text', 'wp-alt-text-plugin'); ?></span>
                         </div>
                         <div class="alttextai-guide-pro-feature">
                             <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
                                 <circle cx="8" cy="8" r="8" fill="#16a34a"/>
                                 <path d="M5 8l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <span><?php esc_html_e('Smart tone + style tuning', 'opptiai-alt-text-generator'); ?></span>
+                            <span><?php esc_html_e('Smart tone + style tuning', 'wp-alt-text-plugin'); ?></span>
                         </div>
                         <div class="alttextai-guide-pro-feature">
                             <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
                                 <circle cx="8" cy="8" r="8" fill="#16a34a"/>
                                 <path d="M5 8l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <span><?php esc_html_e('Unlimited alt text generation', 'opptiai-alt-text-generator'); ?></span>
+                            <span><?php esc_html_e('Unlimited alt text generation', 'wp-alt-text-plugin'); ?></span>
                         </div>
                     </div>
                     <div class="alttextai-guide-pro-cta">
                         <a href="#" class="alttextai-guide-pro-link" data-action="show-upgrade-modal">
-                            <?php esc_html_e('Upgrade to Pro', 'opptiai-alt-text-generator'); ?> →
+                            <?php esc_html_e('Upgrade to Pro', 'wp-alt-text-plugin'); ?> →
                         </a>
                     </div>
                 </div>
@@ -2643,7 +2803,7 @@ class Opptiai_Alt_Core {
                 <!-- Getting Started Card -->
                 <div class="alttextai-guide-steps-card">
                     <h2 class="alttextai-guide-steps-title">
-                        <?php esc_html_e('Getting Started in 4 Easy Steps', 'opptiai-alt-text-generator'); ?>
+                        <?php esc_html_e('Getting Started in 4 Easy Steps', 'wp-alt-text-plugin'); ?>
                     </h2>
                     <div class="alttextai-guide-steps-list">
                         <div class="alttextai-guide-step">
@@ -2651,8 +2811,8 @@ class Opptiai_Alt_Core {
                                 <span class="alttextai-guide-step-number">1</span>
                             </div>
                             <div class="alttextai-guide-step-content">
-                                <h3 class="alttextai-guide-step-title"><?php esc_html_e('Upload Images', 'opptiai-alt-text-generator'); ?></h3>
-                                <p class="alttextai-guide-step-description"><?php esc_html_e('Add images to your WordPress Media Library.', 'opptiai-alt-text-generator'); ?></p>
+                                <h3 class="alttextai-guide-step-title"><?php esc_html_e('Upload Images', 'wp-alt-text-plugin'); ?></h3>
+                                <p class="alttextai-guide-step-description"><?php esc_html_e('Add images to your WordPress Media Library.', 'wp-alt-text-plugin'); ?></p>
                             </div>
                         </div>
                         <div class="alttextai-guide-step">
@@ -2660,8 +2820,8 @@ class Opptiai_Alt_Core {
                                 <span class="alttextai-guide-step-number">2</span>
                             </div>
                             <div class="alttextai-guide-step-content">
-                                <h3 class="alttextai-guide-step-title"><?php esc_html_e('Bulk Optimize', 'opptiai-alt-text-generator'); ?></h3>
-                                <p class="alttextai-guide-step-description"><?php esc_html_e('Generate alt text for multiple images at once from the Dashboard.', 'opptiai-alt-text-generator'); ?></p>
+                                <h3 class="alttextai-guide-step-title"><?php esc_html_e('Bulk Optimize', 'wp-alt-text-plugin'); ?></h3>
+                                <p class="alttextai-guide-step-description"><?php esc_html_e('Generate alt text for multiple images at once from the Dashboard.', 'wp-alt-text-plugin'); ?></p>
                             </div>
                         </div>
                         <div class="alttextai-guide-step">
@@ -2669,8 +2829,8 @@ class Opptiai_Alt_Core {
                                 <span class="alttextai-guide-step-number">3</span>
                             </div>
                             <div class="alttextai-guide-step-content">
-                                <h3 class="alttextai-guide-step-title"><?php esc_html_e('Review & Edit', 'opptiai-alt-text-generator'); ?></h3>
-                                <p class="alttextai-guide-step-description"><?php esc_html_e('Refine generated alt text in the ALT Library.', 'opptiai-alt-text-generator'); ?></p>
+                                <h3 class="alttextai-guide-step-title"><?php esc_html_e('Review & Edit', 'wp-alt-text-plugin'); ?></h3>
+                                <p class="alttextai-guide-step-description"><?php esc_html_e('Refine generated alt text in the ALT Library.', 'wp-alt-text-plugin'); ?></p>
                             </div>
                         </div>
                         <div class="alttextai-guide-step">
@@ -2678,8 +2838,8 @@ class Opptiai_Alt_Core {
                                 <span class="alttextai-guide-step-number">4</span>
                             </div>
                             <div class="alttextai-guide-step-content">
-                                <h3 class="alttextai-guide-step-title"><?php esc_html_e('Regenerate if Needed', 'opptiai-alt-text-generator'); ?></h3>
-                                <p class="alttextai-guide-step-description"><?php esc_html_e('Use the regenerate feature to improve alt text quality anytime.', 'opptiai-alt-text-generator'); ?></p>
+                                <h3 class="alttextai-guide-step-title"><?php esc_html_e('Regenerate if Needed', 'wp-alt-text-plugin'); ?></h3>
+                                <p class="alttextai-guide-step-description"><?php esc_html_e('Use the regenerate feature to improve alt text quality anytime.', 'wp-alt-text-plugin'); ?></p>
                             </div>
                         </div>
                     </div>
@@ -2689,20 +2849,20 @@ class Opptiai_Alt_Core {
                 <div class="alttextai-guide-why-card">
                     <div class="alttextai-guide-why-icon">💡</div>
                     <h3 class="alttextai-guide-why-title">
-                        <?php esc_html_e('Why Alt Text Matters', 'opptiai-alt-text-generator'); ?>
+                        <?php esc_html_e('Why Alt Text Matters', 'wp-alt-text-plugin'); ?>
                     </h3>
                     <ul class="alttextai-guide-why-list">
                         <li class="alttextai-guide-why-item">
                             <span class="alttextai-guide-why-check">✓</span>
-                            <span><?php esc_html_e('Boosts SEO visibility by up to 20%', 'opptiai-alt-text-generator'); ?></span>
+                            <span><?php esc_html_e('Boosts SEO visibility by up to 20%', 'wp-alt-text-plugin'); ?></span>
                         </li>
                         <li class="alttextai-guide-why-item">
                             <span class="alttextai-guide-why-check">✓</span>
-                            <span><?php esc_html_e('Improves Google Images ranking', 'opptiai-alt-text-generator'); ?></span>
+                            <span><?php esc_html_e('Improves Google Images ranking', 'wp-alt-text-plugin'); ?></span>
                         </li>
                         <li class="alttextai-guide-why-item">
                             <span class="alttextai-guide-why-check">✓</span>
-                            <span><?php esc_html_e('Helps achieve WCAG compliance for accessibility', 'opptiai-alt-text-generator'); ?></span>
+                            <span><?php esc_html_e('Helps achieve WCAG compliance for accessibility', 'wp-alt-text-plugin'); ?></span>
                         </li>
                     </ul>
                 </div>
@@ -2712,31 +2872,31 @@ class Opptiai_Alt_Core {
                     <!-- Tips Card -->
                     <div class="alttextai-guide-card">
                         <h3 class="alttextai-guide-card-title">
-                            <?php esc_html_e('Tips for Better Alt Text', 'opptiai-alt-text-generator'); ?>
+                            <?php esc_html_e('Tips for Better Alt Text', 'wp-alt-text-plugin'); ?>
                         </h3>
                         <div class="alttextai-guide-tips-list">
                             <div class="alttextai-guide-tip">
                                 <div class="alttextai-guide-tip-icon">✓</div>
                                 <div class="alttextai-guide-tip-content">
-                                    <div class="alttextai-guide-tip-title"><?php esc_html_e('Keep it concise', 'opptiai-alt-text-generator'); ?></div>
+                                    <div class="alttextai-guide-tip-title"><?php esc_html_e('Keep it concise', 'wp-alt-text-plugin'); ?></div>
                                 </div>
                             </div>
                             <div class="alttextai-guide-tip">
                                 <div class="alttextai-guide-tip-icon">✓</div>
                                 <div class="alttextai-guide-tip-content">
-                                    <div class="alttextai-guide-tip-title"><?php esc_html_e('Be specific', 'opptiai-alt-text-generator'); ?></div>
+                                    <div class="alttextai-guide-tip-title"><?php esc_html_e('Be specific', 'wp-alt-text-plugin'); ?></div>
                                 </div>
                             </div>
                             <div class="alttextai-guide-tip">
                                 <div class="alttextai-guide-tip-icon">✓</div>
                                 <div class="alttextai-guide-tip-content">
-                                    <div class="alttextai-guide-tip-title"><?php esc_html_e('Avoid redundancy', 'opptiai-alt-text-generator'); ?></div>
+                                    <div class="alttextai-guide-tip-title"><?php esc_html_e('Avoid redundancy', 'wp-alt-text-plugin'); ?></div>
                                 </div>
                             </div>
                             <div class="alttextai-guide-tip">
                                 <div class="alttextai-guide-tip-icon">✓</div>
                                 <div class="alttextai-guide-tip-content">
-                                    <div class="alttextai-guide-tip-title"><?php esc_html_e('Think context', 'opptiai-alt-text-generator'); ?></div>
+                                    <div class="alttextai-guide-tip-title"><?php esc_html_e('Think context', 'wp-alt-text-plugin'); ?></div>
                                 </div>
                             </div>
                         </div>
@@ -2745,20 +2905,20 @@ class Opptiai_Alt_Core {
                     <!-- Features Card -->
                     <div class="alttextai-guide-card">
                         <h3 class="alttextai-guide-card-title">
-                            <?php esc_html_e('Key Features', 'opptiai-alt-text-generator'); ?>
+                            <?php esc_html_e('Key Features', 'wp-alt-text-plugin'); ?>
                         </h3>
                         <div class="alttextai-guide-features-list">
                             <div class="alttextai-guide-feature">
                                 <div class="alttextai-guide-feature-icon">🤖</div>
                                 <div class="alttextai-guide-feature-content">
-                                    <div class="alttextai-guide-feature-title"><?php esc_html_e('AI-Powered', 'opptiai-alt-text-generator'); ?></div>
+                                    <div class="alttextai-guide-feature-title"><?php esc_html_e('AI-Powered', 'wp-alt-text-plugin'); ?></div>
                                 </div>
                             </div>
                             <div class="alttextai-guide-feature">
                                 <div class="alttextai-guide-feature-icon">≡</div>
                                 <div class="alttextai-guide-feature-content">
                                     <div class="alttextai-guide-feature-title">
-                                        <?php esc_html_e('Bulk Processing', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Bulk Processing', 'wp-alt-text-plugin'); ?>
                                         <?php if (!$is_pro) : ?>
                                             <span class="alttextai-guide-feature-lock">🔒</span>
                                         <?php endif; ?>
@@ -2768,14 +2928,14 @@ class Opptiai_Alt_Core {
                             <div class="alttextai-guide-feature">
                                 <div class="alttextai-guide-feature-icon">◆</div>
                                 <div class="alttextai-guide-feature-content">
-                                    <div class="alttextai-guide-feature-title"><?php esc_html_e('SEO Optimized', 'opptiai-alt-text-generator'); ?></div>
+                                    <div class="alttextai-guide-feature-title"><?php esc_html_e('SEO Optimized', 'wp-alt-text-plugin'); ?></div>
                                 </div>
                             </div>
                             <div class="alttextai-guide-feature">
                                 <div class="alttextai-guide-feature-icon">🎨</div>
                                 <div class="alttextai-guide-feature-content">
                                     <div class="alttextai-guide-feature-title">
-                                        <?php esc_html_e('Smart tone tuning', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Smart tone tuning', 'wp-alt-text-plugin'); ?>
                                         <?php if (!$is_pro) : ?>
                                             <span class="alttextai-guide-feature-lock">🔒</span>
                                         <?php endif; ?>
@@ -2786,7 +2946,7 @@ class Opptiai_Alt_Core {
                                 <div class="alttextai-guide-feature-icon">🌍</div>
                                 <div class="alttextai-guide-feature-content">
                                     <div class="alttextai-guide-feature-title">
-                                        <?php esc_html_e('Multilingual alt text', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Multilingual alt text', 'wp-alt-text-plugin'); ?>
                                         <?php if (!$is_pro) : ?>
                                             <span class="alttextai-guide-feature-lock">🔒</span>
                                         <?php endif; ?>
@@ -2796,7 +2956,7 @@ class Opptiai_Alt_Core {
                             <div class="alttextai-guide-feature">
                                 <div class="alttextai-guide-feature-icon">♿</div>
                                 <div class="alttextai-guide-feature-content">
-                                    <div class="alttextai-guide-feature-title"><?php esc_html_e('Accessibility', 'opptiai-alt-text-generator'); ?></div>
+                                    <div class="alttextai-guide-feature-title"><?php esc_html_e('Accessibility', 'wp-alt-text-plugin'); ?></div>
                                 </div>
                             </div>
                         </div>
@@ -2808,17 +2968,17 @@ class Opptiai_Alt_Core {
                 <div class="alttextai-guide-cta-card">
                     <h3 class="alttextai-guide-cta-title">
                         <span class="alttextai-guide-cta-icon">⚡</span>
-                        <?php esc_html_e('Ready for More?', 'opptiai-alt-text-generator'); ?>
+                        <?php esc_html_e('Ready for More?', 'wp-alt-text-plugin'); ?>
                     </h3>
                     <p class="alttextai-guide-cta-text">
-                        <?php esc_html_e('Save hours each month with automated alt text generation. Upgrade for 1,000 images/month and priority processing.', 'opptiai-alt-text-generator'); ?>
+                        <?php esc_html_e('Save hours each month with automated alt text generation. Upgrade for 1,000 images/month and priority processing.', 'wp-alt-text-plugin'); ?>
                     </p>
                     <button type="button" class="alttextai-guide-cta-btn" data-action="show-upgrade-modal">
-                        <span><?php esc_html_e('View Plans & Pricing', 'opptiai-alt-text-generator'); ?></span>
+                        <span><?php esc_html_e('View Plans & Pricing', 'wp-alt-text-plugin'); ?></span>
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                             <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                        <span class="alttextai-guide-cta-badge-new"><?php esc_html_e('NEW', 'opptiai-alt-text-generator'); ?></span>
+                        <span class="alttextai-guide-cta-badge-new"><?php esc_html_e('NEW', 'wp-alt-text-plugin'); ?></span>
                     </button>
                 </div>
                 <?php endif; ?>
@@ -2831,17 +2991,17 @@ class Opptiai_Alt_Core {
                 <div class="alttextai-settings-required">
                     <div class="alttextai-settings-required-content">
                         <div class="alttextai-settings-required-icon">🔒</div>
-                        <h2><?php esc_html_e('Authentication Required', 'opptiai-alt-text-generator'); ?></h2>
-                        <p><?php esc_html_e('Settings are only available to authenticated agency users. Please log in with your agency credentials to access this section.', 'opptiai-alt-text-generator'); ?></p>
+                        <h2><?php esc_html_e('Authentication Required', 'wp-alt-text-plugin'); ?></h2>
+                        <p><?php esc_html_e('Settings are only available to authenticated agency users. Please log in with your agency credentials to access this section.', 'wp-alt-text-plugin'); ?></p>
                         <p style="margin-top: 12px; font-size: 14px; color: #6b7280;">
-                            <?php esc_html_e('If you don\'t have agency credentials, please contact your agency administrator or log in with the correct account.', 'opptiai-alt-text-generator'); ?>
+                            <?php esc_html_e('If you don\'t have agency credentials, please contact your agency administrator or log in with the correct account.', 'wp-alt-text-plugin'); ?>
                         </p>
                         <button type="button" class="alttextai-btn-primary alttextai-btn-icon" data-action="show-auth-modal" data-auth-tab="login" style="margin-top: 20px;">
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                 <circle cx="8" cy="8" r="2" fill="currentColor"/>
                             </svg>
-                            <span><?php esc_html_e('Log In', 'opptiai-alt-text-generator'); ?></span>
+                            <span><?php esc_html_e('Log In', 'wp-alt-text-plugin'); ?></span>
                         </button>
                     </div>
                 </div>
@@ -2877,20 +3037,20 @@ class Opptiai_Alt_Core {
 
                 // Determine plan badge text
                 if ($is_agency) {
-                    $plan_badge_text = esc_html__('AGENCY', 'opptiai-alt-text-generator');
+                    $plan_badge_text = esc_html__('AGENCY', 'wp-alt-text-plugin');
                 } elseif ($is_pro) {
-                    $plan_badge_text = esc_html__('PRO', 'opptiai-alt-text-generator');
+                    $plan_badge_text = esc_html__('PRO', 'wp-alt-text-plugin');
                 } else {
-                    $plan_badge_text = esc_html__('FREE', 'opptiai-alt-text-generator');
+                    $plan_badge_text = esc_html__('FREE', 'wp-alt-text-plugin');
                 }
                 ?>
 
                 <!-- Header Section -->
                 <div class="alttextai-settings-page-header">
-                    <h1 class="alttextai-settings-page-title"><?php esc_html_e('Settings', 'opptiai-alt-text-generator'); ?></h1>
-                    <p class="alttextai-settings-page-subtitle"><?php esc_html_e('Configure generation preferences and manage your account.', 'opptiai-alt-text-generator'); ?></p>
+                    <h1 class="alttextai-settings-page-title"><?php esc_html_e('Settings', 'wp-alt-text-plugin'); ?></h1>
+                    <p class="alttextai-settings-page-subtitle"><?php esc_html_e('Configure generation preferences and manage your account.', 'wp-alt-text-plugin'); ?></p>
                 </div>
-
+                
                 <!-- Site-Wide Settings Banner -->
                 <div class="alttextai-settings-sitewide-banner">
                     <svg class="alttextai-settings-sitewide-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -2898,9 +3058,9 @@ class Opptiai_Alt_Core {
                         <path d="M10 6V10M10 14H10.01" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
                     </svg>
                     <div class="alttextai-settings-sitewide-content">
-                        <strong class="alttextai-settings-sitewide-title"><?php esc_html_e('Site-Wide Settings', 'opptiai-alt-text-generator'); ?></strong>
+                        <strong class="alttextai-settings-sitewide-title"><?php esc_html_e('Site-Wide Settings', 'wp-alt-text-plugin'); ?></strong>
                         <span class="alttextai-settings-sitewide-text">
-                            <?php esc_html_e('These settings apply to all users on this WordPress site.', 'opptiai-alt-text-generator'); ?>
+                            <?php esc_html_e('These settings apply to all users on this WordPress site.', 'wp-alt-text-plugin'); ?>
                         </span>
                     </div>
                 </div>
@@ -2917,8 +3077,8 @@ class Opptiai_Alt_Core {
                             <span class="alttextai-settings-plan-quota-limit"><?php echo esc_html($usage_box['limit']); ?></span>
                         </div>
                         <div class="alttextai-settings-plan-quota-label">
-                            <?php esc_html_e('image descriptions', 'opptiai-alt-text-generator'); ?>
-                        </div>
+                            <?php esc_html_e('image descriptions', 'wp-alt-text-plugin'); ?>
+                    </div>
                     </div>
                     <div class="alttextai-settings-plan-info">
                         <?php if (!$is_pro && !$is_agency) : ?>
@@ -2931,11 +3091,11 @@ class Opptiai_Alt_Core {
                                     <?php
                                     if (isset($usage_box['reset_date'])) {
                                         printf(
-                                            esc_html__('Resets %s', 'opptiai-alt-text-generator'),
+                                            esc_html__('Resets %s', 'wp-alt-text-plugin'),
                                             '<strong>' . esc_html($usage_box['reset_date']) . '</strong>'
                                         );
                                     } else {
-                                        esc_html_e('Monthly quota', 'opptiai-alt-text-generator');
+                                        esc_html_e('Monthly quota', 'wp-alt-text-plugin');
                                     }
                                     ?>
                                 </span>
@@ -2945,39 +3105,39 @@ class Opptiai_Alt_Core {
                                     <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                     <circle cx="8" cy="8" r="2" fill="currentColor"/>
                                 </svg>
-                                <span><?php esc_html_e('Shared across all users', 'opptiai-alt-text-generator'); ?></span>
+                                <span><?php esc_html_e('Shared across all users', 'wp-alt-text-plugin'); ?></span>
                             </div>
                         <?php elseif ($is_agency) : ?>
                             <div class="alttextai-settings-plan-info-item">
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                     <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
-                                <span><?php esc_html_e('Multi-site license', 'opptiai-alt-text-generator'); ?></span>
+                                <span><?php esc_html_e('Multi-site license', 'wp-alt-text-plugin'); ?></span>
                             </div>
                             <div class="alttextai-settings-plan-info-item">
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                     <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
-                                <span><?php echo sprintf(esc_html__('Resets %s', 'opptiai-alt-text-generator'), '<strong>' . esc_html($usage_box['reset_date'] ?? 'Monthly') . '</strong>'); ?></span>
+                                <span><?php echo sprintf(esc_html__('Resets %s', 'wp-alt-text-plugin'), '<strong>' . esc_html($usage_box['reset_date'] ?? 'Monthly') . '</strong>'); ?></span>
                             </div>
                         <?php else : ?>
                             <div class="alttextai-settings-plan-info-item">
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                     <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
-                                <span><?php esc_html_e('Unlimited generations', 'opptiai-alt-text-generator'); ?></span>
+                                <span><?php esc_html_e('Unlimited generations', 'wp-alt-text-plugin'); ?></span>
                             </div>
                             <div class="alttextai-settings-plan-info-item">
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                     <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
-                                <span><?php esc_html_e('Priority support', 'opptiai-alt-text-generator'); ?></span>
+                                <span><?php esc_html_e('Priority support', 'wp-alt-text-plugin'); ?></span>
                             </div>
                         <?php endif; ?>
                     </div>
                     <?php if (!$is_pro && !$is_agency) : ?>
                     <button type="button" class="alttextai-settings-plan-upgrade-btn-large" data-action="show-upgrade-modal">
-                        <?php esc_html_e('Upgrade to Pro', 'opptiai-alt-text-generator'); ?>
+                        <?php esc_html_e('Upgrade to Pro', 'wp-alt-text-plugin'); ?>
                     </button>
                     <?php endif; ?>
                 </div>
@@ -2996,7 +3156,7 @@ class Opptiai_Alt_Core {
                         <div class="alttextai-settings-card-header-icon">
                             <span class="alttextai-settings-card-icon-emoji">🔑</span>
                         </div>
-                        <h3 class="alttextai-settings-card-title"><?php esc_html_e('License', 'opptiai-alt-text-generator'); ?></h3>
+                        <h3 class="alttextai-settings-card-title"><?php esc_html_e('License', 'wp-alt-text-plugin'); ?></h3>
                     </div>
 
                     <?php if ($has_license && $license_data) : ?>
@@ -3012,7 +3172,7 @@ class Opptiai_Alt_Core {
                                     <path d="M6 10L9 13L14 7" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
                                 <div>
-                                    <div class="alttextai-settings-license-title"><?php esc_html_e('License Active', 'opptiai-alt-text-generator'); ?></div>
+                                    <div class="alttextai-settings-license-title"><?php esc_html_e('License Active', 'wp-alt-text-plugin'); ?></div>
                                     <div class="alttextai-settings-license-subtitle"><?php echo esc_html($org['name'] ?? ''); ?></div>
                                     <?php 
                                     // Display license key for Pro and Agency users
@@ -3022,7 +3182,7 @@ class Opptiai_Alt_Core {
                                         if ($license_plan === 'pro' || $license_plan === 'agency') :
                                     ?>
                                     <div class="alttextai-settings-license-key" style="margin-top: 8px; font-size: 12px; color: #6b7280; font-family: monospace; word-break: break-all;">
-                                        <strong><?php esc_html_e('License Key:', 'opptiai-alt-text-generator'); ?></strong> <?php echo esc_html($license_key); ?>
+                                        <strong><?php esc_html_e('License Key:', 'wp-alt-text-plugin'); ?></strong> <?php echo esc_html($license_key); ?>
                                     </div>
                                     <?php 
                                         endif;
@@ -3031,7 +3191,7 @@ class Opptiai_Alt_Core {
                                 </div>
                             </div>
                             <button type="button" class="alttextai-settings-license-deactivate-btn" data-action="deactivate-license">
-                                <?php esc_html_e('Deactivate', 'opptiai-alt-text-generator'); ?>
+                                <?php esc_html_e('Deactivate', 'wp-alt-text-plugin'); ?>
                             </button>
                         </div>
                         
@@ -3052,13 +3212,13 @@ class Opptiai_Alt_Core {
                                         <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                         <circle cx="8" cy="8" r="2" fill="currentColor"/>
                                     </svg>
-                                    <?php esc_html_e('Sites Using This License', 'opptiai-alt-text-generator'); ?>
+                                    <?php esc_html_e('Sites Using This License', 'wp-alt-text-plugin'); ?>
                                 </h3>
                             </div>
                             <div class="alttextai-settings-license-sites-content" id="alttextai-license-sites-content">
                                 <div class="alttextai-settings-license-sites-loading">
                                     <span class="alttextai-spinner"></span>
-                                    <?php esc_html_e('Loading site usage...', 'opptiai-alt-text-generator'); ?>
+                                    <?php esc_html_e('Loading site usage...', 'wp-alt-text-plugin'); ?>
                                 </div>
                             </div>
                         </div>
@@ -3069,12 +3229,12 @@ class Opptiai_Alt_Core {
                         <!-- License Activation Form -->
                         <div class="alttextai-settings-license-form">
                             <p class="alttextai-settings-license-description">
-                                <?php esc_html_e('Enter your license key to activate this site. Agency licenses can be used across multiple sites.', 'opptiai-alt-text-generator'); ?>
+                                <?php esc_html_e('Enter your license key to activate this site. Agency licenses can be used across multiple sites.', 'wp-alt-text-plugin'); ?>
                             </p>
                             <form id="license-activation-form">
                                 <div class="alttextai-settings-license-input-group">
                                     <label for="license-key-input" class="alttextai-settings-license-label">
-                                        <?php esc_html_e('License Key', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('License Key', 'wp-alt-text-plugin'); ?>
                                     </label>
                                     <input type="text"
                                            id="license-key-input"
@@ -3086,7 +3246,7 @@ class Opptiai_Alt_Core {
                                 </div>
                                 <div id="license-activation-status" style="display: none; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 14px;"></div>
                                 <button type="submit" id="activate-license-btn" class="alttextai-settings-license-activate-btn">
-                                    <?php esc_html_e('Activate License', 'opptiai-alt-text-generator'); ?>
+                                    <?php esc_html_e('Activate License', 'wp-alt-text-plugin'); ?>
                                 </button>
                             </form>
                         </div>
@@ -3102,26 +3262,26 @@ class Opptiai_Alt_Core {
                         <div class="alttextai-settings-card-header-icon">
                             <span class="alttextai-settings-card-icon-emoji">👤</span>
                         </div>
-                        <h3 class="alttextai-settings-card-title"><?php esc_html_e('Account Management', 'opptiai-alt-text-generator'); ?></h3>
+                        <h3 class="alttextai-settings-card-title"><?php esc_html_e('Account Management', 'wp-alt-text-plugin'); ?></h3>
                     </div>
                     
                     <?php if (!$is_pro && !$is_agency) : ?>
                     <div class="alttextai-settings-account-info-banner">
-                        <span><?php esc_html_e('You are on the free plan.', 'opptiai-alt-text-generator'); ?></span>
+                        <span><?php esc_html_e('You are on the free plan.', 'wp-alt-text-plugin'); ?></span>
                     </div>
                     <div class="alttextai-settings-account-upgrade-link">
                         <button type="button" class="alttextai-settings-account-upgrade-btn" data-action="show-upgrade-modal">
-                            <?php esc_html_e('Upgrade Now', 'opptiai-alt-text-generator'); ?>
+                            <?php esc_html_e('Upgrade Now', 'wp-alt-text-plugin'); ?>
                         </button>
                     </div>
                     <?php else : ?>
                     <div class="alttextai-settings-account-status">
-                        <span class="alttextai-settings-account-status-label"><?php esc_html_e('Current Plan:', 'opptiai-alt-text-generator'); ?></span>
+                        <span class="alttextai-settings-account-status-label"><?php esc_html_e('Current Plan:', 'wp-alt-text-plugin'); ?></span>
                         <span class="alttextai-settings-account-status-value"><?php 
                             if ($is_agency) {
-                                esc_html_e('Agency', 'opptiai-alt-text-generator');
+                                esc_html_e('Agency', 'wp-alt-text-plugin');
                             } else {
-                                esc_html_e('Pro', 'opptiai-alt-text-generator');
+                                esc_html_e('Pro', 'wp-alt-text-plugin');
                             }
                         ?></span>
                     </div>
@@ -3135,12 +3295,12 @@ class Opptiai_Alt_Core {
                     ?>
                     <div class="alttextai-settings-account-actions">
                         <div class="alttextai-settings-account-action-info">
-                            <p><strong><?php esc_html_e('License-Based Plan', 'opptiai-alt-text-generator'); ?></strong></p>
-                            <p><?php esc_html_e('Your subscription is managed through your license. To manage billing, invoices, or update your subscription:', 'opptiai-alt-text-generator'); ?></p>
+                            <p><strong><?php esc_html_e('License-Based Plan', 'wp-alt-text-plugin'); ?></strong></p>
+                            <p><?php esc_html_e('Your subscription is managed through your license. To manage billing, invoices, or update your subscription:', 'wp-alt-text-plugin'); ?></p>
                             <ul>
-                                <li><?php esc_html_e('Contact your license administrator', 'opptiai-alt-text-generator'); ?></li>
-                                <li><?php esc_html_e('Email support for billing inquiries', 'opptiai-alt-text-generator'); ?></li>
-                                <li><?php esc_html_e('View license details in the License section above', 'opptiai-alt-text-generator'); ?></li>
+                                <li><?php esc_html_e('Contact your license administrator', 'wp-alt-text-plugin'); ?></li>
+                                <li><?php esc_html_e('Email support for billing inquiries', 'wp-alt-text-plugin'); ?></li>
+                                <li><?php esc_html_e('View license details in the License section above', 'wp-alt-text-plugin'); ?></li>
                             </ul>
                         </div>
                     </div>
@@ -3153,15 +3313,15 @@ class Opptiai_Alt_Core {
                                 <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                 <circle cx="8" cy="8" r="2" fill="currentColor"/>
                             </svg>
-                            <span><?php esc_html_e('Manage Subscription', 'opptiai-alt-text-generator'); ?></span>
+                            <span><?php esc_html_e('Manage Subscription', 'wp-alt-text-plugin'); ?></span>
                         </button>
                         <div class="alttextai-settings-account-action-info">
-                            <p><?php esc_html_e('In Stripe Customer Portal you can:', 'opptiai-alt-text-generator'); ?></p>
+                            <p><?php esc_html_e('In Stripe Customer Portal you can:', 'wp-alt-text-plugin'); ?></p>
                             <ul>
-                                <li><?php esc_html_e('View and download invoices', 'opptiai-alt-text-generator'); ?></li>
-                                <li><?php esc_html_e('Update payment method', 'opptiai-alt-text-generator'); ?></li>
-                                <li><?php esc_html_e('View payment history', 'opptiai-alt-text-generator'); ?></li>
-                                <li><?php esc_html_e('Cancel or modify subscription', 'opptiai-alt-text-generator'); ?></li>
+                                <li><?php esc_html_e('View and download invoices', 'wp-alt-text-plugin'); ?></li>
+                                <li><?php esc_html_e('Update payment method', 'wp-alt-text-plugin'); ?></li>
+                                <li><?php esc_html_e('View payment history', 'wp-alt-text-plugin'); ?></li>
+                                <li><?php esc_html_e('Cancel or modify subscription', 'wp-alt-text-plugin'); ?></li>
                             </ul>
                         </div>
                     </div>
@@ -3175,16 +3335,16 @@ class Opptiai_Alt_Core {
 
                     <!-- Generation Settings Card -->
                     <div class="alttextai-settings-card">
-                        <h3 class="alttextai-settings-generation-title"><?php esc_html_e('Generation Settings', 'opptiai-alt-text-generator'); ?></h3>
+                        <h3 class="alttextai-settings-generation-title"><?php esc_html_e('Generation Settings', 'wp-alt-text-plugin'); ?></h3>
 
                         <div class="alttextai-settings-form-group">
                             <div class="alttextai-settings-form-field alttextai-settings-form-field--toggle">
                                 <div class="alttextai-settings-form-field-content">
                                     <label for="ai-alt-enable-on-upload" class="alttextai-settings-form-label">
-                                        <?php esc_html_e('Auto-generate on Image Upload', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Auto-generate on Image Upload', 'wp-alt-text-plugin'); ?>
                                     </label>
                                     <p class="alttextai-settings-form-description">
-                                        <?php esc_html_e('Automatically generate alt text when new images are uploaded to your media library.', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Automatically generate alt text when new images are uploaded to your media library.', 'wp-alt-text-plugin'); ?>
                                     </p>
                                 </div>
                                 <label class="alttextai-settings-toggle">
@@ -3202,34 +3362,34 @@ class Opptiai_Alt_Core {
 
                         <div class="alttextai-settings-form-group">
                             <label for="ai-alt-tone" class="alttextai-settings-form-label">
-                                <?php esc_html_e('Tone & Style', 'opptiai-alt-text-generator'); ?>
+                                <?php esc_html_e('Tone & Style', 'wp-alt-text-plugin'); ?>
                             </label>
                             <input
                                 type="text"
                                 id="ai-alt-tone"
                                 name="<?php echo esc_attr(self::OPTION_KEY); ?>[tone]"
                                 value="<?php echo esc_attr($o['tone'] ?? 'professional, accessible'); ?>"
-                                placeholder="<?php esc_attr_e('professional, accessible', 'opptiai-alt-text-generator'); ?>"
+                                placeholder="<?php esc_attr_e('professional, accessible', 'wp-alt-text-plugin'); ?>"
                                 class="alttextai-settings-form-input"
                             />
                         </div>
 
                         <div class="alttextai-settings-form-group">
                             <label for="ai-alt-custom-prompt" class="alttextai-settings-form-label">
-                                <?php esc_html_e('Additional Instructions', 'opptiai-alt-text-generator'); ?>
+                                <?php esc_html_e('Additional Instructions', 'wp-alt-text-plugin'); ?>
                             </label>
                             <textarea
                                 id="ai-alt-custom-prompt"
                                 name="<?php echo esc_attr(self::OPTION_KEY); ?>[custom_prompt]"
                                 rows="4"
-                                placeholder="<?php esc_attr_e('Enter any specific instructions for the AI...', 'opptiai-alt-text-generator'); ?>"
+                                placeholder="<?php esc_attr_e('Enter any specific instructions for the AI...', 'wp-alt-text-plugin'); ?>"
                                 class="alttextai-settings-form-textarea"
                             ><?php echo esc_textarea($o['custom_prompt'] ?? ''); ?></textarea>
                         </div>
 
                         <div class="alttextai-settings-form-actions">
                             <button type="submit" class="alttextai-settings-save-btn">
-                                <?php esc_html_e('Save Settings', 'opptiai-alt-text-generator'); ?>
+                                <?php esc_html_e('Save Settings', 'wp-alt-text-plugin'); ?>
                             </button>
                         </div>
                     </div>
@@ -3244,34 +3404,34 @@ class Opptiai_Alt_Core {
 
                 <!-- Pro Upsell Banner -->
                     <?php if (!$is_agency) : ?>
-                    <div class="alttextai-settings-pro-upsell-banner">
+                <div class="alttextai-settings-pro-upsell-banner">
                     <div class="alttextai-settings-pro-upsell-content">
                         <h3 class="alttextai-settings-pro-upsell-title">
-                            <?php esc_html_e('Want unlimited AI alt text and faster processing?', 'opptiai-alt-text-generator'); ?>
+                            <?php esc_html_e('Want unlimited AI alt text and faster processing?', 'wp-alt-text-plugin'); ?>
                         </h3>
                         <ul class="alttextai-settings-pro-upsell-features">
                             <li>
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                     <path d="M13 4L6 11L3 8" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
-                                <span><?php esc_html_e('Unlimited monthly AI generations', 'opptiai-alt-text-generator'); ?></span>
+                                <span><?php esc_html_e('Unlimited monthly AI generations', 'wp-alt-text-plugin'); ?></span>
                             </li>
                             <li>
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                     <path d="M13 4L6 11L3 8" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
-                                <span><?php esc_html_e('Priority queue', 'opptiai-alt-text-generator'); ?></span>
+                                <span><?php esc_html_e('Priority queue', 'wp-alt-text-plugin'); ?></span>
                             </li>
                             <li>
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                     <path d="M13 4L6 11L3 8" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
-                                <span><?php esc_html_e('Large library batch mode', 'opptiai-alt-text-generator'); ?></span>
+                                <span><?php esc_html_e('Large library batch mode', 'wp-alt-text-plugin'); ?></span>
                             </li>
                         </ul>
                     </div>
                     <button type="button" class="alttextai-settings-pro-upsell-btn" data-action="show-upgrade-modal">
-                        <?php esc_html_e('View Plans & Pricing', 'opptiai-alt-text-generator'); ?> →
+                        <?php esc_html_e('View Plans & Pricing', 'wp-alt-text-plugin'); ?> →
                     </button>
                 </div>
                 <?php endif; ?>
@@ -3292,14 +3452,14 @@ class Opptiai_Alt_Core {
                                     <path d="M12 1L23 12L12 23L1 12L12 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                     <circle cx="12" cy="12" r="3" fill="currentColor"/>
                                 </svg>
-                                <?php esc_html_e('Admin Access', 'opptiai-alt-text-generator'); ?>
+                                <?php esc_html_e('Admin Access', 'wp-alt-text-plugin'); ?>
                             </h2>
                             <p class="alttextai-admin-login-subtitle">
                                 <?php 
                                 if ($is_agency_for_admin) {
-                                    esc_html_e('Enter your agency credentials to access Debug Logs and Settings.', 'opptiai-alt-text-generator');
+                                    esc_html_e('Enter your agency credentials to access Debug Logs and Settings.', 'wp-alt-text-plugin');
                                 } else {
-                                    esc_html_e('Enter your pro credentials to access Debug Logs and Settings.', 'opptiai-alt-text-generator');
+                                    esc_html_e('Enter your pro credentials to access Debug Logs and Settings.', 'wp-alt-text-plugin');
                                 }
                                 ?>
                             </p>
@@ -3310,30 +3470,30 @@ class Opptiai_Alt_Core {
                             
                             <div class="alttextai-admin-login-field">
                                 <label for="admin-login-email" class="alttextai-admin-login-label">
-                                    <?php esc_html_e('Email', 'opptiai-alt-text-generator'); ?>
+                                    <?php esc_html_e('Email', 'wp-alt-text-plugin'); ?>
                                 </label>
                                 <input type="email" 
                                        id="admin-login-email" 
                                        name="email" 
                                        class="alttextai-admin-login-input" 
-                                       placeholder="<?php esc_attr_e('your-email@example.com', 'opptiai-alt-text-generator'); ?>"
+                                       placeholder="<?php esc_attr_e('your-email@example.com', 'wp-alt-text-plugin'); ?>"
                                        required>
                             </div>
                             
                             <div class="alttextai-admin-login-field">
                                 <label for="admin-login-password" class="alttextai-admin-login-label">
-                                    <?php esc_html_e('Password', 'opptiai-alt-text-generator'); ?>
+                                    <?php esc_html_e('Password', 'wp-alt-text-plugin'); ?>
                                 </label>
                                 <input type="password" 
                                        id="admin-login-password" 
                                        name="password" 
                                        class="alttextai-admin-login-input" 
-                                       placeholder="<?php esc_attr_e('Enter your password', 'opptiai-alt-text-generator'); ?>"
+                                       placeholder="<?php esc_attr_e('Enter your password', 'wp-alt-text-plugin'); ?>"
                                        required>
                             </div>
                             
                             <button type="submit" id="admin-login-submit-btn" class="alttextai-admin-login-btn">
-                                <span class="alttextai-btn__text"><?php esc_html_e('Log In', 'opptiai-alt-text-generator'); ?></span>
+                                <span class="alttextai-btn__text"><?php esc_html_e('Log In', 'wp-alt-text-plugin'); ?></span>
                                 <span class="alttextai-btn__spinner" style="display: none;">
                                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                         <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="2" stroke-dasharray="43.98" stroke-dashoffset="10.99" fill="none" opacity="0.5">
@@ -3411,10 +3571,10 @@ class Opptiai_Alt_Core {
                                     <path d="M10 1L19 10L10 19L1 10L10 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                     <circle cx="10" cy="10" r="2.5" fill="currentColor"/>
                                 </svg>
-                                <?php esc_html_e('Admin Panel', 'opptiai-alt-text-generator'); ?>
+                                <?php esc_html_e('Admin Panel', 'wp-alt-text-plugin'); ?>
                             </h2>
                             <p class="alttextai-admin-header-subtitle">
-                                <?php esc_html_e('Debug Logs and Settings', 'opptiai-alt-text-generator'); ?>
+                                <?php esc_html_e('Debug Logs and Settings', 'wp-alt-text-plugin'); ?>
                             </p>
                         </div>
                         <button type="button" class="alttextai-admin-logout-btn" id="alttextai-admin-logout-btn">
@@ -3423,7 +3583,7 @@ class Opptiai_Alt_Core {
                                 <path d="M10 11L13 8L10 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                                 <path d="M13 8H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                             </svg>
-                            <?php esc_html_e('Log Out', 'opptiai-alt-text-generator'); ?>
+                            <?php esc_html_e('Log Out', 'wp-alt-text-plugin'); ?>
                         </button>
                     </div>
 
@@ -3434,28 +3594,28 @@ class Opptiai_Alt_Core {
                                 <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                 <circle cx="8" cy="8" r="2" fill="currentColor"/>
                             </svg>
-                            <?php esc_html_e('Debug Logs', 'opptiai-alt-text-generator'); ?>
+                            <?php esc_html_e('Debug Logs', 'wp-alt-text-plugin'); ?>
                         </button>
                         <button type="button" class="alttextai-admin-tab" data-admin-tab="settings">
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="margin-right: 8px;">
                                 <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                 <path d="M8 4V8L10 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                             </svg>
-                            <?php esc_html_e('Settings', 'opptiai-alt-text-generator'); ?>
+                            <?php esc_html_e('Settings', 'wp-alt-text-plugin'); ?>
                         </button>
                     </div>
 
                     <!-- Debug Logs Section -->
                     <div class="alttextai-admin-section alttextai-admin-tab-content" data-admin-tab-content="debug">
                         <div class="alttextai-admin-section-header">
-                            <h3 class="alttextai-admin-section-title"><?php esc_html_e('Debug Logs', 'opptiai-alt-text-generator'); ?></h3>
+                            <h3 class="alttextai-admin-section-title"><?php esc_html_e('Debug Logs', 'wp-alt-text-plugin'); ?></h3>
                         </div>
                         <?php
                         // Reuse debug logs content
                         if (!class_exists('AltText_AI_Debug_Log')) : ?>
                             <div class="alttextai-section">
                                 <div class="notice notice-warning">
-                                    <p><?php esc_html_e('Debug logging is not available on this site. Please reinstall the logging module.', 'opptiai-alt-text-generator'); ?></p>
+                                    <p><?php esc_html_e('Debug logging is not available on this site. Please reinstall the logging module.', 'wp-alt-text-plugin'); ?></p>
                                 </div>
                             </div>
                         <?php else :
@@ -3474,15 +3634,15 @@ class Opptiai_Alt_Core {
                                 <!-- Debug Logs content (same as debug tab) - inline all content here -->
                                 <!-- Header Section -->
                                 <div class="alttextai-debug-header">
-                                    <h1 class="alttextai-dashboard-title"><?php esc_html_e('Debug Logs', 'opptiai-alt-text-generator'); ?></h1>
-                                    <p class="alttextai-dashboard-subtitle"><?php esc_html_e('Monitor API calls, queue events, and any errors generated by the plugin.', 'opptiai-alt-text-generator'); ?></p>
+                                    <h1 class="alttextai-dashboard-title"><?php esc_html_e('Debug Logs', 'wp-alt-text-plugin'); ?></h1>
+                                    <p class="alttextai-dashboard-subtitle"><?php esc_html_e('Monitor API calls, queue events, and any errors generated by the plugin.', 'wp-alt-text-plugin'); ?></p>
                                     
                                     <!-- Usage Info -->
                                     <?php if (isset($usage_stats)) : ?>
                                     <div class="alttextai-debug-usage-info">
                                         <?php 
                                         printf(
-                                            esc_html__('%1$d of %2$d image descriptions generated this month', 'opptiai-alt-text-generator'),
+                                            esc_html__('%1$d of %2$d image descriptions generated this month', 'wp-alt-text-plugin'),
                                             $usage_stats['used'] ?? 0,
                                             $usage_stats['limit'] ?? 0
                                         ); 
@@ -3494,9 +3654,9 @@ class Opptiai_Alt_Core {
                                             $reset_timestamp = strtotime($reset_date);
                                             if ($reset_timestamp !== false) {
                                                 $formatted_reset = date_i18n('F j, Y', $reset_timestamp);
-                                                printf(esc_html__('Resets %s', 'opptiai-alt-text-generator'), esc_html($formatted_reset));
+                                                printf(esc_html__('Resets %s', 'wp-alt-text-plugin'), esc_html($formatted_reset));
                                             } else {
-                                                printf(esc_html__('Resets %s', 'opptiai-alt-text-generator'), esc_html($reset_date));
+                                                printf(esc_html__('Resets %s', 'wp-alt-text-plugin'), esc_html($reset_date));
                                             }
                                         }
                                         ?>
@@ -3508,14 +3668,14 @@ class Opptiai_Alt_Core {
                                 <div class="alttextai-debug-stats-card">
                                     <div class="alttextai-debug-stats-header">
                                         <div class="alttextai-debug-stats-title">
-                                            <h3><?php esc_html_e('Log Statistics', 'opptiai-alt-text-generator'); ?></h3>
+                                            <h3><?php esc_html_e('Log Statistics', 'wp-alt-text-plugin'); ?></h3>
                                         </div>
                                         <div class="alttextai-debug-stats-actions">
                                             <button type="button" class="alttextai-debug-btn alttextai-debug-btn--secondary" data-debug-clear>
-                                                <?php esc_html_e('Clear Logs', 'opptiai-alt-text-generator'); ?>
+                                                <?php esc_html_e('Clear Logs', 'wp-alt-text-plugin'); ?>
                                             </button>
                                             <a href="<?php echo esc_url($debug_export_url); ?>" class="alttextai-debug-btn alttextai-debug-btn--primary">
-                                                <?php esc_html_e('Export CSV', 'opptiai-alt-text-generator'); ?>
+                                                <?php esc_html_e('Export CSV', 'wp-alt-text-plugin'); ?>
                                             </a>
                                         </div>
                                     </div>
@@ -3523,25 +3683,25 @@ class Opptiai_Alt_Core {
                                     <!-- Stats Grid -->
                                     <div class="alttextai-debug-stats-grid">
                                         <div class="alttextai-debug-stat-item">
-                                            <div class="alttextai-debug-stat-label"><?php esc_html_e('TOTAL LOGS', 'opptiai-alt-text-generator'); ?></div>
+                                            <div class="alttextai-debug-stat-label"><?php esc_html_e('TOTAL LOGS', 'wp-alt-text-plugin'); ?></div>
                                             <div class="alttextai-debug-stat-value" data-debug-stat="total">
                                                 <?php echo esc_html(number_format_i18n(intval($debug_stats['total'] ?? 0))); ?>
                                             </div>
                                         </div>
                                         <div class="alttextai-debug-stat-item alttextai-debug-stat-item--warning">
-                                            <div class="alttextai-debug-stat-label"><?php esc_html_e('WARNINGS', 'opptiai-alt-text-generator'); ?></div>
+                                            <div class="alttextai-debug-stat-label"><?php esc_html_e('WARNINGS', 'wp-alt-text-plugin'); ?></div>
                                             <div class="alttextai-debug-stat-value alttextai-debug-stat-value--warning" data-debug-stat="warnings">
                                                 <?php echo esc_html(number_format_i18n(intval($debug_stats['warnings'] ?? 0))); ?>
                                             </div>
                                         </div>
                                         <div class="alttextai-debug-stat-item alttextai-debug-stat-item--error">
-                                            <div class="alttextai-debug-stat-label"><?php esc_html_e('ERRORS', 'opptiai-alt-text-generator'); ?></div>
+                                            <div class="alttextai-debug-stat-label"><?php esc_html_e('ERRORS', 'wp-alt-text-plugin'); ?></div>
                                             <div class="alttextai-debug-stat-value alttextai-debug-stat-value--error" data-debug-stat="errors">
                                                 <?php echo esc_html(number_format_i18n(intval($debug_stats['errors'] ?? 0))); ?>
                                             </div>
                                         </div>
                                         <div class="alttextai-debug-stat-item">
-                                            <div class="alttextai-debug-stat-label"><?php esc_html_e('LAST API EVENT', 'opptiai-alt-text-generator'); ?></div>
+                                            <div class="alttextai-debug-stat-label"><?php esc_html_e('LAST API EVENT', 'wp-alt-text-plugin'); ?></div>
                                             <div class="alttextai-debug-stat-value alttextai-debug-stat-value--small" data-debug-stat="last_api">
                                                 <?php echo esc_html($debug_stats['last_api'] ?? '—'); ?>
                                             </div>
@@ -3554,39 +3714,39 @@ class Opptiai_Alt_Core {
                                     <form data-debug-filter class="alttextai-debug-filters-form">
                                         <div class="alttextai-debug-filter-group">
                                             <label for="alttextai-debug-level" class="alttextai-debug-filter-label">
-                                                <?php esc_html_e('Level', 'opptiai-alt-text-generator'); ?>
+                                                <?php esc_html_e('Level', 'wp-alt-text-plugin'); ?>
                                             </label>
                                             <select id="alttextai-debug-level" name="level" class="alttextai-debug-filter-input">
-                                                <option value=""><?php esc_html_e('All levels', 'opptiai-alt-text-generator'); ?></option>
-                                                <option value="info"><?php esc_html_e('Info', 'opptiai-alt-text-generator'); ?></option>
-                                                <option value="warning"><?php esc_html_e('Warning', 'opptiai-alt-text-generator'); ?></option>
-                                                <option value="error"><?php esc_html_e('Error', 'opptiai-alt-text-generator'); ?></option>
+                                                <option value=""><?php esc_html_e('All levels', 'wp-alt-text-plugin'); ?></option>
+                                                <option value="info"><?php esc_html_e('Info', 'wp-alt-text-plugin'); ?></option>
+                                                <option value="warning"><?php esc_html_e('Warning', 'wp-alt-text-plugin'); ?></option>
+                                                <option value="error"><?php esc_html_e('Error', 'wp-alt-text-plugin'); ?></option>
                                             </select>
                                         </div>
                                         <div class="alttextai-debug-filter-group">
                                             <label for="alttextai-debug-date" class="alttextai-debug-filter-label">
-                                                <?php esc_html_e('Date', 'opptiai-alt-text-generator'); ?>
+                                                <?php esc_html_e('Date', 'wp-alt-text-plugin'); ?>
                                             </label>
                                             <input type="date" id="alttextai-debug-date" name="date" class="alttextai-debug-filter-input" placeholder="dd/mm/yyyy">
                                         </div>
                                         <div class="alttextai-debug-filter-group alttextai-debug-filter-group--search">
                                             <label for="alttextai-debug-search" class="alttextai-debug-filter-label">
-                                                <?php esc_html_e('Search', 'opptiai-alt-text-generator'); ?>
+                                                <?php esc_html_e('Search', 'wp-alt-text-plugin'); ?>
                                             </label>
                                             <div class="alttextai-debug-search-wrapper">
                                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="alttextai-debug-search-icon">
                                                     <circle cx="7" cy="7" r="4" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                                     <path d="M10 10L13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                                                 </svg>
-                                                <input type="search" id="alttextai-debug-search" name="search" placeholder="<?php esc_attr_e('Search logs…', 'opptiai-alt-text-generator'); ?>" class="alttextai-debug-filter-input alttextai-debug-filter-input--search">
+                                                <input type="search" id="alttextai-debug-search" name="search" placeholder="<?php esc_attr_e('Search logs…', 'wp-alt-text-plugin'); ?>" class="alttextai-debug-filter-input alttextai-debug-filter-input--search">
                                             </div>
                                         </div>
                                         <div class="alttextai-debug-filter-actions">
                                             <button type="submit" class="alttextai-debug-btn alttextai-debug-btn--primary">
-                                                <?php esc_html_e('Apply', 'opptiai-alt-text-generator'); ?>
+                                                <?php esc_html_e('Apply', 'wp-alt-text-plugin'); ?>
                                             </button>
                                             <button type="button" class="alttextai-debug-btn alttextai-debug-btn--ghost" data-debug-reset>
-                                                <?php esc_html_e('Reset', 'opptiai-alt-text-generator'); ?>
+                                                <?php esc_html_e('Reset', 'wp-alt-text-plugin'); ?>
                                             </button>
                                         </div>
                                     </form>
@@ -3597,10 +3757,10 @@ class Opptiai_Alt_Core {
                                     <table class="alttextai-debug-table">
                                         <thead>
                                             <tr>
-                                                <th><?php esc_html_e('TIMESTAMP', 'opptiai-alt-text-generator'); ?></th>
-                                                <th><?php esc_html_e('LEVEL', 'opptiai-alt-text-generator'); ?></th>
-                                                <th><?php esc_html_e('MESSAGE', 'opptiai-alt-text-generator'); ?></th>
-                                                <th><?php esc_html_e('CONTEXT', 'opptiai-alt-text-generator'); ?></th>
+                                                <th><?php esc_html_e('TIMESTAMP', 'wp-alt-text-plugin'); ?></th>
+                                                <th><?php esc_html_e('LEVEL', 'wp-alt-text-plugin'); ?></th>
+                                                <th><?php esc_html_e('MESSAGE', 'wp-alt-text-plugin'); ?></th>
+                                                <th><?php esc_html_e('CONTEXT', 'wp-alt-text-plugin'); ?></th>
                                             </tr>
                                         </thead>
                                         <tbody data-debug-rows>
@@ -3660,7 +3820,7 @@ class Opptiai_Alt_Core {
                                                                     class="alttextai-debug-context-btn" 
                                                                     data-context-data="<?php echo esc_attr($context_attr); ?>"
                                                                     data-row-index="<?php echo esc_attr($row_index); ?>">
-                                                                <?php esc_html_e('Log Context', 'opptiai-alt-text-generator'); ?>
+                                                                <?php esc_html_e('Log Context', 'wp-alt-text-plugin'); ?>
                                                             </button>
                                                         <?php else : ?>
                                                             <span class="alttextai-debug-context-empty">—</span>
@@ -3680,7 +3840,7 @@ class Opptiai_Alt_Core {
                                             <?php else : ?>
                                                 <tr>
                                                     <td colspan="4" class="alttextai-debug-table-empty">
-                                                        <?php esc_html_e('No logs recorded yet.', 'opptiai-alt-text-generator'); ?>
+                                                        <?php esc_html_e('No logs recorded yet.', 'wp-alt-text-plugin'); ?>
                                                     </td>
                                                 </tr>
                                             <?php endif; ?>
@@ -3692,19 +3852,19 @@ class Opptiai_Alt_Core {
                                 <?php if ($debug_pages > 1) : ?>
                                 <div class="alttextai-debug-pagination">
                                     <button type="button" class="alttextai-debug-pagination-btn" data-debug-page="prev" <?php disabled($debug_page <= 1); ?>>
-                                        <?php esc_html_e('Previous', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Previous', 'wp-alt-text-plugin'); ?>
                                     </button>
                                     <span class="alttextai-debug-pagination-info" data-debug-page-indicator>
                                         <?php
                                             printf(
-                                                esc_html__('Page %1$s of %2$s', 'opptiai-alt-text-generator'),
+                                                esc_html__('Page %1$s of %2$s', 'wp-alt-text-plugin'),
                                                 esc_html(number_format_i18n($debug_page)),
                                                 esc_html(number_format_i18n($debug_pages))
                                             );
                                         ?>
                                     </span>
                                     <button type="button" class="alttextai-debug-pagination-btn" data-debug-page="next" <?php disabled($debug_page >= $debug_pages); ?>>
-                                        <?php esc_html_e('Next', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Next', 'wp-alt-text-plugin'); ?>
                                     </button>
                                 </div>
                                 <?php endif; ?>
@@ -3838,7 +3998,7 @@ class Opptiai_Alt_Core {
                     <!-- Settings Section -->
                     <div class="alttextai-admin-section alttextai-admin-tab-content" data-admin-tab-content="settings" style="display: none;">
                         <div class="alttextai-admin-section-header">
-                            <h3 class="alttextai-admin-section-title"><?php esc_html_e('Settings', 'opptiai-alt-text-generator'); ?></h3>
+                            <h3 class="alttextai-admin-section-title"><?php esc_html_e('Settings', 'wp-alt-text-plugin'); ?></h3>
                         </div>
                         <?php
                         // Reuse settings content from settings tab (same as starting from line 2716)
@@ -3870,11 +4030,11 @@ class Opptiai_Alt_Core {
 
                         // Determine plan badge text
                         if ($is_agency) {
-                            $plan_badge_text = esc_html__('AGENCY', 'opptiai-alt-text-generator');
+                            $plan_badge_text = esc_html__('AGENCY', 'wp-alt-text-plugin');
                         } elseif ($is_pro) {
-                            $plan_badge_text = esc_html__('PRO', 'opptiai-alt-text-generator');
+                            $plan_badge_text = esc_html__('PRO', 'wp-alt-text-plugin');
                         } else {
-                            $plan_badge_text = esc_html__('FREE', 'opptiai-alt-text-generator');
+                            $plan_badge_text = esc_html__('FREE', 'wp-alt-text-plugin');
                         }
                         ?>
                         <!-- Settings Page Content (full content from settings tab) -->
@@ -3886,9 +4046,9 @@ class Opptiai_Alt_Core {
                                     <path d="M10 6V10M10 14H10.01" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
                                 </svg>
                                 <div class="alttextai-settings-sitewide-content">
-                                    <strong class="alttextai-settings-sitewide-title"><?php esc_html_e('Site-Wide Settings', 'opptiai-alt-text-generator'); ?></strong>
+                                    <strong class="alttextai-settings-sitewide-title"><?php esc_html_e('Site-Wide Settings', 'wp-alt-text-plugin'); ?></strong>
                                     <span class="alttextai-settings-sitewide-text">
-                                        <?php esc_html_e('These settings apply to all users on this WordPress site.', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('These settings apply to all users on this WordPress site.', 'wp-alt-text-plugin'); ?>
                                     </span>
                                 </div>
                             </div>
@@ -3905,7 +4065,7 @@ class Opptiai_Alt_Core {
                                         <span class="alttextai-settings-plan-quota-limit"><?php echo esc_html($usage_box['limit']); ?></span>
                                     </div>
                                     <div class="alttextai-settings-plan-quota-label">
-                                        <?php esc_html_e('image descriptions', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('image descriptions', 'wp-alt-text-plugin'); ?>
                                     </div>
                                 </div>
                                 <div class="alttextai-settings-plan-info">
@@ -3919,11 +4079,11 @@ class Opptiai_Alt_Core {
                                                 <?php
                                                 if (isset($usage_box['reset_date'])) {
                                                     printf(
-                                                        esc_html__('Resets %s', 'opptiai-alt-text-generator'),
+                                                        esc_html__('Resets %s', 'wp-alt-text-plugin'),
                                                         '<strong>' . esc_html($usage_box['reset_date']) . '</strong>'
                                                     );
                                                 } else {
-                                                    esc_html_e('Monthly quota', 'opptiai-alt-text-generator');
+                                                    esc_html_e('Monthly quota', 'wp-alt-text-plugin');
                                                 }
                                                 ?>
                                             </span>
@@ -3933,39 +4093,39 @@ class Opptiai_Alt_Core {
                                                 <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                                 <circle cx="8" cy="8" r="2" fill="currentColor"/>
                                             </svg>
-                                            <span><?php esc_html_e('Shared across all users', 'opptiai-alt-text-generator'); ?></span>
+                                            <span><?php esc_html_e('Shared across all users', 'wp-alt-text-plugin'); ?></span>
                                         </div>
                                     <?php elseif ($is_agency) : ?>
                                         <div class="alttextai-settings-plan-info-item">
                                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                                 <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                             </svg>
-                                            <span><?php esc_html_e('Multi-site license', 'opptiai-alt-text-generator'); ?></span>
+                                            <span><?php esc_html_e('Multi-site license', 'wp-alt-text-plugin'); ?></span>
                                         </div>
                                         <div class="alttextai-settings-plan-info-item">
                                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                                 <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                             </svg>
-                                            <span><?php echo sprintf(esc_html__('Resets %s', 'opptiai-alt-text-generator'), '<strong>' . esc_html($usage_box['reset_date'] ?? 'Monthly') . '</strong>'); ?></span>
+                                            <span><?php echo sprintf(esc_html__('Resets %s', 'wp-alt-text-plugin'), '<strong>' . esc_html($usage_box['reset_date'] ?? 'Monthly') . '</strong>'); ?></span>
                                         </div>
                                     <?php else : ?>
                                         <div class="alttextai-settings-plan-info-item">
                                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                                 <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                             </svg>
-                                            <span><?php esc_html_e('Unlimited generations', 'opptiai-alt-text-generator'); ?></span>
+                                            <span><?php esc_html_e('Unlimited generations', 'wp-alt-text-plugin'); ?></span>
                                         </div>
                                         <div class="alttextai-settings-plan-info-item">
                                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                                 <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                             </svg>
-                                            <span><?php esc_html_e('Priority support', 'opptiai-alt-text-generator'); ?></span>
+                                            <span><?php esc_html_e('Priority support', 'wp-alt-text-plugin'); ?></span>
                                         </div>
                                     <?php endif; ?>
                                 </div>
                                 <?php if (!$is_pro && !$is_agency) : ?>
                                 <button type="button" class="alttextai-settings-plan-upgrade-btn-large" data-action="show-upgrade-modal">
-                                    <?php esc_html_e('Upgrade to Pro', 'opptiai-alt-text-generator'); ?>
+                                    <?php esc_html_e('Upgrade to Pro', 'wp-alt-text-plugin'); ?>
                                 </button>
                                 <?php endif; ?>
                             </div>
@@ -3984,7 +4144,7 @@ class Opptiai_Alt_Core {
                                     <div class="alttextai-settings-card-header-icon">
                                         <span class="alttextai-settings-card-icon-emoji">🔑</span>
                                     </div>
-                                    <h3 class="alttextai-settings-card-title"><?php esc_html_e('License', 'opptiai-alt-text-generator'); ?></h3>
+                                    <h3 class="alttextai-settings-card-title"><?php esc_html_e('License', 'wp-alt-text-plugin'); ?></h3>
                                 </div>
 
                                 <?php if ($has_license && $license_data) : ?>
@@ -4000,12 +4160,12 @@ class Opptiai_Alt_Core {
                                                 <path d="M6 10L9 13L14 7" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                             </svg>
                                             <div>
-                                                <div class="alttextai-settings-license-title"><?php esc_html_e('License Active', 'opptiai-alt-text-generator'); ?></div>
+                                                <div class="alttextai-settings-license-title"><?php esc_html_e('License Active', 'wp-alt-text-plugin'); ?></div>
                                                 <div class="alttextai-settings-license-subtitle"><?php echo esc_html($org['name'] ?? ''); ?></div>
                                             </div>
                                         </div>
                                         <button type="button" class="alttextai-settings-license-deactivate-btn" data-action="deactivate-license">
-                                            <?php esc_html_e('Deactivate', 'opptiai-alt-text-generator'); ?>
+                                            <?php esc_html_e('Deactivate', 'wp-alt-text-plugin'); ?>
                                         </button>
                                     </div>
                                     
@@ -4024,13 +4184,13 @@ class Opptiai_Alt_Core {
                                                     <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                                     <circle cx="8" cy="8" r="2" fill="currentColor"/>
                                                 </svg>
-                                                <?php esc_html_e('Sites Using This License', 'opptiai-alt-text-generator'); ?>
+                                                <?php esc_html_e('Sites Using This License', 'wp-alt-text-plugin'); ?>
                                             </h3>
                                         </div>
                                         <div class="alttextai-settings-license-sites-content" id="alttextai-license-sites-content">
                                             <div class="alttextai-settings-license-sites-loading">
                                                 <span class="alttextai-spinner"></span>
-                                                <?php esc_html_e('Loading site usage...', 'opptiai-alt-text-generator'); ?>
+                                                <?php esc_html_e('Loading site usage...', 'wp-alt-text-plugin'); ?>
                                             </div>
                                         </div>
                                     </div>
@@ -4038,10 +4198,10 @@ class Opptiai_Alt_Core {
                                     <!-- Prompt to login for site usage -->
                                     <div class="alttextai-settings-license-sites-auth">
                                         <p class="alttextai-settings-license-sites-auth-text">
-                                            <?php esc_html_e('Log in to view site usage and generation statistics for this license.', 'opptiai-alt-text-generator'); ?>
+                                            <?php esc_html_e('Log in to view site usage and generation statistics for this license.', 'wp-alt-text-plugin'); ?>
                                         </p>
                                         <button type="button" class="alttextai-settings-license-sites-auth-btn" data-action="show-auth-modal" data-auth-tab="login">
-                                            <?php esc_html_e('Log In', 'opptiai-alt-text-generator'); ?>
+                                            <?php esc_html_e('Log In', 'wp-alt-text-plugin'); ?>
                                         </button>
                                     </div>
                                     <?php endif; ?>
@@ -4051,12 +4211,12 @@ class Opptiai_Alt_Core {
                                     <!-- License Activation Form -->
                                     <div class="alttextai-settings-license-form">
                                         <p class="alttextai-settings-license-description">
-                                            <?php esc_html_e('Enter your license key to activate this site. Agency licenses can be used across multiple sites.', 'opptiai-alt-text-generator'); ?>
+                                            <?php esc_html_e('Enter your license key to activate this site. Agency licenses can be used across multiple sites.', 'wp-alt-text-plugin'); ?>
                                         </p>
                                         <form id="license-activation-form">
                                             <div class="alttextai-settings-license-input-group">
                                                 <label for="license-key-input" class="alttextai-settings-license-label">
-                                                    <?php esc_html_e('License Key', 'opptiai-alt-text-generator'); ?>
+                                                    <?php esc_html_e('License Key', 'wp-alt-text-plugin'); ?>
                                                 </label>
                                                 <input type="text"
                                                        id="license-key-input"
@@ -4068,7 +4228,7 @@ class Opptiai_Alt_Core {
                                             </div>
                                             <div id="license-activation-status" style="display: none; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 14px;"></div>
                                             <button type="submit" id="activate-license-btn" class="alttextai-settings-license-activate-btn">
-                                                <?php esc_html_e('Activate License', 'opptiai-alt-text-generator'); ?>
+                                                <?php esc_html_e('Activate License', 'wp-alt-text-plugin'); ?>
                                             </button>
                                         </form>
                                     </div>
@@ -4081,26 +4241,26 @@ class Opptiai_Alt_Core {
                                     <div class="alttextai-settings-card-header-icon">
                                         <span class="alttextai-settings-card-icon-emoji">👤</span>
                                     </div>
-                                    <h3 class="alttextai-settings-card-title"><?php esc_html_e('Account Management', 'opptiai-alt-text-generator'); ?></h3>
+                                    <h3 class="alttextai-settings-card-title"><?php esc_html_e('Account Management', 'wp-alt-text-plugin'); ?></h3>
                                 </div>
                                 
                                 <?php if (!$is_pro && !$is_agency) : ?>
                                 <div class="alttextai-settings-account-info-banner">
-                                    <span><?php esc_html_e('You are on the free plan.', 'opptiai-alt-text-generator'); ?></span>
+                                    <span><?php esc_html_e('You are on the free plan.', 'wp-alt-text-plugin'); ?></span>
                                 </div>
                                 <div class="alttextai-settings-account-upgrade-link">
                                     <button type="button" class="alttextai-settings-account-upgrade-btn" data-action="show-upgrade-modal">
-                                        <?php esc_html_e('Upgrade Now', 'opptiai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Upgrade Now', 'wp-alt-text-plugin'); ?>
                                     </button>
                                 </div>
                                 <?php else : ?>
                                 <div class="alttextai-settings-account-status">
-                                    <span class="alttextai-settings-account-status-label"><?php esc_html_e('Current Plan:', 'opptiai-alt-text-generator'); ?></span>
+                                    <span class="alttextai-settings-account-status-label"><?php esc_html_e('Current Plan:', 'wp-alt-text-plugin'); ?></span>
                                     <span class="alttextai-settings-account-status-value"><?php 
                                         if ($is_agency) {
-                                            esc_html_e('Agency', 'opptiai-alt-text-generator');
+                                            esc_html_e('Agency', 'wp-alt-text-plugin');
                                         } else {
-                                            esc_html_e('Pro', 'opptiai-alt-text-generator');
+                                            esc_html_e('Pro', 'wp-alt-text-plugin');
                                         }
                                     ?></span>
                                 </div>
@@ -4114,12 +4274,12 @@ class Opptiai_Alt_Core {
                                 ?>
                                 <div class="alttextai-settings-account-actions">
                                     <div class="alttextai-settings-account-action-info">
-                                        <p><strong><?php esc_html_e('License-Based Plan', 'opptiai-alt-text-generator'); ?></strong></p>
-                                        <p><?php esc_html_e('Your subscription is managed through your license. To manage billing, invoices, or update your subscription:', 'opptiai-alt-text-generator'); ?></p>
+                                        <p><strong><?php esc_html_e('License-Based Plan', 'wp-alt-text-plugin'); ?></strong></p>
+                                        <p><?php esc_html_e('Your subscription is managed through your license. To manage billing, invoices, or update your subscription:', 'wp-alt-text-plugin'); ?></p>
                                         <ul>
-                                            <li><?php esc_html_e('Contact your license administrator', 'opptiai-alt-text-generator'); ?></li>
-                                            <li><?php esc_html_e('Email support for billing inquiries', 'opptiai-alt-text-generator'); ?></li>
-                                            <li><?php esc_html_e('View license details in the License section above', 'opptiai-alt-text-generator'); ?></li>
+                                            <li><?php esc_html_e('Contact your license administrator', 'wp-alt-text-plugin'); ?></li>
+                                            <li><?php esc_html_e('Email support for billing inquiries', 'wp-alt-text-plugin'); ?></li>
+                                            <li><?php esc_html_e('View license details in the License section above', 'wp-alt-text-plugin'); ?></li>
                                         </ul>
                                     </div>
                                 </div>
@@ -4132,15 +4292,15 @@ class Opptiai_Alt_Core {
                                             <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                             <circle cx="8" cy="8" r="2" fill="currentColor"/>
                                         </svg>
-                                        <span><?php esc_html_e('Manage Subscription', 'opptiai-alt-text-generator'); ?></span>
+                                        <span><?php esc_html_e('Manage Subscription', 'wp-alt-text-plugin'); ?></span>
                                     </button>
                                     <div class="alttextai-settings-account-action-info">
-                                        <p><?php esc_html_e('In Stripe Customer Portal you can:', 'opptiai-alt-text-generator'); ?></p>
+                                        <p><?php esc_html_e('In Stripe Customer Portal you can:', 'wp-alt-text-plugin'); ?></p>
                                         <ul>
-                                            <li><?php esc_html_e('View and download invoices', 'opptiai-alt-text-generator'); ?></li>
-                                            <li><?php esc_html_e('Update payment method', 'opptiai-alt-text-generator'); ?></li>
-                                            <li><?php esc_html_e('View payment history', 'opptiai-alt-text-generator'); ?></li>
-                                            <li><?php esc_html_e('Cancel or modify subscription', 'opptiai-alt-text-generator'); ?></li>
+                                            <li><?php esc_html_e('View and download invoices', 'wp-alt-text-plugin'); ?></li>
+                                            <li><?php esc_html_e('Update payment method', 'wp-alt-text-plugin'); ?></li>
+                                            <li><?php esc_html_e('View payment history', 'wp-alt-text-plugin'); ?></li>
+                                            <li><?php esc_html_e('Cancel or modify subscription', 'wp-alt-text-plugin'); ?></li>
                                         </ul>
                                     </div>
                                 </div>
@@ -4154,16 +4314,16 @@ class Opptiai_Alt_Core {
 
                                 <!-- Generation Settings Card -->
                                 <div class="alttextai-settings-card">
-                                    <h3 class="alttextai-settings-generation-title"><?php esc_html_e('Generation Settings', 'opptiai-alt-text-generator'); ?></h3>
+                                    <h3 class="alttextai-settings-generation-title"><?php esc_html_e('Generation Settings', 'wp-alt-text-plugin'); ?></h3>
 
                                     <div class="alttextai-settings-form-group">
                                         <div class="alttextai-settings-form-field alttextai-settings-form-field--toggle">
                                             <div class="alttextai-settings-form-field-content">
                                                 <label for="ai-alt-enable-on-upload" class="alttextai-settings-form-label">
-                                                    <?php esc_html_e('Auto-generate on Image Upload', 'opptiai-alt-text-generator'); ?>
+                                                    <?php esc_html_e('Auto-generate on Image Upload', 'wp-alt-text-plugin'); ?>
                                                 </label>
                                                 <p class="alttextai-settings-form-description">
-                                                    <?php esc_html_e('Automatically generate alt text when new images are uploaded to your media library.', 'opptiai-alt-text-generator'); ?>
+                                                    <?php esc_html_e('Automatically generate alt text when new images are uploaded to your media library.', 'wp-alt-text-plugin'); ?>
                                                 </p>
                                             </div>
                                             <label class="alttextai-settings-toggle">
@@ -4181,34 +4341,34 @@ class Opptiai_Alt_Core {
 
                                     <div class="alttextai-settings-form-group">
                                         <label for="ai-alt-tone" class="alttextai-settings-form-label">
-                                            <?php esc_html_e('Tone & Style', 'opptiai-alt-text-generator'); ?>
+                                            <?php esc_html_e('Tone & Style', 'wp-alt-text-plugin'); ?>
                                         </label>
                                         <input
                                             type="text"
                                             id="ai-alt-tone"
                                             name="<?php echo esc_attr(self::OPTION_KEY); ?>[tone]"
                                             value="<?php echo esc_attr($o['tone'] ?? 'professional, accessible'); ?>"
-                                            placeholder="<?php esc_attr_e('professional, accessible', 'opptiai-alt-text-generator'); ?>"
+                                            placeholder="<?php esc_attr_e('professional, accessible', 'wp-alt-text-plugin'); ?>"
                                             class="alttextai-settings-form-input"
                                         />
                                     </div>
 
                                     <div class="alttextai-settings-form-group">
                                         <label for="ai-alt-custom-prompt" class="alttextai-settings-form-label">
-                                            <?php esc_html_e('Additional Instructions', 'opptiai-alt-text-generator'); ?>
+                                            <?php esc_html_e('Additional Instructions', 'wp-alt-text-plugin'); ?>
                                         </label>
                                         <textarea
                                             id="ai-alt-custom-prompt"
                                             name="<?php echo esc_attr(self::OPTION_KEY); ?>[custom_prompt]"
                                             rows="4"
-                                            placeholder="<?php esc_attr_e('Enter any specific instructions for the AI...', 'opptiai-alt-text-generator'); ?>"
+                                            placeholder="<?php esc_attr_e('Enter any specific instructions for the AI...', 'wp-alt-text-plugin'); ?>"
                                             class="alttextai-settings-form-textarea"
                                         ><?php echo esc_textarea($o['custom_prompt'] ?? ''); ?></textarea>
                                     </div>
 
                                     <div class="alttextai-settings-form-actions">
                                         <button type="submit" class="alttextai-settings-save-btn">
-                                            <?php esc_html_e('Save Settings', 'opptiai-alt-text-generator'); ?>
+                                            <?php esc_html_e('Save Settings', 'wp-alt-text-plugin'); ?>
                                         </button>
                                     </div>
                                 </div>
@@ -4263,7 +4423,7 @@ class Opptiai_Alt_Core {
                     $('#alttextai-admin-logout-btn').on('click', function(e) {
                         e.preventDefault();
                         
-                        if (!confirm('<?php echo esc_js(__('Are you sure you want to log out of the admin panel?', 'opptiai-alt-text-generator')); ?>')) {
+                        if (!confirm('<?php echo esc_js(__('Are you sure you want to log out of the admin panel?', 'wp-alt-text-plugin')); ?>')) {
                             return;
                         }
                         
@@ -4298,7 +4458,7 @@ class Opptiai_Alt_Core {
             
             <!-- Footer -->
             <div style="text-align: center; padding: 24px 0; margin-top: 48px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 13px;">
-                <?php esc_html_e('OpptiAI • WordPress AI Tools', 'opptiai-alt-text-generator'); ?> — <a href="https://oppti.ai" target="_blank" rel="noopener noreferrer" style="color: #14b8a6; text-decoration: none;">https://oppti.ai</a>
+                <?php esc_html_e('OpptiAI • WordPress AI Tools', 'wp-alt-text-plugin'); ?> — <a href="https://oppti.ai" target="_blank" rel="noopener noreferrer" style="color: #14b8a6; text-decoration: none;">https://oppti.ai</a>
             </div>
         </div>
         
@@ -4629,14 +4789,14 @@ class Opptiai_Alt_Core {
         if ($alt === ''){
             return [
                 'score' => 0,
-                'grade' => __('Missing', 'opptiai-alt-text-generator'),
+                'grade' => __('Missing', 'wp-alt-text-plugin'),
                 'status' => 'critical',
-                'issues' => [__('ALT text is missing.', 'opptiai-alt-text-generator')],
+                'issues' => [__('ALT text is missing.', 'wp-alt-text-plugin')],
                 'heuristic' => [
                     'score' => 0,
-                    'grade' => __('Missing', 'opptiai-alt-text-generator'),
+                    'grade' => __('Missing', 'wp-alt-text-plugin'),
                     'status' => 'critical',
-                    'issues' => [__('ALT text is missing.', 'opptiai-alt-text-generator')],
+                    'issues' => [__('ALT text is missing.', 'wp-alt-text-plugin')],
                 ],
                 'review' => null,
             ];
@@ -4650,14 +4810,14 @@ class Opptiai_Alt_Core {
         if ($normalized === '' || preg_match($placeholder_pattern, $normalized)){
             return [
                 'score' => 0,
-                'grade' => __('Critical', 'opptiai-alt-text-generator'),
+                'grade' => __('Critical', 'wp-alt-text-plugin'),
                 'status' => 'critical',
-                'issues' => [__('ALT text looks like placeholder content and must be rewritten.', 'opptiai-alt-text-generator')],
+                'issues' => [__('ALT text looks like placeholder content and must be rewritten.', 'wp-alt-text-plugin')],
                 'heuristic' => [
                     'score' => 0,
-                    'grade' => __('Critical', 'opptiai-alt-text-generator'),
+                    'grade' => __('Critical', 'wp-alt-text-plugin'),
                     'status'=> 'critical',
-                    'issues'=> [__('ALT text looks like placeholder content and must be rewritten.', 'opptiai-alt-text-generator')],
+                    'issues'=> [__('ALT text looks like placeholder content and must be rewritten.', 'wp-alt-text-plugin')],
                 ],
                 'review' => null,
             ];
@@ -4666,40 +4826,40 @@ class Opptiai_Alt_Core {
         $length = function_exists('mb_strlen') ? mb_strlen($alt) : strlen($alt);
         if ($length < 45){
             $score -= 35;
-            $issues[] = __('Too short – add a richer description (45+ characters).', 'opptiai-alt-text-generator');
+            $issues[] = __('Too short – add a richer description (45+ characters).', 'wp-alt-text-plugin');
         } elseif ($length > 160){
             $score -= 15;
-            $issues[] = __('Very long – trim to keep the description concise (under 160 characters).', 'opptiai-alt-text-generator');
+            $issues[] = __('Very long – trim to keep the description concise (under 160 characters).', 'wp-alt-text-plugin');
         }
 
         if (preg_match('/\b(image|picture|photo|screenshot)\b/i', $alt)){
             $score -= 10;
-            $issues[] = __('Contains generic filler words like “image” or “photo”.', 'opptiai-alt-text-generator');
+            $issues[] = __('Contains generic filler words like “image” or “photo”.', 'wp-alt-text-plugin');
         }
 
         if (preg_match('/\b(test|testing|sample|example|dummy|placeholder|lorem|alt text)\b/i', $alt)){
             $score = min($score - 80, 5);
-            $issues[] = __('Contains placeholder wording such as “test” or “sample”. Replace with a real description.', 'opptiai-alt-text-generator');
+            $issues[] = __('Contains placeholder wording such as “test” or “sample”. Replace with a real description.', 'wp-alt-text-plugin');
         }
 
         $word_count = str_word_count($alt, 0, '0123456789');
         if ($word_count < 4){
             $score -= 70;
             $score = min($score, 5);
-            $issues[] = __('ALT text is extremely brief – add meaningful descriptive words.', 'opptiai-alt-text-generator');
+            $issues[] = __('ALT text is extremely brief – add meaningful descriptive words.', 'wp-alt-text-plugin');
         } elseif ($word_count < 6){
             $score -= 50;
             $score = min($score, 20);
-            $issues[] = __('ALT text is too short to convey the subject in detail.', 'opptiai-alt-text-generator');
+            $issues[] = __('ALT text is too short to convey the subject in detail.', 'wp-alt-text-plugin');
         } elseif ($word_count < 8){
             $score -= 35;
             $score = min($score, 40);
-            $issues[] = __('ALT text could use a few more descriptive words.', 'opptiai-alt-text-generator');
+            $issues[] = __('ALT text could use a few more descriptive words.', 'wp-alt-text-plugin');
         }
 
         if ($score > 40 && $length < 30){
             $score = min($score, 40);
-            $issues[] = __('Expand the description with one or two concrete details.', 'opptiai-alt-text-generator');
+            $issues[] = __('Expand the description with one or two concrete details.', 'wp-alt-text-plugin');
         }
 
         $normalize = static function($value){
@@ -4714,7 +4874,7 @@ class Opptiai_Alt_Core {
             $normalized_title = $normalize($title);
             if ($normalized_title !== '' && $normalized_alt === $normalized_title){
                 $score -= 12;
-                $issues[] = __('Matches the attachment title – add more unique detail.', 'opptiai-alt-text-generator');
+                $issues[] = __('Matches the attachment title – add more unique detail.', 'wp-alt-text-plugin');
             }
         }
 
@@ -4724,13 +4884,13 @@ class Opptiai_Alt_Core {
             $normalized_base = $normalize($base);
             if ($normalized_base !== '' && $normalized_alt === $normalized_base){
                 $score -= 20;
-                $issues[] = __('Matches the file name – rewrite it to describe the image.', 'opptiai-alt-text-generator');
+                $issues[] = __('Matches the file name – rewrite it to describe the image.', 'wp-alt-text-plugin');
             }
         }
 
         if (!preg_match('/[a-z]{4,}/i', $alt)){
             $score -= 15;
-            $issues[] = __('Lacks descriptive language – include meaningful nouns or adjectives.', 'opptiai-alt-text-generator');
+            $issues[] = __('Lacks descriptive language – include meaningful nouns or adjectives.', 'wp-alt-text-plugin');
         }
 
         if (!preg_match('/\b[a-z]/i', $alt)){
@@ -4743,9 +4903,9 @@ class Opptiai_Alt_Core {
         $grade  = $this->grade_from_status($status);
 
         if ($status === 'review' && empty($issues)){
-            $issues[] = __('Give this ALT another look to ensure it reflects the image details.', 'opptiai-alt-text-generator');
+            $issues[] = __('Give this ALT another look to ensure it reflects the image details.', 'wp-alt-text-plugin');
         } elseif ($status === 'critical' && empty($issues)){
-            $issues[] = __('ALT text should be rewritten for accessibility.', 'opptiai-alt-text-generator');
+            $issues[] = __('ALT text should be rewritten for accessibility.', 'wp-alt-text-plugin');
         }
 
         $heuristic = [
@@ -4811,13 +4971,13 @@ class Opptiai_Alt_Core {
     private function grade_from_status(string $status): string{
         switch ($status){
             case 'great':
-                return __('Excellent', 'opptiai-alt-text-generator');
+                return __('Excellent', 'wp-alt-text-plugin');
             case 'good':
-                return __('Strong', 'opptiai-alt-text-generator');
+                return __('Strong', 'wp-alt-text-plugin');
             case 'review':
-                return __('Needs review', 'opptiai-alt-text-generator');
+                return __('Needs review', 'wp-alt-text-plugin');
             default:
-                return __('Critical', 'opptiai-alt-text-generator');
+                return __('Critical', 'wp-alt-text-plugin');
         }
     }
 
@@ -4963,32 +5123,32 @@ class Opptiai_Alt_Core {
     private function get_source_meta_map(){
         return [
             'auto'     => [
-                'label' => __('Auto (upload)', 'opptiai-alt-text-generator'),
-                'description' => __('Generated automatically when the image was uploaded.', 'opptiai-alt-text-generator'),
+                'label' => __('Auto (upload)', 'wp-alt-text-plugin'),
+                'description' => __('Generated automatically when the image was uploaded.', 'wp-alt-text-plugin'),
             ],
             'ajax'     => [
-                'label' => __('Media Library (single)', 'opptiai-alt-text-generator'),
-                'description' => __('Triggered from the Media Library row action or attachment details screen.', 'opptiai-alt-text-generator'),
+                'label' => __('Media Library (single)', 'wp-alt-text-plugin'),
+                'description' => __('Triggered from the Media Library row action or attachment details screen.', 'wp-alt-text-plugin'),
             ],
             'bulk'     => [
-                'label' => __('Media Library (bulk)', 'opptiai-alt-text-generator'),
-                'description' => __('Generated via the Media Library bulk action.', 'opptiai-alt-text-generator'),
+                'label' => __('Media Library (bulk)', 'wp-alt-text-plugin'),
+                'description' => __('Generated via the Media Library bulk action.', 'wp-alt-text-plugin'),
             ],
             'dashboard' => [
-                'label' => __('Dashboard quick actions', 'opptiai-alt-text-generator'),
-                'description' => __('Generated from the dashboard buttons.', 'opptiai-alt-text-generator'),
+                'label' => __('Dashboard quick actions', 'wp-alt-text-plugin'),
+                'description' => __('Generated from the dashboard buttons.', 'wp-alt-text-plugin'),
             ],
             'wpcli'    => [
-                'label' => __('WP-CLI', 'opptiai-alt-text-generator'),
-                'description' => __('Generated via the wp ai-alt CLI command.', 'opptiai-alt-text-generator'),
+                'label' => __('WP-CLI', 'wp-alt-text-plugin'),
+                'description' => __('Generated via the wp ai-alt CLI command.', 'wp-alt-text-plugin'),
             ],
             'manual'   => [
-                'label' => __('Manual / custom', 'opptiai-alt-text-generator'),
-                'description' => __('Generated by custom code or integration.', 'opptiai-alt-text-generator'),
+                'label' => __('Manual / custom', 'wp-alt-text-plugin'),
+                'description' => __('Generated by custom code or integration.', 'wp-alt-text-plugin'),
             ],
             'unknown'  => [
-                'label' => __('Unknown', 'opptiai-alt-text-generator'),
-                'description' => __('Source not recorded for this ALT text.', 'opptiai-alt-text-generator'),
+                'label' => __('Unknown', 'wp-alt-text-plugin'),
+                'description' => __('Source not recorded for this ALT text.', 'wp-alt-text-plugin'),
             ],
         ];
     }
@@ -5007,7 +5167,7 @@ class Opptiai_Alt_Core {
 
     public function handle_usage_export(){
         if (!$this->user_can_manage()){
-            wp_die(__('You do not have permission to export usage data.', 'opptiai-alt-text-generator'));
+            wp_die(__('You do not have permission to export usage data.', 'wp-alt-text-plugin'));
         }
         check_admin_referer('opptiai_alt_usage_export');
 
@@ -5037,12 +5197,12 @@ class Opptiai_Alt_Core {
 
     public function handle_debug_log_export() {
         if (!$this->user_can_manage()){
-            wp_die(__('You do not have permission to export debug logs.', 'opptiai-alt-text-generator'));
+            wp_die(__('You do not have permission to export debug logs.', 'wp-alt-text-plugin'));
         }
         check_admin_referer('opptiai_alt_debug_export');
 
         if (!class_exists('AltText_AI_Debug_Log')) {
-            wp_die(__('Debug logging is not available.', 'opptiai-alt-text-generator'));
+            wp_die(__('Debug logging is not available.', 'wp-alt-text-plugin'));
         }
 
         global $wpdb;
@@ -5167,22 +5327,22 @@ class Opptiai_Alt_Core {
     private function build_inline_image_payload($attachment_id){
         $file = get_attached_file($attachment_id);
         if (!$file || !file_exists($file)){
-            return new \WP_Error('inline_image_missing', __('Unable to locate the image file for inline embedding.', 'opptiai-alt-text-generator'));
+            return new \WP_Error('inline_image_missing', __('Unable to locate the image file for inline embedding.', 'wp-alt-text-plugin'));
         }
 
         $size = filesize($file);
         if ($size === false || $size <= 0){
-            return new \WP_Error('inline_image_size', __('Unable to read the image size for inline embedding.', 'opptiai-alt-text-generator'));
+            return new \WP_Error('inline_image_size', __('Unable to read the image size for inline embedding.', 'wp-alt-text-plugin'));
         }
 
         $limit = apply_filters('opptiai_alt_inline_image_limit', 1024 * 1024 * 2, $attachment_id, $file);
         if ($size > $limit){
-            return new \WP_Error('inline_image_too_large', __('Image exceeds the inline embedding size limit.', 'opptiai-alt-text-generator'), ['size' => $size, 'limit' => $limit]);
+            return new \WP_Error('inline_image_too_large', __('Image exceeds the inline embedding size limit.', 'wp-alt-text-plugin'), ['size' => $size, 'limit' => $limit]);
         }
 
         $contents = file_get_contents($file);
         if ($contents === false){
-            return new \WP_Error('inline_image_read_failed', __('Unable to read the image file for inline embedding.', 'opptiai-alt-text-generator'));
+            return new \WP_Error('inline_image_read_failed', __('Unable to read the image file for inline embedding.', 'wp-alt-text-plugin'));
         }
 
         $mime = get_post_mime_type($attachment_id);
@@ -5192,7 +5352,7 @@ class Opptiai_Alt_Core {
 
         $base64 = base64_encode($contents);
         if (!$base64){
-            return new \WP_Error('inline_image_encode_failed', __('Failed to encode the image for inline embedding.', 'opptiai-alt-text-generator'));
+            return new \WP_Error('inline_image_encode_failed', __('Failed to encode the image for inline embedding.', 'wp-alt-text-plugin'));
         }
 
         unset($contents);
@@ -5210,13 +5370,13 @@ class Opptiai_Alt_Core {
     private function review_alt_text_with_model(int $attachment_id, string $alt, string $image_strategy, $image_payload_used, array $opts, string $api_key){
         $alt = trim((string) $alt);
         if ($alt === ''){
-            return new \WP_Error('review_skipped', __('ALT text is empty; skipped review.', 'opptiai-alt-text-generator'));
+            return new \WP_Error('review_skipped', __('ALT text is empty; skipped review.', 'wp-alt-text-plugin'));
         }
 
         $review_model = $opts['review_model'] ?? ($opts['model'] ?? 'gpt-4o-mini');
         $review_model = apply_filters('opptiai_alt_review_model', $review_model, $attachment_id, $opts);
         if (!$review_model){
-            return new \WP_Error('review_model_missing', __('No review model configured.', 'opptiai-alt-text-generator'));
+            return new \WP_Error('review_model_missing', __('No review model configured.', 'wp-alt-text-plugin'));
         }
 
         $image_payload = $image_payload_used;
@@ -5245,10 +5405,10 @@ class Opptiai_Alt_Core {
 
         $context_lines = [];
         if ($title){
-            $context_lines[] = sprintf(__('Media title: %s', 'opptiai-alt-text-generator'), $title);
+            $context_lines[] = sprintf(__('Media title: %s', 'wp-alt-text-plugin'), $title);
         }
         if ($filename){
-            $context_lines[] = sprintf(__('Filename: %s', 'opptiai-alt-text-generator'), $filename);
+            $context_lines[] = sprintf(__('Filename: %s', 'wp-alt-text-plugin'), $filename);
         }
 
         $quoted_alt = str_replace('"', '\"', (string)($alt ?? ''));
@@ -5325,7 +5485,7 @@ class Opptiai_Alt_Core {
         $content = $data['choices'][0]['message']['content'];
         $parsed = $this->extract_json_object($content);
         if (!$parsed){
-            return new \WP_Error('review_parse_failed', __('Unable to parse review response.', 'opptiai-alt-text-generator'), ['response' => $content]);
+            return new \WP_Error('review_parse_failed', __('Unable to parse review response.', 'wp-alt-text-plugin'), ['response' => $content]);
         }
 
         $score = isset($parsed['score']) ? intval($parsed['score']) : 0;
@@ -5444,7 +5604,7 @@ class Opptiai_Alt_Core {
         if (!$has_license && (!defined('WP_LOCAL_DEV') || !WP_LOCAL_DEV)) {
             // Check if at usage limit (only in production)
             if ($this->api_client->has_reached_limit()) {
-                return new \WP_Error('limit_reached', __('Monthly generation limit reached. Please upgrade to continue.', 'opptiai-alt-text-generator'));
+                return new \WP_Error('limit_reached', __('Monthly generation limit reached. Please upgrade to continue.', 'wp-alt-text-plugin'));
             }
         }
 
@@ -5461,7 +5621,7 @@ class Opptiai_Alt_Core {
             update_post_meta($attachment_id, '_ai_alt_model', $model);
             update_post_meta($attachment_id, '_ai_alt_generated_at', current_time('mysql'));
             $this->stats_cache = null;
-            return new \WP_Error('ai_alt_dry_run', __('Dry run enabled. Prompt stored for review; ALT text not updated.', 'opptiai-alt-text-generator'), ['prompt' => $prompt]);
+            return new \WP_Error('ai_alt_dry_run', __('Dry run enabled. Prompt stored for review; ALT text not updated.', 'wp-alt-text-plugin'), ['prompt' => $prompt]);
         }
 
         // Build context for API
@@ -5529,7 +5689,7 @@ class Opptiai_Alt_Core {
 
         if (!isset($api_response['success']) || !$api_response['success']) {
             // Extract error details from API response if available
-            $error_message = __('Failed to generate alt text', 'opptiai-alt-text-generator');
+            $error_message = __('Failed to generate alt text', 'wp-alt-text-plugin');
             $error_code = 'api_error';
             
             if (isset($api_response['message'])) {
@@ -5605,7 +5765,7 @@ class Opptiai_Alt_Core {
                 AltText_AI_Usage_Tracker::clear_cache();
             }
         }
-
+        
         $alt = trim($api_response['alt_text']);
         $usage_summary = $api_response['tokens'] ?? ['prompt' => 0, 'completion' => 0, 'total' => 0];
         
@@ -5656,7 +5816,7 @@ class Opptiai_Alt_Core {
                 if (strcasecmp($generated, trim($existing_alt)) === 0){
                 $result = new \WP_Error(
                     'duplicate_alt',
-                    __('Generated ALT text matched the existing value.', 'opptiai-alt-text-generator'),
+                    __('Generated ALT text matched the existing value.', 'wp-alt-text-plugin'),
                     [
                         'existing' => $existing_alt,
                         'generated' => $generated,
@@ -5709,7 +5869,7 @@ class Opptiai_Alt_Core {
     }
 
     public function register_bulk_action($bulk_actions){
-        $bulk_actions['ai_alt_generate'] = __('Generate Alt Text (AI)', 'opptiai-alt-text-generator');
+        $bulk_actions['ai_alt_generate'] = __('Generate Alt Text (AI)', 'wp-alt-text-plugin');
         return $bulk_actions;
     }
 
@@ -5738,8 +5898,8 @@ class Opptiai_Alt_Core {
     public function row_action_link($actions, $post){
         if ($post->post_type === 'attachment' && $this->is_image($post->ID)){
             $has_alt = (bool) get_post_meta($post->ID, '_wp_attachment_image_alt', true);
-            $generate_label   = __('Generate Alt Text (AI)', 'opptiai-alt-text-generator');
-            $regenerate_label = __('Regenerate Alt Text (AI)', 'opptiai-alt-text-generator');
+            $generate_label   = __('Generate Alt Text (AI)', 'wp-alt-text-plugin');
+            $regenerate_label = __('Regenerate Alt Text (AI)', 'wp-alt-text-plugin');
             $text = $has_alt ? $regenerate_label : $generate_label;
             $actions['ai_alt_generate_single'] = '<a href="#" class="ai-alt-generate" data-id="' . intval($post->ID) . '" data-has-alt="' . ($has_alt ? '1' : '0') . '" data-label-generate="' . esc_attr($generate_label) . '" data-label-regenerate="' . esc_attr($regenerate_label) . '">' . esc_html($text) . '</a>';
         }
@@ -5752,11 +5912,11 @@ class Opptiai_Alt_Core {
         }
 
         $has_alt = (bool) get_post_meta($post->ID, '_wp_attachment_image_alt', true);
-        $label_generate   = __('Generate Alt', 'opptiai-alt-text-generator');
-        $label_regenerate = __('Regenerate Alt', 'opptiai-alt-text-generator');
+        $label_generate   = __('Generate Alt', 'wp-alt-text-plugin');
+        $label_regenerate = __('Regenerate Alt', 'wp-alt-text-plugin');
         $current_label    = $has_alt ? $label_regenerate : $label_generate;
         $is_authenticated = $this->api_client->is_authenticated();
-        $disabled_attr    = !$is_authenticated ? ' disabled title="' . esc_attr__('Please log in to generate alt text', 'opptiai-alt-text-generator') . '"' : '';
+        $disabled_attr    = !$is_authenticated ? ' disabled title="' . esc_attr__('Please log in to generate alt text', 'wp-alt-text-plugin') . '"' : '';
         $button = sprintf(
             '<button type="button" class="button ai-alt-generate" data-id="%1$d" data-has-alt="%2$d" data-label-generate="%3$s" data-label-regenerate="%4$s"%5$s>%6$s</button>',
             intval($post->ID),
@@ -5770,9 +5930,9 @@ class Opptiai_Alt_Core {
         // Hide attachment screen field by default to avoid confusion; can be re-enabled via filter
         if (apply_filters('ai_alt_show_attachment_button', false)){
         $fields['ai_alt_generate'] = [
-            'label' => __('AI Alt Text', 'opptiai-alt-text-generator'),
+            'label' => __('AI Alt Text', 'wp-alt-text-plugin'),
             'input' => 'html',
-            'html'  => $button . '<p class="description">' . esc_html__('Use AI to suggest alternative text for this image.', 'opptiai-alt-text-generator') . '</p>',
+            'html'  => $button . '<p class="description">' . esc_html__('Use AI to suggest alternative text for this image.', 'wp-alt-text-plugin') . '</p>',
         ];
         }
 
@@ -5780,7 +5940,7 @@ class Opptiai_Alt_Core {
     }
 
 	/**
-	 * @deprecated 4.3.0 Use Opptiai_Alt_REST_Controller::register_routes().
+	 * @deprecated 4.3.0 Use AltText_AI_REST_Controller::register_routes().
 	 */
 	public function register_rest_routes(){
 		if ( ! class_exists( 'Opptiai_Alt_REST_Controller' ) ) {
@@ -5814,14 +5974,14 @@ class Opptiai_Alt_Core {
         $checkout_prices = $this->get_checkout_price_ids();
 
         $l10n_common = [
-            'reviewCue'           => __('Visit the ALT Library to double-check the wording.', 'opptiai-alt-text-generator'),
+            'reviewCue'           => __('Visit the ALT Library to double-check the wording.', 'wp-alt-text-plugin'),
             'statusReady'         => '',
-            'previewAltHeading'   => __('Review generated ALT text', 'opptiai-alt-text-generator'),
-            'previewAltHint'      => __('Review the generated description before applying it to your media item.', 'opptiai-alt-text-generator'),
-            'previewAltApply'     => __('Use this ALT', 'opptiai-alt-text-generator'),
-            'previewAltCancel'    => __('Keep current ALT', 'opptiai-alt-text-generator'),
-            'previewAltDismissed' => __('Preview dismissed. Existing ALT kept.', 'opptiai-alt-text-generator'),
-            'previewAltShortcut'  => __('Shift + Enter for newline.', 'opptiai-alt-text-generator'),
+            'previewAltHeading'   => __('Review generated ALT text', 'wp-alt-text-plugin'),
+            'previewAltHint'      => __('Review the generated description before applying it to your media item.', 'wp-alt-text-plugin'),
+            'previewAltApply'     => __('Use this ALT', 'wp-alt-text-plugin'),
+            'previewAltCancel'    => __('Keep current ALT', 'wp-alt-text-plugin'),
+            'previewAltDismissed' => __('Preview dismissed. Existing ALT kept.', 'wp-alt-text-plugin'),
+            'previewAltShortcut'  => __('Shift + Enter for newline.', 'wp-alt-text-plugin'),
         ];
 
         // Load on Media Library and attachment edit contexts (modal also)
@@ -5987,12 +6147,12 @@ class Opptiai_Alt_Core {
                     'stats' => ['total' => 0, 'warnings' => 0, 'errors' => 0, 'last_api' => null],
                 ],
                 'strings' => [
-                    'noLogs' => __('No logs recorded yet.', 'opptiai-alt-text-generator'),
-                    'contextTitle' => __('Log Context', 'opptiai-alt-text-generator'),
-                    'clearConfirm' => __('This will permanently delete all debug logs. Continue?', 'opptiai-alt-text-generator'),
-                    'errorGeneric' => __('Unable to load debug logs. Please try again.', 'opptiai-alt-text-generator'),
-                    'emptyContext' => __('No additional context was provided for this entry.', 'opptiai-alt-text-generator'),
-                    'cleared' => __('Logs cleared successfully.', 'opptiai-alt-text-generator'),
+                    'noLogs' => __('No logs recorded yet.', 'wp-alt-text-plugin'),
+                    'contextTitle' => __('Log Context', 'wp-alt-text-plugin'),
+                    'clearConfirm' => __('This will permanently delete all debug logs. Continue?', 'wp-alt-text-plugin'),
+                    'errorGeneric' => __('Unable to load debug logs. Please try again.', 'wp-alt-text-plugin'),
+                    'emptyContext' => __('No additional context was provided for this entry.', 'wp-alt-text-plugin'),
+                    'cleared' => __('Logs cleared successfully.', 'wp-alt-text-plugin'),
                 ],
             ]);
 
@@ -6030,22 +6190,22 @@ class Opptiai_Alt_Core {
             
             wp_localize_script('opptiai-alt-dashboard', 'OPPTIAI_ALT_DASH_L10N', [
                 'l10n'        => array_merge([
-                    'processing'         => __('Generating ALT text…', 'opptiai-alt-text-generator'),
-                    'processingMissing'  => __('Generating ALT for #%d…', 'opptiai-alt-text-generator'),
-                    'error'              => __('Something went wrong. Check console for details.', 'opptiai-alt-text-generator'),
-                    'summary'            => __('Generated %1$d images (%2$d errors).', 'opptiai-alt-text-generator'),
-                    'restUnavailable'    => __('REST endpoint unavailable', 'opptiai-alt-text-generator'),
-                    'prepareBatch'       => __('Preparing image list…', 'opptiai-alt-text-generator'),
-                    'coverageCopy'       => __('of images currently include ALT text.', 'opptiai-alt-text-generator'),
-                    'noRequests'         => __('None yet', 'opptiai-alt-text-generator'),
-                    'noAudit'            => __('No usage data recorded yet.', 'opptiai-alt-text-generator'),
-                    'nothingToProcess'   => __('No images to process.', 'opptiai-alt-text-generator'),
-                    'batchStart'         => __('Starting batch…', 'opptiai-alt-text-generator'),
-                    'batchComplete'      => __('Batch complete.', 'opptiai-alt-text-generator'),
-                    'batchCompleteAt'    => __('Batch complete at %s', 'opptiai-alt-text-generator'),
-                    'completedItem'      => __('Finished #%d', 'opptiai-alt-text-generator'),
-                    'failedItem'         => __('Failed #%d', 'opptiai-alt-text-generator'),
-                    'loadingButton'      => __('Processing…', 'opptiai-alt-text-generator'),
+                    'processing'         => __('Generating ALT text…', 'wp-alt-text-plugin'),
+                    'processingMissing'  => __('Generating ALT for #%d…', 'wp-alt-text-plugin'),
+                    'error'              => __('Something went wrong. Check console for details.', 'wp-alt-text-plugin'),
+                    'summary'            => __('Generated %1$d images (%2$d errors).', 'wp-alt-text-plugin'),
+                    'restUnavailable'    => __('REST endpoint unavailable', 'wp-alt-text-plugin'),
+                    'prepareBatch'       => __('Preparing image list…', 'wp-alt-text-plugin'),
+                    'coverageCopy'       => __('of images currently include ALT text.', 'wp-alt-text-plugin'),
+                    'noRequests'         => __('None yet', 'wp-alt-text-plugin'),
+                    'noAudit'            => __('No usage data recorded yet.', 'wp-alt-text-plugin'),
+                    'nothingToProcess'   => __('No images to process.', 'wp-alt-text-plugin'),
+                    'batchStart'         => __('Starting batch…', 'wp-alt-text-plugin'),
+                    'batchComplete'      => __('Batch complete.', 'wp-alt-text-plugin'),
+                    'batchCompleteAt'    => __('Batch complete at %s', 'wp-alt-text-plugin'),
+                    'completedItem'      => __('Finished #%d', 'wp-alt-text-plugin'),
+                    'failedItem'         => __('Failed #%d', 'wp-alt-text-plugin'),
+                    'loadingButton'      => __('Processing…', 'wp-alt-text-plugin'),
                 ], $l10n_common),
             ]);
             
@@ -6068,13 +6228,13 @@ class Opptiai_Alt_Core {
                 'restClear' => esc_url_raw( rest_url('opptiai/v1/logs/clear') ),
                 'initial'   => $debug_bootstrap,
                 'strings'   => [
-                    'noLogs'       => __('No logs recorded yet.', 'opptiai-alt-text-generator'),
-                    'contextTitle' => __('Log Context', 'opptiai-alt-text-generator'),
-                    'clearConfirm' => __('This will permanently delete all debug logs. Continue?', 'opptiai-alt-text-generator'),
-                    'errorGeneric' => __('Unable to load debug logs. Please try again.', 'opptiai-alt-text-generator'),
-                    'emptyContext' => __('No additional context was provided for this entry.', 'opptiai-alt-text-generator'),
-                    'cleared'      => __('Logs cleared successfully.', 'opptiai-alt-text-generator'),
-                    'pageIndicator'=> __('Page %1$d of %2$d', 'opptiai-alt-text-generator'),
+                    'noLogs'       => __('No logs recorded yet.', 'wp-alt-text-plugin'),
+                    'contextTitle' => __('Log Context', 'wp-alt-text-plugin'),
+                    'clearConfirm' => __('This will permanently delete all debug logs. Continue?', 'wp-alt-text-plugin'),
+                    'errorGeneric' => __('Unable to load debug logs. Please try again.', 'wp-alt-text-plugin'),
+                    'emptyContext' => __('No additional context was provided for this entry.', 'wp-alt-text-plugin'),
+                    'cleared'      => __('Logs cleared successfully.', 'wp-alt-text-plugin'),
+                    'pageIndicator'=> __('Page %1$d of %2$d', 'wp-alt-text-plugin'),
                 ],
             ]);
         }
@@ -6102,6 +6262,21 @@ class Opptiai_Alt_Core {
     /**
      * AJAX handler: Dismiss upgrade notice
      */
+    /**
+     * Handle AJAX request to dismiss external API notice.
+     * Uses site option so it shows only once for all users.
+     */
+    public function ajax_dismiss_api_notice() {
+        check_ajax_referer('wp_alt_text_dismiss_api_notice', 'nonce');
+        if (!$this->user_can_manage()) {
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
+        }
+        
+        // Store as site option so it shows only once globally, not per user
+        update_option('wp_alt_text_api_notice_dismissed', true, false);
+        wp_send_json_success(['message' => __('Notice dismissed', 'wp-alt-text-plugin')]);
+    }
+
     public function ajax_dismiss_upgrade() {
         check_ajax_referer('opptiai_alt_upgrade_nonce', 'nonce');
         
@@ -6121,40 +6296,40 @@ class Opptiai_Alt_Core {
     public function ajax_queue_retry_job() {
         check_ajax_referer('opptiai_alt_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
         }
         $job_id = intval($_POST['job_id'] ?? 0);
         if ($job_id <= 0) {
-            wp_send_json_error(['message' => __('Invalid job ID.', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Invalid job ID.', 'wp-alt-text-plugin')]);
         }
         AltText_AI_Queue::retry_job($job_id);
         AltText_AI_Queue::schedule_processing(10);
-        wp_send_json_success(['message' => __('Job re-queued.', 'opptiai-alt-text-generator')]);
+        wp_send_json_success(['message' => __('Job re-queued.', 'wp-alt-text-plugin')]);
     }
 
     public function ajax_queue_retry_failed() {
         check_ajax_referer('opptiai_alt_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
         }
         AltText_AI_Queue::retry_failed();
         AltText_AI_Queue::schedule_processing(10);
-        wp_send_json_success(['message' => __('Retry scheduled for failed jobs.', 'opptiai-alt-text-generator')]);
+        wp_send_json_success(['message' => __('Retry scheduled for failed jobs.', 'wp-alt-text-plugin')]);
     }
 
     public function ajax_queue_clear_completed() {
         check_ajax_referer('opptiai_alt_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
         }
         AltText_AI_Queue::clear_completed();
-        wp_send_json_success(['message' => __('Cleared completed jobs.', 'opptiai-alt-text-generator')]);
+        wp_send_json_success(['message' => __('Cleared completed jobs.', 'wp-alt-text-plugin')]);
     }
 
     public function ajax_queue_stats() {
         check_ajax_referer('opptiai_alt_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
         }
         
         $stats = AltText_AI_Queue::get_stats();
@@ -6169,7 +6344,7 @@ class Opptiai_Alt_Core {
     public function ajax_track_upgrade() {
         check_ajax_referer('opptiai_alt_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
         }
 
         $source = sanitize_key($_POST['source'] ?? 'dashboard');
@@ -6246,7 +6421,7 @@ class Opptiai_Alt_Core {
         $this->invalidate_stats_cache();
 
         wp_send_json_success([
-            'message'        => __('Alt text generated successfully.', 'opptiai-alt-text-generator'),
+            'message'        => __('Alt text generated successfully.', 'wp-alt-text-plugin'),
             'alt_text'       => $result,
             'attachment_id'  => $attachment_id,
         ]);
@@ -6302,7 +6477,7 @@ class Opptiai_Alt_Core {
             $remaining = $usage['remaining'] ?? 0;
             if (count($ids) > $remaining) {
                 wp_send_json_error([
-                    'message' => sprintf(__('You only have %d generations remaining. Please upgrade or select fewer images.', 'opptiai-alt-text-generator'), $remaining),
+                    'message' => sprintf(__('You only have %d generations remaining. Please upgrade or select fewer images.', 'wp-alt-text-plugin'), $remaining),
                     'code' => 'insufficient_credits',
                     'remaining' => $remaining
                 ]);
@@ -6330,7 +6505,7 @@ class Opptiai_Alt_Core {
             AltText_AI_Queue::schedule_processing();
             
             wp_send_json_success([
-                'message' => sprintf(__('%d image(s) queued for processing', 'opptiai-alt-text-generator'), $queued),
+                'message' => sprintf(__('%d image(s) queued for processing', 'wp-alt-text-plugin'), $queued),
                 'queued' => $queued,
                 'total' => count($ids)
             ]);
@@ -6339,12 +6514,12 @@ class Opptiai_Alt_Core {
             // Check if images already have alt text and suggest direct regeneration instead
             if ($source === 'bulk-regenerate') {
                 wp_send_json_error([
-                    'message' => __('No images were queued. They may already be processing or have completed. Try refreshing the page.', 'opptiai-alt-text-generator'),
+                    'message' => __('No images were queued. They may already be processing or have completed. Try refreshing the page.', 'wp-alt-text-plugin'),
                     'code' => 'already_queued'
                 ]);
             } else {
                 wp_send_json_error([
-                    'message' => __('Failed to queue images. They may already be queued or processing.', 'opptiai-alt-text-generator')
+                    'message' => __('Failed to queue images. They may already be queued or processing.', 'wp-alt-text-plugin')
                 ]);
             }
         }
@@ -6487,14 +6662,14 @@ class Opptiai_Alt_Core {
     public function ajax_register() {
         check_ajax_referer('opptiai_alt_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
         }
 
         $email = isset($_POST['email']) && is_string($_POST['email']) ? sanitize_email($_POST['email']) : '';
         $password = $_POST['password'] ?? '';
 
         if (empty($email) || empty($password)) {
-            wp_send_json_error(['message' => __('Email and password are required', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Email and password are required', 'wp-alt-text-plugin')]);
         }
 
         $result = $this->api_client->register($email, $password);
@@ -6504,7 +6679,7 @@ class Opptiai_Alt_Core {
         }
 
         wp_send_json_success([
-            'message' => __('Account created successfully', 'opptiai-alt-text-generator'),
+            'message' => __('Account created successfully', 'wp-alt-text-plugin'),
             'user' => $result['user'] ?? null
         ]);
     }
@@ -6515,14 +6690,14 @@ class Opptiai_Alt_Core {
     public function ajax_login() {
         check_ajax_referer('opptiai_alt_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
         }
 
         $email = isset($_POST['email']) && is_string($_POST['email']) ? sanitize_email($_POST['email']) : '';
         $password = $_POST['password'] ?? '';
 
         if (empty($email) || empty($password)) {
-            wp_send_json_error(['message' => __('Email and password are required', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Email and password are required', 'wp-alt-text-plugin')]);
         }
 
         $result = $this->api_client->login($email, $password);
@@ -6532,7 +6707,7 @@ class Opptiai_Alt_Core {
         }
 
         wp_send_json_success([
-            'message' => __('Logged in successfully', 'opptiai-alt-text-generator'),
+            'message' => __('Logged in successfully', 'wp-alt-text-plugin'),
             'user' => $result['user'] ?? null
         ]);
     }
@@ -6543,19 +6718,19 @@ class Opptiai_Alt_Core {
     public function ajax_logout() {
         check_ajax_referer('opptiai_alt_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
         }
 
         $this->api_client->clear_token();
 
-        wp_send_json_success(['message' => __('Logged out successfully', 'opptiai-alt-text-generator')]);
+        wp_send_json_success(['message' => __('Logged out successfully', 'wp-alt-text-plugin')]);
     }
 
     public function ajax_disconnect_account() {
         check_ajax_referer('opptiai_alt_upgrade_nonce', 'nonce');
 
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
         }
 
         $this->api_client->clear_token();
@@ -6564,7 +6739,7 @@ class Opptiai_Alt_Core {
         delete_transient('opptiai_alt_token_last_check');
 
         wp_send_json_success([
-            'message' => __('Account disconnected. Please sign in again to reconnect.', 'opptiai-alt-text-generator'),
+            'message' => __('Account disconnected. Please sign in again to reconnect.', 'wp-alt-text-plugin'),
         ]);
     }
 
@@ -6575,7 +6750,7 @@ class Opptiai_Alt_Core {
         check_ajax_referer('opptiai_alt_license_action', 'nonce');
 
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
         }
 
         $license_key = isset($_POST['license_key']) && is_string($_POST['license_key'])
@@ -6583,12 +6758,12 @@ class Opptiai_Alt_Core {
             : '';
 
         if (empty($license_key)) {
-            wp_send_json_error(['message' => __('License key is required', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('License key is required', 'wp-alt-text-plugin')]);
         }
 
         // Validate UUID format
         if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $license_key)) {
-            wp_send_json_error(['message' => __('Invalid license key format', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Invalid license key format', 'wp-alt-text-plugin')]);
         }
 
         $result = $this->api_client->activate_license($license_key);
@@ -6602,7 +6777,7 @@ class Opptiai_Alt_Core {
         delete_transient('opptiai_alt_usage_cache');
 
         wp_send_json_success([
-            'message' => __('License activated successfully', 'opptiai-alt-text-generator'),
+            'message' => __('License activated successfully', 'wp-alt-text-plugin'),
             'organization' => $result['organization'] ?? null,
             'site' => $result['site'] ?? null
         ]);
@@ -6615,7 +6790,7 @@ class Opptiai_Alt_Core {
         check_ajax_referer('opptiai_alt_license_action', 'nonce');
 
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
         }
 
         $result = $this->api_client->deactivate_license();
@@ -6629,7 +6804,7 @@ class Opptiai_Alt_Core {
         }
 
         wp_send_json_success([
-            'message' => __('License deactivated successfully', 'opptiai-alt-text-generator')
+            'message' => __('License deactivated successfully', 'wp-alt-text-plugin')
         ]);
     }
 
@@ -6639,13 +6814,13 @@ class Opptiai_Alt_Core {
     public function ajax_get_license_sites() {
         check_ajax_referer('opptiai_alt_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
         }
 
         // Must be authenticated to view license site usage
         if (!$this->api_client->is_authenticated()) {
             wp_send_json_error([
-                'message' => __('Please log in to view license site usage', 'opptiai-alt-text-generator')
+                'message' => __('Please log in to view license site usage', 'wp-alt-text-plugin')
             ]);
         }
 
@@ -6654,7 +6829,7 @@ class Opptiai_Alt_Core {
 
         if (is_wp_error($result)) {
             wp_send_json_error([
-                'message' => $result->get_error_message() ?: __('Failed to fetch license site usage', 'opptiai-alt-text-generator')
+                'message' => $result->get_error_message() ?: __('Failed to fetch license site usage', 'wp-alt-text-plugin')
             ]);
         }
 
@@ -6667,20 +6842,20 @@ class Opptiai_Alt_Core {
     public function ajax_disconnect_license_site() {
         check_ajax_referer('opptiai_alt_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
         }
 
         // Must be authenticated to disconnect license sites
         if (!$this->api_client->is_authenticated()) {
             wp_send_json_error([
-                'message' => __('Please log in to disconnect license sites', 'opptiai-alt-text-generator')
+                'message' => __('Please log in to disconnect license sites', 'wp-alt-text-plugin')
             ]);
         }
 
         $site_id = isset($_POST['site_id']) ? sanitize_text_field($_POST['site_id']) : '';
         if (empty($site_id)) {
             wp_send_json_error([
-                'message' => __('Site ID is required', 'opptiai-alt-text-generator')
+                'message' => __('Site ID is required', 'wp-alt-text-plugin')
             ]);
         }
 
@@ -6689,12 +6864,12 @@ class Opptiai_Alt_Core {
 
         if (is_wp_error($result)) {
             wp_send_json_error([
-                'message' => $result->get_error_message() ?: __('Failed to disconnect site', 'opptiai-alt-text-generator')
+                'message' => $result->get_error_message() ?: __('Failed to disconnect site', 'wp-alt-text-plugin')
             ]);
         }
 
         wp_send_json_success([
-            'message' => __('Site disconnected successfully', 'opptiai-alt-text-generator'),
+            'message' => __('Site disconnected successfully', 'wp-alt-text-plugin'),
             'data' => $result
         ]);
     }
@@ -6743,7 +6918,7 @@ class Opptiai_Alt_Core {
     public function ajax_admin_login() {
         check_ajax_referer('opptiai_alt_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
         }
 
         // Verify agency license
@@ -6758,7 +6933,7 @@ class Opptiai_Alt_Core {
         
         if (!$is_agency) {
             wp_send_json_error([
-                'message' => __('Admin access is only available for agency licenses', 'opptiai-alt-text-generator')
+                'message' => __('Admin access is only available for agency licenses', 'wp-alt-text-plugin')
             ]);
         }
 
@@ -6767,13 +6942,13 @@ class Opptiai_Alt_Core {
 
         if (empty($email) || !is_email($email)) {
             wp_send_json_error([
-                'message' => __('Please enter a valid email address', 'opptiai-alt-text-generator')
+                'message' => __('Please enter a valid email address', 'wp-alt-text-plugin')
             ]);
         }
 
         if (empty($password)) {
             wp_send_json_error([
-                'message' => __('Please enter your password', 'opptiai-alt-text-generator')
+                'message' => __('Please enter your password', 'wp-alt-text-plugin')
             ]);
         }
 
@@ -6782,7 +6957,7 @@ class Opptiai_Alt_Core {
 
         if (is_wp_error($result)) {
             wp_send_json_error([
-                'message' => $result->get_error_message() ?: __('Login failed. Please check your credentials.', 'opptiai-alt-text-generator')
+                'message' => $result->get_error_message() ?: __('Login failed. Please check your credentials.', 'wp-alt-text-plugin')
             ]);
         }
 
@@ -6790,7 +6965,7 @@ class Opptiai_Alt_Core {
         $this->set_admin_session();
 
         wp_send_json_success([
-            'message' => __('Successfully logged in', 'opptiai-alt-text-generator'),
+            'message' => __('Successfully logged in', 'wp-alt-text-plugin'),
             'redirect' => add_query_arg(['tab' => 'admin'], admin_url('upload.php?page=opptiai-alt'))
         ]);
     }
@@ -6801,13 +6976,13 @@ class Opptiai_Alt_Core {
     public function ajax_admin_logout() {
         check_ajax_referer('opptiai_alt_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
         }
 
         $this->clear_admin_session();
 
         wp_send_json_success([
-            'message' => __('Logged out successfully', 'opptiai-alt-text-generator'),
+            'message' => __('Logged out successfully', 'wp-alt-text-plugin'),
             'redirect' => add_query_arg(['tab' => 'admin'], admin_url('upload.php?page=opptiai-alt'))
         ]);
     }
@@ -6818,12 +6993,12 @@ class Opptiai_Alt_Core {
     public function ajax_get_user_info() {
         check_ajax_referer('opptiai_alt_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
         }
 
         if (!$this->api_client->is_authenticated()) {
             wp_send_json_error([
-                'message' => __('Not authenticated', 'opptiai-alt-text-generator'),
+                'message' => __('Not authenticated', 'wp-alt-text-plugin'),
                 'code' => 'not_authenticated'
             ]);
         }
@@ -6847,19 +7022,19 @@ class Opptiai_Alt_Core {
     public function ajax_create_checkout() {
         check_ajax_referer('opptiai_alt_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
         }
 
         if (!$this->api_client->is_authenticated()) {
             wp_send_json_error([
-                'message' => __('Please log in to upgrade', 'opptiai-alt-text-generator'),
+                'message' => __('Please log in to upgrade', 'wp-alt-text-plugin'),
                 'code' => 'not_authenticated'
             ]);
         }
 
         $price_id = sanitize_text_field($_POST['price_id'] ?? '');
         if (empty($price_id)) {
-            wp_send_json_error(['message' => __('Price ID is required', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Price ID is required', 'wp-alt-text-plugin')]);
         }
 
         $success_url = admin_url('upload.php?page=opptiai-alt&checkout=success');
@@ -6883,7 +7058,7 @@ class Opptiai_Alt_Core {
     public function ajax_create_portal() {
         check_ajax_referer('opptiai_alt_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
         }
 
         // Check if user is authenticated via JWT token OR admin session with agency license
@@ -6906,7 +7081,7 @@ class Opptiai_Alt_Core {
         // Allow if authenticated via JWT OR admin-authenticated with agency/pro license
         if (!$is_authenticated && !($is_admin_authenticated && $has_agency_license)) {
             wp_send_json_error([
-                'message' => __('Please log in to manage billing', 'opptiai-alt-text-generator'),
+                'message' => __('Please log in to manage billing', 'wp-alt-text-plugin'),
                 'code' => 'not_authenticated'
             ]);
         }
@@ -6932,7 +7107,7 @@ class Opptiai_Alt_Core {
                 strpos($error_message, 'Unauthorized') !== false ||
                 strpos($error_message, 'not_authenticated') !== false) {
                 wp_send_json_error([
-                    'message' => __('To manage your subscription, please log in with your account credentials (not just admin access). If you have an agency license, contact support to access billing management.', 'opptiai-alt-text-generator'),
+                    'message' => __('To manage your subscription, please log in with your account credentials (not just admin access). If you have an agency license, contact support to access billing management.', 'wp-alt-text-plugin'),
                     'code' => 'not_authenticated'
                 ]);
                 return;
@@ -6952,14 +7127,14 @@ class Opptiai_Alt_Core {
     public function ajax_forgot_password() {
         check_ajax_referer('opptiai_alt_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
         }
 
         $email = isset($_POST['email']) && is_string($_POST['email']) ? sanitize_email($_POST['email']) : '';
         
         if (empty($email) || !is_email($email)) {
             wp_send_json_error([
-                'message' => __('Please enter a valid email address', 'opptiai-alt-text-generator')
+                'message' => __('Please enter a valid email address', 'wp-alt-text-plugin')
             ]);
         }
 
@@ -6973,13 +7148,13 @@ class Opptiai_Alt_Core {
 
         // Pass through all data from backend, including reset link if provided
         $response_data = [
-            'message' => __('Password reset link has been sent to your email. Please check your inbox and spam folder.', 'opptiai-alt-text-generator'),
+            'message' => __('Password reset link has been sent to your email. Please check your inbox and spam folder.', 'wp-alt-text-plugin'),
         ];
         
         // Include reset link if provided (for development/testing when email service isn't configured)
         if (isset($result['resetLink'])) {
             $response_data['resetLink'] = $result['resetLink'];
-            $response_data['note'] = $result['note'] ?? __('Email service is in development mode. Use this link to reset your password.', 'opptiai-alt-text-generator');
+            $response_data['note'] = $result['note'] ?? __('Email service is in development mode. Use this link to reset your password.', 'wp-alt-text-plugin');
         }
         
         wp_send_json_success($response_data);
@@ -7000,10 +7175,10 @@ class Opptiai_Alt_Core {
             // Check against various possible slugs
             $possible_slugs = [
                 $plugin_slug,
-                'opptiai-alt-text-generator',
-                'seo-opptiai-alt-text-generator',
-                'seo-opptiai-alt-text-generator-auto-image-seo-accessibility',
-                'opptiai-alt-text-generator'
+                'wp-alt-text-plugin',
+                'seo-wp-alt-text-plugin',
+                'seo-wp-alt-text-plugin-auto-image-seo-accessibility',
+                'wp-alt-text-plugin'
             ];
             $is_our_plugin = in_array($args->slug, $possible_slugs, true);
         }
@@ -7034,7 +7209,7 @@ class Opptiai_Alt_Core {
     public function ajax_reset_password() {
         check_ajax_referer('opptiai_alt_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
         }
 
         $email = isset($_POST['email']) && is_string($_POST['email']) ? sanitize_email($_POST['email']) : '';
@@ -7043,19 +7218,19 @@ class Opptiai_Alt_Core {
         
         if (empty($email) || !is_email($email)) {
             wp_send_json_error([
-                'message' => __('Please enter a valid email address', 'opptiai-alt-text-generator')
+                'message' => __('Please enter a valid email address', 'wp-alt-text-plugin')
             ]);
         }
 
         if (empty($token)) {
             wp_send_json_error([
-                'message' => __('Reset token is required', 'opptiai-alt-text-generator')
+                'message' => __('Reset token is required', 'wp-alt-text-plugin')
             ]);
         }
 
         if (empty($password) || strlen($password) < 8) {
             wp_send_json_error([
-                'message' => __('Password must be at least 8 characters long', 'opptiai-alt-text-generator')
+                'message' => __('Password must be at least 8 characters long', 'wp-alt-text-plugin')
             ]);
         }
 
@@ -7068,7 +7243,7 @@ class Opptiai_Alt_Core {
         }
 
         wp_send_json_success([
-            'message' => __('Password reset successfully. You can now sign in with your new password.', 'opptiai-alt-text-generator'),
+            'message' => __('Password reset successfully. You can now sign in with your new password.', 'wp-alt-text-plugin'),
             'redirect' => admin_url('upload.php?page=opptiai-alt&password_reset=success')
         ]);
     }
@@ -7079,12 +7254,12 @@ class Opptiai_Alt_Core {
     public function ajax_get_subscription_info() {
         check_ajax_referer('opptiai_alt_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
         }
 
         if (!$this->api_client->is_authenticated()) {
             wp_send_json_error([
-                'message' => __('Please log in to view subscription information', 'opptiai-alt-text-generator'),
+                'message' => __('Please log in to view subscription information', 'wp-alt-text-plugin'),
                 'code' => 'not_authenticated'
             ]);
         }
@@ -7106,12 +7281,12 @@ class Opptiai_Alt_Core {
     public function ajax_inline_generate() {
         check_ajax_referer('opptiai_alt_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
         }
 
         $attachment_ids = isset($_POST['attachment_ids']) ? (array) $_POST['attachment_ids'] : [];
         if (empty($attachment_ids)) {
-            wp_send_json_error(['message' => __('No attachment IDs provided.', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('No attachment IDs provided.', 'wp-alt-text-plugin')]);
         }
 
         $ids = array_map('intval', $attachment_ids);
@@ -7120,7 +7295,7 @@ class Opptiai_Alt_Core {
         });
 
         if (empty($ids)) {
-            wp_send_json_error(['message' => __('Invalid attachment IDs.', 'opptiai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Invalid attachment IDs.', 'wp-alt-text-plugin')]);
         }
 
         $results = [];
@@ -7129,7 +7304,7 @@ class Opptiai_Alt_Core {
                 $results[] = [
                     'attachment_id' => $id,
                     'success' => false,
-                    'message' => __('Attachment is not an image.', 'opptiai-alt-text-generator'),
+                    'message' => __('Attachment is not an image.', 'wp-alt-text-plugin'),
                 ];
                 continue;
             }

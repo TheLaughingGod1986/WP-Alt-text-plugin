@@ -8,7 +8,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
 
-PLUGIN_SLUG="opptiai-alt-text-generator"
+PLUGIN_SLUG="wp-alt-text-plugin"
 BUILD_DIR="${ROOT_DIR}/build"
 DIST_DIR="${ROOT_DIR}/dist"
 PLUGIN_DIR="${BUILD_DIR}/${PLUGIN_SLUG}"
@@ -56,7 +56,18 @@ rsync -a \
 rsync -a \
   --exclude='wordpress-org' \
   --exclude='wordpress-org/**' \
-  assets includes templates \
+  --exclude='scripts/**' \
+  --exclude='*.sh' \
+  --exclude='*.py' \
+  --exclude='*.sql' \
+  --exclude='test-*.php' \
+  --exclude='check-*.php' \
+  --exclude='mock-*.js' \
+  --exclude='demo*.html' \
+  --exclude='*.md' \
+  --exclude='*.txt' \
+  --exclude='!readme.txt' \
+  assets includes templates languages \
   "$PLUGIN_DIR/"
 
 # Remove unminified JS/CSS files (only keep .min versions in production)
@@ -91,6 +102,11 @@ find "$PLUGIN_DIR" -path "*/tests/*" -delete
 find "$PLUGIN_DIR" -name "*test*.php" -delete
 find "$PLUGIN_DIR" -name "*Test.php" -delete
 find "$PLUGIN_DIR" -name "*spec*.js" -delete
+find "$PLUGIN_DIR" -name "check-*.php" -delete
+find "$PLUGIN_DIR" -name "test-*.php" -delete
+find "$PLUGIN_DIR" -name "mock-*.js" -delete
+find "$PLUGIN_DIR" -name "check-*.sql" -delete
+find "$PLUGIN_DIR" -type d -name "scripts" -exec rm -rf {} + 2>/dev/null || true
 
 # Remove test images and demo files
 find "$PLUGIN_DIR" -name "demo*.html" -delete

@@ -342,9 +342,9 @@ class AltText_AI_API_Client_V2 {
                 'error'    => $error_message,
             ]);
             if (strpos($error_message, 'timeout') !== false) {
-                return new WP_Error('api_timeout', __('Authentication server is taking too long to respond. Please try again in a few minutes.', 'opptiai-alt-text-generator'));
+                return new WP_Error('api_timeout', __('Authentication server is taking too long to respond. Please try again in a few minutes.', 'wp-alt-text-plugin'));
             } elseif (strpos($error_message, 'could not resolve') !== false) {
-                return new WP_Error('api_unreachable', __('Unable to reach authentication server. Please check your internet connection and try again.', 'opptiai-alt-text-generator'));
+                return new WP_Error('api_unreachable', __('Unable to reach authentication server. Please check your internet connection and try again.', 'wp-alt-text-plugin'));
             }
             return new WP_Error('api_error', $error_message);
         }
@@ -364,13 +364,13 @@ class AltText_AI_API_Client_V2 {
             // Check if it's an HTML error page (means endpoint doesn't exist)
             if (strpos($body, '<html') !== false || strpos($body, 'Cannot POST') !== false || strpos($body, 'Cannot GET') !== false) {
                 // Provide context-specific error messages
-                $error_message = __('This feature is not yet available. Please contact support for assistance or try again later.', 'opptiai-alt-text-generator');
+                $error_message = __('This feature is not yet available. Please contact support for assistance or try again later.', 'wp-alt-text-plugin');
                 
                 // Check endpoint to provide more specific message
                 if (strpos($endpoint, '/auth/forgot-password') !== false || strpos($endpoint, '/auth/reset-password') !== false) {
-                    $error_message = __('Password reset functionality is currently being set up on our backend. Please contact support for assistance or try again later.', 'opptiai-alt-text-generator');
+                    $error_message = __('Password reset functionality is currently being set up on our backend. Please contact support for assistance or try again later.', 'wp-alt-text-plugin');
                 } elseif (strpos($endpoint, '/licenses/sites') !== false || strpos($endpoint, '/api/licenses/sites') !== false) {
-                    $error_message = __('License site usage tracking is currently being set up on our backend. Please contact support for assistance or try again later.', 'opptiai-alt-text-generator');
+                    $error_message = __('License site usage tracking is currently being set up on our backend. Please contact support for assistance or try again later.', 'wp-alt-text-plugin');
                 }
                 
                 return new WP_Error(
@@ -380,15 +380,66 @@ class AltText_AI_API_Client_V2 {
             }
             return new WP_Error(
                 'not_found',
-                $data['error'] ?? $data['message'] ?? __('The requested resource was not found.', 'opptiai-alt-text-generator')
+                $data['error'] ?? $data['message'] ?? __('The requested resource was not found.', 'wp-alt-text-plugin')
             );
         }
         
         // Handle server errors
         if ($status_code >= 500) {
+            // Log the actual response body for debugging
+            $error_details = '';
+            if (is_array($data) && isset($data['error'])) {
+                $error_details = $data['error'];
+            } elseif (is_array($data) && isset($data['message'])) {
+                $error_details = $data['message'];
+            } elseif (!empty($body) && strlen($body) < 500) {
+                // Only include body if it's not too long
+                $error_details = $body;
+            }
+            
+            $this->log_api_event('error', 'API server error', [
+                'endpoint' => $endpoint,
+                'method'   => $method,
+                'status'   => $status_code,
+                'error_details' => $error_details,
+                'body_preview' => substr($body, 0, 200),
+            ]);
+            
+            // Try to extract more specific error from response body
+            $backend_error_code = '';
+            $backend_error_message = '';
+            
+            if (is_array($data)) {
+                $backend_error_code = $data['code'] ?? '';
+                $backend_error_message = $data['message'] ?? $data['error'] ?? '';
+            }
+            
+            // Provide more specific error message based on endpoint and error details
+            $error_message = __('The server encountered an error processing your request. Please try again in a few minutes.', 'wp-alt-text-plugin');
+            
+            if (strpos($endpoint, '/api/generate') !== false) {
+                // Check if it's an OpenAI API key issue (backend configuration problem)
+                if (strpos(strtolower($error_details), 'incorrect api key') !== false || 
+                    strpos(strtolower($error_details), 'invalid api key') !== false ||
+                    strpos(strtolower($backend_error_code), 'generation_error') !== false) {
+                    $error_message = __('The image generation service is temporarily unavailable due to a backend configuration issue. Please contact support.', 'wp-alt-text-plugin');
+                } else {
+                    $error_message = __('The image generation service is temporarily unavailable. Please try again in a few minutes.', 'wp-alt-text-plugin');
+                }
+            } elseif (strpos($endpoint, '/auth/') !== false) {
+                $error_message = __('The authentication server is temporarily unavailable. Please try again in a few minutes.', 'wp-alt-text-plugin');
+            }
+            
             return new WP_Error(
                 'server_error',
-                __('Authentication server is temporarily unavailable. Please try again in a few minutes.', 'opptiai-alt-text-generator')
+                $error_message,
+                [
+                    'status_code' => $status_code,
+                    'endpoint' => $endpoint,
+                    'error_details' => $error_details,
+                    'backend_code' => $backend_error_code,
+                    'backend_message' => $backend_error_message,
+                ]
             );
         }
         
@@ -397,7 +448,7 @@ class AltText_AI_API_Client_V2 {
             $this->clear_token();
             return new WP_Error(
                 'auth_required',
-                __('Authentication required. Please log in to continue.', 'opptiai-alt-text-generator'),
+                __('Authentication required. Please log in to continue.', 'wp-alt-text-plugin'),
                 ['requires_auth' => true]
             );
         }
@@ -430,7 +481,7 @@ class AltText_AI_API_Client_V2 {
         
         return new WP_Error(
             'registration_failed',
-            $response['data']['error'] ?? __('Registration failed', 'opptiai-alt-text-generator')
+            $response['data']['error'] ?? __('Registration failed', 'wp-alt-text-plugin')
         );
     }
     
@@ -455,7 +506,7 @@ class AltText_AI_API_Client_V2 {
         
         return new WP_Error(
             'login_failed',
-            $response['data']['error'] ?? __('Login failed', 'opptiai-alt-text-generator')
+            $response['data']['error'] ?? __('Login failed', 'wp-alt-text-plugin')
         );
     }
     
@@ -476,7 +527,7 @@ class AltText_AI_API_Client_V2 {
 
         return new WP_Error(
             'user_info_failed',
-            $response['data']['error'] ?? __('Failed to get user info', 'opptiai-alt-text-generator')
+            $response['data']['error'] ?? __('Failed to get user info', 'wp-alt-text-plugin')
         );
     }
 
@@ -521,7 +572,7 @@ class AltText_AI_API_Client_V2 {
 
         return new WP_Error(
             'license_activation_failed',
-            $response['error'] ?? __('Failed to activate license', 'opptiai-alt-text-generator')
+            $response['error'] ?? __('Failed to activate license', 'wp-alt-text-plugin')
         );
     }
 
@@ -533,7 +584,7 @@ class AltText_AI_API_Client_V2 {
 
         return [
             'success' => true,
-            'message' => __('License deactivated successfully', 'opptiai-alt-text-generator')
+            'message' => __('License deactivated successfully', 'wp-alt-text-plugin')
         ];
     }
 
@@ -547,7 +598,7 @@ class AltText_AI_API_Client_V2 {
         $has_license = $this->has_active_license();
         
         if (!$is_authenticated && !$has_license) {
-            return new WP_Error('not_authenticated', __('Must be authenticated or have an active license to view license site usage', 'opptiai-alt-text-generator'));
+            return new WP_Error('not_authenticated', __('Must be authenticated or have an active license to view license site usage', 'wp-alt-text-plugin'));
         }
 
         $response = $this->make_request('/api/licenses/sites', 'GET');
@@ -560,7 +611,7 @@ class AltText_AI_API_Client_V2 {
             return $response['data'] ?? ['sites' => []];
         }
 
-        return new WP_Error('api_error', $response['message'] ?? __('Failed to fetch license site usage', 'opptiai-alt-text-generator'));
+        return new WP_Error('api_error', $response['message'] ?? __('Failed to fetch license site usage', 'wp-alt-text-plugin'));
     }
 
     /**
@@ -569,7 +620,7 @@ class AltText_AI_API_Client_V2 {
      */
     public function disconnect_license_site($site_id) {
         if (!$this->is_authenticated()) {
-            return new WP_Error('not_authenticated', __('Must be authenticated to disconnect license sites', 'opptiai-alt-text-generator'));
+            return new WP_Error('not_authenticated', __('Must be authenticated to disconnect license sites', 'wp-alt-text-plugin'));
         }
 
         $response = $this->make_request('/api/licenses/sites/' . urlencode($site_id), 'DELETE');
@@ -579,10 +630,10 @@ class AltText_AI_API_Client_V2 {
         }
 
         if ($response['success']) {
-            return $response['data'] ?? ['message' => __('Site disconnected successfully', 'opptiai-alt-text-generator')];
+            return $response['data'] ?? ['message' => __('Site disconnected successfully', 'wp-alt-text-plugin')];
         }
 
-        return new WP_Error('api_error', $response['message'] ?? __('Failed to disconnect site', 'opptiai-alt-text-generator'));
+        return new WP_Error('api_error', $response['message'] ?? __('Failed to disconnect site', 'wp-alt-text-plugin'));
     }
 
     /**
@@ -627,7 +678,7 @@ class AltText_AI_API_Client_V2 {
 
         return new WP_Error(
             'usage_failed',
-            $response['data']['error'] ?? __('Failed to get usage info', 'opptiai-alt-text-generator')
+            $response['data']['error'] ?? __('Failed to get usage info', 'wp-alt-text-plugin')
         );
     }
 
@@ -763,7 +814,7 @@ class AltText_AI_API_Client_V2 {
         if (isset($image_payload['_error']) && $image_payload['_error'] === 'image_too_large') {
             return new WP_Error(
                 'image_too_large',
-                $image_payload['_error_message'] ?? __('Image file is too large.', 'opptiai-alt-text-generator'),
+                $image_payload['_error_message'] ?? __('Image file is too large.', 'wp-alt-text-plugin'),
                 ['image_id' => $image_id]
             );
         }
@@ -774,7 +825,7 @@ class AltText_AI_API_Client_V2 {
             'regenerate' => $regenerate
         ];
 
-        $response = $this->make_request($endpoint, 'POST', $body);
+        $response = $this->request_with_retry($endpoint, 'POST', $body);
 
         if (is_wp_error($response)) {
             return $response;
@@ -794,7 +845,7 @@ class AltText_AI_API_Client_V2 {
         if ($response['status_code'] === 429) {
             return new WP_Error(
                 'limit_reached',
-                $response['data']['error'] ?? __('Monthly limit reached', 'opptiai-alt-text-generator'),
+                $response['data']['error'] ?? __('Monthly limit reached', 'wp-alt-text-plugin'),
                 ['usage' => $response['data']['usage'] ?? null]
             );
         }
@@ -802,13 +853,26 @@ class AltText_AI_API_Client_V2 {
         if (!$response['success']) {
             // Extract detailed error information
             $error_data = $response['data'] ?? [];
-            $error_message = $error_data['message'] ?? $error_data['error'] ?? __('Failed to generate alt text', 'opptiai-alt-text-generator');
+            $error_message = $error_data['message'] ?? $error_data['error'] ?? __('Failed to generate alt text', 'wp-alt-text-plugin');
             $error_code = $error_data['code'] ?? 'api_error';
             
             // Handle 413 Payload Too Large specifically
             if ($response['status_code'] === 413) {
-                $error_message = __('Image file is too large. Please compress or resize the image before generating alt text.', 'opptiai-alt-text-generator');
+                $error_message = __('Image file is too large. Please compress or resize the image before generating alt text.', 'wp-alt-text-plugin');
                 $error_code = 'payload_too_large';
+            }
+            
+            // Handle backend OpenAI API key errors (backend configuration issue)
+            // Check both the error message and the backend's error field
+            $backend_error_lower = strtolower($error_message . ' ' . ($error_data['error'] ?? ''));
+            if (strpos($backend_error_lower, 'incorrect api key') !== false || 
+                strpos($backend_error_lower, 'invalid api key') !== false ||
+                strpos($backend_error_lower, 'api key provided') !== false ||
+                $error_code === 'GENERATION_ERROR') {
+                // This is a backend configuration issue - the backend's OpenAI API key is invalid/expired
+                // This is NOT a plugin issue, but a backend server configuration problem
+                $error_message = __('The backend service is experiencing a configuration issue. This is a temporary backend problem that needs to be fixed on the server side. Please try again in a few minutes or contact support if the issue persists.', 'wp-alt-text-plugin');
+                $error_code = 'backend_config_error';
             }
             
             // Log detailed error information for debugging
@@ -818,7 +882,8 @@ class AltText_AI_API_Client_V2 {
                     'status_code' => $response['status_code'],
                     'error_code' => $error_code,
                     'error_message' => $error_message,
-                    'full_response' => $error_data, // Include full error data for debugging
+                    'backend_error' => $error_data['error'] ?? $error_data['message'] ?? 'Unknown error',
+                    'backend_code' => $error_data['code'] ?? 'unknown',
                 ], 'api');
             }
             
@@ -829,7 +894,8 @@ class AltText_AI_API_Client_V2 {
                     'code' => $error_code,
                     'status_code' => $response['status_code'],
                     'image_id' => $image_id,
-                    'api_response' => $error_data
+                    'api_response' => $error_data,
+                    'backend_error' => $error_data['error'] ?? $error_data['message'] ?? null,
                 ]
             );
         }
@@ -854,14 +920,14 @@ class AltText_AI_API_Client_V2 {
             'context' => $context
         ];
         
-        $response = $this->make_request($endpoint, 'POST', $body);
+        $response = $this->request_with_retry($endpoint, 'POST', $body);
         
         if (is_wp_error($response)) {
             return $response;
         }
         
         if (!$response['success']) {
-            $error_message = $response['data']['message'] ?? $response['data']['error'] ?? __('Failed to review alt text', 'opptiai-alt-text-generator');
+            $error_message = $response['data']['message'] ?? $response['data']['error'] ?? __('Failed to review alt text', 'wp-alt-text-plugin');
             return new WP_Error(
                 'api_error',
                 $error_message,
@@ -888,7 +954,7 @@ class AltText_AI_API_Client_V2 {
         
         return new WP_Error(
             'billing_failed',
-            $response['data']['error'] ?? __('Failed to get billing info', 'opptiai-alt-text-generator')
+            $response['data']['error'] ?? __('Failed to get billing info', 'wp-alt-text-plugin')
         );
     }
 
@@ -908,7 +974,7 @@ class AltText_AI_API_Client_V2 {
 
         return new WP_Error(
             'plans_failed',
-            $response['data']['error'] ?? __('Failed to fetch pricing plans', 'opptiai-alt-text-generator')
+            $response['data']['error'] ?? __('Failed to fetch pricing plans', 'wp-alt-text-plugin')
         );
     }
     
@@ -940,7 +1006,7 @@ class AltText_AI_API_Client_V2 {
         }
 
         if (!$error_message) {
-            $error_message = __('Failed to create checkout session', 'opptiai-alt-text-generator');
+            $error_message = __('Failed to create checkout session', 'wp-alt-text-plugin');
         }
 
         return new WP_Error(
@@ -968,7 +1034,7 @@ class AltText_AI_API_Client_V2 {
         
         return new WP_Error(
             'portal_failed',
-            $response['data']['error'] ?? __('Failed to create customer portal session', 'opptiai-alt-text-generator')
+            $response['data']['error'] ?? __('Failed to create customer portal session', 'wp-alt-text-plugin')
         );
     }
     
@@ -1003,15 +1069,15 @@ class AltText_AI_API_Client_V2 {
         }
         
         // Extract error message with better context
-        $error_message = $response['data']['error'] ?? $response['data']['message'] ?? __('Failed to send password reset email', 'opptiai-alt-text-generator');
+        $error_message = $response['data']['error'] ?? $response['data']['message'] ?? __('Failed to send password reset email', 'wp-alt-text-plugin');
         
         // Check for specific error cases
         if ($response['status_code'] === 404) {
-            $error_message = __('Password reset is currently being set up. This feature is not yet available on our backend. Please contact support for assistance.', 'opptiai-alt-text-generator');
+            $error_message = __('Password reset is currently being set up. This feature is not yet available on our backend. Please contact support for assistance.', 'wp-alt-text-plugin');
         } elseif ($response['status_code'] === 429) {
-            $error_message = __('Too many password reset requests. Please wait 15 minutes before trying again.', 'opptiai-alt-text-generator');
+            $error_message = __('Too many password reset requests. Please wait 15 minutes before trying again.', 'wp-alt-text-plugin');
         } elseif ($response['status_code'] >= 500) {
-            $error_message = __('The authentication server is temporarily unavailable. Please try again in a few minutes.', 'opptiai-alt-text-generator');
+            $error_message = __('The authentication server is temporarily unavailable. Please try again in a few minutes.', 'wp-alt-text-plugin');
         }
         
         return new WP_Error(
@@ -1050,7 +1116,7 @@ class AltText_AI_API_Client_V2 {
         
         return new WP_Error(
             'reset_password_failed',
-            $response['data']['error'] ?? $response['data']['message'] ?? __('Failed to reset password', 'opptiai-alt-text-generator')
+            $response['data']['error'] ?? $response['data']['message'] ?? __('Failed to reset password', 'wp-alt-text-plugin')
         );
     }
     
@@ -1070,7 +1136,7 @@ class AltText_AI_API_Client_V2 {
         
         return new WP_Error(
             'subscription_info_failed',
-            $response['data']['error'] ?? __('Failed to fetch subscription information', 'opptiai-alt-text-generator')
+            $response['data']['error'] ?? __('Failed to fetch subscription information', 'wp-alt-text-plugin')
         );
     }
     
@@ -1439,19 +1505,19 @@ class AltText_AI_API_Client_V2 {
                                                         } else {
                                                             // Image is STILL too large - mark error
                                                             $payload['_error'] = 'image_too_large';
-                                                            $payload['_error_message'] = __('Image file is too large even after compression. Please manually optimize the image.', 'opptiai-alt-text-generator');
+                                                            $payload['_error_message'] = __('Image file is too large even after compression. Please manually optimize the image.', 'wp-alt-text-plugin');
                                                         }
                                                     } else {
                                                         $payload['_error'] = 'image_too_large';
-                                                        $payload['_error_message'] = __('Failed to read compressed image.', 'opptiai-alt-text-generator');
+                                                        $payload['_error_message'] = __('Failed to read compressed image.', 'wp-alt-text-plugin');
                                                     }
                                                 } else {
                                                     $payload['_error'] = 'image_too_large';
-                                                    $payload['_error_message'] = __('Failed to save compressed image.', 'opptiai-alt-text-generator');
+                                                    $payload['_error_message'] = __('Failed to save compressed image.', 'wp-alt-text-plugin');
                                                 }
                                             } else {
                                                 $payload['_error'] = 'image_too_large';
-                                                $payload['_error_message'] = __('Failed to create image editor.', 'opptiai-alt-text-generator');
+                                                $payload['_error_message'] = __('Failed to create image editor.', 'wp-alt-text-plugin');
                                             }
                                         }
                                     } else {
@@ -1502,7 +1568,7 @@ class AltText_AI_API_Client_V2 {
                                         } else {
                                             // Still too large after recompression - mark error
                                             $payload['_error'] = 'image_too_large';
-                                            $payload['_error_message'] = __('Image file is too large even after compression. Please manually optimize the image.', 'opptiai-alt-text-generator');
+                                            $payload['_error_message'] = __('Image file is too large even after compression. Please manually optimize the image.', 'wp-alt-text-plugin');
                                         }
                                     } else {
                                         $payload['image_url'] = $image_url;

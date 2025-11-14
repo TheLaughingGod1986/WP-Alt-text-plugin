@@ -90,9 +90,9 @@ class AltText_AI_Usage_Tracker {
         if ($force_refresh) {
             delete_transient(self::CACHE_KEY);
         }
-
+        
         $cached = get_transient(self::CACHE_KEY);
-
+        
         if ($cached === false) {
             // Default values if no cache exists
             $reset_ts = strtotime('first day of next month');
@@ -106,7 +106,7 @@ class AltText_AI_Usage_Tracker {
                 'seconds_until_reset' => max(0, $reset_ts - current_time('timestamp')),
             ];
         }
-
+        
         return $cached;
     }
     

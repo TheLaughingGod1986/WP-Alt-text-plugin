@@ -35,7 +35,7 @@ class Opptiai_Alt {
 	 */
 	public function __construct() {
 		$this->version     = defined( 'OPPTIAI_ALT_VERSION' ) ? OPPTIAI_ALT_VERSION : '1.0.0';
-		$this->plugin_name = 'opptiai-alt-text-generator';
+		$this->plugin_name = 'wp-alt-text-plugin';
 
 		$this->load_dependencies();
 		$this->set_locale();

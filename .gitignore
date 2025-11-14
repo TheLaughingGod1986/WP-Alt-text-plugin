@@ -37,6 +37,7 @@ Thumbs.db
 .env.development
 render-env-vars.txt
 *-env-vars.txt
+DEPLOYMENT-INSTRUCTIONS.md
 
 # Dependencies
 node_modules/

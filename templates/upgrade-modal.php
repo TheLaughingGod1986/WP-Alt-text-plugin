@@ -27,10 +27,10 @@ $stripe_links = [
     <div class="alttextai-upgrade-modal__content">
         <div class="alttextai-upgrade-modal__header">
             <div class="alttextai-upgrade-modal__header-content">
-                <h2 id="alttextai-upgrade-modal-title"><?php esc_html_e('Unlock Unlimited SEO AI Alt Text Generation', 'opptiai-alt-text-generator'); ?></h2>
-                <p class="alttextai-upgrade-modal__subtitle" id="alttextai-upgrade-modal-desc"><?php esc_html_e('Boost Google image rankings, improve SEO, and save hours of manual work', 'opptiai-alt-text-generator'); ?></p>
+                <h2 id="alttextai-upgrade-modal-title"><?php esc_html_e('Unlock Unlimited SEO AI Alt Text Generation', 'wp-alt-text-plugin'); ?></h2>
+                <p class="alttextai-upgrade-modal__subtitle" id="alttextai-upgrade-modal-desc"><?php esc_html_e('Boost Google image rankings, improve SEO, and save hours of manual work', 'wp-alt-text-plugin'); ?></p>
             </div>
-            <button type="button" class="alttextai-modal-close" onclick="alttextaiCloseModal();" aria-label="<?php esc_attr_e('Close upgrade modal', 'opptiai-alt-text-generator'); ?>">
+            <button type="button" class="alttextai-modal-close" onclick="alttextaiCloseModal();" aria-label="<?php esc_attr_e('Close upgrade modal', 'wp-alt-text-plugin'); ?>">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                     <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
@@ -42,7 +42,7 @@ $stripe_links = [
                 <!-- Not Authenticated - Show Pricing with Sign Up Note -->
                 <div class="alttextai-auth-notice">
                     <div class="alttextai-auth-notice__icon">💡</div>
-                    <p><strong><?php esc_html_e('New to SEO AI Alt Text?', 'opptiai-alt-text-generator'); ?></strong> <?php esc_html_e('You\'ll create your account during checkout. Existing users can', 'opptiai-alt-text-generator'); ?> <a href="#" onclick="triggerSignIn(); return false;"><?php esc_html_e('sign in here', 'opptiai-alt-text-generator'); ?></a>.</p>
+                    <p><strong><?php esc_html_e('New to SEO AI Alt Text?', 'wp-alt-text-plugin'); ?></strong> <?php esc_html_e('You\'ll create your account during checkout. Existing users can', 'wp-alt-text-plugin'); ?> <a href="#" onclick="triggerSignIn(); return false;"><?php esc_html_e('sign in here', 'wp-alt-text-plugin'); ?></a>.</p>
                 </div>
             <?php endif; ?>
             
@@ -53,24 +53,24 @@ $stripe_links = [
                     <!-- Pro Plan -->
                     <div class="alttextai-plan-card alttextai-plan-card--pro">
                         <div class="alttextai-plan-header">
-                            <h3><?php esc_html_e('Pro Plan', 'opptiai-alt-text-generator'); ?></h3>
+                            <h3><?php esc_html_e('Pro Plan', 'wp-alt-text-plugin'); ?></h3>
                             <div class="alttextai-plan-price">
                                 <span class="alttextai-price-amount">£12.99</span>
-                                <span class="alttextai-price-period"><?php esc_html_e('/month', 'opptiai-alt-text-generator'); ?></span>
+                                <span class="alttextai-price-period"><?php esc_html_e('/month', 'wp-alt-text-plugin'); ?></span>
                             </div>
-                            <p class="alttextai-plan-value"><?php esc_html_e('Perfect for growing websites', 'opptiai-alt-text-generator'); ?></p>
+                            <p class="alttextai-plan-value"><?php esc_html_e('Perfect for growing websites', 'wp-alt-text-plugin'); ?></p>
                         </div>
                         
                         <div class="alttextai-plan-features">
                             <ul>
                                 <li>
-                                    <span class="alttextai-feature-highlight"><?php esc_html_e('1,000', 'opptiai-alt-text-generator'); ?></span>
-                                    <?php esc_html_e('AI-generated alt texts per month', 'opptiai-alt-text-generator'); ?>
+                                    <span class="alttextai-feature-highlight"><?php esc_html_e('1,000', 'wp-alt-text-plugin'); ?></span>
+                                    <?php esc_html_e('AI-generated alt texts per month', 'wp-alt-text-plugin'); ?>
                                 </li>
-                                <li><?php esc_html_e('Advanced quality scoring for SEO', 'opptiai-alt-text-generator'); ?></li>
-                                <li><?php esc_html_e('Bulk process unlimited images', 'opptiai-alt-text-generator'); ?></li>
-                                <li><?php esc_html_e('Priority support & assistance', 'opptiai-alt-text-generator'); ?></li>
-                                <li><?php esc_html_e('Full API access included', 'opptiai-alt-text-generator'); ?></li>
+                                <li><?php esc_html_e('Advanced quality scoring for SEO', 'wp-alt-text-plugin'); ?></li>
+                                <li><?php esc_html_e('Bulk process unlimited images', 'wp-alt-text-plugin'); ?></li>
+                                <li><?php esc_html_e('Priority support & assistance', 'wp-alt-text-plugin'); ?></li>
+                                <li><?php esc_html_e('Full API access included', 'wp-alt-text-plugin'); ?></li>
                             </ul>
                         </div>
                         
@@ -80,42 +80,42 @@ $stripe_links = [
                                 data-plan="pro"
                                 data-price-id="<?php echo esc_attr($pro_price_id); ?>"
                                 data-fallback-url="<?php echo esc_url($stripe_links['pro']); ?>"
-                                aria-label="<?php esc_attr_e('Purchase Pro plan - Unlimited monthly generations', 'opptiai-alt-text-generator'); ?>">
+                                aria-label="<?php esc_attr_e('Purchase Pro plan - Unlimited monthly generations', 'wp-alt-text-plugin'); ?>">
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                                 <path d="M8 2L6 6H2L6 9L4 14L8 11L12 14L10 9L14 6H10L8 2Z" fill="currentColor"/>
                             </svg>
-                            <span><?php esc_html_e('Get Started with Pro', 'opptiai-alt-text-generator'); ?></span>
+                            <span><?php esc_html_e('Get Started with Pro', 'wp-alt-text-plugin'); ?></span>
                         </button>
                     </div>
                     
                     <!-- Agency Plan -->
                     <div class="alttextai-plan-card alttextai-plan-card--featured alttextai-plan-card--agency">
-                        <div class="alttextai-plan-badge"><?php esc_html_e('MOST POPULAR', 'opptiai-alt-text-generator'); ?></div>
+                        <div class="alttextai-plan-badge"><?php esc_html_e('MOST POPULAR', 'wp-alt-text-plugin'); ?></div>
                         <div class="alttextai-plan-header">
-                            <h3><?php esc_html_e('Agency Plan', 'opptiai-alt-text-generator'); ?></h3>
+                            <h3><?php esc_html_e('Agency Plan', 'wp-alt-text-plugin'); ?></h3>
                             <div class="alttextai-plan-price">
                                 <span class="alttextai-price-amount">£49.99</span>
-                                <span class="alttextai-price-period"><?php esc_html_e('/month', 'opptiai-alt-text-generator'); ?></span>
+                                <span class="alttextai-price-period"><?php esc_html_e('/month', 'wp-alt-text-plugin'); ?></span>
                             </div>
-                            <p class="alttextai-plan-value"><?php esc_html_e('Best value for agencies & professionals', 'opptiai-alt-text-generator'); ?></p>
+                            <p class="alttextai-plan-value"><?php esc_html_e('Best value for agencies & professionals', 'wp-alt-text-plugin'); ?></p>
                         </div>
                         
                         <div class="alttextai-plan-features">
                             <ul>
                                 <li>
-                                    <span class="alttextai-feature-highlight"><?php esc_html_e('10,000', 'opptiai-alt-text-generator'); ?></span>
-                                    <?php esc_html_e('AI-generated alt texts per month', 'opptiai-alt-text-generator'); ?>
+                                    <span class="alttextai-feature-highlight"><?php esc_html_e('10,000', 'wp-alt-text-plugin'); ?></span>
+                                    <?php esc_html_e('AI-generated alt texts per month', 'wp-alt-text-plugin'); ?>
                                 </li>
-                                <li><?php esc_html_e('Advanced quality scoring for SEO', 'opptiai-alt-text-generator'); ?></li>
-                                <li><?php esc_html_e('Bulk process unlimited images', 'opptiai-alt-text-generator'); ?></li>
-                                <li><?php esc_html_e('Priority support & assistance', 'opptiai-alt-text-generator'); ?> <span class="alttextai-coming-soon"><?php esc_html_e('(coming soon)', 'opptiai-alt-text-generator'); ?></span></li>
-                                <li><?php esc_html_e('Full API access included', 'opptiai-alt-text-generator'); ?> <span class="alttextai-coming-soon"><?php esc_html_e('(coming soon)', 'opptiai-alt-text-generator'); ?></span></li>
-                                <li><?php esc_html_e('White-label options for clients', 'opptiai-alt-text-generator'); ?> <span class="alttextai-coming-soon"><?php esc_html_e('(coming soon)', 'opptiai-alt-text-generator'); ?></span></li>
+                                <li><?php esc_html_e('Advanced quality scoring for SEO', 'wp-alt-text-plugin'); ?></li>
+                                <li><?php esc_html_e('Bulk process unlimited images', 'wp-alt-text-plugin'); ?></li>
+                                <li><?php esc_html_e('Priority support & assistance', 'wp-alt-text-plugin'); ?> <span class="alttextai-coming-soon"><?php esc_html_e('(coming soon)', 'wp-alt-text-plugin'); ?></span></li>
+                                <li><?php esc_html_e('Full API access included', 'wp-alt-text-plugin'); ?> <span class="alttextai-coming-soon"><?php esc_html_e('(coming soon)', 'wp-alt-text-plugin'); ?></span></li>
+                                <li><?php esc_html_e('White-label options for clients', 'wp-alt-text-plugin'); ?> <span class="alttextai-coming-soon"><?php esc_html_e('(coming soon)', 'wp-alt-text-plugin'); ?></span></li>
                             </ul>
                         </div>
                         
                         <div class="alttextai-plan-savings">
-                            <?php esc_html_e('Save 15+ hours/month with automation', 'opptiai-alt-text-generator'); ?>
+                            <?php esc_html_e('Save 15+ hours/month with automation', 'wp-alt-text-plugin'); ?>
                         </div>
                         
                         <button type="button" 
@@ -124,11 +124,11 @@ $stripe_links = [
                                 data-plan="agency"
                                 data-price-id="<?php echo esc_attr($agency_price_id); ?>"
                                 data-fallback-url="<?php echo esc_url($stripe_links['agency']); ?>"
-                                aria-label="<?php esc_attr_e('Purchase Agency plan - Best value for agencies and professionals', 'opptiai-alt-text-generator'); ?>">
+                                aria-label="<?php esc_attr_e('Purchase Agency plan - Best value for agencies and professionals', 'wp-alt-text-plugin'); ?>">
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                                 <path d="M8 2L6 6H2L6 9L4 14L8 11L12 14L10 9L14 6H10L8 2Z" fill="currentColor"/>
                             </svg>
-                            <span><?php esc_html_e('Upgrade to Agency', 'opptiai-alt-text-generator'); ?></span>
+                            <span><?php esc_html_e('Upgrade to Agency', 'wp-alt-text-plugin'); ?></span>
                         </button>
                     </div>
                 </div>
@@ -139,24 +139,24 @@ $stripe_links = [
                         <div class="alttextai-plan-card-content">
                             <div class="alttextai-plan-header">
                                 <div class="alttextai-credits-header-left">
-                                    <h3><?php esc_html_e('Credits Pack', 'opptiai-alt-text-generator'); ?></h3>
-                                    <p class="alttextai-plan-value"><?php esc_html_e('Top up when you need more', 'opptiai-alt-text-generator'); ?></p>
+                                    <h3><?php esc_html_e('Credits Pack', 'wp-alt-text-plugin'); ?></h3>
+                                    <p class="alttextai-plan-value"><?php esc_html_e('Top up when you need more', 'wp-alt-text-plugin'); ?></p>
                                 </div>
                                 <div class="alttextai-plan-price">
                                     <span class="alttextai-price-amount">£9.99</span>
-                                    <span class="alttextai-price-period"><?php esc_html_e('one-time', 'opptiai-alt-text-generator'); ?></span>
+                                    <span class="alttextai-price-period"><?php esc_html_e('one-time', 'wp-alt-text-plugin'); ?></span>
                                 </div>
                             </div>
                             
                             <div class="alttextai-plan-features alttextai-plan-features--horizontal">
                                 <ul>
                                     <li>
-                                        <span class="alttextai-feature-highlight"><?php esc_html_e('100', 'opptiai-alt-text-generator'); ?></span>
-                                        <?php esc_html_e('AI-generated alt texts', 'opptiai-alt-text-generator'); ?>
+                                        <span class="alttextai-feature-highlight"><?php esc_html_e('100', 'wp-alt-text-plugin'); ?></span>
+                                        <?php esc_html_e('AI-generated alt texts', 'wp-alt-text-plugin'); ?>
                                     </li>
-                                    <li><?php esc_html_e('Never expires - use anytime', 'opptiai-alt-text-generator'); ?></li>
-                                    <li><?php esc_html_e('Works with any plan', 'opptiai-alt-text-generator'); ?></li>
-                                    <li><?php esc_html_e('Perfect for occasional use', 'opptiai-alt-text-generator'); ?></li>
+                                    <li><?php esc_html_e('Never expires - use anytime', 'wp-alt-text-plugin'); ?></li>
+                                    <li><?php esc_html_e('Works with any plan', 'wp-alt-text-plugin'); ?></li>
+                                    <li><?php esc_html_e('Perfect for occasional use', 'wp-alt-text-plugin'); ?></li>
                                 </ul>
                             </div>
                             
@@ -166,11 +166,11 @@ $stripe_links = [
                                     data-plan="credits"
                                     data-price-id="<?php echo esc_attr($credits_price_id); ?>"
                                     data-fallback-url="<?php echo esc_url($stripe_links['credits']); ?>"
-                                    aria-label="<?php esc_attr_e('Purchase credit pack - 100 AI-generated alt texts', 'opptiai-alt-text-generator'); ?>">
+                                    aria-label="<?php esc_attr_e('Purchase credit pack - 100 AI-generated alt texts', 'wp-alt-text-plugin'); ?>">
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                                     <path d="M8 2L6 6H2L6 9L4 14L8 11L12 14L10 9L14 6H10L8 2Z" fill="currentColor"/>
                                 </svg>
-                                <span><?php esc_html_e('Buy Credits', 'opptiai-alt-text-generator'); ?></span>
+                                <span><?php esc_html_e('Buy Credits', 'wp-alt-text-plugin'); ?></span>
                             </button>
                         </div>
                     </div>
@@ -182,15 +182,15 @@ $stripe_links = [
                     <div class="alttextai-trust-elements">
                         <div class="alttextai-trust-item">
                             <span class="alttextai-trust-icon">🔒</span>
-                            <span class="alttextai-trust-text"><?php esc_html_e('Secure checkout via Stripe', 'opptiai-alt-text-generator'); ?></span>
+                            <span class="alttextai-trust-text"><?php esc_html_e('Secure checkout via Stripe', 'wp-alt-text-plugin'); ?></span>
                         </div>
                         <div class="alttextai-trust-item">
                             <span class="alttextai-trust-icon">✅</span>
-                            <span class="alttextai-trust-text"><?php esc_html_e('Cancel anytime', 'opptiai-alt-text-generator'); ?></span>
+                            <span class="alttextai-trust-text"><?php esc_html_e('Cancel anytime', 'wp-alt-text-plugin'); ?></span>
                         </div>
                         <div class="alttextai-trust-item">
                             <span class="alttextai-trust-icon">⚡</span>
-                            <span class="alttextai-trust-text"><?php esc_html_e('Instant activation', 'opptiai-alt-text-generator'); ?></span>
+                            <span class="alttextai-trust-text"><?php esc_html_e('Instant activation', 'wp-alt-text-plugin'); ?></span>
                         </div>
                     </div>
                 </div>

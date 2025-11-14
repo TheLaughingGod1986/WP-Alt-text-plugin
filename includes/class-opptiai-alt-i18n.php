@@ -14,7 +14,7 @@ class Opptiai_Alt_I18n {
 	 */
 	public function load_plugin_textdomain() {
 		load_plugin_textdomain(
-			'opptiai-alt-text-generator',
+			'wp-alt-text-plugin',
 			false,
 			dirname( OPPTIAI_ALT_PLUGIN_BASENAME ) . '/languages/'
 		);

@@ -70,37 +70,37 @@
             }
             
             // Find the context row
-            const contextRow = panel.querySelector('[data-context-row-for="' + rowId + '"]');
-            const contextBody = contextRow ? contextRow.querySelector('[data-debug-context-body="' + rowId + '"]') : null;
-            
-            if (!contextRow || !contextBody) {
+                const contextRow = panel.querySelector('[data-context-row-for="' + rowId + '"]');
+                const contextBody = contextRow ? contextRow.querySelector('[data-debug-context-body="' + rowId + '"]') : null;
+                
+                if (!contextRow || !contextBody) {
                 console.warn('[AltText AI Debug] Context elements not found:', { 
                     contextRow: !!contextRow, 
                     contextBody: !!contextBody, 
                     rowId: rowId,
                     allRows: panel.querySelectorAll('[data-context-row-for]').length
                 });
-                return;
-            }
-            
+                    return;
+                }
+                
             console.log('[AltText AI Debug] Found context elements, processing...');
             
             // Check if expanded
             const isExpanded = contextRow.style.display !== 'none' && contextRow.offsetParent !== null;
-            
-            if (isExpanded) {
+                
+                if (isExpanded) {
                 // Collapse
-                contextRow.style.display = 'none';
-                button.classList.remove('is-expanded');
-                button.textContent = strings.contextTitle || 'Log Context';
-            } else {
+                    contextRow.style.display = 'none';
+                    button.classList.remove('is-expanded');
+                    button.textContent = strings.contextTitle || 'Log Context';
+                } else {
                 // Expand - decode context
-                let context = null;
+                    let context = null;
                 
                 // Try decoding strategies
                 const strategies = [
                     (str) => {
-                        try {
+                    try {
                             if (/^[A-Za-z0-9+\/]*={0,2}$/.test(str)) {
                                 return JSON.parse(decodeURIComponent(escape(atob(str))));
                             }
@@ -129,7 +129,7 @@
                         _raw: encoded.substring(0, 100) + '...',
                         _note: 'The context data could not be decoded.'
                     };
-                }
+                            }
                 
                 // Format output
                 let output = '';
@@ -146,11 +146,11 @@
                 }
                 
                 // Display
-                contextBody.textContent = output;
-                contextRow.style.display = 'table-row';
-                button.classList.add('is-expanded');
-                button.textContent = strings.contextHide || 'Hide Context';
-            }
+                    contextBody.textContent = output;
+                    contextRow.style.display = 'table-row';
+                    button.classList.add('is-expanded');
+                    button.textContent = strings.contextHide || 'Hide Context';
+                }
         }, true);
         
     }
@@ -519,7 +519,7 @@
                 } catch (e) {
                     // Fallback to URL encoding if base64 fails
                     try {
-                        const encoded = encodeURIComponent(JSON.stringify(log.context));
+                const encoded = encodeURIComponent(JSON.stringify(log.context));
                         const rowIndex = String(index);
                         contextCell = '<button type="button" class="alttextai-debug-context-btn" data-context-data="' + escapeAttr(encoded) + '" data-row-index="' + escapeAttr(rowIndex) + '" style="padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer;">' + escapeHtml(strings.contextTitle) + '</button>';
                     } catch (e2) {

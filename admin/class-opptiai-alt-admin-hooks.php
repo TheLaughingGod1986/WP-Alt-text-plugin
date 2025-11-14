@@ -58,6 +58,7 @@ class Opptiai_Alt_Admin_Hooks {
 		add_action( 'admin_post_opptiai_alt_debug_export', [ $this->core, 'handle_debug_log_export' ] );
 		add_action( 'init', [ $this->core, 'ensure_capability' ] );
 		add_action( 'admin_notices', [ $this->core, 'maybe_render_queue_notice' ] );
+		add_action( 'admin_footer', [ $this->core, 'maybe_render_external_api_notice' ] );
 
 		$this->register_ajax_hooks();
 
@@ -99,6 +100,7 @@ class Opptiai_Alt_Admin_Hooks {
 			'alttextai_disconnect_license_site' => 'ajax_disconnect_license_site',
 			'alttextai_admin_login'            => 'ajax_admin_login',
 			'alttextai_admin_logout'           => 'ajax_admin_logout',
+			'wp_alt_text_dismiss_api_notice'   => 'ajax_dismiss_api_notice',
 		];
 
 		foreach ( $ajax_actions as $action => $callback ) {

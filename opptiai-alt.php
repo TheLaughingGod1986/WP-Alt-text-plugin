@@ -1,17 +1,19 @@
 <?php
 /**
- * Plugin Name: OpptiAI Alt Text Generator – Auto Image SEO & Accessibility
- * Plugin URI: https://wordpress.org/plugins/opptiai-alt-text-generator/
- * Description: Advanced SEO AI automatically generates keyword-optimized alt text for WordPress images. Boost Google image rankings, improve accessibility (WCAG compliant), and enhance SEO with AI-powered descriptions. Free tier: 50 AI generations/month. Perfect for SEO optimization, image search rankings, accessibility, e-commerce, and content creators.
+ * Plugin Name: WP Alt Text AI – Auto Image SEO & Accessibility
+ * Plugin URI: https://wordpress.org/plugins/wp-alt-text-plugin/
+ * Description: Automatically generates SEO-optimized and WCAG-compliant alt text for WordPress images using AI. Free tier includes 50 AI generations per month. Improves image search rankings, accessibility, and SEO.
  * Version: 4.2.2
  * Author: Benjamin Oats
+ * Author URI: https://oppti.ai
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: opptiai-alt-text-generator
+ * Text Domain: wp-alt-text-plugin
+ * Domain Path: /languages
  * Requires at least: 5.8
  * Tested up to: 6.8
  * Requires PHP: 7.4
- * Tags: SEO, SEO AI, image SEO, alt text SEO, SEO optimization, Google image SEO, image search ranking, AI alt text, artificial intelligence, automated SEO, keyword optimization, accessibility, alt text, images, AI, WCAG, screen reader, image optimization, bulk edit, WooCommerce, automatic alt text, image accessibility, bulk processing, accessibility compliance, image descriptions, WordPress SEO, SEO tool, image meta tags, search engine optimization
+ * Tags: SEO, accessibility, alt text, images, AI, automation, wcag, media library, image SEO, alt text SEO
  */
 
 if ( ! defined( 'WPINC' ) ) {

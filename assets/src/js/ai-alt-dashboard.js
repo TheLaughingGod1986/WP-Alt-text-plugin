@@ -204,7 +204,7 @@
             
             if (isAuthenticated) {
                 // User is authenticated, open portal directly
-                openCustomerPortal();
+            openCustomerPortal();
             } else {
                 // User not authenticated - show login modal first
                 // Set a flag to open portal after successful login
@@ -1091,8 +1091,8 @@
         
         if (!window.alttextai_ajax || !window.alttextai_ajax.ajaxurl) {
             alert('Configuration error. Please refresh the page.');
-            return;
-        }
+                    return;
+                }
         
         // Check authentication before making the request - check multiple sources
         const ajaxAuth = window.alttextai_ajax && window.alttextai_ajax.is_authenticated === true;
@@ -1296,7 +1296,7 @@
                         errorMessage = 'Unable to find your billing account.\n\nPlease contact support for assistance.';
                         alert(errorMessage);
                     } else {
-                        alert(errorMessage);
+                    alert(errorMessage);
                     }
                 }
             },
@@ -1983,7 +1983,7 @@ function initCountdownTimer() {
             remaining = Math.max(0, resetTimestamp - currentTime);
         } else {
             // Fallback: use elapsed seconds method
-            const initialSeconds = parseInt(countdownElement.getAttribute('data-initial-seconds'), 10) || 0;
+        const initialSeconds = parseInt(countdownElement.getAttribute('data-initial-seconds'), 10) || 0;
             
             if (initialSeconds <= 0) {
                 daysEl.textContent = '0';
@@ -1995,13 +1995,13 @@ function initCountdownTimer() {
                 }
                 return;
             }
-            
-            // Calculate elapsed time since page load
-            const startTime = parseFloat(countdownElement.getAttribute('data-start-time')) || (Date.now() / 1000);
-            const currentTime = Date.now() / 1000;
+        
+        // Calculate elapsed time since page load
+        const startTime = parseFloat(countdownElement.getAttribute('data-start-time')) || (Date.now() / 1000);
+        const currentTime = Date.now() / 1000;
             const elapsed = Math.max(0, Math.floor(currentTime - startTime));
-            
-            // Calculate remaining seconds
+        
+        // Calculate remaining seconds
             remaining = Math.max(0, initialSeconds - elapsed);
         }
 
