@@ -104,13 +104,13 @@ includes/
   └── class-api-client-v2.php           # API client with post() method
 
 admin/
-  └── class-ai-alt-gpt-core.php        # Main plugin class with:
+  └── class-opptiai-alt-core.php        # Main plugin class with:
                                         #   - Usage tracking hooks
                                         #   - Analytics dashboard
                                         #   - Governance integration
                                         #   - CSV export
 
-ai-alt-gpt.php                         # Plugin bootstrap (loads all classes)
+opptiai-alt.php                         # Plugin bootstrap (loads all classes)
 ```
 
 ### Database Tables

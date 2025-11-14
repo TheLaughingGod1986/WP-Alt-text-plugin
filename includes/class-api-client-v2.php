@@ -12,6 +12,8 @@ class AltText_AI_API_Client_V2 {
     private $token_option_key = 'opptiai_alt_jwt_token';
     private $user_option_key = 'opptiai_alt_user_data';
     private $site_id_option_key = 'opptiai_alt_site_id';
+    private $license_key_option_key = 'opptiai_alt_license_key';
+    private $license_data_option_key = 'opptiai_alt_license_data';
     private $encryption_prefix = 'enc:';
     
     public function __construct() {
@@ -105,12 +107,80 @@ class AltText_AI_API_Client_V2 {
     public function set_user_data($user_data) {
         update_option($this->user_option_key, $user_data, false);
     }
-    
+
     /**
-     * Check if user is authenticated
+     * Get stored license key
+     */
+    public function get_license_key() {
+        $key = get_option($this->license_key_option_key, '');
+        if ($key === '' || $key === false) {
+            return '';
+        }
+        return $this->maybe_decrypt_secret($key);
+    }
+
+    /**
+     * Store license key
+     */
+    public function set_license_key($license_key) {
+        if (empty($license_key)) {
+            $this->clear_license_key();
+            return;
+        }
+
+        $stored = $this->encrypt_secret($license_key);
+        if (empty($stored)) {
+            $stored = $license_key;
+        }
+        update_option($this->license_key_option_key, $stored, false);
+    }
+
+    /**
+     * Clear stored license key
+     */
+    public function clear_license_key() {
+        delete_option($this->license_key_option_key);
+        delete_option($this->license_data_option_key);
+    }
+
+    /**
+     * Get stored license data (organization info, etc.)
+     */
+    public function get_license_data() {
+        $data = get_option($this->license_data_option_key, null);
+        return ($data !== false && $data !== null) ? $data : null;
+    }
+
+    /**
+     * Store license data
+     */
+    public function set_license_data($license_data) {
+        update_option($this->license_data_option_key, $license_data, false);
+    }
+
+    /**
+     * Check if license key is active
+     */
+    public function has_active_license() {
+        $license_key = $this->get_license_key();
+        $license_data = $this->get_license_data();
+
+        return !empty($license_key) && !empty($license_data) &&
+               isset($license_data['organization']) &&
+               isset($license_data['site']);
+    }
+
+    /**
+     * Check if user is authenticated (JWT or License Key)
      * Also validates the token by checking with backend
      */
     public function is_authenticated() {
+        // Check license key first (agency license)
+        if ($this->has_active_license()) {
+            return true;
+        }
+
+        // Check JWT token (personal account)
         $token = $this->get_token();
 
         if (empty($token)) {
@@ -162,22 +232,26 @@ class AltText_AI_API_Client_V2 {
     
     /**
      * Get authentication headers
-     * Includes site ID for site-based licensing
+     * Includes license key or JWT token, plus site info
      */
     private function get_auth_headers() {
         $token = $this->get_token();
+        $license_key = $this->get_license_key();
         $site_id = $this->get_site_id();
-        
+
         $headers = [
             'Content-Type' => 'application/json',
-            'X-Site-ID' => $site_id,  // Site-based licensing identifier
+            'X-Site-Hash' => $site_id,  // Site-based licensing identifier
             'X-Site-URL' => get_site_url(),  // For backend reference
         ];
-        
-        if ($token) {
+
+        // Priority: License key > JWT token
+        if (!empty($license_key)) {
+            $headers['X-License-Key'] = $license_key;
+        } elseif ($token) {
             $headers['Authorization'] = 'Bearer ' . $token;
         }
-        
+
         return $headers;
     }
 
@@ -289,9 +363,19 @@ class AltText_AI_API_Client_V2 {
         if ($status_code === 404) {
             // Check if it's an HTML error page (means endpoint doesn't exist)
             if (strpos($body, '<html') !== false || strpos($body, 'Cannot POST') !== false || strpos($body, 'Cannot GET') !== false) {
+                // Provide context-specific error messages
+                $error_message = __('This feature is not yet available. Please contact support for assistance or try again later.', 'opptiai-alt-text-generator');
+                
+                // Check endpoint to provide more specific message
+                if (strpos($endpoint, '/auth/forgot-password') !== false || strpos($endpoint, '/auth/reset-password') !== false) {
+                    $error_message = __('Password reset functionality is currently being set up on our backend. Please contact support for assistance or try again later.', 'opptiai-alt-text-generator');
+                } elseif (strpos($endpoint, '/licenses/sites') !== false || strpos($endpoint, '/api/licenses/sites') !== false) {
+                    $error_message = __('License site usage tracking is currently being set up on our backend. Please contact support for assistance or try again later.', 'opptiai-alt-text-generator');
+                }
+                
                 return new WP_Error(
                     'endpoint_not_found',
-                    __('This feature is not yet available. The password reset functionality is currently being set up on our backend. Please contact support for assistance or try again later.', 'opptiai-alt-text-generator')
+                    $error_message
                 );
             }
             return new WP_Error(
@@ -380,34 +464,161 @@ class AltText_AI_API_Client_V2 {
      */
     public function get_user_info() {
         $response = $this->make_request('/auth/me');
-        
+
         if (is_wp_error($response)) {
             return $response;
         }
-        
+
         if ($response['success']) {
             $this->set_user_data($response['data']['user']);
             return $response['data']['user'];
         }
-        
+
         return new WP_Error(
             'user_info_failed',
             $response['data']['error'] ?? __('Failed to get user info', 'opptiai-alt-text-generator')
         );
     }
-    
+
     /**
-     * Get usage information
+     * Activate license key for this site
      */
-    public function get_usage() {
-        $response = $this->make_request('/usage');
+    public function activate_license($license_key) {
+        $site_id = $this->get_site_id();
+
+        $data = [
+            'licenseKey' => $license_key,
+            'siteHash' => $site_id,
+            'siteUrl' => get_site_url(),
+            'installId' => $site_id,
+            'pluginVersion' => defined('OPPTIAI_ALT_VERSION') ? OPPTIAI_ALT_VERSION : '1.0.0',
+            'wordpressVersion' => get_bloginfo('version'),
+            'phpVersion' => PHP_VERSION,
+            'isMultisite' => is_multisite()
+        ];
+
+        $response = $this->make_request('/api/license/activate', 'POST', $data);
 
         if (is_wp_error($response)) {
             return $response;
         }
 
         if ($response['success']) {
-            return $response['data']['usage'];
+            // Store license key and data
+            $this->set_license_key($license_key);
+            $this->set_license_data([
+                'organization' => $response['organization'],
+                'site' => $response['site'],
+                'activated_at' => current_time('mysql')
+            ]);
+
+            return [
+                'success' => true,
+                'organization' => $response['organization'],
+                'site' => $response['site']
+            ];
+        }
+
+        return new WP_Error(
+            'license_activation_failed',
+            $response['error'] ?? __('Failed to activate license', 'opptiai-alt-text-generator')
+        );
+    }
+
+    /**
+     * Deactivate current license key
+     */
+    public function deactivate_license() {
+        $this->clear_license_key();
+
+        return [
+            'success' => true,
+            'message' => __('License deactivated successfully', 'opptiai-alt-text-generator')
+        ];
+    }
+
+    /**
+     * Get license site usage statistics
+     * Returns sites using the license and their generation counts
+     */
+    public function get_license_sites() {
+        if (!$this->is_authenticated()) {
+            return new WP_Error('not_authenticated', __('Must be authenticated to view license site usage', 'opptiai-alt-text-generator'));
+        }
+
+        $response = $this->make_request('/api/licenses/sites', 'GET');
+        
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        if ($response['success']) {
+            return $response['data'] ?? ['sites' => []];
+        }
+
+        return new WP_Error('api_error', $response['message'] ?? __('Failed to fetch license site usage', 'opptiai-alt-text-generator'));
+    }
+
+    /**
+     * Disconnect a site from the license
+     * Removes the installation from the backend
+     */
+    public function disconnect_license_site($site_id) {
+        if (!$this->is_authenticated()) {
+            return new WP_Error('not_authenticated', __('Must be authenticated to disconnect license sites', 'opptiai-alt-text-generator'));
+        }
+
+        $response = $this->make_request('/api/licenses/sites/' . urlencode($site_id), 'DELETE');
+        
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        if ($response['success']) {
+            return $response['data'] ?? ['message' => __('Site disconnected successfully', 'opptiai-alt-text-generator')];
+        }
+
+        return new WP_Error('api_error', $response['message'] ?? __('Failed to disconnect site', 'opptiai-alt-text-generator'));
+    }
+
+    /**
+     * Get usage information
+     */
+    public function get_usage() {
+        $has_license   = $this->has_active_license();
+        $license_cache = $has_license ? $this->get_license_data() : null;
+
+        $response = $this->make_request('/usage');
+
+        if (is_wp_error($response)) {
+            if ($has_license && $license_cache) {
+                $cached_usage = $this->format_license_usage_from_cache($license_cache);
+                if ($cached_usage) {
+                    return $cached_usage;
+                }
+            }
+            return $response;
+        }
+
+        if ($response['success'] && isset($response['data']['usage'])) {
+            $usage = $response['data']['usage'];
+
+            if ($has_license && is_array($usage)) {
+                $this->sync_license_usage_snapshot(
+                    $usage,
+                    $response['data']['organization'] ?? [],
+                    $response['data']['site'] ?? []
+                );
+            }
+
+            return $usage;
+        }
+
+        if ($has_license && $license_cache) {
+            $cached_usage = $this->format_license_usage_from_cache($license_cache);
+            if ($cached_usage) {
+                return $cached_usage;
+            }
         }
 
         return new WP_Error(
@@ -417,9 +628,89 @@ class AltText_AI_API_Client_V2 {
     }
 
     /**
+     * Convert stored license data into a usage payload
+     */
+    private function format_license_usage_from_cache($license_data) {
+        if (empty($license_data) || !isset($license_data['organization'])) {
+            return null;
+        }
+
+        $org = $license_data['organization'];
+        $limit = isset($org['tokenLimit']) ? intval($org['tokenLimit']) : 10000;
+        $remaining = isset($org['tokensRemaining']) ? intval($org['tokensRemaining']) : $limit;
+        $used = max(0, $limit - $remaining);
+
+        $reset_ts = 0;
+        if (!empty($org['resetDate'])) {
+            $reset_ts = strtotime($org['resetDate']);
+        }
+        if ($reset_ts <= 0) {
+            $reset_ts = strtotime('first day of next month');
+        }
+
+        return [
+            'used' => $used,
+            'limit' => $limit,
+            'remaining' => $remaining,
+            'plan' => strtolower($org['plan'] ?? 'agency'),
+            'resetDate' => $org['resetDate'] ?? '',
+            'reset_timestamp' => $reset_ts,
+            'seconds_until_reset' => max(0, $reset_ts - current_time('timestamp')),
+        ];
+    }
+
+    /**
+     * Persist license usage snapshots so cached data stays in sync
+     */
+    private function sync_license_usage_snapshot($usage, $organization = [], $site_data = []) {
+        $existing_license = $this->get_license_data();
+        $updated_license  = is_array($existing_license) ? $existing_license : [];
+        $org              = isset($updated_license['organization']) && is_array($updated_license['organization'])
+            ? $updated_license['organization']
+            : [];
+
+        if (is_array($organization) && !empty($organization)) {
+            $org = array_merge($org, $organization);
+        }
+
+        if (isset($usage['limit'])) {
+            $org['tokenLimit'] = intval($usage['limit']);
+        }
+
+        if (isset($usage['remaining'])) {
+            $org['tokensRemaining'] = max(0, intval($usage['remaining']));
+        } elseif (isset($usage['used']) && isset($org['tokenLimit'])) {
+            $org['tokensRemaining'] = max(0, intval($org['tokenLimit']) - intval($usage['used']));
+        }
+
+        if (!empty($usage['resetDate'])) {
+            $org['resetDate'] = sanitize_text_field($usage['resetDate']);
+        } elseif (!empty($usage['nextReset'])) {
+            $org['resetDate'] = sanitize_text_field($usage['nextReset']);
+        }
+
+        if (!empty($usage['plan'])) {
+            $org['plan'] = sanitize_text_field($usage['plan']);
+        }
+
+        $updated_license['organization'] = $org;
+
+        if (!empty($site_data)) {
+            $updated_license['site'] = array_merge($updated_license['site'] ?? [], (array) $site_data);
+        }
+
+        $updated_license['updated_at'] = current_time('mysql');
+        $this->set_license_data($updated_license);
+    }
+
+    /**
      * Check if user has reached their limit
      */
     public function has_reached_limit() {
+        if ($this->has_active_license()) {
+            return false;
+        }
+
         $usage = $this->get_usage();
 
         // If there was an error getting usage, fail securely (assume limit reached)

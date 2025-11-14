@@ -1,7 +1,7 @@
 # Production ZIP Manifest - Version 4.2.0
 
 ## Package Information
-- **File**: `dist/ai-alt-text-generator-4.2.0.zip`
+- **File**: `dist/opptiai-alt-text-generator-4.2.0.zip`
 - **Size**: 132KB
 - **Version**: 4.2.0
 - **Build Date**: 2025-01-XX
@@ -10,7 +10,7 @@
 ## Included Files (Clean Plugin Only)
 
 ### Core Plugin Files
-- ✅ `ai-alt-gpt.php` - Main plugin file (v4.2.0)
+- ✅ `opptiai-alt.php` - Main plugin file (v4.2.0)
 - ✅ `readme.txt` - WordPress.org readme (v4.2.0)
 - ✅ `LICENSE` - GPL v2 license
 
@@ -118,13 +118,13 @@ The following have been **automatically excluded** from the production ZIP:
 ### Via WordPress Admin
 1. Go to **Plugins → Add New**
 2. Click **Upload Plugin**
-3. Select `ai-alt-text-generator-4.2.0.zip`
+3. Select `opptiai-alt-text-generator-4.2.0.zip`
 4. Click **Install Now**
 5. Click **Activate Plugin**
 
 ### Via WP-CLI
 ```bash
-wp plugin install dist/ai-alt-text-generator-4.2.0.zip --activate
+wp plugin install dist/opptiai-alt-text-generator-4.2.0.zip --activate
 ```
 
 ## Post-Installation

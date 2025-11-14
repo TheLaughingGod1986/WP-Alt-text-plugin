@@ -15,7 +15,7 @@ foreach ($wp_load_paths as $path) {
     }
 }
 
-require_once AI_ALT_GPT_PLUGIN_DIR . 'includes/class-queue.php';
+require_once OPPTIAI_ALT_PLUGIN_DIR . 'includes/class-queue.php';
 
 echo "Processing Queue\n";
 echo str_repeat("=", 50) . "\n\n";
@@ -43,4 +43,5 @@ if ($stats['pending'] > 0) {
 }
 
 echo "\n" . str_repeat("=", 50) . "\n";
+
 

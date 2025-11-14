@@ -7,21 +7,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class Ai_Alt_Gpt_REST_Controller {
+class Opptiai_Alt_REST_Controller {
 
 	/**
 	 * Core plugin implementation.
 	 *
-	 * @var AI_Alt_Text_Generator_GPT
+	 * @var Opptiai_Alt_Core
 	 */
 	private $core;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param AI_Alt_Text_Generator_GPT $core Core implementation instance.
+	 * @param Opptiai_Alt_Core $core Core implementation instance.
 	 */
-	public function __construct( AI_Alt_Text_Generator_GPT $core ) {
+	public function __construct( Opptiai_Alt_Core $core ) {
 		$this->core = $core;
 	}
 
@@ -30,7 +30,7 @@ class Ai_Alt_Gpt_REST_Controller {
 	 */
 	public function register_routes() {
 		register_rest_route(
-			'ai-alt/v1',
+			'opptiai/v1',
 			'/generate/(?P<id>\d+)',
 			[
 				'methods'             => 'POST',
@@ -40,7 +40,7 @@ class Ai_Alt_Gpt_REST_Controller {
 		);
 
 		register_rest_route(
-			'ai-alt/v1',
+			'opptiai/v1',
 			'/alt/(?P<id>\d+)',
 			[
 				'methods'             => 'POST',
@@ -50,7 +50,7 @@ class Ai_Alt_Gpt_REST_Controller {
 		);
 
 		register_rest_route(
-			'ai-alt/v1',
+			'opptiai/v1',
 			'/list',
 			[
 				'methods'             => 'GET',
@@ -60,7 +60,7 @@ class Ai_Alt_Gpt_REST_Controller {
 		);
 
 		register_rest_route(
-			'ai-alt/v1',
+			'opptiai/v1',
 			'/stats',
 			[
 				'methods'             => 'GET',
@@ -70,7 +70,7 @@ class Ai_Alt_Gpt_REST_Controller {
 		);
 
 		register_rest_route(
-			'ai-alt/v1',
+			'opptiai/v1',
 			'/usage',
 			[
 				'methods'             => 'GET',
@@ -80,7 +80,7 @@ class Ai_Alt_Gpt_REST_Controller {
 		);
 
 		register_rest_route(
-			'ai-alt/v1',
+			'opptiai/v1',
 			'/plans',
 			[
 				'methods'             => 'GET',
@@ -90,11 +90,31 @@ class Ai_Alt_Gpt_REST_Controller {
 		);
 
 		register_rest_route(
-			'ai-alt/v1',
+			'opptiai/v1',
 			'/queue',
 			[
 				'methods'             => 'GET',
 				'callback'            => [ $this, 'handle_queue' ],
+				'permission_callback' => [ $this, 'can_edit_media' ],
+			]
+		);
+
+		register_rest_route(
+			'opptiai/v1',
+			'/logs',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ $this, 'handle_logs' ],
+				'permission_callback' => [ $this, 'can_edit_media' ],
+			]
+		);
+
+		register_rest_route(
+			'opptiai/v1',
+			'/logs/clear',
+			[
+				'methods'             => 'POST',
+				'callback'            => [ $this, 'handle_logs_clear' ],
 				'permission_callback' => [ $this, 'can_edit_media' ],
 			]
 		);
@@ -106,7 +126,68 @@ class Ai_Alt_Gpt_REST_Controller {
 	 * @return bool
 	 */
 	public function can_edit_media() {
-		return current_user_can( 'edit_posts' );
+		if ( method_exists( $this->core, 'user_can_manage' ) && $this->core->user_can_manage() ) {
+			return true;
+		}
+
+		return current_user_can( 'manage_options' );
+	}
+
+	/**
+	 * Fetch debug logs via REST.
+	 */
+	public function handle_logs( \WP_REST_Request $request ) {
+		if ( ! class_exists( 'AltText_AI_Debug_Log' ) ) {
+			return rest_ensure_response([
+				'logs' => [],
+				'pagination' => [
+					'page' => 1,
+					'per_page' => 10,
+					'total_pages' => 1,
+					'total_items' => 0,
+				],
+				'stats' => [
+					'total' => 0,
+					'warnings' => 0,
+					'errors' => 0,
+					'last_api' => null,
+				],
+			]);
+		}
+
+		$args = [
+			'level'    => sanitize_text_field( $request->get_param( 'level' ) ),
+			'search'   => sanitize_text_field( $request->get_param( 'search' ) ),
+			'date'     => sanitize_text_field( $request->get_param( 'date' ) ),
+			'per_page' => intval( $request->get_param( 'per_page' ) ?: 10 ),
+			'page'     => intval( $request->get_param( 'page' ) ?: 1 ),
+		];
+
+		return rest_ensure_response( AltText_AI_Debug_Log::get_logs( $args ) );
+	}
+
+	/**
+	 * Clear logs via REST.
+	 */
+	public function handle_logs_clear( \WP_REST_Request $request ) {
+		if ( ! class_exists( 'AltText_AI_Debug_Log' ) ) {
+			return rest_ensure_response([
+				'cleared' => false,
+				'stats' => []
+			]);
+		}
+
+		$older_than = intval( $request->get_param( 'older_than' ) );
+		if ( $older_than > 0 ) {
+			AltText_AI_Debug_Log::delete_older_than( $older_than );
+		} else {
+			AltText_AI_Debug_Log::clear_logs();
+		}
+
+		return rest_ensure_response([
+			'cleared' => true,
+			'stats'   => AltText_AI_Debug_Log::get_stats(),
+		]);
 	}
 
 	/**
@@ -156,7 +237,7 @@ class Ai_Alt_Gpt_REST_Controller {
 		}
 
 		if ( '' === $alt ) {
-			return new \WP_Error( 'invalid_alt', __( 'ALT text cannot be empty.', 'ai-alt-gpt' ), [ 'status' => 400 ] );
+			return new \WP_Error( 'invalid_alt', __( 'ALT text cannot be empty.', 'opptiai-alt-text-generator' ), [ 'status' => 400 ] );
 		}
 
 		$alt_sanitized = wp_strip_all_tags( $alt );
@@ -308,8 +389,8 @@ class Ai_Alt_Gpt_REST_Controller {
 	 */
 	public function handle_queue() {
 		$stats    = AltText_AI_Queue::get_stats();
-		$recent   = AltText_AI_Queue::get_recent( apply_filters( 'ai_alt_queue_recent_limit', 10 ) );
-		$failures = AltText_AI_Queue::get_recent_failures( apply_filters( 'ai_alt_queue_fail_limit', 5 ) );
+		$recent   = AltText_AI_Queue::get_recent( apply_filters( 'opptiai_queue_recent_limit', 10 ) );
+		$failures = AltText_AI_Queue::get_recent_failures( apply_filters( 'opptiai_queue_fail_limit', 5 ) );
 
 		return [
 			'stats'    => $stats,

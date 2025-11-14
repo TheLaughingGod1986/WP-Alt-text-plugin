@@ -126,24 +126,28 @@ class AltTextAuthModal {
             <div id="alttext-auth-modal" class="alttext-auth-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="alttext-auth-modal-title" aria-describedby="alttext-auth-modal-desc">
                 <div class="alttext-auth-modal__overlay">
                     <div class="alttext-auth-modal__content">
-                        <div class="alttext-auth-modal__header">
-                            <h2 class="alttext-auth-modal__title" id="alttext-auth-modal-title">SEO AI Alt Text Account</h2>
+                        <!-- Header with Icon + Close Button -->
                             <button class="alttext-auth-modal__close" type="button" aria-label="Close dialog">&times;</button>
+                        
+                        <div class="alttext-auth-modal__header">
+                            <h2 class="alttext-auth-modal__title" id="alttext-auth-modal-title">AltText AI Account</h2>
+                            <p class="alttext-auth-modal__subtitle" id="alttext-auth-modal-desc">Sign in to sync your subscription, usage quota, and account preferences.</p>
                         </div>
                         
                         <div class="alttext-auth-modal__body">
                             <!-- Login Form -->
                             <div id="alttext-login-form" class="alttext-auth-form">
-                                <h3>Sign In</h3>
-                                <form id="login-form" autocomplete="on" aria-label="Sign in to your SEO AI Alt Text account">
+                                <form id="login-form" autocomplete="off" aria-label="Sign in to your AltText AI account">
                                     <div class="alttext-form-group">
                                         <label for="login-email">Email</label>
-                                        <input type="email" id="login-email" name="email" autocomplete="username" required aria-required="true">
+                                        <input type="email" id="login-email" name="email" placeholder="Email" autocomplete="off" required aria-required="true">
                                     </div>
                                     <div class="alttext-form-group">
+                                        <div class="alttext-form-group__header">
                                         <label for="login-password">Password</label>
-                                        <input type="password" id="login-password" name="password" autocomplete="current-password" required aria-required="true">
                                         <a href="#" id="show-forgot-password" class="alttext-forgot-password-link" aria-label="Reset your password">Forgot password?</a>
+                                        </div>
+                                        <input type="text" id="login-password" name="password" data-password-field="true" data-password-autocomplete="current-password" autocomplete="off" inputmode="text" required aria-required="true">
                                     </div>
                                     <button type="submit" class="alttext-btn alttext-btn--primary" aria-label="Sign in">
                                         <span class="alttext-btn__text">Sign In</span>
@@ -151,22 +155,20 @@ class AltTextAuthModal {
                                     </button>
                                 </form>
                                 <p class="alttext-auth-switch">
-                                    Don't have an account?
-                                    <a href="#" id="show-register" aria-label="Switch to registration form">Create one here</a>
+                                    Don't have an account? <a href="#" id="show-register" aria-label="Switch to registration form">Create one</a>
                                 </p>
                             </div>
 
                             <!-- Register Form -->
                             <div id="alttext-register-form" class="alttext-auth-form" style="display: none;">
-                                <h3>Create Account</h3>
-                                <form id="register-form" autocomplete="off" aria-label="Create a new SEO AI Alt Text account">
+                                <form id="register-form" autocomplete="off" aria-label="Create a new AltText AI account">
                                     <div class="alttext-form-group">
                                         <label for="register-email">Email</label>
-                                        <input type="email" id="register-email" name="email" autocomplete="off" required aria-required="true">
+                                        <input type="email" id="register-email" name="email" placeholder="Email" autocomplete="off" required aria-required="true">
                                     </div>
                                     <div class="alttext-form-group">
                                         <label for="register-password">Password</label>
-                                        <input type="password" id="register-password" name="password" autocomplete="new-password" minlength="8" required aria-required="true" aria-describedby="register-password-strength-label register-password-hint">
+                                        <input type="text" id="register-password" name="password" data-password-field="true" data-password-autocomplete="new-password" autocomplete="off" inputmode="text" minlength="8" required aria-required="true" aria-describedby="register-password-strength-label register-password-hint">
                                         <div class="alttext-password-strength" id="register-password-strength" style="display: none;" role="status" aria-live="polite" aria-atomic="true">
                                             <div class="alttext-password-strength-bar" aria-hidden="true">
                                                 <div class="alttext-password-strength-fill" id="register-password-strength-fill" aria-hidden="true"></div>
@@ -177,7 +179,7 @@ class AltTextAuthModal {
                                     </div>
                                     <div class="alttext-form-group">
                                         <label for="register-confirm">Confirm Password</label>
-                                        <input type="password" id="register-confirm" name="confirmPassword" autocomplete="new-password" required aria-required="true">
+                                        <input type="text" id="register-confirm" name="confirmPassword" data-password-field="true" data-password-autocomplete="new-password" autocomplete="off" inputmode="text" required aria-required="true">
                                     </div>
                                     <button type="submit" class="alttext-btn alttext-btn--primary" aria-label="Create account">
                                         <span class="alttext-btn__text">Create Account</span>
@@ -185,8 +187,7 @@ class AltTextAuthModal {
                                     </button>
                                 </form>
                                 <p class="alttext-auth-switch">
-                                    Already have an account?
-                                    <a href="#" id="show-login" aria-label="Switch to sign in form">Sign in here</a>
+                                    Already have an account? <a href="#" id="show-login" aria-label="Switch to sign in form">Sign in</a>
                                 </p>
                             </div>
 
@@ -217,15 +218,15 @@ class AltTextAuthModal {
                                 <form id="reset-password-form" autocomplete="off" aria-label="Reset your password">
                                     <div class="alttext-form-group">
                                         <label for="reset-email">Email</label>
-                                        <input type="email" id="reset-email" name="email" autocomplete="username" required readonly aria-readonly="true">
+                                        <input type="email" id="reset-email" name="email" autocomplete="off" required readonly aria-readonly="true">
                                     </div>
                                     <div class="alttext-form-group">
                                         <label for="reset-token">Reset Token</label>
-                                        <input type="text" id="reset-token" name="token" required readonly aria-readonly="true">
+                                        <input type="text" id="reset-token" name="token" autocomplete="off" required readonly aria-readonly="true">
                                     </div>
                                     <div class="alttext-form-group">
                                         <label for="reset-password">New Password</label>
-                                        <input type="password" id="reset-password" name="password" autocomplete="new-password" minlength="8" required aria-required="true" aria-describedby="reset-password-strength-label reset-password-hint">
+                                        <input type="text" id="reset-password" name="password" data-password-field="true" data-password-autocomplete="new-password" autocomplete="off" inputmode="text" minlength="8" required aria-required="true" aria-describedby="reset-password-strength-label reset-password-hint">
                                         <div class="alttext-password-strength" id="reset-password-strength" style="display: none;" role="status" aria-live="polite" aria-atomic="true">
                                             <div class="alttext-password-strength-bar" aria-hidden="true">
                                                 <div class="alttext-password-strength-fill" id="reset-password-strength-fill" aria-hidden="true"></div>
@@ -236,7 +237,7 @@ class AltTextAuthModal {
                                     </div>
                                     <div class="alttext-form-group">
                                         <label for="reset-confirm">Confirm New Password</label>
-                                        <input type="password" id="reset-confirm" name="confirmPassword" autocomplete="new-password" required aria-required="true">
+                                        <input type="text" id="reset-confirm" name="confirmPassword" data-password-field="true" data-password-autocomplete="new-password" autocomplete="off" inputmode="text" required aria-required="true">
                                     </div>
                                     <button type="submit" class="alttext-btn alttext-btn--primary" aria-label="Reset password">
                                         <span class="alttext-btn__text">Reset Password</span>
@@ -247,6 +248,11 @@ class AltTextAuthModal {
                                     <a href="#" id="show-login-from-reset" aria-label="Switch to sign in form">Back to sign in</a>
                                 </p>
                             </div>
+                        </div>
+                        
+                        <!-- Pro Upsell Strip -->
+                        <div class="alttext-auth-modal__footer">
+                            <p class="alttext-auth-modal__upsell">Pro users enjoy unlimited image generation + bulk processing.</p>
                         </div>
                     </div>
                 </div>
@@ -261,6 +267,22 @@ class AltTextAuthModal {
 
         // Use event delegation from document for all modal events
         document.addEventListener('click', function(e) {
+            // Global CTA triggers (works even if dashboard script fails)
+            const authTrigger = e.target.closest('[data-action="show-auth-modal"], #alttextai-show-auth-banner-btn, #alttextai-show-auth-login-btn');
+            if (authTrigger) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const requestedTab = authTrigger.getAttribute('data-auth-tab') || authTrigger.dataset?.authTab || 'login';
+                self.show();
+                if (requestedTab === 'register') {
+                    self.showRegisterForm();
+                } else {
+                    self.showLoginForm();
+                }
+                return;
+            }
+
             // Close button
             if (e.target.closest('.alttext-auth-modal__close')) {
                 e.preventDefault();
@@ -378,10 +400,33 @@ class AltTextAuthModal {
         });
     }
 
+    enablePasswordFields() {
+        if (!this.modalElement) return;
+        const fields = this.modalElement.querySelectorAll('[data-password-field]');
+        fields.forEach((input) => {
+            input.type = 'password';
+            const mode = input.dataset.passwordAutocomplete || 'off';
+            input.setAttribute('autocomplete', mode);
+        });
+    }
+
+    resetPasswordFields() {
+        if (!this.modalElement) return;
+        const fields = this.modalElement.querySelectorAll('[data-password-field]');
+        fields.forEach((input) => {
+            input.type = 'text';
+            input.setAttribute('autocomplete', 'off');
+            if (input.value) {
+                input.value = '';
+            }
+        });
+    }
+
     show() {
         if (this.modalElement) {
             this.modalElement.style.display = 'block';
             document.body.style.overflow = 'hidden';
+            this.enablePasswordFields();
             
             // Focus trap: focus on first input or close button
             const firstInput = this.modalElement.querySelector('input[type="email"], input[type="password"], button');
@@ -395,6 +440,7 @@ class AltTextAuthModal {
         if (this.modalElement) {
             this.modalElement.style.display = 'none';
             document.body.style.overflow = '';
+            this.resetPasswordFields();
         }
     }
 
@@ -486,6 +532,8 @@ class AltTextAuthModal {
                 // WordPress AJAX error response - message is in data.data.message
                 const errorMessage = data.data?.message || data.message || 'Login failed';
                 this.showError(errorMessage);
+                // Clear portal flag on login failure
+                localStorage.removeItem('alttextai_open_portal_after_login');
             }
         } catch (error) {
             console.error('Login error:', error);
@@ -494,6 +542,8 @@ class AltTextAuthModal {
             } else {
                 this.showError('Network error. Please try again.');
             }
+            // Clear portal flag on network error
+            localStorage.removeItem('alttextai_open_portal_after_login');
         } finally {
             this.setLoading(form, false);
         }
@@ -551,10 +601,14 @@ class AltTextAuthModal {
                 // WordPress AJAX error response - message is in data.data.message
                 const errorMessage = data.data?.message || data.message || 'Registration failed';
                 this.showError(errorMessage);
+                // Clear portal flag on registration failure
+                localStorage.removeItem('alttextai_open_portal_after_login');
             }
         } catch (error) {
             console.error('Registration error:', error);
             this.showError('Network error. Please try again.');
+            // Clear portal flag on network error
+            localStorage.removeItem('alttextai_open_portal_after_login');
         } finally {
             this.setLoading(form, false);
         }

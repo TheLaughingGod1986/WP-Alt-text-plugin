@@ -8,7 +8,7 @@
 
 ```bash
 # Check package exists
-ls -lh ai-alt-text-generator-4.2.1.zip
+ls -lh opptiai-alt-text-generator-4.2.1.zip
 
 # Expected: 150K file
 # Location: Project root directory
@@ -23,13 +23,13 @@ ls -lh ai-alt-text-generator-4.2.1.zip
 ### Option A: WordPress Admin Upload
 1. Go to **WordPress Admin → Plugins → Add New**
 2. Click **Upload Plugin**
-3. Select `ai-alt-text-generator-4.2.1.zip`
+3. Select `opptiai-alt-text-generator-4.2.1.zip`
 4. Click **Install Now**
 5. Click **Activate**
 
 ### Option B: Manual Install (FTP/SFTP)
-1. Extract ZIP: `unzip ai-alt-text-generator-4.2.1.zip`
-2. Upload `ai-alt-text-generator` folder to `/wp-content/plugins/`
+1. Extract ZIP: `unzip opptiai-alt-text-generator-4.2.1.zip`
+2. Upload `opptiai-alt-text-generator` folder to `/wp-content/plugins/`
 3. Go to **Plugins** in WordPress Admin
 4. Click **Activate**
 
@@ -138,7 +138,7 @@ ls -lh ai-alt-text-generator-4.2.1.zip
 
 ## 📞 Quick Reference
 
-**Package:** `ai-alt-text-generator-4.2.1.zip`  
+**Package:** `opptiai-alt-text-generator-4.2.1.zip`  
 **Size:** 150 KB  
 **Version:** 4.2.1  
 **PHP:** 7.4+  
@@ -150,6 +150,7 @@ ls -lh ai-alt-text-generator-4.2.1.zip
 
 **Total Time:** ~5 minutes  
 **Status:** 🚀 Deployed!
+
 
 
 

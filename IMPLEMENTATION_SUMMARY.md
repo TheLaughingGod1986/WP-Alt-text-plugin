@@ -105,7 +105,7 @@ ALTER TABLE wp_alttextai_queue
 - Action hooks: `alttextai_before_log_event`, `alttextai_after_log_event`
 
 **Integration Point:**
-`admin/class-ai-alt-gpt-core.php` (lines 4349-4368) - Already integrated!
+`admin/class-opptiai-alt-core.php` (lines 4349-4368) - Already integrated!
 
 #### 1.4 Queue User Tracking
 **File:** `includes/class-queue.php` (lines 63-108, 166-197)
@@ -141,7 +141,7 @@ ALTER TABLE wp_alttextai_queue
 - Overall health status (healthy, warning, error)
 
 #### 1.6 Cron Jobs
-**File:** `admin/class-ai-alt-gpt-core.php` (lines 471-498)
+**File:** `admin/class-opptiai-alt-core.php` (lines 471-498)
 
 **Schedules:**
 1. **Batch Sync:** Every 5 minutes (`ai_alt_sync_usage_events`)
@@ -208,7 +208,7 @@ ALTER TABLE wp_alttextai_queue
    - Enhanced `mark_complete()` method
    - Added helper methods
 
-2. **admin/class-ai-alt-gpt-core.php**
+2. **admin/class-opptiai-alt-core.php**
    - Added usage event tracker initialization
    - Added cron job registration
    - Already integrated event logging into generation pipeline
@@ -361,10 +361,10 @@ cat USAGE_TRACKING_DEPLOYMENT_GUIDE.md
 # Option B: Direct deployment
 rsync -avz --exclude 'node_modules' \
   WP-Alt-text-plugin/ \
-  user@server:/var/www/wp-content/plugins/ai-alt-text-generator/
+  user@server:/var/www/wp-content/plugins/opptiai-alt-text-generator/
 
 # Activate
-wp plugin activate seo-ai-alt-text-generator-auto-image-seo-accessibility
+wp plugin activate seo-opptiai-alt-text-generator-auto-image-seo-accessibility
 ```
 
 ### 3. Verify Installation

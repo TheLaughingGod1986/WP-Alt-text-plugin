@@ -63,7 +63,7 @@ The Stripe Customer Portal endpoint (`/billing/portal`) already exists and is wo
    - Email address (for verification)
    - Used flag (false initially)
 3. Send email to user with reset link:
-   - Link format: `https://wordpress-site.com/wp-admin/upload.php?page=ai-alt-gpt&reset-token=TOKEN&email=EMAIL`
+   - Link format: `https://wordpress-site.com/wp-admin/upload.php?page=opptiai-alt&reset-token=TOKEN&email=EMAIL`
    - Include expiration time in email
    - Include instructions to check spam folder
 4. **Security**: Always return success message (even if email not found) to prevent email enumeration
@@ -280,7 +280,7 @@ AltText AI Team
 **Request Body**:
 ```json
 {
-  "returnUrl": "https://wordpress-site.com/wp-admin/upload.php?page=ai-alt-gpt"
+  "returnUrl": "https://wordpress-site.com/wp-admin/upload.php?page=opptiai-alt"
 }
 ```
 

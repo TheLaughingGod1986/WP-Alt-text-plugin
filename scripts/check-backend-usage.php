@@ -7,7 +7,7 @@
 $wp_load_paths = [
     __DIR__ . '/../../../../wp-load.php',
     '/var/www/html/wp-load.php',
-    '/var/www/html/wp-content/plugins/ai-alt-gpt/../../../../wp-load.php',
+    '/var/www/html/wp-content/plugins/opptiai-alt/../../../../wp-load.php',
 ];
 
 foreach ($wp_load_paths as $path) {
@@ -23,7 +23,7 @@ echo "Checking Backend Database Usage for: {$user_email}\n";
 echo str_repeat("=", 60) . "\n\n";
 
 // Method 1: Check API (source of truth)
-require_once AI_ALT_GPT_PLUGIN_DIR . 'includes/class-api-client-v2.php';
+require_once OPPTIAI_ALT_PLUGIN_DIR . 'includes/class-api-client-v2.php';
 $api_client = new AltText_AI_API_Client_V2();
 
 echo "1. From Backend API (Source of Truth):\n";

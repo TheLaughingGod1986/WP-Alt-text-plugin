@@ -6,3 +6,4 @@ RETURNING id, "userId", "createdAt";
 -- Verify
 SELECT COUNT(*) as usage_count FROM usage_logs WHERE "userId" = 2;
 
+

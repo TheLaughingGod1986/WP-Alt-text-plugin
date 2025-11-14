@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class Ai_Alt_Gpt_Loader {
+class Opptiai_Alt_Loader {
 
 	/**
 	 * The array of actions registered with WordPress.

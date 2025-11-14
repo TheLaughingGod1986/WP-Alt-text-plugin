@@ -7,7 +7,7 @@
 $wp_load_paths = [
     __DIR__ . '/../../../../wp-load.php',
     '/var/www/html/wp-load.php',
-    '/var/www/html/wp-content/plugins/ai-alt-gpt/../../../../wp-load.php',
+    '/var/www/html/wp-content/plugins/opptiai-alt/../../../../wp-load.php',
 ];
 
 foreach ($wp_load_paths as $path) {
@@ -17,7 +17,7 @@ foreach ($wp_load_paths as $path) {
     }
 }
 
-require_once AI_ALT_GPT_PLUGIN_DIR . 'includes/class-api-client-v2.php';
+require_once OPPTIAI_ALT_PLUGIN_DIR . 'includes/class-api-client-v2.php';
 
 echo "Testing API Authentication\n";
 echo str_repeat("=", 50) . "\n\n";
@@ -25,7 +25,10 @@ echo str_repeat("=", 50) . "\n\n";
 $api_client = new AltText_AI_API_Client_V2();
 
 // Check if token exists
-$token = get_option('alttextai_jwt_token', '');
+$token = get_option('opptiai_alt_jwt_token', '');
+if (empty($token)) {
+    $token = get_option('opptiai_alt_jwt_token', '');
+}
 if (empty($token)) {
     echo "❌ No token found in WordPress options\n";
     exit(1);

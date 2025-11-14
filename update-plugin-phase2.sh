@@ -27,23 +27,23 @@ print_error() {
 }
 
 # Check if we're in the right directory
-if [ ! -f "ai-alt-gpt.php" ]; then
+if [ ! -f "opptiai-alt.php" ]; then
     print_error "Not in WordPress plugin directory. Please run from plugin root folder"
     exit 1
 fi
 
 # Backup current plugin
 print_status "Creating backup of current plugin..."
-cp ai-alt-gpt.php ai-alt-gpt-v1-backup.php
-print_success "Backup created: ai-alt-gpt-v1-backup.php"
+cp opptiai-alt.php opptiai-alt-v1-backup.php
+print_success "Backup created: opptiai-alt-v1-backup.php"
 
 # Update main plugin file
 print_status "Updating main plugin file..."
-if [ -f "ai-alt-gpt-v2.php" ]; then
-    cp ai-alt-gpt-v2.php ai-alt-gpt.php
+if [ -f "opptiai-alt-v2.php" ]; then
+    cp opptiai-alt-v2.php opptiai-alt.php
     print_success "Main plugin file updated"
 else
-    print_error "ai-alt-gpt-v2.php not found"
+    print_error "opptiai-alt-v2.php not found"
     exit 1
 fi
 
@@ -67,7 +67,7 @@ cat > update-version.sh << 'EOF'
 #!/bin/bash
 
 # Update plugin version in main file
-sed -i.bak 's/Version: 3.1.0/Version: 4.0.0/' ai-alt-gpt.php
+sed -i.bak 's/Version: 3.1.0/Version: 4.0.0/' opptiai-alt.php
 sed -i.bak 's/Version: 3.1.0/Version: 4.0.0/' readme.txt
 
 echo "✅ Plugin version updated to 4.0.0"
@@ -87,7 +87,7 @@ echo "========================"
 echo "Checking required files..."
 
 files=(
-    "ai-alt-gpt.php"
+    "opptiai-alt.php"
     "includes/class-api-client-v2.php"
     "assets/auth-modal.js"
     "assets/auth-modal.css"
@@ -106,25 +106,25 @@ echo ""
 echo "🔍 Checking for Phase 2 features in main plugin file..."
 
 # Check for Phase 2 features
-if grep -q "AltText_AI_API_Client_V2" ai-alt-gpt.php; then
+if grep -q "AltText_AI_API_Client_V2" opptiai-alt.php; then
     echo "✅ API Client V2 found"
 else
     echo "❌ API Client V2 not found"
 fi
 
-if grep -q "alttextai_register" ai-alt-gpt.php; then
+if grep -q "alttextai_register" opptiai-alt.php; then
     echo "✅ Registration AJAX found"
 else
     echo "❌ Registration AJAX not found"
 fi
 
-if grep -q "alttextai_login" ai-alt-gpt.php; then
+if grep -q "alttextai_login" opptiai-alt.php; then
     echo "✅ Login AJAX found"
 else
     echo "❌ Login AJAX not found"
 fi
 
-if grep -q "auth-modal" ai-alt-gpt.php; then
+if grep -q "auth-modal" opptiai-alt.php; then
     echo "✅ Auth modal found"
 else
     echo "❌ Auth modal not found"
@@ -147,8 +147,8 @@ cat > plugin-update-summary.md << EOF
 # WordPress Plugin Phase 2 Update Summary
 
 ## ✅ Completed Steps
-- [x] Main plugin file updated (ai-alt-gpt.php)
-- [x] Backup created (ai-alt-gpt-v1-backup.php)
+- [x] Main plugin file updated (opptiai-alt.php)
+- [x] Backup created (opptiai-alt-v1-backup.php)
 - [x] Version update script created
 - [x] Testing script created
 
@@ -180,7 +180,7 @@ cat > plugin-update-summary.md << EOF
 If something goes wrong:
 \`\`\`bash
 # Restore original plugin
-cp ai-alt-gpt-v1-backup.php ai-alt-gpt.php
+cp opptiai-alt-v1-backup.php opptiai-alt.php
 \`\`\`
 
 ## 📚 Documentation

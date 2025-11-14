@@ -577,7 +577,7 @@ class AltText_AI_Email_Subscriber_Manager {
 
 ### 2.2 WordPress Usage Event Integration
 
-**File:** `admin/class-ai-alt-gpt-core.php` (add to constructor)
+**File:** `admin/class-opptiai-alt-core.php` (add to constructor)
 
 ```php
 // Hook into usage tracking events
@@ -585,7 +585,7 @@ add_action('alttextai_after_log_event', [$this, 'check_usage_thresholds'], 10, 3
 add_action('alttextai_subscriber_added', [$this, 'send_welcome_email'], 10, 3);
 
 // Initialize email subscriber manager
-require_once AI_ALT_GPT_PLUGIN_DIR . 'includes/class-email-subscriber-manager.php';
+require_once OPPTIAI_ALT_PLUGIN_DIR . 'includes/class-email-subscriber-manager.php';
 $this->email_subscriber_manager = new AltText_AI_Email_Subscriber_Manager($this->api_client);
 ```
 

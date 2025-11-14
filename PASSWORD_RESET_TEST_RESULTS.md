@@ -143,7 +143,7 @@ All components of the password reset flow have been tested and are working corre
 - ✅ Form validation
 - ✅ Error message display
 
-#### PHP AJAX Handlers (`ai-alt-gpt.php`)
+#### PHP AJAX Handlers (`opptiai-alt.php`)
 
 **Actions:**
 - ✅ `wp_ajax_alttextai_forgot_password`

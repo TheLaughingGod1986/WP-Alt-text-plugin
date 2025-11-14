@@ -18,3 +18,4 @@ GROUP BY DATE_TRUNC('month', ul."createdAt")
 ORDER BY month DESC
 LIMIT 12;
 
+

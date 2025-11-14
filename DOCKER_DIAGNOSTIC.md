@@ -94,7 +94,7 @@ docker exec wp-alt-text-plugin-wordpress-1 php -r "
 define('ABSPATH', '/var/www/html/');
 \$_SERVER['HTTP_HOST'] = 'localhost';
 require '/var/www/html/wp-load.php';
-\$token = get_option('alttextai_jwt_token');
+\$token = get_option('opptiai_alt_jwt_token');
 echo 'Token exists: ' . (!empty(\$token) ? 'YES' : 'NO') . PHP_EOL;
 echo 'Token length: ' . strlen(\$token) . PHP_EOL;
 "
@@ -210,7 +210,7 @@ docker exec wp-alt-text-plugin-wordpress-1 php -r "
 define('ABSPATH', '/var/www/html/');
 \$_SERVER['HTTP_HOST'] = 'localhost';
 require '/var/www/html/wp-load.php';
-\$settings = get_option('ai_alt_gpt_settings');
+\$settings = get_option('opptiai_alt_settings');
 echo 'API URL: ' . (\$settings['api_url'] ?? 'NOT SET') . PHP_EOL;
 "
 echo ""
@@ -220,7 +220,7 @@ docker exec wp-alt-text-plugin-wordpress-1 php -r "
 define('ABSPATH', '/var/www/html/');
 \$_SERVER['HTTP_HOST'] = 'localhost';
 require '/var/www/html/wp-load.php';
-\$token = get_option('alttextai_jwt_token');
+\$token = get_option('opptiai_alt_jwt_token');
 echo 'Token: ' . (!empty(\$token) ? 'EXISTS (' . strlen(\$token) . ' chars)' : 'NOT SET') . PHP_EOL;
 "
 echo ""
@@ -294,7 +294,7 @@ docker exec wp-alt-text-plugin-wordpress-1 php -r "
 define('ABSPATH', '/var/www/html/');
 \$_SERVER['HTTP_HOST'] = 'localhost';
 require '/var/www/html/wp-load.php';
-delete_option('alttextai_jwt_token');
+delete_option('opptiai_alt_jwt_token');
 delete_option('alttextai_user_data');
 echo '✅ Auth cleared. Please login again.' . PHP_EOL;
 "

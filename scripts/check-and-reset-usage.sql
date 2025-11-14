@@ -34,3 +34,4 @@ GROUP BY u.id, u.email, u.plan;
 -- WHERE user_id = (SELECT id FROM users WHERE email = 'benoats@gmail.com')
 -- AND created_at >= DATE_TRUNC('month', CURRENT_DATE);
 
+

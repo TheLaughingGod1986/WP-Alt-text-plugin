@@ -45,7 +45,7 @@ This document outlines the implementation plan for adding two major features:
   - Returns success/error response
 
 ### 1.3 WordPress AJAX Handlers
-**File**: `ai-alt-gpt.php`
+**File**: `opptiai-alt.php`
 **Time**: ~15 minutes
 
 **Tasks**:
@@ -100,7 +100,7 @@ This document outlines the implementation plan for adding two major features:
     - Subscription ID
 
 ### 2.2 WordPress AJAX Handler
-**File**: `ai-alt-gpt.php`
+**File**: `opptiai-alt.php`
 **Time**: ~10 minutes
 
 **Tasks**:
@@ -112,7 +112,7 @@ This document outlines the implementation plan for adding two major features:
   - `add_action('wp_ajax_alttextai_get_subscription_info', [$this, 'ajax_get_subscription_info']);`
 
 ### 2.3 Settings Page UI - Account Management Section
-**File**: `ai-alt-gpt.php` (Settings tab rendering)
+**File**: `opptiai-alt.php` (Settings tab rendering)
 **Time**: ~30 minutes
 
 **Tasks**:
@@ -219,7 +219,7 @@ This document outlines the implementation plan for adding two major features:
 **Tasks**:
 - [ ] Configure email service (SendGrid, AWS SES, etc.)
 - [ ] Create password reset email template
-- [ ] Include reset link: `https://your-site.com/wp-admin/upload.php?page=ai-alt-gpt&reset-token=TOKEN&email=EMAIL`
+- [ ] Include reset link: `https://your-site.com/wp-admin/upload.php?page=opptiai-alt&reset-token=TOKEN&email=EMAIL`
 - [ ] Set token expiry (e.g., 1 hour)
 
 **Total Phase 3 Time**: ~105 minutes (backend work)

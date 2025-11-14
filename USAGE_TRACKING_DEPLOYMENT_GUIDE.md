@@ -109,17 +109,17 @@ Provider dashboard is available at `https://<your-domain>/provider/dashboard` (b
 
 ```bash
 # 1. Upload plugin files to server
-wp plugin deactivate seo-ai-alt-text-generator-auto-image-seo-accessibility
-cp -r WP-Alt-text-plugin/* /path/to/wp-content/plugins/ai-alt-text-generator/
-wp plugin activate seo-ai-alt-text-generator-auto-image-seo-accessibility
+wp plugin deactivate seo-opptiai-alt-text-generator-auto-image-seo-accessibility
+cp -r WP-Alt-text-plugin/* /path/to/wp-content/plugins/opptiai-alt-text-generator/
+wp plugin activate seo-opptiai-alt-text-generator-auto-image-seo-accessibility
 ```
 
 #### Option B: Git Deployment
 
 ```bash
-cd /path/to/wp-content/plugins/ai-alt-text-generator/
+cd /path/to/wp-content/plugins/opptiai-alt-text-generator/
 git pull origin main
-wp plugin activate seo-ai-alt-text-generator-auto-image-seo-accessibility --network  # For multisite
+wp plugin activate seo-opptiai-alt-text-generator-auto-image-seo-accessibility --network  # For multisite
 ```
 
 ### Step 4: Database Migration
@@ -128,7 +128,7 @@ The tables are created automatically on plugin activation. To manually trigger:
 
 ```php
 // In WordPress admin or via WP-CLI
-do_action('activate_plugin', 'ai-alt-text-generator/ai-alt-gpt.php');
+do_action('activate_plugin', 'opptiai-alt-text-generator/opptiai-alt.php');
 
 // Or via WP-CLI
 wp eval 'AltText_AI_Usage_Event_Tracker::create_tables();'
@@ -158,7 +158,7 @@ Expected output:
 ai_alt_sync_usage_events     Every 5 Minutes
 ai_alt_rollup_usage_daily    Once Daily
 ai_alt_cleanup_usage_events  Once Daily
-ai_alt_process_queue         ai_alt_5min
+opptiai_alt_process_queue         ai_alt_5min
 ```
 
 ### Step 6: Test Event Logging
@@ -285,7 +285,7 @@ ORDER BY usage_date DESC;
 
 1. **Check JWT token:**
 ```bash
-wp option get alttextai_jwt_token
+wp option get opptiai_alt_jwt_token
 ```
 If expired, user must re-authenticate.
 
@@ -444,7 +444,7 @@ wp cron event delete ai_alt_cleanup_usage_events
 
 ```bash
 git revert <commit-hash>
-wp plugin activate seo-ai-alt-text-generator-auto-image-seo-accessibility
+wp plugin activate seo-opptiai-alt-text-generator-auto-image-seo-accessibility
 ```
 
 ### Step 4: Preserve Data (Optional)
@@ -617,7 +617,7 @@ AltText AI: Failed to sync - Network timeout
 
 ```bash
 # Check plugin status
-wp plugin status seo-ai-alt-text-generator-auto-image-seo-accessibility
+wp plugin status seo-opptiai-alt-text-generator-auto-image-seo-accessibility
 
 # View recent usage events
 wp db query "SELECT * FROM wp_alttextai_usage_events ORDER BY id DESC LIMIT 10;"

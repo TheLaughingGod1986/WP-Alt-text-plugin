@@ -16,8 +16,8 @@ echo ""
 
 # Files to remove (backup and test files)
 FILES_TO_REMOVE=(
-    "ai-alt-gpt-js-backup.php"
-    "ai-alt-gpt-simple-backup.php"
+    "opptiai-alt-js-backup.php"
+    "opptiai-alt-simple-backup.php"
     "test-frontend-password-reset.php"
     "mock-backend.js"
     "simple-stripe-integration.php"
@@ -48,6 +48,7 @@ echo "   - Console.log statements (wrapped in debug checks)"
 echo "   - Error logging patterns"
 echo "   - Asset minification"
 echo ""
+
 
 
 

@@ -1,7 +1,7 @@
 (function($) {
     'use strict';
 
-    var config = window.AI_ALT_GPT_DASH || window.AI_ALT_GPT || {};
+    var config = window.OPPTIAI_ALT_DASH || window.OPPTIAI_ALT || {};
 
     var QueueMonitor = {
         initialized: false,
@@ -330,7 +330,7 @@
                 return config.restQueue;
             }
             if (config.restRoot) {
-                return config.restRoot + 'ai-alt/v1/queue';
+                return config.restRoot + 'opptiai/v1/queue';
             }
             return null;
         },

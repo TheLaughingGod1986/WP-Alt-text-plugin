@@ -6,7 +6,7 @@
 
 ```bash
 # Upload and activate
-wp plugin activate seo-ai-alt-text-generator-auto-image-seo-accessibility
+wp plugin activate seo-opptiai-alt-text-generator-auto-image-seo-accessibility
 ```
 
 **That's it!** Tables are created automatically.
@@ -109,7 +109,7 @@ wp eval 'AltText_AI_Usage_Event_Tracker::create_tables();'
 
 ```bash
 # Check JWT token
-wp option get alttextai_jwt_token
+wp option get opptiai_alt_jwt_token
 
 # Manual retry
 wp eval '$t = new AltText_AI_Usage_Event_Tracker(); $t->retry_failed_syncs();'

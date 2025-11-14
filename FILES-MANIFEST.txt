@@ -33,7 +33,7 @@ DEMO:
 ═══════════════════════════════════════════════════
 
 CORE:
-├── ai-alt-gpt.php                    - Enhanced dashboard HTML & gamified copy
+├── opptiai-alt.php                    - Enhanced dashboard HTML & gamified copy
 └── README.md                         - Added gamification section
 
 ═══════════════════════════════════════════════════

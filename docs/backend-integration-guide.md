@@ -12,7 +12,7 @@ The WordPress plugin tracks token usage events locally and syncs them to the bac
 
 All endpoints require JWT authentication via `Authorization: Bearer {token}` header.
 
-The plugin stores the JWT in WordPress options (`alttextai_jwt_token`) and includes it in all API requests.
+The plugin stores the JWT in WordPress options (`opptiai_alt_jwt_token`) and includes it in all API requests.
 
 ---
 
@@ -459,8 +459,8 @@ Content-Type: application/json
 ```json
 {
   "priceId": "price_1SMrxaJl9Rm418cMM4iikjlJ",
-  "successUrl": "https://example.com/wp-admin/upload.php?page=ai-alt-gpt&checkout=success",
-  "cancelUrl": "https://example.com/wp-admin/upload.php?page=ai-alt-gpt&checkout=cancel",
+  "successUrl": "https://example.com/wp-admin/upload.php?page=opptiai-alt&checkout=success",
+  "cancelUrl": "https://example.com/wp-admin/upload.php?page=opptiai-alt&checkout=cancel",
   "companyName": "AltText AI",
   "branding": {
     "name": "AltText AI",

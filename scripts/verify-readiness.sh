@@ -19,8 +19,8 @@ WARNINGS=0
 
 # Check 1: Distribution package exists
 echo "📦 Checking distribution package..."
-if [ -f "ai-alt-text-generator-4.2.1.zip" ]; then
-    SIZE=$(ls -lh ai-alt-text-generator-4.2.1.zip | awk '{print $5}')
+if [ -f "opptiai-alt-text-generator-4.2.1.zip" ]; then
+    SIZE=$(ls -lh opptiai-alt-text-generator-4.2.1.zip | awk '{print $5}')
     echo "   ✅ Package exists ($SIZE)"
 else
     echo "   ❌ Package not found!"
@@ -81,8 +81,8 @@ done
 # Check 5: Main plugin file
 echo ""
 echo "📝 Checking main plugin file..."
-if [ -f "ai-alt-gpt.php" ]; then
-    VERSION=$(grep "Version:" ai-alt-gpt.php | head -1 | sed -E "s/.*Version: ([0-9.]+).*/\1/" | tr -d '[:space:]')
+if [ -f "opptiai-alt.php" ]; then
+    VERSION=$(grep "Version:" opptiai-alt.php | head -1 | sed -E "s/.*Version: ([0-9.]+).*/\1/" | tr -d '[:space:]')
     if [ "$VERSION" = "4.2.1" ]; then
         echo "   ✅ Main plugin file exists (Version: $VERSION)"
     else
@@ -116,6 +116,7 @@ else
     echo "   Please fix errors before deploying."
     exit 1
 fi
+
 
 
 

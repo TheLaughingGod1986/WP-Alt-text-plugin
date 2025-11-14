@@ -11,8 +11,8 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 cd "$PROJECT_ROOT"
 
-VERSION=$(grep "Version:" ai-alt-gpt.php | head -1 | sed -E "s/.*Version: ([0-9.]+).*/\1/" | tr -d '[:space:]')
-PLUGIN_NAME="ai-alt-text-generator"
+VERSION=$(grep "Version:" opptiai-alt.php | head -1 | sed -E "s/.*Version: ([0-9.]+).*/\1/" | tr -d '[:space:]')
+PLUGIN_NAME="opptiai-alt-text-generator"
 ZIP_NAME="${PLUGIN_NAME}-${VERSION}.zip"
 
 echo "📦 Creating distribution package: ${ZIP_NAME}"
@@ -33,7 +33,7 @@ echo "   📁 Preparing files..."
 
 # Copy core files
 mkdir -p "$TEMP_DIR/$PLUGIN_NAME"
-cp ai-alt-gpt.php "$TEMP_DIR/$PLUGIN_NAME/"
+cp opptiai-alt.php "$TEMP_DIR/$PLUGIN_NAME/"
 cp readme.txt "$TEMP_DIR/$PLUGIN_NAME/"
 cp LICENSE "$TEMP_DIR/$PLUGIN_NAME/"
 

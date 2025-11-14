@@ -7,7 +7,7 @@ $wp_load_paths = [
     __DIR__ . '/../../../../wp-load.php',
     __DIR__ . '/../../../wp-load.php',
     '/var/www/html/wp-load.php',
-    '/var/www/html/wp-content/plugins/ai-alt-gpt/../../../../wp-load.php',
+    '/var/www/html/wp-content/plugins/opptiai-alt/../../../../wp-load.php',
 ];
 
 $wp_loaded = false;

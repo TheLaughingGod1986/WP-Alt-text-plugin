@@ -15,7 +15,7 @@ foreach ($wp_load_paths as $path) {
     }
 }
 
-require_once AI_ALT_GPT_PLUGIN_DIR . 'includes/class-queue.php';
+require_once OPPTIAI_ALT_PLUGIN_DIR . 'includes/class-queue.php';
 
 echo "Queue Debug Information\n";
 echo str_repeat("=", 50) . "\n\n";
@@ -76,10 +76,11 @@ if ($pending) {
     echo "To manually trigger processing, you can:\n";
     echo "1. Click 'Process queue now' in the dashboard\n";
     echo "2. Or wait for WordPress cron to run (usually every 5 minutes)\n";
-    echo "3. Or trigger via: wp cron event run ai_alt_process_queue\n";
+    echo "3. Or trigger via: wp cron event run opptiai_alt_process_queue\n";
 } else {
     echo "No pending jobs found.\n";
 }
 
 echo "\n" . str_repeat("=", 50) . "\n";
+
 

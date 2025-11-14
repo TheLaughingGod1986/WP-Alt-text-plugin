@@ -2,7 +2,7 @@
 
 ## Current Status
 
-✅ **Frontend**: Ready in ZIP (`dist/ai-alt-text-generator-4.2.0.zip`)  
+✅ **Frontend**: Ready in ZIP (`dist/opptiai-alt-text-generator-4.2.0.zip`)  
 ❌ **Backend**: Needs deployment to Render
 
 ## Step-by-Step Deployment
@@ -69,7 +69,7 @@ In your Render service environment variables, ensure you have:
 
 **Required:**
 ```
-FRONTEND_URL=https://your-wordpress-site.com/wp-admin/upload.php?page=ai-alt-gpt
+FRONTEND_URL=https://your-wordpress-site.com/wp-admin/upload.php?page=opptiai-alt
 ```
 
 **Optional (for email service - currently logs to console):**
@@ -103,14 +103,14 @@ curl -X GET https://alttext-ai-backend.onrender.com/billing/subscription \
 ### Step 6: Upload Frontend Plugin
 
 The ZIP is already built:
-- **Location**: `dist/ai-alt-text-generator-4.2.0.zip`
+- **Location**: `dist/opptiai-alt-text-generator-4.2.0.zip`
 - **Size**: 160K
 - **Version**: 4.2.0
 
 **Upload to WordPress:**
 1. WordPress Admin → Plugins → Add New
 2. Click "Upload Plugin"
-3. Select `ai-alt-text-generator-4.2.0.zip`
+3. Select `opptiai-alt-text-generator-4.2.0.zip`
 4. Click "Install Now"
 5. Activate if prompted
 

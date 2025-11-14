@@ -8,3 +8,4 @@
 -- INSERT INTO usage_logs ("userId", "createdAt") 
 -- VALUES (2, CURRENT_TIMESTAMP);
 
+

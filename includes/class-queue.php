@@ -8,8 +8,8 @@ if (!defined('ABSPATH')) {
 }
 
 class AltText_AI_Queue {
-    const TABLE_SLUG = 'alttextai_queue';
-    const CRON_HOOK  = 'ai_alt_process_queue';
+    const TABLE_SLUG = 'opptiai_alt_queue';
+    const CRON_HOOK  = 'opptiai_alt_process_queue';
 
     /**
      * Get queue table name.
@@ -74,7 +74,8 @@ class AltText_AI_Queue {
         ));
 
         if ($exists) {
-            return false;
+            self::schedule_processing();
+            return true;
         }
 
         $inserted = $wpdb->insert(
@@ -97,9 +98,45 @@ class AltText_AI_Queue {
     }
 
     /**
+     * Clear existing queue entries for specific attachment IDs.
+     */
+    public static function clear_for_attachments(array $ids) {
+        global $wpdb;
+        if (empty($ids)) {
+            return 0;
+        }
+        
+        $table = self::table();
+        $ids = array_map('intval', $ids);
+        $ids = array_filter($ids, function($id) {
+            return $id > 0;
+        });
+        
+        if (empty($ids)) {
+            return 0;
+        }
+        
+        // Build safe IN clause
+        $ids_clean = array_map('absint', $ids);
+        $ids_string = implode(',', $ids_clean);
+        
+        // Clear ALL entries (pending, processing, completed, failed) to allow regeneration
+        $deleted = $wpdb->query(
+            "DELETE FROM {$table} WHERE attachment_id IN ({$ids_string})"
+        );
+        
+        return $deleted !== false ? $deleted : 0;
+    }
+
+    /**
      * Bulk enqueue attachments.
      */
     public static function enqueue_many(array $ids, $source = 'bulk') {
+        // For regeneration, clear existing queue entries first
+        if ($source === 'bulk-regenerate') {
+            self::clear_for_attachments($ids);
+        }
+        
         $count = 0;
         foreach ($ids as $id) {
             if (self::enqueue($id, $source)) {
@@ -327,10 +364,10 @@ class AltText_AI_Queue {
 
         // Auto-cleanup redundant pending jobs (images that already have alt text)
         // This runs every hour to keep the queue clean
-        $last_cleanup = get_transient('alttextai_queue_last_cleanup');
+        $last_cleanup = get_transient('opptiai_alt_queue_last_cleanup');
         if (false === $last_cleanup) {
             self::cleanup_redundant_jobs();
-            set_transient('alttextai_queue_last_cleanup', time(), HOUR_IN_SECONDS);
+            set_transient('opptiai_alt_queue_last_cleanup', time(), HOUR_IN_SECONDS);
         }
 
         // Table name is already sanitized via table() method, so safe to use directly

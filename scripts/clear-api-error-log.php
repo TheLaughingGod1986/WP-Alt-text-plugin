@@ -41,3 +41,4 @@ echo "\n" . str_repeat("=", 50) . "\n";
 echo "\nNow try generating alt text or refreshing the dashboard.\n";
 echo "Any new errors will appear fresh in the log.\n";
 
+

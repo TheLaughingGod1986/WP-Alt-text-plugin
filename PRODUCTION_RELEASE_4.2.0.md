@@ -4,7 +4,7 @@
 2025-01-XX (Ready for testing)
 
 ## Package Information
-- **File**: `dist/ai-alt-text-generator-4.2.0.zip`
+- **File**: `dist/opptiai-alt-text-generator-4.2.0.zip`
 - **Size**: 132KB
 - **Version**: 4.2.0
 - **Branch**: `feature/account-management`
@@ -12,7 +12,7 @@
 ## What's Included
 
 ### Core Files
-- ✅ `ai-alt-gpt.php` (246KB) - Main plugin file with version 4.2.0
+- ✅ `opptiai-alt.php` (246KB) - Main plugin file with version 4.2.0
 - ✅ `readme.txt` (26KB) - WordPress.org readme with stable tag 4.2.0
 - ✅ `LICENSE` - GPL v2 license
 
@@ -89,13 +89,13 @@
 ### Via WordPress Admin
 1. Go to **Plugins → Add New**
 2. Click **Upload Plugin**
-3. Choose `ai-alt-text-generator-4.2.0.zip`
+3. Choose `opptiai-alt-text-generator-4.2.0.zip`
 4. Click **Install Now**
 5. Click **Activate Plugin**
 
 ### Via WP-CLI
 ```bash
-wp plugin install dist/ai-alt-text-generator-4.2.0.zip --activate
+wp plugin install dist/opptiai-alt-text-generator-4.2.0.zip --activate
 ```
 
 ## Post-Installation

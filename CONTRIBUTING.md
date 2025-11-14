@@ -230,7 +230,7 @@ Before submitting a PR:
 
 1. **Get Translation Files**
    - Language files are in `languages/`
-   - POT file: `languages/seo-ai-alt-text-generator-auto-image-seo-accessibility.pot`
+   - POT file: `languages/seo-opptiai-alt-text-generator-auto-image-seo-accessibility.pot`
 
 2. **Create Translation**
    - Use [Poedit](https://poedit.net/) or similar tool
@@ -288,14 +288,14 @@ wp-alt-text-ai/
 ├── public/             # Public-facing code
 ├── scripts/            # Development scripts
 ├── templates/          # PHP templates
-├── ai-alt-gpt.php      # Main plugin file
+├── opptiai-alt.php      # Main plugin file
 └── readme.txt          # WordPress.org readme
 ```
 
 ### Key Files to Know
 
-- `ai-alt-gpt.php` - Main plugin file
-- `admin/class-ai-alt-gpt-core.php` - Core admin functionality
+- `opptiai-alt.php` - Main plugin file
+- `admin/class-opptiai-alt-core.php` - Core admin functionality
 - `includes/class-api-client-v2.php` - API communication
 - `includes/class-usage-event-tracker.php` - Usage tracking
 - `assets/ai-alt-dashboard.js` - Frontend JavaScript
@@ -403,6 +403,7 @@ Thank you for taking the time to contribute! Every contribution, no matter how s
 **Ready to contribute?** Fork the repo, make your changes, and submit a pull request!
 
 🚀 **Let's make the web more accessible, one image at a time!**
+
 
 
 

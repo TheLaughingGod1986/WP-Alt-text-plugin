@@ -59,11 +59,11 @@ EOF
 echo "✅ Created render-env-vars.txt"
 
 # Update WordPress plugin settings if needed
-if [ -f "ai-alt-gpt.php" ]; then
+if [ -f "opptiai-alt.php" ]; then
     echo "📝 Checking WordPress plugin configuration..."
     
     # Check if API URL needs updating
-    if grep -q "alttext-ai-backend.onrender.com" ai-alt-gpt.php; then
+    if grep -q "alttext-ai-backend.onrender.com" opptiai-alt.php; then
         echo "🔧 WordPress plugin is already configured for Render"
     else
         echo "⚠️  You may need to update the API URL in WordPress settings"

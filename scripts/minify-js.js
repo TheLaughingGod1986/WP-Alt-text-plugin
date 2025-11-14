@@ -6,7 +6,12 @@
 
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+let terser = null;
+try {
+    terser = require('terser');
+} catch (error) {
+    console.warn('⚠️  Unable to load terser from node_modules. JavaScript minification will be skipped.');
+}
 
 const assetsDir = path.join(__dirname, '..', 'assets');
 const srcDir = path.join(assetsDir, 'src', 'js');
@@ -16,10 +21,11 @@ const jsFiles = [
     'ai-alt-dashboard.js',
     'auth-modal.js',
     'upgrade-modal.js',
-    'ai-alt-queue-monitor.js'
+    'ai-alt-queue-monitor.js',
+    'ai-alt-debug.js'
 ];
 
-function minifyFile(inputFile) {
+async function minifyFile(inputFile) {
     const inputPath = path.join(srcDir, inputFile);
     const outputFile = inputFile.replace('.js', '.min.js');
     const outputPath = path.join(distDir, outputFile);
@@ -27,24 +33,38 @@ function minifyFile(inputFile) {
     console.log(`📦 Minifying ${inputFile}...`);
 
     try {
-        // Use npx terser with proper CLI syntax
-        // Reserved names need to be in a config file or passed differently
-        const terserCmd = `npx --yes terser "${inputPath}" -o "${outputPath}" --compress drop_console=false,passes=2 --mangle --format comments=false`;
-        
-        execSync(terserCmd, {
-            stdio: 'pipe',
-            cwd: path.join(__dirname, '..'),
-            maxBuffer: 10 * 1024 * 1024 // 10MB buffer
+        if (!terser) {
+            return;
+        }
+
+        const source = await fs.promises.readFile(inputPath, 'utf8');
+        const result = await terser.minify(source, {
+            compress: {
+                drop_console: false,
+                passes: 2,
+            },
+            mangle: true,
+            format: {
+                comments: false,
+            },
         });
 
-        const originalSize = fs.statSync(inputPath).size;
-        const minifiedSize = fs.statSync(outputPath).size;
-        const savings = ((originalSize - minifiedSize) / originalSize * 100).toFixed(1);
+        if (!result.code) {
+            throw new Error('Terser did not produce any output');
+        }
 
-        console.log(`  ✅ ${outputFile} (${formatSize(minifiedSize)} / ${formatSize(originalSize)} - ${savings}% reduction)`);
+        await fs.promises.mkdir(path.dirname(outputPath), { recursive: true });
+        await fs.promises.writeFile(outputPath, result.code, 'utf8');
+
+        const [originalStat, minifiedStat] = await Promise.all([
+            fs.promises.stat(inputPath),
+            fs.promises.stat(outputPath),
+        ]);
+        const savings = ((originalStat.size - minifiedStat.size) / originalStat.size * 100).toFixed(1);
+
+        console.log(`  ✅ ${outputFile} (${formatSize(minifiedStat.size)} / ${formatSize(originalStat.size)} - ${savings}% reduction)`);
     } catch (error) {
         console.error(`  ❌ Error minifying ${inputFile}:`, error.message);
-        // Don't exit - continue with other files
     }
 }
 
@@ -54,23 +74,31 @@ function formatSize(bytes) {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
 
-function main() {
+async function main() {
+    if (!terser) {
+        console.warn('⚠️  Terser is not available, skipping JavaScript minification.');
+        return;
+    }
+
     console.log('🚀 Starting JavaScript minification...\n');
 
     if (!fs.existsSync(distDir)) {
         fs.mkdirSync(distDir, { recursive: true });
     }
 
-    jsFiles.forEach(file => {
+    for (const file of jsFiles) {
         const inputPath = path.join(srcDir, file);
         if (!fs.existsSync(inputPath)) {
             console.warn(`  ⚠️  ${file} not found, skipping...`);
-            return;
+            continue;
         }
-        minifyFile(file);
-    });
+        await minifyFile(file);
+    }
 
     console.log('\n✅ JavaScript minification complete!');
 }
 
-main();
+main().catch(error => {
+    console.error('❌ JavaScript minification failed:', error);
+    process.exitCode = 1;
+});

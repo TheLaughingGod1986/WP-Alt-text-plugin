@@ -55,7 +55,7 @@ includes/
 ### Admin Integration
 ```
 admin/
-└── class-ai-alt-gpt-core.php        # Main integration
+└── class-opptiai-alt-core.php        # Main integration
     ├── Usage tracking hooks
     ├── Analytics dashboard
     ├── Governance checks

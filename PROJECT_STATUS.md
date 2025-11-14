@@ -29,7 +29,7 @@
 - **Source Files:** ✅ Excluded from distribution
 
 ### Package ✅
-- **Distribution ZIP:** ✅ Created (`ai-alt-text-generator-4.2.1.zip`)
+- **Distribution ZIP:** ✅ Created (`opptiai-alt-text-generator-4.2.1.zip`)
 - **File Count:** 47 files
 - **Package Size:** 150 KB
 - **Structure:** ✅ Clean, production-ready
@@ -71,7 +71,7 @@ wp-alt-text-ai/
 ├── public/                     # Public-facing code
 ├── scripts/                    # Development scripts
 ├── templates/                  # PHP templates
-├── ai-alt-gpt.php              # Main plugin file
+├── opptiai-alt.php              # Main plugin file
 ├── CONTRIBUTING.md             # Contribution guide
 ├── CODE_OF_CONDUCT.md          # Community standards
 ├── CHANGELOG.md                # Version history

@@ -7,26 +7,26 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class Ai_Alt_Gpt_Admin_Hooks {
+class Opptiai_Alt_Admin_Hooks {
 
 	/**
-	 * @var AI_Alt_Text_Generator_GPT
+	 * @var Opptiai_Alt_Core
 	 */
 	private $core;
 
 	/**
-	 * @var Ai_Alt_Gpt_REST_Controller
+	 * @var Opptiai_Alt_REST_Controller
 	 */
 	private $rest_controller;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param AI_Alt_Text_Generator_GPT $core Core implementation instance.
+	 * @param Opptiai_Alt_Core $core Core implementation instance.
 	 */
-	public function __construct( AI_Alt_Text_Generator_GPT $core ) {
+	public function __construct( Opptiai_Alt_Core $core ) {
 		$this->core            = $core;
-		$this->rest_controller = new Ai_Alt_Gpt_REST_Controller( $core );
+		$this->rest_controller = new Opptiai_Alt_REST_Controller( $core );
 	}
 
 	/**
@@ -54,7 +54,8 @@ class Ai_Alt_Gpt_Admin_Hooks {
 		add_action( 'admin_init', [ $this->core, 'maybe_display_threshold_notice' ] );
 		add_action( 'admin_init', [ $this->core, 'maybe_handle_direct_checkout' ] );
 		add_action( 'admin_notices', [ $this->core, 'maybe_render_checkout_notices' ] );
-		add_action( 'admin_post_ai_alt_usage_export', [ $this->core, 'handle_usage_export' ] );
+		add_action( 'admin_post_opptiai_alt_usage_export', [ $this->core, 'handle_usage_export' ] );
+		add_action( 'admin_post_opptiai_alt_debug_export', [ $this->core, 'handle_debug_log_export' ] );
 		add_action( 'init', [ $this->core, 'ensure_capability' ] );
 		add_action( 'admin_notices', [ $this->core, 'maybe_render_queue_notice' ] );
 
@@ -63,7 +64,7 @@ class Ai_Alt_Gpt_Admin_Hooks {
 		add_action( AltText_AI_Queue::CRON_HOOK, [ $this->core, 'process_queue' ] );
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			\WP_CLI::add_command( 'ai-alt', [ $this->core, 'wpcli_command' ] );
+			\WP_CLI::add_command( 'opptiai-alt', [ $this->core, 'wpcli_command' ] );
 		}
 	}
 
@@ -84,12 +85,20 @@ class Ai_Alt_Gpt_Admin_Hooks {
 			'alttextai_register'               => 'ajax_register',
 			'alttextai_login'                  => 'ajax_login',
 			'alttextai_logout'                 => 'ajax_logout',
+			'alttextai_disconnect_account'     => 'ajax_disconnect_account',
 			'alttextai_get_user_info'          => 'ajax_get_user_info',
 			'alttextai_create_checkout'        => 'ajax_create_checkout',
 			'alttextai_create_portal'          => 'ajax_create_portal',
 			'alttextai_forgot_password'        => 'ajax_forgot_password',
 			'alttextai_reset_password'         => 'ajax_reset_password',
 			'alttextai_get_subscription_info'  => 'ajax_get_subscription_info',
+			'alttextai_inline_generate'        => 'ajax_inline_generate',
+			'alttextai_activate_license'       => 'ajax_activate_license',
+			'alttextai_deactivate_license'     => 'ajax_deactivate_license',
+			'alttextai_get_license_sites'      => 'ajax_get_license_sites',
+			'alttextai_disconnect_license_site' => 'ajax_disconnect_license_site',
+			'alttextai_admin_login'            => 'ajax_admin_login',
+			'alttextai_admin_logout'           => 'ajax_admin_logout',
 		];
 
 		foreach ( $ajax_actions as $action => $callback ) {

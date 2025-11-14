@@ -10,3 +10,4 @@ RETURNING id, "userId", "createdAt";
 -- Verify it was added
 SELECT COUNT(*) as current_usage FROM usage_logs WHERE "userId" = 2;
 
+

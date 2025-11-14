@@ -69,7 +69,7 @@ These hooks keep the WordPress dashboard in sync with your SaaS checkout/portal 
 
 ## Installation
 
-1. Upload the plugin files to `/wp-content/plugins/ai-alt-gpt/`
+1. Upload the plugin files to `/wp-content/plugins/opptiai-alt/`
 2. Activate the plugin through the 'Plugins' menu in WordPress
 3. Navigate to **Media → AI ALT Text** to configure your OpenAI API key
 4. Start generating accessible ALT text!
@@ -226,11 +226,11 @@ Generate a WordPress-ready package with the helper script:
 ./build-plugin.sh
 ```
 
-The build outputs `dist/ai-alt-text-generator-<version>.zip`, removing local tooling and development artefacts.  
+The build outputs `dist/opptiai-alt-text-generator-<version>.zip`, removing local tooling and development artefacts.  
 Install it via the WordPress admin (**Plugins → Add New → Upload Plugin**) or with WP‑CLI:
 
 ```bash
-wp plugin install dist/ai-alt-text-generator-<version>.zip --activate
+wp plugin install dist/opptiai-alt-text-generator-<version>.zip --activate
 ```
 
 Backend deployment guidance lives in `backend/README.md`; Render configuration is provided in `backend/render-phase2.yaml`.

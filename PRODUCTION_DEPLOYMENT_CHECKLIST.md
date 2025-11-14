@@ -26,7 +26,7 @@
 ### Version Consistency ✅
 - [x] Main plugin file: 4.2.1 ✅
 - [x] readme.txt stable tag: 4.2.1 ✅
-- [x] All constants use AI_ALT_GPT_VERSION ✅
+- [x] All constants use OPPTIAI_ALT_VERSION ✅
 
 ### Assets ✅
 - [x] JavaScript files minified:
@@ -122,7 +122,7 @@
 ## 📦 Distribution Package Checklist
 
 ### Files to Include
-- [x] `ai-alt-gpt.php` (main plugin file)
+- [x] `opptiai-alt.php` (main plugin file)
 - [x] `readme.txt` (WordPress.org metadata)
 - [x] `LICENSE` (GPLv2)
 - [x] `includes/` directory
@@ -152,8 +152,8 @@
 ### 1. Create Distribution ZIP
 ```bash
 # Exclude development files
-zip -r ai-alt-text-generator-4.2.1.zip \
-  ai-alt-gpt.php \
+zip -r opptiai-alt-text-generator-4.2.1.zip \
+  opptiai-alt.php \
   readme.txt \
   LICENSE \
   includes/ \
@@ -170,7 +170,7 @@ zip -r ai-alt-text-generator-4.2.1.zip \
 
 ### 2. Verify ZIP Contents
 ```bash
-unzip -l ai-alt-text-generator-4.2.1.zip | head -30
+unzip -l opptiai-alt-text-generator-4.2.1.zip | head -30
 ```
 
 ### 3. Test Installation
@@ -251,6 +251,7 @@ unzip -l ai-alt-text-generator-4.2.1.zip | head -30
 **Prepared by:** AI Code Review Assistant  
 **Date:** 2024-11-03  
 **Next Review:** Post-deployment (Week 1)
+
 
 
 

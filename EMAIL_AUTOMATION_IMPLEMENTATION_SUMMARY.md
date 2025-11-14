@@ -18,7 +18,7 @@ I've successfully built a **complete email automation system** for the AltText A
 |-----------|--------|-------|
 | **Email Subscriber Manager** | ✅ Complete | [class-email-subscriber-manager.php](includes/class-email-subscriber-manager.php) |
 | **Marketing Opt-in Checkbox** | ✅ Complete | [auth-modal.js](assets/auth-modal.js) + CSS |
-| **WordPress Integration** | ✅ Complete | [class-ai-alt-gpt-core.php](admin/class-ai-alt-gpt-core.php) |
+| **WordPress Integration** | ✅ Complete | [class-opptiai-alt-core.php](admin/class-opptiai-alt-core.php) |
 | **Database Schema** | ✅ Complete | 2 new tables (subscribers + events) |
 | **Usage Threshold Tracking** | ✅ Complete | Automatic email triggers at 70% & 100% |
 | **Welcome Email System** | ✅ Complete | Fires on opt-in |
@@ -124,7 +124,7 @@ body: new URLSearchParams({
 
 #### 1.5 WordPress AJAX Handler
 
-**File:** `admin/class-ai-alt-gpt-core.php` (ajax_register method, lines 5267-5311)
+**File:** `admin/class-opptiai-alt-core.php` (ajax_register method, lines 5267-5311)
 
 **Flow:**
 1. Validates email and password
@@ -151,7 +151,7 @@ if ($marketing_opt_in && isset($result['user'])) {
 
 #### 1.6 Usage Threshold Tracking
 
-**File:** `admin/class-ai-alt-gpt-core.php` (check_usage_thresholds method, lines 580-642)
+**File:** `admin/class-opptiai-alt-core.php` (check_usage_thresholds method, lines 580-642)
 
 **Triggers:**
 - Hooked into `alttextai_after_log_event` action
@@ -178,7 +178,7 @@ if ($plan === 'free') {
 
 #### 1.7 Cron Jobs
 
-**File:** `admin/class-ai-alt-gpt-core.php` (register_email_cron_jobs method, lines 545-551)
+**File:** `admin/class-opptiai-alt-core.php` (register_email_cron_jobs method, lines 545-551)
 
 **Scheduled Actions:**
 1. **`alttextai_sync_subscriber`** - Syncs subscriber to Resend (5 sec delay)
@@ -191,7 +191,7 @@ if ($plan === 'free') {
 
 #### 1.8 Plugin Activation
 
-**File:** `admin/class-ai-alt-gpt-core.php` (activate method, line 963)
+**File:** `admin/class-opptiai-alt-core.php` (activate method, line 963)
 
 ```php
 public function activate() {
@@ -275,7 +275,7 @@ Tables are created automatically on plugin activation.
    - Info box background
    - Privacy notice styling
 
-3. **admin/class-ai-alt-gpt-core.php**
+3. **admin/class-opptiai-alt-core.php**
    - Added email_subscriber_manager property (line 61)
    - Initialized email manager in constructor (lines 77-88)
    - Updated ajax_register handler (lines 5272-5305)
@@ -450,7 +450,7 @@ See [EMAIL_AUTOMATION_SPEC.md](EMAIL_AUTOMATION_SPEC.md) for React Email templat
 wp db export backup-$(date +%Y%m%d).sql
 
 # Upload plugin files
-wp plugin activate seo-ai-alt-text-generator-auto-image-seo-accessibility
+wp plugin activate seo-opptiai-alt-text-generator-auto-image-seo-accessibility
 
 # Verify tables created
 wp db query "SHOW TABLES LIKE '%alttextai_email%';"

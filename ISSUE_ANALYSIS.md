@@ -98,7 +98,7 @@ define('ABSPATH', '/var/www/html/');
 require '/var/www/html/wp-load.php';
 
 global \$wpdb;
-\$table = \$wpdb->prefix . 'ai_alt_gpt_queue';
+\$table = \$wpdb->prefix . 'opptiai_alt_queue';
 
 // Reset items with 3 attempts back to 0
 \$updated = \$wpdb->query(
@@ -117,7 +117,7 @@ define('ABSPATH', '/var/www/html/');
 require '/var/www/html/wp-load.php';
 
 // Trigger queue processing
-do_action('ai_alt_gpt_process_queue');
+do_action('opptiai_alt_process_queue');
 echo '✅ Queue processing triggered!' . PHP_EOL;
 "
 ```
@@ -148,7 +148,7 @@ services:
       WORDPRESS_DEBUG: 1
     volumes:
       - wordpress_data:/var/www/html
-      - ./:/var/www/html/wp-content/plugins/ai-alt-gpt
+      - ./:/var/www/html/wp-content/plugins/opptiai-alt
     depends_on:
       - db
 ```
@@ -332,7 +332,7 @@ define('ABSPATH', '/var/www/html/');
 \$_SERVER['HTTP_HOST'] = 'localhost';
 require '/var/www/html/wp-load.php';
 global \$wpdb;
-\$table = \$wpdb->prefix . 'ai_alt_gpt_queue';
+\$table = \$wpdb->prefix . 'opptiai_alt_queue';
 \$wpdb->query(\"UPDATE \$table SET attempts = 0 WHERE attempts >= 3 AND status = 'pending'\");
 echo '✅ Queue reset!';
 "
@@ -348,7 +348,7 @@ docker exec wp-alt-text-plugin-wordpress-1 php -r "
 define('ABSPATH', '/var/www/html/');
 \$_SERVER['HTTP_HOST'] = 'localhost';
 require '/var/www/html/wp-load.php';
-do_action('ai_alt_gpt_process_queue');
+do_action('opptiai_alt_process_queue');
 "
 ```
 

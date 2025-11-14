@@ -31,7 +31,7 @@ This is your **quick navigation guide** to get started with the project.
 - ✅ **Package Created** (150 KB distribution)
 
 ### Key Files
-- **Package:** `ai-alt-text-generator-4.2.1.zip`
+- **Package:** `opptiai-alt-text-generator-4.2.1.zip`
 - **Main README:** [README.md](README.md)
 - **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md)
 - **Status:** [PROJECT_STATUS.md](PROJECT_STATUS.md)
@@ -71,7 +71,7 @@ This is your **quick navigation guide** to get started with the project.
 ## ✅ Verification
 
 ### Package
-- ✅ `ai-alt-text-generator-4.2.1.zip` (150 KB) ready
+- ✅ `opptiai-alt-text-generator-4.2.1.zip` (150 KB) ready
 
 ### Documentation
 - ✅ 25+ documentation files complete

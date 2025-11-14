@@ -1,7 +1,7 @@
 # Release Notes - Version 4.2.1
 
 **Release Date:** November 3, 2024  
-**Package:** `ai-alt-text-generator-4.2.1.zip`  
+**Package:** `opptiai-alt-text-generator-4.2.1.zip`  
 **Status:** ✅ Production Ready
 
 ---
@@ -48,13 +48,13 @@ This release focuses on **production readiness**, code quality improvements, and
 ### WordPress Admin
 1. Go to **Plugins → Add New**
 2. Click **Upload Plugin**
-3. Select `ai-alt-text-generator-4.2.1.zip`
+3. Select `opptiai-alt-text-generator-4.2.1.zip`
 4. Click **Install Now**
 5. **Activate** the plugin
 
 ### Manual Installation
 1. Extract the ZIP file
-2. Upload `ai-alt-text-generator` folder to `/wp-content/plugins/`
+2. Upload `opptiai-alt-text-generator` folder to `/wp-content/plugins/`
 3. Activate from WordPress Admin
 
 ---
@@ -186,7 +186,7 @@ Before deploying to production, test:
 ### Cleaned
 - `assets/ai-alt-dashboard.js` - Debug code wrapped
 - `includes/class-usage-event-tracker.php` - Error logging standardized
-- `admin/class-ai-alt-gpt-core.php` - Error logging standardized
+- `admin/class-opptiai-alt-core.php` - Error logging standardized
 - `.gitignore` - Updated to prevent backup files
 
 ### Regenerated
@@ -240,7 +240,8 @@ Future releases will focus on:
 
 **Released:** November 3, 2024  
 **Version:** 4.2.1  
-**Package:** `ai-alt-text-generator-4.2.1.zip`
+**Package:** `opptiai-alt-text-generator-4.2.1.zip`
+
 
 
 

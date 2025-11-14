@@ -1,6 +1,6 @@
 <?php
 $root = realpath(__DIR__ . '/..');
-$domain = 'ai-alt-gpt';
+$domain = 'opptiai-alt-text-generator';
 $entries = [];
 
 $singleFunctions = ['__','_e','esc_html__','esc_html_e','esc_attr__','esc_attr_e'];

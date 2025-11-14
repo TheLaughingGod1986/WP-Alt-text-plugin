@@ -21,7 +21,10 @@ foreach ($wp_load_paths as $path) {
     }
 }
 
-$token = get_option('alttextai_jwt_token', '');
+$token = get_option('opptiai_alt_jwt_token', '');
+if (empty($token)) {
+    $token = get_option('opptiai_alt_jwt_token', '');
+}
 
 if (empty($token)) {
     echo "❌ No token found. Please authenticate first.\n";

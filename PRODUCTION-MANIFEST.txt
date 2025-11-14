@@ -9,7 +9,7 @@ PRODUCTION FILES (Include in Distribution ZIP)
 --------------------------------------------------------------------------------
 
 Core Files:
-  ai-alt-gpt.php                 118 KB    Main plugin file
+  opptiai-alt.php                 118 KB    Main plugin file
   LICENSE                        1.0 KB    GPL-2.0 license
 
 Assets:
@@ -47,8 +47,8 @@ EXCLUDED FROM PRODUCTION:        ~30 KB    (development only)
 DISTRIBUTION PACKAGE STRUCTURE
 --------------------------------------------------------------------------------
 
-ai-alt-gpt-3.0.0.zip
-├── ai-alt-gpt.php
+opptiai-alt-3.0.0.zip
+├── opptiai-alt.php
 ├── LICENSE
 ├── README.md
 ├── CHANGELOG.md
@@ -63,7 +63,7 @@ CODE STATISTICS
 --------------------------------------------------------------------------------
 
 Language Breakdown:
-  PHP:         2,296 lines    (ai-alt-gpt.php)
+  PHP:         2,296 lines    (opptiai-alt.php)
   JavaScript:  1,356 lines    (admin.js + dashboard.js)
   CSS:         2,217 lines    (dashboard.css)
   ─────────────────────────
@@ -135,10 +135,10 @@ CREATE DISTRIBUTION PACKAGE
 --------------------------------------------------------------------------------
 
 Command:
-  cd /Users/benoats/Projects/ai-alt-gpt
+  cd /Users/benoats/Projects/opptiai-alt
   
-  zip -r ai-alt-gpt-3.0.0.zip \
-    ai-alt-gpt.php \
+  zip -r opptiai-alt-3.0.0.zip \
+    opptiai-alt.php \
     assets/ \
     CHANGELOG.md \
     LICENSE \
@@ -146,13 +146,13 @@ Command:
     -x "*.git*" "*.DS_Store" "*.md" "*DEPLOYMENT*" "*PRODUCTION*" "*SHIP-IT*"
   
   # Verify package
-  unzip -l ai-alt-gpt-3.0.0.zip
+  unzip -l opptiai-alt-3.0.0.zip
 
 Expected Result:
-  ai-alt-gpt-3.0.0.zip (~70 KB compressed)
+  opptiai-alt-3.0.0.zip (~70 KB compressed)
   
   Contents:
-    - ai-alt-gpt.php
+    - opptiai-alt.php
     - assets/ai-alt-admin.js
     - assets/ai-alt-dashboard.js
     - assets/ai-alt-dashboard.css
@@ -165,7 +165,7 @@ Expected Result:
 WORDPRESS.ORG REQUIREMENTS
 --------------------------------------------------------------------------------
 
-Plugin Header (Already in ai-alt-gpt.php):
+Plugin Header (Already in opptiai-alt.php):
   ✅ Plugin Name: Farlo AI Alt Text Generator (GPT)
   ✅ Description: [Present]
   ✅ Version: 3.0.0

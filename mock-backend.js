@@ -79,9 +79,9 @@ app.get('/usage', (req, res) => {
 app.post('/api/generate', (req, res) => {
     console.log('Alt text generation:', req.body);
     
-    // Accept any Bearer token for testing
+    // Accept any Bearer token for testing (or no token in local dev)
     const authHeader = req.headers.authorization;
-    if (authHeader && !authHeader.startsWith('Bearer ')) {
+    if (authHeader && !authHeader.startsWith('Bearer ') && authHeader !== '') {
         return res.status(401).json({
             error: 'Access token required',
             code: 'MISSING_TOKEN'
@@ -93,7 +93,8 @@ app.post('/api/generate', (req, res) => {
     const limit = 10;
     const remaining = Math.max(0, limit - usageCount);
     
-    console.log(`✓ Alt text generated (Usage: ${usageCount}/${limit})`);
+    const isRegenerate = req.body.regenerate === true;
+    console.log(`✓ Alt text ${isRegenerate ? 'regenerated' : 'generated'} (Usage: ${usageCount}/${limit})`);
     
     // Generate realistic alt text based on image data
     const imageId = req.body.image_data?.image_id;
@@ -103,22 +104,50 @@ app.post('/api/generate', (req, res) => {
     
     // Mock realistic alt text based on image characteristics
     // In production, OpenAI Vision would analyze the actual image
+    // For regenerate, add variation to show it's different
     let altText;
     const imageSize = width * height;
+    const regenerateSuffix = isRegenerate ? ' (regenerated)' : '';
+    const variation = isRegenerate ? Math.floor(Math.random() * 3) : 0;
     
     // Generate contextually appropriate mock descriptions
     if (filename.includes('tiger') || filename.includes('download-1.jpeg')) {
-        altText = 'Majestic tiger walking through tall grass in natural habitat';
+        const variations = [
+            'Majestic tiger walking through tall grass in natural habitat',
+            'Wild tiger strolling across a grassy savanna landscape',
+            'Powerful tiger moving gracefully through tall vegetation'
+        ];
+        altText = variations[variation] || variations[0];
     } else if (filename.includes('download.jpeg') && imageId === 6) {
-        altText = 'Professional woman with curly hair working on laptop at desk';
+        const variations = [
+            'Professional woman with curly hair working on laptop at desk',
+            'Businesswoman with curly hair focused on laptop computer',
+            'Female professional typing on laptop in office setting'
+        ];
+        altText = variations[variation] || variations[0];
     } else if (filename.includes('download.png') && width > 300) {
         altText = 'Red square logo with white text displaying "tes"';
     } else if (imageSize > 500000) {
-        altText = 'Screenshot of WordPress dashboard showing plugin interface';
+        const variations = [
+            'Screenshot of WordPress dashboard showing plugin interface',
+            'WordPress admin panel displaying plugin management screen',
+            'Dashboard view of WordPress plugin configuration'
+        ];
+        altText = variations[variation] || variations[0];
     } else if (filename.includes('image')) {
-        altText = 'Web analytics dashboard displaying user engagement metrics';
+        const variations = [
+            'Web analytics dashboard displaying user engagement metrics',
+            'Data visualization showing website traffic and user statistics',
+            'Analytics interface with charts and performance indicators'
+        ];
+        altText = variations[variation] || variations[0];
     } else {
-        altText = 'Stock photo showing business or technology concept';
+        const variations = [
+            'Stock photo showing business or technology concept',
+            'Professional image depicting modern business environment',
+            'High-quality photograph representing corporate or tech theme'
+        ];
+        altText = variations[variation] || variations[0];
     }
     
     // Generate a quality score based on alt text complexity

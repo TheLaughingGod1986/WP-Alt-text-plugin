@@ -23,7 +23,7 @@ The backend API should use the environment variable `ALTTEXT_OPENAI_API_KEY` for
 After updating and restarting, you can test with:
 
 ```bash
-docker-compose exec -T wordpress php /var/www/html/wp-content/plugins/ai-alt-gpt/scripts/test-backend-openai-key.php
+docker-compose exec -T wordpress php /var/www/html/wp-content/plugins/opptiai-alt/scripts/test-backend-openai-key.php
 ```
 
 This will make a test generation request and verify the backend can successfully call OpenAI.
@@ -31,4 +31,5 @@ This will make a test generation request and verify the backend can successfully
 ## Current Status:
 
 The backend API is currently working (tested successfully), so it has a valid OpenAI key configured. If you need to update it to use `ALTTEXT_OPENAI_API_KEY` specifically, follow the steps above.
+
 

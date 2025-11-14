@@ -54,7 +54,7 @@ define('ABSPATH', '/var/www/html/');
 require '/var/www/html/wp-load.php';
 
 global \$wpdb;
-\$table = \$wpdb->prefix . 'ai_alt_gpt_queue';
+\$table = \$wpdb->prefix . 'opptiai_alt_queue';
 
 // Count stuck items
 \$stuck = \$wpdb->get_var(
@@ -109,7 +109,7 @@ define('ABSPATH', '/var/www/html/');
 require '/var/www/html/wp-load.php';
 
 global \$wpdb;
-\$table = \$wpdb->prefix . 'ai_alt_gpt_queue';
+\$table = \$wpdb->prefix . 'opptiai_alt_queue';
 
 \$pending = \$wpdb->get_var(\"SELECT COUNT(*) FROM \$table WHERE status = 'pending'\");
 \$processing = \$wpdb->get_var(\"SELECT COUNT(*) FROM \$table WHERE status = 'processing'\");
@@ -133,5 +133,5 @@ echo "2. Go to Media → AltText AI"
 echo "3. The queue should start processing automatically"
 echo ""
 echo "If queue doesn't start, manually trigger it:"
-echo "  docker exec wp-alt-text-plugin-wordpress-1 wp cron event run ai_alt_gpt_process_queue --allow-root"
+echo "  docker exec wp-alt-text-plugin-wordpress-1 wp cron event run opptiai_alt_process_queue --allow-root"
 echo ""

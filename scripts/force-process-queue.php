@@ -15,7 +15,7 @@ foreach ($wp_load_paths as $path) {
     }
 }
 
-require_once AI_ALT_GPT_PLUGIN_DIR . 'includes/class-queue.php';
+require_once OPPTIAI_ALT_PLUGIN_DIR . 'includes/class-queue.php';
 // Get stats before
 $stats_before = AltText_AI_Queue::get_stats();
 echo "Before:\n";
@@ -25,7 +25,7 @@ echo "  Failed: " . $stats_before['failed'] . "\n\n";
 
 // Trigger the queue processing via action hook
 echo "Processing queue via action hook...\n";
-do_action('ai_alt_process_queue');
+do_action('opptiai_alt_process_queue');
 
 // Wait a moment for processing
 sleep(3);

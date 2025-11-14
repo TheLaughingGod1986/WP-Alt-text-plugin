@@ -38,7 +38,7 @@ Should return `0`.
 ## Step 5: Clear WordPress Cache
 
 ```bash
-docker exec wp-alt-text-plugin-wordpress-1 php /var/www/html/wp-content/plugins/ai-alt-gpt/scripts/clear-usage-cache.php
+docker exec wp-alt-text-plugin-wordpress-1 php /var/www/html/wp-content/plugins/opptiai-alt/scripts/clear-usage-cache.php
 ```
 
 ## Alternative: Use the Automated Script

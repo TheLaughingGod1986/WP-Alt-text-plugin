@@ -5,3 +5,4 @@ SELECT 'Usage this month (Dec 2025)', COUNT(*) FROM usage_logs WHERE "userId" = 
 UNION ALL
 SELECT 'Usage in Oct 2025', COUNT(*) FROM usage_logs WHERE "userId" = 2 AND "createdAt" >= '2025-10-01' AND "createdAt" < '2025-11-01';
 
+

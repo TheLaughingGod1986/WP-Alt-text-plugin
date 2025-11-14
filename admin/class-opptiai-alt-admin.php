@@ -7,11 +7,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once AI_ALT_GPT_PLUGIN_DIR . 'admin/class-ai-alt-gpt-core.php';
-require_once AI_ALT_GPT_PLUGIN_DIR . 'admin/class-ai-alt-gpt-rest-controller.php';
-require_once AI_ALT_GPT_PLUGIN_DIR . 'admin/class-ai-alt-gpt-admin-hooks.php';
+require_once OPPTIAI_ALT_PLUGIN_DIR . 'admin/class-opptiai-alt-core.php';
+require_once OPPTIAI_ALT_PLUGIN_DIR . 'admin/class-opptiai-alt-rest-controller.php';
+require_once OPPTIAI_ALT_PLUGIN_DIR . 'admin/class-opptiai-alt-admin-hooks.php';
 
-class Ai_Alt_Gpt_Admin {
+class Opptiai_Alt_Admin {
 
 	/**
 	 * The ID of this plugin.
@@ -30,14 +30,14 @@ class Ai_Alt_Gpt_Admin {
 	/**
 	 * Core implementation instance.
 	 *
-	 * @var AI_Alt_Text_Generator_GPT|null
+	 * @var Opptiai_Alt_Core|null
 	 */
 	private $core = null;
 
 	/**
 	 * Hook registrar.
 	 *
-	 * @var Ai_Alt_Gpt_Admin_Hooks|null
+	 * @var Opptiai_Alt_Admin_Hooks|null
 	 */
 	private $hooks = null;
 
@@ -63,15 +63,15 @@ class Ai_Alt_Gpt_Admin {
 			return;
 		}
 
-		$this->core  = new AI_Alt_Text_Generator_GPT();
-		$this->hooks = new Ai_Alt_Gpt_Admin_Hooks( $this->core );
+		$this->core  = new Opptiai_Alt_Core();
+		$this->hooks = new Opptiai_Alt_Admin_Hooks( $this->core );
 		$this->hooks->register();
 	}
 
 	/**
 	 * Expose the core instance for integration tests or custom extensions.
 	 *
-	 * @return AI_Alt_Text_Generator_GPT|null
+	 * @return Opptiai_Alt_Core|null
 	 */
 	public function get_core() {
 		return $this->core;

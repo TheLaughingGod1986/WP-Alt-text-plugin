@@ -15,8 +15,8 @@ foreach ($wp_load_paths as $path) {
     }
 }
 
-require_once AI_ALT_GPT_PLUGIN_DIR . 'includes/class-usage-tracker.php';
-require_once AI_ALT_GPT_PLUGIN_DIR . 'includes/class-api-client-v2.php';
+require_once OPPTIAI_ALT_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+require_once OPPTIAI_ALT_PLUGIN_DIR . 'includes/class-api-client-v2.php';
 
 echo "Debugging Usage Cache\n";
 echo str_repeat("=", 50) . "\n\n";
@@ -51,4 +51,5 @@ if (is_wp_error($api_usage)) {
 }
 
 echo "\n" . str_repeat("=", 50) . "\n";
+
 

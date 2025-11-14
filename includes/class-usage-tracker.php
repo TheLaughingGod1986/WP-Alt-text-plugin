@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) { exit; }
 
 class AltText_AI_Usage_Tracker {
     
-    const CACHE_KEY = 'alttextai_usage_cache';
+    const CACHE_KEY = 'opptiai_alt_usage_cache';
     const CACHE_EXPIRY = 300; // 5 minutes
     
     /**
@@ -49,13 +49,50 @@ class AltText_AI_Usage_Tracker {
      * Get cached usage data
      */
     public static function get_cached_usage($force_refresh = false) {
+        // PRIORITY 1: Check for active license first - license overrides personal account
+        require_once OPPTIAI_ALT_PLUGIN_DIR . 'includes/class-api-client-v2.php';
+        $api_client = new AltText_AI_API_Client_V2();
+
+        if ($api_client->has_active_license()) {
+            $license_data = $api_client->get_license_data();
+            if ($license_data && isset($license_data['organization'])) {
+                $org = $license_data['organization'];
+
+                // Parse reset date
+                $reset_ts = strtotime('first day of next month');
+                if (!empty($org['resetDate'])) {
+                    $parsed = strtotime($org['resetDate']);
+                    if ($parsed > 0) {
+                        $reset_ts = $parsed;
+                    }
+                }
+
+                $current_ts = current_time('timestamp');
+                $tokens_remaining = isset($org['tokensRemaining']) ? max(0, intval($org['tokensRemaining'])) : 10000;
+                $limit = 10000; // Agency plan default
+                $used = max(0, $limit - $tokens_remaining);
+
+                // Return organization quota instead of personal account
+                return [
+                    'used' => $used,
+                    'limit' => $limit,
+                    'remaining' => $tokens_remaining,
+                    'plan' => 'agency',
+                    'resetDate' => date('Y-m-01', $reset_ts),
+                    'reset_timestamp' => $reset_ts,
+                    'seconds_until_reset' => max(0, $reset_ts - $current_ts),
+                ];
+            }
+        }
+
+        // PRIORITY 2: If no license, fall back to personal account data
         // If force refresh, clear cache first
         if ($force_refresh) {
             delete_transient(self::CACHE_KEY);
         }
-        
+
         $cached = get_transient(self::CACHE_KEY);
-        
+
         if ($cached === false) {
             // Default values if no cache exists
             $reset_ts = strtotime('first day of next month');
@@ -69,7 +106,7 @@ class AltText_AI_Usage_Tracker {
                 'seconds_until_reset' => max(0, $reset_ts - current_time('timestamp')),
             ];
         }
-        
+
         return $cached;
     }
     
@@ -108,44 +145,50 @@ class AltText_AI_Usage_Tracker {
         $used = max(0, intval($usage['used']));
         if ($used > $limit) { $used = $limit; }
         $remaining = max(0, $limit - $used);
+        $percentage_exact = $limit > 0 ? ($used / $limit) * 100 : 0;
+        $percentage_exact = min(100, max(0, $percentage_exact));
         
         // Calculate days until reset
         $reset_timestamp = isset($usage['reset_timestamp']) ? intval($usage['reset_timestamp']) : 0;
+        $current_timestamp = current_time('timestamp');
+        
         if ($reset_timestamp <= 0 && !empty($usage['resetDate'])) {
             // Try parsing the reset date - handle both Y-m-d and other formats
             $reset_date_str = $usage['resetDate'];
-            $reset_timestamp = strtotime($reset_date_str);
+            $parsed_timestamp = strtotime($reset_date_str);
             
-            // If still invalid, try to parse as first of next month
-            if ($reset_timestamp <= 0) {
-                $reset_timestamp = strtotime('first day of next month', current_time('timestamp'));
+            // Validate the parsed timestamp - it should be in the future and not more than 2 months away
+            $max_future = strtotime('+2 months', $current_timestamp);
+            if ($parsed_timestamp > 0 && $parsed_timestamp > $current_timestamp && $parsed_timestamp <= $max_future) {
+                $reset_timestamp = $parsed_timestamp;
+            } else {
+                // Invalid date, use first of next month
+                $reset_timestamp = strtotime('first day of next month', $current_timestamp);
             }
         }
         
-        // Fallback to next month if no reset date is set
-        if ($reset_timestamp <= 0) {
-            $reset_timestamp = strtotime('first day of next month', current_time('timestamp'));
+        // Fallback to next month if no reset date is set or invalid
+        if ($reset_timestamp <= 0 || $reset_timestamp <= $current_timestamp) {
+            $reset_timestamp = strtotime('first day of next month', $current_timestamp);
         }
         
-        $current_timestamp = current_time('timestamp');
-        $seconds_until_reset = $reset_timestamp > 0 ? max(0, $reset_timestamp - $current_timestamp) : 0;
+        // Ensure reset is at midnight (start of day)
+        $reset_timestamp = strtotime('midnight', $reset_timestamp);
+        
+        $seconds_until_reset = max(0, $reset_timestamp - $current_timestamp);
         $days_until_reset = (int) floor($seconds_until_reset / DAY_IN_SECONDS);
-        
-        // Ensure we have valid seconds (at least until end of current day if date parsing failed)
-        if ($seconds_until_reset <= 0) {
-            $end_of_day = strtotime('tomorrow', $current_timestamp) - 1;
-            $seconds_until_reset = max(0, $end_of_day - $current_timestamp);
-            $days_until_reset = (int) floor($seconds_until_reset / DAY_IN_SECONDS);
-        }
 
         return [
             'used' => $used,
             'limit' => $limit,
             'remaining' => $remaining,
-            'percentage' => min(100, round(($used / max($limit, 1)) * 100)),
+            'percentage' => $percentage_exact,
+            'percentage_exact' => $percentage_exact,
+            'percentage_display' => self::format_percentage_label($percentage_exact),
             'plan' => $usage['plan'],
             'plan_label' => ucfirst($usage['plan']),
             'reset_date' => $reset_timestamp ? date('F j, Y', $reset_timestamp) : date('F j, Y', strtotime($usage['resetDate'])),
+            'reset_timestamp' => $reset_timestamp,
             'days_until_reset' => $days_until_reset,
             'seconds_until_reset' => $seconds_until_reset,
             'is_free' => $usage['plan'] === 'free',
@@ -158,30 +201,30 @@ class AltText_AI_Usage_Tracker {
      */
     public static function get_upgrade_url() {
         $default = 'https://alttextai.com/pricing';
-        $stored  = get_option('alttextai_upgrade_url', $default);
-        return apply_filters('alttextai_upgrade_url', $stored ?: $default);
+        $stored  = get_option('opptiai_alt_upgrade_url', $default);
+        return apply_filters('opptiai_alt_upgrade_url', $stored ?: $default);
     }
 
     /**
      * Get billing portal URL (Stripe customer portal, etc.)
      */
     public static function get_billing_portal_url() {
-        $stored = get_option('alttextai_billing_portal_url', '');
-        return apply_filters('alttextai_billing_portal_url', $stored);
+        $stored = get_option('opptiai_alt_billing_portal_url', '');
+        return apply_filters('opptiai_alt_billing_portal_url', $stored);
     }
     
     /**
      * Dismiss upgrade notice for current session
      */
     public static function dismiss_upgrade_notice() {
-        set_transient('alttextai_upgrade_dismissed', true, HOUR_IN_SECONDS);
+        set_transient('opptiai_alt_upgrade_dismissed', true, HOUR_IN_SECONDS);
     }
     
     /**
      * Check if upgrade notice is dismissed
      */
     public static function is_upgrade_dismissed() {
-        return get_transient('alttextai_upgrade_dismissed') === true;
+        return get_transient('opptiai_alt_upgrade_dismissed') === true;
     }
     
     /**
@@ -207,5 +250,38 @@ class AltText_AI_Usage_Tracker {
         }
         
         return false;
+    }
+
+    /**
+     * Format percentage label with dynamic precision for small numbers.
+     */
+    public static function format_percentage_label($percentage_value) {
+        $value = floatval($percentage_value);
+
+        if ($value <= 0) {
+            return '0';
+        }
+
+        if ($value >= 100) {
+            return '100';
+        }
+
+        if ($value < 0.01) {
+            return '<0.01';
+        }
+
+        if ($value < 0.1) {
+            return number_format_i18n($value, 2);
+        }
+
+        if ($value < 1) {
+            return number_format_i18n($value, 1);
+        }
+
+        if ($value < 10) {
+            return number_format_i18n($value, 1);
+        }
+
+        return number_format_i18n($value, 0);
     }
 }

@@ -7,15 +7,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once AI_ALT_GPT_PLUGIN_DIR . 'admin/class-ai-alt-gpt-core.php';
+require_once OPPTIAI_ALT_PLUGIN_DIR . 'admin/class-opptiai-alt-core.php';
 
-class Ai_Alt_Gpt_Deactivator {
+class Opptiai_Alt_Deactivator {
 
 	/**
 	 * Deactivate the plugin.
 	 */
 	public static function deactivate() {
-		$core = new AI_Alt_Text_Generator_GPT();
+		$core = new Opptiai_Alt_Core();
 		$core->deactivate();
 	}
 }

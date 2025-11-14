@@ -501,14 +501,17 @@
 .alttextai-settings-toggle {
     position: relative;
     display: inline-block;
-    width: 48px;
-    height: 24px;
+    width: 52px;
+    height: 28px;
+    cursor: pointer;
+    flex-shrink: 0;
 }
 
 .alttextai-settings-toggle input {
     opacity: 0;
     width: 0;
     height: 0;
+    position: absolute;
 }
 
 .alttextai-settings-toggle-slider {
@@ -518,30 +521,52 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: var(--alttextai-gray-300);
-    transition: 0.3s;
-    border-radius: 24px;
+    background-color: #d1d5db;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 28px;
+    border: 2px solid transparent;
 }
 
 .alttextai-settings-toggle-slider:before {
     position: absolute;
     content: "";
-    height: 18px;
-    width: 18px;
-    left: 3px;
-    bottom: 3px;
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
     background-color: white;
-    transition: 0.3s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border-radius: 50%;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.alttextai-settings-toggle:hover .alttextai-settings-toggle-slider {
+    background-color: #9ca3af;
 }
 
 .alttextai-settings-toggle input:checked + .alttextai-settings-toggle-slider {
-    background: var(--alttextai-gradient-primary);
+    background: linear-gradient(135deg, #14b8a6 0%, #10b981 100%);
+    border-color: rgba(20, 184, 166, 0.2);
+}
+
+.alttextai-settings-toggle:hover input:checked + .alttextai-settings-toggle-slider {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.1);
 }
 
 .alttextai-settings-toggle input:checked + .alttextai-settings-toggle-slider:before {
     transform: translateX(24px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.alttextai-settings-toggle input:focus-visible + .alttextai-settings-toggle-slider {
+    outline: 2px solid #14b8a6;
+    outline-offset: 2px;
+}
+
+.alttextai-settings-toggle input:disabled + .alttextai-settings-toggle-slider {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .alttextai-settings-toggle-label {

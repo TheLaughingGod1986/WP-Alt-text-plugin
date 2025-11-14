@@ -27,7 +27,7 @@ print_error() {
 }
 
 # Check if we're in the right directory
-if [ ! -f "ai-alt-gpt.php" ]; then
+if [ ! -f "opptiai-alt.php" ]; then
     print_error "Not in WordPress plugin directory. Please run from plugin root folder"
     exit 1
 fi
@@ -183,7 +183,7 @@ cp .env.backup .env
 ### WordPress Plugin Rollback
 \`\`\`bash
 # Restore original plugin
-cp ai-alt-gpt-v1-backup.php ai-alt-gpt.php
+cp opptiai-alt-v1-backup.php opptiai-alt.php
 \`\`\`
 
 ## 📈 Expected Results

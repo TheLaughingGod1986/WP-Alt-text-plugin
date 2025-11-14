@@ -7,7 +7,7 @@
 $wp_load_paths = [
     __DIR__ . '/../../../../wp-load.php',
     '/var/www/html/wp-load.php',
-    '/var/www/html/wp-content/plugins/ai-alt-gpt/../../../../wp-load.php',
+    '/var/www/html/wp-content/plugins/opptiai-alt/../../../../wp-load.php',
 ];
 
 foreach ($wp_load_paths as $path) {
@@ -153,7 +153,7 @@ echo "   ✓ Cache cleared\n\n";
 
 // Method 3: Refresh from API to get updated count
 echo "3. Refreshing usage from API...\n";
-require_once AI_ALT_GPT_PLUGIN_DIR . 'includes/class-api-client-v2.php';
+require_once OPPTIAI_ALT_PLUGIN_DIR . 'includes/class-api-client-v2.php';
 $api_client = new AltText_AI_API_Client_V2();
 
 if ($api_client->is_authenticated()) {

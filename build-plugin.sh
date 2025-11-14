@@ -8,13 +8,13 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
 
-PLUGIN_SLUG="ai-alt-text-generator"
+PLUGIN_SLUG="opptiai-alt-text-generator"
 BUILD_DIR="${ROOT_DIR}/build"
 DIST_DIR="${ROOT_DIR}/dist"
 PLUGIN_DIR="${BUILD_DIR}/${PLUGIN_SLUG}"
 
 # Read version from the plugin header; fall back to timestamp
-VERSION="$(grep -m1 "Version:" ai-alt-gpt.php | sed -E 's/.*Version:[[:space:]]*([0-9.]+).*/\1/' | tr -d '\r')"
+VERSION="$(grep -m1 "Version:" opptiai-alt.php | sed -E 's/.*Version:[[:space:]]*([0-9.]+).*/\1/' | tr -d '\r')"
 if [[ -z "${VERSION}" ]]; then
   VERSION="latest-$(date +%Y%m%d%H%M)"
 fi
@@ -49,7 +49,7 @@ fi
 
 echo "📋 Copying core files"
 rsync -a \
-  ai-alt-gpt.php LICENSE readme.txt \
+  opptiai-alt.php LICENSE readme.txt \
   "$PLUGIN_DIR/"
 
 # Copy assets - we'll filter out unminified files after

@@ -1,5 +1,6 @@
 /**
  * Authentication Modal Styles
+ * Refactored to match OpttiAI dashboard design
  */
 
 .alttext-auth-modal {
@@ -8,38 +9,51 @@
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: var(--alttextai-z-modal);
-    font-family: var(--alttextai-font-family);
+    z-index: 999999;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
+/* Modal Overlay with fade animation */
 .alttext-auth-modal__overlay {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: var(--alttextai-modal-backdrop);
+    background: rgba(0, 0, 0, 0.32);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: var(--alttextai-space-5);
+    padding: 20px;
+    animation: auth-fade-in 0.2s ease-out;
 }
 
+@keyframes auth-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+}
+}
+
+/* Modal Content Box */
 .alttext-auth-modal__content {
-    background: var(--alttextai-white);
-    border-radius: var(--alttextai-radius-xl);
-    box-shadow: var(--alttextai-shadow-modal);
-    max-width: 400px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    max-width: 560px;
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
-    animation: alttext-modal-slide-in 0.3s ease-out;
+    position: relative;
+    animation: auth-scale-in 0.2s ease-out;
 }
 
-@keyframes alttext-modal-slide-in {
+@keyframes auth-scale-in {
     from {
         opacity: 0;
-        transform: scale(0.9) translateY(-20px);
+        transform: scale(0.95) translateY(-10px);
     }
     to {
         opacity: 1;
@@ -47,149 +61,174 @@
     }
 }
 
-.alttext-auth-modal__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--alttextai-space-6) var(--alttextai-space-6) 0;
-    border-bottom: 1px solid var(--alttextai-border-color);
-    margin-bottom: var(--alttextai-space-6);
-}
-
-.alttext-auth-modal__title {
-    font-size: var(--alttextai-text-2xl);
-    font-weight: var(--alttextai-font-bold);
-    color: var(--alttextai-text-primary);
-    margin: 0;
-}
-
+/* Close Button - Top Right */
 .alttext-auth-modal__close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
     background: none;
     border: none;
-    font-size: var(--alttextai-text-2xl);
-    color: var(--alttextai-text-muted);
+    font-size: 28px;
+    line-height: 1;
+    color: #9ca3af;
     cursor: pointer;
-    padding: var(--alttextai-space-1);
-    border-radius: var(--alttextai-radius-sm);
-    transition: var(--alttextai-transition-colors);
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+    z-index: 10;
 }
 
 .alttext-auth-modal__close:hover {
-    background: var(--alttextai-bg-secondary);
+    background: #f3f4f6;
+    color: #6b7280;
 }
 
+/* Header Section - Centered, No Icon */
+.alttext-auth-modal__header {
+    text-align: center;
+    padding: 40px 48px 24px;
+}
+
+.alttext-auth-modal__title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 8px;
+    line-height: 1.2;
+}
+
+.alttext-auth-modal__subtitle {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Body Section */
 .alttext-auth-modal__body {
-    padding: 0 var(--alttextai-space-6) var(--alttextai-space-6);
+    padding: 0 48px 32px;
 }
 
-.alttext-auth-form h3 {
-    font-size: var(--alttextai-text-xl);
-    font-weight: var(--alttextai-font-semibold);
-    color: var(--alttextai-text-primary);
-    margin: 0 0 var(--alttextai-space-5);
+/* Form Styling */
+.alttext-auth-form {
+    /* No heading needed - title is in header */
 }
 
 .alttext-form-group {
-    margin-bottom: var(--alttextai-space-5);
+    margin-bottom: 20px;
 }
 
 .alttext-form-group label {
     display: block;
-    font-weight: var(--alttextai-font-medium);
-    color: var(--alttextai-text-primary);
-    margin-bottom: var(--alttextai-space-2);
+    font-weight: 600;
+    font-size: 14px;
+    color: #374151;
+    margin-bottom: 8px;
+}
+
+.alttext-form-group__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
 }
 
 .alttext-form-group input {
     width: 100%;
-    padding: var(--alttextai-input-padding-y) var(--alttextai-input-padding-x);
-    border: 1px solid var(--alttextai-input-border);
-    border-radius: var(--alttextai-input-border-radius);
-    font-size: var(--alttextai-text-base);
-    transition: var(--alttextai-transition-colors);
+    padding: 12px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 15px;
+    color: #111827;
+    transition: all 0.15s ease;
     box-sizing: border-box;
+}
+
+.alttext-form-group input::placeholder {
+    color: #9ca3af;
 }
 
 .alttext-form-group input:focus {
     outline: none;
-    border-color: var(--alttextai-primary);
-    box-shadow: var(--alttextai-input-focus-ring);
+    border-color: #3A74FF;
+    box-shadow: 0 0 0 3px rgba(58, 116, 255, 0.25);
+}
+
+.alttext-form-group input[readonly] {
+    background-color: #f9fafb;
+    cursor: not-allowed;
 }
 
 .alttext-form-group small {
     display: block;
-    color: var(--alttextai-text-muted);
-    font-size: var(--alttextai-text-xs);
-    margin-top: var(--alttextai-space-1);
+    color: #6b7280;
+    font-size: 13px;
+    margin-top: 6px;
 }
 
+/* Forgot Password Link */
 .alttext-forgot-password-link {
-    display: inline-block;
-    margin-top: var(--alttextai-space-2);
-    color: var(--alttextai-primary);
-    font-size: var(--alttextai-text-sm);
+    color: #3A74FF;
+    font-size: 13px;
     text-decoration: none;
-    font-weight: var(--alttextai-font-medium);
+    font-weight: 500;
+    transition: opacity 0.15s ease;
 }
 
 .alttext-forgot-password-link:hover {
-    text-decoration: underline;
+    opacity: 0.7;
 }
 
 .alttext-forgot-password-info,
 .alttext-reset-password-info {
-    color: var(--alttextai-text-muted);
-    font-size: var(--alttextai-text-sm);
-    margin-bottom: var(--alttextai-space-5);
+    color: #6b7280;
+    font-size: 14px;
+    margin-bottom: 24px;
     line-height: 1.5;
-}
-
-.alttext-form-group input[readonly] {
-    background-color: var(--alttextai-bg-secondary);
-    cursor: not-allowed;
 }
 
 /* Password Strength Indicator */
 .alttext-password-strength {
-    margin-top: var(--alttextai-space-2);
+    margin-top: 8px;
 }
 
 .alttext-password-strength-bar {
     width: 100%;
     height: 4px;
-    background: var(--alttextai-gray-200);
-    border-radius: var(--alttextai-radius-full);
+    background: #e5e7eb;
+    border-radius: 4px;
     overflow: hidden;
-    margin-bottom: var(--alttextai-space-1);
+    margin-bottom: 6px;
 }
 
 .alttext-password-strength-fill {
     height: 100%;
     width: 0%;
     transition: width 0.3s ease, background-color 0.3s ease;
-    border-radius: var(--alttextai-radius-full);
+    border-radius: 4px;
 }
 
 .alttext-password-strength-label {
-    font-size: var(--alttextai-text-xs);
-    font-weight: var(--alttextai-font-medium);
+    font-size: 12px;
+    font-weight: 600;
     display: inline-block;
 }
 
+/* Primary Button - Blue */
 .alttext-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: var(--alttextai-button-padding-y) var(--alttextai-button-padding-x);
+    padding: 14px 24px;
     border: none;
-    border-radius: var(--alttextai-button-border-radius);
-    font-size: var(--alttextai-text-base);
-    font-weight: var(--alttextai-button-font-weight);
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
     cursor: pointer;
-    transition: var(--alttextai-transition);
+    transition: all 0.15s ease;
     text-decoration: none;
     width: 100%;
-    margin-bottom: var(--alttextai-space-4);
+    margin-bottom: 16px;
 }
 
 .alttext-btn:disabled {
@@ -198,41 +237,49 @@
 }
 
 .alttext-btn--primary {
-    background: var(--alttextai-gradient-primary);
-    color: var(--alttextai-white);
+    background: #3A74FF;
+    color: #ffffff;
 }
 
 .alttext-btn--primary:hover:not(:disabled) {
+    background: #2F5ED6;
     transform: translateY(-1px);
-    box-shadow: var(--alttextai-shadow-button);
+    box-shadow: 0 4px 12px rgba(58, 116, 255, 0.3);
+}
+
+.alttext-btn--primary:active:not(:disabled) {
+    transform: translateY(0);
 }
 
 .alttext-btn__spinner {
     margin-left: 8px;
 }
 
+/* Auth Switch Text */
 .alttext-auth-switch {
     text-align: center;
-    color: var(--alttextai-text-muted);
-    font-size: var(--alttextai-text-sm);
+    color: #6b7280;
+    font-size: 14px;
     margin: 0;
 }
 
 .alttext-auth-switch a {
-    color: var(--alttextai-primary);
+    color: #3A74FF;
     text-decoration: none;
-    font-weight: var(--alttextai-font-medium);
+    font-weight: 600;
+    transition: opacity 0.15s ease;
 }
 
 .alttext-auth-switch a:hover {
-    text-decoration: underline;
+    opacity: 0.7;
 }
 
+/* Alert Messages */
 .alttext-alert {
-    padding: var(--alttextai-space-3) var(--alttextai-space-4);
-    border-radius: var(--alttextai-radius-lg);
-    margin-bottom: var(--alttextai-space-5);
-    font-size: var(--alttextai-text-sm);
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 14px;
     animation: alttext-alert-slide-in 0.3s ease-out;
 }
 
@@ -248,30 +295,60 @@
 }
 
 .alttext-alert--error {
-    background: var(--alttextai-danger-bg);
-    color: var(--alttextai-danger);
-    border: 1px solid var(--alttextai-danger-light);
+    background: #fee2e2;
+    color: #991b1b;
+    border-left: 4px solid #dc2626;
 }
 
 .alttext-alert--success {
-    background: var(--alttextai-success-bg);
-    color: var(--alttextai-success);
-    border: 1px solid var(--alttextai-success-light);
+    background: #d1fae5;
+    color: #065f46;
+    border-left: 4px solid #10b981;
 }
 
-/* Responsive */
-@media (max-width: 480px) {
-    .alttext-auth-modal__overlay {
-        padding: 10px;
-    }
-    
+/* Footer Upsell Strip */
+.alttext-auth-modal__footer {
+    padding: 20px 48px 32px;
+    text-align: center;
+    border-top: 1px solid #e5e7eb;
+}
+
+.alttext-auth-modal__upsell {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
     .alttext-auth-modal__content {
-        max-height: 95vh;
+        max-width: 100%;
+        margin: 0 10px;
     }
     
-    .alttext-auth-modal__header,
+    .alttext-auth-modal__header {
+        padding: 32px 24px 20px;
+    }
+
     .alttext-auth-modal__body {
-        padding-left: 16px;
-        padding-right: 16px;
+        padding: 0 24px 24px;
+    }
+
+    .alttext-auth-modal__footer {
+        padding: 16px 24px 24px;
+    }
+
+    .alttext-auth-modal__title {
+        font-size: 22px;
+    }
+
+    .alttext-auth-modal__subtitle {
+        font-size: 13px;
+    }
+
+    .alttext-btn {
+        padding: 12px 20px;
+        font-size: 15px;
     }
 }

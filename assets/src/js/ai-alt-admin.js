@@ -6,12 +6,52 @@
 (function($) {
     'use strict';
 
-    // Ensure AI_ALT_GPT_DASH exists (from dashboard) or use AI_ALT_GPT
-    var config = window.AI_ALT_GPT_DASH || window.AI_ALT_GPT || {};
+    // Ensure OPPTIAI_ALT_DASH exists (from dashboard) or use OPPTIAI_ALT
+    var config = window.OPPTIAI_ALT_DASH || window.OPPTIAI_ALT || {};
     
-    if (!config.rest || !config.nonce) {
-        console.error('[AI Alt Text] JavaScript configuration missing. REST URL or nonce not found.');
-        return;
+    // Check if we have the necessary configuration for bulk operations
+    var hasBulkConfig = config.rest && config.nonce;
+    
+    if (!hasBulkConfig) {
+        console.warn('[AI Alt Text] REST configuration missing. Bulk operations disabled, but single regenerate will still work.');
+    }
+
+    function canManageAccount() {
+        return !!(window.OPPTIAI_ALT && window.OPPTIAI_ALT.canManage);
+    }
+
+    function handleLimitReached(errorData) {
+        var message = (errorData && errorData.message) || 'Monthly limit reached. Please contact a site administrator.';
+        if (!canManageAccount()) {
+            showNotification(message, 'warning');
+            return;
+        }
+
+        var usage = errorData && errorData.usage ? errorData.usage : null;
+
+        // Try multiple methods to show the upgrade modal
+        if (typeof alttextaiShowModal === 'function') {
+            alttextaiShowModal();
+        } else if (typeof window.alttextaiShowModal === 'function') {
+            window.alttextaiShowModal();
+        } else if (typeof showUpgradeModal === 'function') {
+            showUpgradeModal(usage);
+        } else if (typeof window.alttextai_show_upgrade_modal === 'function') {
+            window.alttextai_show_upgrade_modal(usage);
+        } else {
+            // Fallback: trigger event or click upgrade button
+            var upgradeBtn = document.querySelector('[data-action="show-upgrade-modal"]');
+            if (upgradeBtn) {
+                upgradeBtn.click();
+            } else {
+                $(document).trigger('alttextai:show-upgrade-modal', [usage]);
+            }
+        }
+
+        // Show notification
+        if (typeof showNotification === 'function') {
+            showNotification(message, 'error');
+        }
     }
 
     /**
@@ -25,13 +65,44 @@
         if ($btn.prop('disabled')) {
             return false;
         }
+        
+        // Check if we have necessary configuration
+        if (!hasBulkConfig) {
+            alert('Configuration error. Please refresh the page and try again.');
+            return false;
+        }
+
+        // Check if user is out of credits BEFORE starting
+        var usageStats = (window.OPPTIAI_ALT_DASH && window.OPPTIAI_ALT_DASH.initialUsage) ||
+                         (window.OPPTIAI_ALT_DASH && window.OPPTIAI_ALT_DASH.usage) ||
+                         (window.OPPTIAI_ALT && window.OPPTIAI_ALT.usage) || null;
+
+        // Check if remaining is 0 or less, or if used >= limit
+        var remaining = usageStats && (usageStats.remaining !== undefined) ? parseInt(usageStats.remaining, 10) : null;
+        var used = usageStats && (usageStats.used !== undefined) ? parseInt(usageStats.used, 10) : null;
+        var limit = usageStats && (usageStats.limit !== undefined) ? parseInt(usageStats.limit, 10) : null;
+        var plan = usageStats && usageStats.plan ? usageStats.plan.toLowerCase() : 'free';
+
+        // Check if user has quota OR is on premium plan (pro/agency)
+        var isPremium = plan === 'pro' || plan === 'agency';
+        var hasQuota = remaining > 0;
+
+        if (usageStats && !isPremium && !hasQuota) {
+            // User is out of credits and not on premium plan - show upgrade modal
+            handleLimitReached({
+                message: 'Monthly limit reached. Upgrade to continue generating alt text.',
+                code: 'limit_reached',
+                usage: usageStats
+            });
+            return false;
+        }
 
         $btn.prop('disabled', true);
         $btn.text('Loading...');
 
         // Get list of images missing alt text
         $.ajax({
-            url: config.restMissing || (config.restRoot + 'ai-alt/v1/list?scope=missing'),
+            url: config.restMissing || (config.restRoot + 'opptiai/v1/list?scope=missing'),
             method: 'GET',
             headers: {
                 'X-WP-Nonce': config.nonce
@@ -55,35 +126,46 @@
             showBulkProgress('Preparing bulk run...', count, 0);
 
             // Queue all images
-            queueImages(ids, 'bulk', function(success, queued, error) {
+            queueImages(ids, 'bulk', function(success, queued, error, processedIds) {
                 $btn.prop('disabled', false);
                 $btn.text(originalText);
-                
+
                 if (success && queued > 0) {
-                    hideBulkProgress();
-                    alert('Successfully queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' for alt text generation. Processing will start shortly.');
-                    
-                    // Refresh page after a delay to show updated stats
-                    setTimeout(function() {
-                        window.location.reload();
-                    }, 2000);
+                    // Update modal to show success and keep it open
+                    updateBulkProgressTitle('Successfully Queued!');
+                    logBulkProgressSuccess('Successfully queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' for processing');
+                    startInlineGeneration(processedIds || ids, 'bulk');
+
+                    // Don't hide modal - let user close it manually or monitor progress
                 } else if (success && queued === 0) {
-                    hideBulkProgress();
-                    alert('All images are already in queue or processing. Please check the queue status.');
-                    // Refresh to show current queue state
-                    setTimeout(function() {
-                        window.location.reload();
-                    }, 1000);
+                    updateBulkProgressTitle('Already Queued');
+                    logBulkProgressSuccess('All images are already in queue or processing');
+                    startInlineGeneration(processedIds || ids, 'bulk');
+
+                    // Don't hide modal - let user close it manually
                 } else {
-                    hideBulkProgress();
-                    
+                    // Check for limit_reached FIRST - show upgrade modal immediately
+                    if (error && error.code === 'limit_reached') {
+                        hideBulkProgress();
+                        handleLimitReached(error);
+                        return; // Exit early - don't show bulk progress modal
+                    }
+
+                    // Show error in modal log
+                    if (error && error.message) {
+                        logBulkProgressError(error.message);
+                    } else {
+                        logBulkProgressError('Failed to queue images. Please try again.');
+                    }
+
                     // Error logging (keep minimal for production)
                     if (error && error.code) {
                         console.error('[AI Alt Text] Error:', error.code, error.message || 'Unknown error');
                     }
-                    
+
                     // Check for insufficient credits FIRST, before any other error handling
                     if (error && error.code === 'insufficient_credits' && error.remaining !== null && error.remaining > 0) {
+                        hideBulkProgress();
                         var remainingCount = error.remaining;
                         var totalRequested = count;
                         var errorMsg = error.message || 'You only have ' + remainingCount + ' generations remaining.';
@@ -103,23 +185,20 @@
                             $btn.text('Loading...');
                             showBulkProgress('Queueing ' + remainingCount + ' image' + (remainingCount !== 1 ? 's' : '') + '...', remainingCount, 0);
                             
-                            queueImages(limitedIds, 'bulk', function(success, queued, queueError) {
+                            queueImages(limitedIds, 'bulk', function(success, queued, queueError, processedLimited) {
                                 $btn.prop('disabled', false);
                                 $btn.text(originalText);
                                 
                                 if (success && queued > 0) {
-                                    hideBulkProgress();
-                                    alert('Successfully queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' for alt text generation. Processing will start shortly.');
-                                    setTimeout(function() {
-                                        window.location.reload();
-                                    }, 2000);
+                                    updateBulkProgressTitle('Successfully Queued!');
+                                    logBulkProgressSuccess('Queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' using remaining credits');
+                                    startInlineGeneration(processedLimited || limitedIds, 'bulk');
                                 } else {
-                                    hideBulkProgress();
                                     var errorMsg = 'Failed to queue images.';
                                     if (queueError && queueError.message) {
                                         errorMsg = queueError.message;
                                     }
-                                    alert(errorMsg);
+                                    logBulkProgressError(errorMsg);
                                 }
                             });
                             return; // Exit early
@@ -160,13 +239,14 @@
                             errorMsg += ' No images were found to queue.';
                         }
                     }
-                    
+
                     if (error && error.message) {
                         console.error('[AI Alt Text] Error details:', error);
                     } else {
                         console.error('[AI Alt Text] Queue failed for generate missing - no error details');
                     }
-                    alert(errorMsg);
+
+                    // Keep modal open to show error - user can close manually
                 }
             });
         })
@@ -174,8 +254,9 @@
             console.error('[AI Alt Text] Failed to get missing images:', error, xhr);
             $btn.prop('disabled', false);
             $btn.text(originalText);
-            alert('Failed to load images. Please try again.');
-            hideBulkProgress();
+
+            logBulkProgressError('Failed to load images. Please try again.');
+            // Keep modal open to show error - user can close manually
         });
     }
 
@@ -195,13 +276,44 @@
         if ($btn.prop('disabled')) {
             return false;
         }
+        
+        // Check if we have necessary configuration
+        if (!hasBulkConfig) {
+            alert('Configuration error. Please refresh the page and try again.');
+            return false;
+        }
+
+        // Check if user is out of credits BEFORE starting
+        var usageStats = (window.OPPTIAI_ALT_DASH && window.OPPTIAI_ALT_DASH.initialUsage) ||
+                         (window.OPPTIAI_ALT_DASH && window.OPPTIAI_ALT_DASH.usage) ||
+                         (window.OPPTIAI_ALT && window.OPPTIAI_ALT.usage) || null;
+
+        // Check if remaining is 0 or less, or if used >= limit
+        var remaining = usageStats && (usageStats.remaining !== undefined) ? parseInt(usageStats.remaining, 10) : null;
+        var used = usageStats && (usageStats.used !== undefined) ? parseInt(usageStats.used, 10) : null;
+        var limit = usageStats && (usageStats.limit !== undefined) ? parseInt(usageStats.limit, 10) : null;
+        var plan = usageStats && usageStats.plan ? usageStats.plan.toLowerCase() : 'free';
+
+        // Check if user has quota OR is on premium plan (pro/agency)
+        var isPremium = plan === 'pro' || plan === 'agency';
+        var hasQuota = remaining > 0;
+
+        if (usageStats && !isPremium && !hasQuota) {
+            // User is out of credits and not on premium plan - show upgrade modal
+            handleLimitReached({
+                message: 'Monthly limit reached. Upgrade to continue regenerating alt text.',
+                code: 'limit_reached',
+                usage: usageStats
+            });
+            return false;
+        }
 
         $btn.prop('disabled', true);
         $btn.text('Loading...');
 
         // Get list of all images
         $.ajax({
-            url: config.restAll || (config.restRoot + 'ai-alt/v1/list?scope=all'),
+            url: config.restAll || (config.restRoot + 'opptiai/v1/list?scope=all'),
             method: 'GET',
             headers: {
                 'X-WP-Nonce': config.nonce
@@ -225,35 +337,46 @@
             showBulkProgress('Preparing bulk regeneration...', count, 0);
 
             // Queue all images
-            queueImages(ids, 'bulk-regenerate', function(success, queued, error) {
+            queueImages(ids, 'bulk-regenerate', function(success, queued, error, processedIds) {
                 $btn.prop('disabled', false);
                 $btn.text(originalText);
-                
+
                 if (success && queued > 0) {
-                    hideBulkProgress();
-                    alert('Successfully queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' for alt text regeneration. Processing will start shortly.');
-                    
-                    // Refresh page after a delay to show updated stats
-                    setTimeout(function() {
-                        window.location.reload();
-                    }, 2000);
+                    // Update modal to show success and keep it open
+                    updateBulkProgressTitle('Successfully Queued!');
+                    logBulkProgressSuccess('Successfully queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' for regeneration');
+                    startInlineGeneration(processedIds || ids, 'bulk-regenerate');
+
+                    // Don't hide modal - let user close it manually or monitor progress
                 } else if (success && queued === 0) {
-                    hideBulkProgress();
-                    alert('All images are already in queue or processing. Please check the queue status.');
-                    // Refresh to show current queue state
-                    setTimeout(function() {
-                        window.location.reload();
-                    }, 1000);
+                    updateBulkProgressTitle('Already Queued');
+                    logBulkProgressSuccess('All images are already in queue or processing');
+                    startInlineGeneration(processedIds || ids, 'bulk-regenerate');
+
+                    // Don't hide modal - let user close it manually
                 } else {
-                    hideBulkProgress();
-                    
+                    // Check for limit_reached FIRST - show upgrade modal immediately
+                    if (error && error.code === 'limit_reached') {
+                        hideBulkProgress();
+                        handleLimitReached(error);
+                        return; // Exit early - don't show bulk progress modal
+                    }
+
+                    // Show error in modal log
+                    if (error && error.message) {
+                        logBulkProgressError(error.message);
+                    } else {
+                        logBulkProgressError('Failed to queue images. Please try again.');
+                    }
+
                     // Error logging (keep minimal for production)
                     if (error && error.code) {
                         console.error('[AI Alt Text] Error:', error.code, error.message || 'Unknown error');
                     }
-                    
+
                     // Check for insufficient credits FIRST, before any other error handling
                     if (error && error.code === 'insufficient_credits' && error.remaining !== null && error.remaining > 0) {
+                        hideBulkProgress();
                         var remainingCount = error.remaining;
                         var totalRequested = count;
                         var errorMsg = error.message || 'You only have ' + remainingCount + ' generations remaining.';
@@ -273,23 +396,20 @@
                             $btn.text('Loading...');
                             showBulkProgress('Queueing ' + remainingCount + ' image' + (remainingCount !== 1 ? 's' : '') + ' for regeneration...', remainingCount, 0);
                             
-                            queueImages(limitedIds, 'bulk-regenerate', function(success, queued, queueError) {
+                            queueImages(limitedIds, 'bulk-regenerate', function(success, queued, queueError, processedLimited) {
                                 $btn.prop('disabled', false);
                                 $btn.text(originalText);
                                 
                                 if (success && queued > 0) {
-                                    hideBulkProgress();
-                                    alert('Successfully queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' for alt text regeneration. Processing will start shortly.');
-                                    setTimeout(function() {
-                                        window.location.reload();
-                                    }, 2000);
+                                    updateBulkProgressTitle('Successfully Queued!');
+                                    logBulkProgressSuccess('Queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' using remaining credits');
+                                    startInlineGeneration(processedLimited || limitedIds, 'bulk-regenerate');
                                 } else {
-                                    hideBulkProgress();
                                     var errorMsg = 'Failed to queue images.';
                                     if (queueError && queueError.message) {
                                         errorMsg = queueError.message;
                                     }
-                                    alert(errorMsg);
+                                    logBulkProgressError(errorMsg);
                                 }
                             });
                             return; // Exit early
@@ -330,13 +450,14 @@
                             errorMsg += ' No images were found to queue.';
                         }
                     }
-                    
+
                     if (error && error.message) {
                         console.error('[AI Alt Text] Error details:', error);
                     } else {
                         console.error('[AI Alt Text] Queue failed for regenerate all - no error details');
                     }
-                    alert(errorMsg);
+
+                    // Keep modal open to show error - user can close manually
                 }
             });
         })
@@ -344,43 +465,80 @@
             console.error('[AI Alt Text] Failed to get all images:', error, xhr);
             $btn.prop('disabled', false);
             $btn.text(originalText);
-            alert('Failed to load images. Please try again.');
-            hideBulkProgress();
+
+            logBulkProgressError('Failed to load images. Please try again.');
+            // Keep modal open to show error - user can close manually
         });
     }
 
     /**
-     * Regenerate alt text for a single image
+     * Regenerate alt text for a single image - shows modal with preview
      */
     function handleRegenerateSingle(e) {
         e.preventDefault();
-        
+
         console.log('[AI Alt Text] Regenerate button clicked');
         var $btn = $(this);
         var attachmentId = $btn.data('attachment-id');
-        
+
         console.log('[AI Alt Text] Attachment ID:', attachmentId);
         console.log('[AI Alt Text] Button disabled?', $btn.prop('disabled'));
-        
+
         if (!attachmentId || $btn.prop('disabled')) {
             console.warn('[AI Alt Text] Cannot regenerate - missing ID or button disabled');
             return false;
         }
 
+        // Disable the button immediately to prevent multiple clicks
         var originalText = $btn.text();
-        $btn.prop('disabled', true);
-        $btn.text('Generating...');
-        
+        $btn.prop('disabled', true).addClass('regenerating');
+        $btn.text('Processing...');
+
+        // Get image info from the row
+        var $row = $btn.closest('tr');
+        var imageTitle = $row.find('.alttextai-table__cell--title').text().trim() || 'Image';
+        var imageSrc = $row.find('img').attr('src') || '';
+
+        // Show modal
+        showRegenerateModal(attachmentId, imageTitle, imageSrc, $btn, originalText);
+    }
+
+    /**
+     * Show regenerate modal and start generation
+     */
+    function showRegenerateModal(attachmentId, imageTitle, imageSrc, $btn, originalBtnText) {
+        // Check if modal exists, if not create it
+        var $modal = $('#alttextai-regenerate-modal');
+        if (!$modal.length) {
+            $modal = createRegenerateModal();
+        }
+
+        // Populate modal with image info
+        $modal.find('.alttextai-regenerate-modal__image-title').text(imageTitle);
+        $modal.find('.alttextai-regenerate-modal__thumbnail').attr('src', imageSrc);
+
+        // Show loading state
+        $modal.find('.alttextai-regenerate-modal__loading').addClass('active');
+        $modal.find('.alttextai-regenerate-modal__result').removeClass('active');
+        $modal.find('.alttextai-regenerate-modal__error').removeClass('active');
+
+        // Disable accept button during loading
+        $modal.find('.alttextai-regenerate-modal__btn--accept').prop('disabled', true);
+
+        // Show modal
+        $modal.addClass('active');
+        $('body').css('overflow', 'hidden');
+
         console.log('[AI Alt Text] Starting AJAX request...');
 
         // Use AJAX endpoint for single regeneration
-        var ajaxUrl = (window.alttextai_ajax && window.alttextai_ajax.ajaxurl) || 
-                     (window.AI_ALT_GPT && window.AI_ALT_GPT.restRoot ? window.AI_ALT_GPT.restRoot.replace(/\/$/, '') + '/admin-ajax.php' : null) ||
+        var ajaxUrl = (window.alttextai_ajax && window.alttextai_ajax.ajaxurl) ||
+                     (window.OPPTIAI_ALT && window.OPPTIAI_ALT.restRoot ? window.OPPTIAI_ALT.restRoot.replace(/\/$/, '') + '/admin-ajax.php' : null) ||
                      (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php');
-        var nonceValue = (window.alttextai_ajax && window.alttextai_ajax.nonce) || 
-                       (window.AI_ALT_GPT && window.AI_ALT_GPT.nonce) ||
+        var nonceValue = (window.alttextai_ajax && window.alttextai_ajax.nonce) ||
+                       (window.OPPTIAI_ALT && window.OPPTIAI_ALT.nonce) ||
                        '';
-        
+
         $.ajax({
             url: ajaxUrl,
             method: 'POST',
@@ -392,111 +550,188 @@
         })
         .done(function(response) {
             console.log('[AI Alt Text] Regenerate response:', response);
-            console.log('[AI Alt Text] Response success?', response && response.success);
-            console.log('[AI Alt Text] Response data:', response && response.data);
-            
-            $btn.prop('disabled', false);
-            $btn.text(originalText);
-            
+
+            // Hide loading state
+            $modal.find('.alttextai-regenerate-modal__loading').removeClass('active');
+
             if (response && response.success) {
-                // Update the alt text in the table if it exists
-                var $row = $btn.closest('tr');
-                console.log('[AI Alt Text] Found row:', $row.length > 0);
-                
-                var attachmentId = $btn.data('attachment-id');
                 var newAltText = response.data && response.data.alt_text ? response.data.alt_text : '';
-                
                 console.log('[AI Alt Text] New alt text:', newAltText);
-                
+
                 if (newAltText) {
-                    // Find the new alt text cell (has class alttextai-table__cell--new)
-                    var $newAltCell = $row.find('.alttextai-table__cell--new');
-                    console.log('[AI Alt Text] Found new alt cell:', $newAltCell.length > 0);
-                    
-                    if ($newAltCell.length) {
-                        // Check if there's a copy button (existing alt text) or just a span (no alt text)
-                        var $copyButton = $newAltCell.find('.alttextai-copy-trigger');
-                        var $copyText = $copyButton.find('.alttextai-copy-text');
-                        
-                        if ($copyButton.length && $copyText.length) {
-                            // Update existing alt text in copy button
-                            $copyText.text(newAltText);
-                            $copyButton.attr('data-copy-alt', newAltText);
-                        } else {
-                            // No existing alt text - create the copy button structure
-                            $newAltCell.html(
-                                '<button type="button" class="alttextai-copy-trigger" data-copy-alt="' + 
-                                $('<div>').text(newAltText).html() + 
-                                '" aria-label="Copy alt text to clipboard">' +
-                                '<span class="alttextai-copy-text">' + $('<div>').text(newAltText).html() + '</span>' +
-                                '<span class="alttextai-copy-icon" aria-hidden="true">📋</span>' +
-                                '</button>'
-                            );
-                        }
-                        
-                        // Update status badge to "Optimized"
-                        var $statusCell = $row.find('.alttextai-table__cell--status');
-                        if ($statusCell.length) {
-                            $statusCell.html(
-                                '<span class="alttextai-status-badge alttextai-status-badge--optimized">✅ Optimized</span>'
-                            );
-                        }
-                        
-                        // Update row data-status attribute
-                        $row.attr('data-status', 'optimized');
-                    }
-                }
-                
-                // Show success message
-                showNotification('Alt text regenerated successfully!', 'success');
-                
-                // Refresh usage stats if available
-                if (typeof refreshUsageStats === 'function') {
-                    refreshUsageStats();
+                    // Show result
+                    $modal.find('.alttextai-regenerate-modal__alt-text').text(newAltText);
+                    $modal.find('.alttextai-regenerate-modal__result').addClass('active');
+
+                    // Enable accept button
+                    $modal.find('.alttextai-regenerate-modal__btn--accept')
+                        .prop('disabled', false)
+                        .off('click')
+                        .on('click', function() {
+                            acceptRegeneratedAltText(attachmentId, newAltText, $btn, originalBtnText, $modal);
+                        });
+                } else {
+                    showModalError($modal, 'No alt text was generated. Please try again.');
+                    reenableButton($btn, originalBtnText);
                 }
             } else {
                 // Check for limit_reached error
                 var errorData = response && response.data ? response.data : {};
                 if (errorData.code === 'limit_reached') {
-                    // Show upgrade modal instead of error notification
-                    if (typeof showUpgradeModal === 'function') {
-                        showUpgradeModal(errorData.usage);
-                    } else if (typeof window.alttextai_show_upgrade_modal === 'function') {
-                        window.alttextai_show_upgrade_modal(errorData.usage);
-                    } else {
-                        // Fallback: try to trigger via event
-                        $(document).trigger('alttextai:show-upgrade-modal', [errorData.usage]);
-                        showNotification(errorData.message || 'Monthly limit reached. Please upgrade to continue.', 'error');
-                    }
+                    closeRegenerateModal($modal);
+                    reenableButton($btn, originalBtnText);
+                    handleLimitReached(errorData);
                 } else {
                     var message = errorData.message || 'Failed to regenerate alt text';
-                    showNotification(message, 'error');
+                    showModalError($modal, message);
+                    reenableButton($btn, originalBtnText);
                 }
             }
         })
         .fail(function(xhr, status, error) {
             console.error('[AI Alt Text] Failed to regenerate:', error, xhr);
-            $btn.prop('disabled', false);
-            $btn.text(originalText);
-            
+
+            // Hide loading state
+            $modal.find('.alttextai-regenerate-modal__loading').removeClass('active');
+
             // Check for limit_reached error in response
             var errorData = xhr.responseJSON && xhr.responseJSON.data ? xhr.responseJSON.data : {};
             if (errorData.code === 'limit_reached') {
-                // Show upgrade modal instead of error notification
-                if (typeof showUpgradeModal === 'function') {
-                    showUpgradeModal(errorData.usage);
-                } else if (typeof window.alttextai_show_upgrade_modal === 'function') {
-                    window.alttextai_show_upgrade_modal(errorData.usage);
-                } else {
-                    // Fallback: try to trigger via event
-                    $(document).trigger('alttextai:show-upgrade-modal', [errorData.usage]);
-                    showNotification(errorData.message || 'Monthly limit reached. Please upgrade to continue.', 'error');
-                }
+                closeRegenerateModal($modal);
+                reenableButton($btn, originalBtnText);
+                handleLimitReached(errorData);
             } else {
-                var message = errorData.message || 'Failed to regenerate alt text';
-                showNotification(message, 'error');
+                var message = errorData.message || 'Failed to regenerate alt text. Please try again.';
+                showModalError($modal, message);
+                reenableButton($btn, originalBtnText);
             }
         });
+
+        // Handle cancel button
+        $modal.find('.alttextai-regenerate-modal__btn--cancel')
+            .off('click')
+            .on('click', function() {
+                closeRegenerateModal($modal);
+                reenableButton($btn, originalBtnText);
+            });
+    }
+
+    /**
+     * Create the regenerate modal HTML
+     */
+    function createRegenerateModal() {
+        var modalHtml =
+            '<div id="alttextai-regenerate-modal" class="alttextai-regenerate-modal">' +
+            '    <div class="alttextai-regenerate-modal__content">' +
+            '        <div class="alttextai-regenerate-modal__header">' +
+            '            <h2 class="alttextai-regenerate-modal__title">Regenerate Alt Text</h2>' +
+            '            <p class="alttextai-regenerate-modal__subtitle">Review the new alt text before applying</p>' +
+            '        </div>' +
+            '        <div class="alttextai-regenerate-modal__body">' +
+            '            <div class="alttextai-regenerate-modal__image-preview">' +
+            '                <img src="" alt="" class="alttextai-regenerate-modal__thumbnail">' +
+            '                <div class="alttextai-regenerate-modal__image-info">' +
+            '                    <p class="alttextai-regenerate-modal__image-title"></p>' +
+            '                </div>' +
+            '            </div>' +
+            '            <div class="alttextai-regenerate-modal__error"></div>' +
+            '            <div class="alttextai-regenerate-modal__loading">' +
+            '                <div class="alttextai-regenerate-modal__spinner"></div>' +
+            '                <p class="alttextai-regenerate-modal__loading-text">Generating new alt text...</p>' +
+            '            </div>' +
+            '            <div class="alttextai-regenerate-modal__result">' +
+            '                <p class="alttextai-regenerate-modal__alt-text-label">New Alt Text:</p>' +
+            '                <p class="alttextai-regenerate-modal__alt-text"></p>' +
+            '            </div>' +
+            '        </div>' +
+            '        <div class="alttextai-regenerate-modal__footer">' +
+            '            <button type="button" class="alttextai-regenerate-modal__btn alttextai-regenerate-modal__btn--cancel">Cancel</button>' +
+            '            <button type="button" class="alttextai-regenerate-modal__btn alttextai-regenerate-modal__btn--accept" disabled>Accept & Apply</button>' +
+            '        </div>' +
+            '    </div>' +
+            '</div>';
+
+        $('body').append(modalHtml);
+        return $('#alttextai-regenerate-modal');
+    }
+
+    /**
+     * Show error in modal
+     */
+    function showModalError($modal, message) {
+        $modal.find('.alttextai-regenerate-modal__error').text(message).addClass('active');
+    }
+
+    /**
+     * Close regenerate modal
+     */
+    function closeRegenerateModal($modal) {
+        $modal.removeClass('active');
+        $('body').css('overflow', '');
+    }
+
+    /**
+     * Re-enable the regenerate button
+     */
+    function reenableButton($btn, originalText) {
+        $btn.prop('disabled', false).removeClass('regenerating');
+        $btn.text(originalText);
+    }
+
+    /**
+     * Accept regenerated alt text and update the UI
+     */
+    function acceptRegeneratedAltText(attachmentId, newAltText, $btn, originalBtnText, $modal) {
+        console.log('[AI Alt Text] Accepting new alt text');
+
+        // Update the alt text in the table
+        var $row = $btn.closest('tr');
+
+        if (newAltText) {
+            var $altCell = $row.find('.alttextai-library-cell--alt-text');
+
+            if ($altCell.length) {
+                var safeAlt = $('<div>').text(newAltText).html();
+                var truncated = newAltText.length > 80 ? newAltText.substring(0, 77) + '…' : newAltText;
+                var safeTruncated = $('<div>').text(truncated).html();
+
+                var $existing = $altCell.find('.alttextai-library-alt-text');
+                if ($existing.length) {
+                    $existing.text(truncated);
+                    $existing.attr('title', newAltText);
+                } else {
+                    $altCell.html(
+                        '<div class="alttextai-library-alt-text" title="' + safeAlt + '">' + safeTruncated + '</div>'
+                    );
+                }
+
+                // Update status badge to "Regenerated"
+                var $statusCell = $row.find('.alttextai-library-cell--status span');
+                if ($statusCell.length) {
+                    $statusCell
+                        .removeClass()
+                        .addClass('alttextai-status-badge alttextai-status-badge--regenerated')
+                        .text('Regenerated');
+                }
+
+                // Update row data attribute
+                $row.attr('data-status', 'regenerated');
+            }
+        }
+
+        // Close modal
+        closeRegenerateModal($modal);
+
+        // Re-enable button
+        reenableButton($btn, originalBtnText);
+
+        // Show success message
+        showNotification('Alt text updated successfully!', 'success');
+
+        // Refresh usage stats if available
+        if (typeof refreshUsageStats === 'function') {
+            refreshUsageStats();
+        }
     }
 
     /**
@@ -514,7 +749,12 @@
         
         // Use AJAX to queue images
         // We'll create a single AJAX call that queues all images
-        var ajaxUrl = (window.alttextai_ajax && window.alttextai_ajax.ajax_url) || (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php');
+        var ajaxUrl = '/wp-admin/admin-ajax.php';
+        if (window.alttextai_ajax) {
+            ajaxUrl = window.alttextai_ajax.ajax_url || window.alttextai_ajax.ajaxurl || ajaxUrl;
+        } else if (typeof ajaxurl !== 'undefined') {
+            ajaxUrl = ajaxurl;
+        }
         var nonceValue = (window.alttextai_ajax && window.alttextai_ajax.nonce) || config.nonce;
         
         // Queueing images (debug info removed for production)
@@ -538,11 +778,11 @@
                 queued = responseData.queued || 0;
                 
                 if (queued > 0) {
-                    callback(true, queued, null);
+                    callback(true, queued, null, ids.slice(0));
                 } else {
                     console.warn('[AI Alt Text] No images were queued. Response:', response);
                     // Still might be success if 0 queued but they were already in queue
-                    callback(true, queued, null);
+                    callback(true, queued, null, ids.slice(0));
                 }
             } else {
                 // Error response from server
@@ -573,7 +813,7 @@
                     message: errorMessage,
                     code: errorCode,
                     remaining: errorRemaining
-                });
+                }, ids.slice(0));
             }
         })
         .fail(function(xhr, status, error) {
@@ -617,7 +857,7 @@
             // This is slower but more reliable
             // Falling back to REST API method
             queueImagesFallback(ids, source, function(success, queued) {
-                callback(success, queued, null);
+                callback(success, queued, null, ids.slice(0));
             });
         });
     }
@@ -639,7 +879,7 @@
             // Queue this batch using REST generate endpoint (which will queue if busy)
             var promises = batch.map(function(id) {
                 return $.ajax({
-                    url: config.rest || (config.restRoot + 'ai-alt/v1/generate/' + id),
+                    url: config.rest || (config.restRoot + 'opptiai/v1/generate/' + id),
                     method: 'POST',
                     headers: {
                         'X-WP-Nonce': config.nonce
@@ -690,42 +930,512 @@
     }
 
     /**
-     * Show bulk progress bar
+     * Begin inline generation after queue completes.
      */
-    function showBulkProgress(label, total, current) {
-        var $progress = $('[data-bulk-progress]');
-        if ($progress.length) {
-            $progress.removeAttr('hidden');
-            $('[data-bulk-progress-label]').text(label || 'Processing...');
+    function startInlineGeneration(idList, source) {
+        if (!idList || !idList.length || !hasBulkConfig) {
+            return;
         }
-        updateBulkProgress(current, total);
+
+        var normalized = Array.from(new Set(idList.map(function(id) {
+            return parseInt(id, 10);
+        }).filter(function(id) {
+            return !isNaN(id) && id > 0;
+        })));
+
+        if (!normalized.length) {
+            return;
+        }
+
+        var $modal = $('#alttextai-bulk-progress-modal');
+        if (!$modal.length) {
+            return;
+        }
+
+        $modal.data('startTime', Date.now());
+        $modal.data('total', normalized.length);
+        $modal.data('current', 0);
+        $modal.data('successes', 0);
+        $modal.data('failed', 0);
+        $modal.find('.alttextai-bulk-progress__total').text(normalized.length);
+        $modal.find('.alttextai-bulk-progress__current').text(0);
+        $modal.find('.alttextai-bulk-progress__percentage').text('0%');
+        $modal.find('.alttextai-bulk-progress__eta').text('Calculating...');
+        $modal.find('.alttextai-bulk-progress__bar-fill').css('width', '0%');
+
+        var intro = 'Starting inline generation for ' + normalized.length + ' image' + (normalized.length !== 1 ? 's' : '') + '...';
+        updateBulkProgressTitle('Generating Alt Text…');
+        logBulkProgressSuccess(intro);
+
+        $modal.data('batchQueue', normalized.slice(0));
+        var inlineBatchSize = window.OPPTIAI_ALT && window.OPPTIAI_ALT.inlineBatchSize
+            ? Math.max(1, parseInt(window.OPPTIAI_ALT.inlineBatchSize, 10))
+            : 1;
+        processInlineGenerationQueue(normalized, inlineBatchSize);
     }
 
     /**
-     * Update bulk progress bar
+     * Process images sequentially in batches and update modal progress.
      */
-    function updateBulkProgress(current, total) {
-        var $progress = $('[data-bulk-progress]');
-        var $bar = $('[data-bulk-progress-bar]');
-        var $counts = $('[data-bulk-progress-counts]');
-        
-        if ($progress.length && $bar.length) {
-            var percentage = total > 0 ? Math.round((current / total) * 100) : 0;
-            $bar.css('width', percentage + '%');
+    function processInlineGenerationQueue(queue, batchSize) {
+        batchSize = batchSize || 1;
+        var $modal = $('#alttextai-bulk-progress-modal');
+        if (!$modal.length) {
+            return;
         }
-        
-        if ($counts.length) {
-            $counts.text(current + ' / ' + total);
+        var total = queue.length;
+        var processed = 0;
+        var successes = 0;
+        var failures = 0;
+        var active = 0;
+
+        function processNext() {
+            if (!queue.length && active === 0) {
+                finalizeInlineGeneration(successes, failures);
+                return;
+            }
+
+            if (active >= batchSize || !queue.length) {
+                return;
+            }
+
+            var id = queue.shift();
+            active++;
+
+            generateAltTextForId(id)
+                .then(function(result) {
+                    successes++;
+                    processed++;
+                    var title = result && result.title ? result.title : ('Generated alt text for image #' + id);
+                    updateBulkProgress(processed, total, title);
+                })
+                .catch(function(error) {
+                    failures++;
+                    processed++;
+                    var message = 'Image #' + id + ': ' + (error && error.message ? error.message : 'Failed to generate alt text.');
+                    logBulkProgressError(message);
+                    updateBulkProgress(processed, total);
+                })
+                .finally(function() {
+                    active--;
+                    setTimeout(processNext, 250);
+                });
+
+            if (active < batchSize && queue.length) {
+                processNext();
+            }
         }
+
+        processNext();
+    }
+
+    function finalizeInlineGeneration(successes, failures) {
+        var $modal = $('#alttextai-bulk-progress-modal');
+        var total = successes + failures;
+        var startTime = $modal.length ? $modal.data('startTime') : Date.now();
+        var elapsed = (Date.now() - startTime) / 1000; // seconds
+        
+        // Calculate time saved (estimate: 2 minutes per image)
+        var timeSavedMinutes = successes * 2;
+        var timeSavedHours = Math.round(timeSavedMinutes / 60);
+        var timeSavedText = timeSavedHours > 0 ? timeSavedHours + ' hour' + (timeSavedHours !== 1 ? 's' : '') : '< 1 hour';
+        
+        // Calculate AI confidence (100% if no failures, otherwise percentage)
+        var confidence = total > 0 ? Math.round((successes / total) * 100) : 100;
+        
+        // Hide progress modal
+        hideBulkProgress();
+        
+        // Show success modal
+        setTimeout(function() {
+            showSuccessModal({
+                processed: successes,
+                total: total,
+                failures: failures,
+                timeSaved: timeSavedText,
+                confidence: confidence
+            });
+        }, 300);
+
+        if (typeof refreshUsageStats === 'function') {
+            refreshUsageStats();
+        }
+    }
+
+    function generateAltTextForId(id) {
+        return new Promise(function(resolve, reject) {
+            var ajaxUrl = (window.alttextai_ajax && (window.alttextai_ajax.ajax_url || window.alttextai_ajax.ajaxurl)) ||
+                (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php');
+            var nonceValue = (window.alttextai_ajax && window.alttextai_ajax.nonce) || '';
+
+            $.ajax({
+                url: ajaxUrl,
+                method: 'POST',
+                dataType: 'json',
+                data: {
+                    action: 'alttextai_inline_generate',
+                    attachment_ids: [id],
+                    nonce: nonceValue
+                }
+            })
+            .done(function(response) {
+                if (response && response.success && response.data && response.data.results) {
+                    var first = response.data.results[0];
+                    if (first && first.success) {
+                        resolve({
+                            id: id,
+                            alt: first.alt_text || '',
+                            title: first.title || ('Image #' + id)
+                        });
+                    } else {
+                        reject({ message: (first && first.message) ? first.message : 'Failed to generate alt text.' });
+                    }
+                } else if (response && response.data && response.data.message) {
+                    reject({ message: response.data.message });
+                } else {
+                    reject({ message: 'Unexpected response from server.' });
+                }
+            })
+            .fail(function(xhr) {
+                var message = 'Request failed';
+                if (xhr && xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message) {
+                    message = xhr.responseJSON.data.message;
+                } else if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                    message = xhr.responseJSON.message;
+                }
+                reject({ message: message });
+            });
+        });
+    }
+
+    /**
+     * Show bulk progress modal with detailed tracking
+     */
+    function showBulkProgress(label, total, current) {
+        var $modal = $('#alttextai-bulk-progress-modal');
+
+        // Create modal if it doesn't exist
+        if (!$modal.length) {
+            $modal = createBulkProgressModal();
+        }
+
+        // Initialize progress tracking
+        $modal.data('startTime', Date.now());
+        $modal.data('total', total);
+        $modal.data('current', current || 0);
+
+        // Update initial state
+        $modal.find('.alttextai-bulk-progress__title').text(label || 'Processing Images...');
+        $modal.find('.alttextai-bulk-progress__total').text(total);
+        $modal.find('.alttextai-bulk-progress__log').empty();
+
+        // Show modal
+        $modal.addClass('active');
+        $('body').css('overflow', 'hidden');
+
+        updateBulkProgress(current || 0, total);
+    }
+
+    /**
+     * Create bulk progress modal HTML
+     */
+    function createBulkProgressModal() {
+        var modalHtml =
+            '<div id="alttextai-bulk-progress-modal" class="alttextai-bulk-progress-modal">' +
+            '    <div class="alttextai-bulk-progress-modal__overlay"></div>' +
+            '    <div class="alttextai-bulk-progress-modal__content">' +
+            '        <div class="alttextai-bulk-progress__header">' +
+            '            <h2 class="alttextai-bulk-progress__title">Processing Images...</h2>' +
+            '            <button type="button" class="alttextai-bulk-progress__close" aria-label="Close">×</button>' +
+            '        </div>' +
+            '        <div class="alttextai-bulk-progress__body">' +
+            '            <div class="alttextai-bulk-progress__stats">' +
+            '                <div class="alttextai-bulk-progress__stat">' +
+            '                    <span class="alttextai-bulk-progress__stat-label">Progress</span>' +
+            '                    <span class="alttextai-bulk-progress__stat-value">' +
+            '                        <span class="alttextai-bulk-progress__current">0</span> / ' +
+            '                        <span class="alttextai-bulk-progress__total">0</span>' +
+            '                    </span>' +
+            '                </div>' +
+            '                <div class="alttextai-bulk-progress__stat">' +
+            '                    <span class="alttextai-bulk-progress__stat-label">Percentage</span>' +
+            '                    <span class="alttextai-bulk-progress__stat-value alttextai-bulk-progress__percentage">0%</span>' +
+            '                </div>' +
+            '                <div class="alttextai-bulk-progress__stat">' +
+            '                    <span class="alttextai-bulk-progress__stat-label">Estimated Time</span>' +
+            '                    <span class="alttextai-bulk-progress__stat-value alttextai-bulk-progress__eta">Calculating...</span>' +
+            '                </div>' +
+            '            </div>' +
+            '            <div class="alttextai-bulk-progress__bar-container">' +
+            '                <div class="alttextai-bulk-progress__bar">' +
+            '                    <div class="alttextai-bulk-progress__bar-fill" style="width: 0%"></div>' +
+            '                </div>' +
+            '            </div>' +
+            '            <div class="alttextai-bulk-progress__log-container">' +
+            '                <h3 class="alttextai-bulk-progress__log-title">Processing Log</h3>' +
+            '                <div class="alttextai-bulk-progress__log"></div>' +
+            '            </div>' +
+            '        </div>' +
+            '    </div>' +
+            '</div>';
+
+        $('body').append(modalHtml);
+        var $modal = $('#alttextai-bulk-progress-modal');
+
+        // Add close button handler
+        $modal.find('.alttextai-bulk-progress__close').on('click', function() {
+            hideBulkProgress();
+        });
+
+        return $modal;
+    }
+
+    /**
+     * Update bulk progress bar with detailed stats
+     */
+    function updateBulkProgress(current, total, imageTitle) {
+        var $modal = $('#alttextai-bulk-progress-modal');
+        if (!$modal.length) return;
+
+        var percentage = total > 0 ? Math.round((current / total) * 100) : 0;
+        var startTime = $modal.data('startTime') || Date.now();
+        var elapsed = (Date.now() - startTime) / 1000; // seconds
+
+        // Calculate ETA
+        var eta = 'Calculating...';
+        if (current > 0 && elapsed > 0) {
+            var avgTimePerImage = elapsed / current;
+            var remaining = total - current;
+            var etaSeconds = remaining * avgTimePerImage;
+
+            if (etaSeconds < 60) {
+                eta = Math.ceil(etaSeconds) + 's';
+            } else if (etaSeconds < 3600) {
+                eta = Math.ceil(etaSeconds / 60) + 'm';
+            } else {
+                var hours = Math.floor(etaSeconds / 3600);
+                var mins = Math.ceil((etaSeconds % 3600) / 60);
+                eta = hours + 'h ' + mins + 'm';
+            }
+        }
+
+        // Update stats
+        $modal.find('.alttextai-bulk-progress__current').text(current);
+        $modal.find('.alttextai-bulk-progress__percentage').text(percentage + '%');
+        $modal.find('.alttextai-bulk-progress__eta').text(eta);
+        $modal.find('.alttextai-bulk-progress__bar-fill').css('width', percentage + '%');
+
+        // Add log entry if image title provided
+        if (imageTitle) {
+            var timestamp = new Date().toLocaleTimeString();
+            var logEntry =
+                '<div class="alttextai-bulk-progress__log-entry">' +
+                '    <span class="alttextai-bulk-progress__log-time">' + timestamp + '</span>' +
+                '    <span class="alttextai-bulk-progress__log-icon">✓</span>' +
+                '    <span class="alttextai-bulk-progress__log-text">' + escapeHtml(imageTitle) + '</span>' +
+                '</div>';
+
+            var $log = $modal.find('.alttextai-bulk-progress__log');
+            $log.append(logEntry);
+
+            // Auto-scroll to bottom
+            $log.scrollTop($log[0].scrollHeight);
+        }
+    }
+
+    /**
+     * Add error log entry
+     */
+    function logBulkProgressError(errorMessage) {
+        var $modal = $('#alttextai-bulk-progress-modal');
+        if (!$modal.length) return;
+
+        var timestamp = new Date().toLocaleTimeString();
+        var logEntry =
+            '<div class="alttextai-bulk-progress__log-entry alttextai-bulk-progress__log-entry--error">' +
+            '    <span class="alttextai-bulk-progress__log-time">' + timestamp + '</span>' +
+            '    <span class="alttextai-bulk-progress__log-icon">✗</span>' +
+            '    <span class="alttextai-bulk-progress__log-text">' + escapeHtml(errorMessage || 'An error occurred') + '</span>' +
+            '</div>';
+
+        var $log = $modal.find('.alttextai-bulk-progress__log');
+        $log.append(logEntry);
+        $log.scrollTop($log[0].scrollHeight);
+    }
+
+    /**
+     * Add success log entry
+     */
+    function logBulkProgressSuccess(successMessage) {
+        var $modal = $('#alttextai-bulk-progress-modal');
+        if (!$modal.length) return;
+
+        var timestamp = new Date().toLocaleTimeString();
+        var logEntry =
+            '<div class="alttextai-bulk-progress__log-entry alttextai-bulk-progress__log-entry--success">' +
+            '    <span class="alttextai-bulk-progress__log-time">' + timestamp + '</span>' +
+            '    <span class="alttextai-bulk-progress__log-icon">✓</span>' +
+            '    <span class="alttextai-bulk-progress__log-text">' + escapeHtml(successMessage || 'Success') + '</span>' +
+            '</div>';
+
+        var $log = $modal.find('.alttextai-bulk-progress__log');
+        $log.append(logEntry);
+        $log.scrollTop($log[0].scrollHeight);
+    }
+
+    /**
+     * Update bulk progress modal title
+     */
+    function updateBulkProgressTitle(title) {
+        var $modal = $('#alttextai-bulk-progress-modal');
+        if (!$modal.length) return;
+
+        $modal.find('.alttextai-bulk-progress__title').text(title);
+    }
+
+    /**
+     * Escape HTML to prevent XSS
+     */
+    function escapeHtml(text) {
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     /**
      * Hide bulk progress bar
      */
     function hideBulkProgress() {
-        var $progress = $('[data-bulk-progress]');
-        if ($progress.length) {
-            $progress.attr('hidden', 'hidden');
+        var $modal = $('#alttextai-bulk-progress-modal');
+        if ($modal.length) {
+            $modal.removeClass('active');
+            $('body').css('overflow', '');
+        }
+    }
+
+    /**
+     * Create and show success modal
+     */
+    function createSuccessModal() {
+        var modalHtml =
+            '<div id="opptiai-modal-success" class="opptiai-modal-success" role="dialog" aria-modal="true" aria-labelledby="opptiai-modal-success-title">' +
+            '    <div class="opptiai-modal-success__overlay"></div>' +
+            '    <div class="opptiai-modal-success__content">' +
+            '        <button type="button" class="opptiai-modal-success__close" aria-label="' + escapeHtml('Close') + '">×</button>' +
+            '        <div class="opptiai-modal-success__header">' +
+            '            <div class="opptiai-modal-success__badge">' +
+            '                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+            '                    <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+            '                </svg>' +
+            '            </div>' +
+            '            <h2 id="opptiai-modal-success-title" class="opptiai-modal-success__title">Alt Text Generated Successfully</h2>' +
+            '            <p class="opptiai-modal-success__subtitle">Your images have been processed and are ready to review.</p>' +
+            '        </div>' +
+            '        <div class="opptiai-modal-success__stats">' +
+            '            <div class="opptiai-modal-success__stat-card">' +
+            '                <div class="opptiai-modal-success__stat-number" data-stat="processed">0</div>' +
+            '                <div class="opptiai-modal-success__stat-label">Images Processed</div>' +
+            '            </div>' +
+            '            <div class="opptiai-modal-success__stat-card">' +
+            '                <div class="opptiai-modal-success__stat-number" data-stat="time">0</div>' +
+            '                <div class="opptiai-modal-success__stat-label">Time Saved</div>' +
+            '            </div>' +
+            '            <div class="opptiai-modal-success__stat-card">' +
+            '                <div class="opptiai-modal-success__stat-number" data-stat="confidence">0%</div>' +
+            '                <div class="opptiai-modal-success__stat-label">AI Confidence</div>' +
+            '            </div>' +
+            '        </div>' +
+            '        <div class="opptiai-modal-success__summary" data-summary-type="success">' +
+            '            <div class="opptiai-modal-success__summary-icon">✓</div>' +
+            '            <div class="opptiai-modal-success__summary-text">All images were processed successfully.</div>' +
+            '        </div>' +
+            '        <div class="opptiai-modal-success__actions">' +
+            '            <a href="' + escapeHtml((typeof ajaxurl !== 'undefined' ? ajaxurl.replace('/admin-ajax.php', '/admin.php') : '/wp-admin/admin.php') + '?page=opptiai-alt&tab=library') + '" class="opptiai-modal-success__btn opptiai-modal-success__btn--primary">View ALT Library →</a>' +
+            '            <button type="button" class="opptiai-modal-success__btn opptiai-modal-success__btn--secondary" data-action="view-warnings" style="display: none;">View Warnings</button>' +
+            '        </div>' +
+            '    </div>' +
+            '</div>';
+
+        var $existing = $('#opptiai-modal-success');
+        if ($existing.length) {
+            $existing.remove();
+        }
+
+        $('body').append(modalHtml);
+        var $modal = $('#opptiai-modal-success');
+
+        // Close handlers
+        $modal.find('.opptiai-modal-success__close, .opptiai-modal-success__overlay').on('click', function() {
+            hideSuccessModal();
+        });
+
+        // View Warnings button handler
+        $modal.find('[data-action="view-warnings"]').on('click', function() {
+            hideSuccessModal();
+            // Show the ALT Library tab with filters applied
+            var libraryUrl = (typeof ajaxurl !== 'undefined' ? ajaxurl.replace('/admin-ajax.php', '/admin.php') : '/wp-admin/admin.php') + '?page=opptiai-alt&tab=library';
+            window.location.href = libraryUrl;
+        });
+
+        // ESC key handler
+        $(document).on('keydown.opptiai-success-modal', function(e) {
+            if (e.keyCode === 27 && $modal.hasClass('active')) {
+                hideSuccessModal();
+            }
+        });
+
+        return $modal;
+    }
+
+    /**
+     * Show success modal with stats
+     */
+    function showSuccessModal(data) {
+        var $modal = $('#opptiai-modal-success');
+        if (!$modal.length) {
+            $modal = createSuccessModal();
+        }
+
+        // Update stats
+        $modal.find('[data-stat="processed"]').text(data.processed || 0);
+        $modal.find('[data-stat="time"]').text(data.timeSaved || '0 hours');
+        $modal.find('[data-stat="confidence"]').text((data.confidence || 0) + '%');
+
+        // Update summary based on failures
+        var $summary = $modal.find('.opptiai-modal-success__summary');
+        var $warningsBtn = $modal.find('[data-action="view-warnings"]');
+        
+        if (data.failures > 0) {
+            $summary.attr('data-summary-type', 'warning');
+            $summary.find('.opptiai-modal-success__summary-icon').text('⚠');
+            $summary.find('.opptiai-modal-success__summary-text').text('Some images generated with warnings — review details below.');
+            $warningsBtn.show();
+        } else {
+            $summary.attr('data-summary-type', 'success');
+            $summary.find('.opptiai-modal-success__summary-icon').text('✓');
+            $summary.find('.opptiai-modal-success__summary-text').text('All images were processed successfully.');
+            $warningsBtn.hide();
+        }
+
+        // Show modal
+        $modal.addClass('active');
+        $('body').css('overflow', 'hidden');
+
+        // Focus management
+        setTimeout(function() {
+            $modal.find('.opptiai-modal-success__close').focus();
+        }, 100);
+    }
+
+    /**
+     * Hide success modal
+     */
+    function hideSuccessModal() {
+        var $modal = $('#opptiai-modal-success');
+        if ($modal.length) {
+            $modal.removeClass('active');
+            $('body').css('overflow', '');
+            $(document).off('keydown.opptiai-success-modal');
         }
     }
 
@@ -745,19 +1455,156 @@
         }, 5000);
     }
 
+
+    /**
+     * License Management Functions
+     */
+
+    // Handle license activation form submission
+    function handleLicenseActivation(e) {
+        e.preventDefault();
+
+        var $form = $('#license-activation-form');
+        var $input = $('#license-key-input');
+        var $button = $('#activate-license-btn');
+        var $status = $('#license-activation-status');
+        var nonce = $('#license-nonce').val();
+
+        var licenseKey = $input.val().trim();
+
+        if (!licenseKey) {
+            showLicenseStatus('error', 'Please enter a license key');
+            return;
+        }
+
+        // Disable form
+        $button.prop('disabled', true).text('Activating...');
+        $input.prop('disabled', true);
+
+        // Make AJAX request
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'alttextai_activate_license',
+                nonce: nonce,
+                license_key: licenseKey
+            },
+            success: function(response) {
+                if (response.success) {
+                    showLicenseStatus('success', response.data.message || 'License activated successfully!');
+
+                    // Reload page after 1 second to show activated state
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showLicenseStatus('error', response.data.message || 'Failed to activate license');
+                    $button.prop('disabled', false).text('Activate License');
+                    $input.prop('disabled', false);
+                }
+            },
+            error: function(xhr, status, error) {
+                showLicenseStatus('error', 'Network error: ' + error);
+                $button.prop('disabled', false).text('Activate License');
+                $input.prop('disabled', false);
+            }
+        });
+    }
+
+    // Handle license deactivation
+    function handleLicenseDeactivation(e) {
+        e.preventDefault();
+
+        if (!confirm('Are you sure you want to deactivate this license? You will need to reactivate it to continue using the shared quota.')) {
+            return;
+        }
+
+        var $button = $(this);
+        var nonce = $('#license-nonce').val();
+
+        // Disable button
+        $button.prop('disabled', true).text('Deactivating...');
+
+        // Make AJAX request
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'alttextai_deactivate_license',
+                nonce: nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Show success message
+                    alert(response.data.message || 'License deactivated successfully');
+
+                    // Reload page to show deactivated state
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + (response.data.message || 'Failed to deactivate license'));
+                    $button.prop('disabled', false).text('Deactivate License');
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('Network error: ' + error);
+                $button.prop('disabled', false).text('Deactivate License');
+            }
+        });
+    }
+
+    // Show status message in license activation form
+    function showLicenseStatus(type, message) {
+        var $status = $('#license-activation-status');
+        var iconHtml = '';
+        var bgColor = '';
+        var textColor = '';
+
+        if (type === 'success') {
+            iconHtml = '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="vertical-align: middle; margin-right: 8px;"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="2" fill="none"/><path d="M6 10L9 13L14 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+            bgColor = '#d1fae5';
+            textColor = '#065f46';
+        } else {
+            iconHtml = '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="vertical-align: middle; margin-right: 8px;"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="2" fill="none"/><path d="M10 6v4M10 14h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+            bgColor = '#fee2e2';
+            textColor = '#991b1b';
+        }
+
+        $status.html(
+            '<div style="padding: 12px; background: ' + bgColor + '; color: ' + textColor + '; border-radius: 4px; font-size: 14px;">' +
+            iconHtml + message +
+            '</div>'
+        ).show();
+    }
+
     // Initialize on document ready
     $(document).ready(function() {
-        // AI Alt Text Admin JavaScript loaded
-        
+        console.log('[AI Alt Text] Admin JavaScript loaded');
+        console.log('[AI Alt Text] Config:', config);
+        console.log('[AI Alt Text] Has bulk config:', hasBulkConfig);
+        console.log('[AI Alt Text] alttextai_ajax:', window.alttextai_ajax);
+
+        // Count regenerate buttons
+        var regenButtons = $('[data-action="regenerate-single"]');
+        console.log('[AI Alt Text] Found ' + regenButtons.length + ' regenerate buttons');
+
         // Handle generate missing button
         $(document).on('click', '[data-action="generate-missing"]', handleGenerateMissing);
-        
+
         // Handle regenerate all button
         $(document).on('click', '[data-action="regenerate-all"]', handleRegenerateAll);
-        
+
         // Handle individual regenerate buttons
-        $(document).on('click', '[data-action="regenerate-single"]', handleRegenerateSingle);
+        $(document).on('click', '[data-action="regenerate-single"]', function(e) {
+            console.log('[AI Alt Text] Regenerate button click event fired!');
+            handleRegenerateSingle.call(this, e);
+        });
+
+        // License management handlers
+        $('#license-activation-form').on('submit', handleLicenseActivation);
+        $(document).on('click', '[data-action="deactivate-license"]', handleLicenseDeactivation);
+
+        console.log('[AI Alt Text] License management handlers registered');
     });
 
 })(jQuery);
-

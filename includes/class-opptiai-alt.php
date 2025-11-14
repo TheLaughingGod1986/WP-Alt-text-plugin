@@ -7,12 +7,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class Ai_Alt_Gpt {
+class Opptiai_Alt {
 
 	/**
 	 * Loader responsible for maintaining WordPress hooks.
 	 *
-	 * @var Ai_Alt_Gpt_Loader
+	 * @var Opptiai_Alt_Loader
 	 */
 	protected $loader;
 
@@ -34,8 +34,8 @@ class Ai_Alt_Gpt {
 	 * Set up the plugin.
 	 */
 	public function __construct() {
-		$this->version     = defined( 'AI_ALT_GPT_VERSION' ) ? AI_ALT_GPT_VERSION : '1.0.0';
-		$this->plugin_name = 'ai-alt-gpt';
+		$this->version     = defined( 'OPPTIAI_ALT_VERSION' ) ? OPPTIAI_ALT_VERSION : '1.0.0';
+		$this->plugin_name = 'opptiai-alt-text-generator';
 
 		$this->load_dependencies();
 		$this->set_locale();
@@ -46,18 +46,18 @@ class Ai_Alt_Gpt {
 	 * Load the dependencies required by this plugin.
 	 */
 	private function load_dependencies() {
-		require_once AI_ALT_GPT_PLUGIN_DIR . 'includes/class-ai-alt-gpt-loader.php';
-		require_once AI_ALT_GPT_PLUGIN_DIR . 'includes/class-ai-alt-gpt-i18n.php';
-		require_once AI_ALT_GPT_PLUGIN_DIR . 'admin/class-ai-alt-gpt-admin.php';
+		require_once OPPTIAI_ALT_PLUGIN_DIR . 'includes/class-opptiai-alt-loader.php';
+		require_once OPPTIAI_ALT_PLUGIN_DIR . 'includes/class-opptiai-alt-i18n.php';
+		require_once OPPTIAI_ALT_PLUGIN_DIR . 'admin/class-opptiai-alt-admin.php';
 
-		$this->loader = new Ai_Alt_Gpt_Loader();
+		$this->loader = new Opptiai_Alt_Loader();
 	}
 
 	/**
 	 * Register locale.
 	 */
 	private function set_locale() {
-		$plugin_i18n = new Ai_Alt_Gpt_I18n();
+		$plugin_i18n = new Opptiai_Alt_I18n();
 
 		$this->loader->add_action( 'plugins_loaded', $plugin_i18n, 'load_plugin_textdomain' );
 	}
@@ -66,7 +66,7 @@ class Ai_Alt_Gpt {
 	 * Register all of the hooks related to the admin area functionality.
 	 */
 	private function define_admin_hooks() {
-		$plugin_admin = new Ai_Alt_Gpt_Admin( $this->get_plugin_name(), $this->get_version() );
+		$plugin_admin = new Opptiai_Alt_Admin( $this->get_plugin_name(), $this->get_version() );
 
 		$this->loader->add_action( 'init', $plugin_admin, 'bootstrap_core', 0 );
 	}
@@ -90,7 +90,7 @@ class Ai_Alt_Gpt {
 	/**
 	 * Retrieve the loader instance.
 	 *
-	 * @return Ai_Alt_Gpt_Loader
+	 * @return Opptiai_Alt_Loader
 	 */
 	public function get_loader() {
 		return $this->loader;
