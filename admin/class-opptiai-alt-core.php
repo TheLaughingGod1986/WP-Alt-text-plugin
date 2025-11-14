@@ -705,6 +705,14 @@ class Opptiai_Alt_Core {
             if (!in_array($tab, array_keys($tabs))) {
                 $tab = 'dashboard';
             }
+            
+            // Set variables for Admin tab access (used later in template)
+            $is_pro_for_admin = $is_pro;
+            $is_agency_for_admin = $is_agency;
+        } else {
+            // Not a registered user - set defaults
+            $is_pro_for_admin = false;
+            $is_agency_for_admin = false;
         }
         $export_url = wp_nonce_url(admin_url('admin-post.php?action=opptiai_alt_usage_export'), 'opptiai_alt_usage_export');
         $audit_rows = $stats['audit'] ?? [];
