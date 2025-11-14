@@ -347,7 +347,11 @@ class AltText_AI_API_Client_V2 {
                 'error'    => $error_message,
             ]);
             if (strpos($error_message, 'timeout') !== false) {
-                return new WP_Error('api_timeout', __('Authentication server is taking too long to respond. Please try again in a few minutes.', 'wp-alt-text-plugin'));
+                // Provide more specific message for generation timeouts
+                if (strpos($endpoint, '/api/generate') !== false) {
+                    return new WP_Error('api_timeout', __('The image generation is taking longer than expected. This may happen with large images or during high server load. Please try again.', 'wp-alt-text-plugin'));
+                }
+                return new WP_Error('api_timeout', __('The server is taking too long to respond. Please try again in a few minutes.', 'wp-alt-text-plugin'));
             } elseif (strpos($error_message, 'could not resolve') !== false) {
                 return new WP_Error('api_unreachable', __('Unable to reach authentication server. Please check your internet connection and try again.', 'wp-alt-text-plugin'));
             }
