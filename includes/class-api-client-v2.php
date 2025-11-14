@@ -319,7 +319,9 @@ class AltText_AI_API_Client_V2 {
         
         // Use longer timeout for generation requests (OpenAI can take time)
         if ($timeout === null) {
-            $timeout = (strpos($endpoint, '/api/generate') !== false) ? 90 : 30;
+            // Check for generate endpoint (with or without leading slash)
+            $is_generate_endpoint = (strpos($endpoint, '/api/generate') !== false) || (strpos($endpoint, 'api/generate') !== false);
+            $timeout = $is_generate_endpoint ? 90 : 30;
         }
         
         $args = [
@@ -348,7 +350,8 @@ class AltText_AI_API_Client_V2 {
             ]);
             if (strpos($error_message, 'timeout') !== false) {
                 // Provide more specific message for generation timeouts
-                if (strpos($endpoint, '/api/generate') !== false) {
+                $is_generate_endpoint = (strpos($endpoint, '/api/generate') !== false) || (strpos($endpoint, 'api/generate') !== false);
+                if ($is_generate_endpoint) {
                     return new WP_Error('api_timeout', __('The image generation is taking longer than expected. This may happen with large images or during high server load. Please try again.', 'wp-alt-text-plugin'));
                 }
                 return new WP_Error('api_timeout', __('The server is taking too long to respond. Please try again in a few minutes.', 'wp-alt-text-plugin'));
@@ -768,28 +771,28 @@ class AltText_AI_API_Client_V2 {
         }
 
         $org = $license_data['organization'];
-        $limit = isset($org['tokenLimit']) ? intval($org['tokenLimit']) : 10000;
-        $remaining = isset($org['tokensRemaining']) ? intval($org['tokensRemaining']) : $limit;
-        $used = max(0, $limit - $remaining);
+            $limit = isset($org['tokenLimit']) ? intval($org['tokenLimit']) : 10000;
+            $remaining = isset($org['tokensRemaining']) ? intval($org['tokensRemaining']) : $limit;
+            $used = max(0, $limit - $remaining);
 
-        $reset_ts = 0;
-        if (!empty($org['resetDate'])) {
-            $reset_ts = strtotime($org['resetDate']);
-        }
-        if ($reset_ts <= 0) {
-            $reset_ts = strtotime('first day of next month');
-        }
+            $reset_ts = 0;
+            if (!empty($org['resetDate'])) {
+                $reset_ts = strtotime($org['resetDate']);
+            }
+            if ($reset_ts <= 0) {
+                $reset_ts = strtotime('first day of next month');
+            }
 
-        return [
-            'used' => $used,
-            'limit' => $limit,
-            'remaining' => $remaining,
-            'plan' => strtolower($org['plan'] ?? 'agency'),
-            'resetDate' => $org['resetDate'] ?? '',
-            'reset_timestamp' => $reset_ts,
-            'seconds_until_reset' => max(0, $reset_ts - current_time('timestamp')),
-        ];
-    }
+            return [
+                'used' => $used,
+                'limit' => $limit,
+                'remaining' => $remaining,
+                'plan' => strtolower($org['plan'] ?? 'agency'),
+                'resetDate' => $org['resetDate'] ?? '',
+                'reset_timestamp' => $reset_ts,
+                'seconds_until_reset' => max(0, $reset_ts - current_time('timestamp')),
+            ];
+        }
 
     /**
      * Persist license usage snapshots so cached data stays in sync
