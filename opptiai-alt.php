@@ -3,7 +3,7 @@
  * Plugin Name: WP Alt Text AI – Auto Image SEO & Accessibility
  * Plugin URI: https://wordpress.org/plugins/wp-alt-text-plugin/
  * Description: Automatically generates SEO-optimized and WCAG-compliant alt text for WordPress images using AI. Free tier includes 50 AI generations per month. Improves image search rankings, accessibility, and SEO.
- * Version: 4.2.2
+ * Version: 4.3.0
  * Author: Benjamin Oats
  * Author URI: https://oppti.ai
  * License: GPLv2 or later
@@ -20,12 +20,16 @@ if ( ! defined( 'WPINC' ) ) {
 	die;
 }
 
-define( 'OPPTIAI_ALT_VERSION', '4.2.2' );
+define( 'OPPTIAI_ALT_VERSION', '4.3.0' );
 define( 'OPPTIAI_ALT_PLUGIN_FILE', __FILE__ );
 define( 'OPPTIAI_ALT_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OPPTIAI_ALT_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'OPPTIAI_ALT_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 
+// Load OpptiAI Framework
+require_once OPPTIAI_ALT_PLUGIN_DIR . 'opptiai-framework/init.php';
+
+// Load plugin-specific classes
 require_once OPPTIAI_ALT_PLUGIN_DIR . 'includes/class-api-client-v2.php';
 require_once OPPTIAI_ALT_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 require_once OPPTIAI_ALT_PLUGIN_DIR . 'includes/class-queue.php';

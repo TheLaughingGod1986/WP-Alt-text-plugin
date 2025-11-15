@@ -5,7 +5,7 @@ Tags: accessibility, alt text, images, automation, ai, wcag, media library, seo
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 4.2.2
+Stable tag: 4.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -123,6 +123,18 @@ Yes. You can disable API calls through the plugin settings page. However, disabl
 
 == Changelog ==
 
+= 4.3.0 =
+* Added complete OpptiAI Framework infrastructure for future extensibility
+* Created modular architecture with shared UI components
+* Added module registration system for future OpptiAI products
+* Improved code organization with 15+ reusable framework classes
+* Enhanced security with centralized sanitization and validation
+* Added automated build system for WordPress.org deployment
+* Removed 132+ legacy test files and scripts for cleaner codebase
+* Improved maintainability with better separation of concerns
+* 100% backward compatible - all existing features work unchanged
+* Foundation for faster feature development in future releases
+
 = 4.2.2 =
 * Enhanced license management for Pro and Agency users
 * Improved admin authentication flow
@@ -150,6 +162,9 @@ Yes. You can disable API calls through the plugin settings page. However, disabl
 * Media Library integration
 
 == Upgrade Notice ==
+
+= 4.3.0 =
+Major architectural upgrade. Adds complete framework infrastructure while maintaining 100% backward compatibility. Recommended for all users.
 
 = 4.2.2 =
 Recommended update with enhanced license management and security improvements.

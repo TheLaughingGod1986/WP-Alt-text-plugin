@@ -1,0 +1,688 @@
+/**
+ * OpptiAI Framework - Admin UI Styles
+ *
+ * Consolidated styles for all OpptiAI admin pages
+ *
+ * @package OpptiAI\Framework\UI
+ * @version 1.0.0
+ */
+
+/* ========================================================================
+   RESET & BASE STYLES
+   ======================================================================== */
+
+.opptiai-admin-wrap {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	color: #1e293b;
+	line-height: 1.6;
+}
+
+.opptiai-admin-wrap * {
+	box-sizing: border-box;
+}
+
+/* ========================================================================
+   PAGE LAYOUT
+   ======================================================================== */
+
+.opptiai-page-wrapper {
+	display: flex;
+	gap: 2rem;
+	margin: 2rem 0;
+}
+
+.opptiai-page-content {
+	flex: 1;
+	min-width: 0;
+}
+
+/* ========================================================================
+   PAGE HEADER
+   ======================================================================== */
+
+.opptiai-page-header {
+	margin-bottom: 2rem;
+	padding-bottom: 1rem;
+	border-bottom: 1px solid #e2e8f0;
+}
+
+.opptiai-page-title {
+	font-size: 2rem;
+	font-weight: 600;
+	margin: 0 0 0.5rem 0;
+	color: #0f172a;
+}
+
+.opptiai-page-subtitle {
+	font-size: 1rem;
+	color: #64748b;
+	margin: 0;
+}
+
+.opptiai-breadcrumbs {
+	font-size: 0.875rem;
+	color: #64748b;
+	margin-bottom: 1rem;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.opptiai-breadcrumbs a {
+	color: #3b82f6;
+	text-decoration: none;
+}
+
+.opptiai-breadcrumbs a:hover {
+	text-decoration: underline;
+}
+
+.opptiai-breadcrumb-separator {
+	color: #cbd5e1;
+}
+
+/* ========================================================================
+   SIDEBAR NAVIGATION
+   ======================================================================== */
+
+.opptiai-sidebar {
+	width: 250px;
+	flex-shrink: 0;
+}
+
+.opptiai-sidebar-nav {
+	background: #ffffff;
+	border: 1px solid #e2e8f0;
+	border-radius: 0.5rem;
+	overflow: hidden;
+}
+
+.opptiai-sidebar-item {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.875rem 1rem;
+	color: #475569;
+	text-decoration: none;
+	border-bottom: 1px solid #f1f5f9;
+	transition: all 0.2s ease;
+}
+
+.opptiai-sidebar-item:last-child {
+	border-bottom: none;
+}
+
+.opptiai-sidebar-item:hover {
+	background: #f8fafc;
+	color: #0f172a;
+}
+
+.opptiai-sidebar-item-active {
+	background: #eff6ff;
+	color: #2563eb;
+	font-weight: 500;
+	border-left: 3px solid #2563eb;
+}
+
+.opptiai-sidebar-icon {
+	font-size: 1.25rem;
+	width: 1.5rem;
+	height: 1.5rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+/* ========================================================================
+   CARDS
+   ======================================================================== */
+
+.opptiai-card {
+	background: #ffffff;
+	border: 1px solid #e2e8f0;
+	border-radius: 0.5rem;
+	margin-bottom: 1.5rem;
+	overflow: hidden;
+}
+
+.opptiai-card-header {
+	padding: 1.25rem 1.5rem;
+	border-bottom: 1px solid #f1f5f9;
+	background: #f8fafc;
+}
+
+.opptiai-card-header h3 {
+	margin: 0;
+	font-size: 1.125rem;
+	font-weight: 600;
+	color: #0f172a;
+}
+
+.opptiai-card-body {
+	padding: 1.5rem;
+}
+
+.opptiai-card-footer {
+	padding: 1rem 1.5rem;
+	background: #f8fafc;
+	border-top: 1px solid #f1f5f9;
+}
+
+/* ========================================================================
+   STAT BOXES
+   ======================================================================== */
+
+.opptiai-stat-box {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	padding: 1.25rem;
+	background: #ffffff;
+	border: 1px solid #e2e8f0;
+	border-radius: 0.5rem;
+	transition: box-shadow 0.2s ease;
+}
+
+.opptiai-stat-box:hover {
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.opptiai-stat-icon {
+	font-size: 2rem;
+	color: #3b82f6;
+}
+
+.opptiai-stat-content {
+	flex: 1;
+}
+
+.opptiai-stat-label {
+	font-size: 0.875rem;
+	color: #64748b;
+	margin-bottom: 0.25rem;
+}
+
+.opptiai-stat-value {
+	font-size: 1.875rem;
+	font-weight: 700;
+	color: #0f172a;
+}
+
+.opptiai-stat-trend {
+	font-size: 1.5rem;
+	font-weight: 600;
+}
+
+.opptiai-stat-trend-up {
+	color: #10b981;
+}
+
+.opptiai-stat-trend-down {
+	color: #ef4444;
+}
+
+/* ========================================================================
+   BUTTONS
+   ======================================================================== */
+
+.opptiai-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 0.625rem 1.25rem;
+	font-size: 0.875rem;
+	font-weight: 500;
+	line-height: 1.5;
+	text-decoration: none;
+	border: none;
+	border-radius: 0.375rem;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.opptiai-button:focus {
+	outline: 2px solid transparent;
+	outline-offset: 2px;
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+}
+
+.opptiai-button[disabled] {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.opptiai-button-primary {
+	background: #3b82f6;
+	color: #ffffff;
+}
+
+.opptiai-button-primary:hover:not([disabled]) {
+	background: #2563eb;
+}
+
+.opptiai-button-secondary {
+	background: #f1f5f9;
+	color: #475569;
+}
+
+.opptiai-button-secondary:hover:not([disabled]) {
+	background: #e2e8f0;
+}
+
+.opptiai-button-danger {
+	background: #ef4444;
+	color: #ffffff;
+}
+
+.opptiai-button-danger:hover:not([disabled]) {
+	background: #dc2626;
+}
+
+.opptiai-button-success {
+	background: #10b981;
+	color: #ffffff;
+}
+
+.opptiai-button-success:hover:not([disabled]) {
+	background: #059669;
+}
+
+/* ========================================================================
+   TABLES
+   ======================================================================== */
+
+.opptiai-table {
+	width: 100%;
+	border-collapse: collapse;
+	background: #ffffff;
+}
+
+.opptiai-table thead {
+	background: #f8fafc;
+}
+
+.opptiai-table th {
+	padding: 0.75rem 1rem;
+	text-align: left;
+	font-weight: 600;
+	font-size: 0.875rem;
+	color: #475569;
+	border-bottom: 2px solid #e2e8f0;
+}
+
+.opptiai-table td {
+	padding: 0.875rem 1rem;
+	border-bottom: 1px solid #f1f5f9;
+}
+
+.opptiai-table tbody tr:hover {
+	background: #f8fafc;
+}
+
+/* ========================================================================
+   NOTICES/ALERTS
+   ======================================================================== */
+
+.opptiai-notice {
+	position: relative;
+	padding: 1rem 1.25rem;
+	border-radius: 0.375rem;
+	margin-bottom: 1rem;
+	display: flex;
+	align-items: start;
+	gap: 0.75rem;
+}
+
+.opptiai-notice-content {
+	flex: 1;
+}
+
+.opptiai-notice-dismiss {
+	background: none;
+	border: none;
+	cursor: pointer;
+	font-size: 1.5rem;
+	line-height: 1;
+	padding: 0;
+	color: inherit;
+	opacity: 0.5;
+	transition: opacity 0.2s;
+}
+
+.opptiai-notice-dismiss:hover {
+	opacity: 1;
+}
+
+.opptiai-notice-info {
+	background: #eff6ff;
+	border-left: 4px solid #3b82f6;
+	color: #1e40af;
+}
+
+.opptiai-notice-success {
+	background: #f0fdf4;
+	border-left: 4px solid #10b981;
+	color: #065f46;
+}
+
+.opptiai-notice-warning {
+	background: #fffbeb;
+	border-left: 4px solid #f59e0b;
+	color: #92400e;
+}
+
+.opptiai-notice-error {
+	background: #fef2f2;
+	border-left: 4px solid #ef4444;
+	color: #991b1b;
+}
+
+/* ========================================================================
+   MODALS
+   ======================================================================== */
+
+.opptiai-modal {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 999999;
+}
+
+.opptiai-modal-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.5);
+}
+
+.opptiai-modal-container {
+	position: relative;
+	max-width: 90%;
+	max-height: 90%;
+	margin: 5% auto;
+	background: #ffffff;
+	border-radius: 0.5rem;
+	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.opptiai-modal-small .opptiai-modal-container {
+	max-width: 400px;
+}
+
+.opptiai-modal-medium .opptiai-modal-container {
+	max-width: 600px;
+}
+
+.opptiai-modal-large .opptiai-modal-container {
+	max-width: 900px;
+}
+
+.opptiai-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1.25rem 1.5rem;
+	border-bottom: 1px solid #e2e8f0;
+}
+
+.opptiai-modal-header h2 {
+	margin: 0;
+	font-size: 1.25rem;
+	font-weight: 600;
+}
+
+.opptiai-modal-close {
+	background: none;
+	border: none;
+	font-size: 1.5rem;
+	cursor: pointer;
+	padding: 0;
+	width: 2rem;
+	height: 2rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 0.25rem;
+	transition: background 0.2s;
+}
+
+.opptiai-modal-close:hover {
+	background: #f1f5f9;
+}
+
+.opptiai-modal-body {
+	padding: 1.5rem;
+	overflow-y: auto;
+	flex: 1;
+}
+
+.opptiai-modal-footer {
+	padding: 1rem 1.5rem;
+	border-top: 1px solid #e2e8f0;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0.75rem;
+}
+
+/* ========================================================================
+   PROGRESS BARS
+   ======================================================================== */
+
+.opptiai-progress-bar {
+	margin-bottom: 1rem;
+}
+
+.opptiai-progress-label {
+	font-size: 0.875rem;
+	color: #64748b;
+	margin-bottom: 0.5rem;
+}
+
+.opptiai-progress-track {
+	height: 1.5rem;
+	background: #f1f5f9;
+	border-radius: 0.75rem;
+	overflow: hidden;
+}
+
+.opptiai-progress-fill {
+	height: 100%;
+	background: linear-gradient(90deg, #3b82f6, #2563eb);
+	border-radius: 0.75rem;
+	transition: width 0.3s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.opptiai-progress-text {
+	color: #ffffff;
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+
+/* ========================================================================
+   TABS
+   ======================================================================== */
+
+.opptiai-tabs {
+	display: flex;
+	gap: 0.5rem;
+	border-bottom: 2px solid #e2e8f0;
+	margin-bottom: 1.5rem;
+}
+
+.opptiai-tab {
+	padding: 0.75rem 1.25rem;
+	color: #64748b;
+	text-decoration: none;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -2px;
+	transition: all 0.2s ease;
+}
+
+.opptiai-tab:hover {
+	color: #0f172a;
+}
+
+.opptiai-tab-active {
+	color: #2563eb;
+	border-bottom-color: #2563eb;
+	font-weight: 500;
+}
+
+.opptiai-tab-panel {
+	display: block;
+}
+
+.opptiai-tab-panel-hidden {
+	display: none;
+}
+
+/* ========================================================================
+   FORM FIELDS
+   ======================================================================== */
+
+.opptiai-form-field {
+	margin-bottom: 1.25rem;
+}
+
+.opptiai-form-label {
+	display: block;
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: #0f172a;
+	margin-bottom: 0.5rem;
+}
+
+.opptiai-required {
+	color: #ef4444;
+}
+
+.opptiai-form-control {
+	width: 100%;
+	padding: 0.625rem 0.875rem;
+	font-size: 0.875rem;
+	line-height: 1.5;
+	color: #0f172a;
+	background: #ffffff;
+	border: 1px solid #cbd5e1;
+	border-radius: 0.375rem;
+	transition: all 0.2s ease;
+}
+
+.opptiai-form-control:focus {
+	outline: none;
+	border-color: #3b82f6;
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+textarea.opptiai-form-control {
+	resize: vertical;
+	min-height: 100px;
+}
+
+.opptiai-checkbox-label {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	cursor: pointer;
+}
+
+.opptiai-form-checkbox {
+	width: 1.125rem;
+	height: 1.125rem;
+	cursor: pointer;
+}
+
+/* ========================================================================
+   LISTS
+   ======================================================================== */
+
+.opptiai-list {
+	margin: 0;
+	padding-left: 1.5rem;
+}
+
+.opptiai-list li {
+	margin-bottom: 0.5rem;
+}
+
+/* ========================================================================
+   FOOTER
+   ======================================================================== */
+
+.opptiai-page-footer {
+	margin-top: 3rem;
+	padding-top: 1.5rem;
+	border-top: 1px solid #e2e8f0;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 0.875rem;
+	color: #64748b;
+}
+
+.opptiai-footer-links {
+	display: flex;
+	gap: 1.5rem;
+}
+
+.opptiai-footer-links a {
+	color: #3b82f6;
+	text-decoration: none;
+}
+
+.opptiai-footer-links a:hover {
+	text-decoration: underline;
+}
+
+/* ========================================================================
+   RESPONSIVE
+   ======================================================================== */
+
+@media (max-width: 1024px) {
+	.opptiai-page-wrapper {
+		flex-direction: column;
+	}
+
+	.opptiai-sidebar {
+		width: 100%;
+	}
+
+	.opptiai-sidebar-nav {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	}
+
+	.opptiai-sidebar-item {
+		border-bottom: none;
+		border-right: 1px solid #f1f5f9;
+	}
+}
+
+@media (max-width: 768px) {
+	.opptiai-page-title {
+		font-size: 1.5rem;
+	}
+
+	.opptiai-modal-container {
+		max-width: 95%;
+		margin: 2% auto;
+	}
+
+	.opptiai-tabs {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+}

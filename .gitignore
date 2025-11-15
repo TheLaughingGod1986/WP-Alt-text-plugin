@@ -41,3 +41,20 @@ DEPLOYMENT-INSTRUCTIONS.md
 
 # Dependencies
 node_modules/
+
+# Test Files (exclude from production builds)
+test-*.php
+check-*.php
+debug-*.php
+scripts/
+*.sh
+
+# Documentation (exclude from production, except readme.txt and framework docs)
+docs/
+*.md
+!README.md
+!readme.txt
+!REFACTOR_SUMMARY.md
+!IMPLEMENTATION_GUIDE.md
+!PROGRESS_REPORT.md
+!DEPLOYMENT_CHECKLIST.md
