@@ -426,6 +426,25 @@ class AltText_AI_API_Client_V2 {
                 $backend_error_message = $data['message'] ?? $data['error'] ?? '';
             }
             
+            // Check for "User not found" errors first (these come back as 500 sometimes)
+            $error_details_lower = strtolower($error_details . ' ' . $backend_error_message);
+            if (strpos($error_details_lower, 'user not found') !== false || 
+                strpos($error_details_lower, 'user does not exist') !== false ||
+                (is_array($data) && isset($data['code']) && strpos(strtolower($data['code']), 'user_not_found') !== false)) {
+                // User was deleted or token is invalid - clear stored credentials
+                $this->clear_token();
+                delete_transient('opptiai_alt_token_last_check');
+                return new WP_Error(
+                    'auth_required',
+                    __('Your session has expired or your account is no longer available. Please log in again.', 'wp-alt-text-plugin'),
+                    [
+                        'requires_auth' => true,
+                        'status_code' => $status_code,
+                        'code' => 'user_not_found',
+                    ]
+                );
+            }
+            
             // Provide more specific error message based on endpoint and error details
             $error_message = __('The server encountered an error processing your request. Please try again in a few minutes.', 'wp-alt-text-plugin');
             
@@ -457,14 +476,35 @@ class AltText_AI_API_Client_V2 {
             );
         }
         
-        // Handle authentication errors
+        // Handle authentication errors and user not found errors
         if ($status_code === 401 || $status_code === 403) {
             $this->clear_token();
+            delete_transient('opptiai_alt_token_last_check');
             return new WP_Error(
                 'auth_required',
                 __('Authentication required. Please log in to continue.', 'wp-alt-text-plugin'),
                 ['requires_auth' => true]
             );
+        }
+        
+        // Check for "User not found" errors in response body (backend returns 500 sometimes)
+        if (isset($data['message']) || isset($data['error'])) {
+            $error_msg = strtolower(($data['message'] ?? '') . ' ' . ($data['error'] ?? ''));
+            if (strpos($error_msg, 'user not found') !== false || 
+                strpos($error_msg, 'user does not exist') !== false) {
+                // User was deleted or token is invalid - clear stored credentials
+                $this->clear_token();
+                delete_transient('opptiai_alt_token_last_check');
+                return new WP_Error(
+                    'auth_required',
+                    __('Your session has expired or your account is no longer available. Please log in again.', 'wp-alt-text-plugin'),
+                    [
+                        'requires_auth' => true,
+                        'status_code' => $status_code,
+                        'code' => 'user_not_found',
+                    ]
+                );
+            }
         }
         
         return [
@@ -937,6 +977,25 @@ class AltText_AI_API_Client_V2 {
             $error_data = $response['data'] ?? [];
             $error_message = $error_data['message'] ?? $error_data['error'] ?? __('Failed to generate alt text', 'wp-alt-text-plugin');
             $error_code = $error_data['code'] ?? 'api_error';
+            
+            // Handle authentication/user errors - clear invalid token
+            $error_message_lower = strtolower($error_message . ' ' . ($error_data['error'] ?? ''));
+            if (strpos($error_message_lower, 'user not found') !== false || 
+                strpos($error_message_lower, 'user does not exist') !== false ||
+                (($response['status_code'] === 401 || $response['status_code'] === 403) && strpos($error_message_lower, 'unauthorized') !== false)) {
+                // User was deleted or token is invalid - clear stored credentials
+                $this->clear_token();
+                delete_transient('opptiai_alt_token_last_check');
+                return new WP_Error(
+                    'auth_required',
+                    __('Your session has expired or your account is no longer available. Please log in again.', 'wp-alt-text-plugin'),
+                    [
+                        'requires_auth' => true,
+                        'status_code' => $response['status_code'],
+                        'code' => 'user_not_found',
+                    ]
+                );
+            }
             
             // Handle 413 Payload Too Large specifically
             if ($response['status_code'] === 413) {
