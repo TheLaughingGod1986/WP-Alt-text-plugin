@@ -5963,9 +5963,15 @@ class Opptiai_Alt_Core {
         $use_debug_assets = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG;
         $js_base  = $use_debug_assets ? 'assets/src/js/' : 'assets/dist/js/';
         $css_base = $use_debug_assets ? 'assets/src/css/' : 'assets/dist/css/';
-        $asset_path = static function(string $base, string $name, bool $debug, string $type): string {
+        $asset_path = static function(string $base, string $name, bool $debug, string $type) use ($base_path): string {
             $extension = $debug ? ".$type" : ".min.$type";
-            return $base . $name . $extension;
+            $minified_path = $base . $name . $extension;
+            // If minified file doesn't exist, fall back to source file
+            if (!$debug && !file_exists($base_path . $minified_path)) {
+                $source_base = str_replace('assets/dist/', 'assets/src/', $base);
+                return $source_base . $name . ".$type";
+            }
+            return $minified_path;
         };
 
         $admin_file    = $asset_path($js_base, 'ai-alt-admin', $use_debug_assets, 'js');
