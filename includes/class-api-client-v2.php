@@ -922,6 +922,31 @@ class AltText_AI_API_Client_V2 {
      * Generate alt text via API (Phase 2)
      */
     public function generate_alt_text($image_id, $context = [], $regenerate = false) {
+        // Validate authentication before making request
+        // If we haven't checked recently and token exists, validate it first
+        if (!$this->has_active_license()) {
+            $token = $this->get_token();
+            if (!empty($token) && !defined('WP_LOCAL_DEV')) {
+                $last_check = get_transient('opptiai_alt_token_last_check');
+                // If token check expired or never done, validate before generating
+                if ($last_check === false) {
+                    $user_info = $this->get_user_info();
+                    if (is_wp_error($user_info)) {
+                        // Token is invalid, clear it and return auth error
+                        $this->clear_token();
+                        delete_transient('opptiai_alt_token_last_check');
+                        return new WP_Error(
+                            'auth_required',
+                            __('Your session has expired. Please log in again.', 'wp-alt-text-plugin'),
+                            ['requires_auth' => true]
+                        );
+                    }
+                    // Token is valid, cache for 5 minutes
+                    set_transient('opptiai_alt_token_last_check', time(), 5 * MINUTE_IN_SECONDS);
+                }
+            }
+        }
+        
         $endpoint = 'api/generate';
         
         // Enrich context with useful metadata for higher fidelity
