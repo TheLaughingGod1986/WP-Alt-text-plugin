@@ -3,10 +3,12 @@
  * Debug logging utility for AltText AI.
  */
 
+namespace BeepBeepAI\AltTextGenerator;
+
 if (!defined('ABSPATH')) { exit; }
 
-class AltText_AI_Debug_Log {
-    const TABLE_SLUG = 'opptiai_alt_logs';
+class Debug_Log {
+    const TABLE_SLUG = 'bbai_logs';
     const MAX_MESSAGE_LENGTH = 2000;
     const MAX_CONTEXT_LENGTH = 4000;
 
@@ -71,7 +73,7 @@ class AltText_AI_Debug_Log {
         }
 
         $source = sanitize_key($source ?: 'core');
-        $meta = sanitize_text_field($meta);
+        $meta = is_string($meta) && $meta !== '' ? sanitize_text_field($meta) : '';
         
         // Get current user ID if not provided
         if ($user_id === null) {
@@ -152,14 +154,29 @@ class AltText_AI_Debug_Log {
 
         $where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
         $table = self::table();
+        // Table names are sanitized in table() method, safe to use directly with esc_sql
+        $table_escaped = esc_sql($table);
 
-        $query = "SELECT * FROM {$table} {$where_sql} ORDER BY created_at DESC LIMIT %d OFFSET %d";
+        $query = "SELECT * FROM {$table_escaped} {$where_sql} ORDER BY created_at DESC LIMIT %d OFFSET %d";
         array_push($params, $per_page, $offset);
         $prepared = $wpdb->prepare($query, $params);
         $rows = $wpdb->get_results($prepared, ARRAY_A);
 
-        $count_query = "SELECT COUNT(*) FROM {$table} {$where_sql}";
-        $count_prepared = $where ? $wpdb->prepare($count_query, array_slice($params, 0, count($params) - 2)) : $count_query;
+        // Build count query - only use prepare() if there are placeholders
+        // Build count params (exclude LIMIT and OFFSET params)
+        $count_params = array_slice($params, 0, count($params) - 2);
+        $count_query = "SELECT COUNT(*) FROM {$table_escaped} {$where_sql}";
+        
+        // Only use prepare() if there are placeholders in the query
+        // WordPress requires at least one placeholder when using prepare()
+        if (empty($count_params)) {
+            // No WHERE conditions - query has no placeholders, use directly
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped, no user input
+            $count_prepared = $count_query;
+        } else {
+            // When there are WHERE conditions, prepare with those params
+            $count_prepared = $wpdb->prepare($count_query, $count_params);
+        }
         $total_items = intval($wpdb->get_var($count_prepared));
         $total_pages = $per_page > 0 ? ceil($total_items / $per_page) : 1;
 
@@ -192,9 +209,14 @@ class AltText_AI_Debug_Log {
 
         global $wpdb;
         $table = self::table();
-        $totals = $wpdb->get_results("SELECT level, COUNT(*) as total FROM {$table} GROUP BY level", OBJECT_K);
-        $total_logs = intval($wpdb->get_var("SELECT COUNT(*) FROM {$table}"));
-        $last_api_call = $wpdb->get_var("SELECT created_at FROM {$table} WHERE source = 'api' ORDER BY created_at DESC LIMIT 1");
+        // Table names are sanitized in table() method, safe to use directly
+        $table_escaped = esc_sql($table);
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
+        $totals = $wpdb->get_results("SELECT level, COUNT(*) as total FROM `{$table_escaped}` GROUP BY level", OBJECT_K);
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
+        $total_logs = intval($wpdb->get_var("SELECT COUNT(*) FROM `{$table_escaped}`"));
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
+        $last_api_call = $wpdb->get_var($wpdb->prepare("SELECT created_at FROM `{$table_escaped}` WHERE source = %s ORDER BY created_at DESC LIMIT 1", 'api'));
 
         return [
             'total'    => $total_logs,
@@ -211,7 +233,10 @@ class AltText_AI_Debug_Log {
 
         global $wpdb;
         $table = self::table();
-        $wpdb->query("DELETE FROM {$table}");
+        // Table names are sanitized in table() method, safe to use directly with esc_sql
+        $table_escaped = esc_sql($table);
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
+        $wpdb->query("DELETE FROM `{$table_escaped}`");
     }
 
     public static function delete_older_than($days = 30) {
@@ -221,8 +246,11 @@ class AltText_AI_Debug_Log {
 
         global $wpdb;
         $table = self::table();
+        // Table names are sanitized in table() method, safe to use directly with esc_sql
+        $table_escaped = esc_sql($table);
         $threshold = gmdate('Y-m-d H:i:s', time() - ($days * DAY_IN_SECONDS));
-        $wpdb->query($wpdb->prepare("DELETE FROM {$table} WHERE created_at < %s", $threshold));
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
+        $wpdb->query($wpdb->prepare("DELETE FROM `{$table_escaped}` WHERE created_at < %s", $threshold));
     }
 
     private static function allowed_levels() {

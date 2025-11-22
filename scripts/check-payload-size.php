@@ -28,7 +28,7 @@ echo str_repeat("=", 60) . "\n\n";
 
 // Test with image #20
 $image_id = 20;
-$api_client = new AltText_AI_API_Client_V2();
+$api_client = new BbAI_API_Client_V2();
 
 $image_url = wp_get_attachment_url($image_id);
 $title     = get_the_title($image_id);

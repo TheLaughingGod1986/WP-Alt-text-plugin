@@ -12,11 +12,11 @@ SELECT
         ELSE NULL
     END as expires_at
 FROM wp_options
-WHERE option_name LIKE '%opptiai_alt_usage_cache%'
+WHERE option_name LIKE '%beepbeepai_usage_cache%'
 ORDER BY option_name;
 
 -- To see if you've used all 50 credits, look for the option_value in the row
--- where option_name = '_transient_opptiai_alt_usage_cache'
+-- where option_name = '_transient_beepbeepai_usage_cache'
 -- The value will be serialized PHP data, but you can see numbers like:
 -- "used";i:50 means you've used 50
 -- "limit";i:50 means your limit is 50

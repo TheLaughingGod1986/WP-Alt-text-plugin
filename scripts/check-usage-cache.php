@@ -20,7 +20,7 @@ echo "Usage Cache Check:\n";
 echo str_repeat("=", 50) . "\n\n";
 
 // Check transient (try both old and new cache keys)
-$cache_keys = ['opptiai_alt_usage_cache', 'alttextai_usage_cache'];
+$cache_keys = ['beepbeepai_usage_cache'];
 $cached = false;
 $used_key = '';
 
@@ -56,8 +56,8 @@ if ($cached !== false) {
 
 // Check raw database
 global $wpdb;
-$transient_key = '_transient_opptiai_alt_usage_cache';
-$timeout_key = '_transient_timeout_opptiai_alt_usage_cache';
+$transient_key = '_transient_beepbeepai_usage_cache';
+$timeout_key = '_transient_timeout_beepbeepai_usage_cache';
 
 $transient_value = $wpdb->get_var($wpdb->prepare(
     "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s",

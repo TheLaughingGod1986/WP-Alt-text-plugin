@@ -3,7 +3,7 @@
  * Handles user registration and login
  */
 
-class AltTextAuthModal {
+class BbAIAuthModal {
     constructor() {
         this.apiUrl = this.getApiUrl();
         this.token = this.getStoredToken();
@@ -15,14 +15,8 @@ class AltTextAuthModal {
 
     getApiUrl() {
         // First check for configured API URL
-        if (window.alttextai_ajax?.api_url) {
-            return window.alttextai_ajax.api_url;
-        }
-
-        // Environment-based fallback for development
-        const hostname = window.location.hostname;
-        if (hostname === 'localhost' || hostname === '127.0.0.1') {
-            return 'http://localhost:3001';
+        if (window.bbai_ajax?.api_url) {
+            return window.bbai_ajax.api_url;
         }
 
         // No fallback for production - fail explicitly
@@ -130,14 +124,14 @@ class AltTextAuthModal {
                             <button class="alttext-auth-modal__close" type="button" aria-label="Close dialog">&times;</button>
                         
                         <div class="alttext-auth-modal__header">
-                            <h2 class="alttext-auth-modal__title" id="alttext-auth-modal-title">AltText AI Account</h2>
+                            <h2 class="alttext-auth-modal__title" id="alttext-auth-modal-title">BeepBeep AI Account</h2>
                             <p class="alttext-auth-modal__subtitle" id="alttext-auth-modal-desc">Sign in to sync your subscription, usage quota, and account preferences.</p>
                         </div>
                         
                         <div class="alttext-auth-modal__body">
                             <!-- Login Form -->
                             <div id="alttext-login-form" class="alttext-auth-form">
-                                <form id="login-form" autocomplete="off" aria-label="Sign in to your AltText AI account">
+                                <form id="login-form" autocomplete="off" aria-label="Sign in to your BeepBeep AI account">
                                     <div class="alttext-form-group">
                                         <label for="login-email">Email</label>
                                         <input type="email" id="login-email" name="email" placeholder="Email" autocomplete="off" required aria-required="true">
@@ -161,7 +155,7 @@ class AltTextAuthModal {
 
                             <!-- Register Form -->
                             <div id="alttext-register-form" class="alttext-auth-form" style="display: none;">
-                                <form id="register-form" autocomplete="off" aria-label="Create a new AltText AI account">
+                                <form id="register-form" autocomplete="off" aria-label="Create a new BeepBeep AI account">
                                     <div class="alttext-form-group">
                                         <label for="register-email">Email</label>
                                         <input type="email" id="register-email" name="email" placeholder="Email" autocomplete="off" required aria-required="true">
@@ -268,7 +262,7 @@ class AltTextAuthModal {
         // Use event delegation from document for all modal events
         document.addEventListener('click', function(e) {
             // Global CTA triggers (works even if dashboard script fails)
-            const authTrigger = e.target.closest('[data-action="show-auth-modal"], #alttextai-show-auth-banner-btn, #alttextai-show-auth-login-btn');
+            const authTrigger = e.target.closest('[data-action="show-auth-modal"], #bbai-show-auth-banner-btn, #bbai-show-auth-login-btn');
             if (authTrigger) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -495,7 +489,7 @@ class AltTextAuthModal {
         this.setLoading(form, true);
 
         // Validate AJAX config exists
-        if (!window.alttextai_ajax?.ajaxurl) {
+        if (!window.bbai_ajax?.ajaxurl) {
             console.error('[AltText AI] AJAX configuration not loaded');
             this.showError('Configuration error. Please refresh the page and try again.');
             this.setLoading(form, false);
@@ -503,16 +497,16 @@ class AltTextAuthModal {
         }
 
         try {
-            const response = await fetch(window.alttextai_ajax.ajaxurl, {
+            const response = await fetch(window.bbai_ajax.ajaxurl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },
                 body: new URLSearchParams({
-                    action: 'alttextai_login',
+                    action: 'beepbeepai_login',
                     email: email,
                     password: password,
-                    nonce: window.alttextai_ajax.nonce
+                    nonce: window.bbai_ajax.nonce
                 })
             });
 
@@ -564,7 +558,7 @@ class AltTextAuthModal {
         this.setLoading(form, true);
 
         // Validate AJAX config exists
-        if (!window.alttextai_ajax?.ajaxurl) {
+        if (!window.bbai_ajax?.ajaxurl) {
             console.error('[AltText AI] AJAX configuration not loaded');
             this.showError('Configuration error. Please refresh the page and try again.');
             this.setLoading(form, false);
@@ -572,16 +566,16 @@ class AltTextAuthModal {
         }
 
         try {
-            const response = await fetch(window.alttextai_ajax.ajaxurl, {
+            const response = await fetch(window.bbai_ajax.ajaxurl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },
                 body: new URLSearchParams({
-                    action: 'alttextai_register',
+                    action: 'beepbeepai_register',
                     email: email,
                     password: password,
-                    nonce: window.alttextai_ajax.nonce
+                    nonce: window.bbai_ajax.nonce
                 })
             });
 
@@ -622,7 +616,7 @@ class AltTextAuthModal {
         this.setLoading(form, true);
 
         // Validate AJAX config exists
-        if (!window.alttextai_ajax?.ajaxurl) {
+        if (!window.bbai_ajax?.ajaxurl) {
             console.error('[AltText AI] AJAX configuration not loaded');
             this.showError('Configuration error. Please refresh the page and try again.');
             this.setLoading(form, false);
@@ -630,15 +624,15 @@ class AltTextAuthModal {
         }
 
         try {
-            const response = await fetch(window.alttextai_ajax.ajaxurl, {
+            const response = await fetch(window.bbai_ajax.ajaxurl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },
                 body: new URLSearchParams({
-                    action: 'alttextai_forgot_password',
+                    action: 'beepbeepai_forgot_password',
                     email: email,
-                    nonce: window.alttextai_ajax.nonce
+                    nonce: window.bbai_ajax.nonce
                 })
             });
 
@@ -740,7 +734,7 @@ class AltTextAuthModal {
         this.setLoading(form, true);
 
         // Validate AJAX config exists
-        if (!window.alttextai_ajax?.ajaxurl) {
+        if (!window.bbai_ajax?.ajaxurl) {
             console.error('[AltText AI] AJAX configuration not loaded');
             this.showError('Configuration error. Please refresh the page and try again.');
             this.setLoading(form, false);
@@ -748,17 +742,17 @@ class AltTextAuthModal {
         }
 
         try {
-            const response = await fetch(window.alttextai_ajax.ajaxurl, {
+            const response = await fetch(window.bbai_ajax.ajaxurl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },
                 body: new URLSearchParams({
-                    action: 'alttextai_reset_password',
+                    action: 'beepbeepai_reset_password',
                     email: email,
                     token: token,
                     password: password,
-                    nonce: window.alttextai_ajax.nonce
+                    nonce: window.bbai_ajax.nonce
                 })
             });
 
@@ -897,15 +891,15 @@ class AltTextAuthModal {
     storeToken(token) {
         localStorage.setItem('alttextai_token', token);
         // Also store in WordPress for server-side access
-        fetch(window.alttextai_ajax?.ajax_url || '/wp-admin/admin-ajax.php', {
+        fetch(window.bbai_ajax?.ajax_url || '/wp-admin/admin-ajax.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
             body: new URLSearchParams({
-                action: 'alttextai_store_token',
+                action: 'bbai_store_token',
                 token: token,
-                nonce: window.alttextai_ajax?.nonce || ''
+                nonce: window.bbai_ajax?.nonce || ''
             })
         });
     }
@@ -966,11 +960,16 @@ class AltTextAuthModal {
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    window.AltTextAuthModal = new AltTextAuthModal();
-    window.authModal = window.AltTextAuthModal; // Alias for compatibility
+    // Create instance and add to bbaiApp namespace
+    var authModalInstance = new BbAIAuthModal();
+    window.AltTextAuthModal = authModalInstance; // Legacy support
+    if (typeof bbaiApp !== 'undefined') {
+        bbaiApp.authModal = authModalInstance;
+    }
+    window.authModal = authModalInstance; // Alias for compatibility
 });
 
 // Export for use in other scripts
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = AltTextAuthModal;
+    module.exports = BbAIAuthModal;
 }

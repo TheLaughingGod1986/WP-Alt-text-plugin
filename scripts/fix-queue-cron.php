@@ -21,13 +21,13 @@ echo "Fixing Queue Cron\n";
 echo str_repeat("=", 50) . "\n\n";
 
 // Clear any stuck cron events
-$cleared = wp_clear_scheduled_hook(AltText_AI_Queue::CRON_HOOK);
+$cleared = wp_clear_scheduled_hook(BbAI_Queue::CRON_HOOK);
 echo "Cleared $cleared stuck cron event(s)\n\n";
 
 // Schedule processing immediately (in 5 seconds)
-AltText_AI_Queue::schedule_processing(5);
+BbAI_Queue::schedule_processing(5);
 
-$next = wp_next_scheduled(AltText_AI_Queue::CRON_HOOK);
+$next = wp_next_scheduled(BbAI_Queue::CRON_HOOK);
 if ($next) {
     $seconds = $next - time();
     echo "✓ Cron rescheduled for " . date('Y-m-d H:i:s', $next) . " ($seconds seconds from now)\n\n";
@@ -36,7 +36,7 @@ if ($next) {
 }
 
 // Get pending count
-$stats = AltText_AI_Queue::get_stats();
+$stats = BbAI_Queue::get_stats();
 echo "Pending jobs: " . $stats['pending'] . "\n\n";
 
 // Try to trigger WordPress cron manually

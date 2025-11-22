@@ -25,7 +25,7 @@ if (!defined('ABSPATH')) {
 echo "Testing Alt Text Generation for Multiple Images\n";
 echo str_repeat("=", 70) . "\n\n";
 
-$api_client = new AltText_AI_API_Client_V2();
+$api_client = new BbAI_API_Client_V2();
 
 // Test images 16-20
 $image_ids = [16, 17, 18, 19, 20];

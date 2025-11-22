@@ -19,18 +19,18 @@ echo "Clearing API Error Log\n";
 echo str_repeat("=", 50) . "\n\n";
 
 // Get current error count
-$errors = get_option('alttextai_api_error_log', []);
+$errors = get_option('beepbeepai_api_error_log', []);
 $count = is_array($errors) ? count($errors) : 0;
 
 echo "Current error count: $count\n\n";
 
 // Clear the log
-delete_option('alttextai_api_error_log');
+delete_option('beepbeepai_api_error_log');
 
 echo "✓ API error log cleared\n\n";
 
 // Verify it's cleared
-$errors_after = get_option('alttextai_api_error_log', []);
+$errors_after = get_option('beepbeepai_api_error_log', []);
 if (empty($errors_after)) {
     echo "✓ Verified: Error log is now empty\n";
 } else {

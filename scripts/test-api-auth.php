@@ -22,12 +22,12 @@ require_once OPPTIAI_ALT_PLUGIN_DIR . 'includes/class-api-client-v2.php';
 echo "Testing API Authentication\n";
 echo str_repeat("=", 50) . "\n\n";
 
-$api_client = new AltText_AI_API_Client_V2();
+$api_client = new BbAI_API_Client_V2();
 
 // Check if token exists
-$token = get_option('opptiai_alt_jwt_token', '');
+$token = get_option('beepbeepai_jwt_token', '');
 if (empty($token)) {
-    $token = get_option('opptiai_alt_jwt_token', '');
+    $token = get_option('beepbeepai_jwt_token', '');
 }
 if (empty($token)) {
     echo "❌ No token found in WordPress options\n";

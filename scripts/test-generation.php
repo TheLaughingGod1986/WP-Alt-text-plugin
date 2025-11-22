@@ -28,7 +28,7 @@ echo str_repeat("=", 60) . "\n\n";
 
 // Step 1: Check authentication
 echo "1. Checking authentication...\n";
-$token = get_option('opptiai_alt_jwt_token', '');
+$token = get_option('beepbeepai_jwt_token', '');
 if (empty($token)) {
     echo "   ❌ No JWT token found - user not authenticated\n";
     exit(1);
@@ -37,12 +37,12 @@ echo "   ✓ JWT token found\n\n";
 
 // Step 2: Check API client
 echo "2. Checking API client...\n";
-if (!class_exists('AltText_AI_API_Client_V2')) {
+if (!class_exists('BbAI_API_Client_V2')) {
     echo "   ❌ API Client class not found\n";
     exit(1);
 }
 
-$api_client = new AltText_AI_API_Client_V2();
+$api_client = new BbAI_API_Client_V2();
 echo "   ✓ API Client instantiated\n";
 
 $is_authenticated = $api_client->is_authenticated();
@@ -144,9 +144,9 @@ echo "\n";
 
 // Step 7: Check debug logs
 echo "7. Checking recent debug logs...\n";
-if (class_exists('AltText_AI_Debug_Log')) {
+if (class_exists('BbAI_Debug_Log')) {
     global $wpdb;
-    $table_name = $wpdb->prefix . 'alttextai_debug_logs';
+    $table_name = $wpdb->prefix . 'beepbeepai_debug_logs';
     $logs = $wpdb->get_results(
         "SELECT * FROM {$table_name} WHERE category IN ('api', 'generation') ORDER BY created_at DESC LIMIT 5",
         ARRAY_A

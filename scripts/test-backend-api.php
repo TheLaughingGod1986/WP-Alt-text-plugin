@@ -3,7 +3,7 @@
  * Test Backend API Endpoints Directly
  */
 
-$base_url = 'https://alttext-ai-backend.onrender.com';
+$base_url = 'https://oppti.dev/api';
 
 echo "Testing Backend API Endpoints\n";
 echo str_repeat("=", 50) . "\n\n";
@@ -21,9 +21,9 @@ foreach ($wp_load_paths as $path) {
     }
 }
 
-$token = get_option('opptiai_alt_jwt_token', '');
+$token = get_option('beepbeepai_jwt_token', '');
 if (empty($token)) {
-    $token = get_option('opptiai_alt_jwt_token', '');
+    $token = get_option('beepbeepai_jwt_token', '');
 }
 
 if (empty($token)) {

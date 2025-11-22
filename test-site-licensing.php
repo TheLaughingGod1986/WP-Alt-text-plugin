@@ -25,7 +25,7 @@ echo "=== Site-Based Licensing Test ===\n\n";
 
 // Test 1: Check Site ID Generation
 echo "1. Testing Site ID Generation...\n";
-$site_id = get_option('opptiai_alt_site_id', '');
+$site_id = get_option('beepbeepai_site_id', '');
 if (empty($site_id)) {
     echo "   ⚠️  Site ID not found. It will be generated on first API request.\n";
     echo "   This is normal if no one has logged in yet.\n";
@@ -36,7 +36,7 @@ if (empty($site_id)) {
 
 // Test 2: Check Token Storage (Site-Wide)
 echo "\n2. Testing Token Storage (Site-Wide)...\n";
-$token = get_option('opptiai_alt_jwt_token', '');
+$token = get_option('beepbeepai_jwt_token', '');
 if (empty($token)) {
     echo "   ⚠️  No token found. User needs to log in first.\n";
     echo "   This is expected if no authentication has occurred.\n";
@@ -48,7 +48,7 @@ if (empty($token)) {
 
 // Test 3: Check User Data Storage
 echo "\n3. Testing User Data Storage...\n";
-$user_data = get_option('opptiai_alt_user_data', null);
+$user_data = get_option('beepbeepai_user_data', null);
 if ($user_data === null || $user_data === false) {
     echo "   ⚠️  No user data found. User needs to log in first.\n";
 } else {
@@ -61,7 +61,7 @@ if ($user_data === null || $user_data === false) {
 
 // Test 4: Check Usage Cache (Site-Wide)
 echo "\n4. Testing Usage Cache (Site-Wide)...\n";
-$usage_cache = get_transient('opptiai_alt_usage_cache');
+$usage_cache = get_transient('beepbeepai_usage_cache');
 if ($usage_cache === false) {
     echo "   ⚠️  No usage cache found. This is normal if no API calls have been made.\n";
 } else {
@@ -75,8 +75,8 @@ if ($usage_cache === false) {
 
 // Test 5: Verify API Client Configuration
 echo "\n5. Testing API Client Configuration...\n";
-if (class_exists('AltText_AI_API_Client_V2')) {
-    $api_client = new AltText_AI_API_Client_V2();
+if (class_exists('BbAI_API_Client_V2')) {
+    $api_client = new BbAI_API_Client_V2();
     
     // Check if authenticated
     $is_authenticated = $api_client->is_authenticated();
@@ -96,9 +96,9 @@ if (class_exists('AltText_AI_API_Client_V2')) {
 // Test 6: Check WordPress Options (Site-Wide Storage)
 echo "\n6. Testing WordPress Options (Site-Wide Storage)...\n";
 $options_to_check = [
-    'opptiai_alt_site_id' => 'Site ID',
-    'opptiai_alt_jwt_token' => 'JWT Token',
-    'opptiai_alt_user_data' => 'User Data',
+    'beepbeepai_site_id' => 'Site ID',
+    'beepbeepai_jwt_token' => 'JWT Token',
+    'beepbeepai_user_data' => 'User Data',
 ];
 
 foreach ($options_to_check as $option_key => $label) {
@@ -115,21 +115,21 @@ echo "\n7. Simulating Multi-User Scenario...\n";
 $current_user_id = get_current_user_id();
 if ($current_user_id > 0) {
     echo "   ✅ Current user ID: {$current_user_id}\n";
-    echo "   ✅ Token accessible to this user: " . (get_option('opptiai_alt_jwt_token') ? "Yes" : "No") . "\n";
-    echo "   ✅ Usage cache accessible to this user: " . (get_transient('opptiai_alt_usage_cache') !== false ? "Yes" : "No") . "\n";
+    echo "   ✅ Token accessible to this user: " . (get_option('beepbeepai_jwt_token') ? "Yes" : "No") . "\n";
+    echo "   ✅ Usage cache accessible to this user: " . (get_transient('beepbeepai_usage_cache') !== false ? "Yes" : "No") . "\n";
 } else {
     echo "   ⚠️  No user logged in (running as CLI)\n";
 }
 
 // Test 8: Check if Site ID would be sent in API requests
 echo "\n8. Testing Site ID in API Requests...\n";
-if (class_exists('AltText_AI_API_Client_V2')) {
+if (class_exists('BbAI_API_Client_V2')) {
     // Use reflection to access private method for testing
-    $reflection = new ReflectionClass('AltText_AI_API_Client_V2');
+    $reflection = new ReflectionClass('BbAI_API_Client_V2');
     $method = $reflection->getMethod('get_site_id');
     $method->setAccessible(true);
     
-    $api_client = new AltText_AI_API_Client_V2();
+    $api_client = new BbAI_API_Client_V2();
     $site_id_from_client = $method->invoke($api_client);
     
     if (!empty($site_id_from_client)) {

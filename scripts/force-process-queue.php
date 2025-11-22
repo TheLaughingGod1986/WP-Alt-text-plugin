@@ -17,7 +17,7 @@ foreach ($wp_load_paths as $path) {
 
 require_once OPPTIAI_ALT_PLUGIN_DIR . 'includes/class-queue.php';
 // Get stats before
-$stats_before = AltText_AI_Queue::get_stats();
+$stats_before = BbAI_Queue::get_stats();
 echo "Before:\n";
 echo "  Pending: " . $stats_before['pending'] . "\n";
 echo "  Processing: " . $stats_before['processing'] . "\n";
@@ -25,13 +25,13 @@ echo "  Failed: " . $stats_before['failed'] . "\n\n";
 
 // Trigger the queue processing via action hook
 echo "Processing queue via action hook...\n";
-do_action('opptiai_alt_process_queue');
+do_action('beepbeepai_process_queue');
 
 // Wait a moment for processing
 sleep(3);
 
 // Get stats after
-$stats_after = AltText_AI_Queue::get_stats();
+$stats_after = BbAI_Queue::get_stats();
 echo "\nAfter:\n";
 echo "  Pending: " . $stats_after['pending'] . "\n";
 echo "  Processing: " . $stats_after['processing'] . "\n";

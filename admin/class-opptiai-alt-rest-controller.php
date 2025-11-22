@@ -7,21 +7,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class Opptiai_Alt_REST_Controller {
+class BbAI_REST_Controller {
 
 	/**
 	 * Core plugin implementation.
 	 *
-	 * @var Opptiai_Alt_Core
+	 * @var BbAI_Core
 	 */
 	private $core;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param Opptiai_Alt_Core $core Core implementation instance.
+	 * @param BbAI_Core $core Core implementation instance.
 	 */
-	public function __construct( Opptiai_Alt_Core $core ) {
+	public function __construct( BbAI_Core $core ) {
 		$this->core = $core;
 	}
 
@@ -30,7 +30,7 @@ class Opptiai_Alt_REST_Controller {
 	 */
 	public function register_routes() {
 		register_rest_route(
-			'opptiai/v1',
+			'bbai/v1',
 			'/generate/(?P<id>\d+)',
 			[
 				'methods'             => 'POST',
@@ -40,7 +40,7 @@ class Opptiai_Alt_REST_Controller {
 		);
 
 		register_rest_route(
-			'opptiai/v1',
+			'bbai/v1',
 			'/alt/(?P<id>\d+)',
 			[
 				'methods'             => 'POST',
@@ -50,7 +50,7 @@ class Opptiai_Alt_REST_Controller {
 		);
 
 		register_rest_route(
-			'opptiai/v1',
+			'bbai/v1',
 			'/list',
 			[
 				'methods'             => 'GET',
@@ -60,7 +60,7 @@ class Opptiai_Alt_REST_Controller {
 		);
 
 		register_rest_route(
-			'opptiai/v1',
+			'bbai/v1',
 			'/stats',
 			[
 				'methods'             => 'GET',
@@ -70,7 +70,7 @@ class Opptiai_Alt_REST_Controller {
 		);
 
 		register_rest_route(
-			'opptiai/v1',
+			'bbai/v1',
 			'/usage',
 			[
 				'methods'             => 'GET',
@@ -80,7 +80,7 @@ class Opptiai_Alt_REST_Controller {
 		);
 
 		register_rest_route(
-			'opptiai/v1',
+			'bbai/v1',
 			'/plans',
 			[
 				'methods'             => 'GET',
@@ -90,7 +90,7 @@ class Opptiai_Alt_REST_Controller {
 		);
 
 		register_rest_route(
-			'opptiai/v1',
+			'bbai/v1',
 			'/queue',
 			[
 				'methods'             => 'GET',
@@ -100,7 +100,7 @@ class Opptiai_Alt_REST_Controller {
 		);
 
 		register_rest_route(
-			'opptiai/v1',
+			'bbai/v1',
 			'/logs',
 			[
 				'methods'             => 'GET',
@@ -110,7 +110,7 @@ class Opptiai_Alt_REST_Controller {
 		);
 
 		register_rest_route(
-			'opptiai/v1',
+			'bbai/v1',
 			'/logs/clear',
 			[
 				'methods'             => 'POST',
@@ -137,7 +137,7 @@ class Opptiai_Alt_REST_Controller {
 	 * Fetch debug logs via REST.
 	 */
 	public function handle_logs( \WP_REST_Request $request ) {
-		if ( ! class_exists( 'AltText_AI_Debug_Log' ) ) {
+		if ( ! class_exists( 'BbAI_Debug_Log' ) ) {
 			return rest_ensure_response([
 				'logs' => [],
 				'pagination' => [
@@ -155,38 +155,45 @@ class Opptiai_Alt_REST_Controller {
 			]);
 		}
 
+		$level_raw = $request->get_param( 'level' );
+		$search_raw = $request->get_param( 'search' );
+		$date_raw = $request->get_param( 'date' );
+		$per_page_raw = $request->get_param( 'per_page' );
+		$page_raw = $request->get_param( 'page' );
+
 		$args = [
-			'level'    => sanitize_text_field( $request->get_param( 'level' ) ),
-			'search'   => sanitize_text_field( $request->get_param( 'search' ) ),
-			'date'     => sanitize_text_field( $request->get_param( 'date' ) ),
-			'per_page' => intval( $request->get_param( 'per_page' ) ?: 10 ),
-			'page'     => intval( $request->get_param( 'page' ) ?: 1 ),
+			'level'    => is_string( $level_raw ) ? sanitize_text_field( $level_raw ) : '',
+			'search'   => is_string( $search_raw ) ? sanitize_text_field( $search_raw ) : '',
+			'date'     => is_string( $date_raw ) ? sanitize_text_field( $date_raw ) : '',
+			'per_page' => absint( $per_page_raw ?: 10 ),
+			'page'     => absint( $page_raw ?: 1 ),
 		];
 
-		return rest_ensure_response( AltText_AI_Debug_Log::get_logs( $args ) );
+		return rest_ensure_response( BbAI_Debug_Log::get_logs( $args ) );
 	}
 
 	/**
 	 * Clear logs via REST.
 	 */
 	public function handle_logs_clear( \WP_REST_Request $request ) {
-		if ( ! class_exists( 'AltText_AI_Debug_Log' ) ) {
+		if ( ! class_exists( 'BbAI_Debug_Log' ) ) {
 			return rest_ensure_response([
 				'cleared' => false,
 				'stats' => []
 			]);
 		}
 
-		$older_than = intval( $request->get_param( 'older_than' ) );
+		$older_than_raw = $request->get_param( 'older_than' );
+		$older_than = absint( $older_than_raw );
 		if ( $older_than > 0 ) {
-			AltText_AI_Debug_Log::delete_older_than( $older_than );
+			BbAI_Debug_Log::delete_older_than( $older_than );
 		} else {
-			AltText_AI_Debug_Log::clear_logs();
+			BbAI_Debug_Log::clear_logs();
 		}
 
 		return rest_ensure_response([
 			'cleared' => true,
-			'stats'   => AltText_AI_Debug_Log::get_stats(),
+			'stats'   => BbAI_Debug_Log::get_stats(),
 		]);
 	}
 
@@ -197,29 +204,112 @@ class Opptiai_Alt_REST_Controller {
 	 * @return array|\WP_Error
 	 */
 	public function handle_generate_single( \WP_REST_Request $request ) {
-		$id  = intval( $request['id'] );
-		$alt = $this->core->generate_and_save( $id, 'ajax' );
+		// Suppress any HTML output that might break JSON response
+		$output_started = ob_get_level() > 0;
+		if ( ! $output_started ) {
+			ob_start();
+		}
+		
+		try {
+			$id_raw = $request->get_param( 'id' );
+			$id = absint( $id_raw );
+			
+			if ( $id <= 0 ) {
+				if ( ! $output_started ) {
+					ob_end_clean();
+				}
+				return new \WP_Error( 'invalid_attachment', 'Invalid attachment ID.', [ 'status' => 400 ] );
+			}
+			
+			$alt = $this->core->generate_and_save( $id, 'ajax' );
 
-		if ( is_wp_error( $alt ) ) {
-			if ( 'ai_alt_dry_run' === $alt->get_error_code() ) {
-				return [
-					'id'      => $id,
-					'code'    => $alt->get_error_code(),
-					'message' => $alt->get_error_message(),
-					'prompt'  => $alt->get_error_data()['prompt'] ?? '',
-					'stats'   => $this->core->get_media_stats(),
-				];
+			if ( is_wp_error( $alt ) ) {
+				$error_code = $alt->get_error_code();
+				$error_message = $alt->get_error_message();
+				
+				// Return proper REST error response
+				if ( 'beepbeepai_dry_run' === $error_code ) {
+					// Try to get stats, but don't fail if it errors
+					try {
+						$stats = $this->core->get_media_stats();
+					} catch ( \Exception $e ) {
+						$stats = [];
+					}
+					
+					if ( ! $output_started ) {
+						ob_end_clean();
+					}
+					
+					return rest_ensure_response([
+						'id'      => $id,
+						'code'    => $error_code,
+						'message' => $error_message,
+						'prompt'  => $alt->get_error_data()['prompt'] ?? '',
+						'stats'   => $stats,
+					]);
+				}
+				
+				// Convert WP_Error to REST error response
+				$status = 500;
+				if ( $error_code === 'limit_reached' ) {
+					$status = 403;
+				} elseif ( $error_code === 'auth_required' || $error_code === 'user_not_found' ) {
+					$status = 401;
+				} elseif ( $error_code === 'not_image' || $error_code === 'invalid_attachment' ) {
+					$status = 400;
+				}
+				
+				if ( ! $output_started ) {
+					ob_end_clean();
+				}
+				
+				return new \WP_Error( $error_code, $error_message, [ 'status' => $status ] );
 			}
 
-			return $alt;
+			// Try to get meta and stats, but don't fail if they error
+			try {
+				$meta = $this->core->prepare_attachment_snapshot( $id );
+			} catch ( \Exception $e ) {
+				$meta = [];
+			}
+			
+			try {
+				$stats = $this->core->get_media_stats();
+			} catch ( \Exception $e ) {
+				$stats = [];
+			}
+			
+			if ( ! $output_started ) {
+				ob_end_clean();
+			}
+			
+			return rest_ensure_response([
+				'id'   => $id,
+				'alt'  => $alt,
+				'meta' => $meta,
+				'stats'=> $stats,
+			]);
+		} catch ( \Exception $e ) {
+			if ( ! $output_started ) {
+				ob_end_clean();
+			}
+			// Catch any PHP exceptions and return proper JSON error
+			return new \WP_Error( 
+				'generation_failed', 
+				'Failed to generate alt text: ' . $e->getMessage(), 
+				[ 'status' => 500 ] 
+			);
+		} catch ( \Error $e ) {
+			if ( ! $output_started ) {
+				ob_end_clean();
+			}
+			// Also catch PHP 7+ Error objects (non-Exception errors)
+			return new \WP_Error( 
+				'generation_failed', 
+				'Failed to generate alt text: ' . $e->getMessage(), 
+				[ 'status' => 500 ] 
+			);
 		}
-
-		return [
-			'id'   => $id,
-			'alt'  => $alt,
-			'meta' => $this->core->prepare_attachment_snapshot( $id ),
-			'stats'=> $this->core->get_media_stats(),
-		];
 	}
 
 	/**
@@ -229,8 +319,10 @@ class Opptiai_Alt_REST_Controller {
 	 * @return array|\WP_Error
 	 */
 	public function handle_save_alt( \WP_REST_Request $request ) {
-		$id  = intval( $request['id'] );
-		$alt = trim( (string) $request->get_param( 'alt' ) );
+		$id_raw = $request->get_param( 'id' );
+		$id = absint( $id_raw );
+		$alt_raw = $request->get_param( 'alt' );
+		$alt = is_string( $alt_raw ) ? sanitize_text_field( trim( $alt_raw ) ) : '';
 
 		if ( $id <= 0 ) {
 			return new \WP_Error( 'invalid_attachment', 'Invalid attachment ID.', [ 'status' => 400 ] );
@@ -325,8 +417,10 @@ class Opptiai_Alt_REST_Controller {
 	 * @return array|\WP_Error
 	 */
 	public function handle_list( \WP_REST_Request $request ) {
-		$scope = 'all' === $request->get_param( 'scope' ) ? 'all' : 'missing';
-		$limit = max( 1, min( 500, intval( $request->get_param( 'limit' ) ?: 100 ) ) );
+		$scope_raw = $request->get_param( 'scope' );
+		$scope = ( is_string( $scope_raw ) && 'all' === sanitize_key( $scope_raw ) ) ? 'all' : 'missing';
+		$limit_raw = $request->get_param( 'limit' );
+		$limit = max( 1, min( 500, absint( $limit_raw ?: 100 ) ) );
 
 		$ids = ( 'missing' === $scope )
 			? $this->core->get_missing_attachment_ids( $limit )
@@ -344,8 +438,9 @@ class Opptiai_Alt_REST_Controller {
 	 * @return array|\WP_Error
 	 */
 	public function handle_stats( \WP_REST_Request $request ) {
-		$fresh = $request->get_param( 'fresh' );
-		if ( $fresh && filter_var( $fresh, FILTER_VALIDATE_BOOLEAN ) ) {
+		$fresh_raw = $request->get_param( 'fresh' );
+		$fresh = filter_var( $fresh_raw, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
+		if ( $fresh === true ) {
 			$this->core->invalidate_stats_cache();
 		}
 
@@ -388,9 +483,9 @@ class Opptiai_Alt_REST_Controller {
 	 * @return array
 	 */
 	public function handle_queue() {
-		$stats    = AltText_AI_Queue::get_stats();
-		$recent   = AltText_AI_Queue::get_recent( apply_filters( 'opptiai_queue_recent_limit', 10 ) );
-		$failures = AltText_AI_Queue::get_recent_failures( apply_filters( 'opptiai_queue_fail_limit', 5 ) );
+		$stats    = BbAI_Queue::get_stats();
+		$recent   = BbAI_Queue::get_recent( apply_filters( 'bbai_queue_recent_limit', 10 ) );
+		$failures = BbAI_Queue::get_recent_failures( apply_filters( 'bbai_queue_fail_limit', 5 ) );
 
 		return [
 			'stats'    => $stats,

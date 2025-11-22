@@ -1,6 +1,6 @@
 <?php
 $root = realpath(__DIR__ . '/..');
-$domain = 'opptiai-alt-text-generator';
+$domain = 'beepbeep-ai-alt-text-generator';
 $entries = [];
 
 $singleFunctions = ['__','_e','esc_html__','esc_html_e','esc_attr__','esc_attr_e'];
@@ -103,11 +103,17 @@ if (!$fh) {
 
 $header = "msgid \"\"\n" .
     "msgstr \"\"\n" .
-    "Project-Id-Version: SEO AI Alt Text Generator \n" .
+    "Project-Id-Version: Alt Text AI - Image SEO Automation\n" .
+    "Report-Msgid-Bugs-To: https://oppti.dev\n" .
     "POT-Creation-Date: " . gmdate('Y-m-d H:i:s') . "+0000\n" .
+    "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n" .
+    "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n" .
+    "Language-Team: LANGUAGE <LL@li.org>\n" .
+    "Language: \n" .
     "MIME-Version: 1.0\n" .
     "Content-Type: text/plain; charset=UTF-8\n" .
     "Content-Transfer-Encoding: 8bit\n" .
+    "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n" .
     "X-Generator: scripts/make-pot.php\n\n";
 
 fwrite($fh, $header);

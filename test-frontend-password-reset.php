@@ -15,7 +15,7 @@ echo "🧪 Testing Frontend Password Reset Integration\n";
 echo str_repeat('=', 60) . "\n\n";
 
 // Get API client instance
-$api_client = new AltTextAI_API_Client_V2();
+$api_client = new BbAI_API_Client_V2();
 
 // Test 1: Forgot Password Request
 echo "📧 Test 1: Forgot Password Request\n";
@@ -85,10 +85,10 @@ echo "🌐 Test 3: API Configuration\n";
 $api_url = defined('ALT_TEXT_AI_API_URL') ? ALT_TEXT_AI_API_URL : $api_client->api_url;
 echo "  API URL: {$api_url}\n";
 
-if (strpos($api_url, 'localhost') !== false || strpos($api_url, '127.0.0.1') !== false) {
-    echo "  ⚠️  Using localhost - make sure backend is running locally\n";
+if (strpos($api_url, 'oppti.dev') !== false) {
+    echo "  ✅ Using production backend\n";
 } else {
-    echo "  ✅ Using production/staging backend\n";
+    echo "  ⚠️  Unexpected API URL\n";
 }
 
 echo "\n";

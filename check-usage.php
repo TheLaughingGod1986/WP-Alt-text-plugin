@@ -1,7 +1,7 @@
 <?php
 /**
  * Quick script to check usage data from database
- * Run from WordPress root: php wp-content/plugins/opptiai-alt-text-generator/check-usage.php
+ * Run from WordPress root: php wp-content/plugins/beepbeep-ai-alt-text-generator/check-usage.php
  */
 
 // Load WordPress
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
 echo "=== AltText AI Usage Check ===\n\n";
 
 // Check transient cache
-$cache_key = 'opptiai_alt_usage_cache';
+$cache_key = 'beepbeepai_usage_cache';
 $cached_usage = get_transient($cache_key);
 
 if ($cached_usage !== false) {
@@ -42,10 +42,10 @@ echo "\n=== Attempting Live API Check ===\n";
 // Check if we can access the API client
 if (class_exists('Opptiai_Alt_Api_Client_V2')) {
     // Try to get the plugin instance
-    global $alttextai_plugin;
+    global $beepbeepai_plugin;
     
-    if (isset($alttextai_plugin) && isset($alttextai_plugin->api_client)) {
-        $api_client = $alttextai_plugin->api_client;
+    if (isset($beepbeepai_plugin) && isset($beepbeepai_plugin->api_client)) {
+        $api_client = $beepbeepai_plugin->api_client;
         
         if ($api_client && method_exists($api_client, 'get_usage')) {
             echo "Fetching live usage from API...\n";
@@ -84,18 +84,21 @@ if (class_exists('Opptiai_Alt_Api_Client_V2')) {
 echo "\n=== Database Tables Check ===\n";
 global $wpdb;
 
-$usage_events_table = $wpdb->prefix . 'alttextai_usage_events';
-$table_exists = $wpdb->get_var("SHOW TABLES LIKE '$usage_events_table'");
+$usage_events_table = $wpdb->prefix . 'beepbeepai_usage_events';
+$usage_events_table_escaped = esc_sql($usage_events_table);
+$table_exists = $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $usage_events_table));
 
 if ($table_exists) {
-    $total_events = $wpdb->get_var("SELECT COUNT(*) FROM $usage_events_table");
+    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is escaped with esc_sql
+    $total_events = $wpdb->get_var("SELECT COUNT(*) FROM `{$usage_events_table_escaped}`");
     echo "✅ Usage events table exists\n";
     echo "   Total events recorded: $total_events\n";
     
     // Count events in current month
     $current_month = date('Y-m');
+    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is escaped with esc_sql
     $month_events = $wpdb->get_var($wpdb->prepare(
-        "SELECT COUNT(*) FROM $usage_events_table WHERE DATE_FORMAT(created_at, '%%Y-%%m') = %s",
+        "SELECT COUNT(*) FROM `{$usage_events_table_escaped}` WHERE DATE_FORMAT(created_at, '%%Y-%%m') = %s",
         $current_month
     ));
     echo "   Events this month ($current_month): $month_events\n";

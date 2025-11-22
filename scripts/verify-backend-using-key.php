@@ -16,10 +16,10 @@ foreach ($wp_load_paths as $path) {
     }
 }
 
-$base_url = 'https://alttext-ai-backend.onrender.com';
-$token = get_option('opptiai_alt_jwt_token', '');
+$base_url = 'https://oppti.dev/api';
+$token = get_option('beepbeepai_jwt_token', '');
 if (empty($token)) {
-    $token = get_option('opptiai_alt_jwt_token', '');
+    $token = get_option('beepbeepai_jwt_token', '');
 }
 
 if (empty($token)) {

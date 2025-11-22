@@ -4,13 +4,47 @@
  * Caches usage data locally and handles upgrade prompts
  */
 
+namespace BeepBeepAI\AltTextGenerator;
+
 if (!defined('ABSPATH')) { exit; }
 
-class AltText_AI_Usage_Tracker {
+class Usage_Tracker {
     
-    const CACHE_KEY = 'opptiai_alt_usage_cache';
+    const CACHE_KEY = 'bbai_usage_cache';
     const CACHE_EXPIRY = 300; // 5 minutes
     
+    /**
+     * Allocate free credits on first generation request.
+     * This ensures free credits are only granted once per site.
+     *
+     * @return bool True if credits were allocated, false if already allocated.
+     */
+    public static function allocate_free_credits_if_needed() {
+        $free_credits_allocated = get_option('beepbeepai_free_credits_allocated', false);
+        
+        if ($free_credits_allocated) {
+            // Already allocated
+            return false;
+        }
+        
+        // Mark as allocated (one-time per site)
+        update_option('beepbeepai_free_credits_allocated', true, false);
+        
+        // Update usage cache with free credits
+        $reset_ts = strtotime('first day of next month');
+        $usage_data = [
+            'used' => 0,
+            'limit' => 50,
+            'remaining' => 50,
+            'plan' => 'free',
+            'resetDate' => date('Y-m-01', $reset_ts),
+            'resetTimestamp' => $reset_ts,
+        ];
+        self::update_usage($usage_data);
+        
+        return true;
+    }
+
     /**
      * Update cached usage data
      */
@@ -50,8 +84,8 @@ class AltText_AI_Usage_Tracker {
      */
     public static function get_cached_usage($force_refresh = false) {
         // PRIORITY 1: Check for active license first - license overrides personal account
-        require_once OPPTIAI_ALT_PLUGIN_DIR . 'includes/class-api-client-v2.php';
-        $api_client = new AltText_AI_API_Client_V2();
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
+        $api_client = new API_Client_V2();
 
         if ($api_client->has_active_license()) {
             $license_data = $api_client->get_license_data();
@@ -94,17 +128,36 @@ class AltText_AI_Usage_Tracker {
         $cached = get_transient(self::CACHE_KEY);
         
         if ($cached === false) {
+            // Check if free credits have been allocated for this site
+            $free_credits_allocated = get_option('beepbeepai_free_credits_allocated', false);
+            
             // Default values if no cache exists
             $reset_ts = strtotime('first day of next month');
-            return [
-                'used' => 0,
-                'limit' => 50,
-                'remaining' => 50,
-                'plan' => 'free',
-                'resetDate' => date('Y-m-01', $reset_ts),
-                'reset_timestamp' => $reset_ts,
-                'seconds_until_reset' => max(0, $reset_ts - current_time('timestamp')),
-            ];
+            
+            // Only show free credits if they've been allocated (first generation request)
+            // This prevents showing 50 credits before first use
+            if ($free_credits_allocated) {
+                return [
+                    'used' => 0,
+                    'limit' => 50,
+                    'remaining' => 50,
+                    'plan' => 'free',
+                    'resetDate' => date('Y-m-01', $reset_ts),
+                    'reset_timestamp' => $reset_ts,
+                    'seconds_until_reset' => max(0, $reset_ts - current_time('timestamp')),
+                ];
+            } else {
+                // Free credits not yet allocated - show as unavailable
+                return [
+                    'used' => 0,
+                    'limit' => 0,
+                    'remaining' => 0,
+                    'plan' => 'free',
+                    'resetDate' => date('Y-m-01', $reset_ts),
+                    'reset_timestamp' => $reset_ts,
+                    'seconds_until_reset' => max(0, $reset_ts - current_time('timestamp')),
+                ];
+            }
         }
         
         return $cached;
@@ -178,6 +231,19 @@ class AltText_AI_Usage_Tracker {
         $seconds_until_reset = max(0, $reset_timestamp - $current_timestamp);
         $days_until_reset = (int) floor($seconds_until_reset / DAY_IN_SECONDS);
 
+        // Get plan with fallback
+        $plan = isset($usage['plan']) && !empty($usage['plan']) ? $usage['plan'] : 'free';
+        
+        // Get reset date with fallback
+        $reset_date_display = $reset_timestamp ? date('F j, Y', $reset_timestamp) : '';
+        if (empty($reset_date_display) && !empty($usage['resetDate'])) {
+            $parsed_reset = strtotime($usage['resetDate']);
+            $reset_date_display = $parsed_reset > 0 ? date('F j, Y', $parsed_reset) : date('F j, Y', strtotime('first day of next month'));
+        }
+        if (empty($reset_date_display)) {
+            $reset_date_display = date('F j, Y', strtotime('first day of next month'));
+        }
+        
         return [
             'used' => $used,
             'limit' => $limit,
@@ -185,14 +251,14 @@ class AltText_AI_Usage_Tracker {
             'percentage' => $percentage_exact,
             'percentage_exact' => $percentage_exact,
             'percentage_display' => self::format_percentage_label($percentage_exact),
-            'plan' => $usage['plan'],
-            'plan_label' => ucfirst($usage['plan']),
-            'reset_date' => $reset_timestamp ? date('F j, Y', $reset_timestamp) : date('F j, Y', strtotime($usage['resetDate'])),
+            'plan' => $plan,
+            'plan_label' => ucfirst($plan),
+            'reset_date' => $reset_date_display,
             'reset_timestamp' => $reset_timestamp,
             'days_until_reset' => $days_until_reset,
             'seconds_until_reset' => $seconds_until_reset,
-            'is_free' => $usage['plan'] === 'free',
-            'is_pro' => $usage['plan'] === 'pro',
+            'is_free' => $plan === 'free',
+            'is_pro' => $plan === 'pro',
         ];
     }
     
@@ -200,31 +266,31 @@ class AltText_AI_Usage_Tracker {
      * Get upgrade URL
      */
     public static function get_upgrade_url() {
-        $default = 'https://alttextai.com/pricing';
-        $stored  = get_option('opptiai_alt_upgrade_url', $default);
-        return apply_filters('opptiai_alt_upgrade_url', $stored ?: $default);
+        $default = 'https://github.com/beepbeepv2/beepbeep-ai-alt-text-generator';
+        $stored  = get_option('bbai_upgrade_url', $default);
+        return apply_filters('bbai_upgrade_url', $stored ?: $default);
     }
 
     /**
      * Get billing portal URL (Stripe customer portal, etc.)
      */
     public static function get_billing_portal_url() {
-        $stored = get_option('opptiai_alt_billing_portal_url', '');
-        return apply_filters('opptiai_alt_billing_portal_url', $stored);
+        $stored = get_option('bbai_billing_portal_url', '');
+        return apply_filters('bbai_billing_portal_url', $stored);
     }
     
     /**
      * Dismiss upgrade notice for current session
      */
     public static function dismiss_upgrade_notice() {
-        set_transient('opptiai_alt_upgrade_dismissed', true, HOUR_IN_SECONDS);
+        set_transient('bbai_upgrade_dismissed', true, HOUR_IN_SECONDS);
     }
     
     /**
      * Check if upgrade notice is dismissed
      */
     public static function is_upgrade_dismissed() {
-        return get_transient('opptiai_alt_upgrade_dismissed') === true;
+        return get_transient('bbai_upgrade_dismissed') === true;
     }
     
     /**
@@ -233,9 +299,9 @@ class AltText_AI_Usage_Tracker {
     public static function refresh_from_api($api_client = null) {
         if (!$api_client) {
             // Try to get API client from global instance
-            global $alttextai_plugin;
-            if (isset($alttextai_plugin) && isset($alttextai_plugin->api_client)) {
-                $api_client = $alttextai_plugin->api_client;
+            global $beepbeepai_plugin;
+            if (isset($beepbeepai_plugin) && isset($beepbeepai_plugin->api_client)) {
+                $api_client = $beepbeepai_plugin->api_client;
             }
         }
         

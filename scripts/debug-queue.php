@@ -21,7 +21,7 @@ echo "Queue Debug Information\n";
 echo str_repeat("=", 50) . "\n\n";
 
 // Get queue stats
-$stats = AltText_AI_Queue::get_stats();
+$stats = BbAI_Queue::get_stats();
 echo "Queue Status:\n";
 echo "  Pending: " . $stats['pending'] . "\n";
 echo "  Processing: " . $stats['processing'] . "\n";
@@ -29,7 +29,7 @@ echo "  Failed: " . $stats['failed'] . "\n";
 echo "  Completed (24h): " . $stats['completed_recent'] . "\n\n";
 
 // Check if cron is scheduled
-$next_cron = wp_next_scheduled(AltText_AI_Queue::CRON_HOOK);
+$next_cron = wp_next_scheduled(BbAI_Queue::CRON_HOOK);
 echo "Cron Status:\n";
 if ($next_cron) {
     $time_until = $next_cron - time();
@@ -41,7 +41,7 @@ echo "\n";
 
 // Get pending jobs
 global $wpdb;
-$table = AltText_AI_Queue::table();
+$table = BbAI_Queue::table();
 $pending = $wpdb->get_results(
     "SELECT * FROM {$table} WHERE status = 'pending' ORDER BY id ASC LIMIT 5",
     ARRAY_A
@@ -63,9 +63,9 @@ if ($pending) {
     
     // Try to schedule processing now
     echo "Attempting to trigger processing...\n";
-    AltText_AI_Queue::schedule_processing(5); // Schedule in 5 seconds
+    BbAI_Queue::schedule_processing(5); // Schedule in 5 seconds
     
-    $next_cron = wp_next_scheduled(AltText_AI_Queue::CRON_HOOK);
+    $next_cron = wp_next_scheduled(BbAI_Queue::CRON_HOOK);
     if ($next_cron) {
         echo "✓ Scheduled for: " . date('Y-m-d H:i:s', $next_cron) . "\n";
     } else {
@@ -76,7 +76,7 @@ if ($pending) {
     echo "To manually trigger processing, you can:\n";
     echo "1. Click 'Process queue now' in the dashboard\n";
     echo "2. Or wait for WordPress cron to run (usually every 5 minutes)\n";
-    echo "3. Or trigger via: wp cron event run opptiai_alt_process_queue\n";
+    echo "3. Or trigger via: wp cron event run beepbeepai_process_queue\n";
 } else {
     echo "No pending jobs found.\n";
 }

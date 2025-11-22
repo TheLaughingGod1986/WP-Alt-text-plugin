@@ -21,7 +21,7 @@ echo str_repeat("=", 60) . "\n\n";
 
 // 1. Check API usage
 require_once OPPTIAI_ALT_PLUGIN_DIR . 'includes/class-api-client-v2.php';
-$api_client = new AltText_AI_API_Client_V2();
+$api_client = new BbAI_API_Client_V2();
 
 echo "1. API Client Status:\n";
 echo "   Authenticated: " . ($api_client->is_authenticated() ? 'YES' : 'NO') . "\n";
@@ -57,12 +57,12 @@ echo "\n";
 
 // 3. Check usage tracker
 echo "3. Usage Tracker Cache:\n";
-$cached = AltText_AI_Usage_Tracker::get_cached_usage();
+$cached = BbAI_Usage_Tracker::get_cached_usage();
 echo "   Cached Used: " . ($cached['used'] ?? 'N/A') . "\n";
 echo "   Cached Limit: " . ($cached['limit'] ?? 'N/A') . "\n";
 echo "   Cached Remaining: " . ($cached['remaining'] ?? 'N/A') . "\n";
 
-$stats = AltText_AI_Usage_Tracker::get_stats_display();
+$stats = BbAI_Usage_Tracker::get_stats_display();
 echo "   Stats Display Used: " . ($stats['used'] ?? 'N/A') . "\n";
 echo "   Stats Display Limit: " . ($stats['limit'] ?? 'N/A') . "\n";
 echo "   Stats Display Remaining: " . ($stats['remaining'] ?? 'N/A') . "\n";
@@ -71,9 +71,9 @@ echo "\n";
 
 // 4. Check usage governance
 echo "4. Usage Governance Check:\n";
-global $alttextai_plugin;
-if (isset($alttextai_plugin) && isset($alttextai_plugin->usage_governance)) {
-    $gov = $alttextai_plugin->usage_governance;
+global $beepbeepai_plugin;
+if (isset($beepbeepai_plugin) && isset($beepbeepai_plugin->usage_governance)) {
+    $gov = $beepbeepai_plugin->usage_governance;
     $plan = $stats['plan'] ?? 'free';
     $used = $stats['used'] ?? 0;
     

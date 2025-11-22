@@ -27,7 +27,7 @@ if (!$wp_loaded) {
 
 // Check if WordPress is already installed
 if (!get_option('siteurl')) {
-    die("Error: WordPress is not installed yet. Please complete the WordPress installation first at http://localhost:8080\n");
+    die("Error: WordPress is not installed yet. Please complete the WordPress installation first.\n");
 }
 
 $username = 'black';
@@ -123,5 +123,5 @@ echo "\n";
 echo "WordPress Admin Credentials:\n";
 echo "  Username: {$username}\n";
 echo "  Password: {$password}\n";
-echo "  Login URL: http://localhost:8080/wp-admin\n";
+echo "  Login URL: " . admin_url() . "\n";
 echo "\n";

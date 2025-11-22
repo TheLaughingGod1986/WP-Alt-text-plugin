@@ -26,7 +26,7 @@ echo "Debug Image Payload Content\n";
 echo str_repeat("=", 60) . "\n\n";
 
 $image_id = 18;
-$api_client = new AltText_AI_API_Client_V2();
+$api_client = new BbAI_API_Client_V2();
 
 $image_url = wp_get_attachment_url($image_id);
 $title     = get_the_title($image_id);

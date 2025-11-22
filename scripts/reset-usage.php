@@ -21,7 +21,7 @@ $user_email = isset($argv[1]) ? $argv[1] : null;
 
 // Try to get from stored user data
 if (!$user_email) {
-    $user_data = get_option('alttextai_user_data', null);
+    $user_data = get_option('beepbeepai_user_data', null);
     if (is_array($user_data) && isset($user_data['email'])) {
         $user_email = $user_data['email'];
     }
@@ -35,7 +35,7 @@ echo "🔄 Resetting Usage Count for: {$user_email}\n";
 echo str_repeat("=", 60) . "\n\n";
 
 // Method 1: Reset via direct database access (if configured)
-if (defined('ALTTEXT_AI_DB_ENABLED') && ALTTEXT_AI_DB_ENABLED && class_exists('AltText_AI_Direct_DB_Usage')) {
+if (defined('BBAI_DB_ENABLED') && BBAI_DB_ENABLED && class_exists('BbAI_Direct_DB_Usage')) {
     echo "1. Attempting direct database reset...\n";
     
     $db_host = defined('ALTTEXT_AI_DB_HOST') ? ALTTEXT_AI_DB_HOST : null;
@@ -148,18 +148,18 @@ if (defined('ALTTEXT_AI_DB_ENABLED') && ALTTEXT_AI_DB_ENABLED && class_exists('A
 
 // Method 2: Clear WordPress cache
 echo "2. Clearing WordPress usage cache...\n";
-AltText_AI_Usage_Tracker::clear_cache();
+BbAI_Usage_Tracker::clear_cache();
 echo "   ✓ Cache cleared\n\n";
 
 // Method 3: Refresh from API to get updated count
 echo "3. Refreshing usage from API...\n";
 require_once OPPTIAI_ALT_PLUGIN_DIR . 'includes/class-api-client-v2.php';
-$api_client = new AltText_AI_API_Client_V2();
+$api_client = new BbAI_API_Client_V2();
 
 if ($api_client->is_authenticated()) {
     $usage = $api_client->get_usage();
     if (is_array($usage) && !empty($usage)) {
-        AltText_AI_Usage_Tracker::update_usage($usage);
+        BbAI_Usage_Tracker::update_usage($usage);
         echo "   ✓ Refreshed from API:\n";
         echo "     Used: " . ($usage['used'] ?? 0) . "\n";
         echo "     Limit: " . ($usage['limit'] ?? 50) . "\n";

@@ -39,11 +39,11 @@ if (!defined('ABSPATH')) {
 global $wpdb;
 
 // Load the queue class
-if (!class_exists('AltText_AI_Queue')) {
+if (!class_exists('BbAI_Queue')) {
     require_once dirname(__DIR__) . '/includes/class-queue.php';
 }
 
-$table = AltText_AI_Queue::table();
+$table = BbAI_Queue::table();
 
 echo "Resetting stuck queue jobs...\n\n";
 
@@ -69,7 +69,7 @@ $failed_cleared = $wpdb->query(
 echo "✓ Cleared {$failed_cleared} failed job(s)\n\n";
 
 // Show current stats
-$stats = AltText_AI_Queue::get_stats();
+$stats = BbAI_Queue::get_stats();
 echo "Current Queue Status:\n";
 echo "  Pending: {$stats['pending']}\n";
 echo "  Processing: {$stats['processing']}\n";

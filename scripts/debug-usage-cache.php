@@ -22,26 +22,26 @@ echo "Debugging Usage Cache\n";
 echo str_repeat("=", 50) . "\n\n";
 
 // Check raw cache
-$cache_key = 'alttextai_usage_cache';
+$cache_key = 'beepbeepai_usage_cache';
 $cached = get_transient($cache_key);
 echo "Raw Cache (transient):\n";
 print_r($cached);
 echo "\n";
 
 // Check get_cached_usage
-$cached_usage = AltText_AI_Usage_Tracker::get_cached_usage();
+$cached_usage = BbAI_Usage_Tracker::get_cached_usage();
 echo "get_cached_usage():\n";
 print_r($cached_usage);
 echo "\n";
 
 // Check get_stats_display
-$stats = AltText_AI_Usage_Tracker::get_stats_display();
+$stats = BbAI_Usage_Tracker::get_stats_display();
 echo "get_stats_display():\n";
 print_r($stats);
 echo "\n";
 
 // Check API directly
-$api_client = new AltText_AI_API_Client_V2();
+$api_client = new BbAI_API_Client_V2();
 echo "API get_usage():\n";
 $api_usage = $api_client->get_usage();
 if (is_wp_error($api_usage)) {

@@ -4,43 +4,37 @@
  * Handles JWT authentication and communication with the Phase 2 API
  */
 
+namespace BeepBeepAI\AltTextGenerator;
+
 if (!defined('ABSPATH')) { exit; }
 
-class AltText_AI_API_Client_V2 {
+class API_Client_V2 {
     
     private $api_url;
-    private $token_option_key = 'opptiai_alt_jwt_token';
-    private $user_option_key = 'opptiai_alt_user_data';
-    private $site_id_option_key = 'opptiai_alt_site_id';
-    private $license_key_option_key = 'opptiai_alt_license_key';
-    private $license_data_option_key = 'opptiai_alt_license_data';
+    private $token_option_key = 'beepbeepai_jwt_token';
+    private $user_option_key = 'beepbeepai_user_data';
+    private $site_id_option_key = 'beepbeepai_site_id';
+    private $license_key_option_key = 'beepbeepai_license_key';
+    private $license_data_option_key = 'beepbeepai_license_data';
     private $encryption_prefix = 'enc:';
     
     public function __construct() {
-        // ALWAYS use production API by default
+        // ALWAYS use production API URL
         $production_url = 'https://alttext-ai-backend.onrender.com';
-
-        // Allow developers to override for local development via wp-config.php
-        if (defined('ALTTEXT_AI_API_URL')) {
-            // Custom URL defined in wp-config.php
-            $this->api_url = ALTTEXT_AI_API_URL;
-        } elseif (defined('WP_DEBUG') && WP_DEBUG && defined('WP_LOCAL_DEV') && WP_LOCAL_DEV) {
-            // Local development mode (requires both WP_DEBUG and WP_LOCAL_DEV constants)
-            $this->api_url = 'http://host.docker.internal:3001';
-        } else {
-            // Production for all normal users
-            $this->api_url = $production_url;
-        }
+        $this->api_url = $production_url;
 
         // Force update WordPress settings to production (clean up legacy configs)
-        $options = get_option('opptiai_alt_settings', []);
+        $options = get_option('beepbeepai_settings', []);
         if ($options === false || $options === null) {
-            $options = get_option('opptiai_settings', []);
+            $options = get_option('beepbeepai_settings', []);
+            if ($options === false || $options === null) {
+                $options = get_option('beepbeepai_settings', []);
+            }
         }
         $options = is_array($options) ? $options : [];
         if (!isset($options['api_url']) || $options['api_url'] !== $production_url) {
             $options['api_url'] = $production_url;
-            update_option('opptiai_alt_settings', $options);
+            update_option('beepbeepai_settings', $options);
         }
     }
     
@@ -50,7 +44,7 @@ class AltText_AI_API_Client_V2 {
     protected function get_token() {
         $token = get_option($this->token_option_key, '');
         if ($token === '' || $token === false) {
-            $legacy = get_option('alttextai_jwt_token', '');
+            $legacy = get_option('beepbeepai_jwt_token', '');
             if (!empty($legacy)) {
                 $this->set_token($legacy);
                 $token = $legacy;
@@ -81,9 +75,9 @@ class AltText_AI_API_Client_V2 {
      */
     public function clear_token() {
         delete_option($this->token_option_key);
-        delete_option('alttextai_jwt_token');
+        delete_option('beepbeepai_jwt_token');
         delete_option($this->user_option_key);
-        delete_option('alttextai_user_data');
+        delete_option('beepbeepai_user_data');
     }
     
     /**
@@ -92,7 +86,7 @@ class AltText_AI_API_Client_V2 {
     public function get_user_data() {
         $data = get_option($this->user_option_key, null);
         if (($data === false || $data === null)) {
-            $legacy = get_option('alttextai_user_data', null);
+            $legacy = get_option('beepbeepai_user_data', null);
             if ($legacy !== null && $legacy !== false) {
                 update_option($this->user_option_key, $legacy);
                 $data = $legacy;
@@ -193,7 +187,7 @@ class AltText_AI_API_Client_V2 {
         }
 
         // Validate token is still valid (check periodically, not every request)
-        $last_check = get_transient('opptiai_alt_token_last_check');
+        $last_check = get_transient('bbai_token_last_check');
         $should_validate = $last_check === false;
 
         if ($should_validate) {
@@ -201,13 +195,27 @@ class AltText_AI_API_Client_V2 {
             $user_info = $this->get_user_info();
 
             if (is_wp_error($user_info)) {
-                // Token is invalid, clear it
-                $this->clear_token();
-                return false;
+                $error_code = $user_info->get_error_code();
+                $error_message = strtolower($user_info->get_error_message());
+                
+                // Only clear token if it's definitely invalid (not a temporary server error)
+                // Don't clear on server errors (500), network errors, or timeouts
+                $error_message_str = is_string($error_message) ? $error_message : '';
+                if ($error_code === 'auth_required' || 
+                    $error_code === 'user_not_found' ||
+                    ($error_message_str && strpos($error_message_str, 'user not found') !== false) ||
+                    ($error_message_str && strpos($error_message_str, 'session expired') !== false) ||
+                    ($error_message_str && strpos($error_message_str, 'unauthorized') !== false)) {
+                    // Token is definitely invalid, clear it
+                    $this->clear_token();
+                    return false;
+                }
+                // For server errors, network issues, etc., don't clear token
+                // Just return false for this check, token might still be valid
+            } else {
+                // Token is valid, cache result for 5 minutes
+                set_transient('bbai_token_last_check', time(), 5 * MINUTE_IN_SECONDS);
             }
-
-            // Token is valid, cache result for 5 minutes
-            set_transient('opptiai_alt_token_last_check', time(), 5 * MINUTE_IN_SECONDS);
         }
 
         return true;
@@ -216,40 +224,53 @@ class AltText_AI_API_Client_V2 {
     /**
      * Get or generate unique site ID
      * This ensures quotas are tracked per-site, not per-user
+     * 
+     * @return string Site identifier
      */
-    private function get_site_id() {
-        $site_id = get_option($this->site_id_option_key, '');
-        
-        if (empty($site_id)) {
-            // Generate unique site ID based on site URL + timestamp
-            $site_url = get_site_url();
-            $site_id = md5($site_url . time() . wp_generate_password(20, false));
-            update_option($this->site_id_option_key, $site_id, false);
-        }
-        
-        return $site_id;
+    public function get_site_id() {
+        // Use the centralized helper function
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
+        return \BeepBeepAI\AltTextGenerator\get_site_identifier();
     }
     
     /**
      * Get authentication headers
      * Includes license key or JWT token, plus site info
      */
-    private function get_auth_headers() {
+    private function get_auth_headers($include_user_id = false, $extra_headers = []) {
         $token = $this->get_token();
         $license_key = $this->get_license_key();
         $site_id = $this->get_site_id();
+
+        // Get site fingerprint for abuse prevention
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-site-fingerprint.php';
+        $fingerprint = \BeepBeepAI\AltTextGenerator\Site_Fingerprint::get_fingerprint();
 
         $headers = [
             'Content-Type' => 'application/json',
             'X-Site-Hash' => $site_id,  // Site-based licensing identifier
             'X-Site-URL' => get_site_url(),  // For backend reference
+            'X-Site-Fingerprint' => $fingerprint,  // Site fingerprint for abuse prevention
         ];
+
+        // Include current user ID if requested (for analytics)
+        if ($include_user_id) {
+            $user_id = get_current_user_id();
+            if ($user_id > 0) {
+                $headers['X-WP-User-ID'] = (string) $user_id;
+            }
+        }
 
         // Priority: License key > JWT token
         if (!empty($license_key)) {
             $headers['X-License-Key'] = $license_key;
         } elseif ($token) {
             $headers['Authorization'] = 'Bearer ' . $token;
+        }
+
+        // Merge any caller-provided headers (used for debugging/traceability)
+        if (!empty($extra_headers) && is_array($extra_headers)) {
+            $headers = array_merge($headers, $extra_headers);
         }
 
         return $headers;
@@ -313,14 +334,15 @@ class AltText_AI_API_Client_V2 {
     /**
      * Make authenticated API request
      */
-    private function make_request($endpoint, $method = 'GET', $data = null, $timeout = null) {
+    private function make_request($endpoint, $method = 'GET', $data = null, $timeout = null, $include_user_id = false, $extra_headers = []) {
         $url = trailingslashit($this->api_url) . ltrim($endpoint, '/');
-        $headers = $this->get_auth_headers();
+        $headers = $this->get_auth_headers($include_user_id, $extra_headers);
         
         // Use longer timeout for generation requests (OpenAI can take time)
         if ($timeout === null) {
             // Check for generate endpoint (with or without leading slash)
-            $is_generate_endpoint = (strpos($endpoint, '/api/generate') !== false) || (strpos($endpoint, 'api/generate') !== false);
+            $endpoint_str = is_string($endpoint) ? $endpoint : '';
+            $is_generate_endpoint = $endpoint_str && ((strpos($endpoint_str, '/api/generate') !== false) || (strpos($endpoint_str, 'api/generate') !== false));
             $timeout = $is_generate_endpoint ? 90 : 30;
         }
         
@@ -343,22 +365,25 @@ class AltText_AI_API_Client_V2 {
 
         if (is_wp_error($response)) {
             $error_message = $response->get_error_message();
+            $error_message = is_string($error_message) ? $error_message : '';
             $this->log_api_event('error', 'API request failed', [
                 'endpoint' => $endpoint,
                 'method'   => $method,
                 'error'    => $error_message,
             ]);
-            if (strpos($error_message, 'timeout') !== false) {
+            $error_message_str = is_string($error_message) ? $error_message : '';
+            if ($error_message_str && strpos($error_message_str, 'timeout') !== false) {
                 // Provide more specific message for generation timeouts
-                $is_generate_endpoint = (strpos($endpoint, '/api/generate') !== false) || (strpos($endpoint, 'api/generate') !== false);
+                $endpoint_str = is_string($endpoint) ? $endpoint : '';
+                $is_generate_endpoint = $endpoint_str && ((strpos($endpoint_str, '/api/generate') !== false) || (strpos($endpoint_str, 'api/generate') !== false));
                 if ($is_generate_endpoint) {
-                    return new WP_Error('api_timeout', __('The image generation is taking longer than expected. This may happen with large images or during high server load. Please try again.', 'wp-alt-text-plugin'));
+                    return new \WP_Error('api_timeout', __('The image generation is taking longer than expected. This may happen with large images or during high server load. Please try again.', 'beepbeep-ai-alt-text-generator'));
                 }
-                return new WP_Error('api_timeout', __('The server is taking too long to respond. Please try again in a few minutes.', 'wp-alt-text-plugin'));
-            } elseif (strpos($error_message, 'could not resolve') !== false) {
-                return new WP_Error('api_unreachable', __('Unable to reach authentication server. Please check your internet connection and try again.', 'wp-alt-text-plugin'));
+                return new \WP_Error('api_timeout', __('The server is taking too long to respond. Please try again in a few minutes.', 'beepbeep-ai-alt-text-generator'));
+            } elseif ($error_message_str && strpos($error_message_str, 'could not resolve') !== false) {
+                return new \WP_Error('api_unreachable', __('Unable to reach authentication server. Please check your internet connection and try again.', 'beepbeep-ai-alt-text-generator'));
             }
-            return new WP_Error('api_error', $error_message);
+            return new \WP_Error('api_error', $error_message ?: __('API request failed', 'beepbeep-ai-alt-text-generator'));
         }
         
         $status_code = wp_remote_retrieve_response_code($response);
@@ -374,25 +399,27 @@ class AltText_AI_API_Client_V2 {
         // Handle 404 - endpoint not found
         if ($status_code === 404) {
             // Check if it's an HTML error page (means endpoint doesn't exist)
-            if (strpos($body, '<html') !== false || strpos($body, 'Cannot POST') !== false || strpos($body, 'Cannot GET') !== false) {
+            $body_str = is_string($body) ? $body : '';
+            $endpoint_str = is_string($endpoint) ? $endpoint : '';
+            if ($body_str && (strpos($body_str, '<html') !== false || strpos($body_str, 'Cannot POST') !== false || strpos($body_str, 'Cannot GET') !== false)) {
                 // Provide context-specific error messages
-                $error_message = __('This feature is not yet available. Please contact support for assistance or try again later.', 'wp-alt-text-plugin');
+                $error_message = __('This feature is not yet available. Please contact support for assistance or try again later.', 'beepbeep-ai-alt-text-generator');
                 
                 // Check endpoint to provide more specific message
-                if (strpos($endpoint, '/auth/forgot-password') !== false || strpos($endpoint, '/auth/reset-password') !== false) {
-                    $error_message = __('Password reset functionality is currently being set up on our backend. Please contact support for assistance or try again later.', 'wp-alt-text-plugin');
-                } elseif (strpos($endpoint, '/licenses/sites') !== false || strpos($endpoint, '/api/licenses/sites') !== false) {
-                    $error_message = __('License site usage tracking is currently being set up on our backend. Please contact support for assistance or try again later.', 'wp-alt-text-plugin');
+                if ($endpoint_str && (strpos($endpoint_str, '/auth/forgot-password') !== false || strpos($endpoint_str, '/auth/reset-password') !== false)) {
+                    $error_message = __('Password reset functionality is currently being set up on our backend. Please contact support for assistance or try again later.', 'beepbeep-ai-alt-text-generator');
+                } elseif ($endpoint_str && (strpos($endpoint_str, '/licenses/sites') !== false || strpos($endpoint_str, '/api/licenses/sites') !== false)) {
+                    $error_message = __('License site usage tracking is currently being set up on our backend. Please contact support for assistance or try again later.', 'beepbeep-ai-alt-text-generator');
                 }
                 
-                return new WP_Error(
+                return new \WP_Error(
                     'endpoint_not_found',
                     $error_message
                 );
             }
-            return new WP_Error(
+            return new \WP_Error(
                 'not_found',
-                $data['error'] ?? $data['message'] ?? __('The requested resource was not found.', 'wp-alt-text-plugin')
+                $data['error'] ?? $data['message'] ?? __('The requested resource was not found.', 'beepbeep-ai-alt-text-generator')
             );
         }
         
@@ -401,12 +428,12 @@ class AltText_AI_API_Client_V2 {
             // Log the actual response body for debugging
             $error_details = '';
             if (is_array($data) && isset($data['error'])) {
-                $error_details = $data['error'];
+                $error_details = is_string($data['error']) ? $data['error'] : wp_json_encode($data['error']);
             } elseif (is_array($data) && isset($data['message'])) {
-                $error_details = $data['message'];
+                $error_details = is_string($data['message']) ? $data['message'] : '';
             } elseif (!empty($body) && strlen($body) < 500) {
                 // Only include body if it's not too long
-                $error_details = $body;
+                $error_details = is_string($body) ? $body : '';
             }
             
             $this->log_api_event('error', 'API server error', [
@@ -414,7 +441,7 @@ class AltText_AI_API_Client_V2 {
                 'method'   => $method,
                 'status'   => $status_code,
                 'error_details' => $error_details,
-                'body_preview' => substr($body, 0, 200),
+                'body_preview' => is_string($body) ? substr($body, 0, 200) : '',
             ]);
             
             // Try to extract more specific error from response body
@@ -422,21 +449,43 @@ class AltText_AI_API_Client_V2 {
             $backend_error_message = '';
             
             if (is_array($data)) {
-                $backend_error_code = $data['code'] ?? '';
-                $backend_error_message = $data['message'] ?? $data['error'] ?? '';
+                $backend_error_code = is_string($data['code'] ?? '') ? $data['code'] : '';
+                $backend_error_message = is_string($data['message'] ?? $data['error'] ?? '') ? ($data['message'] ?? $data['error'] ?? '') : '';
             }
             
             // Check for "User not found" errors first (these come back as 500 sometimes)
-            $error_details_lower = strtolower($error_details . ' ' . $backend_error_message);
+            // Exception: For checkout endpoints, don't clear token here - let create_checkout_session() handle retry without token
+            $endpoint_str = is_string($endpoint) ? $endpoint : '';
+            $is_checkout_endpoint = strpos($endpoint_str, '/billing/checkout') !== false;
+            
+            $error_details_str = is_string($error_details) ? $error_details : '';
+            $backend_error_message_str = is_string($backend_error_message) ? $backend_error_message : '';
+            $error_details_lower = strtolower($error_details_str . ' ' . $backend_error_message_str);
             if (strpos($error_details_lower, 'user not found') !== false || 
                 strpos($error_details_lower, 'user does not exist') !== false ||
-                (is_array($data) && isset($data['code']) && strpos(strtolower($data['code']), 'user_not_found') !== false)) {
-                // User was deleted or token is invalid - clear stored credentials
+                (is_array($data) && isset($data['code']) && is_string($data['code']) && strpos(strtolower($data['code']), 'user_not_found') !== false)) {
+                
+                // For checkout, return error without clearing token so it can retry without auth
+                if ($is_checkout_endpoint) {
+                    return new \WP_Error(
+                        'user_not_found',
+                        __('User not found', 'beepbeep-ai-alt-text-generator'),
+                        [
+                            'requires_auth' => false,
+                            'status_code' => $status_code,
+                            'code' => 'user_not_found',
+                            'backend_message' => $backend_error_message_str,
+                            'error_details' => $error_details_str,
+                        ]
+                    );
+                }
+                
+                // For other endpoints, clear token and return auth_required error
                 $this->clear_token();
-                delete_transient('opptiai_alt_token_last_check');
-                return new WP_Error(
+                delete_transient('bbai_token_last_check');
+                return new \WP_Error(
                     'auth_required',
-                    __('Your session has expired or your account is no longer available. Please log in again.', 'wp-alt-text-plugin'),
+                    __('Your session has expired or your account is no longer available. Please log in again.', 'beepbeep-ai-alt-text-generator'),
                     [
                         'requires_auth' => true,
                         'status_code' => $status_code,
@@ -446,24 +495,33 @@ class AltText_AI_API_Client_V2 {
             }
             
             // Provide more specific error message based on endpoint and error details
-            $error_message = __('The server encountered an error processing your request. Please try again in a few minutes.', 'wp-alt-text-plugin');
+            $error_message = __('The server encountered an error processing your request. Please try again in a few minutes.', 'beepbeep-ai-alt-text-generator');
             
             // Check for generate endpoint (with or without leading slash)
-            $is_generate_endpoint = (strpos($endpoint, '/api/generate') !== false) || (strpos($endpoint, 'api/generate') !== false);
-            if ($is_generate_endpoint) {
+            $endpoint_str = is_string($endpoint) ? $endpoint : '';
+            $is_generate_endpoint = $endpoint_str && ((strpos($endpoint_str, '/api/generate') !== false) || (strpos($endpoint_str, 'api/generate') !== false));
+            $is_checkout_endpoint = strpos($endpoint_str, '/billing/checkout') !== false;
+            
+            if ($is_checkout_endpoint) {
+                // For checkout, provide a more user-friendly error message
+                // The backend is having issues with checkout - likely needs authentication fix
+                $error_message = __('Unable to create checkout session. This may be a temporary backend issue. Please try again in a moment or contact support if the problem persists.', 'beepbeep-ai-alt-text-generator');
+            } elseif ($is_generate_endpoint) {
                 // Check if it's an OpenAI API key issue (backend configuration problem)
-                if (strpos(strtolower($error_details), 'incorrect api key') !== false || 
-                    strpos(strtolower($error_details), 'invalid api key') !== false ||
-                    strpos(strtolower($backend_error_code), 'generation_error') !== false) {
-                    $error_message = __('The image generation service is temporarily unavailable due to a backend configuration issue. Please contact support.', 'wp-alt-text-plugin');
+                $error_details_str = is_string($error_details) ? $error_details : '';
+                $backend_error_code_str = is_string($backend_error_code) ? $backend_error_code : '';
+                if (($error_details_str && (strpos(strtolower($error_details_str), 'incorrect api key') !== false || 
+                    strpos(strtolower($error_details_str), 'invalid api key') !== false)) ||
+                    ($backend_error_code_str && strpos(strtolower($backend_error_code_str), 'generation_error') !== false)) {
+                    $error_message = __('The image generation service is temporarily unavailable due to a backend configuration issue. Please contact support.', 'beepbeep-ai-alt-text-generator');
                 } else {
-                    $error_message = __('The image generation service is temporarily unavailable. Please try again in a few minutes.', 'wp-alt-text-plugin');
+                    $error_message = __('The image generation service is temporarily unavailable. Please try again in a few minutes.', 'beepbeep-ai-alt-text-generator');
                 }
-            } elseif (strpos($endpoint, '/auth/') !== false) {
-                $error_message = __('The authentication server is temporarily unavailable. Please try again in a few minutes.', 'wp-alt-text-plugin');
+            } elseif (is_string($endpoint) && strpos($endpoint, '/auth/') !== false) {
+                $error_message = __('The authentication server is temporarily unavailable. Please try again in a few minutes.', 'beepbeep-ai-alt-text-generator');
             }
             
-            return new WP_Error(
+            return new \WP_Error(
                 'server_error',
                 $error_message,
                 [
@@ -476,35 +534,25 @@ class AltText_AI_API_Client_V2 {
             );
         }
         
-        // Handle authentication errors and user not found errors
+        // Handle authentication errors - only clear token if it's a clear auth issue
+        // Don't clear on temporary backend errors or if endpoint doesn't require auth
         if ($status_code === 401 || $status_code === 403) {
-            $this->clear_token();
-            delete_transient('opptiai_alt_token_last_check');
-            return new WP_Error(
+            // Check if this is a billing/checkout endpoint (can work without auth)
+            $endpoint_str = is_string($endpoint) ? $endpoint : '';
+            $is_checkout_endpoint = strpos($endpoint_str, '/billing/checkout') !== false;
+            
+            // For checkout, don't clear token - let the caller handle it
+            if (!$is_checkout_endpoint) {
+                // Only clear token for non-checkout endpoints
+                $this->clear_token();
+                delete_transient('bbai_token_last_check');
+            }
+            
+            return new \WP_Error(
                 'auth_required',
-                __('Authentication required. Please log in to continue.', 'wp-alt-text-plugin'),
+                __('Authentication required. Please log in to continue.', 'beepbeep-ai-alt-text-generator'),
                 ['requires_auth' => true]
             );
-        }
-        
-        // Check for "User not found" errors in response body (backend returns 500 sometimes)
-        if (isset($data['message']) || isset($data['error'])) {
-            $error_msg = strtolower(($data['message'] ?? '') . ' ' . ($data['error'] ?? ''));
-            if (strpos($error_msg, 'user not found') !== false || 
-                strpos($error_msg, 'user does not exist') !== false) {
-                // User was deleted or token is invalid - clear stored credentials
-                $this->clear_token();
-                delete_transient('opptiai_alt_token_last_check');
-                return new WP_Error(
-                    'auth_required',
-                    __('Your session has expired or your account is no longer available. Please log in again.', 'wp-alt-text-plugin'),
-                    [
-                        'requires_auth' => true,
-                        'status_code' => $status_code,
-                        'code' => 'user_not_found',
-                    ]
-                );
-            }
         }
         
         return [
@@ -517,15 +565,15 @@ class AltText_AI_API_Client_V2 {
     /**
      * Wrapper that retries transient failures (502, 503, timeouts) with backoff.
      */
-    private function request_with_retry($endpoint, $method = 'GET', $data = null, $max_attempts = 3) {
+    private function request_with_retry($endpoint, $method = 'GET', $data = null, $max_attempts = 3, $include_user_id = false, $extra_headers = []) {
         $attempt = 0;
         $last_error = null;
 
         while ($attempt < $max_attempts) {
-            $response = $this->make_request($endpoint, $method, $data);
+            $response = $this->make_request($endpoint, $method, $data, null, $include_user_id, $extra_headers);
             if (!is_wp_error($response)) {
-                if ($attempt > 0 && class_exists('AltText_AI_Debug_Log')) {
-                    AltText_AI_Debug_Log::log('info', 'API request recovered after retry', [
+                if ($attempt > 0 && class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                    \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'API request recovered after retry', [
                         'endpoint' => $endpoint,
                         'attempt' => $attempt + 1,
                     ], 'api');
@@ -542,8 +590,8 @@ class AltText_AI_API_Client_V2 {
 
             if ($attempt < $max_attempts) {
                 $delay = min(3, $attempt); // 1s, 2s
-                if (class_exists('AltText_AI_Debug_Log')) {
-                    AltText_AI_Debug_Log::log('warning', 'Retrying API request after transient failure', [
+                if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                    \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Retrying API request after transient failure', [
                         'endpoint'    => $endpoint,
                         'attempt'     => $attempt + 1,
                         'error_code'  => $response->get_error_code(),
@@ -554,7 +602,7 @@ class AltText_AI_API_Client_V2 {
             }
         }
 
-        return $last_error ?: new WP_Error('api_error', __('Unknown API error', 'wp-alt-text-plugin'));
+        return $last_error ?: new \WP_Error('api_error', __('Unknown API error', 'beepbeep-ai-alt-text-generator'));
     }
 
     /**
@@ -584,14 +632,49 @@ class AltText_AI_API_Client_V2 {
     
     /**
      * Register new user
+     * Includes site_id to prevent multiple free accounts per site
      */
     public function register($email, $password) {
+        // Check if site already has an account
+        $existing_token = $this->get_token();
+        if (!empty($existing_token)) {
+            // Site already has an account - check if it's a free plan
+            $usage = $this->get_usage();
+            if (!is_wp_error($usage) && isset($usage['plan']) && $usage['plan'] === 'free') {
+                return new \WP_Error(
+                    'free_plan_exists',
+                    __('A free plan has already been used for this site. Upgrade to Pro or Agency to increase your quota.', 'beepbeep-ai-alt-text-generator'),
+                    ['code' => 'free_plan_already_used']
+                );
+            }
+        }
+        
+        // Get site identifier
+        $site_id = $this->get_site_id();
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
+        $site_id = \BeepBeepAI\AltTextGenerator\get_site_identifier();
+        
         $response = $this->make_request('/auth/register', 'POST', [
             'email' => $email,
-            'password' => $password
+            'password' => $password,
+            'site_id' => $site_id,
+            'site_url' => get_site_url(),
+            'plugin_version' => defined('BBAI_VERSION') ? BBAI_VERSION : '1.0.0',
+            'wordpress_version' => get_bloginfo('version'),
         ]);
         
         if (is_wp_error($response)) {
+            // Check for "free plan already used" error from backend
+            $error_message = strtolower($response->get_error_message());
+            if (strpos($error_message, 'free plan') !== false || 
+                strpos($error_message, 'already used') !== false ||
+                $response->get_error_code() === 'free_plan_exists') {
+                return new \WP_Error(
+                    'free_plan_exists',
+                    __('A free plan has already been used for this site. Upgrade to Pro or Agency to increase your quota.', 'beepbeep-ai-alt-text-generator'),
+                    ['code' => 'free_plan_already_used']
+                );
+            }
             return $response;
         }
         
@@ -601,19 +684,26 @@ class AltText_AI_API_Client_V2 {
             return $response['data'];
         }
         
-        return new WP_Error(
+        return new \WP_Error(
             'registration_failed',
-            $response['data']['error'] ?? __('Registration failed', 'wp-alt-text-plugin')
+            $response['data']['error'] ?? __('Registration failed', 'beepbeep-ai-alt-text-generator')
         );
     }
     
     /**
      * Login user
+     * Includes site_id for account linking
      */
     public function login($email, $password) {
+        // Get site identifier
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
+        $site_id = \BeepBeepAI\AltTextGenerator\get_site_identifier();
+        
         $response = $this->make_request('/auth/login', 'POST', [
             'email' => $email,
-            'password' => $password
+            'password' => $password,
+            'site_id' => $site_id,
+            'site_url' => get_site_url(),
         ]);
         
         if (is_wp_error($response)) {
@@ -626,9 +716,9 @@ class AltText_AI_API_Client_V2 {
             return $response['data'];
         }
         
-        return new WP_Error(
+        return new \WP_Error(
             'login_failed',
-            $response['data']['error'] ?? __('Login failed', 'wp-alt-text-plugin')
+            $response['data']['error'] ?? __('Login failed', 'beepbeep-ai-alt-text-generator')
         );
     }
     
@@ -647,9 +737,9 @@ class AltText_AI_API_Client_V2 {
             return $response['data']['user'];
         }
 
-        return new WP_Error(
+        return new \WP_Error(
             'user_info_failed',
-            $response['data']['error'] ?? __('Failed to get user info', 'wp-alt-text-plugin')
+            $response['data']['error'] ?? __('Failed to get user info', 'beepbeep-ai-alt-text-generator')
         );
     }
 
@@ -664,7 +754,7 @@ class AltText_AI_API_Client_V2 {
             'siteHash' => $site_id,
             'siteUrl' => get_site_url(),
             'installId' => $site_id,
-            'pluginVersion' => defined('OPPTIAI_ALT_VERSION') ? OPPTIAI_ALT_VERSION : '1.0.0',
+            'pluginVersion' => defined('BBAI_VERSION') ? BBAI_VERSION : '1.0.0',
             'wordpressVersion' => get_bloginfo('version'),
             'phpVersion' => PHP_VERSION,
             'isMultisite' => is_multisite()
@@ -692,9 +782,9 @@ class AltText_AI_API_Client_V2 {
             ];
         }
 
-        return new WP_Error(
+        return new \WP_Error(
             'license_activation_failed',
-            $response['error'] ?? __('Failed to activate license', 'wp-alt-text-plugin')
+            $response['error'] ?? __('Failed to activate license', 'beepbeep-ai-alt-text-generator')
         );
     }
 
@@ -706,7 +796,7 @@ class AltText_AI_API_Client_V2 {
 
         return [
             'success' => true,
-            'message' => __('License deactivated successfully', 'wp-alt-text-plugin')
+            'message' => __('License deactivated successfully', 'beepbeep-ai-alt-text-generator')
         ];
     }
 
@@ -720,7 +810,7 @@ class AltText_AI_API_Client_V2 {
         $has_license = $this->has_active_license();
         
         if (!$is_authenticated && !$has_license) {
-            return new WP_Error('not_authenticated', __('Must be authenticated or have an active license to view license site usage', 'wp-alt-text-plugin'));
+            return new \WP_Error('not_authenticated', __('Must be authenticated or have an active license to view license site usage', 'beepbeep-ai-alt-text-generator'));
         }
 
         $response = $this->make_request('/api/licenses/sites', 'GET');
@@ -733,7 +823,7 @@ class AltText_AI_API_Client_V2 {
             return $response['data'] ?? ['sites' => []];
         }
 
-        return new WP_Error('api_error', $response['message'] ?? __('Failed to fetch license site usage', 'wp-alt-text-plugin'));
+        return new \WP_Error('api_error', $response['message'] ?? __('Failed to fetch license site usage', 'beepbeep-ai-alt-text-generator'));
     }
 
     /**
@@ -742,7 +832,7 @@ class AltText_AI_API_Client_V2 {
      */
     public function disconnect_license_site($site_id) {
         if (!$this->is_authenticated()) {
-            return new WP_Error('not_authenticated', __('Must be authenticated to disconnect license sites', 'wp-alt-text-plugin'));
+            return new \WP_Error('not_authenticated', __('Must be authenticated to disconnect license sites', 'beepbeep-ai-alt-text-generator'));
         }
 
         $response = $this->make_request('/api/licenses/sites/' . urlencode($site_id), 'DELETE');
@@ -752,10 +842,10 @@ class AltText_AI_API_Client_V2 {
         }
 
         if ($response['success']) {
-            return $response['data'] ?? ['message' => __('Site disconnected successfully', 'wp-alt-text-plugin')];
+            return $response['data'] ?? ['message' => __('Site disconnected successfully', 'beepbeep-ai-alt-text-generator')];
         }
 
-        return new WP_Error('api_error', $response['message'] ?? __('Failed to disconnect site', 'wp-alt-text-plugin'));
+        return new \WP_Error('api_error', $response['message'] ?? __('Failed to disconnect site', 'beepbeep-ai-alt-text-generator'));
     }
 
     /**
@@ -768,12 +858,26 @@ class AltText_AI_API_Client_V2 {
         $response = $this->make_request('/usage');
 
         if (is_wp_error($response)) {
+            // If API call fails, try to use cached usage as fallback
             if ($has_license && $license_cache) {
                 $cached_usage = $this->format_license_usage_from_cache($license_cache);
                 if ($cached_usage) {
                     return $cached_usage;
                 }
             }
+            
+            // For non-license accounts, try cached usage as fallback
+            if (!$has_license) {
+                require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+                $cached_usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
+                // Only use cached usage if it's a valid array with remaining credits >= 0
+                // This ensures we have valid data before falling back to cache
+                if (is_array($cached_usage) && isset($cached_usage['remaining']) && is_numeric($cached_usage['remaining']) && $cached_usage['remaining'] >= 0) {
+                    // Return cached usage if available
+                    return $cached_usage;
+                }
+            }
+            
             return $response;
         }
 
@@ -786,6 +890,10 @@ class AltText_AI_API_Client_V2 {
                     $response['data']['organization'] ?? [],
                     $response['data']['site'] ?? []
                 );
+            } else {
+                // Update usage cache for non-license accounts
+                require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+                \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($usage);
             }
 
             return $usage;
@@ -797,10 +905,21 @@ class AltText_AI_API_Client_V2 {
                 return $cached_usage;
             }
         }
+        
+        // For non-license accounts, try cached usage as fallback
+        if (!$has_license) {
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+            $cached_usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
+            // Only use cached usage if it's a valid array with remaining credits >= 0
+            if (is_array($cached_usage) && isset($cached_usage['remaining']) && is_numeric($cached_usage['remaining']) && $cached_usage['remaining'] >= 0) {
+                // Return cached usage if available
+                return $cached_usage;
+            }
+        }
 
-        return new WP_Error(
+        return new \WP_Error(
             'usage_failed',
-            $response['data']['error'] ?? __('Failed to get usage info', 'wp-alt-text-plugin')
+            $response['data']['error'] ?? __('Failed to get usage info', 'beepbeep-ai-alt-text-generator')
         );
     }
 
@@ -888,16 +1007,78 @@ class AltText_AI_API_Client_V2 {
             return false;
         }
 
-        $usage = $this->get_usage();
+        try {
+            // ALWAYS check cached usage first - it's more reliable than API calls
+            // This prevents false "limit reached" errors when API is slow/unreliable
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+            $cached_usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
+            
+            // If cached usage is valid and shows credits available, don't block
+            if (is_array($cached_usage) && isset($cached_usage['remaining']) && is_numeric($cached_usage['remaining'])) {
+                $remaining = intval($cached_usage['remaining']);
+                // Only block if cached usage explicitly shows 0 remaining
+                if ($remaining > 0) {
+                    return false; // Cached shows credits available - don't block
+                }
+                if ($remaining === 0) {
+                    return true; // Cached shows 0 - block generation
+                }
+            }
+            
+            // If no valid cached usage, try API as fallback
+            $usage = $this->get_usage();
 
-        // If there was an error getting usage, fail securely (assume limit reached)
-        // This prevents bypassing limits when API is temporarily unavailable
-        if (is_wp_error($usage)) {
-            return true;
+            // If there was an error getting usage, check if it's an auth error
+            // For auth errors, don't assume limit reached - allow generation to proceed
+            // Backend will handle usage limits during processing
+            if (is_wp_error($usage)) {
+                $error_code = $usage->get_error_code();
+                
+                // If it's an auth/user error, don't block generation - backend will handle it
+                if ($error_code === 'auth_required' || $error_code === 'user_not_found') {
+                    return false; // Don't block on auth errors
+                }
+                
+                // For other errors and no cached usage, allow generation to proceed
+                // Backend will enforce limits, and we don't want to block unnecessarily
+                return false;
+            }
+
+            // Check if remaining is 0 or less from API response
+            // Make sure remaining is numeric before comparing
+            if (isset($usage['remaining']) && is_numeric($usage['remaining'])) {
+                $remaining = intval($usage['remaining']);
+                // Only block if API explicitly shows 0 remaining AND no cached usage contradicted it
+                if ($remaining === 0 && (!is_array($cached_usage) || !isset($cached_usage['remaining']) || intval($cached_usage['remaining']) === 0)) {
+                    return true; // API and cache both show 0 - block
+                }
+                if ($remaining > 0) {
+                    return false; // API shows credits available - don't block
+                }
+            }
+            
+            // If we can't determine usage from API or cache, don't block - let backend handle it
+            return false;
+        } catch ( \Exception $e ) {
+            // If anything throws an exception, check cached usage as fallback
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+            $cached_usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
+            
+            // Check if cached usage is valid and shows credits available
+            if (is_array($cached_usage) && isset($cached_usage['remaining']) && is_numeric($cached_usage['remaining']) && $cached_usage['remaining'] > 0) {
+                // Cached usage shows credits available - don't block
+                return false;
+            }
+            
+            // If cached usage shows 0 remaining, respect that and block
+            if (is_array($cached_usage) && isset($cached_usage['remaining']) && is_numeric($cached_usage['remaining']) && $cached_usage['remaining'] === 0) {
+                // Cached usage shows 0 credits - block generation
+                return true;
+            }
+            
+            // No valid cached usage available - don't block on exceptions, let backend handle it
+            return false;
         }
-
-        // Check if remaining is 0 or less
-        return isset($usage['remaining']) && $usage['remaining'] <= 0;
     }
 
     /**
@@ -927,27 +1108,56 @@ class AltText_AI_API_Client_V2 {
         if (!$this->has_active_license()) {
             $token = $this->get_token();
             if (!empty($token) && !defined('WP_LOCAL_DEV')) {
-                $last_check = get_transient('opptiai_alt_token_last_check');
+                $last_check = get_transient('bbai_token_last_check');
                 // If token check expired or never done, validate before generating
                 if ($last_check === false) {
                     $user_info = $this->get_user_info();
                     if (is_wp_error($user_info)) {
-                        // Token is invalid, clear it and return auth error
-                        $this->clear_token();
-                        delete_transient('opptiai_alt_token_last_check');
-                        return new WP_Error(
-                            'auth_required',
-                            __('Your session has expired. Please log in again.', 'wp-alt-text-plugin'),
-                            ['requires_auth' => true]
-                        );
+                        $error_code = $user_info->get_error_code();
+                        $error_message = strtolower($user_info->get_error_message());
+                        
+                        // Only clear token if it's definitely invalid (not a temporary server error)
+                        if ($error_code === 'auth_required' || 
+                            $error_code === 'user_not_found' ||
+                            (strpos($error_message, 'user not found') !== false) ||
+                            (strpos($error_message, 'session expired') !== false) ||
+                            (strpos($error_message, 'unauthorized') !== false)) {
+                            // Token is definitely invalid, clear it
+                            $this->clear_token();
+                            delete_transient('bbai_token_last_check');
+                            return new \WP_Error(
+                                'auth_required',
+                                __('Your session has expired. Please log in again.', 'beepbeep-ai-alt-text-generator'),
+                                ['requires_auth' => true]
+                            );
+                        }
+                        // For server errors, network issues, etc., don't clear token
+                        // Just proceed with generation attempt - backend will handle it
+                    } else {
+                        // Token is valid, cache for 5 minutes
+                        set_transient('bbai_token_last_check', time(), 5 * MINUTE_IN_SECONDS);
                     }
-                    // Token is valid, cache for 5 minutes
-                    set_transient('opptiai_alt_token_last_check', time(), 5 * MINUTE_IN_SECONDS);
                 }
             }
         }
         
+        // Validate site fingerprint before credit operation
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-site-fingerprint.php';
+        $fingerprint_check = \BeepBeepAI\AltTextGenerator\Site_Fingerprint::check_on_credit_operation(false);
+        if (is_wp_error($fingerprint_check)) {
+            return $fingerprint_check;
+        }
+        
         $endpoint = 'api/generate';
+        
+        // CRITICAL: Log image_id being used for generation (to debug backend receiving wrong ID)
+        if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+            \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'generate_alt_text called', [
+                'image_id' => $image_id,
+                'regenerate' => $regenerate,
+                'endpoint' => $endpoint,
+            ], 'api');
+        }
         
         // Enrich context with useful metadata for higher fidelity
         $image_url = wp_get_attachment_url($image_id);
@@ -955,32 +1165,140 @@ class AltText_AI_API_Client_V2 {
         $caption   = wp_get_attachment_caption($image_id);
         $filename  = $image_url ? wp_basename(parse_url($image_url, PHP_URL_PATH)) : '';
 
+        // Debug: Log image details when regenerating to ensure correct image is being processed
+        if ($regenerate && class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+            // Get actual file path for verification
+            $file_path = get_attached_file($image_id);
+            $file_exists = $file_path && file_exists($file_path);
+            $file_hash = $file_exists && function_exists('md5_file') ? md5_file($file_path) : 'unknown';
+            
+            \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'Regenerating alt text for image', [
+                'image_id' => $image_id,
+                'image_url' => $image_url,
+                'file_path' => $file_path,
+                'file_exists' => $file_exists,
+                'file_hash' => substr($file_hash, 0, 8) . '...',
+                'filename' => $filename,
+                'title' => $title,
+            ], 'api');
+        }
+
         $image_payload = $this->prepare_image_payload($image_id, $image_url, $title, $caption, $filename);
 
         // Check if image preparation failed due to size
         if (isset($image_payload['_error']) && $image_payload['_error'] === 'image_too_large') {
-            return new WP_Error(
+            return new \WP_Error(
                 'image_too_large',
-                $image_payload['_error_message'] ?? __('Image file is too large.', 'wp-alt-text-plugin'),
+                $image_payload['_error_message'] ?? __('Image file is too large.', 'beepbeep-ai-alt-text-generator'),
                 ['image_id' => $image_id]
             );
         }
+        
+        // Check if image data is missing (critical error)
+        if (isset($image_payload['_error']) && $image_payload['_error'] === 'missing_image_data') {
+            return new \WP_Error(
+                'missing_image_data',
+                $image_payload['_error_message'] ?? __('Image data is missing. Cannot generate alt text.', 'beepbeep-ai-alt-text-generator'),
+                ['image_id' => $image_id]
+            );
+        }
+        
+        // Debug: Log what's being sent to backend (always, not just on regenerate)
+        if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+            $log_level = $regenerate ? 'warning' : 'info';
+            \BeepBeepAI\AltTextGenerator\Debug_Log::log($log_level, 'Sending image to backend API', [
+                'image_id' => $image_id,
+                'regenerate' => $regenerate,
+                'has_image_url' => !empty($image_payload['image_url']),
+                'has_image_base64' => !empty($image_payload['image_base64']),
+                'image_url_full' => !empty($image_payload['image_url']) ? $image_payload['image_url'] : 'none',
+                'image_url_preview' => !empty($image_payload['image_url']) ? substr($image_payload['image_url'], 0, 100) . '...' : 'none',
+                'base64_length' => !empty($image_payload['image_base64']) ? strlen($image_payload['image_base64']) : 0,
+                'payload_keys' => array_keys($image_payload),
+                'image_id_in_payload' => !empty($image_payload['image_id']) ? $image_payload['image_id'] : 'missing',
+            ], 'api');
+        }
 
+        // CRITICAL: Ensure image data is actually included in payload
+        // If image_url or image_base64 is missing, log a warning
+        if (empty($image_payload['image_url']) && empty($image_payload['image_base64'])) {
+            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                \BeepBeepAI\AltTextGenerator\Debug_Log::log('error', 'Image payload missing both image_url and image_base64', [
+                    'image_id' => $image_id,
+                    'payload_keys' => array_keys($image_payload),
+                    'image_url_input' => $image_url,
+                ], 'api');
+            }
+        }
+        
+        // CRITICAL: Ensure image_id in image_data payload matches the actual image_id
+        // Backend might be reading image_id from image_data.image_id
+        if (isset($image_payload['image_id']) && (string) $image_payload['image_id'] !== (string) $image_id) {
+            $payload_image_id_before = $image_payload['image_id'] ?? 'missing';
+            $image_payload['image_id'] = (string) $image_id;
+            
+            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                \BeepBeepAI\AltTextGenerator\Debug_Log::log('error', 'Image ID mismatch detected and fixed', [
+                    'expected_image_id' => $image_id,
+                    'payload_image_id_before' => $payload_image_id_before,
+                    'payload_image_id_after' => (string) $image_id,
+                ], 'api');
+            }
+        }
+        
+        // Ensure attachment_id mirrors image_id for backward compatibility with backend parsers
+        if (!isset($image_payload['attachment_id']) || (string) $image_payload['attachment_id'] !== (string) $image_id) {
+            $payload_attachment_before = $image_payload['attachment_id'] ?? 'missing';
+            $image_payload['attachment_id'] = (string) $image_id;
+
+            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Attachment ID normalized on payload', [
+                    'expected_attachment_id' => $image_id,
+                    'payload_attachment_before' => $payload_attachment_before,
+                    'payload_attachment_after' => (string) $image_id,
+                ], 'api');
+            }
+        }
+        
+        // Log the exact payload being sent to verify image_id is correct
+        if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+            \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'API Request Payload (BEFORE sending to backend)', [
+                'image_id_param' => $image_id,
+                'root_image_id_in_body' => (string) $image_id,
+                'image_data.image_id' => $image_payload['image_id'] ?? 'missing',
+                'image_data.attachment_id' => $image_payload['attachment_id'] ?? 'missing',
+                'regenerate_flag' => $regenerate,
+                'has_image_url' => !empty($image_payload['image_url']),
+                'image_url_preview' => !empty($image_payload['image_url']) ? substr($image_payload['image_url'], 0, 100) : 'none',
+                'timestamp' => time(),
+            ], 'api');
+        }
+        
         $body = [
             'image_data' => $image_payload,
             'context' => $context,
-            'regenerate' => $regenerate
+            'regenerate' => $regenerate ? true : false, // Explicitly cast to boolean
+            // Add timestamp and image_id to prevent caching issues
+            'timestamp' => time(),
+            'image_id' => (string) $image_id, // Include image_id at root level AND in image_data
+            'attachment_id' => (string) $image_id, // Redundant identifier for backend parsers
         ];
 
-        $response = $this->request_with_retry($endpoint, 'POST', $body);
+        // Include user ID and explicit image identifiers in headers for traceability
+        $extra_headers = [
+            'X-Image-ID' => (string) $image_id,
+            'X-Attachment-ID' => (string) $image_id,
+        ];
+
+        $response = $this->request_with_retry($endpoint, 'POST', $body, 3, true, $extra_headers);
 
         if (is_wp_error($response)) {
             return $response;
         }
 
         // Debug logging
-        if (class_exists('AltText_AI_Debug_Log')) {
-            AltText_AI_Debug_Log::log('debug', 'Generation API response', [
+        if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+            \BeepBeepAI\AltTextGenerator\Debug_Log::log('debug', 'Generation API response', [
                 'status_code' => $response['status_code'],
                 'success' => $response['success'],
                 'has_data' => isset($response['data']),
@@ -990,9 +1308,49 @@ class AltText_AI_API_Client_V2 {
 
         // Handle rate limit
         if ($response['status_code'] === 429) {
-            return new WP_Error(
+            // DO NOT update usage from error responses - credits should only be deducted on success
+            // The backend may have consumed credits during the failed attempt, but we shouldn't record it
+            // Usage will be refreshed on successful generation
+            
+            // Before blocking, check cached usage - backend might be incorrectly reporting quota exhausted
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+            $cached_usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
+            
+            // If cached usage shows credits available, verify with fresh API check
+            if (is_array($cached_usage) && isset($cached_usage['remaining']) && is_numeric($cached_usage['remaining']) && $cached_usage['remaining'] > 0) {
+                // Cached shows credits available - backend error might be incorrect
+                // Do a fresh check to see actual status
+                $fresh_usage = $this->get_usage();
+                
+                if (!is_wp_error($fresh_usage) && is_array($fresh_usage) && isset($fresh_usage['remaining']) && is_numeric($fresh_usage['remaining']) && $fresh_usage['remaining'] > 0) {
+                    // Fresh API check shows credits available - backend 429 was incorrect
+                    // Update cache with fresh data and return a retry error instead of blocking
+                    \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($fresh_usage);
+                    
+                    if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                        \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Backend returned 429 but cache and fresh API check show credits available', [
+                            'cached_remaining' => $cached_usage['remaining'],
+                            'api_remaining' => $fresh_usage['remaining'],
+                            'backend_error' => $response['data']['error'] ?? 'Monthly limit reached',
+                        ], 'api');
+                    }
+                    
+                    // Return a retry error instead of blocking completely
+                    return new \WP_Error(
+                        'quota_check_mismatch',
+                        __('Backend reported quota limit, but credits appear available. Please try again in a moment.', 'beepbeep-ai-alt-text-generator'),
+                        ['usage' => $fresh_usage, 'retry_after' => 3]
+                    );
+                } elseif (!is_wp_error($fresh_usage) && is_array($fresh_usage) && isset($fresh_usage['remaining']) && is_numeric($fresh_usage['remaining']) && $fresh_usage['remaining'] === 0) {
+                    // Fresh API check confirms 0 credits - backend was correct, update cache
+                    \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($fresh_usage);
+                }
+            }
+            
+            // Cached usage confirms no credits OR fresh check also shows exhausted
+            return new \WP_Error(
                 'limit_reached',
-                $response['data']['error'] ?? __('Monthly limit reached', 'wp-alt-text-plugin'),
+                $response['data']['error'] ?? __('Monthly limit reached', 'beepbeep-ai-alt-text-generator'),
                 ['usage' => $response['data']['usage'] ?? null]
             );
         }
@@ -1000,23 +1358,29 @@ class AltText_AI_API_Client_V2 {
         if (!$response['success']) {
             // Extract detailed error information
             $error_data = $response['data'] ?? [];
-            $error_message = $error_data['message'] ?? $error_data['error'] ?? __('Failed to generate alt text', 'wp-alt-text-plugin');
+            $error_message = $error_data['message'] ?? $error_data['error'] ?? __('Failed to generate alt text', 'beepbeep-ai-alt-text-generator');
             $error_code = $error_data['code'] ?? 'api_error';
             
-            // Handle authentication/user errors - clear invalid token
+            // Handle authentication/user errors - only clear token if definitely invalid
+            // Don't clear on temporary server errors
             $error_message_lower = strtolower($error_message . ' ' . ($error_data['error'] ?? ''));
-            if (strpos($error_message_lower, 'user not found') !== false || 
-                strpos($error_message_lower, 'user does not exist') !== false ||
-                (($response['status_code'] === 401 || $response['status_code'] === 403) && strpos($error_message_lower, 'unauthorized') !== false)) {
+            $status_code_check = isset($response['status_code']) ? intval($response['status_code']) : 0;
+            
+            // Only clear token if it's clearly an auth issue, not a server error
+            if ((strpos($error_message_lower, 'user not found') !== false || 
+                 strpos($error_message_lower, 'user does not exist') !== false ||
+                 ($status_code_check === 401 && strpos($error_message_lower, 'unauthorized') !== false)) &&
+                $status_code_check < 500) { // Don't clear token on 500 errors - might be backend issue
+                
                 // User was deleted or token is invalid - clear stored credentials
                 $this->clear_token();
-                delete_transient('opptiai_alt_token_last_check');
-                return new WP_Error(
+                delete_transient('bbai_token_last_check');
+                return new \WP_Error(
                     'auth_required',
-                    __('Your session has expired or your account is no longer available. Please log in again.', 'wp-alt-text-plugin'),
+                    __('Your session has expired or your account is no longer available. Please log in again.', 'beepbeep-ai-alt-text-generator'),
                     [
                         'requires_auth' => true,
-                        'status_code' => $response['status_code'],
+                        'status_code' => $status_code_check,
                         'code' => 'user_not_found',
                     ]
                 );
@@ -1024,7 +1388,7 @@ class AltText_AI_API_Client_V2 {
             
             // Handle 413 Payload Too Large specifically
             if ($response['status_code'] === 413) {
-                $error_message = __('Image file is too large. Please compress or resize the image before generating alt text.', 'wp-alt-text-plugin');
+                $error_message = __('Image file is too large. Please compress or resize the image before generating alt text.', 'beepbeep-ai-alt-text-generator');
                 $error_code = 'payload_too_large';
             }
             
@@ -1037,13 +1401,13 @@ class AltText_AI_API_Client_V2 {
                 $error_code === 'GENERATION_ERROR') {
                 // This is a backend configuration issue - the backend's OpenAI API key is invalid/expired
                 // This is NOT a plugin issue, but a backend server configuration problem
-                $error_message = __('The backend service is experiencing a configuration issue. This is a temporary backend problem that needs to be fixed on the server side. Please try again in a few minutes or contact support if the issue persists.', 'wp-alt-text-plugin');
+                $error_message = __('The backend service is experiencing a configuration issue. This is a temporary backend problem that needs to be fixed on the server side. Please try again in a few minutes or contact support if the issue persists.', 'beepbeep-ai-alt-text-generator');
                 $error_code = 'backend_config_error';
             }
             
             // Log detailed error information for debugging
-            if (class_exists('AltText_AI_Debug_Log')) {
-                AltText_AI_Debug_Log::log('error', 'API generation failed', [
+            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                \BeepBeepAI\AltTextGenerator\Debug_Log::log('error', 'API generation failed', [
                     'image_id' => $image_id,
                     'status_code' => $response['status_code'],
                     'error_code' => $error_code,
@@ -1053,7 +1417,7 @@ class AltText_AI_API_Client_V2 {
                 ], 'api');
             }
             
-            return new WP_Error(
+            return new \WP_Error(
                 'api_error',
                 $error_message,
                 [
@@ -1093,8 +1457,8 @@ class AltText_AI_API_Client_V2 {
         }
         
         if (!$response['success']) {
-            $error_message = $response['data']['message'] ?? $response['data']['error'] ?? __('Failed to review alt text', 'wp-alt-text-plugin');
-            return new WP_Error(
+            $error_message = $response['data']['message'] ?? $response['data']['error'] ?? __('Failed to review alt text', 'beepbeep-ai-alt-text-generator');
+            return new \WP_Error(
                 'api_error',
                 $error_message,
                 ['code' => $response['data']['code'] ?? 'api_error']
@@ -1118,9 +1482,9 @@ class AltText_AI_API_Client_V2 {
             return $response['data']['billing'];
         }
         
-        return new WP_Error(
+        return new \WP_Error(
             'billing_failed',
-            $response['data']['error'] ?? __('Failed to get billing info', 'wp-alt-text-plugin')
+            $response['data']['error'] ?? __('Failed to get billing info', 'beepbeep-ai-alt-text-generator')
         );
     }
 
@@ -1138,9 +1502,9 @@ class AltText_AI_API_Client_V2 {
             return $response['data']['plans'] ?? [];
         }
 
-        return new WP_Error(
+        return new \WP_Error(
             'plans_failed',
-            $response['data']['error'] ?? __('Failed to fetch pricing plans', 'wp-alt-text-plugin')
+            $response['data']['error'] ?? __('Failed to fetch pricing plans', 'beepbeep-ai-alt-text-generator')
         );
     }
     
@@ -1148,13 +1512,89 @@ class AltText_AI_API_Client_V2 {
      * Create checkout session
      */
     public function create_checkout_session($price_id, $success_url, $cancel_url) {
+        // For checkout, try without token if token is invalid/expired
+        // This allows guest checkout - users can create account during checkout
+        $token = $this->get_token();
+        $had_token = !empty($token);
+        
+        // First attempt: with token if available
         $response = $this->make_request('/billing/checkout', 'POST', [
             'priceId' => $price_id,
             'successUrl' => $success_url,
             'cancelUrl' => $cancel_url
         ]);
         
+        // Check response body for "user not found" errors (backend returns 500 with this message)
+        $is_user_not_found_error = false;
         if (is_wp_error($response)) {
+            $error_code = $response->get_error_code();
+            $error_message = strtolower($response->get_error_message());
+            $error_data = $response->get_error_data();
+            
+            // Check for "user not found" errors in various forms
+            $is_user_not_found_error = $error_code === 'user_not_found' ||
+                                       strpos($error_message, 'user not found') !== false ||
+                                       strpos($error_message, 'user does not exist') !== false ||
+                                       (is_array($error_data) && isset($error_data['code']) && 
+                                        ($error_data['code'] === 'user_not_found' ||
+                                         strpos(strtolower($error_data['code']), 'user_not_found') !== false)) ||
+                                       (is_array($error_data) && isset($error_data['backend_message']) && 
+                                        is_string($error_data['backend_message']) &&
+                                        strpos(strtolower($error_data['backend_message']), 'user not found') !== false) ||
+                                       (is_array($error_data) && isset($error_data['error_details']) && 
+                                        is_string($error_data['error_details']) &&
+                                        strpos(strtolower($error_data['error_details']), 'user not found') !== false);
+        } elseif (isset($response['status_code']) && $response['status_code'] >= 500) {
+            // Check response body for "user not found" in 500 errors
+            $response_data = $response['data'] ?? [];
+            $error_body = '';
+            if (isset($response_data['error']) && is_string($response_data['error'])) {
+                $error_body = strtolower($response_data['error']);
+            } elseif (isset($response_data['message']) && is_string($response_data['message'])) {
+                $error_body = strtolower($response_data['message']);
+            }
+            $is_user_not_found_error = strpos($error_body, 'user not found') !== false ||
+                                       strpos($error_body, 'user does not exist') !== false;
+        }
+        
+        // If it's a "user not found" error and we had a token, clear token and retry without auth (for guest checkout)
+        if ($is_user_not_found_error && $had_token) {
+            // Clear invalid token - it's causing the backend to fail
+            $this->clear_token();
+            delete_transient('bbai_token_last_check');
+            
+            // Retry without token (guest checkout)
+            $response = $this->make_request('/billing/checkout', 'POST', [
+                'priceId' => $price_id,
+                'successUrl' => $success_url,
+                'cancelUrl' => $cancel_url
+            ]);
+        }
+        
+        // Handle errors - don't show "session expired" or "user not found" for checkout
+        if (is_wp_error($response)) {
+            $error_code = $response->get_error_code();
+            $error_message = $response->get_error_message();
+            $error_lower = strtolower($error_message);
+            $error_data = $response->get_error_data();
+            
+            // For checkout, provide user-friendly error messages
+            // Don't show technical errors like "user not found" or "session expired"
+            if (strpos($error_lower, 'session') !== false || 
+                strpos($error_lower, 'log in') !== false ||
+                strpos($error_lower, 'authenticated') !== false ||
+                strpos($error_lower, 'user not found') !== false ||
+                strpos($error_lower, 'user does not exist') !== false ||
+                $error_code === 'user_not_found' ||
+                $error_code === 'auth_required' ||
+                (is_array($error_data) && isset($error_data['status_code']) && $error_data['status_code'] >= 500)) {
+                // For checkout errors, provide a helpful message
+                return new \WP_Error(
+                    'checkout_failed',
+                    __('Unable to create checkout session. This may be a temporary backend issue. Please try again in a moment or contact support if the problem persists.', 'beepbeep-ai-alt-text-generator'),
+                    ['response' => $error_data]
+                );
+            }
             return $response;
         }
         
@@ -1172,10 +1612,10 @@ class AltText_AI_API_Client_V2 {
         }
 
         if (!$error_message) {
-            $error_message = __('Failed to create checkout session', 'wp-alt-text-plugin');
+            $error_message = __('Failed to create checkout session', 'beepbeep-ai-alt-text-generator');
         }
 
-        return new WP_Error(
+        return new \WP_Error(
             'checkout_failed',
             $error_message,
             ['response' => $response]
@@ -1198,9 +1638,9 @@ class AltText_AI_API_Client_V2 {
             return $response['data'];
         }
         
-        return new WP_Error(
+        return new \WP_Error(
             'portal_failed',
-            $response['data']['error'] ?? __('Failed to create customer portal session', 'wp-alt-text-plugin')
+            $response['data']['error'] ?? __('Failed to create customer portal session', 'beepbeep-ai-alt-text-generator')
         );
     }
     
@@ -1213,7 +1653,7 @@ class AltText_AI_API_Client_V2 {
         $this->clear_token();
         
         // Get the WordPress site URL for the reset link
-        $site_url = admin_url('upload.php?page=opptiai-alt');
+        $site_url = admin_url('upload.php?page=bbai');
         
         $response = $this->make_request('/auth/forgot-password', 'POST', [
             'email' => $email,
@@ -1235,18 +1675,18 @@ class AltText_AI_API_Client_V2 {
         }
         
         // Extract error message with better context
-        $error_message = $response['data']['error'] ?? $response['data']['message'] ?? __('Failed to send password reset email', 'wp-alt-text-plugin');
+        $error_message = $response['data']['error'] ?? $response['data']['message'] ?? __('Failed to send password reset email', 'beepbeep-ai-alt-text-generator');
         
         // Check for specific error cases
         if ($response['status_code'] === 404) {
-            $error_message = __('Password reset is currently being set up. This feature is not yet available on our backend. Please contact support for assistance.', 'wp-alt-text-plugin');
+            $error_message = __('Password reset is currently being set up. This feature is not yet available on our backend. Please contact support for assistance.', 'beepbeep-ai-alt-text-generator');
         } elseif ($response['status_code'] === 429) {
-            $error_message = __('Too many password reset requests. Please wait 15 minutes before trying again.', 'wp-alt-text-plugin');
+            $error_message = __('Too many password reset requests. Please wait 15 minutes before trying again.', 'beepbeep-ai-alt-text-generator');
         } elseif ($response['status_code'] >= 500) {
-            $error_message = __('The authentication server is temporarily unavailable. Please try again in a few minutes.', 'wp-alt-text-plugin');
+            $error_message = __('The authentication server is temporarily unavailable. Please try again in a few minutes.', 'beepbeep-ai-alt-text-generator');
         }
         
-        return new WP_Error(
+        return new \WP_Error(
             'forgot_password_failed',
             $error_message
         );
@@ -1280,9 +1720,9 @@ class AltText_AI_API_Client_V2 {
             return $response['data'];
         }
         
-        return new WP_Error(
+        return new \WP_Error(
             'reset_password_failed',
-            $response['data']['error'] ?? $response['data']['message'] ?? __('Failed to reset password', 'wp-alt-text-plugin')
+            $response['data']['error'] ?? $response['data']['message'] ?? __('Failed to reset password', 'beepbeep-ai-alt-text-generator')
         );
     }
     
@@ -1300,9 +1740,9 @@ class AltText_AI_API_Client_V2 {
             return $response['data'];
         }
         
-        return new WP_Error(
+        return new \WP_Error(
             'subscription_info_failed',
-            $response['data']['error'] ?? __('Failed to fetch subscription information', 'wp-alt-text-plugin')
+            $response['data']['error'] ?? __('Failed to fetch subscription information', 'beepbeep-ai-alt-text-generator')
         );
     }
     
@@ -1312,6 +1752,7 @@ class AltText_AI_API_Client_V2 {
     private function prepare_image_payload($image_id, $image_url, $title, $caption, $filename) {
         $payload = [
             'image_id' => (string) $image_id,  // Cast to string for Prisma compatibility
+            'attachment_id' => (string) $image_id, // Redundant field for backend compatibility
             'title' => $title,
             'caption' => $caption,
             'filename' => $filename
@@ -1325,436 +1766,131 @@ class AltText_AI_API_Client_V2 {
         }
         
         if ($image_url) {
-            // Check if URL is localhost - if so, encode as base64
-            $parsed_url = parse_url($image_url);
-            $is_localhost = isset($parsed_url['host']) && 
-                           (in_array($parsed_url['host'], ['localhost', '127.0.0.1', 'host.docker.internal']) ||
-                            strpos($parsed_url['host'], '.local') !== false ||
-                            strpos($parsed_url['host'], 'localhost') !== false);
-            
-            if ($is_localhost) {
-                // For localhost URLs, encode image as base64 so backend can access it
-                // Resize to max 1024px on longest side to reduce payload size (doesn't affect token count)
-                $file_path = get_attached_file($image_id);
-                if ($file_path && file_exists($file_path)) {
-                    $mime_type = get_post_mime_type($image_id) ?: 'image/jpeg';
-                    
-                    // Get original dimensions
-                    $metadata = wp_get_attachment_metadata($image_id);
+            // Always send image URL to backend - backend handles all image processing
+            // For public URLs, check if image is too large and resize if needed
+            // Large images should be resized and sent as base64 to avoid 413 errors
+            $file_path = get_attached_file($image_id);
+            if ($file_path && file_exists($file_path)) {
+                $file_size = filesize($file_path);
+                // Very aggressive threshold - resize if over 512KB to prevent backend errors
+                $max_file_size = 512 * 1024; // 512KB - resize if larger
+                
+                // Get metadata first
+                $mime_type = get_post_mime_type($image_id) ?: 'image/jpeg';
+                $metadata = wp_get_attachment_metadata($image_id);
+                
+                // Always resize large images and send as base64 to prevent 413 errors
+                // Also resize if file doesn't exist in metadata (dimensions unknown)
+                $should_resize = ($file_size > $max_file_size) || 
+                                (empty($metadata) || empty($metadata['width']) || empty($metadata['height']));
+                
+                if ($should_resize && function_exists('wp_get_image_editor')) {
                     $orig_width = $metadata['width'] ?? 0;
                     $orig_height = $metadata['height'] ?? 0;
                     
-                    // Resize to 512px for good AI analysis quality (backend now supports 2MB payloads)
-                    $max_size = 512;
-                    $needs_resize = ($orig_width > $max_size || $orig_height > $max_size);
-
-                    if ($needs_resize && function_exists('wp_get_image_editor')) {
+                    // Resize to max 800px on longest side for large files
+                    $max_size = 800;
+                    
+                    if ($orig_width > $max_size || $orig_height > $max_size) {
+                        if ($orig_width > $orig_height) {
+                            $new_width = $max_size;
+                            $new_height = intval(($orig_height / $orig_width) * $max_size);
+                        } else {
+                            $new_height = $max_size;
+                            $new_width = intval(($orig_width / $orig_height) * $max_size);
+                        }
+                        
                         $editor = wp_get_image_editor($file_path);
                         if (!is_wp_error($editor)) {
-                            // Calculate new dimensions maintaining aspect ratio
-                            if ($orig_width > $orig_height) {
-                                $new_width = $max_size;
-                                $new_height = intval(($orig_height / $orig_width) * $max_size);
-                            } else {
-                                $new_height = $max_size;
-                                $new_width = intval(($orig_width / $orig_height) * $max_size);
-                            }
-
                             $editor->resize($new_width, $new_height, false);
-
-                            // Set quality for good detail while keeping file size reasonable
+                            
+                            // Set quality to reduce file size
                             if (method_exists($editor, 'set_quality')) {
-                                $editor->set_quality(75);
+                                $editor->set_quality(85);
                             }
                             
-                            // Save to temporary file
                             $upload_dir = wp_upload_dir();
-                            $temp_filename = 'alttext-ai-temp-' . $image_id . '-' . time() . '.jpg';
+                            $temp_filename = 'beepbeepai-temp-' . $image_id . '-' . time() . '.jpg';
                             $temp_path = $upload_dir['path'] . '/' . $temp_filename;
                             $saved = $editor->save($temp_path, 'image/jpeg');
                             
                             if (!is_wp_error($saved) && isset($saved['path'])) {
-                                $file_contents = file_get_contents($saved['path']);
-                                @unlink($saved['path']); // Clean up temp file
-                                if ($file_contents !== false) {
-                                    $base64 = base64_encode($file_contents);
-                                    $payload['image_base64'] = $base64;
-                                    $payload['mime_type'] = 'image/jpeg'; // Resized images saved as JPEG
-                                    // Don't send image_url for localhost - backend should use base64
-                                } else {
-                                    // Fallback to original file
-                                    $file_contents = file_get_contents($file_path);
-                                    if ($file_contents !== false) {
-                                        $base64 = base64_encode($file_contents);
+                                $resized_contents = file_get_contents($saved['path']);
+                                @unlink($saved['path']);
+                                if ($resized_contents !== false) {
+                                    $base64 = base64_encode($resized_contents);
+                                    if (strlen($base64) <= 5.5 * 1024 * 1024) {
                                         $payload['image_base64'] = $base64;
-                                        $payload['mime_type'] = $mime_type;
-                                        // Don't send image_url for localhost - backend should use base64
+                                        $payload['mime_type'] = 'image/jpeg';
                                     } else {
-                                        // Don't send image_url for localhost - backend should use base64
+                                        // Still too large, send URL as fallback
+                                        $payload['image_url'] = $image_url;
                                     }
-                                }
-                            } else {
-                                // Fallback to original file if resize fails
-                                $file_contents = file_get_contents($file_path);
-                                if ($file_contents !== false) {
-                                    $base64 = base64_encode($file_contents);
-                                    $payload['image_base64'] = $base64;
-                                    $payload['mime_type'] = $mime_type;
-                                    $payload['image_url'] = $image_url;
                                 } else {
                                     $payload['image_url'] = $image_url;
                                 }
-                            }
-                        } else {
-                            // Fallback to original file if editor fails
-                            $file_contents = file_get_contents($file_path);
-                            if ($file_contents !== false) {
-                                $base64 = base64_encode($file_contents);
-                                $payload['image_base64'] = $base64;
-                                $payload['mime_type'] = $mime_type;
-                                $payload['image_url'] = $image_url;
                             } else {
                                 $payload['image_url'] = $image_url;
                             }
+                        } else {
+                            $payload['image_url'] = $image_url;
                         }
                     } else {
-                        // No resize needed or editor not available - check file size before encoding
-                        $file_size = file_exists($file_path) ? filesize($file_path) : 0;
-                        $max_file_size = 4 * 1024 * 1024; // 4MB limit for base64 encoding
-                        
-                        if ($file_size > 0 && $file_size <= $max_file_size) {
-                            $file_contents = file_get_contents($file_path);
-                            if ($file_contents !== false) {
-                                $base64 = base64_encode($file_contents);
-                                // Base64 increases size by ~33%, so check encoded size (max ~5.3MB)
-                                if (strlen($base64) <= 5.5 * 1024 * 1024) {
-                                    $payload['image_base64'] = $base64;
-                                    $payload['mime_type'] = $mime_type;
-                                    // Don't send image_url for localhost - backend should use base64
-                                } else {
-                                    // File too large even after encoding, try to resize anyway
-                                    if (function_exists('wp_get_image_editor')) {
-                                        $editor = wp_get_image_editor($file_path);
-                                        if (!is_wp_error($editor)) {
-                                            $metadata = wp_get_attachment_metadata($image_id);
-                                            $orig_width = $metadata['width'] ?? 0;
-                                            $orig_height = $metadata['height'] ?? 0;
-                                            $max_size = 800; // Smaller size for large files
-                                            
-                                            if ($orig_width > $max_size || $orig_height > $max_size) {
-                                                if ($orig_width > $orig_height) {
-                                                    $new_width = $max_size;
-                                                    $new_height = intval(($orig_height / $orig_width) * $max_size);
-                                                } else {
-                                                    $new_height = $max_size;
-                                                    $new_width = intval(($orig_width / $orig_height) * $max_size);
-                                                }
-                                                
-                                                $editor->resize($new_width, $new_height, false);
-                                                
-                                                // Set quality to reduce file size (85% is a good balance)
-                                                if (method_exists($editor, 'set_quality')) {
-                                                    $editor->set_quality(85);
-                                                }
-                                                
-                                                $upload_dir = wp_upload_dir();
-                                                $temp_filename = 'alttext-ai-temp-' . $image_id . '-' . time() . '.jpg';
-                                                $temp_path = $upload_dir['path'] . '/' . $temp_filename;
-                                                $saved = $editor->save($temp_path, 'image/jpeg');
-                                                
-                                                if (!is_wp_error($saved) && isset($saved['path'])) {
-                                                    $resized_contents = file_get_contents($saved['path']);
-                                                    @unlink($saved['path']);
-                                                    if ($resized_contents !== false) {
-                                                        $base64 = base64_encode($resized_contents);
-                                                        if (strlen($base64) <= 5.5 * 1024 * 1024) {
-                                                            $payload['image_base64'] = $base64;
-                                                            $payload['mime_type'] = 'image/jpeg';
-                                                            // Don't send image_url for localhost
-                                                        } else {
-                                                            // Still too large, send URL as fallback
-                                                            $payload['image_url'] = $image_url;
-                                                        }
-                                                    } else {
-                                                        $payload['image_url'] = $image_url;
-                                                    }
-                                                } else {
-                                                    $payload['image_url'] = $image_url;
-                                                }
-                                            } else {
-                                                // Image already small, but file size is large - send URL
-                                                $payload['image_url'] = $image_url;
-                                            }
-                                        } else {
-                                            $payload['image_url'] = $image_url;
-                                        }
-                                    } else {
-                                        $payload['image_url'] = $image_url;
-                                    }
-                                }
-                            } else {
-                                $payload['image_url'] = $image_url;
-                            }
-                        } else {
-                            // File too large, try to resize it
-                            if ($file_size > $max_file_size && function_exists('wp_get_image_editor')) {
-                                $editor = wp_get_image_editor($file_path);
-                                if (!is_wp_error($editor)) {
-                                    $metadata = wp_get_attachment_metadata($image_id);
-                                    $orig_width = $metadata['width'] ?? 0;
-                                    $orig_height = $metadata['height'] ?? 0;
-                                    $max_size = 800; // Smaller size for large files
-                                    
-                                    if ($orig_width > $max_size || $orig_height > $max_size) {
-                                        if ($orig_width > $orig_height) {
-                                            $new_width = $max_size;
-                                            $new_height = intval(($orig_height / $orig_width) * $max_size);
-                                        } else {
-                                            $new_height = $max_size;
-                                            $new_width = intval(($orig_width / $orig_height) * $max_size);
-                                        }
-                                        
-                                        $editor->resize($new_width, $new_height, false);
-                                        
-                                        $upload_dir = wp_upload_dir();
-                                        $temp_filename = 'alttext-ai-temp-' . $image_id . '-' . time() . '.jpg';
-                                        $temp_path = $upload_dir['path'] . '/' . $temp_filename;
-                                        $saved = $editor->save($temp_path, 'image/jpeg');
-                                        
-                                        if (!is_wp_error($saved) && isset($saved['path'])) {
-                                            $resized_contents = file_get_contents($saved['path']);
-                                            @unlink($saved['path']);
-                                            if ($resized_contents !== false) {
-                                                $base64 = base64_encode($resized_contents);
-                                                if (strlen($base64) <= 5.5 * 1024 * 1024) {
-                                                    $payload['image_base64'] = $base64;
-                                                    $payload['mime_type'] = 'image/jpeg';
-                                                    // Don't send image_url for localhost
-                                                } else {
-                                                    $payload['image_url'] = $image_url;
-                                                }
-                                            } else {
-                                                $payload['image_url'] = $image_url;
-                                            }
-                                        } else {
-                                            $payload['image_url'] = $image_url;
-                                        }
-                                    } else {
-                                        $payload['image_url'] = $image_url;
-                                    }
-                                } else {
-                                    $payload['image_url'] = $image_url;
-                                }
-                            } else {
-                                $payload['image_url'] = $image_url;
-                            }
-                        }
-                    }
-                } else {
-                    // Fallback to URL if file doesn't exist
-                    $payload['image_url'] = $image_url;
-                }
-            } else {
-                // For public URLs, check if image is too large and resize if needed
-                // Large images should be resized and sent as base64 to avoid 413 errors
-                $file_path = get_attached_file($image_id);
-                if ($file_path && file_exists($file_path)) {
-                    $file_size = filesize($file_path);
-                    // Very aggressive threshold - resize if over 512KB to prevent backend errors
-                    $max_file_size = 512 * 1024; // 512KB - resize if larger
-                    
-                    // Get metadata first
-                    $mime_type = get_post_mime_type($image_id) ?: 'image/jpeg';
-                    $metadata = wp_get_attachment_metadata($image_id);
-                    
-                    // Always resize large images and send as base64 to prevent 413 errors
-                    // Also resize if file doesn't exist in metadata (dimensions unknown)
-                    $should_resize = ($file_size > $max_file_size) || 
-                                    (empty($metadata) || empty($metadata['width']) || empty($metadata['height']));
-                    
-                    if ($should_resize && function_exists('wp_get_image_editor')) {
-                        $orig_width = $metadata['width'] ?? 0;
-                        $orig_height = $metadata['height'] ?? 0;
-                        
-                        // Log resize attempt for debugging
-                        if (class_exists('AltText_AI_Debug_Log')) {
-                            AltText_AI_Debug_Log::log('debug', 'Resizing large image for API', [
-                                'image_id' => $image_id,
-                                'file_size' => round($file_size / 1024 / 1024, 2) . 'MB',
-                                'dimensions' => $orig_width . 'x' . $orig_height,
-                            ], 'api');
-                        }
-                        
-                        // Resize to 512px for good AI analysis (backend now supports 2MB payloads)
-                        $max_size = 512;
-                        
-                        // Always resize if dimensions are large OR if file size is large (even if dimensions are small)
-                        $needs_dimension_resize = ($orig_width > $max_size || $orig_height > $max_size);
-                        $needs_resize = $needs_dimension_resize || ($file_size > $max_file_size);
-                        
-                        if ($needs_resize) {
-                            $editor = wp_get_image_editor($file_path);
-                            if (!is_wp_error($editor)) {
-                                // Calculate new dimensions
-                                if ($needs_dimension_resize) {
-                                    // Resize based on dimensions
-                                    if ($orig_width > $orig_height) {
-                                        $new_width = $max_size;
-                                        $new_height = intval(($orig_height / $orig_width) * $max_size);
-                                    } else {
-                                        $new_height = $max_size;
-                                        $new_width = intval(($orig_width / $orig_height) * $max_size);
-                                    }
-                                    $editor->resize($new_width, $new_height, false);
-                                } else {
-                                    // Dimensions are small but file is large - just recompress
-                                    // Don't resize, just save with lower quality
-                                }
-                                
-                                // Set quality for good detail while keeping file size reasonable
-                                if (method_exists($editor, 'set_quality')) {
-                                    $editor->set_quality(75); // Good quality for AI analysis
-                                }
-                                
-                                $upload_dir = wp_upload_dir();
-                                $temp_filename = 'alttext-ai-temp-' . $image_id . '-' . time() . '.jpg';
-                                $temp_path = $upload_dir['path'] . '/' . $temp_filename;
-                                $saved = $editor->save($temp_path, 'image/jpeg');
-                                
-                                if (!is_wp_error($saved) && isset($saved['path'])) {
-                                    $resized_contents = file_get_contents($saved['path']);
-                                    $resized_size = strlen($resized_contents);
-                                    @unlink($saved['path']);
-                                    
-                                    if ($resized_contents !== false) {
-                                        $base64 = base64_encode($resized_contents);
-                                        $base64_size = strlen($base64);
-                                        
-                                        // Log resize result for debugging
-                                        if (class_exists('AltText_AI_Debug_Log')) {
-                                            AltText_AI_Debug_Log::log('debug', 'Image resize completed', [
-                                                'image_id' => $image_id,
-                                                'original_size' => round($file_size / 1024 / 1024, 2) . 'MB',
-                                                'resized_size' => round($resized_size / 1024 / 1024, 2) . 'MB',
-                                                'base64_size' => round($base64_size / 1024 / 1024, 2) . 'MB',
-                                                'max_size' => $max_size,
-                                            ], 'api');
-                                        }
-                                        
-                                        // Check if encoded size is acceptable (max ~1.8MB, backend supports 2MB)
-                                        if ($base64_size <= 1.8 * 1024 * 1024) {
-                                            $payload['image_base64'] = $base64;
-                                            $payload['mime_type'] = 'image/jpeg';
-                                            // Don't send image_url when sending base64
-                                        } else {
-                                            // Still too large after first resize - try smaller at 384px
-                                            $editor2 = wp_get_image_editor($file_path);
-                                            if (!is_wp_error($editor2)) {
-                                                // Resize to 384px max dimension
-                                                if ($orig_width > $orig_height) {
-                                                    $editor2->resize(384, intval(($orig_height / $orig_width) * 384), false);
-                                                } else {
-                                                    $editor2->resize(intval(($orig_width / $orig_height) * 384), 384, false);
-                                                }
-                                                if (method_exists($editor2, 'set_quality')) {
-                                                    $editor2->set_quality(70); // Still good quality
-                                                }
-                                                $saved2 = $editor2->save($temp_path, 'image/jpeg');
-                                                if (!is_wp_error($saved2) && isset($saved2['path'])) {
-                                                    $final_contents = file_get_contents($saved2['path']);
-                                                    @unlink($saved2['path']);
-                                                    if ($final_contents !== false) {
-                                                        $final_base64 = base64_encode($final_contents);
-                                                        if (strlen($final_base64) <= 1.8 * 1024 * 1024) {
-                                                            $payload['image_base64'] = $final_base64;
-                                                            $payload['mime_type'] = 'image/jpeg';
-                                                        } else {
-                                                            // Image is STILL too large - mark error
-                                                            $payload['_error'] = 'image_too_large';
-                                                            $payload['_error_message'] = __('Image file is too large even after compression. Please manually optimize the image.', 'wp-alt-text-plugin');
-                                                        }
-                                                    } else {
-                                                        $payload['_error'] = 'image_too_large';
-                                                        $payload['_error_message'] = __('Failed to read compressed image.', 'wp-alt-text-plugin');
-                                                    }
-                                                } else {
-                                                    $payload['_error'] = 'image_too_large';
-                                                    $payload['_error_message'] = __('Failed to save compressed image.', 'wp-alt-text-plugin');
-                                                }
-                                            } else {
-                                                $payload['_error'] = 'image_too_large';
-                                                $payload['_error_message'] = __('Failed to create image editor.', 'wp-alt-text-plugin');
-                                            }
-                                        }
-                                    } else {
-                                        $payload['image_url'] = $image_url;
-                                    }
-                                } else {
-                                    // Resize failed - log and fallback to URL
-                                    if (class_exists('AltText_AI_Debug_Log')) {
-                                        AltText_AI_Debug_Log::log('warning', 'Image resize failed', [
-                                            'image_id' => $image_id,
-                                            'error' => is_wp_error($saved) ? $saved->get_error_message() : 'Unknown error',
-                                        ], 'api');
-                                    }
-                                    $payload['image_url'] = $image_url;
-                                }
-                            } else {
-                                // Editor creation failed
-                                if (class_exists('AltText_AI_Debug_Log')) {
-                                    AltText_AI_Debug_Log::log('warning', 'Image editor creation failed', [
-                                        'image_id' => $image_id,
-                                        'error' => $editor->get_error_message(),
-                                    ], 'api');
-                                }
-                                $payload['image_url'] = $image_url;
-                            }
-                        } else {
-                            // Image dimensions are small but file size is large (high quality)
-                            // Try to recompress it
-                            $editor = wp_get_image_editor($file_path);
-                            if (!is_wp_error($editor)) {
-                                if (method_exists($editor, 'set_quality')) {
-                                    $editor->set_quality(75); // Good quality
-                                }
-                                
-                                $upload_dir = wp_upload_dir();
-                                $temp_filename = 'alttext-ai-temp-' . $image_id . '-' . time() . '.jpg';
-                                $temp_path = $upload_dir['path'] . '/' . $temp_filename;
-                                $saved = $editor->save($temp_path, 'image/jpeg');
-                                
-                                if (!is_wp_error($saved) && isset($saved['path'])) {
-                                    $compressed_contents = file_get_contents($saved['path']);
-                                    @unlink($saved['path']);
-                                    if ($compressed_contents !== false) {
-                                        $base64 = base64_encode($compressed_contents);
-                                        if (strlen($base64) <= 1.8 * 1024 * 1024) {
-                                            $payload['image_base64'] = $base64;
-                                            $payload['mime_type'] = 'image/jpeg';
-                                        } else {
-                                            // Still too large after recompression - mark error
-                                            $payload['_error'] = 'image_too_large';
-                                            $payload['_error_message'] = __('Image file is too large even after compression. Please manually optimize the image.', 'wp-alt-text-plugin');
-                                        }
-                                    } else {
-                                        $payload['image_url'] = $image_url;
-                                    }
-                                } else {
-                                    $payload['image_url'] = $image_url;
-                                }
-                            } else {
-                                $payload['image_url'] = $image_url;
-                            }
-                        }
-                    } else {
-                        // Small image, send URL
+                        // Image already small, send URL
                         $payload['image_url'] = $image_url;
                     }
                 } else {
-                    // No file path, send URL
+                    // No resize needed or editor not available - send URL
                     $payload['image_url'] = $image_url;
                 }
+            } else {
+                // Fallback to URL if file doesn't exist
+                $payload['image_url'] = $image_url;
             }
+        } else {
+            // No image URL provided - this is an error condition
+            // Log it but still return the payload (backend should handle the error)
+            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                \BeepBeepAI\AltTextGenerator\Debug_Log::log('error', 'prepare_image_payload: No image_url provided', [
+                    'image_id' => $image_id,
+                    'image_url_param' => $image_url,
+                ], 'api');
+            }
+        }
+
+        // Always try to include inline image data for accuracy when file is accessible
+        // This helps when the backend cannot reach the public URL (private sites/CDNs)
+        $file_path = $file_path ?? get_attached_file($image_id);
+        if (empty($payload['image_base64']) && $file_path && file_exists($file_path)) {
+            $file_size = filesize($file_path);
+            $max_inline_size = 5.5 * 1024 * 1024; // ~5.5MB upper bound
+            if ($file_size > 0 && $file_size <= $max_inline_size) {
+                $contents = file_get_contents($file_path);
+                if ($contents !== false) {
+                    $base64 = base64_encode($contents);
+                    // Avoid sending absurdly large base64 (should align with size check)
+                    if (!empty($base64) && strlen($base64) <= $max_inline_size * 1.4) {
+                        $mime_type = $mime_type ?? get_post_mime_type($image_id) ?: 'image/jpeg';
+                        $payload['image_base64'] = $base64;
+                        $payload['mime_type'] = $mime_type;
+                    }
+                }
+            }
+        }
+        
+        // CRITICAL: Verify that image data is included before returning
+        // At least one of image_url or image_base64 must be present
+        if (empty($payload['image_url']) && empty($payload['image_base64'])) {
+            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                \BeepBeepAI\AltTextGenerator\Debug_Log::log('error', 'prepare_image_payload: Payload missing image data', [
+                    'image_id' => $image_id,
+                    'payload_keys' => array_keys($payload),
+                    'image_url_input' => $image_url,
+                ], 'api');
+            }
+            // Set error flag so caller knows payload is invalid
+            $payload['_error'] = 'missing_image_data';
+            $payload['_error_message'] = 'Image URL or base64 data is required';
         }
         
         return $payload;
@@ -1824,10 +1960,10 @@ class AltText_AI_API_Client_V2 {
     }
 
     private function log_api_event($level, $message, $context = []) {
-        if (class_exists('AltText_AI_Debug_Log')) {
+        if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
             // Sanitize context before logging
             $sanitized_context = $this->sanitize_log_context($context);
-            AltText_AI_Debug_Log::log($level, $message, $sanitized_context, 'api');
+            \BeepBeepAI\AltTextGenerator\Debug_Log::log($level, $message, $sanitized_context, 'api');
         }
     }
 }

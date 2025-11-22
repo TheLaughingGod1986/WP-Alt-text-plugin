@@ -2,13 +2,13 @@
 -- Run these in your WordPress database (phpMyAdmin, MySQL client, etc.)
 
 -- 1. Check cached usage data from WordPress transients
--- Usage data is stored in wp_options table with option_name like '_transient_opptiai_alt_usage_cache'
+-- Usage data is stored in wp_options table with option_name like '_transient_beepbeepai_usage_cache'
 SELECT 
     option_name,
     option_value,
     FROM_UNIXTIME(SUBSTRING_INDEX(option_name, '_transient_timeout_', -1)) as expiry_time
 FROM wp_options
-WHERE option_name LIKE '%opptiai_alt_usage_cache%'
+WHERE option_name LIKE '%beepbeepai_usage_cache%'
 ORDER BY option_name;
 
 -- 2. If the transient exists, decode the JSON to see usage details
@@ -17,7 +17,7 @@ SELECT
     option_name,
     option_value
 FROM wp_options
-WHERE option_name = '_transient_opptiai_alt_usage_cache';
+WHERE option_name = '_transient_beepbeepai_usage_cache';
 
 -- 3. Check if usage events table exists and count events
 SELECT 

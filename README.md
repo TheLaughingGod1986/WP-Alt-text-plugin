@@ -41,7 +41,7 @@ Professional WordPress plugin for generating accessible ALT text using OpenAI's 
 #### SaaS / Billing Customisation
 - **Upgrade URL** – Set the target pricing/checkout page with the `alttextai_upgrade_url` option or hook into the `alttextai_upgrade_url` filter:
   ```php
-  update_option( 'alttextai_upgrade_url', 'https://app.alttextai.com/pricing' );
+  update_option( 'alttextai_upgrade_url', 'https://github.com/beepbeepv2/beepbeep-ai-alt-text-generator' );
   // or
   add_filter( 'alttextai_upgrade_url', fn() => 'https://example.com/upgrade' );
   ```

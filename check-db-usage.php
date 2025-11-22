@@ -34,7 +34,7 @@ echo "=== AltText AI Database Usage Check ===\n\n";
 global $wpdb;
 
 // Check the usage cache transient
-$cache_key = 'opptiai_alt_usage_cache';
+$cache_key = 'beepbeepai_usage_cache';
 $transient_key = '_transient_' . $cache_key;
 $timeout_key = '_transient_timeout_' . $cache_key;
 
@@ -94,7 +94,7 @@ if ($transient_value) {
 
 // Also check usage events table if it exists
 echo "\n=== Usage Events Table Check ===\n";
-$events_table = $wpdb->prefix . 'alttextai_usage_events';
+$events_table = $wpdb->prefix . 'beepbeepai_usage_events';
 $table_exists = $wpdb->get_var($wpdb->prepare(
     "SELECT COUNT(*) FROM information_schema.tables 
      WHERE table_schema = DATABASE() 
@@ -114,7 +114,7 @@ if ($table_exists) {
     echo "   Events this month ({$current_month}): {$month_count}\n";
     
     // Get install ID if available
-    $install_id = get_option('alttextai_install_id', '');
+    $install_id = get_option('beepbeepai_install_id', '');
     if ($install_id) {
         $install_events = $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM {$events_table} 

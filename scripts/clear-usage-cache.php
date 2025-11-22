@@ -19,17 +19,17 @@ foreach ($wp_load_paths as $path) {
 echo "Clearing usage cache and refreshing from API...\n\n";
 
 // Clear cache
-AltText_AI_Usage_Tracker::clear_cache();
+BbAI_Usage_Tracker::clear_cache();
 echo "✓ Cache cleared\n";
 
 // Force refresh from API
 require_once OPPTIAI_ALT_PLUGIN_DIR . 'includes/class-api-client-v2.php';
-$api_client = new AltText_AI_API_Client_V2();
+$api_client = new BbAI_API_Client_V2();
 
 if ($api_client->is_authenticated()) {
     $usage = $api_client->get_usage();
     if (is_array($usage) && !empty($usage)) {
-        AltText_AI_Usage_Tracker::update_usage($usage);
+        BbAI_Usage_Tracker::update_usage($usage);
         echo "✓ Refreshed from API:\n";
         echo "  Used: " . ($usage['used'] ?? 0) . "\n";
         echo "  Limit: " . ($usage['limit'] ?? 50) . "\n";

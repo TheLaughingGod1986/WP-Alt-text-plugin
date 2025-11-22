@@ -24,7 +24,7 @@ echo str_repeat("=", 60) . "\n\n";
 
 // Method 1: Check API (source of truth)
 require_once OPPTIAI_ALT_PLUGIN_DIR . 'includes/class-api-client-v2.php';
-$api_client = new AltText_AI_API_Client_V2();
+$api_client = new BbAI_API_Client_V2();
 
 echo "1. From Backend API (Source of Truth):\n";
 $usage = $api_client->get_usage();
@@ -44,9 +44,9 @@ echo "\n";
 
 // Method 2: Try direct database if configured
 if (defined('ALTTEXT_AI_DB_ENABLED') && ALTTEXT_AI_DB_ENABLED) {
-    if (class_exists('AltText_AI_Direct_DB_Usage')) {
+    if (class_exists('BbAI_Direct_DB_Usage')) {
         echo "2. From Direct Database Access:\n";
-        $db_usage = AltText_AI_Direct_DB_Usage::get_usage_from_db($user_email);
+        $db_usage = BbAI_Direct_DB_Usage::get_usage_from_db($user_email);
         if (!is_wp_error($db_usage)) {
             echo "   Used: " . ($db_usage['used'] ?? 0) . "\n";
             echo "   Limit: " . ($db_usage['limit'] ?? 50) . "\n";

@@ -31,7 +31,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Load the queue class
-if (!class_exists('AltText_AI_Queue')) {
+if (!class_exists('BbAI_Queue')) {
     require_once dirname(__DIR__) . '/includes/class-queue.php';
 }
 
@@ -42,7 +42,7 @@ echo "Queue Status Check\n";
 echo "==================\n\n";
 
 // Get queue stats
-$stats = AltText_AI_Queue::get_stats();
+$stats = BbAI_Queue::get_stats();
 echo "Current Queue Status:\n";
 echo "  Pending: {$stats['pending']}\n";
 echo "  Processing: {$stats['processing']}\n";
@@ -50,7 +50,7 @@ echo "  Failed: {$stats['failed']}\n";
 echo "  Completed: {$stats['completed']}\n\n";
 
 // Check if cron is scheduled
-$next_scheduled = wp_next_scheduled(AltText_AI_Queue::CRON_HOOK);
+$next_scheduled = wp_next_scheduled(BbAI_Queue::CRON_HOOK);
 if ($next_scheduled) {
     $time_until = $next_scheduled - time();
     echo "Next cron scheduled: " . date('Y-m-d H:i:s', $next_scheduled) . " (in {$time_until} seconds)\n";
@@ -61,7 +61,7 @@ if ($next_scheduled) {
 echo "\n";
 
 // Get pending jobs
-$pending_jobs = AltText_AI_Queue::get_recent(10);
+$pending_jobs = BbAI_Queue::get_recent(10);
 if (!empty($pending_jobs)) {
     echo "Recent jobs:\n";
     foreach ($pending_jobs as $job) {
@@ -78,16 +78,16 @@ if ($stats['pending'] > 0 || $stats['processing'] > 0) {
     echo "Processing queue manually...\n";
     
     // Reset stale jobs first
-    AltText_AI_Queue::reset_stale(10 * MINUTE_IN_SECONDS);
+    BbAI_Queue::reset_stale(10 * MINUTE_IN_SECONDS);
     echo "✓ Reset stale jobs\n";
     
     // Trigger the queue processing via WordPress action
     // This will call the process_queue method on the core class
-    do_action(AltText_AI_Queue::CRON_HOOK);
+    do_action(BbAI_Queue::CRON_HOOK);
     echo "✓ Queue processor executed\n\n";
     
     // Get updated stats
-    $stats = AltText_AI_Queue::get_stats();
+    $stats = BbAI_Queue::get_stats();
     echo "Updated Queue Status:\n";
     echo "  Pending: {$stats['pending']}\n";
     echo "  Processing: {$stats['processing']}\n";
@@ -96,7 +96,7 @@ if ($stats['pending'] > 0 || $stats['processing'] > 0) {
     
     // Schedule next processing if there are still pending jobs
     if ($stats['pending'] > 0) {
-        AltText_AI_Queue::schedule_processing(30);
+        BbAI_Queue::schedule_processing(30);
         echo "✓ Scheduled next processing in 30 seconds\n";
     }
 } else {

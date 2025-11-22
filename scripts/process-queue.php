@@ -21,7 +21,7 @@ echo "Processing Queue\n";
 echo str_repeat("=", 50) . "\n\n";
 
 // Get queue stats
-$stats = AltText_AI_Queue::get_stats();
+$stats = BbAI_Queue::get_stats();
 echo "Queue Status:\n";
 echo "  Pending: " . $stats['pending'] . "\n";
 echo "  Processing: " . $stats['processing'] . "\n";
@@ -33,7 +33,7 @@ if ($stats['pending'] > 0) {
     
     // Process the queue
     // This will trigger the background processing
-    do_action('alttextai_process_queue');
+    do_action('beepbeepai_process_queue');
     
     echo "✓ Queue processing triggered\n";
     echo "\nNote: Jobs are processed in the background.\n";

@@ -35,7 +35,7 @@ foreach ($image_ids as $id) {
 }
 
 echo "\nStep 2: Generating fresh alt text...\n";
-$api_client = new AltText_AI_API_Client_V2();
+$api_client = new BbAI_API_Client_V2();
 
 foreach ($image_ids as $image_id) {
     $file_path = get_attached_file($image_id);
