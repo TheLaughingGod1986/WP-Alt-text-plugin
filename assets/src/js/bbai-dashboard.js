@@ -1399,6 +1399,21 @@
                         if (typeof window.alttextai_refresh_usage === 'function') {
                             window.alttextai_refresh_usage();
                         }
+                        
+                        // Send dashboard welcome email after upgrade
+                        if (typeof window.sendDashboardWelcomeEmail === 'function') {
+                            const userEmail = (window.bbai_ajax && window.bbai_ajax.user_data && window.bbai_ajax.user_data.email) || 
+                                            (window.BBAI && window.BBAI.userData && window.BBAI.userData.email);
+                            const userPlan = (window.bbai_ajax && window.bbai_ajax.user_data && window.bbai_ajax.user_data.plan) || 'pro';
+                            
+                            if (userEmail) {
+                                window.sendDashboardWelcomeEmail(userEmail, userPlan)
+                                    .catch(error => {
+                                        console.error('[AltText AI] Failed to send dashboard welcome email:', error);
+                                        // Don't block user flow on email failure
+                                    });
+                            }
+                        }
                     }
                 } else {
                     // Backend API failed - fall back to direct Stripe payment link

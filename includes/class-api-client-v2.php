@@ -792,6 +792,9 @@ class API_Client_V2 {
 
     /**
      * Activate license key for this site
+     * 
+     * Note: The backend handles sending welcome/activation emails automatically
+     * when a license is activated. The plugin does not send emails directly.
      */
     public function activate_license($license_key) {
         $site_id = $this->get_site_id();

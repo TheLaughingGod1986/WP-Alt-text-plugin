@@ -103,6 +103,9 @@ class Admin_Hooks {
 			'beepbeepai_admin_login'            => 'ajax_admin_login',
 			'beepbeepai_admin_logout'           => 'ajax_admin_logout',
 			'beepbeepai_dismiss_api_notice'   => 'ajax_dismiss_api_notice',
+			'bbai_clear_signup_transients'      => 'ajax_clear_signup_transients',
+			'bbai_log_dashboard_signup_error'   => 'ajax_log_dashboard_signup_error',
+			'bbai_save_email_preferences'       => 'ajax_save_email_preferences',
 		];
 
 		foreach ( $ajax_actions as $action => $callback ) {

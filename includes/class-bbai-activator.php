@@ -32,6 +32,12 @@ class Activator {
 			set_transient('bbai_install_core_notice', true, 3600);
 		}
 
+		// Set transient to show dashboard signup modal on first activation
+		// Only show if user hasn't already submitted
+		if (!get_option('bbai_dashboard_signup_submitted', false)) {
+			set_transient('bbai_show_dashboard_signup', true, 3600);
+		}
+
 		$core = new \BeepBeepAI\AltTextGenerator\Core();
 		$core->activate();
 	}

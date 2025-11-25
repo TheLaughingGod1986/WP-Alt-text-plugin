@@ -584,6 +584,15 @@ class BbAIAuthModal {
             if (data.success) {
                 // WordPress AJAX success response
                 const userData = data.data?.user || {};
+                
+                // Send welcome email to backend (non-blocking)
+                if (email && typeof window.sendWelcomeEmail === 'function') {
+                    window.sendWelcomeEmail(email).catch(error => {
+                        // Log error but don't block registration flow
+                        console.error('[AltText AI] Welcome email failed:', error);
+                    });
+                }
+                
                 this.hide();
                 this.showSuccess('Account created successfully! Welcome to SEO AI Alt Text.');
 

@@ -392,6 +392,15 @@ class BbAI_Core {
         } else {
             $checkout = isset($_GET['checkout']) ? sanitize_key(wp_unslash($_GET['checkout'])) : '';
             if ($checkout === 'success') {
+                // Check if user upgraded to pro plan
+                $usage_box = BbAI_Usage_Tracker::get_stats_display();
+                $plan = $usage_box['plan'] ?? 'free';
+                if ($plan === 'pro' || $plan === 'agency') {
+                    // Set transient to show dashboard signup modal after upgrade
+                    if (!get_option('bbai_dashboard_signup_submitted', false)) {
+                        set_transient('bbai_show_dashboard_signup_upgrade', true, 3600);
+                    }
+                }
                 ?>
                 <div class="notice notice-success is-dismissible">
                     <p><?php esc_html_e('Checkout session started. Complete the payment in the newly opened tab.', 'wp-alt-text-plugin'); ?></p>
@@ -4409,6 +4418,85 @@ class BbAI_Core {
                                 </div>
                             </form>
 
+                            <!-- Email Preferences Section -->
+                            <div class="bbai-settings-section" style="margin-top: 32px; padding: 24px; background: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb;">
+                                <h3 class="bbai-settings-section-title" style="margin: 0 0 12px; font-size: 18px; font-weight: 600; color: #111827;">
+                                    <?php esc_html_e('Email Preferences', 'wp-alt-text-plugin'); ?>
+                                </h3>
+                                <p class="bbai-settings-section-description" style="margin: 0 0 20px; font-size: 14px; color: #6b7280; line-height: 1.5;">
+                                    <?php esc_html_e('Emails are handled by OpttiAI via Resend. Only selected communications are sent (no spam).', 'wp-alt-text-plugin'); ?>
+                                </p>
+                                
+                                <?php
+                                $current_user = wp_get_current_user();
+                                $user_email = $current_user->exists() ? $current_user->user_email : '';
+                                $email_opt_in = get_option('bbai_email_opt_in', false);
+                                $waitlist_opt_in = get_option('bbai_waitlist_opt_in', false);
+                                ?>
+                                
+                                <div class="bbai-email-preferences-options" style="display: flex; flex-direction: column; gap: 16px;">
+                                    <!-- Product Updates Opt-in -->
+                                    <label class="bbai-email-preference-item" style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e5e7eb;">
+                                        <input 
+                                            type="checkbox" 
+                                            id="bbai-email-opt-in" 
+                                            name="bbai_email_opt_in" 
+                                            value="1" 
+                                            <?php checked($email_opt_in, true); ?>
+                                            style="margin-top: 2px; cursor: pointer;"
+                                        >
+                                        <div style="flex: 1;">
+                                            <div style="font-weight: 600; font-size: 14px; color: #111827; margin-bottom: 4px;">
+                                                <?php esc_html_e('Product updates and news', 'wp-alt-text-plugin'); ?>
+                                            </div>
+                                            <div style="font-size: 13px; color: #6b7280;">
+                                                <?php esc_html_e('Receive updates about new features, improvements, and tips.', 'wp-alt-text-plugin'); ?>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    
+                                    <!-- Waitlist Opt-in -->
+                                    <label class="bbai-email-preference-item" style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e5e7eb;">
+                                        <input 
+                                            type="checkbox" 
+                                            id="bbai-waitlist-opt-in" 
+                                            name="bbai_waitlist_opt_in" 
+                                            value="1" 
+                                            <?php checked($waitlist_opt_in, true); ?>
+                                            style="margin-top: 2px; cursor: pointer;"
+                                        >
+                                        <div style="flex: 1;">
+                                            <div style="font-weight: 600; font-size: 14px; color: #111827; margin-bottom: 4px;">
+                                                <?php esc_html_e('Let me know when new OpttiAI plugins launch', 'wp-alt-text-plugin'); ?>
+                                            </div>
+                                            <div style="font-size: 13px; color: #6b7280;">
+                                                <?php esc_html_e('Get early access to new OpttiAI plugins and tools.', 'wp-alt-text-plugin'); ?>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                                
+                                <div class="bbai-email-preferences-actions" style="margin-top: 20px;">
+                                    <button type="button" id="bbai-save-email-preferences" class="bbai-btn-primary" style="padding: 10px 20px; font-size: 14px;">
+                                        <?php esc_html_e('Save Preferences', 'wp-alt-text-plugin'); ?>
+                                    </button>
+                                    <div id="bbai-email-preferences-message" style="display: none; margin-top: 12px; padding: 12px; border-radius: 8px; font-size: 14px;"></div>
+                                </div>
+                                
+                                <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+                                    <p style="margin: 0; font-size: 12px; color: #6b7280;">
+                                        <?php esc_html_e('Your email:', 'wp-alt-text-plugin'); ?> 
+                                        <strong><?php echo esc_html($user_email ?: __('Not available', 'wp-alt-text-plugin')); ?></strong>
+                                        <?php if ($user_email): ?>
+                                            <br>
+                                            <a href="https://oppti.dev/privacy" target="_blank" rel="noopener noreferrer" style="color: #3A74FF; text-decoration: none;">
+                                                <?php esc_html_e('Privacy Policy', 'wp-alt-text-plugin'); ?>
+                                            </a>
+                                        <?php endif; ?>
+                                    </p>
+                                </div>
+                            </div>
+
                             <!-- Hidden nonce for AJAX requests -->
                             <input type="hidden" id="license-nonce" value="<?php echo esc_attr(wp_create_nonce('bbai_license_action')); ?>">
                         </div>
@@ -4418,6 +4506,73 @@ class BbAI_Core {
                 <script>
                 (function($) {
                     'use strict';
+                    
+                    // Email preferences handler
+                    $('#bbai-save-email-preferences').on('click', function() {
+                        const $btn = $(this);
+                        const $message = $('#bbai-email-preferences-message');
+                        const emailOptIn = $('#bbai-email-opt-in').is(':checked');
+                        const waitlistOptIn = $('#bbai-waitlist-opt-in').is(':checked');
+                        const userEmail = '<?php echo esc_js($user_email); ?>';
+                        
+                        if (!userEmail) {
+                            $message.removeClass().addClass('alttext-alert alttext-alert--error').text('<?php esc_html_e('Email address not available', 'wp-alt-text-plugin'); ?>').show();
+                            return;
+                        }
+                        
+                        $btn.prop('disabled', true).text('<?php esc_html_e('Saving...', 'wp-alt-text-plugin'); ?>');
+                        $message.hide();
+                        
+                        // Save preferences via AJAX
+                        $.ajax({
+                            url: window.bbai_ajax.ajaxurl,
+                            method: 'POST',
+                            data: {
+                                action: 'bbai_save_email_preferences',
+                                nonce: window.bbai_ajax.nonce,
+                                email_opt_in: emailOptIn ? '1' : '0',
+                                waitlist_opt_in: waitlistOptIn ? '1' : '0',
+                                email: userEmail
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    $message.removeClass().addClass('alttext-alert alttext-alert--success')
+                                        .text('<?php esc_html_e('Preferences saved successfully', 'wp-alt-text-plugin'); ?>').show();
+                                    
+                                    // Handle waitlist submission if opted in
+                                    if (waitlistOptIn && typeof window.submitToWaitlist === 'function') {
+                                        window.submitToWaitlist(userEmail, 'alt-text', 'wp-plugin-settings')
+                                            .then(() => {
+                                                $message.text('<?php esc_html_e('You are on the OpttiAI plugin waitlist. We\'ll email you when new tools launch.', 'wp-alt-text-plugin'); ?>');
+                                            })
+                                            .catch(err => {
+                                                console.error('Waitlist submission failed:', err);
+                                                // Don't show error to user, preferences were saved
+                                            });
+                                    }
+                                    
+                                    // Handle plugin signup email if opted in
+                                    if (emailOptIn && typeof window.sendPluginSignupEmail === 'function') {
+                                        window.sendPluginSignupEmail(userEmail, window.location.origin, 'alt-text')
+                                            .catch(err => {
+                                                console.error('Plugin signup email failed:', err);
+                                                // Don't show error to user, preferences were saved
+                                            });
+                                    }
+                                } else {
+                                    $message.removeClass().addClass('alttext-alert alttext-alert--error')
+                                        .text(response.data?.message || '<?php esc_html_e('Failed to save preferences', 'wp-alt-text-plugin'); ?>').show();
+                                }
+                            },
+                            error: function() {
+                                $message.removeClass().addClass('alttext-alert alttext-alert--error')
+                                    .text('<?php esc_html_e('Network error. Please try again.', 'wp-alt-text-plugin'); ?>').show();
+                            },
+                            complete: function() {
+                                $btn.prop('disabled', false).text('<?php esc_html_e('Save Preferences', 'wp-alt-text-plugin'); ?>');
+                            }
+                        });
+                    });
                     
                     // Admin tab switching
                     $('.bbai-admin-tab').on('click', function(e) {
@@ -4517,6 +4672,10 @@ class BbAI_Core {
         // Include upgrade modal - always available for all tabs
         $checkout_prices = $this->get_checkout_price_ids();
         include BBAI_PLUGIN_DIR . 'templates/upgrade-modal.php';
+        
+        // Include dashboard signup modal
+        require_once BBAI_PLUGIN_DIR . 'admin/components/DashboardSignupModal.php';
+        DashboardSignupModal::render();
     }
 
     /**
@@ -6097,10 +6256,16 @@ class BbAI_Core {
                 'inlineBatchSize' => defined('BBAI_INLINE_BATCH') ? max(1, intval(BBAI_INLINE_BATCH)) : 1,
             ]);
             // Also add bbai_ajax for regenerate functionality
+            // Get API URL from settings (same logic as dashboard)
+            $admin_options = get_option(self::OPTION_KEY, []);
+            $production_url = 'https://alttext-ai-backend.onrender.com';
+            $admin_api_url = isset($admin_options['api_url']) && !empty($admin_options['api_url']) ? $admin_options['api_url'] : $production_url;
+            
             wp_localize_script('bbai-admin', 'bbai_ajax', [
                 'ajaxurl' => admin_url('admin-ajax.php'),
                 'ajax_url'=> admin_url('admin-ajax.php'),
                 'nonce'   => wp_create_nonce('bbai_upgrade_nonce'),
+                'api_url' => $admin_api_url,
                 'can_manage' => $this->user_can_manage(),
             ]);
         }
@@ -6112,6 +6277,9 @@ class BbAI_Core {
             $upgrade_js  = $asset_path($js_base, 'upgrade-modal', $use_debug_assets, 'js');
             $auth_css    = $asset_path($css_base, 'auth-modal', $use_debug_assets, 'css');
             $auth_js     = $asset_path($js_base, 'auth-modal', $use_debug_assets, 'js');
+            $email_helper_js = $asset_path($js_base, 'email-helper', $use_debug_assets, 'js');
+            $waitlist_js = $asset_path($js_base, 'waitlist-modal', $use_debug_assets, 'js');
+            $dashboard_signup_js = $asset_path($js_base, 'dashboard-signup', $use_debug_assets, 'js');
 
             // Enqueue design system (FIRST - foundation for all styles)
             wp_enqueue_style(
@@ -6216,6 +6384,57 @@ class BbAI_Core {
                 $asset_version($auth_js, '4.0.0'),
                 true
             );
+            // Email helper must load before waitlist and dashboard signup
+            wp_enqueue_script(
+                'bbai-email-helper',
+                $base_url . $email_helper_js,
+                [],
+                $asset_version($email_helper_js, '1.0.0'),
+                true
+            );
+            wp_enqueue_script(
+                'bbai-waitlist',
+                $base_url . $waitlist_js,
+                ['bbai-email-helper'],
+                $asset_version($waitlist_js, '1.0.0'),
+                true
+            );
+            wp_enqueue_script(
+                'bbai-dashboard-signup',
+                $base_url . $dashboard_signup_js,
+                ['bbai-email-helper'],
+                $asset_version($dashboard_signup_js, '1.0.0'),
+                true
+            );
+            $dashboard_signup_handler_js = $asset_path($js_base, 'dashboard-signup-handler', $use_debug_assets, 'js');
+            $api_client_js = $asset_path($js_base, 'apiClient', $use_debug_assets, 'js');
+            $email_events_js = $asset_path($js_base, 'emailEvents', $use_debug_assets, 'js');
+            
+            // Enqueue API client first (no dependencies)
+            wp_enqueue_script(
+                'bbai-api-client',
+                $base_url . $api_client_js,
+                [],
+                $asset_version($api_client_js, '1.0.0'),
+                true
+            );
+            
+            // Enqueue email events (depends on api client)
+            wp_enqueue_script(
+                'bbai-email-events',
+                $base_url . $email_events_js,
+                ['bbai-api-client'],
+                $asset_version($email_events_js, '1.0.0'),
+                true
+            );
+            
+            wp_enqueue_script(
+                'bbai-dashboard-signup-handler',
+                $base_url . $dashboard_signup_handler_js,
+                ['jquery', 'bbai-auth', 'bbai-api-client'],
+                $asset_version($dashboard_signup_handler_js, '1.0.0'),
+                true
+            );
             wp_enqueue_script(
                 'bbai-debug',
                 $base_url . $asset_path($js_base, 'bbai-debug', $use_debug_assets, 'js'),
@@ -6266,9 +6485,9 @@ class BbAI_Core {
             
             // Add AJAX variables for regenerate functionality and auth
             $options = get_option(self::OPTION_KEY, []);
-            // Production API URL - always use production
+            // Use API URL from plugin settings, fallback to production
             $production_url = 'https://alttext-ai-backend.onrender.com';
-            $api_url = $production_url;
+            $api_url = isset($options['api_url']) && !empty($options['api_url']) ? $options['api_url'] : $production_url;
 
             wp_localize_script('bbai-dashboard', 'bbai_ajax', [
                 'ajaxurl' => admin_url('admin-ajax.php'),
@@ -6887,6 +7106,81 @@ class BbAI_Core {
             'message' => __('License activated successfully', 'wp-alt-text-plugin'),
             'organization' => $result['organization'] ?? null,
             'site' => $result['site'] ?? null
+        ]);
+    }
+
+    /**
+     * AJAX handler: Clear signup transients after successful submission
+     */
+    public function ajax_clear_signup_transients() {
+        check_ajax_referer('bbai_dashboard_signup', 'nonce');
+        
+        if (!$this->user_can_manage()) {
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
+        }
+
+        delete_transient('bbai_show_dashboard_signup');
+        delete_transient('bbai_show_dashboard_signup_upgrade');
+        
+        // Mark as submitted so it doesn't show again
+        update_option('bbai_dashboard_signup_submitted', true, false);
+        
+        wp_send_json_success(['message' => __('Transients cleared', 'wp-alt-text-plugin')]);
+    }
+
+    /**
+     * AJAX handler: Log dashboard signup errors to WordPress debug log
+     */
+    public function ajax_log_dashboard_signup_error() {
+        check_ajax_referer('bbai_dashboard_signup', 'nonce');
+        
+        if (!$this->user_can_manage()) {
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
+        }
+
+        $error_message = isset($_POST['error_message']) ? sanitize_text_field(wp_unslash($_POST['error_message'])) : 'Unknown error';
+        $response_code = isset($_POST['response_code']) ? sanitize_text_field(wp_unslash($_POST['response_code'])) : 'N/A';
+
+        // Only log if WP_DEBUG is enabled (lightweight)
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log("[OpttiAI] Dashboard signup failed: " . $response_code . " - " . $error_message);
+        }
+        
+        wp_send_json_success(['message' => __('Error logged', 'wp-alt-text-plugin')]);
+    }
+
+    /**
+     * AJAX handler: Save email preferences
+     */
+    public function ajax_save_email_preferences() {
+        check_ajax_referer('bbai_upgrade_nonce', 'nonce');
+        
+        if (!$this->user_can_manage()) {
+            wp_send_json_error(['message' => __('Unauthorized', 'wp-alt-text-plugin')]);
+        }
+
+        $email_opt_in = isset($_POST['email_opt_in']) && $_POST['email_opt_in'] === '1';
+        $waitlist_opt_in = isset($_POST['waitlist_opt_in']) && $_POST['waitlist_opt_in'] === '1';
+        $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
+
+        if (!is_email($email)) {
+            wp_send_json_error(['message' => __('Invalid email address', 'wp-alt-text-plugin')]);
+        }
+
+        // Save preferences
+        update_option('bbai_email_opt_in', $email_opt_in, false);
+        update_option('bbai_waitlist_opt_in', $waitlist_opt_in, false);
+
+        // If email opt-in is enabled and this is the first time, send plugin signup email
+        if ($email_opt_in && !get_option('bbai_plugin_signup_sent', false)) {
+            // This will be handled by JavaScript calling sendPluginSignupEmail
+            // We just mark that preferences were saved
+        }
+
+        wp_send_json_success([
+            'message' => __('Preferences saved successfully', 'wp-alt-text-plugin'),
+            'email_opt_in' => $email_opt_in,
+            'waitlist_opt_in' => $waitlist_opt_in
         ]);
     }
 
