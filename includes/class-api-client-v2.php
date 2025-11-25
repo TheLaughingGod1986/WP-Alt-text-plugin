@@ -154,14 +154,39 @@ class API_Client_V2 {
 
     /**
      * Check if license key is active
+     * For free users, checks framework snapshot if no license key is stored
      */
     public function has_active_license() {
         $license_key = $this->get_license_key();
         $license_data = $this->get_license_data();
 
-        return !empty($license_key) && !empty($license_data) &&
-               isset($license_data['organization']) &&
-               isset($license_data['site']);
+        // If we have both key and data, license is active
+        if (!empty($license_key) && !empty($license_data) &&
+            isset($license_data['organization']) &&
+            isset($license_data['site'])) {
+            return true;
+        }
+
+        // For free users, check framework snapshot (license may be stored there without a key)
+        if (function_exists('opptiai_framework')) {
+            $framework = opptiai_framework();
+            if ($framework && isset($framework->licensing)) {
+                $snapshot = $framework->licensing->get_snapshot();
+                if (!empty($snapshot) && isset($snapshot['plan'])) {
+                    // Free, Pro, or Agency plan detected in snapshot
+                    return true;
+                }
+            }
+        }
+
+        // Also check if we have license data without a key (free plan scenario)
+        if (!empty($license_data) && 
+            isset($license_data['organization']) && 
+            isset($license_data['organization']['plan'])) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -334,9 +359,16 @@ class API_Client_V2 {
     /**
      * Make authenticated API request
      */
-    private function make_request($endpoint, $method = 'GET', $data = null, $timeout = null, $include_user_id = false, $extra_headers = []) {
+    private function make_request($endpoint, $method = 'GET', $data = null, $timeout = null, $include_user_id = false, $extra_headers = [], $include_auth_headers = true) {
         $url = trailingslashit($this->api_url) . ltrim($endpoint, '/');
-        $headers = $this->get_auth_headers($include_user_id, $extra_headers);
+        $headers = $include_auth_headers
+            ? $this->get_auth_headers($include_user_id, $extra_headers)
+            : array_merge(
+                [
+                    'Content-Type' => 'application/json',
+                ],
+                $extra_headers
+            );
         
         // Use longer timeout for generation requests (OpenAI can take time)
         if ($timeout === null) {
@@ -565,12 +597,12 @@ class API_Client_V2 {
     /**
      * Wrapper that retries transient failures (502, 503, timeouts) with backoff.
      */
-    private function request_with_retry($endpoint, $method = 'GET', $data = null, $max_attempts = 3, $include_user_id = false, $extra_headers = []) {
+    private function request_with_retry($endpoint, $method = 'GET', $data = null, $max_attempts = 3, $include_user_id = false, $extra_headers = [], $include_auth_headers = true) {
         $attempt = 0;
         $last_error = null;
 
         while ($attempt < $max_attempts) {
-            $response = $this->make_request($endpoint, $method, $data, null, $include_user_id, $extra_headers);
+            $response = $this->make_request($endpoint, $method, $data, null, $include_user_id, $extra_headers, $include_auth_headers);
             if (!is_wp_error($response)) {
                 if ($attempt > 0 && class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
                     \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'API request recovered after retry', [
@@ -661,7 +693,7 @@ class API_Client_V2 {
             'site_url' => get_site_url(),
             'plugin_version' => defined('BBAI_VERSION') ? BBAI_VERSION : '1.0.0',
             'wordpress_version' => get_bloginfo('version'),
-        ]);
+        ], null, false, [], false);
         
         if (is_wp_error($response)) {
             // Check for "free plan already used" error from backend
@@ -680,7 +712,15 @@ class API_Client_V2 {
         
         if ($response['success'] && isset($response['data']['token'])) {
             $this->set_token($response['data']['token']);
-            $this->set_user_data($response['data']['user']);
+            if (isset($response['data']['user'])) {
+                $this->set_user_data($response['data']['user']);
+            }
+
+            $snapshot = $this->extract_license_snapshot($response['data']);
+            if ($snapshot) {
+                $this->apply_license_snapshot($snapshot);
+            }
+
             return $response['data'];
         }
         
@@ -704,7 +744,7 @@ class API_Client_V2 {
             'password' => $password,
             'site_id' => $site_id,
             'site_url' => get_site_url(),
-        ]);
+        ], null, false, [], false);
         
         if (is_wp_error($response)) {
             return $response;
@@ -713,6 +753,13 @@ class API_Client_V2 {
         if ($response['success'] && isset($response['data']['token'])) {
             $this->set_token($response['data']['token']);
             $this->set_user_data($response['data']['user']);
+            
+            // Extract and apply license snapshot if present (for free/pro/agency plans)
+            $snapshot = $this->extract_license_snapshot($response['data']);
+            if ($snapshot) {
+                $this->apply_license_snapshot($snapshot);
+            }
+            
             return $response['data'];
         }
         
@@ -798,6 +845,63 @@ class API_Client_V2 {
             'success' => true,
             'message' => __('License deactivated successfully', 'beepbeep-ai-alt-text-generator')
         ];
+    }
+
+    /**
+     * Auto-attach license to this site after checkout/sign-up.
+     *
+     * @param array $args Optional overrides (siteUrl, siteHash, installId).
+     * @return array|\WP_Error
+     */
+    public function auto_attach_license($args = []) {
+        $site_hash = $this->get_site_id();
+
+        $defaults = [
+            'siteUrl' => get_site_url(),
+            'siteHash' => $site_hash,
+            'installId' => $site_hash,
+        ];
+
+        $payload = array_merge($defaults, array_filter((array) $args, static function($value) {
+            return $value !== null && $value !== '';
+        }));
+
+        $response = $this->make_request('/api/licenses/auto-attach', 'POST', $payload, null, true);
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $snapshot = $this->extract_license_snapshot($response['data'] ?? []);
+
+        if ($response['success'] && $snapshot) {
+            $this->apply_license_snapshot($snapshot);
+            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'License auto-attach succeeded', [
+                    'plan' => $snapshot['plan'] ?? '',
+                    'tokenLimit' => $snapshot['tokenLimit'] ?? '',
+                    'siteHash' => $payload['siteHash'] ?? '',
+                ], 'licensing');
+            }
+            return [
+                'success' => true,
+                'message' => $response['data']['message'] ?? __('License attached successfully', 'beepbeep-ai-alt-text-generator'),
+                'license' => $snapshot,
+                'site' => isset($response['data']['site']) ? $response['data']['site'] : [],
+            ];
+        }
+
+        if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+            \BeepBeepAI\AltTextGenerator\Debug_Log::log('error', 'License auto-attach failed', [
+                'siteHash' => $payload['siteHash'] ?? '',
+                'response' => isset($response['data']) ? $response['data'] : [],
+            ], 'licensing');
+        }
+
+        return new \WP_Error(
+            'auto_attach_failed',
+            $response['data']['message'] ?? __('Failed to auto-attach license', 'beepbeep-ai-alt-text-generator')
+        );
     }
 
     /**
@@ -997,6 +1101,101 @@ class API_Client_V2 {
 
         $updated_license['updated_at'] = current_time('mysql');
         $this->set_license_data($updated_license);
+    }
+
+    /**
+     * Apply a license snapshot payload returned from the backend.
+     *
+     * @param array $snapshot License snapshot data.
+     */
+    private function apply_license_snapshot($snapshot) {
+        if (empty($snapshot) || !is_array($snapshot)) {
+            return;
+        }
+
+        if (!empty($snapshot['licenseKey'])) {
+            $this->set_license_key($snapshot['licenseKey']);
+        }
+
+        $usage_payload = [
+            'limit' => isset($snapshot['tokenLimit']) ? intval($snapshot['tokenLimit']) : 0,
+            'remaining' => isset($snapshot['tokensRemaining']) ? intval($snapshot['tokensRemaining']) : 0,
+            'plan' => isset($snapshot['plan']) ? sanitize_text_field($snapshot['plan']) : 'free',
+            'resetDate' => isset($snapshot['resetDate']) ? sanitize_text_field($snapshot['resetDate']) : '',
+            'reset_timestamp' => isset($snapshot['reset_timestamp']) ? intval($snapshot['reset_timestamp']) : 0,
+        ];
+
+        $organization = [
+            'plan' => $usage_payload['plan'],
+            'tokenLimit' => $usage_payload['limit'],
+            'tokensRemaining' => $usage_payload['remaining'],
+            'resetDate' => $usage_payload['resetDate'],
+            'reset_timestamp' => $usage_payload['reset_timestamp'],
+            'autoAttachStatus' => isset($snapshot['autoAttachStatus']) ? $snapshot['autoAttachStatus'] : '',
+            'licenseEmailSentAt' => isset($snapshot['licenseEmailSentAt']) ? $snapshot['licenseEmailSentAt'] : '',
+        ];
+
+        $site_data = [
+            'siteUrl' => isset($snapshot['siteUrl']) ? $snapshot['siteUrl'] : '',
+            'siteHash' => isset($snapshot['siteHash']) ? $snapshot['siteHash'] : '',
+            'installId' => isset($snapshot['installId']) ? $snapshot['installId'] : '',
+            'autoAttachStatus' => isset($snapshot['autoAttachStatus']) ? $snapshot['autoAttachStatus'] : '',
+        ];
+
+        $this->sync_license_usage_snapshot($usage_payload, $organization, $site_data);
+
+        if (function_exists('opptiai_framework')) {
+            $framework = opptiai_framework();
+            if ($framework && isset($framework->licensing) && method_exists($framework->licensing, 'sync_snapshot')) {
+                $framework_snapshot = $snapshot;
+                if (!isset($framework_snapshot['maskedLicenseKey']) && !empty($framework_snapshot['licenseKey'])) {
+                    $framework_snapshot['maskedLicenseKey'] = $this->mask_license_key($framework_snapshot['licenseKey']);
+                }
+                unset($framework_snapshot['licenseKey']);
+                $framework->licensing->sync_snapshot($framework_snapshot);
+            }
+        }
+    }
+
+    /**
+     * Attempt to locate a license snapshot in an API response payload.
+     *
+     * @param array $data Response data array from make_request.
+     * @return array|null
+     */
+    private function extract_license_snapshot($data) {
+        if (!is_array($data)) {
+            return null;
+        }
+
+        if (isset($data['license']) && is_array($data['license'])) {
+            return $data['license'];
+        }
+
+        if (isset($data['License']) && is_array($data['License'])) {
+            return $data['License'];
+        }
+
+        if (isset($data['licenseSnapshot']) && is_array($data['licenseSnapshot'])) {
+            return $data['licenseSnapshot'];
+        }
+
+        return null;
+    }
+
+    /**
+     * Mask license key for display/logging purposes.
+     *
+     * @param string $license_key Raw license key.
+     * @return string
+     */
+    private function mask_license_key($license_key) {
+        $license_key = (string) $license_key;
+        if (strlen($license_key) <= 8) {
+            return str_repeat('•', max(0, strlen($license_key) - 4)) . substr($license_key, -4);
+        }
+
+        return substr($license_key, 0, 4) . str_repeat('•', strlen($license_key) - 8) . substr($license_key, -4);
     }
 
     /**
@@ -1658,7 +1857,7 @@ class API_Client_V2 {
         $response = $this->make_request('/auth/forgot-password', 'POST', [
             'email' => $email,
             'siteUrl' => $site_url
-        ]);
+        ], null, false, [], false);
         
         // Restore token if it existed
         if ($temp_token) {
@@ -1705,7 +1904,7 @@ class API_Client_V2 {
             'token' => $token,
             'newPassword' => $new_password,
             'password' => $new_password // Also send as 'password' for compatibility
-        ]);
+        ], null, false, [], false);
         
         // Restore token if it existed
         if ($temp_token) {

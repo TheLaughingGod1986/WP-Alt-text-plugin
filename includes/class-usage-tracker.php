@@ -266,7 +266,17 @@ class Usage_Tracker {
      * Get upgrade URL
      */
     public static function get_upgrade_url() {
-        $default = 'https://github.com/beepbeepv2/beepbeep-ai-alt-text-generator';
+        // Try framework config first
+        $default = 'https://oppti.dev/pricing';
+        if (function_exists('opptiai_framework')) {
+            $framework = opptiai_framework();
+            if ($framework && isset($framework->config)) {
+                $config_url = $framework->config->get('pricing', $default);
+                if (!empty($config_url)) {
+                    $default = $config_url;
+                }
+            }
+        }
         $stored  = get_option('bbai_upgrade_url', $default);
         return apply_filters('bbai_upgrade_url', $stored ?: $default);
     }

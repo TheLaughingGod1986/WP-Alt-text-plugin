@@ -5,7 +5,7 @@
  * Version: 4.2.3
  * Author: beepbeepv2
  * Author URI: https://oppti.dev
- * Plugin URI: https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/
+ * Plugin URI: https://oppti.dev/alt-text
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: beepbeep-ai-alt-text-generator
@@ -53,6 +53,11 @@ define( 'BBAI_PLUGIN_URL', plugin_dir_url( __FILE__ ) ); // Legacy alias
 define( 'BEEPBEEP_AI_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 define( 'BBAI_PLUGIN_BASENAME', plugin_basename( __FILE__ ) ); // Legacy alias
 
+// Optionally load OptiAI Framework if available (shared core plugin)
+// Plugin works standalone without requiring the framework
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'framework/loader.php';
+
+// Load plugin classes (works with or without framework)
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-queue.php';

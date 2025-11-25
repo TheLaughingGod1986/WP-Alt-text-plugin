@@ -65,10 +65,6 @@ else {
                         <span class="bbai-trust-badge-icon">✓</span>
                         <span class="bbai-trust-badge-text"><?php esc_html_e('WCAG-compliant alt text', 'beepbeep-ai-alt-text-generator'); ?></span>
                     </div>
-                    <div class="bbai-trust-badge">
-                        <span class="bbai-trust-badge-icon">✓</span>
-                        <span class="bbai-trust-badge-text"><?php esc_html_e('Secure Stripe checkout', 'beepbeep-ai-alt-text-generator'); ?></span>
-                    </div>
                 </div>
             </div>
             <button type="button" class="bbai-modal-close" onclick="if(typeof alttextaiCloseModal==='function'){alttextaiCloseModal();}else if(typeof bbaiCloseModal==='function'){bbaiCloseModal();}" aria-label="<?php esc_attr_e('Close upgrade modal', 'beepbeep-ai-alt-text-generator'); ?>">
@@ -110,7 +106,7 @@ else {
                 </button>
                 <button type="button" class="bbai-billing-toggle__option bbai-billing-toggle__option--yearly bbai-billing-toggle__option--disabled" data-billing="yearly" disabled title="<?php esc_attr_e('Coming soon', 'beepbeep-ai-alt-text-generator'); ?>">
                     <?php esc_html_e('Yearly', 'beepbeep-ai-alt-text-generator'); ?>
-                    <span class="bbai-billing-coming-soon"><?php esc_html_e('Coming Soon', 'beepbeep-ai-alt-text-generator'); ?></span>
+                    <span class="bbai-billing-coming-soon"><?php esc_html_e('COMING SOON', 'beepbeep-ai-alt-text-generator'); ?></span>
                 </button>
             </div>
             
@@ -118,7 +114,7 @@ else {
             <div class="bbai-pricing-container">
                 <!-- Pro Plan Card -->
                 <div class="bbai-plan-card bbai-plan-card--pro">
-                    <div class="bbai-plan-badge bbai-plan-badge--popular"><?php esc_html_e('Most popular', 'beepbeep-ai-alt-text-generator'); ?></div>
+                    <div class="bbai-plan-badge bbai-plan-badge--popular"><?php esc_html_e('MOST POPULAR', 'beepbeep-ai-alt-text-generator'); ?></div>
                     <div class="bbai-plan-header">
                         <h3><?php esc_html_e('Pro Plan', 'beepbeep-ai-alt-text-generator'); ?></h3>
                         <div class="bbai-plan-price">
@@ -144,17 +140,17 @@ else {
                     </div>
                     
                     <div class="bbai-plan-credits-info">
-                        <small><?php esc_html_e('Credits: 1,000 per month', 'beepbeep-ai-alt-text-generator'); ?></small>
+                        <small><?php esc_html_e('100 credits/month', 'beepbeep-ai-alt-text-generator'); ?></small>
                     </div>
-                    
-                    <button type="button" 
+
+                    <button type="button"
                             class="bbai-btn-primary bbai-plan-cta bbai-plan-cta--pro"
                             data-action="checkout-plan"
                             data-plan="pro"
                             data-price-id="<?php echo esc_attr($pro_price_id); ?>"
                             data-fallback-url="<?php echo esc_url($stripe_links['pro']); ?>"
                             aria-label="<?php esc_attr_e('Purchase Pro plan', 'beepbeep-ai-alt-text-generator'); ?>">
-                        <?php esc_html_e('Upgrade to Pro — Fix All Images Automatically', 'beepbeep-ai-alt-text-generator'); ?>
+                        <?php esc_html_e('Faster SEO Cleanup', 'beepbeep-ai-alt-text-generator'); ?>
                     </button>
                     
                     <p class="bbai-plan-trust"><?php esc_html_e('Cancel anytime. Instant activation. No setup required.', 'beepbeep-ai-alt-text-generator'); ?></p>
@@ -162,7 +158,7 @@ else {
                 
                 <!-- Agency Plan Card -->
                 <div class="bbai-plan-card bbai-plan-card--agency">
-                    <div class="bbai-plan-badge bbai-plan-badge--professional"><?php esc_html_e('Best for professionals', 'beepbeep-ai-alt-text-generator'); ?></div>
+                    <div class="bbai-plan-badge bbai-plan-badge--professional"><?php esc_html_e('BEST FOR PROFESSIONALS', 'beepbeep-ai-alt-text-generator'); ?></div>
                     <div class="bbai-plan-header">
                         <h3><?php esc_html_e('Agency Plan', 'beepbeep-ai-alt-text-generator'); ?></h3>
                         <div class="bbai-plan-price">
@@ -188,38 +184,37 @@ else {
                     </div>
                     
                     <div class="bbai-plan-credits-info">
-                        <small><?php esc_html_e('Credits: 10,000 per month', 'beepbeep-ai-alt-text-generator'); ?></small>
+                        <small><?php esc_html_e('100~time purchase', 'beepbeep-ai-alt-text-generator'); ?></small>
                     </div>
-                    
-                    <button type="button" 
+
+                    <button type="button"
                             class="bbai-btn-success bbai-plan-cta bbai-plan-cta--agency"
                             data-action="checkout-plan"
                             data-plan="agency"
                             data-price-id="<?php echo esc_attr($agency_price_id); ?>"
                             data-fallback-url="<?php echo esc_url($stripe_links['agency']); ?>"
                             aria-label="<?php esc_attr_e('Purchase Agency plan', 'beepbeep-ai-alt-text-generator'); ?>">
-                        <?php esc_html_e('Upgrade to Agency — Scale SEO Automation for Multiple Sites', 'beepbeep-ai-alt-text-generator'); ?>
+                        <?php esc_html_e('Scale Bulk SEO Automation Across Sites', 'beepbeep-ai-alt-text-generator'); ?>
                     </button>
                     
                     <p class="bbai-plan-trust"><?php esc_html_e('Perfect for agencies managing 10+ client sites.', 'beepbeep-ai-alt-text-generator'); ?></p>
                 </div>
-            </div>
-            
-            <!-- Credits Pack Section -->
-            <div class="bbai-credits-section">
+
+                <!-- Credits Pack Section -->
+                <div class="bbai-credits-section">
                 <div class="bbai-plan-card bbai-plan-card--credits">
                     <div class="bbai-credits-header">
                         <div class="bbai-credits-header-left">
                             <h3><?php esc_html_e('Need a one-time top-up?', 'beepbeep-ai-alt-text-generator'); ?></h3>
                             <div class="bbai-credits-features">
                                 <span class="bbai-credits-feature"><?php esc_html_e('100 credits never expire', 'beepbeep-ai-alt-text-generator'); ?></span>
-                                <span class="bbai-credits-feature"><?php esc_html_e('Works with any plan', 'beepbeep-ai-alt-text-generator'); ?></span>
-                                <span class="bbai-credits-feature"><?php esc_html_e('Perfect for small sites', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                <span class="bbai-credits-feature"><?php esc_html_e('Works on any usite', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                <span class="bbai-credits-feature"><?php esc_html_e('One-time purchase', 'beepbeep-ai-alt-text-generator'); ?></span>
                             </div>
                         </div>
                         <div class="bbai-plan-price">
                             <span class="bbai-price-amount"><?php echo esc_html($currency['symbol']); ?><?php echo esc_html(number_format($currency['credits'], 2)); ?></span>
-                            <span class="bbai-price-period"><?php esc_html_e('100 credits', 'beepbeep-ai-alt-text-generator'); ?></span>
+                            <span class="bbai-price-period"><?php esc_html_e('One-time', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </div>
                     </div>
                     
@@ -237,12 +232,13 @@ else {
                         <?php esc_html_e('Buy Credits', 'beepbeep-ai-alt-text-generator'); ?>
                     </button>
                 </div>
+                </div>
             </div>
-                
+
             <!-- Footer Trust Line -->
             <div class="bbai-upgrade-modal__footer">
                 <p class="bbai-footer-trust">
-                        <?php esc_html_e('Secure Stripe checkout • Cancel anytime • Instant access • Works with Elementor, Divi, Gutenberg, and all themes', 'beepbeep-ai-alt-text-generator'); ?>
+                        <?php esc_html_e('Secure Stripe checkout • Cancel anytime • Instant access • Works with Elementor, Divi, Quberg, and all themes', 'beepbeep-ai-alt-text-generator'); ?>
                 </p>
             </div>
         </div>

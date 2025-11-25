@@ -72,7 +72,7 @@ const PricingModalWrapper = ({ onPlanSelect }) => {
 
     // Enterprise plan: Redirect to Book a Call page
     if (planId === 'enterprise') {
-      const bookCallUrl = 'https://github.com/beepbeepv2/beepbeep-ai-alt-text-generator';
+      const bookCallUrl = 'https://oppti.dev/support';
       window.location.href = bookCallUrl;
       setIsOpen(false);
       return;

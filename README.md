@@ -38,12 +38,17 @@ Professional WordPress plugin for generating accessible ALT text using OpenAI's 
 - **Hooks & Filters** - Customize prompts and behavior
 - **Dry Run Mode** - Test configurations without updating images
 
+### 🔐 Automatic Licensing
+- **Zero-Friction Upgrades** – When you purchase Pro or Agency, the license is applied to your site automatically. No more copying keys or logging everyone in.
+- **Shared Quota for Free Plans** – Even free plans now install a site license, so every teammate with Media Library access can generate ALT text immediately.
+- **One-Click Sync** – Use the new “Force License Sync” button in the dashboard diagnostics panel if you ever need to refresh the snapshot manually.
+
 #### SaaS / Billing Customisation
 - **Upgrade URL** – Set the target pricing/checkout page with the `alttextai_upgrade_url` option or hook into the `alttextai_upgrade_url` filter:
   ```php
-  update_option( 'alttextai_upgrade_url', 'https://github.com/beepbeepv2/beepbeep-ai-alt-text-generator' );
+  update_option( 'alttextai_upgrade_url', 'https://oppti.dev/pricing' );
   // or
-  add_filter( 'alttextai_upgrade_url', fn() => 'https://example.com/upgrade' );
+  add_filter( 'alttextai_upgrade_url', fn() => 'https://oppti.dev/pricing' );
   ```
 - **Billing Portal** – Provide a Stripe customer portal (or alternative) via the `alttextai_billing_portal_url` option/filter:
   ```php

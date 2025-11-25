@@ -518,10 +518,84 @@ class Core {
         } else {
             $checkout = isset($_GET['checkout']) ? sanitize_key(wp_unslash($_GET['checkout'])) : '';
             if ($checkout === 'success') {
+                $site_hash = '';
+                if (method_exists($this->api_client, 'get_site_id')) {
+                    $site_hash = sanitize_text_field($this->api_client->get_site_id());
+                }
+                $rest_nonce = wp_create_nonce('wp_rest');
+                $rest_endpoint = esc_url_raw(rest_url('bbai/v1/license/attach'));
+                $site_url = get_site_url();
                 ?>
-                <div class="notice notice-success is-dismissible">
-                    <p><?php esc_html_e('Redirecting to secure checkout... Complete your payment to unlock up to 1,000 alt text generations per month with Pro.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                <div class="notice notice-info bbai-auto-attach-notice" data-site-url="<?php echo esc_attr($site_url); ?>" data-site-hash="<?php echo esc_attr($site_hash); ?>" data-install-id="<?php echo esc_attr($site_hash); ?>" data-status-pending="<?php esc_attr_e('Syncing your new license...', 'beepbeep-ai-alt-text-generator'); ?>" data-status-success="<?php esc_attr_e('License synced! Refreshing your dashboard...', 'beepbeep-ai-alt-text-generator'); ?>" data-status-error="<?php esc_attr_e('Automatic activation failed. Please use the license key from your email or contact support.', 'beepbeep-ai-alt-text-generator'); ?>">
+                    <p><strong><?php esc_html_e('Activating your OptiAI license...', 'beepbeep-ai-alt-text-generator'); ?></strong></p>
+                    <p><?php esc_html_e('We found your new plan and are applying it to this site automatically. This usually takes less than a minute.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                    <p class="bbai-auto-attach-status" aria-live="polite"></p>
                 </div>
+                <script>
+                (function() {
+                    const restNonce = '<?php echo esc_js( $rest_nonce ); ?>';
+                    const restEndpoint = '<?php echo esc_js( $rest_endpoint ); ?>';
+                    window.addEventListener('DOMContentLoaded', function bbaiAutoAttachInit() {
+                        const notice = document.querySelector('.bbai-auto-attach-notice');
+                        if (!notice || notice.dataset.autoAttachInit === '1') {
+                            return;
+                        }
+                        notice.dataset.autoAttachInit = '1';
+                        const statusNode = notice.querySelector('.bbai-auto-attach-status');
+                        if (statusNode) {
+                            statusNode.textContent = notice.dataset.statusPending || 'Syncing your new license...';
+                        }
+                        const payload = {
+                            siteUrl: notice.dataset.siteUrl || window.location.origin,
+                            siteHash: notice.dataset.siteHash || '',
+                            installId: notice.dataset.installId || notice.dataset.siteHash || ''
+                        };
+                        fetch(restEndpoint, {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-WP-Nonce': restNonce
+                            },
+                            body: JSON.stringify(payload)
+                        })
+                        .then(function(response) {
+                            if (!response.ok) {
+                                throw new Error('HTTP ' + response.status);
+                            }
+                            return response.json();
+                        })
+                        .then(function(data) {
+                            if (!data || data.success !== true) {
+                                throw new Error(data && data.message ? data.message : 'Unknown error');
+                            }
+                            notice.classList.remove('notice-info');
+                            notice.classList.add('notice-success', 'is-dismissible');
+                            if (statusNode) {
+                                statusNode.textContent = data.message || notice.dataset.statusSuccess || 'License synced! Refreshing your dashboard...';
+                            }
+                            if (typeof window.alttextai_refresh_usage === 'function') {
+                                window.alttextai_refresh_usage();
+                            }
+                            if (window.history && history.replaceState) {
+                                const params = new URLSearchParams(window.location.search);
+                                params.delete('checkout');
+                                const newQuery = params.toString();
+                                const newUrl = window.location.pathname + (newQuery ? '?' + newQuery : '') + window.location.hash;
+                                history.replaceState({}, document.title, newUrl);
+                            }
+                        })
+                        .catch(function(error) {
+                            console.error('[OptiAI] Auto-attach failed', error);
+                            notice.classList.remove('notice-info');
+                            notice.classList.add('notice-error');
+                            if (statusNode) {
+                                statusNode.textContent = notice.dataset.statusError || error.message || 'Automatic activation failed. Please use the license key from your email or contact support.';
+                            }
+                        });
+                    });
+                })();
+                </script>
                 <?php
             } elseif ($checkout === 'cancel') {
                 ?>
@@ -976,7 +1050,7 @@ class Core {
                 } else {
                     $out['language'] = $lang_input ?: 'en-GB';
                     $out['language_custom'] = '';
-                }
+        }
                 $out['enable_on_upload'] = !empty($input['enable_on_upload']);
                 $tone = isset($input['tone']) ? (string)$input['tone'] : 'professional, accessible';
                 $out['tone'] = $tone ? sanitize_text_field($tone) : 'professional, accessible';
@@ -988,7 +1062,7 @@ class Core {
                     $out['token_alert_sent'] = false;
                 } else {
                     $out['token_alert_sent'] = !empty($existing['token_alert_sent']);
-                }
+    }
                 $out['dry_run'] = !empty($input['dry_run']);
                 $custom_prompt = isset($input['custom_prompt']) ? (string)$input['custom_prompt'] : '';
                 $out['custom_prompt'] = $custom_prompt ? wp_kses_post($custom_prompt) : '';
@@ -1881,7 +1955,13 @@ class Core {
                         <!-- Powered by OpttiAI -->
                         <div class="bbai-premium-footer-divider"></div>
                         <div class="bbai-premium-footer-branding">
-                            <span><?php esc_html_e('Powered by', 'beepbeep-ai-alt-text-generator'); ?> <strong>OpttiAI</strong></span>
+                            <?php
+                            $site_url = 'https://oppti.dev';
+                            if (function_exists('opptiai_framework') && opptiai_framework()->config) {
+                                $site_url = opptiai_framework()->config->get('site', 'https://oppti.dev');
+                            }
+                            ?>
+                            <span><?php esc_html_e('Powered by', 'beepbeep-ai-alt-text-generator'); ?> <strong><a href="<?php echo esc_url($site_url); ?>" target="_blank" rel="noopener" style="color: inherit; text-decoration: none;">OpttiAI</a></strong></span>
                         </div>
                         
                         <!-- Circular Progress Animation Script -->
@@ -3614,6 +3694,28 @@ class Core {
                     $has_license = $this->api_client->has_active_license();
                     $license_data = $this->api_client->get_license_data();
                 }
+                
+                // Auto-attach license for authenticated free users who don't have one yet
+                $is_authenticated = $this->api_client->is_authenticated();
+                if ($is_authenticated && !$has_license) {
+                    // Check if user is on free plan and doesn't have license
+                    $usage = $this->api_client->get_usage();
+                    if (!is_wp_error($usage) && isset($usage['plan']) && $usage['plan'] === 'free') {
+                        // Try to auto-attach free license
+                        $auto_attach_result = $this->api_client->auto_attach_license();
+                        if (!is_wp_error($auto_attach_result) && isset($auto_attach_result['success']) && $auto_attach_result['success']) {
+                            // Refresh license status
+                            $has_license = $this->api_client->has_active_license();
+                            $license_data = $this->api_client->get_license_data();
+                        }
+                    }
+                }
+                
+                $diagnostic_site_hash = '';
+                if (method_exists($this->api_client, 'get_site_id')) {
+                    $diagnostic_site_hash = sanitize_text_field($this->api_client->get_site_id());
+                }
+                $diagnostic_site_url = get_site_url();
                 ?>
 
                 <div class="bbai-settings-card">
@@ -3686,6 +3788,51 @@ class Core {
                                     <?php esc_html_e('Loading site usage...', 'beepbeep-ai-alt-text-generator'); ?>
                                 </div>
                             </div>
+                        </div>
+                        <?php endif; ?>
+                        
+                        <?php
+                        $auto_status = isset($org['autoAttachStatus']) ? sanitize_text_field($org['autoAttachStatus']) : '';
+                        $email_sent_at = isset($org['licenseEmailSentAt']) ? sanitize_text_field($org['licenseEmailSentAt']) : '';
+                        $email_sent_display = '';
+                        if ($email_sent_at) {
+                            $sent_timestamp = strtotime($email_sent_at);
+                            if ($sent_timestamp) {
+                                $email_sent_display = date_i18n( get_option('date_format') . ' ' . get_option('time_format'), $sent_timestamp );
+                            } else {
+                                $email_sent_display = $email_sent_at;
+                            }
+                        }
+                        if ($auto_status || $email_sent_at) :
+                        ?>
+                        <div class="bbai-settings-license-diagnostics">
+                            <div class="bbai-settings-license-diagnostics-row">
+                                <span class="bbai-settings-license-diagnostics-label"><?php esc_html_e('Auto-attach status', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                <span class="bbai-settings-license-diagnostics-value">
+                                    <?php echo esc_html($auto_status ?: __('Not available', 'beepbeep-ai-alt-text-generator')); ?>
+                                </span>
+                            </div>
+                            <?php if ($email_sent_display) : ?>
+                            <div class="bbai-settings-license-diagnostics-row">
+                                <span class="bbai-settings-license-diagnostics-label"><?php esc_html_e('License email sent', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                <span class="bbai-settings-license-diagnostics-value">
+                                    <?php echo esc_html( $email_sent_display ); ?>
+                                </span>
+                            </div>
+                            <?php endif; ?>
+                            <div class="bbai-settings-license-diagnostics-actions">
+                                <button type="button"
+                                        class="bbai-settings-license-sync-btn"
+                                        data-action="force-license-sync"
+                                        data-site-url="<?php echo esc_attr($diagnostic_site_url); ?>"
+                                        data-site-hash="<?php echo esc_attr($diagnostic_site_hash); ?>"
+                                        data-install-id="<?php echo esc_attr($diagnostic_site_hash); ?>">
+                                    <?php esc_html_e('Force License Sync', 'beepbeep-ai-alt-text-generator'); ?>
+                                </button>
+                            </div>
+                            <p class="bbai-settings-license-note">
+                                <?php esc_html_e('Need the license email resent? Contact support and we\'ll send it again.', 'beepbeep-ai-alt-text-generator'); ?>
+                            </p>
                         </div>
                         <?php endif; ?>
                         
@@ -6653,6 +6800,12 @@ class Core {
             'previewAltShortcut'  => __('Shift + Enter for newline.', 'beepbeep-ai-alt-text-generator'),
         ];
 
+        $site_hash_for_js = '';
+        if (method_exists($this->api_client, 'get_site_id')) {
+            $site_hash_for_js = sanitize_text_field($this->api_client->get_site_id());
+        }
+        $site_url_for_js = get_site_url();
+
         // Load on Media Library and attachment edit contexts (modal also)
         if (in_array($hook, ['upload.php', 'post.php', 'post-new.php', 'media_page_bbai'], true)){
             wp_enqueue_script('bbai-admin', $base_url . $admin_file, ['jquery'], $admin_version, true);
@@ -6667,12 +6820,18 @@ class Core {
                 'restQueue'  => esc_url_raw( rest_url('bbai/v1/queue') ),
                 'restRoot'  => esc_url_raw( rest_url() ),
                 'restPlans' => esc_url_raw( rest_url('bbai/v1/plans') ),
+                'restLicenseAttach' => esc_url_raw( rest_url('bbai/v1/license/attach') ),
                 'l10n'      => $l10n_common,
                 'upgradeUrl'=> esc_url( Usage_Tracker::get_upgrade_url() ),
                 'billingPortalUrl' => esc_url( Usage_Tracker::get_billing_portal_url() ),
                 'checkoutPrices' => $checkout_prices,
                 'canManage' => $this->user_can_manage(),
                 'inlineBatchSize' => defined('BBAI_INLINE_BATCH') ? max(1, intval(BBAI_INLINE_BATCH)) : 1,
+                'autoAttachDefaults' => [
+                    'siteUrl' => esc_url_raw( $site_url_for_js ),
+                    'siteHash' => sanitize_text_field( $site_hash_for_js ),
+                    'installId' => sanitize_text_field( $site_hash_for_js ),
+                ],
             ]);
             // Also add bbai_ajax for regenerate functionality
             wp_localize_script('bbai-admin', 'bbai_ajax', [
@@ -6731,7 +6890,7 @@ class Core {
                 'bbai-upgrade',
                 $base_url . $upgrade_css,
                 ['bbai-components'],
-                $asset_version($upgrade_css, '3.1.0')
+                $asset_version($upgrade_css, '3.2.0')
             );
             wp_enqueue_style(
                 'bbai-auth',
@@ -7327,19 +7486,19 @@ class Core {
             if ($attachment_id <= 0 || !$this->is_image($attachment_id)) {
                 Queue::mark_complete($job->id);
                 continue;
-            }
+                }
 
             $result = $this->generate_and_save($attachment_id, $job->source ?? 'queue', max(0, intval($job->attempts) - 1));
 
             if (is_wp_error($result)) {
                 $code    = $result->get_error_code();
-                $message = $result->get_error_message();
+                    $message = $result->get_error_message();
 
                 if ($code === 'limit_reached') {
                     Queue::mark_retry($job->id, $message);
                     Queue::schedule_processing(apply_filters('bbai_queue_limit_delay', HOUR_IN_SECONDS));
                     break;
-                }
+                    }
 
                 if (intval($job->attempts) >= $max_attempts) {
                     Queue::mark_failed($job->id, $message);

@@ -37,7 +37,7 @@
     background: var(--bbai-white, #ffffff);
     border-radius: 16px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    max-width: 1100px;
+    max-width: 840px;
     width: 90%;
     max-height: 90vh;
     overflow-y: auto;
@@ -45,6 +45,7 @@
     z-index: 1000000;
     pointer-events: auto;
     animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    margin: 0 auto;
 }
 
 @keyframes slideUp {
@@ -62,32 +63,49 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding: 40px 40px 32px;
+    padding: 48px 40px 32px;
     border-bottom: 1px solid #e5e7eb;
     background: #ffffff !important;
     background: var(--bbai-white, #ffffff);
+    position: relative;
+}
+
+.bbai-upgrade-modal__header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 120px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.03) 0%, rgba(16, 185, 129, 0.02) 100%);
+    pointer-events: none;
+    border-radius: 16px 16px 0 0;
 }
 
 .bbai-upgrade-modal__header-content {
     flex: 1;
     max-width: 85%;
+    position: relative;
+    z-index: 1;
 }
 
 .bbai-upgrade-modal__header h2 {
     margin: 0 0 16px 0;
-    font-size: 32px;
-    font-weight: 800;
+    font-size: 28px;
+    font-weight: 700;
     color: #111827;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    max-width: 720px;
 }
 
 .bbai-upgrade-modal__subtitle {
     margin: 0 0 24px 0;
-    font-size: 18px;
+    font-size: 16px;
     color: #6b7280;
     font-weight: 400;
     line-height: 1.6;
+    max-width: 600px;
 }
 
 /* Trust Badges */
@@ -95,7 +113,7 @@
     display: flex;
     gap: 24px;
     flex-wrap: wrap;
-    margin-top: 8px;
+    margin-top: 0;
 }
 
 .bbai-trust-badge {
@@ -157,6 +175,9 @@
     padding: 32px 40px 40px;
     background: #ffffff !important;
     background: var(--bbai-white, #ffffff);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
 }
 
 /* Auth Notice */
@@ -165,7 +186,6 @@
     border: 1px solid #3b82f6;
     border-radius: 8px;
     padding: 16px 20px;
-    margin-bottom: 32px;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -202,7 +222,6 @@
     background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
     border: 1px solid #10b981;
     border-radius: 12px;
-    margin-bottom: 32px;
 }
 
 .bbai-why-upgrade-item {
@@ -229,10 +248,11 @@
 .bbai-billing-toggle {
     display: inline-flex;
     background: #f3f4f6;
-    border-radius: 10px;
-    padding: 4px;
-    margin-bottom: 32px;
-    gap: 4px;
+    border-radius: 12px;
+    padding: 6px;
+    margin-bottom: 24px;
+    gap: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .bbai-billing-toggle__option {
@@ -240,7 +260,7 @@
     border: none;
     background: transparent;
     color: #6b7280;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
     border-radius: 8px;
     cursor: pointer;
@@ -291,12 +311,14 @@
 .bbai-billing-coming-soon {
     background: #6b7280;
     color: #ffffff;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
-    padding: 2px 8px;
+    padding: 3px 10px;
     border-radius: 12px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    white-space: nowrap;
+    margin-left: 4px;
 }
 
 .bbai-plan-credits-info {
@@ -316,26 +338,25 @@
 .bbai-pricing-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    margin-bottom: 32px;
+    gap: 20px;
 }
 
 /* Plan Cards */
 .bbai-plan-card {
     border: 2px solid #e5e7eb;
-    border-radius: 16px;
-    padding: 32px;
+    border-radius: 12px;
+    padding: 32px 24px 24px;
     position: relative;
     background: #ffffff !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
-    height: 100%;
 }
 
 .bbai-plan-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.15));
 }
 
 .bbai-plan-card--pro {
@@ -359,11 +380,12 @@
 /* Plan Badges */
 .bbai-plan-badge {
     position: absolute;
-    top: -12px;
-    left: 24px;
-    padding: 6px 16px;
-    border-radius: 20px;
-    font-size: 12px;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -382,13 +404,13 @@
 
 /* Plan Header */
 .bbai-plan-header {
-    margin-bottom: 24px;
+    margin-bottom: 20px;
     text-align: center;
 }
 
 .bbai-plan-header h3 {
-    margin: 0 0 16px 0;
-    font-size: 24px;
+    margin: 0 0 12px 0;
+    font-size: 20px;
     font-weight: 700;
     color: #111827;
     line-height: 1.3;
@@ -400,11 +422,11 @@
 }
 
 .bbai-price-amount {
-    font-size: 42px;
+    font-size: 36px;
     font-weight: 800;
     color: #111827;
     line-height: 1;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
     display: inline-block;
 }
 
@@ -413,7 +435,7 @@
 }
 
 .bbai-price-period {
-    font-size: 18px;
+    font-size: 16px;
     color: #6b7280;
     margin-left: 4px;
     font-weight: 500;
@@ -422,7 +444,7 @@
 /* Plan Features */
 .bbai-plan-features {
     flex: 1;
-    margin: 0 0 24px 0;
+    margin: 0 0 20px 0;
 }
 
 .bbai-plan-features ul {
@@ -430,68 +452,71 @@
     padding: 0;
     margin: 0;
     text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .bbai-plan-features li {
-    padding: 12px 0 12px 32px;
-    border-bottom: 1px solid #f3f4f6;
+    padding: 0 0 0 28px;
     position: relative;
-    font-size: 15px;
+    font-size: 14px;
     color: #374151;
-    line-height: 1.6;
-}
-
-.bbai-plan-features li:last-child {
-    border-bottom: none;
+    line-height: 1.5;
+    min-height: 20px;
+    display: flex;
+    align-items: flex-start;
 }
 
 .bbai-plan-features li:before {
     content: "✓";
     position: absolute;
     left: 0;
-    width: 24px;
-    height: 24px;
-    display: inline-flex;
+    width: 20px;
+    height: 20px;
+    display: flex;
     align-items: center;
     justify-content: center;
     background: #10b981;
     color: #ffffff;
     font-weight: 700;
-    font-size: 14px;
+    font-size: 12px;
     border-radius: 50%;
-    top: 10px;
+    flex-shrink: 0;
 }
 
 .bbai-feature-highlight {
-    font-weight: 800;
-    color: #2563eb;
-    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    font-size: 14px;
 }
 
 /* Plan CTA Buttons - Vibrant Colors */
 .bbai-plan-cta {
     width: 100%;
-    padding: 16px 24px !important;
-    font-size: 16px !important;
-    font-weight: 700 !important;
-    border-radius: 10px;
+    padding: 14px 24px !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    border-radius: 8px;
     border: none;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
     margin-top: 0;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     text-transform: none !important;
     letter-spacing: 0 !important;
     display: inline-flex !important;
     align-items: center;
     justify-content: center;
     gap: 8px;
+    font-family: inherit;
 }
 
 .bbai-plan-cta:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.3));
 }
 
 .bbai-plan-cta:active {
@@ -500,33 +525,29 @@
 
 .bbai-plan-cta--pro {
     background: #2563eb !important;
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
     color: #ffffff !important;
     box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4) !important;
 }
 
 .bbai-plan-cta--pro:hover {
     background: #1d4ed8 !important;
-    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
     box-shadow: 0 8px 24px rgba(37, 99, 235, 0.5) !important;
 }
 
 .bbai-plan-cta--agency {
     background: #10b981 !important;
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
     color: #ffffff !important;
     box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4) !important;
 }
 
 .bbai-plan-cta--agency:hover {
     background: #059669 !important;
-    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
     box-shadow: 0 8px 24px rgba(16, 185, 129, 0.5) !important;
 }
 
 .bbai-plan-trust {
     margin: 0;
-    font-size: 13px;
+    font-size: 12px;
     color: #6b7280;
     text-align: center;
     font-weight: 500;
@@ -535,24 +556,26 @@
 
 /* Credits Section */
 .bbai-credits-section {
-    margin-bottom: 32px;
+    margin-top: 24px;
+    grid-column: 1 / -1;
 }
 
 .bbai-plan-card--credits {
     width: 100%;
     border-color: #3b82f6;
-    background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%) !important;
-    padding: 32px;
+    background: #ffffff !important;
+    padding: 24px;
+    border-radius: 12px;
 }
 
 .bbai-credits-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     gap: 32px;
-    margin-bottom: 24px;
-    padding-bottom: 24px;
-    border-bottom: 2px solid #e5e7eb;
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
 }
 
 .bbai-credits-header-left {
@@ -560,8 +583,8 @@
 }
 
 .bbai-credits-header-left h3 {
-    margin: 0 0 12px 0;
-    font-size: 24px;
+    margin: 0 0 8px 0;
+    font-size: 20px;
     font-weight: 700;
     color: #111827;
     text-align: left;
@@ -569,20 +592,19 @@
 
 .bbai-credits-features {
     display: flex;
-    gap: 16px;
+    gap: 12px;
     flex-wrap: wrap;
 }
 
 .bbai-credits-feature {
     display: inline-flex;
     align-items: center;
-    padding: 6px 12px;
-    background: #e0f2fe;
-    border: 1px solid #0ea5e9;
-    border-radius: 6px;
+    padding: 0;
+    background: transparent;
+    border: none;
     font-size: 13px;
-    font-weight: 600;
-    color: #0369a1;
+    font-weight: 500;
+    color: #6b7280;
 }
 
 .bbai-plan-card--credits .bbai-plan-price {
@@ -590,36 +612,53 @@
     text-align: right;
 }
 
+.bbai-plan-card--credits .bbai-price-amount {
+    font-size: 36px;
+    font-weight: 800;
+    color: #111827;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.bbai-plan-card--credits .bbai-price-period {
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 500;
+    display: block;
+    margin-left: 0;
+}
+
+.bbai-plan-card--credits .bbai-plan-credits-info {
+    display: none;
+}
+
 .bbai-plan-card--credits .bbai-plan-cta {
-    background: #3b82f6 !important;
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    background: #2563eb !important;
     color: #ffffff !important;
-    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4) !important;
-    max-width: 280px;
-    margin-left: auto;
-    margin-right: auto;
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4) !important;
+    width: 100%;
+    margin-top: 20px;
 }
 
 .bbai-plan-card--credits .bbai-plan-cta:hover {
-    background: #2563eb !important;
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
-    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.5) !important;
+    background: #1d4ed8 !important;
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.5) !important;
 }
 
 /* Footer Trust Line */
 .bbai-upgrade-modal__footer {
-    margin-top: 32px;
-    padding-top: 24px;
+    margin-top: 16px;
+    padding-top: 20px;
     border-top: 1px solid #e5e7eb;
     text-align: center;
 }
 
 .bbai-footer-trust {
     margin: 0;
-    font-size: 14px;
+    font-size: 13px;
     color: #6b7280;
     font-weight: 500;
-    line-height: 1.6;
+    line-height: 1.5;
 }
 
 /* Responsive Design - Mobile First */

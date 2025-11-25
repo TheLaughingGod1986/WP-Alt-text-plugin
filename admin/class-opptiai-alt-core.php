@@ -1690,7 +1690,13 @@ class BbAI_Core {
                         <!-- Powered by OpttiAI -->
                         <div class="bbai-premium-footer-divider"></div>
                         <div class="bbai-premium-footer-branding">
-                            <span><?php esc_html_e('Powered by', 'wp-alt-text-plugin'); ?> <strong>OpttiAI</strong></span>
+                            <?php
+                            $site_url = 'https://oppti.dev';
+                            if (function_exists('opptiai_framework') && opptiai_framework()->config) {
+                                $site_url = opptiai_framework()->config->get('site', 'https://oppti.dev');
+                            }
+                            ?>
+                            <span><?php esc_html_e('Powered by', 'wp-alt-text-plugin'); ?> <strong><a href="<?php echo esc_url($site_url); ?>" target="_blank" rel="noopener" style="color: inherit; text-decoration: none;">OpttiAI</a></strong></span>
                         </div>
                         
                         <!-- Circular Progress Animation Script -->
@@ -6146,7 +6152,7 @@ class BbAI_Core {
                 'bbai-upgrade',
                 $base_url . $upgrade_css,
                 ['bbai-components'],
-                $asset_version($upgrade_css, '3.1.0')
+                $asset_version($upgrade_css, '3.2.0')
             );
             wp_enqueue_style(
                 'bbai-auth',

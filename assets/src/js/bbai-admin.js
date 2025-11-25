@@ -1750,6 +1750,64 @@
         });
     }
 
+    // Force license sync via REST endpoint
+    function handleManualLicenseSync(e) {
+        e.preventDefault();
+
+        if (typeof window.fetch !== 'function') {
+            alert('Your browser cannot perform automatic license sync. Please update your browser or contact support.');
+            return;
+        }
+
+        if (!window.BBAI || !BBAI.restLicenseAttach) {
+            alert('License sync service is unavailable. Please refresh and try again.');
+            return;
+        }
+
+        var $button = $(this);
+        var originalText = $button.text();
+        $button.prop('disabled', true).text('Syncing...');
+
+        var defaults = BBAI.autoAttachDefaults || {};
+        var payload = {
+            siteUrl: $button.data('siteUrl') || defaults.siteUrl || window.location.origin,
+            siteHash: $button.data('siteHash') || defaults.siteHash || '',
+            installId: $button.data('installId') || defaults.installId || defaults.siteHash || ''
+        };
+
+        fetch(BBAI.restLicenseAttach, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-WP-Nonce': BBAI.nonce
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(function(response) {
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            return response.json();
+        })
+        .then(function(data) {
+            if (!data || data.success !== true) {
+                throw new Error((data && data.message) ? data.message : 'License sync failed. Please try again.');
+            }
+            showNotification(data.message || 'License synced successfully.', 'success');
+            setTimeout(function() {
+                window.location.reload();
+            }, 1200);
+        })
+        .catch(function(error) {
+            console.error('[AI Alt Text] License sync failed:', error);
+            alert(error && error.message ? error.message : 'Unable to sync license. Please try again or contact support.');
+        })
+        .finally(function() {
+            $button.prop('disabled', false).text(originalText);
+        });
+    }
+
     // Show status message in license activation form
     function showLicenseStatus(type, message) {
         var $status = $('#license-activation-status');
@@ -1800,6 +1858,7 @@
         // License management handlers
         $('#license-activation-form').on('submit', handleLicenseActivation);
         $(document).on('click', '[data-action="deactivate-license"]', handleLicenseDeactivation);
+        $(document).on('click', '[data-action="force-license-sync"]', handleManualLicenseSync);
 
         console.log('[AI Alt Text] License management handlers registered');
     });

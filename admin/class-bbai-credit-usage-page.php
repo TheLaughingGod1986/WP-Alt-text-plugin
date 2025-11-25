@@ -163,10 +163,10 @@ class Credit_Usage_Page {
 
 			<?php if ($view === 'user_detail' && $user_id > 0) : ?>
 				<p style="margin-bottom: 24px;">
-					<a href="<?php echo esc_url(admin_url('upload.php?page=bbai-credit-usage')); ?>" 
-					   class="button" 
+					<a href="<?php echo esc_url(admin_url('upload.php?page=bbai&tab=credit-usage')); ?>"
+					   class="button"
 					   style="background: #2563EB; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 500; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-decoration: none; transition: background 0.15s; display: inline-block;"
-					   onmouseover="this.style.background='#1D4ED8'" 
+					   onmouseover="this.style.background='#1D4ED8'"
 					   onmouseout="this.style.background='#2563EB'">
 						<?php esc_html_e('← Back to Summary', 'beepbeep-ai-alt-text-generator'); ?>
 					</a>
@@ -241,7 +241,8 @@ class Credit_Usage_Page {
 			<!-- Filters -->
 			<div class="bbai-usage-filters" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 24px; margin: 32px 0;">
 				<form method="get" action="">
-					<input type="hidden" name="page" value="bbai-credit-usage">
+					<input type="hidden" name="page" value="bbai">
+					<input type="hidden" name="tab" value="credit-usage">
 					<input type="hidden" name="view" value="<?php echo esc_attr($view); ?>">
 					<?php if ($user_id > 0) : ?>
 						<input type="hidden" name="user_id" value="<?php echo esc_attr($user_id); ?>">
@@ -307,11 +308,11 @@ class Credit_Usage_Page {
 					</div>
 
 					<div class="submit" style="display: flex; gap: 12px; margin-top: 20px;">
-						<input type="submit" 
-							   class="button button-primary" 
+						<input type="submit"
+							   class="button button-primary"
 							   value="<?php esc_attr_e('Filter', 'beepbeep-ai-alt-text-generator'); ?>"
 							   style="background: #2563EB; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 500; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; cursor: pointer; transition: background 0.15s;">
-						<a href="<?php echo esc_url(admin_url('upload.php?page=bbai-credit-usage')); ?>" 
+						<a href="<?php echo esc_url(admin_url('upload.php?page=bbai&tab=credit-usage')); ?>"
 						   class="button"
 						   style="background: #FFFFFF; color: #2563EB; border: 1px solid #2563EB; padding: 10px 20px; border-radius: 6px; font-weight: 500; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-decoration: none; transition: background 0.15s; display: inline-block;">
 							<?php esc_html_e('Clear Filters', 'beepbeep-ai-alt-text-generator'); ?>
@@ -415,7 +416,7 @@ class Credit_Usage_Page {
 							$pagination_args = [
 								'total' => $user_details['pages'],
 								'current' => $user_details['page'],
-								'base' => add_query_arg(['paged' => '%#%', 'view' => 'user_detail', 'user_id' => $user_id], admin_url('upload.php?page=bbai-credit-usage')),
+								'base' => add_query_arg(['paged' => '%#%', 'view' => 'user_detail', 'user_id' => $user_id, 'tab' => 'credit-usage'], admin_url('upload.php?page=bbai')),
 							];
 							echo wp_kses_post(paginate_links($pagination_args));
 							?>
@@ -496,10 +497,10 @@ class Credit_Usage_Page {
 												<?php endif; ?>
 											</td>
 											<td style="padding: 18px 20px;">
-												<a href="<?php echo esc_url(add_query_arg(['view' => 'user_detail', 'user_id' => $user_data['user_id']], admin_url('upload.php?page=bbai-credit-usage'))); ?>" 
+												<a href="<?php echo esc_url(add_query_arg(['view' => 'user_detail', 'user_id' => $user_data['user_id'], 'tab' => 'credit-usage'], admin_url('upload.php?page=bbai'))); ?>"
 												   class="button button-small"
 												   style="background: #2563EB; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 500; font-size: 13px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-decoration: none; transition: all 0.15s; display: inline-block; white-space: nowrap;"
-												   onmouseover="this.style.background='#1D4ED8'; this.style.boxShadow='0 1px 3px 0 rgba(0, 0, 0, 0.1)'" 
+												   onmouseover="this.style.background='#1D4ED8'; this.style.boxShadow='0 1px 3px 0 rgba(0, 0, 0, 0.1)'"
 												   onmouseout="this.style.background='#2563EB'; this.style.boxShadow='none'"
 												   onfocus="this.style.outline='2px solid #93C5FD'; this.style.outlineOffset='2px'"
 												   onblur="this.style.outline='none'">
@@ -656,7 +657,7 @@ class Credit_Usage_Page {
 							$pagination_args = [
 								'total' => $usage_by_user['pages'],
 								'current' => $usage_by_user['page'],
-								'base' => add_query_arg(['paged' => '%#%'], admin_url('upload.php?page=bbai-credit-usage')),
+								'base' => add_query_arg(['paged' => '%#%', 'tab' => 'credit-usage'], admin_url('upload.php?page=bbai')),
 							];
 							echo wp_kses_post(paginate_links($pagination_args));
 							?>

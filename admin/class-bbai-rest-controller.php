@@ -183,6 +183,16 @@ class REST_Controller {
 				'permission_callback' => [ $this, 'can_edit_media' ],
 			]
 		);
+
+		register_rest_route(
+			'bbai/v1',
+			'/license/attach',
+			[
+				'methods'             => 'POST',
+				'callback'            => [ $this, 'handle_license_attach' ],
+				'permission_callback' => [ $this, 'can_manage_license' ],
+			]
+		);
 	}
 
 	/**
@@ -191,6 +201,19 @@ class REST_Controller {
 	 * @return bool
 	 */
 	public function can_edit_media() {
+		if ( method_exists( $this->core, 'user_can_manage' ) && $this->core->user_can_manage() ) {
+			return true;
+		}
+
+		return current_user_can( 'manage_options' );
+	}
+
+	/**
+	 * Permission callback for license management routes.
+	 *
+	 * @return bool
+	 */
+	public function can_manage_license() {
 		if ( method_exists( $this->core, 'user_can_manage' ) && $this->core->user_can_manage() ) {
 			return true;
 		}
@@ -799,5 +822,43 @@ class REST_Controller {
 	 */
 	public function can_view_team_usage() {
 		return current_user_can('manage_options') || current_user_can('bbai_view_team_usage');
+	}
+
+	/**
+	 * Auto-attach license after checkout/signup.
+	 *
+	 * @param \WP_REST_Request $request REST request instance.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function handle_license_attach( \WP_REST_Request $request ) {
+		if ( ! method_exists( $this->core, 'get_api_client' ) ) {
+			return new \WP_Error( 'bbai_missing_client', __( 'API client unavailable', 'beepbeep-ai-alt-text-generator' ) );
+		}
+
+		$api_client = $this->core->get_api_client();
+		if ( ! $api_client ) {
+			return new \WP_Error( 'bbai_missing_client', __( 'API client unavailable', 'beepbeep-ai-alt-text-generator' ) );
+		}
+
+		$args = [
+			'siteUrl'   => $request->get_param( 'siteUrl' ),
+			'siteHash'  => $request->get_param( 'siteHash' ),
+			'installId' => $request->get_param( 'installId' ),
+		];
+
+		$result = $api_client->auto_attach_license( $args );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return rest_ensure_response(
+			[
+				'success' => true,
+				'message' => isset( $result['message'] ) ? $result['message'] : __( 'License attached successfully', 'beepbeep-ai-alt-text-generator' ),
+				'license' => isset( $result['license'] ) ? $result['license'] : [],
+				'site'    => isset( $result['site'] ) ? $result['site'] : [],
+			]
+		);
 	}
 }
