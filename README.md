@@ -1,6 +1,6 @@
 # AI Alt Text Generator
 
-Professional WordPress plugin for generating accessible ALT text using OpenAI's GPT models. Features progress tracking, achievement system, and comprehensive analytics to improve accessibility and SEO.
+AI-powered image alt text generator that boosts WordPress SEO, accessibility, and image rankings automatically.
 
 **NEW in v3.1: Professional Gamification!** Track progress with levels and achievements. Modern, engaging interface that makes accessibility work rewarding.
 

@@ -12,7 +12,7 @@ License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
 
-The fastest way to automatically generate SEO-optimized and WCAG-compliant alt text for every WordPress image. Boost Google Images rankings, improve accessibility, and save 10+ hours monthly.
+AI-powered image alt text generator that boosts WordPress SEO, accessibility, and image rankings automatically.
 
 == Description ==
 

@@ -1248,7 +1248,7 @@ class BbAI_Core {
                         <!-- Subtle Header Section -->
                         <div class="bbai-dashboard-header-section">
                             <h1 class="bbai-dashboard-title"><?php esc_html_e('Dashboard', 'wp-alt-text-plugin'); ?></h1>
-                            <p class="bbai-dashboard-subtitle"><?php esc_html_e('Automated, accessible alt text generation for your WordPress media library.', 'wp-alt-text-plugin'); ?></p>
+                            <p class="bbai-dashboard-subtitle"><?php esc_html_e('AI-powered image alt text generator that boosts WordPress SEO, accessibility, and image rankings automatically.', 'wp-alt-text-plugin'); ?></p>
                         </div>
 
                         <?php 
