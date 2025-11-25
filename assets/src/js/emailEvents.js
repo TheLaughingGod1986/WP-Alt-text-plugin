@@ -36,7 +36,7 @@ if (typeof window.postJson === 'function') {
  * @param {string} pluginName - Plugin name (default: 'alt-text')
  * @returns {Promise<object>} Response from backend
  */
-export function sendPluginSignupEmail(email, siteUrl, pluginName = 'alt-text') {
+function sendPluginSignupEmail(email, siteUrl, pluginName = 'alt-text') {
     if (!email || !email.includes('@')) {
         return Promise.reject(new Error('Invalid email address'));
     }
@@ -54,7 +54,7 @@ export function sendPluginSignupEmail(email, siteUrl, pluginName = 'alt-text') {
  * @param {string} plan - Plan name (e.g., 'pro', 'agency')
  * @returns {Promise<object>} Response from backend
  */
-export function sendDashboardWelcomeEmail(email, plan) {
+function sendDashboardWelcomeEmail(email, plan) {
     if (!email || !email.includes('@')) {
         return Promise.reject(new Error('Invalid email address'));
     }
@@ -73,7 +73,7 @@ export function sendDashboardWelcomeEmail(email, plan) {
  * @param {string} source - Source of signup (default: 'wp-plugin-settings')
  * @returns {Promise<object>} Response from backend
  */
-export function submitToWaitlist(email, plugin = 'alt-text', source = 'wp-plugin-settings') {
+function submitToWaitlist(email, plugin = 'alt-text', source = 'wp-plugin-settings') {
     if (!email || !email.includes('@')) {
         return Promise.reject(new Error('Invalid email address'));
     }

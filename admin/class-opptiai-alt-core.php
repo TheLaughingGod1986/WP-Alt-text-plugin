@@ -1694,7 +1694,16 @@ class BbAI_Core {
                                 </span>
                                 <span class="bbai-footer-cta-badge"><?php esc_html_e('(included in free plan)', 'wp-alt-text-plugin'); ?></span>
                             </p>
+                            <button type="button" class="bbai-upcoming-plugins-subscribe-btn" id="bbai-upcoming-plugins-subscribe-btn" data-action="show-subscribe-modal">
+                                <?php esc_html_e('Notify Me', 'wp-alt-text-plugin'); ?>
+                            </button>
                         </div>
+                        
+                        <?php
+                        // Include upcoming plugins subscribe modal
+                        require_once BBAI_PLUGIN_DIR . 'admin/components/UpcomingPluginsSubscribeModal.php';
+                        UpcomingPluginsSubscribeModal::render();
+                        ?>
                         
                         <!-- Powered by OpttiAI -->
                         <div class="bbai-premium-footer-divider"></div>
@@ -6433,6 +6442,16 @@ class BbAI_Core {
                 $base_url . $dashboard_signup_handler_js,
                 ['jquery', 'bbai-auth', 'bbai-api-client'],
                 $asset_version($dashboard_signup_handler_js, '1.0.0'),
+                true
+            );
+            
+            // Enqueue upcoming plugins subscribe handler
+            $upcoming_plugins_subscribe_js = $asset_path($js_base, 'upcoming-plugins-subscribe', $use_debug_assets, 'js');
+            wp_enqueue_script(
+                'bbai-upcoming-plugins-subscribe',
+                $base_url . $upcoming_plugins_subscribe_js,
+                ['bbai-api-client', 'bbai-email-events'],
+                $asset_version($upcoming_plugins_subscribe_js, '1.0.0'),
                 true
             );
             wp_enqueue_script(
