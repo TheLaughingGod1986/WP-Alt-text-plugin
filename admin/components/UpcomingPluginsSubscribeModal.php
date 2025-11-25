@@ -241,18 +241,19 @@ class UpcomingPluginsSubscribeModal {
         
         .bbai-upcoming-plugins-subscribe-btn {
             margin-top: 12px;
-            padding: 8px 16px;
-            font-size: 13px;
+            padding: 10px 20px;
+            font-size: 14px;
             font-weight: 600;
             color: #3A74FF;
             background: #ffffff;
-            border: 1px solid #3A74FF;
-            border-radius: 6px;
+            border: 2px solid #3A74FF;
+            border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s ease;
             display: block;
             width: 100%;
             text-align: center;
+            box-shadow: 0 2px 4px rgba(58, 116, 255, 0.1);
         }
         
         .bbai-upcoming-plugins-subscribe-btn:hover {
@@ -260,12 +261,22 @@ class UpcomingPluginsSubscribeModal {
             color: #ffffff;
         }
         
+        /* Ensure button is always visible */
+        .bbai-premium-footer-cta {
+            position: relative;
+        }
+        
+        .bbai-upcoming-plugins-subscribe-btn {
+            z-index: 10;
+        }
+        
         @media (min-width: 640px) {
             .bbai-premium-footer-cta {
-                display: flex;
+                display: flex !important;
                 align-items: center;
                 justify-content: space-between;
                 gap: 16px;
+                text-align: left !important;
             }
             
             .bbai-premium-footer-cta .bbai-footer-cta-text {
@@ -274,9 +285,10 @@ class UpcomingPluginsSubscribeModal {
             }
             
             .bbai-upcoming-plugins-subscribe-btn {
-                margin-top: 0;
-                width: auto;
+                margin-top: 0 !important;
+                width: auto !important;
                 flex-shrink: 0;
+                min-width: 120px;
             }
         }
         </style>
