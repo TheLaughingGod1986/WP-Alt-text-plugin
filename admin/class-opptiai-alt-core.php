@@ -699,33 +699,79 @@ class BbAI_Core {
     private function create_performance_indexes() {
         global $wpdb;
         
+        // Check if indexes already exist to avoid slow re-creation
+        $indexes_created = get_option('bbai_performance_indexes_created', false);
+        if ($indexes_created) {
+            return; // Indexes already exist, skip
+        }
+        
         // Index for _beepbeepai_generated_at (used in sorting and stats)
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WordPress core table names are safe
-        $wpdb->query("
-            CREATE INDEX idx_beepbeepai_generated_at 
-            ON {$wpdb->postmeta} (meta_key(50), meta_value(50))
+        // Use IF NOT EXISTS equivalent by checking first
+        $index_exists = $wpdb->get_var("
+            SELECT COUNT(*) 
+            FROM information_schema.statistics 
+            WHERE table_schema = DATABASE() 
+            AND table_name = '{$wpdb->postmeta}' 
+            AND index_name = 'idx_beepbeepai_generated_at'
         ");
+        if (!$index_exists) {
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WordPress core table names are safe
+            $wpdb->query("
+                CREATE INDEX idx_beepbeepai_generated_at 
+                ON {$wpdb->postmeta} (meta_key(50), meta_value(50))
+            ");
+        }
         
         // Index for _beepbeepai_source (used in stats aggregation)
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WordPress core table names are safe
-        $wpdb->query("
-            CREATE INDEX idx_beepbeepai_source 
-            ON {$wpdb->postmeta} (meta_key(50), meta_value(50))
+        $index_exists = $wpdb->get_var("
+            SELECT COUNT(*) 
+            FROM information_schema.statistics 
+            WHERE table_schema = DATABASE() 
+            AND table_name = '{$wpdb->postmeta}' 
+            AND index_name = 'idx_beepbeepai_source'
         ");
+        if (!$index_exists) {
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WordPress core table names are safe
+            $wpdb->query("
+                CREATE INDEX idx_beepbeepai_source 
+                ON {$wpdb->postmeta} (meta_key(50), meta_value(50))
+            ");
+        }
         
         // Index for _wp_attachment_image_alt (used in coverage stats)
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WordPress core table names are safe
-        $wpdb->query("
-            CREATE INDEX idx_wp_attachment_alt 
-            ON {$wpdb->postmeta} (meta_key(50), meta_value(100))
+        $index_exists = $wpdb->get_var("
+            SELECT COUNT(*) 
+            FROM information_schema.statistics 
+            WHERE table_schema = DATABASE() 
+            AND table_name = '{$wpdb->postmeta}' 
+            AND index_name = 'idx_wp_attachment_alt'
         ");
+        if (!$index_exists) {
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WordPress core table names are safe
+            $wpdb->query("
+                CREATE INDEX idx_wp_attachment_alt 
+                ON {$wpdb->postmeta} (meta_key(50), meta_value(100))
+            ");
+        }
         
         // Composite index for attachment queries
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WordPress core table names are safe
-        $wpdb->query("
-            CREATE INDEX idx_posts_attachment_image 
-            ON {$wpdb->posts} (post_type(20), post_mime_type(20), post_status(20))
+        $index_exists = $wpdb->get_var("
+            SELECT COUNT(*) 
+            FROM information_schema.statistics 
+            WHERE table_schema = DATABASE() 
+            AND table_name = '{$wpdb->posts}' 
+            AND index_name = 'idx_posts_attachment_image'
         ");
+        if (!$index_exists) {
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WordPress core table names are safe
+            $wpdb->query("
+                CREATE INDEX idx_posts_attachment_image 
+                ON {$wpdb->posts} (post_type(20), post_mime_type(20), post_status(20))
+            ");
+        }
+        
+        // Mark indexes as created to skip on future activations
+        update_option('bbai_performance_indexes_created', true, false);
     }
 
     public function add_settings_page() {

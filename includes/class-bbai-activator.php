@@ -20,7 +20,9 @@ class Activator {
 	public static function activate() {
 		// Check for OptiAI Core plugin and migrate if needed
 		// Use leading backslash to reference global namespace class
-		if (class_exists('\OptiAI_Migration')) {
+		// Skip migration check if already migrated to speed up activation
+		$already_migrated = get_option('bbai_framework_migrated', false);
+		if (!$already_migrated && class_exists('\OptiAI_Migration')) {
 			$migration_needed = \OptiAI_Migration::migration_needed();
 			if ($migration_needed) {
 				\OptiAI_Migration::run_migration();
