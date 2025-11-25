@@ -244,16 +244,18 @@ class UpcomingPluginsSubscribeModal {
             padding: 10px 20px;
             font-size: 14px;
             font-weight: 600;
-            color: #3A74FF;
-            background: #ffffff;
-            border: 2px solid #3A74FF;
+            color: #3A74FF !important;
+            background: #ffffff !important;
+            border: 2px solid #3A74FF !important;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s ease;
-            display: block;
+            display: block !important;
             width: 100%;
             text-align: center;
             box-shadow: 0 2px 4px rgba(58, 116, 255, 0.1);
+            visibility: visible !important;
+            opacity: 1 !important;
         }
         
         .bbai-upcoming-plugins-subscribe-btn:hover {

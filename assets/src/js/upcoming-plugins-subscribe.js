@@ -27,6 +27,14 @@ class BbAIUpcomingPluginsSubscribe {
         this.modal = document.getElementById('bbai-upcoming-plugins-subscribe-modal');
         this.subscribeButton = document.getElementById('bbai-upcoming-plugins-subscribe-btn');
         
+        // Debug: Log if elements are found
+        if (!this.subscribeButton) {
+            console.warn('[OpttiAI] Subscribe button not found in DOM');
+        }
+        if (!this.modal) {
+            console.warn('[OpttiAI] Subscribe modal not found in DOM');
+        }
+        
         if (this.modal) {
             this.form = this.modal.querySelector('#bbai-upcoming-plugins-subscribe-form');
             this.messageElement = this.modal.querySelector('#bbai-upcoming-plugins-subscribe-message');
@@ -37,6 +45,17 @@ class BbAIUpcomingPluginsSubscribe {
         
         if (this.subscribeButton) {
             this.subscribeButton.addEventListener('click', () => this.showModal());
+            // Ensure button is visible
+            this.subscribeButton.style.display = 'block';
+            this.subscribeButton.style.visibility = 'visible';
+        } else {
+            // Fallback: try to find button by class if ID doesn't work
+            const fallbackButton = document.querySelector('.bbai-upcoming-plugins-subscribe-btn');
+            if (fallbackButton) {
+                this.subscribeButton = fallbackButton;
+                this.subscribeButton.addEventListener('click', () => this.showModal());
+                console.log('[OpttiAI] Found subscribe button via class selector');
+            }
         }
     }
 
