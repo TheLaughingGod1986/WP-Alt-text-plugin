@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: BeepBeep AI – Alt Text Generator
- * Description: Automatically generates SEO-optimized AI alt text for WordPress.
+ * Description: AI-powered image alt text generator that boosts WordPress SEO, accessibility, and image rankings automatically.
  * Version: 4.2.3
  * Author: beepbeepv2
- * Author URI: https://oppti.dev
- * Plugin URI: https://oppti.dev/plugins/alt-text
+ * Author URI: https://oppti.dev/
+ * Plugin URI: https://oppti.dev/
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: beepbeep-ai-alt-text-generator
