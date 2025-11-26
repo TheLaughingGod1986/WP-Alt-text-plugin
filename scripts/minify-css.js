@@ -47,7 +47,10 @@ async function minifyFile(inputFile) {
         }
 
         const css = await fs.promises.readFile(inputPath, 'utf8');
-        const result = await cssnano.process(css, { from: inputPath, to: outputPath });
+        
+        // cssnano v5+ uses a different API - it's a PostCSS plugin
+        const postcss = require('postcss');
+        const result = await postcss([cssnano()]).process(css, { from: inputPath, to: outputPath });
 
         await fs.promises.mkdir(path.dirname(outputPath), { recursive: true });
         await fs.promises.writeFile(outputPath, result.css, 'utf8');
