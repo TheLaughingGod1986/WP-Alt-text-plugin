@@ -234,6 +234,23 @@ class Admin_Assets {
 			]
 		);
 		
+		// Add bbai_ajax for regenerate functionality
+		$admin_options = get_option( 'bbai_settings', [] );
+		$production_url = 'https://alttext-ai-backend.onrender.com';
+		$admin_api_url = isset( $admin_options['api_url'] ) && ! empty( $admin_options['api_url'] ) ? $admin_options['api_url'] : $production_url;
+		
+		wp_localize_script(
+			'bbai-admin',
+			'bbai_ajax',
+			[
+				'ajaxurl'   => admin_url( 'admin-ajax.php' ),
+				'ajax_url'  => admin_url( 'admin-ajax.php' ),
+				'nonce'     => wp_create_nonce( 'bbai_upgrade_nonce' ),
+				'api_url'   => $admin_api_url,
+				'can_manage' => method_exists( $core, 'user_can_manage' ) ? $core->user_can_manage() : false,
+			]
+		);
+		
 		// Add Optti API configuration
 		wp_localize_script(
 			'bbai-admin',
