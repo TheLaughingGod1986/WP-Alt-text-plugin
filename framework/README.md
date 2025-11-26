@@ -34,7 +34,7 @@ require_once __DIR__ . '/framework/loader.php';
 Optti_Framework::bootstrap( __FILE__, [
     'plugin_slug'  => 'my-plugin',
     'version'      => '1.0.0',
-    'api_base_url' => 'https://backend.optti.dev',
+    'api_base_url' => 'https://alttext-ai-backend.onrender.com',
     'asset_url'    => plugin_dir_url( __FILE__ ) . 'framework/dist/',
     'asset_dir'    => plugin_dir_path( __FILE__ ) . 'framework/dist/',
 ] );

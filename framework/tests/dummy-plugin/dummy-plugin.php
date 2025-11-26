@@ -24,7 +24,7 @@ require_once __DIR__ . '/../loader.php';
 Optti_Framework::bootstrap( __FILE__, [
 	'plugin_slug'  => 'dummy-optti-plugin',
 	'version'      => DUMMY_PLUGIN_VERSION,
-	'api_base_url' => 'https://backend.optti.dev',
+	'api_base_url' => 'https://alttext-ai-backend.onrender.com',
 	'asset_url'    => DUMMY_PLUGIN_URL . '../dist/',
 	'asset_dir'    => DUMMY_PLUGIN_DIR . '../dist/',
 ] );
