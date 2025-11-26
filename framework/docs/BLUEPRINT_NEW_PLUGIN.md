@@ -184,17 +184,35 @@ class My_Plugin extends PluginBase {
     }
 
     /**
+     * REST controller instance.
+     *
+     * @var \Optti\Framework\REST_Controller|null
+     */
+    protected $rest_controller = null;
+
+    /**
      * Register REST routes.
      *
      * @return void
      */
     public function register_rest_routes() {
+        // Option 1: Use framework REST controller with framework APIs exposed
+        // This gives you auth, billing, license, and usage endpoints automatically
+        // Uncomment to enable:
+        // $this->rest_controller = new \Optti\Framework\REST_Controller( $this );
+        // $this->rest_controller->register_routes();
+
+        // Option 2: Create custom REST controller extending base class
+        // Example:
+        // require_once MY_PLUGIN_DIR . 'includes/class-rest-controller.php';
+        // $this->rest_controller = new My_Plugin_REST_Controller( $this );
+        // $this->rest_controller->register_routes();
+
+        // Option 3: Register routes directly
         register_rest_route( 'my-plugin/v1', '/settings', [
             'methods'  => 'POST',
             'callback' => [ $this, 'handle_settings_save' ],
-            'permission_callback' => function() {
-                return current_user_can( 'manage_options' );
-            },
+            'permission_callback' => [ $this, 'can_manage_options' ],
         ] );
     }
 

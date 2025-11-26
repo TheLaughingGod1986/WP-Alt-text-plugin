@@ -215,13 +215,36 @@ abstract class PluginBase {
 	}
 
 	/**
+	 * REST controller instance.
+	 *
+	 * @var REST_Controller|null
+	 */
+	protected $rest_controller = null;
+
+	/**
 	 * Register REST routes.
 	 * Override this method in child classes to register plugin-specific REST routes.
 	 *
 	 * @return void
 	 */
 	public function register_rest_routes() {
-		// Plugin-specific REST routes should be registered here.
+		// If a REST controller is set, use it.
+		if ( $this->rest_controller ) {
+			$this->rest_controller->register_routes();
+			return;
+		}
+
+		// Otherwise, plugin-specific REST routes should be registered here.
+	}
+
+	/**
+	 * Set REST controller.
+	 *
+	 * @param REST_Controller $controller REST controller instance.
+	 * @return void
+	 */
+	protected function set_rest_controller( REST_Controller $controller ) {
+		$this->rest_controller = $controller;
 	}
 
 	/**

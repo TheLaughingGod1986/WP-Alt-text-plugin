@@ -110,6 +110,22 @@ class OpttiApiClient {
 	}
 
 	/**
+	 * Create checkout session.
+	 *
+	 * @param {string} priceId Price ID.
+	 * @param {string} successUrl Success URL.
+	 * @param {string} cancelUrl Cancel URL.
+	 * @return {Promise} Checkout session.
+	 */
+	async createCheckoutSession( priceId, successUrl = null, cancelUrl = null ) {
+		return this.request( '/billing/checkout', 'POST', {
+			price_id: priceId,
+			success_url: successUrl || window.location.href,
+			cancel_url: cancelUrl || window.location.href,
+		} );
+	}
+
+	/**
 	 * Get billing portal URL.
 	 *
 	 * @param {string} userId User ID.
