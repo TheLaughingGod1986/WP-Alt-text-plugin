@@ -69,6 +69,14 @@ class Admin {
 		$this->hooks = new \BeepBeepAI\AltTextGenerator\Admin_Hooks( $this->core );
 		$this->hooks->register();
 	}
+	
+	/**
+	 * Ensure REST routes are registered even if bootstrap hasn't run yet.
+	 * This is called directly on rest_api_init to guarantee routes are available.
+	 */
+	public function ensure_rest_routes() {
+		$this->bootstrap_core();
+	}
 
 	/**
 	 * Expose the core instance for integration tests or custom extensions.

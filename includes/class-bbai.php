@@ -71,6 +71,8 @@ class Plugin {
 		$plugin_admin = new Admin( $this->get_plugin_name(), $this->get_version() );
 
 		$this->loader->add_action( 'init', $plugin_admin, 'bootstrap_core', 0 );
+		// Ensure REST routes are registered on rest_api_init (may fire before init)
+		$this->loader->add_action( 'rest_api_init', $plugin_admin, 'ensure_rest_routes', 0 );
 	}
 
 	/**
