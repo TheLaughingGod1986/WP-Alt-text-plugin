@@ -8,10 +8,10 @@
 let postJson;
 if (typeof window.postJson === 'function') {
     postJson = window.postJson;
-} else if (typeof window.bbai_ajax?.api_url !== 'undefined') {
+} else if (typeof opttiApi?.baseUrl !== 'undefined' || typeof window.bbai_ajax?.api_url !== 'undefined') {
     // Fallback implementation if apiClient not loaded
     postJson = function(path, body) {
-        const apiUrl = window.bbai_ajax.api_url;
+        const apiUrl = opttiApi?.baseUrl || window.bbai_ajax?.api_url;
         if (!apiUrl) {
             return Promise.reject(new Error('API URL not configured'));
         }
@@ -45,11 +45,20 @@ async function sendWelcomeEmail(email) {
     }
 
     try {
-        // Use /email/dashboard endpoint for welcome emails
-        return await postJson('/email/dashboard', {
+        // Use sendPluginSignup from optti-api.js if available
+        if (typeof window.sendPluginSignup === 'function') {
+            return await window.sendPluginSignup({
+                email,
+                plugin: opttiApi?.plugin || 'beepbeep-ai',
+                site: opttiApi?.site || window.location.origin
+            });
+        }
+        
+        // Fallback to direct API call
+        return await postJson('/email/plugin-signup', {
             email: email,
-            plugin: 'alt-text-ai',
-            source: 'welcome'
+            plugin: opttiApi?.plugin || 'beepbeep-ai',
+            site: opttiApi?.site || window.location.origin
         });
     } catch (error) {
         // Log error but don't expose internal details to user

@@ -775,10 +775,12 @@ class BbAI_Core {
     }
 
     public function add_settings_page() {
-        $cap = current_user_can(self::CAPABILITY) ? self::CAPABILITY : 'manage_options';
+        // Use manage_options as the capability for page registration
+        // The render function will check user_can_manage() for actual access control
+        $cap = 'manage_options';
         add_media_page(
-            'AI Alt Text Generation',
-            'AI Alt Text Generation',
+            __( 'BeepBeep AI - Alt Text Generator', 'wp-alt-text-plugin' ),
+            __( 'BeepBeep AI', 'wp-alt-text-plugin' ),
             $cap,
             'bbai',
             [$this, 'render_settings_page']
@@ -4607,12 +4609,19 @@ class BbAI_Core {
                                     }
                                     
                                     // Handle plugin signup email if opted in
-                                    if (emailOptIn && typeof window.sendPluginSignupEmail === 'function') {
-                                        window.sendPluginSignupEmail(userEmail, window.location.origin, 'alt-text')
-                                            .catch(err => {
-                                                console.error('Plugin signup email failed:', err);
-                                                // Don't show error to user, preferences were saved
-                                            });
+                                    if (emailOptIn) {
+                                        try {
+                                            const result = typeof window.sendPluginSignup === 'function' 
+                                                ? await window.sendPluginSignup({ email: userEmail })
+                                                : typeof window.sendPluginSignupEmail === 'function'
+                                                    ? await window.sendPluginSignupEmail(userEmail, window.location.origin, 'alt-text')
+                                                    : null;
+                                            if (result && !result.ok) {
+                                                console.warn("Signup email fallback triggered");
+                                            }
+                                        } catch (e) {
+                                            console.warn("Silent fallback: signup failed but continuing", e);
+                                        }
                                     }
                                 } else {
                                     $message.removeClass().addClass('alttext-alert alttext-alert--error')
@@ -6290,8 +6299,10 @@ class BbAI_Core {
         ];
 
         // Load on Media Library and attachment edit contexts (modal also)
+        // For dashboard page, bbai-admin depends on bbai-dashboard to get BBAI_DASH config
+        $admin_deps = ($hook === 'media_page_bbai') ? ['jquery', 'bbai-dashboard'] : ['jquery'];
         if (in_array($hook, ['upload.php', 'post.php', 'post-new.php', 'media_page_bbai'], true)){
-            wp_enqueue_script('bbai-admin', $base_url . $admin_file, ['jquery'], $admin_version, true);
+            wp_enqueue_script('bbai-admin', $base_url . $admin_file, $admin_deps, $admin_version, true);
             wp_localize_script('bbai-admin', 'BBAI', [
                 'nonce'     => wp_create_nonce('wp_rest'),
                 'rest'      => esc_url_raw( rest_url('bbai/v1/') ),
@@ -6322,6 +6333,13 @@ class BbAI_Core {
                 'nonce'   => wp_create_nonce('bbai_upgrade_nonce'),
                 'api_url' => $admin_api_url,
                 'can_manage' => $this->user_can_manage(),
+            ]);
+            
+            // Add Optti API configuration
+            wp_localize_script('bbai-admin', 'opttiApi', [
+                'baseUrl' => 'https://alttext-ai-backend.onrender.com',
+                'plugin' => 'beepbeep-ai',
+                'site'   => home_url()
             ]);
         }
 
@@ -6418,24 +6436,34 @@ class BbAI_Core {
             $stats_data = $this->get_media_stats();
             $usage_data = BbAI_Usage_Tracker::get_stats_display();
             
+            // Enqueue optti-api.js FIRST - shared API module for all Optti plugins
+            $optti_api_js = $asset_path($js_base, 'optti-api', $use_debug_assets, 'js');
+            wp_enqueue_script(
+                'optti-api',
+                $base_url . $optti_api_js,
+                ['jquery'],
+                $asset_version($optti_api_js, '1.0.0'),
+                true
+            );
+            
             wp_enqueue_script(
                 'bbai-dashboard',
                 $base_url . $js_file,
-                ['jquery', 'wp-api-fetch'],
+                ['jquery', 'wp-api-fetch', 'optti-api'],
                 $asset_version($js_file, '3.0.0'),
                 true
             );
             wp_enqueue_script(
                 'bbai-upgrade',
                 $base_url . $upgrade_js,
-                ['jquery'],
+                ['jquery', 'optti-api'],
                 $asset_version($upgrade_js, '3.1.0'),
                 true
             );
             wp_enqueue_script(
                 'bbai-auth',
                 $base_url . $auth_js,
-                ['jquery'],
+                ['jquery', 'optti-api'],
                 $asset_version($auth_js, '4.0.0'),
                 true
             );
@@ -6443,14 +6471,14 @@ class BbAI_Core {
             wp_enqueue_script(
                 'bbai-email-helper',
                 $base_url . $email_helper_js,
-                [],
+                ['optti-api'],
                 $asset_version($email_helper_js, '1.0.0'),
                 true
             );
             wp_enqueue_script(
                 'bbai-waitlist',
                 $base_url . $waitlist_js,
-                ['bbai-email-helper'],
+                ['bbai-email-helper', 'optti-api'],
                 $asset_version($waitlist_js, '1.0.0'),
                 true
             );
@@ -6564,6 +6592,13 @@ class BbAI_Core {
                 'can_manage' => $this->user_can_manage(),
             ]);
             
+            // Add Optti API configuration
+            wp_localize_script('bbai-dashboard', 'opttiApi', [
+                'baseUrl' => 'https://alttext-ai-backend.onrender.com',
+                'plugin' => 'beepbeep-ai',
+                'site'   => home_url()
+            ]);
+            
             wp_localize_script('bbai-dashboard', 'BBAI_DASH_L10N', [
                 'l10n'        => array_merge([
                     'processing'         => __('Generating ALT text…', 'wp-alt-text-plugin'),
@@ -6595,6 +6630,13 @@ class BbAI_Core {
                 'priceIds' => $checkout_prices,
                 'restPlans' => esc_url_raw( rest_url('bbai/v1/plans') ),
                 'canManage' => $this->user_can_manage(),
+            ]);
+            
+            // Add Optti API configuration
+            wp_localize_script('bbai-upgrade', 'opttiApi', [
+                'baseUrl' => 'https://alttext-ai-backend.onrender.com',
+                'plugin' => 'beepbeep-ai',
+                'site'   => home_url()
             ]);
 
         }

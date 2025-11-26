@@ -11,7 +11,12 @@ class BbAIWaitlistModal {
     }
 
     getApiUrl() {
-        // First check for configured API URL
+        // First check for opttiApi baseUrl
+        if (opttiApi?.baseUrl) {
+            return opttiApi.baseUrl;
+        }
+        
+        // Fallback to legacy API URL
         if (window.bbai_ajax?.api_url) {
             return window.bbai_ajax.api_url;
         }
@@ -123,12 +128,21 @@ class BbAIWaitlistModal {
     }
 
     async sendWelcomeEmail(email) {
+        // Use sendPluginSignup from optti-api.js if available
+        if (typeof window.sendPluginSignup === 'function') {
+            return await window.sendPluginSignup({
+                email,
+                plugin: opttiApi?.plugin || 'beepbeep-ai',
+                site: opttiApi?.site || window.location.origin
+            });
+        }
+        
         // Use postJson from apiClient if available
         if (typeof window.postJson === 'function') {
-            return await window.postJson('/email/dashboard', {
+            return await window.postJson('/email/plugin-signup', {
                 email: email,
-                plugin: 'alt-text-ai',
-                source: 'waitlist'
+                plugin: opttiApi?.plugin || 'beepbeep-ai',
+                site: opttiApi?.site || window.location.origin
             });
         }
         
@@ -138,19 +152,20 @@ class BbAIWaitlistModal {
         }
         
         // Final fallback if nothing loaded
-        if (!this.apiUrl) {
+        const apiUrl = opttiApi?.baseUrl || this.apiUrl;
+        if (!apiUrl) {
             throw new Error('API URL not configured');
         }
 
-        const response = await fetch(`${this.apiUrl}/email/dashboard`, {
+        const response = await fetch(`${apiUrl}/email/plugin-signup`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 email: email,
-                plugin: 'alt-text-ai',
-                source: 'waitlist'
+                plugin: opttiApi?.plugin || 'beepbeep-ai',
+                site: opttiApi?.site || window.location.origin
             })
         });
 

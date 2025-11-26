@@ -27,13 +27,13 @@
         setup() {
             // Get data from PHP
             if (window.bbaiDashboardSignupData) {
-                this.apiUrl = window.bbaiDashboardSignupData.apiUrl || (window.bbai_ajax && window.bbai_ajax.api_url);
+                this.apiUrl = opttiApi?.baseUrl || window.bbaiDashboardSignupData.apiUrl || (window.bbai_ajax && window.bbai_ajax.api_url);
                 this.siteDomain = window.bbaiDashboardSignupData.siteDomain || '';
                 this.nonce = window.bbaiDashboardSignupData.nonce || '';
                 this.ajaxUrl = window.bbaiDashboardSignupData.ajaxUrl || (window.bbai_ajax && window.bbai_ajax.ajaxurl);
             } else {
-                // Fallback to window.bbai_ajax
-                this.apiUrl = window.bbai_ajax && window.bbai_ajax.api_url;
+                // Fallback to opttiApi or window.bbai_ajax
+                this.apiUrl = opttiApi?.baseUrl || (window.bbai_ajax && window.bbai_ajax.api_url);
                 this.ajaxUrl = window.bbai_ajax && window.bbai_ajax.ajaxurl;
             }
 
@@ -125,31 +125,37 @@
         }
 
     async submitToBackend(email, name) {
+        // Use sendPluginSignup from optti-api.js if available
+        if (typeof window.sendPluginSignup === 'function') {
+            return await window.sendPluginSignup({
+                email,
+                plugin: opttiApi?.plugin || 'beepbeep-ai',
+                site: opttiApi?.site || window.location.origin
+            });
+        }
+        
         // Use postJson from apiClient if available
         if (typeof window.postJson === 'function') {
-            return await window.postJson('/email/dashboard', {
+            return await window.postJson('/email/plugin-signup', {
                 email: email,
-                name: name,
-                plugin: 'alttext',
-                source: 'dashboard',
-                domain: this.siteDomain
+                plugin: opttiApi?.plugin || 'beepbeep-ai',
+                site: opttiApi?.site || window.location.origin
             });
         }
         
         // Fallback if apiClient not loaded
-        if (!this.apiUrl) {
+        const apiUrl = opttiApi?.baseUrl || this.apiUrl;
+        if (!apiUrl) {
             throw new Error('API URL not configured');
         }
 
         const payload = {
             email: email,
-            name: name,
-            plugin: 'alttext',
-            source: 'dashboard',
-            domain: this.siteDomain
+            plugin: opttiApi?.plugin || 'beepbeep-ai',
+            site: opttiApi?.site || window.location.origin
         };
 
-        const response = await fetch(`${this.apiUrl}/email/dashboard`, {
+        const response = await fetch(`${apiUrl}/email/plugin-signup`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

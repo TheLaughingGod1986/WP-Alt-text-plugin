@@ -156,8 +156,19 @@ class BbAIUpcomingPluginsSubscribe {
                 );
             }
 
-            // Send email notification
-            if (typeof window.sendPluginSignupEmail === 'function') {
+            // Send email notification using standardized signup
+            if (typeof window.sendPluginSignup === 'function') {
+                promises.push(
+                    window.sendPluginSignup({
+                        email,
+                        plugin: 'upcoming-plugins',
+                        site: siteUrl || opttiApi?.site || window.location.origin
+                    }).catch(err => {
+                        console.warn('Email notification failed:', err);
+                        // Don't throw - continue
+                    })
+                );
+            } else if (typeof window.sendPluginSignupEmail === 'function') {
                 promises.push(
                     window.sendPluginSignupEmail(email, siteUrl, 'upcoming-plugins')
                         .catch(err => {
@@ -168,11 +179,10 @@ class BbAIUpcomingPluginsSubscribe {
             } else if (typeof window.postJson === 'function') {
                 // Fallback: use postJson directly
                 promises.push(
-                    window.postJson('/email/dashboard', {
+                    window.postJson('/email/plugin-signup', {
                         email: email,
                         plugin: 'upcoming-plugins',
-                        source: 'banner',
-                        siteUrl: siteUrl
+                        site: siteUrl || opttiApi?.site || window.location.origin
                     }).catch(err => {
                         console.warn('Email notification failed:', err);
                     })

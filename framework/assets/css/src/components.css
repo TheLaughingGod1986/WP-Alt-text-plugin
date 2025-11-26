@@ -1,0 +1,140 @@
+/**
+ * Components
+ *
+ * Reusable UI components.
+ */
+
+/* Buttons */
+.optti-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: var(--optti-spacing-sm) var(--optti-spacing-md);
+	font-size: var(--optti-font-size-base);
+	font-weight: var(--optti-font-weight-medium);
+	line-height: var(--optti-line-height-normal);
+	border: 1px solid transparent;
+	border-radius: var(--optti-radius-md);
+	cursor: pointer;
+	transition: all 0.2s ease;
+	text-decoration: none;
+}
+
+.optti-button--primary {
+	background-color: var(--optti-color-primary);
+	color: #fff;
+}
+
+.optti-button--primary:hover {
+	background-color: var(--optti-color-primary-dark);
+}
+
+.optti-button--secondary {
+	background-color: var(--optti-color-secondary);
+	color: #fff;
+}
+
+.optti-button--outline {
+	background-color: transparent;
+	border-color: var(--optti-color-primary);
+	color: var(--optti-color-primary);
+}
+
+.optti-button--ghost {
+	background-color: transparent;
+	color: var(--optti-color-primary);
+}
+
+/* Forms */
+.optti-form__field {
+	width: 100%;
+	padding: var(--optti-spacing-sm) var(--optti-spacing-md);
+	font-size: var(--optti-font-size-base);
+	border: 1px solid #ddd;
+	border-radius: var(--optti-radius-md);
+}
+
+.optti-form__field--error {
+	border-color: var(--optti-color-error);
+}
+
+/* Tables */
+.optti-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.optti-table--striped tbody tr:nth-child(even) {
+	background-color: #f9f9f9;
+}
+
+.optti-table--bordered {
+	border: 1px solid #ddd;
+}
+
+.optti-table--bordered th,
+.optti-table--bordered td {
+	border: 1px solid #ddd;
+	padding: var(--optti-spacing-sm);
+}
+
+/* Badges */
+.optti-badge {
+	display: inline-block;
+	padding: var(--optti-spacing-xs) var(--optti-spacing-sm);
+	font-size: var(--optti-font-size-xs);
+	font-weight: var(--optti-font-weight-medium);
+	border-radius: var(--optti-radius-full);
+}
+
+.optti-badge--success {
+	background-color: var(--optti-color-success);
+	color: #fff;
+}
+
+.optti-badge--error {
+	background-color: var(--optti-color-error);
+	color: #fff;
+}
+
+/* Alerts */
+.optti-alert {
+	padding: var(--optti-spacing-md);
+	border-radius: var(--optti-radius-md);
+	border-left: 4px solid;
+}
+
+.optti-alert--success {
+	background-color: #f0f9f4;
+	border-color: var(--optti-color-success);
+	color: #1e4620;
+}
+
+.optti-alert--error {
+	background-color: #fef2f2;
+	border-color: var(--optti-color-error);
+	color: #7f1d1d;
+}
+
+/* Cards */
+.optti-card {
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: var(--optti-radius-lg);
+	box-shadow: var(--optti-shadow-sm);
+}
+
+.optti-card__header {
+	padding: var(--optti-spacing-md);
+	border-bottom: 1px solid #ddd;
+}
+
+.optti-card__body {
+	padding: var(--optti-spacing-md);
+}
+
+.optti-card__footer {
+	padding: var(--optti-spacing-md);
+	border-top: 1px solid #ddd;
+}
+

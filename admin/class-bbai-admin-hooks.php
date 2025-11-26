@@ -35,6 +35,9 @@ class Admin_Hooks {
 	 * Register all hooks with WordPress.
 	 */
 	public function register() {
+		// Ensure capability is set up early, before menu registration.
+		$this->core->ensure_capability();
+		
 		add_action( 'admin_menu', [ $this->core, 'add_settings_page' ] );
 		add_action( 'admin_menu', [ __CLASS__, 'register_credit_usage_page' ] );
 		add_action( 'admin_init', [ $this->core, 'register_settings' ] );
@@ -49,7 +52,8 @@ class Admin_Hooks {
 		add_filter( 'media_row_actions', [ $this->core, 'row_action_link' ], 10, 2 );
 		add_filter( 'attachment_fields_to_edit', [ $this->core, 'attachment_fields_to_edit' ], 15, 2 );
 
-		add_action( 'rest_api_init', [ $this->rest_controller, 'register_routes' ] );
+		// Register REST routes - use priority 10 to ensure it runs after WordPress core routes
+		add_action( 'rest_api_init', [ $this->rest_controller, 'register_routes' ], 10 );
 		add_action( 'admin_enqueue_scripts', [ $this->core, 'enqueue_admin' ] );
 		add_action( 'admin_init', [ $this->core, 'maybe_display_threshold_notice' ] );
 		add_action( 'admin_init', [ $this->core, 'maybe_handle_direct_checkout' ] );

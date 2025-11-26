@@ -10,7 +10,7 @@
  * @returns {Promise<object>} Response data
  */
 function postJson(path, body) {
-    const apiUrl = window.bbai_ajax?.api_url;
+    const apiUrl = opttiApi?.baseUrl || window.bbai_ajax?.api_url;
     
     if (!apiUrl) {
         return Promise.reject(new Error('API URL not configured'));

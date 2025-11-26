@@ -1,0 +1,62 @@
+/**
+ * Design Tokens
+ *
+ * CSS variables for colors, spacing, typography, etc.
+ */
+
+:root {
+	/* Colors */
+	--optti-color-primary: #0073aa;
+	--optti-color-primary-dark: #005177;
+	--optti-color-primary-light: #00a0d2;
+	--optti-color-secondary: #23282d;
+	--optti-color-success: #46b450;
+	--optti-color-error: #dc3232;
+	--optti-color-warning: #ffb900;
+	--optti-color-info: #00a0d2;
+
+	/* Spacing */
+	--optti-spacing-xs: 4px;
+	--optti-spacing-sm: 8px;
+	--optti-spacing-md: 16px;
+	--optti-spacing-lg: 24px;
+	--optti-spacing-xl: 32px;
+	--optti-spacing-2xl: 48px;
+	--optti-spacing-3xl: 64px;
+
+	/* Typography */
+	--optti-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	--optti-font-size-xs: 11px;
+	--optti-font-size-sm: 13px;
+	--optti-font-size-base: 14px;
+	--optti-font-size-lg: 16px;
+	--optti-font-size-xl: 18px;
+	--optti-font-size-2xl: 24px;
+	--optti-font-size-3xl: 32px;
+	--optti-font-weight-normal: 400;
+	--optti-font-weight-medium: 500;
+	--optti-font-weight-semibold: 600;
+	--optti-font-weight-bold: 700;
+	--optti-line-height-tight: 1.25;
+	--optti-line-height-normal: 1.5;
+	--optti-line-height-relaxed: 1.75;
+
+	/* Border Radius */
+	--optti-radius-sm: 2px;
+	--optti-radius-md: 4px;
+	--optti-radius-lg: 8px;
+	--optti-radius-xl: 12px;
+	--optti-radius-full: 9999px;
+
+	/* Shadows */
+	--optti-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+	--optti-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+	--optti-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+	--optti-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+
+	/* Breakpoints */
+	--optti-breakpoint-mobile: 480px;
+	--optti-breakpoint-tablet: 768px;
+	--optti-breakpoint-desktop: 1024px;
+}
+

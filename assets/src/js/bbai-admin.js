@@ -375,9 +375,17 @@
         if ($btn.prop('disabled')) {
             return false;
         }
-        
-        // Check if we have necessary configuration
-        if (!hasBulkConfig) {
+
+        // Check if we have necessary configuration (check dynamically in case BBAI_DASH loads after script)
+        var currentConfig = window.BBAI_DASH || window.BBAI || config;
+        var hasConfig = currentConfig.rest && currentConfig.nonce;
+        if (!hasConfig) {
+            console.error('[AI Alt Text] Missing REST config:', {
+                BBAI_DASH: !!window.BBAI_DASH,
+                BBAI: !!window.BBAI,
+                config: config,
+                currentConfig: currentConfig
+            });
             alert('Configuration error. Please refresh the page and try again.');
             return false;
         }
@@ -425,12 +433,13 @@
         $btn.prop('disabled', true);
         $btn.text('Loading...');
 
-        // Get list of all images
+        // Get list of all images (use dynamically checked config)
+        var currentConfig = window.BBAI_DASH || window.BBAI || config;
         $.ajax({
-            url: config.restAll || (config.restRoot + 'bbai/v1/list?scope=all'),
+            url: currentConfig.restAll || (currentConfig.restRoot + 'bbai/v1/list?scope=all'),
             method: 'GET',
             headers: {
-                'X-WP-Nonce': config.nonce
+                'X-WP-Nonce': currentConfig.nonce
             },
             data: {
                 limit: 500

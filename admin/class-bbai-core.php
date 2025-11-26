@@ -69,12 +69,30 @@ class Core {
     private $account_summary = null;
 
     public function user_can_manage(){
-        return current_user_can(self::CAPABILITY) || current_user_can('manage_options');
+        // Check multiple capabilities to ensure access works.
+        // Administrators should always have manage_options.
+        if (current_user_can('manage_options')) {
+            return true;
+        }
+        // Also check the custom capability if it exists.
+        if (current_user_can(self::CAPABILITY)) {
+            return true;
+        }
+        // Fallback: check if user is administrator role.
+        $user = wp_get_current_user();
+        if ($user && in_array('administrator', (array) $user->roles)) {
+            return true;
+        }
+        return false;
     }
 
     public function __construct() {
+        // Ensure capability is set immediately in constructor (before any hooks).
+        // This ensures administrators have the custom capability from the start.
+        $this->ensure_capability();
+        
         // Use Phase 2 API client (JWT-based authentication)
-        $this->api_client = new API_Client_V2();
+        $this->api_client = new \BeepBeepAI\AltTextGenerator\API_Client_V2();
         // Soft-migrate legacy options to new prefixed keys
         $current = get_option(self::OPTION_KEY, null);
         if ($current === null) {
@@ -336,9 +354,18 @@ class Core {
     }
 
     public function ensure_capability(){
+        // Ensure all administrator users have the custom capability.
         $role = get_role('administrator');
         if ($role && !$role->has_cap(self::CAPABILITY)){
             $role->add_cap(self::CAPABILITY);
+        }
+        
+        // Also ensure super admins have it (for multisite).
+        if (is_multisite()) {
+            $super_admin_role = get_role('administrator');
+            if ($super_admin_role && !$super_admin_role->has_cap(self::CAPABILITY)){
+                $super_admin_role->add_cap(self::CAPABILITY);
+            }
         }
     }
 
@@ -979,21 +1006,31 @@ class Core {
     }
 
     public function add_settings_page() {
-        $cap = current_user_can(self::CAPABILITY) ? self::CAPABILITY : 'manage_options';
-        add_media_page(
+        // Ensure capability is set before registering menu.
+        $this->ensure_capability();
+        
+        // Use 'upload_files' as the capability - this is required by add_media_page().
+        // Administrators always have this capability.
+        // Fine-grained permission checks happen inside render_settings_page() via user_can_manage().
+        $hook = add_media_page(
             'BeepBeep AI – Alt Text Generator',
             'BeepBeep AI',
-            $cap,
+            'upload_files', // Required capability for media pages
             'bbai',
             [$this, 'render_settings_page']
         );
+        
+        // If menu registration failed, log it for debugging.
+        if (empty($hook) && defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('BeepBeep AI: Failed to register admin menu. Current user can upload_files: ' . (current_user_can('upload_files') ? 'yes' : 'no'));
+        }
 
         // Hidden checkout redirect page
         add_submenu_page(
             null, // No parent = hidden from menu
             'Checkout',
             'Checkout',
-            $cap,
+            'upload_files', // Use same capability as main menu
             'bbai-checkout',
             [$this, 'handle_checkout_redirect']
         );
@@ -1077,7 +1114,11 @@ class Core {
     }
 
     public function render_settings_page() {
-        if (!$this->user_can_manage()) return;
+        // Double-check permissions - if user can upload files, they should be able to access this.
+        // This is a media page, so upload_files is the primary requirement.
+        if (!current_user_can('upload_files') && !$this->user_can_manage()) {
+            wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'beepbeep-ai-alt-text-generator' ) );
+        }
         $opts  = get_option(self::OPTION_KEY, []);
         $stats = $this->get_media_stats();
         $nonce = wp_create_nonce(self::NONCE_KEY);
@@ -6840,6 +6881,13 @@ class Core {
                 'nonce'   => wp_create_nonce('beepbeepai_nonce'),
                 'can_manage' => $this->user_can_manage(),
             ]);
+            
+            // Add Optti API configuration
+            wp_localize_script('bbai-admin', 'opttiApi', [
+                'baseUrl' => 'https://alttext-ai-backend.onrender.com',
+                'plugin' => 'beepbeep-ai',
+                'site'   => home_url()
+            ]);
         }
 
         if ($hook === 'media_page_bbai'){
@@ -7210,93 +7258,204 @@ class Core {
      * AJAX handler: Regenerate single image alt text
      */
     public function ajax_regenerate_single() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
-        
-        if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => 'Unauthorized']);
-        }
-        
-        $attachment_id_raw = isset($_POST['attachment_id']) ? wp_unslash($_POST['attachment_id']) : '';
-        $attachment_id = absint($attachment_id_raw);
-        if (!$attachment_id) {
-            wp_send_json_error(['message' => 'Invalid attachment ID']);
-        }
-        
-        // CRITICAL: Log the attachment_id being received to debug why backend sees wrong ID
-        if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-            \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Regenerate request received', [
-                'attachment_id_raw' => $attachment_id_raw,
-                'attachment_id' => $attachment_id,
-                'post_data_keys' => array_keys($_POST),
-            ], 'generation');
-        }
-        
-        $has_license = $this->api_client->has_active_license();
+        // Wrap in try-catch to prevent fatal errors from causing 500 responses
+        try {
+            // Check nonce - use wp_verify_nonce if check_ajax_referer fails
+            $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+            if (!wp_verify_nonce($nonce, 'beepbeepai_nonce')) {
+                wp_send_json_error(['message' => 'Security check failed. Please refresh the page and try again.']);
+                return;
+            }
+            
+            if (!$this->user_can_manage()) {
+                wp_send_json_error(['message' => 'Unauthorized']);
+                return;
+            }
+            
+            $attachment_id_raw = isset($_POST['attachment_id']) ? wp_unslash($_POST['attachment_id']) : '';
+            $attachment_id = absint($attachment_id_raw);
+            if (!$attachment_id) {
+                wp_send_json_error(['message' => 'Invalid attachment ID']);
+                return;
+            }
+            
+            // CRITICAL: Log the attachment_id being received to debug why backend sees wrong ID
+            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Regenerate request received', [
+                    'attachment_id_raw' => $attachment_id_raw,
+                    'attachment_id' => $attachment_id,
+                    'post_data_keys' => array_keys($_POST),
+                ], 'generation');
+            }
+            
+            // Ensure API client is initialized
+            if (!$this->api_client) {
+                // Check if class exists and is properly namespaced
+                if (!class_exists('\BeepBeepAI\AltTextGenerator\API_Client_V2')) {
+                    wp_send_json_error([
+                        'message' => __('API client class not found. Please deactivate and reactivate the plugin.', 'beepbeep-ai-alt-text-generator'),
+                        'code' => 'class_not_found',
+                    ]);
+                    return;
+                }
+                $this->api_client = new \BeepBeepAI\AltTextGenerator\API_Client_V2();
+            }
+            
+            // Ensure API client methods are available
+            if (!method_exists($this->api_client, 'has_active_license')) {
+                wp_send_json_error([
+                    'message' => __('API client not properly initialized. Please refresh the page and try again.', 'beepbeep-ai-alt-text-generator'),
+                    'code' => 'api_client_error',
+                ]);
+                return;
+            }
+            
+            $has_license = $this->api_client->has_active_license();
 
-        // Check if user has reached their limit (skip in local dev mode and for license accounts)
-        // Use has_reached_limit() which includes cached usage fallback for better reliability
-        if (!$has_license && (!defined('WP_LOCAL_DEV') || !WP_LOCAL_DEV)) {
-            if ($this->api_client->has_reached_limit()) {
-                // Get usage data for the error response (prefer cached if API failed)
-                $usage = $this->api_client->get_usage();
-                if (is_wp_error($usage)) {
-                    // Fall back to cached usage for display
-                    require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
-                    $usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
+            // Check if user has reached their limit (skip in local dev mode and for license accounts)
+            // Use has_reached_limit() which includes cached usage fallback for better reliability
+            if (!$has_license && (!defined('WP_LOCAL_DEV') || !WP_LOCAL_DEV)) {
+                if (method_exists($this->api_client, 'has_reached_limit') && $this->api_client->has_reached_limit()) {
+                    // Get usage data for the error response (prefer cached if API failed)
+                    $usage = null;
+                    if (method_exists($this->api_client, 'get_usage')) {
+                        $usage = $this->api_client->get_usage();
+                        if (is_wp_error($usage)) {
+                            // Fall back to cached usage for display
+                            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+                            $usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
+                        }
+                    }
+                    
+                    wp_send_json_error([
+                        'message' => 'Monthly limit reached',
+                        'code' => 'limit_reached',
+                        'usage' => is_array($usage) ? $usage : null
+                    ]);
+                    return;
+                }
+            }
+            
+            // Ensure generate_and_save method exists
+            if (!method_exists($this, 'generate_and_save')) {
+                wp_send_json_error([
+                    'message' => __('Generation method not available. Please refresh the page and try again.', 'beepbeep-ai-alt-text-generator'),
+                    'code' => 'method_not_found',
+                ]);
+                return;
+            }
+            
+            $result = $this->generate_and_save($attachment_id, 'ajax', 1, [], true);
+
+            if (is_wp_error($result)) {
+                $error_code = $result->get_error_code();
+                $error_message = $result->get_error_message();
+                $error_data = $result->get_error_data();
+                
+                // Provide more user-friendly error messages
+                $user_message = $error_message;
+                
+                // Handle specific error codes with better messages
+                if ($error_code === 'missing_alt_text') {
+                    $user_message = __('The API returned a response but no alt text was generated. This may be a temporary issue. Please try again.', 'beepbeep-ai-alt-text-generator');
+                } elseif ($error_code === 'api_response_invalid') {
+                    $user_message = __('The API response was invalid. Please try again in a moment.', 'beepbeep-ai-alt-text-generator');
+                } elseif ($error_code === 'quota_check_mismatch') {
+                    $user_message = __('Credits appear available but the backend reported a limit. Please try again in a moment.', 'beepbeep-ai-alt-text-generator');
+                } elseif ($error_code === 'limit_reached' || $error_code === 'quota_exhausted') {
+                    $user_message = __('Monthly quota exhausted. Please upgrade to continue generating alt text.', 'beepbeep-ai-alt-text-generator');
+                } elseif ($error_code === 'api_timeout') {
+                    $user_message = __('The request timed out. Please try again.', 'beepbeep-ai-alt-text-generator');
+                } elseif ($error_code === 'api_unreachable') {
+                    $user_message = __('Unable to reach the server. Please check your internet connection and try again.', 'beepbeep-ai-alt-text-generator');
                 }
                 
                 wp_send_json_error([
-                    'message' => 'Monthly limit reached',
-                    'code' => 'limit_reached',
-                    'usage' => is_array($usage) ? $usage : null
+                    'message' => $user_message,
+                    'code'    => $error_code,
+                    'data'    => $error_data,
                 ]);
+                return;
             }
-        }
-        
-        $result = $this->generate_and_save($attachment_id, 'ajax', 1, [], true);
 
-        if (is_wp_error($result)) {
-            $error_code = $result->get_error_code();
-            $error_message = $result->get_error_message();
-            $error_data = $result->get_error_data();
+            \BeepBeepAI\AltTextGenerator\Usage_Tracker::clear_cache();
+            $this->invalidate_stats_cache();
+
+            wp_send_json_success([
+                'message'        => __('Alt text generated successfully.', 'beepbeep-ai-alt-text-generator'),
+                'alt_text'       => $result,
+                'attachment_id'  => $attachment_id,
+                'data'           => [
+                    'alt_text' => $result,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            // Log to PHP error log first (more reliable)
+            error_log('BBAI AJAX Regenerate Exception: ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine());
             
-            // Provide more user-friendly error messages
-            $user_message = $error_message;
+            // Try to log to debug log with minimal context to avoid encoding issues
+            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                try {
+                    // Use minimal, safe context that won't cause encoding issues
+                    $error_context = [
+                        'error' => substr($e->getMessage(), 0, 200), // Limit message length
+                        'file' => basename($e->getFile()), // Just filename, not full path
+                        'line' => $e->getLine(),
+                    ];
+                    \BeepBeepAI\AltTextGenerator\Debug_Log::log('error', 'AJAX regenerate failed', $error_context, 'generation');
+                } catch (\Exception $log_error) {
+                    // If logging fails, just continue - don't break the error response
+                    error_log('BBAI: Failed to log error: ' . $log_error->getMessage());
+                }
+            }
             
-            // Handle specific error codes with better messages
-            if ($error_code === 'missing_alt_text') {
-                $user_message = __('The API returned a response but no alt text was generated. This may be a temporary issue. Please try again.', 'beepbeep-ai-alt-text-generator');
-            } elseif ($error_code === 'api_response_invalid') {
-                $user_message = __('The API response was invalid. Please try again in a moment.', 'beepbeep-ai-alt-text-generator');
-            } elseif ($error_code === 'quota_check_mismatch') {
-                $user_message = __('Credits appear available but the backend reported a limit. Please try again in a moment.', 'beepbeep-ai-alt-text-generator');
-            } elseif ($error_code === 'limit_reached' || $error_code === 'quota_exhausted') {
-                $user_message = __('Monthly quota exhausted. Please upgrade to continue generating alt text.', 'beepbeep-ai-alt-text-generator');
-            } elseif ($error_code === 'api_timeout') {
-                $user_message = __('The request timed out. Please try again.', 'beepbeep-ai-alt-text-generator');
-            } elseif ($error_code === 'api_unreachable') {
-                $user_message = __('Unable to reach the server. Please check your internet connection and try again.', 'beepbeep-ai-alt-text-generator');
+            // Send simple error response
+            $error_msg = $e->getMessage();
+            if (empty($error_msg)) {
+                $error_msg = 'Unknown error occurred';
             }
             
             wp_send_json_error([
-                'message' => $user_message,
-                'code'    => $error_code,
-                'data'    => $error_data,
+                'message' => 'Error: ' . esc_html(substr($error_msg, 0, 200)),
+                'code' => 'internal_error',
             ]);
-            return;
+            exit; // Ensure we stop execution
+        } catch (\Error $e) {
+            // Also catch PHP 7+ Error objects (non-Exception errors)
+            // Log to PHP error log first (more reliable)
+            $error_msg = $e->getMessage();
+            $error_file = $e->getFile();
+            $error_line = $e->getLine();
+            
+            error_log('BBAI AJAX Regenerate Fatal Error: ' . $error_msg . ' in ' . $error_file . ' on line ' . $error_line);
+            
+            // Try to log to debug log with minimal context to avoid encoding issues
+            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                try {
+                    // Use minimal, safe context that won't cause encoding issues
+                    $error_context = [
+                        'error' => substr($error_msg, 0, 200), // Limit message length
+                        'file' => basename($error_file), // Just filename, not full path
+                        'line' => $error_line,
+                    ];
+                    \BeepBeepAI\AltTextGenerator\Debug_Log::log('error', 'AJAX regenerate fatal error', $error_context, 'generation');
+                } catch (\Exception $log_error) {
+                    // If logging fails, just continue - don't break the error response
+                    error_log('BBAI: Failed to log fatal error: ' . $log_error->getMessage());
+                }
+            }
+            
+            // Send simple error response
+            if (empty($error_msg)) {
+                $error_msg = 'Fatal error occurred';
+            }
+            
+            wp_send_json_error([
+                'message' => 'Fatal Error: ' . esc_html(substr($error_msg, 0, 200)),
+                'code' => 'fatal_error',
+            ]);
+            exit; // Ensure we stop execution
         }
-
-        Usage_Tracker::clear_cache();
-        $this->invalidate_stats_cache();
-
-        wp_send_json_success([
-            'message'        => __('Alt text generated successfully.', 'beepbeep-ai-alt-text-generator'),
-            'alt_text'       => $result,
-            'attachment_id'  => $attachment_id,
-            'data'           => [
-                'alt_text' => $result,
-            ],
-        ]);
     }
 
     /**

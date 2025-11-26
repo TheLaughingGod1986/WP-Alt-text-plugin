@@ -10,7 +10,7 @@ if (typeof window.postJson === 'function') {
 } else {
     // Fallback implementation if apiClient not loaded
     postJson = function(path, body) {
-        const apiUrl = window.bbai_ajax?.api_url;
+        const apiUrl = opttiApi?.baseUrl || window.bbai_ajax?.api_url;
         if (!apiUrl) {
             return Promise.reject(new Error('API URL not configured'));
         }
@@ -32,19 +32,29 @@ if (typeof window.postJson === 'function') {
 /**
  * Send plugin signup email to backend
  * @param {string} email - User email address
- * @param {string} siteUrl - Site URL
- * @param {string} pluginName - Plugin name (default: 'alt-text')
+ * @param {string} siteUrl - Site URL (optional, defaults to opttiApi.site)
+ * @param {string} pluginName - Plugin name (optional, defaults to opttiApi.plugin)
  * @returns {Promise<object>} Response from backend
  */
-function sendPluginSignupEmail(email, siteUrl, pluginName = 'alt-text') {
+function sendPluginSignupEmail(email, siteUrl, pluginName) {
     if (!email || !email.includes('@')) {
         return Promise.reject(new Error('Invalid email address'));
     }
     
+    // Use sendPluginSignup from optti-api.js if available, otherwise fallback
+    if (typeof window.sendPluginSignup === 'function') {
+        return window.sendPluginSignup({
+            email,
+            plugin: pluginName || opttiApi?.plugin || 'beepbeep-ai',
+            site: siteUrl || opttiApi?.site || window.location.origin
+        });
+    }
+    
+    // Fallback to direct API call
     return postJson('/email/plugin-signup', {
         email: email,
-        siteUrl: siteUrl || window.location.origin,
-        pluginName: pluginName
+        plugin: pluginName || opttiApi?.plugin || 'beepbeep-ai',
+        site: siteUrl || opttiApi?.site || window.location.origin
     });
 }
 

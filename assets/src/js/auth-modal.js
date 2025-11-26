@@ -14,7 +14,12 @@ class BbAIAuthModal {
     }
 
     getApiUrl() {
-        // First check for configured API URL
+        // First check for opttiApi baseUrl
+        if (opttiApi?.baseUrl) {
+            return opttiApi.baseUrl;
+        }
+        
+        // Fallback to legacy API URL
         if (window.bbai_ajax?.api_url) {
             return window.bbai_ajax.api_url;
         }
@@ -586,11 +591,19 @@ class BbAIAuthModal {
                 const userData = data.data?.user || {};
                 
                 // Send welcome email to backend (non-blocking)
-                if (email && typeof window.sendWelcomeEmail === 'function') {
-                    window.sendWelcomeEmail(email).catch(error => {
-                        // Log error but don't block registration flow
-                        console.error('[AltText AI] Welcome email failed:', error);
-                    });
+                if (email) {
+                    try {
+                        const result = typeof window.sendPluginSignup === 'function'
+                            ? await window.sendPluginSignup({ email })
+                            : typeof window.sendWelcomeEmail === 'function'
+                                ? await window.sendWelcomeEmail(email)
+                                : null;
+                        if (result && !result.ok) {
+                            console.warn("Signup email fallback triggered");
+                        }
+                    } catch (e) {
+                        console.warn("Silent fallback: signup failed but continuing", e);
+                    }
                 }
                 
                 this.hide();

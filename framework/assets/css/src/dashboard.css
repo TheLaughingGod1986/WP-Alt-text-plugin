@@ -1,0 +1,90 @@
+/**
+ * Dashboard Styles
+ *
+ * Dashboard-specific styles.
+ */
+
+/* Stat Tiles */
+.optti-stat-tile {
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: var(--optti-radius-lg);
+	padding: var(--optti-spacing-lg);
+	box-shadow: var(--optti-shadow-sm);
+}
+
+.optti-stat-tile__value {
+	font-size: var(--optti-font-size-3xl);
+	font-weight: var(--optti-font-weight-bold);
+	color: var(--optti-color-primary);
+	margin-bottom: var(--optti-spacing-xs);
+}
+
+.optti-stat-tile__label {
+	font-size: var(--optti-font-size-sm);
+	color: #666;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+/* Charts */
+.optti-chart {
+	padding: var(--optti-spacing-md);
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: var(--optti-radius-lg);
+}
+
+.optti-chart__bars {
+	display: flex;
+	align-items: flex-end;
+	gap: var(--optti-spacing-sm);
+	height: 200px;
+}
+
+.optti-chart__bar {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.optti-chart__bar-value {
+	width: 100%;
+	background-color: var(--optti-color-primary);
+	border-radius: var(--optti-radius-sm) var(--optti-radius-sm) 0 0;
+	transition: height 0.3s ease;
+}
+
+.optti-chart__bar-label {
+	margin-top: var(--optti-spacing-xs);
+	font-size: var(--optti-font-size-xs);
+	color: #666;
+	text-align: center;
+}
+
+/* Upgrade Panel */
+.optti-upgrade-panel {
+	background: linear-gradient(135deg, var(--optti-color-primary) 0%, var(--optti-color-primary-dark) 100%);
+	color: #fff;
+	border-radius: var(--optti-radius-lg);
+	padding: var(--optti-spacing-xl);
+	text-align: center;
+}
+
+.optti-upgrade-panel__title {
+	font-size: var(--optti-font-size-2xl);
+	font-weight: var(--optti-font-weight-bold);
+	margin-bottom: var(--optti-spacing-md);
+}
+
+.optti-upgrade-panel__description {
+	font-size: var(--optti-font-size-base);
+	margin-bottom: var(--optti-spacing-lg);
+	opacity: 0.9;
+}
+
+.optti-upgrade-panel__cta {
+	margin-top: var(--optti-spacing-md);
+}
+
