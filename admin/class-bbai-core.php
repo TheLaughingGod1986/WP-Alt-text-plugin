@@ -1984,11 +1984,11 @@ class Core {
                         <div class="bbai-premium-footer-cta">
                             <p class="bbai-footer-cta-text">
                                 <?php esc_html_e('Complete your SEO stack', 'beepbeep-ai-alt-text-generator'); ?> 
-                                <span class="bbai-footer-cta-link bbai-footer-cta-link--coming-soon">
+                                <a href="https://oppti.dev/plugins/meta" target="_blank" rel="noopener noreferrer" class="bbai-footer-cta-link bbai-footer-cta-link--coming-soon">
                                     <?php esc_html_e('Try our SEO Meta Generator AI', 'beepbeep-ai-alt-text-generator'); ?>
                                     <span class="bbai-footer-cta-badge-new"><?php esc_html_e('New', 'beepbeep-ai-alt-text-generator'); ?></span>
                                     <span class="bbai-footer-cta-badge-coming-soon"><?php esc_html_e('Coming Soon', 'beepbeep-ai-alt-text-generator'); ?></span>
-                                </span>
+                                </a>
                                 <span class="bbai-footer-cta-badge"><?php esc_html_e('(included in free plan)', 'beepbeep-ai-alt-text-generator'); ?></span>
                             </p>
                         </div>

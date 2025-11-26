@@ -1735,11 +1735,11 @@ class BbAI_Core {
                         <div class="bbai-premium-footer-cta">
                             <p class="bbai-footer-cta-text">
                                 <?php esc_html_e('Complete your SEO stack', 'wp-alt-text-plugin'); ?> 
-                                <span class="bbai-footer-cta-link bbai-footer-cta-link--coming-soon">
+                                <a href="https://oppti.dev/plugins/meta" target="_blank" rel="noopener noreferrer" class="bbai-footer-cta-link bbai-footer-cta-link--coming-soon">
                                     <?php esc_html_e('Try our SEO Meta Generator AI', 'wp-alt-text-plugin'); ?>
                                     <span class="bbai-footer-cta-badge-new"><?php esc_html_e('New', 'wp-alt-text-plugin'); ?></span>
                                     <span class="bbai-footer-cta-badge-coming-soon"><?php esc_html_e('Coming Soon', 'wp-alt-text-plugin'); ?></span>
-                                </span>
+                                </a>
                                 <span class="bbai-footer-cta-badge"><?php esc_html_e('(included in free plan)', 'wp-alt-text-plugin'); ?></span>
                             </p>
                             <button type="button" class="bbai-upcoming-plugins-subscribe-btn" id="bbai-upcoming-plugins-subscribe-btn" data-action="show-subscribe-modal">
