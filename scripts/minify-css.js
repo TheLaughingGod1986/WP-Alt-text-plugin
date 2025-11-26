@@ -17,7 +17,7 @@ const assetsDir = path.join(__dirname, '..', 'assets');
 const srcDir = path.join(assetsDir, 'src', 'css');
 const distDir = path.join(assetsDir, 'dist', 'css');
 const cssFiles = [
-    'ai-alt-dashboard.css',
+    'bbai-dashboard.css',
     'auth-modal.css',
     'upgrade-modal.css',
     'modern-style.css',
@@ -26,7 +26,7 @@ const cssFiles = [
     'button-enhancements.css',
     'guide-settings-pages.css',
     'dashboard-tailwind.css',
-    'ai-alt-debug.css'
+    'bbai-debug.css'
 ];
 
 async function minifyFile(inputFile) {
