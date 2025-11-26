@@ -114,6 +114,18 @@ if ( is_admin() || ( defined( 'DOING_AJAX' ) && DOING_AJAX ) || ( defined( 'REST
 	}, 0 );
 }
 
+// Ensure REST routes are registered on rest_api_init (may fire before init completes)
+// This is a safety net to guarantee routes are available
+add_action( 'rest_api_init', function() {
+	if ( ! class_exists( '\BeepBeepAI\AltTextGenerator\Admin' ) ) {
+		require_once OPTTI_PLUGIN_DIR . 'includes/class-bbai.php';
+		require_once OPTTI_PLUGIN_DIR . 'admin/class-bbai-admin.php';
+	}
+	
+	$admin_instance = new \BeepBeepAI\AltTextGenerator\Admin( 'beepbeep-ai-alt-text-generator', OPTTI_VERSION );
+	$admin_instance->ensure_rest_routes();
+}, 0 );
+
 // Global plugin instance (for backward compatibility and module access)
 global $optti_beepbeep_plugin;
 
