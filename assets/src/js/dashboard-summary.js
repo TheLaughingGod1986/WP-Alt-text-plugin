@@ -3,7 +3,25 @@
  * Renders optional summary cards above the dashboard iframe
  */
 
-import { getDashboardCharts } from './dashboard-api';
+import { getDashboardCharts, getDashboard } from './dashboard-api';
+
+/**
+ * Format renewal date for display
+ */
+function formatRenewalDate(renewsOn) {
+    if (!renewsOn) return '';
+    
+    try {
+        const date = new Date(renewsOn);
+        if (isNaN(date.getTime())) return '';
+        
+        const day = date.getDate();
+        const month = date.toLocaleDateString('en-GB', { month: 'short' });
+        return `${day} ${month}`;
+    } catch (e) {
+        return '';
+    }
+}
 
 /**
  * Render summary cards using data from /dashboard/charts endpoint
@@ -16,6 +34,7 @@ export async function renderSummaryCards() {
 
     try {
         const result = await getDashboardCharts();
+        const dashboardResult = await getDashboard();
         
         if (!result.ok) {
             // Hide summary cards on error
@@ -25,14 +44,37 @@ export async function renderSummaryCards() {
 
         const { coverage, usage, time_saved, quality } = result;
         
+        // Get credit balance from dashboard response (credits.balance)
+        const credits = dashboardResult.ok && dashboardResult.credits ? dashboardResult.credits : null;
+        const creditBalance = credits?.balance ?? null;
+        const subscription = dashboardResult.ok ? dashboardResult.subscription : null;
+        
         // Only show cards if there's meaningful data
-        const hasData = coverage.total > 0 || usage.limit > 0;
+        const hasData = coverage.total > 0 || usage.limit > 0 || creditBalance !== null;
         if (!hasData) {
             container.style.display = 'none';
             return;
         }
 
         let cardsHTML = '';
+        
+        // Credit Balance Card
+        if (creditBalance !== null) {
+            const subscriptionStatus = subscription?.status || 'none';
+            const subscriptionActive = subscriptionStatus === 'active';
+            const renewsOn = subscription?.renewsOn || null;
+            const renewalText = renewsOn ? ` (Renews on ${formatRenewalDate(renewsOn)})` : '';
+            
+            cardsHTML += `
+                <div class="bbai-summary-card">
+                    <h3 class="bbai-summary-card-title">Credits Remaining</h3>
+                    <p class="bbai-summary-card-value">${creditBalance}</p>
+                    <p class="bbai-summary-card-description">
+                        Subscription: ${subscriptionActive ? 'Active' + renewalText : 'None'}
+                    </p>
+                </div>
+            `;
+        }
 
         // Coverage Card
         if (coverage.total > 0) {

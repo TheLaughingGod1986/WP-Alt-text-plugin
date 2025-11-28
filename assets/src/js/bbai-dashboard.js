@@ -36,8 +36,20 @@
     window.bbai_openUpgradeModal = function(subscriptionError) {
         // Extract error code if object is passed
         let errorCode = subscriptionError;
+        let credits = null;
+        let subscriptionExpired = false;
+        
         if (typeof subscriptionError === 'object' && subscriptionError !== null) {
-            errorCode = subscriptionError.error || subscriptionError.subscriptionError || subscriptionError.code || 'subscription_required';
+            // Handle NO_ACCESS error object
+            if (subscriptionError.noAccess || subscriptionError.code === 'NO_ACCESS') {
+                errorCode = subscriptionError.errorCode || 'no_access';
+                credits = subscriptionError.credits !== undefined ? parseInt(subscriptionError.credits, 10) : null;
+                subscriptionExpired = subscriptionError.subscriptionExpired === true;
+            } else {
+                errorCode = subscriptionError.error || subscriptionError.subscriptionError || subscriptionError.code || subscriptionError.errorCode || 'subscription_required';
+                credits = subscriptionError.credits !== undefined ? parseInt(subscriptionError.credits, 10) : null;
+                subscriptionExpired = subscriptionError.subscriptionExpired === true;
+            }
         }
         
         // Normalize error code
@@ -45,11 +57,22 @@
             errorCode = 'subscription_required';
         }
         
+        // Determine error code based on context if needed
+        if (errorCode === 'no_access') {
+            if (subscriptionExpired) {
+                errorCode = 'subscription_expired';
+            } else if (credits !== null && credits === 0) {
+                errorCode = 'out_of_credits';
+            }
+        }
+        
         // Map error codes to user-friendly messages
         const errorMessages = {
             'subscription_required': 'A subscription is required to continue generating alt text.',
             'subscription_expired': 'Your subscription has expired. Please renew to continue.',
-            'quota_exceeded': "You've reached your monthly limit. Upgrade to continue generating alt text."
+            'quota_exceeded': "You've reached your monthly limit. Upgrade to continue generating alt text.",
+            'no_access': 'Access denied. Please upgrade or purchase credits to continue.',
+            'out_of_credits': "You've run out of credits. Please purchase more credits to continue."
         };
         
         const message = errorMessages[errorCode] || errorMessages['subscription_required'];
@@ -58,13 +81,21 @@
         if (typeof sessionStorage !== 'undefined') {
             sessionStorage.setItem('bbai_upgrade_reason', errorCode);
             sessionStorage.setItem('bbai_upgrade_message', message);
+            if (credits !== null) {
+                sessionStorage.setItem('bbai_upgrade_credits', credits.toString());
+            }
+            if (subscriptionExpired) {
+                sessionStorage.setItem('bbai_upgrade_subscription_expired', 'true');
+            }
         }
         
         // Log analytics event
         if (typeof window.logEvent === 'function') {
             window.logEvent('upgrade_modal_open', {
                 reason: errorCode,
-                source: 'subscription_error'
+                source: subscriptionError && subscriptionError.noAccess ? 'no_access_error' : 'subscription_error',
+                credits: credits,
+                subscriptionExpired: subscriptionExpired
             });
         }
         
@@ -1545,6 +1576,27 @@
     async function initiateCheckout($button, priceId, planName) {
         if (alttextaiDebug) console.log('[AltText AI] Initiating checkout:', planName, priceId);
         
+        // Determine if this is a credit pack purchase
+        const packId = $button.attr('data-pack-id') || null;
+        const isCreditPack = planName === 'credits' || !!packId;
+        
+        // Log analytics event for checkout initiation
+        if (typeof window.logEvent === 'function') {
+            const analyticsPayload = {
+                plan: planName,
+                priceId: priceId
+            };
+            
+            if (isCreditPack && packId) {
+                analyticsPayload.packId = packId;
+                analyticsPayload.type = 'credit_pack';
+            } else {
+                analyticsPayload.type = 'subscription';
+            }
+            
+            window.logEvent('checkout_initiated', analyticsPayload);
+        }
+        
         if (!window.opttiBilling || !window.opttiApi) {
             // Fallback to old AJAX method if new billing API not available
             const fallbackUrl = $button.attr('data-fallback-url');
@@ -1570,7 +1622,8 @@
             const session = await window.opttiBilling.createCheckoutSession({
                 email: window.opttiApi.userEmail || '',
                 plugin: window.opttiApi.plugin || 'beepbeep-ai',
-                priceId: priceId
+                priceId: priceId,
+                packId: isCreditPack ? packId : undefined
             });
 
             if (alttextaiDebug) console.log('[AltText AI] Checkout response:', session);
@@ -1598,13 +1651,30 @@
                 // Monitor for successful checkout (user returns to success page)
                 const urlParams = new URLSearchParams(window.location.search);
                 if (urlParams.get('checkout') === 'success') {
+                    // Log analytics event for successful checkout
+                    if (typeof window.logEvent === 'function') {
+                        const analyticsPayload = {
+                            plan: planName,
+                            priceId: priceId
+                        };
+                        
+                        if (isCreditPack && packId) {
+                            analyticsPayload.packId = packId;
+                            analyticsPayload.type = 'credit_pack';
+                        } else {
+                            analyticsPayload.type = 'subscription';
+                        }
+                        
+                        window.logEvent('checkout_completed', analyticsPayload);
+                    }
+                    
                     // Refresh data after successful checkout
                     if (typeof window.alttextai_refresh_usage === 'function') {
                         window.alttextai_refresh_usage();
                     }
                     
-                    // Send dashboard welcome email after upgrade
-                    if (typeof window.sendDashboardWelcomeEmail === 'function') {
+                    // Send dashboard welcome email after upgrade (only for subscriptions, not credit packs)
+                    if (!isCreditPack && typeof window.sendDashboardWelcomeEmail === 'function') {
                         const userEmail = window.opttiApi.userEmail || 
                                         (window.bbai_ajax && window.bbai_ajax.user_data && window.bbai_ajax.user_data.email) || 
                                         (window.BBAI && window.BBAI.userData && window.BBAI.userData.email);

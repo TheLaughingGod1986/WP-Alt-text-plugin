@@ -722,22 +722,54 @@
             // Hide loading state
             $modal.find('.bbai-regenerate-modal__loading').removeClass('active');
 
-            // Check for subscription error in response
+            // Check for subscription error or NO_ACCESS in response
             var subscriptionError = null;
             if (response && response.data) {
                 if (response.data.subscription_error || 
+                    response.data.no_access ||
+                    (response.data.code && response.data.code === 'NO_ACCESS') ||
                     (response.data.error_code && (
                         response.data.error_code === 'subscription_required' ||
                         response.data.error_code === 'subscription_expired' ||
-                        response.data.error_code === 'quota_exceeded'
+                        response.data.error_code === 'quota_exceeded' ||
+                        response.data.error_code === 'no_access' ||
+                        response.data.error_code === 'out_of_credits'
                     ))) {
-                    subscriptionError = response.data.error_code || response.data.subscription_error || 'subscription_required';
+                    // Determine error code from NO_ACCESS context
+                    if (response.data.code === 'NO_ACCESS' || response.data.no_access) {
+                        var credits = response.data.credits !== undefined ? parseInt(response.data.credits, 10) : null;
+                        var subscriptionExpired = response.data.subscription_expired === true;
+                        if (subscriptionExpired) {
+                            subscriptionError = 'subscription_expired';
+                        } else if (credits !== null && credits === 0) {
+                            subscriptionError = 'out_of_credits';
+                        } else {
+                            subscriptionError = 'no_access';
+                        }
+                    } else {
+                        subscriptionError = response.data.error_code || response.data.subscription_error || 'subscription_required';
+                    }
                 }
             }
             
-            // Handle subscription error
+            // Handle subscription error or NO_ACCESS
             if (subscriptionError) {
                 closeRegenerateModal($modal);
+                reenableButton($btn, originalBtnText);
+                
+                // Disable generate button and show No Access state
+                $btn.prop('disabled', true).addClass('bbai-no-access');
+                
+                // Add No Access message/link if needed
+                if (!$btn.data('no-access-message-added')) {
+                    var noAccessMessage = $('<span class="bbai-no-access-message" style="display: block; margin-top: 8px; color: #dc3232; font-size: 12px;">' +
+                        '<a href="#" style="text-decoration: underline;" onclick="if(typeof window.bbai_openUpgradeModal===\'function\'){window.bbai_openUpgradeModal(\'' + subscriptionError + '\');return false;}">Upgrade or purchase credits</a>' +
+                        '</span>');
+                    $btn.after(noAccessMessage);
+                    $btn.data('no-access-message-added', true);
+                }
+                
+                // Trigger upgrade modal
                 if (typeof window.bbai_openUpgradeModal === 'function') {
                     window.bbai_openUpgradeModal(subscriptionError);
                 }
@@ -1003,14 +1035,31 @@
                             errorRemaining = parseInt(response.data.remaining, 10);
                         }
                         
-                        // Check for subscription error
+                        // Check for subscription error or NO_ACCESS
                         if (response.data.subscription_error || 
+                            response.data.no_access ||
+                            (response.data.code && response.data.code === 'NO_ACCESS') ||
                             (response.data.error_code && (
                                 response.data.error_code === 'subscription_required' ||
                                 response.data.error_code === 'subscription_expired' ||
-                                response.data.error_code === 'quota_exceeded'
+                                response.data.error_code === 'quota_exceeded' ||
+                                response.data.error_code === 'no_access' ||
+                                response.data.error_code === 'out_of_credits'
                             ))) {
-                            subscriptionError = response.data.error_code || response.data.subscription_error || 'subscription_required';
+                            // Determine error code from NO_ACCESS context
+                            if (response.data.code === 'NO_ACCESS' || response.data.no_access) {
+                                var credits = response.data.credits !== undefined ? parseInt(response.data.credits, 10) : null;
+                                var subscriptionExpired = response.data.subscription_expired === true;
+                                if (subscriptionExpired) {
+                                    subscriptionError = 'subscription_expired';
+                                } else if (credits !== null && credits === 0) {
+                                    subscriptionError = 'out_of_credits';
+                                } else {
+                                    subscriptionError = 'no_access';
+                                }
+                            } else {
+                                subscriptionError = response.data.error_code || response.data.subscription_error || 'subscription_required';
+                            }
                         }
                     }
                 }

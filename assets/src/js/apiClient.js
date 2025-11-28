@@ -54,6 +54,32 @@ function postJson(path, body) {
             // Try to parse error response
             return response.json()
                 .then(err => {
+                    // Check for NO_ACCESS error code
+                    if (err.code === 'NO_ACCESS') {
+                        // Determine error context
+                        const credits = err.credits !== undefined ? parseInt(err.credits, 10) : null;
+                        const subscriptionExpired = err.subscription_expired === true;
+                        
+                        let errorCode = 'no_access';
+                        if (subscriptionExpired) {
+                            errorCode = 'subscription_expired';
+                        } else if (credits !== null && credits === 0) {
+                            errorCode = 'out_of_credits';
+                        }
+                        
+                        // Return NO_ACCESS error for handling by caller
+                        return {
+                            ok: false,
+                            noAccess: true,
+                            code: 'NO_ACCESS',
+                            errorCode: errorCode,
+                            credits: credits,
+                            subscriptionExpired: subscriptionExpired,
+                            message: err.message || 'Access denied',
+                            status: response.status
+                        };
+                    }
+                    
                     // Check for quota exceeded error
                     if (err.error === 'quota_exceeded') {
                         if (typeof showUpgradeModal === 'function') {
@@ -68,6 +94,31 @@ function postJson(path, body) {
                 .catch(() => Promise.reject(new Error(`HTTP error! status: ${response.status}`)));
         }
         return response.json().then(data => {
+            // Check for NO_ACCESS error code in response
+            if (data.code === 'NO_ACCESS' || (data.ok === false && data.code === 'NO_ACCESS')) {
+                // Determine error context
+                const credits = data.credits !== undefined ? parseInt(data.credits, 10) : null;
+                const subscriptionExpired = data.subscription_expired === true;
+                
+                let errorCode = 'no_access';
+                if (subscriptionExpired) {
+                    errorCode = 'subscription_expired';
+                } else if (credits !== null && credits === 0) {
+                    errorCode = 'out_of_credits';
+                }
+                
+                // Return NO_ACCESS error for handling by caller
+                return {
+                    ok: false,
+                    noAccess: true,
+                    code: 'NO_ACCESS',
+                    errorCode: errorCode,
+                    credits: credits,
+                    subscriptionExpired: subscriptionExpired,
+                    message: data.message || 'Access denied'
+                };
+            }
+            
             // Check for quota exceeded in successful response
             if (data.error === 'quota_exceeded') {
                 if (typeof showUpgradeModal === 'function') {

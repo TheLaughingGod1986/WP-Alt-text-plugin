@@ -128,6 +128,26 @@ class BbAI_REST_Controller {
 				'permission_callback' => [ $this, 'can_edit_media' ],
 			]
 		);
+
+		register_rest_route(
+			'bbai/v1',
+			'/credits/balance',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ $this, 'handle_credit_balance' ],
+				'permission_callback' => [ $this, 'can_edit_media' ],
+			]
+		);
+
+		register_rest_route(
+			'bbai/v1',
+			'/credits/packs',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ $this, 'handle_credit_packs' ],
+				'permission_callback' => [ $this, 'can_edit_media' ],
+			]
+		);
 	}
 
 	/**
@@ -474,6 +494,44 @@ class BbAI_REST_Controller {
 		}
 
 		return $usage;
+	}
+
+	/**
+	 * Return credit balance and subscription status from backend.
+	 *
+	 * @return array|\WP_Error
+	 */
+	public function handle_credit_balance() {
+		$api_client = $this->core->get_api_client();
+		if ( ! $api_client ) {
+			return new \WP_Error( 'missing_client', 'API client not available.' );
+		}
+
+		$credit_balance = $api_client->get_credit_balance();
+		if ( is_wp_error( $credit_balance ) ) {
+			return $credit_balance;
+		}
+
+		return $credit_balance;
+	}
+
+	/**
+	 * Return available credit packs from backend.
+	 *
+	 * @return array|\WP_Error
+	 */
+	public function handle_credit_packs() {
+		$api_client = $this->core->get_api_client();
+		if ( ! $api_client ) {
+			return new \WP_Error( 'missing_client', 'API client not available.' );
+		}
+
+		$credit_packs = $api_client->get_credit_packs();
+		if ( is_wp_error( $credit_packs ) ) {
+			return $credit_packs;
+		}
+
+		return $credit_packs;
 	}
 
 	/**

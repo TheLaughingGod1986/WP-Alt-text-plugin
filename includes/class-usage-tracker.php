@@ -135,7 +135,7 @@ class Usage_Tracker {
                 if ($tokens_used > 0) {
                     $used = $tokens_used;
                 } else {
-                    $used = max(0, $limit - $tokens_remaining);
+                $used = max(0, $limit - $tokens_remaining);
                 }
                 
                 // Ensure used doesn't exceed limit

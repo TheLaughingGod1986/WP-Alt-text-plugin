@@ -53,6 +53,7 @@ export async function getDashboard() {
                 ok: true,
                 installations: data.data?.installations ?? [],
                 subscription: data.data?.subscription ?? null,
+                credits: data.data?.credits ?? null,
                 usage: data.data?.usage ?? {
                     monthlyImages: 0,
                     dailyImages: 0,
@@ -256,9 +257,54 @@ export async function getDashboardCharts() {
     }
 }
 
+/**
+ * Get available credit packs
+ */
+export async function getCreditPacks() {
+    try {
+        const token = opttiApi?.token ?? '';
+        const headers = {
+            'Content-Type': 'application/json',
+        };
+        
+        // Add Authorization header if token is available
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        // Use WordPress REST API endpoint
+        const restUrl = opttiApi?.restUrl ?? '/wp-json/bbai/v1/credits/packs';
+        const res = await fetch(restUrl, {
+            method: 'GET',
+            headers: headers
+        });
+        
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        
+        const data = await res.json();
+        
+        // Return structured data - credit packs should be an array
+        return {
+            ok: true,
+            packs: Array.isArray(data) ? data : (data.packs ?? [])
+        };
+    } catch (err) {
+        console.error('Credit packs API error:', err);
+        return {
+            ok: false,
+            error: 'network_error',
+            message: 'Unable to load credit packs',
+            packs: []
+        };
+    }
+}
+
 // For backward compatibility, expose globally
 if (typeof window !== 'undefined') {
     window.getDashboard = getDashboard;
     window.getDashboardCharts = getDashboardCharts;
+    window.getCreditPacks = getCreditPacks;
 }
 

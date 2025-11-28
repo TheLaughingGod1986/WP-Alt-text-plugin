@@ -75,6 +75,20 @@ else {
         </div>
         
         <div class="bbai-upgrade-modal__body">
+            <!-- NO_ACCESS / Out of Credits Notice (shown via JavaScript) -->
+            <div id="bbai-no-access-notice" class="bbai-auth-notice bbai-no-access-notice" style="display: none;">
+                <div class="bbai-auth-notice__icon">⚠️</div>
+                <p id="bbai-no-access-message"></p>
+                <div class="bbai-no-access-actions" style="margin-top: 12px; display: flex; gap: 12px; flex-wrap: wrap;">
+                    <button type="button" class="button button-primary" id="bbai-buy-credits-btn" style="display: none;">
+                        <?php esc_html_e('Buy Credits on Dashboard', 'beepbeep-ai-alt-text-generator'); ?>
+                    </button>
+                    <button type="button" class="button button-secondary" id="bbai-upgrade-subscription-btn" style="display: none;">
+                        <?php esc_html_e('Upgrade Subscription', 'beepbeep-ai-alt-text-generator'); ?>
+                    </button>
+                </div>
+            </div>
+            
             <?php if (!$is_authenticated) : ?>
                 <!-- Not Authenticated - Show Pricing with Sign Up Note -->
                 <div class="bbai-auth-notice">
@@ -200,38 +214,14 @@ else {
                     <p class="bbai-plan-trust"><?php esc_html_e('Perfect for agencies managing 10+ client sites.', 'beepbeep-ai-alt-text-generator'); ?></p>
                 </div>
 
-                <!-- Credits Pack Section -->
-                <div class="bbai-credits-section">
-                <div class="bbai-plan-card bbai-plan-card--credits">
-                    <div class="bbai-credits-header">
-                        <div class="bbai-credits-header-left">
-                            <h3><?php esc_html_e('Need a one-time top-up?', 'beepbeep-ai-alt-text-generator'); ?></h3>
-                            <div class="bbai-credits-features">
-                                <span class="bbai-credits-feature"><?php esc_html_e('100 credits never expire', 'beepbeep-ai-alt-text-generator'); ?></span>
-                                <span class="bbai-credits-feature"><?php esc_html_e('Works on any usite', 'beepbeep-ai-alt-text-generator'); ?></span>
-                                <span class="bbai-credits-feature"><?php esc_html_e('One-time purchase', 'beepbeep-ai-alt-text-generator'); ?></span>
-                            </div>
-                        </div>
-                        <div class="bbai-plan-price">
-                            <span class="bbai-price-amount"><?php echo esc_html($currency['symbol']); ?><?php echo esc_html(number_format($currency['credits'], 2)); ?></span>
-                            <span class="bbai-price-period"><?php esc_html_e('One-time', 'beepbeep-ai-alt-text-generator'); ?></span>
-                        </div>
+                <!-- Credits Pack Section - Dynamically loaded from API -->
+                <div class="bbai-credits-section" id="bbai-credits-packs-container">
+                    <div class="bbai-credits-loading" style="text-align: center; padding: 20px; display: none;">
+                        <?php esc_html_e('Loading credit packs...', 'beepbeep-ai-alt-text-generator'); ?>
                     </div>
-                    
-                    <div class="bbai-plan-credits-info">
-                        <small><?php esc_html_e('Credits: 100 one-time purchase', 'beepbeep-ai-alt-text-generator'); ?></small>
+                    <div class="bbai-credits-packs-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+                        <!-- Credit packs will be dynamically inserted here via JavaScript -->
                     </div>
-                    
-                    <button type="button" 
-                            class="bbai-btn-secondary bbai-plan-cta bbai-plan-cta--credits"
-                            data-action="checkout-plan"
-                            data-plan="credits"
-                            data-price-id="<?php echo esc_attr($credits_price_id); ?>"
-                            data-fallback-url="<?php echo esc_url($stripe_links['credits']); ?>"
-                            aria-label="<?php esc_attr_e('Purchase credit pack', 'beepbeep-ai-alt-text-generator'); ?>">
-                        <?php esc_html_e('Buy Credits', 'beepbeep-ai-alt-text-generator'); ?>
-                    </button>
-                </div>
                 </div>
             </div>
 
@@ -249,8 +239,218 @@ else {
 (function($) {
     'use strict';
     
+    // Check for NO_ACCESS reasons and show appropriate notice
+    function checkNoAccessReason() {
+        if (typeof sessionStorage === 'undefined') return;
+        
+        var reason = sessionStorage.getItem('bbai_upgrade_reason');
+        var message = sessionStorage.getItem('bbai_upgrade_message');
+        var credits = sessionStorage.getItem('bbai_upgrade_credits');
+        var subscriptionExpired = sessionStorage.getItem('bbai_upgrade_subscription_expired') === 'true';
+        
+        if (!reason || !message) return;
+        
+        var notice = $('#bbai-no-access-notice');
+        var messageEl = $('#bbai-no-access-message');
+        var buyCreditsBtn = $('#bbai-buy-credits-btn');
+        var upgradeSubscriptionBtn = $('#bbai-upgrade-subscription-btn');
+        
+        // Show notice for NO_ACCESS related reasons
+        if (reason === 'no_access' || reason === 'out_of_credits' || reason === 'subscription_expired') {
+            notice.show();
+            messageEl.html('<strong>' + message + '</strong>');
+            
+            // Show appropriate CTAs based on reason
+            if (reason === 'out_of_credits') {
+                // Show both buttons for out of credits
+                buyCreditsBtn.show().on('click', function() {
+                    // Link to dashboard credits purchase
+                    var dashboardUrl = (typeof opttiApi !== 'undefined' && opttiApi.dashboardUrl) || (typeof window.bbai_ajax !== 'undefined' && window.bbai_ajax.dashboard_url) || '#';
+                    if (dashboardUrl && dashboardUrl !== '#') {
+                        window.open(dashboardUrl + '/credits', '_blank');
+                    }
+                });
+                upgradeSubscriptionBtn.show().on('click', function() {
+                    // Scroll to pricing plans or highlight subscription plans
+                    $('html, body').animate({
+                        scrollTop: $('.bbai-pricing-container').offset().top - 20
+                    }, 500);
+                    $('.bbai-plan-card--pro, .bbai-plan-card--agency').addClass('bbai-plan-highlight').delay(3000).queue(function() {
+                        $(this).removeClass('bbai-plan-highlight').dequeue();
+                    });
+                });
+            } else if (reason === 'subscription_expired') {
+                // Show upgrade subscription button
+                upgradeSubscriptionBtn.show().on('click', function() {
+                    $('html, body').animate({
+                        scrollTop: $('.bbai-pricing-container').offset().top - 20
+                    }, 500);
+                    $('.bbai-plan-card--pro, .bbai-plan-card--agency').addClass('bbai-plan-highlight').delay(3000).queue(function() {
+                        $(this).removeClass('bbai-plan-highlight').dequeue();
+                    });
+                });
+            } else {
+                // Generic NO_ACCESS - show both options
+                buyCreditsBtn.show().on('click', function() {
+                    var dashboardUrl = (typeof opttiApi !== 'undefined' && opttiApi.dashboardUrl) || (typeof window.bbai_ajax !== 'undefined' && window.bbai_ajax.dashboard_url) || '#';
+                    if (dashboardUrl && dashboardUrl !== '#') {
+                        window.open(dashboardUrl + '/credits', '_blank');
+                    }
+                });
+                upgradeSubscriptionBtn.show().on('click', function() {
+                    $('html, body').animate({
+                        scrollTop: $('.bbai-pricing-container').offset().top - 20
+                    }, 500);
+                });
+            }
+        }
+    }
+    
+    /**
+     * Load and render credit packs dynamically
+     */
+    async function loadCreditPacks() {
+        const container = document.getElementById('bbai-credits-packs-container');
+        const loadingEl = container?.querySelector('.bbai-credits-loading');
+        const packsGrid = container?.querySelector('.bbai-credits-packs-grid');
+        
+        if (!container || !packsGrid) return;
+        
+        // Show loading state
+        if (loadingEl) loadingEl.style.display = 'block';
+        if (packsGrid) packsGrid.style.display = 'none';
+        
+        try {
+            // Use getCreditPacks if available
+            let packsResult;
+            if (typeof window.getCreditPacks === 'function') {
+                packsResult = await window.getCreditPacks();
+            } else {
+                // Fallback: fetch directly from REST API
+                const token = (typeof opttiApi !== 'undefined' && opttiApi.token) || '';
+                const headers = {
+                    'Content-Type': 'application/json',
+                };
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
+                
+                const restUrl = (typeof opttiApi !== 'undefined' && opttiApi.restUrl) || '/wp-json/bbai/v1/credits/packs';
+                const res = await fetch(restUrl, {
+                    method: 'GET',
+                    headers: headers
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    packsResult = {
+                        ok: true,
+                        packs: Array.isArray(data) ? data : (data.packs || [])
+                    };
+                } else {
+                    packsResult = {
+                        ok: false,
+                        packs: []
+                    };
+                }
+            }
+            
+            if (!packsResult || !packsResult.ok || !packsResult.packs || packsResult.packs.length === 0) {
+                // Hide credits section if no packs available
+                if (container) container.style.display = 'none';
+                return;
+            }
+            
+            const packs = packsResult.packs;
+            const currencySymbol = '<?php echo esc_js($currency['symbol']); ?>';
+            
+            // Clear existing packs
+            packsGrid.innerHTML = '';
+            
+            // Render each pack
+            packs.forEach(function(pack) {
+                const credits = pack.credits || 0;
+                const price = pack.price || 0;
+                const packId = pack.id || '';
+                const priceFormatted = (price / 100).toFixed(2); // Convert from cents to currency
+                
+                const packCard = document.createElement('div');
+                packCard.className = 'bbai-plan-card bbai-plan-card--credits';
+                packCard.innerHTML = `
+                    <div class="bbai-credits-header">
+                        <div class="bbai-credits-header-left">
+                            <h3><?php esc_html_e('Credit Pack', 'beepbeep-ai-alt-text-generator'); ?></h3>
+                            <div class="bbai-credits-features">
+                                <span class="bbai-credits-feature">${credits} <?php esc_html_e('credits', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                <span class="bbai-credits-feature"><?php esc_html_e('Never expire', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                <span class="bbai-credits-feature"><?php esc_html_e('One-time purchase', 'beepbeep-ai-alt-text-generator'); ?></span>
+                            </div>
+                        </div>
+                        <div class="bbai-plan-price">
+                            <span class="bbai-price-amount">${currencySymbol}${priceFormatted}</span>
+                            <span class="bbai-price-period"><?php esc_html_e('One-time', 'beepbeep-ai-alt-text-generator'); ?></span>
+                        </div>
+                    </div>
+                    
+                    <div class="bbai-plan-credits-info">
+                        <small><?php esc_html_e('Credits:', 'beepbeep-ai-alt-text-generator'); ?> ${credits} <?php esc_html_e('one-time purchase', 'beepbeep-ai-alt-text-generator'); ?></small>
+                    </div>
+                    
+                    <button type="button" 
+                            class="bbai-btn-secondary bbai-plan-cta bbai-plan-cta--credits"
+                            data-action="checkout-plan"
+                            data-plan="credits"
+                            data-pack-id="${packId}"
+                            data-price-id="${packId}"
+                            aria-label="<?php esc_attr_e('Purchase credit pack', 'beepbeep-ai-alt-text-generator'); ?>">
+                        <?php esc_html_e('Buy Credits', 'beepbeep-ai-alt-text-generator'); ?>
+                    </button>
+                `;
+                
+                packsGrid.appendChild(packCard);
+            });
+            
+            // Show packs grid
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (packsGrid) packsGrid.style.display = 'grid';
+            
+        } catch (error) {
+            console.error('[AltText AI] Error loading credit packs:', error);
+            // Hide credits section on error
+            if (container) container.style.display = 'none';
+            if (loadingEl) loadingEl.style.display = 'none';
+        }
+    }
+    
     // Billing toggle functionality
     $(document).ready(function() {
+        // Check for NO_ACCESS reason on modal open
+        checkNoAccessReason();
+        
+        // Also check when modal is shown (in case it's opened programmatically)
+        var modal = $('#bbai-upgrade-modal');
+        if (modal.length) {
+            // Use MutationObserver to detect when modal is shown
+            var observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                        var display = modal.css('display');
+                        if (display === 'flex' || display === 'block') {
+                            setTimeout(checkNoAccessReason, 100);
+                            // Load credit packs when modal is shown
+                            loadCreditPacks();
+                        }
+                    }
+                });
+            });
+            observer.observe(modal[0], { attributes: true, attributeFilter: ['style'] });
+        }
+        
+        // Load credit packs on initial page load if modal is already visible
+        if (modal.length && (modal.css('display') === 'flex' || modal.css('display') === 'block')) {
+            loadCreditPacks();
+        }
+        
         // Currency is already detected server-side via WordPress locale
         // This ensures prices display correctly based on user's WordPress language/region settings
         

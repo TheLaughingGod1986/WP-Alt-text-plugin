@@ -484,6 +484,58 @@ class API_Client_V2 {
             );
         }
         
+        // Handle NO_ACCESS errors (can be in any status code response)
+        if (is_array($data) && isset($data['code']) && $data['code'] === 'NO_ACCESS') {
+            // Determine error context from response data
+            $credits = isset($data['credits']) ? intval($data['credits']) : null;
+            $subscription_expired = isset($data['subscription_expired']) ? (bool)$data['subscription_expired'] : false;
+            
+            // Determine error type based on context
+            $error_code = 'no_access';
+            if ($subscription_expired) {
+                $error_code = 'subscription_expired';
+            } elseif ($credits !== null && $credits === 0) {
+                $error_code = 'out_of_credits';
+            }
+            
+            $error_message = __('Access denied. Please upgrade or purchase credits to continue.', 'beepbeep-ai-alt-text-generator');
+            if ($subscription_expired) {
+                $error_message = __('Your subscription has expired. Please renew to continue.', 'beepbeep-ai-alt-text-generator');
+            } elseif ($credits === 0) {
+                $error_message = __("You've run out of credits. Please purchase more credits to continue.", 'beepbeep-ai-alt-text-generator');
+            }
+            
+            $this->log_api_event('warning', 'NO_ACCESS error detected', [
+                'endpoint' => $endpoint,
+                'method'   => $method,
+                'error_code' => $error_code,
+                'credits' => $credits,
+                'subscription_expired' => $subscription_expired,
+            ]);
+            
+            // Cache NO_ACCESS error for UI handling
+            set_transient('bbai_no_access_error', [
+                'error_code' => $error_code,
+                'message' => $error_message,
+                'credits' => $credits,
+                'subscription_expired' => $subscription_expired,
+                'timestamp' => time(),
+            ], HOUR_IN_SECONDS);
+            
+            return new \WP_Error(
+                'no_access',
+                $error_message,
+                [
+                    'no_access' => true,
+                    'error_code' => $error_code,
+                    'credits' => $credits,
+                    'subscription_expired' => $subscription_expired,
+                    'status_code' => $status_code,
+                    'requires_action' => true,
+                ]
+            );
+        }
+        
         // Handle subscription errors (402 Payment Required)
         if ($status_code === 402) {
             $error_code = '';
@@ -1286,6 +1338,78 @@ class API_Client_V2 {
         return new \WP_Error(
             'usage_failed',
             $response['data']['error'] ?? __('Failed to get usage info', 'beepbeep-ai-alt-text-generator')
+        );
+    }
+
+    /**
+     * Get credit balance and subscription status
+     * Requires JWT authentication
+     * 
+     * @return array|\WP_Error Returns credit balance and subscription info or WP_Error
+     */
+    public function get_credit_balance() {
+        // Must be authenticated to get credit balance
+        if (!$this->is_authenticated()) {
+            return new \WP_Error(
+                'not_authenticated',
+                __('Must be authenticated to get credit balance', 'beepbeep-ai-alt-text-generator')
+            );
+        }
+
+        $response = $this->make_request('/credits/balance', 'GET');
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        if ($response['success'] && isset($response['data'])) {
+            return $response['data'];
+        }
+
+        return new \WP_Error(
+            'credit_balance_failed',
+            $response['data']['error'] ?? __('Failed to get credit balance', 'beepbeep-ai-alt-text-generator')
+        );
+    }
+
+    /**
+     * Get available credit packs
+     * Requires JWT authentication
+     * 
+     * @return array|\WP_Error Returns array of credit packs or WP_Error
+     */
+    public function get_credit_packs() {
+        // Must be authenticated to get credit packs
+        if (!$this->is_authenticated()) {
+            return new \WP_Error(
+                'not_authenticated',
+                __('Must be authenticated to get credit packs', 'beepbeep-ai-alt-text-generator')
+            );
+        }
+
+        $response = $this->make_request('/credits/packs', 'GET');
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        if ($response['success'] && isset($response['data'])) {
+            // Credit packs should be an array
+            $packs = is_array($response['data']) ? $response['data'] : [];
+            
+            // Ensure each pack has required structure
+            return array_map(function($pack) {
+                return [
+                    'id' => $pack['id'] ?? '',
+                    'credits' => isset($pack['credits']) ? intval($pack['credits']) : 0,
+                    'price' => isset($pack['price']) ? intval($pack['price']) : 0,
+                ];
+            }, $packs);
+        }
+
+        return new \WP_Error(
+            'credit_packs_failed',
+            $response['data']['error'] ?? __('Failed to get credit packs', 'beepbeep-ai-alt-text-generator')
         );
     }
 
