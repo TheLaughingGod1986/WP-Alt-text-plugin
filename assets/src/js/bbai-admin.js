@@ -213,6 +213,14 @@
             var ids = response.ids || [];
             var count = ids.length;
             
+            // Log analytics event
+            if (typeof window.logEvent === 'function') {
+                window.logEvent('alt_text_generate', {
+                    count: count,
+                    source: 'bulk-generate-missing'
+                });
+            }
+            
             // Show progress bar
             showBulkProgress('Preparing bulk run...', count, 0);
 
@@ -456,6 +464,14 @@
             var ids = response.ids || [];
             var count = ids.length;
             
+            // Log analytics event
+            if (typeof window.logEvent === 'function') {
+                window.logEvent('alt_text_generate', {
+                    count: count,
+                    source: 'bulk-regenerate-all'
+                });
+            }
+            
             // Show progress bar
             showBulkProgress('Preparing bulk regeneration...', count, 0);
 
@@ -619,6 +635,14 @@
             return false;
         }
 
+        // Log analytics event
+        if (typeof window.logEvent === 'function') {
+            window.logEvent('alt_text_generate', {
+                count: 1,
+                source: 'regenerate-single'
+            });
+        }
+
         // Disable the button immediately to prevent multiple clicks
         var originalText = $btn.text();
         $btn.prop('disabled', true).addClass('regenerating');
@@ -689,6 +713,14 @@
                 console.log('[AI Alt Text] New alt text:', newAltText);
 
                 if (newAltText) {
+                    // Log analytics event for alt text generation
+                    if (typeof window.logEvent === 'function') {
+                        window.logEvent('alt_text_generated', {
+                            attachment_id: attachmentId,
+                            source: 'ajax'
+                        });
+                    }
+                    
                     // Show result
                     $modal.find('.bbai-regenerate-modal__alt-text').text(newAltText);
                     $modal.find('.bbai-regenerate-modal__result').addClass('active');
