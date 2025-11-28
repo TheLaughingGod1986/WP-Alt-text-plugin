@@ -333,6 +333,112 @@
     }
 }
 
+/* Dashboard Wrapper */
+.bbai-dashboard-wrapper {
+    margin-top: 20px;
+}
+
+/* Dashboard Auth Prompt */
+.bbai-dashboard-auth-prompt {
+    text-align: center;
+    padding: 60px 20px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.bbai-dashboard-auth-prompt h2 {
+    margin-bottom: 16px;
+    color: #1a1a1a;
+}
+
+.bbai-dashboard-auth-prompt p {
+    margin-bottom: 24px;
+    color: #6b7280;
+}
+
+/* Dashboard Iframe */
+#bbai-optti-dashboard {
+    width: 100%;
+    min-height: 800px;
+    border: 0;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    background: #fff;
+}
+
+/* Summary Cards */
+.bbai-summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.bbai-summary-card {
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e5e7eb;
+}
+
+.bbai-summary-card-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 8px 0;
+}
+
+.bbai-summary-card-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.bbai-summary-card-description {
+    font-size: 13px;
+    color: #9ca3af;
+    margin: 8px 0 0 0;
+}
+
+/* Dark Mode Support for Iframe */
+@media (prefers-color-scheme: dark) {
+    .bbai-dashboard-auth-prompt {
+        background: #1f2937;
+        color: #f9fafb;
+    }
+
+    .bbai-dashboard-auth-prompt h2 {
+        color: #f9fafb;
+    }
+
+    .bbai-dashboard-auth-prompt p {
+        color: #9ca3af;
+    }
+
+    .bbai-summary-card {
+        background: #1f2937;
+        border-color: #374151;
+    }
+
+    .bbai-summary-card-value {
+        color: #f9fafb;
+    }
+
+    .bbai-summary-card-title {
+        color: #9ca3af;
+    }
+
+    .bbai-summary-card-description {
+        color: #6b7280;
+    }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .optti-charts-grid {
@@ -345,6 +451,14 @@
 
     .optti-metrics-grid {
         grid-template-columns: 1fr;
+    }
+
+    .bbai-summary-cards {
+        grid-template-columns: 1fr;
+    }
+
+    #bbai-optti-dashboard {
+        min-height: 600px;
     }
 }
 

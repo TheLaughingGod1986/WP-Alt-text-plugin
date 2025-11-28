@@ -29,6 +29,28 @@ function postJson(path, body) {
     })
     .then(response => {
         if (!response.ok) {
+            // Check for subscription error (402 Payment Required)
+            if (response.status === 402) {
+                return response.json()
+                    .then(err => {
+                        // Return subscription error object for handling by caller
+                        return { 
+                            ok: false, 
+                            subscriptionError: err.error || err.code || 'subscription_required',
+                            message: err.message || 'Subscription required',
+                            status: 402
+                        };
+                    })
+                    .catch(() => {
+                        return { 
+                            ok: false, 
+                            subscriptionError: 'subscription_required',
+                            message: 'Subscription required',
+                            status: 402
+                        };
+                    });
+            }
+            
             // Try to parse error response
             return response.json()
                 .then(err => {

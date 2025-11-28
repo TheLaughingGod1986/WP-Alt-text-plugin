@@ -69,6 +69,7 @@ class Admin_Hooks {
 
 		add_action( \BeepBeepAI\AltTextGenerator\Queue::CRON_HOOK, [ $this->core, 'process_queue' ] );
 		add_action( 'beepbeepai_run_migration', [ $this->core, 'run_migration' ] );
+		add_action( 'bbai_daily_identity_sync', [ $this->core, 'daily_identity_sync' ] );
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			\WP_CLI::add_command( 'beepbeepai', [ $this->core, 'wpcli_command' ] );

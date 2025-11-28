@@ -43,5 +43,15 @@ class Activator {
 
 		$core = new \BeepBeepAI\AltTextGenerator\Core();
 		$core->activate();
+
+		// Store activation timestamp for analytics (JS will fire on first load)
+		update_option('bbai_activated_at', time());
+
+		// Sync identity if user is authenticated during plugin activation
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
+		$api_client = new \BeepBeepAI\AltTextGenerator\API_Client_V2();
+		if ($api_client->is_authenticated()) {
+			$api_client->sync_identity();
+		}
 	}
 }

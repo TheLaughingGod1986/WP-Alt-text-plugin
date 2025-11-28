@@ -453,6 +453,83 @@ class BbAI_Core {
             </div>
             <?php
         }
+        
+        // Render subscription banner if subscription is invalid
+        $this->render_subscription_banner();
+    }
+    
+    /**
+     * Check if subscription is invalid
+     * @return array|null Returns error info if invalid, null if valid
+     */
+    private function check_subscription_status() {
+        // Check cached subscription status (stored when 402 error is received)
+        $subscription_error = get_transient('bbai_subscription_error');
+        if ($subscription_error) {
+            return [
+                'error_code' => $subscription_error['error_code'] ?? 'subscription_required',
+                'message' => $subscription_error['message'] ?? __('Your subscription is invalid or expired.', 'wp-alt-text-plugin')
+            ];
+        }
+        
+        // If user is authenticated, we assume subscription is valid unless we have an error cached
+        // The banner will only show if we've received a 402 error recently
+        return null;
+    }
+    
+    /**
+     * Render subscription banner if subscription is invalid
+     */
+    public function render_subscription_banner() {
+        // Only show on plugin admin pages
+        $screen = get_current_screen();
+        if (!$screen || !isset($screen->id) || !is_string($screen->id)) {
+            return;
+        }
+        
+        // Check if we're on a plugin admin page
+        $is_plugin_page = (
+            strpos($screen->id, 'media_page_bbai') !== false ||
+            strpos($screen->id, 'beepbeep') !== false ||
+            strpos($screen->id, 'bbai') !== false
+        );
+        
+        if (!$is_plugin_page) {
+            return;
+        }
+        
+        $subscription_status = $this->check_subscription_status();
+        if (!$subscription_status) {
+            return; // Subscription is valid, no banner needed
+        }
+        
+        $error_code = $subscription_status['error_code'] ?? 'subscription_required';
+        $message = $subscription_status['message'] ?? __('Your subscription is invalid or expired.', 'wp-alt-text-plugin');
+        
+        // Map error codes to user-friendly messages
+        $error_messages = [
+            'subscription_required' => __('A subscription is required to continue generating alt text.', 'wp-alt-text-plugin'),
+            'subscription_expired' => __('Your subscription has expired. Please renew to continue.', 'wp-alt-text-plugin'),
+            'quota_exceeded' => __("You've reached your monthly limit. Upgrade to continue generating alt text.", 'wp-alt-text-plugin'),
+        ];
+        
+        $display_message = $error_messages[$error_code] ?? $message;
+        
+        ?>
+        <div class="notice notice-error bbai-subscription-banner" style="margin: 20px 0; padding: 16px; border-left-color: #dc3232;">
+            <p style="margin: 0 0 8px; font-weight: 600;">
+                <strong><?php esc_html_e('Subscription Required', 'wp-alt-text-plugin'); ?></strong>
+            </p>
+            <p style="margin: 0 0 12px;">
+                <?php echo esc_html($display_message); ?>
+            </p>
+            <p style="margin: 0;">
+                <button type="button" class="button button-primary" data-action="show-upgrade-modal">
+                    <?php esc_html_e('Upgrade Now', 'wp-alt-text-plugin'); ?>
+                </button>
+            </p>
+        </div>
+        <?php
     }
 
     public function render_token_notice(){
@@ -1072,941 +1149,59 @@ class BbAI_Core {
 
             <?php if ($tab === 'dashboard') : ?>
             <?php
-                $coverage_numeric = max(0, min(100, floatval($stats['coverage'])));
-                $coverage_decimals = $coverage_numeric === floor($coverage_numeric) ? 0 : 1;
-                $coverage_display = number_format_i18n($coverage_numeric, $coverage_decimals);
-                /* translators: %s: Percentage value */
-                $coverage_text = $coverage_display . '%';
-                /* translators: %s: Percentage value */
-                $coverage_value_text = sprintf(__('ALT coverage at %s', 'wp-alt-text-plugin'), $coverage_text);
+                // Check authentication and license status
+                $has_license = $this->api_client->has_active_license();
+                $is_authenticated = $this->api_client->is_authenticated();
+                $can_access_dashboard = $has_license || $is_authenticated;
+                
+                // Get JWT token if available
+                $jwt_token = get_option('optti_jwt_token') ?: '';
+                
+                // Build dashboard URL
+                $dashboard_base_url = 'https://app.optti.dev/dashboard';
+                $dashboard_params = [
+                    'source' => 'wp',
+                    'plugin' => 'beepbeep-ai',
+                ];
+                
+                // Add JWT token to URL if available
+                if (!empty($jwt_token)) {
+                    $dashboard_params['token'] = $jwt_token;
+                }
+                
+                $dashboard_url = add_query_arg($dashboard_params, $dashboard_base_url);
+                $dashboard_url = esc_url_raw($dashboard_url);
             ?>
-
-            <?php
-                $checkout_nonce = wp_create_nonce('bbai_direct_checkout');
-                $checkout_base  = admin_url('admin.php');
-                $price_ids      = $this->get_checkout_price_ids();
-
-                $pro_plan  = [
-                    'page'             => 'bbai-checkout',
-                    'plan'             => 'pro',
-                    'price_id'         => $price_ids['pro'] ?? '',
-                    '_bbai_nonce' => $checkout_nonce,
-                ];
-                $agency_plan = [
-                    'page'             => 'bbai-checkout',
-                    'plan'             => 'agency',
-                    'price_id'         => $price_ids['agency'] ?? '',
-                    '_bbai_nonce' => $checkout_nonce,
-                ];
-                $credits_plan = [
-                    'page'             => 'bbai-checkout',
-                    'type'             => 'credits',
-                    'price_id'         => $price_ids['credits'] ?? '',
-                    '_bbai_nonce' => $checkout_nonce,
-                ];
-                $pro_test_url     = esc_url(add_query_arg($pro_plan, $checkout_base));
-                $agency_test_url  = esc_url(add_query_arg($agency_plan, $checkout_base));
-                $credits_test_url = esc_url(add_query_arg($credits_plan, $checkout_base));
-            ?>
-
-            <div class="bbai-clean-dashboard" data-stats='<?php echo esc_attr(wp_json_encode($stats)); ?>'>
-                <?php
-                // Get usage stats
-                $usage_stats = BbAI_Usage_Tracker::get_stats_display();
-                
-                // Pull fresh usage from backend to avoid stale cache - same logic as Settings tab
-                // This works for both authenticated users and license-based access
-                if (isset($this->api_client)) {
-                    // Check if we have license or authentication
-                    $has_license = $this->api_client->has_active_license();
-                    $is_authenticated = $this->api_client->is_authenticated();
-                    
-                    // Try to fetch fresh usage if we have license or authentication
-                    if ($has_license || $is_authenticated) {
-                        $live_usage = $this->api_client->get_usage();
-                        if (is_array($live_usage) && !empty($live_usage) && !is_wp_error($live_usage)) {
-                            // Update cache with fresh API data
-                            BbAI_Usage_Tracker::update_usage($live_usage);
-                        } elseif ($has_license) {
-                            // If we have a license but get_usage failed, refresh license data
-                            // This ensures license-based usage is up to date
-                            $this->refresh_license_usage_snapshot(true);
-                        }
-                    }
-                }
-                // Get stats - will use the just-updated cache or license data
-                $usage_stats = BbAI_Usage_Tracker::get_stats_display(false);
-                $account_summary = $this->api_client->is_authenticated() ? $this->get_account_summary($usage_stats) : null;
-                
-                // If stats show 0 but we have API data, use API data directly
-                if (isset($live_usage) && is_array($live_usage) && !empty($live_usage) && !is_wp_error($live_usage)) {
-                    if (($usage_stats['used'] ?? 0) == 0 && ($live_usage['used'] ?? 0) > 0) {
-                        // Cache hasn't updated yet, use API data directly
-                        $usage_stats['used'] = max(0, intval($live_usage['used'] ?? 0));
-                        $usage_stats['limit'] = max(1, intval($live_usage['limit'] ?? 50));
-                        $usage_stats['remaining'] = max(0, intval($live_usage['remaining'] ?? 50));
-                        // Recalculate percentage
-                        $usage_stats['percentage'] = $usage_stats['limit'] > 0 ? (($usage_stats['used'] / $usage_stats['limit']) * 100) : 0;
-                        $usage_stats['percentage'] = min(100, max(0, $usage_stats['percentage']));
-                        $usage_stats['percentage_display'] = BbAI_Usage_Tracker::format_percentage_label($usage_stats['percentage']);
-                    }
-                }
-                
-                // Get raw values directly from the stats array - same calculation method as Settings tab
-                $dashboard_used = max(0, intval($usage_stats['used'] ?? 0));
-                $dashboard_limit = max(1, intval($usage_stats['limit'] ?? 50));
-                $dashboard_remaining = max(0, intval($usage_stats['remaining'] ?? 50));
-                
-                // Recalculate remaining to ensure accuracy
-                $dashboard_remaining = max(0, $dashboard_limit - $dashboard_used);
-                
-                // Cap used at limit to prevent showing > 100%
-                if ($dashboard_used > $dashboard_limit) {
-                    $dashboard_used = $dashboard_limit;
-                    $dashboard_remaining = 0;
-                }
-                
-                // Calculate percentage - same way as Settings tab
-                $percentage = $dashboard_limit > 0 ? (($dashboard_used / $dashboard_limit) * 100) : 0;
-                $percentage = min(100, max(0, $percentage));
-                
-                // If at limit, ensure it shows 100%
-                if ($dashboard_used >= $dashboard_limit && $dashboard_remaining <= 0) {
-                    $percentage = 100;
-                }
-                
-                // Update the stats with calculated values for display
-                $usage_stats['used'] = $dashboard_used;
-                $usage_stats['limit'] = $dashboard_limit;
-                $usage_stats['remaining'] = $dashboard_remaining;
-                $usage_stats['percentage'] = $percentage;
-                $usage_stats['percentage_display'] = BbAI_Usage_Tracker::format_percentage_label($percentage);
-                ?>
-                
-                <!-- Optti Dashboard Integration (Step 6) -->
-                <div id="optti-dashboard-root" class="optti-dashboard-root">
-                    <p>Loading your Optti dashboard...</p>
-                </div>
-                
-                <!-- Clean Dashboard Design -->
-                <div class="bbai-dashboard-shell max-w-5xl mx-auto px-6">
-
-                     <!-- HERO Section Styles -->
-                     <style>
-                         .bbai-hero-section {
-                             background: linear-gradient(to bottom, #f7fee7 0%, #ffffff 100%);
-                             border-radius: 24px;
-                             margin-bottom: 32px;
-                             padding: 48px 40px;
-                             text-align: center;
-                             box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-                         }
-                         .bbai-hero-content {
-                             margin-bottom: 32px;
-                         }
-                         .bbai-hero-title {
-                             margin: 0 0 16px 0;
-                             font-size: 2.5rem;
-                             font-weight: 700;
-                             color: #0f172a;
-                             line-height: 1.2;
-                         }
-                         .bbai-hero-subtitle {
-                             margin: 0;
-                             font-size: 1.125rem;
-                             color: #475569;
-                             line-height: 1.6;
-                             max-width: 600px;
-                             margin-left: auto;
-                             margin-right: auto;
-                         }
-                         .bbai-hero-actions {
-                             display: flex;
-                             flex-direction: column;
-                             align-items: center;
-                             gap: 16px;
-                             margin-bottom: 24px;
-                         }
-                         .bbai-hero-btn-primary {
-                             background: linear-gradient(135deg, #14b8a6 0%, #84cc16 100%);
-                             color: white;
-                             border: none;
-                             padding: 16px 32px;
-                             border-radius: 16px;
-                             font-size: 16px;
-                             font-weight: 600;
-                             cursor: pointer;
-                             transition: opacity 0.2s ease;
-                             box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
-                         }
-                         .bbai-hero-btn-primary:hover {
-                             opacity: 0.9;
-                         }
-                         .bbai-hero-link-secondary {
-                             background: transparent;
-                             border: none;
-                             color: #6b7280;
-                             text-decoration: underline;
-                             font-size: 14px;
-                             cursor: pointer;
-                             transition: color 0.2s ease;
-                             padding: 0;
-                         }
-                         .bbai-hero-link-secondary:hover {
-                             color: #14b8a6;
-                         }
-                         .bbai-hero-micro-copy {
-                             font-size: 14px;
-                             color: #64748b;
-                             font-weight: 500;
-                         }
-                     </style>
-
-                     <?php if (!$this->api_client->is_authenticated()) : ?>
-                     <!-- HERO Section - Not Authenticated -->
-                     <div class="bbai-hero-section">
-                         <div class="bbai-hero-content">
-                             <h2 class="bbai-hero-title">
-                                 <?php esc_html_e('🎉 Boost Your Site\'s SEO Automatically', 'wp-alt-text-plugin'); ?>
-                             </h2>
-                             <p class="bbai-hero-subtitle">
-                                 <?php esc_html_e('Let AI write perfect, accessibility-friendly alt text for every image — free each month.', 'wp-alt-text-plugin'); ?>
-                             </p>
-                         </div>
-                         <div class="bbai-hero-actions">
-                             <button type="button" class="bbai-hero-btn-primary" id="bbai-show-auth-banner-btn">
-                                <?php esc_html_e('Start Free — Generate 50 AI Descriptions', 'wp-alt-text-plugin'); ?>
-                             </button>
-                             <button type="button" class="bbai-hero-link-secondary" id="bbai-show-auth-login-btn">
-                                 <?php esc_html_e('Already a user? Log in', 'wp-alt-text-plugin'); ?>
-                             </button>
-                         </div>
-                         <div class="bbai-hero-micro-copy">
-                             <?php esc_html_e('⚡ SEO Boost · 🦾 Accessibility · 🕒 Saves Hours', 'wp-alt-text-plugin'); ?>
-                         </div>
-                     </div>
-                     <?php endif; ?>
-                     <!-- Subscription management now in header -->
-
-
-                    <!-- Tab Content: Dashboard -->
-                    <div class="bbai-tab-content active" id="tab-dashboard">
-                    <!-- Premium Dashboard Container -->
-                    <div class="bbai-premium-dashboard">
-                        <!-- Subtle Header Section -->
-                        <div class="bbai-dashboard-header-section">
-                            <h1 class="bbai-dashboard-title"><?php esc_html_e('Dashboard', 'wp-alt-text-plugin'); ?></h1>
-                            <p class="bbai-dashboard-subtitle"><?php esc_html_e('AI-powered image alt text generator that boosts WordPress SEO, accessibility, and image rankings automatically.', 'wp-alt-text-plugin'); ?></p>
-                        </div>
-
-                        <?php 
-                        $is_authenticated = $this->api_client->is_authenticated();
-                        $has_license = $this->api_client->has_active_license();
-                        if ($is_authenticated || $has_license) : 
-                            // Get plan from usage stats or license
-                            $plan_slug = $usage_stats['plan'] ?? 'free';
-                            
-                            // If using license, check license plan
-                            if ($has_license && $plan_slug === 'free') {
-                                $license_data = $this->api_client->get_license_data();
-                                if ($license_data && isset($license_data['organization'])) {
-                                    $plan_slug = strtolower($license_data['organization']['plan'] ?? 'free');
-                                }
-                            }
-                            
-                            // Determine badge text and class
-                            $plan_badge_class = 'bbai-usage-plan-badge';
-                            $is_agency = ($plan_slug === 'agency');
-                            $is_pro = ($plan_slug === 'pro' || $plan_slug === 'agency');
-                            
-                            if ($plan_slug === 'agency') {
-                                $plan_badge_text = esc_html__('AGENCY', 'wp-alt-text-plugin');
-                                $plan_badge_class .= ' bbai-usage-plan-badge--agency';
-                            } elseif ($plan_slug === 'pro') {
-                                $plan_badge_text = esc_html__('PRO', 'wp-alt-text-plugin');
-                                $plan_badge_class .= ' bbai-usage-plan-badge--pro';
-                            } else {
-                                $plan_badge_text = esc_html__('FREE', 'wp-alt-text-plugin');
-                                $plan_badge_class .= ' bbai-usage-plan-badge--free';
-                            }
-                        ?>
-                        <!-- Premium Stats Grid -->
-                        <div class="bbai-premium-stats-grid<?php echo esc_attr($is_agency ? ' bbai-premium-stats-grid--single' : ''); ?>">
-                            <!-- Usage Card with Circular Progress -->
-                            <div class="bbai-premium-card bbai-usage-card<?php echo esc_attr($is_agency ? ' bbai-usage-card--full-width' : ''); ?>">
-                                <?php if ($is_agency) : ?>
-                                <!-- Soft purple gradient badge for Agency -->
-                                <span class="bbai-usage-plan-badge bbai-usage-plan-badge--agency-polished"><?php echo esc_html__('AGENCY', 'wp-alt-text-plugin'); ?></span>
-                                <?php else : ?>
-                                <span class="<?php echo esc_attr($plan_badge_class); ?>"><?php echo esc_html($plan_badge_text); ?></span>
-                                <?php endif; ?>
-                                <?php
-                                $percentage = min(100, max(0, $usage_stats['percentage'] ?? 0));
-                                $percentage_display = $usage_stats['percentage_display'] ?? BbAI_Usage_Tracker::format_percentage_label($percentage);
-                                $radius = 54;
-                                $circumference = 2 * M_PI * $radius;
-                                // Calculate offset: at 0% = full circumference (hidden), at 100% = 0 (fully visible)
-                                $stroke_dashoffset = $circumference * (1 - ($percentage / 100));
-                                $gradient_id = 'grad-' . wp_generate_password(8, false);
-                                ?>
-                                <?php if ($is_agency) : ?>
-                                <!-- Full-width agency layout - Polished Design -->
-                                <div class="bbai-usage-card-layout-full">
-                                    <div class="bbai-usage-card-left">
-                                        <h3 class="bbai-usage-card-title"><?php esc_html_e('Alt Text Generated This Month', 'wp-alt-text-plugin'); ?></h3>
-                                        <div class="bbai-usage-card-stats">
-                                            <div class="bbai-usage-stat-item">
-                                                <div class="bbai-usage-stat-value"><?php echo esc_html(number_format_i18n($usage_stats['used'])); ?></div>
-                                                <div class="bbai-usage-stat-label"><?php esc_html_e('Generated', 'wp-alt-text-plugin'); ?></div>
-                                            </div>
-                                            <div class="bbai-usage-stat-divider"></div>
-                                            <div class="bbai-usage-stat-item">
-                                                <div class="bbai-usage-stat-value"><?php echo esc_html(number_format_i18n($usage_stats['limit'])); ?></div>
-                                                <div class="bbai-usage-stat-label"><?php esc_html_e('Monthly Limit', 'wp-alt-text-plugin'); ?></div>
-                                            </div>
-                                            <div class="bbai-usage-stat-divider"></div>
-                                            <div class="bbai-usage-stat-item">
-                                                <div class="bbai-usage-stat-value"><?php echo esc_html(number_format_i18n($usage_stats['remaining'] ?? 0)); ?></div>
-                                                <div class="bbai-usage-stat-label"><?php esc_html_e('Remaining', 'wp-alt-text-plugin'); ?></div>
-                                            </div>
-                                        </div>
-                                        <div class="bbai-usage-card-reset">
-                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="margin-right: 6px;" aria-hidden="true">
-                                                <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                                                <path d="M8 4V8L10 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                                            </svg>
-                                            <span>
-                                            <?php 
-                                            $reset_date = $usage_stats['reset_date'] ?? '';
-                                            if (!empty($reset_date)) {
-                                                $reset_timestamp = strtotime($reset_date);
-                                                if ($reset_timestamp !== false) {
-                                                    $formatted_date = date_i18n('F j, Y', $reset_timestamp);
-                                                    printf(esc_html__('Resets %s', 'wp-alt-text-plugin'), esc_html($formatted_date));
-                                                } else {
-                                                    printf(esc_html__('Resets %s', 'wp-alt-text-plugin'), esc_html($reset_date));
-                                                }
-                                            } else {
-                                                esc_html_e('Resets monthly', 'wp-alt-text-plugin');
-                                            }
-                                            ?>
-                                            </span>
-                                        </div>
-                                        <?php 
-                                        $plan_slug = $usage_stats['plan'] ?? 'free';
-                                        $billing_portal = BbAI_Usage_Tracker::get_billing_portal_url();
-                                        ?>
-                                        <?php if (!empty($billing_portal)) : ?>
-                                        <div class="bbai-usage-card-actions">
-                                            <a href="#" class="bbai-usage-billing-link" data-action="open-billing-portal">
-                                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="margin-right: 6px;" aria-hidden="true">
-                                                    <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                                                    <circle cx="8" cy="8" r="2" fill="currentColor"/>
-                                                </svg>
-                                                <?php esc_html_e('Manage Billing', 'wp-alt-text-plugin'); ?>
-                                            </a>
-                                        </div>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div class="bbai-usage-card-divider" aria-hidden="true"></div>
-                                    <div class="bbai-usage-card-right">
-                                <div class="bbai-usage-ring-wrapper">
-                                            <?php
-                                            // Modern thin stroke ring gauge for agency
-                                            $agency_radius = 60;
-                                            $agency_circumference = 2 * M_PI * $agency_radius;
-                                            $agency_stroke_dashoffset = $agency_circumference * (1 - ($percentage / 100));
-                                            $agency_gradient_id = 'grad-agency-' . wp_generate_password(8, false);
-                                            ?>
-                                            <div class="bbai-circular-progress bbai-circular-progress--agency" 
-                                                 data-percentage="<?php echo esc_attr($percentage); ?>"
-                                                 aria-label="<?php printf(esc_attr__('Credits used: %s%%', 'wp-alt-text-plugin'), esc_attr($percentage_display)); ?>"
-                                                 role="progressbar"
-                                                 aria-valuenow="<?php echo esc_attr($percentage); ?>"
-                                                 aria-valuemin="0"
-                                                 aria-valuemax="100">
-                                                <svg class="bbai-circular-progress-svg" viewBox="0 0 140 140" aria-hidden="true">
-                                                    <defs>
-                                                        <linearGradient id="<?php echo esc_attr($agency_gradient_id); ?>" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                            <stop offset="0%" style="stop-color:#9b5cff;stop-opacity:1" />
-                                                            <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
-                                                        </linearGradient>
-                                                    </defs>
-                                                    <!-- Background circle -->
-                                                    <circle 
-                                                    cx="70" 
-                                                    cy="70" 
-                                                        r="<?php echo esc_attr($agency_radius); ?>" 
-                                                    fill="none"
-                                                        stroke="#f3f4f6" 
-                                                        stroke-width="8" 
-                                                        class="bbai-circular-progress-bg" />
-                                                    <!-- Progress circle -->
-                                                    <circle 
-                                                        cx="70" 
-                                                        cy="70" 
-                                                        r="<?php echo esc_attr($agency_radius); ?>" 
-                                                        fill="none"
-                                                        stroke="url(#<?php echo esc_attr($agency_gradient_id); ?>)"
-                                                        stroke-width="8"
-                                                    stroke-linecap="round"
-                                                        stroke-dasharray="<?php echo esc_attr($agency_circumference); ?>"
-                                                        stroke-dashoffset="<?php echo esc_attr($agency_stroke_dashoffset); ?>"
-                                                        class="bbai-circular-progress-bar"
-                                                        data-circumference="<?php echo esc_attr($agency_circumference); ?>"
-                                                        data-offset="<?php echo esc_attr($agency_stroke_dashoffset); ?>"
-                                                        transform="rotate(-90 70 70)" />
-                                                </svg>
-                                                <div class="bbai-circular-progress-text">
-                                                    <div class="bbai-circular-progress-percent"><?php echo esc_html($percentage_display); ?>%</div>
-                                                    <div class="bbai-circular-progress-label"><?php esc_html_e('Credits Used', 'wp-alt-text-plugin'); ?></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <?php else : ?>
-                                <!-- Standard vertical layout -->
-                                <h3 class="bbai-usage-card-title"><?php esc_html_e('Alt Text Generated This Month', 'wp-alt-text-plugin'); ?></h3>
-                                <div class="bbai-usage-ring-wrapper">
-                                    <div class="bbai-circular-progress" data-percentage="<?php echo esc_attr($percentage); ?>">
-                                        <svg class="bbai-circular-progress-svg" viewBox="0 0 120 120">
-                                            <defs>
-                                                <linearGradient id="<?php echo esc_attr($gradient_id); ?>" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                    <stop offset="0%" style="stop-color:#9b5cff;stop-opacity:1" />
-                                                    <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
-                                                </linearGradient>
-                                            </defs>
-                                            <!-- Background circle -->
-                                            <circle 
-                                                cx="60" 
-                                                cy="60" 
-                                                r="<?php echo esc_attr($radius); ?>" 
-                                                fill="none" 
-                                                stroke="#f3f4f6" 
-                                                stroke-width="12" 
-                                                class="bbai-circular-progress-bg" />
-                                            <!-- Progress circle -->
-                                            <circle 
-                                                cx="60" 
-                                                cy="60" 
-                                                r="<?php echo esc_attr($radius); ?>" 
-                                                fill="none"
-                                                stroke="url(#<?php echo esc_attr($gradient_id); ?>)"
-                                                stroke-width="12"
-                                                stroke-linecap="round"
-                                                stroke-dasharray="<?php echo esc_attr($circumference); ?>"
-                                                stroke-dashoffset="<?php echo esc_attr($stroke_dashoffset); ?>"
-                                                class="bbai-circular-progress-bar"
-                                                data-circumference="<?php echo esc_attr($circumference); ?>"
-                                                data-offset="<?php echo esc_attr($stroke_dashoffset); ?>" />
-                                        </svg>
-                                        <div class="bbai-circular-progress-text">
-                                            <div class="bbai-circular-progress-percent"><?php echo esc_html($percentage_display); ?>%</div>
-                                            <div class="bbai-circular-progress-label"><?php esc_html_e('credits used', 'wp-alt-text-plugin'); ?></div>
-                                        </div>
-                                    </div>
-                                    <button type="button" class="bbai-usage-tooltip" aria-label="<?php esc_attr_e('How quotas work', 'wp-alt-text-plugin'); ?>" title="<?php esc_attr_e('Your monthly quota resets on the first of each month. Upgrade to Pro for unlimited generations.', 'wp-alt-text-plugin'); ?>">
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                            <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                                            <path d="M8 5V5.01M8 11H8.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                                        </svg>
-                                    </button>
-                                </div>
-                                <div class="bbai-usage-details">
-                                    <div class="bbai-usage-text">
-                                        <strong><?php echo esc_html($usage_stats['used']); ?></strong> / <strong><?php echo esc_html($usage_stats['limit']); ?></strong>
-                                    </div>
-                                    <div class="bbai-usage-microcopy">
-                                        <?php 
-                                        $reset_date = $usage_stats['reset_date'] ?? '';
-                                        if (!empty($reset_date)) {
-                                            // Format as "resets MONTH DAY, YEAR"
-                                            $reset_timestamp = strtotime($reset_date);
-                                            if ($reset_timestamp !== false) {
-                                                $formatted_date = date_i18n('F j, Y', $reset_timestamp);
-                                                printf(
-                                                    esc_html__('Resets %s', 'wp-alt-text-plugin'),
-                                                    esc_html($formatted_date)
-                                                );
-                                            } else {
-                                                printf(
-                                                    esc_html__('Resets %s', 'wp-alt-text-plugin'),
-                                                    esc_html($reset_date)
-                                                );
-                                            }
-                                        } else {
-                                            esc_html_e('Resets monthly', 'wp-alt-text-plugin');
-                                        }
-                                        ?>
-                                    </div>
-                                    <?php 
-                                    $plan_slug = $usage_stats['plan'] ?? 'free';
-                                    $billing_portal = BbAI_Usage_Tracker::get_billing_portal_url();
-                                    $is_pro = ($plan_slug === 'pro' || $plan_slug === 'agency');
-                                    ?>
-                                    <?php if (!$is_pro) : ?>
-                                    <a href="#" class="bbai-usage-upgrade-link" data-action="show-upgrade-modal">
-                                            <?php esc_html_e('Upgrade for unlimited images', 'wp-alt-text-plugin'); ?> →
-                                    </a>
-                                    <?php elseif (!empty($billing_portal)) : ?>
-                                        <a href="#" class="bbai-usage-billing-link" data-action="open-billing-portal">
-                                            <?php esc_html_e('Manage billing & invoices', 'wp-alt-text-plugin'); ?> →
-                                        </a>
-                                    <?php endif; ?>
-                                </div>
-                                <?php endif; ?>
-                            </div>
-                            
-                            <!-- Premium Upsell Card -->
-                            <?php if (!$is_agency) : ?>
-                            <div class="bbai-premium-card bbai-upsell-card">
-                                <h3 class="bbai-upsell-title"><?php esc_html_e('Upgrade to Pro — Unlock Unlimited AI Power', 'wp-alt-text-plugin'); ?></h3>
-                                <ul class="bbai-upsell-features">
-                                    <li>
-                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                            <circle cx="10" cy="10" r="10" fill="#0EAD4B"/>
-                                            <path d="M6 10l2.5 2.5L14 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                        </svg>
-                                        <?php esc_html_e('Unlimited image generations', 'wp-alt-text-plugin'); ?>
-                                    </li>
-                                    <li>
-                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                            <circle cx="10" cy="10" r="10" fill="#0EAD4B"/>
-                                            <path d="M6 10l2.5 2.5L14 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                        </svg>
-                                        <?php esc_html_e('Priority queue processing', 'wp-alt-text-plugin'); ?>
-                                    </li>
-                                    <li>
-                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                            <circle cx="10" cy="10" r="10" fill="#0EAD4B"/>
-                                            <path d="M6 10l2.5 2.5L14 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                        </svg>
-                                        <?php esc_html_e('Bulk optimisation for large libraries', 'wp-alt-text-plugin'); ?>
-                                    </li>
-                                    <li>
-                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                            <circle cx="10" cy="10" r="10" fill="#0EAD4B"/>
-                                            <path d="M6 10l2.5 2.5L14 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                        </svg>
-                                        <?php esc_html_e('Multilingual AI alt text', 'wp-alt-text-plugin'); ?>
-                                    </li>
-                                    <li>
-                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                            <circle cx="10" cy="10" r="10" fill="#0EAD4B"/>
-                                            <path d="M6 10l2.5 2.5L14 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                        </svg>
-                                        <?php esc_html_e('Faster & more descriptive alt text from improved Vision models', 'wp-alt-text-plugin'); ?>
-                                    </li>
-                                </ul>
-                                <button type="button" class="bbai-upsell-cta bbai-upsell-cta--large" data-action="show-upgrade-modal">
-                                    <?php esc_html_e('Pro or Agency', 'wp-alt-text-plugin'); ?>
-                                </button>
-                                <p class="bbai-upsell-microcopy">
-                                    <?php esc_html_e('Save 15+ hours/month with automated SEO alt generation.', 'wp-alt-text-plugin'); ?>
-                                </p>
-                            </div>
-                            <?php endif; ?>
-                        </div>
-                        
-                        <!-- Stats Cards Row -->
-                        <?php
-                        $alt_texts_generated = $usage_stats['used'] ?? 0;
-                        $minutes_per_alt_text = 2.5;
-                        $hours_saved = round(($alt_texts_generated * $minutes_per_alt_text) / 60, 1);
-                        $total_images = $stats['total'] ?? 0;
-                        $optimized = $stats['with_alt'] ?? 0;
-                        $remaining_images = $stats['missing'] ?? 0;
-                        $coverage_percent = $total_images > 0 ? round(($optimized / $total_images) * 100) : 0;
-                        ?>
-                        <div class="bbai-premium-metrics-grid">
-                            <!-- Time Saved Card -->
-                            <div class="bbai-premium-card bbai-metric-card">
-                                <div class="bbai-metric-icon">
-                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
-                                        <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                    </svg>
-                                </div>
-                                <div class="bbai-metric-value"><?php echo esc_html($hours_saved); ?> hrs</div>
-                                <div class="bbai-metric-label"><?php esc_html_e('TIME SAVED', 'wp-alt-text-plugin'); ?></div>
-                                <div class="bbai-metric-description"><?php esc_html_e('vs manual optimisation', 'wp-alt-text-plugin'); ?></div>
-                            </div>
-                            
-                            <!-- Images Optimized Card -->
-                            <div class="bbai-premium-card bbai-metric-card">
-                                <div class="bbai-metric-icon">
-                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                                        <path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
-                                </div>
-                                <div class="bbai-metric-value"><?php echo esc_html($optimized); ?></div>
-                                <div class="bbai-metric-label"><?php esc_html_e('IMAGES OPTIMIZED', 'wp-alt-text-plugin'); ?></div>
-                                <div class="bbai-metric-description"><?php esc_html_e('with generated alt text', 'wp-alt-text-plugin'); ?></div>
-                            </div>
-                            
-                            <!-- Estimated SEO Impact Card -->
-                            <div class="bbai-premium-card bbai-metric-card">
-                                <div class="bbai-metric-icon">
-                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                                        <path d="M2 12L12 2L22 12M12 8V22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
-                                </div>
-                                <div class="bbai-metric-value"><?php echo esc_html($coverage_percent); ?>%</div>
-                                <div class="bbai-metric-label"><?php esc_html_e('ESTIMATED SEO IMPACT', 'wp-alt-text-plugin'); ?></div>
-                            </div>
-                        </div>
-                        
-                        <!-- Site-Wide Licensing Notice -->
-                        <div class="bbai-premium-card bbai-info-notice">
-                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                <circle cx="10" cy="10" r="9" stroke="#0ea5e9" stroke-width="1.5" fill="none"/>
-                                <path d="M10 6V10M10 14H10.01" stroke="#0ea5e9" stroke-width="1.5" stroke-linecap="round"/>
-                            </svg>
-                            <span>
-                                <?php 
-                                $site_name = trim(get_bloginfo('name'));
-                                $site_label = $site_name !== '' ? $site_name : __('this WordPress site', 'wp-alt-text-plugin');
-                                printf(
-                                    esc_html__('Quota shared across all users on %s', 'wp-alt-text-plugin'),
-                                    '<strong>' . esc_html($site_label) . '</strong>'
-                                );
-                                ?>
-                            </span>
-                        </div>
-
-                        <!-- Image Optimization Card (Full Width Pill) -->
-                        <?php
-                        $total_images = $stats['total'] ?? 0;
-                        $optimized = $stats['with_alt'] ?? 0;
-                        $remaining_imgs = $stats['missing'] ?? 0;
-                        $coverage_pct = $total_images > 0 ? round(($optimized / $total_images) * 100) : 0;
-
-                        // Check if user has quota remaining (for free users) or is on pro/agency plan
-                        $plan = $usage_stats['plan'] ?? 'free';
-                        $has_quota = ($usage_stats['remaining'] ?? 0) > 0;
-                        $is_premium = in_array($plan, ['pro', 'agency'], true);
-                        $can_generate = $has_quota || $is_premium;
-                        ?>
-                        <div class="bbai-premium-card bbai-optimization-card <?php echo esc_attr(($total_images > 0 && $remaining_imgs === 0) ? 'bbai-optimization-card--complete' : ''); ?>">
-                            <?php if ($total_images > 0 && $remaining_imgs === 0) : ?>
-                                <div class="bbai-optimization-accent-bar"></div>
-                            <?php endif; ?>
-                            <div class="bbai-optimization-header">
-                                <?php if ($total_images > 0 && $remaining_imgs === 0) : ?>
-                                    <div class="bbai-optimization-success-chip">
-                                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                                            <path d="M13 4L6 11L3 8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                        </svg>
-                                    </div>
-                                <?php endif; ?>
-                                <h2 class="bbai-optimization-title">
-                                    <?php 
-                                    if ($total_images > 0) {
-                                        if ($remaining_imgs > 0) {
-                                            printf(
-                                                esc_html__('%1$d of %2$d images optimized', 'wp-alt-text-plugin'),
-                                                $optimized,
-                                                $total_images
-                                            );
-                                        } else {
-                                            // Success chip with checkmark icon is already shown above
-                                            printf(
-                                                esc_html__('All %1$d images optimized!', 'wp-alt-text-plugin'),
-                                                $total_images
-                                            );
-                                        }
-                                    } else {
-                                        esc_html_e('Ready to optimize images', 'wp-alt-text-plugin');
-                                    }
-                                    ?>
-                                </h2>
-                            </div>
-                            
-                            <?php if ($total_images > 0) : ?>
-                                <div class="bbai-optimization-progress">
-                                    <div class="bbai-optimization-progress-bar">
-                                        <div class="bbai-optimization-progress-fill" style="width: <?php echo esc_attr($coverage_pct); ?>%; background: <?php echo esc_attr(($remaining_imgs === 0) ? '#10b981' : '#9b5cff'); ?>;"></div>
-                                    </div>
-                                    <div class="bbai-optimization-stats">
-                                        <div class="bbai-optimization-stat">
-                                            <span class="bbai-optimization-stat-label"><?php esc_html_e('Optimized', 'wp-alt-text-plugin'); ?></span>
-                                            <span class="bbai-optimization-stat-value"><?php echo esc_html($optimized); ?></span>
-                                        </div>
-                                        <div class="bbai-optimization-stat">
-                                            <span class="bbai-optimization-stat-label"><?php esc_html_e('Remaining', 'wp-alt-text-plugin'); ?></span>
-                                            <span class="bbai-optimization-stat-value"><?php echo esc_html($remaining_imgs); ?></span>
-                                        </div>
-                                        <div class="bbai-optimization-stat">
-                                            <span class="bbai-optimization-stat-label"><?php esc_html_e('Total', 'wp-alt-text-plugin'); ?></span>
-                                            <span class="bbai-optimization-stat-value"><?php echo esc_html($total_images); ?></span>
-                                        </div>
-                                    </div>
-                                    <div class="bbai-optimization-actions">
-                                        <button type="button" class="bbai-optimization-cta bbai-optimization-cta--primary <?php echo esc_attr((!$can_generate) ? 'bbai-optimization-cta--locked' : ''); ?>" data-action="generate-missing" <?php echo (!$can_generate) ? 'disabled title="' . esc_attr__('Unlock unlimited alt text with Pro →', 'wp-alt-text-plugin') . '"' : ''; ?>>
-                                            <?php if (!$can_generate) : ?>
-                                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
-                                                    <path d="M12 6V4a4 4 0 00-8 0v2M4 6h8l1 8H3L4 6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                                </svg>
-                                                <span><?php esc_html_e('Generate Missing Alt Text', 'wp-alt-text-plugin'); ?></span>
-                                            <?php else : ?>
-                                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
-                                                    <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                                                    <path d="M6 6H10M6 10H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                                                </svg>
-                                                <span><?php esc_html_e('Generate Missing Alt Text', 'wp-alt-text-plugin'); ?></span>
-                                            <?php endif; ?>
-                                        </button>
-                                        <button type="button" class="bbai-optimization-cta bbai-optimization-cta--secondary <?php echo esc_attr((!$can_generate) ? 'bbai-optimization-cta--locked' : ''); ?>" data-action="regenerate-all" <?php echo (!$can_generate) ? 'disabled title="' . esc_attr__('Unlock unlimited alt text with Pro →', 'wp-alt-text-plugin') . '"' : ''; ?>>
-                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
-                                                <path d="M8 2L10 6L14 8L10 10L8 14L6 10L2 8L6 6L8 2Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                                                <circle cx="8" cy="8" r="2" fill="currentColor"/>
-                                            </svg>
-                                            <span><?php esc_html_e('Re-optimize All Alt Text', 'wp-alt-text-plugin'); ?></span>
-                                        </button>
-                                    </div>
-                                </div>
-                            <?php else : ?>
-                                <div class="bbai-optimization-empty">
-                                    <p><?php esc_html_e('Upload images to your WordPress Media Library to get started with AI-powered alt text generation.', 'wp-alt-text-plugin'); ?></p>
-                                    <a href="<?php echo esc_url(admin_url('upload.php')); ?>" class="bbai-btn-primary">
-                                        <?php esc_html_e('Go to Media Library', 'wp-alt-text-plugin'); ?>
-                                    </a>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                        
-                        <!-- Footer Cross-Sell -->
-                        <div class="bbai-premium-footer-cta">
-                            <p class="bbai-footer-cta-text">
-                                <?php esc_html_e('Complete your SEO stack', 'wp-alt-text-plugin'); ?> 
-                                <a href="https://oppti.dev/plugins/meta" target="_blank" rel="noopener noreferrer" class="bbai-footer-cta-link bbai-footer-cta-link--coming-soon">
-                                    <?php esc_html_e('Try our SEO Meta Generator AI', 'wp-alt-text-plugin'); ?>
-                                    <span class="bbai-footer-cta-badge-new"><?php esc_html_e('New', 'wp-alt-text-plugin'); ?></span>
-                                    <span class="bbai-footer-cta-badge-coming-soon"><?php esc_html_e('Coming Soon', 'wp-alt-text-plugin'); ?></span>
-                                </a>
-                                <span class="bbai-footer-cta-badge"><?php esc_html_e('(included in free plan)', 'wp-alt-text-plugin'); ?></span>
-                            </p>
-                            <button type="button" class="bbai-upcoming-plugins-subscribe-btn" id="bbai-upcoming-plugins-subscribe-btn" data-action="show-subscribe-modal">
-                                <?php esc_html_e('Notify Me', 'wp-alt-text-plugin'); ?>
-                            </button>
-                        </div>
-                        
-                        <?php
-                        // Include upcoming plugins subscribe modal
-                        require_once BBAI_PLUGIN_DIR . 'admin/components/UpcomingPluginsSubscribeModal.php';
-                        UpcomingPluginsSubscribeModal::render();
-                        ?>
-                        
-                        <!-- Powered by OpttiAI -->
-                        <div class="bbai-premium-footer-divider"></div>
-                        <div class="bbai-premium-footer-branding">
-                            <?php
-                            $site_url = 'https://oppti.dev';
-                            if (function_exists('opptiai_framework') && opptiai_framework()->config) {
-                                $site_url = opptiai_framework()->config->get('site', 'https://oppti.dev');
-                            }
-                            ?>
-                            <span><?php esc_html_e('Powered by', 'wp-alt-text-plugin'); ?> <strong><a href="<?php echo esc_url($site_url); ?>" target="_blank" rel="noopener" style="color: inherit; text-decoration: none;">OpttiAI</a></strong></span>
-                        </div>
-                        
-                        <!-- Circular Progress Animation Script -->
-                        <script>
-                        (function() {
-                            function initProgressRings() {
-                                var rings = document.querySelectorAll('.bbai-circular-progress-bar[data-offset]');
-                                rings.forEach(function(ring) {
-                                    var circumference = parseFloat(ring.getAttribute('data-circumference'));
-                                    var targetOffset = parseFloat(ring.getAttribute('data-offset'));
-                                    
-                                    if (!isNaN(circumference) && !isNaN(targetOffset)) {
-                                        // Start from full (hidden)
-                                        ring.style.strokeDashoffset = circumference;
-                                        ring.style.transition = 'stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
-                                        
-                                        // Animate to target
-                                        requestAnimationFrame(function() {
-                                            ring.style.strokeDashoffset = targetOffset;
-                                        });
-                                    }
-                                });
-                            }
-                            
-                            if (document.readyState === 'loading') {
-                                document.addEventListener('DOMContentLoaded', initProgressRings);
-                            } else {
-                                setTimeout(initProgressRings, 50);
-                            }
-                        })();
-                        </script>
-                    <?php else : ?>
-                        <!-- Not Authenticated - Demo Preview (Using Real Dashboard Structure) -->
-                        <div class="bbai-demo-preview">
-                            <!-- Demo Badge Overlay -->
-                            <div class="bbai-demo-badge-overlay">
-                                <span class="bbai-demo-badge-text"><?php esc_html_e('DEMO PREVIEW', 'wp-alt-text-plugin'); ?></span>
-                            </div>
-                            
-                            <!-- Usage Card (Demo) -->
-                            <div class="bbai-dashboard-card bbai-dashboard-card--featured bbai-demo-mode">
-                                <div class="bbai-dashboard-card-header">
-                                    <div class="bbai-dashboard-card-badge"><?php esc_html_e('USAGE STATUS', 'wp-alt-text-plugin'); ?></div>
-                                    <h2 class="bbai-dashboard-card-title">
-                                        <span class="bbai-dashboard-emoji">📊</span>
-                                        <?php esc_html_e('0 of 50 image descriptions generated this month.', 'wp-alt-text-plugin'); ?>
-                                    </h2>
-                                    <p style="margin: 12px 0 0 0; font-size: 14px; color: #6b7280;">
-                                        <?php esc_html_e('Sign in to track your usage and access premium features.', 'wp-alt-text-plugin'); ?>
-                                    </p>
-                                </div>
-                                
-                                <div class="bbai-dashboard-usage-bar">
-                                    <div class="bbai-dashboard-usage-bar-fill" style="width: 0%;"></div>
-                                </div>
-                                
-                                <div class="bbai-dashboard-usage-stats">
-                                    <div class="bbai-dashboard-usage-stat">
-                                        <span class="bbai-dashboard-usage-label"><?php esc_html_e('Used', 'wp-alt-text-plugin'); ?></span>
-                                        <span class="bbai-dashboard-usage-value">0</span>
-                                    </div>
-                                    <div class="bbai-dashboard-usage-stat">
-                                        <span class="bbai-dashboard-usage-label"><?php esc_html_e('Remaining', 'wp-alt-text-plugin'); ?></span>
-                                        <span class="bbai-dashboard-usage-value">50</span>
-                                    </div>
-                                    <div class="bbai-dashboard-usage-stat">
-                                        <span class="bbai-dashboard-usage-label"><?php esc_html_e('Resets', 'wp-alt-text-plugin'); ?></span>
-                                        <span class="bbai-dashboard-usage-value"><?php echo esc_html(date_i18n('F j, Y', strtotime('first day of next month'))); ?></span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Time Saved Card (Demo) -->
-                            <div class="bbai-dashboard-card bbai-time-saved-card bbai-demo-mode">
-                                <div class="bbai-dashboard-card-header">
-                                    <div class="bbai-dashboard-card-badge"><?php esc_html_e('TIME SAVED', 'wp-alt-text-plugin'); ?></div>
-                                    <h2 class="bbai-dashboard-card-title">
-                                        <span class="bbai-dashboard-emoji">⏱️</span>
-                                        <?php esc_html_e('Ready to optimize your images', 'wp-alt-text-plugin'); ?>
-                                    </h2>
-                                    <p class="bbai-seo-impact" style="margin-top: 8px; font-size: 14px; color: #6b7280;"><?php esc_html_e('Start generating alt text to improve SEO and accessibility', 'wp-alt-text-plugin'); ?></p>
-                                </div>
-                            </div>
-
-                            <!-- Image Optimization Card (Demo) -->
-                            <div class="bbai-dashboard-card bbai-demo-mode">
-                                <div class="bbai-dashboard-card-header">
-                                    <div class="bbai-dashboard-card-badge"><?php esc_html_e('IMAGE OPTIMIZATION', 'wp-alt-text-plugin'); ?></div>
-                                    <h2 class="bbai-dashboard-card-title">
-                                        <span class="bbai-dashboard-emoji">📊</span>
-                                        <?php esc_html_e('Ready to optimize images', 'wp-alt-text-plugin'); ?>
-                                    </h2>
-                                </div>
-                                
-                                <div class="bbai-dashboard-usage-bar">
-                                    <div class="bbai-dashboard-usage-bar-fill" style="width: 0%;"></div>
-                                </div>
-                                
-                                <div class="bbai-dashboard-usage-stats">
-                                    <div class="bbai-dashboard-usage-stat">
-                                        <span class="bbai-dashboard-usage-label"><?php esc_html_e('Optimized', 'wp-alt-text-plugin'); ?></span>
-                                        <span class="bbai-dashboard-usage-value">0</span>
-                                    </div>
-                                    <div class="bbai-dashboard-usage-stat">
-                                        <span class="bbai-dashboard-usage-label"><?php esc_html_e('Remaining', 'wp-alt-text-plugin'); ?></span>
-                                        <span class="bbai-dashboard-usage-value">—</span>
-                                    </div>
-                                    <div class="bbai-dashboard-usage-stat">
-                                        <span class="bbai-dashboard-usage-label"><?php esc_html_e('Total', 'wp-alt-text-plugin'); ?></span>
-                                        <span class="bbai-dashboard-usage-value">—</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Demo CTA -->
-                            <div class="bbai-demo-cta">
-                                <p class="bbai-demo-cta-text"><?php esc_html_e('✨ Sign up now to start generating alt text for your images!', 'wp-alt-text-plugin'); ?></p>
-                                <button type="button" class="bbai-btn-primary bbai-btn-icon" id="bbai-demo-signup-btn">
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                        <path d="M8 2L6 6H2L6 9L4 14L8 11L12 14L10 9L14 6H10L8 2Z" fill="currentColor"/>
-                                    </svg>
-                                    <span><?php esc_html_e('Get Started Free', 'wp-alt-text-plugin'); ?></span>
-                                </button>
-                            </div>
-                        </div>
-                    <?php endif; // End is_authenticated check for usage/stats cards ?>
-
-                    <?php if ($this->api_client->is_authenticated() && ($usage_stats['remaining'] ?? 0) <= 0) : ?>
-                        <div class="bbai-limit-reached">
-                            <div class="bbai-limit-header-icon">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                            </div>
-                            <h3 class="bbai-limit-title"><?php esc_html_e('Monthly limit reached — keep the momentum going!', 'wp-alt-text-plugin'); ?></h3>
-                            <p class="bbai-limit-description">
-                                <?php
-                                    $reset_label = $usage_stats['reset_date'] ?? '';
-                                    printf(
-                                        esc_html__('You\'ve used all %1$d free generations this month. Your quota resets on %2$s.', 'wp-alt-text-plugin'),
-                                        $usage_stats['limit'],
-                                        esc_html($reset_label)
-                                    );
-                                ?>
-                            </p>
-
-                            <div class="bbai-countdown" data-countdown="<?php echo esc_attr($usage_stats['seconds_until_reset'] ?? 0); ?>" data-reset-timestamp="<?php echo esc_attr($usage_stats['reset_timestamp'] ?? 0); ?>">
-                                <div class="bbai-countdown-item">
-                                    <div class="bbai-countdown-number" data-days>0</div>
-                                    <div class="bbai-countdown-label"><?php esc_html_e('days', 'wp-alt-text-plugin'); ?></div>
-                                </div>
-                                <div class="bbai-countdown-separator">—</div>
-                                <div class="bbai-countdown-item">
-                                    <div class="bbai-countdown-number" data-hours>0</div>
-                                    <div class="bbai-countdown-label"><?php esc_html_e('hours', 'wp-alt-text-plugin'); ?></div>
-                                </div>
-                                <div class="bbai-countdown-separator">—</div>
-                                <div class="bbai-countdown-item">
-                                    <div class="bbai-countdown-number" data-minutes>0</div>
-                                    <div class="bbai-countdown-label"><?php esc_html_e('mins', 'wp-alt-text-plugin'); ?></div>
-                                </div>
-                            </div>
-
-                            <div class="bbai-limit-cta">
-                                <button type="button" class="bbai-limit-upgrade-btn bbai-limit-upgrade-btn--full" data-action="show-upgrade-modal" data-upgrade-source="upgrade-modal">
-                                    <?php esc_html_e('Upgrade to Pro', 'wp-alt-text-plugin'); ?>
-                                </button>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-
-                    <!-- Testimonial Block -->
-                    <div class="bbai-testimonials-grid">
-                        <div class="bbai-testimonial-block">
-                            <div class="bbai-testimonial-stars">⭐️⭐️⭐️⭐️⭐️</div>
-                            <blockquote class="bbai-testimonial-quote">
-                                <?php esc_html_e('"Generated 1,200 alt texts for our agency in minutes."', 'wp-alt-text-plugin'); ?>
-                            </blockquote>
-                            <div class="bbai-testimonial-author-wrapper">
-                                <div class="bbai-testimonial-avatar">SW</div>
-                                <cite class="bbai-testimonial-author"><?php esc_html_e('Sarah W.', 'wp-alt-text-plugin'); ?></cite>
-                            </div>
-                        </div>
-                        <div class="bbai-testimonial-block">
-                            <div class="bbai-testimonial-stars">⭐️⭐️⭐️⭐️⭐️</div>
-                            <blockquote class="bbai-testimonial-quote">
-                                <?php esc_html_e('"We automated 4,800 alt text entries for our WooCommerce store."', 'wp-alt-text-plugin'); ?>
-                            </blockquote>
-                            <div class="bbai-testimonial-author-wrapper">
-                                <div class="bbai-testimonial-avatar">MP</div>
-                                <cite class="bbai-testimonial-author"><?php esc_html_e('Martin P.', 'wp-alt-text-plugin'); ?></cite>
-                            </div>
-                        </div>
+            
+            <div class="wrap bbai-dashboard-wrapper">
+                <?php if ($can_access_dashboard) : ?>
+                    <!-- Optional: Summary Cards Above Iframe -->
+                    <div id="bbai-dashboard-summary-cards" class="bbai-summary-cards" style="margin-bottom: 24px;">
+                        <!-- Cards will be rendered by JavaScript -->
                     </div>
+                    
+                    <!-- SaaS Dashboard Iframe -->
+                    <iframe 
+                        id="bbai-optti-dashboard"
+                        src="<?php echo $dashboard_url; ?>"
+                        style="width:100%; min-height:800px; border:0;"
+                        allow="clipboard-read; clipboard-write"
+                        title="<?php esc_attr_e('Optti Dashboard', 'wp-alt-text-plugin'); ?>"
+                    ></iframe>
+                <?php else : ?>
+                    <!-- Not Authenticated - Show Auth Prompt -->
+                    <div class="bbai-dashboard-auth-prompt" style="text-align: center; padding: 60px 20px;">
+                        <h2 style="margin-bottom: 16px;"><?php esc_html_e('Sign in to view your dashboard', 'wp-alt-text-plugin'); ?></h2>
+                        <p style="margin-bottom: 24px; color: #6b7280;">
+                            <?php esc_html_e('Please sign in to access your dashboard and view your usage statistics.', 'wp-alt-text-plugin'); ?>
+                        </p>
+                        <button type="button" class="bbai-btn-primary" data-action="show-auth-modal" data-auth-tab="login" style="padding: 12px 24px; font-size: 16px;">
+                            <?php esc_html_e('Sign In', 'wp-alt-text-plugin'); ?>
+                        </button>
+                    </div>
+                <?php endif; ?>
+            </div>
 
-                    </div> <!-- End Dashboard Container -->
-                    </div> <!-- End Premium Dashboard -->
-                    </div> <!-- End Tab Content: Dashboard -->
 
             <?php elseif ($tab === 'library' && $this->api_client->is_authenticated()) : ?>
                 <!-- ALT Library Table -->
@@ -6644,6 +5839,16 @@ class BbAI_Core {
                 'userEmail' => wp_get_current_user()->exists() ? wp_get_current_user()->user_email : '',
                 'token' => get_option('optti_jwt_token') ?: '',
             ]);
+            
+            // Enqueue dashboard-summary.js - optional summary cards above iframe
+            $dashboard_summary_js = $asset_path($js_base, 'dashboard-summary', $use_debug_assets, 'js');
+            wp_enqueue_script(
+                'optti-dashboard-summary',
+                $base_url . $dashboard_summary_js,
+                ['jquery', 'optti-dashboard-api'],
+                $asset_version($dashboard_summary_js, '1.0.0'),
+                true
+            );
             
             // Enqueue dashboard-render.js - must load after dashboard-api.js
             $dashboard_render_js = $asset_path($js_base, 'dashboard-render', $use_debug_assets, 'js');

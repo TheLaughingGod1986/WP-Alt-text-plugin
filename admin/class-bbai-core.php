@@ -6891,7 +6891,8 @@ class Core {
                 'baseUrl' => 'https://alttext-ai-backend.onrender.com',
                 'plugin' => 'beepbeep-ai',
                 'site'   => home_url(),
-                'userEmail' => $user_email
+                'userEmail' => $user_email,
+                'token' => get_option('optti_jwt_token') ?: ''
             ]);
         }
 

@@ -229,6 +229,13 @@
                 $btn.prop('disabled', false);
                 $btn.text(originalText);
 
+                // Check for subscription error
+                if (error && error.subscriptionError) {
+                    hideBulkProgress();
+                    // Upgrade modal should already be triggered by queueImages
+                    return; // Exit early
+                }
+
                 if (success && queued > 0) {
                     // Update modal to show success and keep it open
                     updateBulkProgressTitle('Successfully Queued!');
@@ -480,6 +487,13 @@
                 $btn.prop('disabled', false);
                 $btn.text(originalText);
 
+                // Check for subscription error
+                if (error && error.subscriptionError) {
+                    hideBulkProgress();
+                    // Upgrade modal should already be triggered by queueImages
+                    return; // Exit early
+                }
+
                 if (success && queued > 0) {
                     // Update modal to show success and keep it open
                     updateBulkProgressTitle('Successfully Queued!');
@@ -707,6 +721,28 @@
 
             // Hide loading state
             $modal.find('.bbai-regenerate-modal__loading').removeClass('active');
+
+            // Check for subscription error in response
+            var subscriptionError = null;
+            if (response && response.data) {
+                if (response.data.subscription_error || 
+                    (response.data.error_code && (
+                        response.data.error_code === 'subscription_required' ||
+                        response.data.error_code === 'subscription_expired' ||
+                        response.data.error_code === 'quota_exceeded'
+                    ))) {
+                    subscriptionError = response.data.error_code || response.data.subscription_error || 'subscription_required';
+                }
+            }
+            
+            // Handle subscription error
+            if (subscriptionError) {
+                closeRegenerateModal($modal);
+                if (typeof window.bbai_openUpgradeModal === 'function') {
+                    window.bbai_openUpgradeModal(subscriptionError);
+                }
+                return;
+            }
 
             if (response && response.success) {
                 var newAltText = response.data && response.data.alt_text ? response.data.alt_text : '';
@@ -951,6 +987,7 @@
                 var errorMessage = 'Failed to queue images';
                 var errorCode = null;
                 var errorRemaining = null;
+                var subscriptionError = null;
                 
                 // WordPress wp_send_json_error wraps data in response.data
                 if (response && response.data) {
@@ -965,7 +1002,31 @@
                         if (response.data.remaining !== undefined && response.data.remaining !== null) {
                             errorRemaining = parseInt(response.data.remaining, 10);
                         }
+                        
+                        // Check for subscription error
+                        if (response.data.subscription_error || 
+                            (response.data.error_code && (
+                                response.data.error_code === 'subscription_required' ||
+                                response.data.error_code === 'subscription_expired' ||
+                                response.data.error_code === 'quota_exceeded'
+                            ))) {
+                            subscriptionError = response.data.error_code || response.data.subscription_error || 'subscription_required';
+                        }
                     }
+                }
+                
+                // Check for subscription error and trigger modal
+                if (subscriptionError) {
+                    if (typeof window.bbai_openUpgradeModal === 'function') {
+                        window.bbai_openUpgradeModal(subscriptionError);
+                    }
+                    callback(false, 0, {
+                        message: errorMessage,
+                        code: errorCode,
+                        remaining: errorRemaining,
+                        subscriptionError: subscriptionError
+                    }, ids.slice(0));
+                    return;
                 }
                 
                 console.error('[AI Alt Text] Queue failed:', errorMessage, errorCode ? '(Code: ' + errorCode + ')' : '');

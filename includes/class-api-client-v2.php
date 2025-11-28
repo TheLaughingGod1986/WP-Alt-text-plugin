@@ -104,13 +104,35 @@ class API_Client_V2 {
 
     /**
      * Get stored license key
+     * Also checks framework snapshot and license data if key is not stored directly
      */
     public function get_license_key() {
         $key = get_option($this->license_key_option_key, '');
-        if ($key === '' || $key === false) {
-            return '';
+        if ($key !== '' && $key !== false) {
+            $decrypted = $this->maybe_decrypt_secret($key);
+            if (!empty($decrypted)) {
+                return $decrypted;
+            }
         }
-        return $this->maybe_decrypt_secret($key);
+        
+        // If no key stored, check framework snapshot (for free licenses)
+        if (function_exists('opptiai_framework')) {
+            $framework = opptiai_framework();
+            if ($framework && isset($framework->licensing)) {
+                $snapshot = $framework->licensing->get_snapshot();
+                if (!empty($snapshot) && isset($snapshot['licenseKey'])) {
+                    return $snapshot['licenseKey'];
+                }
+            }
+        }
+        
+        // Also check license data (might have been stored there)
+        $license_data = $this->get_license_data();
+        if (!empty($license_data) && isset($license_data['licenseKey'])) {
+            return $license_data['licenseKey'];
+        }
+        
+        return '';
     }
 
     /**
@@ -180,6 +202,7 @@ class API_Client_V2 {
         }
 
         // Also check if we have license data without a key (free plan scenario)
+        // This handles cases where auto-attach succeeded but didn't return a licenseKey
         if (!empty($license_data) && 
             isset($license_data['organization']) && 
             isset($license_data['organization']['plan'])) {
@@ -248,12 +271,18 @@ class API_Client_V2 {
     
     /**
      * Get or generate unique site ID
-     * This ensures quotas are tracked per-site, not per-user
      * 
-     * @return string Site identifier
+     * CRITICAL: This ensures quotas are tracked per-site, not per-user.
+     * - Free plan: Site gets exactly 50 credits/month total, shared across all users
+     * - Pro/Agency: Site gets plan credits, shared across all users
+     * - Site ID is sent as X-Site-Hash header to backend for quota tracking
+     * - All users on the same site share the same quota
+     * 
+     * @return string Site identifier (stable, generated once per site)
      */
     public function get_site_id() {
         // Use the centralized helper function
+        // This generates a stable site identifier stored in WordPress options (site-wide)
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
         return \BeepBeepAI\AltTextGenerator\get_site_identifier();
     }
@@ -273,7 +302,7 @@ class API_Client_V2 {
 
         $headers = [
             'Content-Type' => 'application/json',
-            'X-Site-Hash' => $site_id,  // Site-based licensing identifier
+            'X-Site-Hash' => $site_id,  // Site-based licensing identifier - ensures quota tracking per-site, not per-user
             'X-Site-URL' => get_site_url(),  // For backend reference
             'X-Site-Fingerprint' => $fingerprint,  // Site fingerprint for abuse prevention
         ];
@@ -455,6 +484,52 @@ class API_Client_V2 {
             );
         }
         
+        // Handle subscription errors (402 Payment Required)
+        if ($status_code === 402) {
+            $error_code = '';
+            $error_message = '';
+            
+            if (is_array($data)) {
+                $error_code = is_string($data['error'] ?? $data['code'] ?? '') ? ($data['error'] ?? $data['code'] ?? '') : 'subscription_required';
+                $error_message = is_string($data['message'] ?? '') ? $data['message'] : __('A subscription is required to continue.', 'beepbeep-ai-alt-text-generator');
+            } else {
+                $error_code = 'subscription_required';
+                $error_message = __('A subscription is required to continue.', 'beepbeep-ai-alt-text-generator');
+            }
+            
+            // Normalize error codes to expected values
+            $normalized_code = 'subscription_required';
+            if ($error_code === 'subscription_expired' || strpos(strtolower($error_code), 'expired') !== false) {
+                $normalized_code = 'subscription_expired';
+            } elseif ($error_code === 'quota_exceeded' || strpos(strtolower($error_code), 'quota') !== false) {
+                $normalized_code = 'quota_exceeded';
+            }
+            
+            $this->log_api_event('warning', 'Subscription error detected', [
+                'endpoint' => $endpoint,
+                'method'   => $method,
+                'error_code' => $normalized_code,
+            ]);
+            
+            // Cache subscription error for banner display (expires in 1 hour)
+            set_transient('bbai_subscription_error', [
+                'error_code' => $normalized_code,
+                'message' => $error_message,
+                'timestamp' => time(),
+            ], HOUR_IN_SECONDS);
+            
+            return new \WP_Error(
+                'subscription_error',
+                $error_message,
+                [
+                    'subscription_error' => true,
+                    'error_code' => $normalized_code,
+                    'status_code' => 402,
+                    'requires_subscription' => true,
+                ]
+            );
+        }
+        
         // Handle server errors
         if ($status_code >= 500) {
             // Log the actual response body for debugging
@@ -564,6 +639,11 @@ class API_Client_V2 {
                     'backend_message' => $backend_error_message,
                 ]
             );
+        }
+        
+        // Clear subscription error transient on successful API calls (subscription is valid)
+        if ($status_code >= 200 && $status_code < 300) {
+            delete_transient('bbai_subscription_error');
         }
         
         // Handle authentication errors - only clear token if it's a clear auth issue
@@ -719,6 +799,18 @@ class API_Client_V2 {
             $snapshot = $this->extract_license_snapshot($response['data']);
             if ($snapshot) {
                 $this->apply_license_snapshot($snapshot);
+            } else {
+                // If no license snapshot in response, try to auto-attach for free users
+                // This ensures free users get a site-wide license key automatically
+                if (!$this->has_active_license()) {
+                    $auto_attach_result = $this->auto_attach_license();
+                    // Log but don't fail registration if auto-attach fails
+                    if (is_wp_error($auto_attach_result) && class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                        \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Auto-attach license failed during registration', [
+                            'error' => $auto_attach_result->get_error_message(),
+                        ], 'licensing');
+                    }
+                }
             }
 
             return $response['data'];
@@ -758,6 +850,24 @@ class API_Client_V2 {
             $snapshot = $this->extract_license_snapshot($response['data']);
             if ($snapshot) {
                 $this->apply_license_snapshot($snapshot);
+            } else {
+                // If no license snapshot in response, try to auto-attach for free users
+                // This ensures free users get a site-wide license key automatically
+                if (!$this->has_active_license()) {
+                    $auto_attach_result = $this->auto_attach_license();
+                    // Log auto-attach result (success or failure)
+                    if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                        if (is_wp_error($auto_attach_result)) {
+                            \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Auto-attach license failed during login', [
+                                'error' => $auto_attach_result->get_error_message(),
+                            ], 'licensing');
+                        } else {
+                            \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'Auto-attach license succeeded during login', [
+                                'plan' => $auto_attach_result['license']['plan'] ?? 'free',
+                            ], 'licensing');
+                        }
+                    }
+                }
             }
             
             return $response['data'];
@@ -781,6 +891,28 @@ class API_Client_V2 {
 
         if ($response['success']) {
             $this->set_user_data($response['data']['user']);
+            
+            // Extract and apply license snapshot if present
+            $snapshot = $this->extract_license_snapshot($response['data']);
+            if ($snapshot) {
+                $this->apply_license_snapshot($snapshot);
+            } else {
+                // If no license snapshot and user is authenticated but has no license, try auto-attach
+                // This ensures free users get a site-wide license key automatically
+                if (!$this->has_active_license()) {
+                    $auto_attach_result = $this->auto_attach_license();
+                    // Log but don't fail if auto-attach fails
+                    if (is_wp_error($auto_attach_result) && class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                        \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Auto-attach license failed during get_user_info', [
+                            'error' => $auto_attach_result->get_error_message(),
+                        ], 'licensing');
+                    }
+                }
+            }
+            
+            // Sync identity after token refresh
+            $this->sync_identity();
+            
             return $response['data']['user'];
         }
 
@@ -788,6 +920,111 @@ class API_Client_V2 {
             'user_info_failed',
             $response['data']['error'] ?? __('Failed to get user info', 'beepbeep-ai-alt-text-generator')
         );
+    }
+
+    /**
+     * Get user email for identity sync
+     * 
+     * @return string User email, or empty string if not available
+     */
+    private function get_user_email() {
+        // First try: Get email from stored user data
+        $user_data = $this->get_user_data();
+        if (!empty($user_data) && is_array($user_data) && !empty($user_data['email'])) {
+            return sanitize_email($user_data['email']);
+        }
+        
+        // Fallback: Get email from current WordPress user
+        $current_user = wp_get_current_user();
+        if ($current_user && $current_user->exists() && !empty($current_user->user_email)) {
+            return sanitize_email($current_user->user_email);
+        }
+        
+        return '';
+    }
+
+    /**
+     * Sync identity data to backend
+     * 
+     * Sends identity sync call to backend when:
+     * - User logs in via plugin
+     * - Plugin installation occurs
+     * - Plugin refreshes token
+     * - Daily sync if plugin is actively used
+     * 
+     * @return bool|WP_Error True on success, WP_Error on failure (errors are logged but not blocking)
+     */
+    public function sync_identity() {
+        // Get user email
+        $email = $this->get_user_email();
+        
+        // If no email available and not authenticated, skip sync
+        if (empty($email) && !$this->is_authenticated()) {
+            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'Skipping identity sync - no email and not authenticated', [], 'identity');
+            }
+            return false;
+        }
+        
+        // Get site URL (equivalent to window.location.origin in JS)
+        $site_url = home_url();
+        $parsed_url = parse_url($site_url);
+        if ($parsed_url) {
+            $site = $parsed_url['scheme'] . '://' . $parsed_url['host'];
+            if (!empty($parsed_url['port'])) {
+                $site .= ':' . $parsed_url['port'];
+            }
+        } else {
+            $site = $site_url;
+        }
+        
+        // Get installation ID (optional)
+        $site_id = $this->get_site_id();
+        $installation_id = !empty($site_id) ? $site_id : null;
+        
+        // Get JWT token (optional)
+        $jwt_token = $this->get_token();
+        
+        // Build payload
+        $payload = [
+            'email' => $email,
+            'plugin' => 'beepbeep-ai',
+            'site' => $site,
+        ];
+        
+        // Add optional fields only if they exist
+        if (!empty($installation_id)) {
+            $payload['installationId'] = $installation_id;
+        }
+        
+        if (!empty($jwt_token)) {
+            $payload['jwt'] = $jwt_token;
+        }
+        
+        // Make request to identity sync endpoint
+        // Use include_auth_headers = false since we're sending jwt in the payload
+        $response = $this->make_request('/identity/sync', 'POST', $payload, 30, false, [], false);
+        
+        if (is_wp_error($response)) {
+            // Log error but don't block operations
+            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Identity sync failed', [
+                    'error' => $response->get_error_message(),
+                    'code' => $response->get_error_code(),
+                ], 'identity');
+            }
+            return $response;
+        }
+        
+        // Log success
+        if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+            \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'Identity sync succeeded', [
+                'email' => $email,
+                'site' => $site,
+            ], 'identity');
+        }
+        
+        return true;
     }
 
     /**
@@ -962,7 +1199,10 @@ class API_Client_V2 {
         $has_license   = $this->has_active_license();
         $license_cache = $has_license ? $this->get_license_data() : null;
 
-        $response = $this->make_request('/usage');
+        // CRITICAL: Do NOT include user ID - usage must be tracked per-site, not per-user
+        // For free plans, all users on a site share the same 50 credits
+        // The backend should use X-Site-Hash header (sent automatically) to track usage per-site
+        $response = $this->make_request('/usage', 'GET', null, null, false);  // include_user_id = false
 
         if (is_wp_error($response)) {
             // If API call fails, try to use cached usage as fallback
@@ -992,6 +1232,25 @@ class API_Client_V2 {
             $usage = $response['data']['usage'];
 
             if ($has_license && is_array($usage)) {
+                // Extract license key from response if available
+                $license_key_from_response = null;
+                if (isset($response['data']['site']['licenseKey'])) {
+                    $license_key_from_response = $response['data']['site']['licenseKey'];
+                } elseif (isset($response['data']['licenseKey'])) {
+                    $license_key_from_response = $response['data']['licenseKey'];
+                } elseif (isset($response['data']['license']['licenseKey'])) {
+                    $license_key_from_response = $response['data']['license']['licenseKey'];
+                }
+                
+                // Store license key if we got it from the response
+                $current_key = $this->get_license_key();
+                if (!empty($license_key_from_response) && empty($current_key)) {
+                    $this->set_license_key($license_key_from_response);
+                }
+                
+                // CRITICAL: Ensure usage is site-wide, not per-user
+                // The backend should return the same usage for all users on the same site
+                // If it doesn't, we need to ensure we're using site-based tracking
                 $this->sync_license_usage_snapshot(
                     $usage,
                     $response['data']['organization'] ?? [],
@@ -1071,6 +1330,14 @@ class API_Client_V2 {
         $org              = isset($updated_license['organization']) && is_array($updated_license['organization'])
             ? $updated_license['organization']
             : [];
+        
+        // Extract and store license key from site_data if available and we don't have one
+        if (!empty($site_data) && is_array($site_data) && isset($site_data['licenseKey']) && !empty($site_data['licenseKey'])) {
+            $current_key = $this->get_license_key();
+            if (empty($current_key)) {
+                $this->set_license_key($site_data['licenseKey']);
+            }
+        }
 
         if (is_array($organization) && !empty($organization)) {
             $org = array_merge($org, $organization);
@@ -1143,9 +1410,20 @@ class API_Client_V2 {
             'siteHash' => isset($snapshot['siteHash']) ? $snapshot['siteHash'] : '',
             'installId' => isset($snapshot['installId']) ? $snapshot['installId'] : '',
             'autoAttachStatus' => isset($snapshot['autoAttachStatus']) ? $snapshot['autoAttachStatus'] : '',
+            'licenseKey' => isset($snapshot['licenseKey']) ? $snapshot['licenseKey'] : '',  // Store license key in site data too
         ];
 
         $this->sync_license_usage_snapshot($usage_payload, $organization, $site_data);
+        
+        // Also store license key in license data for easier retrieval
+        if (!empty($snapshot['licenseKey'])) {
+            $license_data = $this->get_license_data();
+            if (empty($license_data)) {
+                $license_data = [];
+            }
+            $license_data['licenseKey'] = $snapshot['licenseKey'];
+            $this->set_license_data($license_data);
+        }
 
         if (function_exists('opptiai_framework')) {
             $framework = opptiai_framework();

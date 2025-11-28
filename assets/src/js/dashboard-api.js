@@ -20,6 +20,31 @@ export async function getDashboard() {
             headers: headers
         });
         
+        // Check for subscription error (402 Payment Required)
+        if (res.status === 402) {
+            const data = await res.json();
+            const subscriptionError = data.error || data.code || 'subscription_required';
+            
+            // Trigger upgrade modal
+            if (typeof window.bbai_openUpgradeModal === 'function') {
+                window.bbai_openUpgradeModal(subscriptionError);
+            }
+            
+            return {
+                ok: false,
+                subscriptionError: subscriptionError,
+                error: 'subscription_required',
+                message: data.message || 'Subscription required',
+                installations: [],
+                subscription: null,
+                usage: {
+                    monthlyImages: 0,
+                    dailyImages: 0,
+                    totalImages: 0
+                }
+            };
+        }
+        
         const data = await res.json();
         
         // Check if response is successful
@@ -105,11 +130,82 @@ export async function getDashboardCharts() {
             headers: headers
         });
         
+        // Check for subscription error (402 Payment Required)
+        if (res.status === 402) {
+            const errorData = await res.json().catch(() => ({}));
+            const subscriptionError = errorData.error || errorData.code || errorData.subscription_error || 'subscription_required';
+            
+            // Trigger upgrade modal
+            if (typeof window.bbai_openUpgradeModal === 'function') {
+                window.bbai_openUpgradeModal(subscriptionError);
+            }
+            
+            // Return error structure
+            return {
+                ok: false,
+                subscriptionError: subscriptionError,
+                error: 'subscription_required',
+                message: errorData.message || 'Subscription required',
+                coverage: {
+                    total: 0,
+                    with_alt: 0,
+                    missing: 0,
+                    percentage: 0
+                },
+                usage: {
+                    used: 0,
+                    limit: 0,
+                    remaining: 0,
+                    percentage: 0
+                },
+                time_saved: 0,
+                quality: {
+                    average: 0,
+                    total_reviewed: 0
+                }
+            };
+        }
+        
         if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
         }
         
         const data = await res.json();
+        
+        // Check for subscription error in successful response data
+        if (data.subscriptionError || (data.error && typeof data.error === 'object' && data.error.subscription_error)) {
+            const subscriptionError = data.subscriptionError || (data.error?.error_code || 'subscription_required');
+            
+            // Trigger upgrade modal
+            if (typeof window.bbai_openUpgradeModal === 'function') {
+                window.bbai_openUpgradeModal(subscriptionError);
+            }
+            
+            // Return error structure
+            return {
+                ok: false,
+                subscriptionError: subscriptionError,
+                error: 'subscription_required',
+                message: data.error?.message || data.message || 'Subscription required',
+                coverage: {
+                    total: 0,
+                    with_alt: 0,
+                    missing: 0,
+                    percentage: 0
+                },
+                usage: {
+                    used: 0,
+                    limit: 0,
+                    remaining: 0,
+                    percentage: 0
+                },
+                time_saved: 0,
+                quality: {
+                    average: 0,
+                    total_reviewed: 0
+                }
+            };
+        }
         
         // Return structured data matching backend response
         return {

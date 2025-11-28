@@ -15,26 +15,41 @@ class Usage_Tracker {
     
     /**
      * Allocate free credits on first generation request.
-     * This ensures free credits are only granted once per site.
+     * 
+     * IMPORTANT: Free credits are allocated ONCE PER SITE, not per user.
+     * - A site on free plan gets exactly 50 credits per month total
+     * - All users on the site share these 50 credits
+     * - Multiple users cannot trigger multiple allocations
+     * - Only when a user subscribes to Pro/Agency does the site get more credits
+     * 
+     * This uses WordPress site-wide options (not per-user) to ensure:
+     * 1. Only one allocation per site (checked via get_option)
+     * 2. Usage is tracked per-site via X-Site-Hash header sent to backend
+     * 3. All users see the same usage quota
      *
      * @return bool True if credits were allocated, false if already allocated.
      */
     public static function allocate_free_credits_if_needed() {
+        // Check if free credits have already been allocated for this site
+        // get_option() is site-wide, not per-user, so this check works across all users
         $free_credits_allocated = get_option('beepbeepai_free_credits_allocated', false);
         
         if ($free_credits_allocated) {
-            // Already allocated
+            // Already allocated for this site - return early
+            // This prevents multiple users from triggering multiple allocations
             return false;
         }
         
-        // Mark as allocated (one-time per site)
+        // Mark as allocated (one-time per site, shared across all users)
+        // This option is site-wide, so all users will see it as allocated
         update_option('beepbeepai_free_credits_allocated', true, false);
         
-        // Update usage cache with free credits
+        // Update usage cache with free credits (50 credits per month)
+        // This cache is site-wide (set_transient), so all users see the same usage
         $reset_ts = strtotime('first day of next month');
         $usage_data = [
             'used' => 0,
-            'limit' => 50,
+            'limit' => 50,  // Free plan: exactly 50 credits per month per site
             'remaining' => 50,
             'plan' => 'free',
             'resetDate' => date('Y-m-01', $reset_ts),
@@ -91,6 +106,7 @@ class Usage_Tracker {
             $license_data = $api_client->get_license_data();
             if ($license_data && isset($license_data['organization'])) {
                 $org = $license_data['organization'];
+                $plan = strtolower($org['plan'] ?? 'free');
 
                 // Parse reset date
                 $reset_ts = strtotime('first day of next month');
@@ -102,16 +118,40 @@ class Usage_Tracker {
                 }
 
                 $current_ts = current_time('timestamp');
-                $tokens_remaining = isset($org['tokensRemaining']) ? max(0, intval($org['tokensRemaining'])) : 10000;
-                $limit = 10000; // Agency plan default
-                $used = max(0, $limit - $tokens_remaining);
+                
+                // Get plan-specific limits
+                $plan_limits = [
+                    'free' => 50,
+                    'pro' => 1000,
+                    'agency' => 10000,
+                ];
+                $limit = $plan_limits[$plan] ?? 50;
+                
+                // Get usage from organization data
+                $tokens_remaining = isset($org['tokensRemaining']) ? max(0, intval($org['tokensRemaining'])) : $limit;
+                $tokens_used = isset($org['tokensUsed']) ? max(0, intval($org['tokensUsed'])) : 0;
+                
+                // Calculate used: prefer tokensUsed if available, otherwise calculate from remaining
+                if ($tokens_used > 0) {
+                    $used = $tokens_used;
+                } else {
+                    $used = max(0, $limit - $tokens_remaining);
+                }
+                
+                // Ensure used doesn't exceed limit
+                if ($used > $limit) {
+                    $used = $limit;
+                    $tokens_remaining = 0;
+                } else {
+                    $tokens_remaining = max(0, $limit - $used);
+                }
 
                 // Return organization quota instead of personal account
                 return [
                     'used' => $used,
                     'limit' => $limit,
                     'remaining' => $tokens_remaining,
-                    'plan' => 'agency',
+                    'plan' => $plan,
                     'resetDate' => date('Y-m-01', $reset_ts),
                     'reset_timestamp' => $reset_ts,
                     'seconds_until_reset' => max(0, $reset_ts - $current_ts),

@@ -29,9 +29,80 @@
         return $cachedElements[selector];
     }
 
+    /**
+     * Open upgrade modal with subscription error reason
+     * @param {string|object} subscriptionError - Error code string or error object
+     */
+    window.bbai_openUpgradeModal = function(subscriptionError) {
+        // Extract error code if object is passed
+        let errorCode = subscriptionError;
+        if (typeof subscriptionError === 'object' && subscriptionError !== null) {
+            errorCode = subscriptionError.error || subscriptionError.subscriptionError || subscriptionError.code || 'subscription_required';
+        }
+        
+        // Normalize error code
+        if (typeof errorCode !== 'string') {
+            errorCode = 'subscription_required';
+        }
+        
+        // Map error codes to user-friendly messages
+        const errorMessages = {
+            'subscription_required': 'A subscription is required to continue generating alt text.',
+            'subscription_expired': 'Your subscription has expired. Please renew to continue.',
+            'quota_exceeded': "You've reached your monthly limit. Upgrade to continue generating alt text."
+        };
+        
+        const message = errorMessages[errorCode] || errorMessages['subscription_required'];
+        
+        // Store error reason for modal display
+        if (typeof sessionStorage !== 'undefined') {
+            sessionStorage.setItem('bbai_upgrade_reason', errorCode);
+            sessionStorage.setItem('bbai_upgrade_message', message);
+        }
+        
+        // Log analytics event
+        if (typeof window.logEvent === 'function') {
+            window.logEvent('upgrade_modal_open', {
+                reason: errorCode,
+                source: 'subscription_error'
+            });
+        }
+        
+        // Trigger upgrade modal using existing infrastructure
+        if (typeof window.openPricingModal === 'function') {
+            window.openPricingModal('enterprise');
+        } else if (typeof bbaiApp && typeof bbaiApp.showModal === 'function') {
+            bbaiApp.showModal();
+        } else if (typeof alttextaiShowModal === 'function') {
+            alttextaiShowModal();
+        } else {
+            // Direct fallback - show modal directly
+            const modal = document.getElementById('bbai-upgrade-modal');
+            if (modal) {
+                modal.removeAttribute('style');
+                modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important;';
+            } else {
+                console.error('[AltText AI] Upgrade modal not found');
+                alert(message);
+            }
+        }
+    };
+
     // Initialize when DOM is ready
     $(document).ready(function() {
         console.log('[AltText AI] jQuery ready - setting up upgrade modal handlers');
+        
+        // Check if plugin was just activated and fire analytics event
+        // This fires on first admin page load after activation
+        if (typeof opttiApi !== 'undefined' && opttiApi.activatedAt) {
+            const activationFired = sessionStorage.getItem('bbai_activation_event_fired');
+            if (!activationFired) {
+                if (typeof window.logEvent === 'function') {
+                    window.logEvent('plugin_activated', {});
+                    sessionStorage.setItem('bbai_activation_event_fired', 'true');
+                }
+            }
+        }
         
         // Load license site usage if on agency license (delay for Admin tab)
         setTimeout(function() {
@@ -97,6 +168,11 @@
         $(document).on('click', '[data-action="show-upgrade-modal"]', function(e) {
             e.preventDefault();
             e.stopPropagation();
+            
+            // Log analytics event when upgrade modal is opened
+            if (typeof window.logEvent === 'function') {
+                window.logEvent('upgrade_modal_open', {});
+            }
             
             console.log('[AltText AI] Upgrade CTA clicked via jQuery handler', this);
             

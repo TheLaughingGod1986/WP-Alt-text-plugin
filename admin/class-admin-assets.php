@@ -47,7 +47,15 @@ class Admin_Assets {
 	 */
 	public function enqueue_assets( $hook ) {
 		// Only load on Optti admin pages.
-		if ( strpos( $hook, 'optti' ) === false ) {
+		// Check for 'optti', 'bbai', or plugin-specific hooks
+		$is_optti_page = (
+			strpos( $hook, 'optti' ) !== false ||
+			strpos( $hook, 'bbai' ) !== false ||
+			$hook === 'media_page_bbai' ||
+			( isset( $_GET['page'] ) && ( strpos( $_GET['page'], 'optti' ) !== false || strpos( $_GET['page'], 'bbai' ) !== false ) )
+		);
+		
+		if ( ! $is_optti_page ) {
 			return;
 		}
 

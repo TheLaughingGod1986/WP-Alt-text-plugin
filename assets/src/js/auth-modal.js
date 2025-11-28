@@ -523,10 +523,11 @@ class BbAIAuthModal {
                 this.hide();
                 this.showSuccess('Welcome back! You are now signed in to SEO AI Alt Text.');
 
-                // Reload page to refresh authentication state
+                // Reload page to refresh authentication state and show license
+                // Increased delay to allow auto-attach license to complete on backend
                 setTimeout(() => {
                     window.location.reload();
-                }, 1500);
+                }, 2500);
             } else {
                 // WordPress AJAX error response - message is in data.data.message
                 const errorMessage = data.data?.message || data.message || 'Login failed';

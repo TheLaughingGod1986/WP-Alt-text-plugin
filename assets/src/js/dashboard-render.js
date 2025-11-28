@@ -329,6 +329,18 @@ async function renderDashboard() {
     try {
         const result = await getDashboardCharts();
         
+        // Check for subscription error
+        if (result.subscriptionError) {
+            // Upgrade modal should already be triggered by dashboard-api.js
+            // Show error message
+            container.innerHTML = `
+                <div class="optti-dashboard-error">
+                    ${result.message || 'Subscription required to view dashboard.'}
+                </div>
+            `;
+            return;
+        }
+        
         if (!result.ok) {
             // Show error message
             container.innerHTML = `
