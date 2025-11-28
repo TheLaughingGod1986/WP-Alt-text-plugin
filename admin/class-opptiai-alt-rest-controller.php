@@ -118,6 +118,16 @@ class BbAI_REST_Controller {
 				'permission_callback' => [ $this, 'can_edit_media' ],
 			]
 		);
+
+		register_rest_route(
+			'bbai/v1',
+			'/dashboard/charts',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ $this, 'handle_dashboard_charts' ],
+				'permission_callback' => [ $this, 'can_edit_media' ],
+			]
+		);
 	}
 
 	/**
@@ -515,6 +525,98 @@ class BbAI_REST_Controller {
 			'completed_at'     => $row['completed_at'] ?? '',
 			'attachment_title' => get_the_title( $attachment_id ),
 			'edit_url'         => esc_url_raw( add_query_arg( 'item', $attachment_id, admin_url( 'upload.php' ) ) ),
+		];
+	}
+
+	/**
+	 * Return dashboard charts data in a single response.
+	 *
+	 * @return array|\WP_Error
+	 */
+	public function handle_dashboard_charts() {
+		// Get media stats
+		$stats = $this->core->get_media_stats();
+		
+		// Get usage stats
+		$api_client = $this->core->get_api_client();
+		$usage_data = null;
+		if ( $api_client ) {
+			$usage = $api_client->get_usage();
+			if ( ! is_wp_error( $usage ) && is_array( $usage ) ) {
+				$usage_data = $usage;
+			}
+		}
+		
+		// Fallback to Usage_Tracker if API client fails
+		if ( ! $usage_data && class_exists( '\BeepBeepAI\AltTextGenerator\Usage_Tracker' ) ) {
+			$usage_stats = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_stats_display( false );
+			if ( is_array( $usage_stats ) ) {
+				$usage_data = [
+					'used'      => intval( $usage_stats['used'] ?? 0 ),
+					'limit'     => intval( $usage_stats['limit'] ?? 0 ),
+					'remaining' => intval( $usage_stats['remaining'] ?? 0 ),
+				];
+			}
+		}
+		
+		// Calculate time saved (2.5 minutes per alt text)
+		$alt_texts_generated = intval( $stats['generated'] ?? 0 );
+		$minutes_per_alt_text = 2.5;
+		$time_saved = round( ( $alt_texts_generated * $minutes_per_alt_text ) / 60, 1 );
+		
+		// Get quality metrics if available
+		global $wpdb;
+		$quality_data = $wpdb->get_results(
+			"SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key = '_beepbeepai_review_score' AND meta_value != ''",
+			ARRAY_A
+		);
+		
+		$quality_scores = [];
+		$total_reviewed = 0;
+		if ( is_array( $quality_data ) ) {
+			foreach ( $quality_data as $row ) {
+				$score = floatval( $row['meta_value'] ?? 0 );
+				if ( $score > 0 ) {
+					$quality_scores[] = $score;
+					$total_reviewed++;
+				}
+			}
+		}
+		
+		$average_quality = 0;
+		if ( count( $quality_scores ) > 0 ) {
+			$average_quality = round( array_sum( $quality_scores ) / count( $quality_scores ), 1 );
+		}
+		
+		// Build response
+		$coverage_total = intval( $stats['total'] ?? 0 );
+		$coverage_with_alt = intval( $stats['with_alt'] ?? 0 );
+		$coverage_missing = intval( $stats['missing'] ?? 0 );
+		$coverage_percentage = $coverage_total > 0 ? round( ( $coverage_with_alt / $coverage_total ) * 100, 1 ) : 0;
+		
+		$usage_used = intval( $usage_data['used'] ?? 0 );
+		$usage_limit = intval( $usage_data['limit'] ?? 0 );
+		$usage_remaining = intval( $usage_data['remaining'] ?? 0 );
+		$usage_percentage = $usage_limit > 0 ? round( ( $usage_used / $usage_limit ) * 100, 1 ) : 0;
+		
+		return [
+			'coverage' => [
+				'total'      => $coverage_total,
+				'with_alt'   => $coverage_with_alt,
+				'missing'    => $coverage_missing,
+				'percentage' => $coverage_percentage,
+			],
+			'usage' => [
+				'used'       => $usage_used,
+				'limit'      => $usage_limit,
+				'remaining'  => $usage_remaining,
+				'percentage' => $usage_percentage,
+			],
+			'time_saved' => $time_saved,
+			'quality' => [
+				'average'       => $average_quality,
+				'total_reviewed' => $total_reviewed,
+			],
 		];
 	}
 }

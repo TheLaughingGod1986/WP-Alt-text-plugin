@@ -648,6 +648,7 @@ class BbAI_Core {
 
     public function deactivate(){
         wp_clear_scheduled_hook(BbAI_Queue::CRON_HOOK);
+        wp_clear_scheduled_hook('bbai_daily_identity_sync');
     }
 
     public function activate() {
@@ -693,6 +694,11 @@ class BbAI_Core {
         $role = get_role('administrator');
         if ($role && !$role->has_cap(self::CAPABILITY)){
             $role->add_cap(self::CAPABILITY);
+        }
+
+        // Schedule daily identity sync
+        if (!wp_next_scheduled('bbai_daily_identity_sync')) {
+            wp_schedule_event(time(), 'daily', 'bbai_daily_identity_sync');
         }
     }
     
@@ -991,7 +997,30 @@ class BbAI_Core {
                         $is_authenticated = $this->api_client->is_authenticated();
 
                         if ($is_authenticated || $has_license) :
+                            // Get initial usage stats
                             $usage_stats = BbAI_Usage_Tracker::get_stats_display();
+                            
+                            // Refresh usage from backend if we have license or authentication
+                            // This ensures different WordPress users see up-to-date usage
+                            if (isset($this->api_client)) {
+                                $has_license = $this->api_client->has_active_license();
+                                $is_auth = $this->api_client->is_authenticated();
+                                
+                                if ($has_license || $is_auth) {
+                                    $live_usage = $this->api_client->get_usage();
+                                    if (is_array($live_usage) && !empty($live_usage) && !is_wp_error($live_usage)) {
+                                        BbAI_Usage_Tracker::update_usage($live_usage);
+                                        // Re-fetch stats with updated cache
+                                        $usage_stats = BbAI_Usage_Tracker::get_stats_display(false);
+                                    } elseif ($has_license) {
+                                        // If license exists but get_usage failed, refresh license snapshot
+                                        $this->refresh_license_usage_snapshot(true);
+                                        // Re-fetch stats with updated license data
+                                        $usage_stats = BbAI_Usage_Tracker::get_stats_display(false);
+                                    }
+                                }
+                            }
+                            
                             $account_summary = $is_authenticated ? $this->get_account_summary($usage_stats) : null;
                             $plan_slug  = $usage_stats['plan'] ?? 'free';
                             $plan_label = isset($usage_stats['plan_label']) ? (string)$usage_stats['plan_label'] : ucfirst($plan_slug);
@@ -1086,14 +1115,26 @@ class BbAI_Core {
                 $usage_stats = BbAI_Usage_Tracker::get_stats_display();
                 
                 // Pull fresh usage from backend to avoid stale cache - same logic as Settings tab
+                // This works for both authenticated users and license-based access
                 if (isset($this->api_client)) {
-                    $live_usage = $this->api_client->get_usage();
-                    if (is_array($live_usage) && !empty($live_usage) && !is_wp_error($live_usage)) {
-                        // Update cache with fresh API data
-                        BbAI_Usage_Tracker::update_usage($live_usage);
+                    // Check if we have license or authentication
+                    $has_license = $this->api_client->has_active_license();
+                    $is_authenticated = $this->api_client->is_authenticated();
+                    
+                    // Try to fetch fresh usage if we have license or authentication
+                    if ($has_license || $is_authenticated) {
+                        $live_usage = $this->api_client->get_usage();
+                        if (is_array($live_usage) && !empty($live_usage) && !is_wp_error($live_usage)) {
+                            // Update cache with fresh API data
+                            BbAI_Usage_Tracker::update_usage($live_usage);
+                        } elseif ($has_license) {
+                            // If we have a license but get_usage failed, refresh license data
+                            // This ensures license-based usage is up to date
+                            $this->refresh_license_usage_snapshot(true);
+                        }
                     }
                 }
-                // Get stats - will use the just-updated cache
+                // Get stats - will use the just-updated cache or license data
                 $usage_stats = BbAI_Usage_Tracker::get_stats_display(false);
                 $account_summary = $this->api_client->is_authenticated() ? $this->get_account_summary($usage_stats) : null;
                 
@@ -1141,6 +1182,11 @@ class BbAI_Core {
                 $usage_stats['percentage'] = $percentage;
                 $usage_stats['percentage_display'] = BbAI_Usage_Tracker::format_percentage_label($percentage);
                 ?>
+                
+                <!-- Optti Dashboard Integration (Step 6) -->
+                <div id="optti-dashboard-root" class="optti-dashboard-root">
+                    <p>Loading your Optti dashboard...</p>
+                </div>
                 
                 <!-- Clean Dashboard Design -->
                 <div class="bbai-dashboard-shell max-w-5xl mx-auto px-6">
@@ -3276,17 +3322,14 @@ class BbAI_Core {
                                     <div class="bbai-settings-license-title"><?php esc_html_e('License Active', 'wp-alt-text-plugin'); ?></div>
                                     <div class="bbai-settings-license-subtitle"><?php echo esc_html($org['name'] ?? ''); ?></div>
                                     <?php 
-                                    // Display license key for Pro and Agency users
+                                    // Display license key for all plans (free, pro, agency)
                                     $license_key = $this->api_client->get_license_key();
                                     if (!empty($license_key)) :
-                                        $license_plan = strtolower($org['plan'] ?? 'free');
-                                        if ($license_plan === 'pro' || $license_plan === 'agency') :
                                     ?>
                                     <div class="bbai-settings-license-key" style="margin-top: 8px; font-size: 12px; color: #6b7280; font-family: monospace; word-break: break-all;">
                                         <strong><?php esc_html_e('License Key:', 'wp-alt-text-plugin'); ?></strong> <?php echo esc_html($license_key); ?>
                                     </div>
                                     <?php 
-                                        endif;
                                     endif; 
                                     ?>
                                 </div>
@@ -3337,12 +3380,36 @@ class BbAI_Core {
                                     <label for="license-key-input" class="bbai-settings-license-label">
                                         <?php esc_html_e('License Key', 'wp-alt-text-plugin'); ?>
                                     </label>
+                                    <?php
+                                    // Pre-populate with existing license key if available
+                                    $existing_license_key = $this->api_client->get_license_key();
+                                    
+                                    // If no license key found but we have a license, try to fetch it from backend
+                                    if (empty($existing_license_key) && $this->api_client->has_active_license()) {
+                                        // Try to get license key from usage endpoint
+                                        $usage_response = $this->api_client->get_usage();
+                                        if (!is_wp_error($usage_response)) {
+                                            $existing_license_key = $this->api_client->get_license_key();
+                                        }
+                                        
+                                        // If still empty, try auto-attach to get the key
+                                        if (empty($existing_license_key)) {
+                                            $auto_attach_result = $this->api_client->auto_attach_license();
+                                            if (!is_wp_error($auto_attach_result) && isset($auto_attach_result['license']['licenseKey'])) {
+                                                $existing_license_key = $auto_attach_result['license']['licenseKey'];
+                                            } else {
+                                                $existing_license_key = $this->api_client->get_license_key();
+                                            }
+                                        }
+                                    }
+                                    ?>
                                     <input type="text"
                                            id="license-key-input"
                                            name="license_key"
                                            class="bbai-settings-license-input"
                                            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                                            pattern="[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                                           value="<?php echo esc_attr($existing_license_key); ?>"
                                            required>
                                 </div>
                                 <div id="license-activation-status" style="display: none; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 14px;"></div>
@@ -3500,6 +3567,14 @@ class BbAI_Core {
                 (function($) {
                     'use strict';
                     // Toggle is handled by CSS, no JavaScript needed for visual updates
+                    
+                    // Check if settings were just saved (WordPress adds settings-updated query param)
+                    if (window.location.search.includes('settings-updated=true')) {
+                        // Log analytics event when settings are saved
+                        if (typeof window.logEvent === 'function') {
+                            window.logEvent('settings_saved', {});
+                        }
+                    }
                 })(jQuery);
                 </script>
 
@@ -4319,12 +4394,36 @@ class BbAI_Core {
                                                 <label for="license-key-input" class="bbai-settings-license-label">
                                                     <?php esc_html_e('License Key', 'wp-alt-text-plugin'); ?>
                                                 </label>
+                                                <?php
+                                                // Pre-populate with existing license key if available
+                                                $existing_license_key = $this->api_client->get_license_key();
+                                                
+                                                // If no license key found but we have a license, try to fetch it from backend
+                                                if (empty($existing_license_key) && $this->api_client->has_active_license()) {
+                                                    // Try to get license key from usage endpoint
+                                                    $usage_response = $this->api_client->get_usage();
+                                                    if (!is_wp_error($usage_response)) {
+                                                        $existing_license_key = $this->api_client->get_license_key();
+                                                    }
+                                                    
+                                                    // If still empty, try auto-attach to get the key
+                                                    if (empty($existing_license_key)) {
+                                                        $auto_attach_result = $this->api_client->auto_attach_license();
+                                                        if (!is_wp_error($auto_attach_result) && isset($auto_attach_result['license']['licenseKey'])) {
+                                                            $existing_license_key = $auto_attach_result['license']['licenseKey'];
+                                                        } else {
+                                                            $existing_license_key = $this->api_client->get_license_key();
+                                                        }
+                                                    }
+                                                }
+                                                ?>
                                                 <input type="text"
                                                        id="license-key-input"
                                                        name="license_key"
                                                        class="bbai-settings-license-input"
                                                        placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                                                        pattern="[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                                                       value="<?php echo esc_attr($existing_license_key); ?>"
                                                        required>
                                             </div>
                                             <div id="license-activation-status" style="display: none; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 14px;"></div>
@@ -6259,6 +6358,35 @@ class BbAI_Core {
 	}
 
     public function enqueue_admin($hook){
+        // Early return for WordPress core pages that should never load our CSS
+        $excluded_pages = [
+            'index.php',           // Dashboard
+            'dashboard',           // Dashboard (alternative)
+            'edit.php',            // Posts list
+            'edit-comments.php',   // Comments
+            'themes.php',          // Themes
+            'plugins.php',         // Plugins
+            'users.php',           // Users
+            'tools.php',           // Tools
+            'options-general.php', // Settings
+        ];
+        
+        // Check if this is an excluded page (unless it's our specific page)
+        if ( in_array( $hook, $excluded_pages, true ) && $hook !== 'media_page_bbai' ) {
+            return;
+        }
+        
+        // Also check GET parameter for additional safety
+        if ( isset( $_GET['page'] ) ) {
+            $page = sanitize_key( $_GET['page'] );
+            if ( ! empty( $page ) && strpos( $page, 'bbai' ) === false && strpos( $page, 'optti' ) === false ) {
+                // Only exclude if it's definitely not our page
+                if ( ! in_array( $hook, [ 'upload.php', 'post.php', 'post-new.php', 'media_page_bbai' ], true ) ) {
+                    return;
+                }
+            }
+        }
+        
         $base_path = BBAI_PLUGIN_DIR;
         $base_url  = BBAI_PLUGIN_URL;
 
@@ -6300,8 +6428,14 @@ class BbAI_Core {
 
         // Load on Media Library and attachment edit contexts (modal also)
         // For dashboard page, bbai-admin depends on bbai-dashboard to get BBAI_DASH config
+        // IMPORTANT: Only load on specific pages - never on WordPress core pages like dashboard
+        $allowed_hooks = ['upload.php', 'post.php', 'post-new.php', 'media_page_bbai'];
+        if (!in_array($hook, $allowed_hooks, true)){
+            return; // Early return - don't load any CSS/JS on other pages
+        }
+        
         $admin_deps = ($hook === 'media_page_bbai') ? ['jquery', 'bbai-dashboard'] : ['jquery'];
-        if (in_array($hook, ['upload.php', 'post.php', 'post-new.php', 'media_page_bbai'], true)){
+        if (in_array($hook, $allowed_hooks, true)){
             wp_enqueue_script('bbai-admin', $base_url . $admin_file, $admin_deps, $admin_version, true);
             wp_localize_script('bbai-admin', 'BBAI', [
                 'nonce'     => wp_create_nonce('wp_rest'),
@@ -6344,8 +6478,19 @@ class BbAI_Core {
                 'baseUrl' => 'https://alttext-ai-backend.onrender.com',
                 'plugin' => 'beepbeep-ai',
                 'site'   => home_url(),
-                'userEmail' => $user_email
+                'userEmail' => $user_email,
+                'token' => get_option('optti_jwt_token') ?: ''
             ]);
+            
+            // Enqueue optti-analytics.js for admin pages
+            $optti_analytics_js = $asset_path($js_base, 'optti-analytics', $use_debug_assets, 'js');
+            wp_enqueue_script(
+                'optti-analytics',
+                $base_url . $optti_analytics_js,
+                ['jquery'],
+                $asset_version($optti_analytics_js, '1.0.0'),
+                true
+            );
         }
 
         if ($hook === 'media_page_bbai'){
@@ -6353,6 +6498,15 @@ class BbAI_Core {
             $js_file     = $asset_path($js_base, 'bbai-dashboard', $use_debug_assets, 'js');
             $upgrade_css = $asset_path($css_base, 'upgrade-modal', $use_debug_assets, 'css');
             $upgrade_js  = $asset_path($js_base, 'upgrade-modal', $use_debug_assets, 'js');
+            
+            // Enqueue dashboard.css for new dashboard integration
+            $dashboard_css = $asset_path($css_base, 'dashboard', $use_debug_assets, 'css');
+            wp_enqueue_style(
+                'optti-dashboard-css',
+                $base_url . $dashboard_css,
+                [],
+                $asset_version($dashboard_css, '1.0.0')
+            );
             $auth_css    = $asset_path($css_base, 'auth-modal', $use_debug_assets, 'css');
             $auth_js     = $asset_path($js_base, 'auth-modal', $use_debug_assets, 'js');
             $email_helper_js = $asset_path($js_base, 'email-helper', $use_debug_assets, 'js');
@@ -6451,6 +6605,16 @@ class BbAI_Core {
                 true
             );
             
+            // Enqueue optti-analytics.js - analytics event logging helper
+            $optti_analytics_js = $asset_path($js_base, 'optti-analytics', $use_debug_assets, 'js');
+            wp_enqueue_script(
+                'optti-analytics',
+                $base_url . $optti_analytics_js,
+                ['jquery', 'optti-api'],
+                $asset_version($optti_analytics_js, '1.0.0'),
+                true
+            );
+            
             // Enqueue optti-billing.js SECOND - billing API module
             $optti_billing_js = $asset_path($js_base, 'optti-billing', $use_debug_assets, 'js');
             wp_enqueue_script(
@@ -6458,6 +6622,36 @@ class BbAI_Core {
                 $base_url . $optti_billing_js,
                 ['jquery', 'optti-api'],
                 $asset_version($optti_billing_js, '1.0.0'),
+                true
+            );
+            
+            // Enqueue dashboard-api.js - must load after optti-api.js but before dashboard-render.js
+            $dashboard_api_js = $asset_path($js_base, 'dashboard-api', $use_debug_assets, 'js');
+            wp_enqueue_script(
+                'optti-dashboard-api',
+                $base_url . $dashboard_api_js,
+                ['jquery', 'optti-api'],
+                $asset_version($dashboard_api_js, '1.0.0'),
+                true
+            );
+            
+            // Localize dashboard-api script with REST URL
+            wp_localize_script('optti-dashboard-api', 'opttiApi', [
+                'baseUrl' => 'https://alttext-ai-backend.onrender.com',
+                'restUrl' => esc_url_raw( rest_url('bbai/v1/dashboard/charts') ),
+                'plugin' => 'beepbeep-ai',
+                'site'   => home_url(),
+                'userEmail' => wp_get_current_user()->exists() ? wp_get_current_user()->user_email : '',
+                'token' => get_option('optti_jwt_token') ?: '',
+            ]);
+            
+            // Enqueue dashboard-render.js - must load after dashboard-api.js
+            $dashboard_render_js = $asset_path($js_base, 'dashboard-render', $use_debug_assets, 'js');
+            wp_enqueue_script(
+                'optti-dashboard-render',
+                $base_url . $dashboard_render_js,
+                ['jquery', 'optti-dashboard-api'],
+                $asset_version($dashboard_render_js, '1.0.0'),
                 true
             );
             
@@ -6612,11 +6806,14 @@ class BbAI_Core {
             $user_email = $current_user->exists() ? $current_user->user_email : '';
             
             // Add Optti API configuration
+            $activated_at = get_option('bbai_activated_at', 0);
             wp_localize_script('bbai-dashboard', 'opttiApi', [
                 'baseUrl' => 'https://alttext-ai-backend.onrender.com',
                 'plugin' => 'beepbeep-ai',
                 'site'   => home_url(),
-                'userEmail' => $user_email
+                'userEmail' => $user_email,
+                'token' => get_option('optti_jwt_token') ?: '',
+                'activatedAt' => $activated_at ?: null
             ]);
             
             wp_localize_script('bbai-dashboard', 'BBAI_DASH_L10N', [
@@ -6661,7 +6858,8 @@ class BbAI_Core {
                 'baseUrl' => 'https://alttext-ai-backend.onrender.com',
                 'plugin' => 'beepbeep-ai',
                 'site'   => home_url(),
-                'userEmail' => $user_email
+                'userEmail' => $user_email,
+                'token' => get_option('optti_jwt_token') ?: ''
             ]);
 
         }
@@ -6798,9 +6996,28 @@ class BbAI_Core {
         
         // Clear cache and fetch fresh data
         BbAI_Usage_Tracker::clear_cache();
+        
+        // If we have a license but no key, try to refresh license data
+        $has_license = $this->api_client->has_active_license();
+        $license_key = $this->api_client->get_license_key();
+        
+        if ($has_license && empty($license_key)) {
+            // License exists but key is missing - try to refresh from backend
+            $this->refresh_license_usage_snapshot(true);
+        }
+        
+        // Try auto-attach if no license exists
+        if (!$has_license) {
+            $auto_attach_result = $this->api_client->auto_attach_license();
+            if (!is_wp_error($auto_attach_result)) {
+                // Auto-attach succeeded, refresh license data
+                $this->refresh_license_usage_snapshot(true);
+            }
+        }
+        
         $usage = $this->api_client->get_usage();
         
-        if ($usage) {
+        if ($usage && !is_wp_error($usage)) {
             $stats = BbAI_Usage_Tracker::get_stats_display();
             wp_send_json_success($stats);
         } else {
@@ -7021,6 +7238,17 @@ class BbAI_Core {
         BbAI_Queue::purge_completed(apply_filters('beepbeepai_queue_purge_age', DAY_IN_SECONDS * 2));
     }
 
+    /**
+     * Daily identity sync handler
+     * Called by WordPress cron to sync identity if user is authenticated
+     */
+    public function daily_identity_sync() {
+        // Only sync if user is authenticated
+        if ($this->api_client->is_authenticated()) {
+            $this->api_client->sync_identity();
+        }
+    }
+
     public function handle_media_change($attachment_id = 0) {
         $this->invalidate_stats_cache();
 
@@ -7152,9 +7380,26 @@ class BbAI_Core {
             wp_send_json_error(['message' => $result->get_error_message()]);
         }
 
+        // Check if license was auto-attached during login
+        $has_license = $this->api_client->has_active_license();
+        $license_data = $this->api_client->get_license_data();
+        $license_info = null;
+        
+        if ($has_license && $license_data) {
+            $license_info = [
+                'has_license' => true,
+                'plan' => $license_data['organization']['plan'] ?? 'free',
+                'license_key' => $this->api_client->get_license_key(),
+            ];
+        }
+
+        // Sync identity immediately after login
+        $this->api_client->sync_identity();
+
         wp_send_json_success([
             'message' => __('Logged in successfully', 'wp-alt-text-plugin'),
-            'user' => $result['user'] ?? null
+            'user' => $result['user'] ?? null,
+            'license' => $license_info
         ]);
     }
 
