@@ -238,7 +238,7 @@ class Admin_Assets {
 		$admin_options = get_option( 'bbai_settings', [] );
 		$production_url = 'https://alttext-ai-backend.onrender.com';
 		$admin_api_url = isset( $admin_options['api_url'] ) && ! empty( $admin_options['api_url'] ) ? $admin_options['api_url'] : $production_url;
-		
+
 		wp_localize_script(
 			'bbai-admin',
 			'bbai_ajax',
@@ -251,6 +251,10 @@ class Admin_Assets {
 			]
 		);
 		
+		// Get user email for billing
+		$current_user = wp_get_current_user();
+		$user_email = $current_user->exists() ? $current_user->user_email : '';
+		
 		// Add Optti API configuration
 		wp_localize_script(
 			'bbai-admin',
@@ -259,6 +263,7 @@ class Admin_Assets {
 				'baseUrl' => 'https://alttext-ai-backend.onrender.com',
 				'plugin'  => 'beepbeep-ai',
 				'site'    => home_url(),
+				'userEmail' => $user_email
 			]
 		);
 	}

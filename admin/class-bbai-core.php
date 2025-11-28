@@ -6882,11 +6882,16 @@ class Core {
                 'can_manage' => $this->user_can_manage(),
             ]);
             
+            // Get user email for billing
+            $current_user = wp_get_current_user();
+            $user_email = $current_user->exists() ? $current_user->user_email : '';
+            
             // Add Optti API configuration
             wp_localize_script('bbai-admin', 'opttiApi', [
                 'baseUrl' => 'https://alttext-ai-backend.onrender.com',
                 'plugin' => 'beepbeep-ai',
-                'site'   => home_url()
+                'site'   => home_url(),
+                'userEmail' => $user_email
             ]);
         }
 

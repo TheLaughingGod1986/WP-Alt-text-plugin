@@ -1794,6 +1794,18 @@
             body: JSON.stringify(payload)
         })
         .then(function(response) {
+            // Check for quota exceeded error
+            if (response.error === 'quota_exceeded') {
+                if (typeof showUpgradeModal === 'function') {
+                    showUpgradeModal();
+                } else if (typeof window.showUpgradeModal === 'function') {
+                    window.showUpgradeModal();
+                } else if (typeof alttextaiShowModal === 'function') {
+                    alttextaiShowModal();
+                }
+                return;
+            }
+            
             if (!response.ok) {
                 throw new Error('HTTP ' + response.status);
             }

@@ -549,6 +549,78 @@
     /**
      * Load subscription information from backend
      */
+    /**
+     * Load subscription status using new billing API
+     * This function uses opttiBilling.fetchSubscriptions to get subscription data
+     */
+    async function loadSubscriptionStatus() {
+        if (!window.opttiBilling || !window.opttiApi || !window.opttiApi.userEmail) {
+            if (alttextaiDebug) console.log('[AltText AI] Billing API not available, skipping subscription status load');
+            return;
+        }
+
+        try {
+            const result = await window.opttiBilling.fetchSubscriptions({ 
+                email: window.opttiApi.userEmail 
+            });
+
+            if (!result.ok) {
+                if (alttextaiDebug) console.warn('[AltText AI] Failed to fetch subscriptions:', result);
+                return;
+            }
+
+            const sub = result.subscriptions?.find(s => s.plugin_slug === window.opttiApi.plugin);
+            if (!sub) {
+                updateUIForFreePlan();
+                return;
+            }
+
+            updateUIForPlan(sub.plan);
+        } catch (error) {
+            if (alttextaiDebug) console.error('[AltText AI] Error loading subscription status:', error);
+        }
+    }
+
+    /**
+     * Update UI for free plan
+     */
+    function updateUIForFreePlan() {
+        // Hide upgrade button if it exists
+        const $upgradeBtn = $('.bbai-upgrade-link, [data-action="show-upgrade-modal"]');
+        $upgradeBtn.show();
+        
+        // Update plan badge if it exists
+        const $badge = $('.bbai-plan-badge, #bbai-plan-badge');
+        $badge.text('FREE').removeClass('bbai-badge-pro bbai-badge-agency').addClass('bbai-badge-free');
+        
+        // Update quota display if it exists
+        const $quota = $('.bbai-quota-display, #bbai-quota-display');
+        $quota.text('Free plan - Limited usage');
+    }
+
+    /**
+     * Update UI for paid plan
+     */
+    function updateUIForPlan(plan) {
+        const planUpper = plan ? plan.toUpperCase() : 'PRO';
+        
+        // Update plan badge
+        const $badge = $('.bbai-plan-badge, #bbai-plan-badge');
+        $badge.text(planUpper)
+              .removeClass('bbai-badge-free bbai-badge-pro bbai-badge-agency')
+              .addClass('bbai-badge-' + plan.toLowerCase());
+        
+        // Hide upgrade button if already on PRO or AGENCY
+        if (plan === 'pro' || plan === 'agency') {
+            const $upgradeBtn = $('.bbai-upgrade-link, [data-action="show-upgrade-modal"]');
+            $upgradeBtn.hide();
+        }
+        
+        // Update quota display
+        const $quota = $('.bbai-quota-display, #bbai-quota-display');
+        $quota.text(planUpper + ' plan - Full access');
+    }
+
     function loadSubscriptionInfo(forceRefresh) {
         // Use cached DOM elements for better performance
         const $loading = getCachedElement('#bbai-subscription-loading');
@@ -1206,37 +1278,87 @@
             $btn.html('<span class="bbai-spinner"></span> Opening portal...');
         });
 
-                $.ajax({
-            url: window.bbai_ajax.ajaxurl,
-                    type: 'POST',
-                    data: {
-                action: 'beepbeepai_create_portal',
-                nonce: window.bbai_ajax.nonce
-            },
-            timeout: 30000, // 30 second timeout
-            success: function(response) {
-                if (alttextaiDebug) console.log('[AltText AI] Portal response:', response);
-                
-                // Restore button state
-                $buttons.prop('disabled', false)
-                        .removeClass('bbai-btn-loading')
-                        .attr('aria-busy', 'false');
-                
-                // Restore original text
-                $buttons.each(function() {
-                    const $btn = $(this);
-                    const key = $btn.attr('id') || 'btn';
-                    $btn.text(originalText[key] || 'Manage Subscription');
-                });
+                // Use new billing API if available, otherwise fallback to AJAX
+                if (window.opttiBilling && window.opttiApi && window.opttiApi.userEmail) {
+                    window.opttiBilling.createPortalSession({ email: window.opttiApi.userEmail })
+                        .then(function(session) {
+                            if (alttextaiDebug) console.log('[AltText AI] Portal response:', session);
+                            
+                            // Restore button state
+                            $buttons.prop('disabled', false)
+                                    .removeClass('bbai-btn-loading')
+                                    .attr('aria-busy', 'false');
+                            
+                            // Restore original text
+                            $buttons.each(function() {
+                                const $btn = $(this);
+                                const key = $btn.attr('id') || 'btn';
+                                $btn.text(originalText[key] || 'Manage Subscription');
+                            });
 
-                if (response.success && response.data && response.data.url) {
-                    if (alttextaiDebug) console.log('[AltText AI] Opening portal URL:', response.data.url);
-                    
-                    // Open portal in new tab
-                    const portalWindow = window.open(response.data.url, '_blank', 'noopener,noreferrer');
-                    
-                    if (!portalWindow) {
-                        alert('Please allow popups for this site to manage your subscription.');
+                            if (session.ok && session.url) {
+                                if (alttextaiDebug) console.log('[AltText AI] Opening portal URL:', session.url);
+                                
+                                // Open portal in new tab
+                                const portalWindow = window.open(session.url, '_blank', 'noopener,noreferrer');
+                                
+                                if (!portalWindow) {
+                                    alert('Please allow popups for this site to manage your subscription.');
+                                }
+                            } else {
+                                alert('Unable to open billing portal.');
+                            }
+                        })
+                        .catch(function(error) {
+                            if (alttextaiDebug) console.error('[AltText AI] Portal error:', error);
+                            
+                            // Restore button state
+                            $buttons.prop('disabled', false)
+                                    .removeClass('bbai-btn-loading')
+                                    .attr('aria-busy', 'false');
+                            
+                            // Restore original text
+                            $buttons.each(function() {
+                                const $btn = $(this);
+                                const key = $btn.attr('id') || 'btn';
+                                $btn.text(originalText[key] || 'Manage Subscription');
+                            });
+                            
+                            alert('Unable to open billing portal.');
+                        });
+                } else {
+                    // Fallback to AJAX method
+                    $.ajax({
+                        url: window.bbai_ajax.ajaxurl,
+                        type: 'POST',
+                        data: {
+                            action: 'beepbeepai_create_portal',
+                            nonce: window.bbai_ajax.nonce
+                        },
+                        timeout: 30000, // 30 second timeout
+                        success: function(response) {
+                            if (alttextaiDebug) console.log('[AltText AI] Portal response:', response);
+                            
+                            // Restore button state
+                            $buttons.prop('disabled', false)
+                                    .removeClass('bbai-btn-loading')
+                                    .attr('aria-busy', 'false');
+                            
+                            // Restore original text
+                            $buttons.each(function() {
+                                const $btn = $(this);
+                                const key = $btn.attr('id') || 'btn';
+                                $btn.text(originalText[key] || 'Manage Subscription');
+                            });
+
+                            if (response.success && response.data && response.data.url) {
+                                if (alttextaiDebug) console.log('[AltText AI] Opening portal URL:', response.data.url);
+                                
+                                // Open portal in new tab
+                                const portalWindow = window.open(response.data.url, '_blank', 'noopener,noreferrer');
+                                
+                                if (!portalWindow) {
+                                    alert('Please allow popups for this site to manage your subscription.');
                         return;
                     }
                     
@@ -1344,10 +1466,18 @@
      * Initiate Stripe Checkout
      * Creates checkout session and opens in new tab
      */
-    function initiateCheckout($button, priceId, planName) {
+    async function initiateCheckout($button, priceId, planName) {
         if (alttextaiDebug) console.log('[AltText AI] Initiating checkout:', planName, priceId);
         
-        if (!window.bbai_ajax || !window.bbai_ajax.ajaxurl) {
+        if (!window.opttiBilling || !window.opttiApi) {
+            // Fallback to old AJAX method if new billing API not available
+            const fallbackUrl = $button.attr('data-fallback-url');
+            if (fallbackUrl) {
+                if (alttextaiDebug) console.log('[AltText AI] Billing API not available, using fallback Stripe link');
+                window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+                alttextaiCloseModal();
+                return;
+            }
             alert('Configuration error. Please refresh the page.');
             return;
         }
@@ -1360,112 +1490,97 @@
         const originalHtml = $button.html();
         $button.html('<span class="bbai-spinner"></span> Loading checkout...');
 
-        $.ajax({
-            url: window.bbai_ajax.ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'beepbeepai_create_checkout',
-                nonce: window.bbai_ajax.nonce,
-                price_id: priceId
-            },
-            timeout: 30000, // 30 second timeout
-            success: function(response) {
-                if (alttextaiDebug) console.log('[AltText AI] Checkout response:', response);
-                
-                // Restore button state
-                $button.prop('disabled', false)
-                       .removeClass('bbai-btn-loading')
-                       .html(originalHtml)
-                       .attr('aria-busy', 'false');
+        try {
+            const session = await window.opttiBilling.createCheckoutSession({
+                email: window.opttiApi.userEmail || '',
+                plugin: window.opttiApi.plugin || 'beepbeep-ai',
+                priceId: priceId
+            });
 
-                if (response.success && response.data && response.data.url) {
-                    if (alttextaiDebug) console.log('[AltText AI] Opening checkout URL:', response.data.url);
-                    
-                    // Open checkout in new tab
-                    const checkoutWindow = window.open(response.data.url, '_blank', 'noopener,noreferrer');
-                    
-                    if (!checkoutWindow) {
-                        alert('Please allow popups for this site to complete checkout.');
-                        return;
+            if (alttextaiDebug) console.log('[AltText AI] Checkout response:', session);
+            
+            // Restore button state
+            $button.prop('disabled', false)
+                   .removeClass('bbai-btn-loading')
+                   .html(originalHtml)
+                   .attr('aria-busy', 'false');
+
+            if (session.ok && session.url) {
+                if (alttextaiDebug) console.log('[AltText AI] Opening checkout URL:', session.url);
+                
+                // Open checkout in new tab
+                const checkoutWindow = window.open(session.url, '_blank', 'noopener,noreferrer');
+                
+                if (!checkoutWindow) {
+                    alert('Please allow popups for this site to complete checkout.');
+                    return;
+                }
+                
+                // Close the upgrade modal
+                alttextaiCloseModal();
+                
+                // Monitor for successful checkout (user returns to success page)
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('checkout') === 'success') {
+                    // Refresh data after successful checkout
+                    if (typeof window.alttextai_refresh_usage === 'function') {
+                        window.alttextai_refresh_usage();
                     }
                     
-                    // Close the upgrade modal
-                    alttextaiCloseModal();
-                    
-                    // Monitor for successful checkout (user returns to success page)
-                    const urlParams = new URLSearchParams(window.location.search);
-                    if (urlParams.get('checkout') === 'success') {
-                        // Refresh data after successful checkout
-                        if (typeof window.alttextai_refresh_usage === 'function') {
-                            window.alttextai_refresh_usage();
-                        }
+                    // Send dashboard welcome email after upgrade
+                    if (typeof window.sendDashboardWelcomeEmail === 'function') {
+                        const userEmail = window.opttiApi.userEmail || 
+                                        (window.bbai_ajax && window.bbai_ajax.user_data && window.bbai_ajax.user_data.email) || 
+                                        (window.BBAI && window.BBAI.userData && window.BBAI.userData.email);
+                        const userPlan = (window.bbai_ajax && window.bbai_ajax.user_data && window.bbai_ajax.user_data.plan) || 'pro';
                         
-                        // Send dashboard welcome email after upgrade
-                        if (typeof window.sendDashboardWelcomeEmail === 'function') {
-                            const userEmail = (window.bbai_ajax && window.bbai_ajax.user_data && window.bbai_ajax.user_data.email) || 
-                                            (window.BBAI && window.BBAI.userData && window.BBAI.userData.email);
-                            const userPlan = (window.bbai_ajax && window.bbai_ajax.user_data && window.bbai_ajax.user_data.plan) || 'pro';
-                            
-                            if (userEmail) {
-                                window.sendDashboardWelcomeEmail(userEmail, userPlan)
-                                    .catch(error => {
-                                        console.error('[AltText AI] Failed to send dashboard welcome email:', error);
-                                        // Don't block user flow on email failure
-                                    });
-                            }
+                        if (userEmail) {
+                            window.sendDashboardWelcomeEmail(userEmail, userPlan)
+                                .catch(error => {
+                                    console.error('[AltText AI] Failed to send dashboard welcome email:', error);
+                                    // Don't block user flow on email failure
+                                });
                         }
-                    }
-                } else {
-                    // Backend API failed - fall back to direct Stripe payment link
-                    const fallbackUrl = $button.attr('data-fallback-url');
-                    if (fallbackUrl) {
-                        if (alttextaiDebug) console.log('[AltText AI] Backend checkout failed, using fallback Stripe link');
-                        window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
-                        alttextaiCloseModal();
-                    } else {
-                        // No fallback available - show error
-                        let errorMessage = response.data?.message || 'Failed to create checkout session. Please try again.';
-                        const errorCode = response.data?.code || '';
-                        
-                        if (errorMessage.toLowerCase().includes('price')) {
-                            errorMessage = 'Unable to load pricing information.\n\nPlease try again or contact support.';
-                        }
-                        
-                        alert(errorMessage);
                     }
                 }
-            },
-            error: function(xhr, status, error) {
-                if (alttextaiDebug) console.error('[AltText AI] Checkout error:', status, error, xhr);
-                
-                // Restore button state
-                $button.prop('disabled', false)
-                       .removeClass('bbai-btn-loading')
-                       .html(originalHtml)
-                       .attr('aria-busy', 'false');
-                
-                // Try fallback to direct Stripe payment link
+            } else {
+                // Backend API failed - fall back to direct Stripe payment link
                 const fallbackUrl = $button.attr('data-fallback-url');
                 if (fallbackUrl) {
-                    if (alttextaiDebug) console.log('[AltText AI] Backend checkout error, using fallback Stripe link');
+                    if (alttextaiDebug) console.log('[AltText AI] Backend checkout failed, using fallback Stripe link');
                     window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
                     alttextaiCloseModal();
                 } else {
                     // No fallback available - show error
-                    let errorMessage = 'Unable to connect to checkout system. Please try again.';
+                    let errorMessage = session.message || 'Failed to create checkout session. Please try again.';
                     
-                    if (status === 'timeout') {
-                        errorMessage = 'Request timed out. Please check your internet connection and try again.';
-                    } else if (xhr.status === 0) {
-                        errorMessage = 'Network connection lost. Please check your internet and try again.';
-                    } else if (xhr.status >= 500) {
-                        errorMessage = 'Checkout system is temporarily unavailable. Please try again in a few minutes.';
+                    if (errorMessage.toLowerCase().includes('price')) {
+                        errorMessage = 'Unable to load pricing information.\n\nPlease try again or contact support.';
                     }
                     
                     alert(errorMessage);
                 }
             }
-        });
+        } catch (error) {
+            if (alttextaiDebug) console.error('[AltText AI] Checkout error:', error);
+            
+            // Restore button state
+            $button.prop('disabled', false)
+                   .removeClass('bbai-btn-loading')
+                   .html(originalHtml)
+                   .attr('aria-busy', 'false');
+            
+            // Try fallback to direct Stripe payment link
+            const fallbackUrl = $button.attr('data-fallback-url');
+            if (fallbackUrl) {
+                if (alttextaiDebug) console.log('[AltText AI] Checkout error, using fallback Stripe link');
+                window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+                alttextaiCloseModal();
+            } else {
+                // No fallback available - show error
+                alert('Something went wrong. Please try again later.');
+            }
+        }
     }
 
     /**

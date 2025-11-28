@@ -31,10 +31,31 @@ function postJson(path, body) {
         if (!response.ok) {
             // Try to parse error response
             return response.json()
-                .then(err => Promise.reject(new Error(err.error || err.message || `HTTP error! status: ${response.status}`)))
+                .then(err => {
+                    // Check for quota exceeded error
+                    if (err.error === 'quota_exceeded') {
+                        if (typeof showUpgradeModal === 'function') {
+                            showUpgradeModal();
+                        } else if (typeof window.showUpgradeModal === 'function') {
+                            window.showUpgradeModal();
+                        }
+                        return Promise.reject(new Error(err.error || err.message || `HTTP error! status: ${response.status}`));
+                    }
+                    return Promise.reject(new Error(err.error || err.message || `HTTP error! status: ${response.status}`));
+                })
                 .catch(() => Promise.reject(new Error(`HTTP error! status: ${response.status}`)));
         }
-        return response.json();
+        return response.json().then(data => {
+            // Check for quota exceeded in successful response
+            if (data.error === 'quota_exceeded') {
+                if (typeof showUpgradeModal === 'function') {
+                    showUpgradeModal();
+                } else if (typeof window.showUpgradeModal === 'function') {
+                    window.showUpgradeModal();
+                }
+            }
+            return data;
+        });
     })
     .catch(error => {
         // Log error for debugging

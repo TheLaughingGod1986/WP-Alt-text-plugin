@@ -6335,11 +6335,16 @@ class BbAI_Core {
                 'can_manage' => $this->user_can_manage(),
             ]);
             
+            // Get user email for billing
+            $current_user = wp_get_current_user();
+            $user_email = $current_user->exists() ? $current_user->user_email : '';
+            
             // Add Optti API configuration
             wp_localize_script('bbai-admin', 'opttiApi', [
                 'baseUrl' => 'https://alttext-ai-backend.onrender.com',
                 'plugin' => 'beepbeep-ai',
-                'site'   => home_url()
+                'site'   => home_url(),
+                'userEmail' => $user_email
             ]);
         }
 
@@ -6446,17 +6451,27 @@ class BbAI_Core {
                 true
             );
             
+            // Enqueue optti-billing.js SECOND - billing API module
+            $optti_billing_js = $asset_path($js_base, 'optti-billing', $use_debug_assets, 'js');
+            wp_enqueue_script(
+                'optti-billing',
+                $base_url . $optti_billing_js,
+                ['jquery', 'optti-api'],
+                $asset_version($optti_billing_js, '1.0.0'),
+                true
+            );
+            
             wp_enqueue_script(
                 'bbai-dashboard',
                 $base_url . $js_file,
-                ['jquery', 'wp-api-fetch', 'optti-api'],
+                ['jquery', 'wp-api-fetch', 'optti-api', 'optti-billing'],
                 $asset_version($js_file, '3.0.0'),
                 true
             );
             wp_enqueue_script(
                 'bbai-upgrade',
                 $base_url . $upgrade_js,
-                ['jquery', 'optti-api'],
+                ['jquery', 'optti-api', 'optti-billing'],
                 $asset_version($upgrade_js, '3.1.0'),
                 true
             );
@@ -6592,11 +6607,16 @@ class BbAI_Core {
                 'can_manage' => $this->user_can_manage(),
             ]);
             
+            // Get user email for billing
+            $current_user = wp_get_current_user();
+            $user_email = $current_user->exists() ? $current_user->user_email : '';
+            
             // Add Optti API configuration
             wp_localize_script('bbai-dashboard', 'opttiApi', [
                 'baseUrl' => 'https://alttext-ai-backend.onrender.com',
                 'plugin' => 'beepbeep-ai',
-                'site'   => home_url()
+                'site'   => home_url(),
+                'userEmail' => $user_email
             ]);
             
             wp_localize_script('bbai-dashboard', 'BBAI_DASH_L10N', [
@@ -6632,11 +6652,16 @@ class BbAI_Core {
                 'canManage' => $this->user_can_manage(),
             ]);
             
+            // Get user email for billing
+            $current_user = wp_get_current_user();
+            $user_email = $current_user->exists() ? $current_user->user_email : '';
+            
             // Add Optti API configuration
             wp_localize_script('bbai-upgrade', 'opttiApi', [
                 'baseUrl' => 'https://alttext-ai-backend.onrender.com',
                 'plugin' => 'beepbeep-ai',
-                'site'   => home_url()
+                'site'   => home_url(),
+                'userEmail' => $user_email
             ]);
 
         }
