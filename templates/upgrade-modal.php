@@ -267,7 +267,7 @@ else {
                     // Link to dashboard credits purchase
                     var dashboardUrl = (typeof opttiApi !== 'undefined' && opttiApi.dashboardUrl) || (typeof window.bbai_ajax !== 'undefined' && window.bbai_ajax.dashboard_url) || '#';
                     if (dashboardUrl && dashboardUrl !== '#') {
-                        window.open(dashboardUrl + '/credits', '_blank');
+                        window.open(dashboardUrl + '/dashboard/credits', '_blank');
                     }
                 });
                 upgradeSubscriptionBtn.show().on('click', function() {
@@ -294,7 +294,7 @@ else {
                 buyCreditsBtn.show().on('click', function() {
                     var dashboardUrl = (typeof opttiApi !== 'undefined' && opttiApi.dashboardUrl) || (typeof window.bbai_ajax !== 'undefined' && window.bbai_ajax.dashboard_url) || '#';
                     if (dashboardUrl && dashboardUrl !== '#') {
-                        window.open(dashboardUrl + '/credits', '_blank');
+                        window.open(dashboardUrl + '/dashboard/credits', '_blank');
                     }
                 });
                 upgradeSubscriptionBtn.show().on('click', function() {

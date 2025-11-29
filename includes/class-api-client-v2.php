@@ -255,6 +255,14 @@ class API_Client_V2 {
                     ($error_message_str && strpos($error_message_str, 'session expired') !== false) ||
                     ($error_message_str && strpos($error_message_str, 'unauthorized') !== false)) {
                     // Token is definitely invalid, clear it
+                    // WP_DEBUG conditional logging for token invalidation
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log(sprintf(
+                            '[BeepBeep AI] JWT token invalidated and cleared: %s (code: %s)',
+                            $error_message,
+                            $error_code
+                        ));
+                    }
                     $this->clear_token();
                     return false;
                 }
@@ -263,6 +271,10 @@ class API_Client_V2 {
             } else {
                 // Token is valid, cache result for 5 minutes
                 set_transient('bbai_token_last_check', time(), 5 * MINUTE_IN_SECONDS);
+                // WP_DEBUG conditional logging for token validation success
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('[BeepBeep AI] JWT token validation succeeded');
+                }
             }
         }
 
@@ -486,9 +498,11 @@ class API_Client_V2 {
         
         // Handle NO_ACCESS errors (can be in any status code response)
         if (is_array($data) && isset($data['code']) && $data['code'] === 'NO_ACCESS') {
-            // Determine error context from response data
+            // Extract error fields from new backend structure
             $credits = isset($data['credits']) ? intval($data['credits']) : null;
             $subscription_expired = isset($data['subscription_expired']) ? (bool)$data['subscription_expired'] : false;
+            $reason = isset($data['reason']) && is_string($data['reason']) ? $data['reason'] : '';
+            $message = isset($data['message']) && is_string($data['message']) ? $data['message'] : '';
             
             // Determine error type based on context
             $error_code = 'no_access';
@@ -498,11 +512,22 @@ class API_Client_V2 {
                 $error_code = 'out_of_credits';
             }
             
-            $error_message = __('Access denied. Please upgrade or purchase credits to continue.', 'beepbeep-ai-alt-text-generator');
-            if ($subscription_expired) {
+            // Build error message with fallback hierarchy:
+            // 1. Use backend message if provided
+            // 2. Use reason if provided
+            // 3. Use context-based default messages
+            // 4. Use generic fallback
+            $error_message = '';
+            if (!empty($message)) {
+                $error_message = $message;
+            } elseif (!empty($reason)) {
+                $error_message = $reason;
+            } elseif ($subscription_expired) {
                 $error_message = __('Your subscription has expired. Please renew to continue.', 'beepbeep-ai-alt-text-generator');
             } elseif ($credits === 0) {
                 $error_message = __("You've run out of credits. Please purchase more credits to continue.", 'beepbeep-ai-alt-text-generator');
+            } else {
+                $error_message = __('Access denied. Please upgrade or purchase credits to continue.', 'beepbeep-ai-alt-text-generator');
             }
             
             $this->log_api_event('warning', 'NO_ACCESS error detected', [
@@ -511,12 +536,14 @@ class API_Client_V2 {
                 'error_code' => $error_code,
                 'credits' => $credits,
                 'subscription_expired' => $subscription_expired,
+                'reason' => $reason,
             ]);
             
             // Cache NO_ACCESS error for UI handling
             set_transient('bbai_no_access_error', [
                 'error_code' => $error_code,
                 'message' => $error_message,
+                'reason' => $reason,
                 'credits' => $credits,
                 'subscription_expired' => $subscription_expired,
                 'timestamp' => time(),
@@ -528,6 +555,7 @@ class API_Client_V2 {
                 [
                     'no_access' => true,
                     'error_code' => $error_code,
+                    'reason' => $reason,
                     'credits' => $credits,
                     'subscription_expired' => $subscription_expired,
                     'status_code' => $status_code,
@@ -965,7 +993,18 @@ class API_Client_V2 {
             // Sync identity after token refresh
             $this->sync_identity();
             
+            // WP_DEBUG conditional logging for JWT refresh success
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[BeepBeep AI] JWT token refresh succeeded via get_user_info()');
+            }
+            
             return $response['data']['user'];
+        }
+
+        // WP_DEBUG conditional logging for JWT refresh failure
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            $error_msg = $response['data']['error'] ?? __('Failed to get user info', 'beepbeep-ai-alt-text-generator');
+            error_log(sprintf('[BeepBeep AI] JWT token refresh failed: %s', $error_msg));
         }
 
         return new \WP_Error(
@@ -1065,6 +1104,14 @@ class API_Client_V2 {
                     'code' => $response->get_error_code(),
                 ], 'identity');
             }
+            // WP_DEBUG conditional logging for detailed debugging
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log(sprintf(
+                    '[BeepBeep AI] Identity sync failed: %s (code: %s)',
+                    $response->get_error_message(),
+                    $response->get_error_code()
+                ));
+            }
             return $response;
         }
         
@@ -1074,6 +1121,14 @@ class API_Client_V2 {
                 'email' => $email,
                 'site' => $site,
             ], 'identity');
+        }
+        // WP_DEBUG conditional logging for detailed debugging
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf(
+                '[BeepBeep AI] Identity sync succeeded: email=%s, site=%s',
+                $email,
+                $site
+            ));
         }
         
         return true;

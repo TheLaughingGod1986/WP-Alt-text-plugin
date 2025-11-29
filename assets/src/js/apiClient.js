@@ -56,9 +56,11 @@ function postJson(path, body) {
                 .then(err => {
                     // Check for NO_ACCESS error code
                     if (err.code === 'NO_ACCESS') {
-                        // Determine error context
+                        // Extract error fields from new backend structure
                         const credits = err.credits !== undefined ? parseInt(err.credits, 10) : null;
                         const subscriptionExpired = err.subscription_expired === true;
+                        const reason = err.reason || '';
+                        const message = err.message || '';
                         
                         let errorCode = 'no_access';
                         if (subscriptionExpired) {
@@ -67,15 +69,27 @@ function postJson(path, body) {
                             errorCode = 'out_of_credits';
                         }
                         
+                        // Build error message with fallback hierarchy:
+                        // 1. Use backend message if provided
+                        // 2. Use reason if provided
+                        // 3. Use generic fallback
+                        let errorMessage = 'Access denied';
+                        if (message) {
+                            errorMessage = message;
+                        } else if (reason) {
+                            errorMessage = reason;
+                        }
+                        
                         // Return NO_ACCESS error for handling by caller
                         return {
                             ok: false,
                             noAccess: true,
                             code: 'NO_ACCESS',
                             errorCode: errorCode,
+                            reason: reason,
                             credits: credits,
                             subscriptionExpired: subscriptionExpired,
-                            message: err.message || 'Access denied',
+                            message: errorMessage,
                             status: response.status
                         };
                     }
@@ -96,9 +110,11 @@ function postJson(path, body) {
         return response.json().then(data => {
             // Check for NO_ACCESS error code in response
             if (data.code === 'NO_ACCESS' || (data.ok === false && data.code === 'NO_ACCESS')) {
-                // Determine error context
+                // Extract error fields from new backend structure
                 const credits = data.credits !== undefined ? parseInt(data.credits, 10) : null;
                 const subscriptionExpired = data.subscription_expired === true;
+                const reason = data.reason || '';
+                const message = data.message || '';
                 
                 let errorCode = 'no_access';
                 if (subscriptionExpired) {
@@ -107,15 +123,27 @@ function postJson(path, body) {
                     errorCode = 'out_of_credits';
                 }
                 
+                // Build error message with fallback hierarchy:
+                // 1. Use backend message if provided
+                // 2. Use reason if provided
+                // 3. Use generic fallback
+                let errorMessage = 'Access denied';
+                if (message) {
+                    errorMessage = message;
+                } else if (reason) {
+                    errorMessage = reason;
+                }
+                
                 // Return NO_ACCESS error for handling by caller
                 return {
                     ok: false,
                     noAccess: true,
                     code: 'NO_ACCESS',
                     errorCode: errorCode,
+                    reason: reason,
                     credits: credits,
                     subscriptionExpired: subscriptionExpired,
-                    message: data.message || 'Access denied'
+                    message: errorMessage
                 };
             }
             

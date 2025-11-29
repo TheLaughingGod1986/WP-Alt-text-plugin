@@ -37,9 +37,61 @@ export async function opttiPost (path, payload, customHeaders = {}) {
 }
 
 /**
+ * Valid event types for analytics tracking
+ * @type {string[]}
+ */
+const VALID_EVENT_TYPES = [
+    'alt_text_generate',
+    'alt_text_generated',
+    'upgrade_modal_open',
+    'plugin_activated',
+    'checkout_initiated',
+    'checkout_completed',
+    'dashboard_loaded',
+    'settings_saved',
+    'out_of_credits_modal_open',
+    'buy_credits_clicked'
+];
+
+/**
  * Queue an analytics event for batched sending
+ * 
+ * @param {string} event - Event type (must be one of VALID_EVENT_TYPES)
+ * @param {Object} payload - Optional event payload data
+ * 
+ * Valid event types:
+ * - alt_text_generate: User initiated alt text generation
+ * - alt_text_generated: Alt text was successfully generated
+ * - upgrade_modal_open: Upgrade modal was opened
+ * - plugin_activated: Plugin was activated
+ * - checkout_initiated: User started checkout process
+ * - checkout_completed: Checkout was completed
+ * - dashboard_loaded: Dashboard page was loaded
+ * - settings_saved: Settings were saved
+ * - out_of_credits_modal_open: Out of credits modal was opened
+ * - buy_credits_clicked: User clicked buy credits button
  */
 export function logEvent(event, payload = {}) {
+    // Validate event type
+    if (typeof event !== 'string' || !event) {
+        console.warn('[Optti Analytics] Invalid event type:', event);
+        return;
+    }
+    
+    // Check if event type is valid (warn in development, allow in production for backward compatibility)
+    if (VALID_EVENT_TYPES.indexOf(event) === -1) {
+        if (typeof console !== 'undefined' && console.warn) {
+            console.warn(`[Optti Analytics] Unknown event type: ${event}. Valid types: ${VALID_EVENT_TYPES.join(', ')}`);
+        }
+        // Still log the event for backward compatibility, but warn about it
+    }
+    
+    // Validate payload is an object
+    if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) {
+        console.warn('[Optti Analytics] Payload must be an object:', payload);
+        payload = {};
+    }
+    
     // Add event to queue
     eventQueue.push({
         event,

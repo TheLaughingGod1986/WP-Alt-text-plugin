@@ -66,7 +66,7 @@
             }
         }
         
-        // Map error codes to user-friendly messages
+        // Map error codes to user-friendly messages (fallback)
         const errorMessages = {
             'subscription_required': 'A subscription is required to continue generating alt text.',
             'subscription_expired': 'Your subscription has expired. Please renew to continue.',
@@ -75,7 +75,15 @@
             'out_of_credits': "You've run out of credits. Please purchase more credits to continue."
         };
         
-        const message = errorMessages[errorCode] || errorMessages['subscription_required'];
+        // Use backend message/reason if available, otherwise use fallback
+        let message = '';
+        if (subscriptionError && subscriptionError.message) {
+            message = subscriptionError.message;
+        } else if (subscriptionError && subscriptionError.reason) {
+            message = subscriptionError.reason;
+        } else {
+            message = errorMessages[errorCode] || errorMessages['subscription_required'];
+        }
         
         // Store error reason for modal display
         if (typeof sessionStorage !== 'undefined') {

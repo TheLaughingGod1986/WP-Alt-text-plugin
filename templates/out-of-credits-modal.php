@@ -26,7 +26,7 @@ if (defined('BBAI_DASHBOARD_URL') && BBAI_DASHBOARD_URL) {
             <div class="bbai-upgrade-modal__header-content">
                 <h2 id="bbai-out-of-credits-modal-title"><?php esc_html_e("You've run out of credits", 'beepbeep-ai-alt-text-generator'); ?></h2>
                 <p class="bbai-upgrade-modal__subtitle" id="bbai-out-of-credits-modal-desc">
-                    <?php esc_html_e('Your plan does not include unlimited usage. You can buy a credit pack to continue generating alt text.', 'beepbeep-ai-alt-text-generator'); ?>
+                    <?php esc_html_e('Purchase credit packs to continue generating SEO-optimized alt text for your images. Credit packs are available in various sizes to suit your needs.', 'beepbeep-ai-alt-text-generator'); ?>
                 </p>
             </div>
             <button type="button" class="bbai-modal-close" onclick="if(typeof bbaiCloseOutOfCreditsModal==='function'){bbaiCloseOutOfCreditsModal();}else if(typeof alttextaiCloseModal==='function'){alttextaiCloseModal();}" aria-label="<?php esc_attr_e('Close modal', 'beepbeep-ai-alt-text-generator'); ?>">
@@ -39,7 +39,7 @@ if (defined('BBAI_DASHBOARD_URL') && BBAI_DASHBOARD_URL) {
         <div class="bbai-upgrade-modal__body" style="padding: 24px;">
             <div style="text-align: center;">
                 <p style="margin-bottom: 24px; color: #6b7280;">
-                    <?php esc_html_e('Purchase credit packs to continue generating alt text for your images.', 'beepbeep-ai-alt-text-generator'); ?>
+                    <?php esc_html_e('Credit packs give you additional generations beyond your monthly plan. Each credit generates one AI-powered alt text description. Choose a pack size that fits your workflow.', 'beepbeep-ai-alt-text-generator'); ?>
                 </p>
             </div>
         </div>
