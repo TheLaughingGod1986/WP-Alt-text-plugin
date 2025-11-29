@@ -4030,6 +4030,7 @@ class BbAI_Core {
         // Include upgrade modal - always available for all tabs
         $checkout_prices = $this->get_checkout_price_ids();
         include BBAI_PLUGIN_DIR . 'templates/upgrade-modal.php';
+        include BBAI_PLUGIN_DIR . 'templates/out-of-credits-modal.php';
         
         // Include dashboard signup modal
         require_once BBAI_PLUGIN_DIR . 'admin/components/DashboardSignupModal.php';

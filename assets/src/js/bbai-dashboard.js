@@ -99,6 +99,12 @@
             });
         }
         
+        // If out of credits, show out-of-credits modal instead
+        if (errorCode === 'out_of_credits' && typeof window.bbai_openOutOfCreditsModal === 'function') {
+            window.bbai_openOutOfCreditsModal();
+            return;
+        }
+        
         // Trigger upgrade modal using existing infrastructure
         if (typeof window.openPricingModal === 'function') {
             window.openPricingModal('enterprise');

@@ -769,8 +769,10 @@
                     $btn.data('no-access-message-added', true);
                 }
                 
-                // Trigger upgrade modal
-                if (typeof window.bbai_openUpgradeModal === 'function') {
+                // Trigger out-of-credits modal if credits = 0, otherwise upgrade modal
+                if (subscriptionError === 'out_of_credits' && typeof window.bbai_openOutOfCreditsModal === 'function') {
+                    window.bbai_openOutOfCreditsModal();
+                } else if (typeof window.bbai_openUpgradeModal === 'function') {
                     window.bbai_openUpgradeModal(subscriptionError);
                 }
                 return;
@@ -1066,7 +1068,10 @@
                 
                 // Check for subscription error and trigger modal
                 if (subscriptionError) {
-                    if (typeof window.bbai_openUpgradeModal === 'function') {
+                    // Trigger out-of-credits modal if credits = 0, otherwise upgrade modal
+                    if (subscriptionError === 'out_of_credits' && typeof window.bbai_openOutOfCreditsModal === 'function') {
+                        window.bbai_openOutOfCreditsModal();
+                    } else if (typeof window.bbai_openUpgradeModal === 'function') {
                         window.bbai_openUpgradeModal(subscriptionError);
                     }
                     callback(false, 0, {

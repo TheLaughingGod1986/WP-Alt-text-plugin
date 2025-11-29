@@ -258,6 +258,54 @@ export async function getDashboardCharts() {
 }
 
 /**
+ * Get credit balance and subscription status from REST endpoint
+ * This provides an alternative to getting credits from /dashboard endpoint
+ * Cache balance for display (short-lived cache, 1-2 minutes)
+ */
+export async function getCreditBalance() {
+    try {
+        const token = opttiApi?.token ?? '';
+        const headers = {
+            'Content-Type': 'application/json',
+        };
+        
+        // Add Authorization header if token is available
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        // Use WordPress REST API endpoint
+        const restUrl = opttiApi?.restUrl ?? '/wp-json/bbai/v1/credits/balance';
+        const res = await fetch(restUrl, {
+            method: 'GET',
+            headers: headers
+        });
+        
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        
+        const data = await res.json();
+        
+        // Return structured data
+        return {
+            ok: true,
+            credits: data.credits ?? null,
+            subscription: data.subscription ?? null
+        };
+    } catch (err) {
+        console.error('Credit balance API error:', err);
+        return {
+            ok: false,
+            error: 'network_error',
+            message: 'Unable to load credit balance',
+            credits: null,
+            subscription: null
+        };
+    }
+}
+
+/**
  * Get available credit packs
  */
 export async function getCreditPacks() {
@@ -305,6 +353,7 @@ export async function getCreditPacks() {
 if (typeof window !== 'undefined') {
     window.getDashboard = getDashboard;
     window.getDashboardCharts = getDashboardCharts;
+    window.getCreditBalance = getCreditBalance;
     window.getCreditPacks = getCreditPacks;
 }
 
