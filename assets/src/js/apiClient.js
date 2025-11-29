@@ -10,10 +10,10 @@
  * @returns {Promise<object>} Response data
  */
 function postJson(path, body) {
-    const apiUrl = opttiApi?.baseUrl || window.bbai_ajax?.api_url;
+    const apiUrl = opttiApi?.baseUrl;
     
     if (!apiUrl) {
-        return Promise.reject(new Error('API URL not configured'));
+        return Promise.reject(new Error('API URL not configured. opttiApi.baseUrl is required.'));
     }
     
     // Ensure path starts with /

@@ -5678,15 +5678,7 @@ class BbAI_Core {
                 'token' => get_option('optti_jwt_token') ?: ''
             ]);
             
-            // Enqueue optti-analytics.js for admin pages
-            $optti_analytics_js = $asset_path($js_base, 'optti-analytics', $use_debug_assets, 'js');
-            wp_enqueue_script(
-                'optti-analytics',
-                $base_url . $optti_analytics_js,
-                ['jquery'],
-                $asset_version($optti_analytics_js, '1.0.0'),
-                true
-            );
+            // Analytics functionality is now in optti-api.js (no separate optti-analytics.js needed)
         }
 
         if ($hook === 'media_page_bbai'){
@@ -5801,15 +5793,7 @@ class BbAI_Core {
                 true
             );
             
-            // Enqueue optti-analytics.js - analytics event logging helper
-            $optti_analytics_js = $asset_path($js_base, 'optti-analytics', $use_debug_assets, 'js');
-            wp_enqueue_script(
-                'optti-analytics',
-                $base_url . $optti_analytics_js,
-                ['jquery', 'optti-api'],
-                $asset_version($optti_analytics_js, '1.0.0'),
-                true
-            );
+            // Analytics functionality is now in optti-api.js (no separate optti-analytics.js needed)
             
             // Enqueue optti-billing.js SECOND - billing API module
             $optti_billing_js = $asset_path($js_base, 'optti-billing', $use_debug_assets, 'js');

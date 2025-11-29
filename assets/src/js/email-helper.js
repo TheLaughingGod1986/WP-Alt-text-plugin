@@ -8,12 +8,12 @@
 let postJson;
 if (typeof window.postJson === 'function') {
     postJson = window.postJson;
-} else if (typeof opttiApi?.baseUrl !== 'undefined' || typeof window.bbai_ajax?.api_url !== 'undefined') {
+} else if (typeof opttiApi?.baseUrl !== 'undefined') {
     // Fallback implementation if apiClient not loaded
     postJson = function(path, body) {
-        const apiUrl = opttiApi?.baseUrl || window.bbai_ajax?.api_url;
+        const apiUrl = opttiApi?.baseUrl;
         if (!apiUrl) {
-            return Promise.reject(new Error('API URL not configured'));
+            return Promise.reject(new Error('API URL not configured. opttiApi.baseUrl is required.'));
         }
         const endpoint = path.startsWith('/') ? path : '/' + path;
         return fetch(`${apiUrl}${endpoint}`, {

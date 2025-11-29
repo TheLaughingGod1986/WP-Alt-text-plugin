@@ -27,14 +27,18 @@
         setup() {
             // Get data from PHP
             if (window.bbaiDashboardSignupData) {
-                this.apiUrl = opttiApi?.baseUrl || window.bbaiDashboardSignupData.apiUrl || (window.bbai_ajax && window.bbai_ajax.api_url);
+                this.apiUrl = opttiApi?.baseUrl || window.bbaiDashboardSignupData.apiUrl;
                 this.siteDomain = window.bbaiDashboardSignupData.siteDomain || '';
                 this.nonce = window.bbaiDashboardSignupData.nonce || '';
                 this.ajaxUrl = window.bbaiDashboardSignupData.ajaxUrl || (window.bbai_ajax && window.bbai_ajax.ajaxurl);
             } else {
-                // Fallback to opttiApi or window.bbai_ajax
-                this.apiUrl = opttiApi?.baseUrl || (window.bbai_ajax && window.bbai_ajax.api_url);
+                // Use opttiApi baseUrl (required)
+                this.apiUrl = opttiApi?.baseUrl;
                 this.ajaxUrl = window.bbai_ajax && window.bbai_ajax.ajaxurl;
+            }
+            
+            if (!this.apiUrl) {
+                console.error('[Dashboard Signup] API URL not configured. opttiApi.baseUrl is required.');
             }
 
             const form = document.getElementById('bbai-dashboard-signup-form');

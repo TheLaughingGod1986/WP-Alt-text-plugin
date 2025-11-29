@@ -42,7 +42,17 @@ $bbai_options = [
 	'wp_alt_text_api_notice_dismissed',
 ];
 
+// Delete optti_ prefixed options (unified framework)
+$optti_options = [
+	'optti_jwt_token',
+];
+
 foreach ( $bbai_options as $option ) {
+	delete_option( $option );
+}
+
+// Delete optti_ prefixed options
+foreach ( $optti_options as $option ) {
 	delete_option( $option );
 }
 
@@ -108,6 +118,7 @@ foreach ( $legacy_transients as $transient ) {
 wp_clear_scheduled_hook( 'bbai_process_queue' );
 wp_clear_scheduled_hook( 'beepbeepai_process_queue' );
 wp_clear_scheduled_hook( \BeepBeepAI\AltTextGenerator\Queue::CRON_HOOK );
+wp_clear_scheduled_hook( 'bbai_daily_identity_sync' );
 
 // Remove custom capability from administrator role
 $role = get_role( 'administrator' );

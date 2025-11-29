@@ -12,17 +12,13 @@ class BbAIWaitlistModal {
 
     getApiUrl() {
         // First check for opttiApi baseUrl
+        // Use opttiApi baseUrl (required)
         if (opttiApi?.baseUrl) {
             return opttiApi.baseUrl;
         }
-        
-        // Fallback to legacy API URL
-        if (window.bbai_ajax?.api_url) {
-            return window.bbai_ajax.api_url;
-        }
 
-        // No fallback for production - fail explicitly
-        console.error('[AltText AI] API URL not configured');
+        // Fail explicitly if not configured
+        console.error('[AltText AI] API URL not configured. opttiApi.baseUrl is required.');
         return null;
     }
 

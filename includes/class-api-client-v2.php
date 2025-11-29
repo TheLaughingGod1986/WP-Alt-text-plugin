@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) { exit; }
 class API_Client_V2 {
     
     private $api_url;
-    private $token_option_key = 'beepbeepai_jwt_token';
+    private $token_option_key = 'optti_jwt_token';
     private $user_option_key = 'beepbeepai_user_data';
     private $site_id_option_key = 'beepbeepai_site_id';
     private $license_key_option_key = 'beepbeepai_license_key';
@@ -40,14 +40,21 @@ class API_Client_V2 {
     
     /**
      * Get stored JWT token
+     * Checks for optti_jwt_token first, then migrates from legacy keys if found
      */
     protected function get_token() {
         $token = get_option($this->token_option_key, '');
         if ($token === '' || $token === false) {
-            $legacy = get_option('beepbeepai_jwt_token', '');
-            if (!empty($legacy)) {
-                $this->set_token($legacy);
-                $token = $legacy;
+            // Check legacy token keys and migrate
+            $legacy_keys = ['beepbeepai_jwt_token', 'bbai_jwt_token'];
+            foreach ($legacy_keys as $legacy_key) {
+                $legacy = get_option($legacy_key, '');
+                if (!empty($legacy)) {
+                    // Migrate legacy token to new key
+                    $this->set_token($legacy);
+                    $token = $legacy;
+                    break;
+                }
             }
         }
         $token = is_string($token) ? $token : '';
@@ -72,10 +79,13 @@ class API_Client_V2 {
     
     /**
      * Clear stored token
+     * Clears both new and legacy token keys for complete cleanup
      */
     public function clear_token() {
         delete_option($this->token_option_key);
+        // Clear all legacy token keys
         delete_option('beepbeepai_jwt_token');
+        delete_option('bbai_jwt_token');
         delete_option($this->user_option_key);
         delete_option('beepbeepai_user_data');
     }
