@@ -138,8 +138,15 @@ class API_Client_V2 {
         
         // Also check license data (might have been stored there)
         $license_data = $this->get_license_data();
-        if (!empty($license_data) && isset($license_data['licenseKey'])) {
-            return $license_data['licenseKey'];
+        if (!empty($license_data)) {
+            // Check top-level licenseKey
+            if (isset($license_data['licenseKey']) && !empty($license_data['licenseKey'])) {
+                return $license_data['licenseKey'];
+            }
+            // Check site data for licenseKey (stored during auto-attach)
+            if (isset($license_data['site']) && is_array($license_data['site']) && isset($license_data['site']['licenseKey']) && !empty($license_data['site']['licenseKey'])) {
+                return $license_data['site']['licenseKey'];
+            }
         }
         
         return '';
@@ -316,6 +323,75 @@ class API_Client_V2 {
     private function get_auth_headers($include_user_id = false, $extra_headers = []) {
         $token = $this->get_token();
         $license_key = $this->get_license_key();
+        
+        // CRITICAL: If we have an active license but no key, try to retrieve it
+        // This handles cases where license data exists but key wasn't stored separately
+        if (empty($license_key) && $this->has_active_license()) {
+            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Active license detected but no license key found - attempting to retrieve', [
+                    'has_active_license' => true,
+                    'has_license_key' => false,
+                ], 'auth');
+            }
+            
+            $license_data = $this->get_license_data();
+            if (!empty($license_data)) {
+                // Check multiple locations for the license key
+                if (isset($license_data['licenseKey']) && !empty($license_data['licenseKey'])) {
+                    $license_key = $license_data['licenseKey'];
+                    // Store it for future use
+                    $this->set_license_key($license_key);
+                    if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                        \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'License key retrieved from license_data[licenseKey]', [
+                            'license_key_preview' => substr($license_key, 0, 20) . '...',
+                        ], 'auth');
+                    }
+                } elseif (isset($license_data['site']['licenseKey']) && !empty($license_data['site']['licenseKey'])) {
+                    $license_key = $license_data['site']['licenseKey'];
+                    // Store it for future use
+                    $this->set_license_key($license_key);
+                    if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                        \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'License key retrieved from license_data[site][licenseKey]', [
+                            'license_key_preview' => substr($license_key, 0, 20) . '...',
+                        ], 'auth');
+                    }
+                } elseif (function_exists('opptiai_framework')) {
+                    // Check framework snapshot
+                    $framework = opptiai_framework();
+                    if ($framework && isset($framework->licensing)) {
+                        $snapshot = $framework->licensing->get_snapshot();
+                        if (!empty($snapshot) && isset($snapshot['licenseKey'])) {
+                            $license_key = $snapshot['licenseKey'];
+                            // Store it for future use
+                            $this->set_license_key($license_key);
+                            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                                \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'License key retrieved from framework snapshot', [
+                                    'license_key_preview' => substr($license_key, 0, 20) . '...',
+                                ], 'auth');
+                            }
+                        }
+                    }
+                }
+                
+                // If still no key after checking all locations, log it
+                if (empty($license_key) && class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                    \BeepBeepAI\AltTextGenerator\Debug_Log::log('error', 'Active license detected but license key not found in any location', [
+                        'has_license_data' => !empty($license_data),
+                        'license_data_keys' => !empty($license_data) ? array_keys($license_data) : [],
+                        'has_site_data' => isset($license_data['site']),
+                        'site_data_keys' => isset($license_data['site']) && is_array($license_data['site']) ? array_keys($license_data['site']) : [],
+                    ], 'auth');
+                }
+            } else {
+                if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                    \BeepBeepAI\AltTextGenerator\Debug_Log::log('error', 'Active license detected but no license data available', [
+                        'has_active_license' => true,
+                        'has_license_data' => false,
+                    ], 'auth');
+                }
+            }
+        }
+        
         $site_id = $this->get_site_id();
 
         // Get site fingerprint for abuse prevention
@@ -340,8 +416,35 @@ class API_Client_V2 {
         // Priority: License key > JWT token
         if (!empty($license_key)) {
             $headers['X-License-Key'] = $license_key;
+            
+            // Debug logging for license key usage
+            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                \BeepBeepAI\AltTextGenerator\Debug_Log::log('debug', 'License key included in auth headers', [
+                    'has_license_key' => true,
+                    'license_key_preview' => substr($license_key, 0, 20) . '...',
+                    'has_active_license' => $this->has_active_license(),
+                ], 'auth');
+            }
         } elseif ($token) {
             $headers['Authorization'] = 'Bearer ' . $token;
+            
+            // Debug logging if we have license but no key
+            if ($this->has_active_license() && class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Active license detected but no license key available for headers', [
+                    'has_active_license' => true,
+                    'has_license_key' => false,
+                    'has_token' => !empty($token),
+                ], 'auth');
+            }
+        } else {
+            // No license key and no token
+            if ($this->has_active_license() && class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                \BeepBeepAI\AltTextGenerator\Debug_Log::log('error', 'Active license detected but no license key or token available', [
+                    'has_active_license' => true,
+                    'has_license_key' => false,
+                    'has_token' => false,
+                ], 'auth');
+            }
         }
 
         // Merge any caller-provided headers (used for debugging/traceability)
@@ -439,10 +542,36 @@ class API_Client_V2 {
             $args['body'] = wp_json_encode($data);
         }
         
-        $this->log_api_event('debug', 'API request started', [
+        // Log request details for debugging (especially for generate endpoint)
+        $endpoint_str = is_string($endpoint) ? $endpoint : '';
+        $is_generate_endpoint = $endpoint_str && ((strpos($endpoint_str, '/api/generate') !== false) || (strpos($endpoint_str, 'api/generate') !== false));
+        
+        $log_data = [
             'endpoint' => $endpoint,
             'method'   => $method,
-        ]);
+        ];
+        
+        // For generate endpoint, log auth headers (but not sensitive values)
+        if ($is_generate_endpoint && $include_auth_headers) {
+            $auth_headers = $this->get_auth_headers($include_user_id, $extra_headers);
+            $log_data['has_license_key'] = !empty($auth_headers['X-License-Key']);
+            $log_data['has_auth_token'] = !empty($auth_headers['Authorization']);
+            $log_data['site_hash'] = $auth_headers['X-Site-Hash'] ?? 'missing';
+            $log_data['site_url'] = $auth_headers['X-Site-URL'] ?? 'missing';
+            $log_data['has_user_id'] = !empty($auth_headers['X-WP-User-ID']);
+            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'Generate request headers', [
+                    'has_license_key' => $log_data['has_license_key'],
+                    'has_auth_token' => $log_data['has_auth_token'],
+                    'site_hash' => $log_data['site_hash'],
+                    'site_url' => $log_data['site_url'],
+                    'has_user_id' => $log_data['has_user_id'],
+                    'license_key_preview' => !empty($auth_headers['X-License-Key']) ? substr($auth_headers['X-License-Key'], 0, 20) . '...' : 'none',
+                ], 'api');
+            }
+        }
+        
+        $this->log_api_event('debug', 'API request started', $log_data);
 
         $response = wp_remote_request($url, $args);
 
@@ -479,6 +608,19 @@ class API_Client_V2 {
             'status'   => $status_code,
         ]);
         
+        // Enhanced logging for 401/403 errors to debug license validation issues
+        if (($status_code === 401 || $status_code === 403) && class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+            \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', '401/403 response received - logging full response structure', [
+                'endpoint' => $endpoint,
+                'status_code' => $status_code,
+                'response_body' => $body,
+                'parsed_data' => $data,
+                'has_active_license' => $this->has_active_license(),
+                'license_key_preview' => substr($this->get_license_key(), 0, 20) . '...',
+                'site_hash' => $this->get_site_id(),
+            ], 'api');
+        }
+        
         // Handle 404 - endpoint not found
         if ($status_code === 404) {
             // Check if it's an HTML error page (means endpoint doesn't exist)
@@ -506,20 +648,120 @@ class API_Client_V2 {
             );
         }
         
-        // Handle NO_ACCESS errors (can be in any status code response)
-        if (is_array($data) && isset($data['code']) && $data['code'] === 'NO_ACCESS') {
-            // Extract error fields from new backend structure
-            $credits = isset($data['credits']) ? intval($data['credits']) : null;
-            $subscription_expired = isset($data['subscription_expired']) ? (bool)$data['subscription_expired'] : false;
-            $reason = isset($data['reason']) && is_string($data['reason']) ? $data['reason'] : '';
-            $message = isset($data['message']) && is_string($data['message']) ? $data['message'] : '';
+        // Handle NO_ACCESS errors (can be in any status code response, including 403)
+        // Check for both uppercase and lowercase variations, and also check nested data structure
+        $no_access_code = null;
+        $no_access_data = null;
+        
+        if (is_array($data)) {
+            // Check top-level code field (case-insensitive)
+            if (isset($data['code'])) {
+                $code_str = is_string($data['code']) ? strtoupper($data['code']) : '';
+                if ($code_str === 'NO_ACCESS' || $code_str === 'NOACCESS') {
+                    $no_access_code = $data['code'];
+                    $no_access_data = $data;
+                }
+            }
+            
+            // Also check nested data.code (backend sometimes nests it)
+            if (!$no_access_code && isset($data['data']) && is_array($data['data'])) {
+                if (isset($data['data']['code'])) {
+                    $code_str = is_string($data['data']['code']) ? strtoupper($data['data']['code']) : '';
+                    if ($code_str === 'NO_ACCESS' || $code_str === 'NOACCESS') {
+                        $no_access_code = $data['data']['code'];
+                        $no_access_data = $data['data'];
+                    }
+                }
+            }
+            
+            // Also check for no_access boolean flag
+            if (!$no_access_code && (isset($data['no_access']) && $data['no_access'] === true)) {
+                $no_access_code = 'no_access';
+                $no_access_data = $data;
+            }
+            
+            // Check nested data.no_access
+            if (!$no_access_code && isset($data['data']) && is_array($data['data']) && isset($data['data']['no_access']) && $data['data']['no_access'] === true) {
+                $no_access_code = 'no_access';
+                $no_access_data = $data['data'];
+            }
+        }
+        
+        if ($no_access_code && $no_access_data) {
+            // Extract error fields from new backend structure (use $no_access_data which may be nested)
+            $credits = isset($no_access_data['credits']) ? intval($no_access_data['credits']) : null;
+            $subscription_expired = isset($no_access_data['subscription_expired']) ? (bool)$no_access_data['subscription_expired'] : false;
+            $reason = isset($no_access_data['reason']) && is_string($no_access_data['reason']) ? $no_access_data['reason'] : '';
+            $message = isset($no_access_data['message']) && is_string($no_access_data['message']) ? $no_access_data['message'] : '';
+            
+            // Fallback to top-level data if not found in nested structure
+            if ($credits === null && isset($data['credits'])) {
+                $credits = intval($data['credits']);
+            }
+            if (!$subscription_expired && isset($data['subscription_expired'])) {
+                $subscription_expired = (bool)$data['subscription_expired'];
+            }
+            if (empty($reason) && isset($data['reason']) && is_string($data['reason'])) {
+                $reason = $data['reason'];
+            }
+            if (empty($message) && isset($data['message']) && is_string($data['message'])) {
+                $message = $data['message'];
+            }
             
             // Determine error type based on context
+            // Check reason field first (backend sends reason: "no_credits" for quota issues)
             $error_code = 'no_access';
-            if ($subscription_expired) {
+            $is_quota_error = false;
+            
+            if (!empty($reason) && strtolower($reason) === 'no_credits') {
+                $error_code = 'out_of_credits';
+                $is_quota_error = true;
+            } elseif ($subscription_expired) {
                 $error_code = 'subscription_expired';
             } elseif ($credits !== null && $credits === 0) {
                 $error_code = 'out_of_credits';
+                $is_quota_error = true;
+            }
+            
+            // If it's a quota error (no_credits), check if cached usage disagrees with backend
+            // This handles cases where backend reports no credits but usage endpoint shows credits available
+            if ($is_quota_error) {
+                require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+                $cached_usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
+                
+                // If cached usage shows credits available, do a fresh check
+                if (is_array($cached_usage) && isset($cached_usage['remaining']) && is_numeric($cached_usage['remaining']) && $cached_usage['remaining'] > 0) {
+                    $fresh_usage = $this->get_usage();
+                    
+                    if (!is_wp_error($fresh_usage) && is_array($fresh_usage) && isset($fresh_usage['remaining']) && is_numeric($fresh_usage['remaining']) && $fresh_usage['remaining'] > 0) {
+                        // Fresh API check shows credits available - backend NO_ACCESS was incorrect
+                        // Update cache with fresh data and return a retry error instead of blocking
+                        \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($fresh_usage);
+                        
+                        if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                            \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Backend returned NO_ACCESS with no_credits but cache and fresh API check show credits available', [
+                                'cached_remaining' => $cached_usage['remaining'],
+                                'api_remaining' => $fresh_usage['remaining'],
+                                'backend_reason' => $reason,
+                                'backend_message' => $message,
+                            ], 'api');
+                        }
+                        
+                        // Return a retry error instead of blocking completely
+                        return new \WP_Error(
+                            'quota_check_mismatch',
+                            __('Backend reported quota limit, but credits appear available. Please try again in a moment.', 'beepbeep-ai-alt-text-generator'),
+                            [
+                                'usage' => $fresh_usage, 
+                                'retry_after' => 3,
+                                'error_code' => 'out_of_credits',
+                            ]
+                        );
+                    } elseif (!is_wp_error($fresh_usage) && is_array($fresh_usage) && isset($fresh_usage['remaining']) && is_numeric($fresh_usage['remaining']) && $fresh_usage['remaining'] === 0) {
+                        // Fresh API check confirms 0 credits - backend was correct, update cache
+                        \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($fresh_usage);
+                    }
+                }
             }
             
             // Build error message with fallback hierarchy:
@@ -534,7 +776,7 @@ class API_Client_V2 {
                 $error_message = $reason;
             } elseif ($subscription_expired) {
                 $error_message = __('Your subscription has expired. Please renew to continue.', 'beepbeep-ai-alt-text-generator');
-            } elseif ($credits === 0) {
+            } elseif ($credits === 0 || $is_quota_error) {
                 $error_message = __("You've run out of credits. Please purchase more credits to continue.", 'beepbeep-ai-alt-text-generator');
             } else {
                 $error_message = __('Access denied. Please upgrade or purchase credits to continue.', 'beepbeep-ai-alt-text-generator');
@@ -547,6 +789,7 @@ class API_Client_V2 {
                 'credits' => $credits,
                 'subscription_expired' => $subscription_expired,
                 'reason' => $reason,
+                'is_quota_error' => $is_quota_error,
             ]);
             
             // Cache NO_ACCESS error for UI handling
@@ -591,8 +834,47 @@ class API_Client_V2 {
             $normalized_code = 'subscription_required';
             if ($error_code === 'subscription_expired' || strpos(strtolower($error_code), 'expired') !== false) {
                 $normalized_code = 'subscription_expired';
-            } elseif ($error_code === 'quota_exceeded' || strpos(strtolower($error_code), 'quota') !== false) {
-                $normalized_code = 'quota_exceeded';
+            } elseif ($error_code === 'quota_exceeded' || strpos(strtolower($error_code), 'quota') !== false || $error_code === 'out_of_credits') {
+                $normalized_code = 'out_of_credits';
+            }
+            
+            // If it's an out_of_credits error, check if cached usage disagrees
+            if ($normalized_code === 'out_of_credits') {
+                require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+                $cached_usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
+                
+                // If cached usage shows credits available, do a fresh check
+                if (is_array($cached_usage) && isset($cached_usage['remaining']) && is_numeric($cached_usage['remaining']) && $cached_usage['remaining'] > 0) {
+                    $fresh_usage = $this->get_usage();
+                    
+                    if (!is_wp_error($fresh_usage) && is_array($fresh_usage) && isset($fresh_usage['remaining']) && is_numeric($fresh_usage['remaining']) && $fresh_usage['remaining'] > 0) {
+                        // Fresh API check shows credits available - backend 402 was incorrect
+                        // Update cache with fresh data and return a retry error instead of blocking
+                        \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($fresh_usage);
+                        
+                        if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                            \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Backend returned 402 out_of_credits but cache and fresh API check show credits available', [
+                                'cached_remaining' => $cached_usage['remaining'],
+                                'api_remaining' => $fresh_usage['remaining'],
+                                'backend_error' => $error_message,
+                            ], 'api');
+                        }
+                        
+                        // Return a retry error instead of blocking completely
+                        return new \WP_Error(
+                            'quota_check_mismatch',
+                            __('Backend reported quota limit, but credits appear available. Please try again in a moment.', 'beepbeep-ai-alt-text-generator'),
+                            [
+                                'usage' => $fresh_usage, 
+                                'retry_after' => 3,
+                                'error_code' => 'out_of_credits',
+                            ]
+                        );
+                    } elseif (!is_wp_error($fresh_usage) && is_array($fresh_usage) && isset($fresh_usage['remaining']) && is_numeric($fresh_usage['remaining']) && $fresh_usage['remaining'] === 0) {
+                        // Fresh API check confirms 0 credits - backend was correct, update cache
+                        \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($fresh_usage);
+                    }
+                }
             }
             
             $this->log_api_event('warning', 'Subscription error detected', [
@@ -698,24 +980,55 @@ class API_Client_V2 {
             $endpoint_str = is_string($endpoint) ? $endpoint : '';
             $is_generate_endpoint = $endpoint_str && ((strpos($endpoint_str, '/api/generate') !== false) || (strpos($endpoint_str, 'api/generate') !== false));
             $is_checkout_endpoint = strpos($endpoint_str, '/billing/checkout') !== false;
+            $is_auto_attach_endpoint = strpos($endpoint_str, '/api/licenses/auto-attach') !== false;
             
-            if ($is_checkout_endpoint) {
+            // Check for database schema errors (backend issue)
+            $error_details_str = is_string($error_details) ? $error_details : '';
+            $backend_error_message_str = is_string($backend_error_message) ? $backend_error_message : '';
+            $error_details_lower = strtolower($error_details_str . ' ' . $backend_error_message_str);
+            $is_schema_error = strpos($error_details_lower, 'column') !== false && 
+                              (strpos($error_details_lower, 'schema cache') !== false || 
+                               strpos($error_details_lower, 'not found') !== false ||
+                               strpos($error_details_lower, 'does not exist') !== false);
+            
+            if ($is_auto_attach_endpoint) {
+                // Auto-attach is optional - don't show critical errors to users
+                if ($is_schema_error) {
+                    // Backend database schema issue - log but don't fail critically
+                    $error_message = __('License auto-attachment is temporarily unavailable due to a backend maintenance issue. Your plugin will continue to work normally. Please try again later or contact support if needed.', 'beepbeep-ai-alt-text-generator');
+                } else {
+                    $error_message = __('License auto-attachment failed. Your plugin will continue to work normally. You can manually activate your license using the key from your email if needed.', 'beepbeep-ai-alt-text-generator');
+                }
+            } elseif ($is_checkout_endpoint) {
                 // For checkout, provide a more user-friendly error message
                 // The backend is having issues with checkout - likely needs authentication fix
                 $error_message = __('Unable to create checkout session. This may be a temporary backend issue. Please try again in a moment or contact support if the problem persists.', 'beepbeep-ai-alt-text-generator');
             } elseif ($is_generate_endpoint) {
-                // Check if it's an OpenAI API key issue (backend configuration problem)
-                $error_details_str = is_string($error_details) ? $error_details : '';
-                $backend_error_code_str = is_string($backend_error_code) ? $backend_error_code : '';
-                if (($error_details_str && (strpos(strtolower($error_details_str), 'incorrect api key') !== false || 
-                    strpos(strtolower($error_details_str), 'invalid api key') !== false)) ||
-                    ($backend_error_code_str && strpos(strtolower($backend_error_code_str), 'generation_error') !== false)) {
-                    $error_message = __('The image generation service is temporarily unavailable due to a backend configuration issue. Please contact support.', 'beepbeep-ai-alt-text-generator');
+                // Check for schema errors first (backend database issue)
+                if ($is_schema_error) {
+                    $error_message = __('The image generation service is temporarily unavailable due to backend maintenance. Please try again in a few minutes.', 'beepbeep-ai-alt-text-generator');
                 } else {
-                    $error_message = __('The image generation service is temporarily unavailable. Please try again in a few minutes.', 'beepbeep-ai-alt-text-generator');
+                    // Check if it's an OpenAI API key issue (backend configuration problem)
+                    $error_details_str = is_string($error_details) ? $error_details : '';
+                    $backend_error_code_str = is_string($backend_error_code) ? $backend_error_code : '';
+                    if (($error_details_str && (strpos(strtolower($error_details_str), 'incorrect api key') !== false || 
+                        strpos(strtolower($error_details_str), 'invalid api key') !== false)) ||
+                        ($backend_error_code_str && strpos(strtolower($backend_error_code_str), 'generation_error') !== false)) {
+                        $error_message = __('The image generation service is temporarily unavailable due to a backend configuration issue. Please contact support.', 'beepbeep-ai-alt-text-generator');
+                    } else {
+                        $error_message = __('The image generation service is temporarily unavailable. Please try again in a few minutes.', 'beepbeep-ai-alt-text-generator');
+                    }
                 }
             } elseif (is_string($endpoint) && strpos($endpoint, '/auth/') !== false) {
-                $error_message = __('The authentication server is temporarily unavailable. Please try again in a few minutes.', 'beepbeep-ai-alt-text-generator');
+                // Check if auth endpoint error is due to schema issue
+                if ($is_schema_error) {
+                    $error_message = __('Authentication is temporarily unavailable due to backend maintenance. Please try again in a few minutes.', 'beepbeep-ai-alt-text-generator');
+                } else {
+                    $error_message = __('The authentication server is temporarily unavailable. Please try again in a few minutes.', 'beepbeep-ai-alt-text-generator');
+                }
+            } elseif ($is_schema_error) {
+                // Generic database schema error handling
+                $error_message = __('The service is temporarily unavailable due to backend maintenance. Please try again in a few minutes.', 'beepbeep-ai-alt-text-generator');
             }
             
             return new \WP_Error(
@@ -738,16 +1051,110 @@ class API_Client_V2 {
         
         // Handle authentication errors - only clear token if it's a clear auth issue
         // Don't clear on temporary backend errors or if endpoint doesn't require auth
+        // IMPORTANT: Check for NO_ACCESS/subscription errors first (handled above), 
+        // only treat as auth error if it's not a subscription issue
         if ($status_code === 401 || $status_code === 403) {
             // Check if this is a billing/checkout endpoint (can work without auth)
             $endpoint_str = is_string($endpoint) ? $endpoint : '';
             $is_checkout_endpoint = strpos($endpoint_str, '/billing/checkout') !== false;
             
-            // For checkout, don't clear token - let the caller handle it
-            if (!$is_checkout_endpoint) {
-                // Only clear token for non-checkout endpoints
+            // Double-check: if response contains subscription-related errors, don't treat as auth error
+            // (This is a safety check - NO_ACCESS should have been caught above)
+            $is_subscription_error = false;
+            if (is_array($data)) {
+                $code_str = isset($data['code']) && is_string($data['code']) ? strtoupper($data['code']) : '';
+                if ($code_str === 'NO_ACCESS' || $code_str === 'NOACCESS' || 
+                    (isset($data['no_access']) && $data['no_access'] === true) ||
+                    (isset($data['data']['no_access']) && $data['data']['no_access'] === true)) {
+                    $is_subscription_error = true;
+                }
+            }
+            
+            // For checkout or subscription errors, don't clear token - let the caller handle it
+            // Also don't clear token if user has an active license (license-based auth works without token)
+            if (!$is_checkout_endpoint && !$is_subscription_error && !$this->has_active_license()) {
+                // Only clear token for non-checkout, non-subscription endpoints, and only if no license
                 $this->clear_token();
                 delete_transient('bbai_token_last_check');
+            }
+            
+            // If it's a subscription error, it should have been handled above, but if we get here,
+            // return a more appropriate error
+            if ($is_subscription_error) {
+                return new \WP_Error(
+                    'no_access',
+                    isset($data['message']) && is_string($data['message']) ? $data['message'] : __('No active subscription found. Please subscribe to continue.', 'beepbeep-ai-alt-text-generator'),
+                    [
+                        'no_access' => true,
+                        'error_code' => 'no_access',
+                        'status_code' => $status_code,
+                        'requires_action' => true,
+                    ]
+                );
+            }
+            
+            // If user has an active license, don't treat 401/403 as authentication error
+            // It might be a license validation issue or backend error
+            if ($this->has_active_license()) {
+                // Log the actual response structure for debugging
+                if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                    \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', '401/403 received with active license - checking response structure', [
+                        'status_code' => $status_code,
+                        'endpoint' => $endpoint,
+                        'response_data' => $data,
+                        'has_code' => isset($data['code']),
+                        'code_value' => isset($data['code']) ? $data['code'] : 'none',
+                        'has_reason' => isset($data['reason']),
+                        'reason_value' => isset($data['reason']) ? $data['reason'] : 'none',
+                        'has_message' => isset($data['message']),
+                        'license_key_preview' => substr($this->get_license_key(), 0, 20) . '...',
+                        'site_hash' => $this->get_site_id(),
+                    ], 'api');
+                }
+                
+                // Check if usage endpoint shows we have access (to distinguish license validation from quota)
+                // This helps identify if it's a license key recognition issue vs quota issue
+                $usage_check = $this->get_usage();
+                $has_usage_access = !is_wp_error($usage_check) && is_array($usage_check);
+                
+                if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                    \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'Usage endpoint check after 401/403', [
+                        'has_usage_access' => $has_usage_access,
+                        'usage_remaining' => $has_usage_access && isset($usage_check['remaining']) ? $usage_check['remaining'] : 'unknown',
+                        'usage_error' => is_wp_error($usage_check) ? $usage_check->get_error_message() : 'none',
+                    ], 'api');
+                }
+                
+                // If usage endpoint works, it's likely a license key recognition issue on the generate endpoint
+                // If usage endpoint also fails, it's a broader license validation issue
+                if ($has_usage_access) {
+                    // Usage endpoint works but generate endpoint doesn't - likely license key not recognized in generate request
+                    $error_message = __('License key not recognized by generation endpoint. Please ensure your license key is correctly configured.', 'beepbeep-ai-alt-text-generator');
+                    
+                    if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                        \BeepBeepAI\AltTextGenerator\Debug_Log::log('error', 'License key works for usage but not for generate endpoint', [
+                            'license_key_preview' => substr($this->get_license_key(), 0, 20) . '...',
+                            'site_hash' => $this->get_site_id(),
+                            'usage_remaining' => $usage_check['remaining'] ?? 'unknown',
+                        ], 'licensing');
+                    }
+                } else {
+                    // Both endpoints failing - broader license validation issue
+                    $error_message = isset($data['message']) && is_string($data['message']) 
+                        ? $data['message'] 
+                        : __('License validation failed. Please refresh the page or contact support.', 'beepbeep-ai-alt-text-generator');
+                }
+                
+                return new \WP_Error(
+                    'license_error',
+                    $error_message,
+                    [
+                        'license_error' => true,
+                        'error_code' => isset($data['code']) ? $data['code'] : 'license_validation_failed',
+                        'status_code' => $status_code,
+                        'usage_check_passed' => $has_usage_access,
+                    ]
+                );
             }
             
             return new \WP_Error(
@@ -815,7 +1222,7 @@ class API_Client_V2 {
             return false;
         }
 
-        $retryable_codes = ['server_error', 'api_timeout', 'api_unreachable'];
+        $retryable_codes = ['server_error', 'api_timeout', 'api_unreachable', 'quota_check_mismatch'];
         $code = $error->get_error_code();
         if (!in_array($code, $retryable_codes, true)) {
             return false;
@@ -943,13 +1350,18 @@ class API_Client_V2 {
             } else {
                 // If no license snapshot in response, try to auto-attach for free users
                 // This ensures free users get a site-wide license key automatically
+                // Don't fail login if auto-attach fails (it's optional)
                 if (!$this->has_active_license()) {
                     $auto_attach_result = $this->auto_attach_license();
-                    // Log auto-attach result (success or failure)
+                    // Log auto-attach result (success or failure) but don't block login
                     if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
                         if (is_wp_error($auto_attach_result)) {
-                            \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Auto-attach license failed during login', [
+                            $error_data = $auto_attach_result->get_error_data();
+                            $is_schema_error = isset($error_data['is_schema_error']) && $error_data['is_schema_error'];
+                            $log_level = $is_schema_error ? 'warning' : 'warning'; // Always warning, login should succeed
+                            \BeepBeepAI\AltTextGenerator\Debug_Log::log($log_level, 'Auto-attach license failed during login (non-blocking)', [
                                 'error' => $auto_attach_result->get_error_message(),
+                                'is_schema_error' => $is_schema_error,
                             ], 'licensing');
                         } else {
                             \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'Auto-attach license succeeded during login', [
@@ -1069,7 +1481,7 @@ class API_Client_V2 {
         
         // Get site URL (equivalent to window.location.origin in JS)
         $site_url = home_url();
-        $parsed_url = parse_url($site_url);
+        $parsed_url = wp_parse_url($site_url);
         if ($parsed_url) {
             $site = $parsed_url['scheme'] . '://' . $parsed_url['host'];
             if (!empty($parsed_url['port'])) {
@@ -1102,6 +1514,17 @@ class API_Client_V2 {
             $payload['jwt'] = $jwt_token;
         }
         
+        // Debug logging to see what's being sent
+        if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+            \BeepBeepAI\AltTextGenerator\Debug_Log::log('debug', 'Identity sync payload', [
+                'email' => $email,
+                'site' => $site,
+                'has_installation_id' => !empty($installation_id),
+                'has_jwt' => !empty($jwt_token),
+                'payload_keys' => array_keys($payload),
+            ], 'identity');
+        }
+        
         // Make request to identity sync endpoint
         // Use include_auth_headers = false since we're sending jwt in the payload
         $response = $this->make_request('/identity/sync', 'POST', $payload, 30, false, [], false);
@@ -1123,6 +1546,37 @@ class API_Client_V2 {
                 ));
             }
             return $response;
+        }
+        
+        // Check if response indicates failure (400+ status codes return success: false)
+        if (isset($response['success']) && !$response['success']) {
+            $status_code = $response['status_code'] ?? 0;
+            $error_message = '';
+            if (isset($response['data']) && is_array($response['data'])) {
+                $error_message = $response['data']['error'] ?? $response['data']['message'] ?? '';
+            }
+            
+            // Log error but don't block operations
+            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Identity sync failed', [
+                    'status_code' => $status_code,
+                    'error' => $error_message ?: 'Bad Request',
+                    'payload' => $payload,
+                ], 'identity');
+            }
+            // WP_DEBUG conditional logging for detailed debugging
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log(sprintf(
+                    '[BeepBeep AI] Identity sync failed: status=%d, error=%s',
+                    $status_code,
+                    $error_message ?: 'Bad Request'
+                ));
+            }
+            return new \WP_Error(
+                'identity_sync_failed',
+                $error_message ?: sprintf(__('Identity sync failed with status %d', 'beepbeep-ai-alt-text-generator'), $status_code),
+                ['status_code' => $status_code]
+            );
         }
         
         // Log success
@@ -1229,7 +1683,15 @@ class API_Client_V2 {
             return $response;
         }
 
-        $snapshot = $this->extract_license_snapshot($response['data'] ?? []);
+        // Handle nested response structure: backend returns { success: true, data: { license: ... } }
+        // but make_request wraps it, so we need to check response['data']['data'] if it exists
+        $response_data = $response['data'] ?? [];
+        if (isset($response_data['data']) && is_array($response_data['data'])) {
+            // Backend response is nested: { success: true, data: { license: ... } }
+            $response_data = $response_data['data'];
+        }
+        
+        $snapshot = $this->extract_license_snapshot($response_data);
 
         if ($response['success'] && $snapshot) {
             $this->apply_license_snapshot($snapshot);
@@ -1242,22 +1704,44 @@ class API_Client_V2 {
             }
             return [
                 'success' => true,
-                'message' => $response['data']['message'] ?? __('License attached successfully', 'beepbeep-ai-alt-text-generator'),
+                'message' => $response_data['message'] ?? __('License attached successfully', 'beepbeep-ai-alt-text-generator'),
                 'license' => $snapshot,
-                'site' => isset($response['data']['site']) ? $response['data']['site'] : [],
+                'site' => isset($response_data['site']) ? $response_data['site'] : [],
             ];
         }
 
+        // Check if this is a schema error (backend database issue)
+        $error_message = $response_data['message'] ?? __('Failed to auto-attach license', 'beepbeep-ai-alt-text-generator');
+        $error_details = $response_data['error_details'] ?? $response_data['error'] ?? '';
+        $error_details_lower = is_string($error_details) ? strtolower($error_details) : '';
+        $is_schema_error = strpos($error_details_lower, 'column') !== false && 
+                          (strpos($error_details_lower, 'schema cache') !== false || 
+                           strpos($error_details_lower, 'not found') !== false ||
+                           strpos($error_details_lower, 'does not exist') !== false);
+        
         if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-            \BeepBeepAI\AltTextGenerator\Debug_Log::log('error', 'License auto-attach failed', [
+            $log_level = $is_schema_error ? 'warning' : 'error';
+            \BeepBeepAI\AltTextGenerator\Debug_Log::log($log_level, 'License auto-attach failed', [
                 'siteHash' => $payload['siteHash'] ?? '',
-                'response' => isset($response['data']) ? $response['data'] : [],
+                'response' => $response_data,
+                'response_success' => $response['success'] ?? false,
+                'has_snapshot' => !empty($snapshot),
+                'is_schema_error' => $is_schema_error,
             ], 'licensing');
+        }
+
+        // For schema errors, return a more user-friendly message indicating it's a backend issue
+        if ($is_schema_error) {
+            $error_message = __('License auto-attachment is temporarily unavailable due to backend maintenance. Your plugin will continue to work normally.', 'beepbeep-ai-alt-text-generator');
         }
 
         return new \WP_Error(
             'auto_attach_failed',
-            $response['data']['message'] ?? __('Failed to auto-attach license', 'beepbeep-ai-alt-text-generator')
+            $error_message,
+            [
+                'is_schema_error' => $is_schema_error,
+                'siteHash' => $payload['siteHash'] ?? '',
+            ]
         );
     }
 
@@ -1349,29 +1833,46 @@ class API_Client_V2 {
             $usage = $response['data']['usage'];
 
             if ($has_license && is_array($usage)) {
-                // Extract license key from response if available
-                $license_key_from_response = null;
-                if (isset($response['data']['site']['licenseKey'])) {
-                    $license_key_from_response = $response['data']['site']['licenseKey'];
-                } elseif (isset($response['data']['licenseKey'])) {
-                    $license_key_from_response = $response['data']['licenseKey'];
-                } elseif (isset($response['data']['license']['licenseKey'])) {
-                    $license_key_from_response = $response['data']['license']['licenseKey'];
-                }
-                
-                // Store license key if we got it from the response
-                $current_key = $this->get_license_key();
-                if (!empty($license_key_from_response) && empty($current_key)) {
-                    $this->set_license_key($license_key_from_response);
+                // Extract and apply license snapshot if present (this will store the license key)
+                $snapshot = $this->extract_license_snapshot($response['data']);
+                if ($snapshot) {
+                    $this->apply_license_snapshot($snapshot);
+                } else {
+                    // Fallback: Extract license key from response if available (if snapshot extraction didn't work)
+                    $license_key_from_response = null;
+                    if (isset($response['data']['site']['licenseKey'])) {
+                        $license_key_from_response = $response['data']['site']['licenseKey'];
+                    } elseif (isset($response['data']['licenseKey'])) {
+                        $license_key_from_response = $response['data']['licenseKey'];
+                    } elseif (isset($response['data']['license']['licenseKey'])) {
+                        $license_key_from_response = $response['data']['license']['licenseKey'];
+                    }
+                    
+                    // Store license key if we got it from the response and don't have one
+                    $current_key = $this->get_license_key();
+                    if (!empty($license_key_from_response) && empty($current_key)) {
+                        $this->set_license_key($license_key_from_response);
+                    }
                 }
                 
                 // CRITICAL: Ensure usage is site-wide, not per-user
                 // The backend should return the same usage for all users on the same site
                 // If it doesn't, we need to ensure we're using site-based tracking
+                // Pass the full response data as snapshot to preserve timestamps
+                $full_snapshot = array_merge(
+                    $response['data']['site'] ?? [],
+                    $response['data']['organization'] ?? [],
+                    [
+                        'licenseKey' => $response['data']['site']['licenseKey'] ?? $response['data']['licenseKey'] ?? $response['data']['license']['licenseKey'] ?? '',
+                        'createdAt' => $response['data']['site']['createdAt'] ?? $response['data']['site']['created_at'] ?? $response['data']['createdAt'] ?? $response['data']['created_at'] ?? '',
+                        'updatedAt' => $response['data']['site']['updatedAt'] ?? $response['data']['site']['updated_at'] ?? $response['data']['updatedAt'] ?? $response['data']['updated_at'] ?? '',
+                    ]
+                );
                 $this->sync_license_usage_snapshot(
                     $usage,
                     $response['data']['organization'] ?? [],
-                    $response['data']['site'] ?? []
+                    $response['data']['site'] ?? [],
+                    $full_snapshot
                 );
             } else {
                 // Update usage cache for non-license accounts
@@ -1513,7 +2014,7 @@ class API_Client_V2 {
     /**
      * Persist license usage snapshots so cached data stays in sync
      */
-    private function sync_license_usage_snapshot($usage, $organization = [], $site_data = []) {
+    private function sync_license_usage_snapshot($usage, $organization = [], $site_data = [], $snapshot = []) {
         $existing_license = $this->get_license_data();
         $updated_license  = is_array($existing_license) ? $existing_license : [];
         $org              = isset($updated_license['organization']) && is_array($updated_license['organization'])
@@ -1558,7 +2059,29 @@ class API_Client_V2 {
             $updated_license['site'] = array_merge($updated_license['site'] ?? [], (array) $site_data);
         }
 
-        $updated_license['updated_at'] = current_time('mysql');
+        // Preserve timestamps from API snapshot if available, otherwise use WordPress time
+        if (!empty($snapshot) && is_array($snapshot)) {
+            // Preserve created_at from snapshot if available
+            if (!empty($snapshot['createdAt']) || !empty($snapshot['created_at'])) {
+                $updated_license['created_at'] = $snapshot['createdAt'] ?? $snapshot['created_at'] ?? '';
+            } elseif (empty($updated_license['created_at'])) {
+                // Only set if we don't already have one
+                $updated_license['created_at'] = current_time('mysql');
+            }
+            // Preserve updated_at from snapshot if available
+            if (!empty($snapshot['updatedAt']) || !empty($snapshot['updated_at'])) {
+                $updated_license['updated_at'] = $snapshot['updatedAt'] ?? $snapshot['updated_at'] ?? '';
+            } else {
+                $updated_license['updated_at'] = current_time('mysql');
+            }
+        } else {
+            // Fallback: only update updated_at if we don't have created_at
+            if (empty($updated_license['created_at'])) {
+                $updated_license['created_at'] = current_time('mysql');
+            }
+            $updated_license['updated_at'] = current_time('mysql');
+        }
+        
         $this->set_license_data($updated_license);
     }
 
@@ -1600,17 +2123,30 @@ class API_Client_V2 {
             'installId' => isset($snapshot['installId']) ? $snapshot['installId'] : '',
             'autoAttachStatus' => isset($snapshot['autoAttachStatus']) ? $snapshot['autoAttachStatus'] : '',
             'licenseKey' => isset($snapshot['licenseKey']) ? $snapshot['licenseKey'] : '',  // Store license key in site data too
+            'licenseEmailSentAt' => isset($snapshot['licenseEmailSentAt']) ? $snapshot['licenseEmailSentAt'] : '',
+            // Preserve timestamps from API if available
+            'created_at' => isset($snapshot['createdAt']) ? $snapshot['createdAt'] : (isset($snapshot['created_at']) ? $snapshot['created_at'] : ''),
+            'updated_at' => isset($snapshot['updatedAt']) ? $snapshot['updatedAt'] : (isset($snapshot['updated_at']) ? $snapshot['updated_at'] : ''),
         ];
 
-        $this->sync_license_usage_snapshot($usage_payload, $organization, $site_data);
+        $this->sync_license_usage_snapshot($usage_payload, $organization, $site_data, $snapshot);
         
-        // Also store license key in license data for easier retrieval
-        if (!empty($snapshot['licenseKey'])) {
+        // Also store license key and timestamps in license data for easier retrieval
+        if (!empty($snapshot['licenseKey']) || !empty($snapshot['createdAt']) || !empty($snapshot['updatedAt'])) {
             $license_data = $this->get_license_data();
             if (empty($license_data)) {
                 $license_data = [];
             }
-            $license_data['licenseKey'] = $snapshot['licenseKey'];
+            if (!empty($snapshot['licenseKey'])) {
+                $license_data['licenseKey'] = $snapshot['licenseKey'];
+            }
+            // Preserve timestamps from API
+            if (!empty($snapshot['createdAt']) || !empty($snapshot['created_at'])) {
+                $license_data['created_at'] = $snapshot['createdAt'] ?? $snapshot['created_at'] ?? '';
+            }
+            if (!empty($snapshot['updatedAt']) || !empty($snapshot['updated_at'])) {
+                $license_data['updated_at'] = $snapshot['updatedAt'] ?? $snapshot['updated_at'] ?? '';
+            }
             $this->set_license_data($license_data);
         }
 
@@ -1772,9 +2308,13 @@ class API_Client_V2 {
      * Generate alt text via API (Phase 2)
      */
     public function generate_alt_text($image_id, $context = [], $regenerate = false) {
+        // Check if we have an active license first - if so, skip token validation
+        $has_license = $this->has_active_license();
+        
         // Validate authentication before making request
         // If we haven't checked recently and token exists, validate it first
-        if (!$this->has_active_license()) {
+        // BUT: Skip token validation if we have an active license (license-based auth works without token)
+        if (!$has_license) {
             $token = $this->get_token();
             if (!empty($token) && !defined('WP_LOCAL_DEV')) {
                 $last_check = get_transient('bbai_token_last_check');
@@ -1808,6 +2348,52 @@ class API_Client_V2 {
                     }
                 }
             }
+            
+            // CRITICAL: If user is authenticated but has no license, try auto-attach
+            // This handles the case where auto-attach failed during login/registration
+            // or the user logged in before auto-attach was implemented
+            if ($this->is_authenticated() && !$this->has_active_license()) {
+                // Check if we've already tried auto-attach recently (avoid spamming backend)
+                $last_auto_attach = get_transient('bbai_last_auto_attach_attempt');
+                $should_retry = $last_auto_attach === false || (time() - $last_auto_attach) > 300; // Retry every 5 minutes max
+                
+                if ($should_retry) {
+                    if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                        \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'Attempting auto-attach license before generation (no license found)', [
+                            'image_id' => $image_id,
+                        ], 'licensing');
+                    }
+                    
+                    $auto_attach_result = $this->auto_attach_license();
+                    set_transient('bbai_last_auto_attach_attempt', time(), 300); // Cache attempt for 5 minutes
+                    
+                    if (!is_wp_error($auto_attach_result)) {
+                        // Auto-attach succeeded, re-check license status
+                        if ($this->has_active_license()) {
+                            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                                \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'Auto-attach succeeded during generation, license now active', [
+                                    'plan' => $auto_attach_result['license']['plan'] ?? 'free',
+                                ], 'licensing');
+                            }
+                            // License is now active, proceed with generation
+                        }
+                    } else {
+                        // Log auto-attach failure but don't block generation
+                        // Backend will return appropriate error if license is truly required
+                        $error_data = $auto_attach_result->get_error_data();
+                        $is_schema_error = isset($error_data['is_schema_error']) && $error_data['is_schema_error'];
+                        $log_level = $is_schema_error ? 'warning' : 'warning';
+                        
+                        if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                            \BeepBeepAI\AltTextGenerator\Debug_Log::log($log_level, 'Auto-attach failed during generation (non-blocking)', [
+                                'error' => $auto_attach_result->get_error_message(),
+                                'is_schema_error' => $is_schema_error,
+                            ], 'licensing');
+                        }
+                        // Continue with generation attempt - backend will handle the no-access error
+                    }
+                }
+            }
         }
         
         // Validate site fingerprint before credit operation
@@ -1832,7 +2418,8 @@ class API_Client_V2 {
         $image_url = wp_get_attachment_url($image_id);
         $title     = get_the_title($image_id);
         $caption   = wp_get_attachment_caption($image_id);
-        $filename  = $image_url ? wp_basename(parse_url($image_url, PHP_URL_PATH)) : '';
+        $parsed_image_url = $image_url ? wp_parse_url($image_url) : null;
+        $filename  = $parsed_image_url && isset($parsed_image_url['path']) ? wp_basename($parsed_image_url['path']) : '';
 
         // Debug: Log image details when regenerating to ensure correct image is being processed
         if ($regenerate && class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
@@ -1929,18 +2516,57 @@ class API_Client_V2 {
             }
         }
         
-        // Log the exact payload being sent to verify image_id is correct
-        if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-            \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'API Request Payload (BEFORE sending to backend)', [
-                'image_id_param' => $image_id,
-                'root_image_id_in_body' => (string) $image_id,
-                'image_data.image_id' => $image_payload['image_id'] ?? 'missing',
-                'image_data.attachment_id' => $image_payload['attachment_id'] ?? 'missing',
-                'regenerate_flag' => $regenerate,
-                'has_image_url' => !empty($image_payload['image_url']),
-                'image_url_preview' => !empty($image_payload['image_url']) ? substr($image_payload['image_url'], 0, 100) : 'none',
-                'timestamp' => time(),
-            ], 'api');
+        // Get license key and site hash for usage tracking
+        // CRITICAL: Retrieve license key BEFORE building body to ensure it's available
+        $license_key = $this->get_license_key();
+        $site_hash = $this->get_site_id();
+        
+        // If no license key but we have an active license, try to get it
+        // This ensures free users with auto-attached licenses have the key available
+        if (empty($license_key) && $this->has_active_license()) {
+            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Active license but no key found before generation - attempting retrieval', [
+                    'has_active_license' => true,
+                    'image_id' => $image_id,
+                ], 'licensing');
+            }
+            
+            // Check license data directly first (fastest)
+            $license_data = $this->get_license_data();
+            if (!empty($license_data)) {
+                if (isset($license_data['licenseKey']) && !empty($license_data['licenseKey'])) {
+                    $license_key = $license_data['licenseKey'];
+                    $this->set_license_key($license_key);
+                } elseif (isset($license_data['site']['licenseKey']) && !empty($license_data['site']['licenseKey'])) {
+                    $license_key = $license_data['site']['licenseKey'];
+                    $this->set_license_key($license_key);
+                }
+            }
+            
+            // If still empty, try to refresh license data from backend
+            if (empty($license_key)) {
+                $usage_response = $this->get_usage();
+                if (!is_wp_error($usage_response)) {
+                    $license_key = $this->get_license_key();
+                }
+            }
+            
+            // If still empty, try auto-attach
+            if (empty($license_key)) {
+                $auto_attach_result = $this->auto_attach_license();
+                if (!is_wp_error($auto_attach_result)) {
+                    $license_key = $this->get_license_key();
+                }
+            }
+            
+            // Final check - log if still missing
+            if (empty($license_key) && class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                \BeepBeepAI\AltTextGenerator\Debug_Log::log('error', 'Active license detected but license key still not found after all attempts', [
+                    'has_active_license' => true,
+                    'has_license_data' => !empty($license_data),
+                    'image_id' => $image_id,
+                ], 'licensing');
+            }
         }
         
         $body = [
@@ -1952,6 +2578,35 @@ class API_Client_V2 {
             'image_id' => (string) $image_id, // Include image_id at root level AND in image_data
             'attachment_id' => (string) $image_id, // Redundant identifier for backend parsers
         ];
+        
+        // CRITICAL: Include license key and site hash in body for backend usage tracking
+        // Backend needs these to associate the request with the correct license/site for quota tracking
+        if (!empty($license_key)) {
+            $body['licenseKey'] = $license_key;
+        }
+        if (!empty($site_hash)) {
+            $body['siteHash'] = $site_hash;
+            $body['site_id'] = $site_hash; // Some backends might expect site_id
+        }
+        
+        // Debug logging to verify license key is being sent (AFTER body is created with license key)
+        if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+            \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'API Request Payload (ready to send to backend)', [
+                'image_id_param' => $image_id,
+                'root_image_id_in_body' => (string) $image_id,
+                'image_data.image_id' => $image_payload['image_id'] ?? 'missing',
+                'image_data.attachment_id' => $image_payload['attachment_id'] ?? 'missing',
+                'regenerate_flag' => $regenerate,
+                'has_image_url' => !empty($image_payload['image_url']),
+                'has_license_key' => !empty($license_key),
+                'license_key_preview' => !empty($license_key) ? substr($license_key, 0, 20) . '...' : 'none',
+                'has_site_hash' => !empty($site_hash),
+                'site_hash' => $site_hash ?? 'none',
+                'has_active_license' => $this->has_active_license(),
+                'license_key_in_body' => !empty($body['licenseKey']),
+                'site_hash_in_body' => !empty($body['siteHash']),
+            ], 'api');
+        }
 
         // Include user ID and explicit image identifiers in headers for traceability
         $extra_headers = [
@@ -1962,6 +2617,44 @@ class API_Client_V2 {
         $response = $this->request_with_retry($endpoint, 'POST', $body, 3, true, $extra_headers);
 
         if (is_wp_error($response)) {
+            // If we get a quota_check_mismatch error, the backend is reporting no credits
+            // but our usage check shows credits available - this is a backend sync issue
+            // Try one more time after a short delay to see if backend has synced
+            if ($response->get_error_code() === 'quota_check_mismatch') {
+                $retry_after = $response->get_error_data()['retry_after'] ?? 3;
+                
+                if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                    \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'Quota mismatch detected - waiting before retry', [
+                        'retry_after' => $retry_after,
+                        'image_id' => $image_id,
+                    ], 'api');
+                }
+                
+                // Wait a moment for backend to sync
+                sleep($retry_after);
+                
+                // Retry the request once more
+                $retry_response = $this->request_with_retry($endpoint, 'POST', $body, 1, true, $extra_headers);
+                
+                if (!is_wp_error($retry_response)) {
+                    // Retry succeeded - backend synced
+                    if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                        \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'Quota mismatch retry succeeded - backend synced', [
+                            'image_id' => $image_id,
+                        ], 'api');
+                    }
+                    return $retry_response;
+                }
+                
+                // Retry also failed - return the original error
+                if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                    \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Quota mismatch retry also failed', [
+                        'image_id' => $image_id,
+                        'retry_error' => $retry_response->get_error_message(),
+                    ], 'api');
+                }
+            }
+            
             return $response;
         }
 
@@ -1975,13 +2668,31 @@ class API_Client_V2 {
             ], 'api');
         }
 
-        // Handle rate limit
+        // Handle rate limit (429)
+        // According to backend docs: 429 should only be for OpenAI rate limits (code: "OPENAI_RATE_LIMIT")
+        // Quota issues should return 403 with NO_ACCESS code and reason: "no_credits"
         if ($response['status_code'] === 429) {
-            // DO NOT update usage from error responses - credits should only be deducted on success
-            // The backend may have consumed credits during the failed attempt, but we shouldn't record it
-            // Usage will be refreshed on successful generation
+            // Check if this is actually an OpenAI rate limit or a quota issue
+            $response_data = $response['data'] ?? [];
+            $error_code = isset($response_data['code']) && is_string($response_data['code']) ? strtoupper($response_data['code']) : '';
+            $is_openai_rate_limit = ($error_code === 'OPENAI_RATE_LIMIT' || 
+                                    (isset($response_data['reason']) && strtolower($response_data['reason']) === 'rate_limit_exceeded'));
             
-            // Before blocking, check cached usage - backend might be incorrectly reporting quota exhausted
+            if ($is_openai_rate_limit) {
+                // This is a legitimate OpenAI rate limit - return appropriate error
+                return new \WP_Error(
+                    'openai_rate_limit',
+                    $response_data['message'] ?? __('OpenAI rate limit reached. Please try again later.', 'beepbeep-ai-alt-text-generator'),
+                    [
+                        'error_code' => 'openai_rate_limit',
+                        'retry_after' => 60, // Wait 60 seconds for OpenAI rate limit
+                    ]
+                );
+            }
+            
+            // If it's not an OpenAI rate limit, it might be a misconfigured backend
+            // that's returning 429 for quota issues (should be 403)
+            // Check cached usage to see if this might be a quota issue
             require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
             $cached_usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
             
@@ -1992,15 +2703,16 @@ class API_Client_V2 {
                 $fresh_usage = $this->get_usage();
                 
                 if (!is_wp_error($fresh_usage) && is_array($fresh_usage) && isset($fresh_usage['remaining']) && is_numeric($fresh_usage['remaining']) && $fresh_usage['remaining'] > 0) {
-                    // Fresh API check shows credits available - backend 429 was incorrect
+                    // Fresh API check shows credits available - backend 429 was incorrect (should be 403)
                     // Update cache with fresh data and return a retry error instead of blocking
                     \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($fresh_usage);
                     
                     if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-                        \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Backend returned 429 but cache and fresh API check show credits available', [
+                        \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Backend returned 429 (not OpenAI rate limit) but cache and fresh API check show credits available', [
                             'cached_remaining' => $cached_usage['remaining'],
                             'api_remaining' => $fresh_usage['remaining'],
-                            'backend_error' => $response['data']['error'] ?? 'Monthly limit reached',
+                            'backend_error' => $response_data['error'] ?? $response_data['message'] ?? 'Rate limit reached',
+                            'backend_code' => $error_code,
                         ], 'api');
                     }
                     
@@ -2017,10 +2729,11 @@ class API_Client_V2 {
             }
             
             // Cached usage confirms no credits OR fresh check also shows exhausted
+            // OR it's a legitimate rate limit
             return new \WP_Error(
                 'limit_reached',
-                $response['data']['error'] ?? __('Monthly limit reached', 'beepbeep-ai-alt-text-generator'),
-                ['usage' => $response['data']['usage'] ?? null]
+                $response_data['message'] ?? $response_data['error'] ?? __('Rate limit reached. Please try again later.', 'beepbeep-ai-alt-text-generator'),
+                ['usage' => $response_data['usage'] ?? null]
             );
         }
 
@@ -2111,7 +2824,8 @@ class API_Client_V2 {
         $image_url = wp_get_attachment_url($image_id);
         $title     = get_the_title($image_id);
         $caption   = wp_get_attachment_caption($image_id);
-        $filename  = $image_url ? wp_basename(parse_url($image_url, PHP_URL_PATH)) : '';
+        $parsed_image_url = $image_url ? wp_parse_url($image_url) : null;
+        $filename  = $parsed_image_url && isset($parsed_image_url['path']) ? wp_basename($parsed_image_url['path']) : '';
 
         $body = [
             'alt_text' => $alt_text,
@@ -2590,7 +3304,7 @@ class API_Client_V2 {
             // Sanitize URLs - only show endpoint path, not full URL
             if ($key === 'url' && is_string($value)) {
                 // Extract just the endpoint path, remove base URL
-                $parsed = parse_url($value);
+                $parsed = wp_parse_url($value);
                 if (isset($parsed['path'])) {
                     $sanitized[$key] = $parsed['path'] . (isset($parsed['query']) ? '?' . '[QUERY_PARAMS]' : '');
                 } else {

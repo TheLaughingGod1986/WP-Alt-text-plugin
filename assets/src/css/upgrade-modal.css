@@ -561,10 +561,18 @@
 }
 
 .bbai-plan-card--credits {
-    border-color: #3b82f6;
+    border-color: #6366f1;
+    border-width: 2px;
     background: #ffffff !important;
-    padding: 24px;
+    padding: 32px 24px 24px;
     border-radius: 12px;
+    position: relative;
+}
+
+.bbai-plan-card--credits:hover {
+    border-color: #4f46e5;
+    box-shadow: 0 12px 40px rgba(99, 102, 241, 0.2);
+    transform: translateY(-4px);
 }
 
 .bbai-credits-header {
@@ -606,42 +614,65 @@
     color: #6b7280;
 }
 
+/* Credits card uses same structure as other plan cards */
+.bbai-plan-card--credits .bbai-plan-header {
+    margin-bottom: 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.bbai-plan-card--credits .bbai-plan-header h3 {
+    margin: 0 0 16px 0;
+    width: 100%;
+}
+
 .bbai-plan-card--credits .bbai-plan-price {
-    flex-shrink: 0;
-    text-align: right;
+    margin: 0 0 8px 0;
+    text-align: center;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .bbai-plan-card--credits .bbai-price-amount {
     font-size: 36px;
     font-weight: 800;
     color: #111827;
-    display: block;
-    margin-bottom: 4px;
+    line-height: 1;
+    letter-spacing: -0.01em;
+    display: inline-block;
 }
 
 .bbai-plan-card--credits .bbai-price-period {
-    font-size: 14px;
+    font-size: 16px;
     color: #6b7280;
+    margin-left: 4px;
     font-weight: 500;
-    display: block;
-    margin-left: 0;
 }
 
 .bbai-plan-card--credits .bbai-plan-credits-info {
-    display: none;
+    text-align: center;
+    margin: 0 0 20px 0;
+    padding: 0;
 }
 
 .bbai-plan-card--credits .bbai-plan-cta {
-    background: #2563eb !important;
+    background: #6366f1 !important;
     color: #ffffff !important;
-    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4) !important;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4) !important;
     width: 100%;
-    margin-top: 20px;
+    margin-top: 0;
 }
 
 .bbai-plan-card--credits .bbai-plan-cta:hover {
-    background: #1d4ed8 !important;
-    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.5) !important;
+    background: #4f46e5 !important;
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.5) !important;
+    transform: translateY(-2px);
 }
 
 /* Footer Trust Line */

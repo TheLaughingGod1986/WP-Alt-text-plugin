@@ -364,12 +364,33 @@
             });
             })
             .fail(function(xhr, status, error) {
-                console.error('[AI Alt Text] Failed to get missing images:', error, xhr);
+                console.error('[AI Alt Text] Failed to get all images:', {
+                    error: error,
+                    status: status,
+                    xhr: xhr,
+                    statusCode: xhr.status,
+                    responseText: xhr.responseText
+                });
                 $btn.prop('disabled', false);
                 $btn.text(originalText);
 
-                logBulkProgressError('Failed to load images. Please try again.');
-                // Keep modal open to show error - user can close manually
+                var errorMsg = 'Failed to load images. ';
+                if (xhr.status === 403) {
+                    errorMsg += 'Permission denied. Please check you have the correct permissions.';
+                } else if (xhr.status === 404) {
+                    errorMsg += 'Endpoint not found. Please refresh the page.';
+                } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg += xhr.responseJSON.message;
+                } else {
+                    errorMsg += 'Please check your browser console for details.';
+                }
+                
+                alert(errorMsg);
+                
+                // Try to show progress modal with error if it exists
+                if (typeof logBulkProgressError === 'function') {
+                    logBulkProgressError(errorMsg);
+                }
             });
         }
     }
@@ -379,8 +400,12 @@
      */
     function handleRegenerateAll(e) {
         e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('[AI Alt Text] Re-optimize All button clicked');
         
         if (!confirm('This will regenerate alt text for ALL images, replacing existing alt text. Are you sure?')) {
+            console.log('[AI Alt Text] User cancelled re-optimize');
             return false;
         }
 
@@ -388,11 +413,21 @@
         var originalText = $btn.text();
         
         if ($btn.prop('disabled')) {
+            console.warn('[AI Alt Text] Button is disabled');
             return false;
         }
 
         // Check if we have necessary configuration (check dynamically in case BBAI_DASH loads after script)
         var currentConfig = window.BBAI_DASH || window.BBAI || config;
+        console.log('[AI Alt Text] Using config:', {
+            hasBBAI_DASH: !!window.BBAI_DASH,
+            hasBBAI: !!window.BBAI,
+            hasConfig: !!config,
+            restAll: currentConfig.restAll,
+            restRoot: currentConfig.restRoot,
+            nonce: currentConfig.nonce ? 'present' : 'missing'
+        });
+        
         var hasConfig = currentConfig.rest && currentConfig.nonce;
         if (!hasConfig) {
             console.error('[AI Alt Text] Missing REST config:', {
@@ -450,8 +485,11 @@
 
         // Get list of all images (use dynamically checked config)
         var currentConfig = window.BBAI_DASH || window.BBAI || config;
+        var listUrl = currentConfig.restAll || (currentConfig.restRoot + 'bbai/v1/list?scope=all');
+        console.log('[AI Alt Text] Fetching all images from:', listUrl);
+        
         $.ajax({
-            url: currentConfig.restAll || (currentConfig.restRoot + 'bbai/v1/list?scope=all'),
+            url: listUrl,
             method: 'GET',
             headers: {
                 'X-WP-Nonce': currentConfig.nonce
@@ -461,7 +499,10 @@
             }
         })
         .done(function(response) {
+            console.log('[AI Alt Text] Received response:', response);
+            
             if (!response || !response.ids || response.ids.length === 0) {
+                console.warn('[AI Alt Text] No images found in response');
                 alert('No images found.');
                 $btn.prop('disabled', false);
                 $btn.text(originalText);
@@ -470,6 +511,7 @@
 
             var ids = response.ids || [];
             var count = ids.length;
+            console.log('[AI Alt Text] Found ' + count + ' images to regenerate');
             
             // Log analytics event
             if (typeof window.logEvent === 'function') {
@@ -622,12 +664,41 @@
             });
         })
         .fail(function(xhr, status, error) {
-            console.error('[AI Alt Text] Failed to get all images:', error, xhr);
+            console.error('[AI Alt Text] Failed to get all images:', {
+                error: error,
+                status: status,
+                xhr: xhr,
+                statusCode: xhr.status,
+                responseText: xhr.responseText,
+                responseJSON: xhr.responseJSON
+            });
             $btn.prop('disabled', false);
             $btn.text(originalText);
 
-            logBulkProgressError('Failed to load images. Please try again.');
-            // Keep modal open to show error - user can close manually
+            var errorMsg = 'Failed to load images. ';
+            if (xhr.status === 403) {
+                errorMsg += 'Permission denied. Please check you have the correct permissions.';
+            } else if (xhr.status === 404) {
+                errorMsg += 'Endpoint not found. Please refresh the page.';
+            } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg += xhr.responseJSON.message;
+            } else {
+                errorMsg += 'Please check your browser console for details.';
+            }
+            
+            // Show alert to make error visible
+            alert(errorMsg);
+            
+            // Try to show error in progress modal if it exists
+            if (typeof logBulkProgressError === 'function') {
+                logBulkProgressError(errorMsg);
+            } else {
+                // If modal doesn't exist, create it to show the error
+                showBulkProgress('Error', 0, 0);
+                if (typeof logBulkProgressError === 'function') {
+                    logBulkProgressError(errorMsg);
+                }
+            }
         });
     }
 

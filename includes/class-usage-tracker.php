@@ -50,9 +50,9 @@ class Usage_Tracker {
         $usage_data = [
             'used' => 0,
             'limit' => 50,  // Free plan: exactly 50 credits per month per site
-            'remaining' => 50,
-            'plan' => 'free',
-            'resetDate' => date('Y-m-01', $reset_ts),
+                    'remaining' => 50,
+                    'plan' => 'free',
+                    'resetDate' => gmdate('Y-m-01', $reset_ts),
             'resetTimestamp' => $reset_ts,
         ];
         self::update_usage($usage_data);
@@ -87,7 +87,7 @@ class Usage_Tracker {
             'limit'      => $limit,
             'remaining'  => $remaining,
             'plan'       => $usage_data['plan'] ?? 'free',
-            'resetDate'  => $reset_raw ?: date('Y-m-01', strtotime('+1 month', $current_ts)),
+            'resetDate'  => $reset_raw ?: gmdate('Y-m-01', strtotime('+1 month', $current_ts)),
             'reset_timestamp' => $reset_ts,
             'seconds_until_reset' => $seconds_until_reset,
         ];
@@ -152,7 +152,7 @@ class Usage_Tracker {
                     'limit' => $limit,
                     'remaining' => $tokens_remaining,
                     'plan' => $plan,
-                    'resetDate' => date('Y-m-01', $reset_ts),
+                    'resetDate' => gmdate('Y-m-01', $reset_ts),
                     'reset_timestamp' => $reset_ts,
                     'seconds_until_reset' => max(0, $reset_ts - $current_ts),
                 ];
@@ -182,7 +182,7 @@ class Usage_Tracker {
                     'limit' => 50,
                     'remaining' => 50,
                     'plan' => 'free',
-                    'resetDate' => date('Y-m-01', $reset_ts),
+                    'resetDate' => gmdate('Y-m-01', $reset_ts),
                     'reset_timestamp' => $reset_ts,
                     'seconds_until_reset' => max(0, $reset_ts - current_time('timestamp')),
                 ];
@@ -193,7 +193,7 @@ class Usage_Tracker {
                     'limit' => 0,
                     'remaining' => 0,
                     'plan' => 'free',
-                    'resetDate' => date('Y-m-01', $reset_ts),
+                    'resetDate' => gmdate('Y-m-01', $reset_ts),
                     'reset_timestamp' => $reset_ts,
                     'seconds_until_reset' => max(0, $reset_ts - current_time('timestamp')),
                 ];
@@ -275,13 +275,13 @@ class Usage_Tracker {
         $plan = isset($usage['plan']) && !empty($usage['plan']) ? $usage['plan'] : 'free';
         
         // Get reset date with fallback
-        $reset_date_display = $reset_timestamp ? date('F j, Y', $reset_timestamp) : '';
+        $reset_date_display = $reset_timestamp ? gmdate('F j, Y', $reset_timestamp) : '';
         if (empty($reset_date_display) && !empty($usage['resetDate'])) {
             $parsed_reset = strtotime($usage['resetDate']);
-            $reset_date_display = $parsed_reset > 0 ? date('F j, Y', $parsed_reset) : date('F j, Y', strtotime('first day of next month'));
+            $reset_date_display = $parsed_reset > 0 ? gmdate('F j, Y', $parsed_reset) : gmdate('F j, Y', strtotime('first day of next month'));
         }
         if (empty($reset_date_display)) {
-            $reset_date_display = date('F j, Y', strtotime('first day of next month'));
+            $reset_date_display = gmdate('F j, Y', strtotime('first day of next month'));
         }
         
         return [

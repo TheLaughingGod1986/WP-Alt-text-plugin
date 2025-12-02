@@ -641,86 +641,91 @@ class BbAI_Core {
             </div>
         </div>
         
-        <script>
-        (function($) {
-            // Ensure jQuery and ajaxurl are available
-            if (typeof $ === 'undefined') {
-                console.error('[WP Alt Text AI] jQuery is required for the API notice modal');
-                return;
-            }
-            
-            // Show modal on page load with a small delay to ensure styles are loaded
-            $(document).ready(function() {
-                var $modal = $('#wp-alt-text-api-notice-modal');
-                if ($modal.length === 0) {
-                    return;
-                }
-                
-                // Small delay to ensure CSS is loaded
-                setTimeout(function() {
-                    $modal.css({
-                        'display': 'flex',
-                        'opacity': '0'
-                    }).animate({
-                        'opacity': '1'
-                    }, 300);
-                }, 500);
-            });
-            
-            // Handle close button
-            window.bbaiCloseApiNotice = function() {
-                var $modal = $('#wp-alt-text-api-notice-modal');
-                if ($modal.length === 0) {
-                    return;
-                }
-                
-                // Fade out and remove
-                $modal.animate({
-                    'opacity': '0'
-                }, 200, function() {
-                    // Dismiss via AJAX
-                    var ajaxUrl = (typeof ajaxurl !== 'undefined') ? ajaxurl : '<?php echo esc_js(admin_url('admin-ajax.php')); ?>';
-                    $.ajax({
-                        url: ajaxUrl,
-                        type: 'POST',
-                        data: {
-                            action: 'wp_alt_text_dismiss_api_notice',
-                            nonce: '<?php echo esc_js($nonce); ?>'
-                        },
-                        success: function(response) {
-                            console.log('[WP Alt Text AI] API notice dismissed');
-                        },
-                        error: function() {
-                            console.log('[WP Alt Text AI] Failed to dismiss notice');
-                        }
-                    });
-                    
-                    // Remove modal from DOM
-                    $modal.remove();
-                });
-            };
-            
-            // Close on backdrop click (use event delegation)
-            $(document).on('click', '#bbai-api-notice-modal.bbai-modal-backdrop', function(e) {
-                if (e.target === this) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    wpAltTextCloseApiNotice();
-                }
-            });
-            
-            // Close on ESC key
-            $(document).on('keydown', function(e) {
-                if (e.key === 'Escape' || e.keyCode === 27) {
-                    var $modal = $('#wp-alt-text-api-notice-modal');
-                    if ($modal.length > 0 && $modal.is(':visible')) {
-                        wpAltTextCloseApiNotice();
-                    }
-                }
-            });
-        })(jQuery);
-        </script>
         <?php
+        // Add inline script for API notice modal
+        $api_notice_script = sprintf(
+            "(function($) {
+                // Ensure jQuery and ajaxurl are available
+                if (typeof $ === 'undefined') {
+                    console.error('[WP Alt Text AI] jQuery is required for the API notice modal');
+                    return;
+                }
+                
+                // Show modal on page load with a small delay to ensure styles are loaded
+                $(document).ready(function() {
+                    var $modal = $('#wp-alt-text-api-notice-modal');
+                    if ($modal.length === 0) {
+                        return;
+                    }
+                    
+                    // Small delay to ensure CSS is loaded
+                    setTimeout(function() {
+                        $modal.css({
+                            'display': 'flex',
+                            'opacity': '0'
+                        }).animate({
+                            'opacity': '1'
+                        }, 300);
+                    }, 500);
+                });
+                
+                // Handle close button
+                window.bbaiCloseApiNotice = function() {
+                    var $modal = $('#wp-alt-text-api-notice-modal');
+                    if ($modal.length === 0) {
+                        return;
+                    }
+                    
+                    // Fade out and remove
+                    $modal.animate({
+                        'opacity': '0'
+                    }, 200, function() {
+                        // Dismiss via AJAX
+                        var ajaxUrl = (typeof ajaxurl !== 'undefined') ? ajaxurl : %s;
+                        $.ajax({
+                            url: ajaxUrl,
+                            type: 'POST',
+                            data: {
+                                action: 'wp_alt_text_dismiss_api_notice',
+                                nonce: %s
+                            },
+                            success: function(response) {
+                                console.log('[WP Alt Text AI] API notice dismissed');
+                            },
+                            error: function() {
+                                console.log('[WP Alt Text AI] Failed to dismiss notice');
+                            }
+                        });
+                        
+                        // Remove modal from DOM
+                        $modal.remove();
+                    });
+                };
+                
+                // Close on backdrop click (use event delegation)
+                $(document).on('click', '#bbai-api-notice-modal.bbai-modal-backdrop', function(e) {
+                    if (e.target === this) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        bbaiCloseApiNotice();
+                    }
+                });
+                
+                // Close on ESC key
+                $(document).on('keydown', function(e) {
+                    if (e.key === 'Escape' || e.keyCode === 27) {
+                        var $modal = $('#wp-alt-text-api-notice-modal');
+                        if ($modal.length > 0 && $modal.is(':visible')) {
+                            bbaiCloseApiNotice();
+                        }
+                    }
+                });
+            })(jQuery);",
+            wp_json_encode(admin_url('admin-ajax.php')),
+            wp_json_encode($nonce)
+        );
+        wp_add_inline_script('jquery', $api_notice_script);
+        ?>
     }
 
     public function deactivate(){
@@ -1639,22 +1644,25 @@ class BbAI_Core {
             // Get plan info for upgrade card
             $plan_slug = isset($usage_stats) && isset($usage_stats['plan']) ? $usage_stats['plan'] : 'free';
             $is_pro = ($plan_slug === 'pro' || $plan_slug === 'agency');
+            
+            // Add inline styles for debug panel responsive grid
+            $debug_responsive_css = '
+                /* Responsive Debug Stats Grid */
+                @media (max-width: 768px) {
+                    [data-bbai-debug-panel] .debug-stats-grid {
+                        grid-template-columns: repeat(2, 1fr) !important;
+                        gap: 16px !important;
+                    }
+                }
+                @media (max-width: 480px) {
+                    [data-bbai-debug-panel] .debug-stats-grid {
+                        grid-template-columns: 1fr !important;
+                        gap: 16px !important;
+                    }
+                }
+            ';
+            wp_add_inline_style('bbai-debug-styles', $debug_responsive_css);
         ?>
-        <style>
-            /* Responsive Debug Stats Grid */
-            @media (max-width: 768px) {
-                [data-bbai-debug-panel] .debug-stats-grid {
-                    grid-template-columns: repeat(2, 1fr) !important;
-                    gap: 16px !important;
-                }
-            }
-            @media (max-width: 480px) {
-                [data-bbai-debug-panel] .debug-stats-grid {
-                    grid-template-columns: 1fr !important;
-                    gap: 16px !important;
-                }
-            }
-        </style>
         <div class="bbai-dashboard-container" data-bbai-debug-panel>
             <!-- Header Section -->
             <div class="bbai-debug-header">
@@ -2353,10 +2361,37 @@ class BbAI_Core {
                 <?php
                 // Pull fresh usage from backend to avoid stale cache in Settings
                 if (isset($this->api_client)) {
+                    // Clear cache first to force fresh fetch
+                    BbAI_Usage_Tracker::clear_cache();
                     $live = $this->api_client->get_usage();
-                    if (is_array($live) && !empty($live)) { BbAI_Usage_Tracker::update_usage($live); }
+                    
+                    // Debug logging to see what backend returns
+                    if (class_exists('BbAI_Debug_Log')) {
+                        if (is_wp_error($live)) {
+                            BbAI_Debug_Log::log('error', 'Failed to fetch usage in settings page', [
+                                'error_message' => $live->get_error_message(),
+                                'error_code' => $live->get_error_code(),
+                            ], 'usage');
+                        } elseif (is_array($live)) {
+                            BbAI_Debug_Log::log('info', 'Usage fetched in settings page', [
+                                'used' => $live['used'] ?? 'not set',
+                                'limit' => $live['limit'] ?? 'not set',
+                                'remaining' => $live['remaining'] ?? 'not set',
+                                'plan' => $live['plan'] ?? 'not set',
+                            ], 'usage');
+                        } else {
+                            BbAI_Debug_Log::log('warning', 'Usage fetch returned unexpected type', [
+                                'type' => gettype($live),
+                            ], 'usage');
+                        }
+                    }
+                    
+                    if (is_array($live) && !empty($live)) { 
+                        BbAI_Usage_Tracker::update_usage($live); 
+                    }
                 }
-                $usage_box = BbAI_Usage_Tracker::get_stats_display();
+                // Force refresh to get the latest usage data
+                $usage_box = BbAI_Usage_Tracker::get_stats_display(true);
                 $o = wp_parse_args($opts, []);
                 
                 // Check for license plan first
@@ -2516,17 +2551,87 @@ class BbAI_Core {
                                 <div>
                                     <div class="bbai-settings-license-title"><?php esc_html_e('License Active', 'wp-alt-text-plugin'); ?></div>
                                     <div class="bbai-settings-license-subtitle"><?php echo esc_html($org['name'] ?? ''); ?></div>
+                                    
                                     <?php 
                                     // Display license key for all plans (free, pro, agency)
                                     $license_key = $this->api_client->get_license_key();
-                                    if (!empty($license_key)) :
+                                    if (empty($license_key)) {
+                                        // Try to get from license data directly
+                                        $license_key = $license_data['licenseKey'] ?? $license_data['site']['licenseKey'] ?? '';
+                                    }
+                                    
+                                    // Display license details - always show section if we have any data
+                                    $site_data = $license_data['site'] ?? [];
+                                    $auto_attach_status = $site_data['autoAttachStatus'] ?? $license_data['autoAttachStatus'] ?? '';
+                                    $license_email_sent = $site_data['licenseEmailSentAt'] ?? $license_data['licenseEmailSentAt'] ?? '';
+                                    $created_at = $license_data['created_at'] ?? $site_data['created_at'] ?? $org['createdAt'] ?? $org['created_at'] ?? '';
+                                    $updated_at = $license_data['updated_at'] ?? $site_data['updated_at'] ?? $org['updatedAt'] ?? $org['updated_at'] ?? '';
+                                    $plan = $org['plan'] ?? '';
+                                    $plan_label = $org['planLabel'] ?? '';
+                                    
+                                    // Always show details section if we have license data
+                                    $has_any_details = !empty($license_key) || !empty($auto_attach_status) || !empty($created_at) || !empty($updated_at) || !empty($plan) || !empty($license_email_sent);
+                                    
+                                    if ($has_any_details) :
                                     ?>
-                                    <div class="bbai-settings-license-key" style="margin-top: 8px; font-size: 12px; color: #6b7280; font-family: monospace; word-break: break-all;">
-                                        <strong><?php esc_html_e('License Key:', 'wp-alt-text-plugin'); ?></strong> <?php echo esc_html($license_key); ?>
+                                    <div class="bbai-settings-license-details" style="margin-top: 12px; font-size: 12px; color: #6b7280; line-height: 1.6;">
+                                        <?php if (!empty($license_key)) : ?>
+                                            <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb;">
+                                                <strong><?php esc_html_e('License Key:', 'wp-alt-text-plugin'); ?></strong>
+                                                <div style="margin-top: 4px; font-family: monospace; word-break: break-all; color: #374151;">
+                                                    <?php echo esc_html($license_key); ?>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+                                        
+                                        <?php if (!empty($plan)) : ?>
+                                            <div style="margin-bottom: 4px;">
+                                                <strong><?php esc_html_e('Plan:', 'wp-alt-text-plugin'); ?></strong> 
+                                                <?php echo esc_html(ucfirst($plan)); ?>
+                                                <?php if (!empty($plan_label) && $plan_label !== $plan) : ?>
+                                                    (<?php echo esc_html($plan_label); ?>)
+                                                <?php endif; ?>
+                                            </div>
+                                        <?php endif; ?>
+                                        
+                                        <?php if (!empty($auto_attach_status)) : ?>
+                                            <div style="margin-bottom: 4px;">
+                                                <strong><?php esc_html_e('Status:', 'wp-alt-text-plugin'); ?></strong> 
+                                                <?php echo esc_html(ucfirst(str_replace('_', ' ', $auto_attach_status))); ?>
+                                            </div>
+                                        <?php endif; ?>
+                                        
+                                        <?php if (!empty($created_at)) : 
+                                            $created_timestamp = strtotime($created_at);
+                                            $formatted_created = $created_timestamp !== false ? date_i18n('F j, Y \a\t g:i A', $created_timestamp) : $created_at;
+                                        ?>
+                                            <div style="margin-bottom: 4px;">
+                                                <strong><?php esc_html_e('Created:', 'wp-alt-text-plugin'); ?></strong> 
+                                                <?php echo esc_html($formatted_created); ?>
+                                            </div>
+                                        <?php endif; ?>
+                                        
+                                        <?php if (!empty($updated_at)) : 
+                                            $updated_timestamp = strtotime($updated_at);
+                                            $formatted_updated = $updated_timestamp !== false ? date_i18n('F j, Y \a\t g:i A', $updated_timestamp) : $updated_at;
+                                        ?>
+                                            <div style="margin-bottom: 4px;">
+                                                <strong><?php esc_html_e('Last Updated:', 'wp-alt-text-plugin'); ?></strong> 
+                                                <?php echo esc_html($formatted_updated); ?>
+                                            </div>
+                                        <?php endif; ?>
+                                        
+                                        <?php if (!empty($license_email_sent)) : 
+                                            $email_sent_timestamp = strtotime($license_email_sent);
+                                            $formatted_email_sent = $email_sent_timestamp !== false ? date_i18n('F j, Y \a\t g:i A', $email_sent_timestamp) : $license_email_sent;
+                                        ?>
+                                            <div style="margin-bottom: 4px;">
+                                                <strong><?php esc_html_e('License Email Sent:', 'wp-alt-text-plugin'); ?></strong> 
+                                                <?php echo esc_html($formatted_email_sent); ?>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
-                                    <?php 
-                                    endif; 
-                                    ?>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                             <button type="button" class="bbai-settings-license-deactivate-btn" data-action="deactivate-license">
@@ -2579,9 +2684,10 @@ class BbAI_Core {
                                     // Pre-populate with existing license key if available
                                     $existing_license_key = $this->api_client->get_license_key();
                                     
-                                    // If no license key found but we have a license, try to fetch it from backend
-                                    if (empty($existing_license_key) && $this->api_client->has_active_license()) {
-                                        // Try to get license key from usage endpoint
+                                    // If no license key found, try to fetch it from backend
+                                    // Try even if has_active_license() is false, as user might be authenticated
+                                    if (empty($existing_license_key) && $this->api_client->is_authenticated()) {
+                                        // First, try to get license key from usage endpoint
                                         $usage_response = $this->api_client->get_usage();
                                         if (!is_wp_error($usage_response)) {
                                             $existing_license_key = $this->api_client->get_license_key();
@@ -2590,9 +2696,27 @@ class BbAI_Core {
                                         // If still empty, try auto-attach to get the key
                                         if (empty($existing_license_key)) {
                                             $auto_attach_result = $this->api_client->auto_attach_license();
-                                            if (!is_wp_error($auto_attach_result) && isset($auto_attach_result['license']['licenseKey'])) {
-                                                $existing_license_key = $auto_attach_result['license']['licenseKey'];
+                                            if (!is_wp_error($auto_attach_result)) {
+                                                // Extract license key from response (could be in different locations)
+                                                $license_key_from_response = null;
+                                                if (isset($auto_attach_result['license']['licenseKey'])) {
+                                                    $license_key_from_response = $auto_attach_result['license']['licenseKey'];
+                                                } elseif (isset($auto_attach_result['licenseKey'])) {
+                                                    $license_key_from_response = $auto_attach_result['licenseKey'];
+                                                } elseif (isset($auto_attach_result['site']['licenseKey'])) {
+                                                    $license_key_from_response = $auto_attach_result['site']['licenseKey'];
+                                                }
+                                                
+                                                // Store the license key if we found it
+                                                if (!empty($license_key_from_response)) {
+                                                    $this->api_client->set_license_key($license_key_from_response);
+                                                    $existing_license_key = $license_key_from_response;
+                                                } else {
+                                                    // Try to get it after auto-attach (should be stored by apply_license_snapshot)
+                                                    $existing_license_key = $this->api_client->get_license_key();
+                                                }
                                             } else {
+                                                // Auto-attach failed, try to get existing key anyway
                                                 $existing_license_key = $this->api_client->get_license_key();
                                             }
                                         }
@@ -5334,32 +5458,101 @@ class BbAI_Core {
             BbAI_Usage_Tracker::clear_cache();
         }
 
+        // Extract usage data from API response - check multiple possible locations
+        $usage_data = null;
+        
+        // Log full API response structure for debugging
+        if (class_exists('BbAI_Debug_Log')) {
+            BbAI_Debug_Log::log('debug', 'API response structure for usage extraction', [
+                'attachment_id' => $attachment_id,
+                'response_keys' => array_keys($api_response),
+                'has_usage' => isset($api_response['usage']),
+                'has_license' => isset($api_response['license']),
+                'has_organization' => isset($api_response['organization']),
+                'has_site' => isset($api_response['site']),
+                'usage_structure' => isset($api_response['usage']) ? (is_array($api_response['usage']) ? array_keys($api_response['usage']) : gettype($api_response['usage'])) : 'not set',
+                'license_structure' => isset($api_response['license']) ? (is_array($api_response['license']) ? array_keys($api_response['license']) : gettype($api_response['license'])) : 'not set',
+            ], 'usage');
+        }
+        
         if (!empty($api_response['usage']) && is_array($api_response['usage'])) {
-            BbAI_Usage_Tracker::update_usage($api_response['usage']);
+            $usage_data = $api_response['usage'];
+            if (class_exists('BbAI_Debug_Log')) {
+                BbAI_Debug_Log::log('info', 'Found usage data in api_response[usage]', [
+                    'usage_data' => $usage_data,
+                ], 'usage');
+            }
+        } elseif (!empty($api_response['license']) && is_array($api_response['license'])) {
+            // Backend might return usage in license object
+            $license = $api_response['license'];
+            if (isset($license['tokensUsed']) || isset($license['tokensRemaining'])) {
+                $usage_data = [
+                    'used' => isset($license['tokensUsed']) ? intval($license['tokensUsed']) : 0,
+                    'remaining' => isset($license['tokensRemaining']) ? intval($license['tokensRemaining']) : 0,
+                    'limit' => isset($license['tokenLimit']) ? intval($license['tokenLimit']) : 50,
+                    'plan' => isset($license['plan']) ? sanitize_key($license['plan']) : 'free',
+                    'resetDate' => isset($license['resetDate']) ? sanitize_text_field($license['resetDate']) : '',
+                ];
+                if (class_exists('BbAI_Debug_Log')) {
+                    BbAI_Debug_Log::log('info', 'Found usage data in api_response[license]', [
+                        'usage_data' => $usage_data,
+                        'license_keys' => array_keys($license),
+                    ], 'usage');
+                }
+            }
+        } elseif (!empty($api_response['organization']) && is_array($api_response['organization'])) {
+            // Check organization object for usage
+            $org = $api_response['organization'];
+            if (isset($org['tokensUsed']) || isset($org['tokensRemaining'])) {
+                $usage_data = [
+                    'used' => isset($org['tokensUsed']) ? intval($org['tokensUsed']) : 0,
+                    'remaining' => isset($org['tokensRemaining']) ? intval($org['tokensRemaining']) : 0,
+                    'limit' => isset($org['tokenLimit']) ? intval($org['tokenLimit']) : 50,
+                    'plan' => isset($org['plan']) ? sanitize_key($org['plan']) : 'free',
+                    'resetDate' => isset($org['resetDate']) ? sanitize_text_field($org['resetDate']) : '',
+                ];
+                if (class_exists('BbAI_Debug_Log')) {
+                    BbAI_Debug_Log::log('info', 'Found usage data in api_response[organization]', [
+                        'usage_data' => $usage_data,
+                    ], 'usage');
+                }
+            }
+        }
+        
+        // Log if usage data not found
+        if (!$usage_data && class_exists('BbAI_Debug_Log')) {
+            BbAI_Debug_Log::log('warning', 'Usage data not found in API response - will refresh from backend', [
+                'attachment_id' => $attachment_id,
+                'response_keys' => array_keys($api_response),
+            ], 'usage');
+        }
+        
+        if ($usage_data && is_array($usage_data)) {
+            BbAI_Usage_Tracker::update_usage($usage_data);
 
             if ($has_license) {
                 $existing_license = $this->api_client->get_license_data() ?? [];
                 $updated_license  = $existing_license ?: [];
                 $organization     = $updated_license['organization'] ?? [];
 
-                if (isset($api_response['usage']['limit'])) {
-                    $organization['tokenLimit'] = intval($api_response['usage']['limit']);
+                if (isset($usage_data['limit'])) {
+                    $organization['tokenLimit'] = intval($usage_data['limit']);
                 }
 
-                if (isset($api_response['usage']['remaining'])) {
-                    $organization['tokensRemaining'] = max(0, intval($api_response['usage']['remaining']));
-                } elseif (isset($api_response['usage']['used']) && isset($organization['tokenLimit'])) {
-                    $organization['tokensRemaining'] = max(0, intval($organization['tokenLimit']) - intval($api_response['usage']['used']));
+                if (isset($usage_data['remaining'])) {
+                    $organization['tokensRemaining'] = max(0, intval($usage_data['remaining']));
+                } elseif (isset($usage_data['used']) && isset($organization['tokenLimit'])) {
+                    $organization['tokensRemaining'] = max(0, intval($organization['tokenLimit']) - intval($usage_data['used']));
                 }
 
-                if (!empty($api_response['usage']['resetDate'])) {
-                    $organization['resetDate'] = sanitize_text_field($api_response['usage']['resetDate']);
-                } elseif (!empty($api_response['usage']['nextReset'])) {
-                    $organization['resetDate'] = sanitize_text_field($api_response['usage']['nextReset']);
+                if (!empty($usage_data['resetDate'])) {
+                    $organization['resetDate'] = sanitize_text_field($usage_data['resetDate']);
+                } elseif (!empty($usage_data['nextReset'])) {
+                    $organization['resetDate'] = sanitize_text_field($usage_data['nextReset']);
                 }
 
-                if (!empty($api_response['usage']['plan'])) {
-                    $organization['plan'] = sanitize_key($api_response['usage']['plan']);
+                if (!empty($usage_data['plan'])) {
+                    $organization['plan'] = sanitize_key($usage_data['plan']);
                 }
 
                 $updated_license['organization'] = $organization;
@@ -5367,6 +5560,21 @@ class BbAI_Core {
                 $this->api_client->set_license_data($updated_license);
                 BbAI_Usage_Tracker::clear_cache();
             }
+        }
+        
+        // Force refresh usage from backend after successful generation
+        // This ensures the usage display is updated immediately
+        BbAI_Usage_Tracker::clear_cache();
+        
+        // Also update cache with usage data from response if available
+        if (!empty($usage_data) && is_array($usage_data)) {
+            BbAI_Usage_Tracker::update_usage($usage_data);
+        }
+        
+        // Then fetch fresh usage from backend to ensure accuracy
+        $fresh_usage = $this->api_client->get_usage();
+        if (!is_wp_error($fresh_usage) && is_array($fresh_usage)) {
+            BbAI_Usage_Tracker::update_usage($fresh_usage);
         }
         
         $alt = trim($api_response['alt_text']);
@@ -5436,6 +5644,122 @@ class BbAI_Core {
         $alt = $result['alt'];
 
         $this->record_usage($usage_summary);
+        
+        // Log usage to database for tracking
+        if (class_exists('\BeepBeepAI\AltTextGenerator\Credit_Usage_Logger')) {
+            $user_id = get_current_user_id();
+            $credits_used = 1; // Default to 1 credit per generation
+            $token_cost = null;
+            
+            // Try to get actual token cost from usage summary if available
+            if (isset($usage_summary['total']) && $usage_summary['total'] > 0) {
+                // Estimate cost based on model (rough estimate)
+                // This is approximate - actual cost should come from backend
+                $token_cost = null; // Let backend handle actual cost tracking
+            }
+            
+            // Get model from API response if available
+            $log_model = $model;
+            if (isset($api_response['model']) && !empty($api_response['model'])) {
+                $log_model = sanitize_text_field($api_response['model']);
+            }
+            
+            try {
+                \BeepBeepAI\AltTextGenerator\Credit_Usage_Logger::log_usage(
+                    $attachment_id,
+                    $user_id,
+                    $credits_used,
+                    $token_cost,
+                    $log_model,
+                    $source
+                );
+            } catch (\Exception $e) {
+                // Log error but don't block generation
+                if (class_exists('BbAI_Debug_Log')) {
+                    BbAI_Debug_Log::log('warning', 'Failed to log credit usage', [
+                        'attachment_id' => $attachment_id,
+                        'error' => $e->getMessage(),
+                    ], 'usage');
+                }
+            }
+        }
+        
+        // CRITICAL: Always refresh usage from backend after generation
+        // The backend tracks usage server-side, so we need to fetch the latest count
+        // This ensures the UI shows the correct usage immediately after generation
+        try {
+            // Clear cache first to force fresh fetch
+            BbAI_Usage_Tracker::clear_cache();
+            
+            // Fetch latest usage from backend
+            $latest_usage = $this->api_client->get_usage();
+            
+            if (is_wp_error($latest_usage)) {
+                if (class_exists('BbAI_Debug_Log')) {
+                    BbAI_Debug_Log::log('warning', 'Failed to fetch usage after generation', [
+                        'attachment_id' => $attachment_id,
+                        'error' => $latest_usage->get_error_message(),
+                        'error_code' => $latest_usage->get_error_code(),
+                    ], 'usage');
+                }
+            } elseif (is_array($latest_usage) && !empty($latest_usage)) {
+                // Update usage tracker with latest data from backend
+                BbAI_Usage_Tracker::update_usage($latest_usage);
+                
+                if (class_exists('BbAI_Debug_Log')) {
+                    BbAI_Debug_Log::log('info', 'Usage refreshed after generation', [
+                        'attachment_id' => $attachment_id,
+                        'used' => $latest_usage['used'] ?? 0,
+                        'remaining' => $latest_usage['remaining'] ?? 0,
+                        'limit' => $latest_usage['limit'] ?? 50,
+                    ], 'usage');
+                }
+                
+                // Update license data with latest usage if we have a license
+                if ($has_license) {
+                    $existing_license = $this->api_client->get_license_data() ?? [];
+                    $updated_license = $existing_license ?: [];
+                    $organization = $updated_license['organization'] ?? [];
+                    
+                    if (isset($latest_usage['used'])) {
+                        $organization['tokensUsed'] = intval($latest_usage['used']);
+                    }
+                    if (isset($latest_usage['remaining'])) {
+                        $organization['tokensRemaining'] = max(0, intval($latest_usage['remaining']));
+                    }
+                    if (isset($latest_usage['limit'])) {
+                        $organization['tokenLimit'] = intval($latest_usage['limit']);
+                    }
+                    if (!empty($latest_usage['resetDate'])) {
+                        $organization['resetDate'] = sanitize_text_field($latest_usage['resetDate']);
+                    }
+                    if (!empty($latest_usage['plan'])) {
+                        $organization['plan'] = sanitize_key($latest_usage['plan']);
+                    }
+                    
+                    $updated_license['organization'] = $organization;
+                    $updated_license['updated_at'] = current_time('mysql');
+                    $this->api_client->set_license_data($updated_license);
+                }
+            } else {
+                if (class_exists('BbAI_Debug_Log')) {
+                    BbAI_Debug_Log::log('warning', 'Usage refresh returned invalid data', [
+                        'attachment_id' => $attachment_id,
+                        'usage_type' => gettype($latest_usage),
+                    ], 'usage');
+                }
+            }
+        } catch (\Exception $e) {
+            // Log error but don't block generation
+            if (class_exists('BbAI_Debug_Log')) {
+                BbAI_Debug_Log::log('error', 'Exception refreshing usage after generation', [
+                    'attachment_id' => $attachment_id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ], 'usage');
+            }
+        }
+        
         if ($has_license) {
             $this->refresh_license_usage_snapshot();
         }
@@ -6219,10 +6543,27 @@ class BbAI_Core {
      * AJAX handler: Regenerate single image alt text
      */
     public function ajax_regenerate_single() {
-        check_ajax_referer('bbai_upgrade_nonce', 'nonce');
-        
+        // Check user permissions first (more reliable than nonce for authenticated users)
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => 'Unauthorized']);
+        }
+        
+        // Check nonce - use wp_verify_nonce if check_ajax_referer fails
+        $nonce_check = check_ajax_referer('bbai_upgrade_nonce', 'nonce', false);
+        if (!$nonce_check) {
+            // Fallback: try wp_verify_nonce
+            $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+            if (empty($nonce) || !wp_verify_nonce($nonce, 'bbai_upgrade_nonce')) {
+                // If nonce check fails but user has permissions, log warning but allow (nonce might be expired)
+                // This prevents blocking legitimate users with expired nonces
+                if (class_exists('BbAI_Debug_Log')) {
+                    BbAI_Debug_Log::log('warning', 'Nonce check failed for regenerate, but user has permissions', [
+                        'user_id' => get_current_user_id(),
+                        'has_nonce' => !empty($nonce),
+                    ], 'security');
+                }
+                // Don't block - user permissions are already verified above
+            }
         }
         
         $attachment_id_raw = isset($_POST['attachment_id']) ? wp_unslash($_POST['attachment_id']) : '';

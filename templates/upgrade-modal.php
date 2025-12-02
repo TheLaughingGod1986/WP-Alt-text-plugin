@@ -225,6 +225,51 @@ else {
                 </div>
             </div>
 
+            <!-- Buy 100 Credits Card -->
+            <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+                <div class="bbai-plan-card bbai-plan-card--credits">
+                    <div class="bbai-plan-badge" style="background: #6366f1; color: #ffffff;">
+                        <?php esc_html_e('ONE-TIME PURCHASE', 'beepbeep-ai-alt-text-generator'); ?>
+                    </div>
+                    <div class="bbai-plan-header">
+                        <h3><?php esc_html_e('Credit Pack', 'beepbeep-ai-alt-text-generator'); ?></h3>
+                        <div class="bbai-plan-price">
+                            <span class="bbai-price-amount"><?php echo esc_html($currency['symbol']); ?><span class="bbai-price-value"><?php echo esc_html(number_format($currency['credits'], 2)); ?></span></span>
+                            <span class="bbai-price-period"><?php esc_html_e('One-time', 'beepbeep-ai-alt-text-generator'); ?></span>
+                        </div>
+                    </div>
+                    
+                    <div class="bbai-plan-features">
+                        <ul>
+                            <li>
+                                <span class="bbai-feature-highlight"><?php esc_html_e('100', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                <?php esc_html_e('credits for alt text generation', 'beepbeep-ai-alt-text-generator'); ?>
+                            </li>
+                            <li><?php esc_html_e('Credits never expire', 'beepbeep-ai-alt-text-generator'); ?></li>
+                            <li><?php esc_html_e('Perfect for occasional use', 'beepbeep-ai-alt-text-generator'); ?></li>
+                            <li><?php esc_html_e('No subscription required', 'beepbeep-ai-alt-text-generator'); ?></li>
+                            <li><?php esc_html_e('Use on any WordPress site', 'beepbeep-ai-alt-text-generator'); ?></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bbai-plan-credits-info">
+                        <small><?php esc_html_e('100 credits • One-time purchase', 'beepbeep-ai-alt-text-generator'); ?></small>
+                    </div>
+
+                    <button type="button"
+                            class="bbai-btn-secondary bbai-plan-cta bbai-plan-cta--credits"
+                            data-action="checkout-plan"
+                            data-plan="credits"
+                            data-price-id="<?php echo esc_attr($credits_price_id); ?>"
+                            data-fallback-url="<?php echo esc_url($stripe_links['credits']); ?>"
+                            aria-label="<?php esc_attr_e('Buy 100 Credits', 'beepbeep-ai-alt-text-generator'); ?>">
+                        <?php esc_html_e('Buy 100 Credits', 'beepbeep-ai-alt-text-generator'); ?>
+                    </button>
+                    
+                    <p class="bbai-plan-trust"><?php esc_html_e('One-time purchase • Credits never expire • Instant activation', 'beepbeep-ai-alt-text-generator'); ?></p>
+                </div>
+            </div>
+
             <!-- Footer Trust Line -->
             <div class="bbai-upgrade-modal__footer">
                 <p class="bbai-footer-trust">
