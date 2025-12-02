@@ -29,13 +29,13 @@ class Admin_Menu {
 	 *
 	 * @var array
 	 */
-	protected $pages = [];
+	protected $pages = array();
 
 	/**
 	 * Initialize the admin menu.
 	 */
 	protected function __construct() {
-		add_action( 'admin_menu', [ $this, 'register_menus' ] );
+		add_action( 'admin_menu', array( $this, 'register_menus' ) );
 	}
 
 	/**
@@ -46,19 +46,19 @@ class Admin_Menu {
 	public function register_menus() {
 		// Register main menu page.
 		// Use translation only if text domain is loaded (after init).
-		$menu_title = is_textdomain_loaded( 'beepbeep-ai-alt-text-generator' ) 
-			? __( 'Optti', 'beepbeep-ai-alt-text-generator' ) 
+		$menu_title = is_textdomain_loaded( 'beepbeep-ai-alt-text-generator' )
+			? __( 'Optti', 'beepbeep-ai-alt-text-generator' )
 			: 'Optti';
-		$page_title = is_textdomain_loaded( 'beepbeep-ai-alt-text-generator' ) 
-			? __( 'Optti', 'beepbeep-ai-alt-text-generator' ) 
+		$page_title = is_textdomain_loaded( 'beepbeep-ai-alt-text-generator' )
+			? __( 'Optti', 'beepbeep-ai-alt-text-generator' )
 			: 'Optti';
-		
+
 		$main_page = add_menu_page(
 			$page_title,
 			$menu_title,
 			'manage_options',
 			'optti',
-			[ $this, 'render_page' ],
+			array( $this, 'render_page' ),
 			'dashicons-images-alt2',
 			30
 		);
@@ -74,9 +74,9 @@ class Admin_Menu {
 	 */
 	protected function register_submenu_pages() {
 		// Helper to safely translate strings (only after init).
-		$translate = function( $text ) {
-			return is_textdomain_loaded( 'beepbeep-ai-alt-text-generator' ) 
-				? __( $text, 'beepbeep-ai-alt-text-generator' ) 
+		$translate = function ( $text ) {
+			return is_textdomain_loaded( 'beepbeep-ai-alt-text-generator' )
+				? __( $text, 'beepbeep-ai-alt-text-generator' )
 				: $text;
 		};
 
@@ -87,7 +87,7 @@ class Admin_Menu {
 			$translate( 'Dashboard' ),
 			'manage_options',
 			'optti',
-			[ $this, 'render_page' ]
+			array( $this, 'render_page' )
 		);
 
 		// ALT Library - redirects to legacy library tab.
@@ -97,7 +97,7 @@ class Admin_Menu {
 			$translate( 'ALT Library' ),
 			'manage_options',
 			'optti-library',
-			[ $this, 'render_page' ]
+			array( $this, 'render_page' )
 		);
 
 		// Credit Usage - redirects to legacy credit-usage tab.
@@ -107,7 +107,7 @@ class Admin_Menu {
 			$translate( 'Credit Usage' ),
 			'manage_options',
 			'optti-credit-usage',
-			[ $this, 'render_page' ]
+			array( $this, 'render_page' )
 		);
 
 		// Settings - redirects to legacy settings tab.
@@ -117,7 +117,7 @@ class Admin_Menu {
 			$translate( 'Settings' ),
 			'manage_options',
 			'optti-settings',
-			[ $this, 'render_page' ]
+			array( $this, 'render_page' )
 		);
 
 		// License - redirects to legacy dashboard (license info shown there).
@@ -127,7 +127,7 @@ class Admin_Menu {
 			$translate( 'License' ),
 			'manage_options',
 			'optti-license',
-			[ $this, 'render_page' ]
+			array( $this, 'render_page' )
 		);
 
 		// Analytics - redirects to legacy dashboard (analytics shown there).
@@ -137,7 +137,7 @@ class Admin_Menu {
 			$translate( 'Analytics' ),
 			'manage_options',
 			'optti-analytics',
-			[ $this, 'render_page' ]
+			array( $this, 'render_page' )
 		);
 	}
 
@@ -156,7 +156,7 @@ class Admin_Menu {
 				'<h1>' . esc_html__( 'Plugin Error', 'beepbeep-ai-alt-text-generator' ) . '</h1>' .
 				'<p>' . esc_html__( 'The BeepBeep AI Core class is not available. Please deactivate and reactivate the plugin.', 'beepbeep-ai-alt-text-generator' ) . '</p>',
 				esc_html__( 'Plugin Error', 'beepbeep-ai-alt-text-generator' ),
-				[ 'response' => 500 ]
+				array( 'response' => 500 )
 			);
 		}
 
@@ -164,7 +164,7 @@ class Admin_Menu {
 		// The Admin class should have bootstrapped the Core.
 		global $wp_filter;
 		$core = null;
-		
+
 		// Try to get Core instance via reflection or global.
 		// For now, create a new instance if needed (it's a singleton internally).
 		try {
@@ -174,22 +174,22 @@ class Admin_Menu {
 				'<h1>' . esc_html__( 'Plugin Error', 'beepbeep-ai-alt-text-generator' ) . '</h1>' .
 				'<p>' . esc_html__( 'Failed to initialize the plugin core. Please check your error logs.', 'beepbeep-ai-alt-text-generator' ) . '</p>',
 				esc_html__( 'Plugin Error', 'beepbeep-ai-alt-text-generator' ),
-				[ 'response' => 500 ]
+				array( 'response' => 500 )
 			);
 		}
 
 		// Map framework menu pages to legacy menu tabs.
-		$tab_map = [
-			'optti'            => '', // Dashboard (no tab)
-			'optti-library'    => 'library',
+		$tab_map = array(
+			'optti'              => '', // Dashboard (no tab)
+			'optti-library'      => 'library',
 			'optti-credit-usage' => 'credit-usage',
-			'optti-settings'   => 'settings',
-			'optti-license'    => '', // License (shown on dashboard)
-			'optti-analytics'  => '', // Analytics (shown on dashboard)
-		];
+			'optti-settings'     => 'settings',
+			'optti-license'      => '', // License (shown on dashboard)
+			'optti-analytics'    => '', // Analytics (shown on dashboard)
+		);
 
 		$tab = $tab_map[ $page ] ?? '';
-		
+
 		// Set the tab in $_GET so the legacy renderer can see it.
 		if ( ! empty( $tab ) ) {
 			$_GET['tab'] = $tab;
@@ -204,7 +204,7 @@ class Admin_Menu {
 				'<h1>' . esc_html__( 'Plugin Error', 'beepbeep-ai-alt-text-generator' ) . '</h1>' .
 				'<p>' . esc_html__( 'The plugin core does not have a render method. Please contact support.', 'beepbeep-ai-alt-text-generator' ) . '</p>',
 				esc_html__( 'Plugin Error', 'beepbeep-ai-alt-text-generator' ),
-				[ 'response' => 500 ]
+				array( 'response' => 500 )
 			);
 		}
 	}
@@ -212,18 +212,17 @@ class Admin_Menu {
 	/**
 	 * Register a custom page.
 	 *
-	 * @param string $slug Page slug.
-	 * @param string $title Page title.
-	 * @param string $capability Required capability.
+	 * @param string   $slug Page slug.
+	 * @param string   $title Page title.
+	 * @param string   $capability Required capability.
 	 * @param callable $callback Render callback.
 	 * @return void
 	 */
 	public function register_page( $slug, $title, $capability, $callback ) {
-		$this->pages[ $slug ] = [
+		$this->pages[ $slug ] = array(
 			'title'      => $title,
 			'capability' => $capability,
 			'callback'   => $callback,
-		];
+		);
 	}
 }
-

@@ -16,29 +16,42 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Prevent headers already sent errors from PHP 8.1 deprecation warnings
+// Prevent headers already sent errors from PHP 8.1+ deprecation warnings
 // These warnings come from WordPress core when null values are passed to strpos/str_replace
-if ( ! headers_sent() && ! wp_doing_ajax() && ! wp_doing_cron() && ! ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
-	// Start output buffering to prevent headers already sent errors
-	ob_start();
+if ( ! headers_sent() ) {
+	// Check if we're in AJAX, cron, or REST API context (functions may not be loaded yet)
+	$is_ajax = ( defined( 'DOING_AJAX' ) && DOING_AJAX ) || ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() );
+	$is_cron = ( defined( 'DOING_CRON' ) && DOING_CRON ) || ( function_exists( 'wp_doing_cron' ) && wp_doing_cron() );
+	$is_rest = defined( 'REST_REQUEST' ) && REST_REQUEST;
 	
-	// Set custom error handler that suppresses only E_DEPRECATED warnings from WordPress core
-	// This prevents display of PHP 8.1 compatibility warnings from WordPress core
-	set_error_handler( function( $errno, $errstr, $errfile, $errline ) {
-		// Only suppress E_DEPRECATED warnings (8192) from WordPress core files
-		if ( $errno === E_DEPRECATED && $errfile !== null && is_string( $errfile ) && $errfile !== '' ) {
-			$errfile_normalized = str_replace( '\\', '/', $errfile );
-			// Check if warning is from WordPress core (wp-includes or wp-admin)
-			if ( $errfile_normalized !== '' && 
-			     ( strpos( $errfile_normalized, '/wp-includes/' ) !== false || 
-			       strpos( $errfile_normalized, '/wp-admin/' ) !== false ) ) {
-				// Suppress this WordPress core deprecation warning
-				return true;
+	// Only suppress in non-AJAX, non-cron, non-REST contexts
+	if ( ! $is_ajax && ! $is_cron && ! $is_rest ) {
+		// Start output buffering to prevent headers already sent errors
+		ob_start();
+		
+		// Set custom error handler that suppresses only E_DEPRECATED warnings from WordPress core
+		// This prevents display of PHP 8.1+ compatibility warnings from WordPress core
+		set_error_handler( function( $errno, $errstr, $errfile, $errline ) {
+			// Only suppress E_DEPRECATED warnings (8192) from WordPress core files
+			if ( $errno === E_DEPRECATED ) {
+				// Safely check file path with null checks
+				if ( $errfile !== null && is_string( $errfile ) && $errfile !== '' ) {
+					$errfile_normalized = str_replace( '\\', '/', $errfile );
+					// Check if warning is from WordPress core (wp-includes or wp-admin)
+					if ( $errfile_normalized !== '' ) {
+						$is_wp_includes = strpos( $errfile_normalized, '/wp-includes/' ) !== false;
+						$is_wp_admin = strpos( $errfile_normalized, '/wp-admin/' ) !== false;
+						if ( $is_wp_includes || $is_wp_admin ) {
+							// Suppress this WordPress core deprecation warning
+							return true;
+						}
+					}
+				}
 			}
-		}
-		// Pass through all other errors
-		return false;
-	}, E_DEPRECATED );
+			// Pass through all other errors
+			return false;
+		}, E_DEPRECATED );
+	}
 }
 
 // Define plugin constants
@@ -63,18 +76,21 @@ define( 'BBAI_PLUGIN_BASENAME', OPTTI_PLUGIN_BASENAME );
 // Bootstrap Optti Framework
 require_once OPTTI_PLUGIN_DIR . 'framework/loader.php';
 
-Optti_Framework::bootstrap( __FILE__, [
-	'plugin_slug'  => 'beepbeep-ai-alt-text-generator',
-	'version'      => OPTTI_VERSION,
-	'api_base_url' => 'https://alttext-ai-backend.onrender.com',
-	'asset_url'    => OPTTI_PLUGIN_URL . 'framework/dist/',
-	'asset_dir'    => OPTTI_PLUGIN_DIR . 'framework/dist/',
-] );
+Optti_Framework::bootstrap(
+	__FILE__,
+	array(
+		'plugin_slug'  => 'beepbeep-ai-alt-text-generator',
+		'version'      => OPTTI_VERSION,
+		'api_base_url' => 'https://alttext-ai-backend.onrender.com',
+		'asset_url'    => OPTTI_PLUGIN_URL . 'framework/dist/',
+		'asset_dir'    => OPTTI_PLUGIN_DIR . 'framework/dist/',
+	)
+);
 
 // Load translations at init to comply with WordPress expectations.
 add_action(
 	'init',
-	static function() {
+	static function () {
 		load_plugin_textdomain(
 			'beepbeep-ai-alt-text-generator',
 			false,
@@ -99,32 +115,40 @@ require_once OPTTI_PLUGIN_DIR . 'includes/class-beepbeep-plugin.php';
 if ( is_admin() || ( defined( 'DOING_AJAX' ) && DOING_AJAX ) || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
 	require_once OPTTI_PLUGIN_DIR . 'includes/class-bbai.php';
 	require_once OPTTI_PLUGIN_DIR . 'admin/class-bbai-admin.php';
-	
+
 	// Initialize legacy plugin system to register admin menu, AJAX handlers, and REST routes.
 	$legacy_plugin = new \BeepBeepAI\AltTextGenerator\Plugin();
 	$legacy_plugin->run();
 } else {
 	// For frontend, bootstrap on init.
-	add_action( 'init', function() {
-		require_once OPTTI_PLUGIN_DIR . 'includes/class-bbai.php';
-		require_once OPTTI_PLUGIN_DIR . 'admin/class-bbai-admin.php';
-		
-		$legacy_plugin = new \BeepBeepAI\AltTextGenerator\Plugin();
-		$legacy_plugin->run();
-	}, 0 );
+	add_action(
+		'init',
+		function () {
+			require_once OPTTI_PLUGIN_DIR . 'includes/class-bbai.php';
+			require_once OPTTI_PLUGIN_DIR . 'admin/class-bbai-admin.php';
+
+			$legacy_plugin = new \BeepBeepAI\AltTextGenerator\Plugin();
+			$legacy_plugin->run();
+		},
+		0
+	);
 }
 
 // Ensure REST routes are registered on rest_api_init (may fire before init completes)
 // This is a safety net to guarantee routes are available
-add_action( 'rest_api_init', function() {
-	if ( ! class_exists( '\BeepBeepAI\AltTextGenerator\Admin' ) ) {
-		require_once OPTTI_PLUGIN_DIR . 'includes/class-bbai.php';
-		require_once OPTTI_PLUGIN_DIR . 'admin/class-bbai-admin.php';
-	}
-	
-	$admin_instance = new \BeepBeepAI\AltTextGenerator\Admin( 'beepbeep-ai-alt-text-generator', OPTTI_VERSION );
-	$admin_instance->ensure_rest_routes();
-}, 0 );
+add_action(
+	'rest_api_init',
+	function () {
+		if ( ! class_exists( '\BeepBeepAI\AltTextGenerator\Admin' ) ) {
+			require_once OPTTI_PLUGIN_DIR . 'includes/class-bbai.php';
+			require_once OPTTI_PLUGIN_DIR . 'admin/class-bbai-admin.php';
+		}
+
+		$admin_instance = new \BeepBeepAI\AltTextGenerator\Admin( 'beepbeep-ai-alt-text-generator', OPTTI_VERSION );
+		$admin_instance->ensure_rest_routes();
+	},
+	0
+);
 
 // Global plugin instance (for backward compatibility and module access)
 global $optti_beepbeep_plugin;
@@ -134,11 +158,11 @@ global $optti_beepbeep_plugin;
  */
 function optti_activate() {
 	global $optti_beepbeep_plugin;
-	
+
 	// Load legacy activator for backward compatibility during migration.
 	require_once OPTTI_PLUGIN_DIR . 'includes/class-bbai-activator.php';
 	\BeepBeepAI\AltTextGenerator\Activator::activate();
-	
+
 	// Also activate framework.
 	if ( $optti_beepbeep_plugin ) {
 		$optti_beepbeep_plugin->activate();
@@ -150,11 +174,11 @@ function optti_activate() {
  */
 function optti_deactivate() {
 	global $optti_beepbeep_plugin;
-	
+
 	// Load legacy deactivator for backward compatibility during migration.
 	require_once OPTTI_PLUGIN_DIR . 'includes/class-bbai-deactivator.php';
 	\BeepBeepAI\AltTextGenerator\Deactivator::deactivate();
-	
+
 	// Also deactivate framework.
 	if ( $optti_beepbeep_plugin ) {
 		$optti_beepbeep_plugin->deactivate();
@@ -178,7 +202,7 @@ function beepbeepai_deactivate() {
  */
 function optti_run() {
 	global $optti_beepbeep_plugin;
-	
+
 	// Initialize BeepBeep plugin.
 	$optti_beepbeep_plugin = new \BeepBeepAI\AltTextGenerator\BeepBeep_AltText_Plugin(
 		OPTTI_PLUGIN_FILE,

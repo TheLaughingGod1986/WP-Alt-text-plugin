@@ -32,7 +32,7 @@ class DashboardSignupModal {
         }
         
         ?>
-        <div id="bbai-dashboard-signup-modal" class="alttext-auth-modal" style="display: <?php echo $should_show ? 'block' : 'none'; ?>;" role="dialog" aria-modal="true" aria-labelledby="bbai-dashboard-signup-title" aria-describedby="bbai-dashboard-signup-desc">
+        <div id="bbai-dashboard-signup-modal" class="alttext-auth-modal" style="display: <?php echo esc_attr( $should_show ? 'block' : 'none' ); ?>;" role="dialog" aria-modal="true" aria-labelledby="bbai-dashboard-signup-title" aria-describedby="bbai-dashboard-signup-desc">
             <div class="alttext-auth-modal__overlay">
                 <div class="alttext-auth-modal__content">
                     <button class="alttext-auth-modal__close" type="button" aria-label="Close dialog" id="bbai-dashboard-signup-close">&times;</button>
@@ -102,24 +102,33 @@ class DashboardSignupModal {
         </div>
         
         <script type="text/javascript">
-        // Pass data to JavaScript
-        window.bbaiDashboardSignupData = {
-            apiUrl: <?php 
-                // Get API URL - use from bbai_ajax if available, otherwise from API client
-                $api_url = '';
-                if (isset($GLOBALS['bbai_ajax']) && isset($GLOBALS['bbai_ajax']['api_url'])) {
-                    $api_url = $GLOBALS['bbai_ajax']['api_url'];
-                } else {
-                    // Fallback to default API URL
-                    $api_url = 'https://alttext-ai-backend.onrender.com';
-                }
-                echo wp_json_encode($api_url); 
-            ?>,
-            siteDomain: <?php echo wp_json_encode($site_domain); ?>,
-            nonce: <?php echo wp_json_encode($nonce); ?>,
-            ajaxUrl: <?php echo wp_json_encode(admin_url('admin-ajax.php')); ?>,
-            showOnUpgrade: <?php echo $show_on_upgrade ? 'true' : 'false'; ?>
-        };
+        <?php
+        // Get API URL - use from bbai_ajax if available, otherwise from API client
+        $api_url = '';
+        if (isset($GLOBALS['bbai_ajax']) && isset($GLOBALS['bbai_ajax']['api_url'])) {
+            $api_url = $GLOBALS['bbai_ajax']['api_url'];
+        } else {
+            // Fallback to default API URL
+            $api_url = 'https://alttext-ai-backend.onrender.com';
+        }
+        
+        // Add inline script with data localization
+        $dashboard_signup_script = sprintf(
+            "window.bbaiDashboardSignupData = {
+                apiUrl: %s,
+                siteDomain: %s,
+                nonce: %s,
+                ajaxUrl: %s,
+                showOnUpgrade: %s
+            };",
+            wp_json_encode($api_url),
+            wp_json_encode($site_domain),
+            wp_json_encode($nonce),
+            wp_json_encode(admin_url('admin-ajax.php')),
+            $show_on_upgrade ? 'true' : 'false'
+        );
+        wp_add_inline_script('jquery', $dashboard_signup_script);
+        ?>
         
         // Auto-show modal if upgrade transient is set
         <?php if ($show_on_upgrade): ?>
@@ -152,7 +161,7 @@ class DashboardSignupModal {
      */
     public static function get_site_domain() {
         $site_url = get_site_url();
-        $parsed = parse_url($site_url);
+        $parsed = wp_parse_url($site_url);
         return isset($parsed['host']) ? $parsed['host'] : '';
     }
 }

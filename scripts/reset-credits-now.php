@@ -30,7 +30,7 @@ if (!$wp_loaded || !defined('ABSPATH')) {
 }
 
 // Load plugin
-require_once ABSPATH . 'wp-content/plugins/beepbeep-ai-alt-text-generator/admin/class-bbai-core.php';
+require_once ABSPATH . 'wp-content/plugins/beepbeep-ai-alt-text-generator.php';
 
 if (!class_exists('BBAI_Core')) {
     die("❌ Error: Plugin not found. Make sure the plugin is installed.\n");

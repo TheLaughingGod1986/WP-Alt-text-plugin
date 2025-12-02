@@ -29,14 +29,14 @@ class Admin_Notices {
 	 *
 	 * @var array
 	 */
-	protected $notices = [];
+	protected $notices = array();
 
 	/**
 	 * Initialize admin notices.
 	 */
 	protected function __construct() {
-		add_action( 'admin_notices', [ $this, 'display_notices' ] );
-		add_action( 'admin_init', [ $this, 'dismiss_notices' ] );
+		add_action( 'admin_notices', array( $this, 'display_notices' ) );
+		add_action( 'admin_init', array( $this, 'dismiss_notices' ) );
 	}
 
 	/**
@@ -49,11 +49,11 @@ class Admin_Notices {
 	 * @return void
 	 */
 	public function add( $id, $message, $type = 'info', $dismissible = true ) {
-		$this->notices[ $id ] = [
+		$this->notices[ $id ] = array(
 			'message'     => $message,
 			'type'        => $type,
 			'dismissible' => $dismissible,
-		];
+		);
 	}
 
 	/**
@@ -78,10 +78,10 @@ class Admin_Notices {
 				continue;
 			}
 
-			$classes = [
+			$classes = array(
 				'notice',
 				'notice-' . $notice['type'],
-			];
+			);
 
 			if ( $notice['dismissible'] ) {
 				$classes[] = 'is-dismissible';
@@ -117,7 +117,7 @@ class Admin_Notices {
 		}
 
 		$this->dismiss( $notice_id );
-		wp_safe_redirect( remove_query_arg( [ 'optti_dismiss_notice', '_wpnonce' ] ) );
+		wp_safe_redirect( remove_query_arg( array( 'optti_dismiss_notice', '_wpnonce' ) ) );
 		exit;
 	}
 
@@ -130,7 +130,7 @@ class Admin_Notices {
 	public function dismiss( $id ) {
 		$dismissed = get_user_meta( get_current_user_id(), 'optti_dismissed_notices', true );
 		if ( ! is_array( $dismissed ) ) {
-			$dismissed = [];
+			$dismissed = array();
 		}
 		$dismissed[] = $id;
 		update_user_meta( get_current_user_id(), 'optti_dismissed_notices', array_unique( $dismissed ) );

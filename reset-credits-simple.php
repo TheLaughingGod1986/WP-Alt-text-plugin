@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) {
 
 // Load plugin files
 if (!defined('BEEPBEEP_AI_PLUGIN_DIR')) {
-    require_once ABSPATH . 'wp-content/plugins/beepbeep-ai-alt-text-generator/beepbeep-ai-alt-text-generator.php';
+    require_once ABSPATH . 'wp-content/plugins/beepbeep-ai-alt-text-generator.php';
 }
 
 echo "🔄 Resetting Credits to 0...\n";

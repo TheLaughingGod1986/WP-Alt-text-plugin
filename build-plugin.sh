@@ -57,7 +57,20 @@ if [ -d "languages" ]; then
     rsync -a --exclude='*.md' --exclude='*.txt' --exclude='.DS_Store' languages/ "$PLUGIN_DIR/languages/"
 fi
 
-# Copy assets directory (exclude wordpress-org and source files)
+# Copy framework directory (required for plugin functionality)
+if [ -d "framework" ]; then
+    rsync -a \
+      --exclude='*.md' \
+      --exclude='.DS_Store' \
+      --exclude='phpunit.xml' \
+      --exclude='jest.config.js' \
+      --exclude='tests/' \
+      --exclude='tools/' \
+      --exclude='docs/' \
+      framework/ "$PLUGIN_DIR/framework/"
+fi
+
+# Copy assets directory (include source files for WordPress.org compliance)
 if [ -d "assets" ]; then
     rsync -a \
       --exclude='wordpress-org' \
@@ -65,12 +78,20 @@ if [ -d "assets" ]; then
       --exclude='*.md' \
       --exclude='.DS_Store' \
       assets/ "$PLUGIN_DIR/assets/"
-    
-    # Remove source files if dist exists (keep only compiled/minified)
-    if [ -d "$PLUGIN_DIR/assets/dist" ]; then
-        echo "🗑️  Removing source files (keeping only dist)..."
-        rm -rf "$PLUGIN_DIR/assets/src" 2>/dev/null || true
-    fi
+fi
+
+# Copy package.json and package-lock.json if they exist (WordPress.org requirement)
+if [ -f "package.json" ]; then
+    cp package.json "$PLUGIN_DIR/" 2>/dev/null || true
+fi
+
+if [ -f "package-lock.json" ]; then
+    cp package-lock.json "$PLUGIN_DIR/" 2>/dev/null || true
+fi
+
+# Copy webpack.config.js if it exists (WordPress.org requirement)
+if [ -f "webpack.config.js" ]; then
+    cp webpack.config.js "$PLUGIN_DIR/" 2>/dev/null || true
 fi
 
 echo "🧼 Cleaning development files"

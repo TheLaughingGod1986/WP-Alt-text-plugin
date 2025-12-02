@@ -12,29 +12,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Extract variables
 $current_plan = $current_plan ?? 'free';
 $pricing_data = $pricing_data ?? array();
-$is_pro = $is_pro ?? false;
-$is_agency = $is_agency ?? false;
+$is_pro       = $is_pro ?? false;
+$is_agency    = $is_agency ?? false;
 
 // Define plans
 $plans = array(
-	'free' => array(
-		'name' => __( 'Free', 'beepbeep-ai-alt-text-generator' ),
-		'price' => __( 'Free', 'beepbeep-ai-alt-text-generator' ),
+	'free'   => array(
+		'name'         => __( 'Free', 'beepbeep-ai-alt-text-generator' ),
+		'price'        => __( 'Free', 'beepbeep-ai-alt-text-generator' ),
 		'price_annual' => __( 'Free', 'beepbeep-ai-alt-text-generator' ),
-		'features' => array(
+		'features'     => array(
 			__( '100 image generations/month', 'beepbeep-ai-alt-text-generator' ),
 			__( 'Basic alt text generation', 'beepbeep-ai-alt-text-generator' ),
 			__( 'Standard queue processing', 'beepbeep-ai-alt-text-generator' ),
 			__( 'Community support', 'beepbeep-ai-alt-text-generator' ),
 		),
-		'current' => $current_plan === 'free',
+		'current'      => $current_plan === 'free',
 	),
-	'pro' => array(
-		'name' => __( 'Pro', 'beepbeep-ai-alt-text-generator' ),
-		'price' => '$29',
-		'price_annual' => '$290',
+	'pro'    => array(
+		'name'                   => __( 'Pro', 'beepbeep-ai-alt-text-generator' ),
+		'price'                  => '$29',
+		'price_annual'           => '$290',
 		'price_per_month_annual' => '$24.17',
-		'features' => array(
+		'features'               => array(
 			__( 'Unlimited image generations', 'beepbeep-ai-alt-text-generator' ),
 			__( 'Priority queue processing', 'beepbeep-ai-alt-text-generator' ),
 			__( 'Bulk optimization for large libraries', 'beepbeep-ai-alt-text-generator' ),
@@ -42,15 +42,15 @@ $plans = array(
 			__( 'Faster & more descriptive alt text', 'beepbeep-ai-alt-text-generator' ),
 			__( 'Priority support', 'beepbeep-ai-alt-text-generator' ),
 		),
-		'recommended' => true,
-		'current' => $is_pro,
+		'recommended'            => true,
+		'current'                => $is_pro,
 	),
 	'agency' => array(
-		'name' => __( 'Agency', 'beepbeep-ai-alt-text-generator' ),
-		'price' => '$99',
-		'price_annual' => '$990',
+		'name'                   => __( 'Agency', 'beepbeep-ai-alt-text-generator' ),
+		'price'                  => '$99',
+		'price_annual'           => '$990',
 		'price_per_month_annual' => '$82.50',
-		'features' => array(
+		'features'               => array(
 			__( 'Everything in Pro', 'beepbeep-ai-alt-text-generator' ),
 			__( 'Multi-site license', 'beepbeep-ai-alt-text-generator' ),
 			__( 'White-label options', 'beepbeep-ai-alt-text-generator' ),
@@ -58,7 +58,7 @@ $plans = array(
 			__( 'Dedicated support', 'beepbeep-ai-alt-text-generator' ),
 			__( 'Custom integrations', 'beepbeep-ai-alt-text-generator' ),
 		),
-		'current' => $is_agency,
+		'current'                => $is_agency,
 	),
 );
 ?>
@@ -129,7 +129,7 @@ $plans = array(
 							<button class="optiai-button" data-action="show-upgrade-modal" data-plan="<?php echo esc_attr( $plan_id ); ?>">
 								<?php esc_html_e( 'Upgrade Now', 'beepbeep-ai-alt-text-generator' ); ?>
 							</button>
-							<a href="<?php echo esc_url( function_exists('opptiai_framework') ? opptiai_framework()->licensing->get_upgrade_url() : '#' ); ?>" class="optiai-button-secondary" target="_blank">
+							<a href="<?php echo esc_url( function_exists( 'opptiai_framework' ) ? opptiai_framework()->licensing->get_upgrade_url() : '#' ); ?>" class="optiai-button-secondary" target="_blank">
 								<?php esc_html_e( 'View Details', 'beepbeep-ai-alt-text-generator' ); ?>
 							</a>
 							<?php if ( $plan_id !== 'free' ) : ?>

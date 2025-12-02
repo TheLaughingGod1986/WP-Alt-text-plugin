@@ -23,8 +23,8 @@ class Page_Renderer {
 	/**
 	 * Render a page with template wrapper.
 	 *
-	 * @param string $page_slug Page slug.
-	 * @param string $page_title Page title.
+	 * @param string   $page_slug Page slug.
+	 * @param string   $page_title Page title.
 	 * @param callable $content_callback Content callback.
 	 * @return void
 	 */
@@ -53,28 +53,28 @@ class Page_Renderer {
 	 * @return array Menu items.
 	 */
 	protected static function get_menu_items() {
-		return [
-			'optti' => [
+		return array(
+			'optti'           => array(
 				'title' => __( 'Dashboard', 'beepbeep-ai-alt-text-generator' ),
 				'url'   => admin_url( 'admin.php?page=optti' ),
 				'icon'  => 'dashicons-dashboard',
-			],
-			'optti-settings' => [
+			),
+			'optti-settings'  => array(
 				'title' => __( 'Settings', 'beepbeep-ai-alt-text-generator' ),
 				'url'   => admin_url( 'admin.php?page=optti-settings' ),
 				'icon'  => 'dashicons-admin-settings',
-			],
-			'optti-license' => [
+			),
+			'optti-license'   => array(
 				'title' => __( 'License', 'beepbeep-ai-alt-text-generator' ),
 				'url'   => admin_url( 'admin.php?page=optti-license' ),
 				'icon'  => 'dashicons-admin-network',
-			],
-			'optti-analytics' => [
+			),
+			'optti-analytics' => array(
 				'title' => __( 'Analytics', 'beepbeep-ai-alt-text-generator' ),
 				'url'   => admin_url( 'admin.php?page=optti-analytics' ),
 				'icon'  => 'dashicons-chart-bar',
-			],
-		];
+			),
+		);
 	}
 
 	/**
@@ -97,7 +97,7 @@ class Page_Renderer {
 			<nav class="optti-admin-nav">
 				<ul class="optti-admin-nav-list">
 					<?php foreach ( $menu_items as $slug => $item ) : ?>
-						<li class="optti-admin-nav-item <?php echo $slug === $current_page ? 'active' : ''; ?>">
+						<li class="optti-admin-nav-item <?php echo esc_attr( $slug === $current_page ? 'active' : '' ); ?>">
 							<a href="<?php echo esc_url( $item['url'] ); ?>" class="optti-admin-nav-link">
 								<span class="dashicons <?php echo esc_attr( $item['icon'] ); ?>"></span>
 								<?php echo esc_html( $item['title'] ); ?>

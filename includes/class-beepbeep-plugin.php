@@ -105,4 +105,3 @@ class BeepBeep_AltText_Plugin extends PluginBase {
 		// This method can be overridden if needed.
 	}
 }
-

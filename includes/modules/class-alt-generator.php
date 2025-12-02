@@ -104,7 +104,8 @@ class Alt_Generator implements ModuleInterface {
 		$image_url = wp_get_attachment_url( $attachment_id );
 		$title     = get_the_title( $attachment_id );
 		$caption   = wp_get_attachment_caption( $attachment_id );
-		$filename  = $image_url ? wp_basename( parse_url( $image_url, PHP_URL_PATH ) ) : '';
+		$parsed_image_url = $image_url ? wp_parse_url( $image_url ) : null;
+		$filename  = $parsed_image_url && isset( $parsed_image_url['path'] ) ? wp_basename( $parsed_image_url['path'] ) : '';
 
 		// Build context.
 		$context = [

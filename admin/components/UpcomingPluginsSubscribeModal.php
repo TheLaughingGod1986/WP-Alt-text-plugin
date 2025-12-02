@@ -59,7 +59,9 @@ class UpcomingPluginsSubscribeModal {
             </div>
         </div>
         
-        <style>
+        <?php
+        // Add inline styles for upcoming plugins subscribe modal
+        $upcoming_modal_css = '
         .bbai-upcoming-plugins-subscribe-modal {
             position: fixed;
             top: 0;
@@ -293,17 +295,21 @@ class UpcomingPluginsSubscribeModal {
                 min-width: 120px;
             }
         }
-        </style>
+        ';
+        wp_add_inline_style('bbai-components', $upcoming_modal_css);
         
-        <script type="text/javascript">
-        // Pass data to JavaScript
-        window.bbaiUpcomingPluginsSubscribeData = {
-            userEmail: <?php echo wp_json_encode($user_email); ?>,
-            siteUrl: <?php echo wp_json_encode($site_url); ?>,
-            nonce: <?php echo wp_json_encode($nonce); ?>
-        };
-        </script>
-        <?php
+        // Add inline script with data localization
+        $upcoming_modal_script = sprintf(
+            "window.bbaiUpcomingPluginsSubscribeData = {
+                userEmail: %s,
+                siteUrl: %s,
+                nonce: %s
+            };",
+            wp_json_encode($user_email),
+            wp_json_encode($site_url),
+            wp_json_encode($nonce)
+        );
+        wp_add_inline_script('jquery', $upcoming_modal_script);
     }
 }
 

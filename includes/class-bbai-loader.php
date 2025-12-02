@@ -18,51 +18,51 @@ class Loader {
 	 *
 	 * @var array
 	 */
-	protected $actions = [];
+	protected $actions = array();
 
 	/**
 	 * The array of filters registered with WordPress.
 	 *
 	 * @var array
 	 */
-	protected $filters = [];
+	protected $filters = array();
 
 	/**
 	 * Add a new action to the collection.
 	 *
-	 * @param string   $hook          The WordPress action to hook into.
-	 * @param object   $component     The instance on which the hook is defined.
-	 * @param string   $callback      The method to call on the component.
-	 * @param int      $priority      Optional. The priority at which to fire. Default 10.
-	 * @param int      $accepted_args Optional. Number of accepted args. Default 1.
+	 * @param string $hook          The WordPress action to hook into.
+	 * @param object $component     The instance on which the hook is defined.
+	 * @param string $callback      The method to call on the component.
+	 * @param int    $priority      Optional. The priority at which to fire. Default 10.
+	 * @param int    $accepted_args Optional. Number of accepted args. Default 1.
 	 */
 	public function add_action( $hook, $component, $callback, $priority = 10, $accepted_args = 1 ) {
-		$this->actions[] = [
+		$this->actions[] = array(
 			'hook'          => $hook,
 			'component'     => $component,
 			'callback'      => $callback,
 			'priority'      => $priority,
 			'accepted_args' => $accepted_args,
-		];
+		);
 	}
 
 	/**
 	 * Add a new filter to the collection.
 	 *
-	 * @param string   $hook          The WordPress filter to hook into.
-	 * @param object   $component     The instance on which the hook is defined.
-	 * @param string   $callback      The method to call on the component.
-	 * @param int      $priority      Optional. The priority at which to fire. Default 10.
-	 * @param int      $accepted_args Optional. Number of accepted args. Default 1.
+	 * @param string $hook          The WordPress filter to hook into.
+	 * @param object $component     The instance on which the hook is defined.
+	 * @param string $callback      The method to call on the component.
+	 * @param int    $priority      Optional. The priority at which to fire. Default 10.
+	 * @param int    $accepted_args Optional. Number of accepted args. Default 1.
 	 */
 	public function add_filter( $hook, $component, $callback, $priority = 10, $accepted_args = 1 ) {
-		$this->filters[] = [
+		$this->filters[] = array(
 			'hook'          => $hook,
 			'component'     => $component,
 			'callback'      => $callback,
 			'priority'      => $priority,
 			'accepted_args' => $accepted_args,
-		];
+		);
 	}
 
 	/**
@@ -72,7 +72,7 @@ class Loader {
 		foreach ( $this->filters as $hook ) {
 			add_filter(
 				$hook['hook'],
-				[ $hook['component'], $hook['callback'] ],
+				array( $hook['component'], $hook['callback'] ),
 				$hook['priority'],
 				$hook['accepted_args']
 			);
@@ -81,7 +81,7 @@ class Loader {
 		foreach ( $this->actions as $hook ) {
 			add_action(
 				$hook['hook'],
-				[ $hook['component'], $hook['callback'] ],
+				array( $hook['component'], $hook['callback'] ),
 				$hook['priority'],
 				$hook['accepted_args']
 			);
