@@ -115,9 +115,14 @@ foreach ( $legacy_transients as $transient ) {
 }
 
 // Clear scheduled cron hooks
+// Clear framework queue hook
+if ( class_exists( '\Optti\Framework\Queue' ) ) {
+	\Optti\Framework\Queue::init( 'bbai' );
+	wp_clear_scheduled_hook( \Optti\Framework\Queue::get_cron_hook() );
+}
+// Also clear legacy hooks for backward compatibility
 wp_clear_scheduled_hook( 'bbai_process_queue' );
 wp_clear_scheduled_hook( 'beepbeepai_process_queue' );
-wp_clear_scheduled_hook( \BeepBeepAI\AltTextGenerator\Queue::CRON_HOOK );
 wp_clear_scheduled_hook( 'bbai_daily_identity_sync' );
 
 // Remove custom capability from administrator role

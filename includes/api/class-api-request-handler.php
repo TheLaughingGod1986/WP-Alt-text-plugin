@@ -181,9 +181,8 @@ class API_Request_Handler {
 			}
 		}
 
-		// Priority: License key > JWT token
-		// CRITICAL: If license key is in extra_headers, use it and DON'T set Authorization header
-		// This ensures backend sees X-License-Key and doesn't check Authorization first
+		// CRITICAL: Backend /api/generate endpoint requires BOTH license key AND JWT token
+		// Send both headers when available to ensure proper authentication
 		if ( ! empty( $license_key ) ) {
 			$headers['X-License-Key'] = $license_key;
 
@@ -201,13 +200,25 @@ class API_Request_Handler {
 					'auth'
 				);
 			}
-		} elseif ( $token ) {
-			// Only set Authorization if we don't have a license key
-			// This prevents both headers from being sent when license key is in extra_headers
+		}
+
+		// CRITICAL: Always send JWT token when available (backend requires both)
+		// The generate endpoint needs both X-License-Key AND Authorization headers
+		if ( $token ) {
 			$headers['Authorization'] = 'Bearer ' . $token;
 
 			// Debug logging if we have license but no key
-			if ( $this->has_active_license_callback && call_user_func( $this->has_active_license_callback ) && class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+			if ( ! empty( $license_key ) && class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+				\BeepBeepAI\AltTextGenerator\Debug_Log::log(
+					'debug',
+					'Both license key and JWT token included in auth headers',
+					array(
+						'has_license_key' => true,
+						'has_token'       => true,
+					),
+					'auth'
+				);
+			} elseif ( $this->has_active_license_callback && call_user_func( $this->has_active_license_callback ) && class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
 				\BeepBeepAI\AltTextGenerator\Debug_Log::log(
 					'warning',
 					'Active license detected but no license key available for headers',
@@ -220,15 +231,15 @@ class API_Request_Handler {
 				);
 			}
 		} else {
-			// No license key and no token
-			if ( $this->has_active_license_callback && call_user_func( $this->has_active_license_callback ) && class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+			// No JWT token available
+			if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
 				\BeepBeepAI\AltTextGenerator\Debug_Log::log(
-					'error',
-					'Active license detected but no license key or token available',
+					'warning',
+					'No JWT token available for auth headers',
 					array(
-						'has_active_license' => true,
-						'has_license_key'    => false,
+						'has_license_key'    => ! empty( $license_key ),
 						'has_token'          => false,
+						'has_active_license' => $this->has_active_license_callback ? call_user_func( $this->has_active_license_callback ) : false,
 					),
 					'auth'
 				);

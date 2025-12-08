@@ -12,7 +12,7 @@ namespace Optti\Modules;
 use Optti\Framework\Interfaces\ModuleInterface;
 use Optti\Framework\LicenseManager;
 use Optti\Framework\Logger;
-use BeepBeepAI\AltTextGenerator\Queue;
+use Optti\Framework\Queue;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -54,6 +54,9 @@ class Bulk_Processor implements ModuleInterface {
 	 * @return void
 	 */
 	public function init() {
+		// Initialize Queue with plugin slug.
+		Queue::init( 'bbai' );
+
 		// Register bulk actions.
 		add_filter( 'bulk_actions-upload', [ $this, 'register_bulk_actions' ] );
 		add_filter( 'handle_bulk_actions-upload', [ $this, 'handle_bulk_actions' ], 10, 3 );
@@ -63,7 +66,7 @@ class Bulk_Processor implements ModuleInterface {
 		add_action( 'wp_ajax_optti_bulk_status', [ $this, 'ajax_bulk_status' ] );
 
 		// Register cron hook.
-		add_action( Queue::CRON_HOOK, [ $this, 'process_queue' ] );
+		add_action( Queue::get_cron_hook(), [ $this, 'process_queue' ] );
 	}
 
 	/**
@@ -176,7 +179,7 @@ class Bulk_Processor implements ModuleInterface {
 		}
 
 		foreach ( $claimed as $job ) {
-			$attachment_id = intval( $job->attachment_id );
+			$attachment_id = intval( $job->entity_id ?? 0 );
 			$source = $job->source ?? 'auto';
 			$job_id = intval( $job->id );
 

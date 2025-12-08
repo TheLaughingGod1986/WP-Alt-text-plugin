@@ -1399,161 +1399,39 @@
             $btn.html('<span class="bbai-spinner"></span> Opening portal...');
         });
 
-                // Use new billing API if available, otherwise fallback to AJAX
-                if (window.opttiBilling && window.opttiApi && window.opttiApi.userEmail) {
-                    window.opttiBilling.createPortalSession({ email: window.opttiApi.userEmail })
-                        .then(function(session) {
-                            if (alttextaiDebug) console.log('[AltText AI] Portal response:', session);
-                            
-                            // Restore button state
-                            $buttons.prop('disabled', false)
-                                    .removeClass('bbai-btn-loading')
-                                    .attr('aria-busy', 'false');
-                            
-                            // Restore original text
-                            $buttons.each(function() {
-                                const $btn = $(this);
-                                const key = $btn.attr('id') || 'btn';
-                                $btn.text(originalText[key] || 'Manage Subscription');
-                            });
+        // Use new billing API if available, otherwise fallback to AJAX
+        if (window.opttiBilling && window.opttiApi && window.opttiApi.userEmail) {
+            window.opttiBilling.createPortalSession({ email: window.opttiApi.userEmail })
+            .then(function(session) {
+                if (alttextaiDebug) console.log('[AltText AI] Portal response:', session);
+                
+                // Restore button state
+                $buttons.prop('disabled', false)
+                        .removeClass('bbai-btn-loading')
+                        .attr('aria-busy', 'false');
+                
+                // Restore original text
+                $buttons.each(function() {
+                    const $btn = $(this);
+                    const key = $btn.attr('id') || 'btn';
+                    $btn.text(originalText[key] || 'Manage Subscription');
+                });
 
-                            if (session.ok && session.url) {
-                                if (alttextaiDebug) console.log('[AltText AI] Opening portal URL:', session.url);
-                                
-                                // Open portal in new tab
-                                const portalWindow = window.open(session.url, '_blank', 'noopener,noreferrer');
-                                
-                                if (!portalWindow) {
-                                    alert('Please allow popups for this site to manage your subscription.');
-                                }
-                            } else {
-                                alert('Unable to open billing portal.');
-                            }
-                        })
-                        .catch(function(error) {
-                            if (alttextaiDebug) console.error('[AltText AI] Portal error:', error);
-                            
-                            // Restore button state
-                            $buttons.prop('disabled', false)
-                                    .removeClass('bbai-btn-loading')
-                                    .attr('aria-busy', 'false');
-                            
-                            // Restore original text
-                            $buttons.each(function() {
-                                const $btn = $(this);
-                                const key = $btn.attr('id') || 'btn';
-                                $btn.text(originalText[key] || 'Manage Subscription');
-                            });
-                            
-                            alert('Unable to open billing portal.');
-                        });
-                } else {
-                    // Fallback to AJAX method
-                    $.ajax({
-                        url: window.bbai_ajax.ajaxurl,
-                        type: 'POST',
-                        data: {
-                            action: 'beepbeepai_create_portal',
-                            nonce: window.bbai_ajax.nonce
-                        },
-                        timeout: 30000, // 30 second timeout
-                        success: function(response) {
-                            if (alttextaiDebug) console.log('[AltText AI] Portal response:', response);
-                            
-                            // Restore button state
-                            $buttons.prop('disabled', false)
-                                    .removeClass('bbai-btn-loading')
-                                    .attr('aria-busy', 'false');
-                            
-                            // Restore original text
-                            $buttons.each(function() {
-                                const $btn = $(this);
-                                const key = $btn.attr('id') || 'btn';
-                                $btn.text(originalText[key] || 'Manage Subscription');
-                            });
-
-                            if (response.success && response.data && response.data.url) {
-                                if (alttextaiDebug) console.log('[AltText AI] Opening portal URL:', response.data.url);
-                                
-                                // Open portal in new tab
-                                const portalWindow = window.open(response.data.url, '_blank', 'noopener,noreferrer');
-                                
-                                if (!portalWindow) {
-                                    alert('Please allow popups for this site to manage your subscription.');
-                        return;
+                if (session.ok && session.url) {
+                    if (alttextaiDebug) console.log('[AltText AI] Opening portal URL:', session.url);
+                    
+                    // Open portal in new tab
+                    const portalWindow = window.open(session.url, '_blank', 'noopener,noreferrer');
+                    
+                    if (!portalWindow) {
+                        alert('Please allow popups for this site to manage your subscription.');
                     }
-                    
-                    // Monitor for user return and refresh subscription data
-                    let checkCount = 0;
-                    const maxChecks = 150; // 5 minutes max
-                    
-                    const checkInterval = setInterval(function() {
-                        checkCount++;
-                        if (document.hasFocus() || checkCount >= maxChecks) {
-                            clearInterval(checkInterval);
-                            if (alttextaiDebug) console.log('[AltText AI] User returned, refreshing data...');
-                            
-                            // Reload subscription info
-                            if (typeof loadSubscriptionInfo === 'function') {
-                                loadSubscriptionInfo(true); // Force refresh
-                            }
-                            
-                            // Refresh usage stats on dashboard
-                            if (typeof window.alttextai_refresh_usage === 'function') {
-                                window.alttextai_refresh_usage();
-                            }
-                        }
-                    }, 2000);
                 } else {
-                    // Provide context-aware error messages
-                    let errorMessage = response.data?.message || 'Failed to open customer portal. Please try again.';
-                    
-                    bbaiDebug.log('[AltText AI] Portal request failed:', errorMessage);
-                    
-                    if (errorMessage.toLowerCase().includes('not authenticated') || errorMessage.toLowerCase().includes('login')) {
-                        // This shouldn't happen since we check auth first, but handle it gracefully
-                        bbaiDebug.log('[AltText AI] Authentication error from server, showing login modal');
-                        localStorage.setItem('bbai_open_portal_after_login', 'true');
-                        
-                        // Try to show login modal instead of alert
-                        let modalShown = false;
-                        if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
-                            window.authModal.show();
-                            window.authModal.showLoginForm();
-                            modalShown = true;
-                        } else if (typeof showAuthModal === 'function') {
-                            showAuthModal('login');
-                            modalShown = true;
-                        } else {
-                            const authModal = document.getElementById('alttext-auth-modal');
-                            if (authModal) {
-                                authModal.style.display = 'block';
-                                authModal.setAttribute('aria-hidden', 'false');
-                                document.body.style.overflow = 'hidden';
-                                const loginForm = document.getElementById('login-form');
-                                const registerForm = document.getElementById('register-form');
-                                if (loginForm) loginForm.style.display = 'block';
-                                if (registerForm) registerForm.style.display = 'none';
-                                modalShown = true;
-                            }
-                        }
-                        
-                        if (!modalShown) {
-                            alert('Please log in first to manage your billing.\n\nClick the "Login" button in the top navigation.');
-                        }
-                    } else if (errorMessage.toLowerCase().includes('not found') || errorMessage.toLowerCase().includes('subscription')) {
-                        errorMessage = 'No active subscription found.\n\nPlease upgrade to a paid plan first, then you can manage your subscription.';
-                        alert(errorMessage);
-                    } else if (errorMessage.toLowerCase().includes('customer')) {
-                        errorMessage = 'Unable to find your billing account.\n\nPlease contact support for assistance.';
-                        alert(errorMessage);
-                    } else {
-                    alert(errorMessage);
-                    }
+                    alert('Unable to open billing portal.');
                 }
-            },
-            error: function(xhr, status, error) {
-                if (alttextaiDebug) console.error('[AltText AI] Portal error:', status, error, xhr);
+            })
+            .catch(function(error) {
+                if (alttextaiDebug) console.error('[AltText AI] Portal error:', error);
                 
                 // Restore button state
                 $buttons.prop('disabled', false)
@@ -1567,20 +1445,142 @@
                     $btn.text(originalText[key] || 'Manage Subscription');
                 });
                 
-                // Provide helpful error message based on status
-                let errorMessage = 'Unable to connect to billing system. Please try again.';
-                
-                if (status === 'timeout') {
-                    errorMessage = 'Request timed out. Please check your internet connection and try again.';
-                } else if (xhr.status === 0) {
-                    errorMessage = 'Network connection lost. Please check your internet and try again.';
-                } else if (xhr.status >= 500) {
-                    errorMessage = 'Billing system is temporarily unavailable. Please try again in a few minutes.';
+                alert('Unable to open billing portal.');
+            });
+        } else {
+            // Fallback to AJAX method
+            $.ajax({
+                url: window.bbai_ajax.ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'beepbeepai_create_portal',
+                    nonce: window.bbai_ajax.nonce
+                },
+                timeout: 30000, // 30 second timeout
+                success: function(response) {
+                    if (alttextaiDebug) console.log('[AltText AI] Portal response:', response);
+                    
+                    // Restore button state
+                    $buttons.prop('disabled', false)
+                            .removeClass('bbai-btn-loading')
+                            .attr('aria-busy', 'false');
+                    
+                    // Restore original text
+                    $buttons.each(function() {
+                        const $btn = $(this);
+                        const key = $btn.attr('id') || 'btn';
+                        $btn.text(originalText[key] || 'Manage Subscription');
+                    });
+
+                    if (response.success && response.data && response.data.url) {
+                        if (alttextaiDebug) console.log('[AltText AI] Opening portal URL:', response.data.url);
+                        
+                        // Open portal in new tab
+                        const portalWindow = window.open(response.data.url, '_blank', 'noopener,noreferrer');
+                        
+                        if (!portalWindow) {
+                            alert('Please allow popups for this site to manage your subscription.');
+                            return;
+                        }
+                        
+                        // Monitor for user return and refresh subscription data
+                        let checkCount = 0;
+                        const maxChecks = 150; // 5 minutes max
+                        
+                        const checkInterval = setInterval(function() {
+                            checkCount++;
+                            if (document.hasFocus() || checkCount >= maxChecks) {
+                                clearInterval(checkInterval);
+                                if (alttextaiDebug) console.log('[AltText AI] User returned, refreshing data...');
+                                
+                                // Reload subscription info
+                                if (typeof loadSubscriptionInfo === 'function') {
+                                    loadSubscriptionInfo(true); // Force refresh
+                                }
+                                
+                                // Refresh usage stats on dashboard
+                                if (typeof window.alttextai_refresh_usage === 'function') {
+                                    window.alttextai_refresh_usage();
+                                }
+                            }
+                        }, 2000);
+                    } else {
+                        // Provide context-aware error messages
+                        let errorMessage = response.data?.message || 'Failed to open customer portal. Please try again.';
+                        
+                        bbaiDebug.log('[AltText AI] Portal request failed:', errorMessage);
+                        
+                        if (errorMessage.toLowerCase().includes('not authenticated') || errorMessage.toLowerCase().includes('login')) {
+                            // This shouldn't happen since we check auth first, but handle it gracefully
+                            bbaiDebug.log('[AltText AI] Authentication error from server, showing login modal');
+                            localStorage.setItem('bbai_open_portal_after_login', 'true');
+                            
+                            // Try to show login modal instead of alert
+                            let modalShown = false;
+                            if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
+                                window.authModal.show();
+                                window.authModal.showLoginForm();
+                                modalShown = true;
+                            } else if (typeof showAuthModal === 'function') {
+                                showAuthModal('login');
+                                modalShown = true;
+                            } else {
+                                const authModal = document.getElementById('alttext-auth-modal');
+                                if (authModal) {
+                                    authModal.style.display = 'block';
+                                    authModal.setAttribute('aria-hidden', 'false');
+                                    document.body.style.overflow = 'hidden';
+                                    const loginForm = document.getElementById('login-form');
+                                    const registerForm = document.getElementById('register-form');
+                                    if (loginForm) loginForm.style.display = 'block';
+                                    if (registerForm) registerForm.style.display = 'none';
+                                    modalShown = true;
+                                }
+                            }
+                            
+                            if (!modalShown) {
+                                alert('Please log in first to manage your billing.\n\nClick the "Login" button in the top navigation.');
+                            }
+                        } else if (errorMessage.toLowerCase().includes('not found') || errorMessage.toLowerCase().includes('subscription')) {
+                            errorMessage = 'No active subscription found.\n\nPlease upgrade to a paid plan first, then you can manage your subscription.';
+                            alert(errorMessage);
+                        } else if (errorMessage.toLowerCase().includes('customer')) {
+                            errorMessage = 'Unable to find your billing account.\n\nPlease contact support for assistance.';
+                            alert(errorMessage);
+                        } else {
+                            alert(errorMessage);
+                        }
+                    }
+                },
+                error: function(xhr, status, error) {
+                    if (alttextaiDebug) console.error('[AltText AI] Portal error:', status, error, xhr);
+                    
+                    // Restore button state
+                    $buttons.prop('disabled', false)
+                            .removeClass('bbai-btn-loading')
+                            .attr('aria-busy', 'false');
+                    
+                    // Restore original text
+                    $buttons.each(function() {
+                        const $btn = $(this);
+                        const key = $btn.attr('id') || 'btn';
+                        $btn.text(originalText[key] || 'Manage Subscription');
+                    });
+                    
+                    // Provide helpful error message based on status
+                    let errorMessage = 'Unable to connect to billing system. Please try again.';
+                    
+                    if (status === 'timeout') {
+                        errorMessage = 'Request timed out. Please check your internet connection and try again.';
+                    } else if (xhr.status === 0) {
+                        errorMessage = 'Network connection lost. Please check your internet and try again.';
+                    } else if (xhr.status >= 500) {
+                        errorMessage = 'Billing system is temporarily unavailable. Please try again in a few minutes.';
+                    }
+                    
+                    alert(errorMessage);
                 }
-                
-                alert(errorMessage);
-            }
-        });
+            });
     }
 
     /**
@@ -1826,6 +1826,8 @@
         });
     }
 
+    }
+
 })(jQuery);
 
 // Debug helper - only logs when debug mode is enabled
@@ -1970,13 +1972,37 @@ window.testUpgradeModal = function() {
 };
 
 function alttextaiCloseModal() {
+    // Close upgrade modal
     const modal = document.getElementById('bbai-upgrade-modal');
     if (modal) {
         modal.style.display = 'none';
         modal.setAttribute('aria-hidden', 'true');
-        // Restore body scroll
-        document.body.style.overflow = '';
     }
+    
+    // Close all modal backdrops and overlays
+    const backdrops = document.querySelectorAll('.bbai-modal-backdrop, .bbai-modal-overlay, .alttext-auth-modal__overlay, .bbai-bulk-progress-modal');
+    backdrops.forEach(function(backdrop) {
+        backdrop.style.display = 'none';
+        backdrop.classList.remove('active', 'is-visible');
+        backdrop.setAttribute('aria-hidden', 'true');
+    });
+    
+    // Remove any stuck overlays by class
+    const stuckOverlays = document.querySelectorAll('[class*="modal"][class*="overlay"], [class*="modal"][class*="backdrop"]');
+    stuckOverlays.forEach(function(overlay) {
+        const computed = window.getComputedStyle(overlay);
+        if (computed.position === 'fixed' && (computed.zIndex > 1000 || overlay.style.zIndex > 1000)) {
+            overlay.style.display = 'none';
+            overlay.style.visibility = 'hidden';
+        }
+    });
+    
+    // Restore body scroll
+    document.body.style.overflow = '';
+    document.body.style.pointerEvents = '';
+    
+    // Remove any body classes that might lock scrolling
+    document.body.classList.remove('modal-open', 'bbai-modal-open');
 }
 
 // Add to bbaiApp namespace
@@ -1984,6 +2010,71 @@ bbaiApp.closeModal = alttextaiCloseModal;
 
 // Make it available globally for onclick handlers (legacy support)
 window.alttextaiCloseModal = alttextaiCloseModal;
+
+// Emergency cleanup function - removes all stuck overlays
+window.bbaiRemoveStuckOverlays = function() {
+    // Close all modals
+    alttextaiCloseModal();
+    
+    // Force remove any fixed overlays
+    const allOverlays = document.querySelectorAll('*');
+    allOverlays.forEach(function(el) {
+        const style = window.getComputedStyle(el);
+        if (style.position === 'fixed' && 
+            (parseInt(style.zIndex) > 1000 || parseInt(el.style.zIndex) > 1000) &&
+            (el.classList.contains('overlay') || 
+             el.classList.contains('backdrop') || 
+             el.classList.contains('modal') ||
+             el.id && el.id.includes('modal'))) {
+            el.style.display = 'none';
+            el.style.visibility = 'hidden';
+            el.style.opacity = '0';
+        }
+    });
+    
+    // Restore body
+    document.body.style.overflow = '';
+    document.body.style.pointerEvents = '';
+    document.body.classList.remove('modal-open', 'bbai-modal-open');
+    
+    console.log('[BBAI] Removed stuck overlays');
+    return true;
+};
+
+// Auto-cleanup on page load (in case overlays are stuck from previous page)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        // Small delay to let modals initialize properly
+        setTimeout(function() {
+            // Check for stuck overlays
+            const stuckOverlays = document.querySelectorAll('.bbai-modal-backdrop[style*="display: flex"], .bbai-modal-overlay.is-visible, .alttext-auth-modal__overlay[style*="display: block"]');
+            if (stuckOverlays.length > 0) {
+                // Only remove if no actual modal content is visible
+                stuckOverlays.forEach(function(overlay) {
+                    const modalContent = overlay.querySelector('.bbai-modal, .bbai-modal-content, .alttext-auth-modal__content');
+                    if (!modalContent || window.getComputedStyle(modalContent).display === 'none') {
+                        overlay.style.display = 'none';
+                        overlay.classList.remove('active', 'is-visible');
+                    }
+                });
+            }
+        }, 100);
+    });
+} else {
+    // Already loaded, run immediately
+    setTimeout(function() {
+        const stuckOverlays = document.querySelectorAll('.bbai-modal-backdrop[style*="display: flex"], .bbai-modal-overlay.is-visible, .alttext-auth-modal__overlay[style*="display: block"]');
+        if (stuckOverlays.length > 0) {
+            stuckOverlays.forEach(function(overlay) {
+                const modalContent = overlay.querySelector('.bbai-modal, .bbai-modal-content, .alttext-auth-modal__content');
+                if (!modalContent || window.getComputedStyle(modalContent).display === 'none') {
+                    overlay.style.display = 'none';
+                    overlay.classList.remove('active', 'is-visible');
+                }
+            });
+        }
+    }, 100);
+}
 
 // Global fallback handler for upgrade buttons (works even if jQuery isn't ready)
 // This ensures the upgrade modal works on all tabs, even if jQuery handlers fail

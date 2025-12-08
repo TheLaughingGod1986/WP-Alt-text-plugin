@@ -19,16 +19,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Prevent headers already sent errors from PHP 8.1+ deprecation warnings
 // These warnings come from WordPress core when null values are passed to strpos/str_replace
 if ( ! headers_sent() ) {
-	// Check if we're in AJAX, cron, or REST API context (functions may not be loaded yet)
+	// Check if we're in AJAX, cron, REST API, or activation context
 	$is_ajax = ( defined( 'DOING_AJAX' ) && DOING_AJAX ) || ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() );
 	$is_cron = ( defined( 'DOING_CRON' ) && DOING_CRON ) || ( function_exists( 'wp_doing_cron' ) && wp_doing_cron() );
 	$is_rest = defined( 'REST_REQUEST' ) && REST_REQUEST;
+	$is_activation = ( defined( 'WP_CLI' ) && WP_CLI ) || ( isset( $_GET['action'] ) && $_GET['action'] === 'activate' );
 	
-	// Only suppress in non-AJAX, non-cron, non-REST contexts
-	if ( ! $is_ajax && ! $is_cron && ! $is_rest ) {
-		// Start output buffering to prevent headers already sent errors
-		ob_start();
-		
+	// Only suppress in non-AJAX, non-cron, non-REST, non-activation contexts
+	if ( ! $is_ajax && ! $is_cron && ! $is_rest && ! $is_activation ) {
 		// Set custom error handler that suppresses only E_DEPRECATED warnings from WordPress core
 		// This prevents display of PHP 8.1+ compatibility warnings from WordPress core
 		set_error_handler( function( $errno, $errstr, $errfile, $errline ) {
@@ -101,10 +99,12 @@ add_action(
 );
 
 // Load required dependencies (still needed by framework)
+// Defer loading to admin_init for frontend performance - these are only needed in admin/AJAX/REST contexts.
+if ( is_admin() || ( defined( 'DOING_AJAX' ) && DOING_AJAX ) || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
-require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-queue.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-debug-log.php';
+}
 
 // Load BeepBeep plugin class
 require_once OPTTI_PLUGIN_DIR . 'includes/class-beepbeep-plugin.php';

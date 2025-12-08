@@ -7,7 +7,7 @@
 $wp_load_paths = [
     __DIR__ . '/../../../../wp-load.php',
     '/var/www/html/wp-load.php',
-    '/var/www/html/wp-content/plugins/opptiai-alt/../../../../wp-load.php',
+    '/var/www/html/wp-content/plugins/beepbeep-ai-alt-text-generator/../../../../wp-load.php',
 ];
 
 foreach ($wp_load_paths as $path) {

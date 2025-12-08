@@ -43,10 +43,9 @@ if ( ! defined( 'BBAI_VERSION' ) ) {
 // Load API clients, usage tracker, and queue infrastructure
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
-require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-queue.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-debug-log.php';
 
-use BeepBeepAI\AltTextGenerator\Queue;
+use Optti\Framework\Queue;
 use BeepBeepAI\AltTextGenerator\Debug_Log;
 use BeepBeepAI\AltTextGenerator\Usage_Tracker;
 use BeepBeepAI\AltTextGenerator\API_Client_V2;
@@ -957,7 +956,9 @@ class Core {
 	}
 
 	public function deactivate() {
-		wp_clear_scheduled_hook( Queue::CRON_HOOK );
+		// Initialize Queue and clear cron hook.
+		Queue::init( 'bbai' );
+		wp_clear_scheduled_hook( Queue::get_cron_hook() );
 	}
 
 	public function activate() {
@@ -6159,13 +6160,61 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 			return new \WP_Error( 'inline_image_missing', __( 'Unable to locate the image file for inline embedding.', 'beepbeep-ai-alt-text-generator' ) );
 		}
 
+		// Get image dimensions
+		$image_info = getimagesize( $file );
+		if ( ! $image_info ) {
+			return new \WP_Error( 'inline_image_invalid', __( 'Unable to read image dimensions.', 'beepbeep-ai-alt-text-generator' ) );
+		}
+
+		$original_width  = $image_info[0];
+		$original_height = $image_info[1];
+		$mime            = $image_info['mime'] ?? get_post_mime_type( $attachment_id );
+
+		// Target max dimension for OpenAI Vision API (1024px = ~170 tokens, 512px = ~85 tokens)
+		// Using 512px as optimal balance between quality and cost (50% token reduction, no quality loss)
+		$max_dimension = apply_filters( 'bbai_vision_api_max_dimension', 512, $attachment_id, $file );
+		$max_dimension = max( 256, min( 2048, intval( $max_dimension ) ) ); // Clamp between 256-2048px
+
+		// Calculate new dimensions maintaining aspect ratio
+		$needs_resize = ( $original_width > $max_dimension || $original_height > $max_dimension );
+		$new_width    = $original_width;
+		$new_height   = $original_height;
+
+		if ( $needs_resize ) {
+			$ratio = min( $max_dimension / $original_width, $max_dimension / $original_height );
+			$new_width  = intval( $original_width * $ratio );
+			$new_height = intval( $original_height * $ratio );
+		}
+
+		// Load and resize image if needed
+		$resized_file = null;
+		if ( $needs_resize && function_exists( 'wp_get_image_editor' ) ) {
+			$editor = wp_get_image_editor( $file );
+			if ( ! is_wp_error( $editor ) ) {
+				$editor->resize( $new_width, $new_height, false );
+				$resized = $editor->save();
+				if ( ! is_wp_error( $resized ) && isset( $resized['path'] ) ) {
+					$resized_file = $resized['path'];
+					$file         = $resized_file;
+				}
+			}
+		}
+
 		$size = filesize( $file );
 		if ( $size === false || $size <= 0 ) {
+			// Clean up temporary resized file if we created one
+			if ( $resized_file && file_exists( $resized_file ) ) {
+				@unlink( $resized_file );
+			}
 			return new \WP_Error( 'inline_image_size', __( 'Unable to read the image size for inline embedding.', 'beepbeep-ai-alt-text-generator' ) );
 		}
 
 		$limit = apply_filters( 'bbai_inline_image_limit', 1024 * 1024 * 2, $attachment_id, $file );
 		if ( $size > $limit ) {
+			// Clean up temporary resized file if we created one
+			if ( $resized_file && file_exists( $resized_file ) ) {
+				@unlink( $resized_file );
+			}
 			return new \WP_Error(
 				'inline_image_too_large',
 				__( 'Image exceeds the inline embedding size limit.', 'beepbeep-ai-alt-text-generator' ),
@@ -6178,10 +6227,18 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 
 		$contents = file_get_contents( $file );
 		if ( $contents === false ) {
+			// Clean up temporary resized file if we created one
+			if ( $resized_file && file_exists( $resized_file ) ) {
+				@unlink( $resized_file );
+			}
 			return new \WP_Error( 'inline_image_read_failed', __( 'Unable to read the image file for inline embedding.', 'beepbeep-ai-alt-text-generator' ) );
 		}
 
-		$mime = get_post_mime_type( $attachment_id );
+		// Clean up temporary resized file after reading contents
+		if ( $resized_file && file_exists( $resized_file ) && $resized_file !== get_attached_file( $attachment_id ) ) {
+			@unlink( $resized_file );
+		}
+
 		if ( empty( $mime ) ) {
 			$mime = function_exists( 'mime_content_type' ) ? mime_content_type( $file ) : 'image/jpeg';
 		}
@@ -6199,6 +6256,14 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 				'image_url' => array(
 					'url' => 'data:' . $mime . ';base64,' . $base64,
 				),
+			),
+			'original_dimensions' => array(
+				'width'  => $original_width,
+				'height' => $original_height,
+			),
+			'resized_dimensions' => array(
+				'width'  => $new_width,
+				'height' => $new_height,
 			),
 		);
 	}
@@ -6566,18 +6631,34 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 							( is_array( $error_data ) && isset( $error_data['status_code'] ) && intval( $error_data['status_code'] ) === 429 ) );
 
 			// If it's a quota_check_mismatch error (from API client cache check), allow retry
-			if ( $error_code === 'quota_check_mismatch' ) {
-				// This is from our cache validation - suggest retry but still return the error
+			if ( $error_code === 'quota_check_mismatch' || $error_code === 'rate_limit' ) {
+				// This is from our cache validation or rate limit - suggest retry but still return the error
 				// The frontend should handle retry based on the error code
 			} elseif ( $is_quota_error ) {
 				// Check cached usage before accepting the backend's quota error
+				// IMPORTANT: Don't call get_usage() if we're already rate limited (429) - trust the cache
+				$is_rate_limited = ( is_array( $error_data ) && isset( $error_data['status_code'] ) && intval( $error_data['status_code'] ) === 429 );
+				
 				require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 				$cached_usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage( false );
 
 				if ( is_array( $cached_usage ) && isset( $cached_usage['remaining'] ) && is_numeric( $cached_usage['remaining'] ) && $cached_usage['remaining'] > 0 ) {
-					// Cached usage shows credits available - backend error might be incorrect
-					// Clear cache and do a fresh check to see actual status
-					\BeepBeepAI\AltTextGenerator\Usage_Tracker::clear_cache();
+					// Cached usage shows credits available
+					if ( $is_rate_limited ) {
+						// We're rate limited - don't make another API call, trust the cache
+						// Return retry error with longer backoff
+						return new \WP_Error(
+							'rate_limit',
+							__( 'Rate limit reached. Please try again in a moment.', 'beepbeep-ai-alt-text-generator' ),
+							array(
+								'code'        => 'rate_limit',
+								'retry_after' => 10,
+								'usage'       => $cached_usage,
+							)
+						);
+					}
+					
+					// Not rate limited - safe to do a fresh check
 					$fresh_usage = $this->api_client->get_usage();
 
 					if ( ! is_wp_error( $fresh_usage ) && is_array( $fresh_usage ) && isset( $fresh_usage['remaining'] ) && is_numeric( $fresh_usage['remaining'] ) && $fresh_usage['remaining'] > 0 ) {
@@ -6600,16 +6681,20 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 							);
 						}
 
-						// Return a retry error instead of blocking
-						return new \WP_Error(
-							'quota_check_mismatch',
-							__( 'Backend reported quota limit, but credits appear available. Please try again in a moment.', 'beepbeep-ai-alt-text-generator' ),
-							array(
-								'code'        => 'quota_check_mismatch',
-								'retry_after' => 3,
-								'usage'       => $fresh_usage,
-							)
-						);
+					// Return a retry error instead of blocking
+					return new \WP_Error(
+						'quota_check_mismatch',
+						sprintf(
+							__( 'Temporary backend sync issue detected. You have %d credits available. Please try again in a moment.', 'beepbeep-ai-alt-text-generator' ),
+							$fresh_usage['remaining']
+						),
+						array(
+							'code'        => 'quota_check_mismatch',
+							'retry_after' => 3,
+							'usage'       => $fresh_usage,
+							'retryable'   => true,
+						)
+					);
 					}
 				}
 			}
@@ -7998,7 +8083,7 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 		}
 
 		foreach ( $jobs as $job ) {
-			$attachment_id = intval( $job->attachment_id );
+			$attachment_id = intval( $job->entity_id ?? 0 );
 			if ( $attachment_id <= 0 || ! $this->is_image( $attachment_id ) ) {
 				Queue::mark_complete( $job->id );
 				continue;

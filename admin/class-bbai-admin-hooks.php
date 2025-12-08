@@ -67,7 +67,9 @@ class Admin_Hooks {
 
 		$this->register_ajax_hooks();
 
-		add_action( \BeepBeepAI\AltTextGenerator\Queue::CRON_HOOK, array( $this->core, 'process_queue' ) );
+		// Initialize Queue and register cron hook.
+		\Optti\Framework\Queue::init( 'bbai' );
+		add_action( \Optti\Framework\Queue::get_cron_hook(), array( $this->core, 'process_queue' ) );
 		add_action( 'beepbeepai_run_migration', array( $this->core, 'run_migration' ) );
 		add_action( 'bbai_daily_identity_sync', array( $this->core, 'daily_identity_sync' ) );
 
@@ -123,6 +125,6 @@ class Admin_Hooks {
 	 */
 	public static function register_credit_usage_page() {
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/class-bbai-credit-usage-page.php';
-		Credit_Usage_Page::register_admin_page();
+				Credit_Usage_Page::register_admin_page();
 	}
 }

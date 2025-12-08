@@ -2137,4 +2137,166 @@
         bbaiDebug.log('[AI Alt Text] License management handlers registered');
     });
 
+    /**
+     * Refresh usage stats on the dashboard
+     * Fetches fresh usage data from the API and updates the display
+     */
+    window.refreshUsageStats = function() {
+        // Try to get config from multiple sources
+        var dashConfig = window.BBAI_DASH || window.BBAI || config || {};
+        var restUsage = dashConfig.restUsage || config.restUsage;
+        var nonce = dashConfig.nonce || config.nonce;
+        
+        if (!restUsage || !nonce) {
+            bbaiDebug.warn('[AI Alt Text] Cannot refresh usage: missing REST endpoint or nonce', {
+                restUsage: restUsage,
+                hasNonce: !!nonce,
+                dashConfig: dashConfig
+            });
+            return;
+        }
+
+        bbaiDebug.log('[AI Alt Text] Refreshing usage stats...', {
+            restUsage: restUsage,
+            hasNonce: !!nonce
+        });
+
+        $.ajax({
+            url: restUsage + '?force_refresh=true',
+            method: 'GET',
+            headers: {
+                'X-WP-Nonce': nonce
+            },
+            dataType: 'json'
+        }).done(function(usage) {
+            if (!usage || typeof usage !== 'object') {
+                bbaiDebug.warn('[AI Alt Text] Invalid usage data received:', usage);
+                return;
+            }
+
+            bbaiDebug.log('[AI Alt Text] Usage stats refreshed:', usage);
+
+            // Update window.BBAI_DASH.initialUsage for other scripts
+            if (window.BBAI_DASH) {
+                window.BBAI_DASH.initialUsage = usage;
+            }
+            if (window.BBAI) {
+                window.BBAI.usage = usage;
+            }
+
+            // Calculate percentage
+            var used = parseInt(usage.used || 0, 10);
+            var limit = parseInt(usage.limit || 50, 10);
+            var remaining = parseInt(usage.remaining || 0, 10);
+            var percentage = limit > 0 ? Math.min(100, Math.max(0, (used / limit) * 100)) : 0;
+            var percentageDisplay = percentage.toFixed(1) + '%';
+
+            // Update circular progress elements
+            $('.bbai-circular-progress').each(function() {
+                var $progress = $(this);
+                var $svg = $progress.find('.bbai-circular-progress-bar');
+                var $percent = $progress.find('.bbai-circular-progress-percent');
+                
+                if ($svg.length && $svg.data('circumference')) {
+                    var circumference = parseFloat($svg.data('circumference'));
+                    var strokeDashoffset = circumference * (1 - (percentage / 100));
+                    
+                    $svg.attr('stroke-dashoffset', strokeDashoffset);
+                    $svg.attr('data-offset', strokeDashoffset);
+                    $progress.attr('data-percentage', percentage);
+                    $progress.attr('aria-valuenow', percentage);
+                    $progress.attr('aria-label', 'Credits used: ' + percentageDisplay);
+                }
+                
+                if ($percent.length) {
+                    $percent.text(percentageDisplay);
+                }
+            });
+
+            // Update usage text (e.g., "1 / 50")
+            var $usageText = $('.bbai-usage-text');
+            if ($usageText.length) {
+                var $strongs = $usageText.find('strong');
+                if ($strongs.length >= 2) {
+                    $strongs.eq(0).text(used.toLocaleString());
+                    $strongs.eq(1).text(limit.toLocaleString());
+                }
+            }
+
+            // Update number counting elements - be more specific to avoid false matches
+            $('.bbai-number-counting').each(function() {
+                var $el = $(this);
+                var text = $el.text().trim().replace(/,/g, '');
+                var currentValue = parseInt(text, 10);
+                
+                // Only update if the value matches one of our known values
+                if (!isNaN(currentValue)) {
+                    if (currentValue === used || (currentValue < used && $el.closest('.bbai-usage-stat-item').length > 0)) {
+                        $el.text(used.toLocaleString());
+                    } else if (currentValue === limit || (currentValue === 50 && limit === 50)) {
+                        $el.text(limit.toLocaleString());
+                    } else if (currentValue === remaining || (currentValue > remaining && $el.closest('.bbai-usage-stat-item').length > 0)) {
+                        $el.text(remaining.toLocaleString());
+                    }
+                }
+            });
+
+            // Update usage stat values in agency layout (more reliable selector)
+            $('.bbai-usage-stat-item').each(function(index) {
+                var $item = $(this);
+                var $value = $item.find('.bbai-usage-stat-value');
+                var $label = $item.find('.bbai-usage-stat-label');
+                var labelText = $label.text().toLowerCase();
+                
+                if ($value.length) {
+                    // Update based on label text for reliability
+                    if (labelText.indexOf('generated') !== -1 || index === 0) {
+                        $value.text(used.toLocaleString());
+                    } else if (labelText.indexOf('limit') !== -1 || index === 1) {
+                        $value.text(limit.toLocaleString());
+                    } else if (labelText.indexOf('remaining') !== -1 || index === 2) {
+                        $value.text(remaining.toLocaleString());
+                    }
+                }
+            });
+
+            // Also update the circular progress transform if needed
+            $('.bbai-circular-progress-bar').each(function() {
+                var $bar = $(this);
+                var circumference = parseFloat($bar.data('circumference'));
+                if (circumference && !isNaN(circumference)) {
+                    var strokeDashoffset = circumference * (1 - (percentage / 100));
+                    $bar.attr('stroke-dashoffset', strokeDashoffset);
+                    $bar.attr('data-offset', strokeDashoffset);
+                }
+            });
+
+            bbaiDebug.log('[AI Alt Text] Usage stats updated successfully', {
+                used: used,
+                limit: limit,
+                remaining: remaining,
+                percentage: percentageDisplay
+            });
+            
+            // Trigger a custom event so other scripts can listen
+            $(document).trigger('bbai:usageUpdated', [usage]);
+        }).fail(function(xhr, status, error) {
+            bbaiDebug.error('[AI Alt Text] Failed to refresh usage stats:', status, error, xhr);
+            
+            // Try to use cached data as fallback
+            var cachedUsage = window.BBAI_DASH && window.BBAI_DASH.initialUsage;
+            if (cachedUsage && typeof cachedUsage === 'object') {
+                bbaiDebug.log('[AI Alt Text] Using cached usage data as fallback');
+                // Manually trigger update with cached data
+                var event = $.Event('bbai:usageUpdated');
+                $(document).trigger(event, [cachedUsage]);
+            }
+        });
+    };
+    
+    // Make function available globally for debugging
+    if (typeof window !== 'undefined') {
+        window.bbaiRefreshUsageStats = window.refreshUsageStats;
+    }
+
 })(jQuery);

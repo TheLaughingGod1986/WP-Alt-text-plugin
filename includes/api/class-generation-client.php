@@ -157,6 +157,37 @@ class Generation_Client {
 	public function generate_alt_text( $image_id, $context = array(), $regenerate = false ) {
 		$has_license = $this->has_active_license_callback ? call_user_func( $this->has_active_license_callback ) : false;
 
+		// CRITICAL FIX: Backend requires JWT token even with license key
+		// For site-based licensing, ensure we have a JWT token (create anonymous token if needed)
+		if ( $has_license ) {
+			$token = $this->get_token_callback ? call_user_func( $this->get_token_callback ) : '';
+			if ( empty( $token ) ) {
+				// License exists but no JWT token - try to create an anonymous site-based token
+				if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+					\BeepBeepAI\AltTextGenerator\Debug_Log::log(
+						'warning',
+						'Active license but no JWT token - backend requires both for generate endpoint',
+						array(
+							'has_license' => true,
+							'has_token'   => false,
+							'image_id'    => $image_id,
+						),
+						'auth'
+					);
+				}
+
+				// Return user-friendly error explaining they need to log in
+				return new \WP_Error(
+					'jwt_token_required',
+					__( 'Please log in to your BeepBeep AI account to use the alt text generator. Go to the plugin settings page and sign in with your account credentials.', 'beepbeep-ai-alt-text-generator' ),
+					array(
+						'requires_auth' => true,
+						'code' => 'jwt_required_with_license',
+					)
+				);
+			}
+		}
+
 		// Validate authentication if no license
 		if ( ! $has_license ) {
 			$token = $this->get_token_callback ? call_user_func( $this->get_token_callback ) : '';
@@ -384,9 +415,48 @@ class Generation_Client {
 			$image_payload['attachment_id'] = (string) $image_id;
 		}
 
+		// Backend validation: base64 payload must include dimensions
+		if ( ! empty( $image_payload['image_base64'] ) && ( empty( $image_payload['width'] ) || empty( $image_payload['height'] ) ) ) {
+			$decoded = base64_decode( $image_payload['image_base64'], true );
+			if ( $decoded !== false ) {
+				$image_size = getimagesizefromstring( $decoded );
+				if ( $image_size ) {
+					$image_payload['width']  = $image_payload['width'] ?? (int) $image_size[0];
+					$image_payload['height'] = $image_payload['height'] ?? (int) $image_size[1];
+				}
+			}
+
+			// Still missing dimensions -> fall back to image_url to avoid validation errors
+			if ( empty( $image_payload['width'] ) || empty( $image_payload['height'] ) ) {
+				if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+					\BeepBeepAI\AltTextGenerator\Debug_Log::log(
+						'error',
+						'Base64 payload missing dimensions - falling back to image_url',
+						array(
+							'image_id'      => $image_id,
+							'has_image_url' => ! empty( $image_url ),
+						),
+						'api'
+					);
+				}
+
+				if ( ! empty( $image_url ) ) {
+					unset( $image_payload['image_base64'], $image_payload['mime_type'] );
+					$image_payload['image_url'] = $image_url;
+				} else {
+					$image_payload['_error']         = 'missing_image_data';
+					$image_payload['_error_message'] = 'Image data missing dimensions for base64 payload';
+				}
+			}
+		}
+
 		// Get license key and site hash
 		$license_key = $this->get_license_key_callback ? call_user_func( $this->get_license_key_callback ) : '';
 		$site_hash   = $this->get_site_id_callback ? call_user_func( $this->get_site_id_callback ) : '';
+		if ( empty( $site_hash ) ) {
+			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
+			$site_hash = \BeepBeepAI\AltTextGenerator\get_site_identifier();
+		}
 
 		// Try to retrieve license key if missing
 		// This ensures the key is available before building request headers
@@ -466,6 +536,7 @@ class Generation_Client {
 			'timestamp'     => time(),
 			'image_id'      => (string) $image_id,
 			'attachment_id' => (string) $image_id,
+			'detailLevel'   => 'low', // Always use 'low' detail for token cost optimization
 		);
 
 		if ( ! empty( $license_key ) ) {
@@ -503,6 +574,11 @@ class Generation_Client {
 			'X-Image-ID'      => (string) $image_id,
 			'X-Attachment-ID' => (string) $image_id,
 		);
+
+		// Ensure site hash header is present for backend validation/quota tracking
+		if ( ! empty( $site_hash ) ) {
+			$extra_headers['X-Site-Hash'] = $site_hash;
+		}
 
 		// CRITICAL: Ensure license key is explicitly in headers for generate endpoint
 		// This prevents issues where the backend requires it in headers vs body
@@ -743,6 +819,65 @@ class Generation_Client {
 	}
 
 	/**
+	 * Validate base64 size matches reported dimensions
+	 * 
+	 * Rejects "gray zone" cases where base64 is suspiciously small for the dimensions.
+	 * OpenAI tokenizes based on actual image dimensions in the data, not metadata.
+	 * If base64 contains a larger image than reported, it will be tokenized accordingly.
+	 * 
+	 * For 1000x750 images, requires at least ~24KB base64 (3x minimum) instead of just 6KB.
+	 * This prevents 3,000+ token costs even with detail: 'low'.
+	 * 
+	 * @param string $base64 The base64-encoded image data
+	 * @param int    $width  Reported image width
+	 * @param int    $height Reported image height
+	 * @return bool True if base64 size is appropriate for dimensions, false otherwise
+	 */
+	private function validate_base64_size( $base64, $width, $height ) {
+		if ( empty( $base64 ) || $width <= 0 || $height <= 0 ) {
+			return false;
+		}
+
+		$base64_size = strlen( $base64 );
+		$pixel_count = $width * $height;
+
+		// Calculate minimum expected base64 size
+		// For 1000x750 (750,000 pixels), require at least 24KB base64 (3x minimum)
+		// This prevents high token costs even with detail: 'low'
+		// Formula: 24KB = 24,576 bytes for 750,000 pixels
+		// Bytes per pixel: 24,576 / 750,000 = 0.032768
+		// Use a more conservative multiplier (1.5x) to catch edge cases
+		// Required size = pixel_count * 0.032768 * 1.5 bytes
+		$bytes_per_pixel = ( 24576 / 750000 ) * 1.5; // ~0.049152 (more conservative)
+		$min_base64_bytes = intval( $pixel_count * $bytes_per_pixel );
+
+		// For very small images, use a minimum threshold of 10KB (increased from 6KB)
+		// This helps catch cases where small base64 might be corrupted/incomplete
+		$absolute_min = 10 * 1024; // 10KB
+		$required_size = max( $absolute_min, $min_base64_bytes );
+
+		$is_valid = $base64_size >= $required_size;
+
+		if ( ! $is_valid && class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+			\BeepBeepAI\AltTextGenerator\Debug_Log::log(
+				'warning',
+				'Base64 size too small for reported dimensions (gray zone rejection)',
+				array(
+					'dimensions'        => $width . 'x' . $height,
+					'pixel_count'       => $pixel_count,
+					'base64_size_bytes' => $base64_size,
+					'base64_size_kb'    => round( $base64_size / 1024, 2 ),
+					'required_size_kb'  => round( $required_size / 1024, 2 ),
+					'shortfall_kb'      => round( ( $required_size - $base64_size ) / 1024, 2 ),
+				),
+				'api'
+			);
+		}
+
+		return $is_valid;
+	}
+
+	/**
 	 * Prepare image payload for API
 	 */
 	public function prepare_image_payload( $image_id, $image_url, $title, $caption, $filename ) {
@@ -764,72 +899,108 @@ class Generation_Client {
 		if ( $image_url ) {
 			$file_path = get_attached_file( $image_id );
 			if ( $file_path && file_exists( $file_path ) ) {
-				$file_size     = filesize( $file_path );
-				$max_file_size = 512 * 1024; // 512KB
-
 				$mime_type = get_post_mime_type( $image_id ) ?: 'image/jpeg';
 				$metadata  = wp_get_attachment_metadata( $image_id );
 
-				$should_resize = ( $file_size > $max_file_size ) ||
-								( empty( $metadata ) || empty( $metadata['width'] ) || empty( $metadata['height'] ) );
+				// CRITICAL: Always check actual file dimensions, not just file size
+				// Small files can still have large dimensions (e.g., 13KB file at 1000x750)
+				$actual_image_info = getimagesize( $file_path );
+				$orig_width  = $actual_image_info ? $actual_image_info[0] : ( $metadata['width'] ?? 0 );
+				$orig_height = $actual_image_info ? $actual_image_info[1] : ( $metadata['height'] ?? 0 );
+
+				// Use 512px max dimension for optimal cost savings (50% token reduction, no quality loss)
+				$max_dimension = apply_filters( 'bbai_vision_api_max_dimension', 512, $image_id, $file_path );
+				$max_dimension = max( 256, min( 2048, intval( $max_dimension ) ) );
+
+				// ALWAYS resize if dimensions exceed max_dimension, regardless of file size
+				$should_resize = ( $orig_width > $max_dimension || $orig_height > $max_dimension );
 
 				if ( $should_resize && function_exists( 'wp_get_image_editor' ) ) {
-					$orig_width  = $metadata['width'] ?? 0;
-					$orig_height = $metadata['height'] ?? 0;
-					$max_size    = 800;
+					$ratio     = min( $max_dimension / $orig_width, $max_dimension / $orig_height );
+					$new_width  = intval( $orig_width * $ratio );
+					$new_height = intval( $orig_height * $ratio );
 
-					if ( $orig_width > $max_size || $orig_height > $max_size ) {
-						if ( $orig_width > $orig_height ) {
-							$new_width  = $max_size;
-							$new_height = intval( ( $orig_height / $orig_width ) * $max_size );
-						} else {
-							$new_height = $max_size;
-							$new_width  = intval( ( $orig_width / $orig_height ) * $max_size );
+					$editor = wp_get_image_editor( $file_path );
+					if ( ! is_wp_error( $editor ) ) {
+						$editor->resize( $new_width, $new_height, false );
+
+						// Set quality to 57 to meet backend size requirements (~63KB base64 max)
+						if ( method_exists( $editor, 'set_quality' ) ) {
+							$editor->set_quality( 57 );
 						}
 
-						$editor = wp_get_image_editor( $file_path );
-						if ( ! is_wp_error( $editor ) ) {
-							$editor->resize( $new_width, $new_height, false );
+						$upload_dir    = wp_upload_dir();
+						$temp_filename = 'beepbeepai-temp-' . $image_id . '-' . time() . '.jpg';
+						$temp_path     = $upload_dir['path'] . '/' . $temp_filename;
+						$saved         = $editor->save( $temp_path, 'image/jpeg' );
 
-							if ( method_exists( $editor, 'set_quality' ) ) {
-								$editor->set_quality( 85 );
-							}
+						if ( ! is_wp_error( $saved ) && isset( $saved['path'] ) ) {
+							// Verify the resized image dimensions
+							$resized_info = getimagesize( $saved['path'] );
+							$actual_resized_width  = $resized_info ? $resized_info[0] : $new_width;
+							$actual_resized_height = $resized_info ? $resized_info[1] : $new_height;
 
-							$upload_dir    = wp_upload_dir();
-							$temp_filename = 'beepbeepai-temp-' . $image_id . '-' . time() . '.jpg';
-							$temp_path     = $upload_dir['path'] . '/' . $temp_filename;
-							$saved         = $editor->save( $temp_path, 'image/jpeg' );
-
-							if ( ! is_wp_error( $saved ) && isset( $saved['path'] ) ) {
-								$resized_contents = file_get_contents( $saved['path'] );
-								@unlink( $saved['path'] );
-								if ( $resized_contents !== false ) {
-									$base64 = base64_encode( $resized_contents );
-									if ( strlen( $base64 ) <= 5.5 * 1024 * 1024 ) {
+							$resized_contents = file_get_contents( $saved['path'] );
+							@unlink( $saved['path'] );
+							if ( $resized_contents !== false ) {
+								$base64 = base64_encode( $resized_contents );
+								if ( strlen( $base64 ) <= 5.5 * 1024 * 1024 ) {
+									// Validate base64 size matches reported dimensions (reject gray zone cases)
+									if ( $this->validate_base64_size( $base64, $actual_resized_width, $actual_resized_height ) ) {
 										$payload['image_base64'] = $base64;
 										$payload['mime_type']    = 'image/jpeg';
+										// CRITICAL: Update payload dimensions to match resized image
+										$payload['width']  = $actual_resized_width;
+										$payload['height'] = $actual_resized_height;
+										// CRITICAL: Remove image_url when we have base64
+										unset( $payload['image_url'] );
 									} else {
+										// Base64 too small for dimensions (gray zone) - reject and use URL
+										if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+											\BeepBeepAI\AltTextGenerator\Debug_Log::log(
+												'warning',
+												'Rejecting base64: size too small for dimensions, using URL instead',
+												array(
+													'image_id'       => $image_id,
+													'dimensions'     => $actual_resized_width . 'x' . $actual_resized_height,
+													'base64_size_kb' => round( strlen( $base64 ) / 1024, 2 ),
+												),
+												'api'
+											);
+										}
+										unset( $payload['image_base64'] );
 										$payload['image_url'] = $image_url;
 									}
 								} else {
+									// Still too large even after resize - this shouldn't happen with quality 57
+									unset( $payload['image_base64'] );
 									$payload['image_url'] = $image_url;
 								}
 							} else {
+								unset( $payload['image_base64'] );
 								$payload['image_url'] = $image_url;
 							}
 						} else {
+							// Resize failed - do not fall back to original file
+							unset( $payload['image_base64'] );
 							$payload['image_url'] = $image_url;
 						}
 					} else {
+						// Editor creation failed - do not fall back to original file
+						unset( $payload['image_base64'] );
 						$payload['image_url'] = $image_url;
 					}
 				} else {
-					$payload['image_url'] = $image_url;
+					// No resize needed - encode original file
+					$payload['width']  = $orig_width;
+					$payload['height'] = $orig_height;
 				}
 			} else {
 				$payload['image_url'] = $image_url;
 			}
-		} elseif ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+		} else {
+			// No image URL provided - log error
+			if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
 				\BeepBeepAI\AltTextGenerator\Debug_Log::log(
 					'error',
 					'prepare_image_payload: No image_url provided',
@@ -839,21 +1010,59 @@ class Generation_Client {
 					),
 					'api'
 				);
+			}
 		}
 
-		// Try to include inline image data
+		// Only encode original file if resize wasn't needed (dimensions already at or below max)
 		$file_path = $file_path ?? get_attached_file( $image_id );
 		if ( empty( $payload['image_base64'] ) && $file_path && file_exists( $file_path ) ) {
-			$file_size       = filesize( $file_path );
-			$max_inline_size = 5.5 * 1024 * 1024; // ~5.5MB
-			if ( $file_size > 0 && $file_size <= $max_inline_size ) {
-				$contents = file_get_contents( $file_path );
-				if ( $contents !== false ) {
-					$base64 = base64_encode( $contents );
-					if ( ! empty( $base64 ) && strlen( $base64 ) <= $max_inline_size * 1.4 ) {
-						$mime_type               = $mime_type ?? get_post_mime_type( $image_id ) ?: 'image/jpeg';
-						$payload['image_base64'] = $base64;
-						$payload['mime_type']    = $mime_type;
+			// Only encode if dimensions are at or below max_dimension
+			$actual_image_info = getimagesize( $file_path );
+			$actual_width  = $actual_image_info ? $actual_image_info[0] : ( $payload['width'] ?? 0 );
+			$actual_height = $actual_image_info ? $actual_image_info[1] : ( $payload['height'] ?? 0 );
+			
+			$max_dimension = apply_filters( 'bbai_vision_api_max_dimension', 512, $image_id, $file_path );
+			$max_dimension = max( 256, min( 2048, intval( $max_dimension ) ) );
+			
+			// Only encode if dimensions are safe (at or below max)
+			if ( $actual_width <= $max_dimension && $actual_height <= $max_dimension ) {
+				$file_size       = filesize( $file_path );
+				$max_inline_size = 5.5 * 1024 * 1024; // ~5.5MB
+				if ( $file_size > 0 && $file_size <= $max_inline_size ) {
+					$contents = file_get_contents( $file_path );
+					if ( $contents !== false ) {
+						$base64 = base64_encode( $contents );
+						if ( ! empty( $base64 ) && strlen( $base64 ) <= $max_inline_size * 1.4 ) {
+							// Validate base64 size matches reported dimensions (reject gray zone cases)
+							if ( $this->validate_base64_size( $base64, $actual_width, $actual_height ) ) {
+								$mime_type               = $mime_type ?? get_post_mime_type( $image_id ) ?: 'image/jpeg';
+								$payload['image_base64'] = $base64;
+								$payload['mime_type']    = $mime_type;
+								// Update dimensions to actual file dimensions
+								$payload['width']  = $actual_width;
+								$payload['height'] = $actual_height;
+								// CRITICAL: Remove image_url when we have base64
+								unset( $payload['image_url'] );
+							} else {
+								// Base64 too small for dimensions (gray zone) - reject
+								if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+									\BeepBeepAI\AltTextGenerator\Debug_Log::log(
+										'warning',
+										'Rejecting base64: size too small for dimensions',
+										array(
+											'image_id'       => $image_id,
+											'dimensions'     => $actual_width . 'x' . $actual_height,
+											'base64_size_kb' => round( strlen( $base64 ) / 1024, 2 ),
+										),
+										'api'
+									);
+								}
+								// Don't set image_base64, ensure we have image_url as fallback
+								if ( ! empty( $image_url ) ) {
+									$payload['image_url'] = $image_url;
+								}
+							}
+						}
 					}
 				}
 			}

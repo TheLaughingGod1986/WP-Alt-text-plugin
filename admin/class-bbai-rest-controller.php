@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use BeepBeepAI\AltTextGenerator\Queue;
+use Optti\Framework\Queue;
 use BeepBeepAI\AltTextGenerator\Debug_Log;
 
 /**
@@ -562,10 +562,22 @@ class REST_Controller {
 	 *
 	 * @return array|\WP_Error
 	 */
-	public function handle_usage() {
+	public function handle_usage( \WP_REST_Request $request ) {
 		$api_client = $this->core->get_api_client();
 		if ( ! $api_client ) {
 			return new \WP_Error( 'missing_client', 'API client not available.' );
+		}
+
+		// Check if force refresh is requested
+		$force_refresh = $request->get_param( 'force_refresh' ) === 'true' || $request->get_param( 'refresh' ) === 'true';
+		
+		if ( $force_refresh ) {
+			// Clear cache before fetching fresh data
+			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+			\BeepBeepAI\AltTextGenerator\Usage_Tracker::clear_cache();
+			
+			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-token-quota-service.php';
+			\BeepBeepAI\AltTextGenerator\Token_Quota_Service::clear_cache();
 		}
 
 		$usage = $api_client->get_usage();
@@ -593,6 +605,9 @@ class REST_Controller {
 	 * @return array
 	 */
 	public function handle_queue() {
+		// Ensure Queue is initialized.
+		Queue::init( 'bbai' );
+
 		$stats    = Queue::get_stats();
 		$recent   = Queue::get_recent( apply_filters( 'bbai_queue_recent_limit', 10 ) );
 		$failures = Queue::get_recent_failures( apply_filters( 'bbai_queue_fail_limit', 5 ) );
@@ -611,7 +626,7 @@ class REST_Controller {
 	 * @return array
 	 */
 	private function sanitize_job_row( array $row ) {
-		$attachment_id = intval( $row['attachment_id'] ?? 0 );
+		$attachment_id = intval( $row['entity_id'] ?? 0 );
 
 		return array(
 			'id'               => intval( $row['id'] ?? 0 ),

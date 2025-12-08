@@ -10,6 +10,7 @@
 namespace BeepBeepAI\AltTextGenerator;
 
 use Optti\Framework\PluginBase;
+use Optti\Framework\REST_Controller;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -103,5 +104,47 @@ class BeepBeep_AltText_Plugin extends PluginBase {
 	public function register_admin_menus() {
 		// Admin menus are handled by Admin_Menu class.
 		// This method can be overridden if needed.
+	}
+
+	/**
+	 * REST controller instance.
+	 *
+	 * @var REST_Controller|null
+	 */
+	protected $rest_controller = null;
+
+	/**
+	 * Register REST routes.
+	 *
+	 * @return void
+	 */
+	public function register_rest_routes() {
+		// Register framework REST controller with framework API endpoints enabled.
+		if ( ! $this->rest_controller ) {
+			$this->rest_controller = new class( $this ) extends REST_Controller {
+				/**
+				 * Check if framework APIs should be exposed.
+				 *
+				 * @return bool True to expose framework APIs.
+				 */
+				protected function should_expose_framework_apis() {
+					return true;
+				}
+
+				/**
+				 * Register plugin-specific routes.
+				 *
+				 * @return void
+				 */
+				protected function register_plugin_routes() {
+					// Plugin-specific routes can be added here if needed.
+				}
+			};
+		}
+
+		// Register routes via the controller.
+		if ( $this->rest_controller ) {
+			$this->rest_controller->register_routes();
+		}
 	}
 }

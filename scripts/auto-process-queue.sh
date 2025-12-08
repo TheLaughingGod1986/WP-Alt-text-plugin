@@ -15,7 +15,7 @@ while true; do
     docker exec wp-alt-text-plugin-wordpress-1 curl -s http://localhost/wp-cron.php?doing_wp_cron > /dev/null 2>&1
     
     # Also directly trigger the queue processor
-    docker exec wp-alt-text-plugin-wordpress-1 php /var/www/html/wp-content/plugins/opptiai-alt/scripts/check-and-process-queue.php 2>&1 | grep -E "(Pending|Processing|Failed|Completed|✓|⚠)" | head -5
+    docker exec wp-alt-text-plugin-wordpress-1 php /var/www/html/wp-content/plugins/beepbeep-ai-alt-text-generator/scripts/check-and-process-queue.php 2>&1 | grep -E "(Pending|Processing|Failed|Completed|✓|⚠)" | head -5
     
     echo "[$TIMESTAMP] Waiting ${INTERVAL} seconds..."
     sleep $INTERVAL

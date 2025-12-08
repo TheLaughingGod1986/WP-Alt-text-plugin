@@ -88,7 +88,7 @@ echo ""
 echo "============================================================"
 echo "Step 6: Clear WordPress Cache"
 echo "============================================================"
-docker exec wp-alt-text-plugin-wordpress-1 php /var/www/html/wp-content/plugins/opptiai-alt/scripts/clear-usage-cache.php
+docker exec wp-alt-text-plugin-wordpress-1 php /var/www/html/wp-content/plugins/beepbeep-ai-alt-text-generator/scripts/clear-usage-cache.php
 
 echo ""
 echo "============================================================"
