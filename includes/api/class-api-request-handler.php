@@ -161,6 +161,10 @@ class API_Request_Handler {
 		}
 
 		$site_id = $this->get_site_id_callback ? call_user_func( $this->get_site_id_callback ) : '';
+		if ( empty( $site_id ) ) {
+			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
+			$site_id = \BeepBeepAI\AltTextGenerator\get_site_identifier();
+		}
 
 		// Get site fingerprint for abuse prevention
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-site-fingerprint.php';

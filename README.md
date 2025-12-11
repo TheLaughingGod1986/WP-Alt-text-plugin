@@ -24,6 +24,7 @@ AI-powered image alt text generator that boosts WordPress SEO, accessibility, an
 - **Coverage Tracking** - Visual charts showing ALT text coverage across your media library
 - **Usage Metrics** - Monitor API requests, token usage, and generation history
 - **Quality Scoring** - Automated QA review of generated descriptions
+- **Usage by User** - View per-user and site-wide usage (consumes the `/api/usage` endpoint)
 - **ALT Library** - Review, filter, and manage all your ALT text in one place
 
 ### 🎨 Modern Interface
@@ -37,6 +38,48 @@ AI-powered image alt text generator that boosts WordPress SEO, accessibility, an
 - **WP-CLI Support** - Command-line tools for bulk operations
 - **Hooks & Filters** - Customize prompts and behavior
 - **Dry Run Mode** - Test configurations without updating images
+
+## Alt Text API (current setup)
+- Default host: `https://alttext-ai-backend.onrender.com` (override via `ALT_API_HOST` if needed).
+- Auth: open mode by default (leave `ALT_API_TOKEN` unset). If you set a token on both backend and WP, the plugin sends `Authorization: Bearer <token>`; otherwise, no bearer header.
+- Headers: always `Content-Type: application/json` and `X-Site-Key` (site id).
+- Endpoint: `POST /api/alt-text`
+- Payload shape:
+  ```json
+  {
+    "image": {
+      "base64": "<raw base64 string, no data URL prefix>",
+      "width": 256,
+      "height": 256,
+      "mime_type": "image/jpeg"
+    },
+    "context": {
+      "title": "",
+      "pageTitle": "",
+      "altTextSuggestion": "",
+      "caption": "",
+      "filename": ""
+    }
+  }
+  ```
+- Client resize: ~256px max side at ~72% JPEG/WebP; strips any `data:image/...;base64,` prefix before sending.
+- Responses include `altText` and may include `usage` (prompt/completion tokens) and `meta`.
+
+### Billing (planned backend endpoints)
+- Price IDs (Stripe):  
+  - PRO (single site): `price_1SMrxaJl9Rm418cMM4iikj1J`  
+  - AGENCY (multi-site): `price_1SMrxaJl9Rm418cMnJTShXSY`  
+  - CREDITS (top-up): `price_1SMrxbJl9Rm418cM0gkzZOZt`
+- Planned API (backend):
+  - `GET /billing/plans` → list plans (id, name, price, currency, interval, features, priceId, trialDays)
+  - `POST /billing/checkout` with body `{ priceId, successUrl, cancelUrl }` → `{ url, sessionId }` (include site_id metadata for linking)
+  - `POST /billing/portal` with body `{ returnUrl }` → `{ url }`
+  - Optional: `GET /billing/subscription` (plan/status/nextBillingDate, etc.)
+  - Optional: `GET /api/usage` (site summary and per-user breakdown)
+- Auth (recommended):
+  - Alt text: open + `X-Site-Key`; regenerate adds `X-Bypass-Cache: true`.
+  - Billing/portal/usage: `Authorization: Bearer <ALT_API_TOKEN>` + `X-Site-Key` (no user JWT unless needed).
+
 
 ### 🔐 Automatic Licensing
 - **Zero-Friction Upgrades** – When you purchase Pro or Agency, the license is applied to your site automatically. No more copying keys or logging everyone in.

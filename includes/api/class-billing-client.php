@@ -55,6 +55,12 @@ class Billing_Client {
 			return $response['data']['plans'] ?? array();
 		}
 
+		// If the endpoint is not available, treat as no plans instead of surfacing an error.
+		$status = isset( $response['status_code'] ) ? intval( $response['status_code'] ) : 0;
+		if ( 404 === $status ) {
+			return array();
+		}
+
 		return new \WP_Error(
 			'plans_failed',
 			$response['data']['error'] ?? __( 'Failed to fetch pricing plans', 'beepbeep-ai-alt-text-generator' )

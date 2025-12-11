@@ -176,12 +176,12 @@ class Admin_Assets {
 	 */
 	protected function localize_scripts() {
 		// Use the same localization as BeepBeep AI pages for consistency
-		// Get Core instance to access the same data
+		// Get Core instance to access the same data (use singleton to avoid multiple instantiations)
 		if ( ! class_exists( '\BeepBeepAI\AltTextGenerator\Core' ) ) {
 			return;
 		}
 
-		$core            = new \BeepBeepAI\AltTextGenerator\Core();
+		$core            = \BeepBeepAI\AltTextGenerator\Core::get_instance();
 		$checkout_prices = method_exists( $core, 'get_checkout_price_ids' ) ? $core->get_checkout_price_ids() : array();
 
 		$l10n_common = array(

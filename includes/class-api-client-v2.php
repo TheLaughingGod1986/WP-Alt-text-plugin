@@ -44,9 +44,25 @@ class API_Client_V2 {
 	private $generation_client;
 
 	public function __construct() {
-		// ALWAYS use production API URL
+		// Preferred API URL (override with ALT_API_HOST const/env/option bbai_alt_api_host)
 		$production_url = 'https://alttext-ai-backend.onrender.com';
-		$this->api_url  = $production_url;
+		$override_url   = '';
+
+		if ( defined( 'ALT_API_HOST' ) && ! empty( ALT_API_HOST ) ) {
+			$override_url = ALT_API_HOST;
+		}
+		if ( empty( $override_url ) ) {
+			$env_host = getenv( 'ALT_API_HOST' );
+			if ( $env_host !== false && ! empty( $env_host ) ) {
+				$override_url = $env_host;
+			}
+		}
+		$options_alt = get_option( 'bbai_options', array() );
+		if ( empty( $override_url ) && ! empty( $options_alt['bbai_alt_api_host'] ?? '' ) ) {
+			$override_url = $options_alt['bbai_alt_api_host'];
+		}
+
+		$this->api_url = untrailingslashit( ! empty( $override_url ) ? $override_url : $production_url );
 
 		// Force update WordPress settings to production (clean up legacy configs)
 		$options = get_option( 'beepbeepai_settings', array() );
@@ -57,8 +73,8 @@ class API_Client_V2 {
 			}
 		}
 		$options = is_array( $options ) ? $options : array();
-		if ( ! isset( $options['api_url'] ) || $options['api_url'] !== $production_url ) {
-			$options['api_url'] = $production_url;
+		if ( ! isset( $options['api_url'] ) || $options['api_url'] !== $this->api_url ) {
+			$options['api_url'] = $this->api_url;
 			update_option( 'beepbeepai_settings', $options );
 		}
 

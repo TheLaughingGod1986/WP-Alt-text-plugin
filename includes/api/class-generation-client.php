@@ -282,7 +282,7 @@ class Generation_Client {
 			return $fingerprint_check;
 		}
 
-		$endpoint = 'api/generate';
+		$endpoint = 'api/alt-text';
 
 		// Check cache age before generation - refresh if cache is > 2 minutes old
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
@@ -354,6 +354,9 @@ class Generation_Client {
 		}
 
 		$image_payload = $this->prepare_image_payload( $image_id, $image_url, $title, $caption, $filename );
+		if ( is_wp_error( $image_payload ) ) {
+			return $image_payload;
+		}
 
 		// Check for image preparation errors
 		if ( isset( $image_payload['_error'] ) && $image_payload['_error'] === 'image_too_large' ) {
@@ -368,6 +371,14 @@ class Generation_Client {
 			return new \WP_Error(
 				'missing_image_data',
 				$image_payload['_error_message'] ?? __( 'Image data is missing. Cannot generate alt text.', 'beepbeep-ai-alt-text-generator' ),
+				array( 'image_id' => $image_id )
+			);
+		}
+
+		if ( isset( $image_payload['_error'] ) && $image_payload['_error'] === 'invalid_image_size' ) {
+			return new \WP_Error(
+				'invalid_image_size',
+				$image_payload['_error_message'] ?? __( 'Image size is invalid for encoding.', 'beepbeep-ai-alt-text-generator' ),
 				array( 'image_id' => $image_id )
 			);
 		}
@@ -450,6 +461,25 @@ class Generation_Client {
 			}
 		}
 
+		// Ensure dimensions exist even when sending URL-only payloads
+		if ( ( empty( $image_payload['width'] ) || empty( $image_payload['height'] ) ) && ! empty( $image_url ) ) {
+			$file_path = get_attached_file( $image_id );
+			if ( $file_path && file_exists( $file_path ) ) {
+				$image_info = getimagesize( $file_path );
+				if ( $image_info ) {
+					$image_payload['width']  = $image_payload['width'] ?? (int) $image_info[0];
+					$image_payload['height'] = $image_payload['height'] ?? (int) $image_info[1];
+				}
+			}
+		}
+
+		// Explicitly mark image source for backend validation
+		if ( ! empty( $image_payload['image_base64'] ) ) {
+			$image_payload['image_source'] = 'base64';
+		} elseif ( ! empty( $image_payload['image_url'] ) ) {
+			$image_payload['image_source'] = 'url';
+		}
+
 		// Get license key and site hash
 		$license_key = $this->get_license_key_callback ? call_user_func( $this->get_license_key_callback ) : '';
 		$site_hash   = $this->get_site_id_callback ? call_user_func( $this->get_site_id_callback ) : '';
@@ -486,217 +516,79 @@ class Generation_Client {
 						call_user_func( $this->set_license_key_callback, $license_key );
 					}
 				}
-			}
-
-			if ( empty( $license_key ) && $this->get_usage_callback ) {
-				$usage_response = call_user_func( $this->get_usage_callback );
-				if ( ! is_wp_error( $usage_response ) ) {
-					$license_key = $this->get_license_key_callback ? call_user_func( $this->get_license_key_callback ) : '';
-				}
-			}
-
-			if ( empty( $license_key ) && $this->auto_attach_license_callback ) {
-				$auto_attach_result = call_user_func( $this->auto_attach_license_callback );
-				if ( ! is_wp_error( $auto_attach_result ) ) {
-					$license_key = $this->get_license_key_callback ? call_user_func( $this->get_license_key_callback ) : '';
-				}
-			}
-
-			if ( empty( $license_key ) && class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
-				\BeepBeepAI\AltTextGenerator\Debug_Log::log(
-					'error',
-					'Active license detected but license key still not found after all attempts',
-					array(
-						'has_active_license' => true,
-						'has_license_data'   => ! empty( $license_data ),
-						'image_id'           => $image_id,
-					),
-					'licensing'
-				);
-			}
 		}
 
-		// Final refresh of license key to ensure it's available for headers
-		// This handles cases where the key was just stored but callback hasn't refreshed
-		if ( ! empty( $license_key ) && $this->set_license_key_callback ) {
-			// Ensure the key is stored and will be available when headers are built
-			call_user_func( $this->set_license_key_callback, $license_key );
-			// Refresh the value from callback to ensure consistency
-			$refreshed_key = $this->get_license_key_callback ? call_user_func( $this->get_license_key_callback ) : '';
-			if ( ! empty( $refreshed_key ) && $refreshed_key !== $license_key ) {
-				$license_key = $refreshed_key;
-			}
-		}
+	}
 
-		$body = array(
-			'image_data'    => $image_payload,
-			'context'       => $context,
-			'regenerate'    => $regenerate ? true : false,
-			'service'       => 'alttext-ai',
-			'timestamp'     => time(),
-			'image_id'      => (string) $image_id,
-			'attachment_id' => (string) $image_id,
-			'detailLevel'   => 'low', // Always use 'low' detail for token cost optimization
-		);
-
-		if ( ! empty( $license_key ) ) {
-			$body['licenseKey'] = $license_key;
-		}
-		if ( ! empty( $site_hash ) ) {
-			$body['siteHash'] = $site_hash;
-			$body['site_id']  = $site_hash;
-		}
+	$body = array(
+		'image'   => array(
+			'base64'    => $image_payload['base64'] ?? '',
+			'width'     => $image_payload['width'] ?? null,
+			'height'    => $image_payload['height'] ?? null,
+			'mime_type' => $image_payload['mime_type'] ?? ( $image_payload['mime'] ?? 'image/jpeg' ),
+		),
+		'context' => array(
+			'title'             => $title ?: '',
+			'pageTitle'         => $context['page_title'] ?? '',
+			'altTextSuggestion' => $context['alt_text_suggestion'] ?? '',
+			'caption'           => $caption ?? '',
+			'filename'          => $filename ?? '',
+		),
+	);
 
 		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
 			\BeepBeepAI\AltTextGenerator\Debug_Log::log(
 				'info',
-				'API Request Payload (ready to send to backend)',
+				'Alt Text API Request Payload',
 				array(
-					'image_id_param'           => $image_id,
-					'root_image_id_in_body'    => (string) $image_id,
-					'image_data.image_id'      => $image_payload['image_id'] ?? 'missing',
-					'image_data.attachment_id' => $image_payload['attachment_id'] ?? 'missing',
-					'regenerate_flag'          => $regenerate,
-					'has_image_url'            => ! empty( $image_payload['image_url'] ),
-					'has_license_key'          => ! empty( $license_key ),
-					'license_key_preview'      => ! empty( $license_key ) ? substr( $license_key, 0, 20 ) . '...' : 'none',
-					'has_site_hash'            => ! empty( $site_hash ),
-					'site_hash'                => $site_hash ?? 'none',
-					'has_active_license'       => $has_license,
-					'license_key_in_body'      => ! empty( $body['licenseKey'] ),
-					'site_hash_in_body'        => ! empty( $body['siteHash'] ),
+					'image_id_param'     => $image_id,
+					'regenerate_flag'    => $regenerate,
+					'has_base64'         => ! empty( $image_payload['base64'] ),
+					'base64_size_kb'     => ! empty( $image_payload['base64'] ) ? round( strlen( $image_payload['base64'] ) / 1024, 2 ) : 0,
+					'payload_dimensions' => ( $image_payload['width'] ?? 'missing' ) . 'x' . ( $image_payload['height'] ?? 'missing' ),
+					'mime_type'          => $image_payload['mime_type'] ?? 'image/jpeg',
+					'endpoint'           => $endpoint,
 				),
 				'api'
 			);
 		}
 
 		$extra_headers = array(
-			'X-Image-ID'      => (string) $image_id,
-			'X-Attachment-ID' => (string) $image_id,
+			'Content-Type' => 'application/json',
 		);
 
-		// Ensure site hash header is present for backend validation/quota tracking
-		if ( ! empty( $site_hash ) ) {
-			$extra_headers['X-Site-Hash'] = $site_hash;
+		$site_key = $site_hash ?: $this->get_site_identifier();
+		if ( ! empty( $site_key ) ) {
+			$extra_headers['X-Site-Key'] = $site_key;
 		}
 
-		// CRITICAL: Ensure license key is explicitly in headers for generate endpoint
-		// This prevents issues where the backend requires it in headers vs body
-		if ( ! empty( $license_key ) ) {
-			$extra_headers['X-License-Key'] = $license_key;
-
-			if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
-				\BeepBeepAI\AltTextGenerator\Debug_Log::log(
-					'info',
-					'License key explicitly added to generate request headers',
-					array(
-						'license_key_preview'        => substr( $license_key, 0, 20 ) . '...',
-						'has_license_key_in_body'    => ! empty( $body['licenseKey'] ),
-						'has_license_key_in_headers' => true,
-					),
-					'api'
-				);
-			}
+		// Regenerate should bypass cache on the backend.
+		if ( $regenerate ) {
+			$extra_headers['X-Bypass-Cache'] = 'true';
 		}
 
-		$response = $this->request_handler->request_with_retry( $endpoint, 'POST', $body, 3, true, $extra_headers );
+		$api_token = $this->get_alt_api_token();
+		if ( ! empty( $api_token ) ) {
+			$extra_headers['Authorization'] = 'Bearer ' . $api_token;
+		}
+
+		$response = $this->request_handler->request_with_retry( $endpoint, 'POST', $body, 3, false, $extra_headers, false );
 
 		if ( is_wp_error( $response ) ) {
-			// Handle quota_check_mismatch retry
-			if ( $response->get_error_code() === 'quota_check_mismatch' ) {
-				$retry_after = $response->get_error_data()['retry_after'] ?? 3;
-
-				if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
-					\BeepBeepAI\AltTextGenerator\Debug_Log::log(
-						'info',
-						'Quota mismatch detected - clearing cache and waiting before retry',
-						array(
-							'retry_after' => $retry_after,
-							'image_id'    => $image_id,
-						),
-						'api'
-					);
-				}
-
-				// CRITICAL: Clear usage cache to force fresh check before retry
-				// This ensures backend and frontend are synced
-				if ( class_exists( '\BeepBeepAI\AltTextGenerator\Usage_Tracker' ) ) {
-					\BeepBeepAI\AltTextGenerator\Usage_Tracker::clear_cache();
-				}
-
-				sleep( $retry_after );
-
-				// Refresh license key and site hash before retry (in case they changed)
-				$license_key = $this->get_license_key_callback ? call_user_func( $this->get_license_key_callback ) : '';
-				$site_hash   = $this->get_site_id_callback ? call_user_func( $this->get_site_id_callback ) : '';
-
-				// Ensure license key is still in headers for retry
-				if ( ! empty( $license_key ) && ! isset( $extra_headers['X-License-Key'] ) ) {
-					$extra_headers['X-License-Key'] = $license_key;
-				}
-
-				// Update body with fresh license key if needed
-				if ( ! empty( $license_key ) && ( ! isset( $body['licenseKey'] ) || empty( $body['licenseKey'] ) ) ) {
-					$body['licenseKey'] = $license_key;
-				}
-				if ( ! empty( $site_hash ) && ( ! isset( $body['siteHash'] ) || empty( $body['siteHash'] ) ) ) {
-					$body['siteHash'] = $site_hash;
-					$body['site_id']  = $site_hash;
-				}
-
-				$retry_response = $this->request_handler->request_with_retry( $endpoint, 'POST', $body, 1, true, $extra_headers );
-
-				if ( ! is_wp_error( $retry_response ) ) {
-					if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
-						\BeepBeepAI\AltTextGenerator\Debug_Log::log(
-							'info',
-							'Quota mismatch retry succeeded - backend synced',
-							array(
-								'image_id' => $image_id,
-							),
-							'api'
-						);
-					}
-					return $retry_response;
-				}
-
-				if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
-					\BeepBeepAI\AltTextGenerator\Debug_Log::log(
-						'warning',
-						'Quota mismatch retry also failed',
-						array(
-							'image_id'         => $image_id,
-							'retry_error'      => $retry_response->get_error_message(),
-							'retry_error_code' => $retry_response->get_error_code(),
-						),
-						'api'
-					);
-				}
-			}
-
 			return $response;
 		}
 
 		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
 			\BeepBeepAI\AltTextGenerator\Debug_Log::log(
 				'debug',
-				'Generation API response',
+				'Alt Text API response',
 				array(
 					'status_code' => $response['status_code'],
-					'success'     => $response['success'],
-					'has_data'    => isset( $response['data'] ),
-					'data_keys'   => isset( $response['data'] ) && is_array( $response['data'] ) ? array_keys( $response['data'] ) : 'not array',
+					'success'     => $response['success'] ?? false,
+					'data_keys'   => isset( $response['data'] ) && is_array( $response['data'] ) ? array_keys( $response['data'] ) : array(),
 				),
 				'api'
 			);
-		}
-
-		// Handle 429 rate limit errors
-		if ( $response['status_code'] === 429 && $this->error_handler ) {
-			$rate_limit_error = $this->error_handler->handle_rate_limit_error( $response );
-			if ( is_wp_error( $rate_limit_error ) ) {
-				return $rate_limit_error;
-			}
 		}
 
 		if ( ! $response['success'] ) {
@@ -704,118 +596,47 @@ class Generation_Client {
 			$error_message = $error_data['message'] ?? $error_data['error'] ?? __( 'Failed to generate alt text', 'beepbeep-ai-alt-text-generator' );
 			$error_code    = $error_data['code'] ?? 'api_error';
 
-			$error_message_lower = strtolower( $error_message . ' ' . ( $error_data['error'] ?? '' ) );
-			$status_code_check   = isset( $response['status_code'] ) ? intval( $response['status_code'] ) : 0;
-
-			if ( ( strpos( $error_message_lower, 'user not found' ) !== false ||
-				strpos( $error_message_lower, 'user does not exist' ) !== false ||
-				( $status_code_check === 401 && strpos( $error_message_lower, 'unauthorized' ) !== false ) ) &&
-				$status_code_check < 500 ) {
-
-				if ( $this->clear_token_callback ) {
-					call_user_func( $this->clear_token_callback );
-				}
-				delete_transient( 'bbai_token_last_check' );
-				return new \WP_Error(
-					'auth_required',
-					__( 'Your session has expired or your account is no longer available. Please log in again.', 'beepbeep-ai-alt-text-generator' ),
-					array(
-						'requires_auth' => true,
-						'status_code'   => $status_code_check,
-						'code'          => 'user_not_found',
-					)
-				);
-			}
-
-			if ( $response['status_code'] === 413 ) {
-				$error_message = __( 'Image file is too large. Please compress or resize the image before generating alt text.', 'beepbeep-ai-alt-text-generator' );
-				$error_code    = 'payload_too_large';
-			}
-
-			$backend_error_lower = strtolower( $error_message . ' ' . ( $error_data['error'] ?? '' ) );
-			if ( strpos( $backend_error_lower, 'incorrect api key' ) !== false ||
-				strpos( $backend_error_lower, 'invalid api key' ) !== false ||
-				strpos( $backend_error_lower, 'api key provided' ) !== false ||
-				$error_code === 'GENERATION_ERROR' ) {
-				$error_message = __( 'The backend service is experiencing a configuration issue. This is a temporary backend problem that needs to be fixed on the server side. Please try again in a few minutes or contact support if the issue persists.', 'beepbeep-ai-alt-text-generator' );
-				$error_code    = 'backend_config_error';
-			}
-
-			if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
-				\BeepBeepAI\AltTextGenerator\Debug_Log::log(
-					'error',
-					'API generation failed',
-					array(
-						'image_id'      => $image_id,
-						'status_code'   => $response['status_code'],
-						'error_code'    => $error_code,
-						'error_message' => $error_message,
-						'backend_error' => $error_data['error'] ?? $error_data['message'] ?? 'Unknown error',
-						'backend_code'  => $error_data['code'] ?? 'unknown',
-					),
-					'api'
-				);
-			}
-
 			return new \WP_Error(
 				'api_error',
 				$error_message,
 				array(
-					'code'          => $error_code,
-					'status_code'   => $response['status_code'],
-					'image_id'      => $image_id,
-					'api_response'  => $error_data,
-					'backend_error' => $error_data['error'] ?? $error_data['message'] ?? null,
+					'code'        => $error_code,
+					'status_code' => $response['status_code'],
+					'details'     => $error_data['errors'] ?? null,
 				)
 			);
 		}
 
-		// Refresh usage cache after successful generation
-		if ( $this->get_usage_callback ) {
-			$fresh_usage = call_user_func( $this->get_usage_callback );
-			if ( ! is_wp_error( $fresh_usage ) && is_array( $fresh_usage ) ) {
-				require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
-				\BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage( $fresh_usage );
-			}
+		$data     = $response['data'];
+		$alt_text = $data['altText'] ?? '';
+
+		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+			\BeepBeepAI\AltTextGenerator\Debug_Log::log(
+				'info',
+				'Alt Text generated (new API)',
+				array(
+					'image_id' => $image_id,
+					'warnings' => $data['warnings'] ?? array(),
+					'usage'    => $data['usage'] ?? array(),
+					'meta'     => $data['meta'] ?? array(),
+				),
+				'api'
+			);
 		}
 
-		return $response['data'];
+		return array(
+			'alt_text' => $alt_text,
+			'usage'    => $data['usage'] ?? array(),
+			'meta'     => $data['meta'] ?? array(),
+			'warnings' => $data['warnings'] ?? array(),
+		);
 	}
 
 	/**
 	 * Review existing alt text
 	 */
 	public function review_alt_text( $image_id, $alt_text, $context = array() ) {
-		$endpoint = 'api/review';
-
-		$image_url        = wp_get_attachment_url( $image_id );
-		$title            = get_the_title( $image_id );
-		$caption          = wp_get_attachment_caption( $image_id );
-		$parsed_image_url = $image_url ? wp_parse_url( $image_url ) : null;
-		$filename         = $parsed_image_url && isset( $parsed_image_url['path'] ) ? wp_basename( $parsed_image_url['path'] ) : '';
-
-		$body = array(
-			'alt_text'   => $alt_text,
-			'image_data' => $this->prepare_image_payload( $image_id, $image_url, $title, $caption, $filename ),
-			'context'    => $context,
-		);
-
-		$response = $this->request_handler->request_with_retry( $endpoint, 'POST', $body );
-
-		if ( is_wp_error( $response ) ) {
-			return $response;
-		}
-
-		if ( ! $response['success'] ) {
-			$error_message = $response['data']['message'] ?? $response['data']['error'] ?? __( 'Failed to review alt text', 'beepbeep-ai-alt-text-generator' );
-			return new \WP_Error(
-				'api_error',
-				$error_message,
-				array( 'code' => $response['data']['code'] ?? 'api_error' )
-			);
-		}
-
-		return $response['data'];
+		return new \WP_Error( 'review_disabled', __( 'Review is temporarily disabled for the new alt text API.', 'beepbeep-ai-alt-text-generator' ) );
 	}
 
 	/**
@@ -881,211 +702,358 @@ class Generation_Client {
 	 * Prepare image payload for API
 	 */
 	public function prepare_image_payload( $image_id, $image_url, $title, $caption, $filename ) {
-		$payload = array(
-			'image_id'      => (string) $image_id,
-			'attachment_id' => (string) $image_id,
-			'title'         => $title,
-			'caption'       => $caption,
-			'filename'      => $filename,
-		);
-
-		// Get image dimensions
-		$metadata = wp_get_attachment_metadata( $image_id );
-		if ( $metadata && isset( $metadata['width'], $metadata['height'] ) ) {
-			$payload['width']  = $metadata['width'];
-			$payload['height'] = $metadata['height'];
+		$file_path = get_attached_file( $image_id );
+		if ( ! $file_path || ! file_exists( $file_path ) ) {
+			return new \WP_Error( 'missing_image_data', __( 'Image file not found for encoding.', 'beepbeep-ai-alt-text-generator' ) );
 		}
 
-		if ( $image_url ) {
-			$file_path = get_attached_file( $image_id );
-			if ( $file_path && file_exists( $file_path ) ) {
-				$mime_type = get_post_mime_type( $image_id ) ?: 'image/jpeg';
-				$metadata  = wp_get_attachment_metadata( $image_id );
+		$encoded = $this->encode_image_simple( $file_path );
+		if ( is_wp_error( $encoded ) ) {
+			return $encoded;
+		}
 
-				// CRITICAL: Always check actual file dimensions, not just file size
-				// Small files can still have large dimensions (e.g., 13KB file at 1000x750)
-				$actual_image_info = getimagesize( $file_path );
-				$orig_width  = $actual_image_info ? $actual_image_info[0] : ( $metadata['width'] ?? 0 );
-				$orig_height = $actual_image_info ? $actual_image_info[1] : ( $metadata['height'] ?? 0 );
+		return array(
+			'base64'    => $encoded['base64'],
+			'image_base64' => $encoded['base64'],
+			'width'     => $encoded['width'],
+			'height'    => $encoded['height'],
+			'mime_type' => 'image/jpeg',
+			'image_url' => $image_url, // optional; only used if present
+		);
+	}
 
-				// Use 512px max dimension for optimal cost savings (50% token reduction, no quality loss)
-				$max_dimension = apply_filters( 'bbai_vision_api_max_dimension', 512, $image_id, $file_path );
-				$max_dimension = max( 256, min( 2048, intval( $max_dimension ) ) );
+	/**
+	 * Encode image for backend: resize and ensure bytes-per-pixel is within expected band
+	 */
+	private function encode_image_for_api( $file_path, $image_id ) {
+		return $this->encode_image_simple( $file_path );
+	}
 
-				// ALWAYS resize if dimensions exceed max_dimension, regardless of file size
-				$should_resize = ( $orig_width > $max_dimension || $orig_height > $max_dimension );
+	/**
+	 * Simple, resilient resize + base64 helper:
+	 * - Dynamically adjusts dimension/quality to land bytes-per-pixel in a safe band
+	 * - Ensures temp dir exists and cleans up
+	 * - Falls back to GD in-memory encode if WP editor/save fails
+	 */
+	private function encode_image_simple( $file_path ) {
+		$info   = getimagesize( $file_path );
+		$orig_w = $info ? (int) $info[0] : 0;
+		$orig_h = $info ? (int) $info[1] : 0;
+		if ( $orig_w <= 0 || $orig_h <= 0 ) {
+			return new \WP_Error( 'invalid_image_size', __( 'Could not read image dimensions.', 'beepbeep-ai-alt-text-generator' ) );
+		}
 
-				if ( $should_resize && function_exists( 'wp_get_image_editor' ) ) {
-					$ratio     = min( $max_dimension / $orig_width, $max_dimension / $orig_height );
-					$new_width  = intval( $orig_width * $ratio );
-					$new_height = intval( $orig_height * $ratio );
+		$min_bpp   = 0.03;
+		$max_bpp   = 0.09;
+		$best      = null;
+		$mid_bpp   = ( $min_bpp + $max_bpp ) / 2;
+		$max_side  = min( 256, max( $orig_w, $orig_h ) );
+		$targetdim = max( 96, (int) $max_side );
+		$quality   = 72;
 
-					$editor = wp_get_image_editor( $file_path );
-					if ( ! is_wp_error( $editor ) ) {
-						$editor->resize( $new_width, $new_height, false );
+		for ( $i = 0; $i < 6; $i++ ) {
+			$scale    = min( 1, $targetdim / max( $orig_w, $orig_h ) );
+			$target_w = max( 1, (int) floor( $orig_w * $scale ) );
+			$target_h = max( 1, (int) floor( $orig_h * $scale ) );
 
-						// Set quality to 57 to meet backend size requirements (~63KB base64 max)
-						if ( method_exists( $editor, 'set_quality' ) ) {
-							$editor->set_quality( 57 );
-						}
+			$result = $this->encode_with_quality( $file_path, $target_w, $target_h, $orig_w, $orig_h, $quality );
+			if ( $result ) {
+				$bytes       = strlen( $result['base64'] ) * 3 / 4;
+				$pixel_count = max( 1, $result['width'] * $result['height'] );
+				$bpp         = $bytes / $pixel_count;
 
-						$upload_dir    = wp_upload_dir();
-						$temp_filename = 'beepbeepai-temp-' . $image_id . '-' . time() . '.jpg';
-						$temp_path     = $upload_dir['path'] . '/' . $temp_filename;
-						$saved         = $editor->save( $temp_path, 'image/jpeg' );
+				$score = abs( $bpp - $mid_bpp );
+				if ( ! $best || $score < $best['score'] ) {
+					$best = array_merge( $result, array( 'score' => $score ) );
+				}
 
-						if ( ! is_wp_error( $saved ) && isset( $saved['path'] ) ) {
-							// Verify the resized image dimensions
-							$resized_info = getimagesize( $saved['path'] );
-							$actual_resized_width  = $resized_info ? $resized_info[0] : $new_width;
-							$actual_resized_height = $resized_info ? $resized_info[1] : $new_height;
+				if ( $bpp >= $min_bpp && $bpp <= $max_bpp ) {
+					unset( $result['score'] );
+					return $result;
+				}
 
-							$resized_contents = file_get_contents( $saved['path'] );
-							@unlink( $saved['path'] );
-							if ( $resized_contents !== false ) {
-								$base64 = base64_encode( $resized_contents );
-								if ( strlen( $base64 ) <= 5.5 * 1024 * 1024 ) {
-									// Validate base64 size matches reported dimensions (reject gray zone cases)
-									if ( $this->validate_base64_size( $base64, $actual_resized_width, $actual_resized_height ) ) {
-										$payload['image_base64'] = $base64;
-										$payload['mime_type']    = 'image/jpeg';
-										// CRITICAL: Update payload dimensions to match resized image
-										$payload['width']  = $actual_resized_width;
-										$payload['height'] = $actual_resized_height;
-										// CRITICAL: Remove image_url when we have base64
-										unset( $payload['image_url'] );
-									} else {
-										// Base64 too small for dimensions (gray zone) - reject and use URL
-										if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
-											\BeepBeepAI\AltTextGenerator\Debug_Log::log(
-												'warning',
-												'Rejecting base64: size too small for dimensions, using URL instead',
-												array(
-													'image_id'       => $image_id,
-													'dimensions'     => $actual_resized_width . 'x' . $actual_resized_height,
-													'base64_size_kb' => round( strlen( $base64 ) / 1024, 2 ),
-												),
-												'api'
-											);
-										}
-										unset( $payload['image_base64'] );
-										$payload['image_url'] = $image_url;
-									}
-								} else {
-									// Still too large even after resize - this shouldn't happen with quality 57
-									unset( $payload['image_base64'] );
-									$payload['image_url'] = $image_url;
-								}
-							} else {
-								unset( $payload['image_base64'] );
-								$payload['image_url'] = $image_url;
-							}
-						} else {
-							// Resize failed - do not fall back to original file
-							unset( $payload['image_base64'] );
-							$payload['image_url'] = $image_url;
-						}
-					} else {
-						// Editor creation failed - do not fall back to original file
-						unset( $payload['image_base64'] );
-						$payload['image_url'] = $image_url;
-					}
+				// Adjust: if too large, shrink dim and quality; if too small, bump quality slightly.
+				if ( $bpp > $max_bpp ) {
+					$targetdim = max( 96, (int) floor( $targetdim * 0.72 ) );
+					$quality   = max( 40, $quality - 10 );
 				} else {
-					// No resize needed - encode original file
-					$payload['width']  = $orig_width;
-					$payload['height'] = $orig_height;
+					$quality = min( 90, $quality + 10 );
+					$targetdim = min( $max_side, (int) floor( $targetdim * 1.1 ) );
 				}
 			} else {
-				$payload['image_url'] = $image_url;
-			}
-		} else {
-			// No image URL provided - log error
-			if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
-				\BeepBeepAI\AltTextGenerator\Debug_Log::log(
-					'error',
-					'prepare_image_payload: No image_url provided',
-					array(
-						'image_id'        => $image_id,
-						'image_url_param' => $image_url,
-					),
-					'api'
-				);
+				$quality   = max( 40, $quality - 10 );
+				$targetdim = max( 96, (int) floor( $targetdim * 0.85 ) );
 			}
 		}
 
-		// Only encode original file if resize wasn't needed (dimensions already at or below max)
-		$file_path = $file_path ?? get_attached_file( $image_id );
-		if ( empty( $payload['image_base64'] ) && $file_path && file_exists( $file_path ) ) {
-			// Only encode if dimensions are at or below max_dimension
-			$actual_image_info = getimagesize( $file_path );
-			$actual_width  = $actual_image_info ? $actual_image_info[0] : ( $payload['width'] ?? 0 );
-			$actual_height = $actual_image_info ? $actual_image_info[1] : ( $payload['height'] ?? 0 );
-			
-			$max_dimension = apply_filters( 'bbai_vision_api_max_dimension', 512, $image_id, $file_path );
-			$max_dimension = max( 256, min( 2048, intval( $max_dimension ) ) );
-			
-			// Only encode if dimensions are safe (at or below max)
-			if ( $actual_width <= $max_dimension && $actual_height <= $max_dimension ) {
-				$file_size       = filesize( $file_path );
-				$max_inline_size = 5.5 * 1024 * 1024; // ~5.5MB
-				if ( $file_size > 0 && $file_size <= $max_inline_size ) {
-					$contents = file_get_contents( $file_path );
+		if ( $best ) {
+			unset( $best['score'] );
+			return $best;
+		}
+
+		return new \WP_Error( 'invalid_image_size', __( 'Failed to save resized image.', 'beepbeep-ai-alt-text-generator' ) );
+	}
+
+	private function encode_with_quality( $file_path, $target_w, $target_h, $orig_w, $orig_h, $quality ) {
+		// Try WP image editor first.
+		if ( function_exists( 'wp_get_image_editor' ) ) {
+			$editor = wp_get_image_editor( $file_path );
+			if ( ! is_wp_error( $editor ) ) {
+				$editor->resize( $target_w, $target_h, false );
+				if ( method_exists( $editor, 'set_quality' ) ) {
+					$editor->set_quality( $quality );
+				}
+
+				$upload_dir = wp_upload_dir();
+				if ( ! empty( $upload_dir['path'] ) && ! is_dir( $upload_dir['path'] ) ) {
+					wp_mkdir_p( $upload_dir['path'] );
+				}
+				$temp_filename = 'bbai-inline-' . $target_w . 'x' . $target_h . '-' . $quality . '-' . time() . '.jpg';
+				$temp_path     = ! empty( $upload_dir['path'] )
+					? trailingslashit( $upload_dir['path'] ) . $temp_filename
+					: trailingslashit( sys_get_temp_dir() ) . $temp_filename;
+
+				$saved = $editor->save( $temp_path, 'image/jpeg' );
+				if ( ! is_wp_error( $saved ) && ! empty( $saved['path'] ) && file_exists( $saved['path'] ) ) {
+					$contents = file_get_contents( $saved['path'] );
+					@unlink( $saved['path'] );
 					if ( $contents !== false ) {
-						$base64 = base64_encode( $contents );
-						if ( ! empty( $base64 ) && strlen( $base64 ) <= $max_inline_size * 1.4 ) {
-							// Validate base64 size matches reported dimensions (reject gray zone cases)
-							if ( $this->validate_base64_size( $base64, $actual_width, $actual_height ) ) {
-								$mime_type               = $mime_type ?? get_post_mime_type( $image_id ) ?: 'image/jpeg';
-								$payload['image_base64'] = $base64;
-								$payload['mime_type']    = $mime_type;
-								// Update dimensions to actual file dimensions
-								$payload['width']  = $actual_width;
-								$payload['height'] = $actual_height;
-								// CRITICAL: Remove image_url when we have base64
-								unset( $payload['image_url'] );
-							} else {
-								// Base64 too small for dimensions (gray zone) - reject
-								if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
-									\BeepBeepAI\AltTextGenerator\Debug_Log::log(
-										'warning',
-										'Rejecting base64: size too small for dimensions',
-										array(
-											'image_id'       => $image_id,
-											'dimensions'     => $actual_width . 'x' . $actual_height,
-											'base64_size_kb' => round( strlen( $base64 ) / 1024, 2 ),
-										),
-										'api'
-									);
-								}
-								// Don't set image_base64, ensure we have image_url as fallback
-								if ( ! empty( $image_url ) ) {
-									$payload['image_url'] = $image_url;
-								}
-							}
-						}
+						$base64     = base64_encode( $contents );
+						$size_after = getimagesizefromstring( $contents );
+						return array(
+							'base64' => $base64,
+							'width'  => $size_after ? (int) $size_after[0] : $target_w,
+							'height' => $size_after ? (int) $size_after[1] : $target_h,
+							'mime'   => 'image/jpeg',
+						);
 					}
 				}
 			}
 		}
 
-		// Verify image data is included
-		if ( empty( $payload['image_url'] ) && empty( $payload['image_base64'] ) ) {
-			if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
-				\BeepBeepAI\AltTextGenerator\Debug_Log::log(
-					'error',
-					'prepare_image_payload: Payload missing image data',
-					array(
-						'image_id'        => $image_id,
-						'payload_keys'    => array_keys( $payload ),
-						'image_url_input' => $image_url,
-					),
-					'api'
-				);
+		// GD fallback: resize and encode in-memory.
+		if ( function_exists( 'imagecreatefromstring' ) && function_exists( 'imagecreatetruecolor' ) ) {
+			$raw = file_get_contents( $file_path );
+			if ( $raw !== false ) {
+				$src = @imagecreatefromstring( $raw );
+				if ( $src !== false ) {
+					$dst = imagecreatetruecolor( $target_w, $target_h );
+					imagecopyresampled( $dst, $src, 0, 0, 0, 0, $target_w, $target_h, $orig_w, $orig_h );
+					ob_start();
+					imagejpeg( $dst, null, $quality );
+					$jpeg = ob_get_clean();
+					imagedestroy( $dst );
+					imagedestroy( $src );
+					if ( $jpeg !== false ) {
+						$base64     = base64_encode( $jpeg );
+						$size_after = getimagesizefromstring( $jpeg );
+						return array(
+							'base64' => $base64,
+							'width'  => $size_after ? (int) $size_after[0] : $target_w,
+							'height' => $size_after ? (int) $size_after[1] : $target_h,
+							'mime'   => 'image/jpeg',
+						);
+					}
+				}
 			}
-			$payload['_error']         = 'missing_image_data';
-			$payload['_error_message'] = 'Image URL or base64 data is required';
 		}
 
-		return $payload;
+		return null;
 	}
+
+	/**
+	 * Determine if a URL is publicly reachable over HTTPS (not localhost or private IPs)
+	 *
+	 * @param string $url URL to check.
+	 * @return bool
+	 */
+	private function is_public_https_url( $url ) {
+		$parsed = wp_parse_url( $url );
+		if ( empty( $parsed['scheme'] ) || strtolower( $parsed['scheme'] ) !== 'https' || empty( $parsed['host'] ) ) {
+			return false;
+		}
+
+		$host = strtolower( $parsed['host'] );
+		// Localhost / local domains
+		if ( $host === 'localhost' || $host === '127.0.0.1' || substr( $host, -6 ) === '.local' ) {
+			return false;
+		}
+
+		// Private IP ranges
+		if ( filter_var( $host, FILTER_VALIDATE_IP ) ) {
+			if ( substr( $host, 0, 4 ) === '10.' ) {
+				return false;
+			}
+			if ( substr( $host, 0, 8 ) === '192.168.' ) {
+				return false;
+			}
+			// 172.16.0.0 – 172.31.255.255
+			if ( preg_match( '#^172\.(1[6-9]|2[0-9]|3[0-1])\.#', $host ) ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Resize and encode image file to base64 within size limits
+	 *
+	 * @param string $file_path
+	 * @param int    $image_id
+	 * @return array|null { base64, width, height, mime } or null on failure
+	 */
+	private function generate_resized_base64( $file_path, $image_id ) {
+		$mime_type = get_post_mime_type( $image_id ) ?: 'image/jpeg';
+		$image_info = getimagesize( $file_path );
+		$orig_w     = $image_info ? (int) $image_info[0] : 0;
+		$orig_h     = $image_info ? (int) $image_info[1] : 0;
+		if ( $orig_w <= 0 || $orig_h <= 0 ) {
+			return null;
+		}
+
+		// Target ratio-based size: keep base64 length per pixel below ~0.035 (approx backend expectation)
+		$max_ratio      = 0.035; // base64 chars per pixel (approx)
+		$min_ratio      = 0.018; // avoid being flagged as too small
+		$quality_steps  = array( 70, 60, 50, 40, 30, 20 );
+		$max_dim_start  = min( 256, max( 128, max( $orig_w, $orig_h ) ) );
+		$min_dim        = 96;
+
+		$current_dim = $max_dim_start;
+		$best        = null;
+
+		while ( $current_dim >= $min_dim ) {
+			foreach ( $quality_steps as $q ) {
+				$result = $this->resize_and_encode( $file_path, $orig_w, $orig_h, $current_dim, $q );
+				if ( ! $result ) {
+					continue;
+				}
+				$len      = strlen( $result['base64'] );
+				$pixelcnt = max( 1, $result['width'] * $result['height'] );
+				$ratio    = $len / $pixelcnt;
+
+				// Perfect fit within ratio bounds
+				if ( $ratio <= $max_ratio && $ratio >= $min_ratio ) {
+					$result['mime'] = $mime_type;
+					return $result;
+				}
+
+				// Track best candidate (closest to max_ratio without being far below min_ratio)
+				if ( $best === null ) {
+					$best = $result + array( 'mime' => $mime_type );
+					continue;
+				}
+
+				$best_len      = strlen( $best['base64'] );
+				$best_ratio    = $best_len / max( 1, $best['width'] * $best['height'] );
+				$best_score    = abs( $best_ratio - $max_ratio );
+				$current_score = abs( $ratio - $max_ratio );
+
+				if ( $current_score < $best_score ) {
+					$best = $result + array( 'mime' => $mime_type );
+				}
+			}
+
+			$current_dim = (int) floor( $current_dim * 0.85 );
+		}
+
+		return $best ? $best + array( 'mime' => $mime_type ) : null;
+	}
+
+	/**
+	 * Helper: resize and encode using wp_get_image_editor or GD fallback
+	 */
+	private function resize_and_encode( $file_path, $orig_w, $orig_h, $target_dim, $quality ) {
+		$ratio      = min( $target_dim / $orig_w, $target_dim / $orig_h, 1 );
+		$new_width  = (int) max( 1, floor( $orig_w * $ratio ) );
+		$new_height = (int) max( 1, floor( $orig_h * $ratio ) );
+
+		// WP editor path
+		if ( function_exists( 'wp_get_image_editor' ) ) {
+			$editor = wp_get_image_editor( $file_path );
+			if ( ! is_wp_error( $editor ) ) {
+				$editor->resize( $new_width, $new_height, false );
+				if ( method_exists( $editor, 'set_quality' ) ) {
+					$editor->set_quality( $quality );
+				}
+				$upload_dir    = wp_upload_dir();
+				$temp_filename = 'bbai-inline-' . $target_dim . '-' . $quality . '-' . time() . '.jpg';
+				$temp_path     = trailingslashit( $upload_dir['path'] ) . $temp_filename;
+				$saved         = $editor->save( $temp_path, 'image/jpeg' );
+				if ( ! is_wp_error( $saved ) && ! empty( $saved['path'] ) ) {
+					$contents = file_get_contents( $saved['path'] );
+					@unlink( $saved['path'] );
+					if ( $contents !== false ) {
+						$base64 = base64_encode( $contents );
+						$size_after = getimagesizefromstring( $contents );
+						return array(
+							'base64' => $base64,
+							'width'  => $size_after ? (int) $size_after[0] : $new_width,
+							'height' => $size_after ? (int) $size_after[1] : $new_height,
+						);
+					}
+				}
+			}
+		}
+
+		// GD fallback
+		if ( function_exists( 'imagecreatefromstring' ) && function_exists( 'imagecreatetruecolor' ) ) {
+			$raw = file_get_contents( $file_path );
+			if ( $raw !== false ) {
+				$src = @imagecreatefromstring( $raw );
+				if ( $src !== false ) {
+					$dst = imagecreatetruecolor( $new_width, $new_height );
+					imagecopyresampled( $dst, $src, 0, 0, 0, 0, $new_width, $new_height, $orig_w, $orig_h );
+					ob_start();
+					imagejpeg( $dst, null, $quality );
+					$jpeg = ob_get_clean();
+					imagedestroy( $dst );
+					imagedestroy( $src );
+					if ( $jpeg !== false ) {
+						$base64 = base64_encode( $jpeg );
+						$size_after = getimagesizefromstring( $jpeg );
+						return array(
+							'base64' => $base64,
+							'width'  => $size_after ? (int) $size_after[0] : $new_width,
+							'height' => $size_after ? (int) $size_after[1] : $new_height,
+						);
+					}
+				}
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get alt API token from option/constant/env.
+	 */
+	private function get_alt_api_token() {
+		$token = get_option( 'bbai_alt_api_token' );
+		if ( empty( $token ) && defined( 'ALT_API_TOKEN' ) ) {
+			$token = ALT_API_TOKEN;
+		}
+		if ( empty( $token ) ) {
+			$env_token = getenv( 'ALT_API_TOKEN' );
+			if ( $env_token !== false ) {
+				$token = $env_token;
+			}
+		}
+		return $token;
+	}
+
+	/**
+	 * Resolve site identifier for X-Site-Key header.
+	 */
+	private function get_site_identifier() {
+		if ( $this->get_site_id_callback ) {
+			$site_id = call_user_func( $this->get_site_id_callback );
+			if ( ! empty( $site_id ) ) {
+				return $site_id;
+			}
+		}
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
+		return \BeepBeepAI\AltTextGenerator\get_site_identifier();
+	}
+
 }

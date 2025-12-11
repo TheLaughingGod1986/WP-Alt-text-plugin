@@ -129,7 +129,7 @@ const MultiUserUsageTab = ({ apiUrl, nonce }) => {
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold text-slate-900 mb-2">Team Usage</h2>
-        <p className="text-slate-600">Monitor token usage across all team members</p>
+        <p className="text-slate-600">Monitor credit usage across all team members</p>
       </div>
 
       {/* Usage Summary Cards */}
@@ -162,8 +162,9 @@ const MultiUserUsageTab = ({ apiUrl, nonce }) => {
           <h3 className="text-lg font-semibold text-slate-900 mb-4">Usage by User</h3>
           <div className="space-y-3">
             {usageData.users.map((user, index) => {
-              const maxTokens = Math.max(...usageData.users.map(u => u.tokens_used), 1);
-              const percentage = (user.tokens_used / maxTokens) * 100;
+              const maxTokens = Math.max(...usageData.users.map(u => (u.credits_used ?? u.tokens_used ?? 0)), 1);
+              const userUsed = user.credits_used ?? user.tokens_used ?? 0;
+              const percentage = (userUsed / maxTokens) * 100;
               
               return (
                 <div key={user.user_id || index}>
@@ -172,7 +173,7 @@ const MultiUserUsageTab = ({ apiUrl, nonce }) => {
                       {user.display_name} ({user.username})
                     </span>
                     <span className="text-sm text-slate-600">
-                      {user.tokens_used.toLocaleString()} tokens
+                      {userUsed.toLocaleString()} credits
                     </span>
                   </div>
                   <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden">
@@ -364,4 +365,3 @@ const MultiUserUsageTab = ({ apiUrl, nonce }) => {
 };
 
 export default MultiUserUsageTab;
-

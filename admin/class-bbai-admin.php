@@ -65,7 +65,8 @@ class Admin {
 			return;
 		}
 
-		$this->core  = new \BeepBeepAI\AltTextGenerator\Core();
+		// Use singleton instance to avoid multiple instantiations
+		$this->core  = \BeepBeepAI\AltTextGenerator\Core::get_instance();
 		$this->hooks = new \BeepBeepAI\AltTextGenerator\Admin_Hooks( $this->core );
 		$this->hooks->register();
 	}

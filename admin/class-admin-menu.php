@@ -165,10 +165,9 @@ class Admin_Menu {
 		global $wp_filter;
 		$core = null;
 
-		// Try to get Core instance via reflection or global.
-		// For now, create a new instance if needed (it's a singleton internally).
+		// Use singleton instance to avoid multiple instantiations
 		try {
-			$core = new \BeepBeepAI\AltTextGenerator\Core();
+			$core = \BeepBeepAI\AltTextGenerator\Core::get_instance();
 		} catch ( \Exception $e ) {
 			wp_die(
 				'<h1>' . esc_html__( 'Plugin Error', 'beepbeep-ai-alt-text-generator' ) . '</h1>' .

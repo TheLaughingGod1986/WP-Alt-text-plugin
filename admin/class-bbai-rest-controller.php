@@ -95,6 +95,16 @@ class REST_Controller {
 				'permission_callback' => array( $this, 'can_edit_media' ),
 			)
 		);
+		// Fallback to catch legacy requests that append query params directly to rest_route (e.g., rest_route=/bbai/v1/usage?force_refresh=true).
+		register_rest_route(
+			'bbai/v1',
+			'/usage(?P<extra>.*)',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'handle_usage' ),
+				'permission_callback' => array( $this, 'can_edit_media' ),
+			)
+		);
 
 		register_rest_route(
 			'bbai/v1',
@@ -570,6 +580,12 @@ class REST_Controller {
 
 		// Check if force refresh is requested
 		$force_refresh = $request->get_param( 'force_refresh' ) === 'true' || $request->get_param( 'refresh' ) === 'true';
+		if ( ! $force_refresh && $request->get_param( 'extra' ) ) {
+			$extra = (string) $request->get_param( 'extra' );
+			if ( strpos( $extra, 'force_refresh=true' ) !== false || strpos( $extra, 'refresh=true' ) !== false ) {
+				$force_refresh = true;
+			}
+		}
 		
 		if ( $force_refresh ) {
 			// Clear cache before fetching fresh data
@@ -773,24 +789,25 @@ class REST_Controller {
 	 * @return array|\WP_Error
 	 */
 	public function handle_usage_summary( \WP_REST_Request $request ) {
-		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-token-quota-service.php';
-		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
+		$api_client = new \BeepBeepAI\AltTextGenerator\API_Client_V2();
 
-		$quota = \BeepBeepAI\AltTextGenerator\Token_Quota_Service::get_site_quota();
-
-		if ( is_wp_error( $quota ) ) {
-			return $quota;
+		$usage = $api_client->get_usage();
+		if ( is_wp_error( $usage ) ) {
+			return $usage;
 		}
 
-		$site_id = \BeepBeepAI\AltTextGenerator\get_site_identifier();
+		$credits_used      = intval( $usage['credits_used'] ?? $usage['used'] ?? 0 );
+		$credits_remaining = intval( $usage['credits_remaining'] ?? $usage['remaining'] ?? 0 );
+		$total_limit       = $credits_used + $credits_remaining;
 
 		return array(
-			'site_id'     => $site_id,
-			'total_limit' => $quota['limit'] ?? 0,
-			'total_used'  => $quota['used'] ?? 0,
-			'remaining'   => $quota['remaining'] ?? 0,
-			'resets_at'   => $quota['resets_at'] ?? 0,
-			'plan_type'   => $quota['plan_type'] ?? 'free',
+			'total_limit' => $total_limit,
+			'total_used'  => $credits_used,
+			'remaining'   => $credits_remaining,
+			'period_start'=> $usage['period_start'] ?? '',
+			'period_end'  => $usage['period_end'] ?? '',
+			'plan_type'   => $usage['plan_type'] ?? '',
 		);
 	}
 
@@ -801,23 +818,29 @@ class REST_Controller {
 	 * @return array|\WP_Error
 	 */
 	public function handle_usage_by_user( \WP_REST_Request $request ) {
-		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/usage/class-usage-helpers.php';
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
+		$api_client = new \BeepBeepAI\AltTextGenerator\API_Client_V2();
 
-		$users = \BeepBeepAI\AltTextGenerator\Usage\get_monthly_usage_by_user();
-
-		// Format response
-		$formatted = array();
-		foreach ( $users as $user ) {
-			$formatted[] = array(
-				'user_id'      => intval( $user['user_id'] ),
-				'display_name' => $user['display_name'] ?? $user['username'] ?? __( 'System', 'beepbeep-ai-alt-text-generator' ),
-				'username'     => $user['username'] ?? '',
-				'tokens_used'  => intval( $user['tokens_used'] ?? 0 ),
-				'last_used'    => $user['last_used'] ?? null,
-			);
+		// Include user headers for per-user breakdown
+		$usage = $api_client->get_usage();
+		if ( is_wp_error( $usage ) ) {
+			return $usage;
 		}
 
-		return $formatted;
+		$users = array();
+		if ( ! empty( $usage['users'] ) && is_array( $usage['users'] ) ) {
+			foreach ( $usage['users'] as $user ) {
+				$users[] = array(
+					'user_id'      => intval( $user['user_id'] ?? 0 ),
+					'display_name' => $user['display_name'] ?? $user['username'] ?? __( 'System', 'beepbeep-ai-alt-text-generator' ),
+					'username'     => $user['username'] ?? '',
+					'credits_used' => intval( $user['credits_used'] ?? $user['used'] ?? 0 ),
+					'last_used'    => $user['last_used'] ?? null,
+				);
+			}
+		}
+
+		return $users;
 	}
 
 	/**
@@ -827,20 +850,13 @@ class REST_Controller {
 	 * @return array|\WP_Error
 	 */
 	public function handle_usage_events( \WP_REST_Request $request ) {
-		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/usage/class-usage-helpers.php';
-
-		$filters = array(
-			'user_id'     => $request->get_param( 'user_id' ),
-			'date_from'   => $request->get_param( 'from' ),
-			'date_to'     => $request->get_param( 'to' ),
-			'action_type' => $request->get_param( 'action_type' ),
-			'per_page'    => $request->get_param( 'per_page' ) ? absint( $request->get_param( 'per_page' ) ) : 50,
-			'page'        => $request->get_param( 'page' ) ? absint( $request->get_param( 'page' ) ) : 1,
+		// Backend usage API does not expose event logs here; return empty structure to keep UI stable.
+		return array(
+			'total'  => 0,
+			'pages'  => 0,
+			'page'   => 1,
+			'events' => array(),
 		);
-
-		$result = \BeepBeepAI\AltTextGenerator\Usage\get_usage_events( $filters );
-
-		return $result;
 	}
 
 	/**

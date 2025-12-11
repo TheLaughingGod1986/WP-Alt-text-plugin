@@ -67,16 +67,43 @@ class Usage_Tracker {
 	public static function update_usage( $usage_data ) {
 		if ( ! is_array( $usage_data ) ) {
 			return; }
-		$used  = isset( $usage_data['used'] ) ? max( 0, intval( $usage_data['used'] ) ) : 0;
-		$limit = isset( $usage_data['limit'] ) ? intval( $usage_data['limit'] ) : 50;
+		// Accept nested shape { usage: { ... } } from backend.
+		if ( isset( $usage_data['usage'] ) && is_array( $usage_data['usage'] ) ) {
+			$usage_data = $usage_data['usage'];
+		}
+		// Accept subscription wrapper.
+		if ( isset( $usage_data['subscription'] ) && is_array( $usage_data['subscription'] ) ) {
+			$sub        = $usage_data['subscription'];
+			$usage_data = array_merge( $usage_data, array(
+				'used'        => $sub['used'] ?? null,
+				'limit'       => $sub['quota'] ?? null,
+				'remaining'   => $sub['remaining'] ?? null,
+				'plan_type'   => $sub['plan'] ?? $sub['status'] ?? null,
+				'period_end'  => $sub['periodEnd'] ?? null,
+				'period_start'=> $sub['periodStart'] ?? null,
+			) );
+		}
+		// Normalize new API fields to legacy keys.
+		$used_credits      = isset( $usage_data['credits_used'] ) ? intval( $usage_data['credits_used'] ) : ( isset( $usage_data['used'] ) ? intval( $usage_data['used'] ) : 0 );
+		$remaining_credits = isset( $usage_data['credits_remaining'] ) ? intval( $usage_data['credits_remaining'] ) : ( isset( $usage_data['remaining'] ) ? intval( $usage_data['remaining'] ) : 0 );
+
+		// Derive limit from explicit fields or used+remaining.
+		if ( isset( $usage_data['total_limit'] ) ) {
+			$limit = intval( $usage_data['total_limit'] );
+		} elseif ( isset( $usage_data['limit'] ) ) {
+			$limit = intval( $usage_data['limit'] );
+		} else {
+			$limit = max( 0, $used_credits + $remaining_credits );
+		}
 		if ( $limit <= 0 ) {
-			$limit = 50; }
-		$remaining = isset( $usage_data['remaining'] ) ? intval( $usage_data['remaining'] ) : ( $limit - $used );
-		if ( $remaining < 0 ) {
-			$remaining = 0; }
+			$limit = 50;
+		}
+
+		$used      = max( 0, min( $used_credits, $limit ) );
+		$remaining = $remaining_credits > 0 ? $remaining_credits : max( 0, $limit - $used );
 
 		$current_ts = current_time( 'timestamp' );
-		$reset_raw  = $usage_data['resetDate'] ?? '';
+		$reset_raw  = $usage_data['resetDate'] ?? ( $usage_data['period_end'] ?? '' );
 		$reset_ts   = isset( $usage_data['resetTimestamp'] ) ? intval( $usage_data['resetTimestamp'] ) : 0;
 		if ( $reset_ts <= 0 && $reset_raw ) {
 			$reset_ts = strtotime( $reset_raw );
@@ -90,13 +117,24 @@ class Usage_Tracker {
 			'used'                => $used,
 			'limit'               => $limit,
 			'remaining'           => $remaining,
-			'plan'                => $usage_data['plan'] ?? 'free',
+			'plan'                => $usage_data['plan'] ?? ( $usage_data['plan_type'] ?? 'free' ),
 			'resetDate'           => $reset_raw ?: gmdate( 'Y-m-01', strtotime( '+1 month', $current_ts ) ),
 			'reset_timestamp'     => $reset_ts,
 			'seconds_until_reset' => $seconds_until_reset,
 			'_cache_timestamp'    => $current_ts, // Store cache timestamp for age calculation
 		);
 		set_transient( self::CACHE_KEY, $normalized, self::CACHE_EXPIRY );
+
+		// Clear other usage caches so dashboards pick up fresh numbers immediately.
+		if ( class_exists( '\Optti\Framework\LicenseManager' ) ) {
+			$license = \Optti\Framework\LicenseManager::instance();
+			if ( method_exists( $license, 'clear_quota_cache' ) ) {
+				$license->clear_quota_cache();
+			}
+		}
+		if ( class_exists( '\Optti\Framework\Cache' ) ) {
+			\Optti\Framework\Cache::instance()->delete( 'usage_stats' );
+		}
 	}
 
 	/**

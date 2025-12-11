@@ -42,8 +42,16 @@ class Usage_Manager {
 		$has_license   = $this->has_active_license_callback ? call_user_func( $this->has_active_license_callback ) : false;
 		$license_cache = $has_license && $this->get_license_data_callback ? call_user_func( $this->get_license_data_callback ) : null;
 
-		// Do NOT include user ID - usage must be tracked per-site
-		$response = $this->request_handler->make_request( '/usage', 'GET', null, null, false );
+		// Include site key and, optionally, user id/email for per-user breakdown
+		$extra_headers = array();
+		if ( function_exists( 'wp_get_current_user' ) ) {
+			$current_user = wp_get_current_user();
+			if ( $current_user && $current_user->ID ) {
+				$extra_headers['X-WP-User-Email'] = $current_user->user_email ?? '';
+			}
+		}
+
+		$response = $this->request_handler->make_request( '/api/usage', 'GET', null, null, true, $extra_headers );
 
 		if ( is_wp_error( $response ) ) {
 			// Try cached usage as fallback
@@ -65,8 +73,29 @@ class Usage_Manager {
 			return $response;
 		}
 
-		if ( $response['success'] && isset( $response['data']['usage'] ) ) {
-			$usage = $response['data']['usage'];
+		if ( $response['success'] && isset( $response['data'] ) ) {
+			// Accept both nested usage or direct data
+			$usage = $response['data']['usage'] ?? $response['data'];
+
+			// Normalize new backend shape: { subscription: { quota, used, remaining, periodStart, periodEnd, plan/status }, credits: { ... } }
+			if ( isset( $response['data']['subscription'] ) && is_array( $response['data']['subscription'] ) ) {
+				$sub = $response['data']['subscription'];
+				$usage['used']         = isset( $sub['used'] ) ? intval( $sub['used'] ) : null;
+				$usage['limit']        = isset( $sub['quota'] ) ? intval( $sub['quota'] ) : null;
+				$usage['remaining']    = isset( $sub['remaining'] ) ? intval( $sub['remaining'] ) : null;
+				$usage['plan_type']    = $sub['plan'] ?? $sub['status'] ?? null;
+				$usage['period_start'] = $sub['periodStart'] ?? null;
+				$usage['period_end']   = $sub['periodEnd'] ?? null;
+				$usage['scope']        = $sub['scope'] ?? null;
+			}
+
+			// Normalize credits block if present
+			if ( isset( $response['data']['credits'] ) && is_array( $response['data']['credits'] ) ) {
+				$credits                   = $response['data']['credits'];
+				$usage['credits_total']    = $credits['total'] ?? null;
+				$usage['credits_used']     = $credits['used'] ?? null;
+				$usage['credits_remaining'] = $credits['remaining'] ?? null;
+			}
 
 			if ( $has_license && is_array( $usage ) ) {
 				// Extract and apply license snapshot

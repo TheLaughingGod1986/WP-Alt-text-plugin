@@ -92,6 +92,13 @@ class Core {
 	);
 
 	/**
+	 * Singleton instance.
+	 *
+	 * @var Core|null
+	 */
+	private static $instance = null;
+
+	/**
 	 * Cached statistics data.
 	 *
 	 * @var array|null
@@ -132,6 +139,18 @@ class Core {
 	 * @var array|null
 	 */
 	private $account_summary = null;
+
+	/**
+	 * Get singleton instance of Core.
+	 *
+	 * @return Core
+	 */
+	public static function get_instance() {
+		if ( null === self::$instance ) {
+			self::$instance = new self();
+		}
+		return self::$instance;
+	}
 
 	/**
 	 * Check if current user can manage the plugin.
@@ -217,6 +236,15 @@ class Core {
 		if ( ! is_admin() ) {
 			return;
 		}
+
+		// Use transient to avoid checking on every admin_init (check once per hour)
+		$last_check = get_transient( 'bbai_migration_check' );
+		if ( false !== $last_check ) {
+			return;
+		}
+
+		// Set transient for 1 hour to prevent repeated checks
+		set_transient( 'bbai_migration_check', time(), HOUR_IN_SECONDS );
 
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-migrate-usage.php';
 		if ( ! \BeepBeepAI\AltTextGenerator\Migrate_Usage::is_migrated() ) {
@@ -1441,13 +1469,26 @@ class Core {
 				// Get usage stats
 				$usage_stats = Usage_Tracker::get_stats_display();
 
-				// Pull fresh usage from backend to avoid stale cache - same logic as Settings tab
-				if ( isset( $this->api_client ) ) {
+				// Pull fresh usage from backend with caching to avoid blocking page load
+				// Cache API calls for 2 minutes to improve performance
+				$cached_usage = get_transient( 'bbai_dashboard_usage' );
+				if ( false === $cached_usage && isset( $this->api_client ) ) {
 					$live_usage = $this->api_client->get_usage();
 					if ( is_array( $live_usage ) && ! empty( $live_usage ) && ! is_wp_error( $live_usage ) ) {
+						// Cache for 2 minutes
+						set_transient( 'bbai_dashboard_usage', $live_usage, 2 * MINUTE_IN_SECONDS );
 						// Update cache with fresh API data
 						Usage_Tracker::update_usage( $live_usage );
+						$cached_usage = $live_usage;
 					}
+				} elseif ( false !== $cached_usage ) {
+					// Use cached data and update tracker
+					Usage_Tracker::update_usage( $cached_usage );
+				}
+
+				// Use cached usage if available
+				if ( isset( $cached_usage ) && is_array( $cached_usage ) && ! empty( $cached_usage ) ) {
+					$live_usage = $cached_usage;
 				}
 				// Get stats - will use the just-updated cache
 				$usage_stats     = Usage_Tracker::get_stats_display( false );

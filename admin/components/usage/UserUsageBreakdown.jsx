@@ -99,7 +99,7 @@ const UserUsageBreakdown = ({ apiUrl, nonce }) => {
                 User
               </th>
               <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                Tokens Used
+                Credits Used
               </th>
               <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
                 Last Use
@@ -114,7 +114,7 @@ const UserUsageBreakdown = ({ apiUrl, nonce }) => {
                   <div className="text-slate-500 text-xs">({user.username})</div>
                 </td>
                 <td className="px-4 py-3 text-sm text-right font-medium text-slate-900">
-                  {user.tokens_used.toLocaleString()}
+                  {(user.credits_used ?? user.tokens_used ?? 0).toLocaleString()}
                 </td>
                 <td className="px-4 py-3 text-sm text-right text-slate-600">
                   {formatTimeAgo(user.last_used)}
@@ -129,4 +129,3 @@ const UserUsageBreakdown = ({ apiUrl, nonce }) => {
 };
 
 export default UserUsageBreakdown;
-
