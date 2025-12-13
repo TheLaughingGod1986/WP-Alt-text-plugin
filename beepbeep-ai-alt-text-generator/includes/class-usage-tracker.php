@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Usage Tracker for AltText AI
  * Caches usage data locally and handles upgrade prompts

@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /**
  * API Client for AltText AI Phase 2
  * Handles JWT authentication and communication with the Phase 2 API
@@ -676,9 +678,17 @@ class BbAI_API_Client_V2 {
     }
     
     /**
-     * Register new user
+     * Register a new user account.
+     *
+     * Creates a new user account with the API and automatically logs in
+     * by storing the authentication token on success.
+     *
+     * @since 4.0.0
+     * @param string $email    User email address.
+     * @param string $password User password.
+     * @return array|WP_Error User data array with token on success, WP_Error on failure.
      */
-    public function register($email, $password) {
+    public function register(string $email, string $password) {
         $response = $this->make_request('/auth/register', 'POST', [
             'email' => $email,
             'password' => $password
@@ -699,11 +709,18 @@ class BbAI_API_Client_V2 {
             $response['data']['error'] ?? __('Registration failed', 'beepbeep-ai-alt-text-generator')
         );
     }
-    
+
     /**
-     * Login user
+     * Authenticate user with email and password.
+     *
+     * Logs in a user and stores the authentication token for subsequent API requests.
+     *
+     * @since 4.0.0
+     * @param string $email    User email address.
+     * @param string $password User password.
+     * @return array|WP_Error User data array with token on success, WP_Error on failure.
      */
-    public function login($email, $password) {
+    public function login(string $email, string $password) {
         $response = $this->make_request('/auth/login', 'POST', [
             'email' => $email,
             'password' => $password
@@ -724,9 +741,14 @@ class BbAI_API_Client_V2 {
             $response['data']['error'] ?? __('Login failed', 'beepbeep-ai-alt-text-generator')
         );
     }
-    
+
     /**
-     * Get current user info
+     * Get current user account information.
+     *
+     * Fetches user profile data including email, plan, and account status.
+     *
+     * @since 4.0.0
+     * @return array|WP_Error User account data on success, WP_Error on failure.
      */
     public function get_user_info() {
         $response = $this->make_request('/auth/me');
@@ -747,9 +769,16 @@ class BbAI_API_Client_V2 {
     }
 
     /**
-     * Activate license key for this site
+     * Activate an agency/pro license key for this site.
+     *
+     * Registers this WordPress installation with the provided license key,
+     * enabling agency/pro features and quota limits.
+     *
+     * @since 4.0.0
+     * @param string $license_key The license key to activate.
+     * @return array|WP_Error License data on success, WP_Error on failure.
      */
-    public function activate_license($license_key) {
+    public function activate_license(string $license_key) {
         $site_id = $this->get_site_id();
 
         $data = [
@@ -792,7 +821,13 @@ class BbAI_API_Client_V2 {
     }
 
     /**
-     * Deactivate current license key
+     * Deactivate the current license for this site.
+     *
+     * Unregisters this WordPress installation from the license, freeing up
+     * a site slot for use elsewhere.
+     *
+     * @since 4.0.0
+     * @return array Response data with success message.
      */
     public function deactivate_license() {
         $this->clear_license_key();
