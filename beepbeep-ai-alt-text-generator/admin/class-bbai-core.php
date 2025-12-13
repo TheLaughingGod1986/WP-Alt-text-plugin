@@ -6462,7 +6462,7 @@ class BbAI_Core {
      * Handle AJAX request to dismiss external API notice.
      * Uses site option so it shows only once for all users.
      */
-    public function ajax_dismiss_api_notice() {
+    public function ajax_dismiss_api_notice(): void {
         check_ajax_referer('wp_alt_text_dismiss_api_notice', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -6473,9 +6473,9 @@ class BbAI_Core {
         wp_send_json_success(['message' => __('Notice dismissed', 'beepbeep-ai-alt-text-generator')]);
     }
 
-    public function ajax_dismiss_upgrade() {
+    public function ajax_dismiss_upgrade(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
-        
+
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => 'Unauthorized']);
         }
@@ -6489,7 +6489,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Refresh usage data
      */
-    public function ajax_queue_retry_job() {
+    public function ajax_queue_retry_job(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -6504,7 +6504,7 @@ class BbAI_Core {
         wp_send_json_success(['message' => __('Job re-queued.', 'beepbeep-ai-alt-text-generator')]);
     }
 
-    public function ajax_queue_retry_failed() {
+    public function ajax_queue_retry_failed(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -6514,7 +6514,7 @@ class BbAI_Core {
         wp_send_json_success(['message' => __('Retry scheduled for failed jobs.', 'beepbeep-ai-alt-text-generator')]);
     }
 
-    public function ajax_queue_clear_completed() {
+    public function ajax_queue_clear_completed(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -6523,22 +6523,22 @@ class BbAI_Core {
         wp_send_json_success(['message' => __('Cleared completed jobs.', 'beepbeep-ai-alt-text-generator')]);
     }
 
-    public function ajax_queue_stats() {
+    public function ajax_queue_stats(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
         }
-        
+
         $stats = BbAI_Queue::get_stats();
         $failures = BbAI_Queue::get_failures();
-        
+
         wp_send_json_success([
             'stats' => $stats,
             'failures' => $failures
         ]);
     }
 
-    public function ajax_track_upgrade() {
+    public function ajax_track_upgrade(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -6558,17 +6558,17 @@ class BbAI_Core {
         wp_send_json_success(['recorded' => true]);
     }
 
-    public function ajax_refresh_usage() {
+    public function ajax_refresh_usage(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
-        
+
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => 'Unauthorized']);
         }
-        
+
         // Clear cache and fetch fresh data
         BbAI_Usage_Tracker::clear_cache();
         $usage = $this->api_client->get_usage();
-        
+
         if ($usage) {
             $stats = BbAI_Usage_Tracker::get_stats_display();
             wp_send_json_success($stats);
@@ -6580,7 +6580,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Regenerate single image alt text
      */
-    public function ajax_regenerate_single() {
+    public function ajax_regenerate_single(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         
         if (!$this->user_can_manage()) {
@@ -6629,9 +6629,9 @@ class BbAI_Core {
     /**
      * AJAX handler: Bulk queue images for processing
      */
-    public function ajax_bulk_queue() {
+    public function ajax_bulk_queue(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
-        
+
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => 'Unauthorized']);
         }
@@ -6872,7 +6872,7 @@ class BbAI_Core {
     /**
      * AJAX handler: User registration
      */
-    public function ajax_register() {
+    public function ajax_register(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -6901,7 +6901,7 @@ class BbAI_Core {
     /**
      * AJAX handler: User login
      */
-    public function ajax_login() {
+    public function ajax_login(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -6930,7 +6930,7 @@ class BbAI_Core {
     /**
      * AJAX handler: User logout
      */
-    public function ajax_logout() {
+    public function ajax_logout(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -6941,7 +6941,7 @@ class BbAI_Core {
         wp_send_json_success(['message' => __('Logged out successfully', 'beepbeep-ai-alt-text-generator')]);
     }
 
-    public function ajax_disconnect_account() {
+    public function ajax_disconnect_account(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
 
         if (!$this->user_can_manage()) {
@@ -6973,7 +6973,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Activate license key
      */
-    public function ajax_activate_license() {
+    public function ajax_activate_license(): void {
         check_ajax_referer('bbai_license_action', 'nonce');
 
         if (!$this->user_can_manage()) {
@@ -7013,7 +7013,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Deactivate license key
      */
-    public function ajax_deactivate_license() {
+    public function ajax_deactivate_license(): void {
         check_ajax_referer('bbai_license_action', 'nonce');
 
         if (!$this->user_can_manage()) {
@@ -7039,7 +7039,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Get license site usage
      */
-    public function ajax_get_license_sites() {
+    public function ajax_get_license_sites(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -7067,7 +7067,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Disconnect a site from the license
      */
-    public function ajax_disconnect_license_site() {
+    public function ajax_disconnect_license_site(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -7106,7 +7106,7 @@ class BbAI_Core {
     /**
      * Check if admin is authenticated (separate from regular user auth)
      */
-    private function is_admin_authenticated() {
+    private function is_admin_authenticated(): bool {
         // Check if we have a valid admin session
         $admin_session = get_transient('bbai_admin_session_' . get_current_user_id());
         if ($admin_session === false || empty($admin_session)) {
@@ -7126,7 +7126,7 @@ class BbAI_Core {
     /**
      * Set admin session
      */
-    private function set_admin_session() {
+    private function set_admin_session(): void {
         $user_id = get_current_user_id();
         set_transient('bbai_admin_session_' . $user_id, 'authenticated', DAY_IN_SECONDS);
         set_transient('bbai_admin_session_time_' . $user_id, time(), DAY_IN_SECONDS);
@@ -7135,7 +7135,7 @@ class BbAI_Core {
     /**
      * Clear admin session
      */
-    private function clear_admin_session() {
+    private function clear_admin_session(): void {
         $user_id = get_current_user_id();
         delete_transient('bbai_admin_session_' . $user_id);
         delete_transient('bbai_admin_session_time_' . $user_id);
@@ -7144,7 +7144,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Admin login for agency users
      */
-    public function ajax_admin_login() {
+    public function ajax_admin_login(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -7204,7 +7204,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Admin logout
      */
-    public function ajax_admin_logout() {
+    public function ajax_admin_logout(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -7221,7 +7221,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Get user info
      */
-    public function ajax_get_user_info() {
+    public function ajax_get_user_info(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -7250,7 +7250,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Create Stripe checkout session
      */
-    public function ajax_create_checkout() {
+    public function ajax_create_checkout(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -7295,7 +7295,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Create customer portal session
      */
-    public function ajax_create_portal() {
+    public function ajax_create_portal(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -7365,7 +7365,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Forgot password request
      */
-    public function ajax_forgot_password() {
+    public function ajax_forgot_password(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -7405,7 +7405,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Reset password with token
      */
-    public function ajax_reset_password() {
+    public function ajax_reset_password(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -7453,7 +7453,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Get subscription information
      */
-    public function ajax_get_subscription_info() {
+    public function ajax_get_subscription_info(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -7480,7 +7480,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Inline generation for selected attachment IDs (used by progress modal)
      */
-    public function ajax_inline_generate() {
+    public function ajax_inline_generate(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
