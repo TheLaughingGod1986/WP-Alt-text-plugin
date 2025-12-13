@@ -1,7 +1,9 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Define the internationalization functionality.
- * 
+ *
  * Note: This class is kept for backwards compatibility but is not actively used.
  * WordPress.org automatically loads translations from the /languages/ folder since WordPress 4.6.
  */

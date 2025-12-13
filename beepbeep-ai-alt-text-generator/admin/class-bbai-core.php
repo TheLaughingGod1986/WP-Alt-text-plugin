@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Core implementation for the Alt Text AI plugin.
  *
