@@ -48,10 +48,25 @@ class BbAI_Core {
     private $debug_bootstrap = null;
     private $account_summary = null;
 
+    /**
+     * Check if the current user can manage the plugin.
+     *
+     * Verifies the user has either the custom capability or manage_options permission.
+     *
+     * @since 4.2.3
+     * @return bool True if user can manage the plugin, false otherwise.
+     */
     public function user_can_manage(){
         return current_user_can(self::CAPABILITY) || current_user_can('manage_options');
     }
 
+    /**
+     * Initialize the plugin core.
+     *
+     * Sets up the API client, migrates legacy options, and initializes logging.
+     *
+     * @since 4.0.0
+     */
     public function __construct() {
         // Use Phase 2 API client (JWT-based authentication)
         $this->api_client = new BbAI_API_Client_V2();
@@ -90,6 +105,14 @@ class BbAI_Core {
         return $this->api_client;
     }
 
+    /**
+     * Get default usage statistics structure.
+     *
+     * Returns an array with default values for tracking API usage.
+     *
+     * @since 4.0.0
+     * @return array Default usage statistics with prompt, completion, total, requests, and last_request.
+     */
     public function default_usage(){
         return [
             'prompt'      => 0,
@@ -209,6 +232,14 @@ class BbAI_Core {
         wp_mail($email, $subject, $message);
     }
 
+    /**
+     * Ensure administrator role has the plugin capability.
+     *
+     * Adds the custom plugin capability to the administrator role if not already present.
+     *
+     * @since 4.0.0
+     * @return void
+     */
     public function ensure_capability(){
         $role = get_role('administrator');
         if ($role && !$role->has_cap(self::CAPABILITY)){
@@ -216,6 +247,14 @@ class BbAI_Core {
         }
     }
 
+    /**
+     * Display token usage threshold notice if applicable.
+     *
+     * Checks for cached threshold notices and adds admin notice hook if found.
+     *
+     * @since 4.0.0
+     * @return void
+     */
     public function maybe_display_threshold_notice(){
         if (!$this->user_can_manage()){
             return;
@@ -637,10 +676,27 @@ class BbAI_Core {
         <?php
     }
 
+    /**
+     * Plugin deactivation handler.
+     *
+     * Clears scheduled cron hooks for queue processing.
+     *
+     * @since 4.0.0
+     * @return void
+     */
     public function deactivate(){
         wp_clear_scheduled_hook(BbAI_Queue::CRON_HOOK);
     }
 
+    /**
+     * Plugin activation handler.
+     *
+     * Creates database tables, schedules queue processing, sets default options,
+     * and ensures administrator capability is granted.
+     *
+     * @since 4.0.0
+     * @return void
+     */
     public function activate() {
         global $wpdb;
 
@@ -719,6 +775,14 @@ class BbAI_Core {
         ");
     }
 
+    /**
+     * Register the plugin admin page in WordPress.
+     *
+     * Adds a media submenu page for the plugin dashboard.
+     *
+     * @since 4.0.0
+     * @return void
+     */
     public function add_settings_page() {
         $cap = current_user_can(self::CAPABILITY) ? self::CAPABILITY : 'manage_options';
         add_media_page(
@@ -5660,7 +5724,21 @@ class BbAI_Core {
         $this->generate_and_save($attachment_id, 'auto');
     }
 
-    public function generate_and_save($attachment_id, $source='manual', int $retry_count = 0, array $feedback = [], $regenerate = false){
+    /**
+     * Generate and save alt text for an attachment.
+     *
+     * Generates AI-powered alt text using the configured model and saves it to the
+     * attachment metadata. Handles usage limits, retries, and error conditions.
+     *
+     * @since 4.0.0
+     * @param int    $attachment_id WordPress attachment post ID.
+     * @param string $source        Generation source: 'manual', 'auto', 'bulk', 'upload', or 'ajax'.
+     * @param int    $retry_count   Number of retry attempts (default: 0).
+     * @param array  $feedback      User feedback for regeneration (default: []).
+     * @param bool   $regenerate    Whether this is a regeneration request (default: false).
+     * @return string|WP_Error Generated alt text on success, WP_Error object on failure.
+     */
+    public function generate_and_save(int $attachment_id, string $source = 'manual', int $retry_count = 0, array $feedback = [], bool $regenerate = false){
         $opts = get_option(self::OPTION_KEY, []);
 
         // Skip authentication check in local development mode

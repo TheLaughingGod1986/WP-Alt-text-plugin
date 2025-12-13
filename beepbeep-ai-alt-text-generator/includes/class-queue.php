@@ -12,7 +12,12 @@ class BbAI_Queue {
     const CRON_HOOK  = 'bbai_process_queue';
 
     /**
-     * Get queue table name.
+     * Get the fully qualified queue table name.
+     *
+     * Returns the WordPress database table name with prefix for the queue.
+     *
+     * @since 4.0.0
+     * @return string Full table name with WordPress prefix.
      */
     public static function table() {
         global $wpdb;
@@ -20,7 +25,13 @@ class BbAI_Queue {
     }
 
     /**
-     * Create queue table on activation.
+     * Create the queue database table.
+     *
+     * Creates the queue table schema with all necessary columns and indexes
+     * using WordPress dbDelta for safe schema updates.
+     *
+     * @since 4.0.0
+     * @return void
      */
     public static function create_table() {
         global $wpdb;
@@ -49,7 +60,14 @@ class BbAI_Queue {
     }
 
     /**
-     * Schedule queue processing event.
+     * Schedule the queue processor cron event.
+     *
+     * Schedules a single event to process the queue after the specified delay.
+     * Does not schedule if an event is already scheduled.
+     *
+     * @since 4.0.0
+     * @param int $delay Delay in seconds before processing (default: 30).
+     * @return void
      */
     public static function schedule_processing($delay = 30) {
         if (!wp_next_scheduled(self::CRON_HOOK)) {
@@ -58,7 +76,15 @@ class BbAI_Queue {
     }
 
     /**
-     * Enqueue a single attachment.
+     * Add an attachment to the generation queue.
+     *
+     * Enqueues a single attachment for alt text generation. Skips if the
+     * attachment is already in the queue with pending or processing status.
+     *
+     * @since 4.0.0
+     * @param int    $attachment_id WordPress attachment post ID.
+     * @param string $source        Generation source ('auto', 'manual', 'bulk', etc.).
+     * @return bool True if enqueued or already in queue, false on failure.
      */
     public static function enqueue($attachment_id, $source = 'auto') {
         global $wpdb;
@@ -139,7 +165,7 @@ class BbAI_Queue {
      */
     public static function enqueue_many(array $ids, $source = 'bulk') {
         // For regeneration, clear existing queue entries first
-        if ($source === 'bulk-regenerate') {
+        if ('bulk-regenerate' === $source) {
             self::clear_for_attachments($ids);
         }
         
@@ -153,7 +179,14 @@ class BbAI_Queue {
     }
 
     /**
-     * Claim a batch of jobs for processing.
+     * Claim a batch of pending jobs for processing.
+     *
+     * Atomically selects and locks pending jobs from the queue for processing.
+     * Updates job status to 'processing' and increments attempt counter.
+     *
+     * @since 4.0.0
+     * @param int $limit Maximum number of jobs to claim (default: 5).
+     * @return array Array of job objects that were successfully claimed.
      */
     public static function claim_batch($limit = 5) {
         global $wpdb;
@@ -206,7 +239,13 @@ class BbAI_Queue {
     }
 
     /**
-     * Mark job as completed.
+     * Mark a queue job as successfully completed.
+     *
+     * Updates job status to 'completed' and clears any error messages.
+     *
+     * @since 4.0.0
+     * @param int $job_id Queue job ID.
+     * @return void
      */
     public static function mark_complete($job_id) {
         global $wpdb;
@@ -381,7 +420,13 @@ class BbAI_Queue {
     }
 
     /**
-     * Get queue statistics.
+     * Get queue statistics for dashboard display.
+     *
+     * Returns counts of jobs by status (pending, processing, failed, completed).
+     * Also includes recently completed jobs count and cleanup automation.
+     *
+     * @since 4.0.0
+     * @return array Queue statistics with status counts and flags.
      */
     public static function get_stats() {
         global $wpdb;

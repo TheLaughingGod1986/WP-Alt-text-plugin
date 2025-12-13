@@ -72,9 +72,9 @@ class BbAI_Debug_Log {
 
         $source = sanitize_key($source ?: 'core');
         $meta = sanitize_text_field($meta);
-        
+
         // Get current user ID if not provided
-        if ($user_id === null) {
+        if (null === $user_id) {
             $user_id = get_current_user_id();
         }
         $user_id = $user_id > 0 ? intval($user_id) : null;

@@ -15,7 +15,15 @@ class BbAI_API_Client_V2 {
     private $license_key_option_key = 'bbai_license_key';
     private $license_data_option_key = 'bbai_license_data';
     private $encryption_prefix = 'enc:';
-    
+
+    /**
+     * Initialize the API client.
+     *
+     * Sets the production API URL and ensures WordPress settings are updated
+     * to use the production endpoint. Migrates legacy option keys if needed.
+     *
+     * @since 4.0.0
+     */
     public function __construct() {
         // ALWAYS use production API URL
         $production_url = 'https://alttext-ai-backend.onrender.com';
@@ -35,9 +43,15 @@ class BbAI_API_Client_V2 {
             update_option('bbai_settings', $options);
         }
     }
-    
+
     /**
-     * Get stored JWT token
+     * Get stored JWT authentication token.
+     *
+     * Retrieves the encrypted JWT token from WordPress options. Falls back to
+     * legacy option key if the new key is empty. Automatically decrypts the token.
+     *
+     * @since 4.0.0
+     * @return string The decrypted JWT token, or empty string if not set.
      */
     protected function get_token() {
         $token = get_option($this->token_option_key, '');
@@ -51,9 +65,16 @@ class BbAI_API_Client_V2 {
         $token = is_string($token) ? $token : '';
         return $this->maybe_decrypt_secret($token);
     }
-    
+
     /**
-     * Store JWT token
+     * Store JWT authentication token.
+     *
+     * Encrypts and stores the JWT token in WordPress options for secure storage.
+     * Clears the token if an empty value is provided.
+     *
+     * @since 4.0.0
+     * @param string $token The JWT token to store.
+     * @return void
      */
     public function set_token($token) {
         if (empty($token)) {
@@ -67,9 +88,15 @@ class BbAI_API_Client_V2 {
         }
         update_option($this->token_option_key, $stored, false);
     }
-    
+
     /**
-     * Clear stored token
+     * Clear stored authentication tokens and user data.
+     *
+     * Removes JWT token and user data from WordPress options, including
+     * legacy option keys. Logs the user out of the plugin.
+     *
+     * @since 4.0.0
+     * @return void
      */
     public function clear_token() {
         delete_option($this->token_option_key);
@@ -77,9 +104,15 @@ class BbAI_API_Client_V2 {
         delete_option($this->user_option_key);
         delete_option('beepbeepai_user_data');
     }
-    
+
     /**
-     * Get stored user data
+     * Get stored user data from authenticated session.
+     *
+     * Retrieves user account information (email, plan, etc.) from WordPress options.
+     * Migrates legacy option keys if found.
+     *
+     * @since 4.0.0
+     * @return array|null User data array, or null if not authenticated.
      */
     public function get_user_data() {
         $data = get_option($this->user_option_key, null);
@@ -92,16 +125,27 @@ class BbAI_API_Client_V2 {
         }
         return ($data !== false && $data !== null) ? $data : null;
     }
-    
+
     /**
-     * Store user data
+     * Store user account data.
+     *
+     * Saves user account information to WordPress options for caching.
+     *
+     * @since 4.0.0
+     * @param array $user_data User account data from API.
+     * @return void
      */
     public function set_user_data($user_data) {
         update_option($this->user_option_key, $user_data, false);
     }
 
     /**
-     * Get stored license key
+     * Get stored agency license key.
+     *
+     * Retrieves and decrypts the agency/pro license key from WordPress options.
+     *
+     * @since 4.0.0
+     * @return string The decrypted license key, or empty string if not set.
      */
     public function get_license_key() {
         $key = get_option($this->license_key_option_key, '');
@@ -112,7 +156,14 @@ class BbAI_API_Client_V2 {
     }
 
     /**
-     * Store license key
+     * Store agency license key.
+     *
+     * Encrypts and stores the license key in WordPress options.
+     * Clears the license if an empty value is provided.
+     *
+     * @since 4.0.0
+     * @param string $license_key The license key to store.
+     * @return void
      */
     public function set_license_key($license_key) {
         if (empty($license_key)) {
@@ -151,7 +202,13 @@ class BbAI_API_Client_V2 {
     }
 
     /**
-     * Check if license key is active
+     * Check if an active license exists.
+     *
+     * Verifies that a license key is stored and license data is valid,
+     * including organization and site information.
+     *
+     * @since 4.0.0
+     * @return bool True if license is active and valid, false otherwise.
      */
     public function has_active_license() {
         $license_key = $this->get_license_key();
@@ -163,8 +220,14 @@ class BbAI_API_Client_V2 {
     }
 
     /**
-     * Check if user is authenticated (JWT or License Key)
-     * Also validates the token by checking with backend
+     * Check if user is authenticated via JWT or license key.
+     *
+     * Validates authentication by checking for active license or JWT token.
+     * Periodically validates tokens with the backend API to ensure they're still valid.
+     * Automatically clears invalid tokens but preserves tokens during server errors.
+     *
+     * @since 4.0.0
+     * @return bool True if user is authenticated and token is valid, false otherwise.
      */
     public function is_authenticated() {
         // Check license key first (agency license)
@@ -789,7 +852,13 @@ class BbAI_API_Client_V2 {
     }
 
     /**
-     * Get usage information
+     * Get usage information from the API.
+     *
+     * Fetches usage statistics including used credits, limit, and reset date.
+     * Falls back to cached license data if API request fails.
+     *
+     * @since 4.0.0
+     * @return array|WP_Error Usage data array on success, WP_Error on failure.
      */
     public function get_usage() {
         $has_license   = $this->has_active_license();

@@ -90,10 +90,10 @@ class BbAI_Usage_Tracker {
         if ($force_refresh) {
             delete_transient(self::CACHE_KEY);
         }
-        
+
         $cached = get_transient(self::CACHE_KEY);
-        
-        if ($cached === false) {
+
+        if (false === $cached) {
             // Default values if no cache exists
             $reset_ts = strtotime('first day of next month');
             return [
