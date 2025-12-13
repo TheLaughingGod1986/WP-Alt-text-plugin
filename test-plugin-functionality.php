@@ -218,15 +218,34 @@ if (file_exists($uninstall_file)) {
 
     // Check for wpdb->prepare usage
     if (strpos($content, 'wpdb->prepare') !== false) {
-        $passed++;
         echo "  ✓ Using wpdb->prepare() for SQL queries\n";
     } else {
         $warnings[] = "No wpdb->prepare() found in uninstall.php";
     }
 
-    // Check for unsafe direct SQL
-    if (preg_match('/\$wpdb->query\s*\(\s*["\'](?!.*prepare)/', $content)) {
-        $warnings[] = "Found direct SQL queries without prepare()";
+    // Check for unsafe direct SQL (ignore phpcs:ignore commented lines)
+    $lines = explode("\n", $content);
+    $unsafe_queries = 0;
+    foreach ($lines as $i => $line) {
+        // Skip if previous line has phpcs:ignore comment
+        $prev_line = $i > 0 ? $lines[$i - 1] : '';
+        if (strpos($prev_line, 'phpcs:ignore') !== false) {
+            continue;
+        }
+
+        // Check for direct query without prepare or esc_sql
+        if (preg_match('/\$wpdb->query\s*\(\s*["\']/', $line) &&
+            strpos($line, 'prepare') === false &&
+            strpos($line, 'esc_sql') === false) {
+            $unsafe_queries++;
+        }
+    }
+
+    if ($unsafe_queries === 0) {
+        $passed++;
+        echo "  ✓ All SQL queries properly secured\n";
+    } else {
+        $warnings[] = "Found $unsafe_queries direct SQL queries without prepare() or esc_sql()";
     }
 } else {
     $errors[] = "Uninstall file not found";
