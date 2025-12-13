@@ -1,5 +1,5 @@
 === BeepBeep AI – Alt Text Generator ===
-Contributors: benjaminoats
+Contributors: beepbeepv2
 Tags: accessibility, alt text, images, automation, ai, wcag, media library, seo
 Requires at least: 5.8
 Tested up to: 6.8
@@ -87,10 +87,12 @@ This plugin uses external APIs to provide AI-powered image alt text generation, 
    - Terms: https://stripe.com/legal  
    - Privacy: https://stripe.com/privacy  
 
-3. OptiAI API  
-   - Purpose: Authenticates users, syncs account status, and retrieves usage limits.  
-   - Data sent: Site URL, plugin ID, API token, and usage statistics.  
-   - Privacy Policy URL: (insert once your website is live)
+3. Oppti API (our backend)
+   - Purpose: Authenticates users, syncs account status, and retrieves usage limits.
+   - Data sent: Site URL, plugin ID, API token, and usage statistics.
+   - API URL: https://alttext-ai-backend.onrender.com
+   - Terms: https://oppti.dev/terms
+   - Privacy: https://oppti.dev/privacy
 
 == Installation ==
 

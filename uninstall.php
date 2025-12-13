@@ -161,11 +161,9 @@ $meta_keys_to_delete = [
 	'_ai_alt_usage',
 ];
 
-// Delete post meta using SQL for efficiency (sanitized keys)
+// Delete post meta using prepared statements for security
 foreach ( $meta_keys_to_delete as $meta_key ) {
-	$meta_key_escaped = esc_sql( $meta_key );
-	// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $meta_key_escaped is sanitized
-	$wpdb->query( "DELETE FROM {$wpdb->postmeta} WHERE meta_key = '{$meta_key_escaped}'" );
+	$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->postmeta} WHERE meta_key = %s", $meta_key ) );
 }
 
 // Drop custom tables
