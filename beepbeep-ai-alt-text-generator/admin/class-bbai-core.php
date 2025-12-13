@@ -395,9 +395,15 @@ class BbAI_Core {
     }
 
     /**
-     * Helper to grab a single price ID
+     * Get Stripe price ID for a specific plan.
+     *
+     * Retrieves the checkout price ID for the given plan (pro, agency, credits).
+     *
+     * @since 4.0.0
+     * @param string $plan Plan identifier ('pro', 'agency', or 'credits').
+     * @return string Stripe price ID for the plan.
      */
-    public function get_checkout_price_id($plan) {
+    public function get_checkout_price_id(string $plan): string {
         $prices = $this->get_checkout_price_ids();
         $plan = is_string($plan) ? sanitize_key($plan) : '';
         $price_id = $prices[$plan] ?? '';
@@ -405,9 +411,14 @@ class BbAI_Core {
     }
 
     /**
-     * Surface checkout success/error notices in WP Admin
+     * Display checkout success or error notices in WordPress admin.
+     *
+     * Shows user-friendly messages for checkout completion or cancellation.
+     *
+     * @since 4.0.0
+     * @return void
      */
-    public function maybe_render_checkout_notices() {
+    public function maybe_render_checkout_notices(): void {
         $page = isset($_GET['page']) ? sanitize_key($_GET['page']) : '';
         if ($page !== 'beepbeep-ai-alt-text-generator') {
             return;
@@ -834,7 +845,15 @@ class BbAI_Core {
         wp_die('Failed to create checkout session.');
     }
 
-    public function register_settings() {
+    /**
+     * Register plugin settings in WordPress.
+     *
+     * Registers all plugin options with sanitization callbacks.
+     *
+     * @since 4.0.0
+     * @return void
+     */
+    public function register_settings(): void {
         register_setting('bbai_group', self::OPTION_KEY, [
             'type' => 'array',
             'sanitize_callback' => function($input){
@@ -4651,18 +4670,42 @@ class BbAI_Core {
         return apply_filters('bbai_prompt', $prompt, $attachment_id, $opts);
     }
 
-    private function is_image($attachment_id){
+    /**
+     * Check if attachment is an image.
+     *
+     * @since 4.0.0
+     * @param int $attachment_id WordPress attachment post ID.
+     * @return bool True if attachment is an image, false otherwise.
+     */
+    private function is_image(int $attachment_id): bool {
         $mime = get_post_mime_type($attachment_id);
         return strpos((string)$mime, 'image/') === 0;
     }
 
-    public function invalidate_stats_cache(){
+    /**
+     * Invalidate all caches for media statistics.
+     *
+     * Clears object cache, transient cache, and in-memory cache for stats.
+     *
+     * @since 4.0.0
+     * @return void
+     */
+    public function invalidate_stats_cache(): void {
         wp_cache_delete('bbai_stats', 'bbai');
         delete_transient('bbai_stats_v3');
         $this->stats_cache = null;
     }
 
-    public function get_media_stats(){
+    /**
+     * Get media library statistics.
+     *
+     * Returns comprehensive stats including total images, coverage percentage,
+     * and recent generation activity. Uses multi-layer caching for performance.
+     *
+     * @since 4.0.0
+     * @return array Statistics with total, with_alt, missing, coverage, etc.
+     */
+    public function get_media_stats(): array {
         try {
             // Check in-memory cache first
             if (is_array($this->stats_cache)){
@@ -4787,7 +4830,17 @@ class BbAI_Core {
         }
     }
 
-    public function prepare_attachment_snapshot($attachment_id){
+    /**
+     * Prepare comprehensive snapshot of attachment metadata.
+     *
+     * Returns all relevant data for an attachment including ALT text,
+     * generation metadata, token usage, and quality analysis.
+     *
+     * @since 4.0.0
+     * @param int $attachment_id WordPress attachment post ID.
+     * @return array Attachment data with alt, tokens, analysis, etc.
+     */
+    public function prepare_attachment_snapshot(int $attachment_id): array {
         $attachment_id = intval($attachment_id);
         if ($attachment_id <= 0){
             return [];
