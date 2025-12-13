@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Main plugin class following the WordPress Plugin Boilerplate conventions.
  */

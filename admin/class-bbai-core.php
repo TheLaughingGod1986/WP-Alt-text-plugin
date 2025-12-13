@@ -7141,64 +7141,6 @@ class Core {
     }
 
     /**
-     * Reset site credits for testing
-     * Only available to administrators
-     */
-    public function reset_credits_for_testing() {
-        if (!current_user_can('manage_options')) {
-            wp_die('Unauthorized');
-        }
-
-        check_admin_referer('bbai_reset_credits', 'bbai_reset_nonce');
-
-        // Clear usage cache
-        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
-        \BeepBeepAI\AltTextGenerator\Usage_Tracker::clear_cache();
-
-        // Clear token quota service cache
-        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-token-quota-service.php';
-        \BeepBeepAI\AltTextGenerator\Token_Quota_Service::clear_cache();
-
-        // Reset usage to 0
-        $reset_ts = strtotime('first day of next month');
-        $usage_data = [
-            'used' => 0,
-            'limit' => 50,
-            'remaining' => 50,
-            'plan' => 'free',
-            'resetDate' => date('Y-m-01', $reset_ts),
-            'resetTimestamp' => $reset_ts,
-        ];
-        \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($usage_data);
-
-        // Clear credit usage logs
-        global $wpdb;
-        $credit_usage_table = $wpdb->prefix . 'bbai_credit_usage';
-        if ($wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $credit_usage_table)) === $credit_usage_table) {
-            $wpdb->query("DELETE FROM `{$credit_usage_table}`");
-        }
-
-        // Clear usage event logs
-        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/usage/class-usage-logs.php';
-        $usage_logs_table = \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::table();
-        if ($wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $usage_logs_table)) === $usage_logs_table) {
-            $wpdb->query("DELETE FROM `{$usage_logs_table}`");
-        }
-
-        // Clear token quota service local usage
-        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
-        $site_id = \BeepBeepAI\AltTextGenerator\get_site_identifier();
-        $quota_option_key = 'bbai_token_quota_' . md5($site_id);
-        delete_option($quota_option_key);
-
-        // Invalidate stats cache
-        $this->invalidate_stats_cache();
-
-        wp_redirect(add_query_arg('bbai_credits_reset', '1', admin_url('upload.php?page=bbai-credit-usage')));
-        exit;
-    }
-
-    /**
      * AJAX handler: Bulk queue images for processing
      */
     public function ajax_bulk_queue() {

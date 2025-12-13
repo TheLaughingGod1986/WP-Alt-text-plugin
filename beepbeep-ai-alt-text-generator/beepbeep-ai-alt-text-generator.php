@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Plugin Name: BeepBeep AI – Alt Text Generator
  * Plugin URI: https://github.com/beepbeepv2/beepbeep-ai-alt-text-generator

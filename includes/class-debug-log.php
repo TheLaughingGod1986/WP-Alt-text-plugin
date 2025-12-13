@@ -263,10 +263,26 @@ class Debug_Log {
     }
 
     private static function sanitize_context($context) {
+        // List of sensitive keys to redact
+        $sensitive_keys = ['password', 'pass', 'pwd', 'secret', 'token', 'api_key', 'apikey', 'auth', 'authorization', 'jwt', 'bearer'];
+
         $clean = [];
         foreach ($context as $key => $value) {
             $key = sanitize_text_field((string) $key);
-            if (is_scalar($value)) {
+            $key_lower = strtolower($key);
+
+            // Redact sensitive data
+            $is_sensitive = false;
+            foreach ($sensitive_keys as $sensitive) {
+                if (strpos($key_lower, $sensitive) !== false) {
+                    $is_sensitive = true;
+                    break;
+                }
+            }
+
+            if ($is_sensitive) {
+                $clean[$key] = '[REDACTED]';
+            } elseif (is_scalar($value)) {
                 $clean[$key] = is_bool($value) ? $value : sanitize_text_field((string) $value);
             } elseif (is_array($value)) {
                 $clean[$key] = self::sanitize_context($value);

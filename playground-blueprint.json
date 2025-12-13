@@ -1,0 +1,42 @@
+{
+  "$schema": "https://playground.wordpress.net/blueprint-schema.json",
+  "landingPage": "/wp-admin/plugin-install.php",
+  "preferredVersions": {
+    "php": "8.0",
+    "wp": "6.4"
+  },
+  "phpExtensionBundles": [
+    "kitchen-sink"
+  ],
+  "features": {
+    "networking": true
+  },
+  "steps": [
+    {
+      "step": "login",
+      "username": "admin",
+      "password": "password"
+    },
+    {
+      "step": "writeFile",
+      "path": "/wordpress/wp-content/plugins/beepbeep-ai-alt-text-generator.zip",
+      "data": {
+        "resource": "url",
+        "url": "https://github.com/TheLaughingGod1986/WP-Alt-text-plugin/raw/main/dist/beepbeep-ai-alt-text-generator.4.2.3.zip"
+      }
+    },
+    {
+      "step": "unzip",
+      "zipPath": "/wordpress/wp-content/plugins/beepbeep-ai-alt-text-generator.zip",
+      "extractToPath": "/wordpress/wp-content/plugins"
+    },
+    {
+      "step": "activatePlugin",
+      "pluginPath": "beepbeep-ai-alt-text-generator/beepbeep-ai-alt-text-generator.php"
+    },
+    {
+      "step": "runPHP",
+      "code": "<?php require_once 'wordpress/wp-load.php'; echo 'Plugin activated. Navigate to Media > BeepBeep AI to test!'; ?>"
+    }
+  ]
+}

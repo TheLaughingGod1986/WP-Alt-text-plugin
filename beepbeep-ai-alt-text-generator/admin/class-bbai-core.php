@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Core implementation for the Alt Text AI plugin.
  *
@@ -48,10 +50,25 @@ class BbAI_Core {
     private $debug_bootstrap = null;
     private $account_summary = null;
 
-    public function user_can_manage(){
+    /**
+     * Check if the current user can manage the plugin.
+     *
+     * Verifies the user has either the custom capability or manage_options permission.
+     *
+     * @since 4.2.3
+     * @return bool True if user can manage the plugin, false otherwise.
+     */
+    public function user_can_manage(): bool {
         return current_user_can(self::CAPABILITY) || current_user_can('manage_options');
     }
 
+    /**
+     * Initialize the plugin core.
+     *
+     * Sets up the API client, migrates legacy options, and initializes logging.
+     *
+     * @since 4.0.0
+     */
     public function __construct() {
         // Use Phase 2 API client (JWT-based authentication)
         $this->api_client = new BbAI_API_Client_V2();
@@ -86,11 +103,19 @@ class BbAI_Core {
      *
      * @return BbAI_API_Client_V2
      */
-    public function get_api_client() {
+    public function get_api_client(): BbAI_API_Client_V2 {
         return $this->api_client;
     }
 
-    public function default_usage(){
+    /**
+     * Get default usage statistics structure.
+     *
+     * Returns an array with default values for tracking API usage.
+     *
+     * @since 4.0.0
+     * @return array Default usage statistics with prompt, completion, total, requests, and last_request.
+     */
+    public function default_usage(): array {
         return [
             'prompt'      => 0,
             'completion'  => 0,
@@ -100,7 +125,7 @@ class BbAI_Core {
         ];
     }
 
-    private function record_usage($usage){
+    private function record_usage(array $usage): void {
         $prompt     = isset($usage['prompt']) ? max(0, intval($usage['prompt'])) : 0;
         $completion = isset($usage['completion']) ? max(0, intval($usage['completion'])) : 0;
         $total      = isset($usage['total']) ? max(0, intval($usage['total'])) : ($prompt + $completion);
@@ -145,7 +170,7 @@ class BbAI_Core {
      * Refresh usage snapshot from backend when a site license is active.
      * Throttled to avoid hammering the API during bulk jobs.
      */
-    private function refresh_license_usage_snapshot($force = false) {
+    private function refresh_license_usage_snapshot(bool $force = false): void {
         if (!$this->api_client->has_active_license()) {
             return;
         }
@@ -170,7 +195,7 @@ class BbAI_Core {
         set_transient($cache_key, time(), MINUTE_IN_SECONDS);
     }
 
-    private function get_debug_bootstrap($force_refresh = false) {
+    private function get_debug_bootstrap(bool $force_refresh = false): array {
         if ($force_refresh || $this->debug_bootstrap === null) {
             if (class_exists('BbAI_Debug_Log')) {
                 $this->debug_bootstrap = BbAI_Debug_Log::get_logs([
@@ -199,7 +224,7 @@ class BbAI_Core {
         return $this->debug_bootstrap;
     }
 
-    private function send_notification($subject, $message){
+    private function send_notification(string $subject, string $message): void {
         $opts = get_option(self::OPTION_KEY, []);
         $email = $opts['notify_email'] ?? get_option('admin_email');
         $email = is_email($email) ? $email : get_option('admin_email');
@@ -209,14 +234,30 @@ class BbAI_Core {
         wp_mail($email, $subject, $message);
     }
 
-    public function ensure_capability(){
+    /**
+     * Ensure administrator role has the plugin capability.
+     *
+     * Adds the custom plugin capability to the administrator role if not already present.
+     *
+     * @since 4.0.0
+     * @return void
+     */
+    public function ensure_capability(): void {
         $role = get_role('administrator');
         if ($role && !$role->has_cap(self::CAPABILITY)){
             $role->add_cap(self::CAPABILITY);
         }
     }
 
-    public function maybe_display_threshold_notice(){
+    /**
+     * Display token usage threshold notice if applicable.
+     *
+     * Checks for cached threshold notices and adds admin notice hook if found.
+     *
+     * @since 4.0.0
+     * @return void
+     */
+    public function maybe_display_threshold_notice(): void {
         if (!$this->user_can_manage()){
             return;
         }
@@ -234,7 +275,7 @@ class BbAI_Core {
     /**
      * Allow direct checkout links to create Stripe sessions without JavaScript
      */
-    public function maybe_handle_direct_checkout() {
+    public function maybe_handle_direct_checkout(): void {
         if (!is_admin()) { return; }
         $page = isset($_GET['page']) ? sanitize_key($_GET['page']) : '';
         if ($page !== 'bbai-checkout') { return; }
@@ -297,7 +338,7 @@ class BbAI_Core {
     /**
      * Retrieve checkout price IDs sourced from the backend
      */
-    public function get_checkout_price_ids() {
+    public function get_checkout_price_ids(): array {
         if (is_array($this->checkout_price_cache)) {
             return $this->checkout_price_cache;
         }
@@ -354,9 +395,15 @@ class BbAI_Core {
     }
 
     /**
-     * Helper to grab a single price ID
+     * Get Stripe price ID for a specific plan.
+     *
+     * Retrieves the checkout price ID for the given plan (pro, agency, credits).
+     *
+     * @since 4.0.0
+     * @param string $plan Plan identifier ('pro', 'agency', or 'credits').
+     * @return string Stripe price ID for the plan.
      */
-    public function get_checkout_price_id($plan) {
+    public function get_checkout_price_id(string $plan): string {
         $prices = $this->get_checkout_price_ids();
         $plan = is_string($plan) ? sanitize_key($plan) : '';
         $price_id = $prices[$plan] ?? '';
@@ -364,9 +411,14 @@ class BbAI_Core {
     }
 
     /**
-     * Surface checkout success/error notices in WP Admin
+     * Display checkout success or error notices in WordPress admin.
+     *
+     * Shows user-friendly messages for checkout completion or cancellation.
+     *
+     * @since 4.0.0
+     * @return void
      */
-    public function maybe_render_checkout_notices() {
+    public function maybe_render_checkout_notices(): void {
         $page = isset($_GET['page']) ? sanitize_key($_GET['page']) : '';
         if ($page !== 'beepbeep-ai-alt-text-generator') {
             return;
@@ -446,7 +498,7 @@ class BbAI_Core {
         }
     }
 
-    public function render_token_notice(){
+    public function render_token_notice(): void {
         if (empty($this->token_notice)){
             return;
         }
@@ -458,7 +510,7 @@ class BbAI_Core {
         $this->token_notice = null;
     }
 
-    public function maybe_render_queue_notice(){
+    public function maybe_render_queue_notice(): void {
         if (!isset($_GET['bbai_queued'])) {
             return;
         }
@@ -478,7 +530,7 @@ class BbAI_Core {
      * Shows once as a popup after activation to inform users about external service usage.
      * Rendered in admin_footer so it appears as a modal overlay.
      */
-    public function maybe_render_external_api_notice() {
+    public function maybe_render_external_api_notice(): void {
         // Only show on plugin admin pages
         $screen = get_current_screen();
         if (!$screen || !isset($screen->id) || !is_string($screen->id)) {
@@ -637,11 +689,28 @@ class BbAI_Core {
         <?php
     }
 
-    public function deactivate(){
+    /**
+     * Plugin deactivation handler.
+     *
+     * Clears scheduled cron hooks for queue processing.
+     *
+     * @since 4.0.0
+     * @return void
+     */
+    public function deactivate(): void {
         wp_clear_scheduled_hook(BbAI_Queue::CRON_HOOK);
     }
 
-    public function activate() {
+    /**
+     * Plugin activation handler.
+     *
+     * Creates database tables, schedules queue processing, sets default options,
+     * and ensures administrator capability is granted.
+     *
+     * @since 4.0.0
+     * @return void
+     */
+    public function activate(): void {
         global $wpdb;
 
         BbAI_Queue::create_table();
@@ -719,7 +788,15 @@ class BbAI_Core {
         ");
     }
 
-    public function add_settings_page() {
+    /**
+     * Register the plugin admin page in WordPress.
+     *
+     * Adds a media submenu page for the plugin dashboard.
+     *
+     * @since 4.0.0
+     * @return void
+     */
+    public function add_settings_page(): void {
         $cap = current_user_can(self::CAPABILITY) ? self::CAPABILITY : 'manage_options';
         add_media_page(
             'BeepBeep AI – Alt Text Generator',
@@ -740,7 +817,7 @@ class BbAI_Core {
         );
     }
 
-    public function handle_checkout_redirect() {
+    public function handle_checkout_redirect(): void {
         if (!$this->api_client->is_authenticated()) {
             wp_die('Please sign in first to upgrade.');
         }
@@ -768,7 +845,15 @@ class BbAI_Core {
         wp_die('Failed to create checkout session.');
     }
 
-    public function register_settings() {
+    /**
+     * Register plugin settings in WordPress.
+     *
+     * Registers all plugin options with sanitization callbacks.
+     *
+     * @since 4.0.0
+     * @return void
+     */
+    public function register_settings(): void {
         register_setting('bbai_group', self::OPTION_KEY, [
             'type' => 'array',
             'sanitize_callback' => function($input){
@@ -817,7 +902,7 @@ class BbAI_Core {
         ]);
     }
 
-    public function render_settings_page() {
+    public function render_settings_page(): void {
         if (!$this->user_can_manage()) return;
         $opts  = get_option(self::OPTION_KEY, []);
         $stats = $this->get_media_stats();
@@ -4585,18 +4670,42 @@ class BbAI_Core {
         return apply_filters('bbai_prompt', $prompt, $attachment_id, $opts);
     }
 
-    private function is_image($attachment_id){
+    /**
+     * Check if attachment is an image.
+     *
+     * @since 4.0.0
+     * @param int $attachment_id WordPress attachment post ID.
+     * @return bool True if attachment is an image, false otherwise.
+     */
+    private function is_image(int $attachment_id): bool {
         $mime = get_post_mime_type($attachment_id);
         return strpos((string)$mime, 'image/') === 0;
     }
 
-    public function invalidate_stats_cache(){
+    /**
+     * Invalidate all caches for media statistics.
+     *
+     * Clears object cache, transient cache, and in-memory cache for stats.
+     *
+     * @since 4.0.0
+     * @return void
+     */
+    public function invalidate_stats_cache(): void {
         wp_cache_delete('bbai_stats', 'bbai');
         delete_transient('bbai_stats_v3');
         $this->stats_cache = null;
     }
 
-    public function get_media_stats(){
+    /**
+     * Get media library statistics.
+     *
+     * Returns comprehensive stats including total images, coverage percentage,
+     * and recent generation activity. Uses multi-layer caching for performance.
+     *
+     * @since 4.0.0
+     * @return array Statistics with total, with_alt, missing, coverage, etc.
+     */
+    public function get_media_stats(): array {
         try {
             // Check in-memory cache first
             if (is_array($this->stats_cache)){
@@ -4721,7 +4830,17 @@ class BbAI_Core {
         }
     }
 
-    public function prepare_attachment_snapshot($attachment_id){
+    /**
+     * Prepare comprehensive snapshot of attachment metadata.
+     *
+     * Returns all relevant data for an attachment including ALT text,
+     * generation metadata, token usage, and quality analysis.
+     *
+     * @since 4.0.0
+     * @param int $attachment_id WordPress attachment post ID.
+     * @return array Attachment data with alt, tokens, analysis, etc.
+     */
+    public function prepare_attachment_snapshot(int $attachment_id): array {
         $attachment_id = intval($attachment_id);
         if ($attachment_id <= 0){
             return [];
@@ -5040,7 +5159,7 @@ class BbAI_Core {
         return $first_weight >= $second_weight ? $first : $second;
     }
 
-    public function get_missing_attachment_ids($limit = 5){
+    public function get_missing_attachment_ids(int $limit = 5): array {
         global $wpdb;
         $limit = intval($limit);
         if ($limit <= 0){
@@ -5064,7 +5183,7 @@ class BbAI_Core {
         return array_map('intval', (array) $wpdb->get_col($sql));
     }
 
-    public function get_all_attachment_ids($limit = 5, $offset = 0){
+    public function get_all_attachment_ids(int $limit = 5, int $offset = 0): array {
         global $wpdb;
         $limit  = max(1, intval($limit));
         $offset = max(0, intval($offset));
@@ -5087,7 +5206,7 @@ class BbAI_Core {
         return array_map('intval', (array) $rows);
     }
 
-    private function get_usage_rows($limit = 10, $include_all = false){
+    private function get_usage_rows(int $limit = 10, bool $include_all = false): array {
         global $wpdb;
         $limit = max(1, intval($limit));
 
@@ -5226,7 +5345,7 @@ class BbAI_Core {
         return $map[$key]['description'] ?? $map['unknown']['description'];
     }
 
-    public function handle_usage_export(){
+    public function handle_usage_export(): void {
         if (!$this->user_can_manage()){
             wp_die(__('You do not have permission to export usage data.', 'beepbeep-ai-alt-text-generator'));
         }
@@ -5256,7 +5375,7 @@ class BbAI_Core {
         exit;
     }
 
-    public function handle_debug_log_export() {
+    public function handle_debug_log_export(): void {
         if (!$this->user_can_manage()){
             wp_die(__('You do not have permission to export debug logs.', 'beepbeep-ai-alt-text-generator'));
         }
@@ -5644,7 +5763,7 @@ class BbAI_Core {
         $this->invalidate_stats_cache();
     }
 
-    public function maybe_generate_on_upload($attachment_id){
+    public function maybe_generate_on_upload(int $attachment_id): void {
         $opts = get_option(self::OPTION_KEY, []);
         // Default to enabled if option not explicitly disabled
         if (array_key_exists('enable_on_upload', $opts) && empty($opts['enable_on_upload'])) return;
@@ -5660,7 +5779,21 @@ class BbAI_Core {
         $this->generate_and_save($attachment_id, 'auto');
     }
 
-    public function generate_and_save($attachment_id, $source='manual', int $retry_count = 0, array $feedback = [], $regenerate = false){
+    /**
+     * Generate and save alt text for an attachment.
+     *
+     * Generates AI-powered alt text using the configured model and saves it to the
+     * attachment metadata. Handles usage limits, retries, and error conditions.
+     *
+     * @since 4.0.0
+     * @param int    $attachment_id WordPress attachment post ID.
+     * @param string $source        Generation source: 'manual', 'auto', 'bulk', 'upload', or 'ajax'.
+     * @param int    $retry_count   Number of retry attempts (default: 0).
+     * @param array  $feedback      User feedback for regeneration (default: []).
+     * @param bool   $regenerate    Whether this is a regeneration request (default: false).
+     * @return string|WP_Error Generated alt text on success, WP_Error object on failure.
+     */
+    public function generate_and_save(int $attachment_id, string $source = 'manual', int $retry_count = 0, array $feedback = [], bool $regenerate = false){
         $opts = get_option(self::OPTION_KEY, []);
 
         // Skip authentication check in local development mode
@@ -5940,12 +6073,12 @@ class BbAI_Core {
         return BbAI_Queue::enqueue($attachment_id, $source ? sanitize_key($source) : 'auto');
     }
 
-    public function register_bulk_action($bulk_actions){
+    public function register_bulk_action(array $bulk_actions): array {
         $bulk_actions['bbai_generate'] = __('Generate Alt Text (AI)', 'beepbeep-ai-alt-text-generator');
         return $bulk_actions;
     }
 
-    public function handle_bulk_action($redirect_to, $doaction, $post_ids){
+    public function handle_bulk_action(string $redirect_to, string $doaction, array $post_ids): string {
         if ($doaction !== 'bbai_generate') return $redirect_to;
         $queued = 0;
         foreach ($post_ids as $id){
@@ -5967,7 +6100,7 @@ class BbAI_Core {
         return add_query_arg(['bbai_queued' => $queued], $redirect_to);
     }
 
-    public function row_action_link($actions, $post){
+    public function row_action_link(array $actions, \WP_Post $post): array {
         if ($post->post_type === 'attachment' && $this->is_image($post->ID)){
             $has_alt = (bool) get_post_meta($post->ID, '_wp_attachment_image_alt', true);
             $generate_label   = __('Generate Alt Text (AI)', 'beepbeep-ai-alt-text-generator');
@@ -5978,7 +6111,7 @@ class BbAI_Core {
         return $actions;
     }
 
-    public function attachment_fields_to_edit($fields, $post){
+    public function attachment_fields_to_edit(array $fields, \WP_Post $post): array {
         if (!$this->is_image($post->ID)){
             return $fields;
         }
@@ -6014,7 +6147,7 @@ class BbAI_Core {
 	/**
 	 * @deprecated 4.3.0 Use BbAI_REST_Controller::register_routes().
 	 */
-	public function register_rest_routes(){
+	public function register_rest_routes(): void {
 		if ( ! class_exists( 'BbAI_REST_Controller' ) ) {
 			require_once BBAI_PLUGIN_DIR . 'admin/class-bbai-rest-controller.php';
 		}
@@ -6022,7 +6155,7 @@ class BbAI_Core {
 		( new BbAI_REST_Controller( $this ) )->register_routes();
 	}
 
-    public function enqueue_admin($hook){
+    public function enqueue_admin(string $hook): void {
         $base_path = BBAI_PLUGIN_DIR;
         $base_url  = BBAI_PLUGIN_URL;
 
@@ -6329,7 +6462,7 @@ class BbAI_Core {
      * Handle AJAX request to dismiss external API notice.
      * Uses site option so it shows only once for all users.
      */
-    public function ajax_dismiss_api_notice() {
+    public function ajax_dismiss_api_notice(): void {
         check_ajax_referer('wp_alt_text_dismiss_api_notice', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -6340,9 +6473,9 @@ class BbAI_Core {
         wp_send_json_success(['message' => __('Notice dismissed', 'beepbeep-ai-alt-text-generator')]);
     }
 
-    public function ajax_dismiss_upgrade() {
+    public function ajax_dismiss_upgrade(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
-        
+
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => 'Unauthorized']);
         }
@@ -6356,7 +6489,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Refresh usage data
      */
-    public function ajax_queue_retry_job() {
+    public function ajax_queue_retry_job(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -6371,7 +6504,7 @@ class BbAI_Core {
         wp_send_json_success(['message' => __('Job re-queued.', 'beepbeep-ai-alt-text-generator')]);
     }
 
-    public function ajax_queue_retry_failed() {
+    public function ajax_queue_retry_failed(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -6381,7 +6514,7 @@ class BbAI_Core {
         wp_send_json_success(['message' => __('Retry scheduled for failed jobs.', 'beepbeep-ai-alt-text-generator')]);
     }
 
-    public function ajax_queue_clear_completed() {
+    public function ajax_queue_clear_completed(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -6390,22 +6523,22 @@ class BbAI_Core {
         wp_send_json_success(['message' => __('Cleared completed jobs.', 'beepbeep-ai-alt-text-generator')]);
     }
 
-    public function ajax_queue_stats() {
+    public function ajax_queue_stats(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
         }
-        
+
         $stats = BbAI_Queue::get_stats();
         $failures = BbAI_Queue::get_failures();
-        
+
         wp_send_json_success([
             'stats' => $stats,
             'failures' => $failures
         ]);
     }
 
-    public function ajax_track_upgrade() {
+    public function ajax_track_upgrade(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -6425,17 +6558,17 @@ class BbAI_Core {
         wp_send_json_success(['recorded' => true]);
     }
 
-    public function ajax_refresh_usage() {
+    public function ajax_refresh_usage(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
-        
+
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => 'Unauthorized']);
         }
-        
+
         // Clear cache and fetch fresh data
         BbAI_Usage_Tracker::clear_cache();
         $usage = $this->api_client->get_usage();
-        
+
         if ($usage) {
             $stats = BbAI_Usage_Tracker::get_stats_display();
             wp_send_json_success($stats);
@@ -6447,7 +6580,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Regenerate single image alt text
      */
-    public function ajax_regenerate_single() {
+    public function ajax_regenerate_single(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         
         if (!$this->user_can_manage()) {
@@ -6496,9 +6629,9 @@ class BbAI_Core {
     /**
      * AJAX handler: Bulk queue images for processing
      */
-    public function ajax_bulk_queue() {
+    public function ajax_bulk_queue(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
-        
+
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => 'Unauthorized']);
         }
@@ -6605,7 +6738,7 @@ class BbAI_Core {
         }
     }
 
-    public function process_queue() {
+    public function process_queue(): void {
         $batch_size = apply_filters('bbai_queue_batch_size', 3);
         $max_attempts = apply_filters('bbai_queue_max_attempts', 3);
 
@@ -6657,7 +6790,7 @@ class BbAI_Core {
         BbAI_Queue::purge_completed(apply_filters('bbai_queue_purge_age', DAY_IN_SECONDS * 2));
     }
 
-    public function handle_media_change($attachment_id = 0) {
+    public function handle_media_change(int $attachment_id = 0): void {
         $this->invalidate_stats_cache();
 
         if (current_filter() === 'delete_attachment') {
@@ -6681,13 +6814,13 @@ class BbAI_Core {
         return $data;
     }
 
-    public function handle_attachment_updated($post_id, $post_after, $post_before) {
+    public function handle_attachment_updated(int $post_id, \WP_Post $post_after, \WP_Post $post_before): void {
         $this->invalidate_stats_cache();
         $this->queue_attachment($post_id, 'update');
         BbAI_Queue::schedule_processing(20);
     }
 
-    public function handle_post_save($post_ID, $post, $update) {
+    public function handle_post_save(int $post_ID, \WP_Post $post, bool $update): void {
         if ($post instanceof \WP_Post && $post->post_type === 'attachment') {
             $this->invalidate_stats_cache();
             if ($update) {
@@ -6697,7 +6830,7 @@ class BbAI_Core {
         }
     }
 
-    private function get_account_summary(?array $usage_stats = null) {
+    private function get_account_summary(?array $usage_stats = null): array {
         if ($this->account_summary !== null) {
             return $this->account_summary;
         }
@@ -6739,7 +6872,7 @@ class BbAI_Core {
     /**
      * AJAX handler: User registration
      */
-    public function ajax_register() {
+    public function ajax_register(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -6768,7 +6901,7 @@ class BbAI_Core {
     /**
      * AJAX handler: User login
      */
-    public function ajax_login() {
+    public function ajax_login(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -6797,7 +6930,7 @@ class BbAI_Core {
     /**
      * AJAX handler: User logout
      */
-    public function ajax_logout() {
+    public function ajax_logout(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -6808,7 +6941,7 @@ class BbAI_Core {
         wp_send_json_success(['message' => __('Logged out successfully', 'beepbeep-ai-alt-text-generator')]);
     }
 
-    public function ajax_disconnect_account() {
+    public function ajax_disconnect_account(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
 
         if (!$this->user_can_manage()) {
@@ -6840,7 +6973,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Activate license key
      */
-    public function ajax_activate_license() {
+    public function ajax_activate_license(): void {
         check_ajax_referer('bbai_license_action', 'nonce');
 
         if (!$this->user_can_manage()) {
@@ -6880,7 +7013,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Deactivate license key
      */
-    public function ajax_deactivate_license() {
+    public function ajax_deactivate_license(): void {
         check_ajax_referer('bbai_license_action', 'nonce');
 
         if (!$this->user_can_manage()) {
@@ -6906,7 +7039,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Get license site usage
      */
-    public function ajax_get_license_sites() {
+    public function ajax_get_license_sites(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -6934,7 +7067,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Disconnect a site from the license
      */
-    public function ajax_disconnect_license_site() {
+    public function ajax_disconnect_license_site(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -6973,7 +7106,7 @@ class BbAI_Core {
     /**
      * Check if admin is authenticated (separate from regular user auth)
      */
-    private function is_admin_authenticated() {
+    private function is_admin_authenticated(): bool {
         // Check if we have a valid admin session
         $admin_session = get_transient('bbai_admin_session_' . get_current_user_id());
         if ($admin_session === false || empty($admin_session)) {
@@ -6993,7 +7126,7 @@ class BbAI_Core {
     /**
      * Set admin session
      */
-    private function set_admin_session() {
+    private function set_admin_session(): void {
         $user_id = get_current_user_id();
         set_transient('bbai_admin_session_' . $user_id, 'authenticated', DAY_IN_SECONDS);
         set_transient('bbai_admin_session_time_' . $user_id, time(), DAY_IN_SECONDS);
@@ -7002,7 +7135,7 @@ class BbAI_Core {
     /**
      * Clear admin session
      */
-    private function clear_admin_session() {
+    private function clear_admin_session(): void {
         $user_id = get_current_user_id();
         delete_transient('bbai_admin_session_' . $user_id);
         delete_transient('bbai_admin_session_time_' . $user_id);
@@ -7011,7 +7144,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Admin login for agency users
      */
-    public function ajax_admin_login() {
+    public function ajax_admin_login(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -7071,7 +7204,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Admin logout
      */
-    public function ajax_admin_logout() {
+    public function ajax_admin_logout(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -7088,7 +7221,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Get user info
      */
-    public function ajax_get_user_info() {
+    public function ajax_get_user_info(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -7117,7 +7250,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Create Stripe checkout session
      */
-    public function ajax_create_checkout() {
+    public function ajax_create_checkout(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -7162,7 +7295,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Create customer portal session
      */
-    public function ajax_create_portal() {
+    public function ajax_create_portal(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -7232,7 +7365,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Forgot password request
      */
-    public function ajax_forgot_password() {
+    public function ajax_forgot_password(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -7272,7 +7405,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Reset password with token
      */
-    public function ajax_reset_password() {
+    public function ajax_reset_password(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -7320,7 +7453,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Get subscription information
      */
-    public function ajax_get_subscription_info() {
+    public function ajax_get_subscription_info(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
@@ -7347,7 +7480,7 @@ class BbAI_Core {
     /**
      * AJAX handler: Inline generation for selected attachment IDs (used by progress modal)
      */
-    public function ajax_inline_generate() {
+    public function ajax_inline_generate(): void {
         check_ajax_referer('bbai_upgrade_nonce', 'nonce');
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);

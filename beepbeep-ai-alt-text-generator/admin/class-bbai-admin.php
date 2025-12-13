@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Define the admin-specific bootstrap for the plugin.
  */

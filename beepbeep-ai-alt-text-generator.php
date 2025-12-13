@@ -16,31 +16,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Prevent headers already sent errors from PHP 8.1 deprecation warnings
-// These warnings come from WordPress core when null values are passed to strpos/str_replace
-if ( ! headers_sent() && ! wp_doing_ajax() && ! wp_doing_cron() && ! ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
-	// Start output buffering to prevent headers already sent errors
-	ob_start();
-	
-	// Set custom error handler that suppresses only E_DEPRECATED warnings from WordPress core
-	// This prevents display of PHP 8.1 compatibility warnings from WordPress core
-	set_error_handler( function( $errno, $errstr, $errfile, $errline ) {
-		// Only suppress E_DEPRECATED warnings (8192) from WordPress core files
-		if ( $errno === E_DEPRECATED && $errfile !== null && is_string( $errfile ) && $errfile !== '' ) {
-			$errfile_normalized = str_replace( '\\', '/', $errfile );
-			// Check if warning is from WordPress core (wp-includes or wp-admin)
-			if ( $errfile_normalized !== '' && 
-			     ( strpos( $errfile_normalized, '/wp-includes/' ) !== false || 
-			       strpos( $errfile_normalized, '/wp-admin/' ) !== false ) ) {
-				// Suppress this WordPress core deprecation warning
-				return true;
-			}
-		}
-		// Pass through all other errors
-		return false;
-	}, E_DEPRECATED );
-}
-
 // Define plugin constants
 define( 'BEEPBEEP_AI_VERSION', '4.2.3' );
 define( 'BBAI_VERSION', '4.2.3' ); // Legacy alias for compatibility
