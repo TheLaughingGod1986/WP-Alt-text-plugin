@@ -164,7 +164,7 @@ class BbAI_Queue {
 
         $candidates = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM `{$table_escaped}` WHERE status = 'pending' ORDER BY id ASC LIMIT %d",
+                "SELECT id, attachment_id, status, attempts, source, enqueued_at FROM `{$table_escaped}` WHERE status = 'pending' ORDER BY id ASC LIMIT %d",
                 $limit * 3
             ),
             ARRAY_A
@@ -437,7 +437,7 @@ class BbAI_Queue {
         $table_escaped = esc_sql($table);
         return $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM `{$table_escaped}` ORDER BY id DESC LIMIT %d",
+                "SELECT id, attachment_id, status, attempts, source, last_error, enqueued_at, locked_at, completed_at FROM `{$table_escaped}` ORDER BY id DESC LIMIT %d",
                 max(1, intval($limit))
             ),
             ARRAY_A

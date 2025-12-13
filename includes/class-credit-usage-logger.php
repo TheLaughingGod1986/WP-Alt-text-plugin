@@ -508,7 +508,7 @@ class Credit_Usage_Logger {
 		$offset = ($page - 1) * $per_page;
 		$pages = ceil($total / $per_page);
 
-		$query = "SELECT * FROM `{$table_escaped}` 
+		$query = "SELECT id, user_id, attachment_id, credits_used, token_cost, model, source, generated_at, ip_address, deleted_user_original_id FROM `{$table_escaped}`
 			{$where_sql}
 			ORDER BY generated_at DESC
 			LIMIT %d OFFSET %d";
