@@ -123,11 +123,14 @@ class BbAI_REST_Controller {
 	}
 
 	/**
-	 * Permission callback shared across routes.
+	 * Permission callback for REST routes.
 	 *
-	 * @return bool
+	 * Checks if the current user can manage the plugin or has manage_options capability.
+	 *
+	 * @since 4.0.0
+	 * @return bool True if user has permission, false otherwise.
 	 */
-	public function can_edit_media() {
+	public function can_edit_media(): bool {
 		if ( method_exists( $this->core, 'user_can_manage' ) && $this->core->user_can_manage() ) {
 			return true;
 		}
@@ -136,9 +139,15 @@ class BbAI_REST_Controller {
 	}
 
 	/**
-	 * Fetch debug logs via REST.
+	 * Fetch debug logs via REST API.
+	 *
+	 * Returns paginated debug logs with filtering support.
+	 *
+	 * @since 4.0.0
+	 * @param \WP_REST_Request $request REST request object.
+	 * @return \WP_REST_Response REST response with logs data.
 	 */
-	public function handle_logs( \WP_REST_Request $request ) {
+	public function handle_logs( \WP_REST_Request $request ): \WP_REST_Response {
 		if ( ! class_exists( 'BbAI_Debug_Log' ) ) {
 			return rest_ensure_response([
 				'logs' => [],
@@ -175,9 +184,15 @@ class BbAI_REST_Controller {
 	}
 
 	/**
-	 * Clear logs via REST.
+	 * Clear debug logs via REST API.
+	 *
+	 * Optionally clears logs older than specified days.
+	 *
+	 * @since 4.0.0
+	 * @param \WP_REST_Request $request REST request object.
+	 * @return \WP_REST_Response REST response with clear status.
 	 */
-	public function handle_logs_clear( \WP_REST_Request $request ) {
+	public function handle_logs_clear( \WP_REST_Request $request ): \WP_REST_Response {
 		if ( ! class_exists( 'BbAI_Debug_Log' ) ) {
 			return rest_ensure_response([
 				'cleared' => false,
@@ -200,10 +215,13 @@ class BbAI_REST_Controller {
 	}
 
 	/**
-	 * Generate ALT text for a single attachment.
+	 * Generate alt text for a single attachment via REST API.
 	 *
-	 * @param \WP_REST_Request $request REST request instance.
-	 * @return array|\WP_Error
+	 * Handles ALT text generation requests from the Media Library.
+	 *
+	 * @since 4.0.0
+	 * @param \WP_REST_Request $request REST request with attachment ID.
+	 * @return \WP_REST_Response|\WP_Error Generated ALT text response or error.
 	 */
 	public function handle_generate_single( \WP_REST_Request $request ) {
 		// Suppress any HTML output that might break JSON response
@@ -315,10 +333,13 @@ class BbAI_REST_Controller {
 	}
 
 	/**
-	 * Persist manual ALT text adjustments.
+	 * Save manually edited ALT text via REST API.
 	 *
-	 * @param \WP_REST_Request $request REST request instance.
-	 * @return array|\WP_Error
+	 * Persists user-edited ALT text and optionally reviews it for quality.
+	 *
+	 * @since 4.0.0
+	 * @param \WP_REST_Request $request REST request with attachment ID and ALT text.
+	 * @return array|\WP_Error Saved ALT text data or error.
 	 */
 	public function handle_save_alt( \WP_REST_Request $request ) {
 		$id_raw = $request->get_param( 'id' );
@@ -434,10 +455,13 @@ class BbAI_REST_Controller {
 	}
 
 	/**
-	 * Return media library stats with optional cache invalidation.
+	 * Get media library statistics via REST API.
 	 *
-	 * @param \WP_REST_Request $request REST request instance.
-	 * @return array|\WP_Error
+	 * Returns ALT text coverage stats with optional cache invalidation.
+	 *
+	 * @since 4.0.0
+	 * @param \WP_REST_Request $request REST request with optional 'fresh' parameter.
+	 * @return array|\WP_Error Media library statistics or error.
 	 */
 	public function handle_stats( \WP_REST_Request $request ) {
 		$fresh_raw = $request->get_param( 'fresh' );
@@ -450,9 +474,12 @@ class BbAI_REST_Controller {
 	}
 
 	/**
-	 * Return usage metrics from backend.
+	 * Get usage metrics via REST API.
 	 *
-	 * @return array|\WP_Error
+	 * Fetches current usage statistics including credits used and remaining.
+	 *
+	 * @since 4.0.0
+	 * @return array|\WP_Error Usage data (used, limit, remaining) or error.
 	 */
 	public function handle_usage() {
 		$api_client = $this->core->get_api_client();
@@ -469,11 +496,14 @@ class BbAI_REST_Controller {
 	}
 
 	/**
-	 * Expose checkout plans/prices.
+	 * Get available pricing plans via REST API.
 	 *
-	 * @return array
+	 * Returns Stripe checkout price IDs for available plans.
+	 *
+	 * @since 4.0.0
+	 * @return array Pricing plans with Stripe price IDs.
 	 */
-	public function handle_plans() {
+	public function handle_plans(): array {
 		return [
 			'prices' => $this->core->get_checkout_price_ids(),
 		];
