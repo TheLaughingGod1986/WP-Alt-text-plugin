@@ -6073,12 +6073,12 @@ class BbAI_Core {
         return BbAI_Queue::enqueue($attachment_id, $source ? sanitize_key($source) : 'auto');
     }
 
-    public function register_bulk_action($bulk_actions){
+    public function register_bulk_action(array $bulk_actions): array {
         $bulk_actions['bbai_generate'] = __('Generate Alt Text (AI)', 'beepbeep-ai-alt-text-generator');
         return $bulk_actions;
     }
 
-    public function handle_bulk_action($redirect_to, $doaction, $post_ids){
+    public function handle_bulk_action(string $redirect_to, string $doaction, array $post_ids): string {
         if ($doaction !== 'bbai_generate') return $redirect_to;
         $queued = 0;
         foreach ($post_ids as $id){
@@ -6100,7 +6100,7 @@ class BbAI_Core {
         return add_query_arg(['bbai_queued' => $queued], $redirect_to);
     }
 
-    public function row_action_link($actions, $post){
+    public function row_action_link(array $actions, \WP_Post $post): array {
         if ($post->post_type === 'attachment' && $this->is_image($post->ID)){
             $has_alt = (bool) get_post_meta($post->ID, '_wp_attachment_image_alt', true);
             $generate_label   = __('Generate Alt Text (AI)', 'beepbeep-ai-alt-text-generator');
@@ -6111,7 +6111,7 @@ class BbAI_Core {
         return $actions;
     }
 
-    public function attachment_fields_to_edit($fields, $post){
+    public function attachment_fields_to_edit(array $fields, \WP_Post $post): array {
         if (!$this->is_image($post->ID)){
             return $fields;
         }
@@ -6738,7 +6738,7 @@ class BbAI_Core {
         }
     }
 
-    public function process_queue() {
+    public function process_queue(): void {
         $batch_size = apply_filters('bbai_queue_batch_size', 3);
         $max_attempts = apply_filters('bbai_queue_max_attempts', 3);
 
@@ -6790,7 +6790,7 @@ class BbAI_Core {
         BbAI_Queue::purge_completed(apply_filters('bbai_queue_purge_age', DAY_IN_SECONDS * 2));
     }
 
-    public function handle_media_change($attachment_id = 0) {
+    public function handle_media_change(int $attachment_id = 0): void {
         $this->invalidate_stats_cache();
 
         if (current_filter() === 'delete_attachment') {
@@ -6814,13 +6814,13 @@ class BbAI_Core {
         return $data;
     }
 
-    public function handle_attachment_updated($post_id, $post_after, $post_before) {
+    public function handle_attachment_updated(int $post_id, \WP_Post $post_after, \WP_Post $post_before): void {
         $this->invalidate_stats_cache();
         $this->queue_attachment($post_id, 'update');
         BbAI_Queue::schedule_processing(20);
     }
 
-    public function handle_post_save($post_ID, $post, $update) {
+    public function handle_post_save(int $post_ID, \WP_Post $post, bool $update): void {
         if ($post instanceof \WP_Post && $post->post_type === 'attachment') {
             $this->invalidate_stats_cache();
             if ($update) {
@@ -6830,7 +6830,7 @@ class BbAI_Core {
         }
     }
 
-    private function get_account_summary(?array $usage_stats = null) {
+    private function get_account_summary(?array $usage_stats = null): array {
         if ($this->account_summary !== null) {
             return $this->account_summary;
         }
