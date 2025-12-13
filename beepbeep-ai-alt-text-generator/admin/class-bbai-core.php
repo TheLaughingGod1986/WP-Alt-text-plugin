@@ -58,7 +58,7 @@ class BbAI_Core {
      * @since 4.2.3
      * @return bool True if user can manage the plugin, false otherwise.
      */
-    public function user_can_manage(){
+    public function user_can_manage(): bool {
         return current_user_can(self::CAPABILITY) || current_user_can('manage_options');
     }
 
@@ -103,7 +103,7 @@ class BbAI_Core {
      *
      * @return BbAI_API_Client_V2
      */
-    public function get_api_client() {
+    public function get_api_client(): BbAI_API_Client_V2 {
         return $this->api_client;
     }
 
@@ -115,7 +115,7 @@ class BbAI_Core {
      * @since 4.0.0
      * @return array Default usage statistics with prompt, completion, total, requests, and last_request.
      */
-    public function default_usage(){
+    public function default_usage(): array {
         return [
             'prompt'      => 0,
             'completion'  => 0,
@@ -125,7 +125,7 @@ class BbAI_Core {
         ];
     }
 
-    private function record_usage($usage){
+    private function record_usage(array $usage): void {
         $prompt     = isset($usage['prompt']) ? max(0, intval($usage['prompt'])) : 0;
         $completion = isset($usage['completion']) ? max(0, intval($usage['completion'])) : 0;
         $total      = isset($usage['total']) ? max(0, intval($usage['total'])) : ($prompt + $completion);
@@ -170,7 +170,7 @@ class BbAI_Core {
      * Refresh usage snapshot from backend when a site license is active.
      * Throttled to avoid hammering the API during bulk jobs.
      */
-    private function refresh_license_usage_snapshot($force = false) {
+    private function refresh_license_usage_snapshot(bool $force = false): void {
         if (!$this->api_client->has_active_license()) {
             return;
         }
@@ -195,7 +195,7 @@ class BbAI_Core {
         set_transient($cache_key, time(), MINUTE_IN_SECONDS);
     }
 
-    private function get_debug_bootstrap($force_refresh = false) {
+    private function get_debug_bootstrap(bool $force_refresh = false): array {
         if ($force_refresh || $this->debug_bootstrap === null) {
             if (class_exists('BbAI_Debug_Log')) {
                 $this->debug_bootstrap = BbAI_Debug_Log::get_logs([
@@ -224,7 +224,7 @@ class BbAI_Core {
         return $this->debug_bootstrap;
     }
 
-    private function send_notification($subject, $message){
+    private function send_notification(string $subject, string $message): void {
         $opts = get_option(self::OPTION_KEY, []);
         $email = $opts['notify_email'] ?? get_option('admin_email');
         $email = is_email($email) ? $email : get_option('admin_email');
@@ -242,7 +242,7 @@ class BbAI_Core {
      * @since 4.0.0
      * @return void
      */
-    public function ensure_capability(){
+    public function ensure_capability(): void {
         $role = get_role('administrator');
         if ($role && !$role->has_cap(self::CAPABILITY)){
             $role->add_cap(self::CAPABILITY);
@@ -257,7 +257,7 @@ class BbAI_Core {
      * @since 4.0.0
      * @return void
      */
-    public function maybe_display_threshold_notice(){
+    public function maybe_display_threshold_notice(): void {
         if (!$this->user_can_manage()){
             return;
         }
@@ -275,7 +275,7 @@ class BbAI_Core {
     /**
      * Allow direct checkout links to create Stripe sessions without JavaScript
      */
-    public function maybe_handle_direct_checkout() {
+    public function maybe_handle_direct_checkout(): void {
         if (!is_admin()) { return; }
         $page = isset($_GET['page']) ? sanitize_key($_GET['page']) : '';
         if ($page !== 'bbai-checkout') { return; }
@@ -338,7 +338,7 @@ class BbAI_Core {
     /**
      * Retrieve checkout price IDs sourced from the backend
      */
-    public function get_checkout_price_ids() {
+    public function get_checkout_price_ids(): array {
         if (is_array($this->checkout_price_cache)) {
             return $this->checkout_price_cache;
         }
@@ -498,7 +498,7 @@ class BbAI_Core {
         }
     }
 
-    public function render_token_notice(){
+    public function render_token_notice(): void {
         if (empty($this->token_notice)){
             return;
         }
@@ -510,7 +510,7 @@ class BbAI_Core {
         $this->token_notice = null;
     }
 
-    public function maybe_render_queue_notice(){
+    public function maybe_render_queue_notice(): void {
         if (!isset($_GET['bbai_queued'])) {
             return;
         }
@@ -530,7 +530,7 @@ class BbAI_Core {
      * Shows once as a popup after activation to inform users about external service usage.
      * Rendered in admin_footer so it appears as a modal overlay.
      */
-    public function maybe_render_external_api_notice() {
+    public function maybe_render_external_api_notice(): void {
         // Only show on plugin admin pages
         $screen = get_current_screen();
         if (!$screen || !isset($screen->id) || !is_string($screen->id)) {
@@ -697,7 +697,7 @@ class BbAI_Core {
      * @since 4.0.0
      * @return void
      */
-    public function deactivate(){
+    public function deactivate(): void {
         wp_clear_scheduled_hook(BbAI_Queue::CRON_HOOK);
     }
 
@@ -710,7 +710,7 @@ class BbAI_Core {
      * @since 4.0.0
      * @return void
      */
-    public function activate() {
+    public function activate(): void {
         global $wpdb;
 
         BbAI_Queue::create_table();
@@ -796,7 +796,7 @@ class BbAI_Core {
      * @since 4.0.0
      * @return void
      */
-    public function add_settings_page() {
+    public function add_settings_page(): void {
         $cap = current_user_can(self::CAPABILITY) ? self::CAPABILITY : 'manage_options';
         add_media_page(
             'BeepBeep AI – Alt Text Generator',
@@ -817,7 +817,7 @@ class BbAI_Core {
         );
     }
 
-    public function handle_checkout_redirect() {
+    public function handle_checkout_redirect(): void {
         if (!$this->api_client->is_authenticated()) {
             wp_die('Please sign in first to upgrade.');
         }
@@ -902,7 +902,7 @@ class BbAI_Core {
         ]);
     }
 
-    public function render_settings_page() {
+    public function render_settings_page(): void {
         if (!$this->user_can_manage()) return;
         $opts  = get_option(self::OPTION_KEY, []);
         $stats = $this->get_media_stats();
@@ -5159,7 +5159,7 @@ class BbAI_Core {
         return $first_weight >= $second_weight ? $first : $second;
     }
 
-    public function get_missing_attachment_ids($limit = 5){
+    public function get_missing_attachment_ids(int $limit = 5): array {
         global $wpdb;
         $limit = intval($limit);
         if ($limit <= 0){
@@ -5183,7 +5183,7 @@ class BbAI_Core {
         return array_map('intval', (array) $wpdb->get_col($sql));
     }
 
-    public function get_all_attachment_ids($limit = 5, $offset = 0){
+    public function get_all_attachment_ids(int $limit = 5, int $offset = 0): array {
         global $wpdb;
         $limit  = max(1, intval($limit));
         $offset = max(0, intval($offset));
@@ -5206,7 +5206,7 @@ class BbAI_Core {
         return array_map('intval', (array) $rows);
     }
 
-    private function get_usage_rows($limit = 10, $include_all = false){
+    private function get_usage_rows(int $limit = 10, bool $include_all = false): array {
         global $wpdb;
         $limit = max(1, intval($limit));
 
@@ -5345,7 +5345,7 @@ class BbAI_Core {
         return $map[$key]['description'] ?? $map['unknown']['description'];
     }
 
-    public function handle_usage_export(){
+    public function handle_usage_export(): void {
         if (!$this->user_can_manage()){
             wp_die(__('You do not have permission to export usage data.', 'beepbeep-ai-alt-text-generator'));
         }
@@ -5375,7 +5375,7 @@ class BbAI_Core {
         exit;
     }
 
-    public function handle_debug_log_export() {
+    public function handle_debug_log_export(): void {
         if (!$this->user_can_manage()){
             wp_die(__('You do not have permission to export debug logs.', 'beepbeep-ai-alt-text-generator'));
         }
@@ -5763,7 +5763,7 @@ class BbAI_Core {
         $this->invalidate_stats_cache();
     }
 
-    public function maybe_generate_on_upload($attachment_id){
+    public function maybe_generate_on_upload(int $attachment_id): void {
         $opts = get_option(self::OPTION_KEY, []);
         // Default to enabled if option not explicitly disabled
         if (array_key_exists('enable_on_upload', $opts) && empty($opts['enable_on_upload'])) return;
@@ -6147,7 +6147,7 @@ class BbAI_Core {
 	/**
 	 * @deprecated 4.3.0 Use BbAI_REST_Controller::register_routes().
 	 */
-	public function register_rest_routes(){
+	public function register_rest_routes(): void {
 		if ( ! class_exists( 'BbAI_REST_Controller' ) ) {
 			require_once BBAI_PLUGIN_DIR . 'admin/class-bbai-rest-controller.php';
 		}
@@ -6155,7 +6155,7 @@ class BbAI_Core {
 		( new BbAI_REST_Controller( $this ) )->register_routes();
 	}
 
-    public function enqueue_admin($hook){
+    public function enqueue_admin(string $hook): void {
         $base_path = BBAI_PLUGIN_DIR;
         $base_url  = BBAI_PLUGIN_URL;
 
