@@ -1,0 +1,310 @@
+/**
+ * Card Component
+ * Base card styles and common variants
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   BASE CARD
+   ================================================== */
+
+.bbai-card {
+    background: #ffffff;
+    border: 1px solid #f3f4f6;
+    border-radius: 16px;
+    padding: 32px 28px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+}
+
+.bbai-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    border-color: #e5e7eb;
+}
+
+/* Card with no hover effect */
+.bbai-card--static {
+    transform: none !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* ==================================================
+   METRIC CARD
+   ================================================== */
+
+.bbai-metric-card {
+    background: white;
+    border: 1px solid #f3f4f6;
+    border-radius: 16px;
+    padding: 32px 28px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+}
+
+.bbai-metric-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    border-color: #e5e7eb;
+}
+
+.bbai-metric-card--highlight {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0891b2 100%);
+    border-color: #0891b2;
+    color: white;
+    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.2);
+}
+
+.bbai-metric-card--highlight:hover {
+    box-shadow: 0 6px 16px rgba(14, 165, 233, 0.3);
+}
+
+.bbai-metric-card--highlight .bbai-metric-label,
+.bbai-metric-card--highlight .bbai-metric-description {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.bbai-metric-card--highlight .bbai-metric-value {
+    color: white;
+}
+
+.bbai-metric-card--highlight svg {
+    color: white;
+}
+
+.bbai-metric-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.bbai-metric-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.bbai-metric-card--highlight .bbai-metric-label {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.bbai-metric-header svg {
+    color: #9ca3af;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+}
+
+.bbai-metric-value {
+    font-size: 36px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.1;
+    margin-bottom: 12px;
+    letter-spacing: -0.03em;
+}
+
+.bbai-metric-description {
+    font-size: 14px;
+    color: #6b7280;
+    line-height: 1.5;
+}
+
+/* ==================================================
+   PREMIUM CARD (Glassmorphism)
+   ================================================== */
+
+.bbai-premium-card {
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #EAECF0;
+    backdrop-filter: blur(12px);
+    padding: 32px;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+.bbai-premium-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+/* ==================================================
+   PRICING CARD
+   ================================================== */
+
+.bbai-pricing-card {
+    background: #fff;
+    border: 2px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 2rem;
+    transition: all 0.3s ease;
+}
+
+.bbai-pricing-card--pro {
+    border-color: #3b82f6;
+}
+
+.bbai-pricing-card--featured {
+    border-color: #10b981;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+.bbai-pricing-card--credits {
+    border-color: #8b5cf6;
+}
+
+.bbai-pricing-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* ==================================================
+   USAGE CARD
+   ================================================== */
+
+.bbai-usage-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 24px;
+    padding: 32px;
+    height: 100%;
+}
+
+.bbai-usage-card--full-width {
+    flex: 1 1 100% !important;
+    max-width: 100% !important;
+}
+
+.bbai-usage-card-circular {
+    background: white;
+    border: 1px solid #f3f4f6;
+    border-radius: 16px;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.bbai-usage-card-circular:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    border-color: #e5e7eb;
+}
+
+.bbai-usage-card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 24px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ==================================================
+   PRO UPSELL CARD
+   ================================================== */
+
+.bbai-pro-upsell-card {
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    border: 2px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.bbai-pro-upsell-card:hover {
+    border-color: #3b82f6;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15);
+    transform: translateY(-4px);
+}
+
+/* ==================================================
+   TIME SAVED CARD
+   ================================================== */
+
+.bbai-time-saved-card {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border: 1px solid #a7f3d0;
+    border-radius: 16px;
+    padding: 28px 24px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+    transition: all 0.2s ease;
+}
+
+.bbai-time-saved-card:hover {
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.2);
+    transform: translateY(-2px);
+}
+
+/* ==================================================
+   OPTIMIZATION CARD
+   ================================================== */
+
+.bbai-optimization-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+}
+
+.bbai-optimization-card:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+/* ==================================================
+   UPSELL CARD
+   ================================================== */
+
+.bbai-upsell-card {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(168, 85, 247, 0.08) 100%);
+    border: 2px solid rgba(139, 92, 246, 0.2);
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.bbai-upsell-card:hover {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(168, 85, 247, 0.12) 100%);
+    border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: 0 8px 20px rgba(139, 92, 246, 0.2);
+    transform: translateY(-2px);
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 768px) {
+    .bbai-card,
+    .bbai-metric-card,
+    .bbai-premium-card {
+        padding: 24px 20px;
+    }
+
+    .bbai-metric-value {
+        font-size: 28px;
+    }
+}
