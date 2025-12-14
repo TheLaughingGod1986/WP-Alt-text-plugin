@@ -1,0 +1,89 @@
+/**
+ * Animation Design Tokens
+ *
+ * Transition durations, easing functions, and keyframes.
+ * Provides smooth, consistent motion.
+ *
+ * @package BeepBeep\AltText
+ * @since   5.0.0
+ */
+
+:root {
+	/* Duration */
+	--bbai-duration-instant: 0ms;
+	--bbai-duration-fast: 150ms;
+	--bbai-duration-normal: 250ms;
+	--bbai-duration-slow: 350ms;
+	--bbai-duration-slower: 500ms;
+
+	/* Easing Functions */
+	--bbai-ease-in: cubic-bezier(0.4, 0, 1, 1);
+	--bbai-ease-out: cubic-bezier(0, 0, 0.2, 1);
+	--bbai-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+	--bbai-ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+	/* Common Transitions */
+	--bbai-transition-base: all var(--bbai-duration-normal) var(--bbai-ease-in-out);
+	--bbai-transition-colors: color var(--bbai-duration-fast) var(--bbai-ease-in-out),
+		background-color var(--bbai-duration-fast) var(--bbai-ease-in-out),
+		border-color var(--bbai-duration-fast) var(--bbai-ease-in-out);
+	--bbai-transition-opacity: opacity var(--bbai-duration-normal) var(--bbai-ease-in-out);
+	--bbai-transition-transform: transform var(--bbai-duration-normal) var(--bbai-ease-in-out);
+}
+
+/* Keyframe Animations */
+
+@keyframes bbai-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@keyframes bbai-pulse {
+	0%, 100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
+}
+
+@keyframes bbai-bounce {
+	0%, 100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-10px);
+	}
+}
+
+@keyframes bbai-fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes bbai-slide-in-up {
+	from {
+		transform: translateY(10px);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}
+
+@keyframes bbai-slide-in-down {
+	from {
+		transform: translateY(-10px);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}

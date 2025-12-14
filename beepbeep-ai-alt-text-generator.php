@@ -35,6 +35,22 @@ require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-debug-log.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/class-bbai-core.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/class-bbai-admin-hooks.php';
 
+// Load v5.0 architecture (services, controllers, DI container).
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/core/class-container.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/core/class-event-bus.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/core/class-router.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/core/class-service-provider.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-authentication-service.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-license-service.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-usage-service.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-generation-service.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-queue-service.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/controllers/class-auth-controller.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/controllers/class-license-controller.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/controllers/class-generation-controller.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/controllers/class-queue-controller.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/bootstrap-v5.php';
+
 /**
  * Register the activation hook.
  */
