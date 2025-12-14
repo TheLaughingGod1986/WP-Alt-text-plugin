@@ -77,9 +77,22 @@ class Service_Provider {
 		$container->singleton(
 			'api.beepbeep',
 			function ( $c ) {
-				// For now, return existing API client.
-				// Will be replaced with new implementation in Phase 2.
+				// Use existing API client instance.
 				return \BbAI_API_Client_V2::get_instance();
+			}
+		);
+
+		// Legacy core instance - temporary during migration.
+		$container->singleton(
+			'core',
+			function ( $c ) {
+				// Get the global BbAI_Core instance.
+				global $bbai_core;
+				if ( $bbai_core instanceof \BbAI_Core ) {
+					return $bbai_core;
+				}
+				// Fallback: try to instantiate if global not set.
+				return \BbAI_Core::get_instance();
 			}
 		);
 	}
@@ -88,6 +101,7 @@ class Service_Provider {
 	 * Register repository services.
 	 *
 	 * Repositories handle data access layer.
+	 * Note: Repositories will be implemented in future phases.
 	 *
 	 * @since 5.0.0
 	 *
@@ -95,31 +109,8 @@ class Service_Provider {
 	 * @return void
 	 */
 	private static function register_repositories( Container $container ): void {
-		// User repository - singleton.
-		$container->singleton(
-			'repository.user',
-			function ( $c ) {
-				return new \BeepBeep\AltText\Repositories\User_Repository();
-			}
-		);
-
-		// Usage repository - singleton.
-		$container->singleton(
-			'repository.usage',
-			function ( $c ) {
-				return new \BeepBeep\AltText\Repositories\Usage_Repository();
-			}
-		);
-
-		// Queue repository - singleton.
-		$container->singleton(
-			'repository.queue',
-			function ( $c ) {
-				// For now, use existing Queue class.
-				// Will be replaced in Phase 2.
-				return new \BbAI_Queue();
-			}
-		);
+		// Repositories will be added in future phases as needed.
+		// For now, services interact with legacy classes directly.
 	}
 
 	/**
@@ -158,8 +149,7 @@ class Service_Provider {
 			'service.usage',
 			function ( $c ) {
 				return new \BeepBeep\AltText\Services\Usage_Service(
-					$c->get( 'api.beepbeep' ),
-					$c->get( 'repository.usage' )
+					$c->get( 'api.beepbeep' )
 				);
 			}
 		);
@@ -171,7 +161,8 @@ class Service_Provider {
 				return new \BeepBeep\AltText\Services\Generation_Service(
 					$c->get( 'api.beepbeep' ),
 					$c->get( 'service.usage' ),
-					$c->get( 'event_bus' )
+					$c->get( 'event_bus' ),
+					$c->get( 'core' )
 				);
 			}
 		);
@@ -181,8 +172,6 @@ class Service_Provider {
 			'service.queue',
 			function ( $c ) {
 				return new \BeepBeep\AltText\Services\Queue_Service(
-					$c->get( 'repository.queue' ),
-					$c->get( 'service.generation' ),
 					$c->get( 'event_bus' )
 				);
 			}
