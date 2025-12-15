@@ -45,46 +45,76 @@ class Credit_Usage_Page {
 			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Credit usage table created successfully!', 'beepbeep-ai-alt-text-generator' ) . '</p></div>';
 		}
 
+		// Handle fix credit counts request (fix OpenAI tokens -> 1 credit per generation)
+		if ( isset( $_POST['bbai_action'] ) && $_POST['bbai_action'] === 'fix_credit_counts' ) {
+			check_admin_referer( 'bbai_fix_credit_counts', 'bbai_fix_credits_nonce' );
+			global $wpdb;
+			$table = Credit_Usage_Logger::table();
+			if ( Credit_Usage_Logger::table_exists() ) {
+				$updated = $wpdb->query( "UPDATE `{$table}` SET credits_used = 1 WHERE credits_used != 1" );
+				echo '<div class="notice notice-success is-dismissible"><p>' . sprintf(
+					/* translators: %d is the number of records fixed */
+					esc_html__( 'Fixed %d credit usage records. Each generation now correctly counts as 1 credit.', 'beepbeep-ai-alt-text-generator' ),
+					intval( $updated )
+				) . '</p></div>';
+			}
+		}
+
 		// Get filter parameters
-		$date_from = isset( $_GET['date_from'] ) ? sanitize_text_field( wp_unslash( $_GET['date_from'] ) ) : '';
+		// Default to current billing period (first of month) if no date_from is specified
+		$period_start_default = gmdate( 'Y-m-01' ); // First day of current month
+		$date_from_raw = isset( $_GET['date_from'] ) ? sanitize_text_field( wp_unslash( $_GET['date_from'] ) ) : '';
+		$date_from = ! empty( $date_from_raw ) ? $date_from_raw : $period_start_default;
 		$date_to   = isset( $_GET['date_to'] ) ? sanitize_text_field( wp_unslash( $_GET['date_to'] ) ) : '';
 		$user_id   = isset( $_GET['user_id'] ) ? absint( $_GET['user_id'] ) : 0;
 		$source    = isset( $_GET['source'] ) ? sanitize_key( $_GET['source'] ) : '';
 		$page      = isset( $_GET['paged'] ) ? max( 1, absint( $_GET['paged'] ) ) : 1;
 		$view      = isset( $_GET['view'] ) ? sanitize_key( $_GET['view'] ) : 'summary'; // 'summary' or 'user_detail'
+		$show_all_time = isset( $_GET['show_all'] ) && $_GET['show_all'] === '1';
 
-		// Build query args
+		// Build query args - use current period by default, unless show_all is set
 		$query_args = array(
-			'date_from' => $date_from,
+			'date_from' => $show_all_time ? '' : $date_from,
 			'date_to'   => $date_to,
 			'source'    => $source,
 			'user_id'   => $user_id > 0 ? $user_id : null,
-			'per_page'  => 50,
+			'per_page'  => 10,
 			'page'      => $page,
 		);
 
-		// Get site-wide usage summary
-		$site_usage = Credit_Usage_Logger::get_site_usage( $query_args );
-
-		// Get current usage stats - use Token Quota Service for accurate site-wide quota
-		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-token-quota-service.php';
-		$quota = \BeepBeepAI\AltTextGenerator\Token_Quota_Service::get_site_quota();
-		if ( is_wp_error( $quota ) ) {
-			// Fallback to usage tracker
-			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
-			$current_usage = Usage_Tracker::get_stats_display();
-		} else {
-			$used  = max( 0, intval( $quota['used'] ?? 0 ) );
-			$limit = max( 1, intval( $quota['limit'] ?? 50 ) );
-			// Always calculate remaining from limit - used for accuracy
-			$remaining     = max( 0, $limit - $used );
-			$current_usage = array(
-				'used'       => $used,
-				'limit'      => $limit,
-				'remaining'  => $remaining,
-				'percentage' => $limit > 0 ? round( ( $used / $limit ) * 100 ) : 0,
-			);
+		// Use the SAME data source as the Dashboard - Usage_Tracker::get_stats_display()
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+		$usage_stats = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_stats_display( true ); // Force refresh from API
+		
+		// Get raw values - same way as Dashboard
+		$used      = max( 0, intval( $usage_stats['used'] ?? 0 ) );
+		$limit     = max( 1, intval( $usage_stats['limit'] ?? 50 ) );
+		$remaining = max( 0, $limit - $used );
+		$plan      = $usage_stats['plan'] ?? 'free';
+		
+		// Cap used at limit to prevent showing > 100%
+		if ( $used > $limit ) {
+			$used      = $limit;
+			$remaining = 0;
 		}
+		
+		// Calculate percentage - same way as Dashboard
+		$percentage = $limit > 0 ? round( ( $used / $limit ) * 100 ) : 0;
+
+		// Calculate current billing period (first day of current month) for table filtering
+		$period_start = gmdate( 'Y-m-01' );
+		
+		$current_usage = array(
+			'used'            => $used,
+			'limit'           => $limit,
+			'remaining'       => $remaining,
+			'percentage'      => $percentage,
+			'plan'            => $plan,
+			'reset_date'      => $usage_stats['reset_date'] ?? gmdate( 'F j, Y', strtotime( 'first day of next month' ) ),
+		);
+
+		// Also get local usage for the per-user breakdown table
+		$site_usage = Credit_Usage_Logger::get_site_usage( $query_args );
 
 		// Ensure credit usage table exists - create if missing
 		if ( ! Credit_Usage_Logger::table_exists() ) {
@@ -163,7 +193,7 @@ class Credit_Usage_Page {
 
 			<?php if ( $view === 'user_detail' && $user_id > 0 ) : ?>
 				<p style="margin-bottom: 24px;">
-					<a href="<?php echo esc_url( admin_url( 'upload.php?page=bbai&tab=credit-usage' ) ); ?>"
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=optti&tab=credit-usage' ) ); ?>"
 						class="button"
 						style="background: #2563EB; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 500; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-decoration: none; transition: background 0.15s; display: inline-block;"
 						onmouseover="this.style.background='#1D4ED8'"
@@ -246,10 +276,6 @@ class Credit_Usage_Page {
 					<input type="hidden" name="page" value="bbai">
 					<input type="hidden" name="tab" value="credit-usage">
 					<input type="hidden" name="view" value="<?php echo esc_attr( $view ); ?>">
-					<?php if ( $user_id > 0 ) : ?>
-						<input type="hidden" name="user_id" value="<?php echo esc_attr( $user_id ); ?>">
-					<?php endif; ?>
-
 					<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px;">
 						<div>
 							<label for="date_from" style="display: block; font-size: 14px; font-weight: 500; color: #334155; margin-bottom: 8px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
@@ -273,40 +299,22 @@ class Credit_Usage_Page {
 									class="regular-text"
 									style="width: 100%; padding: 8px 12px; border: 1px solid #E2E8F0; border-radius: 6px; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; background: #FFFFFF; transition: border-color 0.15s;">
 						</div>
-						<?php if ( $view !== 'user_detail' ) : ?>
-							<div>
-								<label for="user_id_filter" style="display: block; font-size: 14px; font-weight: 500; color: #334155; margin-bottom: 8px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-									<?php esc_html_e( 'Filter by User', 'beepbeep-ai-alt-text-generator' ); ?>
-								</label>
-								<select id="user_id_filter" 
-										name="user_id" 
-										class="regular-text"
-										style="width: 100%; padding: 8px 12px; border: 1px solid #E2E8F0; border-radius: 6px; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; background: #FFFFFF; transition: border-color 0.15s;">
-									<option value=""><?php esc_html_e( 'All Users', 'beepbeep-ai-alt-text-generator' ); ?></option>
-									<?php foreach ( $all_users as $user ) : ?>
-										<option value="<?php echo esc_attr( $user->ID ); ?>" <?php selected( $user_id, $user->ID ); ?>>
-											<?php echo esc_html( $user->display_name . ' (' . $user->user_email . ')' ); ?>
-										</option>
-									<?php endforeach; ?>
-								</select>
-							</div>
-							<div>
-								<label for="source_filter" style="display: block; font-size: 14px; font-weight: 500; color: #334155; margin-bottom: 8px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-									<?php esc_html_e( 'Filter by Source', 'beepbeep-ai-alt-text-generator' ); ?>
-								</label>
-								<select id="source_filter" 
-										name="source" 
-										class="regular-text"
-										style="width: 100%; padding: 8px 12px; border: 1px solid #E2E8F0; border-radius: 6px; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; background: #FFFFFF; transition: border-color 0.15s;">
-									<option value=""><?php esc_html_e( 'All Sources', 'beepbeep-ai-alt-text-generator' ); ?></option>
-									<option value="manual" <?php selected( $source, 'manual' ); ?>><?php esc_html_e( 'Manual', 'beepbeep-ai-alt-text-generator' ); ?></option>
-									<option value="auto" <?php selected( $source, 'auto' ); ?>><?php esc_html_e( 'Auto Upload', 'beepbeep-ai-alt-text-generator' ); ?></option>
-									<option value="bulk" <?php selected( $source, 'bulk' ); ?>><?php esc_html_e( 'Bulk', 'beepbeep-ai-alt-text-generator' ); ?></option>
-									<option value="inline" <?php selected( $source, 'inline' ); ?>><?php esc_html_e( 'Inline', 'beepbeep-ai-alt-text-generator' ); ?></option>
-									<option value="queue" <?php selected( $source, 'queue' ); ?>><?php esc_html_e( 'Queue', 'beepbeep-ai-alt-text-generator' ); ?></option>
-								</select>
-							</div>
-						<?php endif; ?>
+						<div>
+							<label for="user_id_filter" style="display: block; font-size: 14px; font-weight: 500; color: #334155; margin-bottom: 8px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+								<?php esc_html_e( 'Filter by User', 'beepbeep-ai-alt-text-generator' ); ?>
+							</label>
+							<select id="user_id_filter" 
+									name="user_id" 
+									class="regular-text"
+									style="width: 100%; padding: 8px 12px; border: 1px solid #E2E8F0; border-radius: 6px; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; background: #FFFFFF; transition: border-color 0.15s;">
+								<option value=""><?php esc_html_e( 'All Users', 'beepbeep-ai-alt-text-generator' ); ?></option>
+								<?php foreach ( $all_users as $user ) : ?>
+									<option value="<?php echo esc_attr( $user->ID ); ?>" <?php selected( $user_id, $user->ID ); ?>>
+										<?php echo esc_html( $user->display_name . ' (' . $user->user_email . ')' ); ?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+						</div>
 					</div>
 
 					<div class="submit" style="display: flex; gap: 12px; margin-top: 20px;">
@@ -314,7 +322,7 @@ class Credit_Usage_Page {
 								class="button button-primary"
 								value="<?php esc_attr_e( 'Filter', 'beepbeep-ai-alt-text-generator' ); ?>"
 								style="background: #2563EB; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 500; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; cursor: pointer; transition: background 0.15s;">
-						<a href="<?php echo esc_url( admin_url( 'upload.php?page=bbai&tab=credit-usage' ) ); ?>"
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=optti&tab=credit-usage' ) ); ?>"
 							class="button"
 							style="background: #FFFFFF; color: #2563EB; border: 1px solid #2563EB; padding: 10px 20px; border-radius: 6px; font-weight: 500; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-decoration: none; transition: background 0.15s; display: inline-block;">
 							<?php esc_html_e( 'Clear Filters', 'beepbeep-ai-alt-text-generator' ); ?>
@@ -329,13 +337,13 @@ class Credit_Usage_Page {
 				$wp_user      = get_user_by( 'ID', $user_id );
 				$display_name = $wp_user ? $wp_user->display_name : __( 'Unknown User', 'beepbeep-ai-alt-text-generator' );
 				?>
-				<div style="margin-top: 40px; width: 100%;">
+				<div style="margin-top: 40px; width: 100%; max-width: 100%; box-sizing: border-box;">
 					<h2 style="font-size: 24px; font-weight: 600; color: #0F172A; margin: 0 0 20px 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: left;">
 						<?php printf( esc_html__( 'Credit Usage Details: %s', 'beepbeep-ai-alt-text-generator' ), esc_html( $display_name ) ); ?>
 					</h2>
 
-					<div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); width: 100%; display: block;">
-						<table class="wp-list-table widefat fixed striped" style="margin: 0; border-collapse: collapse; width: 100%; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+					<div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); width: 100%; max-width: 100%; display: block; box-sizing: border-box;">
+						<table class="wp-list-table widefat fixed striped" style="margin: 0; border-collapse: collapse; width: 100%; table-layout: auto; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
 							<thead>
 								<tr style="background: #F8FAFC; border-bottom: 2px solid #E2E8F0;">
 									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
@@ -343,15 +351,6 @@ class Credit_Usage_Page {
 									</th>
 									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
 										<?php esc_html_e( 'Credits Used', 'beepbeep-ai-alt-text-generator' ); ?>
-									</th>
-									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
-										<?php esc_html_e( 'Cost', 'beepbeep-ai-alt-text-generator' ); ?>
-									</th>
-									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
-										<?php esc_html_e( 'Model', 'beepbeep-ai-alt-text-generator' ); ?>
-									</th>
-									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
-										<?php esc_html_e( 'Source', 'beepbeep-ai-alt-text-generator' ); ?>
 									</th>
 									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
 										<?php esc_html_e( 'Generated At', 'beepbeep-ai-alt-text-generator' ); ?>
@@ -381,21 +380,17 @@ class Credit_Usage_Page {
 											</td>
 											<td style="padding: 18px 20px; font-size: 14px; color: #334155; font-weight: 500; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
 												<?php echo esc_html( number_format_i18n( $item['credits_used'] ) ); ?>
-											</td>
-											<td style="padding: 18px 20px; font-size: 14px; color: #64748B; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-												<?php if ( $item['token_cost'] !== null ) : ?>
-													$<?php echo esc_html( number_format_i18n( $item['token_cost'], 6 ) ); ?>
-												<?php else : ?>
-													<span style="color: #94A3B8;"><?php esc_html_e( 'N/A', 'beepbeep-ai-alt-text-generator' ); ?></span>
+												<?php if ( isset( $item['generation_count'] ) && intval( $item['generation_count'] ) > 1 ) : ?>
+													<span style="background: #E0E7FF; color: #4338CA; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 6px; font-weight: 500;">
+														<?php
+														printf(
+															/* translators: %d is the number of times the image was generated */
+															esc_html__( '%d generations', 'beepbeep-ai-alt-text-generator' ),
+															intval( $item['generation_count'] )
+														);
+														?>
+													</span>
 												<?php endif; ?>
-											</td>
-											<td style="padding: 18px 20px; font-size: 14px; color: #334155; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-												<?php echo esc_html( $item['model'] ?: '-' ); ?>
-											</td>
-											<td style="padding: 18px 20px; font-size: 14px; color: #334155; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-												<span style="text-transform: capitalize;">
-													<?php echo esc_html( ucfirst( $item['source'] ) ); ?>
-												</span>
 											</td>
 											<td style="padding: 18px 20px; font-size: 14px; color: #334155; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
 												<?php echo esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $item['generated_at'] ) ) ); ?>
@@ -404,7 +399,7 @@ class Credit_Usage_Page {
 									<?php endforeach; ?>
 								<?php else : ?>
 									<tr>
-										<td colspan="6" style="padding: 48px; text-align: center; color: #64748B; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+										<td colspan="3" style="padding: 48px; text-align: center; color: #64748B; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
 											<?php esc_html_e( 'No usage records found for this user.', 'beepbeep-ai-alt-text-generator' ); ?>
 										</td>
 									</tr>
@@ -412,24 +407,69 @@ class Credit_Usage_Page {
 							</tbody>
 						</table>
 
+					<!-- Pagination -->
 					<?php if ( $user_details['pages'] > 1 ) : ?>
-						<div class="tablenav bottom">
-							<?php
-							$pagination_args = array(
-								'total'   => $user_details['pages'],
-								'current' => $user_details['page'],
-								'base'    => add_query_arg(
-									array(
-										'paged'   => '%#%',
-										'view'    => 'user_detail',
-										'user_id' => $user_id,
-										'tab'     => 'credit-usage',
-									),
-									admin_url( 'upload.php?page=bbai' )
-								),
-							);
-							echo wp_kses_post( paginate_links( $pagination_args ) );
-							?>
+						<?php
+						$base_url = add_query_arg(
+							array(
+								'view'    => 'user_detail',
+								'user_id' => $user_id,
+								'tab'     => 'credit-usage',
+							),
+							admin_url( 'admin.php?page=optti' )
+						);
+						$current_pg = $user_details['page'];
+						$total_pgs  = $user_details['pages'];
+						$start_item = ( ( $current_pg - 1 ) * $user_details['per_page'] ) + 1;
+						$end_item   = min( $current_pg * $user_details['per_page'], $user_details['total'] );
+						?>
+						<div class="bbai-pagination">
+							<div class="bbai-pagination-info">
+								<?php
+								printf(
+									/* translators: %1$d is start, %2$d is end, %3$d is total */
+									esc_html__( 'Showing %1$d-%2$d of %3$d images', 'beepbeep-ai-alt-text-generator' ),
+									$start_item,
+									$end_item,
+									$user_details['total']
+								);
+								?>
+							</div>
+							<div class="bbai-pagination-controls">
+								<?php if ( $current_pg > 1 ) : ?>
+									<a href="<?php echo esc_url( add_query_arg( 'paged', 1, $base_url ) ); ?>" class="bbai-pagination-btn" title="<?php esc_attr_e( 'First page', 'beepbeep-ai-alt-text-generator' ); ?>">
+										<?php esc_html_e( 'First', 'beepbeep-ai-alt-text-generator' ); ?>
+									</a>
+									<a href="<?php echo esc_url( add_query_arg( 'paged', $current_pg - 1, $base_url ) ); ?>" class="bbai-pagination-btn" title="<?php esc_attr_e( 'Previous page', 'beepbeep-ai-alt-text-generator' ); ?>">
+										<?php esc_html_e( 'Previous', 'beepbeep-ai-alt-text-generator' ); ?>
+									</a>
+								<?php else : ?>
+									<span class="bbai-pagination-btn bbai-pagination-btn--disabled"><?php esc_html_e( 'First', 'beepbeep-ai-alt-text-generator' ); ?></span>
+									<span class="bbai-pagination-btn bbai-pagination-btn--disabled"><?php esc_html_e( 'Previous', 'beepbeep-ai-alt-text-generator' ); ?></span>
+								<?php endif; ?>
+								
+								<div class="bbai-pagination-pages">
+									<?php for ( $i = 1; $i <= $total_pgs; $i++ ) : ?>
+										<?php if ( $i === $current_pg ) : ?>
+											<span class="bbai-pagination-btn bbai-pagination-btn--current"><?php echo esc_html( $i ); ?></span>
+										<?php else : ?>
+											<a href="<?php echo esc_url( add_query_arg( 'paged', $i, $base_url ) ); ?>" class="bbai-pagination-btn"><?php echo esc_html( $i ); ?></a>
+										<?php endif; ?>
+									<?php endfor; ?>
+								</div>
+								
+								<?php if ( $current_pg < $total_pgs ) : ?>
+									<a href="<?php echo esc_url( add_query_arg( 'paged', $current_pg + 1, $base_url ) ); ?>" class="bbai-pagination-btn" title="<?php esc_attr_e( 'Next page', 'beepbeep-ai-alt-text-generator' ); ?>">
+										<?php esc_html_e( 'Next', 'beepbeep-ai-alt-text-generator' ); ?>
+									</a>
+									<a href="<?php echo esc_url( add_query_arg( 'paged', $total_pgs, $base_url ) ); ?>" class="bbai-pagination-btn" title="<?php esc_attr_e( 'Last page', 'beepbeep-ai-alt-text-generator' ); ?>">
+										<?php esc_html_e( 'Last', 'beepbeep-ai-alt-text-generator' ); ?>
+									</a>
+								<?php else : ?>
+									<span class="bbai-pagination-btn bbai-pagination-btn--disabled"><?php esc_html_e( 'Next', 'beepbeep-ai-alt-text-generator' ); ?></span>
+									<span class="bbai-pagination-btn bbai-pagination-btn--disabled"><?php esc_html_e( 'Last', 'beepbeep-ai-alt-text-generator' ); ?></span>
+								<?php endif; ?>
+							</div>
 						</div>
 					<?php endif; ?>
 				</div>
@@ -437,25 +477,57 @@ class Credit_Usage_Page {
 			<?php else : ?>
 				<!-- User Summary View -->
 				<div style="margin-top: 40px;">
-					<h2 style="font-size: 24px; font-weight: 600; color: #0F172A; margin: 0 0 20px 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: left;">
-						<?php esc_html_e( 'Usage by User', 'beepbeep-ai-alt-text-generator' ); ?>
-					</h2>
+					<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+						<h2 style="font-size: 24px; font-weight: 600; color: #0F172A; margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: left;">
+							<?php esc_html_e( 'Usage by User', 'beepbeep-ai-alt-text-generator' ); ?>
+						</h2>
+						<?php
+						// Check if credits need fixing (any record with credits_used > 1)
+						if ( Credit_Usage_Logger::table_exists() ) {
+							global $wpdb;
+							$table           = Credit_Usage_Logger::table();
+							$table_escaped   = esc_sql( $table );
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
+							$needs_fix_count = intval( $wpdb->get_var( "SELECT COUNT(*) FROM `{$table_escaped}` WHERE credits_used > 1" ) );
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
+							$total_credits   = intval( $wpdb->get_var( "SELECT SUM(credits_used) FROM `{$table_escaped}`" ) );
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
+							$total_records   = intval( $wpdb->get_var( "SELECT COUNT(*) FROM `{$table_escaped}`" ) );
 
-					<div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); width: 100%;">
-						<table class="wp-list-table widefat fixed striped" style="margin: 0; border-collapse: collapse; width: 100%; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+							// Show fix button if total credits != total records (should be 1 credit per record)
+							if ( $needs_fix_count > 0 || ( $total_credits > 0 && $total_credits !== $total_records ) ) :
+								?>
+								<form method="post" action="" style="display: inline-block; margin-right: 10px;">
+									<?php wp_nonce_field( 'bbai_fix_credit_counts', 'bbai_fix_credits_nonce' ); ?>
+									<input type="hidden" name="bbai_action" value="fix_credit_counts">
+									<button type="submit" 
+											class="button" 
+											style="background: #F59E0B; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 500; font-size: 13px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; cursor: pointer; transition: background 0.15s;"
+											onmouseover="this.style.background='#D97706'"
+											onmouseout="this.style.background='#F59E0B'"
+											title="<?php printf( esc_attr__( 'Total: %1$d credits for %2$d records. Should be %2$d.', 'beepbeep-ai-alt-text-generator' ), $total_credits, $total_records ); ?>">
+										🔧 <?php esc_html_e( 'Fix Credit Counts', 'beepbeep-ai-alt-text-generator' ); ?>
+										<span style="background: rgba(255,255,255,0.3); padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-size: 11px;">
+											<?php echo esc_html( $total_credits ); ?> → <?php echo esc_html( $total_records ); ?>
+										</span>
+									</button>
+								</form>
+								<?php
+							endif;
+
+						}
+						?>
+					</div>
+
+					<div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); width: 100%; max-width: 100%; box-sizing: border-box;">
+						<table class="wp-list-table widefat fixed striped" style="margin: 0; border-collapse: collapse; width: 100%; table-layout: auto; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
 							<thead>
 								<tr style="background: #F8FAFC; border-bottom: 2px solid #E2E8F0;">
 									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
 										<?php esc_html_e( 'User', 'beepbeep-ai-alt-text-generator' ); ?>
 									</th>
 									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
-										<?php esc_html_e( 'Credits Used', 'beepbeep-ai-alt-text-generator' ); ?>
-									</th>
-									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
 										<?php esc_html_e( 'Images Processed', 'beepbeep-ai-alt-text-generator' ); ?>
-									</th>
-									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
-										<?php esc_html_e( 'Total Cost', 'beepbeep-ai-alt-text-generator' ); ?>
 									</th>
 									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
 										<?php esc_html_e( 'Last Activity', 'beepbeep-ai-alt-text-generator' ); ?>
@@ -480,17 +552,7 @@ class Credit_Usage_Page {
 												<?php endif; ?>
 											</td>
 											<td style="padding: 18px 20px; font-size: 14px; color: #334155; font-weight: 500; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-												<?php echo esc_html( number_format_i18n( $user_data['total_credits'] ) ); ?>
-											</td>
-											<td style="padding: 18px 20px; font-size: 14px; color: #334155; font-weight: 500; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
 												<?php echo esc_html( number_format_i18n( $user_data['total_images'] ) ); ?>
-											</td>
-											<td style="padding: 18px 20px; font-size: 14px; color: #64748B; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-												<?php if ( $user_data['total_cost'] > 0 ) : ?>
-													$<?php echo esc_html( number_format_i18n( $user_data['total_cost'], 4 ) ); ?>
-												<?php else : ?>
-													<span style="color: #94A3B8;"><?php esc_html_e( 'N/A', 'beepbeep-ai-alt-text-generator' ); ?></span>
-												<?php endif; ?>
 											</td>
 											<td style="padding: 18px 20px;">
 												<?php if ( $user_data['last_activity'] ) : ?>
@@ -516,7 +578,7 @@ class Credit_Usage_Page {
 															'user_id' => $user_data['user_id'],
 															'tab'  => 'credit-usage',
 														),
-														admin_url( 'upload.php?page=bbai' )
+														admin_url( 'admin.php?page=optti' )
 													)
 												);
 												?>
@@ -685,7 +747,7 @@ class Credit_Usage_Page {
 										'paged' => '%#%',
 										'tab'   => 'credit-usage',
 									),
-									admin_url( 'upload.php?page=bbai' )
+									admin_url( 'admin.php?page=optti' )
 								),
 							);
 							echo wp_kses_post( paginate_links( $pagination_args ) );

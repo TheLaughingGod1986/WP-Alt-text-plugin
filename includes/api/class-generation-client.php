@@ -156,36 +156,33 @@ class Generation_Client {
 	 */
 	public function generate_alt_text( $image_id, $context = array(), $regenerate = false ) {
 		$has_license = $this->has_active_license_callback ? call_user_func( $this->has_active_license_callback ) : false;
+		$token = $this->get_token_callback ? call_user_func( $this->get_token_callback ) : '';
 
-		// CRITICAL FIX: Backend requires JWT token even with license key
-		// For site-based licensing, ensure we have a JWT token (create anonymous token if needed)
-		if ( $has_license ) {
-			$token = $this->get_token_callback ? call_user_func( $this->get_token_callback ) : '';
-			if ( empty( $token ) ) {
-				// License exists but no JWT token - try to create an anonymous site-based token
-				if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
-					\BeepBeepAI\AltTextGenerator\Debug_Log::log(
-						'warning',
-						'Active license but no JWT token - backend requires both for generate endpoint',
-						array(
-							'has_license' => true,
-							'has_token'   => false,
-							'image_id'    => $image_id,
-						),
-						'auth'
-					);
-				}
+		// Log authentication state for debugging
+		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+			\BeepBeepAI\AltTextGenerator\Debug_Log::log(
+				'info',
+				'Generate alt text - authentication state',
+				array(
+					'has_license' => $has_license,
+					'has_token'   => ! empty( $token ),
+					'image_id'    => $image_id,
+				),
+				'auth'
+			);
+		}
 
-				// Return user-friendly error explaining they need to log in
-				return new \WP_Error(
-					'jwt_token_required',
-					__( 'Please log in to your BeepBeep AI account to use the alt text generator. Go to the plugin settings page and sign in with your account credentials.', 'beepbeep-ai-alt-text-generator' ),
-					array(
-						'requires_auth' => true,
-						'code' => 'jwt_required_with_license',
-					)
-				);
-			}
+		// Allow generation with license key OR JWT token
+		// The backend should accept either authentication method
+		if ( ! $has_license && empty( $token ) ) {
+			return new \WP_Error(
+				'auth_required',
+				__( 'Please log in to your BeepBeep AI account or activate a license key to use the alt text generator.', 'beepbeep-ai-alt-text-generator' ),
+				array(
+					'requires_auth' => true,
+					'code' => 'no_auth',
+				)
+			);
 		}
 
 		// Validate authentication if no license
@@ -204,6 +201,8 @@ class Generation_Client {
 						if ( $error_code === 'auth_required' ||
 							$error_code === 'user_not_found' ||
 							( ! empty( $error_message_str ) && strpos( $error_message_str, 'user not found' ) !== false ) ||
+							( ! empty( $error_message_str ) && strpos( $error_message_str, 'jwt user not found' ) !== false ) ||
+							( ! empty( $error_message_str ) && strpos( $error_message_str, 'inactive' ) !== false ) ||
 							( ! empty( $error_message_str ) && strpos( $error_message_str, 'session expired' ) !== false ) ||
 							( ! empty( $error_message_str ) && strpos( $error_message_str, 'unauthorized' ) !== false ) ) {
 							if ( $this->clear_token_callback ) {
@@ -560,6 +559,7 @@ class Generation_Client {
 		$site_key = $site_hash ?: $this->get_site_identifier();
 		if ( ! empty( $site_key ) ) {
 			$extra_headers['X-Site-Key'] = $site_key;
+			$extra_headers['X-Site-Hash'] = $site_key;
 		}
 
 		// Regenerate should bypass cache on the backend.
@@ -567,9 +567,39 @@ class Generation_Client {
 			$extra_headers['X-Bypass-Cache'] = 'true';
 		}
 
-		$api_token = $this->get_alt_api_token();
-		if ( ! empty( $api_token ) ) {
-			$extra_headers['Authorization'] = 'Bearer ' . $api_token;
+		// CRITICAL: Add license key to headers for authentication
+		if ( ! empty( $license_key ) ) {
+			$extra_headers['X-License-Key'] = $license_key;
+		}
+
+		// CRITICAL: Add JWT token for authentication - backend requires this for /api/generate
+		$jwt_token = $this->get_token_callback ? call_user_func( $this->get_token_callback ) : '';
+		if ( ! empty( $jwt_token ) ) {
+			$extra_headers['Authorization'] = 'Bearer ' . $jwt_token;
+		} else {
+			// Fallback to alt API token if JWT not available
+			$api_token = $this->get_alt_api_token();
+			if ( ! empty( $api_token ) ) {
+				$extra_headers['Authorization'] = 'Bearer ' . $api_token;
+			}
+		}
+
+		// Log auth headers for debugging
+		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+			\BeepBeepAI\AltTextGenerator\Debug_Log::log(
+				'info',
+				'Generate endpoint auth headers FINAL',
+				array(
+					'has_license_key'     => ! empty( $extra_headers['X-License-Key'] ),
+					'has_authorization'   => ! empty( $extra_headers['Authorization'] ),
+					'has_site_key'        => ! empty( $extra_headers['X-Site-Key'] ),
+					'license_key_preview' => ! empty( $license_key ) ? substr( $license_key, 0, 20 ) . '...' : 'none',
+					'license_key_source'  => ! empty( $license_key ) ? 'from_callback' : 'empty',
+					'all_header_keys'     => array_keys( $extra_headers ),
+					'endpoint'            => $endpoint,
+				),
+				'auth'
+			);
 		}
 
 		$response = $this->request_handler->request_with_retry( $endpoint, 'POST', $body, 3, false, $extra_headers, false );

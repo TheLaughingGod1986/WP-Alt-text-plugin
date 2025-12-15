@@ -45,6 +45,12 @@ $bbai_options = array(
 // Delete optti_ prefixed options (unified framework)
 $optti_options = array(
 	'optti_jwt_token',
+	'optti_user_data',
+	'optti_site_id',
+	'optti_license_key',
+	'optti_license_data',
+	'optti_license_last_check',
+	'optti_license_snapshot',
 );
 
 foreach ( $bbai_options as $option ) {

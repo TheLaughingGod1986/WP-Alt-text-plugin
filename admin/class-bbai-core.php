@@ -539,8 +539,8 @@ class Core {
 			exit;
 		}
 
-		$success_url = admin_url( 'upload.php?page=bbai&checkout=success' );
-		$cancel_url  = admin_url( 'upload.php?page=bbai&checkout=cancel' );
+		$success_url = admin_url( 'admin.php?page=optti&checkout=success' );
+		$cancel_url  = admin_url( 'admin.php?page=optti&checkout=cancel' );
 
 		$result = $this->api_client->create_checkout_session( $price_id, $success_url, $cancel_url );
 
@@ -831,7 +831,7 @@ class Core {
 			return;
 		}
 		$screen_id = (string) $screen->id;
-		if ( strpos( $screen_id, 'bbai' ) === false && strpos( $screen_id, 'ai-alt' ) === false ) {
+		if ( strpos( $screen_id, 'bbai' ) === false && strpos( $screen_id, 'ai-alt' ) === false && strpos( $screen_id, 'optti' ) === false ) {
 			return;
 		}
 
@@ -1144,20 +1144,75 @@ class Core {
 		// Ensure capability is set before registering menu.
 		$this->ensure_capability();
 
-		// Use 'upload_files' as the capability - this is required by add_media_page().
-		// Administrators always have this capability.
-		// Fine-grained permission checks happen inside render_settings_page() via user_can_manage().
-		$hook = add_media_page(
-			'BeepBeep AI – Alt Text Generator',
-			'BeepBeep AI',
-			'upload_files', // Required capability for media pages
-			'bbai',
+		// Register as a top-level menu item (like Jetpack, WooCommerce)
+		$hook = add_menu_page(
+			__( 'BeepBeep AI – Alt Text Generator', 'beepbeep-ai-alt-text-generator' ),
+			__( 'BeepBeep AI', 'beepbeep-ai-alt-text-generator' ),
+			'upload_files', // Required capability
+			'optti',
+			array( $this, 'render_settings_page' ),
+			'dashicons-format-image', // Icon
+			26 // Position (after Comments, before Appearance)
+		);
+
+		// Add submenu items for better organization
+		add_submenu_page(
+			'optti',
+			__( 'Dashboard', 'beepbeep-ai-alt-text-generator' ),
+			__( 'Dashboard', 'beepbeep-ai-alt-text-generator' ),
+			'upload_files',
+			'optti', // Same as parent to make it the default
 			array( $this, 'render_settings_page' )
+		);
+
+		add_submenu_page(
+			'optti',
+			__( 'ALT Library', 'beepbeep-ai-alt-text-generator' ),
+			__( 'ALT Library', 'beepbeep-ai-alt-text-generator' ),
+			'upload_files',
+			'optti-library',
+			array( $this, 'render_library_page' )
+		);
+
+		add_submenu_page(
+			'optti',
+			__( 'Credit Usage', 'beepbeep-ai-alt-text-generator' ),
+			__( 'Credit Usage', 'beepbeep-ai-alt-text-generator' ),
+			'upload_files',
+			'optti-credit-usage',
+			array( $this, 'render_credit_usage_page' )
+		);
+
+		add_submenu_page(
+			'optti',
+			__( 'How to', 'beepbeep-ai-alt-text-generator' ),
+			__( 'How to', 'beepbeep-ai-alt-text-generator' ),
+			'upload_files',
+			'optti-guide',
+			array( $this, 'render_guide_page' )
+		);
+
+		add_submenu_page(
+			'optti',
+			__( 'Debug Logs', 'beepbeep-ai-alt-text-generator' ),
+			__( 'Debug Logs', 'beepbeep-ai-alt-text-generator' ),
+			'upload_files',
+			'optti-debug',
+			array( $this, 'render_debug_page' )
+		);
+
+		add_submenu_page(
+			'optti',
+			__( 'Settings', 'beepbeep-ai-alt-text-generator' ),
+			__( 'Settings', 'beepbeep-ai-alt-text-generator' ),
+			'upload_files',
+			'optti-settings',
+			array( $this, 'render_settings_tab_page' )
 		);
 
 		// If menu registration failed, log it for debugging.
 		if ( empty( $hook ) && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( 'BeepBeep AI: Failed to register admin menu. Current user can upload_files: ' . ( current_user_can( 'upload_files' ) ? 'yes' : 'no' ) );
+			error_log( 'Optti: Failed to register admin menu. Current user can upload_files: ' . ( current_user_can( 'upload_files' ) ? 'yes' : 'no' ) );
 		}
 
 		// Hidden checkout redirect page
@@ -1165,10 +1220,50 @@ class Core {
 			null, // No parent = hidden from menu
 			'Checkout',
 			'Checkout',
-			'upload_files', // Use same capability as main menu
-			'bbai-checkout',
+			'upload_files',
+			'optti-checkout',
 			array( $this, 'handle_checkout_redirect' )
 		);
+	}
+
+	/**
+	 * Render the library tab page
+	 */
+	public function render_library_page() {
+		$_GET['tab'] = 'library';
+		$this->render_settings_page();
+	}
+
+	/**
+	 * Render the credit usage tab page
+	 */
+	public function render_credit_usage_page() {
+		$_GET['tab'] = 'credit-usage';
+		$this->render_settings_page();
+	}
+
+	/**
+	 * Render the guide (How to) tab page
+	 */
+	public function render_guide_page() {
+		$_GET['tab'] = 'guide';
+		$this->render_settings_page();
+	}
+
+	/**
+	 * Render the debug logs tab page
+	 */
+	public function render_debug_page() {
+		$_GET['tab'] = 'debug';
+		$this->render_settings_page();
+	}
+
+	/**
+	 * Render the settings tab page
+	 */
+	public function render_settings_tab_page() {
+		$_GET['tab'] = 'settings';
+		$this->render_settings_page();
 	}
 
 	public function handle_checkout_redirect() {
@@ -1182,8 +1277,8 @@ class Core {
 			wp_die( 'Invalid checkout request.' );
 		}
 
-		$success_url = admin_url( 'upload.php?page=bbai&checkout=success' );
-		$cancel_url  = admin_url( 'upload.php?page=bbai&checkout=cancel' );
+		$success_url = admin_url( 'admin.php?page=optti&checkout=success' );
+		$cancel_url  = admin_url( 'admin.php?page=optti&checkout=cancel' );
 
 		$result = $this->api_client->create_checkout_session( $price_id, $success_url, $cancel_url );
 
@@ -1359,15 +1454,35 @@ class Core {
 							<span class="bbai-logo-tagline"><?php esc_html_e( 'WordPress AI Tools', 'beepbeep-ai-alt-text-generator' ); ?></span>
 						</div>
 					</div>
-					<nav class="bbai-nav">
-						<?php
-						foreach ( $tabs as $slug => $label ) :
-							$url    = esc_url( add_query_arg( array( 'tab' => $slug ) ) );
-							$active = $tab === $slug ? ' active' : '';
-							?>
-							<a href="<?php echo esc_url( $url ); ?>" class="bbai-nav-link<?php echo esc_attr( $active ); ?>"><?php echo esc_html( $label ); ?></a>
-						<?php endforeach; ?>
-					</nav>
+				<nav class="bbai-nav">
+					<?php
+					// Map tab slugs to their submenu page slugs for proper sidebar highlighting
+					$tab_to_page = array(
+						'dashboard'    => 'optti',
+						'library'      => 'optti-library',
+						'credit-usage' => 'optti-credit-usage',
+						'guide'        => 'optti-guide',
+						'debug'        => 'optti-debug',
+						'settings'     => 'optti-settings',
+						'admin'        => 'optti', // Admin tab uses main page with tab parameter
+					);
+					
+					foreach ( $tabs as $slug => $label ) :
+						// Use the mapped submenu page URL for proper WordPress sidebar highlighting
+						$page_slug = isset( $tab_to_page[ $slug ] ) ? $tab_to_page[ $slug ] : 'optti';
+						
+						// For admin tab, use tab parameter; for others, use the submenu page directly
+						if ( $slug === 'admin' ) {
+							$url = esc_url( admin_url( 'admin.php?page=optti&tab=admin' ) );
+						} else {
+							$url = esc_url( admin_url( 'admin.php?page=' . $page_slug ) );
+						}
+						
+						$active = $tab === $slug ? ' active' : '';
+						?>
+						<a href="<?php echo esc_url( $url ); ?>" class="bbai-nav-link<?php echo esc_attr( $active ); ?>"><?php echo esc_html( $label ); ?></a>
+					<?php endforeach; ?>
+				</nav>
 					<!-- Auth & Subscription Actions -->
 					<div class="bbai-header-actions">
 						<?php
@@ -1466,54 +1581,13 @@ class Core {
 
 			<div class="bbai-clean-dashboard" data-stats='<?php echo esc_attr( wp_json_encode( $stats ) ); ?>'>
 				<?php
-				// Get usage stats
-				$usage_stats = Usage_Tracker::get_stats_display();
-
-				// Pull fresh usage from backend with caching to avoid blocking page load
-				// Cache API calls for 2 minutes to improve performance
-				$cached_usage = get_transient( 'bbai_dashboard_usage' );
-				if ( false === $cached_usage && isset( $this->api_client ) ) {
-					$live_usage = $this->api_client->get_usage();
-					if ( is_array( $live_usage ) && ! empty( $live_usage ) && ! is_wp_error( $live_usage ) ) {
-						// Cache for 2 minutes
-						set_transient( 'bbai_dashboard_usage', $live_usage, 2 * MINUTE_IN_SECONDS );
-						// Update cache with fresh API data
-						Usage_Tracker::update_usage( $live_usage );
-						$cached_usage = $live_usage;
-					}
-				} elseif ( false !== $cached_usage ) {
-					// Use cached data and update tracker
-					Usage_Tracker::update_usage( $cached_usage );
-				}
-
-				// Use cached usage if available
-				if ( isset( $cached_usage ) && is_array( $cached_usage ) && ! empty( $cached_usage ) ) {
-					$live_usage = $cached_usage;
-				}
-				// Get stats - will use the just-updated cache
-				$usage_stats     = Usage_Tracker::get_stats_display( false );
+				// Get usage from backend API - this is the source of truth for billing
+				$usage_stats = Usage_Tracker::get_stats_display( true ); // Force refresh from API
 				$account_summary = $this->api_client->is_authenticated() ? $this->get_account_summary( $usage_stats ) : null;
 
-				// If stats show 0 but we have API data, use API data directly
-				if ( isset( $live_usage ) && is_array( $live_usage ) && ! empty( $live_usage ) && ! is_wp_error( $live_usage ) ) {
-					if ( ( $usage_stats['used'] ?? 0 ) == 0 && ( $live_usage['used'] ?? 0 ) > 0 ) {
-						// Cache hasn't updated yet, use API data directly
-						$usage_stats['used']      = max( 0, intval( $live_usage['used'] ?? 0 ) );
-						$usage_stats['limit']     = max( 1, intval( $live_usage['limit'] ?? 50 ) );
-						$usage_stats['remaining'] = max( 0, intval( $live_usage['remaining'] ?? 50 ) );
-						// Recalculate percentage
-						$usage_stats['percentage']         = $usage_stats['limit'] > 0 ? ( ( $usage_stats['used'] / $usage_stats['limit'] ) * 100 ) : 0;
-						$usage_stats['percentage']         = min( 100, max( 0, $usage_stats['percentage'] ) );
-						$usage_stats['percentage_display'] = Usage_Tracker::format_percentage_label( $usage_stats['percentage'] );
-					}
-				}
-
-				// Get raw values directly from the stats array - same calculation method as Settings tab
+				// Get raw values from backend
 				$dashboard_used      = max( 0, intval( $usage_stats['used'] ?? 0 ) );
 				$dashboard_limit     = max( 1, intval( $usage_stats['limit'] ?? 50 ) );
-				$dashboard_remaining = max( 0, intval( $usage_stats['remaining'] ?? 50 ) );
-
-				// Recalculate remaining to ensure accuracy
 				$dashboard_remaining = max( 0, $dashboard_limit - $dashboard_used );
 
 				// Cap used at limit to prevent showing > 100%
@@ -6944,8 +7018,10 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 		$alt           = $result['alt'];
 
 		// Log credit usage for this generation
+		// IMPORTANT: 1 credit = 1 image generation (not OpenAI tokens)
+		// OpenAI tokens are stored separately in token_cost for reference
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-credit-usage-logger.php';
-		$credits_used = isset( $usage_summary['total_tokens'] ) ? intval( $usage_summary['total_tokens'] ) : 1;
+		$credits_used = 1; // Each generation costs 1 credit
 		$token_cost   = isset( $usage_summary['cost'] ) ? floatval( $usage_summary['cost'] ) : null;
 		$model_used   = isset( $usage_summary['model'] ) ? sanitize_text_field( $usage_summary['model'] ) : $model;
 		\BeepBeepAI\AltTextGenerator\Credit_Usage_Logger::log_usage(
@@ -7153,9 +7229,49 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 		}
 		$site_url_for_js = get_site_url();
 
-		// Load on Media Library and attachment edit contexts (modal also)
-		if ( in_array( $hook, array( 'upload.php', 'post.php', 'post-new.php', 'media_page_bbai' ), true ) ) {
+		// Load on Media Library, attachment edit contexts, and Optti admin pages
+		$optti_pages = array(
+			'upload.php',
+			'post.php',
+			'post-new.php',
+			'media_page_bbai', // Legacy
+			'toplevel_page_optti',
+			'optti_page_optti-library',
+			'optti_page_optti-credit-usage',
+			'optti_page_optti-guide',
+			'optti_page_optti-debug',
+			'optti_page_optti-settings',
+		);
+		if ( in_array( $hook, $optti_pages, true ) || strpos( $hook, 'optti' ) !== false ) {
 			wp_enqueue_script( 'bbai-admin', $base_url . $admin_file, array( 'jquery' ), $admin_version, true );
+			
+			// Load core CSS for all Optti pages (design system, components, modern styles)
+			wp_enqueue_style(
+				'bbai-design-system-common',
+				$base_url . $asset_path( $css_base, 'design-system', $use_debug_assets, 'css' ),
+				array(),
+				$asset_version( $asset_path( $css_base, 'design-system', $use_debug_assets, 'css' ), '1.0.0' )
+			);
+			wp_enqueue_style(
+				'bbai-components-common',
+				$base_url . $asset_path( $css_base, 'components', $use_debug_assets, 'css' ),
+				array( 'bbai-design-system-common' ),
+				$asset_version( $asset_path( $css_base, 'components', $use_debug_assets, 'css' ), '1.0.0' )
+			);
+			wp_enqueue_style(
+				'bbai-modern-common',
+				$base_url . $asset_path( $css_base, 'modern-style', $use_debug_assets, 'css' ),
+				array( 'bbai-components-common' ),
+				$asset_version( $asset_path( $css_base, 'modern-style', $use_debug_assets, 'css' ), '4.1.0' )
+			);
+			
+			// Load bulk progress modal CSS (needed for bbai-admin.js bulk operations)
+			wp_enqueue_style(
+				'bbai-bulk-progress-common',
+				$base_url . $asset_path( $css_base, 'bulk-progress-modal', $use_debug_assets, 'css' ),
+				array( 'bbai-components-common' ),
+				$asset_version( $asset_path( $css_base, 'bulk-progress-modal', $use_debug_assets, 'css' ), '1.0.0' )
+			);
 			wp_localize_script(
 				'bbai-admin',
 				'BBAI',
@@ -7216,7 +7332,11 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 			);
 		}
 
-		if ( $hook === 'media_page_bbai' ) {
+		// Load dashboard scripts on our main page (legacy and new menu)
+		// Debug: Uncomment to see actual hook value
+		// error_log('[BBAI DEBUG] enqueue_admin hook: ' . $hook);
+		$is_dashboard_page = $hook === 'media_page_bbai' || $hook === 'toplevel_page_optti';
+		if ( $is_dashboard_page ) {
 			$css_file     = $asset_path( $css_base, 'bbai-dashboard', $use_debug_assets, 'css' );
 			$js_file      = $asset_path( $js_base, 'bbai-dashboard', $use_debug_assets, 'js' );
 			$usage_bridge = $asset_path( $js_base, 'usage-components-bridge', $use_debug_assets, 'js' );
@@ -7379,13 +7499,23 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 			$stats_data = $this->get_media_stats();
 			$usage_data = Usage_Tracker::get_stats_display();
 
+			// Enqueue Optti Billing API for Stripe checkout FIRST (before dashboard)
+			wp_enqueue_script(
+				'optti-billing',
+				$base_url . $asset_path( $js_base, 'optti-billing', $use_debug_assets, 'js' ),
+				array(),
+				$asset_version( $asset_path( $js_base, 'optti-billing', $use_debug_assets, 'js' ), '1.0.0' ),
+				true
+			);
+			
 			wp_enqueue_script(
 				'bbai-dashboard',
 				$base_url . $js_file,
-				array( 'jquery', 'wp-api-fetch' ),
+				array( 'jquery', 'wp-api-fetch', 'optti-billing' ),
 				$asset_version( $js_file, '3.0.0' ),
 				true
 			);
+			
 			wp_enqueue_script(
 				'bbai-upgrade',
 				$base_url . $upgrade_js,
@@ -7496,6 +7626,23 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 					'is_authenticated' => $this->api_client->is_authenticated(),
 					'user_data'        => $this->api_client->get_user_data(),
 					'can_manage'       => $this->user_can_manage(),
+				)
+			);
+
+			// Get user email for billing
+			$current_user = wp_get_current_user();
+			$user_email   = $current_user->exists() ? $current_user->user_email : '';
+
+			// Add Optti API configuration for dashboard (needed for checkout)
+			wp_localize_script(
+				'bbai-dashboard',
+				'opttiApi',
+				array(
+					'baseUrl'   => 'https://alttext-ai-backend.onrender.com',
+					'plugin'    => 'beepbeep-ai',
+					'site'      => home_url(),
+					'userEmail' => $user_email,
+					'token'     => get_option( 'optti_jwt_token' ) ?: '',
 				)
 			);
 
@@ -7975,7 +8122,7 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 		// Invalidate stats cache
 		$this->invalidate_stats_cache();
 
-		wp_redirect( add_query_arg( 'bbai_credits_reset', '1', admin_url( 'upload.php?page=bbai-credit-usage' ) ) );
+		wp_redirect( add_query_arg( 'bbai_credits_reset', '1', admin_url( 'admin.php?page=optti-credit-usage' ) ) );
 		exit;
 	}
 
@@ -8367,15 +8514,23 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 		// This prevents automatic reconnection when using license keys
 		$this->api_client->clear_license_key();
 
-		// Clear user data
+		// Clear user data - both new and legacy keys
+		delete_option( 'optti_user_data' );
+		delete_option( 'optti_site_id' );
+		delete_option( 'optti_license_snapshot' );
+		delete_option( 'beepbeepai_user_data' );
+		delete_option( 'beepbeepai_site_id' );
 		delete_option( 'opptibbai_user_data' );
 		delete_option( 'opptibbai_site_id' );
 
 		// Clear usage cache
 		Usage_Tracker::clear_cache();
 		delete_transient( 'bbai_usage_cache' );
+		delete_transient( 'beepbeepai_usage_cache' );
 		delete_transient( 'opptibbai_usage_cache' );
+		delete_transient( 'bbai_token_last_check' );
 		delete_transient( 'opptibbai_token_last_check' );
+		delete_transient( 'optti_user_info' );
 
 		wp_send_json_success(
 			array(
@@ -8636,7 +8791,7 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 		wp_send_json_success(
 			array(
 				'message'  => __( 'Successfully logged in', 'beepbeep-ai-alt-text-generator' ),
-				'redirect' => add_query_arg( array( 'tab' => 'admin' ), admin_url( 'upload.php?page=bbai' ) ),
+				'redirect' => add_query_arg( array( 'tab' => 'admin' ), admin_url( 'admin.php?page=optti' ) ),
 			)
 		);
 	}
@@ -8655,7 +8810,7 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 		wp_send_json_success(
 			array(
 				'message'  => __( 'Logged out successfully', 'beepbeep-ai-alt-text-generator' ),
-				'redirect' => add_query_arg( array( 'tab' => 'admin' ), admin_url( 'upload.php?page=bbai' ) ),
+				'redirect' => add_query_arg( array( 'tab' => 'admin' ), admin_url( 'admin.php?page=optti' ) ),
 			)
 		);
 	}
@@ -8711,8 +8866,8 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 			wp_send_json_error( array( 'message' => __( 'Price ID is required', 'beepbeep-ai-alt-text-generator' ) ) );
 		}
 
-		$success_url = admin_url( 'upload.php?page=bbai&checkout=success' );
-		$cancel_url  = admin_url( 'upload.php?page=bbai&checkout=cancel' );
+		$success_url = admin_url( 'admin.php?page=optti&checkout=success' );
+		$cancel_url  = admin_url( 'admin.php?page=optti&checkout=cancel' );
 
 		// Create checkout session - works for both authenticated and unauthenticated users
 		// If token is invalid, it will retry without token for guest checkout
@@ -8789,7 +8944,7 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 			}
 		}
 
-		$return_url = admin_url( 'upload.php?page=bbai' );
+		$return_url = admin_url( 'admin.php?page=optti' );
 		$result     = $this->api_client->create_customer_portal_session( $return_url );
 
 		if ( is_wp_error( $result ) ) {
@@ -8915,7 +9070,7 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 		wp_send_json_success(
 			array(
 				'message'  => __( 'Password reset successfully. You can now sign in with your new password.', 'beepbeep-ai-alt-text-generator' ),
-				'redirect' => admin_url( 'upload.php?page=bbai&password_reset=success' ),
+				'redirect' => admin_url( 'admin.php?page=optti&password_reset=success' ),
 			)
 		);
 	}

@@ -235,10 +235,11 @@ class API_Request_Handler {
 				);
 			}
 		} else {
-			// No JWT token available
+			// No JWT token available - this is OK if we have a license key
 			if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+				$log_level = ! empty( $license_key ) ? 'debug' : 'warning';
 				\BeepBeepAI\AltTextGenerator\Debug_Log::log(
-					'warning',
+					$log_level,
 					'No JWT token available for auth headers',
 					array(
 						'has_license_key'    => ! empty( $license_key ),

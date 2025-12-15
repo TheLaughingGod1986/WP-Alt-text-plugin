@@ -177,15 +177,22 @@
 }
 
 .bbai-debug-pagination {
-    margin-top: 20px;
+    margin-top: 16px;
     display: flex;
+    justify-content: center;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
+    padding: 16px 24px;
+    background: #F8FAFC;
+    border-top: 1px solid #E2E8F0;
+    border-radius: 0 0 12px 12px;
 }
 
 .bbai-debug-pagination span {
-    font-weight: 600;
-    color: #0f172a;
+    font-weight: 500;
+    color: #64748B;
+    font-size: 14px;
+    padding: 0 16px;
 }
 
 .bbai-debug-context {

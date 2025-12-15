@@ -138,6 +138,16 @@ class REST_Controller {
 
 		register_rest_route(
 			'bbai/v1',
+			'/usage/last-generation',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'handle_last_generation' ),
+				'permission_callback' => array( $this, 'can_view_usage' ),
+			)
+		);
+
+		register_rest_route(
+			'bbai/v1',
 			'/usage/events',
 			array(
 				'methods'             => 'GET',
@@ -841,6 +851,28 @@ class REST_Controller {
 		}
 
 		return $users;
+	}
+
+	/**
+	 * Get the last generation's credit usage.
+	 *
+	 * @param \WP_REST_Request $request REST request instance.
+	 * @return array|\WP_Error
+	 */
+	public function handle_last_generation( \WP_REST_Request $request ) {
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-credit-usage-logger.php';
+		
+		$last_record = \BeepBeepAI\AltTextGenerator\Credit_Usage_Logger::get_last_generation();
+		
+		if ( ! $last_record ) {
+			return new \WP_Error(
+				'no_generations',
+				__( 'No credit usage records found.', 'beepbeep-ai-alt-text-generator' ),
+				array( 'status' => 404 )
+			);
+		}
+		
+		return $last_record;
 	}
 
 	/**

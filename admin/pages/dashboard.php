@@ -24,6 +24,6 @@ if ( ! current_user_can( 'manage_options' ) ) {
 }
 
 // Redirect to BeepBeep AI dashboard instead of showing Optti dashboard
-wp_safe_redirect( admin_url( 'upload.php?page=bbai' ) );
+wp_safe_redirect( admin_url( 'admin.php?page=optti' ) );
 exit;
 

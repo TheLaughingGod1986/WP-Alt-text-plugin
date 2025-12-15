@@ -500,19 +500,27 @@ class Credit_Usage_Logger {
 
 		$where_sql = 'WHERE ' . implode( ' AND ', $where );
 
-		// Count total
-		$count_query = "SELECT COUNT(*) FROM `{$table_escaped}` {$where_sql}";
+		// Count total unique images (not total records)
+		$count_query = "SELECT COUNT(DISTINCT attachment_id) FROM `{$table_escaped}` {$where_sql}";
 		$total       = intval( $wpdb->get_var( $wpdb->prepare( $count_query, $params ) ) );
 
-		// Get paginated results
+		// Get paginated results - GROUP BY attachment_id to combine regenerations
 		$per_page = absint( $args['per_page'] );
 		$page     = absint( $args['page'] );
 		$offset   = ( $page - 1 ) * $per_page;
 		$pages    = ceil( $total / $per_page );
 
-		$query = "SELECT * FROM `{$table_escaped}` 
+		// Group by attachment_id and sum credits, get most recent generation date
+		$query = "SELECT 
+				attachment_id,
+				SUM(credits_used) as credits_used,
+				SUM(token_cost) as token_cost,
+				MAX(generated_at) as generated_at,
+				COUNT(*) as generation_count
+			FROM `{$table_escaped}` 
 			{$where_sql}
-			ORDER BY generated_at DESC
+			GROUP BY attachment_id
+			ORDER BY MAX(generated_at) DESC
 			LIMIT %d OFFSET %d";
 
 		$params[] = $per_page;
@@ -594,6 +602,52 @@ class Credit_Usage_Logger {
 		);
 
 		return intval( $deleted );
+	}
+
+	/**
+	 * Get the last generation record.
+	 *
+	 * @return array|null Last generation record or null if none exists.
+	 */
+	public static function get_last_generation() {
+		if ( ! self::table_exists() ) {
+			return null;
+		}
+
+		global $wpdb;
+		$table         = self::table();
+		$table_escaped = esc_sql( $table );
+
+		$last_record = $wpdb->get_row(
+			"SELECT * FROM `{$table_escaped}` ORDER BY generated_at DESC LIMIT 1",
+			ARRAY_A
+		);
+
+		if ( ! $last_record ) {
+			return null;
+		}
+
+		// Enrich with attachment info
+		$attachment_id = intval( $last_record['attachment_id'] );
+		$attachment    = get_post( $attachment_id );
+		if ( $attachment ) {
+			$last_record['attachment_url']      = wp_get_attachment_url( $attachment_id );
+			$last_record['attachment_title']    = get_the_title( $attachment_id );
+			$last_record['attachment_filename']  = wp_basename( get_attached_file( $attachment_id ) ?: '' );
+			$last_record['alt_text']             = get_post_meta( $attachment_id, '_wp_attachment_image_alt', true );
+		}
+
+		// Enrich with user info
+		$user_id = intval( $last_record['user_id'] );
+		if ( $user_id > 0 ) {
+			$user = get_user_by( 'ID', $user_id );
+			if ( $user ) {
+				$last_record['user_display_name'] = $user->display_name;
+				$last_record['user_email']        = $user->user_email;
+			}
+		}
+
+		return $last_record;
 	}
 
 	/**

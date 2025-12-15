@@ -467,30 +467,51 @@
         // Handle checkout plan buttons in upgrade modal
         $(document).on('click', '[data-action="checkout-plan"]', function(e) {
             e.preventDefault();
+            e.stopPropagation();
+            
             const $btn = $(this);
             const plan = $btn.attr('data-plan');
             const priceId = $btn.attr('data-price-id');
             const fallbackUrl = $btn.attr('data-fallback-url');
             
-            bbaiDebug.log('[AltText AI] Checkout plan:', plan, priceId);
+            // Safety check for bbaiDebug
+            const debug = (typeof bbaiDebug !== 'undefined' && bbaiDebug.log) ? bbaiDebug : { log: function() {}, warn: function() {}, error: function() { console.error.apply(console, arguments); } };
             
-            // Try to use backend checkout API if we have a price ID
-            // This provides better tracking, custom success URLs, and account linking
-            if (priceId && window.bbai_ajax && window.bbai_ajax.ajaxurl) {
-                // Use backend checkout session API
-                initiateCheckout($btn, priceId, plan);
-            } else {
-                // Fall back to direct Stripe payment link if no price ID or AJAX not available
-                if (fallbackUrl) {
-                    bbaiDebug.log('[AltText AI] Using fallback Stripe payment link');
-                    window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+            debug.log('[AltText AI] Checkout plan clicked:', plan, priceId, fallbackUrl);
+            
+            // Always use fallback URL if available (most reliable)
+            if (fallbackUrl) {
+                debug.log('[AltText AI] Using fallback Stripe payment link:', fallbackUrl);
+                try {
+                    const checkoutWindow = window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+                    
+                    if (!checkoutWindow || checkoutWindow.closed || typeof checkoutWindow.closed === 'undefined') {
+                        alert('Please allow popups for this site to complete checkout.');
+                        return;
+                    }
+                    
                     // Close the upgrade modal after opening the payment link
                     if (typeof alttextaiCloseModal === 'function') {
                         alttextaiCloseModal();
+                    } else if (typeof window.alttextaiCloseModal === 'function') {
+                        window.alttextaiCloseModal();
                     }
-                } else {
+                } catch (err) {
+                    debug.error('[AltText AI] Error opening checkout:', err);
+                    alert('Unable to open checkout. Please try again or contact support.');
+                }
+            } else if (priceId && window.opttiBilling && window.opttiApi && typeof window.opttiBilling.createCheckoutSession === 'function') {
+                // Try backend checkout API if available
+                debug.log('[AltText AI] Using backend checkout API');
+                try {
+                    initiateCheckout($btn, priceId, plan);
+                } catch (err) {
+                    debug.error('[AltText AI] Error with backend checkout:', err);
                     alert('Unable to initiate checkout. Please try again or contact support.');
                 }
+            } else {
+                debug.warn('[AltText AI] No checkout method available. PriceId:', priceId, 'FallbackUrl:', fallbackUrl, 'opttiBilling:', !!window.opttiBilling, 'opttiApi:', !!window.opttiApi);
+                alert('Unable to initiate checkout. Please try again or contact support.');
             }
         });
 

@@ -89,9 +89,9 @@ class BeepBeep_AltText_Plugin extends PluginBase {
 		require_once OPTTI_PLUGIN_DIR . 'admin/class-page-renderer.php';
 
 		// Initialize admin components.
-		// Enable Admin_Menu to provide framework dashboard access.
-		// The old BeepBeep AI menu will still work via class-opptiai-alt-core.php.
-		\Optti\Admin\Admin_Menu::instance();
+		// NOTE: Admin_Menu is now disabled - the main menu is registered in class-bbai-core.php
+		// to avoid duplicate menu items. The Core class handles all menu registration.
+		// \Optti\Admin\Admin_Menu::instance();
 		\Optti\Admin\Admin_Assets::instance();
 		\Optti\Admin\Admin_Notices::instance();
 	}

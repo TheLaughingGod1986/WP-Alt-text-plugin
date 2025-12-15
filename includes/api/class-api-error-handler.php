@@ -425,6 +425,8 @@ class API_Error_Handler {
 
 		if ( strpos( $error_details_lower, 'user not found' ) !== false ||
 			strpos( $error_details_lower, 'user does not exist' ) !== false ||
+			strpos( $error_details_lower, 'jwt user not found' ) !== false ||
+			strpos( $error_details_lower, 'inactive' ) !== false ||
 			( is_array( $data ) && isset( $data['code'] ) && is_string( $data['code'] ) && strpos( strtolower( $data['code'] ), 'user_not_found' ) !== false ) ) {
 
 			if ( $is_checkout_endpoint ) {

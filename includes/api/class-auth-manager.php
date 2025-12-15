@@ -217,8 +217,30 @@ class Auth_Manager {
 
 	/**
 	 * Get current user info
+	 * Note: This requires a JWT token. If only license-key auth is active, skip this call.
 	 */
 	public function get_user_info() {
+		// Check if we have a JWT token - /auth/me requires Bearer token auth
+		$token = $this->get_token_callback ? call_user_func( $this->get_token_callback ) : '';
+		if ( empty( $token ) ) {
+			// No JWT token - if we have a license key, we're using license-based auth
+			// which doesn't require /auth/me endpoint
+			$has_license = $this->has_active_license_callback ? call_user_func( $this->has_active_license_callback ) : false;
+			if ( $has_license ) {
+				// License-based auth - return success with minimal data
+				return array(
+					'authenticated' => true,
+					'auth_method'   => 'license',
+					'message'       => 'Using license-based authentication',
+				);
+			}
+			// No token and no license - return error
+			return new \WP_Error(
+				'not_authenticated',
+				__( 'Not authenticated. Please log in or activate a license.', 'beepbeep-ai-alt-text-generator' )
+			);
+		}
+
 		$response = $this->request_handler->make_request( '/auth/me' );
 
 		if ( is_wp_error( $response ) ) {
@@ -437,7 +459,7 @@ class Auth_Manager {
 			call_user_func( $this->clear_token_callback );
 		}
 
-		$site_url = admin_url( 'upload.php?page=bbai' );
+		$site_url = admin_url( 'admin.php?page=optti' );
 
 		$response = $this->request_handler->make_request(
 			'/auth/forgot-password',

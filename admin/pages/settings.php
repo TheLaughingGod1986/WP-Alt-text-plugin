@@ -19,5 +19,5 @@ if ( ! current_user_can( 'manage_options' ) ) {
 }
 
 // Redirect to BeepBeep AI settings instead
-wp_safe_redirect( admin_url( 'upload.php?page=bbai&tab=settings' ) );
+wp_safe_redirect( admin_url( 'admin.php?page=optti&tab=settings' ) );
 exit;

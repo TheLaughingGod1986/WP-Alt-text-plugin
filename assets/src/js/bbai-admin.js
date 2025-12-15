@@ -1809,7 +1809,7 @@
             '            <div class="bbai-modal-success__summary-text">All images were processed successfully.</div>' +
             '        </div>' +
             '        <div class="bbai-modal-success__actions">' +
-            '            <a href="' + escapeHtml((typeof ajaxurl !== 'undefined' ? ajaxurl.replace('/admin-ajax.php', '/admin.php') : '/wp-admin/admin.php') + '?page=bbai&tab=library') + '" class="bbai-modal-success__btn bbai-modal-success__btn--primary">View ALT Library →</a>' +
+            '            <a href="' + escapeHtml((typeof ajaxurl !== 'undefined' ? ajaxurl.replace('/admin-ajax.php', '/admin.php') : '/wp-admin/admin.php') + '?page=optti&tab=library') + '" class="bbai-modal-success__btn bbai-modal-success__btn--primary">View ALT Library →</a>' +
             '            <button type="button" class="bbai-modal-success__btn bbai-modal-success__btn--secondary" data-action="view-warnings" style="display: none;">View Warnings</button>' +
             '        </div>' +
             '    </div>' +
@@ -1832,7 +1832,7 @@
         $modal.find('[data-action="view-warnings"]').on('click', function() {
             hideSuccessModal();
             // Show the ALT Library tab with filters applied
-            var libraryUrl = (typeof ajaxurl !== 'undefined' ? ajaxurl.replace('/admin-ajax.php', '/admin.php') : '/wp-admin/admin.php') + '?page=bbai&tab=library';
+            var libraryUrl = (typeof ajaxurl !== 'undefined' ? ajaxurl.replace('/admin-ajax.php', '/admin.php') : '/wp-admin/admin.php') + '?page=optti&tab=library';
             window.location.href = libraryUrl;
         });
 
@@ -2127,6 +2127,52 @@
         $(document).on('click', '[data-action="regenerate-single"]', function(e) {
             bbaiDebug.log('[AI Alt Text] Regenerate button click event fired!');
             handleRegenerateSingle.call(this, e);
+        });
+
+        // Handle checkout plan buttons in upgrade modal (fallback handler for all pages)
+        $(document).on('click', '[data-action="checkout-plan"]', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const $btn = $(this);
+            const fallbackUrl = $btn.attr('data-fallback-url');
+            const plan = $btn.attr('data-plan');
+            const priceId = $btn.attr('data-price-id');
+            
+            if (bbaiDebug && bbaiDebug.log) {
+                bbaiDebug.log('[AI Alt Text] Checkout plan clicked:', plan, priceId, fallbackUrl);
+            }
+            
+            // Always use fallback URL if available (most reliable)
+            if (fallbackUrl) {
+                try {
+                    const checkoutWindow = window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+                    
+                    if (!checkoutWindow || checkoutWindow.closed || typeof checkoutWindow.closed === 'undefined') {
+                        alert('Please allow popups for this site to complete checkout.');
+                        return;
+                    }
+                    
+                    // Close the upgrade modal after opening the payment link
+                    if (typeof alttextaiCloseModal === 'function') {
+                        alttextaiCloseModal();
+                    } else if (typeof window.alttextaiCloseModal === 'function') {
+                        window.alttextaiCloseModal();
+                    } else {
+                        // Fallback: hide modal directly
+                        const modal = document.getElementById('bbai-upgrade-modal');
+                        if (modal) {
+                            modal.style.display = 'none';
+                        }
+                    }
+                } catch (err) {
+                    console.error('[AI Alt Text] Error opening checkout:', err);
+                    alert('Unable to open checkout. Please try again or contact support.');
+                }
+            } else {
+                console.warn('[AI Alt Text] No fallback URL available for checkout');
+                alert('Unable to initiate checkout. Please try again or contact support.');
+            }
         });
 
         // License management handlers

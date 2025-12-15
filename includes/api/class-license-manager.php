@@ -12,8 +12,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 class License_Manager {
 
 	private $request_handler;
-	private $license_key_option_key  = 'beepbeepai_license_key';
-	private $license_data_option_key = 'beepbeepai_license_data';
+	private $license_key_option_key  = 'optti_license_key';
+	private $license_data_option_key = 'optti_license_data';
 	private $encrypt_secret_callback;
 	private $maybe_decrypt_secret_callback;
 	private $get_site_id_callback;

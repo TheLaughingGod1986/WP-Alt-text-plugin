@@ -138,6 +138,24 @@ class Usage_Tracker {
 	}
 
 	/**
+	 * Clear usage cache to force fresh data on next request
+	 */
+	public static function clear_cache() {
+		delete_transient( self::CACHE_KEY );
+		
+		// Also clear framework caches
+		if ( class_exists( '\Optti\Framework\LicenseManager' ) ) {
+			$license = \Optti\Framework\LicenseManager::instance();
+			if ( method_exists( $license, 'clear_quota_cache' ) ) {
+				$license->clear_quota_cache();
+			}
+		}
+		if ( class_exists( '\Optti\Framework\Cache' ) ) {
+			\Optti\Framework\Cache::instance()->delete( 'usage_stats' );
+		}
+	}
+
+	/**
 	 * Get cached usage data
 	 */
 	public static function get_cached_usage( $force_refresh = false ) {
@@ -146,6 +164,25 @@ class Usage_Tracker {
 		$api_client = new API_Client_V2();
 
 		if ( $api_client->has_active_license() ) {
+			// If force refresh or cache is cleared, fetch from API first
+			$cached = get_transient( self::CACHE_KEY );
+			if ( $force_refresh || $cached === false ) {
+				// Fetch fresh usage from API
+				$live_usage = $api_client->get_usage();
+				if ( ! is_wp_error( $live_usage ) && is_array( $live_usage ) ) {
+					// Update cache with fresh data
+					self::update_usage( $live_usage );
+					$cached = get_transient( self::CACHE_KEY );
+					if ( $cached !== false ) {
+						return $cached;
+					}
+				}
+			} else {
+				// Return cached data if available and not force refresh
+				return $cached;
+			}
+
+			// Fallback to license_data if API call failed
 			$license_data = $api_client->get_license_data();
 			if ( $license_data && isset( $license_data['organization'] ) ) {
 				$org  = $license_data['organization'];
@@ -244,13 +281,6 @@ class Usage_Tracker {
 		}
 
 		return $cached;
-	}
-
-	/**
-	 * Clear cached usage
-	 */
-	public static function clear_cache() {
-		delete_transient( self::CACHE_KEY );
 	}
 
 	/**

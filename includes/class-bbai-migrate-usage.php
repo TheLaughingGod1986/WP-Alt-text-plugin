@@ -139,14 +139,8 @@ class Migrate_Usage {
 				$source = sanitize_key( $log['source'] );
 			}
 
-			// Estimate credits used (default to 1 if not specified)
+			// Each generation costs 1 credit (not OpenAI tokens)
 			$credits_used = 1;
-			if ( ! empty( $context['usage'] ) && is_array( $context['usage'] ) ) {
-				$usage = $context['usage'];
-				if ( isset( $usage['total_tokens'] ) ) {
-					$credits_used = absint( $usage['total_tokens'] );
-				}
-			}
 
 			// Get model from context or meta (check new key first, then migrate old key)
 			$model = '';
@@ -275,19 +269,8 @@ class Migrate_Usage {
 			}
 			$model = ! empty( $model ) ? sanitize_text_field( $model ) : '';
 
-			// Estimate credits (default to 1)
+			// Each generation costs 1 credit (not OpenAI tokens)
 			$credits_used = 1;
-			$usage_meta   = get_post_meta( $attachment_id, '_beepbeepai_usage', true );
-			if ( ! $usage_meta ) {
-				$usage_meta = get_post_meta( $attachment_id, '_ai_alt_usage', true );
-				if ( $usage_meta ) {
-					update_post_meta( $attachment_id, '_beepbeepai_usage', $usage_meta );
-					delete_post_meta( $attachment_id, '_ai_alt_usage' );
-				}
-			}
-			if ( is_array( $usage_meta ) && isset( $usage_meta['total_tokens'] ) ) {
-				$credits_used = absint( $usage_meta['total_tokens'] );
-			}
 
 			// Get generated timestamp
 			$generated_at = ! empty( $attachment['meta_value'] ) ? $attachment['meta_value'] : $attachment['post_date'];

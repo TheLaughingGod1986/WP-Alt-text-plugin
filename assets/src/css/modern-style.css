@@ -1254,9 +1254,11 @@ body.media_page_bbai #wpwrap {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: var(--bbai-space-6);
-    padding: var(--bbai-space-4) 0;
+    margin-top: var(--bbai-space-3);
+    padding: var(--bbai-space-4) var(--bbai-space-6);
     border-top: 1px solid var(--bbai-border-primary);
+    background: var(--bbai-gray-50);
+    border-radius: 0 0 var(--bbai-radius-lg) var(--bbai-radius-lg);
 }
 
 .bbai-pagination-info {
@@ -5670,13 +5672,14 @@ body.media_page_bbai #wpwrap {
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
 }
 
-/* Pagination */
+/* Debug Pagination - matches bbai-pagination */
 .bbai-debug-pagination {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    padding: 20px 24px;
-    background: white;
+    gap: var(--bbai-space-2, 8px);
+    padding: var(--bbai-space-4, 16px) var(--bbai-space-6, 24px);
+    background: var(--bbai-gray-50, #F8FAFC);
     border: 1px solid #e5e7eb;
     border-radius: 10px;
     margin-bottom: 24px;
@@ -5684,9 +5687,42 @@ body.media_page_bbai #wpwrap {
 }
 
 .bbai-debug-pagination-info {
-    font-size: 14px;
-    color: #6b7280;
-    font-weight: 500;
+    font-size: var(--bbai-text-sm, 14px);
+    color: var(--bbai-gray-500, #64748B);
+    font-weight: var(--bbai-font-medium, 500);
+    padding: 0 var(--bbai-space-4, 16px);
+}
+
+.bbai-debug-pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--bbai-space-8, 32px);
+    height: var(--bbai-space-8, 32px);
+    padding: 0 var(--bbai-space-3, 12px);
+    font-size: var(--bbai-text-sm, 13px);
+    font-weight: var(--bbai-font-medium, 500);
+    color: var(--bbai-gray-700, #334155);
+    background: var(--bbai-white, #FFFFFF);
+    border: 1px solid var(--bbai-border-primary, #E2E8F0);
+    border-radius: var(--bbai-radius-md, 6px);
+    text-decoration: none;
+    transition: var(--bbai-transition, all 0.15s ease);
+    cursor: pointer;
+}
+
+.bbai-debug-pagination-btn:hover:not(:disabled) {
+    background: var(--bbai-gray-100, #F1F5F9);
+    border-color: var(--bbai-gray-400, #CBD5E1);
+    color: var(--bbai-gray-800, #1e293b);
+}
+
+.bbai-debug-pagination-btn:disabled {
+    background: var(--bbai-gray-50, #F8FAFC);
+    color: var(--bbai-gray-400, #94A3B8);
+    border-color: var(--bbai-border-primary, #E2E8F0);
+    cursor: not-allowed;
+    opacity: 0.6;
 }
 
 /* Responsive */

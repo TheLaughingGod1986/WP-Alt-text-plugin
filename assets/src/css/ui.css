@@ -2416,16 +2416,24 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 16px;
-    margin-bottom: 32px;
+    gap: 8px;
+    padding: 16px 24px;
+    background: #F8FAFC;
+    border-top: 1px solid #E2E8F0;
+    border-radius: 0 0 12px 12px;
 }
 
 .bbai-debug-pagination-btn {
-    padding: 8px 16px;
-    background: white;
-    border: 1px solid #d1d5db;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 12px;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
     color: #374151;
     cursor: pointer;
@@ -2433,19 +2441,23 @@
 }
 
 .bbai-debug-pagination-btn:hover:not(:disabled) {
-    background: #f9fafb;
-    border-color: #9ca3af;
+    background: #F1F5F9;
+    border-color: #CBD5E1;
+    color: #1e293b;
 }
 
 .bbai-debug-pagination-btn:disabled {
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: not-allowed;
+    background: #F8FAFC;
+    color: #94A3B8;
 }
 
 .bbai-debug-pagination-info {
     font-size: 14px;
-    color: #6b7280;
-    font-weight: 400;
+    color: #64748B;
+    font-weight: 500;
+    padding: 0 16px;
 }
 
 /* Pro Upsell Section */

@@ -35,16 +35,16 @@
 .bbai-upgrade-modal__content {
     background: #ffffff !important;
     background: var(--bbai-white, #ffffff);
-    border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    max-width: 840px;
-    width: 90%;
-    max-height: 90vh;
+    border-radius: 20px;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    max-width: 1000px;
+    width: 94%;
+    max-height: 92vh;
     overflow-y: auto;
     position: relative;
     z-index: 1000000;
     pointer-events: auto;
-    animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
     margin: 0 auto;
 }
 
@@ -337,44 +337,54 @@
 /* Pricing Container */
 .bbai-pricing-container {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+@media (min-width: 900px) {
+    .bbai-pricing-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 /* Plan Cards */
 .bbai-plan-card {
     border: 2px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 32px 24px 24px;
+    border-radius: 16px;
+    padding: 36px 28px 28px;
     position: relative;
-    background: #ffffff !important;
+    background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%) !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
 .bbai-plan-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
-    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.15));
+    transform: translateY(-6px);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
 }
 
 .bbai-plan-card--pro {
-    border-color: #e5e7eb;
+    border-color: #3b82f6;
+    border-width: 2px;
+    background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%) !important;
 }
 
 .bbai-plan-card--pro:hover {
     border-color: #2563eb;
+    box-shadow: 0 16px 48px rgba(37, 99, 235, 0.25);
 }
 
 .bbai-plan-card--agency {
     border-color: #10b981;
-    border-width: 2px;
+    border-width: 3px;
+    background: linear-gradient(180deg, #ffffff 0%, #ecfdf5 100%) !important;
 }
 
 .bbai-plan-card--agency:hover {
     border-color: #059669;
-    box-shadow: 0 12px 40px rgba(16, 185, 129, 0.2);
+    box-shadow: 0 16px 48px rgba(16, 185, 129, 0.25);
 }
 
 /* Plan Badges */

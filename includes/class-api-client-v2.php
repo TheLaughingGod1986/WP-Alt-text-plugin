@@ -28,10 +28,10 @@ class API_Client_V2 {
 
 	private $api_url;
 	private $token_option_key        = 'optti_jwt_token';
-	private $user_option_key         = 'beepbeepai_user_data';
-	private $site_id_option_key      = 'beepbeepai_site_id';
-	private $license_key_option_key  = 'beepbeepai_license_key';
-	private $license_data_option_key = 'beepbeepai_license_data';
+	private $user_option_key         = 'optti_user_data';
+	private $site_id_option_key      = 'optti_site_id';
+	private $license_key_option_key  = 'optti_license_key';
+	private $license_data_option_key = 'optti_license_data';
 	private $encryption_prefix       = 'enc:';
 
 	// Service classes
@@ -44,6 +44,9 @@ class API_Client_V2 {
 	private $generation_client;
 
 	public function __construct() {
+		// Migrate legacy option keys to new format
+		$this->migrate_legacy_options();
+
 		// Preferred API URL (override with ALT_API_HOST const/env/option bbai_alt_api_host)
 		$production_url = 'https://alttext-ai-backend.onrender.com';
 		$override_url   = '';
@@ -123,6 +126,48 @@ class API_Client_V2 {
 
 		// Initialize Generation Client (depends on License Manager and Usage Manager)
 		$this->generation_client = new \BeepBeepAI\AltTextGenerator\API\Generation_Client( $this->request_handler, $this->error_handler, $extended_callbacks['generation_client'] );
+	}
+
+	/**
+	 * Migrate legacy option keys to new unified format.
+	 * This ensures both the plugin and framework use consistent option keys.
+	 */
+	private function migrate_legacy_options() {
+		// Legacy to new option key mappings
+		$migrations = array(
+			// License key
+			'beepbeepai_license_key' => 'optti_license_key',
+			// License data
+			'beepbeepai_license_data' => 'optti_license_data',
+			// User data
+			'beepbeepai_user_data' => 'optti_user_data',
+			// Site ID
+			'beepbeepai_site_id' => 'optti_site_id',
+			// JWT token (already handled, but ensure consistency)
+			'beepbeepai_jwt_token' => 'optti_jwt_token',
+			'bbai_jwt_token' => 'optti_jwt_token',
+		);
+
+		foreach ( $migrations as $legacy_key => $new_key ) {
+			$new_value = get_option( $new_key, '' );
+			if ( empty( $new_value ) || $new_value === false ) {
+				$legacy_value = get_option( $legacy_key, '' );
+				if ( ! empty( $legacy_value ) && $legacy_value !== false ) {
+					update_option( $new_key, $legacy_value, false );
+					if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+						Debug_Log::log(
+							'info',
+							'Migrated legacy option to new key',
+							array(
+								'from' => $legacy_key,
+								'to'   => $new_key,
+							),
+							'migration'
+						);
+					}
+				}
+			}
+		}
 	}
 
 	/**
@@ -350,10 +395,15 @@ class API_Client_V2 {
 
 	/**
 	 * Clear stored license key
+	 * Clears both new and legacy license keys for complete cleanup
 	 */
 	public function clear_license_key() {
+		// Clear new unified keys
 		delete_option( $this->license_key_option_key );
 		delete_option( $this->license_data_option_key );
+		// Clear legacy keys
+		delete_option( 'beepbeepai_license_key' );
+		delete_option( 'beepbeepai_license_data' );
 	}
 
 	/**
