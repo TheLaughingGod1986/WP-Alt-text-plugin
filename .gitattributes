@@ -1,0 +1,57 @@
+# WordPress.org Distribution Exclusion
+# This file ensures utility scripts, dev tooling, and build artifacts
+# are excluded from the distribution zip when creating releases.
+
+# Dev Tooling and Scripts
+/scripts/ export-ignore
+/tests/ export-ignore
+/.github/ export-ignore
+/.vscode/ export-ignore
+
+# Utility Scripts (Security-Sensitive)
+/check-*.php export-ignore
+/test-*.php export-ignore
+/force-*.php export-ignore
+/reset-credits*.php export-ignore
+/activate-license-direct.php export-ignore
+/debug-*.php export-ignore
+
+# Build and Dependency Artifacts
+/node_modules/ export-ignore
+/vendor/ export-ignore
+/.env* export-ignore
+/*.log export-ignore
+/phpunit.xml* export-ignore
+/package.json export-ignore
+/package-lock.json export-ignore
+/pnpm-lock.yaml export-ignore
+/yarn.lock export-ignore
+/webpack*.js export-ignore
+/vite*.js export-ignore
+/tsconfig*.json export-ignore
+/eslint* export-ignore
+/prettier* export-ignore
+/docker-compose.yml export-ignore
+
+# Framework Dev Files (framework/ is runtime code, exclude only dev files)
+/framework/tests/ export-ignore
+/framework/jest.config.js export-ignore
+/framework/webpack.config.js export-ignore
+/framework/phpunit.xml export-ignore
+/framework/package.json export-ignore
+/framework/package-lock.json export-ignore
+/framework/CHANGELOG.md export-ignore
+/framework/README.md export-ignore
+/framework/docs/ export-ignore
+/framework/tools/ export-ignore
+
+# Documentation (Optional - Tune as Needed)
+/CHANGELOG.md export-ignore
+/BACKEND_*.md export-ignore
+/CODE_OF_CONDUCT.md export-ignore
+/CONTRIBUTING.md export-ignore
+/README.md export-ignore
+
+# Build Scripts
+/build-plugin.sh export-ignore
+
