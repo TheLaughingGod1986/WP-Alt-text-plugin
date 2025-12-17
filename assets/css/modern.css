@@ -83,3 +83,17 @@
 
 @import 'features/pricing/cards.css';
 @import 'features/pricing/upsell.css';
+
+/* ==================================================
+   FEATURE COMPONENTS - Bulk Operations
+   Bulk optimization components
+   ================================================== */
+
+@import 'features/bulk/operations.css';
+
+/* ==================================================
+   FEATURE COMPONENTS - Debug
+   Debug dashboard components
+   ================================================== */
+
+@import 'features/debug/dashboard.css';
