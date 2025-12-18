@@ -190,3 +190,73 @@ if ( ! class_exists( 'WP_Error' ) ) {
         }
     }
 }
+
+if ( ! function_exists( 'get_transient' ) ) {
+    function get_transient( $transient ) {
+        return false;
+    }
+}
+
+if ( ! function_exists( 'set_transient' ) ) {
+    function set_transient( $transient, $value, $expiration = 0 ) {
+        return true;
+    }
+}
+
+if ( ! function_exists( 'delete_transient' ) ) {
+    function delete_transient( $transient ) {
+        return true;
+    }
+}
+
+if ( ! function_exists( 'current_time' ) ) {
+    function current_time( $type, $gmt = 0 ) {
+        return date( 'Y-m-d H:i:s' );
+    }
+}
+
+if ( ! function_exists( 'wp_mail' ) ) {
+    function wp_mail( $to, $subject, $message, $headers = '', $attachments = array() ) {
+        return true;
+    }
+}
+
+if ( ! function_exists( 'add_query_arg' ) ) {
+    function add_query_arg( $args, $url = '' ) {
+        if ( empty( $url ) ) {
+            $url = 'http://example.com/wp-admin/upload.php';
+        }
+        $query = http_build_query( $args );
+        return $url . '?' . $query;
+    }
+}
+
+if ( ! function_exists( 'admin_url' ) ) {
+    function admin_url( $path = '' ) {
+        return 'http://example.com/wp-admin/' . $path;
+    }
+}
+
+if ( ! function_exists( 'get_current_user_id' ) ) {
+    function get_current_user_id() {
+        return 1;
+    }
+}
+
+if ( ! function_exists( 'is_email' ) ) {
+    function is_email( $email ) {
+        return filter_var( $email, FILTER_VALIDATE_EMAIL ) !== false;
+    }
+}
+
+if ( ! defined( 'DAY_IN_SECONDS' ) ) {
+    define( 'DAY_IN_SECONDS', 86400 );
+}
+
+if ( ! defined( 'HOUR_IN_SECONDS' ) ) {
+    define( 'HOUR_IN_SECONDS', 3600 );
+}
+
+if ( ! defined( 'ARRAY_A' ) ) {
+    define( 'ARRAY_A', 'ARRAY_A' );
+}
