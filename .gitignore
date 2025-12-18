@@ -45,3 +45,10 @@ node_modules/
 # Build artifacts
 build/
 dist/
+
+# Phase 5: Testing Infrastructure
+/vendor/
+/coverage/
+/tests/results/
+composer.lock
+.phpunit.result.cache
