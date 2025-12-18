@@ -1,0 +1,175 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop, 'claude/**' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        php-version: ['8.0', '8.1', '8.2', '8.3']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP ${{ matrix.php-version }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: mbstring, intl
+          coverage: none
+
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-${{ matrix.php-version }}-composer-
+
+      - name: Install PHP dependencies
+        run: composer install --prefer-dist --no-progress --no-suggest
+
+      - name: Run PHPUnit tests
+        run: vendor/bin/phpunit --no-coverage
+
+      - name: Run PHPUnit with testdox output
+        if: matrix.php-version == '8.3'
+        run: vendor/bin/phpunit --testdox --no-coverage
+
+  build:
+    name: Build Assets
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Build assets
+        run: npm run build
+
+      - name: Check build artifacts
+        run: |
+          echo "Checking minified files..."
+          ls -lh assets/dist/js/*.min.js || echo "No JS files found"
+          ls -lh assets/dist/css/*.min.css || echo "No CSS files found"
+          echo "Checking compressed files..."
+          ls -lh assets/dist/js/*.br || echo "No brotli files found"
+          ls -lh assets/dist/css/*.br || echo "No brotli files found"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist-assets
+          path: |
+            assets/dist/
+          retention-days: 7
+
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: phpcs
+
+      - name: Check PHP syntax
+        run: find includes tests -name "*.php" -exec php -l {} \;
+
+      - name: Check for TODO/FIXME comments
+        run: |
+          echo "Checking for TODO/FIXME comments..."
+          grep -r "TODO\|FIXME" includes/ tests/ || echo "No TODO/FIXME found"
+
+  bundle-size:
+    name: Bundle Size Check
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build assets
+        run: npm run build
+
+      - name: Calculate bundle sizes
+        run: |
+          echo "## Bundle Size Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### JavaScript (Minified)" >> $GITHUB_STEP_SUMMARY
+          du -h assets/dist/js/*.min.js | awk '{print "- " $2 ": " $1}' >> $GITHUB_STEP_SUMMARY || echo "No JS files" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### JavaScript (Brotli)" >> $GITHUB_STEP_SUMMARY
+          du -h assets/dist/js/*.br | awk '{print "- " $2 ": " $1}' >> $GITHUB_STEP_SUMMARY || echo "No brotli files" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### CSS (Minified)" >> $GITHUB_STEP_SUMMARY
+          du -h assets/dist/css/*.min.css | awk '{print "- " $2 ": " $1}' >> $GITHUB_STEP_SUMMARY || echo "No CSS files" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### CSS (Brotli)" >> $GITHUB_STEP_SUMMARY
+          du -h assets/dist/css/*.br | awk '{print "- " $2 ": " $1}' >> $GITHUB_STEP_SUMMARY || echo "No brotli files" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check bundle size limits
+        run: |
+          JS_SIZE=$(find assets/dist/js -name "*.min.js" -exec du -b {} + | awk '{total += $1} END {print total}')
+          CSS_SIZE=$(find assets/dist/css -name "*.min.css" -exec du -b {} + | awk '{total += $1} END {print total}')
+          TOTAL_SIZE=$((JS_SIZE + CSS_SIZE))
+
+          echo "JS Size: $((JS_SIZE / 1024)) KB"
+          echo "CSS Size: $((CSS_SIZE / 1024)) KB"
+          echo "Total Size: $((TOTAL_SIZE / 1024)) KB"
+
+          # Warn if total exceeds 400KB
+          if [ $TOTAL_SIZE -gt 409600 ]; then
+            echo "⚠️ Warning: Total bundle size exceeds 400KB"
+            exit 1
+          fi
+
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [test, build, quality]
+    if: always()
+
+    steps:
+      - name: Check test results
+        run: |
+          echo "## CI/CD Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Tests: ${{ needs.test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Build: ${{ needs.build.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Quality: ${{ needs.quality.result }}" >> $GITHUB_STEP_SUMMARY

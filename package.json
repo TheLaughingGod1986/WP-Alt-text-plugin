@@ -8,12 +8,16 @@
     "build:assets": "npm run build:js && npm run build:css",
     "build:compress": "node scripts/compress-assets.js",
     "build:version": "node scripts/version-assets.js",
-    "build": "npm run build:assets && npm run build:compress && npm run build:version"
+    "build": "npm run build:assets && npm run build:compress && npm run build:version",
+    "test": "vendor/bin/phpunit",
+    "test:watch": "vendor/bin/phpunit --testdox --colors=always",
+    "prepare": "husky install || echo 'Husky not installed'"
   },
   "devDependencies": {
     "@fullhuman/postcss-purgecss": "^7.0.2",
     "cssnano": "^7.1.2",
     "cssnano-cli": "^1.0.5",
+    "husky": "^8.0.3",
     "terser": "^5.44.1"
   },
   "dependencies": {
