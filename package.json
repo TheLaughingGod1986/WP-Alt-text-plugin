@@ -6,7 +6,9 @@
     "build:js": "node scripts/minify-js.js",
     "build:css": "node scripts/minify-css.js",
     "build:assets": "npm run build:js && npm run build:css",
-    "build": "npm run build:assets"
+    "build:compress": "node scripts/compress-assets.js",
+    "build:version": "node scripts/version-assets.js",
+    "build": "npm run build:assets && npm run build:compress && npm run build:version"
   },
   "devDependencies": {
     "@fullhuman/postcss-purgecss": "^7.0.2",
