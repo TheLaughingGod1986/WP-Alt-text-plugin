@@ -6715,11 +6715,12 @@ class Core {
                 ['bbai-components'],
                 $asset_version($css_file, '3.0.0')
             );
+            // Enqueue modular modern CSS (Phase 4 refactor - v5.0.0)
             wp_enqueue_style(
                 'bbai-modern',
-                $base_url . $asset_path($css_base, 'modern-style', $use_debug_assets, 'css'),
+                $base_url . 'assets/css/modern.css',
                 ['bbai-components'],
-                $asset_version($asset_path($css_base, 'modern-style', $use_debug_assets, 'css'), '4.1.0')
+                $asset_version('assets/css/modern.css', '5.0.0')
             );
             wp_enqueue_style(
                 'bbai-ui',

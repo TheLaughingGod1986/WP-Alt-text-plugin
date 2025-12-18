@@ -1,0 +1,141 @@
+/**
+ * Library Table Component
+ * Image library table with filters and row states
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   LIBRARY CONTAINER
+   ================================================== */
+
+.bbai-library {
+    background: var(--bbai-white);
+    border: 1px solid var(--bbai-border-primary);
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-space-4) var(--bbai-space-4) var(--bbai-space-2);
+    box-shadow: var(--bbai-shadow-sm);
+}
+
+/* ==================================================
+   LIBRARY INTRO
+   ================================================== */
+
+.bbai-library__intro {
+    padding: var(--bbai-space-2) var(--bbai-space-2) var(--bbai-space-5);
+    border-bottom: 1px solid var(--bbai-border-primary);
+}
+
+.bbai-library__intro h2 {
+    margin: 0 0 var(--bbai-space-1) 0;
+}
+
+/* ==================================================
+   LIBRARY FILTERS BAR
+   ================================================== */
+
+.bbai-library__filters {
+    display: flex;
+    gap: var(--bbai-space-2);
+    align-items: center;
+    padding: var(--bbai-space-4) var(--bbai-space-2);
+}
+
+/* ==================================================
+   LIBRARY TABLE
+   ================================================== */
+
+.bbai-library__table,
+.bbai-audit__table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+}
+
+.bbai-library__table thead th {
+    font-size: var(--bbai-text-xs);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--bbai-gray-500);
+    padding: var(--bbai-space-2) var(--bbai-space-3);
+}
+
+.bbai-library__table tbody tr {
+    background: var(--bbai-gray-50);
+    border: 1px solid var(--bbai-border-primary);
+    border-radius: 10px;
+    box-shadow: var(--bbai-shadow-xs);
+}
+
+.bbai-library__table tbody td {
+    padding: .9rem .9rem;
+    vertical-align: middle;
+}
+
+.bbai-library__table td:last-child,
+.bbai-library__table th:last-child {
+    background: transparent;
+}
+
+/* ==================================================
+   LIBRARY ROW STATES
+   ================================================== */
+
+.bbai-library__row--recent {
+    outline: 2px solid rgba(59, 130, 246, .15);
+}
+
+.bbai-library__row--missing {
+    outline: 2px solid rgba(245, 158, 11, .18);
+}
+
+.bbai-library__row--updated {
+    animation: bbaiRowHighlight 1.6s ease-out;
+}
+
+@keyframes bbaiRowHighlight {
+    0% {
+        background-color: rgba(59, 130, 246, 0.12);
+    }
+    60% {
+        background-color: rgba(59, 130, 246, 0.06);
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
+/* ==================================================
+   LIBRARY BUTTON TRANSITIONS
+   ================================================== */
+
+.bbai-library .button {
+    transition: var(--bbai-transition);
+}
+
+.bbai-library .button:hover {
+    transform: translateY(-1px);
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 768px) {
+    .bbai-library {
+        padding: var(--bbai-space-3) var(--bbai-space-3) var(--bbai-space-2);
+    }
+
+    .bbai-library__intro {
+        padding: var(--bbai-space-2) var(--bbai-space-1) var(--bbai-space-4);
+    }
+
+    .bbai-library__filters {
+        padding: var(--bbai-space-3) var(--bbai-space-1);
+    }
+
+    .bbai-library__table tbody td {
+        padding: .7rem .7rem;
+    }
+}
