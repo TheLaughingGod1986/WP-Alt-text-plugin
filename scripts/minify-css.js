@@ -6,27 +6,34 @@
 
 const fs = require('fs');
 const path = require('path');
+let postcss = null;
 let cssnano = null;
+let purgecss = null;
 try {
+    postcss = require('postcss');
     cssnano = require('cssnano');
+    purgecss = require('@fullhuman/postcss-purgecss').default;
 } catch (error) {
-    console.warn('⚠️  Unable to load cssnano from node_modules. CSS minification will be skipped.');
+    console.warn('⚠️  Unable to load postcss/cssnano/purgecss from node_modules. CSS minification will be skipped.');
 }
 
 const assetsDir = path.join(__dirname, '..', 'assets');
 const srcDir = path.join(assetsDir, 'src', 'css');
 const distDir = path.join(assetsDir, 'dist', 'css');
 const cssFiles = [
-    'ai-alt-dashboard.css',
-    'auth-modal.css',
-    'upgrade-modal.css',
     'modern-style.css',
-    'design-system.css',
-    'components.css',
-    'button-enhancements.css',
+    'ui.css',
+    'bbai-dashboard.css',
     'guide-settings-pages.css',
+    'upgrade-modal.css',
+    'components.css',
+    'design-system.css',
+    'auth-modal.css',
+    'success-modal.css',
+    'bbai-debug.css',
+    'bulk-progress-modal.css',
     'dashboard-tailwind.css',
-    'ai-alt-debug.css'
+    'button-enhancements.css'
 ];
 
 async function minifyFile(inputFile) {
@@ -42,12 +49,38 @@ async function minifyFile(inputFile) {
             return;
         }
 
-        if (!cssnano) {
+        if (!postcss || !cssnano) {
             return;
         }
 
         const css = await fs.promises.readFile(inputPath, 'utf8');
-        const result = await cssnano.process(css, { from: inputPath, to: outputPath });
+
+        // Build postcss plugins array
+        const plugins = [];
+
+        // Add PurgeCSS if explicitly enabled (use with caution for WordPress plugins)
+        // To enable: set environment variable ENABLE_PURGECSS=true
+        const enablePurgeCSS = process.env.ENABLE_PURGECSS === 'true';
+        if (purgecss && enablePurgeCSS) {
+            console.log('  🔍 PurgeCSS enabled - removing unused styles...');
+            plugins.push(purgecss({
+                content: [
+                    path.join(__dirname, '..', 'includes/**/*.php'),
+                    path.join(__dirname, '..', 'assets/**/*.js'),
+                ],
+                safelist: {
+                    // Keep WordPress admin classes
+                    standard: [/^wp-/, /^admin-/, /^notice-/, /^button-/, /^dashicons-/, /^media-/],
+                    // Keep dynamic classes
+                    greedy: [/^bbai-/, /^ai-alt-/, /^modal-/, /^tab-/, /^active/, /^is-/, /^has-/],
+                },
+            }));
+        }
+
+        // Add cssnano for minification
+        plugins.push(cssnano());
+
+        const result = await postcss(plugins).process(css, { from: inputPath, to: outputPath });
 
         await fs.promises.mkdir(path.dirname(outputPath), { recursive: true });
         await fs.promises.writeFile(outputPath, result.css, 'utf8');
@@ -71,8 +104,8 @@ function formatSize(bytes) {
 }
 
 async function main() {
-    if (!cssnano) {
-        console.warn('⚠️  cssnano is not available, skipping CSS minification.');
+    if (!postcss || !cssnano) {
+        console.warn('⚠️  postcss/cssnano is not available, skipping CSS minification.');
         return;
     }
 
