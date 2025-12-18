@@ -11,6 +11,7 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 }
 
 global $wpdb;
+$namespaced_prefix = defined( 'OPTTI_OPTION_PREFIX' ) ? OPTTI_OPTION_PREFIX : 'bbai_';
 
 // Delete all beepbeepai_ options
 $beepbeepai_options = array(
@@ -51,6 +52,29 @@ $optti_options = array(
 	'optti_license_data',
 	'optti_license_last_check',
 	'optti_license_snapshot',
+	'optti_settings',
+	'optti_site_fingerprint',
+	'optti_install_timestamp',
+	'optti_site_secret_key',
+	'optti_quota_cache',
+	'optti_performance_indexes_created',
+);
+
+// Delete namespaced framework options to avoid collisions with other Optti plugins.
+$bbai_optti_options = array(
+	$namespaced_prefix . 'jwt_token',
+	$namespaced_prefix . 'user_data',
+	$namespaced_prefix . 'site_id',
+	$namespaced_prefix . 'license_key',
+	$namespaced_prefix . 'license_data',
+	$namespaced_prefix . 'license_last_check',
+	$namespaced_prefix . 'license_snapshot',
+	$namespaced_prefix . 'settings',
+	$namespaced_prefix . 'site_fingerprint',
+	$namespaced_prefix . 'install_timestamp',
+	$namespaced_prefix . 'site_secret_key',
+	$namespaced_prefix . 'quota_cache',
+	$namespaced_prefix . 'performance_indexes_created',
 );
 
 foreach ( $bbai_options as $option ) {
@@ -59,6 +83,11 @@ foreach ( $bbai_options as $option ) {
 
 // Delete optti_ prefixed options
 foreach ( $optti_options as $option ) {
+	delete_option( $option );
+}
+
+// Delete namespaced options
+foreach ( $bbai_optti_options as $option ) {
 	delete_option( $option );
 }
 
@@ -120,16 +149,50 @@ foreach ( $legacy_transients as $transient ) {
 	delete_transient( $transient );
 }
 
+// Delete optti_ transients (framework cache)
+// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- option_name patterns are constant strings
+$wpdb->query(
+	$wpdb->prepare(
+		"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+		'_transient_optti_%',
+		'_transient_timeout_optti_%'
+	)
+);
+
+// Delete namespaced transients
+// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- option_name patterns are constant strings
+$wpdb->query(
+	$wpdb->prepare(
+		"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+		'_transient_bbai_%',
+		'_transient_timeout_bbai_%'
+	)
+);
+
+// Delete transients using the current namespaced prefix if it differs.
+// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- option_name patterns are constant strings
+$wpdb->query(
+	$wpdb->prepare(
+		"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+		'_transient_' . $namespaced_prefix . '%',
+		'_transient_timeout_' . $namespaced_prefix . '%'
+	)
+);
+
 // Clear scheduled cron hooks
 // Clear framework queue hook
 if ( class_exists( '\Optti\Framework\Queue' ) ) {
 	\Optti\Framework\Queue::init( 'bbai' );
 	wp_clear_scheduled_hook( \Optti\Framework\Queue::get_cron_hook() );
 }
+// Clear potential legacy/default queue hook
+wp_clear_scheduled_hook( 'optti_process_queue_bbai' );
+wp_clear_scheduled_hook( 'optti_process_queue_optti' );
 // Also clear legacy hooks for backward compatibility
 wp_clear_scheduled_hook( 'bbai_process_queue' );
 wp_clear_scheduled_hook( 'beepbeepai_process_queue' );
 wp_clear_scheduled_hook( 'bbai_daily_identity_sync' );
+wp_clear_scheduled_hook( $namespaced_prefix . 'license_check' );
 
 // Remove custom capability from administrator role
 $role = get_role( 'administrator' );
@@ -205,6 +268,19 @@ $wpdb->query( "DROP TABLE IF EXISTS `{$queue_table_safe}`" );
 $logs_table      = $table_prefix . 'bbai_logs';
 $logs_table_safe = esc_sql( $logs_table );
 $wpdb->query( "DROP TABLE IF EXISTS `{$logs_table_safe}`" );
+
+// Framework queue/log tables (current and legacy slug)
+$optti_queue_table_current      = $table_prefix . 'optti_queue_bbai';
+$optti_queue_table_current_safe = esc_sql( $optti_queue_table_current );
+$wpdb->query( "DROP TABLE IF EXISTS `{$optti_queue_table_current_safe}`" );
+
+$optti_queue_table_legacy      = $table_prefix . 'optti_queue_optti';
+$optti_queue_table_legacy_safe = esc_sql( $optti_queue_table_legacy );
+$wpdb->query( "DROP TABLE IF EXISTS `{$optti_queue_table_legacy_safe}`" );
+
+$optti_logs_table      = $table_prefix . 'optti_logs';
+$optti_logs_table_safe = esc_sql( $optti_logs_table );
+$wpdb->query( "DROP TABLE IF EXISTS `{$optti_logs_table_safe}`" );
 
 // Legacy table names (if they exist)
 $legacy_queue_table      = $table_prefix . 'beepbeepai_queue';

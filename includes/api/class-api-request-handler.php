@@ -267,6 +267,17 @@ class API_Request_Handler {
 	 */
 	public function make_request( $endpoint, $method = 'GET', $data = null, $timeout = null, $include_user_id = false, $extra_headers = array(), $include_auth_headers = true ) {
 		$url     = trailingslashit( $this->api_url ) . ltrim( $endpoint, '/' );
+		
+		// Debug logging for forgot password requests
+		if ( strpos( $endpoint, 'forgot-password' ) !== false ) {
+			error_log( '[BBAI DEBUG] make_request called for forgot-password' );
+			error_log( '[BBAI DEBUG] API URL: ' . $this->api_url );
+			error_log( '[BBAI DEBUG] Full URL: ' . $url );
+			error_log( '[BBAI DEBUG] Method: ' . $method );
+			error_log( '[BBAI DEBUG] Data: ' . print_r( $data, true ) );
+			error_log( '[BBAI DEBUG] Include auth headers: ' . ( $include_auth_headers ? 'yes' : 'no' ) );
+		}
+		
 		$headers = $include_auth_headers
 			? $this->get_auth_headers( $include_user_id, $extra_headers )
 			: array_merge(
@@ -275,6 +286,10 @@ class API_Request_Handler {
 				),
 				$extra_headers
 			);
+		
+		if ( strpos( $endpoint, 'forgot-password' ) !== false ) {
+			error_log( '[BBAI DEBUG] Request headers: ' . print_r( $headers, true ) );
+		}
 
 		// Use longer timeout for generation requests (OpenAI can take time)
 		if ( $timeout === null ) {
@@ -285,9 +300,10 @@ class API_Request_Handler {
 		}
 
 		$args = array(
-			'method'  => $method,
-			'headers' => $headers,
-			'timeout' => $timeout,
+			'method'    => $method,
+			'headers'   => $headers,
+			'timeout'   => $timeout,
+			'sslverify' => true,
 		);
 
 		if ( $data && in_array( $method, array( 'POST', 'PUT', 'PATCH' ) ) ) {
@@ -330,7 +346,23 @@ class API_Request_Handler {
 
 		$this->log_api_event( 'debug', 'API request started', $log_data );
 
+		if ( strpos( $endpoint, 'forgot-password' ) !== false ) {
+			error_log( '[BBAI DEBUG] Making wp_remote_request to: ' . $url );
+			error_log( '[BBAI DEBUG] Request args: ' . print_r( $args, true ) );
+		}
+		
 		$response = wp_remote_request( $url, $args );
+
+		if ( strpos( $endpoint, 'forgot-password' ) !== false ) {
+			if ( is_wp_error( $response ) ) {
+				error_log( '[BBAI DEBUG] wp_remote_request returned WP_Error: ' . $response->get_error_message() );
+			} else {
+				$status_code = wp_remote_retrieve_response_code( $response );
+				$body        = wp_remote_retrieve_body( $response );
+				error_log( '[BBAI DEBUG] wp_remote_request response status: ' . $status_code );
+				error_log( '[BBAI DEBUG] wp_remote_request response body: ' . $body );
+			}
+		}
 
 		if ( is_wp_error( $response ) ) {
 			$error_message = $response->get_error_message();
@@ -362,6 +394,12 @@ class API_Request_Handler {
 		$status_code = wp_remote_retrieve_response_code( $response );
 		$body        = wp_remote_retrieve_body( $response );
 		$data        = json_decode( $body, true );
+
+		if ( strpos( $endpoint, 'forgot-password' ) !== false ) {
+			error_log( '[BBAI DEBUG] Response status code: ' . $status_code );
+			error_log( '[BBAI DEBUG] Response body: ' . $body );
+			error_log( '[BBAI DEBUG] Parsed data: ' . print_r( $data, true ) );
+		}
 
 		$this->log_api_event(
 			$status_code >= 400 ? 'warning' : 'debug',
@@ -403,12 +441,23 @@ class API_Request_Handler {
 			'method'      => $method,
 		);
 
+		if ( strpos( $endpoint, 'forgot-password' ) !== false ) {
+			error_log( '[BBAI DEBUG] Built response array: ' . print_r( $response, true ) );
+		}
+
 		// Process response through error handler if available
 		if ( $this->error_handler ) {
-			return $this->error_handler->process_response( $response );
+			$processed = $this->error_handler->process_response( $response );
+			if ( strpos( $endpoint, 'forgot-password' ) !== false ) {
+				error_log( '[BBAI DEBUG] Error handler processed response: ' . print_r( $processed, true ) );
+			}
+			return $processed;
 		}
 
 		// Return raw response if no error handler
+		if ( strpos( $endpoint, 'forgot-password' ) !== false ) {
+			error_log( '[BBAI DEBUG] Returning raw response (no error handler)' );
+		}
 		return $response;
 	}
 

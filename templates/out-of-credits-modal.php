@@ -77,13 +77,6 @@ if (defined('BBAI_DASHBOARD_URL') && BBAI_DASHBOARD_URL) {
                 modal.style.display = 'flex';
                 modal.setAttribute('aria-hidden', 'false');
                 document.body.style.overflow = 'hidden';
-                
-                // Log analytics event
-                if (typeof window.logEvent === 'function') {
-                    window.logEvent('out_of_credits_modal_open', {
-                        source: 'no_access_error'
-                    });
-                }
             }
         };
     }
@@ -124,14 +117,6 @@ if (defined('BBAI_DASHBOARD_URL') && BBAI_DASHBOARD_URL) {
             // Ensure URL ends with /credits?ref=plugin&plugin=beepbeep
             const baseUrl = dashboardUrl.replace(/\/credits.*$/, '').replace(/\/$/, '');
             const buyCreditsUrl = baseUrl + '/credits?ref=plugin&plugin=beepbeep';
-            
-            // Log analytics event
-            if (typeof window.logEvent === 'function') {
-                window.logEvent('buy_credits_clicked', {
-                    source: 'out_of_credits_modal',
-                    url: buyCreditsUrl
-                });
-            }
             
             // Open Buy Credits page in new tab
             window.open(buyCreditsUrl, '_blank', 'noopener,noreferrer');

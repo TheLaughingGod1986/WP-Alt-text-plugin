@@ -7,6 +7,8 @@
 /tests/ export-ignore
 /.github/ export-ignore
 /.vscode/ export-ignore
+/.gitignore export-ignore
+/.gitmodules export-ignore
 
 # Utility Scripts (Security-Sensitive)
 /check-*.php export-ignore
@@ -56,4 +58,3 @@
 
 # Build Scripts
 /build-plugin.sh export-ignore
-

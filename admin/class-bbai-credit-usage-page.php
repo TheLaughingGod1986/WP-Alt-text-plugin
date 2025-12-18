@@ -184,8 +184,8 @@ class Credit_Usage_Page {
 		}
 
 		?>
-		<div class="wrap" style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-			<h1 style="font-size: 28px; font-weight: 600; color: #0F172A; margin-bottom: 24px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+		<div class="wrap" style="font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
+			<h1 style="font-size: 28px; font-weight: 600; color: #0F172A; margin-bottom: 24px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 				<?php echo esc_html( get_admin_page_title() ); ?>
 			</h1>
 
@@ -195,7 +195,7 @@ class Credit_Usage_Page {
 				<p style="margin-bottom: 24px;">
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=optti&tab=credit-usage' ) ); ?>"
 						class="button"
-						style="background: #2563EB; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 500; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-decoration: none; transition: background 0.15s; display: inline-block;"
+						style="background: #2563EB; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 500; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; text-decoration: none; transition: background 0.15s; display: inline-block;"
 						onmouseover="this.style.background='#1D4ED8'"
 						onmouseout="this.style.background='#2563EB'">
 						<?php esc_html_e( '← Back to Summary', 'beepbeep-ai-alt-text-generator' ); ?>
@@ -206,13 +206,13 @@ class Credit_Usage_Page {
 			<!-- Usage Summary Cards -->
 			<div class="bbai-usage-summary-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin: 32px 0;">
 				<div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 24px; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); transition: box-shadow 0.2s;">
-					<h3 style="font-size: 14px; font-weight: 600; color: #0F172A; margin: 0 0 12px 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+					<h3 style="font-size: 14px; font-weight: 600; color: #0F172A; margin: 0 0 12px 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 						<?php esc_html_e( 'Total Credits Allocated', 'beepbeep-ai-alt-text-generator' ); ?>
 					</h3>
-					<p class="bbai-card-value" style="font-size: 32px; font-weight: 700; margin: 8px 0; color: #0F172A; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; letter-spacing: -0.02em;">
+					<p class="bbai-card-value" style="font-size: 32px; font-weight: 700; margin: 8px 0; color: #0F172A; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; letter-spacing: -0.02em;">
 						<?php echo esc_html( number_format_i18n( $current_usage['limit'] ) ); ?>
 					</p>
-					<p style="color: #64748B; font-size: 14px; margin: 0; font-weight: 400; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+					<p style="color: #64748B; font-size: 14px; margin: 0; font-weight: 400; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 						<?php
 						$plan = isset( $current_usage['plan'] ) && ! empty( $current_usage['plan'] ) ? $current_usage['plan'] : 'free';
 						echo esc_html( ucfirst( $plan ) );
@@ -221,13 +221,13 @@ class Credit_Usage_Page {
 					</p>
 				</div>
 				<div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 24px; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); transition: box-shadow 0.2s;">
-					<h3 style="font-size: 14px; font-weight: 600; color: #0F172A; margin: 0 0 12px 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+					<h3 style="font-size: 14px; font-weight: 600; color: #0F172A; margin: 0 0 12px 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 						<?php esc_html_e( 'Total Credits Used', 'beepbeep-ai-alt-text-generator' ); ?>
 					</h3>
-					<p class="bbai-card-value" style="font-size: 32px; font-weight: 700; margin: 8px 0; color: #334155; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; letter-spacing: -0.02em;">
+					<p class="bbai-card-value" style="font-size: 32px; font-weight: 700; margin: 8px 0; color: #334155; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; letter-spacing: -0.02em;">
 						<?php echo esc_html( number_format_i18n( $current_usage['used'] ) ); ?>
 					</p>
-					<p style="color: #64748B; font-size: 14px; margin: 0; font-weight: 400; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+					<p style="color: #64748B; font-size: 14px; margin: 0; font-weight: 400; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 						<?php
 						$percentage_display = isset( $current_usage['percentage_display'] ) ? $current_usage['percentage_display'] : ( isset( $current_usage['percentage'] ) ? number_format_i18n( $current_usage['percentage'], 0 ) : '0' );
 						echo esc_html( $percentage_display );
@@ -236,13 +236,13 @@ class Credit_Usage_Page {
 					</p>
 				</div>
 				<div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 24px; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); transition: box-shadow 0.2s;">
-					<h3 style="font-size: 14px; font-weight: 600; color: #0F172A; margin: 0 0 12px 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+					<h3 style="font-size: 14px; font-weight: 600; color: #0F172A; margin: 0 0 12px 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 						<?php esc_html_e( 'Credits Remaining', 'beepbeep-ai-alt-text-generator' ); ?>
 					</h3>
-					<p class="bbai-card-value" style="font-size: 32px; font-weight: 700; margin: 8px 0; color: #10B981; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; letter-spacing: -0.02em;">
+					<p class="bbai-card-value" style="font-size: 32px; font-weight: 700; margin: 8px 0; color: #10B981; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; letter-spacing: -0.02em;">
 						<?php echo esc_html( number_format_i18n( $current_usage['remaining'] ) ); ?>
 					</p>
-					<p style="color: #64748B; font-size: 14px; margin: 0; font-weight: 400; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+					<p style="color: #64748B; font-size: 14px; margin: 0; font-weight: 400; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 						<?php
 						esc_html_e( 'Resets', 'beepbeep-ai-alt-text-generator' );
 						$reset_date = isset( $current_usage['reset_date'] ) && ! empty( $current_usage['reset_date'] )
@@ -255,13 +255,13 @@ class Credit_Usage_Page {
 					</p>
 				</div>
 				<div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 24px; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); transition: box-shadow 0.2s;">
-					<h3 style="font-size: 14px; font-weight: 600; color: #0F172A; margin: 0 0 12px 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+					<h3 style="font-size: 14px; font-weight: 600; color: #0F172A; margin: 0 0 12px 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 						<?php esc_html_e( 'Active Users', 'beepbeep-ai-alt-text-generator' ); ?>
 					</h3>
-					<p class="bbai-card-value" style="font-size: 32px; font-weight: 700; margin: 8px 0; color: #0F172A; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; letter-spacing: -0.02em;">
+					<p class="bbai-card-value" style="font-size: 32px; font-weight: 700; margin: 8px 0; color: #0F172A; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; letter-spacing: -0.02em;">
 						<?php echo esc_html( number_format_i18n( $usage_by_user['total'] ) ); ?>
 					</p>
-					<p style="color: #64748B; font-size: 14px; margin: 0; font-weight: 400; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+					<p style="color: #64748B; font-size: 14px; margin: 0; font-weight: 400; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 						<?php esc_html_e( 'Users with credit usage', 'beepbeep-ai-alt-text-generator' ); ?>
 					</p>
 				</div>
@@ -278,7 +278,7 @@ class Credit_Usage_Page {
 					<input type="hidden" name="view" value="<?php echo esc_attr( $view ); ?>">
 					<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px;">
 						<div>
-							<label for="date_from" style="display: block; font-size: 14px; font-weight: 500; color: #334155; margin-bottom: 8px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+							<label for="date_from" style="display: block; font-size: 14px; font-weight: 500; color: #334155; margin-bottom: 8px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 								<?php esc_html_e( 'Date From', 'beepbeep-ai-alt-text-generator' ); ?>
 							</label>
 							<input type="date" 
@@ -286,10 +286,10 @@ class Credit_Usage_Page {
 									name="date_from" 
 									value="<?php echo esc_attr( $date_from ); ?>" 
 									class="regular-text"
-									style="width: 100%; padding: 8px 12px; border: 1px solid #E2E8F0; border-radius: 6px; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; background: #FFFFFF; transition: border-color 0.15s;">
+									style="width: 100%; padding: 8px 12px; border: 1px solid #E2E8F0; border-radius: 6px; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; color: #0F172A; background: #FFFFFF; transition: border-color 0.15s;">
 						</div>
 						<div>
-							<label for="date_to" style="display: block; font-size: 14px; font-weight: 500; color: #334155; margin-bottom: 8px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+							<label for="date_to" style="display: block; font-size: 14px; font-weight: 500; color: #334155; margin-bottom: 8px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 								<?php esc_html_e( 'Date To', 'beepbeep-ai-alt-text-generator' ); ?>
 							</label>
 							<input type="date" 
@@ -297,16 +297,16 @@ class Credit_Usage_Page {
 									name="date_to" 
 									value="<?php echo esc_attr( $date_to ); ?>" 
 									class="regular-text"
-									style="width: 100%; padding: 8px 12px; border: 1px solid #E2E8F0; border-radius: 6px; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; background: #FFFFFF; transition: border-color 0.15s;">
+									style="width: 100%; padding: 8px 12px; border: 1px solid #E2E8F0; border-radius: 6px; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; color: #0F172A; background: #FFFFFF; transition: border-color 0.15s;">
 						</div>
 						<div>
-							<label for="user_id_filter" style="display: block; font-size: 14px; font-weight: 500; color: #334155; margin-bottom: 8px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+							<label for="user_id_filter" style="display: block; font-size: 14px; font-weight: 500; color: #334155; margin-bottom: 8px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 								<?php esc_html_e( 'Filter by User', 'beepbeep-ai-alt-text-generator' ); ?>
 							</label>
 							<select id="user_id_filter" 
 									name="user_id" 
 									class="regular-text"
-									style="width: 100%; padding: 8px 12px; border: 1px solid #E2E8F0; border-radius: 6px; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; background: #FFFFFF; transition: border-color 0.15s;">
+									style="width: 100%; padding: 8px 12px; border: 1px solid #E2E8F0; border-radius: 6px; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; color: #0F172A; background: #FFFFFF; transition: border-color 0.15s;">
 								<option value=""><?php esc_html_e( 'All Users', 'beepbeep-ai-alt-text-generator' ); ?></option>
 								<?php foreach ( $all_users as $user ) : ?>
 									<option value="<?php echo esc_attr( $user->ID ); ?>" <?php selected( $user_id, $user->ID ); ?>>
@@ -321,10 +321,10 @@ class Credit_Usage_Page {
 						<input type="submit"
 								class="button button-primary"
 								value="<?php esc_attr_e( 'Filter', 'beepbeep-ai-alt-text-generator' ); ?>"
-								style="background: #2563EB; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 500; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; cursor: pointer; transition: background 0.15s;">
+								style="background: #2563EB; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 500; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; cursor: pointer; transition: background 0.15s;">
 						<a href="<?php echo esc_url( admin_url( 'admin.php?page=optti&tab=credit-usage' ) ); ?>"
 							class="button"
-							style="background: #FFFFFF; color: #2563EB; border: 1px solid #2563EB; padding: 10px 20px; border-radius: 6px; font-weight: 500; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-decoration: none; transition: background 0.15s; display: inline-block;">
+							style="background: #FFFFFF; color: #2563EB; border: 1px solid #2563EB; padding: 10px 20px; border-radius: 6px; font-weight: 500; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; text-decoration: none; transition: background 0.15s; display: inline-block;">
 							<?php esc_html_e( 'Clear Filters', 'beepbeep-ai-alt-text-generator' ); ?>
 						</a>
 					</div>
@@ -338,21 +338,21 @@ class Credit_Usage_Page {
 				$display_name = $wp_user ? $wp_user->display_name : __( 'Unknown User', 'beepbeep-ai-alt-text-generator' );
 				?>
 				<div style="margin-top: 40px; width: 100%; max-width: 100%; box-sizing: border-box;">
-					<h2 style="font-size: 24px; font-weight: 600; color: #0F172A; margin: 0 0 20px 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: left;">
+					<h2 style="font-size: 24px; font-weight: 600; color: #0F172A; margin: 0 0 20px 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; text-align: left;">
 						<?php printf( esc_html__( 'Credit Usage Details: %s', 'beepbeep-ai-alt-text-generator' ), esc_html( $display_name ) ); ?>
 					</h2>
 
 					<div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); width: 100%; max-width: 100%; display: block; box-sizing: border-box;">
-						<table class="wp-list-table widefat fixed striped" style="margin: 0; border-collapse: collapse; width: 100%; table-layout: auto; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+						<table class="wp-list-table widefat fixed striped" style="margin: 0; border-collapse: collapse; width: 100%; table-layout: auto; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 							<thead>
 								<tr style="background: #F8FAFC; border-bottom: 2px solid #E2E8F0;">
-									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
+									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
 										<?php esc_html_e( 'Image', 'beepbeep-ai-alt-text-generator' ); ?>
 									</th>
-									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
+									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
 										<?php esc_html_e( 'Credits Used', 'beepbeep-ai-alt-text-generator' ); ?>
 									</th>
-									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
+									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
 										<?php esc_html_e( 'Generated At', 'beepbeep-ai-alt-text-generator' ); ?>
 									</th>
 								</tr>
@@ -361,7 +361,7 @@ class Credit_Usage_Page {
 								<?php if ( ! empty( $user_details['items'] ) ) : ?>
 									<?php foreach ( $user_details['items'] as $item ) : ?>
 										<tr style="border-bottom: 1px solid #E2E8F0; transition: background-color 0.15s; cursor: default;" onmouseover="this.style.backgroundColor='#F8FAFC'" onmouseout="this.style.backgroundColor=''">
-											<td style="padding: 18px 20px; font-size: 14px; color: #334155; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+											<td style="padding: 18px 20px; font-size: 14px; color: #334155; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 												<?php if ( ! empty( $item['attachment_url'] ) ) : ?>
 													<a href="<?php echo esc_url( $item['attachment_url'] ); ?>" 
 														target="_blank" 
@@ -378,7 +378,7 @@ class Credit_Usage_Page {
 													</span>
 												<?php endif; ?>
 											</td>
-											<td style="padding: 18px 20px; font-size: 14px; color: #334155; font-weight: 500; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+											<td style="padding: 18px 20px; font-size: 14px; color: #334155; font-weight: 500; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 												<?php echo esc_html( number_format_i18n( $item['credits_used'] ) ); ?>
 												<?php if ( isset( $item['generation_count'] ) && intval( $item['generation_count'] ) > 1 ) : ?>
 													<span style="background: #E0E7FF; color: #4338CA; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 6px; font-weight: 500;">
@@ -392,14 +392,14 @@ class Credit_Usage_Page {
 													</span>
 												<?php endif; ?>
 											</td>
-											<td style="padding: 18px 20px; font-size: 14px; color: #334155; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+											<td style="padding: 18px 20px; font-size: 14px; color: #334155; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 												<?php echo esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $item['generated_at'] ) ) ); ?>
 											</td>
 										</tr>
 									<?php endforeach; ?>
 								<?php else : ?>
 									<tr>
-										<td colspan="3" style="padding: 48px; text-align: center; color: #64748B; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+										<td colspan="3" style="padding: 48px; text-align: center; color: #64748B; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 											<?php esc_html_e( 'No usage records found for this user.', 'beepbeep-ai-alt-text-generator' ); ?>
 										</td>
 									</tr>
@@ -478,7 +478,7 @@ class Credit_Usage_Page {
 				<!-- User Summary View -->
 				<div style="margin-top: 40px;">
 					<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-						<h2 style="font-size: 24px; font-weight: 600; color: #0F172A; margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: left;">
+						<h2 style="font-size: 24px; font-weight: 600; color: #0F172A; margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; text-align: left;">
 							<?php esc_html_e( 'Usage by User', 'beepbeep-ai-alt-text-generator' ); ?>
 						</h2>
 						<?php
@@ -502,7 +502,7 @@ class Credit_Usage_Page {
 									<input type="hidden" name="bbai_action" value="fix_credit_counts">
 									<button type="submit" 
 											class="button" 
-											style="background: #F59E0B; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 500; font-size: 13px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; cursor: pointer; transition: background 0.15s;"
+											style="background: #F59E0B; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 500; font-size: 13px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; cursor: pointer; transition: background 0.15s;"
 											onmouseover="this.style.background='#D97706'"
 											onmouseout="this.style.background='#F59E0B'"
 											title="<?php printf( esc_attr__( 'Total: %1$d credits for %2$d records. Should be %2$d.', 'beepbeep-ai-alt-text-generator' ), $total_credits, $total_records ); ?>">
@@ -520,19 +520,19 @@ class Credit_Usage_Page {
 					</div>
 
 					<div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); width: 100%; max-width: 100%; box-sizing: border-box;">
-						<table class="wp-list-table widefat fixed striped" style="margin: 0; border-collapse: collapse; width: 100%; table-layout: auto; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+						<table class="wp-list-table widefat fixed striped" style="margin: 0; border-collapse: collapse; width: 100%; table-layout: auto; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 							<thead>
 								<tr style="background: #F8FAFC; border-bottom: 2px solid #E2E8F0;">
-									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
+									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
 										<?php esc_html_e( 'User', 'beepbeep-ai-alt-text-generator' ); ?>
 									</th>
-									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
+									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
 										<?php esc_html_e( 'Images Processed', 'beepbeep-ai-alt-text-generator' ); ?>
 									</th>
-									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
+									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
 										<?php esc_html_e( 'Last Activity', 'beepbeep-ai-alt-text-generator' ); ?>
 									</th>
-									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
+									<th style="padding: 16px 20px; text-align: left; font-size: 13px; font-weight: 600; color: #0F172A; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; text-transform: uppercase; letter-spacing: 0.025em;">
 										<?php esc_html_e( 'Actions', 'beepbeep-ai-alt-text-generator' ); ?>
 									</th>
 								</tr>
@@ -542,28 +542,28 @@ class Credit_Usage_Page {
 									<?php foreach ( $usage_by_user['users'] as $user_data ) : ?>
 										<tr style="border-bottom: 1px solid #E2E8F0; transition: background-color 0.15s; cursor: default;" onmouseover="this.style.backgroundColor='#F8FAFC'" onmouseout="this.style.backgroundColor=''">
 											<td style="padding: 18px 20px;">
-												<strong style="font-size: 14px; font-weight: 600; color: #0F172A; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: block; line-height: 1.5;">
+												<strong style="font-size: 14px; font-weight: 600; color: #0F172A; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; display: block; line-height: 1.5;">
 													<?php echo esc_html( $user_data['display_name'] ); ?>
 												</strong>
 												<?php if ( ! empty( $user_data['user_email'] ) ) : ?>
-													<span style="color: #64748B; font-size: 13px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: block; margin-top: 4px; line-height: 1.5;">
+													<span style="color: #64748B; font-size: 13px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; display: block; margin-top: 4px; line-height: 1.5;">
 														<?php echo esc_html( $user_data['user_email'] ); ?>
 													</span>
 												<?php endif; ?>
 											</td>
-											<td style="padding: 18px 20px; font-size: 14px; color: #334155; font-weight: 500; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+											<td style="padding: 18px 20px; font-size: 14px; color: #334155; font-weight: 500; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 												<?php echo esc_html( number_format_i18n( $user_data['total_images'] ) ); ?>
 											</td>
 											<td style="padding: 18px 20px;">
 												<?php if ( $user_data['last_activity'] ) : ?>
-													<span style="display: block; font-size: 14px; color: #334155; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5;">
+													<span style="display: block; font-size: 14px; color: #334155; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; line-height: 1.5;">
 														<?php echo esc_html( date_i18n( get_option( 'date_format' ), strtotime( $user_data['last_activity'] ) ) ); ?>
 													</span>
-													<span style="display: block; color: #64748B; font-size: 13px; margin-top: 2px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5;">
+													<span style="display: block; color: #64748B; font-size: 13px; margin-top: 2px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; line-height: 1.5;">
 														<?php echo esc_html( date_i18n( get_option( 'time_format' ), strtotime( $user_data['last_activity'] ) ) ); ?>
 													</span>
 												<?php else : ?>
-													<span style="color: #94A3B8; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+													<span style="color: #94A3B8; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 														<?php esc_html_e( 'N/A', 'beepbeep-ai-alt-text-generator' ); ?>
 													</span>
 												<?php endif; ?>
@@ -584,7 +584,7 @@ class Credit_Usage_Page {
 												?>
 															"
 													class="button button-small"
-													style="background: #2563EB; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 500; font-size: 13px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-decoration: none; transition: all 0.15s; display: inline-block; white-space: nowrap;"
+													style="background: #2563EB; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 500; font-size: 13px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; text-decoration: none; transition: all 0.15s; display: inline-block; white-space: nowrap;"
 													onmouseover="this.style.background='#1D4ED8'; this.style.boxShadow='0 1px 3px 0 rgba(0, 0, 0, 0.1)'"
 													onmouseout="this.style.background='#2563EB'; this.style.boxShadow='none'"
 													onfocus="this.style.outline='2px solid #93C5FD'; this.style.outlineOffset='2px'"
@@ -597,26 +597,26 @@ class Credit_Usage_Page {
 						<?php else : ?>
 							<tr>
 								<td colspan="6" style="padding: 32px; text-align: center;">
-									<p style="color: #64748B; font-size: 14px; margin: 0 0 16px 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+									<p style="color: #64748B; font-size: 14px; margin: 0 0 16px 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 										<?php esc_html_e( 'No credit usage data found.', 'beepbeep-ai-alt-text-generator' ); ?>
 									</p>
 									
 									<?php if ( current_user_can( 'manage_options' ) && isset( $debug_info ) ) : ?>
 										<div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; margin-top: 16px; text-align: left; max-width: 800px; margin-left: auto; margin-right: auto;">
-											<strong style="font-size: 14px; font-weight: 600; color: #0F172A; display: block; margin-bottom: 12px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+											<strong style="font-size: 14px; font-weight: 600; color: #0F172A; display: block; margin-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 												<?php esc_html_e( '🔍 Diagnostic Information', 'beepbeep-ai-alt-text-generator' ); ?>
 											</strong>
 											
 											<div style="margin-bottom: 16px;">
-												<strong style="font-size: 14px; font-weight: 500; color: #334155; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+												<strong style="font-size: 14px; font-weight: 500; color: #334155; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 													<?php esc_html_e( 'Table Status:', 'beepbeep-ai-alt-text-generator' ); ?>
 												</strong> 
 												<?php if ( $table_exists ) : ?>
-													<span style="color: #10B981; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+													<span style="color: #10B981; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 														✓ <?php esc_html_e( 'Exists', 'beepbeep-ai-alt-text-generator' ); ?>
 													</span>
 												<?php else : ?>
-													<span style="color: #EF4444; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+													<span style="color: #EF4444; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 														✗ <?php esc_html_e( 'Missing', 'beepbeep-ai-alt-text-generator' ); ?>
 													</span>
 													<br><br>
@@ -625,11 +625,11 @@ class Credit_Usage_Page {
 														<input type="hidden" name="bbai_action" value="create_credit_table">
 														<button type="submit" 
 																class="button button-primary" 
-																style="background: #2563EB; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 500; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; cursor: pointer; transition: background 0.15s; margin-top: 8px;">
+																style="background: #2563EB; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 500; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; cursor: pointer; transition: background 0.15s; margin-top: 8px;">
 															<?php esc_html_e( 'Create Table Now', 'beepbeep-ai-alt-text-generator' ); ?>
 														</button>
 													</form>
-													<p style="margin-top: 12px; color: #64748B; font-size: 13px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+													<p style="margin-top: 12px; color: #64748B; font-size: 13px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 														<?php esc_html_e( 'The credit usage tracking table is missing. Click the button above to create it. Future credit usage will be tracked automatically.', 'beepbeep-ai-alt-text-generator' ); ?>
 													</p>
 												<?php endif; ?>
@@ -637,28 +637,28 @@ class Credit_Usage_Page {
 											
 											<?php if ( $table_exists ) : ?>
 												<div style="margin-bottom: 12px;">
-													<strong style="font-size: 14px; font-weight: 500; color: #334155; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+													<strong style="font-size: 14px; font-weight: 500; color: #334155; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 														<?php esc_html_e( 'Total Records:', 'beepbeep-ai-alt-text-generator' ); ?>
 													</strong> 
-													<span style="color: #0F172A; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+													<span style="color: #0F172A; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 														<?php echo esc_html( number_format_i18n( $debug_info['total_rows'] ?? 0 ) ); ?>
 													</span>
 												</div>
 												
 												<div style="margin-bottom: 12px;">
-													<strong style="font-size: 14px; font-weight: 500; color: #334155; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+													<strong style="font-size: 14px; font-weight: 500; color: #334155; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 														<?php esc_html_e( 'Distinct Users:', 'beepbeep-ai-alt-text-generator' ); ?>
 													</strong> 
-													<span style="color: #0F172A; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+													<span style="color: #0F172A; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 														<?php echo esc_html( number_format_i18n( $debug_info['distinct_users'] ?? 0 ) ); ?>
 													</span>
 												</div>
 												
 												<div style="margin-bottom: 12px;">
-													<strong style="font-size: 14px; font-weight: 500; color: #334155; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+													<strong style="font-size: 14px; font-weight: 500; color: #334155; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 														<?php esc_html_e( 'Query Results:', 'beepbeep-ai-alt-text-generator' ); ?>
 													</strong> 
-													<span style="color: #0F172A; font-size: 14px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+													<span style="color: #0F172A; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 														<?php echo esc_html( number_format_i18n( $debug_info['query_returned_users'] ?? 0 ) ); ?> users, 
 														<?php echo esc_html( number_format_i18n( $debug_info['query_total'] ?? 0 ) ); ?> total
 													</span>
@@ -666,12 +666,12 @@ class Credit_Usage_Page {
 												
 												<?php if ( ! empty( $debug_info['user_breakdown'] ) ) : ?>
 													<div style="margin-bottom: 16px;">
-														<strong style="font-size: 14px; font-weight: 500; color: #334155; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+														<strong style="font-size: 14px; font-weight: 500; color: #334155; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 															<?php esc_html_e( 'User Breakdown (by credits):', 'beepbeep-ai-alt-text-generator' ); ?>
 														</strong>
 														<div style="margin-top: 8px; padding-left: 16px;">
 															<?php foreach ( $debug_info['user_breakdown'] as $user ) : ?>
-																<div style="margin-bottom: 6px; font-size: 13px; color: #64748B; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6;">
+																<div style="margin-bottom: 6px; font-size: 13px; color: #64748B; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; line-height: 1.6;">
 																	User ID <?php echo esc_html( $user['user_id'] ); ?>: 
 																	<?php echo esc_html( number_format_i18n( $user['total_credits'] ) ); ?> credits 
 																	(<?php echo esc_html( $user['count'] ); ?> operations)
@@ -693,7 +693,7 @@ class Credit_Usage_Page {
 												
 												<?php if ( ! empty( $debug_info['sample_data'] ) ) : ?>
 													<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #E2E8F0;">
-														<strong style="font-size: 14px; font-weight: 500; color: #334155; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+														<strong style="font-size: 14px; font-weight: 500; color: #334155; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 															<?php esc_html_e( 'Recent Activity (last 10 entries):', 'beepbeep-ai-alt-text-generator' ); ?>
 														</strong>
 														<div style="margin-top: 8px; padding-left: 16px; font-family: 'Courier New', 'SF Mono', Monaco, 'Cascadia Code', monospace; font-size: 12px; background: #F8FAFC; padding: 12px; border-radius: 6px; border: 1px solid #E2E8F0;">
@@ -714,7 +714,7 @@ class Credit_Usage_Page {
 									<?php endif; ?>
 									
 									<?php if ( $site_usage['total_credits'] > 0 ) : ?>
-										<p style="color: #64748B; margin-top: 16px; font-size: 13px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6;">
+										<p style="color: #64748B; margin-top: 16px; font-size: 13px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; line-height: 1.6;">
 											<?php
 											printf(
 												esc_html__( 'Note: Site-wide usage shows %d credits used, but no per-user breakdown is available. This may be because: (1) usage occurred before per-user tracking was enabled, (2) all generations were marked as system/anonymous, or (3) the tracking table needs to be populated. Future generations will be tracked per-user.', 'beepbeep-ai-alt-text-generator' ),
@@ -725,7 +725,7 @@ class Credit_Usage_Page {
 									<?php endif; ?>
 									
 									<?php if ( $table_exists && ( $debug_info['total_rows'] ?? 0 ) === 0 ) : ?>
-										<p style="color: #EF4444; margin-top: 16px; font-size: 13px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+										<p style="color: #EF4444; margin-top: 16px; font-size: 13px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;">
 											<strong><?php esc_html_e( 'No data has been logged yet.', 'beepbeep-ai-alt-text-generator' ); ?></strong>
 											<span style="color: #64748B;"><?php esc_html_e( 'Generate alt text for an image while logged in to see usage tracking in action.', 'beepbeep-ai-alt-text-generator' ); ?></span>
 										</p>

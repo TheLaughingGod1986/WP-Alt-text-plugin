@@ -240,14 +240,40 @@ class Usage_Tracker {
 		}
 
 		// PRIORITY 2: If no license, fall back to personal account data
-		// If force refresh, clear cache first
+		// If force refresh, clear cache first and fetch from API
 		if ( $force_refresh ) {
 			delete_transient( self::CACHE_KEY );
+			
+			// Fetch fresh usage from API for authenticated users
+			if ( $api_client->is_authenticated() ) {
+				$live_usage = $api_client->get_usage();
+				if ( ! is_wp_error( $live_usage ) && is_array( $live_usage ) && ! empty( $live_usage ) ) {
+					// Update cache with fresh data
+					self::update_usage( $live_usage );
+					$cached = get_transient( self::CACHE_KEY );
+					if ( $cached !== false ) {
+						return $cached;
+					}
+				}
+			}
 		}
 
 		$cached = get_transient( self::CACHE_KEY );
 
 		if ( $cached === false ) {
+			// If authenticated and cache is empty, try to fetch from API
+			if ( $api_client->is_authenticated() ) {
+				$live_usage = $api_client->get_usage();
+				if ( ! is_wp_error( $live_usage ) && is_array( $live_usage ) && ! empty( $live_usage ) ) {
+					// Update cache with fresh data
+					self::update_usage( $live_usage );
+					$cached = get_transient( self::CACHE_KEY );
+					if ( $cached !== false ) {
+						return $cached;
+					}
+				}
+			}
+			
 			// Check if free credits have been allocated for this site
 			$free_credits_allocated = get_option( 'beepbeepai_free_credits_allocated', false );
 

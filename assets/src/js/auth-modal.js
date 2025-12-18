@@ -25,6 +25,7 @@ class BbAIAuthModal {
     }
 
     init() {
+        console.log('[AltText AI] AuthModal initializing...');
         this.createModalHTML();
         // Cache modal element after creation
         this.modalElement = document.getElementById('alttext-auth-modal');
@@ -35,21 +36,35 @@ class BbAIAuthModal {
             forgotPassword: document.getElementById('alttext-forgot-password-form'),
             resetPassword: document.getElementById('alttext-reset-password-form')
         };
+        console.log('[AltText AI] AuthModal form elements:', this.formElements);
         this.bindEvents();
         this.checkAuthStatus();
         this.checkResetPasswordParams();
+        console.log('[AltText AI] AuthModal initialized successfully');
     }
 
     checkResetPasswordParams() {
         // Check if URL contains reset token and email params
         const urlParams = new URLSearchParams(window.location.search);
-        const resetToken = urlParams.get('reset-token');
+        // Check for both 'token' (from backend) and 'reset-token' (legacy)
+        const resetToken = urlParams.get('token') || urlParams.get('reset-token');
         const resetEmail = urlParams.get('email');
         
         if (resetToken && resetEmail) {
+            console.log('[AltText AI] Reset password params detected:', { 
+                resetToken: resetToken.substring(0, 8) + '...', 
+                resetEmail,
+                fullUrl: window.location.href
+            });
             // Show reset password form
             this.show();
             this.showResetPasswordForm(resetEmail, resetToken);
+        } else {
+            console.log('[AltText AI] No reset password params found:', {
+                token: resetToken ? 'found' : 'missing',
+                email: resetEmail ? 'found' : 'missing',
+                urlParams: Array.from(urlParams.entries())
+            });
         }
     }
 
@@ -348,6 +363,7 @@ class BbAIAuthModal {
             if (e.target.id === 'forgot-password-form') {
                 e.preventDefault();
                 e.stopPropagation();
+                console.log('[AltText AI] Forgot password form submitted');
                 self.handleForgotPassword();
                 return;
             }
@@ -518,11 +534,24 @@ class BbAIAuthModal {
                 this.hide();
                 this.showSuccess('Welcome back! You are now signed in to SEO AI Alt Text.');
 
+                // Clear any cached authentication state to force fresh check
+                if (typeof localStorage !== 'undefined') {
+                    localStorage.removeItem('bbai_subscription_cache');
+                    localStorage.removeItem('bbai_user_data');
+                    localStorage.removeItem('optti_user_data');
+                }
+                if (typeof sessionStorage !== 'undefined') {
+                    sessionStorage.clear();
+                }
+
                 // Reload page to refresh authentication state and show license
-                // Increased delay to allow auto-attach license to complete on backend
+                // Use replace to prevent back button issues, and add cache-busting parameter
                 setTimeout(() => {
-                    window.location.reload();
-                }, 2500);
+                    const currentUrl = new URL(window.location.href);
+                    currentUrl.searchParams.set('bbai_logged_in', '1');
+                    currentUrl.searchParams.set('_t', Date.now().toString());
+                    window.location.replace(currentUrl.toString());
+                }, 1500);
             } else {
                 // WordPress AJAX error response - message is in data.data.message
                 const errorMessage = data.data?.message || data.message || 'Login failed';
@@ -627,55 +656,97 @@ class BbAIAuthModal {
     }
 
     async handleForgotPassword() {
+        console.log('[AltText AI] handleForgotPassword called');
         const form = document.getElementById('forgot-password-form');
+        if (!form) {
+            console.error('[AltText AI] Forgot password form not found');
+            return;
+        }
         const formData = new FormData(form);
         const email = formData.get('email');
+        console.log('[AltText AI] Email:', email);
 
         this.setLoading(form, true);
 
         // Validate AJAX config exists
         if (!window.bbai_ajax?.ajaxurl) {
-            console.error('[AltText AI] AJAX configuration not loaded');
+            console.error('[AltText AI] AJAX configuration not loaded', window.bbai_ajax);
             this.showError('Configuration error. Please refresh the page and try again.');
             this.setLoading(form, false);
             return;
         }
 
+        console.log('[AltText AI] Making forgot password request to:', window.bbai_ajax.ajaxurl);
         try {
+            const requestBody = new URLSearchParams({
+                action: 'beepbeepai_forgot_password',
+                email: email,
+                nonce: window.bbai_ajax.nonce
+            });
+            console.log('[AltText AI] Request body:', requestBody.toString());
+            
             const response = await fetch(window.bbai_ajax.ajaxurl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },
-                body: new URLSearchParams({
-                    action: 'beepbeepai_forgot_password',
-                    email: email,
-                    nonce: window.bbai_ajax.nonce
-                })
+                body: requestBody
             });
-
+            
+            console.log('[AltText AI] Response status:', response.status, response.statusText);
+            
+            // Get response text first to see what we're dealing with
+            const responseText = await response.text();
+            console.log('[AltText AI] Raw response:', responseText);
+            
             // Check if response is OK before parsing JSON
             if (!response.ok) {
                 // Try to parse error response
                 let errorData;
                 try {
-                    errorData = await response.json();
+                    errorData = JSON.parse(responseText);
                 } catch (e) {
-                    errorData = { message: `Server error (${response.status})` };
+                    console.error('[AltText AI] Failed to parse error response:', e);
+                    errorData = { message: `Server error (${response.status}): ${responseText.substring(0, 200)}` };
                 }
                 this.setLoading(form, false);
                 const errorMessage = errorData.data?.message || errorData.message || `Request failed with status ${response.status}`;
+                console.error('[AltText AI] Forgot password error:', errorMessage, errorData);
                 this.showError(errorMessage);
                 return;
             }
 
-            const data = await response.json();
+            let data;
+            try {
+                data = JSON.parse(responseText);
+                console.log('[AltText AI] Parsed response data:', data);
+                console.log('[AltText AI] Full response data object:', JSON.stringify(data, null, 2));
+            } catch (e) {
+                console.error('[AltText AI] Failed to parse JSON response:', e, 'Response text:', responseText);
+                this.setLoading(form, false);
+                this.showError('Invalid response from server. Please try again.');
+                return;
+            }
 
             if (data.success) {
                 this.setLoading(form, false);
                 
+                // Log debug info if available
+                if (data.data?._debug) {
+                    console.log('[AltText AI] Backend debug info:', data.data._debug);
+                }
+                if (data.data?.debug) {
+                    console.log('[AltText AI] Backend debug:', data.data.debug);
+                }
+                if (data.data?.emailSent !== undefined) {
+                    console.log('[AltText AI] Email sent status:', data.data.emailSent);
+                }
+                if (data.data?.error) {
+                    console.warn('[AltText AI] Backend returned error in success response:', data.data.error);
+                }
+                
                 // Build success message
-                let successMessage = 'Reset link sent! ';
+                let successMessage = '';
                 
                 // If reset link is provided in response (for testing/development), show it prominently
                 if (data.data?.resetLink) {
@@ -685,11 +756,25 @@ class BbAIAuthModal {
                     // Create a clickable link element
                     const resetLink = data.data.resetLink;
                     successMessage += resetLink;
+                    this.showSuccess(successMessage);
+                } else if (data.data?.emailSent === false || data.data?.error) {
+                    // Email sending failed
+                    const errorMsg = data.data?.error || 'Email service is not configured or failed to send email.';
+                    successMessage = 'Password reset request received, but email could not be sent.\n\n';
+                    successMessage += 'Error: ' + errorMsg + '\n\n';
+                    successMessage += 'Please check backend logs or contact support.';
+                    this.showError(successMessage);
                 } else {
-                    successMessage += 'Please check your email (including spam folder) for instructions. The link will expire in 1 hour.';
+                    // No reset link - email should have been sent
+                    successMessage = 'Password reset link has been sent to your email. ';
+                    successMessage += 'Please check your inbox (including spam folder) for instructions. ';
+                    successMessage += 'The link will expire in 1 hour.\n\n';
+                    if (data.data?._debug || data.data?.debug) {
+                        successMessage += '\n[Debug: Check browser console for backend response details]';
+                    }
+                    this.showSuccess(successMessage);
                 }
                 
-                this.showSuccess(successMessage);
                 // Clear form but keep modal open so user can see the message
                 form.reset();
                 // Don't auto-close modal - let user close it manually
@@ -979,7 +1064,11 @@ class BbAIAuthModal {
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     // Create instance and add to bbaiApp namespace
+    console.log('[AltText AI] Loading auth-modal.js...');
+    console.log('[AltText AI] window.bbai_ajax:', window.bbai_ajax);
+    console.log('[AltText AI] opttiApi:', typeof opttiApi !== 'undefined' ? opttiApi : 'not defined');
     var authModalInstance = new BbAIAuthModal();
+    console.log('[AltText AI] AuthModal instance created:', authModalInstance);
     window.AltTextAuthModal = authModalInstance; // Legacy support
     if (typeof bbaiApp !== 'undefined') {
         bbaiApp.authModal = authModalInstance;

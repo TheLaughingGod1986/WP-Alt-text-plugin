@@ -13,6 +13,7 @@ use Optti\Framework\Interfaces\ModuleInterface;
 use Optti\Framework\ApiClient;
 use Optti\Framework\LicenseManager;
 use Optti\Framework\Logger;
+use Optti\Framework\Queue;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -176,7 +177,11 @@ class Alt_Generator implements ModuleInterface {
 	 */
 	public function maybe_generate_on_upload( $attachment_id ) {
 		// Check if auto-generation is enabled.
-		$settings = get_option( 'optti_settings', [] );
+		$settings = get_option( 'bbai_settings', [] );
+		if ( empty( $settings ) ) {
+			// Fallback for older installs that may have stored framework settings.
+			$settings = get_option( 'optti_settings', [] );
+		}
 		if ( empty( $settings['enable_on_upload'] ) ) {
 			return;
 		}
@@ -186,8 +191,10 @@ class Alt_Generator implements ModuleInterface {
 			return;
 		}
 
-		// Generate in background.
-		$this->generate( $attachment_id, 'auto', false );
+		// Queue for background processing to avoid slowing uploads.
+		Queue::init( 'bbai' );
+		Queue::enqueue( $attachment_id, 'upload' );
+		Queue::schedule_processing();
 	}
 
 	/**
@@ -316,4 +323,3 @@ class Alt_Generator implements ModuleInterface {
 		return current_user_can( 'manage_options' );
 	}
 }
-

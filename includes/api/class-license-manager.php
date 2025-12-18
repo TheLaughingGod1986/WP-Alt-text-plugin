@@ -12,19 +12,39 @@ if ( ! defined( 'ABSPATH' ) ) {
 class License_Manager {
 
 	private $request_handler;
-	private $license_key_option_key  = 'optti_license_key';
-	private $license_data_option_key = 'optti_license_data';
+	private $option_prefix;
+	private $license_key_option_key;
+	private $license_data_option_key;
 	private $encrypt_secret_callback;
 	private $maybe_decrypt_secret_callback;
 	private $get_site_id_callback;
 	private $is_authenticated_callback;
 
 	public function __construct( $request_handler, $callbacks = array() ) {
+		$this->option_prefix             = function_exists( 'optti_option_prefix' ) ? optti_option_prefix() : 'optti_';
+		$this->license_key_option_key    = $this->option_prefix . 'license_key';
+		$this->license_data_option_key   = $this->option_prefix . 'license_data';
 		$this->request_handler               = $request_handler;
 		$this->encrypt_secret_callback       = $callbacks['encrypt_secret'] ?? null;
 		$this->maybe_decrypt_secret_callback = $callbacks['maybe_decrypt_secret'] ?? null;
 		$this->get_site_id_callback          = $callbacks['get_site_id'] ?? null;
 		$this->is_authenticated_callback     = $callbacks['is_authenticated'] ?? null;
+
+		// Migrate from legacy shared prefix to namespaced prefix if needed.
+		if ( $this->option_prefix !== 'optti_' ) {
+			$shared_keys = array(
+				'optti_license_key'  => $this->license_key_option_key,
+				'optti_license_data' => $this->license_data_option_key,
+			);
+			foreach ( $shared_keys as $old_key => $new_key ) {
+				if ( get_option( $new_key, null ) === null ) {
+					$old_value = get_option( $old_key, null );
+					if ( null !== $old_value ) {
+						update_option( $new_key, $old_value, false );
+					}
+				}
+			}
+		}
 	}
 
 	/**

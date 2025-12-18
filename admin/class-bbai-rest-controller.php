@@ -230,27 +230,59 @@ class REST_Controller {
 	/**
 	 * Permission callback shared across routes.
 	 *
-	 * @return bool
+	 * @param \WP_REST_Request $request REST request instance.
+	 * @return bool|\WP_Error
 	 */
-	public function can_edit_media() {
+	public function can_edit_media( $request = null ) {
+		// Capability check
 		if ( method_exists( $this->core, 'user_can_manage' ) && $this->core->user_can_manage() ) {
-			return true;
+			$has_capability = true;
+		} else {
+			$has_capability = current_user_can( 'manage_options' );
 		}
 
-		return current_user_can( 'manage_options' );
+		if ( ! $has_capability ) {
+			return false;
+		}
+
+		// Nonce verification for state-changing operations
+		if ( $request && in_array( $request->get_method(), array( 'POST', 'PUT', 'DELETE' ), true ) ) {
+			$nonce = $request->get_header( 'X-WP-Nonce' );
+			if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+				return new \WP_Error( 'rest_forbidden', __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ), array( 'status' => 403 ) );
+			}
+		}
+
+		return true;
 	}
 
 	/**
 	 * Permission callback for license management routes.
 	 *
-	 * @return bool
+	 * @param \WP_REST_Request $request REST request instance.
+	 * @return bool|\WP_Error
 	 */
-	public function can_manage_license() {
+	public function can_manage_license( $request = null ) {
+		// Capability check
 		if ( method_exists( $this->core, 'user_can_manage' ) && $this->core->user_can_manage() ) {
-			return true;
+			$has_capability = true;
+		} else {
+			$has_capability = current_user_can( 'manage_options' );
 		}
 
-		return current_user_can( 'manage_options' );
+		if ( ! $has_capability ) {
+			return false;
+		}
+
+		// Nonce verification for state-changing operations
+		if ( $request && in_array( $request->get_method(), array( 'POST', 'PUT', 'DELETE' ), true ) ) {
+			$nonce = $request->get_header( 'X-WP-Nonce' );
+			if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+				return new \WP_Error( 'rest_forbidden', __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ), array( 'status' => 403 ) );
+			}
+		}
+
+		return true;
 	}
 
 	/**

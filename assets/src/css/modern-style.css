@@ -3,8 +3,6 @@
  * Clean SaaS-style design - Production Ready
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap');
-
 /* Production Dashboard Improvements */
 :root {
     --bbai-dashboard-max-width: 1400px;
@@ -740,6 +738,7 @@ body.media_page_bbai #wpwrap {
     position: relative;
     overflow: hidden;
     transition: var(--bbai-transition);
+    white-space: nowrap;
 }
 
 .bbai-btn-regenerate:hover {
@@ -1231,6 +1230,7 @@ body.media_page_bbai #wpwrap {
     transition: var(--bbai-transition);
     box-shadow: var(--bbai-shadow-xs);
     letter-spacing: var(--bbai-tracking-wide);
+    white-space: nowrap;
 }
 
 .bbai-btn-regenerate:hover:not(:disabled):not(.bbai-btn-disabled) {
@@ -2907,7 +2907,7 @@ body.media_page_bbai #wpwrap {
    Toast tweaks
    ================================ */
 .bbai-toast-container {
-    font-family: 'Inter', 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
 }
 
 /* ================================
@@ -3976,7 +3976,7 @@ body.media_page_bbai #wpwrap {
     margin: 0 0 12px 0 !important;
     letter-spacing: -0.02em !important;
     line-height: 1.2 !important;
-    font-family: var(--bbai-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif) !important;
+    font-family: var(--bbai-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif) !important;
 }
 
 .bbai-dashboard-container > div[style*="text-align: center"] p {
@@ -4276,6 +4276,7 @@ body.media_page_bbai #wpwrap {
     border: 1px solid #d1d5db !important;
     border-radius: 10px !important;
     font-size: 14px !important;
+    white-space: nowrap !important;
     font-weight: 500 !important;
     cursor: pointer !important;
     transition: all 0.2s ease !important;

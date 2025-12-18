@@ -321,11 +321,6 @@ async function renderDashboard() {
         return; // Dashboard container not found, exit gracefully
     }
     
-    // Log dashboard load event
-    if (typeof window.logEvent === 'function') {
-        window.logEvent('dashboard_loaded', {});
-    }
-    
     try {
         const result = await getDashboardCharts();
         

@@ -1463,6 +1463,7 @@
     cursor: pointer;
     transition: all 0.15s ease;
     display: inline-block;
+    white-space: nowrap;
 }
 
 .bbai-btn-regenerate:hover:not(:disabled) {

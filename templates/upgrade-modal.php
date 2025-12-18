@@ -14,13 +14,6 @@ $pro_price_id = $checkout_prices['pro'] ?? '';
 $agency_price_id = $checkout_prices['agency'] ?? '';
 $credits_price_id = $checkout_prices['credits'] ?? '';
 
-// Fallback to hardcoded Stripe links if API price IDs not available
-$stripe_links = [
-    'pro' => 'https://buy.stripe.com/dRm28s4rc5Raf0GbY77ss02',
-    'agency' => 'https://buy.stripe.com/28E14og9U0wQ19Q4vF7ss01',
-    'credits' => 'https://buy.stripe.com/6oU9AUf5Q2EYaKq0fp7ss00'
-];
-
 // Get currency - Default to GBP since Stripe is configured for GBP
 $locale = get_locale();
 $locale_lower = strtolower($locale);
@@ -162,7 +155,6 @@ else {
                             data-action="checkout-plan"
                             data-plan="pro"
                             data-price-id="<?php echo esc_attr($pro_price_id); ?>"
-                            data-fallback-url="<?php echo esc_url($stripe_links['pro']); ?>"
                             aria-label="<?php esc_attr_e('Purchase Pro plan', 'beepbeep-ai-alt-text-generator'); ?>">
                         <?php esc_html_e('Faster SEO Cleanup', 'beepbeep-ai-alt-text-generator'); ?>
                     </button>
@@ -206,7 +198,6 @@ else {
                             data-action="checkout-plan"
                             data-plan="agency"
                             data-price-id="<?php echo esc_attr($agency_price_id); ?>"
-                            data-fallback-url="<?php echo esc_url($stripe_links['agency']); ?>"
                             aria-label="<?php esc_attr_e('Purchase Agency plan', 'beepbeep-ai-alt-text-generator'); ?>">
                         <?php esc_html_e('Scale Bulk SEO Automation Across Sites', 'beepbeep-ai-alt-text-generator'); ?>
                     </button>
@@ -261,7 +252,6 @@ else {
                             data-action="checkout-plan"
                             data-plan="credits"
                             data-price-id="<?php echo esc_attr($credits_price_id); ?>"
-                            data-fallback-url="<?php echo esc_url($stripe_links['credits']); ?>"
                             aria-label="<?php esc_attr_e('Buy 100 Credits', 'beepbeep-ai-alt-text-generator'); ?>">
                         <?php esc_html_e('Buy 100 Credits', 'beepbeep-ai-alt-text-generator'); ?>
                     </button>

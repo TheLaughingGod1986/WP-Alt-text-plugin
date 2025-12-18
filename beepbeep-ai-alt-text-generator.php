@@ -16,48 +16,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Prevent headers already sent errors from PHP 8.1+ deprecation warnings
-// These warnings come from WordPress core when null values are passed to strpos/str_replace
-if ( ! headers_sent() ) {
-	// Check if we're in AJAX, cron, REST API, or activation context
-	$is_ajax = ( defined( 'DOING_AJAX' ) && DOING_AJAX ) || ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() );
-	$is_cron = ( defined( 'DOING_CRON' ) && DOING_CRON ) || ( function_exists( 'wp_doing_cron' ) && wp_doing_cron() );
-	$is_rest = defined( 'REST_REQUEST' ) && REST_REQUEST;
-	$is_activation = ( defined( 'WP_CLI' ) && WP_CLI ) || ( isset( $_GET['action'] ) && $_GET['action'] === 'activate' );
-	
-	// Only suppress in non-AJAX, non-cron, non-REST, non-activation contexts
-	if ( ! $is_ajax && ! $is_cron && ! $is_rest && ! $is_activation ) {
-		// Set custom error handler that suppresses only E_DEPRECATED warnings from WordPress core
-		// This prevents display of PHP 8.1+ compatibility warnings from WordPress core
-		set_error_handler( function( $errno, $errstr, $errfile, $errline ) {
-			// Only suppress E_DEPRECATED warnings (8192) from WordPress core files
-			if ( $errno === E_DEPRECATED ) {
-				// Safely check file path with null checks
-				if ( $errfile !== null && is_string( $errfile ) && $errfile !== '' ) {
-					$errfile_normalized = str_replace( '\\', '/', $errfile );
-					// Check if warning is from WordPress core (wp-includes or wp-admin)
-					if ( $errfile_normalized !== '' ) {
-						$is_wp_includes = strpos( $errfile_normalized, '/wp-includes/' ) !== false;
-						$is_wp_admin = strpos( $errfile_normalized, '/wp-admin/' ) !== false;
-						if ( $is_wp_includes || $is_wp_admin ) {
-							// Suppress this WordPress core deprecation warning
-							return true;
-						}
-					}
-				}
-			}
-			// Pass through all other errors
-			return false;
-		}, E_DEPRECATED );
-	}
-}
-
 // Define plugin constants
-define( 'OPTTI_VERSION', '5.0.0' );
+define( 'OPTTI_VERSION', '4.2.3' );
 define( 'OPTTI_PLUGIN_FILE', __FILE__ );
 define( 'OPTTI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OPTTI_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'OPTTI_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
+
+// Namespace framework options/cache to avoid collisions with other Optti-based plugins.
+if ( ! defined( 'OPTTI_OPTION_PREFIX' ) ) {
+	define( 'OPTTI_OPTION_PREFIX', 'bbai_' );
+}
+if ( ! function_exists( 'optti_option_prefix' ) ) {
+	function optti_option_prefix() {
+		return defined( 'OPTTI_OPTION_PREFIX' ) ? OPTTI_OPTION_PREFIX : 'optti_';
+	}
+}
+add_filter(
+	'optti_cache_prefix',
+	static function () {
+		return optti_option_prefix();
+	}
+);
 
 // Legacy constants for backward compatibility
 define( 'BEEPBEEP_AI_VERSION', OPTTI_VERSION );
@@ -74,16 +54,35 @@ define( 'BBAI_PLUGIN_BASENAME', OPTTI_PLUGIN_BASENAME );
 // Bootstrap Optti Framework
 require_once OPTTI_PLUGIN_DIR . 'framework/loader.php';
 
-Optti_Framework::bootstrap(
-	__FILE__,
-	array(
-		'plugin_slug'  => 'beepbeep-ai-alt-text-generator',
-		'version'      => OPTTI_VERSION,
-		'api_base_url' => 'https://alttext-ai-backend.onrender.com',
-		'asset_url'    => OPTTI_PLUGIN_URL . 'framework/dist/',
-		'asset_dir'    => OPTTI_PLUGIN_DIR . 'framework/dist/',
-	)
+// Suppress deprecation notices only during framework bootstrap to avoid noisy output with WP_DEBUG_DISPLAY on.
+$__bbai_prev_handler = set_error_handler(
+	static function ( $errno ) {
+		if ( $errno === E_DEPRECATED ) {
+			return true;
+		}
+		return false;
+	},
+	E_DEPRECATED
 );
+
+try {
+	Optti_Framework::bootstrap(
+		__FILE__,
+		array(
+			'plugin_slug'  => 'beepbeep-ai-alt-text-generator',
+			'version'      => OPTTI_VERSION,
+			'api_base_url' => 'https://alttext-ai-backend.onrender.com',
+			'asset_url'    => OPTTI_PLUGIN_URL . 'framework/dist/',
+			'asset_dir'    => OPTTI_PLUGIN_DIR . 'framework/dist/',
+		)
+	);
+} finally {
+	if ( $__bbai_prev_handler ) {
+		set_error_handler( $__bbai_prev_handler );
+	} else {
+		restore_error_handler();
+	}
+}
 
 // Load translations at init to comply with WordPress expectations.
 add_action(

@@ -258,7 +258,7 @@ This plugin connects to external services to perform automated alt text generati
 
 3. Stripe Checkout
    - Purpose: Process payments for upgrades
-   - URLs used in plugin: all buy.stripe.com URLs
+   - URLs used in plugin: all buy.stripe.com URLs (configurable server-side via 'bbai_stripe_checkout_urls' filter; no client-controlled payment URLs)
    - Terms: https://stripe.com/legal
    - Privacy: https://stripe.com/privacy
 
@@ -278,7 +278,7 @@ This plugin:
 * Allows users to disable API calls through settings
 * Provides transparent information about external service usage
 * Images are processed and immediately deleted from our servers
-* No tracking, analytics, or user behavior monitoring
+* Tracks credit usage for quota management only (functional requirement, not behavioral analytics)
 
 == Source Code ==
 

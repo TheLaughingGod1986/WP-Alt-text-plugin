@@ -97,15 +97,6 @@
             }
         }
         
-        // Log analytics event
-        if (typeof window.logEvent === 'function') {
-            window.logEvent('upgrade_modal_open', {
-                reason: errorCode,
-                source: subscriptionError && subscriptionError.noAccess ? 'no_access_error' : 'subscription_error',
-                credits: credits,
-                subscriptionExpired: subscriptionExpired
-            });
-        }
         
         // If out of credits, show out-of-credits modal instead
         if (errorCode === 'out_of_credits' && typeof window.bbai_openOutOfCreditsModal === 'function') {
@@ -137,15 +128,12 @@
     $(document).ready(function() {
         bbaiDebug.log('[AltText AI] jQuery ready - setting up upgrade modal handlers');
         
-        // Check if plugin was just activated and fire analytics event
+        // Check if plugin was just activated
         // This fires on first admin page load after activation
         if (typeof opttiApi !== 'undefined' && opttiApi.activatedAt) {
             const activationFired = sessionStorage.getItem('bbai_activation_event_fired');
             if (!activationFired) {
-                if (typeof window.logEvent === 'function') {
-                    window.logEvent('plugin_activated', {});
-                    sessionStorage.setItem('bbai_activation_event_fired', 'true');
-                }
+                sessionStorage.setItem('bbai_activation_event_fired', 'true');
             }
         }
         
@@ -213,11 +201,6 @@
         $(document).on('click', '[data-action="show-upgrade-modal"]', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            
-            // Log analytics event when upgrade modal is opened
-            if (typeof window.logEvent === 'function') {
-                window.logEvent('upgrade_modal_open', {});
-            }
             
             bbaiDebug.log('[AltText AI] Upgrade CTA clicked via jQuery handler', this);
             
@@ -458,9 +441,16 @@
 
         $(document).on('click', '[data-action="disconnect-account"]', function(e) {
             e.preventDefault();
+            e.stopPropagation();
+            
+            if (alttextaiDebug) console.log('[AltText AI] Disconnect button clicked');
+            
             if (!confirm('Disconnect this account for all WordPress users? You can reconnect at any time.')) {
+                if (alttextaiDebug) console.log('[AltText AI] Disconnect cancelled by user');
                 return;
             }
+            
+            if (alttextaiDebug) console.log('[AltText AI] Proceeding with disconnect');
             disconnectAccount($(this));
         });
 
@@ -472,45 +462,32 @@
             const $btn = $(this);
             const plan = $btn.attr('data-plan');
             const priceId = $btn.attr('data-price-id');
-            const fallbackUrl = $btn.attr('data-fallback-url');
             
             // Safety check for bbaiDebug
             const debug = (typeof bbaiDebug !== 'undefined' && bbaiDebug.log) ? bbaiDebug : { log: function() {}, warn: function() {}, error: function() { console.error.apply(console, arguments); } };
             
-            debug.log('[AltText AI] Checkout plan clicked:', plan, priceId, fallbackUrl);
+            debug.log('[AltText AI] Checkout plan clicked:', plan, priceId);
             
-            // Always use fallback URL if available (most reliable)
-            if (fallbackUrl) {
-                debug.log('[AltText AI] Using fallback Stripe payment link:', fallbackUrl);
-                try {
-                    const checkoutWindow = window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
-                    
-                    if (!checkoutWindow || checkoutWindow.closed || typeof checkoutWindow.closed === 'undefined') {
-                        alert('Please allow popups for this site to complete checkout.');
-                        return;
-                    }
-                    
-                    // Close the upgrade modal after opening the payment link
-                    if (typeof alttextaiCloseModal === 'function') {
-                        alttextaiCloseModal();
-                    } else if (typeof window.alttextaiCloseModal === 'function') {
-                        window.alttextaiCloseModal();
-                    }
-                } catch (err) {
-                    debug.error('[AltText AI] Error opening checkout:', err);
-                    alert('Unable to open checkout. Please try again or contact support.');
-                }
-            } else if (priceId && window.opttiBilling && window.opttiApi && typeof window.opttiBilling.createCheckoutSession === 'function') {
-                // Try backend checkout API if available
-                debug.log('[AltText AI] Using backend checkout API');
-                try {
-                    initiateCheckout($btn, priceId, plan);
-                } catch (err) {
-                    debug.error('[AltText AI] Error with backend checkout:', err);
-                    alert('Unable to initiate checkout. Please try again or contact support.');
-                }
-            } else {
-                debug.warn('[AltText AI] No checkout method available. PriceId:', priceId, 'FallbackUrl:', fallbackUrl, 'opttiBilling:', !!window.opttiBilling, 'opttiApi:', !!window.opttiApi);
+            // Validate price ID
+            if (!priceId || priceId.trim() === '') {
+                debug.warn('[AltText AI] Price ID missing for plan:', plan);
+                alert('Pricing information is not available. Please refresh the page to load the latest pricing.\n\nIf the problem persists, please contact support.');
+                return;
+            }
+            
+            // Validate AJAX configuration
+            if (!window.bbai_ajax || !window.bbai_ajax.ajaxurl) {
+                debug.error('[AltText AI] WordPress AJAX not configured');
+                alert('Configuration error. Please refresh the page and try again.');
+                return;
+            }
+            
+            // Use WordPress AJAX handler (secure, server-validated)
+            debug.log('[AltText AI] Initiating checkout via WordPress AJAX');
+            try {
+                initiateCheckout($btn, priceId, plan);
+            } catch (err) {
+                debug.error('[AltText AI] Error with checkout:', err);
                 alert('Unable to initiate checkout. Please try again or contact support.');
             }
         });
@@ -1615,36 +1592,6 @@
         const packId = $button.attr('data-pack-id') || null;
         const isCreditPack = planName === 'credits' || !!packId;
         
-        // Log analytics event for checkout initiation
-        if (typeof window.logEvent === 'function') {
-            const analyticsPayload = {
-                plan: planName,
-                priceId: priceId
-            };
-            
-            if (isCreditPack && packId) {
-                analyticsPayload.packId = packId;
-                analyticsPayload.type = 'credit_pack';
-            } else {
-                analyticsPayload.type = 'subscription';
-            }
-            
-            window.logEvent('checkout_initiated', analyticsPayload);
-        }
-        
-        if (!window.opttiBilling || !window.opttiApi) {
-            // Fallback to old AJAX method if new billing API not available
-            const fallbackUrl = $button.attr('data-fallback-url');
-            if (fallbackUrl) {
-                if (alttextaiDebug) console.log('[AltText AI] Billing API not available, using fallback Stripe link');
-                window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
-                alttextaiCloseModal();
-                return;
-            }
-            alert('Configuration error. Please refresh the page.');
-            return;
-        }
-
         // Show loading state
         $button.prop('disabled', true)
                .addClass('bbai-btn-loading')
@@ -1654,12 +1601,59 @@
         $button.html('<span class="bbai-spinner"></span> Loading checkout...');
 
         try {
-            const session = await window.opttiBilling.createCheckoutSession({
-                email: window.opttiApi.userEmail || '',
-                plugin: window.opttiApi.plugin || 'beepbeep-ai',
-                priceId: priceId,
-                packId: isCreditPack ? packId : undefined
+            // Validate inputs
+            if (!priceId || priceId.trim() === '') {
+                throw new Error('Price ID is missing. Please refresh the page and try again.');
+            }
+            
+            if (!window.bbai_ajax || !window.bbai_ajax.ajaxurl) {
+                throw new Error('WordPress AJAX not configured. Please refresh the page.');
+            }
+            
+            if (!window.bbai_ajax.nonce) {
+                throw new Error('Security token missing. Please refresh the page.');
+            }
+            
+            // Use WordPress AJAX handler as primary method (more reliable)
+            let session = null;
+            
+            if (alttextaiDebug) {
+                console.log('[AltText AI] Creating checkout session:', {
+                    priceId: priceId,
+                    ajaxUrl: window.bbai_ajax.ajaxurl,
+                    hasNonce: !!window.bbai_ajax.nonce
+                });
+            }
+            
+            // Use WordPress AJAX endpoint
+            const response = await fetch(window.bbai_ajax.ajaxurl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    action: 'beepbeepai_create_checkout',
+                    nonce: window.bbai_ajax.nonce,
+                    price_id: priceId
+                })
             });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (alttextaiDebug) {
+                console.log('[AltText AI] Checkout response:', data);
+            }
+            
+            if (data.success && data.data && data.data.url) {
+                session = { ok: true, url: data.data.url };
+            } else {
+                const errorMsg = data.data?.message || data.message || 'Failed to create checkout session';
+                session = { ok: false, message: errorMsg };
+            }
 
             if (alttextaiDebug) console.log('[AltText AI] Checkout response:', session);
             
@@ -1669,40 +1663,20 @@
                    .html(originalHtml)
                    .attr('aria-busy', 'false');
 
-            if (session.ok && session.url) {
-                if (alttextaiDebug) console.log('[AltText AI] Opening checkout URL:', session.url);
+            if (session && session.ok && session.url) {
+                if (alttextaiDebug) console.log('[AltText AI] Redirecting to checkout URL:', session.url);
                 
-                // Open checkout in new tab
-                const checkoutWindow = window.open(session.url, '_blank', 'noopener,noreferrer');
+                // Redirect to checkout (same window for better UX)
+                window.location.href = session.url;
                 
-                if (!checkoutWindow) {
-                    alert('Please allow popups for this site to complete checkout.');
-                    return;
+                // Close the upgrade modal if it's open
+                if (typeof alttextaiCloseModal === 'function') {
+                    alttextaiCloseModal();
                 }
-                
-                // Close the upgrade modal
-                alttextaiCloseModal();
                 
                 // Monitor for successful checkout (user returns to success page)
                 const urlParams = new URLSearchParams(window.location.search);
                 if (urlParams.get('checkout') === 'success') {
-                    // Log analytics event for successful checkout
-                    if (typeof window.logEvent === 'function') {
-                        const analyticsPayload = {
-                            plan: planName,
-                            priceId: priceId
-                        };
-                        
-                        if (isCreditPack && packId) {
-                            analyticsPayload.packId = packId;
-                            analyticsPayload.type = 'credit_pack';
-                        } else {
-                            analyticsPayload.type = 'subscription';
-                        }
-                        
-                        window.logEvent('checkout_completed', analyticsPayload);
-                    }
-                    
                     // Refresh data after successful checkout
                     if (typeof window.alttextai_refresh_usage === 'function') {
                         window.alttextai_refresh_usage();
@@ -1725,22 +1699,14 @@
                     }
                 }
             } else {
-                // Backend API failed - fall back to direct Stripe payment link
-                const fallbackUrl = $button.attr('data-fallback-url');
-                if (fallbackUrl) {
-                    if (alttextaiDebug) console.log('[AltText AI] Backend checkout failed, using fallback Stripe link');
-                    window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
-                    alttextaiCloseModal();
-                } else {
-                    // No fallback available - show error
-                    let errorMessage = session.message || 'Failed to create checkout session. Please try again.';
-                    
-                    if (errorMessage.toLowerCase().includes('price')) {
-                        errorMessage = 'Unable to load pricing information.\n\nPlease try again or contact support.';
-                    }
-                    
-                    alert(errorMessage);
+                // Backend API failed - fail closed with error message
+                let errorMessage = session.message || 'Failed to create checkout session. Please try again.';
+                
+                if (errorMessage.toLowerCase().includes('price')) {
+                    errorMessage = 'Unable to load pricing information.\n\nPlease try again or contact support.';
                 }
+                
+                alert(errorMessage + '\n\nIf the problem persists, please contact support.');
             }
         } catch (error) {
             if (alttextaiDebug) console.error('[AltText AI] Checkout error:', error);
@@ -1751,16 +1717,16 @@
                    .html(originalHtml)
                    .attr('aria-busy', 'false');
             
-            // Try fallback to direct Stripe payment link
-            const fallbackUrl = $button.attr('data-fallback-url');
-            if (fallbackUrl) {
-                if (alttextaiDebug) console.log('[AltText AI] Checkout error, using fallback Stripe link');
-                window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
-                alttextaiCloseModal();
+            // Show specific error message
+            let errorMessage = 'Unable to create checkout session. ';
+            if (error.message) {
+                errorMessage += error.message;
             } else {
-                // No fallback available - show error
-                alert('Something went wrong. Please try again later.');
+                errorMessage += 'Please refresh the page and try again.';
             }
+            errorMessage += '\n\nIf the problem persists, please contact support.';
+            
+            alert(errorMessage);
         }
     }
 
@@ -1772,7 +1738,17 @@
         if (alttextaiDebug) console.log('[AltText AI] Disconnecting account...');
         
         if (!window.bbai_ajax || !window.bbai_ajax.ajaxurl) {
+            console.error('[AltText AI] AJAX not configured:', {
+                hasBbaiAjax: !!window.bbai_ajax,
+                hasAjaxUrl: !!(window.bbai_ajax && window.bbai_ajax.ajaxurl)
+            });
             alert('Configuration error. Please refresh the page.');
+            return;
+        }
+        
+        if (!window.bbai_ajax.nonce) {
+            console.error('[AltText AI] Nonce missing');
+            alert('Security token missing. Please refresh the page.');
             return;
         }
 
@@ -1783,6 +1759,12 @@
         
         const originalText = $button.text();
         $button.html('<span class="bbai-spinner"></span> Disconnecting...');
+        
+        if (alttextaiDebug) console.log('[AltText AI] Sending disconnect request:', {
+            action: 'beepbeepai_disconnect_account',
+            ajaxUrl: window.bbai_ajax.ajaxurl,
+            hasNonce: !!window.bbai_ajax.nonce
+        });
 
         $.ajax({
             url: window.bbai_ajax.ajaxurl,
@@ -1803,16 +1785,23 @@
                            .html('✓ Disconnected')
                            .attr('aria-busy', 'false');
                     
-                    // Clear any cached data
+                    // Clear all cached data
                     if (typeof localStorage !== 'undefined') {
                         localStorage.removeItem('bbai_subscription_cache');
                         localStorage.removeItem('alttextai_token');
+                        localStorage.removeItem('bbai_user_data');
+                        localStorage.removeItem('optti_user_data');
                     }
                     
-                    // Reload after brief delay to show success state
-                    setTimeout(function() {
-                        window.location.reload();
-                    }, 1000);
+                    // Clear session storage
+                    if (typeof sessionStorage !== 'undefined') {
+                        sessionStorage.clear();
+                    }
+                    
+                    // Redirect to WordPress admin dashboard (not plugin page) to avoid permission errors
+                    // After disconnect, user should see WordPress admin, not plugin page
+                    const adminBase = window.location.origin + window.location.pathname.split('/wp-admin')[0] + '/wp-admin/';
+                    window.location.replace(adminBase);
                 } else {
                     // Restore button
                     $button.prop('disabled', false)
@@ -1850,6 +1839,86 @@
     }
 
 })(jQuery);
+
+/**
+ * Vanilla JS fallback for disconnect (when jQuery not available)
+ */
+function handleDisconnectVanilla(button) {
+    const alttextaiDebug = (typeof window.alttextaiDebug !== 'undefined' && window.alttextaiDebug) || 
+                          (typeof window.bbai_ajax !== 'undefined' && window.bbai_ajax.debug);
+    
+    if (alttextaiDebug) console.log('[AltText AI] Disconnecting account (Vanilla JS)...');
+    
+    if (!window.bbai_ajax || !window.bbai_ajax.ajaxurl) {
+        console.error('[AltText AI] AJAX not configured');
+        alert('Configuration error. Please refresh the page.');
+        return;
+    }
+    
+    if (!window.bbai_ajax.nonce) {
+        console.error('[AltText AI] Nonce missing');
+        alert('Security token missing. Please refresh the page.');
+        return;
+    }
+    
+    // Show loading state
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.innerHTML = '<span class="bbai-spinner"></span> Disconnecting...';
+    button.setAttribute('aria-busy', 'true');
+    
+    // Make AJAX request
+    fetch(window.bbai_ajax.ajaxurl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+            action: 'beepbeepai_disconnect_account',
+            nonce: window.bbai_ajax.nonce
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (alttextaiDebug) console.log('[AltText AI] Disconnect response:', data);
+        
+        if (data.success) {
+            // Clear all cached data
+            if (typeof localStorage !== 'undefined') {
+                localStorage.removeItem('bbai_subscription_cache');
+                localStorage.removeItem('alttextai_token');
+                localStorage.removeItem('bbai_user_data');
+                localStorage.removeItem('optti_user_data');
+            }
+            
+            // Clear session storage
+            if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.clear();
+            }
+            
+            // Reload immediately
+            window.location.reload();
+        } else {
+            // Restore button
+            button.disabled = false;
+            button.textContent = originalText;
+            button.setAttribute('aria-busy', 'false');
+            
+            const errorMsg = data.data?.message || 'Failed to disconnect account. Please try again.';
+            alert(errorMsg);
+        }
+    })
+    .catch(error => {
+        console.error('[AltText AI] Disconnect error:', error);
+        
+        // Restore button
+        button.disabled = false;
+        button.textContent = originalText;
+        button.setAttribute('aria-busy', 'false');
+        
+        alert('Unable to disconnect account. Please try again.');
+    });
+}
 
 // Debug helper - only logs when debug mode is enabled
 var bbaiDebug = {
@@ -2355,6 +2424,41 @@ function handleLogout() {
 // Initialize auth modal when page loads
 document.addEventListener('DOMContentLoaded', function() {
     if (alttextaiDebug) console.log('[AltText AI] DOM loaded, initializing auth system');
+    
+    // Vanilla JS fallback for disconnect button (in case jQuery isn't ready)
+    const disconnectBtns = document.querySelectorAll('[data-action="disconnect-account"]');
+    disconnectBtns.forEach(function(disconnectBtn) {
+        // Remove any existing listeners to avoid duplicates
+        const newDisconnectBtn = disconnectBtn.cloneNode(true);
+        disconnectBtn.parentNode.replaceChild(newDisconnectBtn, disconnectBtn);
+        
+        // Add vanilla JS event listener
+        newDisconnectBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (alttextaiDebug) console.log('[AltText AI] Disconnect button clicked (Vanilla JS)');
+            
+            if (!confirm('Disconnect this account for all WordPress users? You can reconnect at any time.')) {
+                if (alttextaiDebug) console.log('[AltText AI] Disconnect cancelled by user');
+                return;
+            }
+            
+            // Use jQuery if available, otherwise use vanilla JS
+            if (typeof jQuery !== 'undefined' && typeof disconnectAccount === 'function') {
+                if (alttextaiDebug) console.log('[AltText AI] Using jQuery disconnectAccount function');
+                disconnectAccount(jQuery(this));
+            } else {
+                // Vanilla JS fallback
+                if (alttextaiDebug) console.log('[AltText AI] Using vanilla JS disconnect');
+                handleDisconnectVanilla(this);
+            }
+        });
+        if (alttextaiDebug) console.log('[AltText AI] Disconnect button found and listener attached');
+    });
+    
+    if (disconnectBtns.length === 0) {
+        if (alttextaiDebug) console.log('[AltText AI] Disconnect button not found');
+    }
     
     // Vanilla JS fallback for logout button (in case jQuery isn't ready)
     const logoutBtn = document.getElementById('bbai-logout-btn');

@@ -2,6 +2,14 @@
 
 All notable changes to Farlo AI Alt Text Generator will be documented in this file.
 
+## [4.2.3] - 2025-01-XX
+
+### Compliance & Packaging
+- Aligned all plugin version references to `4.2.3`.
+- Removed global PHP error suppression; deprecation filtering now scoped only to framework bootstrap to avoid noisy output.
+- Added export-ignore entries for `.gitignore` and `.gitmodules`; kept dev/debug assets out of release ZIPs.
+- Added release instructions and build script for generating clean WordPress.org submissions.
+
 ## [4.2.0] - 2025-01-XX
 
 ### ✨ New Features
@@ -213,5 +221,3 @@ For questions about this release:
 ---
 
 **Note:** This changelog follows [Keep a Changelog](https://keepachangelog.com/) principles and adheres to [Semantic Versioning](https://semver.org/).
-
-

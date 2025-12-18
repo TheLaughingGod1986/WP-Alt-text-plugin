@@ -27,11 +27,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 class API_Client_V2 {
 
 	private $api_url;
-	private $token_option_key        = 'optti_jwt_token';
-	private $user_option_key         = 'optti_user_data';
-	private $site_id_option_key      = 'optti_site_id';
-	private $license_key_option_key  = 'optti_license_key';
-	private $license_data_option_key = 'optti_license_data';
+	private $option_prefix;
+	private $token_option_key;
+	private $user_option_key;
+	private $site_id_option_key;
+	private $license_key_option_key;
+	private $license_data_option_key;
 	private $encryption_prefix       = 'enc:';
 
 	// Service classes
@@ -44,6 +45,13 @@ class API_Client_V2 {
 	private $generation_client;
 
 	public function __construct() {
+		$this->option_prefix          = function_exists( 'optti_option_prefix' ) ? optti_option_prefix() : 'optti_';
+		$this->token_option_key        = $this->option_prefix . 'jwt_token';
+		$this->user_option_key         = $this->option_prefix . 'user_data';
+		$this->site_id_option_key      = $this->option_prefix . 'site_id';
+		$this->license_key_option_key  = $this->option_prefix . 'license_key';
+		$this->license_data_option_key = $this->option_prefix . 'license_data';
+
 		// Migrate legacy option keys to new format
 		$this->migrate_legacy_options();
 
@@ -51,6 +59,13 @@ class API_Client_V2 {
 		$production_url = 'https://alttext-ai-backend.onrender.com';
 		$override_url   = '';
 
+		// Check for local development environment
+		// Only use local backend if explicitly configured (for development)
+		// Production always uses production URL unless explicitly overridden
+		$is_local_dev = defined( 'WP_LOCAL_DEV' ) && WP_LOCAL_DEV;
+		$is_debug = defined( 'WP_DEBUG' ) && WP_DEBUG;
+		
+		// Priority order: constant > env var > option > production
 		if ( defined( 'ALT_API_HOST' ) && ! empty( ALT_API_HOST ) ) {
 			$override_url = ALT_API_HOST;
 		}
@@ -65,7 +80,17 @@ class API_Client_V2 {
 			$override_url = $options_alt['bbai_alt_api_host'];
 		}
 
+		// Default to production URL if no override is set
+		// This ensures production always uses production backend
 		$this->api_url = untrailingslashit( ! empty( $override_url ) ? $override_url : $production_url );
+		
+		// Debug: Log which API URL is being used
+		if ( $is_debug ) {
+			error_log( '[BBAI DEBUG] API Client initialized with URL: ' . $this->api_url );
+			error_log( '[BBAI DEBUG] Override URL: ' . ( $override_url ?: 'none (using production)' ) );
+			error_log( '[BBAI DEBUG] Production URL: ' . $production_url );
+			error_log( '[BBAI DEBUG] Is local dev: ' . ( $is_local_dev ? 'yes' : 'no' ) );
+		}
 
 		// Force update WordPress settings to production (clean up legacy configs)
 		$options = get_option( 'beepbeepai_settings', array() );
@@ -133,19 +158,39 @@ class API_Client_V2 {
 	 * This ensures both the plugin and framework use consistent option keys.
 	 */
 	private function migrate_legacy_options() {
+		// If prefix changed from optti_, migrate shared keys.
+		if ( $this->option_prefix !== 'optti_' ) {
+			$shared_keys = array(
+				'optti_license_key'  => $this->license_key_option_key,
+				'optti_license_data' => $this->license_data_option_key,
+				'optti_user_data'    => $this->user_option_key,
+				'optti_site_id'      => $this->site_id_option_key,
+				'optti_jwt_token'    => $this->token_option_key,
+			);
+			foreach ( $shared_keys as $old_key => $new_key ) {
+				$new_val = get_option( $new_key, null );
+				if ( null === $new_val || $new_val === '' ) {
+					$old_val = get_option( $old_key, null );
+					if ( null !== $old_val && $old_val !== '' ) {
+						update_option( $new_key, $old_val, false );
+					}
+				}
+			}
+		}
+
 		// Legacy to new option key mappings
 		$migrations = array(
 			// License key
-			'beepbeepai_license_key' => 'optti_license_key',
+			'beepbeepai_license_key' => $this->license_key_option_key,
 			// License data
-			'beepbeepai_license_data' => 'optti_license_data',
+			'beepbeepai_license_data' => $this->license_data_option_key,
 			// User data
-			'beepbeepai_user_data' => 'optti_user_data',
+			'beepbeepai_user_data' => $this->user_option_key,
 			// Site ID
-			'beepbeepai_site_id' => 'optti_site_id',
+			'beepbeepai_site_id' => $this->site_id_option_key,
 			// JWT token (already handled, but ensure consistency)
-			'beepbeepai_jwt_token' => 'optti_jwt_token',
-			'bbai_jwt_token' => 'optti_jwt_token',
+			'beepbeepai_jwt_token' => $this->token_option_key,
+			'bbai_jwt_token' => $this->token_option_key,
 		);
 
 		foreach ( $migrations as $legacy_key => $new_key ) {
@@ -482,9 +527,32 @@ class API_Client_V2 {
 			return true;
 		}
 
+		// If we just logged in (check URL parameter), skip validation temporarily
+		// This prevents validation failures immediately after login
+		if ( isset( $_GET['bbai_logged_in'] ) && $_GET['bbai_logged_in'] === '1' ) {
+			// Set a short transient to mark we just logged in (5 minutes)
+			// This allows the page to render as authenticated without immediate validation
+			set_transient( 'bbai_token_last_check', time(), 300 );
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( '[BBAI DEBUG] is_authenticated: Bypassing token validation due to bbai_logged_in=1 in URL.' );
+			}
+			return true;
+		}
+
+		// Check if we have a recent login transient (within last 5 minutes)
+		// This allows authentication to persist across page loads after login
+		$last_check = get_transient( 'bbai_token_last_check' );
+		if ( $last_check !== false ) {
+			// We recently logged in, trust the token exists and is valid
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( '[BBAI DEBUG] is_authenticated: Using cached authentication state (logged in within last 5 minutes).' );
+			}
+			return true;
+		}
+
 		// Validate token is still valid (check periodically, not every request)
-		$last_check      = get_transient( 'bbai_token_last_check' );
-		$should_validate = $last_check === false;
+		// Only validate if we don't have a recent login transient
+		$should_validate = true;
 
 		if ( $should_validate ) {
 			// Try to fetch user info to validate token
@@ -493,15 +561,20 @@ class API_Client_V2 {
 			if ( is_wp_error( $user_info ) ) {
 				$error_code    = $user_info->get_error_code();
 				$error_message = strtolower( $user_info->get_error_message() );
+				
+				// Log validation failure for debugging
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( '[BBAI DEBUG] Token validation failed: ' . $error_code . ' - ' . $user_info->get_error_message() );
+				}
 
 				// Only clear token if it's definitely invalid (not a temporary server error)
 				// Don't clear on server errors (500), network errors, or timeouts
 				$error_message_str = is_string( $error_message ) ? $error_message : '';
 				if ( $error_code === 'auth_required' ||
 					$error_code === 'user_not_found' ||
-					( $error_message_str && strpos( $error_message_str, 'user not found' ) !== false ) ||
-					( $error_message_str && strpos( $error_message_str, 'session expired' ) !== false ) ||
-					( $error_message_str && strpos( $error_message_str, 'unauthorized' ) !== false ) ) {
+					( ! empty( $error_message_str ) && strpos( $error_message_str, 'user not found' ) !== false ) ||
+					( ! empty( $error_message_str ) && strpos( $error_message_str, 'session expired' ) !== false ) ||
+					( ! empty( $error_message_str ) && strpos( $error_message_str, 'unauthorized' ) !== false ) ) {
 					// Token is definitely invalid, clear it
 					// WP_DEBUG conditional logging for token invalidation
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -765,7 +838,7 @@ class API_Client_V2 {
 			return '';
 		}
 
-		if ( strpos( $value, $this->encryption_prefix ) !== 0 ) {
+		if ( ! is_string( $value ) || strpos( $value, $this->encryption_prefix ) !== 0 ) {
 			return $value;
 		}
 
@@ -809,9 +882,10 @@ class API_Client_V2 {
 		}
 
 		$args = array(
-			'method'  => $method,
-			'headers' => $headers,
-			'timeout' => $timeout,
+			'method'    => $method,
+			'headers'   => $headers,
+			'timeout'   => $timeout,
+			'sslverify' => true,
 		);
 
 		if ( $data && in_array( $method, array( 'POST', 'PUT', 'PATCH' ) ) ) {
@@ -920,14 +994,14 @@ class API_Client_V2 {
 			// Check if it's an HTML error page (means endpoint doesn't exist)
 			$body_str     = is_string( $body ) ? $body : '';
 			$endpoint_str = is_string( $endpoint ) ? $endpoint : '';
-			if ( $body_str && ( strpos( $body_str, '<html' ) !== false || strpos( $body_str, 'Cannot POST' ) !== false || strpos( $body_str, 'Cannot GET' ) !== false ) ) {
+			if ( ! empty( $body_str ) && ( strpos( $body_str, '<html' ) !== false || strpos( $body_str, 'Cannot POST' ) !== false || strpos( $body_str, 'Cannot GET' ) !== false ) ) {
 				// Provide context-specific error messages
 				$error_message = __( 'This feature is not yet available. Please contact support for assistance or try again later.', 'beepbeep-ai-alt-text-generator' );
 
 				// Check endpoint to provide more specific message
-				if ( $endpoint_str && ( strpos( $endpoint_str, '/auth/forgot-password' ) !== false || strpos( $endpoint_str, '/auth/reset-password' ) !== false ) ) {
+				if ( ! empty( $endpoint_str ) && ( strpos( $endpoint_str, '/auth/forgot-password' ) !== false || strpos( $endpoint_str, '/auth/reset-password' ) !== false ) ) {
 					$error_message = __( 'Password reset functionality is currently being set up on our backend. Please contact support for assistance or try again later.', 'beepbeep-ai-alt-text-generator' );
-				} elseif ( $endpoint_str && ( strpos( $endpoint_str, '/licenses/sites' ) !== false || strpos( $endpoint_str, '/api/licenses/sites' ) !== false ) ) {
+				} elseif ( ! empty( $endpoint_str ) && ( strpos( $endpoint_str, '/licenses/sites' ) !== false || strpos( $endpoint_str, '/api/licenses/sites' ) !== false ) ) {
 					$error_message = __( 'License site usage tracking is currently being set up on our backend. Please contact support for assistance or try again later.', 'beepbeep-ai-alt-text-generator' );
 				}
 
@@ -1273,10 +1347,10 @@ class API_Client_V2 {
 
 			$error_details_str         = is_string( $error_details ) ? $error_details : '';
 			$backend_error_message_str = is_string( $backend_error_message ) ? $backend_error_message : '';
-			$error_details_lower       = strtolower( $error_details_str . ' ' . $backend_error_message_str );
-			if ( strpos( $error_details_lower, 'user not found' ) !== false ||
-				strpos( $error_details_lower, 'user does not exist' ) !== false ||
-				( is_array( $data ) && isset( $data['code'] ) && is_string( $data['code'] ) && strpos( strtolower( $data['code'] ), 'user_not_found' ) !== false ) ) {
+			$error_details_lower       = ! empty( $error_details_str ) || ! empty( $backend_error_message_str ) ? strtolower( trim( $error_details_str . ' ' . $backend_error_message_str ) ) : '';
+			if ( ( ! empty( $error_details_lower ) && ( strpos( $error_details_lower, 'user not found' ) !== false ||
+				strpos( $error_details_lower, 'user does not exist' ) !== false ) ) ||
+				( is_array( $data ) && isset( $data['code'] ) && is_string( $data['code'] ) && ! empty( $data['code'] ) && strpos( strtolower( $data['code'] ), 'user_not_found' ) !== false ) ) {
 
 				// For checkout, return error without clearing token so it can retry without auth
 				if ( $is_checkout_endpoint ) {

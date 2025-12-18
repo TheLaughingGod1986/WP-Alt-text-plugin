@@ -479,12 +479,26 @@ class Auth_Manager {
 			call_user_func( $this->set_token_callback, $temp_token );
 		}
 
+		// Log full response for debugging
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( '[BeepBeep AI] Forgot password API response: ' . wp_json_encode( $response ) );
+		}
+
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
 
 		if ( $response['success'] ) {
-			return $response['data'] ?? array();
+			// Return full data including any debug info
+			$data = $response['data'] ?? array();
+			// Also include status code and full response for debugging
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				$data['_debug'] = array(
+					'status_code' => $response['status_code'] ?? null,
+					'full_response' => $response,
+				);
+			}
+			return $data;
 		}
 
 		$error_message = $response['data']['error'] ?? $response['data']['message'] ?? __( 'Failed to send password reset email', 'beepbeep-ai-alt-text-generator' );

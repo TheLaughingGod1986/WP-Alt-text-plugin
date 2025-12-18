@@ -46,6 +46,7 @@ require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-debug-log.php';
 
 use Optti\Framework\Queue;
+use Optti\Framework\DbOptimizer;
 use BeepBeepAI\AltTextGenerator\Debug_Log;
 use BeepBeepAI\AltTextGenerator\Usage_Tracker;
 use BeepBeepAI\AltTextGenerator\API_Client_V2;
@@ -640,7 +641,8 @@ class Core {
 	 */
 	public function maybe_render_checkout_notices() {
 		$page = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : '';
-		if ( $page !== 'beepbeep-ai-alt-text-generator' ) {
+		// Check for both page slugs (legacy and current)
+		if ( $page !== 'optti' && $page !== 'beepbeep-ai-alt-text-generator' ) {
 			return;
 		}
 
@@ -664,10 +666,35 @@ class Core {
 		} else {
 			$checkout = isset( $_GET['checkout'] ) ? sanitize_key( wp_unslash( $_GET['checkout'] ) ) : '';
 			if ( $checkout === 'success' ) {
+				// Automatically activate license server-side immediately after checkout success
+				// This ensures the license is activated even if JavaScript fails
 				$site_hash = '';
 				if ( method_exists( $this->api_client, 'get_site_id' ) ) {
 					$site_hash = sanitize_text_field( $this->api_client->get_site_id() );
 				}
+				
+				// Try to auto-attach license immediately (server-side)
+				// This happens automatically when user subscribes to a plan
+				// Only attempt if user has proper permissions and API client is available
+				if ( current_user_can( 'manage_options' ) && ! $this->api_client->has_active_license() ) {
+					$auto_attach_result = $this->api_client->auto_attach_license(
+						array(
+							'siteUrl'   => get_site_url(),
+							'siteHash'  => $site_hash,
+							'installId' => $site_hash,
+						)
+					);
+					
+					// If auto-attach succeeds, clear caches to refresh the UI
+					if ( ! is_wp_error( $auto_attach_result ) ) {
+						// Clear license and usage caches
+						delete_transient( 'bbai_license_last_check' );
+						delete_transient( 'bbai_usage_cache' );
+						delete_transient( 'beepbeepai_usage_cache' );
+						wp_cache_flush();
+					}
+				}
+				
 				$rest_nonce    = wp_create_nonce( 'wp_rest' );
 				$rest_endpoint = esc_url_raw( rest_url( 'bbai/v1/license/attach' ) );
 				$site_url      = get_site_url();
@@ -992,7 +1019,9 @@ class Core {
 	public function activate() {
 		global $wpdb;
 
-		Queue::create_table();
+		// Ensure queue uses the bbai slug so activation creates the correct table and hook.
+		Queue::init( 'bbai' );
+		Queue::create_table( 'bbai' );
 		Queue::schedule_processing( 10 );
 		Debug_Log::create_table();
 		update_option( 'bbai_logs_ready', true, false );
@@ -1055,43 +1084,8 @@ class Core {
 	}
 
 	private function create_performance_indexes() {
-		global $wpdb;
-
-		// Index for _bbai_generated_at (used in sorting and stats)
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WordPress core table names are safe
-		$wpdb->query(
-			"
-            CREATE INDEX idx_bbai_generated_at 
-            ON {$wpdb->postmeta} (meta_key(50), meta_value(50))
-        "
-		);
-
-		// Index for _bbai_source (used in stats aggregation)
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WordPress core table names are safe
-		$wpdb->query(
-			"
-            CREATE INDEX idx_bbai_source 
-            ON {$wpdb->postmeta} (meta_key(50), meta_value(50))
-        "
-		);
-
-		// Index for _wp_attachment_image_alt (used in coverage stats)
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WordPress core table names are safe
-		$wpdb->query(
-			"
-            CREATE INDEX idx_wp_attachment_alt 
-            ON {$wpdb->postmeta} (meta_key(50), meta_value(100))
-        "
-		);
-
-		// Composite index for attachment queries
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- WordPress core table names are safe
-		$wpdb->query(
-			"
-            CREATE INDEX idx_posts_attachment_image 
-            ON {$wpdb->posts} (post_type(20), post_mime_type(20), post_status(20))
-        "
-		);
+		// Use framework optimizer to avoid duplicate-index errors and respect existing guards.
+		DbOptimizer::instance()->create_indexes();
 	}
 
 	/**
@@ -1148,67 +1142,81 @@ class Core {
 		$hook = add_menu_page(
 			__( 'BeepBeep AI – Alt Text Generator', 'beepbeep-ai-alt-text-generator' ),
 			__( 'BeepBeep AI', 'beepbeep-ai-alt-text-generator' ),
-			'upload_files', // Required capability
+			'manage_options', // Restrict to admins/custom capability holders
 			'optti',
 			array( $this, 'render_settings_page' ),
 			'dashicons-format-image', // Icon
 			26 // Position (after Comments, before Appearance)
 		);
 
+		// Check authentication status to determine which menu items to show
+		// This matches the main navigation tabs logic
+		$is_authenticated    = $this->api_client->is_authenticated();
+		$has_license         = $this->api_client->has_active_license();
+		$has_registered_user = $is_authenticated || $has_license;
+
 		// Add submenu items for better organization
+		// Always show Dashboard
 		add_submenu_page(
 			'optti',
 			__( 'Dashboard', 'beepbeep-ai-alt-text-generator' ),
 			__( 'Dashboard', 'beepbeep-ai-alt-text-generator' ),
-			'upload_files',
+			'manage_options',
 			'optti', // Same as parent to make it the default
 			array( $this, 'render_settings_page' )
 		);
 
-		add_submenu_page(
-			'optti',
-			__( 'ALT Library', 'beepbeep-ai-alt-text-generator' ),
-			__( 'ALT Library', 'beepbeep-ai-alt-text-generator' ),
-			'upload_files',
-			'optti-library',
-			array( $this, 'render_library_page' )
-		);
+		// Only show additional menu items if user is authenticated or has license
+		if ( $has_registered_user ) {
+			add_submenu_page(
+				'optti',
+				__( 'ALT Library', 'beepbeep-ai-alt-text-generator' ),
+				__( 'ALT Library', 'beepbeep-ai-alt-text-generator' ),
+				'manage_options',
+				'optti-library',
+				array( $this, 'render_library_page' )
+			);
 
-		add_submenu_page(
-			'optti',
-			__( 'Credit Usage', 'beepbeep-ai-alt-text-generator' ),
-			__( 'Credit Usage', 'beepbeep-ai-alt-text-generator' ),
-			'upload_files',
-			'optti-credit-usage',
-			array( $this, 'render_credit_usage_page' )
-		);
+			add_submenu_page(
+				'optti',
+				__( 'Credit Usage', 'beepbeep-ai-alt-text-generator' ),
+				__( 'Credit Usage', 'beepbeep-ai-alt-text-generator' ),
+				'manage_options',
+				'optti-credit-usage',
+				array( $this, 'render_credit_usage_page' )
+			);
+		}
 
+		// Always show "How to" (matches main navigation)
 		add_submenu_page(
 			'optti',
 			__( 'How to', 'beepbeep-ai-alt-text-generator' ),
 			__( 'How to', 'beepbeep-ai-alt-text-generator' ),
-			'upload_files',
+			'manage_options',
 			'optti-guide',
 			array( $this, 'render_guide_page' )
 		);
 
-		add_submenu_page(
-			'optti',
-			__( 'Debug Logs', 'beepbeep-ai-alt-text-generator' ),
-			__( 'Debug Logs', 'beepbeep-ai-alt-text-generator' ),
-			'upload_files',
-			'optti-debug',
-			array( $this, 'render_debug_page' )
-		);
+		// Only show Debug Logs and Settings if authenticated
+		if ( $has_registered_user ) {
+			add_submenu_page(
+				'optti',
+				__( 'Debug Logs', 'beepbeep-ai-alt-text-generator' ),
+				__( 'Debug Logs', 'beepbeep-ai-alt-text-generator' ),
+				'manage_options',
+				'optti-debug',
+				array( $this, 'render_debug_page' )
+			);
 
-		add_submenu_page(
-			'optti',
-			__( 'Settings', 'beepbeep-ai-alt-text-generator' ),
-			__( 'Settings', 'beepbeep-ai-alt-text-generator' ),
-			'upload_files',
-			'optti-settings',
-			array( $this, 'render_settings_tab_page' )
-		);
+			add_submenu_page(
+				'optti',
+				__( 'Settings', 'beepbeep-ai-alt-text-generator' ),
+				__( 'Settings', 'beepbeep-ai-alt-text-generator' ),
+				'manage_options',
+				'optti-settings',
+				array( $this, 'render_settings_tab_page' )
+			);
+		}
 
 		// If menu registration failed, log it for debugging.
 		if ( empty( $hook ) && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -1220,7 +1228,7 @@ class Core {
 			null, // No parent = hidden from menu
 			'Checkout',
 			'Checkout',
-			'upload_files',
+			'manage_options',
 			'optti-checkout',
 			array( $this, 'handle_checkout_redirect' )
 		);
@@ -1350,7 +1358,7 @@ class Core {
 	public function render_settings_page() {
 		// Double-check permissions - if user can upload files, they should be able to access this.
 		// This is a media page, so upload_files is the primary requirement.
-		if ( ! current_user_can( 'upload_files' ) && ! $this->user_can_manage() ) {
+		if ( ! current_user_can( 'manage_options' ) && ! $this->user_can_manage() ) {
 			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'beepbeep-ai-alt-text-generator' ) );
 		}
 		$opts  = get_option( self::OPTION_KEY, array() );
@@ -4962,6 +4970,68 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 								$has_license  = $this->api_client->has_active_license();
 								$license_data = $this->api_client->get_license_data();
 							}
+							
+							// Check if user has a subscription (Pro/Agency plan) even without license key
+							// This happens when users sign up to a plan - license is activated automatically
+							$has_subscription = false;
+							$subscription_plan = '';
+							if ( ! $has_license ) {
+								// Check if user is authenticated and has a subscription
+								$is_authenticated = $this->api_client->is_authenticated();
+								
+								// Also check if user has a license via framework (for agency licenses)
+								$has_license_via_framework = false;
+								if ( function_exists( 'opptiai_framework' ) ) {
+									$framework = opptiai_framework();
+									if ( $framework && isset( $framework->licensing ) ) {
+										$snapshot = $framework->licensing->get_snapshot();
+										if ( ! empty( $snapshot ) && isset( $snapshot['plan'] ) ) {
+											$has_license_via_framework = true;
+											$has_license = true;
+											$license_data = array(
+												'organization' => array(
+													'plan' => $snapshot['plan'] ?? 'free',
+													'name' => $snapshot['organizationName'] ?? '',
+												),
+											);
+										}
+									}
+								}
+								
+								if ( ! $has_license && $is_authenticated ) {
+									$usage = $this->api_client->get_usage();
+									if ( ! is_wp_error( $usage ) && isset( $usage['plan'] ) && is_string( $usage['plan'] ) ) {
+										$subscription_plan = strtolower( $usage['plan'] );
+										$has_subscription = in_array( $subscription_plan, array( 'pro', 'agency' ), true );
+										
+										// If user has subscription but no license, automatically try to attach license
+										// Only do this if we're on the settings page and user has proper permissions
+										if ( $has_subscription && current_user_can( 'manage_options' ) && is_admin() ) {
+											// Use a transient to prevent multiple simultaneous auto-attach attempts
+											$auto_attach_lock = get_transient( 'bbai_auto_attach_in_progress' );
+											if ( ! $auto_attach_lock ) {
+												set_transient( 'bbai_auto_attach_in_progress', time(), 30 ); // 30 second lock
+												$auto_attach_result = $this->api_client->auto_attach_license();
+												delete_transient( 'bbai_auto_attach_in_progress' );
+												
+												if ( ! is_wp_error( $auto_attach_result ) ) {
+													// Auto-attach succeeded - refresh license status
+													$has_license  = $this->api_client->has_active_license();
+													$license_data = $this->api_client->get_license_data();
+													// Clear caches to ensure fresh data
+													delete_transient( 'bbai_license_last_check' );
+													delete_transient( 'bbai_usage_cache' );
+													delete_transient( 'beepbeepai_usage_cache' );
+													wp_cache_flush();
+												} elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+													// Log error for debugging
+													error_log( '[BBAI] Auto-attach failed: ' . $auto_attach_result->get_error_message() );
+												}
+											}
+										}
+									}
+								}
+							}
 							?>
 
 							<div class="bbai-settings-card">
@@ -5032,9 +5102,121 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 									<?php endif; ?>
 									
 									<?php endif; ?>
+								<?php elseif ( $has_subscription ) : ?>
+									<!-- Subscription Active - License Auto-Activating -->
+									<div class="bbai-settings-license-active" id="bbai-auto-activating-license">
+										<div class="bbai-settings-license-status">
+											<svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+												<circle cx="10" cy="10" r="8" fill="#10b981" opacity="0.1"/>
+												<path d="M6 10L9 13L14 7" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											</svg>
+											<div>
+												<div class="bbai-settings-license-title"><?php esc_html_e( 'Activating License...', 'beepbeep-ai-alt-text-generator' ); ?></div>
+												<div class="bbai-settings-license-subtitle">
+													<?php
+													/* translators: %s: Plan name (Pro or Agency) */
+													printf( esc_html__( 'Your %s subscription license is being automatically activated for this site.', 'beepbeep-ai-alt-text-generator' ), esc_html( ucfirst( $subscription_plan ) ) );
+													?>
+												</div>
+											</div>
+										</div>
+									</div>
+									<script>
+									(function() {
+										// Auto-attach license via REST API as fallback
+										const restNonce = '<?php echo esc_js( wp_create_nonce( 'wp_rest' ) ); ?>';
+										const restEndpoint = '<?php echo esc_js( rest_url( 'bbai/v1/license/attach' ) ); ?>';
+										const siteHash = '<?php echo esc_js( method_exists( $this->api_client, 'get_site_id' ) ? $this->api_client->get_site_id() : '' ); ?>';
+										
+										fetch(restEndpoint, {
+											method: 'POST',
+											credentials: 'same-origin',
+											headers: {
+												'Content-Type': 'application/json',
+												'X-WP-Nonce': restNonce
+											},
+											body: JSON.stringify({
+												siteUrl: window.location.origin,
+												siteHash: siteHash,
+												installId: siteHash
+											})
+										})
+										.then(function(response) {
+											if (!response.ok) {
+												throw new Error('HTTP ' + response.status);
+											}
+											return response.json();
+										})
+										.then(function(data) {
+											if (data && data.success === true) {
+												// Success - reload page to show activated license
+												setTimeout(function() {
+													window.location.reload();
+												}, 1000);
+											} else {
+												// Failed - show error but keep form visible
+												console.error('[BBAI] Auto-attach failed:', data);
+											}
+										})
+										.catch(function(error) {
+											console.error('[BBAI] Auto-attach error:', error);
+										});
+									})();
+									</script>
 								<?php else : ?>
 									<!-- License Activation Form -->
 									<div class="bbai-settings-license-form">
+										<?php if ( $is_authenticated && ! $has_license ) : ?>
+											<!-- Show message if authenticated but no license yet - try auto-attach -->
+											<div class="bbai-settings-license-notice" style="padding: 12px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; margin-bottom: 16px;">
+												<p style="margin: 0; color: #0369a1; font-size: 14px;">
+													<?php esc_html_e( 'Attempting to automatically activate your license...', 'beepbeep-ai-alt-text-generator' ); ?>
+												</p>
+											</div>
+											<script>
+											(function() {
+												// Auto-attach license via REST API for authenticated users
+												const restNonce = '<?php echo esc_js( wp_create_nonce( 'wp_rest' ) ); ?>';
+												const restEndpoint = '<?php echo esc_js( rest_url( 'bbai/v1/license/attach' ) ); ?>';
+												const siteHash = '<?php echo esc_js( method_exists( $this->api_client, 'get_site_id' ) ? $this->api_client->get_site_id() : '' ); ?>';
+												
+												// Try auto-attach immediately
+												fetch(restEndpoint, {
+													method: 'POST',
+													credentials: 'same-origin',
+													headers: {
+														'Content-Type': 'application/json',
+														'X-WP-Nonce': restNonce
+													},
+													body: JSON.stringify({
+														siteUrl: window.location.origin,
+														siteHash: siteHash,
+														installId: siteHash
+													})
+												})
+												.then(function(response) {
+													if (!response.ok) {
+														throw new Error('HTTP ' + response.status);
+													}
+													return response.json();
+												})
+												.then(function(data) {
+													if (data && data.success === true) {
+														// Success - reload page to show activated license
+														setTimeout(function() {
+															window.location.reload();
+														}, 1000);
+													} else {
+														// Failed - log but don't show error to user
+														console.log('[BBAI] Auto-attach attempt completed, but no license found yet');
+													}
+												})
+												.catch(function(error) {
+													console.log('[BBAI] Auto-attach attempt:', error.message);
+												});
+											})();
+											</script>
+										<?php endif; ?>
 										<p class="bbai-settings-license-description">
 											<?php esc_html_e( 'Enter your license key to activate this site. Agency licenses can be used across multiple sites.', 'beepbeep-ai-alt-text-generator' ); ?>
 										</p>
@@ -6478,12 +6660,13 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 		$response = wp_remote_post(
 			'https://api.openai.com/v1/chat/completions',
 			array(
-				'headers' => array(
+				'headers'  => array(
 					'Authorization' => 'Bearer ' . $api_key,
 					'Content-Type'  => 'application/json',
 				),
-				'timeout' => 45,
-				'body'    => wp_json_encode( $body ),
+				'timeout'  => 45,
+				'sslverify' => true,
+				'body'     => wp_json_encode( $body ),
 			)
 		);
 
@@ -7319,17 +7502,17 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 			$user_email   = $current_user->exists() ? $current_user->user_email : '';
 
 			// Add Optti API configuration
-			wp_localize_script(
-				'bbai-admin',
-				'opttiApi',
-				array(
-					'baseUrl'   => 'https://alttext-ai-backend.onrender.com',
-					'plugin'    => 'beepbeep-ai',
-					'site'      => home_url(),
-					'userEmail' => $user_email,
-					'token'     => get_option( 'optti_jwt_token' ) ?: '',
-				)
-			);
+				wp_localize_script(
+					'bbai-admin',
+					'opttiApi',
+					array(
+						'baseUrl'   => 'https://alttext-ai-backend.onrender.com',
+						'plugin'    => 'beepbeep-ai',
+						'site'      => home_url(),
+						'userEmail' => $user_email,
+						'token'     => get_option( ( function_exists( 'optti_option_prefix' ) ? optti_option_prefix() : 'optti_' ) . 'jwt_token' ) ?: '',
+					)
+				);
 		}
 
 		// Load dashboard scripts on our main page (legacy and new menu)
@@ -7634,17 +7817,17 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 			$user_email   = $current_user->exists() ? $current_user->user_email : '';
 
 			// Add Optti API configuration for dashboard (needed for checkout)
-			wp_localize_script(
-				'bbai-dashboard',
-				'opttiApi',
-				array(
-					'baseUrl'   => 'https://alttext-ai-backend.onrender.com',
-					'plugin'    => 'beepbeep-ai',
-					'site'      => home_url(),
-					'userEmail' => $user_email,
-					'token'     => get_option( 'optti_jwt_token' ) ?: '',
-				)
-			);
+				wp_localize_script(
+					'bbai-dashboard',
+					'opttiApi',
+					array(
+						'baseUrl'   => 'https://alttext-ai-backend.onrender.com',
+						'plugin'    => 'beepbeep-ai',
+						'site'      => home_url(),
+						'userEmail' => $user_email,
+						'token'     => get_option( ( function_exists( 'optti_option_prefix' ) ? optti_option_prefix() : 'optti_' ) . 'jwt_token' ) ?: '',
+					)
+				);
 
 			wp_localize_script(
 				'bbai-dashboard',
@@ -8122,7 +8305,7 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 		// Invalidate stats cache
 		$this->invalidate_stats_cache();
 
-		wp_redirect( add_query_arg( 'bbai_credits_reset', '1', admin_url( 'admin.php?page=optti-credit-usage' ) ) );
+		wp_safe_redirect( add_query_arg( 'bbai_credits_reset', '1', admin_url( 'admin.php?page=optti-credit-usage' ) ) );
 		exit;
 	}
 
@@ -8310,6 +8493,34 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 		Queue::purge_completed( apply_filters( 'bbai_queue_purge_age', DAY_IN_SECONDS * 2 ) );
 	}
 
+	/**
+	 * Daily sync hook to refresh identity/license data safely.
+	 */
+	public function daily_identity_sync() {
+		if ( ! $this->api_client ) {
+			$this->api_client = new \BeepBeepAI\AltTextGenerator\API_Client_V2();
+		}
+
+		if ( ! $this->api_client->is_authenticated() ) {
+			return;
+		}
+
+		try {
+			$this->api_client->sync_identity();
+		} catch ( \Throwable $e ) {
+			if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+				\BeepBeepAI\AltTextGenerator\Debug_Log::log(
+					'warning',
+					'Daily identity sync failed',
+					array(
+						'message' => $e->getMessage(),
+					),
+					'cron'
+				);
+			}
+		}
+	}
+
 	public function handle_media_change( $attachment_id = 0 ) {
 		$this->invalidate_stats_cache();
 
@@ -8447,6 +8658,36 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-token-quota-service.php';
 		\BeepBeepAI\AltTextGenerator\Token_Quota_Service::clear_cache();
 
+		// Automatically activate license if user has a subscription (Pro/Agency plan)
+		// This happens automatically when users sign up to a plan
+		// Check if user has a subscription by checking their usage/plan
+		$usage = $this->api_client->get_usage();
+		if ( ! is_wp_error( $usage ) && isset( $usage['plan'] ) ) {
+			$plan = strtolower( $usage['plan'] ?? 'free' );
+			// If user has Pro or Agency plan, auto-activate license
+			if ( in_array( $plan, array( 'pro', 'agency' ), true ) && ! $this->api_client->has_active_license() ) {
+				$auto_attach_result = $this->api_client->auto_attach_license();
+				// Log but don't fail registration if auto-attach fails
+				if ( is_wp_error( $auto_attach_result ) && class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+					\BeepBeepAI\AltTextGenerator\Debug_Log::log(
+						'warning',
+						'Auto-attach license failed during registration',
+						array(
+							'error' => $auto_attach_result->get_error_message(),
+							'plan'  => $plan,
+						),
+						'licensing'
+					);
+				} elseif ( ! is_wp_error( $auto_attach_result ) ) {
+					// Clear caches after successful auto-attach
+					delete_transient( 'bbai_license_last_check' );
+					delete_transient( 'bbai_usage_cache' );
+					delete_transient( 'beepbeepai_usage_cache' );
+					wp_cache_flush();
+				}
+			}
+		}
+
 		wp_send_json_success(
 			array(
 				'message' => __( 'Account created successfully', 'beepbeep-ai-alt-text-generator' ),
@@ -8478,10 +8719,40 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
 		}
 
+		// Set a transient to mark we just logged in (5 minutes)
+		// This allows is_authenticated() to return true without immediate token validation
+		set_transient( 'bbai_token_last_check', time(), 300 );
+		
+		// Clear any cached authentication state to ensure fresh check on reload
+		wp_cache_flush();
+		delete_transient( 'bbai_is_authenticated' );
+		delete_transient( 'bbai_has_active_license' );
+		delete_transient( 'bbai_usage_cache' );
+		delete_transient( 'beepbeepai_usage_cache' );
+		
+		// Clear framework caches if available
+		if ( class_exists( '\Optti\Framework\Cache' ) ) {
+			\Optti\Framework\Cache::instance()->delete( 'usage_stats' );
+		}
+		
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( '[BBAI DEBUG] Login successful - token stored, transient set for 5 minutes' );
+		}
+
+		// Verify token was stored correctly
+		$token_after_login = $this->api_client->get_token();
+		$is_auth_after_login = $this->api_client->is_authenticated();
+		
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( '[BBAI DEBUG] After login - Token exists: ' . ( ! empty( $token_after_login ) ? 'yes' : 'no' ) );
+			error_log( '[BBAI DEBUG] After login - Is authenticated: ' . ( $is_auth_after_login ? 'yes' : 'no' ) );
+		}
+
 		wp_send_json_success(
 			array(
 				'message' => __( 'Logged in successfully', 'beepbeep-ai-alt-text-generator' ),
 				'user'    => $result['user'] ?? null,
+				'is_authenticated' => $is_auth_after_login, // Include auth status in response
 			)
 		);
 	}
@@ -8514,14 +8785,76 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 		// This prevents automatic reconnection when using license keys
 		$this->api_client->clear_license_key();
 
+		// Clear admin session (for admin-authenticated users)
+		$this->clear_admin_session();
+
 		// Clear user data - both new and legacy keys
-		delete_option( 'optti_user_data' );
-		delete_option( 'optti_site_id' );
-		delete_option( 'optti_license_snapshot' );
+		$prefix = function_exists( 'optti_option_prefix' ) ? optti_option_prefix() : 'optti_';
+		delete_option( $prefix . 'user_data' );
+		delete_option( $prefix . 'site_id' );
+		delete_option( $prefix . 'license_snapshot' );
 		delete_option( 'beepbeepai_user_data' );
 		delete_option( 'beepbeepai_site_id' );
 		delete_option( 'opptibbai_user_data' );
 		delete_option( 'opptibbai_site_id' );
+
+		// Clear license data - MUST clear all variations to prevent has_active_license() from returning true
+		delete_option( $prefix . 'license_data' );
+		delete_transient( $prefix . 'license_last_check' );
+		delete_option( 'beepbeepai_license_data' );
+		delete_option( 'beepbeepai_license_key' );
+		delete_transient( 'beepbeepai_license_last_check' );
+		
+		// Clear all possible license data keys using direct database queries
+		// This ensures we catch any license data that might be stored with different prefixes
+		global $wpdb;
+		$wpdb->query( $wpdb->prepare(
+			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+			$wpdb->esc_like( 'optti_license' ) . '%'
+		) );
+		$wpdb->query( $wpdb->prepare(
+			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+			$wpdb->esc_like( 'beepbeepai_license' ) . '%'
+		) );
+		$wpdb->query( $wpdb->prepare(
+			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+			$wpdb->esc_like( '_transient_optti_license' ) . '%'
+		) );
+		$wpdb->query( $wpdb->prepare(
+			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+			$wpdb->esc_like( '_transient_timeout_optti_license' ) . '%'
+		) );
+		$wpdb->query( $wpdb->prepare(
+			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+			$wpdb->esc_like( '_transient_beepbeepai_license' ) . '%'
+		) );
+		$wpdb->query( $wpdb->prepare(
+			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+			$wpdb->esc_like( '_transient_timeout_beepbeepai_license' ) . '%'
+		) );
+
+		// Clear framework snapshot if it exists
+		if ( function_exists( 'opptiai_framework' ) ) {
+			$framework = opptiai_framework();
+			if ( $framework && isset( $framework->licensing ) ) {
+				// Try multiple methods to clear the snapshot
+				if ( method_exists( $framework->licensing, 'clear_snapshot' ) ) {
+					$framework->licensing->clear_snapshot();
+				}
+				if ( method_exists( $framework->licensing, 'sync_snapshot' ) ) {
+					$framework->licensing->sync_snapshot( array() );
+				}
+				if ( method_exists( $framework->licensing, 'reset' ) ) {
+					$framework->licensing->reset();
+				}
+			}
+		}
+		
+		// Also clear any framework-related options directly
+		delete_option( 'optti_license_snapshot' );
+		delete_option( 'beepbeepai_license_snapshot' );
+		delete_transient( 'optti_license_snapshot' );
+		delete_transient( 'beepbeepai_license_snapshot' );
 
 		// Clear usage cache
 		Usage_Tracker::clear_cache();
@@ -8531,10 +8864,22 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 		delete_transient( 'bbai_token_last_check' );
 		delete_transient( 'opptibbai_token_last_check' );
 		delete_transient( 'optti_user_info' );
+		delete_transient( $prefix . 'user_info' );
+		
+		// Clear any cached authentication state
+		delete_transient( 'bbai_is_authenticated' );
+		delete_transient( 'bbai_has_active_license' );
+		
+		// Force WordPress object cache flush for this request (if using persistent cache)
+		wp_cache_flush();
+		
+		// Clear the token check transient that might be caching authentication
+		delete_transient( 'bbai_token_last_check' );
+		delete_transient( 'opptibbai_token_last_check' );
 
 		wp_send_json_success(
 			array(
-				'message' => __( 'Account disconnected. Please sign in again to reconnect.', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Account disconnected successfully. You have been logged out.', 'beepbeep-ai-alt-text-generator' ),
 			)
 		);
 	}
@@ -8849,6 +9194,85 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 	}
 
 	/**
+	 * AJAX handler: Clear dashboard signup transients.
+	 */
+	public function ajax_clear_signup_transients() {
+		check_ajax_referer( 'bbai_dashboard_signup', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Forbidden', 'beepbeep-ai-alt-text-generator' ) ), 403 );
+		}
+
+		delete_transient( 'bbai_show_dashboard_signup' );
+		delete_transient( 'bbai_show_dashboard_signup_upgrade' );
+		delete_transient( 'optti_signup_state' );
+		delete_transient( 'optti_signup_error' );
+
+		wp_send_json_success(
+			array(
+				'cleared' => true,
+			)
+		);
+	}
+
+	/**
+	 * AJAX handler: Log dashboard signup errors.
+	 */
+	public function ajax_log_dashboard_signup_error() {
+		check_ajax_referer( 'bbai_dashboard_signup', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Forbidden', 'beepbeep-ai-alt-text-generator' ) ), 403 );
+		}
+
+		$message_raw = isset( $_POST['error_message'] ) ? wp_unslash( $_POST['error_message'] ) : '';
+		$context_raw = isset( $_POST['context'] ) ? wp_unslash( $_POST['context'] ) : '';
+
+		$message = is_string( $message_raw ) ? sanitize_text_field( $message_raw ) : '';
+		$context = is_string( $context_raw ) ? sanitize_text_field( $context_raw ) : '';
+
+		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+			\BeepBeepAI\AltTextGenerator\Debug_Log::log(
+				'warning',
+				'Dashboard signup error',
+				array(
+					'message' => $message,
+					'context' => $context,
+				),
+				'admin'
+			);
+		}
+
+		wp_send_json_success(
+			array(
+				'logged' => true,
+			)
+		);
+	}
+
+	/**
+	 * AJAX handler: Save email preferences for dashboard signup.
+	 */
+	public function ajax_save_email_preferences() {
+		check_ajax_referer( 'bbai_dashboard_signup', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Forbidden', 'beepbeep-ai-alt-text-generator' ) ), 403 );
+		}
+
+		$enabled_raw = isset( $_POST['enabled'] ) ? wp_unslash( $_POST['enabled'] ) : '';
+		$enabled     = (bool) absint( $enabled_raw );
+
+		update_option( 'bbai_email_preferences_enabled', $enabled, false );
+
+		wp_send_json_success(
+			array(
+				'enabled' => $enabled,
+			)
+		);
+	}
+
+	/**
 	 * AJAX handler: Create Stripe checkout session
 	 */
 	public function ajax_create_checkout() {
@@ -8975,17 +9399,25 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 
 	/**
 	 * AJAX handler: Forgot password request
+	 * Note: This should work for anyone (logged in or not) since users need to reset passwords when locked out
 	 */
 	public function ajax_forgot_password() {
+		// Log entry point
+		error_log( '[BBAI DEBUG] ajax_forgot_password called' );
+		error_log( '[BBAI DEBUG] POST data: ' . print_r( $_POST, true ) );
+		error_log( '[BBAI DEBUG] Nonce check starting...' );
+		
 		check_ajax_referer( 'beepbeepai_nonce', 'nonce' );
-		if ( ! $this->user_can_manage() ) {
-			wp_send_json_error( array( 'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ) ) );
-		}
+		error_log( '[BBAI DEBUG] Nonce check passed' );
+		
+		// Removed user_can_manage() check - forgot password should work for anyone
 
 		$email_raw = isset( $_POST['email'] ) ? wp_unslash( $_POST['email'] ) : '';
 		$email     = is_string( $email_raw ) ? sanitize_email( $email_raw ) : '';
+		error_log( '[BBAI DEBUG] Email received: ' . $email );
 
 		if ( empty( $email ) || ! is_email( $email ) ) {
+			error_log( '[BBAI DEBUG] Email validation failed' );
 			wp_send_json_error(
 				array(
 					'message' => __( 'Please enter a valid email address', 'beepbeep-ai-alt-text-generator' ),
@@ -8993,14 +9425,25 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 			);
 		}
 
+		error_log( '[BBAI DEBUG] Calling api_client->forgot_password(' . $email . ')' );
 		$result = $this->api_client->forgot_password( $email );
+		error_log( '[BBAI DEBUG] api_client->forgot_password result: ' . print_r( $result, true ) );
 
 		if ( is_wp_error( $result ) ) {
+			// Log the error for debugging
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( '[BeepBeep AI] Forgot password error: ' . $result->get_error_message() );
+			}
 			wp_send_json_error(
 				array(
 					'message' => $result->get_error_message(),
 				)
 			);
+		}
+
+		// Log the result for debugging
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( '[BeepBeep AI] Forgot password result: ' . wp_json_encode( $result ) );
 		}
 
 		// Pass through all data from backend, including reset link if provided
@@ -9014,17 +9457,27 @@ elseif ( $tab === 'credit-usage' && ( $is_authenticated || $has_license ) ) :
 			$response_data['note']      = $result['note'] ?? __( 'Email service is in development mode. Use this link to reset your password.', 'beepbeep-ai-alt-text-generator' );
 		}
 
+		// Include debug info if available
+		if ( isset( $result['debug'] ) ) {
+			$response_data['debug'] = $result['debug'];
+		}
+		if ( isset( $result['emailSent'] ) ) {
+			$response_data['emailSent'] = $result['emailSent'];
+		}
+		if ( isset( $result['error'] ) ) {
+			$response_data['error'] = $result['error'];
+		}
+
 		wp_send_json_success( $response_data );
 	}
 
 	/**
 	 * AJAX handler: Reset password with token
+	 * Note: This should work for anyone (logged in or not) since users need to reset passwords when locked out
 	 */
 	public function ajax_reset_password() {
 		check_ajax_referer( 'beepbeepai_nonce', 'nonce' );
-		if ( ! $this->user_can_manage() ) {
-			wp_send_json_error( array( 'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ) ) );
-		}
+		// Removed user_can_manage() check - password reset should work for anyone with a valid token
 
 		$email_raw    = isset( $_POST['email'] ) ? wp_unslash( $_POST['email'] ) : '';
 		$email        = is_string( $email_raw ) ? sanitize_email( $email_raw ) : '';

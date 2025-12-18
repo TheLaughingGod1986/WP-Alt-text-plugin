@@ -107,121 +107,7 @@
             return false;
         }
 
-        // Check if user is out of credits BEFORE starting
-        // First, try to get fresh usage stats from API if available
-        var usageStats = (window.BBAI_DASH && window.BBAI_DASH.initialUsage) ||
-                         (window.BBAI_DASH && window.BBAI_DASH.usage) ||
-                         (window.BBAI && window.BBAI.usage) || null;
-
-        // Check if remaining is 0 or less, or if used >= limit
-        var remaining = usageStats && (usageStats.remaining !== undefined) ? parseInt(usageStats.remaining, 10) : null;
-        var used = usageStats && (usageStats.used !== undefined) ? parseInt(usageStats.used, 10) : null;
-        var limit = usageStats && (usageStats.limit !== undefined) ? parseInt(usageStats.limit, 10) : null;
-        var plan = usageStats && usageStats.plan ? usageStats.plan.toLowerCase() : 'free';
-
-        // Check if user has quota OR is on premium plan (pro/agency)
-        // Only show modal when remaining is explicitly 0 (not null/undefined)
-        var isPremium = plan === 'pro' || plan === 'agency';
-        var hasQuota = remaining !== null && remaining !== undefined && remaining > 0;
-        var isOutOfCredits = remaining !== null && remaining !== undefined && remaining === 0;
-
-        // Safety check: If we have credits remaining (> 0), NEVER show modal
-        if (remaining !== null && remaining !== undefined && remaining > 0) {
-            // User has credits - continue without checking anything else
-            continueWithGeneration();
-            return false;
-        }
-
-        // If no usage stats available, don't block - let the API handle it
-        if (!usageStats) {
-            continueWithGeneration();
-            return false;
-        }
-
-        // If usage stats show limit reached, try refreshing from API once before blocking
-        // ONLY if credits are explicitly 0 (not null/undefined)
-        if (!isPremium && isOutOfCredits && config.restUsage) {
-            // Attempt to fetch fresh usage stats from API
-            var refreshUsagePromise = $.ajax({
-                url: config.restUsage,
-                method: 'GET',
-                headers: {
-                    'X-WP-Nonce': config.nonce
-                },
-                cache: false
-            }).then(function(response) {
-                if (response && response.success && response.data) {
-                    // Update cached usage stats
-                    var freshUsage = response.data;
-                    if (window.BBAI_DASH) {
-                        window.BBAI_DASH.usage = freshUsage;
-                    }
-                    // Re-check with fresh data
-                    var freshRemaining = freshUsage.remaining !== undefined ? parseInt(freshUsage.remaining, 10) : null;
-                    var freshPlan = freshUsage.plan ? freshUsage.plan.toLowerCase() : 'free';
-                    var freshIsPremium = freshPlan === 'pro' || freshPlan === 'agency';
-                    var freshIsOutOfCredits = freshRemaining !== null && freshRemaining !== undefined && freshRemaining === 0;
-                    
-                    if (!freshIsPremium && freshIsOutOfCredits) {
-                        // Still at limit after refresh - only show modal when credits are exactly 0
-                        handleLimitReached({
-                            message: 'Monthly limit reached. Upgrade to continue generating alt text.',
-                            code: 'limit_reached',
-                            usage: freshUsage
-                        });
-                        return false;
-                    }
-                    // Fresh data shows quota available, continue with generation
-                    return true;
-                }
-                // API call failed, use cached data
-                return null;
-            }).catch(function() {
-                // API call failed, use cached data
-                return null;
-            });
-            
-            // Wait for refresh attempt, then check again
-            refreshUsagePromise.done(function(shouldContinue) {
-                if (shouldContinue === false) {
-                    // Still at limit after refresh
-                    return false;
-                }
-                if (shouldContinue === null) {
-                    // Refresh failed, check cached data - only show modal if credits are actually 0
-                    var cachedRemaining = remaining;
-                    var cachedIsOutOfCredits = cachedRemaining !== null && cachedRemaining !== undefined && cachedRemaining === 0;
-                    if (cachedIsOutOfCredits && !isPremium) {
-                        handleLimitReached({
-                            message: 'Monthly limit reached. Upgrade to continue generating alt text.',
-                            code: 'limit_reached',
-                            usage: usageStats
-                        });
-                        return false;
-                    }
-                    // If cached data shows credits available or is unclear, continue anyway
-                    continueWithGeneration();
-                    return;
-                }
-                // Fresh data shows quota available, continue
-                continueWithGeneration();
-            });
-            
-            return false; // Prevent immediate continuation, wait for refresh
-        } else if (usageStats && !isPremium && isOutOfCredits) {
-            // User is out of credits (remaining === 0) and not on premium plan - show upgrade modal
-            // Only show modal when credits are explicitly 0, not when null/undefined
-            handleLimitReached({
-                message: 'Monthly limit reached. Upgrade to continue generating alt text.',
-                code: 'limit_reached',
-                usage: usageStats
-            });
-            return false;
-        }
-
-        continueWithGeneration();
-        return false;
-
+        // Helper function to continue with generation after credit check
         function continueWithGeneration() {
             $btn.prop('disabled', true);
             $btn.text('Loading...');
@@ -248,14 +134,6 @@
             var ids = response.ids || [];
             var count = ids.length;
             
-            // Log analytics event
-            if (typeof window.logEvent === 'function') {
-                window.logEvent('alt_text_generate', {
-                    count: count,
-                    source: 'bulk-generate-missing'
-                });
-            }
-            
             // Show progress bar
             showBulkProgress('Preparing bulk run...', count, 0);
 
@@ -274,7 +152,7 @@
                 if (success && queued > 0) {
                     // Update modal to show success and keep it open
                     updateBulkProgressTitle('Successfully Queued!');
-                    logBulkProgressSuccess('Successfully queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' for processing');
+                    logBulkProgressSuccess('Successfully queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' for generation');
                     startInlineGeneration(processedIds || ids, 'bulk');
 
                     // Don't hide modal - let user close it manually or monitor progress
@@ -331,7 +209,7 @@
                             var limitedIds = ids.slice(0, remainingCount);
                             $btn.prop('disabled', true);
                             $btn.text('Loading...');
-                            showBulkProgress('Queueing ' + remainingCount + ' image' + (remainingCount !== 1 ? 's' : '') + '...', remainingCount, 0);
+                            showBulkProgress('Queueing ' + remainingCount + ' image' + (remainingCount !== 1 ? 's' : '') + ' for generation...', remainingCount, 0);
                             
                             queueImages(limitedIds, 'bulk', function(success, queued, queueError, processedLimited) {
                                 $btn.prop('disabled', false);
@@ -397,6 +275,390 @@
                     // Keep modal open to show error - user can close manually
                 }
             });
+        })
+        .fail(function(xhr, status, error) {
+            bbaiDebug.error('[AI Alt Text] Failed to get missing images:', {
+                error: error,
+                status: status,
+                xhr: xhr,
+                statusCode: xhr.status,
+                responseText: xhr.responseText,
+                responseJSON: xhr.responseJSON
+            });
+            $btn.prop('disabled', false);
+            $btn.text(originalText);
+
+            var errorMsg = 'Failed to load images. ';
+            if (xhr.status === 403) {
+                errorMsg += 'Permission denied. Please check you have the correct permissions.';
+            } else if (xhr.status === 404) {
+                errorMsg += 'Endpoint not found. Please refresh the page.';
+            } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg += xhr.responseJSON.message;
+            } else {
+                errorMsg += 'Please check your browser console for details.';
+            }
+            
+            // Show alert to make error visible
+            alert(errorMsg);
+            
+            // Try to show error in progress modal if it exists
+            if (typeof logBulkProgressError === 'function') {
+                logBulkProgressError(errorMsg);
+            } else {
+                // If modal doesn't exist, create it to show the error
+                showBulkProgress('Error', 0, 0);
+                if (typeof logBulkProgressError === 'function') {
+                    logBulkProgressError(errorMsg);
+                }
+            }
+        });
+        } // End of continueWithGeneration function
+
+        // CRITICAL: Check credits BEFORE allowing any generation
+        // User must have credits > 0 OR be on premium plan to generate
+        // If credits are 0, ALWAYS show upgrade modal - no bypasses allowed
+        
+        // Get usage stats from cache
+        var usageStats = (window.BBAI_DASH && window.BBAI_DASH.initialUsage) ||
+                         (window.BBAI_DASH && window.BBAI_DASH.usage) ||
+                         (window.BBAI && window.BBAI.usage) || null;
+
+        var remaining = usageStats && (usageStats.remaining !== undefined) ? parseInt(usageStats.remaining, 10) : null;
+        var plan = usageStats && usageStats.plan ? usageStats.plan.toLowerCase() : 'free';
+        var isPremium = plan === 'pro' || plan === 'agency';
+        var isOutOfCredits = remaining !== null && remaining !== undefined && remaining === 0;
+
+        // If we have credits remaining (> 0), allow generation
+        if (remaining !== null && remaining !== undefined && remaining > 0) {
+            // User has credits - proceed with generation
+            continueWithGeneration();
+            return false;
+        }
+
+        // If user is on premium plan, allow generation (unlimited)
+        if (isPremium) {
+            continueWithGeneration();
+            return false;
+        }
+
+        // If no usage stats available, try to fetch fresh stats before blocking
+        if (!usageStats && config.restUsage) {
+            bbaiDebug.log('[AI Alt Text] No usage stats available, fetching from API...');
+            
+            $btn.prop('disabled', true);
+            $btn.text('Checking credits...');
+            
+            // Fetch fresh usage stats
+            $.ajax({
+                url: config.restUsage,
+                method: 'GET',
+                headers: {
+                    'X-WP-Nonce': config.nonce
+                },
+                cache: false
+            }).done(function(response) {
+                $btn.prop('disabled', false);
+                $btn.text(originalText);
+                
+                if (response && response.success && response.data) {
+                    // Update cached usage stats
+                    var freshUsage = response.data;
+                    var freshRemaining = freshUsage.remaining !== undefined ? parseInt(freshUsage.remaining, 10) : null;
+                    var freshPlan = freshUsage.plan ? freshUsage.plan.toLowerCase() : 'free';
+                    var freshIsPremium = freshPlan === 'pro' || freshPlan === 'agency';
+                    
+                    // Update cache
+                    if (window.BBAI_DASH) {
+                        window.BBAI_DASH.usage = freshUsage;
+                        window.BBAI_DASH.initialUsage = freshUsage;
+                    }
+                    if (window.BBAI) {
+                        window.BBAI.usage = freshUsage;
+                    }
+                    
+                    // Check fresh data
+                    if (freshRemaining !== null && freshRemaining !== undefined && freshRemaining > 0) {
+                        // Credits available - proceed
+                        continueWithGeneration();
+                    } else if (freshIsPremium) {
+                        // Premium plan - proceed
+                        continueWithGeneration();
+                    } else {
+                        // No credits and not premium - show upgrade modal
+                        handleLimitReached({
+                            message: 'You have no credits remaining. Upgrade to continue generating alt text.',
+                            code: 'limit_reached',
+                            usage: freshUsage
+                        });
+                    }
+                } else {
+                    // API call failed - fail closed: show upgrade modal
+                    bbaiDebug.warn('[AI Alt Text] Failed to fetch usage stats, blocking generation');
+                    handleLimitReached({
+                        message: 'Unable to verify credits. Please upgrade to continue generating alt text.',
+                        code: 'limit_reached',
+                        usage: null
+                    });
+                }
+            }).fail(function() {
+                $btn.prop('disabled', false);
+                $btn.text(originalText);
+                
+                // API call failed - fail closed: show upgrade modal
+                bbaiDebug.warn('[AI Alt Text] Failed to fetch usage stats, blocking generation');
+                handleLimitReached({
+                    message: 'Unable to verify credits. Please upgrade to continue generating alt text.',
+                    code: 'limit_reached',
+                    usage: null
+                });
+            });
+            
+            return false; // Wait for API response
+        }
+
+        // If we have cached stats showing 0 credits, show upgrade modal immediately
+        if (isOutOfCredits) {
+            handleLimitReached({
+                message: 'You have no credits remaining. Upgrade to continue generating alt text.',
+                code: 'limit_reached',
+                usage: usageStats
+            });
+            return false;
+        }
+
+        // If we reach here, we don't have usage stats and couldn't fetch them
+        // Fail closed: show upgrade modal
+        bbaiDebug.warn('[AI Alt Text] No usage stats available and cannot fetch, blocking generation');
+        handleLimitReached({
+            message: 'Unable to verify credits. Please upgrade to continue generating alt text.',
+            code: 'limit_reached',
+            usage: null
+        });
+        return false;
+    } // End of handleGenerateMissing function
+
+    /**
+     * Regenerate alt text for all images
+     */
+    function handleRegenerateAll(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        bbaiDebug.log('[AI Alt Text] Re-optimize All button clicked');
+        
+        if (!confirm('This will regenerate alt text for ALL images, replacing existing alt text. Are you sure?')) {
+            bbaiDebug.log('[AI Alt Text] User cancelled re-optimize');
+            return false;
+        }
+
+        var $btn = $(this);
+        var originalText = $btn.text();
+        
+        if ($btn.prop('disabled')) {
+            bbaiDebug.warn('[AI Alt Text] Button is disabled');
+            return false;
+        }
+
+        // Check if we have necessary configuration (check dynamically in case BBAI_DASH loads after script)
+        var currentConfig = window.BBAI_DASH || window.BBAI || config;
+        bbaiDebug.log('[AI Alt Text] Using config:', {
+            hasBBAI_DASH: !!window.BBAI_DASH,
+            hasBBAI: !!window.BBAI,
+            hasConfig: !!config,
+            restAll: currentConfig.restAll,
+            restRoot: currentConfig.restRoot,
+            nonce: currentConfig.nonce ? 'present' : 'missing'
+        });
+        
+        var hasConfig = currentConfig.rest && currentConfig.nonce;
+        if (!hasConfig) {
+                bbaiDebug.error('[AI Alt Text] Missing REST config:', {
+                BBAI_DASH: !!window.BBAI_DASH,
+                BBAI: !!window.BBAI,
+                config: config,
+                currentConfig: currentConfig
+            });
+            alert('Configuration error. Please refresh the page and try again.');
+            return false;
+        }
+
+        // Helper function to continue with regeneration after credit check
+        function continueWithRegeneration() {
+            $btn.prop('disabled', true);
+            $btn.text('Loading...');
+
+            // Get list of all images (use dynamically checked config)
+            var currentConfig = window.BBAI_DASH || window.BBAI || config;
+            var listUrl = currentConfig.restAll || (currentConfig.restRoot + 'bbai/v1/list?scope=all');
+            bbaiDebug.log('[AI Alt Text] Fetching all images from:', listUrl);
+            
+            $.ajax({
+                url: listUrl,
+                method: 'GET',
+                headers: {
+                    'X-WP-Nonce': currentConfig.nonce
+                },
+                data: {
+                    limit: 500
+                }
+            })
+            .done(function(response) {
+                bbaiDebug.log('[AI Alt Text] Received response:', response);
+                
+                if (!response || !response.ids || response.ids.length === 0) {
+                    bbaiDebug.warn('[AI Alt Text] No images found in response');
+                    alert('No images found.');
+                    $btn.prop('disabled', false);
+                    $btn.text(originalText);
+                    return;
+                }
+
+                var ids = response.ids || [];
+                var count = ids.length;
+                bbaiDebug.log('[AI Alt Text] Found ' + count + ' images to regenerate');
+                
+                // Show progress bar
+                showBulkProgress('Preparing bulk regeneration...', count, 0);
+
+                // Queue all images
+                queueImages(ids, 'bulk-regenerate', function(success, queued, error, processedIds) {
+                    $btn.prop('disabled', false);
+                    $btn.text(originalText);
+
+                    // Check for subscription error
+                    if (error && error.subscriptionError) {
+                        hideBulkProgress();
+                        // Upgrade modal should already be triggered by queueImages
+                        return; // Exit early
+                    }
+
+                    if (success && queued > 0) {
+                        // Update modal to show success and keep it open
+                        updateBulkProgressTitle('Successfully Queued!');
+                        logBulkProgressSuccess('Successfully queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' for regeneration');
+                        startInlineGeneration(processedIds || ids, 'bulk-regenerate');
+
+                        // Don't hide modal - let user close it manually or monitor progress
+                    } else if (success && queued === 0) {
+                        updateBulkProgressTitle('Already Queued');
+                        logBulkProgressSuccess('All images are already in queue or processing');
+                        startInlineGeneration(processedIds || ids, 'bulk-regenerate');
+
+                        // Don't hide modal - let user close it manually
+                    } else {
+                        // Check for limit_reached FIRST - show upgrade modal immediately
+                        if (error && error.code === 'limit_reached') {
+                            hideBulkProgress();
+                            handleLimitReached(error);
+                            return; // Exit early - don't show bulk progress modal
+                        }
+
+                        // Check for insufficient credits with 0 remaining - show upgrade modal
+                        if (error && error.code === 'insufficient_credits' && error.remaining !== null && error.remaining === 0) {
+                            hideBulkProgress();
+                            handleLimitReached(error);
+                            return; // Exit early - don't show bulk progress modal
+                        }
+
+                        // Show error in modal log
+                        if (error && error.message) {
+                            logBulkProgressError(error.message);
+                        } else {
+                            logBulkProgressError('Failed to queue images. Please try again.');
+                        }
+
+                        // Error logging (keep minimal for production)
+                        if (error && error.code) {
+                            bbaiDebug.error('[AI Alt Text] Error:', error.code, error.message || 'Unknown error');
+                        }
+
+                        // Check for insufficient credits with remaining > 0 - offer partial regeneration
+                        if (error && error.code === 'insufficient_credits' && error.remaining !== null && error.remaining > 0) {
+                            hideBulkProgress();
+                            var remainingCount = error.remaining;
+                            var totalRequested = count;
+                            var errorMsg = error.message || 'You only have ' + remainingCount + ' generations remaining.';
+                            
+                            // Offer to regenerate with remaining credits or upgrade
+                            var regenerateWithRemaining = confirm(
+                                errorMsg + '\n\n' +
+                                'Would you like to regenerate ' + remainingCount + ' image' + (remainingCount !== 1 ? 's' : '') + 
+                                ' now using your remaining ' + remainingCount + ' credit' + (remainingCount !== 1 ? 's' : '') + '?\n\n' +
+                                '(Click "OK" to regenerate now, or "Cancel" to upgrade)'
+                            );
+                            
+                            if (regenerateWithRemaining) {
+                                // Regenerate with remaining credits
+                                var limitedIds = ids.slice(0, remainingCount);
+                                $btn.prop('disabled', true);
+                                $btn.text('Loading...');
+                                showBulkProgress('Queueing ' + remainingCount + ' image' + (remainingCount !== 1 ? 's' : '') + ' for regeneration...', remainingCount, 0);
+                                
+                                queueImages(limitedIds, 'bulk-regenerate', function(success, queued, queueError, processedLimited) {
+                                    $btn.prop('disabled', false);
+                                    $btn.text(originalText);
+                                    
+                                    if (success && queued > 0) {
+                                        updateBulkProgressTitle('Successfully Queued!');
+                                        logBulkProgressSuccess('Queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' using remaining credits');
+                                        startInlineGeneration(processedLimited || limitedIds, 'bulk-regenerate');
+                                    } else {
+                                        var errorMsg = 'Failed to queue images.';
+                                        if (queueError && queueError.message) {
+                                            errorMsg = queueError.message;
+                                        }
+                                        logBulkProgressError(errorMsg);
+                                    }
+                                });
+                                return; // Exit early
+                            } else {
+                                // User clicked Cancel - offer upgrade
+                                var confirmUpgrade = confirm(
+                                    'Would you like to upgrade to get more credits and regenerate all ' + totalRequested + 
+                                    ' image' + (totalRequested !== 1 ? 's' : '') + '?'
+                                );
+                                
+                                if (confirmUpgrade) {
+                                    // Upgrade
+                                    if (typeof alttextaiShowModal === 'function') {
+                                        alttextaiShowModal();
+                                    } else if (typeof window.bbai_ajax !== 'undefined' && window.bbai_ajax.is_authenticated) {
+                                        var upgradeBtn = document.querySelector('[data-action="show-upgrade-modal"]');
+                                        if (upgradeBtn) {
+                                            upgradeBtn.click();
+                                        }
+                                    } else {
+                                        if (typeof showAuthLogin === 'function') {
+                                            showAuthLogin();
+                                        }
+                                    }
+                                }
+                                return; // Exit early
+                            }
+                        }
+                        
+                        // Handle other errors
+                        var errorMsg = 'Failed to queue images.';
+                        if (error && error.message) {
+                            errorMsg = error.message;
+                        } else {
+                            if (count > 0) {
+                                errorMsg += ' Please check your browser console for details and try again.';
+                            } else {
+                                errorMsg += ' No images were found to queue.';
+                            }
+                        }
+
+                        if (error && error.message) {
+                            bbaiDebug.error('[AI Alt Text] Error details:', error);
+                        } else {
+                            bbaiDebug.error('[AI Alt Text] Queue failed for regenerate all - no error details');
+                        }
+
+                        // Keep modal open to show error - user can close manually
+                    }
+                });
             })
             .fail(function(xhr, status, error) {
                 bbaiDebug.error('[AI Alt Text] Failed to get all images:', {
@@ -404,7 +666,8 @@
                     status: status,
                     xhr: xhr,
                     statusCode: xhr.status,
-                    responseText: xhr.responseText
+                    responseText: xhr.responseText,
+                    responseJSON: xhr.responseJSON
                 });
                 $btn.prop('disabled', false);
                 $btn.text(originalText);
@@ -420,15 +683,140 @@
                     errorMsg += 'Please check your browser console for details.';
                 }
                 
+                // Show alert to make error visible
                 alert(errorMsg);
                 
-                // Try to show progress modal with error if it exists
+                // Try to show error in progress modal if it exists
                 if (typeof logBulkProgressError === 'function') {
                     logBulkProgressError(errorMsg);
+                } else {
+                    // If modal doesn't exist, create it to show the error
+                    showBulkProgress('Error', 0, 0);
+                    if (typeof logBulkProgressError === 'function') {
+                        logBulkProgressError(errorMsg);
+                    }
                 }
             });
+        } // End of continueWithRegeneration function
+
+        // Check if user is out of credits BEFORE starting
+        var usageStats = (window.BBAI_DASH && window.BBAI_DASH.initialUsage) ||
+                         (window.BBAI_DASH && window.BBAI_DASH.usage) ||
+                         (window.BBAI && window.BBAI.usage) || null;
+
+        // Check if remaining is 0 or less, or if used >= limit
+        var remaining = usageStats && (usageStats.remaining !== undefined) ? parseInt(usageStats.remaining, 10) : null;
+        var used = usageStats && (usageStats.used !== undefined) ? parseInt(usageStats.used, 10) : null;
+        var limit = usageStats && (usageStats.limit !== undefined) ? parseInt(usageStats.limit, 10) : null;
+        var plan = usageStats && usageStats.plan ? usageStats.plan.toLowerCase() : 'free';
+        var isPremium = plan === 'pro' || plan === 'agency';
+        var isOutOfCredits = remaining !== null && remaining !== undefined && remaining === 0;
+
+        // Safety check: If we have credits remaining (> 0), NEVER show modal
+        if (remaining !== null && remaining !== undefined && remaining > 0) {
+            // User has credits - continue with regeneration
+            continueWithRegeneration();
+            return false; // Exit early, continueWithRegeneration will handle the rest
+        } else {
+            // If no usage stats available, don't block - let the API handle it
+            if (!usageStats) {
+                // Continue with regeneration - API will handle credit checks
+                continueWithRegeneration();
+                return false; // Exit early, continueWithRegeneration will handle the rest
+            } else if (!isPremium && isOutOfCredits && currentConfig.restUsage) {
+                // If usage stats show limit reached, try refreshing from API once before blocking
+                // This ensures we have the latest credit balance before showing upgrade modal
+                bbaiDebug.log('[AI Alt Text] Credits appear to be 0, refreshing from API before blocking...');
+                
+                $btn.prop('disabled', true);
+                $btn.text('Checking credits...');
+                
+                // Attempt to fetch fresh usage stats from API
+                var refreshUsagePromise = $.ajax({
+                    url: currentConfig.restUsage,
+                    method: 'GET',
+                    headers: {
+                        'X-WP-Nonce': currentConfig.nonce
+                    },
+                    cache: false
+                }).then(function(response) {
+                    if (response && response.success && response.data) {
+                        // Update cached usage stats
+                        var freshUsage = response.data;
+                        var freshRemaining = freshUsage.remaining !== undefined ? parseInt(freshUsage.remaining, 10) : null;
+                        var freshPlan = freshUsage.plan ? freshUsage.plan.toLowerCase() : 'free';
+                        var freshIsPremium = freshPlan === 'pro' || freshPlan === 'agency';
+                        
+                        bbaiDebug.log('[AI Alt Text] Fresh usage stats from API:', {
+                            remaining: freshRemaining,
+                            plan: freshPlan,
+                            isPremium: freshIsPremium
+                        });
+                        
+                        // Update cached stats
+                        if (window.BBAI_DASH) {
+                            window.BBAI_DASH.usage = freshUsage;
+                            window.BBAI_DASH.initialUsage = freshUsage;
+                        }
+                        if (window.BBAI) {
+                            window.BBAI.usage = freshUsage;
+                        }
+                        
+                        // If fresh stats show credits available, continue with regeneration
+                        if (freshRemaining !== null && freshRemaining !== undefined && freshRemaining > 0) {
+                            bbaiDebug.log('[AI Alt Text] Fresh stats show credits available, continuing with regeneration');
+                            return true; // Continue with regeneration
+                        } else if (freshIsPremium) {
+                            bbaiDebug.log('[AI Alt Text] User is on premium plan, continuing with regeneration');
+                            return true; // Premium users can always regenerate
+                        } else {
+                            bbaiDebug.log('[AI Alt Text] Fresh stats confirm no credits, showing upgrade modal');
+                            return false; // Show upgrade modal
+                        }
+                    } else {
+                        // API call failed or returned invalid data - let API handle credit checks
+                        bbaiDebug.warn('[AI Alt Text] Failed to refresh usage stats, letting API handle credit checks');
+                        return true; // Continue - let API handle it
+                    }
+                }).catch(function(error) {
+                    bbaiDebug.warn('[AI Alt Text] Error refreshing usage stats:', error);
+                    // On error, let API handle credit checks rather than blocking
+                    return true; // Continue - let API handle it
+                });
+                
+                // Wait for refresh to complete before proceeding
+                refreshUsagePromise.done(function(shouldContinue) {
+                    if (shouldContinue) {
+                        // Fresh stats show credits available or API should handle it - continue with regeneration
+                        $btn.text('Loading...');
+                        // Continue with regeneration flow below
+                        continueWithRegeneration();
+                    } else {
+                        // Fresh stats confirm no credits - show upgrade modal
+                        $btn.prop('disabled', false);
+                        $btn.text(originalText);
+                        handleLimitReached({
+                            message: 'Monthly limit reached. Upgrade to continue regenerating alt text.',
+                            code: 'limit_reached',
+                            usage: usageStats
+                        });
+                    }
+                });
+                
+                // Return early - will continue via promise callback
+                return false;
+            } else if (!isPremium && isOutOfCredits) {
+                // User is out of credits (remaining === 0) and not on premium plan - show upgrade modal
+                // Only show modal when credits are explicitly 0, not when null/undefined
+                handleLimitReached({
+                    message: 'Monthly limit reached. Upgrade to continue regenerating alt text.',
+                    code: 'limit_reached',
+                    usage: usageStats
+                });
+                return false;
+            }
         }
-    }
+    } // End of handleRegenerateAll function
 
     /**
      * Regenerate alt text for all images
@@ -485,24 +873,318 @@
         var used = usageStats && (usageStats.used !== undefined) ? parseInt(usageStats.used, 10) : null;
         var limit = usageStats && (usageStats.limit !== undefined) ? parseInt(usageStats.limit, 10) : null;
         var plan = usageStats && usageStats.plan ? usageStats.plan.toLowerCase() : 'free';
+        var isPremium = plan === 'pro' || plan === 'agency';
+        var isOutOfCredits = remaining !== null && remaining !== undefined && remaining === 0;
+
+        // Helper function to continue with regeneration after credit check
+        function continueWithRegeneration() {
+            $btn.prop('disabled', true);
+            $btn.text('Loading...');
+
+            // Get list of all images (use dynamically checked config)
+            var currentConfig = window.BBAI_DASH || window.BBAI || config;
+            var listUrl = currentConfig.restAll || (currentConfig.restRoot + 'bbai/v1/list?scope=all');
+            bbaiDebug.log('[AI Alt Text] Fetching all images from:', listUrl);
+            
+            $.ajax({
+                url: listUrl,
+                method: 'GET',
+                headers: {
+                    'X-WP-Nonce': currentConfig.nonce
+                },
+                data: {
+                    limit: 500
+                }
+            })
+            .done(function(response) {
+                bbaiDebug.log('[AI Alt Text] Received response:', response);
+                
+                if (!response || !response.ids || response.ids.length === 0) {
+                    bbaiDebug.warn('[AI Alt Text] No images found in response');
+                    alert('No images found.');
+                    $btn.prop('disabled', false);
+                    $btn.text(originalText);
+                    return;
+                }
+
+                var ids = response.ids || [];
+                var count = ids.length;
+                bbaiDebug.log('[AI Alt Text] Found ' + count + ' images to regenerate');
+                
+                // Show progress bar
+                showBulkProgress('Preparing bulk regeneration...', count, 0);
+
+                // Queue all images
+                queueImages(ids, 'bulk-regenerate', function(success, queued, error, processedIds) {
+                    $btn.prop('disabled', false);
+                    $btn.text(originalText);
+
+                    // Check for subscription error
+                    if (error && error.subscriptionError) {
+                        hideBulkProgress();
+                        // Upgrade modal should already be triggered by queueImages
+                        return; // Exit early
+                    }
+
+                    if (success && queued > 0) {
+                        // Update modal to show success and keep it open
+                        updateBulkProgressTitle('Successfully Queued!');
+                        logBulkProgressSuccess('Successfully queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' for regeneration');
+                        startInlineGeneration(processedIds || ids, 'bulk-regenerate');
+
+                        // Don't hide modal - let user close it manually or monitor progress
+                    } else if (success && queued === 0) {
+                        updateBulkProgressTitle('Already Queued');
+                        logBulkProgressSuccess('All images are already in queue or processing');
+                        startInlineGeneration(processedIds || ids, 'bulk-regenerate');
+
+                        // Don't hide modal - let user close it manually
+                    } else {
+                        // Check for limit_reached FIRST - show upgrade modal immediately
+                        if (error && error.code === 'limit_reached') {
+                            hideBulkProgress();
+                            handleLimitReached(error);
+                            return; // Exit early - don't show bulk progress modal
+                        }
+
+                        // Check for insufficient credits with 0 remaining - show upgrade modal
+                        if (error && error.code === 'insufficient_credits' && error.remaining !== null && error.remaining === 0) {
+                            hideBulkProgress();
+                            handleLimitReached(error);
+                            return; // Exit early - don't show bulk progress modal
+                        }
+
+                        // Show error in modal log
+                        if (error && error.message) {
+                            logBulkProgressError(error.message);
+                        } else {
+                            logBulkProgressError('Failed to queue images. Please try again.');
+                        }
+
+                        // Error logging (keep minimal for production)
+                        if (error && error.code) {
+                            bbaiDebug.error('[AI Alt Text] Error:', error.code, error.message || 'Unknown error');
+                        }
+
+                        // Check for insufficient credits with remaining > 0 - offer partial regeneration
+                        if (error && error.code === 'insufficient_credits' && error.remaining !== null && error.remaining > 0) {
+                            hideBulkProgress();
+                            var remainingCount = error.remaining;
+                            var totalRequested = count;
+                            var errorMsg = error.message || 'You only have ' + remainingCount + ' generations remaining.';
+                            
+                            // Offer to regenerate with remaining credits or upgrade
+                            var regenerateWithRemaining = confirm(
+                                errorMsg + '\n\n' +
+                                'Would you like to regenerate ' + remainingCount + ' image' + (remainingCount !== 1 ? 's' : '') + 
+                                ' now using your remaining ' + remainingCount + ' credit' + (remainingCount !== 1 ? 's' : '') + '?\n\n' +
+                                '(Click "OK" to regenerate now, or "Cancel" to upgrade)'
+                            );
+                            
+                            if (regenerateWithRemaining) {
+                                // Regenerate with remaining credits
+                                var limitedIds = ids.slice(0, remainingCount);
+                                $btn.prop('disabled', true);
+                                $btn.text('Loading...');
+                                showBulkProgress('Queueing ' + remainingCount + ' image' + (remainingCount !== 1 ? 's' : '') + ' for regeneration...', remainingCount, 0);
+                                
+                                queueImages(limitedIds, 'bulk-regenerate', function(success, queued, queueError, processedLimited) {
+                                    $btn.prop('disabled', false);
+                                    $btn.text(originalText);
+                                    
+                                    if (success && queued > 0) {
+                                        updateBulkProgressTitle('Successfully Queued!');
+                                        logBulkProgressSuccess('Queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' using remaining credits');
+                                        startInlineGeneration(processedLimited || limitedIds, 'bulk-regenerate');
+                                    } else {
+                                        var errorMsg = 'Failed to queue images.';
+                                        if (queueError && queueError.message) {
+                                            errorMsg = queueError.message;
+                                        }
+                                        logBulkProgressError(errorMsg);
+                                    }
+                                });
+                                return; // Exit early
+                            } else {
+                                // User clicked Cancel - offer upgrade
+                                var confirmUpgrade = confirm(
+                                    'Would you like to upgrade to get more credits and regenerate all ' + totalRequested + 
+                                    ' image' + (totalRequested !== 1 ? 's' : '') + '?'
+                                );
+                                
+                                if (confirmUpgrade) {
+                                    // Upgrade
+                                    if (typeof alttextaiShowModal === 'function') {
+                                        alttextaiShowModal();
+                                    } else if (typeof window.bbai_ajax !== 'undefined' && window.bbai_ajax.is_authenticated) {
+                                        var upgradeBtn = document.querySelector('[data-action="show-upgrade-modal"]');
+                                        if (upgradeBtn) {
+                                            upgradeBtn.click();
+                                        }
+                                    } else {
+                                        if (typeof showAuthLogin === 'function') {
+                                            showAuthLogin();
+                                        }
+                                    }
+                                }
+                                return; // Exit early
+                            }
+                        }
+                        
+                        // Handle other errors
+                        var errorMsg = 'Failed to queue images.';
+                        if (error && error.message) {
+                            errorMsg = error.message;
+                        } else {
+                            if (count > 0) {
+                                errorMsg += ' Please check your browser console for details and try again.';
+                            } else {
+                                errorMsg += ' No images were found to queue.';
+                            }
+                        }
+
+                        if (error && error.message) {
+                            bbaiDebug.error('[AI Alt Text] Error details:', error);
+                        } else {
+                            bbaiDebug.error('[AI Alt Text] Queue failed for regenerate all - no error details');
+                        }
+
+                        // Keep modal open to show error - user can close manually
+                    }
+                });
+            })
+            .fail(function(xhr, status, error) {
+                bbaiDebug.error('[AI Alt Text] Failed to get all images:', {
+                    error: error,
+                    status: status,
+                    xhr: xhr,
+                    statusCode: xhr.status,
+                    responseText: xhr.responseText,
+                    responseJSON: xhr.responseJSON
+                });
+                $btn.prop('disabled', false);
+                $btn.text(originalText);
+
+                var errorMsg = 'Failed to load images. ';
+                if (xhr.status === 403) {
+                    errorMsg += 'Permission denied. Please check you have the correct permissions.';
+                } else if (xhr.status === 404) {
+                    errorMsg += 'Endpoint not found. Please refresh the page.';
+                } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg += xhr.responseJSON.message;
+                } else {
+                    errorMsg += 'Please check your browser console for details.';
+                }
+                
+                // Show alert to make error visible
+                alert(errorMsg);
+                
+                // Try to show error in progress modal if it exists
+                if (typeof logBulkProgressError === 'function') {
+                    logBulkProgressError(errorMsg);
+                } else {
+                    // If modal doesn't exist, create it to show the error
+                    showBulkProgress('Error', 0, 0);
+                    if (typeof logBulkProgressError === 'function') {
+                        logBulkProgressError(errorMsg);
+                    }
+                }
+            });
+        }
 
         // Safety check: If we have credits remaining (> 0), NEVER show modal
         if (remaining !== null && remaining !== undefined && remaining > 0) {
             // User has credits - continue with regeneration
-            $btn.prop('disabled', true);
-            $btn.text('Loading...');
-            // Continue with regeneration - user has credits
+            continueWithRegeneration();
+            return false; // Exit early, continueWithRegeneration will handle the rest
         } else {
-            // Check if user has quota OR is on premium plan (pro/agency)
-            // Only show modal when remaining is explicitly 0 (not null/undefined)
-            var isPremium = plan === 'pro' || plan === 'agency';
-            var isOutOfCredits = remaining !== null && remaining !== undefined && remaining === 0;
-
             // If no usage stats available, don't block - let the API handle it
             if (!usageStats) {
-                $btn.prop('disabled', true);
-                $btn.text('Loading...');
                 // Continue with regeneration - API will handle credit checks
+                continueWithRegeneration();
+                return false; // Exit early, continueWithRegeneration will handle the rest
+            } else if (!isPremium && isOutOfCredits && currentConfig.restUsage) {
+                // If usage stats show limit reached, try refreshing from API once before blocking
+                // This ensures we have the latest credit balance before showing upgrade modal
+                bbaiDebug.log('[AI Alt Text] Credits appear to be 0, refreshing from API before blocking...');
+                
+                $btn.prop('disabled', true);
+                $btn.text('Checking credits...');
+                
+                // Attempt to fetch fresh usage stats from API
+                var refreshUsagePromise = $.ajax({
+                    url: currentConfig.restUsage,
+                    method: 'GET',
+                    headers: {
+                        'X-WP-Nonce': currentConfig.nonce
+                    },
+                    cache: false
+                }).then(function(response) {
+                    if (response && response.success && response.data) {
+                        // Update cached usage stats
+                        var freshUsage = response.data;
+                        var freshRemaining = freshUsage.remaining !== undefined ? parseInt(freshUsage.remaining, 10) : null;
+                        var freshPlan = freshUsage.plan ? freshUsage.plan.toLowerCase() : 'free';
+                        var freshIsPremium = freshPlan === 'pro' || freshPlan === 'agency';
+                        
+                        bbaiDebug.log('[AI Alt Text] Fresh usage stats from API:', {
+                            remaining: freshRemaining,
+                            plan: freshPlan,
+                            isPremium: freshIsPremium
+                        });
+                        
+                        // Update cached stats
+                        if (window.BBAI_DASH) {
+                            window.BBAI_DASH.usage = freshUsage;
+                            window.BBAI_DASH.initialUsage = freshUsage;
+                        }
+                        if (window.BBAI) {
+                            window.BBAI.usage = freshUsage;
+                        }
+                        
+                        // If fresh stats show credits available, continue with regeneration
+                        if (freshRemaining !== null && freshRemaining !== undefined && freshRemaining > 0) {
+                            bbaiDebug.log('[AI Alt Text] Fresh stats show credits available, continuing with regeneration');
+                            return true; // Continue with regeneration
+                        } else if (freshIsPremium) {
+                            bbaiDebug.log('[AI Alt Text] User is on premium plan, continuing with regeneration');
+                            return true; // Premium users can always regenerate
+                        } else {
+                            bbaiDebug.log('[AI Alt Text] Fresh stats confirm no credits, showing upgrade modal');
+                            return false; // Show upgrade modal
+                        }
+                    } else {
+                        // API call failed or returned invalid data - let API handle credit checks
+                        bbaiDebug.warn('[AI Alt Text] Failed to refresh usage stats, letting API handle credit checks');
+                        return true; // Continue - let API handle it
+                    }
+                }).catch(function(error) {
+                    bbaiDebug.warn('[AI Alt Text] Error refreshing usage stats:', error);
+                    // On error, let API handle credit checks rather than blocking
+                    return true; // Continue - let API handle it
+                });
+                
+                // Wait for refresh to complete before proceeding
+                refreshUsagePromise.done(function(shouldContinue) {
+                    if (shouldContinue) {
+                        // Fresh stats show credits available or API should handle it - continue with regeneration
+                        $btn.text('Loading...');
+                        // Continue with regeneration flow below
+                        continueWithRegeneration();
+                    } else {
+                        // Fresh stats confirm no credits - show upgrade modal
+                        $btn.prop('disabled', false);
+                        $btn.text(originalText);
+                        handleLimitReached({
+                            message: 'Monthly limit reached. Upgrade to continue regenerating alt text.',
+                            code: 'limit_reached',
+                            usage: usageStats
+                        });
+                    }
+                });
+                
+                // Return early - will continue via promise callback
+                return false;
             } else if (!isPremium && isOutOfCredits) {
                 // User is out of credits (remaining === 0) and not on premium plan - show upgrade modal
                 // Only show modal when credits are explicitly 0, not when null/undefined
@@ -514,228 +1196,7 @@
                 return false;
             }
         }
-
-        $btn.prop('disabled', true);
-        $btn.text('Loading...');
-
-        // Get list of all images (use dynamically checked config)
-        var currentConfig = window.BBAI_DASH || window.BBAI || config;
-        var listUrl = currentConfig.restAll || (currentConfig.restRoot + 'bbai/v1/list?scope=all');
-        bbaiDebug.log('[AI Alt Text] Fetching all images from:', listUrl);
-        
-        $.ajax({
-            url: listUrl,
-            method: 'GET',
-            headers: {
-                'X-WP-Nonce': currentConfig.nonce
-            },
-            data: {
-                limit: 500
-            }
-        })
-        .done(function(response) {
-            bbaiDebug.log('[AI Alt Text] Received response:', response);
-            
-            if (!response || !response.ids || response.ids.length === 0) {
-                bbaiDebug.warn('[AI Alt Text] No images found in response');
-                alert('No images found.');
-                $btn.prop('disabled', false);
-                $btn.text(originalText);
-                return;
-            }
-
-            var ids = response.ids || [];
-            var count = ids.length;
-            bbaiDebug.log('[AI Alt Text] Found ' + count + ' images to regenerate');
-            
-            // Log analytics event
-            if (typeof window.logEvent === 'function') {
-                window.logEvent('alt_text_generate', {
-                    count: count,
-                    source: 'bulk-regenerate-all'
-                });
-            }
-            
-            // Show progress bar
-            showBulkProgress('Preparing bulk regeneration...', count, 0);
-
-            // Queue all images
-            queueImages(ids, 'bulk-regenerate', function(success, queued, error, processedIds) {
-                $btn.prop('disabled', false);
-                $btn.text(originalText);
-
-                // Check for subscription error
-                if (error && error.subscriptionError) {
-                    hideBulkProgress();
-                    // Upgrade modal should already be triggered by queueImages
-                    return; // Exit early
-                }
-
-                if (success && queued > 0) {
-                    // Update modal to show success and keep it open
-                    updateBulkProgressTitle('Successfully Queued!');
-                    logBulkProgressSuccess('Successfully queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' for regeneration');
-                    startInlineGeneration(processedIds || ids, 'bulk-regenerate');
-
-                    // Don't hide modal - let user close it manually or monitor progress
-                } else if (success && queued === 0) {
-                    updateBulkProgressTitle('Already Queued');
-                    logBulkProgressSuccess('All images are already in queue or processing');
-                    startInlineGeneration(processedIds || ids, 'bulk-regenerate');
-
-                    // Don't hide modal - let user close it manually
-                } else {
-                    // Check for limit_reached FIRST - show upgrade modal immediately
-                    if (error && error.code === 'limit_reached') {
-                        hideBulkProgress();
-                        handleLimitReached(error);
-                        return; // Exit early - don't show bulk progress modal
-                    }
-
-                    // Check for insufficient credits with 0 remaining - show upgrade modal
-                    if (error && error.code === 'insufficient_credits' && error.remaining !== null && error.remaining === 0) {
-                        hideBulkProgress();
-                        handleLimitReached(error);
-                        return; // Exit early - don't show bulk progress modal
-                    }
-
-                    // Show error in modal log
-                    if (error && error.message) {
-                        logBulkProgressError(error.message);
-                    } else {
-                        logBulkProgressError('Failed to queue images. Please try again.');
-                    }
-
-                    // Error logging (keep minimal for production)
-                    if (error && error.code) {
-                        bbaiDebug.error('[AI Alt Text] Error:', error.code, error.message || 'Unknown error');
-                    }
-
-                    // Check for insufficient credits with remaining > 0 - offer partial regeneration
-                    if (error && error.code === 'insufficient_credits' && error.remaining !== null && error.remaining > 0) {
-                        hideBulkProgress();
-                        var remainingCount = error.remaining;
-                        var totalRequested = count;
-                        var errorMsg = error.message || 'You only have ' + remainingCount + ' generations remaining.';
-                        
-                        // Offer to regenerate with remaining credits or upgrade
-                        var regenerateWithRemaining = confirm(
-                            errorMsg + '\n\n' +
-                            'Would you like to regenerate ' + remainingCount + ' image' + (remainingCount !== 1 ? 's' : '') + 
-                            ' now using your remaining ' + remainingCount + ' credit' + (remainingCount !== 1 ? 's' : '') + '?\n\n' +
-                            '(Click "OK" to regenerate now, or "Cancel" to upgrade)'
-                        );
-                        
-                        if (regenerateWithRemaining) {
-                            // Regenerate with remaining credits
-                            var limitedIds = ids.slice(0, remainingCount);
-                            $btn.prop('disabled', true);
-                            $btn.text('Loading...');
-                            showBulkProgress('Queueing ' + remainingCount + ' image' + (remainingCount !== 1 ? 's' : '') + ' for regeneration...', remainingCount, 0);
-                            
-                            queueImages(limitedIds, 'bulk-regenerate', function(success, queued, queueError, processedLimited) {
-                                $btn.prop('disabled', false);
-                                $btn.text(originalText);
-                                
-                                if (success && queued > 0) {
-                                    updateBulkProgressTitle('Successfully Queued!');
-                                    logBulkProgressSuccess('Queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' using remaining credits');
-                                    startInlineGeneration(processedLimited || limitedIds, 'bulk-regenerate');
-                                } else {
-                                    var errorMsg = 'Failed to queue images.';
-                                    if (queueError && queueError.message) {
-                                        errorMsg = queueError.message;
-                                    }
-                                    logBulkProgressError(errorMsg);
-                                }
-                            });
-                            return; // Exit early
-                        } else {
-                            // User clicked Cancel - offer upgrade
-                            var confirmUpgrade = confirm(
-                                'Would you like to upgrade to get more credits and regenerate all ' + totalRequested + 
-                                ' image' + (totalRequested !== 1 ? 's' : '') + '?'
-                            );
-                            
-                            if (confirmUpgrade) {
-                                // Upgrade
-                                if (typeof alttextaiShowModal === 'function') {
-                                    alttextaiShowModal();
-                                } else if (typeof window.bbai_ajax !== 'undefined' && window.bbai_ajax.is_authenticated) {
-                                    var upgradeBtn = document.querySelector('[data-action="show-upgrade-modal"]');
-                                    if (upgradeBtn) {
-                                        upgradeBtn.click();
-                                    }
-                                } else {
-                                    if (typeof showAuthLogin === 'function') {
-                                        showAuthLogin();
-                                    }
-                                }
-                            }
-                            return; // Exit early
-                        }
-                    }
-                    
-                    // Handle other errors
-                    var errorMsg = 'Failed to queue images.';
-                    if (error && error.message) {
-                        errorMsg = error.message;
-                    } else {
-                        if (count > 0) {
-                            errorMsg += ' Please check your browser console for details and try again.';
-                        } else {
-                            errorMsg += ' No images were found to queue.';
-                        }
-                    }
-
-                    if (error && error.message) {
-                        bbaiDebug.error('[AI Alt Text] Error details:', error);
-                    } else {
-                        bbaiDebug.error('[AI Alt Text] Queue failed for regenerate all - no error details');
-                    }
-
-                    // Keep modal open to show error - user can close manually
-                }
-            });
-        })
-        .fail(function(xhr, status, error) {
-            bbaiDebug.error('[AI Alt Text] Failed to get all images:', {
-                error: error,
-                status: status,
-                xhr: xhr,
-                statusCode: xhr.status,
-                responseText: xhr.responseText,
-                responseJSON: xhr.responseJSON
-            });
-            $btn.prop('disabled', false);
-            $btn.text(originalText);
-
-            var errorMsg = 'Failed to load images. ';
-            if (xhr.status === 403) {
-                errorMsg += 'Permission denied. Please check you have the correct permissions.';
-            } else if (xhr.status === 404) {
-                errorMsg += 'Endpoint not found. Please refresh the page.';
-            } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                errorMsg += xhr.responseJSON.message;
-            } else {
-                errorMsg += 'Please check your browser console for details.';
-            }
-            
-            // Show alert to make error visible
-            alert(errorMsg);
-            
-            // Try to show error in progress modal if it exists
-            if (typeof logBulkProgressError === 'function') {
-                logBulkProgressError(errorMsg);
-            } else {
-                // If modal doesn't exist, create it to show the error
-                showBulkProgress('Error', 0, 0);
-                if (typeof logBulkProgressError === 'function') {
-                    logBulkProgressError(errorMsg);
-                }
-            }
-        });
-    }
+    } // End of handleRegenerateAll function
 
     /**
      * Regenerate alt text for a single image - shows modal with preview
@@ -755,13 +1216,6 @@
             return false;
         }
 
-        // Log analytics event
-        if (typeof window.logEvent === 'function') {
-            window.logEvent('alt_text_generate', {
-                count: 1,
-                source: 'regenerate-single'
-            });
-        }
 
         // Disable the button immediately to prevent multiple clicks
         var originalText = $btn.text();
@@ -889,13 +1343,6 @@
                 bbaiDebug.log('[AI Alt Text] New alt text:', newAltText);
 
                 if (newAltText) {
-                    // Log analytics event for alt text generation
-                    if (typeof window.logEvent === 'function') {
-                        window.logEvent('alt_text_generated', {
-                            attachment_id: attachmentId,
-                            source: 'ajax'
-                        });
-                    }
                     
                     // Show result
                     $modal.find('.bbai-regenerate-modal__alt-text').text(newAltText);
@@ -2135,43 +2582,53 @@
             e.stopPropagation();
             
             const $btn = $(this);
-            const fallbackUrl = $btn.attr('data-fallback-url');
             const plan = $btn.attr('data-plan');
             const priceId = $btn.attr('data-price-id');
             
             if (bbaiDebug && bbaiDebug.log) {
-                bbaiDebug.log('[AI Alt Text] Checkout plan clicked:', plan, priceId, fallbackUrl);
+                bbaiDebug.log('[AI Alt Text] Checkout plan clicked:', plan, priceId);
             }
             
-            // Always use fallback URL if available (most reliable)
-            if (fallbackUrl) {
+            // Use WordPress AJAX handler (secure, server-validated)
+            if (priceId && window.bbai_ajax && window.bbai_ajax.ajaxurl) {
                 try {
-                    const checkoutWindow = window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
-                    
-                    if (!checkoutWindow || checkoutWindow.closed || typeof checkoutWindow.closed === 'undefined') {
-                        alert('Please allow popups for this site to complete checkout.');
-                        return;
-                    }
-                    
-                    // Close the upgrade modal after opening the payment link
-                    if (typeof alttextaiCloseModal === 'function') {
-                        alttextaiCloseModal();
-                    } else if (typeof window.alttextaiCloseModal === 'function') {
-                        window.alttextaiCloseModal();
+                    // Delegate to dashboard checkout handler if available
+                    if (typeof initiateCheckout === 'function') {
+                        initiateCheckout($btn, priceId, plan);
                     } else {
-                        // Fallback: hide modal directly
-                        const modal = document.getElementById('bbai-upgrade-modal');
-                        if (modal) {
-                            modal.style.display = 'none';
-                        }
+                        // Fallback: use AJAX directly
+                        $.ajax({
+                            url: window.bbai_ajax.ajaxurl,
+                            method: 'POST',
+                            data: {
+                                action: 'beepbeepai_create_checkout',
+                                nonce: window.bbai_ajax.nonce || '',
+                                price_id: priceId
+                            },
+                            success: function(response) {
+                                if (response.success && response.data && response.data.url) {
+                                    window.location.href = response.data.url;
+                                } else {
+                                    alert(response.data?.message || 'Unable to create checkout session. Please try again.');
+                                }
+                            },
+                            error: function() {
+                                alert('Unable to initiate checkout. Please try again or contact support.');
+                            }
+                        });
                     }
                 } catch (err) {
-                    console.error('[AI Alt Text] Error opening checkout:', err);
-                    alert('Unable to open checkout. Please try again or contact support.');
+                    if (bbaiDebug && bbaiDebug.error) {
+                        bbaiDebug.error('[AI Alt Text] Error with checkout:', err);
+                    }
+                    alert('Unable to initiate checkout. Please try again or contact support.');
                 }
             } else {
-                console.warn('[AI Alt Text] No fallback URL available for checkout');
-                alert('Unable to initiate checkout. Please try again or contact support.');
+                // Fail closed - no insecure fallback
+                if (bbaiDebug && bbaiDebug.warn) {
+                    bbaiDebug.warn('[AI Alt Text] Checkout API not available. PriceId:', priceId, 'bbai_ajax:', !!window.bbai_ajax);
+                }
+                alert('Unable to initialize checkout. Please refresh the page and try again.\n\nIf the problem persists, please contact support.');
             }
         });
 
