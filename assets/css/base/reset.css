@@ -1,0 +1,143 @@
+/**
+ * WordPress Admin Reset Styles
+ * Resets and overrides for WordPress admin environment
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Base Reset for Plugin Container */
+.bbai-modern {
+    margin: 0 !important;
+    padding: 20px 20px 20px 2px;
+    background: var(--bbai-bg-secondary) !important;
+    overflow-x: hidden;
+    overflow-y: visible !important;
+    box-sizing: border-box;
+}
+
+.bbai-modern *,
+.bbai-modern *::before,
+.bbai-modern *::after {
+    box-sizing: border-box;
+}
+
+/* WordPress Body Content Overflow Fixes */
+.bbai-modern #wpbody-content {
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+}
+
+body.media_page_bbai,
+body.media_page_bbai #wpwrap,
+body.media_page_bbai #wpcontent {
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+}
+
+/* Fix Double Scrollbar - Ensure html/body don't create extra scroll */
+html.wp-toolbar body.media_page_bbai {
+    overflow-y: auto !important;
+}
+
+html.wp-toolbar body.media_page_bbai #wpbody {
+    overflow: visible !important;
+}
+
+html.wp-toolbar body.media_page_bbai #wpcontent {
+    overflow: visible !important;
+    max-height: none !important;
+}
+
+html.wp-toolbar body.media_page_bbai #wpbody-content {
+    overflow: visible !important;
+    max-height: none !important;
+}
+
+/* Prevent Double Scrollbar on Plugin Page */
+body.media_page_bbai #wpwrap #wpcontent {
+    overflow: visible !important;
+}
+
+body.media_page_bbai #wpwrap {
+    overflow: visible !important;
+}
+
+/* Reset Margins and Padding for Common Elements */
+.bbai-modern ul,
+.bbai-modern ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.bbai-modern button,
+.bbai-modern input,
+.bbai-modern select,
+.bbai-modern textarea {
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+}
+
+.bbai-modern img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+.bbai-modern a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.bbai-modern a:hover {
+    text-decoration: none;
+}
+
+/* Remove Default Focus Outlines (We'll add custom ones in components) */
+.bbai-modern button:focus,
+.bbai-modern input:focus,
+.bbai-modern select:focus,
+.bbai-modern textarea:focus {
+    outline: none;
+}
+
+/* Reset Form Elements */
+.bbai-modern input[type="text"],
+.bbai-modern input[type="email"],
+.bbai-modern input[type="password"],
+.bbai-modern input[type="number"],
+.bbai-modern select,
+.bbai-modern textarea {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+}
+
+/* Reset Button Styles */
+.bbai-modern button {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+
+/* Reset Table Styles */
+.bbai-modern table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+.bbai-modern th,
+.bbai-modern td {
+    padding: 0;
+    text-align: left;
+}

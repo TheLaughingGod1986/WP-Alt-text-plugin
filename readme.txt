@@ -254,7 +254,9 @@ This plugin connects to external services to perform automated alt text generati
 2. Oppti API (our backend)
    - Purpose: Handle credits, authentication, usage tracking
    - Data sent: site domain, user ID, number of images, plan tier
-   - URL: https://oppti.dev/api
+   - API URL: https://alttext-ai-backend.onrender.com
+   - Terms: https://oppti.dev/terms
+   - Privacy: https://oppti.dev/privacy
 
 3. Stripe Checkout
    - Purpose: Process payments for upgrades
