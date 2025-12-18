@@ -9,6 +9,7 @@
     "build": "npm run build:assets"
   },
   "devDependencies": {
+    "@fullhuman/postcss-purgecss": "^7.0.2",
     "cssnano": "^7.1.2",
     "cssnano-cli": "^1.0.5",
     "terser": "^5.44.1"
