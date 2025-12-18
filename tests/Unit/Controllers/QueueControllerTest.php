@@ -217,10 +217,10 @@ class QueueControllerTest extends TestCase {
 	public function test_retry_job_negative_id() {
 		$_POST['job_id'] = '-10';
 
-		// absint converts negative to 0
+		// absint converts negative to absolute value (10)
 		$this->queue_service->shouldReceive( 'retry_job' )
 			->once()
-			->with( 0 )
+			->with( 10 )
 			->andReturn( array( 'success' => false ) );
 
 		$result = $this->controller->retry_job();
@@ -290,7 +290,7 @@ class QueueControllerTest extends TestCase {
 			'0'       => 0,
 			''        => 0,
 			'abc'     => 0,
-			'-50'     => 0,
+			'-50'     => 50,    // absint returns absolute value
 			'3.14'    => 3,
 			'100'     => 100,
 			'  42  '  => 42,

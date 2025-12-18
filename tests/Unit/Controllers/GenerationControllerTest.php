@@ -238,10 +238,10 @@ class GenerationControllerTest extends TestCase {
 	public function test_inline_generate_negative_id() {
 		$_POST['attachment_id'] = '-5';
 
-		// absint converts negative to 0
+		// absint converts negative to absolute value (5)
 		$this->generation_service->shouldReceive( 'inline_generate' )
 			->once()
-			->with( 0 )
+			->with( 5 )
 			->andReturn( array( 'success' => false ) );
 
 		$result = $this->controller->inline_generate();

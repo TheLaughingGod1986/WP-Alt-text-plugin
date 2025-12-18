@@ -53,7 +53,9 @@ if ( ! function_exists( 'wp_send_json_error' ) ) {
 
 if ( ! function_exists( 'sanitize_text_field' ) ) {
     function sanitize_text_field( $str ) {
-        return strip_tags( $str );
+        $filtered = strip_tags( $str );
+        $filtered = trim( $filtered );
+        return $filtered;
     }
 }
 
