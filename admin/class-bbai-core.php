@@ -2365,13 +2365,7 @@ class Core {
                     ORDER BY p.post_date DESC
                     LIMIT %d OFFSET %d
                 ", $per_page, $offset));
-                
-                // CRITICAL: Debug - log image IDs to verify they're different
-                if (defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
-                    $image_ids = array_map(function($img) { return $img->ID; }, $all_images);
-                    error_log("BBAI ALT Library: Found " . count($all_images) . " images. IDs: " . implode(', ', $image_ids));
-                }
-                
+
                 $total_count = $total_images;
                 $image_count = count($all_images);
                 $total_pages = ceil($total_count / $per_page);
@@ -2552,12 +2546,6 @@ class Core {
                                             <?php 
                                             $is_local_dev = defined('WP_LOCAL_DEV') && WP_LOCAL_DEV;
                                             $can_regenerate = $is_local_dev || $this->api_client->is_authenticated();
-                                            ?>
-                                            <?php 
-                                            // CRITICAL: Debug - log attachment_id when rendering button to verify it's different for each row
-                                            if (defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
-                                                error_log("BBAI ALT Library: Rendering regenerate button for attachment_id: " . $attachment_id);
-                                            }
                                             ?>
                                             <button type="button" 
                                                     class="bbai-btn-regenerate" 
@@ -8337,34 +8325,6 @@ add_action('admin_footer-upload.php', function(){
             
             // CRITICAL: Debug - Log attachment ID multiple ways to catch any issues
             // Use alert() as fallback since console.log might not be showing
-            var debugMsg = 'Attachment ID Debug:\n';
-            debugMsg += 'Native getAttribute: ' + (btnElement ? btnElement.getAttribute('data-attachment-id') : 'null') + '\n';
-            debugMsg += 'jQuery .attr(): ' + (btn.attr('data-attachment-id') || 'null') + '\n';
-            debugMsg += 'jQuery .data(): ' + (btn.data('attachment-id') || 'null') + '\n';
-            debugMsg += 'Final attachment_id: ' + attachment_id + '\n';
-            debugMsg += 'Button HTML: ' + (btnElement ? btnElement.outerHTML.substring(0, 200) : 'null');
-            
-            console.log('=== REGENERATE DEBUG ===');
-            console.log(debugMsg);
-            console.log('Button element:', btnElement);
-            console.log('Button outerHTML (first 300 chars):', btnElement ? btnElement.outerHTML.substring(0, 300) : 'null');
-            console.log('Button getAttribute("data-attachment-id"):', btnElement ? btnElement.getAttribute('data-attachment-id') : 'null');
-            console.log('Button .attr("data-attachment-id"):', btn.attr('data-attachment-id'));
-            console.log('Button .data("attachment-id"):', btn.data('attachment-id'));
-            var parentRowEl = btn.closest('tr[data-attachment-id]')[0];
-            console.log('Parent row element:', parentRowEl);
-            console.log('Parent row getAttribute("data-attachment-id"):', parentRowEl ? parentRowEl.getAttribute('data-attachment-id') : 'null');
-            console.log('Parent row .attr("data-attachment-id"):', btn.closest('tr[data-attachment-id]').attr('data-attachment-id'));
-            console.log('Extracted attachment_id (final):', attachment_id);
-            console.log('Type of attachment_id:', typeof attachment_id);
-            console.log('Is NaN?', isNaN(attachment_id));
-            console.log('=======================');
-            
-            // TEMPORARY: Show alert to force visibility (remove after debugging)
-            if (typeof window.bbai_debug_alerts !== 'undefined' && window.bbai_debug_alerts) {
-                alert(debugMsg);
-            }
-            
             if (!attachment_id || isNaN(attachment_id) || attachment_id <= 0){
                 console.error('ERROR: Invalid attachment ID:', attachment_id);
                 return pushNotice('error', 'AI ALT: Invalid attachment ID. Please refresh the page and try again.');
@@ -8378,26 +8338,12 @@ add_action('admin_footer-upload.php', function(){
             btn.text('Regenerating…').prop('disabled', true);
 
             // Get nonce - try multiple sources
-            var nonce = (BBAI && BBAI.nonce) || 
-                       (window.wpApiSettings && wpApiSettings.nonce) || 
+            var nonce = (BBAI && BBAI.nonce) ||
+                       (window.wpApiSettings && wpApiSettings.nonce) ||
                        (bbai_ajax && bbai_ajax.nonce) ||
-                       jQuery('#license-nonce').val() || 
+                       jQuery('#license-nonce').val() ||
                        '';
 
-            // CRITICAL: Debug - Log attachment ID multiple ways to catch any issues
-            console.log('=== REGENERATE DEBUG ===');
-            console.log('Button native element:', btnElement);
-            console.log('Button outerHTML:', btnElement ? btnElement.outerHTML : 'null');
-            console.log('Button getAttribute("data-attachment-id"):', btnElement ? btnElement.getAttribute('data-attachment-id') : 'null');
-            console.log('Button .attr("data-attachment-id"):', btn.attr('data-attachment-id'));
-            console.log('Button .data("attachment-id"):', btn.data('attachment-id'));
-            console.log('Parent row getAttribute("data-attachment-id"):', btn.closest('tr[data-attachment-id]')[0] ? btn.closest('tr[data-attachment-id]')[0].getAttribute('data-attachment-id') : 'null');
-            console.log('Parent row .attr("data-attachment-id"):', btn.closest('tr[data-attachment-id]').attr('data-attachment-id'));
-            console.log('Extracted attachment_id (final):', attachment_id);
-            console.log('Type of attachment_id:', typeof attachment_id);
-            console.log('Is NaN?', isNaN(attachment_id));
-            console.log('=======================');
-            
             // Call AJAX endpoint
             var ajaxData = {
                 action: 'beepbeepai_regenerate_single',
@@ -8406,11 +8352,7 @@ add_action('admin_footer-upload.php', function(){
                 // Add timestamp to prevent caching
                 _timestamp: Date.now()
             };
-            
-            console.log('📤 Sending AJAX data:', ajaxData);
-            console.log('📤 Sending attachment_id:', attachment_id);
-            console.log('📤 Button HTML at send time:', btnElement ? btnElement.outerHTML.substring(0, 300) : 'null');
-            
+
             // CRITICAL: Read attachment_id ONE MORE TIME right before sending (fresh from DOM)
             // This ensures we have the absolute latest value from the HTML
             var final_check_id = null;
@@ -8434,17 +8376,11 @@ add_action('admin_footer-upload.php', function(){
             
             // If we got a valid ID from final check, use it (it's fresher)
             if (final_check_id && !isNaN(final_check_id) && final_check_id > 0) {
-                if (final_check_id !== attachment_id) {
-                    console.warn('⚠️ ATTACHMENT ID MISMATCH! Original:', attachment_id, '→ Using fresh:', final_check_id);
-                }
                 attachment_id = final_check_id;
                 ajaxData.attachment_id = attachment_id;
             }
-            
-            console.log('✅ FINAL attachment_id being sent:', attachment_id);
-            
+
             jQuery.post(ajaxurl, ajaxData, function(response){
-                console.log('✅ Regenerate response:', response);
                 restore(btn);
                 
                 if (response.success){
