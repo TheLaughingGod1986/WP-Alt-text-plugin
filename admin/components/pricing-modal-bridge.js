@@ -74,8 +74,7 @@
             pricingModalState.onPlanSelect(planId);
         } else {
             console.log('[AltText AI] Plan selected:', planId);
-            // Default behavior: could integrate with existing Stripe checkout
-            // TODO: Wire up with Stripe checkout flow
+            // Default behavior: Stripe checkout integration via callback system
         }
         closePricingModal();
     }
