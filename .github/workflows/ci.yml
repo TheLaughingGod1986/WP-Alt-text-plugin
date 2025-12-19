@@ -77,7 +77,7 @@ jobs:
           ls -lh assets/dist/css/*.br || echo "No brotli files found"
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dist-assets
           path: |
