@@ -728,10 +728,10 @@ class Core {
                             nonce: '<?php echo esc_js($nonce); ?>'
                         },
                         success: function(response) {
-                            console.log('[WP Alt Text AI] API notice dismissed');
+                            if (window.alttextaiDebug) console.log('[WP Alt Text AI] API notice dismissed');
                         },
                         error: function() {
-                            console.log('[WP Alt Text AI] Failed to dismiss notice');
+                            if (window.alttextaiDebug) console.log('[WP Alt Text AI] Failed to dismiss notice');
                         }
                     });
                     
@@ -2551,7 +2551,7 @@ class Core {
                                                         __('Alt text length is optimal for Google Images (≤125 characters recommended)', 'beepbeep-ai-alt-text-generator') :
                                                         __('Consider shortening to 125 characters or less for optimal Google Images SEO', 'beepbeep-ai-alt-text-generator');
                                                     ?>
-                                                    <span class="bbai-char-counter <?php echo esc_attr($counter_class); ?>" title="<?php echo esc_attr($counter_tooltip); ?>">
+                                                    <span class="bbai-char-counter <?php echo esc_attr($counter_class); ?>" data-bbai-tooltip="<?php echo esc_attr($counter_tooltip); ?> Google Images optimizes alt text under 125 characters." data-bbai-tooltip-position="top">
                                                         <?php echo $counter_icon; ?>
                                                         <span class="bbai-char-counter__number"><?php echo esc_html($char_count); ?></span>
                                                         <span class="bbai-char-counter__label">/125</span>
@@ -2559,7 +2559,16 @@ class Core {
                                                     <?php
                                                     // SEO Quality Badge
                                                     if (class_exists('BBAI_SEO_Quality_Checker')) {
+                                                        $quality = BBAI_SEO_Quality_Checker::calculate_quality($clean_current_alt);
+                                                        $tooltip_text = sprintf(
+                                                            'SEO Quality: %s (%d/100). %s',
+                                                            $quality['grade'],
+                                                            $quality['score'],
+                                                            !empty($quality['issues']) ? implode(' ', array_slice($quality['issues'], 0, 2)) : 'Excellent alt text!'
+                                                        );
+                                                        echo '<span data-bbai-tooltip="' . esc_attr($tooltip_text) . '" data-bbai-tooltip-position="top">';
                                                         echo BBAI_SEO_Quality_Checker::create_badge($clean_current_alt);
+                                                        echo '</span>';
                                                     }
                                                     ?>
                                                 </div>
@@ -6824,11 +6833,35 @@ class Core {
                 true
             );
 
+            // Debug logger (must load first)
+            wp_enqueue_script(
+                'bbai-logger',
+                $base_url . $asset_path($js_base, 'bbai-logger', $use_debug_assets, 'js'),
+                [],
+                $asset_version($asset_path($js_base, 'bbai-logger', $use_debug_assets, 'js'), '4.3.0'),
+                true
+            );
+
+            // Tooltip system
+            wp_enqueue_style(
+                'bbai-tooltips',
+                $base_url . $asset_path($css_base, 'bbai-tooltips', $use_debug_assets, 'css'),
+                ['bbai-components'],
+                $asset_version($asset_path($css_base, 'bbai-tooltips', $use_debug_assets, 'css'), '4.3.0')
+            );
+            wp_enqueue_script(
+                'bbai-tooltips',
+                $base_url . $asset_path($js_base, 'bbai-tooltips', $use_debug_assets, 'js'),
+                ['jquery'],
+                $asset_version($asset_path($js_base, 'bbai-tooltips', $use_debug_assets, 'js'), '4.3.0'),
+                true
+            );
+
             // Custom modal system (must load before other scripts that use it)
             wp_enqueue_script(
                 'bbai-modal',
                 $base_url . $asset_path($js_base, 'bbai-modal', $use_debug_assets, 'js'),
-                ['jquery'],
+                ['jquery', 'bbai-logger'],
                 $asset_version($asset_path($js_base, 'bbai-modal', $use_debug_assets, 'js'), '4.3.0'),
                 true
             );

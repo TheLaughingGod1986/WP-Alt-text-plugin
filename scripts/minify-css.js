@@ -29,6 +29,7 @@ const cssFiles = [
     'components.css',
     'design-system.css',
     'bbai-modal.css',
+    'bbai-tooltips.css',
     'auth-modal.css',
     'success-modal.css',
     'bbai-debug.css',
