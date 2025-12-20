@@ -2535,11 +2535,42 @@ class Core {
                                         </td>
                                         <td class="bbai-library-cell bbai-library-cell--alt-text new-alt-cell-<?php echo esc_attr($attachment_id); ?>">
                                             <?php if ($has_alt) : ?>
-                                                <div class="bbai-library-alt-text" title="<?php echo esc_attr($clean_current_alt); ?>">
-                                                    <?php echo esc_html($truncated_alt); ?>
+                                                <div class="bbai-library-alt-text-wrapper">
+                                                    <div class="bbai-library-alt-text" title="<?php echo esc_attr($clean_current_alt); ?>" data-full-text="<?php echo esc_attr($clean_current_alt); ?>">
+                                                        <?php echo esc_html($truncated_alt); ?>
+                                                    </div>
+                                                    <?php
+                                                    // SEO character counter (125 chars optimal for Google Images)
+                                                    $char_count = mb_strlen($clean_current_alt);
+                                                    $is_optimal = $char_count <= 125;
+                                                    $counter_class = $is_optimal ? 'bbai-char-counter--optimal' : 'bbai-char-counter--warning';
+                                                    $counter_icon = $is_optimal ?
+                                                        '<svg class="bbai-char-counter__icon" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3.5 6L5.5 8L8.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' :
+                                                        '<svg class="bbai-char-counter__icon" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M6 3v3.5M6 8.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+                                                    $counter_tooltip = $is_optimal ?
+                                                        __('Alt text length is optimal for Google Images (≤125 characters recommended)', 'beepbeep-ai-alt-text-generator') :
+                                                        __('Consider shortening to 125 characters or less for optimal Google Images SEO', 'beepbeep-ai-alt-text-generator');
+                                                    ?>
+                                                    <span class="bbai-char-counter <?php echo esc_attr($counter_class); ?>" title="<?php echo esc_attr($counter_tooltip); ?>">
+                                                        <?php echo $counter_icon; ?>
+                                                        <span class="bbai-char-counter__number"><?php echo esc_html($char_count); ?></span>
+                                                        <span class="bbai-char-counter__label">/125</span>
+                                                    </span>
+                                                    <?php
+                                                    // SEO Quality Badge
+                                                    if (class_exists('BBAI_SEO_Quality_Checker')) {
+                                                        echo BBAI_SEO_Quality_Checker::create_badge($clean_current_alt);
+                                                    }
+                                                    ?>
                                                 </div>
                                             <?php else : ?>
-                                                <span class="bbai-library-no-alt"><?php esc_html_e('No alt text', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                                <div class="bbai-library-alt-text-wrapper">
+                                                    <span class="bbai-library-no-alt"><?php esc_html_e('No alt text', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                                    <span class="bbai-char-counter bbai-char-counter--empty" title="<?php esc_attr_e('Add alt text for SEO', 'beepbeep-ai-alt-text-generator'); ?>">
+                                                        <span class="bbai-char-counter__number">0</span>
+                                                        <span class="bbai-char-counter__label">/125</span>
+                                                    </span>
+                                                </div>
                                             <?php endif; ?>
                                         </td>
                                         <td class="bbai-library-cell bbai-library-cell--actions">
@@ -4894,12 +4925,12 @@ class Core {
                                 if (response.success) {
                                     window.location.href = response.data.redirect || window.location.href;
                                 } else {
-                                    alert(response.data?.message || 'Logout failed');
+                                    window.bbaiModal.error(response.data?.message || 'Logout failed');
                                     $btn.prop('disabled', false);
                                 }
                             },
                             error: function() {
-                                alert('Network error. Please try again.');
+                                window.bbaiModal.error('Network error. Please try again.');
                                 $btn.prop('disabled', false);
                             }
                         });
@@ -6759,6 +6790,14 @@ class Core {
                 $asset_version($asset_path($css_base, 'success-modal', $use_debug_assets, 'css'), '1.0.0')
             );
 
+            // Custom modal system (replaces native alert())
+            wp_enqueue_style(
+                'bbai-modal',
+                $base_url . $asset_path($css_base, 'bbai-modal', $use_debug_assets, 'css'),
+                ['bbai-components'],
+                $asset_version($asset_path($css_base, 'bbai-modal', $use_debug_assets, 'css'), '4.3.0')
+            );
+
 
             $stats_data = $this->get_media_stats();
             $usage_data = Usage_Tracker::get_stats_display();
@@ -6784,7 +6823,16 @@ class Core {
                 $asset_version($auth_js, '4.0.0'),
                 true
             );
-            
+
+            // Custom modal system (must load before other scripts that use it)
+            wp_enqueue_script(
+                'bbai-modal',
+                $base_url . $asset_path($js_base, 'bbai-modal', $use_debug_assets, 'js'),
+                ['jquery'],
+                $asset_version($asset_path($js_base, 'bbai-modal', $use_debug_assets, 'js'), '4.3.0'),
+                true
+            );
+
             // Enqueue usage components bridge (requires React/ReactDOM to be loaded separately)
             if (file_exists($base_path . $usage_bridge)) {
                 wp_enqueue_script(

@@ -21,6 +21,7 @@ const jsFiles = [
     'bbai-dashboard.js',
     'bbai-debug.js',
     'bbai-queue-monitor.js',
+    'bbai-modal.js',
     'auth-modal.js',
     'upgrade-modal.js',
     'usage-components-bridge.js'

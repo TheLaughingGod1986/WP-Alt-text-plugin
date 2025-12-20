@@ -32,6 +32,8 @@ require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-queue.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-debug-log.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-seo-quality-checker.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-schema-markup.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/class-bbai-core.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/class-bbai-admin-hooks.php';
 

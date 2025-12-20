@@ -28,6 +28,7 @@ const cssFiles = [
     'upgrade-modal.css',
     'components.css',
     'design-system.css',
+    'bbai-modal.css',
     'auth-modal.css',
     'success-modal.css',
     'bbai-debug.css',
