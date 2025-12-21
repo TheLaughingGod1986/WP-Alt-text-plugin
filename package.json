@@ -1,6 +1,6 @@
 {
   "name": "opptiai-alt-text-generator",
-  "version": "4.2.3",
+  "version": "4.3.0",
   "description": "WordPress plugin for AI-powered alt text generation",
   "scripts": {
     "build:js": "node scripts/minify-js.js",

@@ -2,6 +2,59 @@
 
 All notable changes to Farlo AI Alt Text Generator will be documented in this file.
 
+## [4.3.0] - 2025-12-20
+
+### 🎯 SEO Enhancements
+- **Character Counter** - Real-time character count with visual indicator for 125-character Google Images limit
+- **Quality Checker** - Automated scoring system (0-100) with actionable optimization suggestions
+- **Schema.org Markup** - ImageObject structured data for rich results in search engines
+- **Custom Modal System** - Enhanced UI for alt text editing with preview and quality feedback
+
+### 💡 UX Improvements
+- **Debug Logger Utility** (`assets/src/js/bbai-logger.js`) - Centralized logging that respects debug mode
+  - Only logs when `window.alttextaiDebug` or `?bbai_debug=1` is enabled
+  - Prevents console pollution in production
+  - Supports log levels: log, info, warn, error, group, table, time
+- **Tooltip System** (`assets/src/js/bbai-tooltips.js`, `assets/src/css/bbai-tooltips.css`) - Accessible tooltip system
+  - ARIA-compliant with keyboard navigation
+  - Support for top/bottom/left/right positioning
+  - Smooth animations with reduced motion support
+  - Auto-positioning based on viewport
+
+### ✨ Comprehensive Tooltips (11 total)
+- **Settings Page**
+  - Auto-generate on upload explanation
+  - Tone & style customization guidance
+  - Additional instructions help text
+- **Dashboard**
+  - Optimized images count explanation
+  - Remaining images count guidance
+  - Total images count clarification
+  - Generate missing alt text button help
+  - Regenerate all alt text button guidance
+- **ALT Library**
+  - Regenerate single image button help
+- **SEO Features**
+  - Character counter tooltip
+  - Quality score explanation
+
+### 🐛 Bug Fixes
+- Wrapped debug `console.log` calls in `admin/class-bbai-core.php` to respect debug mode
+- Fixed console pollution issues in production environments
+
+### 📊 Quality Assurance
+- All tooltips tested for accessibility (WCAG 2.1 AA compliant)
+- Debug logger tested with multiple scenarios (debug on/off, URL parameter, global flag)
+- SEO enhancements verified against Google Images best practices
+- Comprehensive testing of modal system and quality checker
+
+### 🔧 Technical Details
+- Added `bbai-logger.js` (115 lines, 394 B gzipped)
+- Added `bbai-tooltips.js` (112 lines, 560 B gzipped)
+- Added `bbai-tooltips.css` (145 lines, 826 B gzipped)
+- Updated build scripts to include new assets
+- Total new gzipped assets: ~1.8 KB
+
 ## [4.2.3] - 2025-12-19
 
 ### 🔒 Security & Compliance

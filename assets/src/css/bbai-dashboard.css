@@ -2111,3 +2111,141 @@
     position: relative;
     z-index: 1;
 }
+
+/* ========================================
+   📊 SEO CHARACTER COUNTER
+   125-character counter for Google Images optimization
+   ======================================== */
+
+/* Character counter container */
+.bbai-char-counter {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-1);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    margin-top: var(--bbai-space-1);
+    padding: 2px 8px;
+    border-radius: var(--bbai-radius-sm);
+    transition: all 0.2s ease;
+}
+
+/* Optimal state (≤125 characters) */
+.bbai-char-counter--optimal {
+    color: var(--bbai-success);
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.bbai-char-counter--optimal .bbai-char-counter__icon {
+    color: var(--bbai-success);
+}
+
+/* Warning state (>125 characters) */
+.bbai-char-counter--warning {
+    color: var(--bbai-warning);
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.bbai-char-counter--warning .bbai-char-counter__icon {
+    color: var(--bbai-warning);
+}
+
+/* Empty state */
+.bbai-char-counter--empty {
+    color: var(--bbai-text-muted);
+    background: var(--bbai-surface-secondary);
+    border: 1px solid var(--bbai-border-color);
+}
+
+/* Icon */
+.bbai-char-counter__icon {
+    display: inline-flex;
+    align-items: center;
+    width: 12px;
+    height: 12px;
+}
+
+/* Number */
+.bbai-char-counter__number {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+/* Label */
+.bbai-char-counter__label {
+    opacity: 0.8;
+}
+
+/* Alt text wrapper with counter */
+.bbai-library-alt-text-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bbai-space-1);
+}
+
+/* Enhanced alt text display */
+.bbai-library-alt-text {
+    line-height: 1.5;
+    color: var(--bbai-text-primary);
+}
+
+/* Table cell alignment */
+.bbai-library-cell--alt-text {
+    vertical-align: top;
+}
+
+/* Tooltip for character counter */
+.bbai-char-counter[title]:hover {
+    cursor: help;
+    opacity: 0.9;
+}
+
+/* Responsive adjustments */
+@media (max-width: 782px) {
+    .bbai-char-counter {
+        font-size: 10px;
+        padding: 1px 6px;
+    }
+}
+
+/* Animation for counter changes */
+@keyframes bbai-counter-update {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.bbai-char-counter--updating {
+    animation: bbai-counter-update 0.3s ease;
+}
+
+/* SEO quality badge (for future use with checklist) */
+.bbai-seo-quality-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: var(--bbai-radius-sm);
+    margin-left: var(--bbai-space-2);
+}
+
+.bbai-seo-quality-badge--excellent {
+    color: var(--bbai-success);
+    background: rgba(16, 185, 129, 0.12);
+}
+
+.bbai-seo-quality-badge--good {
+    color: var(--bbai-info);
+    background: rgba(59, 130, 246, 0.12);
+}
+
+.bbai-seo-quality-badge--needs-work {
+    color: var(--bbai-warning);
+    background: rgba(245, 158, 11, 0.12);
+}

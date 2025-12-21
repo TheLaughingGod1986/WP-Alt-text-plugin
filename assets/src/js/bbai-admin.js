@@ -68,7 +68,7 @@
         
         // Check if we have necessary configuration
         if (!hasBulkConfig) {
-            alert('Configuration error. Please refresh the page and try again.');
+            window.bbaiModal.error('Configuration error. Please refresh the page and try again.');
             return false;
         }
 
@@ -204,7 +204,7 @@
             })
             .done(function(response) {
             if (!response || !response.ids || response.ids.length === 0) {
-                alert('No images found that need alt text.');
+                window.bbaiModal.info('No images found that need alt text.');
                 $btn.prop('disabled', false);
                 $btn.text(originalText);
                 return;
@@ -378,7 +378,7 @@
         
         // Check if we have necessary configuration
         if (!hasBulkConfig) {
-            alert('Configuration error. Please refresh the page and try again.');
+            window.bbaiModal.error('Configuration error. Please refresh the page and try again.');
             return false;
         }
 
@@ -438,7 +438,7 @@
         })
         .done(function(response) {
             if (!response || !response.ids || response.ids.length === 0) {
-                alert('No images found.');
+                window.bbaiModal.info('No images found.');
                 $btn.prop('disabled', false);
                 $btn.text(originalText);
                 return;
@@ -1734,17 +1734,22 @@
             success: function(response) {
                 if (response.success) {
                     // Show success message
-                    alert(response.data.message || 'License deactivated successfully');
-
-                    // Reload page to show deactivated state
-                    window.location.reload();
+                    window.bbaiModal.show({
+                        type: 'success',
+                        title: 'Success',
+                        message: response.data.message || 'License deactivated successfully',
+                        onClose: function() {
+                            // Reload page to show deactivated state
+                            window.location.reload();
+                        }
+                    });
                 } else {
-                    alert('Error: ' + (response.data.message || 'Failed to deactivate license'));
+                    window.bbaiModal.error('Error: ' + (response.data.message || 'Failed to deactivate license'));
                     $button.prop('disabled', false).text('Deactivate License');
                 }
             },
             error: function(xhr, status, error) {
-                alert('Network error: ' + error);
+                window.bbaiModal.error('Network error: ' + error);
                 $button.prop('disabled', false).text('Deactivate License');
             }
         });

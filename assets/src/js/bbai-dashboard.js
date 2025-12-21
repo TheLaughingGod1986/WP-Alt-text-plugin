@@ -116,7 +116,7 @@
                     modal.removeAttribute('style');
                     modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important;';
                 } else {
-                    alert('Upgrade modal not found. Please refresh the page.');
+                    window.bbaiModal.warning('Upgrade modal not found. Please refresh the page.');
                 }
             }
             
@@ -183,7 +183,7 @@
                         authModal.style.display = 'block';
                         document.body.style.overflow = 'hidden';
                     } else {
-                        alert('Please log in first to manage your subscription.');
+                        window.bbaiModal.warning('Please log in first to manage your subscription.');
                     }
                 }
             }
@@ -228,7 +228,7 @@
                         authModal.style.display = 'block';
                         document.body.style.overflow = 'hidden';
                     } else {
-                        alert('Please log in first to manage your subscription.');
+                        window.bbaiModal.warning('Please log in first to manage your subscription.');
                     }
                 }
             }
@@ -324,7 +324,7 @@
                 
                 if (!modalShown) {
                     console.error('[AltText AI] Could not show auth modal');
-                    alert('Please log in first to manage your subscription. Use the "Login" button in the header.');
+                    window.bbaiModal.warning('Please log in first to manage your subscription.\n\nUse the "Login" button in the header.');
                 }
                 
                 return false;
@@ -368,7 +368,7 @@
                         alttextaiCloseModal();
                     }
                 } else {
-                    alert('Unable to initiate checkout. Please try again or contact support.');
+                    window.bbaiModal.error('Unable to initiate checkout. Please try again or contact support.');
                 }
             }
         });
@@ -1061,7 +1061,7 @@
                         loadLicenseSiteUsage();
                     } else {
                         // Show error message
-                        alert('Failed to disconnect site: ' + (response.data?.message || 'Unknown error'));
+                        window.bbaiModal.error('Failed to disconnect site: ' + (response.data?.message || 'Unknown error'));
                         
                         // Restore button
                         $btn.prop('disabled', false)
@@ -1071,7 +1071,7 @@
                 },
                 error: function(xhr, status, error) {
                     console.error('[AltText AI] Failed to disconnect site:', error);
-                    alert('Failed to disconnect site. Please try again.');
+                    window.bbaiModal.error('Failed to disconnect site. Please try again.');
                     
                     // Restore button
                     $btn.prop('disabled', false)
@@ -1099,7 +1099,7 @@
         if (alttextaiDebug) console.log('[AltText AI] Opening customer portal...');
         
         if (!window.bbai_ajax || !window.bbai_ajax.ajaxurl) {
-            alert('Configuration error. Please refresh the page.');
+            window.bbaiModal.error('Configuration error. Please refresh the page.');
                     return;
                 }
         
@@ -1184,7 +1184,7 @@
             }
             
             if (!modalShown) {
-                alert('Please log in first to manage your subscription. Use the "Login" button in the header.');
+                window.bbaiModal.warning('Please log in first to manage your subscription.\n\nUse the "Login" button in the header.');
             }
             
             return;
@@ -1236,7 +1236,7 @@
                     const portalWindow = window.open(response.data.url, '_blank', 'noopener,noreferrer');
                     
                     if (!portalWindow) {
-                        alert('Please allow popups for this site to manage your subscription.');
+                        window.bbaiModal.warning('Please allow popups for this site to manage your subscription.');
                         return;
                     }
                     
@@ -1296,16 +1296,16 @@
                         }
                         
                         if (!modalShown) {
-                            alert('Please log in first to manage your billing.\n\nClick the "Login" button in the top navigation.');
+                            window.bbaiModal.warning('Please log in first to manage your billing.\n\nClick the "Login" button in the top navigation.');
                         }
                     } else if (errorMessage.toLowerCase().includes('not found') || errorMessage.toLowerCase().includes('subscription')) {
                         errorMessage = 'No active subscription found.\n\nPlease upgrade to a paid plan first, then you can manage your subscription.';
-                        alert(errorMessage);
+                        window.bbaiModal.error(errorMessage);
                     } else if (errorMessage.toLowerCase().includes('customer')) {
                         errorMessage = 'Unable to find your billing account.\n\nPlease contact support for assistance.';
-                        alert(errorMessage);
+                        window.bbaiModal.error(errorMessage);
                     } else {
-                    alert(errorMessage);
+                    window.bbaiModal.error(errorMessage);
                     }
                 }
             },
@@ -1335,7 +1335,7 @@
                     errorMessage = 'Billing system is temporarily unavailable. Please try again in a few minutes.';
                 }
                 
-                alert(errorMessage);
+                window.bbaiModal.error(errorMessage);
             }
         });
     }
@@ -1348,7 +1348,7 @@
         if (alttextaiDebug) console.log('[AltText AI] Initiating checkout:', planName, priceId);
         
         if (!window.bbai_ajax || !window.bbai_ajax.ajaxurl) {
-            alert('Configuration error. Please refresh the page.');
+            window.bbaiModal.error('Configuration error. Please refresh the page.');
             return;
         }
 
@@ -1385,7 +1385,7 @@
                     const checkoutWindow = window.open(response.data.url, '_blank', 'noopener,noreferrer');
                     
                     if (!checkoutWindow) {
-                        alert('Please allow popups for this site to complete checkout.');
+                        window.bbaiModal.warning('Please allow popups for this site to complete checkout.');
                         return;
                     }
                     
@@ -1416,7 +1416,7 @@
                             errorMessage = 'Unable to load pricing information.\n\nPlease try again or contact support.';
                         }
                         
-                        alert(errorMessage);
+                        window.bbaiModal.error(errorMessage);
                     }
                 }
             },
@@ -1447,7 +1447,7 @@
                         errorMessage = 'Checkout system is temporarily unavailable. Please try again in a few minutes.';
                     }
                     
-                    alert(errorMessage);
+                    window.bbaiModal.error(errorMessage);
                 }
             }
         });
@@ -1461,7 +1461,7 @@
         if (alttextaiDebug) console.log('[AltText AI] Disconnecting account...');
         
         if (!window.bbai_ajax || !window.bbai_ajax.ajaxurl) {
-            alert('Configuration error. Please refresh the page.');
+            window.bbaiModal.error('Configuration error. Please refresh the page.');
             return;
         }
 
@@ -1510,7 +1510,7 @@
                            .attr('aria-busy', 'false');
                     
                     const errorMsg = response.data?.message || 'Failed to disconnect account. Please try again.';
-                    alert(errorMsg);
+                    window.bbaiModal.error(errorMsg);
                 }
             },
             error: function(xhr, status, error) {
@@ -1531,7 +1531,7 @@
                     errorMessage = 'Network error. Please check your connection and try again.';
                 }
                 
-                alert(errorMessage);
+                window.bbaiModal.error(errorMessage);
             }
         });
     }
@@ -1579,7 +1579,7 @@ function alttextaiShowModal() {
             byClass.id = 'bbai-upgrade-modal';
             return alttextaiShowModal(); // Retry
         }
-        alert('Upgrade modal not found. Please refresh the page.');
+        window.bbaiModal.warning('Upgrade modal not found. Please refresh the page.');
         return false;
     }
     
@@ -1775,7 +1775,7 @@ function showAuthBanner() {
             authModal.style.display = 'block';
         } else {
             if (alttextaiDebug) console.log('[AltText AI] Auth modal not found');
-            alert('Authentication system not available. Please refresh the page.');
+            window.bbaiModal.error('Authentication system not available. Please refresh the page.');
         }
     }
 }
@@ -1875,7 +1875,7 @@ function handleLogout() {
                 if (typeof localStorage !== 'undefined') {
                     localStorage.removeItem('alttextai_token');
                 }
-                alert('Logged out locally. Refreshing page...');
+                window.bbaiModal.info('Logged out locally. Refreshing page...', 'Logged Out');
                 window.location.reload();
             }
         });
@@ -1908,7 +1908,7 @@ function handleLogout() {
             if (typeof localStorage !== 'undefined') {
                 localStorage.removeItem('alttextai_token');
             }
-            alert('Logged out locally. Refreshing page...');
+            window.bbaiModal.info('Logged out locally. Refreshing page...', 'Logged Out');
             window.location.reload();
         });
     }
@@ -2170,5 +2170,293 @@ function initCountdownTimer() {
         }
     });
 
+    /**
+     * SEO Character Counter
+     * Displays 125-character count for Google Images optimization
+     */
+    window.bbaiCharCounter = {
+        /**
+         * Create a character counter element
+         * @param {string} text - The alt text to count
+         * @param {Object} options - Configuration options
+         * @returns {string} HTML string for the counter
+         */
+        create: function(text, options) {
+            options = options || {};
+            var charCount = text ? text.length : 0;
+            var maxChars = options.maxChars || 125;
+            var isOptimal = charCount <= maxChars;
+            var isEmpty = charCount === 0;
+
+            var stateClass = isEmpty ? 'bbai-char-counter--empty' :
+                           (isOptimal ? 'bbai-char-counter--optimal' : 'bbai-char-counter--warning');
+
+            var icon = isEmpty ? '' :
+                      (isOptimal ?
+                       '<svg class="bbai-char-counter__icon" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3.5 6L5.5 8L8.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' :
+                       '<svg class="bbai-char-counter__icon" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M6 3v3.5M6 8.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>');
+
+            var message = isEmpty ? 'No alt text' :
+                         (isOptimal ? 'Optimal for SEO' : 'Too long for optimal SEO');
+
+            var tooltip = isEmpty ? 'Add alt text for SEO' :
+                         (isOptimal ?
+                          'Alt text length is optimal for Google Images (≤125 characters recommended)' :
+                          'Consider shortening to 125 characters or less for optimal Google Images SEO');
+
+            return '<span class="bbai-char-counter ' + stateClass + '" title="' + tooltip + '">' +
+                   icon +
+                   '<span class="bbai-char-counter__number">' + charCount + '</span>' +
+                   '<span class="bbai-char-counter__label">/' + maxChars + '</span>' +
+                   '</span>';
+        },
+
+        /**
+         * Initialize character counters for all alt text elements
+         */
+        init: function() {
+            $('.bbai-library-alt-text').each(function() {
+                var $altText = $(this);
+                var text = $altText.text().trim();
+
+                // Check if counter already exists
+                if ($altText.next('.bbai-char-counter').length === 0) {
+                    var counterHTML = window.bbaiCharCounter.create(text);
+                    $altText.after(counterHTML);
+                }
+            });
+        },
+
+        /**
+         * Update counter for a specific element
+         * @param {jQuery} $element - The element to update
+         * @param {string} newText - The new alt text
+         */
+        update: function($element, newText) {
+            var $counter = $element.next('.bbai-char-counter');
+            if ($counter.length) {
+                var newCounterHTML = this.create(newText);
+                $counter.replaceWith(newCounterHTML);
+                // Add update animation
+                $element.next('.bbai-char-counter').addClass('bbai-char-counter--updating');
+                setTimeout(function() {
+                    $element.next('.bbai-char-counter').removeClass('bbai-char-counter--updating');
+                }, 300);
+            }
+        }
+    };
+
+    // Initialize character counters when DOM is ready
+    $(document).ready(function() {
+        // Initial setup
+        if (typeof window.bbaiCharCounter !== 'undefined') {
+            window.bbaiCharCounter.init();
+        }
+
+        // Re-initialize after AJAX updates (e.g., after regenerating alt text)
+        $(document).on('bbai:alttext:updated', function() {
+            if (typeof window.bbaiCharCounter !== 'undefined') {
+                window.bbaiCharCounter.init();
+            }
+        });
+    });
+
 })(jQuery);
 
+
+/**
+ * SEO Quality Checker
+ * Validates alt text quality for SEO best practices
+ */
+window.bbaiSEOChecker = {
+    /**
+     * Check if alt text starts with redundant phrases
+     * @param {string} text - The alt text to check
+     * @returns {boolean}
+     */
+    hasRedundantPrefix: function(text) {
+        if (!text) return false;
+        var lowerText = text.toLowerCase().trim();
+        var redundantPrefixes = [
+            'image of',
+            'picture of',
+            'photo of',
+            'photograph of',
+            'graphic of',
+            'illustration of',
+            'image showing',
+            'picture showing',
+            'photo showing'
+        ];
+        return redundantPrefixes.some(function(prefix) {
+            return lowerText.startsWith(prefix);
+        });
+    },
+
+    /**
+     * Check if alt text is just a filename
+     * @param {string} text - The alt text to check
+     * @returns {boolean}
+     */
+    isJustFilename: function(text) {
+        if (!text) return false;
+        // Check for common filename patterns
+        var filenamePatterns = [
+            /^IMG[-_]\d+/i,           // IMG_1234, IMG-5678
+            /^DSC[-_]\d+/i,           // DSC_1234, DSC-5678
+            /^\d{8}[-_]\d+/i,         // 20230101_123456
+            /^screenshot[-_]/i,       // screenshot_2023
+            /^image[-_]\d+/i,         // image_001, image-02
+            /\.(jpg|jpeg|png|gif|webp)$/i  // ends with file extension
+        ];
+        return filenamePatterns.some(function(pattern) {
+            return pattern.test(text.trim());
+        });
+    },
+
+    /**
+     * Check if alt text has meaningful content
+     * @param {string} text - The alt text to check
+     * @returns {boolean}
+     */
+    hasDescriptiveContent: function(text) {
+        if (!text) return false;
+        // Should have at least 3 words for meaningful description
+        var words = text.trim().split(/\s+/);
+        return words.length >= 3 && words.some(function(word) {
+            return word.length > 3; // Has at least one substantial word
+        });
+    },
+
+    /**
+     * Calculate SEO quality score
+     * @param {string} text - The alt text to check
+     * @returns {Object} Score and issues
+     */
+    calculateQuality: function(text) {
+        var issues = [];
+        var score = 100;
+
+        if (!text || text.trim().length === 0) {
+            return {
+                score: 0,
+                grade: 'F',
+                issues: ['No alt text provided'],
+                badge: 'missing'
+            };
+        }
+
+        // Check length (125 chars recommended)
+        if (text.length > 125) {
+            issues.push('Too long (>' + text.length + ' chars). Aim for ≤125 for optimal Google Images SEO');
+            score -= 25;
+        }
+
+        // Check for redundant prefixes
+        if (this.hasRedundantPrefix(text)) {
+            issues.push('Starts with "image of" or similar. Remove redundant prefix');
+            score -= 20;
+        }
+
+        // Check if it's just a filename
+        if (this.isJustFilename(text)) {
+            issues.push('Appears to be a filename. Use descriptive text instead');
+            score -= 30;
+        }
+
+        // Check for descriptive content
+        if (!this.hasDescriptiveContent(text)) {
+            issues.push('Too short or lacks descriptive keywords');
+            score -= 15;
+        }
+
+        // Determine grade
+        var grade = 'F';
+        var badge = 'needs-work';
+        if (score >= 90) {
+            grade = 'A';
+            badge = 'excellent';
+        } else if (score >= 75) {
+            grade = 'B';
+            badge = 'good';
+        } else if (score >= 60) {
+            grade = 'C';
+            badge = 'fair';
+        } else if (score >= 40) {
+            grade = 'D';
+            badge = 'poor';
+        }
+
+        return {
+            score: Math.max(0, score),
+            grade: grade,
+            issues: issues,
+            badge: badge
+        };
+    },
+
+    /**
+     * Create SEO quality badge HTML
+     * @param {string} text - The alt text to check
+     * @returns {string} HTML for quality badge
+     */
+    createBadge: function(text) {
+        var quality = this.calculateQuality(text);
+
+        if (quality.badge === 'missing') {
+            return '';
+        }
+
+        var badgeClass = 'bbai-seo-quality-badge bbai-seo-quality-badge--' + quality.badge;
+        var icon = quality.grade === 'A' ?
+            '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 5l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' :
+            quality.grade === 'B' ?
+            '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M5 2v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>' :
+            '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M2 8l6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+
+        var tooltip = quality.issues.length > 0 ?
+            'SEO Quality: ' + quality.grade + ' (' + quality.score + '/100)\n' + quality.issues.join('\n') :
+            'SEO Quality: ' + quality.grade + ' (' + quality.score + '/100) - Excellent!';
+
+        return '<span class="' + badgeClass + '" title="' + tooltip.replace(/"/g, '&quot;') + '">' +
+               icon +
+               'SEO: ' + quality.grade +
+               '</span>';
+    },
+
+    /**
+     * Initialize SEO quality badges for all alt text elements
+     */
+    init: function() {
+        var self = this;
+        $('.bbai-library-alt-text').each(function() {
+            var $altText = $(this);
+            var text = $altText.attr('data-full-text') || $altText.text().trim();
+
+            // Check if badge already exists
+            if ($altText.parent().find('.bbai-seo-quality-badge').length === 0) {
+                var badgeHTML = self.createBadge(text);
+                if (badgeHTML) {
+                    var $counter = $altText.next('.bbai-char-counter');
+                    if ($counter.length) {
+                        $counter.after(badgeHTML);
+                    }
+                }
+            }
+        });
+    }
+};
+
+// Initialize SEO checker when ready
+$(document).ready(function() {
+    if (typeof window.bbaiSEOChecker !== 'undefined') {
+        window.bbaiSEOChecker.init();
+    }
+
+    // Re-initialize after AJAX updates
+    $(document).on('bbai:alttext:updated', function() {
+        if (typeof window.bbaiSEOChecker !== 'undefined') {
+            window.bbaiSEOChecker.init();
+        }
+    });
+});

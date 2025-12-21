@@ -1,0 +1,156 @@
+/**
+ * BeepBeep AI - Tooltip Styles
+ * Accessible tooltip system for user guidance
+ *
+ * @package BeepBeep_AI_Alt_Text_Generator
+ * @since 4.3.0
+ */
+
+/* ==========================================
+   Tooltip Container
+   ========================================== */
+
+.bbai-tooltip {
+    position: absolute;
+    z-index: 999999;
+    max-width: 280px;
+    padding: 8px 12px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #FFFFFF;
+    background: #1F2937;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    pointer-events: none;
+    white-space: normal;
+    word-wrap: break-word;
+    font-weight: 400;
+    text-align: left;
+}
+
+/* ==========================================
+   Tooltip Arrows
+   ========================================== */
+
+.bbai-tooltip::before {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-style: solid;
+}
+
+/* Top tooltip (arrow on bottom) */
+.bbai-tooltip--top::before {
+    bottom: -6px;
+    left: 50%;
+    margin-left: -6px;
+    border-width: 6px 6px 0 6px;
+    border-color: #1F2937 transparent transparent transparent;
+}
+
+/* Bottom tooltip (arrow on top) */
+.bbai-tooltip--bottom::before {
+    top: -6px;
+    left: 50%;
+    margin-left: -6px;
+    border-width: 0 6px 6px 6px;
+    border-color: transparent transparent #1F2937 transparent;
+}
+
+/* Left tooltip (arrow on right) */
+.bbai-tooltip--left::before {
+    top: 50%;
+    right: -6px;
+    margin-top: -6px;
+    border-width: 6px 0 6px 6px;
+    border-color: transparent transparent transparent #1F2937;
+}
+
+/* Right tooltip (arrow on left) */
+.bbai-tooltip--right::before {
+    top: 50%;
+    left: -6px;
+    margin-top: -6px;
+    border-width: 6px 6px 6px 0;
+    border-color: transparent #1F2937 transparent transparent;
+}
+
+/* ==========================================
+   Element with Tooltip
+   ========================================== */
+
+.bbai-has-tooltip {
+    position: relative;
+    cursor: help;
+}
+
+.bbai-has-tooltip:hover,
+.bbai-has-tooltip:focus {
+    outline: none;
+}
+
+/* Optional: Add subtle indicator for tooltips */
+.bbai-has-tooltip::after {
+    content: '';
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    margin-left: 4px;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="%236B7280"><circle cx="8" cy="8" r="7" fill="none" stroke="%236B7280" stroke-width="1.5"/><path d="M8 7v4M8 5v.5"/></svg>') center/contain no-repeat;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+    vertical-align: middle;
+}
+
+.bbai-has-tooltip:hover::after {
+    opacity: 1;
+}
+
+/* ==========================================
+   Animations
+   ========================================== */
+
+@keyframes bbai-tooltip-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.bbai-tooltip {
+    animation: bbai-tooltip-fade-in 0.15s ease;
+}
+
+/* ==========================================
+   Responsive
+   ========================================== */
+
+@media (max-width: 640px) {
+    .bbai-tooltip {
+        max-width: 200px;
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+}
+
+/* ==========================================
+   Accessibility
+   ========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    .bbai-tooltip {
+        animation: none;
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .bbai-tooltip {
+        border: 2px solid #FFFFFF;
+    }
+}

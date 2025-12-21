@@ -376,7 +376,7 @@
                         }, 2000);
                     }).catch(function(err) {
                         console.error('Failed to copy:', err);
-                        alert('Failed to copy to clipboard. Please select and copy manually.');
+                        window.bbaiModal.warning('Failed to copy to clipboard. Please select and copy manually.');
                     });
                 } else {
                     // Fallback for older browsers
@@ -394,7 +394,7 @@
                             $btn.text(originalText).css('background-color', '').css('color', '');
                         }, 2000);
                 } catch (err) {
-                        alert('Failed to copy to clipboard. Please select and copy manually.');
+                        window.bbaiModal.warning('Failed to copy to clipboard. Please select and copy manually.');
                 }
                     document.body.removeChild(textarea);
                 }

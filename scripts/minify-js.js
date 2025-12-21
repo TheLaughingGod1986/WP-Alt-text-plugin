@@ -17,10 +17,13 @@ const assetsDir = path.join(__dirname, '..', 'assets');
 const srcDir = path.join(assetsDir, 'src', 'js');
 const distDir = path.join(assetsDir, 'dist', 'js');
 const jsFiles = [
+    'bbai-logger.js',
+    'bbai-tooltips.js',
     'bbai-admin.js',
     'bbai-dashboard.js',
     'bbai-debug.js',
     'bbai-queue-monitor.js',
+    'bbai-modal.js',
     'auth-modal.js',
     'upgrade-modal.js',
     'usage-components-bridge.js'

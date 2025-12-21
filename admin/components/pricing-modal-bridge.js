@@ -108,7 +108,7 @@
         
         // Fallback: Show alert if React not available
         console.warn('[AltText AI] React not available. Please include React and ReactDOM for the pricing modal.');
-        alert('Pricing modal requires React. Please include React and ReactDOM libraries.');
+        window.bbaiModal.error('Pricing modal requires React. Please include React and ReactDOM libraries.');
     }
 
     /**

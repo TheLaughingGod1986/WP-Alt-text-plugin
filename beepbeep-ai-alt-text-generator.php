@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BeepBeep AI – Alt Text Generator
  * Description: Automatically generates SEO-optimized AI alt text for WordPress.
- * Version: 4.2.3
+ * Version: 4.3.0
  * Author: beepbeepv2
  * Author URI: https://oppti.dev
  * Plugin URI: https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/
@@ -17,8 +17,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants
-define( 'BEEPBEEP_AI_VERSION', '4.2.3' );
-define( 'BBAI_VERSION', '4.2.3' ); // Legacy alias for compatibility
+define( 'BEEPBEEP_AI_VERSION', '4.3.0' );
+define( 'BBAI_VERSION', '4.3.0' ); // Legacy alias for compatibility
 define( 'BEEPBEEP_AI_PLUGIN_FILE', __FILE__ );
 define( 'BBAI_PLUGIN_FILE', __FILE__ ); // Legacy alias
 define( 'BEEPBEEP_AI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
@@ -32,6 +32,8 @@ require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-queue.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-debug-log.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-seo-quality-checker.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-schema-markup.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/class-bbai-core.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/class-bbai-admin-hooks.php';
 
