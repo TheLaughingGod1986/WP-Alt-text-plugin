@@ -1,0 +1,236 @@
+<?php
+/**
+ * SEO Quality Checker
+ *
+ * Validates alt text against SEO best practices for Google Images optimization
+ *
+ * @package BeepBeepAI_AltText
+ * @since 4.2.4
+ */
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+class BBAI_SEO_Quality_Checker {
+
+    /**
+     * Check if alt text starts with redundant phrases
+     *
+     * @param string $text The alt text to check
+     * @return bool
+     */
+    public static function has_redundant_prefix($text) {
+        if (empty($text)) {
+            return false;
+        }
+
+        $lower_text = strtolower(trim($text));
+        $redundant_prefixes = [
+            'image of',
+            'picture of',
+            'photo of',
+            'photograph of',
+            'graphic of',
+            'illustration of',
+            'image showing',
+            'picture showing',
+            'photo showing',
+        ];
+
+        foreach ($redundant_prefixes as $prefix) {
+            if (str_starts_with($lower_text, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if alt text is just a filename
+     *
+     * @param string $text The alt text to check
+     * @return bool
+     */
+    public static function is_just_filename($text) {
+        if (empty($text)) {
+            return false;
+        }
+
+        $trimmed = trim($text);
+
+        // Check for common filename patterns
+        $filename_patterns = [
+            '/^IMG[-_]\d+/i',           // IMG_1234, IMG-5678
+            '/^DSC[-_]\d+/i',           // DSC_1234, DSC-5678
+            '/^\d{8}[-_]\d+/i',         // 20230101_123456
+            '/^screenshot[-_]/i',       // screenshot_2023
+            '/^image[-_]\d+/i',         // image_001, image-02
+            '/\.(jpg|jpeg|png|gif|webp)$/i',  // ends with file extension
+        ];
+
+        foreach ($filename_patterns as $pattern) {
+            if (preg_match($pattern, $trimmed)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if alt text has meaningful descriptive content
+     *
+     * @param string $text The alt text to check
+     * @return bool
+     */
+    public static function has_descriptive_content($text) {
+        if (empty($text)) {
+            return false;
+        }
+
+        // Should have at least 3 words for meaningful description
+        $words = preg_split('/\s+/', trim($text));
+        if (count($words) < 3) {
+            return false;
+        }
+
+        // Check if at least one word is substantial (>3 characters)
+        foreach ($words as $word) {
+            if (strlen($word) > 3) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Calculate SEO quality score for alt text
+     *
+     * @param string $text The alt text to check
+     * @return array {
+     *     @type int    $score  Quality score (0-100)
+     *     @type string $grade  Letter grade (A-F)
+     *     @type array  $issues List of quality issues
+     *     @type string $badge  Badge type (excellent|good|fair|poor|needs-work|missing)
+     * }
+     */
+    public static function calculate_quality($text) {
+        $issues = [];
+        $score = 100;
+
+        if (empty($text) || trim($text) === '') {
+            return [
+                'score' => 0,
+                'grade' => 'F',
+                'issues' => [__('No alt text provided', 'beepbeep-ai-alt-text-generator')],
+                'badge' => 'missing',
+            ];
+        }
+
+        $text_length = mb_strlen($text);
+
+        // Check length (125 chars recommended for Google Images)
+        if ($text_length > 125) {
+            $issues[] = sprintf(
+                __('Too long (%d chars). Aim for ≤125 for optimal Google Images SEO', 'beepbeep-ai-alt-text-generator'),
+                $text_length
+            );
+            $score -= 25;
+        }
+
+        // Check for redundant prefixes
+        if (self::has_redundant_prefix($text)) {
+            $issues[] = __('Starts with "image of" or similar. Remove redundant prefix', 'beepbeep-ai-alt-text-generator');
+            $score -= 20;
+        }
+
+        // Check if it's just a filename
+        if (self::is_just_filename($text)) {
+            $issues[] = __('Appears to be a filename. Use descriptive text instead', 'beepbeep-ai-alt-text-generator');
+            $score -= 30;
+        }
+
+        // Check for descriptive content
+        if (!self::has_descriptive_content($text)) {
+            $issues[] = __('Too short or lacks descriptive keywords', 'beepbeep-ai-alt-text-generator');
+            $score -= 15;
+        }
+
+        // Determine grade and badge
+        $score = max(0, $score);
+
+        if ($score >= 90) {
+            $grade = 'A';
+            $badge = 'excellent';
+        } elseif ($score >= 75) {
+            $grade = 'B';
+            $badge = 'good';
+        } elseif ($score >= 60) {
+            $grade = 'C';
+            $badge = 'fair';
+        } elseif ($score >= 40) {
+            $grade = 'D';
+            $badge = 'poor';
+        } else {
+            $grade = 'F';
+            $badge = 'needs-work';
+        }
+
+        return [
+            'score' => $score,
+            'grade' => $grade,
+            'issues' => $issues,
+            'badge' => $badge,
+        ];
+    }
+
+    /**
+     * Generate SEO quality badge HTML
+     *
+     * @param string $text The alt text to check
+     * @return string HTML for quality badge
+     */
+    public static function create_badge($text) {
+        $quality = self::calculate_quality($text);
+
+        if ($quality['badge'] === 'missing') {
+            return '';
+        }
+
+        $badge_class = 'bbai-seo-quality-badge bbai-seo-quality-badge--' . esc_attr($quality['badge']);
+
+        // Icon based on grade
+        $icon = '';
+        if ($quality['grade'] === 'A') {
+            $icon = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 5l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        } elseif ($quality['grade'] === 'B') {
+            $icon = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M5 2v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+        } else {
+            $icon = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M2 8l6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+        }
+
+        // Build tooltip
+        $tooltip_parts = [
+            sprintf(__('SEO Quality: %s (%d/100)', 'beepbeep-ai-alt-text-generator'), $quality['grade'], $quality['score'])
+        ];
+
+        if (!empty($quality['issues'])) {
+            $tooltip_parts = array_merge($tooltip_parts, $quality['issues']);
+        } else {
+            $tooltip_parts[] = __('Excellent SEO optimization!', 'beepbeep-ai-alt-text-generator');
+        }
+
+        $tooltip = esc_attr(implode("\n", $tooltip_parts));
+
+        return sprintf(
+            '<span class="%s" title="%s">%sSEO: %s</span>',
+            $badge_class,
+            $tooltip,
+            $icon,
+            esc_html($quality['grade'])
+        );
+    }
+}

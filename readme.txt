@@ -7,7 +7,7 @@ Tags: alt text, image SEO, accessibility, AI alt text generator, automatic alt t
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 4.2.3
+Stable tag: 4.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
@@ -191,6 +191,18 @@ Yes. BeepBeep AI works with any WordPress theme or page builder because it adds 
 
 == Changelog ==
 
+= 4.3.0 =
+* 🎯 SEO Enhancements: Character counter for 125-char Google Images limit
+* 🎯 SEO Quality Checker: Real-time scoring and optimization suggestions
+* 🎯 Schema.org Markup: ImageObject structured data for rich results
+* 💡 UX Improvements: Debug logger utility to prevent console pollution
+* 💡 Tooltip System: 11 comprehensive tooltips for better user guidance
+* 💡 Custom Modal System: Enhanced UI for alt text editing and previews
+* ✨ Settings Tooltips: Contextual help for auto-generate, tone, and additional instructions
+* ✨ Dashboard Tooltips: Guidance for stats, bulk actions, and optimization features
+* ✨ Accessibility: All tooltips are ARIA-compliant with keyboard navigation
+* 🐛 Bug Fixes: Wrapped debug console.log calls to respect debug mode
+
 = 4.2.3 =
 * Security improvements and enhanced WordPress.org compliance
 * Improved input sanitization and nonce verification
@@ -225,6 +237,9 @@ Yes. BeepBeep AI works with any WordPress theme or page builder because it adds 
 * Media Library integration
 
 == Upgrade Notice ==
+
+= 4.3.0 =
+Feature update with SEO enhancements and UX improvements. Adds character counter, quality checker, schema markup, debug logger, and 11 comprehensive tooltips. Upgrade for better SEO optimization and user guidance.
 
 = 4.2.3 =
 Recommended update with security improvements and enhanced WordPress.org compliance. Upgrade for better performance and security.

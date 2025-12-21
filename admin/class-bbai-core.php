@@ -728,10 +728,10 @@ class Core {
                             nonce: '<?php echo esc_js($nonce); ?>'
                         },
                         success: function(response) {
-                            console.log('[WP Alt Text AI] API notice dismissed');
+                            if (window.alttextaiDebug) console.log('[WP Alt Text AI] API notice dismissed');
                         },
                         error: function() {
-                            console.log('[WP Alt Text AI] Failed to dismiss notice');
+                            if (window.alttextaiDebug) console.log('[WP Alt Text AI] Failed to dismiss notice');
                         }
                     });
                     
@@ -1818,21 +1818,21 @@ class Core {
                                         <div class="bbai-optimization-progress-fill" style="width: <?php echo esc_attr($coverage_pct); ?>%; background: <?php echo esc_attr(($remaining_imgs === 0) ? '#10b981' : '#9b5cff'); ?>;"></div>
                                     </div>
                                     <div class="bbai-optimization-stats">
-                                        <div class="bbai-optimization-stat">
+                                        <div class="bbai-optimization-stat" data-bbai-tooltip="<?php esc_attr_e('Number of images that already have alt text. These images are SEO-ready and accessible.', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="top">
                                             <span class="bbai-optimization-stat-label"><?php esc_html_e('Optimized', 'beepbeep-ai-alt-text-generator'); ?></span>
                                             <span class="bbai-optimization-stat-value"><?php echo esc_html($optimized); ?></span>
                                         </div>
-                                        <div class="bbai-optimization-stat">
+                                        <div class="bbai-optimization-stat" data-bbai-tooltip="<?php esc_attr_e('Images without alt text. These need optimization for better SEO and accessibility compliance.', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="top">
                                             <span class="bbai-optimization-stat-label"><?php esc_html_e('Remaining', 'beepbeep-ai-alt-text-generator'); ?></span>
                                             <span class="bbai-optimization-stat-value"><?php echo esc_html($remaining_imgs); ?></span>
                                         </div>
-                                        <div class="bbai-optimization-stat">
+                                        <div class="bbai-optimization-stat" data-bbai-tooltip="<?php esc_attr_e('Total number of images in your media library. This includes all image types and sizes.', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="top">
                                             <span class="bbai-optimization-stat-label"><?php esc_html_e('Total', 'beepbeep-ai-alt-text-generator'); ?></span>
                                             <span class="bbai-optimization-stat-value"><?php echo esc_html($total_images); ?></span>
                                         </div>
                                     </div>
                                     <div class="bbai-optimization-actions">
-                                        <button type="button" class="bbai-optimization-cta bbai-optimization-cta--primary <?php echo esc_attr((!$can_generate) ? 'bbai-optimization-cta--locked' : ''); ?>" data-action="generate-missing" <?php echo (!$can_generate) ? 'disabled title="' . esc_attr__('Unlock 1,000 alt text generations with Pro →', 'beepbeep-ai-alt-text-generator') . '"' : ''; ?>>
+                                        <button type="button" class="bbai-optimization-cta bbai-optimization-cta--primary <?php echo esc_attr((!$can_generate) ? 'bbai-optimization-cta--locked' : ''); ?>" data-action="generate-missing" <?php echo (!$can_generate) ? 'disabled title="' . esc_attr__('Unlock 1,000 alt text generations with Pro →', 'beepbeep-ai-alt-text-generator') . '"' : 'data-bbai-tooltip="' . esc_attr__('Automatically generate alt text for all images that don\'t have any. Processes in the background without slowing down your site.', 'beepbeep-ai-alt-text-generator') . '" data-bbai-tooltip-position="bottom"'; ?>>
                                             <?php if (!$can_generate) : ?>
                                                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
                                                     <path d="M12 6V4a4 4 0 00-8 0v2M4 6h8l1 8H3L4 6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1846,7 +1846,7 @@ class Core {
                                                 <span><?php esc_html_e('Generate Missing Alt Text', 'beepbeep-ai-alt-text-generator'); ?></span>
                                             <?php endif; ?>
                                         </button>
-                                        <button type="button" class="bbai-optimization-cta bbai-optimization-cta--secondary bbai-cta-glow-blue <?php echo esc_attr((!$can_generate) ? 'bbai-optimization-cta--locked' : ''); ?>" data-action="regenerate-all" <?php echo (!$can_generate) ? 'disabled title="' . esc_attr__('Unlock 1,000 alt text generations with Pro →', 'beepbeep-ai-alt-text-generator') . '"' : ''; ?>>
+                                        <button type="button" class="bbai-optimization-cta bbai-optimization-cta--secondary bbai-cta-glow-blue <?php echo esc_attr((!$can_generate) ? 'bbai-optimization-cta--locked' : ''); ?>" data-action="regenerate-all" <?php echo (!$can_generate) ? 'disabled title="' . esc_attr__('Unlock 1,000 alt text generations with Pro →', 'beepbeep-ai-alt-text-generator') . '"' : 'data-bbai-tooltip="' . esc_attr__('Regenerate alt text for ALL images, even those that already have it. Useful after changing your tone/style settings or brand guidelines.', 'beepbeep-ai-alt-text-generator') . '" data-bbai-tooltip-position="bottom"'; ?>>
                                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
                                                 <path d="M8 2L10 6L14 8L10 10L8 14L6 10L2 8L6 6L8 2Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                                 <circle cx="8" cy="8" r="2" fill="currentColor"/>
@@ -2535,11 +2535,51 @@ class Core {
                                         </td>
                                         <td class="bbai-library-cell bbai-library-cell--alt-text new-alt-cell-<?php echo esc_attr($attachment_id); ?>">
                                             <?php if ($has_alt) : ?>
-                                                <div class="bbai-library-alt-text" title="<?php echo esc_attr($clean_current_alt); ?>">
-                                                    <?php echo esc_html($truncated_alt); ?>
+                                                <div class="bbai-library-alt-text-wrapper">
+                                                    <div class="bbai-library-alt-text" title="<?php echo esc_attr($clean_current_alt); ?>" data-full-text="<?php echo esc_attr($clean_current_alt); ?>">
+                                                        <?php echo esc_html($truncated_alt); ?>
+                                                    </div>
+                                                    <?php
+                                                    // SEO character counter (125 chars optimal for Google Images)
+                                                    $char_count = mb_strlen($clean_current_alt);
+                                                    $is_optimal = $char_count <= 125;
+                                                    $counter_class = $is_optimal ? 'bbai-char-counter--optimal' : 'bbai-char-counter--warning';
+                                                    $counter_icon = $is_optimal ?
+                                                        '<svg class="bbai-char-counter__icon" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M3.5 6L5.5 8L8.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' :
+                                                        '<svg class="bbai-char-counter__icon" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M6 3v3.5M6 8.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+                                                    $counter_tooltip = $is_optimal ?
+                                                        __('Alt text length is optimal for Google Images (≤125 characters recommended)', 'beepbeep-ai-alt-text-generator') :
+                                                        __('Consider shortening to 125 characters or less for optimal Google Images SEO', 'beepbeep-ai-alt-text-generator');
+                                                    ?>
+                                                    <span class="bbai-char-counter <?php echo esc_attr($counter_class); ?>" data-bbai-tooltip="<?php echo esc_attr($counter_tooltip); ?> Google Images optimizes alt text under 125 characters." data-bbai-tooltip-position="top">
+                                                        <?php echo $counter_icon; ?>
+                                                        <span class="bbai-char-counter__number"><?php echo esc_html($char_count); ?></span>
+                                                        <span class="bbai-char-counter__label">/125</span>
+                                                    </span>
+                                                    <?php
+                                                    // SEO Quality Badge
+                                                    if (class_exists('BBAI_SEO_Quality_Checker')) {
+                                                        $quality = BBAI_SEO_Quality_Checker::calculate_quality($clean_current_alt);
+                                                        $tooltip_text = sprintf(
+                                                            'SEO Quality: %s (%d/100). %s',
+                                                            $quality['grade'],
+                                                            $quality['score'],
+                                                            !empty($quality['issues']) ? implode(' ', array_slice($quality['issues'], 0, 2)) : 'Excellent alt text!'
+                                                        );
+                                                        echo '<span data-bbai-tooltip="' . esc_attr($tooltip_text) . '" data-bbai-tooltip-position="top">';
+                                                        echo BBAI_SEO_Quality_Checker::create_badge($clean_current_alt);
+                                                        echo '</span>';
+                                                    }
+                                                    ?>
                                                 </div>
                                             <?php else : ?>
-                                                <span class="bbai-library-no-alt"><?php esc_html_e('No alt text', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                                <div class="bbai-library-alt-text-wrapper">
+                                                    <span class="bbai-library-no-alt"><?php esc_html_e('No alt text', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                                    <span class="bbai-char-counter bbai-char-counter--empty" title="<?php esc_attr_e('Add alt text for SEO', 'beepbeep-ai-alt-text-generator'); ?>">
+                                                        <span class="bbai-char-counter__number">0</span>
+                                                        <span class="bbai-char-counter__label">/125</span>
+                                                    </span>
+                                                </div>
                                             <?php endif; ?>
                                         </td>
                                         <td class="bbai-library-cell bbai-library-cell--actions">
@@ -2547,13 +2587,15 @@ class Core {
                                             $is_local_dev = defined('WP_LOCAL_DEV') && WP_LOCAL_DEV;
                                             $can_regenerate = $is_local_dev || $this->api_client->is_authenticated();
                                             ?>
-                                            <button type="button" 
-                                                    class="bbai-btn-regenerate" 
-                                                    data-action="regenerate-single" 
+                                            <button type="button"
+                                                    class="bbai-btn-regenerate"
+                                                    data-action="regenerate-single"
                                                     data-attachment-id="<?php echo esc_attr($attachment_id); ?>"
                                                     data-image-id="<?php echo esc_attr($attachment_id); ?>"
                                                     data-id="<?php echo esc_attr($attachment_id); ?>"
                                                     id="bbai-regenerate-btn-<?php echo esc_attr($attachment_id); ?>"
+                                                    data-bbai-tooltip="<?php esc_attr_e('Generate a new alt text description for this image. Previous alt text will be replaced.', 'beepbeep-ai-alt-text-generator'); ?>"
+                                                    data-bbai-tooltip-position="left"
                                                     <?php echo !$can_regenerate ? 'disabled title="' . esc_attr__('Please log in to regenerate alt text', 'beepbeep-ai-alt-text-generator') . '"' : ''; ?>>
                                                 <?php esc_html_e('Regenerate', 'beepbeep-ai-alt-text-generator'); ?>
                                             </button>
@@ -3793,7 +3835,7 @@ class Core {
                         <div class="bbai-settings-form-group">
                             <div class="bbai-settings-form-field bbai-settings-form-field--toggle">
                                 <div class="bbai-settings-form-field-content">
-                                    <label for="bbai-enable-on-upload" class="bbai-settings-form-label">
+                                    <label for="bbai-enable-on-upload" class="bbai-settings-form-label" data-bbai-tooltip="When enabled, alt text is automatically generated for every image you upload. Saves time and ensures no image is left without alt text." data-bbai-tooltip-position="right">
                                         <?php esc_html_e('Auto-generate on Image Upload', 'beepbeep-ai-alt-text-generator'); ?>
                                     </label>
                                     <p class="bbai-settings-form-description">
@@ -3814,7 +3856,7 @@ class Core {
                         </div>
 
                         <div class="bbai-settings-form-group">
-                            <label for="bbai-tone" class="bbai-settings-form-label">
+                            <label for="bbai-tone" class="bbai-settings-form-label" data-bbai-tooltip="Customize how the AI writes alt text. Examples: 'casual and friendly', 'technical and detailed', 'simple and concise'. Affects all generated descriptions." data-bbai-tooltip-position="right">
                                 <?php esc_html_e('Tone & Style', 'beepbeep-ai-alt-text-generator'); ?>
                             </label>
                             <input
@@ -3828,7 +3870,7 @@ class Core {
                         </div>
 
                         <div class="bbai-settings-form-group">
-                            <label for="bbai-custom-prompt" class="bbai-settings-form-label">
+                            <label for="bbai-custom-prompt" class="bbai-settings-form-label" data-bbai-tooltip="Add specific instructions for the AI. Example: 'Always mention brand colors', 'Focus on product features', 'Include emotional context'. These instructions apply to every image." data-bbai-tooltip-position="right">
                                 <?php esc_html_e('Additional Instructions', 'beepbeep-ai-alt-text-generator'); ?>
                             </label>
                             <textarea
@@ -4894,12 +4936,12 @@ class Core {
                                 if (response.success) {
                                     window.location.href = response.data.redirect || window.location.href;
                                 } else {
-                                    alert(response.data?.message || 'Logout failed');
+                                    window.bbaiModal.error(response.data?.message || 'Logout failed');
                                     $btn.prop('disabled', false);
                                 }
                             },
                             error: function() {
-                                alert('Network error. Please try again.');
+                                window.bbaiModal.error('Network error. Please try again.');
                                 $btn.prop('disabled', false);
                             }
                         });
@@ -6759,6 +6801,14 @@ class Core {
                 $asset_version($asset_path($css_base, 'success-modal', $use_debug_assets, 'css'), '1.0.0')
             );
 
+            // Custom modal system (replaces native alert())
+            wp_enqueue_style(
+                'bbai-modal',
+                $base_url . $asset_path($css_base, 'bbai-modal', $use_debug_assets, 'css'),
+                ['bbai-components'],
+                $asset_version($asset_path($css_base, 'bbai-modal', $use_debug_assets, 'css'), '4.3.0')
+            );
+
 
             $stats_data = $this->get_media_stats();
             $usage_data = Usage_Tracker::get_stats_display();
@@ -6784,7 +6834,40 @@ class Core {
                 $asset_version($auth_js, '4.0.0'),
                 true
             );
-            
+
+            // Debug logger (must load first)
+            wp_enqueue_script(
+                'bbai-logger',
+                $base_url . $asset_path($js_base, 'bbai-logger', $use_debug_assets, 'js'),
+                [],
+                $asset_version($asset_path($js_base, 'bbai-logger', $use_debug_assets, 'js'), '4.3.0'),
+                true
+            );
+
+            // Tooltip system
+            wp_enqueue_style(
+                'bbai-tooltips',
+                $base_url . $asset_path($css_base, 'bbai-tooltips', $use_debug_assets, 'css'),
+                ['bbai-components'],
+                $asset_version($asset_path($css_base, 'bbai-tooltips', $use_debug_assets, 'css'), '4.3.0')
+            );
+            wp_enqueue_script(
+                'bbai-tooltips',
+                $base_url . $asset_path($js_base, 'bbai-tooltips', $use_debug_assets, 'js'),
+                ['jquery'],
+                $asset_version($asset_path($js_base, 'bbai-tooltips', $use_debug_assets, 'js'), '4.3.0'),
+                true
+            );
+
+            // Custom modal system (must load before other scripts that use it)
+            wp_enqueue_script(
+                'bbai-modal',
+                $base_url . $asset_path($js_base, 'bbai-modal', $use_debug_assets, 'js'),
+                ['jquery', 'bbai-logger'],
+                $asset_version($asset_path($js_base, 'bbai-modal', $use_debug_assets, 'js'), '4.3.0'),
+                true
+            );
+
             // Enqueue usage components bridge (requires React/ReactDOM to be loaded separately)
             if (file_exists($base_path . $usage_bridge)) {
                 wp_enqueue_script(

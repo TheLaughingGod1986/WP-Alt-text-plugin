@@ -124,7 +124,7 @@ const PricingModalWrapper = ({ onPlanSelect }) => {
       }
     } catch (error) {
       console.error('[AltText AI] Checkout error:', error);
-      alert('Unable to start checkout. Please try again or contact support.');
+      window.bbaiModal.error('Unable to start checkout. Please try again or contact support.');
     }
   };
 
