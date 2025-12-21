@@ -56,7 +56,10 @@ class Credit_Usage_Logger {
 			KEY attachment_id (attachment_id),
 			KEY generated_at (generated_at),
 			KEY source (source),
-			KEY user_generated (user_id, generated_at)
+			KEY user_generated (user_id, generated_at),
+			KEY recent_usage (generated_at DESC, user_id),
+			KEY source_breakdown (source, generated_at),
+			KEY image_history (attachment_id, generated_at DESC)
 		) {$charset_collate};";
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';

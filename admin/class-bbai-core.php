@@ -330,9 +330,16 @@ class Core {
         $email = $opts['notify_email'] ?? get_option('admin_email');
         $email = is_email($email) ? $email : get_option('admin_email');
         if (!$email){
-            return;
+            return false;
         }
-        wp_mail($email, $subject, $message);
+        $result = wp_mail($email, $subject, $message);
+        if (!$result && class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+            \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Email notification failed to send', [
+                'email' => $email,
+                'subject' => $subject
+            ]);
+        }
+        return $result;
     }
 
     public function ensure_capability(){
@@ -5137,27 +5144,24 @@ class Core {
             $coverage = $total ? round(($with_alt / $total) * 100, 1) : 0;
             $missing  = max(0, $total - $with_alt);
 
+            // Cache date/time format to avoid duplicate get_option() calls
+            $date_format_raw = get_option('date_format');
+            $time_format_raw = get_option('time_format');
+            $date_format = is_string($date_format_raw) ? $date_format_raw : '';
+            $time_format = is_string($time_format_raw) ? $time_format_raw : '';
+            $datetime_format = (!empty($date_format) && !empty($time_format)) ? $date_format . ' ' . $time_format : 'Y-m-d H:i:s';
+
             $opts = get_option(self::OPTION_KEY, []);
             $usage = $opts['usage'] ?? $this->default_usage();
             if (!empty($usage['last_request'])){
-                $date_format_raw = get_option('date_format');
-                $time_format_raw = get_option('time_format');
-                $date_format = is_string($date_format_raw) ? $date_format_raw : '';
-                $time_format = is_string($time_format_raw) ? $time_format_raw : '';
-                $format = (!empty($date_format) && !empty($time_format)) ? $date_format . ' ' . $time_format : 'Y-m-d H:i:s';
-                $usage['last_request_formatted'] = mysql2date($format, $usage['last_request']);
+                $usage['last_request_formatted'] = mysql2date($datetime_format, $usage['last_request']);
             }
 
             $latest_generated_raw = $wpdb->get_var($wpdb->prepare(
                 "SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key = %s ORDER BY meta_value DESC LIMIT 1",
                 '_bbai_generated_at'
             ));
-            $date_format_raw = get_option('date_format');
-            $time_format_raw = get_option('time_format');
-            $date_format = is_string($date_format_raw) ? $date_format_raw : '';
-            $time_format = is_string($time_format_raw) ? $time_format_raw : '';
-            $format = (!empty($date_format) && !empty($time_format)) ? $date_format . ' ' . $time_format : 'Y-m-d H:i:s';
-            $latest_generated = $latest_generated_raw ? mysql2date($format, $latest_generated_raw) : '';
+            $latest_generated = $latest_generated_raw ? mysql2date($datetime_format, $latest_generated_raw) : '';
 
             $top_source_row = $wpdb->get_row(
                 "SELECT meta_value AS source, COUNT(*) AS count
@@ -5584,13 +5588,16 @@ class Core {
             }
         }
         $base_query = "SELECT p.ID,
+                       p.post_title,
+                       p.guid,
                        tokens.meta_value AS tokens_total,
                        prompt.meta_value AS tokens_prompt,
                        completion.meta_value AS tokens_completion,
                        alt.meta_value AS alt_text,
                        src.meta_value AS source,
                        model.meta_value AS model,
-                       gen.meta_value AS generated_at
+                       gen.meta_value AS generated_at,
+                       thumb.meta_value AS thumbnail_metadata
                 FROM {$wpdb->posts} p
                 INNER JOIN {$wpdb->postmeta} tokens ON tokens.post_id = p.ID AND tokens.meta_key = %s
                 LEFT JOIN {$wpdb->postmeta} prompt ON prompt.post_id = p.ID AND prompt.meta_key = %s
@@ -5599,6 +5606,7 @@ class Core {
                 LEFT JOIN {$wpdb->postmeta} src ON src.post_id = p.ID AND src.meta_key = %s
                 LEFT JOIN {$wpdb->postmeta} model ON model.post_id = p.ID AND model.meta_key = %s
                 LEFT JOIN {$wpdb->postmeta} gen ON gen.post_id = p.ID AND gen.meta_key = %s
+                LEFT JOIN {$wpdb->postmeta} thumb ON thumb.post_id = p.ID AND thumb.meta_key = %s
                 WHERE p.post_type = %s AND p.post_mime_type LIKE %s
                 ORDER BY
                     CASE WHEN gen.meta_value IS NOT NULL THEN gen.meta_value ELSE p.post_date END DESC,
@@ -5612,6 +5620,7 @@ class Core {
             '_bbai_source',
             '_bbai_model',
             '_bbai_generated_at',
+            '_wp_attachment_metadata',
             'attachment',
             'image/%'
         ];
@@ -5630,20 +5639,36 @@ class Core {
             return [];
         }
 
-        $formatted = array_map(function($row){
+        // Cache date format to avoid repeated get_option() calls
+        $date_time_format = get_option('date_format') . ' ' . get_option('time_format');
+        $upload_dir = wp_upload_dir();
+
+        $formatted = array_map(function($row) use ($date_time_format, $upload_dir){
             $generated = $row['generated_at'] ?? '';
             if ($generated){
-                $generated = mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $generated);
+                $generated = mysql2date($date_time_format, $generated);
             }
 
             $source = sanitize_key($row['source'] ?? 'unknown');
             if (!$source){ $source = 'unknown'; }
 
-            $thumb = wp_get_attachment_image_src($row['ID'], 'thumbnail');
+            // Get thumbnail URL from metadata instead of separate query
+            $thumb_url = '';
+            if (!empty($row['thumbnail_metadata'])) {
+                $metadata = maybe_unserialize($row['thumbnail_metadata']);
+                if (isset($metadata['sizes']['thumbnail']['file'])) {
+                    $dir = dirname($metadata['file']);
+                    $thumb_url = $upload_dir['baseurl'] . '/' . ($dir !== '.' ? $dir . '/' : '') . $metadata['sizes']['thumbnail']['file'];
+                } elseif (!empty($row['guid'])) {
+                    $thumb_url = $row['guid'];
+                }
+            } elseif (!empty($row['guid'])) {
+                $thumb_url = $row['guid'];
+            }
 
             return [
                 'id'         => intval($row['ID']),
-                'title'      => get_the_title($row['ID']),
+                'title'      => $row['post_title'] ?? '',
                 'alt'        => $row['alt_text'] ?? '',
                 'tokens'     => intval($row['tokens_total'] ?? 0),
                 'prompt'     => intval($row['tokens_prompt'] ?? 0),
@@ -5653,9 +5678,9 @@ class Core {
                 'source_description' => $this->format_source_description($source),
                 'model'      => $row['model'] ?? '',
                 'generated'  => $generated,
-                'thumb'      => $thumb ? $thumb[0] : '',
+                'thumb'      => $thumb_url,
                 'details_url'=> add_query_arg('item', $row['ID'], admin_url('upload.php')) . '#attachment_alt',
-                'view_url'   => get_attachment_link($row['ID']),
+                'view_url'   => get_permalink($row['ID']) ?: $row['guid'],
             ];
         }, $rows);
 
