@@ -913,6 +913,8 @@ class Core {
 
     public function add_settings_page() {
         $cap = current_user_can(self::CAPABILITY) ? self::CAPABILITY : 'manage_options';
+        
+        // Main page (Dashboard) - appears as "BeepBeep AI" in Media submenu
         add_media_page(
             'BeepBeep AI – Alt Text Generator',
             'BeepBeep AI',
@@ -920,6 +922,65 @@ class Core {
             'bbai',
             [$this, 'render_settings_page']
         );
+        
+        // Add submenu items for each tab so they appear in the sidebar
+        // Use try-catch to prevent errors from breaking menu registration
+        try {
+            $is_authenticated = $this->api_client->is_authenticated();
+            $has_license = $this->api_client->has_active_license();
+        } catch (Exception $e) {
+            $is_authenticated = false;
+            $has_license = false;
+        } catch (Error $e) {
+            $is_authenticated = false;
+            $has_license = false;
+        }
+        
+        $has_registered_user = $is_authenticated || $has_license;
+        
+        if ($has_registered_user) {
+            // ALT Library tab
+            add_submenu_page(
+                'upload.php',
+                __('ALT Library', 'beepbeep-ai-alt-text-generator'),
+                __('ALT Library', 'beepbeep-ai-alt-text-generator'),
+                $cap,
+                'bbai-library',
+                [$this, 'render_settings_page']
+            );
+            
+            // Credit Usage tab
+            add_submenu_page(
+                'upload.php',
+                __('Credit Usage', 'beepbeep-ai-alt-text-generator'),
+                __('Credit Usage', 'beepbeep-ai-alt-text-generator'),
+                $cap,
+                'bbai-credit-usage',
+                [$this, 'render_settings_page']
+            );
+        }
+        
+        // How to tab (always visible)
+        add_submenu_page(
+            'upload.php',
+            __('How to', 'beepbeep-ai-alt-text-generator'),
+            __('How to', 'beepbeep-ai-alt-text-generator'),
+            $cap,
+            'bbai-guide',
+            [$this, 'render_settings_page']
+        );
+        
+        if ($has_registered_user) {
+            // Settings tab (for authenticated users)
+            add_submenu_page(
+                'upload.php',
+                __('Settings', 'beepbeep-ai-alt-text-generator'),
+                __('Settings', 'beepbeep-ai-alt-text-generator'),
+                $cap,
+                'bbai-settings',
+                [$this, 'render_settings_page']
+            );
+        }
 
         // Hidden checkout redirect page
         add_submenu_page(
@@ -1016,9 +1077,30 @@ class Core {
         $nonce = wp_create_nonce(self::NONCE_KEY);
         
         // Check if there's a registered user (authenticated or has active license)
-        $is_authenticated = $this->api_client->is_authenticated();
-        $has_license = $this->api_client->has_active_license();
-        $has_registered_user = $is_authenticated || $has_license;
+        // Use try-catch to prevent errors from breaking the page
+        try {
+            $is_authenticated = $this->api_client->is_authenticated();
+            $has_license = $this->api_client->has_active_license();
+        } catch (Exception $e) {
+            // If authentication check fails, default to showing limited tabs
+            error_log('[BBAI] Authentication check failed: ' . $e->getMessage());
+            $is_authenticated = false;
+            $has_license = false;
+        } catch (Error $e) {
+            // Catch fatal errors too
+            error_log('[BBAI] Authentication check fatal error: ' . $e->getMessage());
+            $is_authenticated = false;
+            $has_license = false;
+        }
+        
+        // Also check if user has a token stored in options (indicates they've logged in before)
+        $opts = get_option('beepbeepai_settings', []);
+        $has_stored_token = !empty($opts['token'] ?? '');
+        $has_stored_license = !empty($opts['license_key'] ?? '');
+        
+        // Consider user registered if authenticated, has license, or has stored credentials
+        // This ensures tabs show even if current auth check fails
+        $has_registered_user = $is_authenticated || $has_license || $has_stored_token || $has_stored_license;
         
         // Build tabs - show only Dashboard and How to if no registered user
         if (!$has_registered_user) {
@@ -1029,7 +1111,19 @@ class Core {
             
             // Force dashboard tab if trying to access restricted tabs
             $allowed_tabs = ['dashboard', 'guide'];
-        $tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'dashboard';
+            
+            // Check if accessed via submenu (determine tab from page slug)
+            $current_page = isset($_GET['page']) ? sanitize_key($_GET['page']) : 'bbai';
+            $tab_from_page = 'dashboard'; // Default
+            
+            // Map page slugs to tabs (only allow guide for non-registered users)
+            if ($current_page === 'bbai-guide') {
+                $tab_from_page = 'guide';
+            }
+            
+            // Use tab from URL parameter if provided, otherwise use page slug
+            $tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : $tab_from_page;
+            
             if (!in_array($tab, $allowed_tabs)) {
                 $tab = 'dashboard';
             }
@@ -1041,13 +1135,20 @@ class Core {
             // Determine if agency license
             $has_license = $this->api_client->has_active_license();
             $license_data = $this->api_client->get_license_data();
-            $plan_slug = isset($usage_stats) && isset($usage_stats['plan']) ? $usage_stats['plan'] : 'free';
+            $plan_slug = 'free'; // Default to free
             
             // If using license, check license plan
             if ($has_license && $license_data && isset($license_data['organization'])) {
                 $license_plan = strtolower($license_data['organization']['plan'] ?? 'free');
                 if ($license_plan !== 'free') {
                     $plan_slug = $license_plan;
+                }
+            } elseif ($is_authenticated) {
+                // For authenticated users without license, try to get plan from usage stats
+                require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+                $usage_stats = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_stats_display(false);
+                if (isset($usage_stats['plan']) && $usage_stats['plan'] !== 'free') {
+                    $plan_slug = $usage_stats['plan'];
                 }
             }
             
@@ -1072,10 +1173,26 @@ class Core {
             }
             
             
-            $tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'dashboard';
+            // Check if accessed via submenu (determine tab from page slug)
+            $current_page = isset($_GET['page']) ? sanitize_key($_GET['page']) : 'bbai';
+            $tab_from_page = 'dashboard'; // Default
+            
+            // Map page slugs to tabs
+            if ($current_page === 'bbai-library') {
+                $tab_from_page = 'library';
+            } elseif ($current_page === 'bbai-credit-usage') {
+                $tab_from_page = 'credit-usage';
+            } elseif ($current_page === 'bbai-guide') {
+                $tab_from_page = 'guide';
+            } elseif ($current_page === 'bbai-settings') {
+                $tab_from_page = 'settings';
+            }
+            
+            // Use tab from URL parameter if provided, otherwise use page slug
+            $tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : $tab_from_page;
 
             // If trying to access restricted tabs, redirect to dashboard
-            if (!in_array($tab, array_keys($tabs))) {
+            if (!isset($tabs) || !is_array($tabs) || !in_array($tab, array_keys($tabs))) {
                 $tab = 'dashboard';
             }
             
@@ -1114,9 +1231,18 @@ class Core {
                         </div>
                     </div>
                     <nav class="bbai-nav">
-                        <?php foreach ($tabs as $slug => $label) :
+                        <?php 
+                        // Ensure $tabs is always defined
+                        if (!isset($tabs) || !is_array($tabs) || empty($tabs)) {
+                            // Fallback: show at least Dashboard and Guide tabs
+                            $tabs = [
+                                'dashboard' => __('Dashboard', 'beepbeep-ai-alt-text-generator'),
+                                'guide' => __('How to', 'beepbeep-ai-alt-text-generator'),
+                            ];
+                        }
+                        foreach ($tabs as $slug => $label) :
                             $url = esc_url(add_query_arg(['tab' => $slug]));
-                            $active = $tab === $slug ? ' active' : '';
+                            $active = (isset($tab) && $tab === $slug) ? ' active' : '';
                         ?>
                             <a href="<?php echo esc_url($url); ?>" class="bbai-nav-link<?php echo esc_attr($active); ?>"><?php echo esc_html($label); ?></a>
                         <?php endforeach; ?>
@@ -1219,34 +1345,48 @@ class Core {
 
             <div class="bbai-clean-dashboard" data-stats='<?php echo esc_attr(wp_json_encode($stats)); ?>'>
                 <?php
-                // Get usage stats
-                $usage_stats = Usage_Tracker::get_stats_display();
-                
-                // Pull fresh usage from backend to avoid stale cache - same logic as Settings tab
-                if (isset($this->api_client)) {
+                // Pull fresh usage from backend to avoid stale cache
+                $live_usage = null;
+                if (isset($this->api_client) && ($this->api_client->is_authenticated() || $this->api_client->has_active_license())) {
+                    // User is authenticated or has license - fetch fresh usage
                     $live_usage = $this->api_client->get_usage();
                     if (is_array($live_usage) && !empty($live_usage) && !is_wp_error($live_usage)) {
                         // Update cache with fresh API data
                         Usage_Tracker::update_usage($live_usage);
+                        // Use the fresh API data directly
+                        $usage_stats = Usage_Tracker::get_stats_display(true); // Force refresh to get updated cache
+                    } else {
+                        // API call failed, but try to use cached data with force refresh
+                        $usage_stats = Usage_Tracker::get_stats_display(true);
                     }
+                } else {
+                    // Not authenticated - use cached data
+                    $usage_stats = Usage_Tracker::get_stats_display(false);
                 }
-                // Get stats - will use the just-updated cache
-                $usage_stats = Usage_Tracker::get_stats_display(false);
-                $account_summary = $this->api_client->is_authenticated() ? $this->get_account_summary($usage_stats) : null;
                 
-                // If stats show 0 but we have API data, use API data directly
+                // If we have live API data, prefer it over cached (in case cache update failed)
                 if (isset($live_usage) && is_array($live_usage) && !empty($live_usage) && !is_wp_error($live_usage)) {
-                    if (($usage_stats['used'] ?? 0) == 0 && ($live_usage['used'] ?? 0) > 0) {
-                        // Cache hasn't updated yet, use API data directly
-                        $usage_stats['used'] = max(0, intval($live_usage['used'] ?? 0));
-                        $usage_stats['limit'] = max(1, intval($live_usage['limit'] ?? 50));
-                        $usage_stats['remaining'] = max(0, intval($live_usage['remaining'] ?? 50));
-                        // Recalculate percentage
-                        $usage_stats['percentage'] = $usage_stats['limit'] > 0 ? (($usage_stats['used'] / $usage_stats['limit']) * 100) : 0;
-                        $usage_stats['percentage'] = min(100, max(0, $usage_stats['percentage']));
-                        $usage_stats['percentage_display'] = Usage_Tracker::format_percentage_label($usage_stats['percentage']);
+                    // Use API data directly to ensure accuracy
+                    $usage_stats['used'] = max(0, intval($live_usage['used'] ?? 0));
+                    $usage_stats['limit'] = max(1, intval($live_usage['limit'] ?? 50));
+                    $usage_stats['remaining'] = max(0, intval($live_usage['remaining'] ?? ($usage_stats['limit'] - $usage_stats['used'])));
+                    // Recalculate percentage
+                    $usage_stats['percentage'] = $usage_stats['limit'] > 0 ? (($usage_stats['used'] / $usage_stats['limit']) * 100) : 0;
+                    $usage_stats['percentage'] = min(100, max(0, $usage_stats['percentage']));
+                    $usage_stats['percentage_display'] = Usage_Tracker::format_percentage_label($usage_stats['percentage']);
+                    // Preserve other fields from API response
+                    if (isset($live_usage['plan'])) {
+                        $usage_stats['plan'] = $live_usage['plan'];
+                    }
+                    if (isset($live_usage['resetDate'])) {
+                        $usage_stats['resetDate'] = $live_usage['resetDate'];
+                    }
+                    if (isset($live_usage['reset_timestamp'])) {
+                        $usage_stats['reset_timestamp'] = $live_usage['reset_timestamp'];
                     }
                 }
+                
+                $account_summary = $this->api_client->is_authenticated() ? $this->get_account_summary($usage_stats) : null;
                 
                 // Get raw values directly from the stats array - same calculation method as Settings tab
                 $dashboard_used = max(0, intval($usage_stats['used'] ?? 0));
