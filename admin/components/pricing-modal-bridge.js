@@ -83,12 +83,20 @@
      * Open pricing modal
      * @param {string} variant - Modal variant (currently only 'enterprise' supported)
      */
+    const existingOpenPricingModal = typeof window.openPricingModal === 'function' ? window.openPricingModal : null;
+
     function openPricingModal(variant = 'enterprise') {
         pricingModalState.isOpen = true;
         
         // Fetch user plan when opening
         fetchUserPlan();
         
+        // Prefer any existing React-driven modal opener if present
+        if (existingOpenPricingModal && existingOpenPricingModal !== openPricingModal) {
+            existingOpenPricingModal(variant);
+            return;
+        }
+
         // Check if React component is available
         if (typeof window.initPricingModal === 'function' || 
             (typeof React !== 'undefined' && typeof ReactDOM !== 'undefined')) {
@@ -99,16 +107,28 @@
                     window.initPricingModal('bbai-pricing-modal-root', handlePlanSelect);
                 }
             }
-            // Trigger React component to open
-            if (typeof window.openPricingModal === 'function') {
+            // Trigger React component to open if it registered its own handler
+            if (typeof window.openPricingModal === 'function' && window.openPricingModal !== openPricingModal) {
                 window.openPricingModal(variant);
                 return;
             }
         }
         
-        // Fallback: Show alert if React not available
+        // Fallbacks: old modal systems
+        if (typeof bbaiApp !== 'undefined' && typeof bbaiApp.showModal === 'function') {
+            bbaiApp.showModal();
+            return;
+        }
+        if (typeof alttextaiShowModal === 'function') {
+            alttextaiShowModal();
+            return;
+        }
+
+        // Final fallback: warn and show error modal if available
         console.warn('[AltText AI] React not available. Please include React and ReactDOM for the pricing modal.');
-        window.bbaiModal.error('Pricing modal requires React. Please include React and ReactDOM libraries.');
+        if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
+            window.bbaiModal.error('Pricing modal requires React. Please include React and ReactDOM libraries.');
+        }
     }
 
     /**
@@ -136,7 +156,10 @@
     }
 
     // Expose global functions
-    window.openPricingModal = openPricingModal;
+    // Only register bridge if another implementation is not already present
+    if (typeof window.openPricingModal !== 'function') {
+        window.openPricingModal = openPricingModal;
+    }
     window.closePricingModal = closePricingModal;
     window.setPricingModalCallback = setPlanSelectCallback;
     window.getCurrentPlan = getCurrentPlan;

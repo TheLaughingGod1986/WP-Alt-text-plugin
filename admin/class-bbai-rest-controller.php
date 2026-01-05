@@ -187,10 +187,17 @@ class REST_Controller {
 
 	/**
 	 * Permission callback shared across routes.
+	 * When a license key is active, allows any user who can upload files to use shared credits
 	 *
 	 * @return bool
 	 */
 	public function can_edit_media() {
+		// If license is active, allow any user who can upload files (site-wide licensing)
+		if ( method_exists( $this->core, 'api_client' ) && $this->core->api_client->has_active_license() ) {
+			return is_user_logged_in() && current_user_can( 'upload_files' );
+		}
+		
+		// Without license, require manage capability
 		if ( method_exists( $this->core, 'user_can_manage' ) && $this->core->user_can_manage() ) {
 			return true;
 		}

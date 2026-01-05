@@ -56,6 +56,7 @@ class Admin_Hooks {
 		add_action( 'admin_notices', [ $this->core, 'maybe_render_checkout_notices' ] );
 		add_action( 'admin_post_beepbeepai_usage_export', [ $this->core, 'handle_usage_export' ] );
 		add_action( 'admin_post_beepbeepai_debug_export', [ $this->core, 'handle_debug_log_export' ] );
+		add_action( 'admin_post_bbai_logout', [ $this->core, 'handle_logout' ] );
 		add_action( 'init', [ $this->core, 'ensure_capability' ] );
 		add_action( 'admin_notices', [ $this->core, 'maybe_render_queue_notice' ] );
 		add_action( 'admin_footer', [ $this->core, 'maybe_render_external_api_notice' ] );

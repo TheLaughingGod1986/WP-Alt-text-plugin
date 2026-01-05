@@ -9,6 +9,49 @@ namespace BeepBeepAI\AltTextGenerator;
 if (!defined('ABSPATH')) { exit; }
 
 class API_Client_V2 {
+    /**
+     * Helper to make requests with retry/backoff for transient failures.
+     */
+    protected function request_with_retry($endpoint, $method = 'GET', $data = null, $max_attempts = 3, $include_user_id = false, $extra_headers = []) {
+        $attempt = 0;
+        $last_error = null;
+
+        while ($attempt < $max_attempts) {
+            $response = $this->make_request($endpoint, $method, $data, null, $include_user_id, $extra_headers);
+            if (!is_wp_error($response)) {
+                if ($attempt > 0 && class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                    \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'API request recovered after retry', [
+                        'endpoint' => $endpoint,
+                        'attempt' => $attempt + 1,
+                    ], 'api');
+                }
+                return $response;
+            }
+
+            if (!$this->should_retry_api_error($response)) {
+                return $response;
+            }
+
+            $attempt++;
+            $last_error = $response;
+
+            if ($attempt < $max_attempts) {
+                $delay = min(3, $attempt); // 1s, 2s
+                if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                    \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Retrying API request after transient failure', [
+                        'endpoint'    => $endpoint,
+                        'attempt'     => $attempt + 1,
+                        'error_code'  => $response->get_error_code(),
+                        'status_code' => $response->get_error_data()['status_code'] ?? null,
+                    ], 'api');
+                }
+                usleep($delay * 1000000);
+            }
+        }
+
+        return $last_error ?: new \WP_Error('api_error', __('Unknown API error', 'beepbeep-ai-alt-text-generator'));
+    }
+
     
     private $api_url;
     private $token_option_key = 'beepbeepai_jwt_token';
@@ -19,22 +62,27 @@ class API_Client_V2 {
     private $encryption_prefix = 'enc:';
     
     public function __construct() {
-        // ALWAYS use production API URL
-        $production_url = 'https://alttext-ai-backend.onrender.com';
-        $this->api_url = $production_url;
+        // Check for local development override first
+        if (defined('BEEPBEEP_AI_API_URL')) {
+            $this->api_url = BEEPBEEP_AI_API_URL;
+        } else {
+            // ALWAYS use production API URL
+            $production_url = 'https://alttext-ai-backend.onrender.com';
+            $this->api_url = $production_url;
 
-        // Force update WordPress settings to production (clean up legacy configs)
-        $options = get_option('beepbeepai_settings', []);
-        if ($options === false || $options === null) {
+            // Force update WordPress settings to production (clean up legacy configs)
             $options = get_option('beepbeepai_settings', []);
             if ($options === false || $options === null) {
                 $options = get_option('beepbeepai_settings', []);
+                if ($options === false || $options === null) {
+                    $options = get_option('beepbeepai_settings', []);
+                }
             }
-        }
-        $options = is_array($options) ? $options : [];
-        if (!isset($options['api_url']) || $options['api_url'] !== $production_url) {
-            $options['api_url'] = $production_url;
-            update_option('beepbeepai_settings', $options);
+            $options = is_array($options) ? $options : [];
+            if (!isset($options['api_url']) || $options['api_url'] !== $production_url) {
+                $options['api_url'] = $production_url;
+                update_option('beepbeepai_settings', $options);
+            }
         }
     }
     
@@ -78,6 +126,7 @@ class API_Client_V2 {
         delete_option('beepbeepai_jwt_token');
         delete_option($this->user_option_key);
         delete_option('beepbeepai_user_data');
+        delete_transient('bbai_token_last_check');
     }
     
     /**
@@ -197,11 +246,11 @@ class API_Client_V2 {
             if (is_wp_error($user_info)) {
                 $error_code = $user_info->get_error_code();
                 $error_message = strtolower($user_info->get_error_message());
-                
+
                 // Only clear token if it's definitely invalid (not a temporary server error)
                 // Don't clear on server errors (500), network errors, or timeouts
                 $error_message_str = is_string($error_message) ? $error_message : '';
-                if ($error_code === 'auth_required' || 
+                if ($error_code === 'auth_required' ||
                     $error_code === 'user_not_found' ||
                     ($error_message_str && strpos($error_message_str, 'user not found') !== false) ||
                     ($error_message_str && strpos($error_message_str, 'session expired') !== false) ||
@@ -211,7 +260,9 @@ class API_Client_V2 {
                     return false;
                 }
                 // For server errors, network issues, etc., don't clear token
-                // Just return false for this check, token might still be valid
+                // Cache a temporary success to avoid hammering the API on every request
+                // This gives the benefit of the doubt during temporary outages
+                set_transient('bbai_token_last_check', time(), 2 * MINUTE_IN_SECONDS);
             } else {
                 // Token is valid, cache result for 5 minutes
                 set_transient('bbai_token_last_check', time(), 5 * MINUTE_IN_SECONDS);
@@ -350,17 +401,85 @@ class API_Client_V2 {
             'method' => $method,
             'headers' => $headers,
             'timeout' => $timeout,
+            'sslverify' => true, // Explicitly verify SSL certificates (WordPress.org requirement)
         ];
         
         if ($data && in_array($method, ['POST', 'PUT', 'PATCH'])) {
-            $args['body'] = wp_json_encode($data);
+            // Ensure data is an array before encoding
+            if (!is_array($data)) {
+                $this->log_api_event('error', 'Request data is not an array', [
+                    'endpoint' => $endpoint,
+                    'data_type' => gettype($data),
+                ]);
+                return new \WP_Error('invalid_data', __('Request data must be an array', 'beepbeep-ai-alt-text-generator'));
+            }
+            
+            // Clean data to ensure it's JSON-encodable (remove any non-serializable values)
+            $clean_data = $this->clean_json_data($data);
+            
+            // Encode to JSON with error handling
+            $json_body = wp_json_encode($clean_data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            
+            if ($json_body === false || $json_body === null) {
+                $json_error = json_last_error_msg();
+                $this->log_api_event('error', 'JSON encoding failed', [
+                    'endpoint' => $endpoint,
+                    'json_error' => $json_error,
+                    'data_keys' => array_keys($clean_data),
+                ]);
+                return new \WP_Error('json_encode_error', sprintf(__('Failed to encode request data: %s', 'beepbeep-ai-alt-text-generator'), $json_error));
+            }
+            
+            // Validate JSON is not empty
+            if (empty($json_body) || $json_body === '{}' || $json_body === '[]') {
+                $this->log_api_event('error', 'JSON body is empty or invalid', [
+                    'endpoint' => $endpoint,
+                    'json_body' => $json_body,
+                ]);
+                return new \WP_Error('empty_json', __('Request body cannot be empty', 'beepbeep-ai-alt-text-generator'));
+            }
+            
+            // Clean JSON: remove BOM, trim whitespace, ensure it starts with valid JSON character
+            $json_body = trim($json_body);
+            // Remove UTF-8 BOM if present
+            if (substr($json_body, 0, 3) === "\xEF\xBB\xBF") {
+                $json_body = substr($json_body, 3);
+            }
+            // Ensure JSON starts with { or [
+            if (!preg_match('/^[{\[]/', $json_body)) {
+                $this->log_api_event('error', 'JSON body does not start with valid JSON character', [
+                    'endpoint' => $endpoint,
+                    'json_start' => substr($json_body, 0, 10),
+                ]);
+                return new \WP_Error('invalid_json_format', __('JSON body format is invalid', 'beepbeep-ai-alt-text-generator'));
+            }
+            
+            $args['body'] = $json_body;
+            
+            // Log body preview for debugging (first 200 chars)
+            $this->log_api_event('debug', 'Request body prepared', [
+                'endpoint' => $endpoint,
+                'body_length' => strlen($json_body),
+                'body_preview' => substr($json_body, 0, 200),
+            ]);
         }
         
         $this->log_api_event('debug', 'API request started', [
             'endpoint' => $endpoint,
             'method'   => $method,
+            'url'      => $url,
+            'api_host' => parse_url($url, PHP_URL_HOST) ?: '',
+            'api_path' => parse_url($url, PHP_URL_PATH) ?: '',
+            'headers'  => array_keys($headers), // Log header names only (not values for security)
+            'has_body' => isset($args['body']),
+            'body_size' => isset($args['body']) ? strlen($args['body']) : 0,
         ]);
 
+        $status_code = null;
+        $body = null;
+        $data = null;
+
+        // Use WordPress HTTP API exclusively (WordPress.org requirement)
         $response = wp_remote_request($url, $args);
 
         if (is_wp_error($response)) {
@@ -390,13 +509,73 @@ class API_Client_V2 {
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body, true);
 
-        $this->log_api_event($status_code >= 400 ? 'warning' : 'debug', 'API response received', [
+        $log_context = [
             'endpoint' => $endpoint,
             'method'   => $method,
             'status'   => $status_code,
-        ]);
+        ];
+        if ($status_code >= 400) {
+            $log_context['body_preview'] = is_string($body) ? substr($body, 0, 300) : '';
+        }
+        $this->log_api_event($status_code >= 400 ? 'warning' : 'debug', 'API response received', $log_context);
         
-        // Handle 404 - endpoint not found
+        // Handle authentication errors FIRST (401/403) - these are more specific than 404
+        if ($status_code === 401 || $status_code === 403) {
+            $body_str = is_string($body) ? $body : '';
+            $data_array = is_array($data) ? $data : [];
+            
+            // Check if response indicates license key is required
+            $error_message_lower = '';
+            if (isset($data_array['message'])) {
+                $error_message_lower = strtolower(is_string($data_array['message']) ? $data_array['message'] : '');
+            } elseif (isset($data_array['error'])) {
+                $error_message_lower = strtolower(is_string($data_array['error']) ? $data_array['error'] : '');
+            } elseif ($body_str) {
+                $error_message_lower = strtolower($body_str);
+            }
+            
+            $is_license_error = (
+                strpos($error_message_lower, 'license') !== false ||
+                strpos($error_message_lower, 'invalid_license') !== false ||
+                strpos($error_message_lower, 'license key required') !== false ||
+                (isset($data_array['error']) && strtolower($data_array['error']) === 'invalid_license')
+            );
+            
+            if ($is_license_error) {
+                // License key is required or invalid
+                $license_key = $this->get_license_key();
+                if (empty($license_key)) {
+                    return new \WP_Error(
+                        'license_required',
+                        __('License key is required to generate alt text. Please activate your license key in the Settings page.', 'beepbeep-ai-alt-text-generator'),
+                        [
+                            'status_code' => $status_code,
+                            'requires_license' => true,
+                            'action' => 'activate_license'
+                        ]
+                    );
+                } else {
+                    return new \WP_Error(
+                        'invalid_license',
+                        __('Your license key is invalid or expired. Please check your license key in the Settings page.', 'beepbeep-ai-alt-text-generator'),
+                        [
+                            'status_code' => $status_code,
+                            'requires_license' => true,
+                            'action' => 'check_license'
+                        ]
+                    );
+                }
+            }
+            
+            // Generic authentication error
+            return new \WP_Error(
+                'auth_required',
+                __('Authentication required. Please log in to continue.', 'beepbeep-ai-alt-text-generator'),
+                ['status_code' => $status_code, 'requires_auth' => true]
+            );
+        }
+        
+        // Handle 404 - endpoint not found (check AFTER auth errors)
         if ($status_code === 404) {
             // Check if it's an HTML error page (means endpoint doesn't exist)
             $body_str = is_string($body) ? $body : '';
@@ -534,75 +713,14 @@ class API_Client_V2 {
             );
         }
         
-        // Handle authentication errors - only clear token if it's a clear auth issue
-        // Don't clear on temporary backend errors or if endpoint doesn't require auth
-        if ($status_code === 401 || $status_code === 403) {
-            // Check if this is a billing/checkout endpoint (can work without auth)
-            $endpoint_str = is_string($endpoint) ? $endpoint : '';
-            $is_checkout_endpoint = strpos($endpoint_str, '/billing/checkout') !== false;
-            
-            // For checkout, don't clear token - let the caller handle it
-            if (!$is_checkout_endpoint) {
-                // Only clear token for non-checkout endpoints
-                $this->clear_token();
-                delete_transient('bbai_token_last_check');
-            }
-            
-            return new \WP_Error(
-                'auth_required',
-                __('Authentication required. Please log in to continue.', 'beepbeep-ai-alt-text-generator'),
-                ['requires_auth' => true]
-            );
-        }
+        // Note: Authentication errors (401/403) are now handled earlier, before 404 checks
+        // This ensures license key errors are detected and reported correctly
         
         return [
             'status_code' => $status_code,
             'data' => $data,
             'success' => $status_code >= 200 && $status_code < 300
         ];
-    }
-
-    /**
-     * Wrapper that retries transient failures (502, 503, timeouts) with backoff.
-     */
-    private function request_with_retry($endpoint, $method = 'GET', $data = null, $max_attempts = 3, $include_user_id = false, $extra_headers = []) {
-        $attempt = 0;
-        $last_error = null;
-
-        while ($attempt < $max_attempts) {
-            $response = $this->make_request($endpoint, $method, $data, null, $include_user_id, $extra_headers);
-            if (!is_wp_error($response)) {
-                if ($attempt > 0 && class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-                    \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'API request recovered after retry', [
-                        'endpoint' => $endpoint,
-                        'attempt' => $attempt + 1,
-                    ], 'api');
-                }
-                return $response;
-            }
-
-            if (!$this->should_retry_api_error($response)) {
-                return $response;
-            }
-
-            $attempt++;
-            $last_error = $response;
-
-            if ($attempt < $max_attempts) {
-                $delay = min(3, $attempt); // 1s, 2s
-                if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-                    \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Retrying API request after transient failure', [
-                        'endpoint'    => $endpoint,
-                        'attempt'     => $attempt + 1,
-                        'error_code'  => $response->get_error_code(),
-                        'status_code' => $response->get_error_data()['status_code'] ?? null,
-                    ], 'api');
-                }
-                usleep($delay * 1000000);
-            }
-        }
-
-        return $last_error ?: new \WP_Error('api_error', __('Unknown API error', 'beepbeep-ai-alt-text-generator'));
     }
 
     /**
@@ -1899,6 +2017,55 @@ class API_Client_V2 {
     /**
      * Sanitize context data before logging to prevent exposing sensitive information
      */
+    /**
+     * Clean data array to ensure it's JSON-encodable
+     * Removes non-serializable values like resources, objects without __toString, etc.
+     */
+    private function clean_json_data($data) {
+        if (!is_array($data)) {
+            // Convert objects to arrays if possible
+            if (is_object($data)) {
+                // Try to convert to array
+                if (method_exists($data, '__toString')) {
+                    return (string) $data;
+                }
+                // If it's a stdClass or array-like object, cast it
+                if ($data instanceof \stdClass || $data instanceof \ArrayObject) {
+                    return $this->clean_json_data((array) $data);
+                }
+                // Otherwise, skip it
+                return null;
+            }
+            // For scalar values, return as-is
+            return $data;
+        }
+        
+        $cleaned = [];
+        foreach ($data as $key => $value) {
+            // Skip non-scalar keys
+            if (!is_string($key) && !is_int($key)) {
+                continue;
+            }
+            
+            // Recursively clean nested arrays/objects
+            if (is_array($value) || is_object($value)) {
+                $cleaned_value = $this->clean_json_data($value);
+                // Only add if cleaning succeeded
+                if ($cleaned_value !== null) {
+                    $cleaned[$key] = $cleaned_value;
+                }
+            } elseif (is_resource($value)) {
+                // Skip resources
+                continue;
+            } elseif (is_scalar($value) || $value === null) {
+                // Include scalar values and null
+                $cleaned[$key] = $value;
+            }
+        }
+        
+        return $cleaned;
+    }
+    
     private function sanitize_log_context($context) {
         if (!is_array($context)) {
             return $context;

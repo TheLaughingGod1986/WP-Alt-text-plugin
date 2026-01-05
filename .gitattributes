@@ -1,0 +1,23 @@
+# Exclude development files from WordPress.org distribution
+scripts/ export-ignore
+test-*.php export-ignore
+check-*.php export-ignore
+reset-credits*.php export-ignore
+reset-credits*.sh export-ignore
+analyze-*.php export-ignore
+clear-usage-cache.php export-ignore
+*.sh export-ignore
+create_zip*.py export-ignore
+run_create_zip*.sh export-ignore
+run_create_zip*.py export-ignore
+docs/ export-ignore
+tests/ export-ignore
+framework-boilerplate/ export-ignore
+docker-compose.yml export-ignore
+*.log export-ignore
+node_modules/ export-ignore
+zi*.zip export-ignore
+beepbeep-ai-alt-text-generator-final.zip export-ignore
+*.md export-ignore
+!README.md export-ignore
+

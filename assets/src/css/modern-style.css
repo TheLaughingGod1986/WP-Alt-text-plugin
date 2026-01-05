@@ -4647,7 +4647,7 @@ body.media_page_bbai #wpwrap {
 /* Premium Upsell Card */
 .bbai-upsell-card {
     background: linear-gradient(180deg, #4f8dfc 0%, #6aa8ff 100%);
-    color: white;
+    color: white !important;
     padding: 32px;
     height: 100%;
     display: flex;
@@ -4662,10 +4662,15 @@ body.media_page_bbai #wpwrap {
     overflow: hidden;
 }
 
+/* Force all text in upgrade card to be white */
+.bbai-upsell-card *:not(svg):not(path):not(circle) {
+    color: white !important;
+}
+
 .bbai-upsell-title {
     font-size: 24px;
     font-weight: 700;
-    color: white;
+    color: white !important;
     margin: 0 0 24px 0;
     line-height: 1.3;
 }
@@ -4684,7 +4689,7 @@ body.media_page_bbai #wpwrap {
     align-items: center;
     gap: 12px;
     font-size: 15px;
-    color: rgba(255, 255, 255, 0.95);
+    color: rgba(255, 255, 255, 0.95) !important;
     line-height: 1.5;
 }
 

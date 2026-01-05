@@ -246,7 +246,7 @@ class BbAIAuthModal {
                         
                         <!-- Pro Upsell Strip -->
                         <div class="alttext-auth-modal__footer">
-                            <p class="alttext-auth-modal__upsell">Pro users enjoy unlimited image generation + bulk processing.</p>
+                            <p class="alttext-auth-modal__upsell">Pro users get 1,000 AI alt texts per month + bulk processing + priority queue.</p>
                         </div>
                     </div>
                 </div>
@@ -518,10 +518,26 @@ class BbAIAuthModal {
                 this.hide();
                 this.showSuccess('Welcome back! You are now signed in to SEO AI Alt Text.');
 
-                // Reload page to refresh authentication state
+                // Reload page to refresh authentication state and show dashboard
+                // Clear any cached auth state first
+                if (window.BBAI_DASH) {
+                    delete window.BBAI_DASH.isAuthenticated;
+                }
+                if (window.bbai_ajax) {
+                    // Force update authentication state
+                    window.bbai_ajax.is_authenticated = true;
+                }
+                
+                // Reload and ensure we're on the dashboard tab
                 setTimeout(() => {
-                    window.location.reload();
-                }, 1500);
+                    const currentUrl = new URL(window.location.href);
+                    // Ensure we're on the dashboard tab
+                    currentUrl.searchParams.set('tab', 'dashboard');
+                    currentUrl.searchParams.delete('checkout');
+                    currentUrl.searchParams.delete('checkout_error');
+                    // Force a full reload to refresh authentication state
+                    window.location.href = currentUrl.toString();
+                }, 800);
             } else {
                 // WordPress AJAX error response - message is in data.data.message
                 const errorMessage = data.data?.message || data.message || 'Login failed';

@@ -1,0 +1,6293 @@
+/**
+ * BeepBeep AI Alt Text Generator - Modern CSS (Modular)
+ * Main entry point for modular CSS architecture
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ * @version 5.0.0
+ */
+
+/* ==================================================
+   DESIGN TOKENS
+   Core design variables and tokens
+   ================================================== */
+
+/* Imported from: tokens/colors.css */
+/**
+ * Color Design Tokens
+ *
+ * All colors centralized for easy theming and consistency.
+ * Based on modern color system with semantic naming.
+ *
+ * @package BeepBeep\AltText
+ * @since   5.0.0
+ */
+
+:root {
+	/* Brand Colors */
+	--bbai-color-primary: #2563eb;
+	--bbai-color-primary-hover: #1d4ed8;
+	--bbai-color-primary-light: #dbeafe;
+	--bbai-color-primary-dark: #1e40af;
+
+	/* Semantic Colors */
+	--bbai-color-success: #10b981;
+	--bbai-color-success-hover: #059669;
+	--bbai-color-success-light: #d1fae5;
+	--bbai-color-success-dark: #047857;
+
+	--bbai-color-warning: #f59e0b;
+	--bbai-color-warning-hover: #d97706;
+	--bbai-color-warning-light: #fef3c7;
+	--bbai-color-warning-dark: #b45309;
+
+	--bbai-color-error: #ef4444;
+	--bbai-color-error-hover: #dc2626;
+	--bbai-color-error-light: #fee2e2;
+	--bbai-color-error-dark: #b91c1c;
+
+	--bbai-color-info: #3b82f6;
+	--bbai-color-info-hover: #2563eb;
+	--bbai-color-info-light: #dbeafe;
+	--bbai-color-info-dark: #1e40af;
+
+	/* Neutral Palette */
+	--bbai-color-gray-50: #f9fafb;
+	--bbai-color-gray-100: #f3f4f6;
+	--bbai-color-gray-200: #e5e7eb;
+	--bbai-color-gray-300: #d1d5db;
+	--bbai-color-gray-400: #9ca3af;
+	--bbai-color-gray-500: #6b7280;
+	--bbai-color-gray-600: #4b5563;
+	--bbai-color-gray-700: #374151;
+	--bbai-color-gray-800: #1f2937;
+	--bbai-color-gray-900: #111827;
+
+	/* Surface Colors */
+	--bbai-color-bg-primary: #ffffff;
+	--bbai-color-bg-secondary: var(--bbai-color-gray-50);
+	--bbai-color-bg-tertiary: var(--bbai-color-gray-100);
+	--bbai-color-bg-inverse: var(--bbai-color-gray-900);
+
+	/* Text Colors */
+	--bbai-color-text-primary: var(--bbai-color-gray-900);
+	--bbai-color-text-secondary: var(--bbai-color-gray-600);
+	--bbai-color-text-tertiary: var(--bbai-color-gray-500);
+	--bbai-color-text-disabled: var(--bbai-color-gray-400);
+	--bbai-color-text-inverse: #ffffff;
+
+	/* Border Colors */
+	--bbai-color-border: var(--bbai-color-gray-200);
+	--bbai-color-border-hover: var(--bbai-color-gray-300);
+	--bbai-color-border-focus: var(--bbai-color-primary);
+
+	/* State Colors */
+	--bbai-color-disabled: var(--bbai-color-gray-100);
+	--bbai-color-disabled-text: var(--bbai-color-gray-400);
+}
+
+
+/* Imported from: tokens/typography.css */
+/**
+ * Typography Design Tokens
+ *
+ * Type scale and font system.
+ * Based on modular scale for harmonious typography.
+ *
+ * @package BeepBeep\AltText
+ * @since   5.0.0
+ */
+
+:root {
+	/* Font Families */
+	--bbai-font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	--bbai-font-family-mono: "SF Mono", "Monaco", "Cascadia Code", "Roboto Mono", monospace;
+
+	/* Font Sizes - Modular Scale (1.250 - Major Third) */
+	--bbai-font-size-xs: 0.64rem;   /* 10.24px */
+	--bbai-font-size-sm: 0.8rem;    /* 12.8px */
+	--bbai-font-size-base: 1rem;    /* 16px */
+	--bbai-font-size-md: 1.25rem;   /* 20px */
+	--bbai-font-size-lg: 1.563rem;  /* 25px */
+	--bbai-font-size-xl: 1.953rem;  /* 31.25px */
+	--bbai-font-size-2xl: 2.441rem; /* 39px */
+	--bbai-font-size-3xl: 3.052rem; /* 48.8px */
+
+	/* Font Weights */
+	--bbai-font-weight-light: 300;
+	--bbai-font-weight-normal: 400;
+	--bbai-font-weight-medium: 500;
+	--bbai-font-weight-semibold: 600;
+	--bbai-font-weight-bold: 700;
+
+	/* Line Heights */
+	--bbai-line-height-tight: 1.25;
+	--bbai-line-height-normal: 1.5;
+	--bbai-line-height-relaxed: 1.75;
+
+	/* Letter Spacing */
+	--bbai-letter-spacing-tight: -0.025em;
+	--bbai-letter-spacing-normal: 0;
+	--bbai-letter-spacing-wide: 0.025em;
+}
+
+
+/* Imported from: tokens/spacing.css */
+/**
+ * Spacing Design Tokens
+ *
+ * Consistent spacing scale based on 4px baseline grid.
+ * Provides predictable rhythm and alignment.
+ *
+ * @package BeepBeep\AltText
+ * @since   5.0.0
+ */
+
+:root {
+	/* Spacing Scale (4px baseline) */
+	--bbai-space-0: 0;
+	--bbai-space-1: 0.25rem;  /* 4px */
+	--bbai-space-2: 0.5rem;   /* 8px */
+	--bbai-space-3: 0.75rem;  /* 12px */
+	--bbai-space-4: 1rem;     /* 16px */
+	--bbai-space-5: 1.25rem;  /* 20px */
+	--bbai-space-6: 1.5rem;   /* 24px */
+	--bbai-space-8: 2rem;     /* 32px */
+	--bbai-space-10: 2.5rem;  /* 40px */
+	--bbai-space-12: 3rem;    /* 48px */
+	--bbai-space-16: 4rem;    /* 64px */
+	--bbai-space-20: 5rem;    /* 80px */
+	--bbai-space-24: 6rem;    /* 96px */
+	--bbai-space-32: 8rem;    /* 128px */
+
+	/* Component-Specific Spacing */
+	--bbai-space-section: var(--bbai-space-16);
+	--bbai-space-container: var(--bbai-space-6);
+	--bbai-space-card: var(--bbai-space-6);
+	--bbai-space-button: var(--bbai-space-3);
+	--bbai-space-input: var(--bbai-space-3);
+}
+
+
+/* Imported from: tokens/shadows.css */
+/**
+ * Shadow Design Tokens
+ *
+ * Elevation system using box shadows.
+ * Creates depth and visual hierarchy.
+ *
+ * @package BeepBeep\AltText
+ * @since   5.0.0
+ */
+
+:root {
+	/* Shadow Elevations */
+	--bbai-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+	--bbai-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+	--bbai-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+	--bbai-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+	--bbai-shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+	/* Focus Ring */
+	--bbai-shadow-focus: 0 0 0 3px rgba(37, 99, 235, 0.5);
+
+	/* Inner Shadow */
+	--bbai-shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+
+	/* Component Shadows */
+	--bbai-shadow-card: var(--bbai-shadow-md);
+	--bbai-shadow-modal: var(--bbai-shadow-2xl);
+	--bbai-shadow-dropdown: var(--bbai-shadow-lg);
+	--bbai-shadow-button: var(--bbai-shadow-sm);
+}
+
+
+/* Imported from: tokens/animations.css */
+/**
+ * Animation Design Tokens
+ *
+ * Transition durations, easing functions, and keyframes.
+ * Provides smooth, consistent motion.
+ *
+ * @package BeepBeep\AltText
+ * @since   5.0.0
+ */
+
+:root {
+	/* Duration */
+	--bbai-duration-instant: 0ms;
+	--bbai-duration-fast: 150ms;
+	--bbai-duration-normal: 250ms;
+	--bbai-duration-slow: 350ms;
+	--bbai-duration-slower: 500ms;
+
+	/* Easing Functions */
+	--bbai-ease-in: cubic-bezier(0.4, 0, 1, 1);
+	--bbai-ease-out: cubic-bezier(0, 0, 0.2, 1);
+	--bbai-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+	--bbai-ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+	/* Common Transitions */
+	--bbai-transition-base: all var(--bbai-duration-normal) var(--bbai-ease-in-out);
+	--bbai-transition-colors: color var(--bbai-duration-fast) var(--bbai-ease-in-out),
+		background-color var(--bbai-duration-fast) var(--bbai-ease-in-out),
+		border-color var(--bbai-duration-fast) var(--bbai-ease-in-out);
+	--bbai-transition-opacity: opacity var(--bbai-duration-normal) var(--bbai-ease-in-out);
+	--bbai-transition-transform: transform var(--bbai-duration-normal) var(--bbai-ease-in-out);
+}
+
+/* Keyframe Animations */
+
+@keyframes bbai-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@keyframes bbai-pulse {
+	0%, 100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
+}
+
+@keyframes bbai-bounce {
+	0%, 100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-10px);
+	}
+}
+
+@keyframes bbai-fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes bbai-slide-in-up {
+	from {
+		transform: translateY(10px);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}
+
+@keyframes bbai-slide-in-down {
+	from {
+		transform: translateY(-10px);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}
+
+
+
+/* ==================================================
+   BASE STYLES
+   Foundation styles and resets
+   ================================================== */
+
+/* Imported from: base/typography-base.css */
+/**
+ * Base Typography
+ * Font imports and foundational typography styles
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Font Imports */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+/* Base Typography Variables */
+:root {
+    --bbai-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    --bbai-font-family-heading: 'Manrope', var(--bbai-font-family);
+}
+
+/* Typography Foundation */
+.bbai-modern {
+    font-family: var(--bbai-font-family);
+    line-height: var(--bbai-leading-relaxed);
+    color: var(--bbai-text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Heading Styles */
+.bbai-modern h1,
+.bbai-modern h2,
+.bbai-modern h3,
+.bbai-modern h4,
+.bbai-modern h5,
+.bbai-modern h6 {
+    font-family: var(--bbai-font-family-heading);
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 0 0 1rem;
+}
+
+.bbai-modern h1 {
+    font-size: 2.25rem;
+    letter-spacing: -0.02em;
+}
+
+.bbai-modern h2 {
+    font-size: 1.875rem;
+    letter-spacing: -0.01em;
+}
+
+.bbai-modern h3 {
+    font-size: 1.5rem;
+}
+
+.bbai-modern h4 {
+    font-size: 1.25rem;
+}
+
+.bbai-modern h5 {
+    font-size: 1.125rem;
+}
+
+.bbai-modern h6 {
+    font-size: 1rem;
+}
+
+/* Paragraph Styles */
+.bbai-modern p {
+    margin: 0 0 1rem;
+}
+
+.bbai-modern p:last-child {
+    margin-bottom: 0;
+}
+
+/* Text Utilities */
+.bbai-text-sm {
+    font-size: 0.875rem;
+}
+
+.bbai-text-xs {
+    font-size: 0.75rem;
+}
+
+.bbai-text-lg {
+    font-size: 1.125rem;
+}
+
+.bbai-text-xl {
+    font-size: 1.25rem;
+}
+
+.bbai-font-medium {
+    font-weight: 500;
+}
+
+.bbai-font-semibold {
+    font-weight: 600;
+}
+
+.bbai-font-bold {
+    font-weight: 700;
+}
+
+
+/* Imported from: base/reset.css */
+/**
+ * WordPress Admin Reset Styles
+ * Resets and overrides for WordPress admin environment
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Base Reset for Plugin Container */
+.bbai-modern {
+    margin: 0 !important;
+    padding: 20px 20px 20px 2px;
+    background: var(--bbai-bg-secondary) !important;
+    overflow-x: hidden;
+    overflow-y: visible !important;
+    box-sizing: border-box;
+}
+
+.bbai-modern *,
+.bbai-modern *::before,
+.bbai-modern *::after {
+    box-sizing: border-box;
+}
+
+/* WordPress Body Content Overflow Fixes */
+.bbai-modern #wpbody-content {
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+}
+
+body.media_page_bbai,
+body.media_page_bbai #wpwrap,
+body.media_page_bbai #wpcontent {
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+}
+
+/* Fix Double Scrollbar - Ensure html/body don't create extra scroll */
+html.wp-toolbar body.media_page_bbai {
+    overflow-y: auto !important;
+}
+
+html.wp-toolbar body.media_page_bbai #wpbody {
+    overflow: visible !important;
+}
+
+html.wp-toolbar body.media_page_bbai #wpcontent {
+    overflow: visible !important;
+    max-height: none !important;
+}
+
+html.wp-toolbar body.media_page_bbai #wpbody-content {
+    overflow: visible !important;
+    max-height: none !important;
+}
+
+/* Prevent Double Scrollbar on Plugin Page */
+body.media_page_bbai #wpwrap #wpcontent {
+    overflow: visible !important;
+}
+
+body.media_page_bbai #wpwrap {
+    overflow: visible !important;
+}
+
+/* Reset Margins and Padding for Common Elements */
+.bbai-modern ul,
+.bbai-modern ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.bbai-modern button,
+.bbai-modern input,
+.bbai-modern select,
+.bbai-modern textarea {
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+}
+
+.bbai-modern img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+.bbai-modern a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.bbai-modern a:hover {
+    text-decoration: none;
+}
+
+/* Remove Default Focus Outlines (We'll add custom ones in components) */
+.bbai-modern button:focus,
+.bbai-modern input:focus,
+.bbai-modern select:focus,
+.bbai-modern textarea:focus {
+    outline: none;
+}
+
+/* Reset Form Elements */
+.bbai-modern input[type="text"],
+.bbai-modern input[type="email"],
+.bbai-modern input[type="password"],
+.bbai-modern input[type="number"],
+.bbai-modern select,
+.bbai-modern textarea {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+}
+
+/* Reset Button Styles */
+.bbai-modern button {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+
+/* Reset Table Styles */
+.bbai-modern table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+.bbai-modern th,
+.bbai-modern td {
+    padding: 0;
+    text-align: left;
+}
+
+
+/* Imported from: base/layout.css */
+/**
+ * Base Layout Utilities
+ * Foundation layout containers and utilities
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Main Layout Container */
+.bbai-layout {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 0 var(--bbai-space-6) var(--bbai-space-10) var(--bbai-space-6);
+}
+
+/* Section Container */
+.bbai-section {
+    margin: var(--bbai-space-10) 0;
+}
+
+/* Main Container */
+.bbai-container {
+    width: 100%;
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+/* Non-dashboard Layout Helpers */
+.bbai-library-grid,
+.bbai-guide-grid,
+.bbai-table-scroll {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Library Grid Layout */
+.bbai-library-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+    gap: 24px;
+    align-items: flex-start;
+}
+
+.bbai-library-table-card--full-width {
+    grid-column: 1 / -1;
+}
+
+/* Guide Grid Layout */
+.bbai-guide-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+/* Table Scroll Container */
+.bbai-table-scroll {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+}
+
+.bbai-table-scroll table {
+    min-width: 720px;
+    border-collapse: collapse;
+}
+
+.bbai-library-table th,
+.bbai-library-table td {
+    word-break: break-word;
+}
+
+/* Responsive Layout */
+@media (max-width: 1080px) {
+    .bbai-library-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 900px) {
+    .bbai-guide-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .bbai-layout {
+        padding: 0 var(--bbai-space-4) var(--bbai-space-8) var(--bbai-space-4);
+    }
+
+    .bbai-container {
+        padding: 0 16px;
+    }
+}
+
+/* Spacing Utilities */
+.bbai-mt-0 { margin-top: 0; }
+.bbai-mt-4 { margin-top: var(--bbai-space-4); }
+.bbai-mt-6 { margin-top: var(--bbai-space-6); }
+.bbai-mt-8 { margin-top: var(--bbai-space-8); }
+
+.bbai-mb-0 { margin-bottom: 0; }
+.bbai-mb-4 { margin-bottom: var(--bbai-space-4); }
+.bbai-mb-6 { margin-bottom: var(--bbai-space-6); }
+.bbai-mb-8 { margin-bottom: var(--bbai-space-8); }
+
+.bbai-p-0 { padding: 0; }
+.bbai-p-4 { padding: var(--bbai-space-4); }
+.bbai-p-6 { padding: var(--bbai-space-6); }
+.bbai-p-8 { padding: var(--bbai-space-8); }
+
+/* Display Utilities */
+.bbai-flex {
+    display: flex;
+}
+
+.bbai-inline-flex {
+    display: inline-flex;
+}
+
+.bbai-grid {
+    display: grid;
+}
+
+.bbai-hidden {
+    display: none;
+}
+
+/* Flexbox Utilities */
+.bbai-items-center {
+    align-items: center;
+}
+
+.bbai-items-start {
+    align-items: flex-start;
+}
+
+.bbai-items-end {
+    align-items: flex-end;
+}
+
+.bbai-justify-center {
+    justify-content: center;
+}
+
+.bbai-justify-between {
+    justify-content: space-between;
+}
+
+.bbai-justify-end {
+    justify-content: flex-end;
+}
+
+.bbai-flex-col {
+    flex-direction: column;
+}
+
+.bbai-flex-wrap {
+    flex-wrap: wrap;
+}
+
+.bbai-gap-2 { gap: var(--bbai-space-2); }
+.bbai-gap-4 { gap: var(--bbai-space-4); }
+.bbai-gap-6 { gap: var(--bbai-space-6); }
+.bbai-gap-8 { gap: var(--bbai-space-8); }
+
+
+
+/* ==================================================
+   LAYOUT COMPONENTS
+   Structural layout elements
+   ================================================== */
+
+/* Imported from: layout/header.css */
+/**
+ * Header Component
+ * Dark header with navigation and account bar
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Base Header */
+.bbai-header {
+    background: #212B36;
+    padding: 16px 32px;
+    margin-bottom: 0;
+    border-bottom: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.bbai-header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1600px;
+    margin: 0 auto;
+    gap: 24px;
+}
+
+.bbai-header-actions {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* Logo */
+.bbai-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.bbai-logo-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.bbai-logo-text {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.2;
+}
+
+.bbai-logo-tagline {
+    display: none;
+}
+
+.bbai-logo-icon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+}
+
+.bbai-logo-icon rect {
+    rx: 8;
+}
+
+/* Navigation */
+.bbai-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.bbai-nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 8px 16px;
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 20px;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+}
+
+.bbai-nav-link svg {
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.bbai-nav-link:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.bbai-nav-link:hover svg {
+    opacity: 1;
+}
+
+.bbai-nav-link:focus {
+    outline: none;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+}
+
+.bbai-nav-link:focus svg {
+    opacity: 1;
+}
+
+.bbai-nav-link:active {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.12);
+    transform: scale(0.98);
+}
+
+.bbai-nav-link.active {
+    color: #ffffff;
+    background: #374151;
+    font-weight: 600;
+}
+
+.bbai-nav-link.active svg {
+    opacity: 1;
+}
+
+/* Account Bar */
+.bbai-header-account-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 6px 6px 14px;
+    background: #374151;
+    border-radius: 24px;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.bbai-header-account-email {
+    color: #ffffff;
+    font-weight: 500;
+    font-size: 13px;
+    margin-right: 2px;
+}
+
+.bbai-header-plan-badge {
+    padding: 3px 8px;
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    line-height: 1.4;
+}
+
+.bbai-header-upgrade-btn,
+.bbai-header-manage-btn {
+    padding: 6px 14px;
+    background: #10B981;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.bbai-header-upgrade-btn:hover {
+    background: #059669;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+.bbai-header-manage-btn {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+}
+
+.bbai-header-manage-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+}
+
+.bbai-header-disconnect-btn {
+    padding: 6px 14px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.bbai-header-disconnect-btn:hover {
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .bbai-header {
+        padding: 12px 16px;
+    }
+
+    .bbai-header-content {
+        gap: 12px;
+    }
+
+    .bbai-nav {
+        gap: 4px;
+    }
+
+    .bbai-nav-link {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 768px) {
+    .bbai-header-account-bar {
+        padding: 4px 4px 4px 10px;
+        gap: 6px;
+    }
+
+    .bbai-header-account-email {
+        font-size: 12px;
+    }
+
+    .bbai-header-upgrade-btn,
+    .bbai-header-manage-btn,
+    .bbai-header-disconnect-btn {
+        padding: 4px 10px;
+        font-size: 11px;
+    }
+}
+
+
+/* Imported from: layout/footer.css */
+/**
+ * Footer Component
+ * Footer with upgrade links and branding
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Base Footer */
+.bbai-footer {
+    text-align: center;
+    margin-top: 2.25rem;
+    padding-top: 2.25rem;
+    border-top: 1px solid var(--bbai-border-primary);
+}
+
+.bbai-upgrade-link {
+    color: var(--bbai-info);
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: var(--bbai-font-medium);
+    transition: var(--bbai-transition-colors);
+}
+
+.bbai-upgrade-link:hover {
+    color: var(--bbai-primary-dark);
+}
+
+/* Premium Footer CTA */
+.bbai-premium-footer-cta {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(168, 85, 247, 0.12) 100%);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 30px 0 16px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.bbai-premium-footer-cta:hover {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(168, 85, 247, 0.18) 100%);
+    border-color: rgba(139, 92, 246, 0.3);
+    transform: translateY(-1px);
+}
+
+.bbai-footer-cta-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.bbai-footer-cta-icon {
+    width: 20px;
+    height: 20px;
+    color: #8b5cf6;
+}
+
+.bbai-footer-cta-text {
+    font-size: 15px;
+    color: #374151;
+    font-weight: 600;
+}
+
+.bbai-footer-cta-btn {
+    padding: 8px 20px;
+    background: #8b5cf6;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.bbai-footer-cta-btn:hover {
+    background: #7c3aed;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.bbai-footer-cta-badge {
+    font-size: 13px;
+    color: #677388;
+    margin-left: 8px;
+}
+
+/* Footer Divider */
+.bbai-premium-footer-divider {
+    height: 1px;
+    background: #e5e7eb;
+    margin: 30px 0 20px 0;
+}
+
+/* Footer Branding */
+.bbai-premium-footer-branding {
+    text-align: center;
+    padding: 16px 0;
+    font-size: 13px;
+    color: #677388;
+}
+
+.bbai-premium-footer-branding strong {
+    color: #677388;
+    font-weight: 600;
+}
+
+.bbai-premium-footer-branding a {
+    color: #8b5cf6;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.bbai-premium-footer-branding a:hover {
+    color: #7c3aed;
+    text-decoration: underline;
+}
+
+
+
+/* ==================================================
+   CORE UI COMPONENTS
+   Reusable interface components
+   ================================================== */
+
+/* Imported from: components/button.css */
+/**
+ * Button Component
+ * All button styles and variants
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   PRIMARY BUTTON
+   ================================================== */
+
+.bbai-btn-primary {
+    background: var(--bbai-info);
+    color: var(--bbai-white);
+    font-size: var(--bbai-text-base);
+    font-weight: var(--bbai-font-semibold);
+    padding: 1.05rem 2.65rem;
+    border: none;
+    border-radius: var(--bbai-radius-md);
+    cursor: pointer;
+    transition: var(--bbai-transition);
+    box-shadow: 0 8px 20px -6px rgba(59, 130, 246, 0.45);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.bbai-btn-primary:hover {
+    background: var(--bbai-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 12px 24px -8px rgba(37, 99, 235, 0.5);
+}
+
+.bbai-btn-primary:disabled {
+    background: var(--bbai-gray-300);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    opacity: 0.6;
+}
+
+.bbai-btn-primary:focus-visible {
+    outline: 3px solid rgba(59, 130, 246, 0.55);
+    outline-offset: 2px;
+}
+
+/* Primary button in hero - centered */
+.bbai-hero .bbai-btn-primary {
+    display: block;
+    margin: 1rem auto 0;
+}
+
+/* ==================================================
+   REGENERATE BUTTON
+   ================================================== */
+
+.bbai-btn-regenerate {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.55rem 1.1rem;
+    font-size: 0.9375rem;
+    font-weight: var(--bbai-font-semibold);
+    border-radius: var(--bbai-radius-lg);
+    border: 1px solid rgba(14, 165, 233, 0.2);
+    background: linear-gradient(135deg, rgba(236, 253, 245, 0.9) 0%, rgba(209, 250, 229, 0.9) 100%);
+    color: #047857;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: var(--bbai-transition);
+}
+
+.bbai-btn-regenerate:hover:not(:disabled):not(.bbai-btn-disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 18px -12px rgba(5, 150, 105, 0.45);
+    border-color: rgba(5, 150, 105, 0.35);
+}
+
+.bbai-btn-regenerate:disabled,
+.bbai-btn-regenerate.bbai-btn-disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.bbai-btn-regenerate:focus-visible {
+    outline: 3px solid rgba(59, 130, 246, 0.55);
+    outline-offset: 2px;
+}
+
+.bbai-btn-disabled,
+.bbai-btn-disabled:hover {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ==================================================
+   ACCOUNT BUTTONS
+   ================================================== */
+
+.bbai-account-btn {
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #0f172a;
+    padding: 10px 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.bbai-account-btn:hover {
+    border-color: #cbd5f5;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+}
+
+.bbai-account-btn--primary {
+    background: linear-gradient(135deg, #14b8a6 0%, #84cc16 100%);
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 8px 20px rgba(20, 184, 166, 0.35);
+}
+
+.bbai-account-btn--primary:hover {
+    opacity: 0.92;
+}
+
+.bbai-account-btn--ghost {
+    background: transparent;
+    border: none;
+    color: #ef4444;
+    box-shadow: none;
+}
+
+.bbai-account-btn--ghost:hover {
+    color: #dc2626;
+}
+
+/* ==================================================
+   BULK BUTTONS
+   ================================================== */
+
+.bbai-bulk-btn {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    border: none;
+    padding: 1.25rem 2.5rem;
+    border-radius: 16px;
+    font-size: 1.125rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    max-width: 450px;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3), 0 2px 4px rgba(59, 130, 246, 0.2);
+    position: relative;
+    overflow: hidden;
+    letter-spacing: 0.025em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Shine effect */
+.bbai-bulk-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.bbai-bulk-btn:hover:not(:disabled)::before {
+    left: 100%;
+}
+
+.bbai-bulk-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 24px -4px rgba(59, 130, 246, 0.4), 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+.bbai-bulk-btn:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 4px 8px -2px rgba(59, 130, 246, 0.3);
+}
+
+.bbai-bulk-btn:disabled,
+.bbai-bulk-btn.loading {
+    background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+    color: #ffffff;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    opacity: 0.7;
+}
+
+.bbai-bulk-btn:disabled:hover,
+.bbai-bulk-btn.loading:hover {
+    background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+    transform: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Bulk button - Limit variant */
+.bbai-bulk-btn--limit {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    position: relative;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.25rem 2.5rem 1rem 2.5rem;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3), 0 2px 4px rgba(239, 68, 68, 0.2);
+}
+
+.bbai-bulk-btn--limit::before {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+}
+
+.bbai-bulk-btn--limit:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px -4px rgba(239, 68, 68, 0.3);
+}
+
+.bbai-bulk-btn--limit:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 8px -2px rgba(239, 68, 68, 0.3);
+}
+
+.bbai-bulk-btn__badge {
+    background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 0.35rem 0.75rem;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ==================================================
+   PRICING BUTTONS
+   ================================================== */
+
+.bbai-pricing-btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+    width: 100%;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.bbai-pricing-btn--primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.bbai-pricing-btn--primary:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+}
+
+.bbai-pricing-btn--secondary {
+    background: #10b981;
+    color: white;
+}
+
+.bbai-pricing-btn--secondary:hover {
+    background: #059669;
+    transform: translateY(-1px);
+}
+
+/* ==================================================
+   REFRESH BUTTON
+   ================================================== */
+
+.bbai-refresh-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem var(--bbai-space-3);
+    border-radius: var(--bbai-radius-full);
+    background: rgba(37, 99, 235, 0.08);
+    color: #1e3a8a;
+    font-size: 0.8rem;
+    font-weight: var(--bbai-font-semibold);
+    border: none;
+    cursor: pointer;
+    transition: var(--bbai-transition);
+}
+
+.bbai-refresh-btn:hover {
+    background: rgba(37, 99, 235, 0.15);
+    transform: translateY(-1px);
+}
+
+/* ==================================================
+   LOADING STATES
+   ================================================== */
+
+.bbai-btn-regenerate.loading,
+.bbai-btn-primary.loading {
+    position: relative;
+}
+
+.bbai-btn-regenerate.loading::after,
+.bbai-btn-primary.loading::after {
+    content: "";
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    top: 50%;
+    left: 50%;
+    margin-left: -7px;
+    margin-top: -7px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: bbai-button-spin 0.6s linear infinite;
+}
+
+@keyframes bbai-button-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+
+/* Imported from: components/card.css */
+/**
+ * Card Component
+ * Base card styles and common variants
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   BASE CARD
+   ================================================== */
+
+.bbai-card {
+    background: #ffffff;
+    border: 1px solid #f3f4f6;
+    border-radius: 16px;
+    padding: 32px 28px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+}
+
+.bbai-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    border-color: #e5e7eb;
+}
+
+/* Card with no hover effect */
+.bbai-card--static {
+    transform: none !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* ==================================================
+   METRIC CARD
+   ================================================== */
+
+.bbai-metric-card {
+    background: white;
+    border: 1px solid #f3f4f6;
+    border-radius: 16px;
+    padding: 32px 28px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+}
+
+.bbai-metric-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    border-color: #e5e7eb;
+}
+
+.bbai-metric-card--highlight {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0891b2 100%);
+    border-color: #0891b2;
+    color: white;
+    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.2);
+}
+
+.bbai-metric-card--highlight:hover {
+    box-shadow: 0 6px 16px rgba(14, 165, 233, 0.3);
+}
+
+.bbai-metric-card--highlight .bbai-metric-label,
+.bbai-metric-card--highlight .bbai-metric-description {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.bbai-metric-card--highlight .bbai-metric-value {
+    color: white;
+}
+
+.bbai-metric-card--highlight svg {
+    color: white;
+}
+
+.bbai-metric-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.bbai-metric-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.bbai-metric-card--highlight .bbai-metric-label {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.bbai-metric-header svg {
+    color: #9ca3af;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+}
+
+.bbai-metric-value {
+    font-size: 36px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.1;
+    margin-bottom: 12px;
+    letter-spacing: -0.03em;
+}
+
+.bbai-metric-description {
+    font-size: 14px;
+    color: #6b7280;
+    line-height: 1.5;
+}
+
+/* ==================================================
+   PREMIUM CARD (Glassmorphism)
+   ================================================== */
+
+.bbai-premium-card {
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #EAECF0;
+    backdrop-filter: blur(12px);
+    padding: 32px;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+.bbai-premium-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+/* ==================================================
+   PRICING CARD
+   ================================================== */
+
+.bbai-pricing-card {
+    background: #fff;
+    border: 2px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 2rem;
+    transition: all 0.3s ease;
+}
+
+.bbai-pricing-card--pro {
+    border-color: #3b82f6;
+}
+
+.bbai-pricing-card--featured {
+    border-color: #10b981;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+.bbai-pricing-card--credits {
+    border-color: #8b5cf6;
+}
+
+.bbai-pricing-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* ==================================================
+   USAGE CARD
+   ================================================== */
+
+.bbai-usage-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 24px;
+    padding: 32px;
+    height: 100%;
+}
+
+.bbai-usage-card--full-width {
+    flex: 1 1 100% !important;
+    max-width: 100% !important;
+}
+
+.bbai-usage-card-circular {
+    background: white;
+    border: 1px solid #f3f4f6;
+    border-radius: 16px;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.bbai-usage-card-circular:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    border-color: #e5e7eb;
+}
+
+.bbai-usage-card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 24px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ==================================================
+   PRO UPSELL CARD
+   ================================================== */
+
+.bbai-pro-upsell-card {
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    border: 2px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.bbai-pro-upsell-card:hover {
+    border-color: #3b82f6;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15);
+    transform: translateY(-4px);
+}
+
+/* ==================================================
+   TIME SAVED CARD
+   ================================================== */
+
+.bbai-time-saved-card {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border: 1px solid #a7f3d0;
+    border-radius: 16px;
+    padding: 28px 24px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+    transition: all 0.2s ease;
+}
+
+.bbai-time-saved-card:hover {
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.2);
+    transform: translateY(-2px);
+}
+
+/* ==================================================
+   OPTIMIZATION CARD
+   ================================================== */
+
+.bbai-optimization-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+}
+
+.bbai-optimization-card:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+/* ==================================================
+   UPSELL CARD
+   ================================================== */
+
+.bbai-upsell-card {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(168, 85, 247, 0.08) 100%);
+    border: 2px solid rgba(139, 92, 246, 0.2);
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.bbai-upsell-card:hover {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(168, 85, 247, 0.12) 100%);
+    border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: 0 8px 20px rgba(139, 92, 246, 0.2);
+    transform: translateY(-2px);
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 768px) {
+    .bbai-card,
+    .bbai-metric-card,
+    .bbai-premium-card {
+        padding: 24px 20px;
+    }
+
+    .bbai-metric-value {
+        font-size: 28px;
+    }
+}
+
+
+/* Imported from: components/table.css */
+/**
+ * Table Component
+ * Table styles with pagination
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   TABLE CONTAINER
+   ================================================== */
+
+.bbai-table-container {
+    margin: 2.25rem auto;
+    max-width: 980px;
+    overflow-x: auto;
+}
+
+.bbai-table-scroll {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+}
+
+.bbai-table-scroll table {
+    min-width: 720px;
+    border-collapse: collapse;
+}
+
+/* ==================================================
+   TABLE BASE
+   ================================================== */
+
+.bbai-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+/* Table Title */
+.bbai-table-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--bbai-gray-800);
+}
+
+/* ==================================================
+   TABLE HEADER
+   ================================================== */
+
+.bbai-table thead th {
+    background: var(--bbai-gray-50);
+    padding: 1.1rem var(--bbai-space-4);
+    text-align: left;
+    font-size: 13px;
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid var(--bbai-gray-200);
+}
+
+.bbai-table thead th:first-child {
+    border-top-left-radius: var(--bbai-radius-md);
+}
+
+.bbai-table thead th:last-child {
+    border-top-right-radius: var(--bbai-radius-md);
+}
+
+/* ==================================================
+   TABLE BODY
+   ================================================== */
+
+.bbai-table tbody tr {
+    border-bottom: 1px solid var(--bbai-border-primary);
+    transition: var(--bbai-transition);
+}
+
+.bbai-table tbody tr:nth-child(odd) {
+    background: var(--bbai-white);
+}
+
+.bbai-table tbody tr:nth-child(even) {
+    background: var(--bbai-gray-50);
+}
+
+.bbai-table tbody tr:hover {
+    background: var(--bbai-gray-100);
+    box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.08);
+}
+
+.bbai-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.bbai-table tbody td {
+    padding: 1.15rem var(--bbai-space-4);
+    vertical-align: middle;
+}
+
+.bbai-table tbody td:last-child {
+    text-align: right;
+}
+
+.bbai-table__cell--action {
+    text-align: right;
+}
+
+.bbai-table .text-muted {
+    color: var(--bbai-gray-400);
+    font-style: italic;
+}
+
+/* Library Table */
+.bbai-library-table th,
+.bbai-library-table td {
+    word-break: break-word;
+}
+
+.bbai-library-table-card--full-width {
+    grid-column: 1 / -1;
+}
+
+/* ==================================================
+   TABLE UTILITIES
+   ================================================== */
+
+/* Thumbnail */
+.bbai-thumb {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: var(--bbai-radius-sm);
+    border: 1px solid var(--bbai-border-primary);
+    box-shadow: var(--bbai-shadow-xs);
+}
+
+/* Copy Trigger */
+.bbai-copy-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    color: var(--bbai-gray-800);
+}
+
+.bbai-copy-trigger:hover .bbai-copy-icon {
+    opacity: 1;
+    transform: translateY(-1px);
+}
+
+.bbai-copy-icon {
+    width: var(--bbai-space-4);
+    height: var(--bbai-space-4);
+    opacity: 0;
+    transition: var(--bbai-transition);
+    color: var(--bbai-gray-500);
+}
+
+/* ==================================================
+   STATUS BADGES (within tables)
+   ================================================== */
+
+.bbai-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: var(--bbai-radius-full);
+    font-size: 0.825rem;
+    font-weight: var(--bbai-font-semibold);
+    letter-spacing: 0.01em;
+}
+
+.bbai-status-badge--optimized {
+    background: rgba(16, 185, 129, 0.12);
+    color: #047857;
+}
+
+.bbai-status-badge--missing {
+    background: rgba(251, 191, 36, 0.18);
+    color: #92400e;
+}
+
+.bbai-status-badge--regenerated {
+    background: rgba(59, 130, 246, 0.14);
+    color: #1d4ed8;
+}
+
+/* ==================================================
+   PAGINATION
+   ================================================== */
+
+.bbai-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--bbai-space-6);
+    padding: var(--bbai-space-4) 0;
+    border-top: 1px solid var(--bbai-border-primary);
+}
+
+.bbai-pagination-info {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-gray-500);
+    font-weight: var(--bbai-font-medium);
+}
+
+.bbai-pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+}
+
+.bbai-pagination-pages {
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-space-1);
+    margin: 0 var(--bbai-space-4);
+}
+
+.bbai-pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--bbai-space-8);
+    height: var(--bbai-space-8);
+    padding: 0 var(--bbai-space-2);
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-medium);
+    color: var(--bbai-gray-700);
+    background: var(--bbai-white);
+    border: 1px solid var(--bbai-gray-300);
+    border-radius: var(--bbai-radius-sm);
+    text-decoration: none;
+    transition: var(--bbai-transition);
+    cursor: pointer;
+}
+
+.bbai-pagination-btn:hover:not(.bbai-pagination-btn--disabled) {
+    background: var(--bbai-gray-100);
+    border-color: var(--bbai-gray-400);
+    color: var(--bbai-gray-800);
+}
+
+.bbai-pagination-btn--current {
+    background: var(--bbai-info);
+    color: var(--bbai-white);
+    border-color: var(--bbai-info);
+    font-weight: var(--bbai-font-semibold);
+}
+
+.bbai-pagination-btn--disabled {
+    background: var(--bbai-gray-50);
+    color: var(--bbai-gray-400);
+    border-color: var(--bbai-border-primary);
+    cursor: not-allowed;
+}
+
+.bbai-pagination-ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--bbai-space-8);
+    height: var(--bbai-space-8);
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-gray-400);
+    font-weight: var(--bbai-font-medium);
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 768px) {
+    .bbai-thumb {
+        width: 48px;
+        height: 48px;
+    }
+
+    .bbai-table {
+        font-size: 14px;
+    }
+
+    .bbai-table tbody td,
+    .bbai-table thead th {
+        padding: 0.85rem 0.75rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .bbai-pagination {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .bbai-pagination-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .bbai-pagination-pages {
+        margin: 0 0.5rem;
+    }
+}
+
+
+/* Imported from: components/progress.css */
+/**
+ * Progress Component
+ * Linear and circular progress indicators
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   LINEAR PROGRESS BAR
+   ================================================== */
+
+.bbai-progress-container {
+    height: 10px;
+    background: var(--bbai-gray-200);
+    border-radius: var(--bbai-radius-full);
+    overflow: hidden;
+    box-shadow: var(--bbai-shadow-xs);
+}
+
+.bbai-progress-bar {
+    height: 100%;
+    background: var(--bbai-gradient-success);
+    border-radius: var(--bbai-radius-full);
+    min-width: 2px;
+}
+
+/* Progress Bar with Fill Animation */
+.bbai-progress-bar-container {
+    background: var(--bbai-gray-100);
+    height: 10px;
+    border-radius: var(--bbai-radius-md);
+    overflow: hidden;
+    box-shadow: var(--bbai-shadow-xs);
+}
+
+.bbai-progress-bar-fill {
+    height: 100%;
+    background: var(--bbai-gradient-success);
+    border-radius: var(--bbai-radius-md);
+    transition: width 0.5s ease;
+    position: relative;
+    box-shadow: var(--bbai-shadow-xs);
+}
+
+.bbai-progress-bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* ==================================================
+   USAGE BAR
+   ================================================== */
+
+.bbai-usage-bar {
+    max-width: 620px;
+    margin: 0 auto var(--bbai-space-8);
+}
+
+.bbai-usage-text {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-gray-500);
+    margin-bottom: var(--bbai-space-3);
+    text-align: left;
+}
+
+/* ==================================================
+   CIRCULAR PROGRESS
+   ================================================== */
+
+.bbai-circular-progress {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    flex-shrink: 0;
+}
+
+.bbai-circular-progress-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.bbai-circular-progress-bg {
+    fill: none;
+    stroke: #f3f4f6;
+    stroke-width: 12;
+}
+
+.bbai-circular-progress-bar {
+    fill: none;
+    stroke: #9b5cff;
+    stroke-width: 12;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bbai-circular-progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.bbai-circular-progress-percent {
+    font-size: 28px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+
+.bbai-circular-progress-label {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ==================================================
+   CIRCULAR PROGRESS DETAILS
+   ================================================== */
+
+.bbai-usage-circular-details {
+    flex: 1;
+}
+
+.bbai-usage-circular-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.bbai-usage-circular-title strong {
+    font-weight: 600;
+}
+
+.bbai-usage-circular-subtitle {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 24px;
+    line-height: 1.6;
+}
+
+.bbai-usage-circular-stats {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.bbai-usage-stat-number {
+    font-weight: 700;
+    font-size: 16px;
+    color: #111827;
+}
+
+.bbai-usage-stat-text {
+    color: #6b7280;
+}
+
+/* ==================================================
+   BULK PROGRESS
+   ================================================== */
+
+.bbai-bulk-progress {
+    display: none;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.bbai-bulk-progress[hidden] {
+    display: none;
+}
+
+.bbai-bulk-progress:not([hidden]) {
+    display: block;
+}
+
+.bbai-bulk-progress__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.bbai-bulk-progress__counts {
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.bbai-bulk-progress__bar {
+    height: 8px;
+    background: #f3f4f6;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.bbai-bulk-progress__bar span {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+    transition: width 0.3s ease;
+}
+
+/* ==================================================
+   OPTIMIZATION PROGRESS
+   ================================================== */
+
+.bbai-optimization-progress {
+    background: linear-gradient(135deg, var(--bbai-gray-50) 0%, var(--bbai-gray-100) 100%);
+    border: 1px solid var(--bbai-border-primary);
+    border-radius: var(--bbai-radius-xl);
+    padding: var(--bbai-space-8);
+    margin-bottom: var(--bbai-space-8);
+    box-shadow: var(--bbai-shadow-sm);
+    position: relative;
+    overflow: hidden;
+}
+
+/* ==================================================
+   POST OPTIMIZATION BANNER
+   ================================================== */
+
+.bbai-post-optimization-banner {
+    display: none;
+    margin-top: var(--bbai-space-8);
+    padding: var(--bbai-space-6);
+    border-radius: 14px;
+    background: linear-gradient(120deg, #ede9fe 0%, #dbeafe 100%);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    box-shadow: var(--bbai-shadow-lg);
+    align-items: center;
+    gap: var(--bbai-space-5);
+}
+
+.bbai-post-optimization-banner.active {
+    display: flex;
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 768px) {
+    .bbai-circular-progress {
+        width: 140px;
+        height: 140px;
+    }
+
+    .bbai-circular-progress-percent {
+        font-size: 24px;
+    }
+
+    .bbai-usage-circular-title {
+        font-size: 18px;
+    }
+
+    .bbai-usage-bar {
+        max-width: 100%;
+    }
+}
+
+
+/* Imported from: components/badge.css */
+/**
+ * Badge Component
+ * Status badges, chips, and labels
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   BASE BADGE
+   ================================================== */
+
+.bbai-badge {
+    display: inline-block;
+    padding: var(--bbai-space-1) var(--bbai-space-2);
+    border-radius: var(--bbai-radius-full);
+    font-size: var(--bbai-text-xs);
+    border: 1px solid var(--bbai-border-primary);
+    background: var(--bbai-white);
+    font-weight: 600;
+}
+
+.bbai-badge--excellent {
+    color: #065f46;
+    background: var(--bbai-success-bg);
+    border-color: var(--bbai-success-light);
+}
+
+.bbai-badge--critical {
+    color: #991b1b;
+    background: var(--bbai-danger-light);
+    border-color: #fecaca;
+}
+
+/* ==================================================
+   STATUS BADGES (within tables)
+   ================================================== */
+
+.bbai-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: var(--bbai-radius-full);
+    font-size: 0.825rem;
+    font-weight: var(--bbai-font-semibold);
+    letter-spacing: 0.01em;
+}
+
+.bbai-status-badge--optimized {
+    background: rgba(16, 185, 129, 0.12);
+    color: #047857;
+}
+
+.bbai-status-badge--missing {
+    background: rgba(251, 191, 36, 0.18);
+    color: #92400e;
+}
+
+.bbai-status-badge--regenerated {
+    background: rgba(59, 130, 246, 0.14);
+    color: #1d4ed8;
+}
+
+/* ==================================================
+   PLAN BADGES
+   ================================================== */
+
+.bbai-plan-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1.4;
+}
+
+.bbai-plan-badge--pro {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* Usage Plan Badges */
+.bbai-usage-plan-badge {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1.4;
+}
+
+.bbai-usage-plan-badge--free {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.bbai-usage-plan-badge--pro {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.bbai-usage-plan-badge--agency {
+    background: #f3e8ff;
+    color: #7c3aed;
+}
+
+/* Settings Plan Badge */
+.bbai-settings-plan-badge {
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.bbai-settings-plan-badge--free {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.bbai-settings-plan-badge--pro {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.25);
+}
+
+/* ==================================================
+   PRICING BADGE
+   ================================================== */
+
+.bbai-pricing-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1d4ed8;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    box-shadow: 0 2px 4px rgba(29, 78, 216, 0.3);
+}
+
+/* ==================================================
+   STAT CHIPS
+   ================================================== */
+
+.bbai-stats-chips {
+    display: inline-flex;
+    gap: var(--bbai-space-3);
+    align-items: center;
+    justify-content: center;
+    margin: 0 0 var(--bbai-space-6) 0;
+}
+
+.bbai-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+    padding: var(--bbai-space-2) var(--bbai-space-3);
+    border-radius: var(--bbai-radius-full);
+    font-size: 13px;
+    border: 1px solid transparent;
+}
+
+.bbai-chip__label {
+    color: var(--bbai-gray-600);
+}
+
+.bbai-chip__value {
+    font-weight: var(--bbai-font-bold);
+}
+
+.bbai-chip--success {
+    background: var(--bbai-success-bg);
+    border-color: var(--bbai-success-light);
+    color: #065f46;
+}
+
+.bbai-chip--warning {
+    background: var(--bbai-warning-bg);
+    border-color: var(--bbai-warning-light);
+    color: #9a3412;
+}
+
+/* ==================================================
+   SPECIAL BADGES
+   ================================================== */
+
+/* Time Saved Badge */
+.bbai-time-saved-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+}
+
+/* Optimization Badge */
+.bbai-optimization-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Debug Badge */
+.bbai-debug-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #fef3c7;
+    border: 1px solid #fde047;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #92400e;
+}
+
+.bbai-debug-badge-icon {
+    width: 14px;
+    height: 14px;
+}
+
+.bbai-debug-badge-text {
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Modal Badge */
+.bbai-modal__badge {
+    display: inline-block;
+    padding: 4px 10px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Footer CTA Badges */
+.bbai-footer-cta-badge {
+    font-size: 13px;
+    color: #677388;
+    margin-left: 8px;
+}
+
+.bbai-footer-cta-badge-coming-soon {
+    display: inline-block;
+    padding: 4px 8px;
+    background: #fef3c7;
+    color: #92400e;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.bbai-footer-cta-badge-new {
+    display: inline-block;
+    padding: 4px 8px;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 768px) {
+    .bbai-stats-chips {
+        flex-wrap: wrap;
+    }
+
+    .bbai-chip {
+        font-size: 12px;
+        padding: var(--bbai-space-1) var(--bbai-space-2);
+    }
+
+    .bbai-usage-plan-badge {
+        top: 12px;
+        left: 12px;
+        font-size: 10px;
+    }
+}
+
+
+/* Imported from: components/modal.css */
+/**
+ * Modal Component
+ * Base modal structure and variants
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   MODAL OVERLAY (Variant 1)
+   ================================================== */
+
+.bbai-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999999;
+    opacity: 0;
+    transition: var(--bbai-transition);
+    padding: 24px;
+    backdrop-filter: blur(4px);
+}
+
+.bbai-modal-overlay.is-visible {
+    opacity: 1;
+}
+
+/* ==================================================
+   MODAL CONTAINER (Variant 1)
+   ================================================== */
+
+.bbai-modal {
+    background: var(--bbai-white);
+    border-radius: var(--bbai-radius-xl);
+    padding: 28px;
+    max-width: 520px;
+    width: 100%;
+    box-shadow: var(--bbai-shadow-modal);
+    position: relative;
+    transform: translateY(16px);
+    transition: var(--bbai-transition-transform);
+}
+
+.bbai-modal-overlay.is-visible .bbai-modal {
+    transform: translateY(0);
+}
+
+/* ==================================================
+   MODAL FULL SCREEN (Variant 2)
+   ================================================== */
+
+.bbai-modal--fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.bbai-modal__overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.bbai-modal__content {
+    position: relative;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ==================================================
+   MODAL HEADER
+   ================================================== */
+
+.bbai-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.bbai-modal__title {
+    margin: 0 0 8px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.bbai-modal__subtitle {
+    margin: 0 0 18px;
+    color: var(--bbai-gray-500);
+    font-size: var(--bbai-text-sm);
+}
+
+/* ==================================================
+   MODAL CLOSE BUTTON
+   ================================================== */
+
+.bbai-modal__close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+    z-index: 10;
+    line-height: 1;
+}
+
+.bbai-modal__close:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+/* ==================================================
+   MODAL BODY
+   ================================================== */
+
+.bbai-modal__body {
+    padding: 2rem;
+}
+
+/* ==================================================
+   MODAL ELEMENTS
+   ================================================== */
+
+.bbai-modal__label {
+    display: block;
+    font-weight: var(--bbai-font-semibold);
+    margin-bottom: 8px;
+    color: var(--bbai-gray-700);
+}
+
+.bbai-modal__textarea {
+    width: 100%;
+    min-height: 110px;
+    border-radius: 10px;
+    border: 1px solid var(--bbai-gray-300);
+    font-size: var(--bbai-text-base);
+    padding: 12px 14px;
+    resize: vertical;
+    color: var(--bbai-gray-800);
+    background: var(--bbai-gray-50);
+    margin-bottom: 18px;
+    font-family: inherit;
+}
+
+.bbai-modal__textarea:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: var(--bbai-input-focus-ring);
+}
+
+.bbai-modal__notice {
+    background: var(--bbai-warning-light);
+    border: 1px solid #fcd34d;
+    color: #92400e;
+    padding: 10px 12px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    font-size: 13px;
+}
+
+.bbai-modal__actions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.bbai-modal__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.bbai-modal__issues {
+    margin: 0;
+    padding-left: 18px;
+    color: #b45309;
+    font-size: var(--bbai-text-sm);
+}
+
+.bbai-modal__issues li + li {
+    margin-top: 4px;
+}
+
+/* ==================================================
+   MODAL FOOTER
+   ================================================== */
+
+.bbai-modal-footer {
+    text-align: center;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.bbai-modal-urgency {
+    margin-bottom: 1rem;
+}
+
+.bbai-modal-note {
+    margin: 0;
+    color: #dc2626;
+    font-size: 1rem;
+    font-weight: 600;
+    background: #fef2f2;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px solid #fecaca;
+}
+
+.bbai-modal-guarantee {
+    margin-top: 1rem;
+}
+
+/* ==================================================
+   MODAL ANIMATIONS
+   ================================================== */
+
+.bbai-modal-fade-in {
+    animation: bbai-modal-fade-in 0.2s ease-out;
+}
+
+@keyframes bbai-modal-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.bbai-modal-slide-up {
+    animation: bbai-modal-slide-up 0.3s ease-out;
+}
+
+@keyframes bbai-modal-slide-up {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 768px) {
+    .bbai-modal {
+        padding: 20px;
+        max-width: 100%;
+    }
+
+    .bbai-modal__content {
+        width: 95%;
+        max-height: 95vh;
+    }
+
+    .bbai-modal__header,
+    .bbai-modal__body {
+        padding: 1.25rem 1.5rem;
+    }
+
+    .bbai-modal__title {
+        font-size: 1.25rem;
+    }
+
+    .bbai-modal-overlay {
+        padding: 16px;
+    }
+}
+
+
+/* Imported from: components/form.css */
+/**
+ * Form Component
+ * Form fields, inputs, textareas, and labels
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   FORM GROUPS
+   ================================================== */
+
+.bbai-settings-form-group {
+    margin-bottom: 24px;
+}
+
+.bbai-settings-form-group:last-child {
+    margin-bottom: 0;
+}
+
+.bbai-settings-form-field {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    padding: 20px 0;
+}
+
+.bbai-settings-form-field--toggle {
+    align-items: center;
+}
+
+.bbai-settings-form-field + .bbai-settings-form-field {
+    border-top: 1px solid #e5e7eb;
+}
+
+/* ==================================================
+   FORM LABELS
+   ================================================== */
+
+.bbai-settings-form-label,
+.bbai-settings-license-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 6px;
+}
+
+.bbai-settings-form-description {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* ==================================================
+   FORM INPUTS
+   ================================================== */
+
+.bbai-settings-form-input,
+.bbai-settings-license-input,
+.bbai-debug-filter-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #374151;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    font-family: inherit;
+    background: #fff;
+}
+
+.bbai-settings-license-input {
+    font-family: 'Courier New', monospace;
+    border-radius: 6px;
+    border-color: #cbd5e1;
+}
+
+.bbai-settings-form-input:focus,
+.bbai-settings-license-input:focus,
+.bbai-debug-filter-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* ==================================================
+   FORM TEXTAREA
+   ================================================== */
+
+.bbai-settings-form-textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #374151;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 100px;
+}
+
+.bbai-settings-form-textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* ==================================================
+   LICENSE INPUT GROUP
+   ================================================== */
+
+.bbai-settings-license-input-group {
+    margin-bottom: 16px;
+}
+
+.bbai-settings-license-description {
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.6;
+    margin: 0 0 20px 0;
+}
+
+.bbai-settings-license-activate-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.bbai-settings-license-activate-btn:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.bbai-settings-license-activate-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ==================================================
+   DEBUG FILTER
+   ================================================== */
+
+.bbai-debug-filter-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: #6b7280;
+}
+
+.bbai-debug-filter-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* ==================================================
+   FORM VALIDATION STATES
+   ================================================== */
+
+.bbai-settings-form-input.is-invalid,
+.bbai-settings-form-textarea.is-invalid {
+    border-color: #ef4444;
+}
+
+.bbai-settings-form-input.is-invalid:focus,
+.bbai-settings-form-textarea.is-invalid:focus {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.bbai-settings-form-input.is-valid,
+.bbai-settings-form-textarea.is-valid {
+    border-color: #10b981;
+}
+
+.bbai-settings-form-input.is-valid:focus,
+.bbai-settings-form-textarea.is-valid:focus {
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.bbai-form-error-message {
+    display: block;
+    margin-top: 6px;
+    font-size: 13px;
+    color: #ef4444;
+}
+
+.bbai-form-success-message {
+    display: block;
+    margin-top: 6px;
+    font-size: 13px;
+    color: #10b981;
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 768px) {
+    .bbai-settings-form-field {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .bbai-settings-form-field--toggle {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .bbai-settings-form-input,
+    .bbai-settings-form-textarea,
+    .bbai-settings-license-input {
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+}
+
+
+/* Imported from: components/toggle.css */
+/**
+ * Toggle Component
+ * Toggle switch for on/off states
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   BASE TOGGLE
+   ================================================== */
+
+.bbai-settings-toggle {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 24px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.bbai-settings-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* ==================================================
+   TOGGLE SLIDER
+   ================================================== */
+
+.bbai-settings-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #d1d5db;
+    transition: 0.3s;
+    border-radius: 24px;
+}
+
+.bbai-settings-toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* ==================================================
+   TOGGLE STATES
+   ================================================== */
+
+/* Green when ON (primary variant) */
+.bbai-settings-toggle input:checked + .bbai-settings-toggle-slider {
+    background-color: #22C55E;
+}
+
+.bbai-settings-toggle input:checked + .bbai-settings-toggle-slider:before {
+    transform: translateX(24px);
+}
+
+.bbai-settings-toggle input:focus + .bbai-settings-toggle-slider {
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+/* ==================================================
+   TOGGLE VARIANTS
+   ================================================== */
+
+/* Teal variant */
+.bbai-settings-toggle--teal input:checked + .bbai-settings-toggle-slider {
+    background-color: #14b8a6;
+}
+
+.bbai-settings-toggle--teal input:focus + .bbai-settings-toggle-slider {
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.2);
+}
+
+/* Blue variant */
+.bbai-settings-toggle--blue input:checked + .bbai-settings-toggle-slider {
+    background-color: #3b82f6;
+}
+
+.bbai-settings-toggle--blue input:focus + .bbai-settings-toggle-slider {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+/* ==================================================
+   DISABLED STATE
+   ================================================== */
+
+.bbai-settings-toggle input:disabled + .bbai-settings-toggle-slider {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.bbai-settings-toggle input:disabled + .bbai-settings-toggle-slider:before {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* ==================================================
+   DEBUG CONTEXT TOGGLE
+   ================================================== */
+
+.bbai-debug-context-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.bbai-debug-context-toggle:hover {
+    background: #e5e7eb;
+    border-color: #d1d5db;
+}
+
+.bbai-debug-context-toggle.is-expanded {
+    background: #dbeafe;
+    border-color: #3b82f6;
+    color: #1e40af;
+}
+
+/* ==================================================
+   TOGGLE SIZES
+   ================================================== */
+
+/* Small toggle */
+.bbai-settings-toggle--small {
+    width: 36px;
+    height: 20px;
+}
+
+.bbai-settings-toggle--small .bbai-settings-toggle-slider:before {
+    height: 14px;
+    width: 14px;
+}
+
+.bbai-settings-toggle--small input:checked + .bbai-settings-toggle-slider:before {
+    transform: translateX(16px);
+}
+
+/* Large toggle */
+.bbai-settings-toggle--large {
+    width: 56px;
+    height: 28px;
+}
+
+.bbai-settings-toggle--large .bbai-settings-toggle-slider:before {
+    height: 22px;
+    width: 22px;
+}
+
+.bbai-settings-toggle--large input:checked + .bbai-settings-toggle-slider:before {
+    transform: translateX(28px);
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 768px) {
+    .bbai-settings-toggle {
+        /* Slightly larger for easier mobile tapping */
+        width: 52px;
+        height: 26px;
+    }
+
+    .bbai-settings-toggle-slider:before {
+        height: 20px;
+        width: 20px;
+    }
+
+    .bbai-settings-toggle input:checked + .bbai-settings-toggle-slider:before {
+        transform: translateX(26px);
+    }
+}
+
+
+
+/* ==================================================
+   FEATURE COMPONENTS - Dashboard
+   Dashboard-specific components
+   ================================================== */
+
+/* Imported from: features/dashboard/hero.css */
+/**
+ * Dashboard Hero Component
+ * Hero section with account banner, title, and CTA
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   HERO CONTAINER
+   ================================================== */
+
+.bbai-hero {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.bbai-hero-title {
+    font-size: 2.625rem;
+    font-weight: var(--bbai-font-bold);
+    color: var(--bbai-gray-900);
+    margin: 0 0 2.25rem 0;
+    line-height: 1.2;
+}
+
+.bbai-hero .bbai-btn-primary {
+    display: block;
+    margin: 1rem auto 0;
+}
+
+/* ==================================================
+   ACCOUNT BANNER
+   ================================================== */
+
+.bbai-account-banner {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 28px 32px;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+    border: 1px solid #e2e8f0;
+    margin-bottom: 2.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    text-align: left;
+}
+
+.bbai-account-banner__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.bbai-account-banner__header h3 {
+    margin: 12px 0 6px 0;
+    font-size: 1.25rem;
+    font-weight: var(--bbai-font-bold);
+    color: #0f172a;
+}
+
+.bbai-account-banner__header p {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.95rem;
+}
+
+/* ==================================================
+   ACCOUNT CHIP
+   ================================================== */
+
+.bbai-account-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(20, 184, 166, 0.12);
+    color: #0f172a;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.bbai-account-chip::before {
+    content: '🔒';
+}
+
+/* ==================================================
+   ACCOUNT PLAN
+   ================================================== */
+
+.bbai-account-plan {
+    text-align: right;
+}
+
+.bbai-account-plan-label {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.bbai-account-plan small {
+    display: block;
+    color: #94a3b8;
+    font-size: 0.8rem;
+    margin-top: 4px;
+}
+
+/* ==================================================
+   ACCOUNT ACTIONS
+   ================================================== */
+
+.bbai-account-banner__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+
+.bbai-account-btn {
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #0f172a;
+    padding: 10px 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.bbai-account-btn:hover {
+    border-color: #cbd5f5;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+}
+
+.bbai-account-btn--primary {
+    background: linear-gradient(135deg, #14b8a6 0%, #84cc16 100%);
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 8px 20px rgba(20, 184, 166, 0.35);
+}
+
+.bbai-account-btn--primary:hover {
+    opacity: 0.92;
+}
+
+.bbai-account-btn--ghost {
+    background: transparent;
+    border: none;
+    color: #ef4444;
+    box-shadow: none;
+}
+
+.bbai-account-btn--ghost:hover {
+    color: #dc2626;
+}
+
+/* ==================================================
+   ACCOUNT HELP TEXT
+   ================================================== */
+
+.bbai-account-help {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 768px) {
+    .bbai-hero-title {
+        font-size: var(--bbai-text-xl);
+    }
+
+    .bbai-account-banner {
+        padding: 20px 24px;
+    }
+
+    .bbai-account-banner__header {
+        flex-direction: column;
+    }
+
+    .bbai-account-plan {
+        text-align: left;
+    }
+}
+
+
+/* Imported from: features/dashboard/usage-card.css */
+/**
+ * Dashboard Usage Card Component
+ * Usage tracking card with circular progress and details
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   USAGE CARD CIRCULAR (Horizontal Layout)
+   ================================================== */
+
+.bbai-usage-card-circular {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    margin-bottom: 0;
+    border: 1px solid #f3f4f6;
+    transition: all 0.2s ease;
+}
+
+.bbai-usage-card-circular:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: #e5e7eb;
+}
+
+.bbai-usage-circular-container {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+}
+
+.bbai-usage-circular-link {
+    margin-top: 0;
+}
+
+/* ==================================================
+   USAGE CARD (Vertical Layout)
+   ================================================== */
+
+.bbai-usage-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 24px;
+    padding: 32px;
+    height: 100%;
+    justify-content: space-between;
+    min-height: 100%;
+    position: relative;
+}
+
+.bbai-usage-card--full-width {
+    flex: 1 1 100% !important;
+    max-width: 100% !important;
+}
+
+.bbai-usage-card-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 20px 0;
+}
+
+/* ==================================================
+   USAGE RING WRAPPER
+   ================================================== */
+
+.bbai-usage-ring-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.bbai-usage-tooltip {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: help;
+    color: #6b7280;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.bbai-usage-tooltip:hover {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.bbai-usage-tooltip svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* ==================================================
+   USAGE LINKS
+   ================================================== */
+
+.bbai-usage-upgrade-link,
+.bbai-usage-billing-link {
+    display: inline-block;
+    margin-top: 16px;
+    font-size: 14px;
+    color: #7B61FF;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+    padding-top: 4px;
+}
+
+.bbai-usage-upgrade-link:hover,
+.bbai-usage-billing-link:hover {
+    color: #6B4FE8;
+    text-decoration: underline;
+}
+
+.bbai-upgrade-inline {
+    color: var(--bbai-info);
+    text-decoration: none;
+    font-weight: var(--bbai-font-semibold);
+}
+
+.bbai-upgrade-inline:hover {
+    text-decoration: underline;
+}
+
+/* ==================================================
+   USAGE DETAILS
+   ================================================== */
+
+.bbai-usage-details {
+    flex: 1;
+}
+
+.bbai-usage-text {
+    font-size: 15px;
+    color: #111827;
+    margin-bottom: 8px;
+    line-height: 1.5;
+    font-weight: 500;
+}
+
+.bbai-usage-text strong {
+    font-weight: 600;
+    color: #111827;
+}
+
+.bbai-usage-microcopy {
+    font-size: 13px;
+    color: #677388;
+    margin-top: 4px;
+}
+
+/* ==================================================
+   CIRCULAR PROGRESS OVERRIDES (Dashboard Context)
+   ================================================== */
+
+.bbai-usage-card .bbai-circular-progress {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    margin: 0 auto;
+}
+
+/* ==================================================
+   GRADIENT DEFINITION
+   ================================================== */
+
+.bbai-circular-progress-svg defs {
+    display: none;
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 768px) {
+    .bbai-usage-card-circular {
+        padding: 28px 24px;
+        margin-bottom: 32px !important;
+        width: 100% !important;
+    }
+
+    .bbai-usage-circular-container {
+        flex-direction: column !important;
+        text-align: center !important;
+        gap: 28px;
+    }
+
+    .bbai-usage-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 24px;
+    }
+
+    .bbai-usage-card-title {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 640px) {
+    .bbai-usage-card-circular {
+        padding: 24px 20px;
+    }
+}
+
+
+/* Imported from: features/dashboard/metrics.css */
+/**
+ * Dashboard Metrics Component
+ * Metrics grid, time saved card, optimization cards
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   METRICS GRID
+   ================================================== */
+
+.bbai-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-bottom: 48px;
+}
+
+.bbai-optimization-main-card {
+    margin-bottom: 0;
+}
+
+/* ==================================================
+   METRIC ICON (Alternate Style)
+   ================================================== */
+
+.bbai-metric-icon {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 16px;
+    color: #677388;
+    opacity: 0.6;
+}
+
+.bbai-metric-icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+/* ==================================================
+   TIME SAVED CARD
+   ================================================== */
+
+.bbai-time-saved-card {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%) !important;
+    border: 1px solid #10b981 !important;
+    border-radius: 12px !important;
+    padding: 28px !important;
+    margin-bottom: 24px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* ==================================================
+   OPTIMIZATION CARD
+   ================================================== */
+
+.bbai-optimization-card {
+    background: white !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 12px !important;
+    padding: 28px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    transition: box-shadow 0.2s ease !important;
+    position: relative;
+    overflow: hidden;
+    padding-top: 24px;
+    padding-bottom: 20px;
+    padding-left: 24px;
+    padding-right: 24px;
+    margin-bottom: 30px;
+}
+
+.bbai-optimization-card:hover {
+    box-shadow: var(--bbai-card-shadow-hover) !important;
+}
+
+.bbai-optimization-card--complete {
+    border-left: 6px solid #0EAD4B;
+    box-shadow: 0 0 0 1px rgba(14, 173, 75, 0.1), 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.bbai-optimization-accent-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    background: #0EAD4B;
+}
+
+/* ==================================================
+   OPTIMIZATION HEADER
+   ================================================== */
+
+.bbai-optimization-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.bbai-optimization-success-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: #0EAD4B;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.bbai-optimization-success-chip svg {
+    width: 16px;
+    height: 16px;
+}
+
+.bbai-optimization-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+    line-height: 1.3;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.bbai-optimization-check-icon {
+    color: #0EAD4B;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1;
+    display: inline-block;
+}
+
+/* ==================================================
+   OPTIMIZATION PROGRESS (Dashboard Context)
+   ================================================== */
+
+.bbai-optimization-progress {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 20px !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+}
+
+.bbai-optimization-progress-bar {
+    height: 6px !important;
+    background: #f3f4f6 !important;
+    border-radius: 999px !important;
+    overflow: hidden !important;
+    margin: 20px 0 !important;
+    width: 100%;
+    height: 10px;
+    background: #f3f4f6;
+    border-radius: 5px;
+}
+
+.bbai-optimization-progress-bar .bbai-optimization-progress-fill {
+    height: 100% !important;
+    background: linear-gradient(90deg, #8b5cf6 0%, #a855f7 100%) !important;
+    border-radius: 999px !important;
+    transition: width 0.3s ease !important;
+}
+
+/* ==================================================
+   OPTIMIZATION STATS
+   ================================================== */
+
+.bbai-optimization-stats {
+    display: flex !important;
+    justify-content: space-between !important;
+    margin-top: 16px !important;
+}
+
+.bbai-optimization-stat {
+    text-align: center !important;
+}
+
+.bbai-optimization-stat-label {
+    font-size: 12px !important;
+    color: #6b7280 !important;
+    margin-bottom: 4px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    font-weight: 600 !important;
+}
+
+.bbai-optimization-stat-value {
+    font-size: 24px !important;
+    font-weight: 700 !important;
+    color: #111827 !important;
+}
+
+/* ==================================================
+   INFO NOTICE
+   ================================================== */
+
+.bbai-info-notice {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    margin-bottom: 30px;
+    background: rgba(59, 130, 246, 0.05);
+    border-left: 4px solid #3B82F6;
+    border-top: 1px solid rgba(59, 130, 246, 0.15);
+    border-right: 1px solid rgba(59, 130, 246, 0.15);
+    border-bottom: 1px solid rgba(59, 130, 246, 0.15);
+    border-radius: 8px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.bbai-info-notice svg {
+    flex-shrink: 0;
+    color: #3B82F6;
+}
+
+.bbai-info-notice span {
+    font-size: 14px;
+    color: #677388;
+    line-height: 1.6;
+}
+
+/* ==================================================
+   DASHBOARD ACTIONS
+   ================================================== */
+
+.bbai-dashboard-actions {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    margin-top: 32px !important;
+    align-items: center !important;
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 768px) {
+    .bbai-metrics-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .bbai-time-saved-card,
+    .bbai-info-notice,
+    .bbai-optimization-card {
+        margin-bottom: 32px !important;
+        width: 100% !important;
+    }
+
+    .bbai-optimization-title {
+        font-size: 20px;
+    }
+
+    .bbai-optimization-stat-value {
+        font-size: 20px !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .bbai-time-saved-card,
+    .bbai-optimization-card {
+        padding: 20px !important;
+    }
+
+    .bbai-optimization-stats {
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .bbai-optimization-stat {
+        flex: 1 1 45%;
+    }
+}
+
+
+
+/* ==================================================
+   FEATURE COMPONENTS - Library
+   Image library components
+   ================================================== */
+
+/* Imported from: features/library/grid.css */
+/**
+ * Library Grid Component
+ * Main library layout with sidebar
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   LIBRARY GRID LAYOUT
+   ================================================== */
+
+.bbai-library-grid,
+.bbai-guide-grid,
+.bbai-table-scroll {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.bbai-library-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+    gap: 24px;
+    align-items: flex-start;
+}
+
+.bbai-library-main {
+    min-width: 0;
+}
+
+.bbai-library-sidebar {
+    position: relative;
+}
+
+.bbai-library-table-card--full-width {
+    grid-column: 1 / -1;
+}
+
+/* ==================================================
+   GUIDE GRID
+   ================================================== */
+
+.bbai-guide-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+/* ==================================================
+   TABLE SCROLL CONTAINER
+   ================================================== */
+
+.bbai-table-scroll {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+}
+
+.bbai-table-scroll table {
+    min-width: 720px;
+    border-collapse: collapse;
+}
+
+/* ==================================================
+   LIBRARY TABLE SPECIFICS
+   ================================================== */
+
+.bbai-library-table th,
+.bbai-library-table td {
+    word-break: break-word;
+}
+
+/* ==================================================
+   LIBRARY ROW STATES
+   ================================================== */
+
+.bbai-library-row {
+    transition: background-color 0.2s ease;
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 1200px) {
+    .bbai-library-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .bbai-library-sidebar {
+        position: static;
+    }
+
+    .bbai-pro-upsell-card {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 1080px) {
+    .bbai-library-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 900px) {
+    .bbai-guide-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .bbai-library-controls {
+        flex-direction: column;
+    }
+
+    .bbai-search-wrapper {
+        min-width: 100%;
+    }
+
+    .bbai-filters {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .bbai-library-table {
+        font-size: 13px;
+    }
+
+    .bbai-library-table th,
+    .bbai-library-table td {
+        padding: 10px 12px !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .bbai-library-stats {
+        font-size: 13px !important;
+    }
+}
+
+
+/* Imported from: features/library/table.css */
+/**
+ * Library Table Component
+ * Image library table with filters and row states
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   LIBRARY CONTAINER
+   ================================================== */
+
+.bbai-library {
+    background: var(--bbai-white);
+    border: 1px solid var(--bbai-border-primary);
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-space-4) var(--bbai-space-4) var(--bbai-space-2);
+    box-shadow: var(--bbai-shadow-sm);
+}
+
+/* ==================================================
+   LIBRARY INTRO
+   ================================================== */
+
+.bbai-library__intro {
+    padding: var(--bbai-space-2) var(--bbai-space-2) var(--bbai-space-5);
+    border-bottom: 1px solid var(--bbai-border-primary);
+}
+
+.bbai-library__intro h2 {
+    margin: 0 0 var(--bbai-space-1) 0;
+}
+
+/* ==================================================
+   LIBRARY FILTERS BAR
+   ================================================== */
+
+.bbai-library__filters {
+    display: flex;
+    gap: var(--bbai-space-2);
+    align-items: center;
+    padding: var(--bbai-space-4) var(--bbai-space-2);
+}
+
+/* ==================================================
+   LIBRARY TABLE
+   ================================================== */
+
+.bbai-library__table,
+.bbai-audit__table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+}
+
+.bbai-library__table thead th {
+    font-size: var(--bbai-text-xs);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--bbai-gray-500);
+    padding: var(--bbai-space-2) var(--bbai-space-3);
+}
+
+.bbai-library__table tbody tr {
+    background: var(--bbai-gray-50);
+    border: 1px solid var(--bbai-border-primary);
+    border-radius: 10px;
+    box-shadow: var(--bbai-shadow-xs);
+}
+
+.bbai-library__table tbody td {
+    padding: .9rem .9rem;
+    vertical-align: middle;
+}
+
+.bbai-library__table td:last-child,
+.bbai-library__table th:last-child {
+    background: transparent;
+}
+
+/* ==================================================
+   LIBRARY ROW STATES
+   ================================================== */
+
+.bbai-library__row--recent {
+    outline: 2px solid rgba(59, 130, 246, .15);
+}
+
+.bbai-library__row--missing {
+    outline: 2px solid rgba(245, 158, 11, .18);
+}
+
+.bbai-library__row--updated {
+    animation: bbaiRowHighlight 1.6s ease-out;
+}
+
+@keyframes bbaiRowHighlight {
+    0% {
+        background-color: rgba(59, 130, 246, 0.12);
+    }
+    60% {
+        background-color: rgba(59, 130, 246, 0.06);
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
+/* ==================================================
+   LIBRARY BUTTON TRANSITIONS
+   ================================================== */
+
+.bbai-library .button {
+    transition: var(--bbai-transition);
+}
+
+.bbai-library .button:hover {
+    transform: translateY(-1px);
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 768px) {
+    .bbai-library {
+        padding: var(--bbai-space-3) var(--bbai-space-3) var(--bbai-space-2);
+    }
+
+    .bbai-library__intro {
+        padding: var(--bbai-space-2) var(--bbai-space-1) var(--bbai-space-4);
+    }
+
+    .bbai-library__filters {
+        padding: var(--bbai-space-3) var(--bbai-space-1);
+    }
+
+    .bbai-library__table tbody td {
+        padding: .7rem .7rem;
+    }
+}
+
+
+/* Imported from: features/library/filters.css */
+/**
+ * Library Filters Component
+ * Filter buttons and search wrapper
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   SEARCH WRAPPER
+   ================================================== */
+
+.bbai-search-wrapper {
+    position: relative;
+}
+
+/* ==================================================
+   FILTER BUTTONS
+   ================================================== */
+
+.bbai-filter-btn {
+    padding: 8px 16px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    color: #374151;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.bbai-filter-btn:hover {
+    background: #f9fafb !important;
+    border-color: #d1d5db !important;
+}
+
+.bbai-filter-btn.active {
+    background: #eff6ff !important;
+    border-color: #3b82f6 !important;
+    color: #1e40af !important;
+}
+
+/* ==================================================
+   FILTERS CONTAINER
+   ================================================== */
+
+.bbai-filters {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 768px) {
+    .bbai-search-wrapper {
+        min-width: 100%;
+    }
+
+    .bbai-filters {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .bbai-filter-btn {
+        flex: 1 1 calc(50% - 4px);
+        min-width: 140px;
+    }
+}
+
+@media (max-width: 640px) {
+    .bbai-filter-btn {
+        font-size: 13px !important;
+        padding: 7px 12px !important;
+    }
+}
+
+
+/* Imported from: features/library/thumbnail.css */
+/**
+ * Library Thumbnail Component
+ * Image thumbnails and placeholders
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   THUMBNAIL WRAPPER
+   ================================================== */
+
+.bbai-thumb-wrapper {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #f1f5f9;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ==================================================
+   THUMBNAIL IMAGE
+   ================================================== */
+
+.bbai-thumb {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: var(--bbai-radius-sm);
+    border: 1px solid var(--bbai-border-primary);
+    box-shadow: var(--bbai-shadow-xs);
+}
+
+/* Alternate size */
+.bbai-thumb-wrapper .bbai-thumb {
+    width: 100%;
+    height: 100%;
+}
+
+/* ==================================================
+   THUMBNAIL PLACEHOLDER
+   ================================================== */
+
+.bbai-thumb--placeholder {
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 768px) {
+    .bbai-thumb {
+        width: 48px;
+        height: 48px;
+    }
+
+    .bbai-thumb-wrapper {
+        width: 48px;
+        height: 48px;
+    }
+}
+
+@media (max-width: 640px) {
+    .bbai-thumb {
+        width: 44px;
+        height: 44px;
+    }
+
+    .bbai-thumb-wrapper {
+        width: 44px;
+        height: 44px;
+    }
+}
+
+
+
+/* ==================================================
+   FEATURE COMPONENTS - Settings
+   Settings page components
+   ================================================== */
+
+/* Imported from: features/settings/page.css */
+/**
+ * Settings Page Component
+ * Settings page layout, cards, and plan management
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   SETTINGS PAGE CONTAINER
+   ================================================== */
+
+.bbai-settings-container h1,
+.bbai-settings-container h2 {
+    font-family: var(--bbai-font-family-heading);
+}
+
+.bbai-settings-page {
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 0 20px;
+    background: #F9FAFB;
+}
+
+/* ==================================================
+   PAGE HEADER
+   ================================================== */
+
+.bbai-settings-page-header {
+    text-align: center;
+    padding: 0 0 40px;
+}
+
+.bbai-settings-page-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 12px 0;
+    line-height: 1.2;
+}
+
+.bbai-settings-page-subtitle {
+    font-size: 16px;
+    color: #6B7280;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* ==================================================
+   SITE-WIDE SETTINGS BANNER
+   ================================================== */
+
+.bbai-settings-sitewide-banner {
+    background: #F0F7FF;
+    border: 1px solid #D0E7FF;
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.bbai-settings-sitewide-icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.bbai-settings-sitewide-content {
+    flex: 1;
+}
+
+.bbai-settings-sitewide-title {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e40af;
+    margin-bottom: 4px;
+}
+
+.bbai-settings-sitewide-text {
+    font-size: 13px;
+    color: #1e40af;
+    line-height: 1.5;
+}
+
+/* ==================================================
+   SETTINGS CARD
+   ================================================== */
+
+.bbai-settings-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.bbai-settings-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.bbai-settings-card-header-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+}
+
+.bbai-settings-card-header-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.bbai-settings-card-header-content {
+    flex: 1;
+}
+
+.bbai-settings-card-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 4px 0;
+}
+
+.bbai-settings-card-description {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* ==================================================
+   PLAN SUMMARY CARD
+   ================================================== */
+
+.bbai-settings-plan-summary-card {
+    background: #FFFFFF;
+    border-radius: 14px;
+    border: 1px solid #EAECF0;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+    padding: 28px;
+    margin-bottom: 40px;
+    position: relative;
+}
+
+.bbai-settings-plan-badge-top {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+}
+
+.bbai-settings-plan-badge-text {
+    display: inline-block;
+    padding: 4px 12px;
+    background: #F3F4F6;
+    color: #6B7280;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.bbai-settings-plan-quota {
+    margin: 60px 0 24px;
+    text-align: center;
+}
+
+.bbai-settings-plan-quota-meter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 32px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.bbai-settings-plan-quota-used,
+.bbai-settings-plan-quota-limit {
+    display: inline-block;
+}
+
+.bbai-settings-plan-quota-divider {
+    color: #9CA3AF;
+    font-weight: 300;
+}
+
+.bbai-settings-plan-quota-label {
+    font-size: 14px;
+    color: #6B7280;
+    margin-top: 8px;
+}
+
+/* ==================================================
+   PLAN STATUS CARD
+   ================================================== */
+
+.bbai-settings-plan-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.bbai-settings-plan-card--free {
+    background: linear-gradient(135deg, #2bb8ff 0%, #0070f3 100%);
+    border: none;
+    color: white;
+}
+
+.bbai-settings-plan-card--pro {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: none;
+    color: white;
+}
+
+.bbai-settings-plan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.bbai-settings-plan-badge {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.bbai-settings-plan-badge--free {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.bbai-settings-plan-badge--pro {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.bbai-settings-plan-renewal {
+    text-align: right;
+}
+
+.bbai-settings-plan-renewal-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+    opacity: 0.9;
+}
+
+.bbai-settings-plan-renewal-date {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.bbai-settings-plan-usage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.bbai-settings-plan-usage-stats {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.bbai-settings-plan-usage-value {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.bbai-settings-plan-usage-label {
+    font-size: 12px;
+    font-weight: 500;
+    opacity: 0.9;
+    margin-top: 4px;
+}
+
+.bbai-settings-plan-usage-divider {
+    font-size: 24px;
+    font-weight: 300;
+    opacity: 0.7;
+}
+
+.bbai-settings-plan-progress {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.bbai-settings-plan-card--free .bbai-settings-plan-progress {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.bbai-settings-plan-card--pro .bbai-settings-plan-progress {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.bbai-settings-plan-progress-bar {
+    height: 100%;
+    background: white;
+    border-radius: 999px;
+    transition: width 0.3s ease;
+}
+
+.bbai-settings-plan-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 24px 0;
+}
+
+.bbai-settings-plan-feature {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    margin-bottom: 12px;
+}
+
+.bbai-settings-plan-feature svg {
+    flex-shrink: 0;
+}
+
+.bbai-settings-plan-card--free .bbai-settings-plan-feature svg,
+.bbai-settings-plan-card--pro .bbai-settings-plan-feature svg {
+    color: white;
+}
+
+.bbai-settings-plan-upgrade-btn {
+    width: 100%;
+    padding: 14px 24px;
+    background: white;
+    color: #111827;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.bbai-settings-plan-upgrade-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 768px) {
+    .bbai-settings-page {
+        margin: 20px auto;
+        padding: 0 16px;
+    }
+
+    .bbai-settings-page-title {
+        font-size: 24px;
+    }
+
+    .bbai-settings-plan-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .bbai-settings-plan-renewal {
+        text-align: left;
+    }
+
+    .bbai-settings-plan-features {
+        margin-bottom: 20px;
+    }
+
+    .bbai-settings-form-field--toggle {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .bbai-settings-plan-usage-value {
+        font-size: 28px;
+    }
+
+    .bbai-settings-plan-quota-meter {
+        font-size: 28px;
+    }
+}
+
+
+/* Imported from: features/settings/account.css */
+/**
+ * Settings Account Component
+ * Account status, actions, and info banners
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   ACCOUNT STATUS
+   ================================================== */
+
+.bbai-settings-account-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #f9fafb;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.bbai-settings-account-status-label {
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.bbai-settings-account-status-value {
+    font-size: 14px;
+    color: #111827;
+    font-weight: 700;
+}
+
+/* ==================================================
+   ACCOUNT ACTIONS
+   ================================================== */
+
+.bbai-settings-account-actions {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.bbai-settings-account-action-btn {
+    width: 100%;
+    padding: 12px 24px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.bbai-settings-account-action-btn:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.bbai-settings-account-action-info {
+    padding: 16px;
+    background: #f9fafb;
+    border-radius: 6px;
+}
+
+.bbai-settings-account-action-info p {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0 0 12px 0;
+    font-weight: 500;
+}
+
+.bbai-settings-account-action-info ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bbai-settings-account-action-info li {
+    font-size: 13px;
+    color: #374151;
+    padding-left: 24px;
+    position: relative;
+}
+
+.bbai-settings-account-action-info li:before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: #10b981;
+    font-weight: 700;
+}
+
+/* ==================================================
+   INFO BANNER
+   ================================================== */
+
+.bbai-settings-info-banner {
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.bbai-settings-info-banner svg {
+    flex-shrink: 0;
+    color: #0284c7;
+}
+
+/* ==================================================
+   UPSELL BANNER
+   ================================================== */
+
+.bbai-settings-upsell-banner {
+    background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 24px;
+    color: white;
+}
+
+.bbai-settings-upsell-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 16px 0;
+    line-height: 1.3;
+}
+
+.bbai-settings-upsell-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px 0;
+}
+
+.bbai-settings-upsell-features li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.bbai-settings-upsell-features li:before {
+    content: '✓';
+    font-weight: 700;
+    color: #86efac;
+}
+
+.bbai-settings-upsell-btn {
+    width: 100%;
+    padding: 12px 24px;
+    background: white;
+    color: #7c3aed;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.bbai-settings-upsell-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ==================================================
+   PRO UPSELL BANNER
+   ================================================== */
+
+.bbai-settings-pro-upsell-banner {
+    background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 32px;
+    color: white;
+    text-align: center;
+}
+
+.bbai-settings-pro-upsell-btn {
+    display: inline-block;
+    padding: 12px 28px;
+    background: white;
+    color: #7c3aed;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.bbai-settings-pro-upsell-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 768px) {
+    .bbai-settings-account-action-btn {
+        padding: 10px 20px;
+        font-size: 13px;
+    }
+
+    .bbai-settings-upsell-banner {
+        padding: 20px;
+    }
+
+    .bbai-settings-pro-upsell-banner {
+        padding: 20px;
+    }
+
+    .bbai-settings-pro-upsell-btn {
+        padding: 10px 24px;
+        font-size: 14px;
+    }
+}
+
+
+
+/* ==================================================
+   FEATURE COMPONENTS - Pricing
+   Pricing and upsell components
+   ================================================== */
+
+/* Imported from: features/pricing/cards.css */
+/**
+ * Pricing Cards Component
+ * Pricing options and plan cards
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   PRICING OPTIONS GRID
+   ================================================== */
+
+.bbai-pricing-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+/* ==================================================
+   PRICING CARD
+   ================================================== */
+
+.bbai-pricing-card {
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.bbai-pricing-card--pro {
+    border-color: #3b82f6;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+}
+
+.bbai-pricing-card--featured {
+    border-color: #1d4ed8;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    position: relative;
+    transform: scale(1.05);
+    box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.3);
+}
+
+.bbai-pricing-card--credits {
+    border-color: #10b981;
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+}
+
+.bbai-pricing-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.1);
+}
+
+/* ==================================================
+   PRICING HEADER
+   ================================================== */
+
+.bbai-pricing-header h4 {
+    margin: 0 0 1rem 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+/* ==================================================
+   PRICING PRICE
+   ================================================== */
+
+.bbai-pricing-price {
+    margin-bottom: 1.5rem;
+}
+
+.bbai-pricing-amount {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.bbai-pricing-period {
+    font-size: 1rem;
+    color: #6b7280;
+    margin-left: 0.25rem;
+}
+
+.bbai-pricing-savings {
+    font-size: 0.875rem;
+    color: #059669;
+    font-weight: 600;
+    margin-top: 0.5rem;
+}
+
+.bbai-pricing-value {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
+}
+
+/* ==================================================
+   PRICING FEATURES
+   ================================================== */
+
+.bbai-pricing-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.5rem 0;
+    text-align: left;
+}
+
+.bbai-pricing-features li {
+    padding: 0.5rem 0;
+    color: #374151;
+    font-size: 0.875rem;
+}
+
+/* ==================================================
+   PRICING BUTTONS
+   ================================================== */
+
+.bbai-pricing-btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+    width: 100%;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.bbai-pricing-btn--primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.bbai-pricing-btn--primary:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+}
+
+.bbai-pricing-btn--secondary {
+    background: #10b981;
+    color: white;
+}
+
+.bbai-pricing-btn--secondary:hover {
+    background: #059669;
+    transform: translateY(-1px);
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 768px) {
+    .bbai-pricing-options {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .bbai-pricing-card--featured {
+        transform: scale(1);
+    }
+
+    .bbai-pricing-amount {
+        font-size: 2rem;
+    }
+}
+
+
+/* Imported from: features/pricing/upsell.css */
+/**
+ * Pro Upsell Card Component
+ * Premium upgrade card for sidebar
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   PRO UPSELL CARD
+   ================================================== */
+
+.bbai-pro-upsell-card {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0891b2 100%);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.2s ease;
+}
+
+.bbai-pro-upsell-card:hover {
+    box-shadow: 0 6px 20px rgba(14, 165, 233, 0.25);
+    transform: translateY(-2px);
+}
+
+/* ==================================================
+   PRO UPSELL HEADER
+   ================================================== */
+
+.bbai-pro-upsell-header {
+    margin-bottom: 28px;
+}
+
+.bbai-pro-upsell-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: white;
+    line-height: 1.3;
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+/* ==================================================
+   PRO UPSELL FEATURES
+   ================================================== */
+
+.bbai-pro-upsell-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 32px 0;
+}
+
+.bbai-pro-upsell-features li {
+    display: flex;
+    align-items: start;
+    gap: 14px;
+    padding: 10px 0;
+    color: white;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.bbai-pro-upsell-features li:first-child {
+    padding-top: 0;
+}
+
+.bbai-pro-upsell-features li:last-child {
+    padding-bottom: 0;
+}
+
+.bbai-feature-check {
+    flex-shrink: 0;
+    margin-top: 3px;
+}
+
+/* ==================================================
+   PRO UPSELL BUTTON
+   ================================================== */
+
+.bbai-btn-block {
+    width: 100%;
+    justify-content: center;
+    padding: 14px 24px;
+}
+
+/* ==================================================
+   PRICING BADGE
+   ================================================== */
+
+.bbai-pricing-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1d4ed8;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    box-shadow: 0 2px 4px rgba(29, 78, 216, 0.3);
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 1200px) {
+    .bbai-pro-upsell-card {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .bbai-pro-upsell-card {
+        padding: 32px 24px;
+    }
+
+    .bbai-pro-upsell-title {
+        font-size: 20px;
+    }
+
+    .bbai-pro-upsell-features li {
+        font-size: 14px;
+    }
+}
+
+
+
+/* ==================================================
+   FEATURE COMPONENTS - Bulk Operations
+   Bulk optimization components
+   ================================================== */
+
+/* Imported from: features/bulk/operations.css */
+/**
+ * Bulk Operations Component
+ * Bulk optimization progress and buttons
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   BULK PROGRESS INDICATOR
+   ================================================== */
+
+.bbai-bulk-progress {
+    margin-top: 16px;
+    background: var(--bbai-info-bg);
+    border-radius: var(--bbai-radius-lg);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    padding: 14px 16px;
+    color: #312e81;
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.bbai-bulk-progress[hidden] {
+    display: none !important;
+}
+
+.bbai-bulk-progress:not([hidden]) {
+    display: flex !important;
+}
+
+.bbai-bulk-progress__header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: var(--bbai-font-semibold);
+    font-size: var(--bbai-text-sm);
+}
+
+.bbai-bulk-progress__counts {
+    color: #4338ca;
+    font-weight: var(--bbai-font-medium);
+}
+
+.bbai-bulk-progress__bar {
+    position: relative;
+    width: 100%;
+    height: 8px;
+    background: rgba(99, 102, 241, 0.18);
+    border-radius: var(--bbai-radius-full);
+    overflow: hidden;
+}
+
+.bbai-bulk-progress__bar span {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 0;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    transition: width var(--bbai-transition-base) ease;
+}
+
+/* ==================================================
+   BULK OPTIMIZATION BUTTON
+   ================================================== */
+
+.bbai-bulk-btn {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    border: none;
+    padding: 1.25rem 2.5rem;
+    border-radius: 16px;
+    font-size: 1.125rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    max-width: 450px;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3), 0 2px 4px rgba(59, 130, 246, 0.2);
+    position: relative;
+    overflow: hidden;
+    letter-spacing: 0.025em;
+}
+
+.bbai-bulk-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.bbai-bulk-btn:hover:not(:disabled)::before {
+    left: 100%;
+}
+
+.bbai-bulk-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 24px -4px rgba(59, 130, 246, 0.4), 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+.bbai-bulk-btn:disabled,
+.bbai-bulk-btn.loading {
+    background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+    color: #ffffff;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    opacity: 0.7;
+}
+
+.bbai-bulk-btn:disabled:hover,
+.bbai-bulk-btn.loading:hover {
+    background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+    transform: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.bbai-bulk-btn:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 4px 8px -2px rgba(59, 130, 246, 0.3);
+}
+
+/* ==================================================
+   BULK BUTTON - LIMIT STATE
+   ================================================== */
+
+.bbai-bulk-btn--limit {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    position: relative;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.25rem 2.5rem 1rem 2.5rem;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3), 0 2px 4px rgba(239, 68, 68, 0.2);
+}
+
+.bbai-bulk-btn--limit::before {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+}
+
+.bbai-bulk-btn--limit:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px -4px rgba(239, 68, 68, 0.3);
+}
+
+.bbai-bulk-btn--limit:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 8px -2px rgba(239, 68, 68, 0.3);
+}
+
+.bbai-bulk-btn__badge {
+    background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: 2px solid #ffffff;
+    position: relative;
+    z-index: 1;
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 640px) {
+    .bbai-bulk-btn {
+        padding: 1rem 2rem;
+        font-size: 1rem;
+    }
+
+    .bbai-bulk-btn--limit {
+        padding: 1rem 2rem 0.875rem 2rem;
+    }
+}
+
+
+
+/* ==================================================
+   FEATURE COMPONENTS - Debug
+   Debug dashboard components
+   ================================================== */
+
+/* Imported from: features/debug/dashboard.css */
+/**
+ * Debug Dashboard Component
+ * Debug logging interface with filters and tables
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   DEBUG STATS CARD
+   ================================================== */
+
+.bbai-debug-stats-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.bbai-debug-stats-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.bbai-debug-stats-title h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 4px 0;
+}
+
+.bbai-debug-stats-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.bbai-debug-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 24px;
+    border-top: 1px solid #f3f4f6;
+    padding-top: 24px;
+}
+
+.bbai-debug-stat-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.bbai-debug-stat-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+}
+
+.bbai-debug-stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.2;
+}
+
+.bbai-debug-stat-value--warning {
+    color: #f59e0b;
+}
+
+.bbai-debug-stat-value--error {
+    color: #ef4444;
+}
+
+.bbai-debug-stat-value--small {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* ==================================================
+   DEBUG FILTERS
+   ================================================== */
+
+.bbai-debug-filters-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.bbai-debug-filters-form {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+
+.bbai-debug-filter-group {
+    flex: 1;
+    min-width: 150px;
+}
+
+.bbai-debug-filter-group--search {
+    flex: 2;
+    min-width: 200px;
+}
+
+.bbai-debug-filter-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.bbai-debug-filter-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: #6b7280;
+}
+
+.bbai-debug-filter-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #374151;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.bbai-debug-filter-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.bbai-debug-filter-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* ==================================================
+   DEBUG BUTTONS
+   ================================================== */
+
+.bbai-debug-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.bbai-debug-btn--primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.bbai-debug-btn--primary:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.bbai-debug-btn--secondary {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+}
+
+.bbai-debug-btn--secondary:hover:not(:disabled) {
+    background: #e5e7eb;
+    border-color: #d1d5db;
+}
+
+.bbai-debug-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.bbai-debug-btn--upsell {
+    margin-top: 20px;
+    padding: 12px 24px;
+    font-size: 15px;
+}
+
+/* ==================================================
+   DEBUG TABLE
+   ================================================== */
+
+.bbai-debug-table-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.bbai-debug-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.bbai-debug-table thead {
+    background: #f9fafb;
+}
+
+.bbai-debug-table th {
+    padding: 14px 16px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.bbai-debug-table-row {
+    border-bottom: 1px solid #f3f4f6;
+    transition: background 0.15s;
+}
+
+.bbai-debug-table-row:nth-child(even) {
+    background: #fafbfc;
+}
+
+.bbai-debug-table-row:hover {
+    background: #f9fafb;
+}
+
+.bbai-debug-table-cell {
+    padding: 10px 16px;
+    font-size: 13px;
+    color: #374151;
+}
+
+.bbai-debug-table-cell--timestamp {
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.bbai-debug-table-cell--message {
+    color: #111827;
+    max-width: 500px;
+    word-break: break-word;
+}
+
+.bbai-debug-table-empty {
+    text-align: center;
+    padding: 60px 24px;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+/* ==================================================
+   DEBUG BADGE
+   ================================================== */
+
+.bbai-debug-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.bbai-debug-badge-icon {
+    font-size: 14px;
+    line-height: 1;
+}
+
+.bbai-debug-badge-text {
+    line-height: 1.4;
+}
+
+/* ==================================================
+   DEBUG CONTEXT
+   ================================================== */
+
+.bbai-debug-context-toggle {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.bbai-debug-context-toggle:hover {
+    background: #e5e7eb;
+    border-color: #d1d5db;
+}
+
+.bbai-debug-context-toggle.is-expanded {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+.bbai-debug-context-empty {
+    color: #9ca3af;
+    font-size: 13px;
+    font-style: italic;
+}
+
+.bbai-debug-context-row {
+    background: #fafbfc;
+}
+
+.bbai-debug-context-cell {
+    padding: 0;
+}
+
+.bbai-debug-context-content {
+    padding: 16px;
+    background: #1f2937;
+    border-radius: 6px;
+    margin: 8px 16px;
+}
+
+.bbai-debug-context-json {
+    margin: 0;
+    padding: 0;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #e5e7eb;
+    background: transparent;
+    border: none;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-x: auto;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.bbai-debug-context-json::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.bbai-debug-context-json::-webkit-scrollbar-track {
+    background: #111827;
+    border-radius: 4px;
+}
+
+.bbai-debug-context-json::-webkit-scrollbar-thumb {
+    background: #374151;
+    border-radius: 4px;
+}
+
+.bbai-debug-context-json::-webkit-scrollbar-thumb:hover {
+    background: #4b5563;
+}
+
+/* ==================================================
+   DEBUG UPSELL
+   ================================================== */
+
+.bbai-debug-upsell-card {
+    background: linear-gradient(135deg, #f0f9ff 0%, #dbeafe 100%);
+    border-radius: 10px;
+    padding: 32px;
+    text-align: center;
+    margin-bottom: 24px;
+    border: 1px solid #bfdbfe;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.bbai-debug-upsell-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e40af;
+    margin: 0 0 20px;
+}
+
+.bbai-debug-upsell-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 0;
+    display: inline-block;
+    text-align: left;
+}
+
+.bbai-debug-upsell-features li {
+    font-size: 14px;
+    color: #1e40af;
+    margin-bottom: 10px;
+    padding-left: 24px;
+    position: relative;
+}
+
+.bbai-debug-upsell-features li:before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: #10b981;
+    font-weight: 700;
+}
+
+.bbai-debug-upsell-btn {
+    margin-top: 32px;
+    padding: 12px 24px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.bbai-debug-upsell-btn:hover {
+    background: #1d4ed8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+}
+
+/* ==================================================
+   DEBUG PAGINATION
+   ================================================== */
+
+.bbai-debug-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.bbai-debug-pagination-info {
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 768px) {
+    .bbai-debug-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    .bbai-debug-filters-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .bbai-debug-filter-group {
+        min-width: 100%;
+    }
+
+    .bbai-debug-filter-actions {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .bbai-debug-filter-actions .bbai-debug-btn {
+        flex: 1;
+    }
+
+    .bbai-debug-pagination {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .bbai-debug-pagination-info {
+        order: -1;
+    }
+}
+
+@media (max-width: 480px) {
+    .bbai-debug-stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+

@@ -314,6 +314,79 @@ app.post('/billing/checkout', (req, res) => {
     });
 });
 
+// Get billing plans endpoint
+app.get('/billing/plans', (req, res) => {
+    console.log('Billing plans request');
+    
+    // Return mock pricing plans
+    const plans = [
+        {
+            id: 'free',
+            name: 'Free',
+            description: 'Perfect for getting started',
+            price: 0,
+            price_id: null,
+            interval: null,
+            features: [
+                '50 AI alt texts per month',
+                'Basic support',
+                'Manual processing'
+            ],
+            limits: {
+                credits: 50,
+                sites: 1
+            }
+        },
+        {
+            id: 'pro',
+            name: 'Pro',
+            description: 'For professional websites',
+            price: 9.99,
+            price_id: 'price_mock_pro_monthly',
+            interval: 'month',
+            features: [
+                '1,000 AI alt texts per month',
+                'Priority queue',
+                'Bulk processing',
+                'Email support'
+            ],
+            limits: {
+                credits: 1000,
+                sites: 5
+            }
+        },
+        {
+            id: 'agency',
+            name: 'Agency',
+            description: 'For agencies and teams',
+            price: 49.99,
+            price_id: 'price_mock_agency_monthly',
+            interval: 'month',
+            features: [
+                '10,000 AI alt texts per month',
+                'Priority queue',
+                'Bulk processing',
+                'Multiple sites',
+                'Priority support',
+                'API access'
+            ],
+            limits: {
+                credits: 10000,
+                sites: 20
+            }
+        }
+    ];
+    
+    console.log('✓ Billing plans returned:', plans.length, 'plans');
+    
+    res.json({
+        success: true,
+        data: {
+            plans: plans
+        }
+    });
+});
+
 // Reset usage counter and reset date (for testing)
 app.post('/reset-usage', (req, res) => {
     usageCount = 0;
@@ -337,6 +410,7 @@ app.listen(PORT, () => {
     console.log('- POST /api/review');
     console.log('- POST /api/billing/create-checkout (mock Stripe)');
     console.log('- POST /billing/checkout (mock Stripe v2)');
+    console.log('- GET /billing/plans (pricing plans)');
     console.log('- GET /health');
     console.log('- POST /reset-usage (reset counter)');
     console.log(`\nCurrent usage: ${usageCount}/10`);

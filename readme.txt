@@ -260,21 +260,22 @@ First release of BeepBeep AI – Alt Text Generator. Install to start automatica
 
 This plugin connects to external services to perform automated alt text generation and process subscription upgrades.
 
-1. OpenAI API
-   - Purpose: Generate alt text descriptions for images
-   - Data sent: Image URL or base64, prompt, site info
+1. OpenAI API (via our backend)
+   - Purpose: Generate AI alt text descriptions for images
+   - Data sent: Image data (base64 encoded or URL), image prompt text, WordPress site URL, user email address (if authenticated)
    - Terms: https://openai.com/policies/terms-of-use
    - Privacy: https://openai.com/policies/privacy-policy
 
 2. Oppti API (our backend)
-   - Purpose: Handle credits, authentication, usage tracking
-   - Data sent: site domain, user ID, number of images, plan tier
+   - Purpose: Handle credits, authentication, usage tracking, license management
+   - Data sent: WordPress site URL, site identifier hash, user email address, user ID, number of images processed, subscription plan tier, license keys (encrypted)
    - API URL: https://alttext-ai-backend.onrender.com
    - Terms: https://oppti.dev/terms
    - Privacy: https://oppti.dev/privacy
 
 3. Stripe Checkout
    - Purpose: Process payments for upgrades
+   - Data sent: Payment information (handled by Stripe, not stored by plugin), subscription plan selection
    - URLs used in plugin: all buy.stripe.com URLs
    - Terms: https://stripe.com/legal
    - Privacy: https://stripe.com/privacy

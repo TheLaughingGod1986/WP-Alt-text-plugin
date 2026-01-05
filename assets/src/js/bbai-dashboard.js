@@ -3,7 +3,22 @@
  * Handles upgrade modal, auth buttons, and Stripe integration
  */
 
-(function($) {
+const bbaiRunWithJQuery = (function() {
+    let warned = false;
+    return function(callback) {
+        const jq = window.jQuery || window.$;
+        if (typeof jq !== 'function') {
+            if (!warned) {
+                console.warn('[AltText AI] jQuery not found; dashboard scripts not run.');
+                warned = true;
+            }
+            return;
+        }
+        callback(jq);
+    };
+})();
+
+bbaiRunWithJQuery(function($) {
     'use strict';
 
     // Cache commonly used DOM elements (performance optimization)
@@ -1267,7 +1282,7 @@
                     
                     console.log('[AltText AI] Portal request failed:', errorMessage);
                     
-                    if (errorMessage.toLowerCase().includes('not authenticated') || errorMessage.toLowerCase().includes('login')) {
+                    if (errorMessage.toLowerCase().includes('not authenticated') || errorMessage.toLowerCase().includes('login') || errorMessage.toLowerCase().includes('authentication required')) {
                         // This shouldn't happen since we check auth first, but handle it gracefully
                         console.log('[AltText AI] Authentication error from server, showing login modal');
                         localStorage.setItem('bbai_open_portal_after_login', 'true');
@@ -1277,6 +1292,7 @@
                         if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
                             window.authModal.show();
                             window.authModal.showLoginForm();
+                            // Don't show error message - the login modal itself indicates authentication is required
                             modalShown = true;
                         } else if (typeof showAuthModal === 'function') {
                             showAuthModal('login');
@@ -1536,7 +1552,7 @@
         });
     }
 
-})(jQuery);
+});
 
 // Debug mode check (define early so it can be used in functions)
 var alttextaiDebug = (typeof window.bbai_ajax !== 'undefined' && window.bbai_ajax.debug) || false;
@@ -1866,8 +1882,9 @@ function handleLogout() {
                 if (typeof localStorage !== 'undefined') {
                     localStorage.removeItem('alttextai_token');
                 }
-                // Reload the page to update the UI
-                window.location.reload();
+            // Redirect to plugin dashboard/sign-up page after logout
+            const redirect = (window.bbai_ajax && (window.bbai_ajax.logout_redirect || window.bbai_ajax.ajax_url)) || window.location.href;
+            window.location.href = redirect;
                     },
                     error: function(xhr, status, error) {
                 console.error('[AltText AI] Logout failed:', error, xhr.responseText);
@@ -1875,8 +1892,8 @@ function handleLogout() {
                 if (typeof localStorage !== 'undefined') {
                     localStorage.removeItem('alttextai_token');
                 }
-                window.bbaiModal.info('Logged out locally. Refreshing page...', 'Logged Out');
-                window.location.reload();
+            const redirect = (window.bbai_ajax && (window.bbai_ajax.logout_redirect || window.bbai_ajax.ajax_url)) || window.location.href;
+            window.location.href = redirect;
             }
         });
                         } else {
@@ -1900,7 +1917,8 @@ function handleLogout() {
             if (typeof localStorage !== 'undefined') {
                 localStorage.removeItem('alttextai_token');
             }
-            window.location.reload();
+            const redirect = (window.bbai_ajax && (window.bbai_ajax.logout_redirect || window.bbai_ajax.ajax_url)) || window.location.href;
+            window.location.href = redirect;
         })
         .catch(error => {
             console.error('[AltText AI] Logout failed:', error);
@@ -1908,8 +1926,8 @@ function handleLogout() {
             if (typeof localStorage !== 'undefined') {
                 localStorage.removeItem('alttextai_token');
             }
-            window.bbaiModal.info('Logged out locally. Refreshing page...', 'Logged Out');
-            window.location.reload();
+            const redirect = (window.bbai_ajax && (window.bbai_ajax.logout_redirect || window.bbai_ajax.ajax_url)) || window.location.href;
+            window.location.href = redirect;
         });
     }
 }
@@ -2089,7 +2107,7 @@ function initCountdownTimer() {
 /**
  * ALT Library - Search and Filter Functionality
  */
-(function($) {
+bbaiRunWithJQuery(function($) {
     'use strict';
 
     $(document).ready(function() {
@@ -2261,7 +2279,7 @@ function initCountdownTimer() {
         });
     });
 
-})(jQuery);
+});
 
 
 /**
@@ -2429,6 +2447,11 @@ window.bbaiSEOChecker = {
      */
     init: function() {
         var self = this;
+        // Use jQuery instead of $ for WordPress compatibility (noConflict mode)
+        var $ = window.jQuery || window.$;
+        if (typeof $ !== 'function') {
+            return;
+        }
         $('.bbai-library-alt-text').each(function() {
             var $altText = $(this);
             var text = $altText.attr('data-full-text') || $altText.text().trim();
@@ -2448,15 +2471,20 @@ window.bbaiSEOChecker = {
 };
 
 // Initialize SEO checker when ready
-$(document).ready(function() {
-    if (typeof window.bbaiSEOChecker !== 'undefined') {
-        window.bbaiSEOChecker.init();
+bbaiRunWithJQuery(function($) {
+    if (typeof $ !== 'function') {
+        return;
     }
-
-    // Re-initialize after AJAX updates
-    $(document).on('bbai:alttext:updated', function() {
+    $(document).ready(function() {
         if (typeof window.bbaiSEOChecker !== 'undefined') {
             window.bbaiSEOChecker.init();
         }
+
+        // Re-initialize after AJAX updates
+        $(document).on('bbai:alttext:updated', function() {
+            if (typeof window.bbaiSEOChecker !== 'undefined') {
+                window.bbaiSEOChecker.init();
+            }
+        });
     });
 });
