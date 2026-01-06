@@ -671,13 +671,17 @@
         })
         .done(function(response) {
             console.log('[AI Alt Text] Regenerate response:', response);
+            console.log('[AI Alt Text] Response type:', typeof response);
+            console.log('[AI Alt Text] Response.data:', response.data);
 
             // Hide loading state
             $modal.find('.bbai-regenerate-modal__loading').removeClass('active');
 
             if (response && response.success) {
-                var newAltText = response.data && response.data.alt_text ? response.data.alt_text : '';
+                // Backend returns altText (camelCase), support both for compatibility
+                var newAltText = (response.data && response.data.altText) || (response.data && response.data.alt_text) || '';
                 console.log('[AI Alt Text] New alt text:', newAltText);
+                console.log('[AI Alt Text] Alt text length:', newAltText.length);
 
                 if (newAltText) {
                     // Show result
@@ -702,6 +706,22 @@
                     closeRegenerateModal($modal);
                     reenableButton($btn, originalBtnText);
                     handleLimitReached(errorData);
+                } else if (errorData.code === 'auth_required' || (errorData.message && errorData.message.toLowerCase().includes('authentication required'))) {
+                    // Authentication required - show login modal
+                    closeRegenerateModal($modal);
+                    reenableButton($btn, originalBtnText);
+                    
+                    // Show login modal
+                    if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
+                        window.authModal.show();
+                        window.authModal.showLoginForm();
+                    } else if (typeof showAuthModal === 'function') {
+                        showAuthModal('login');
+                    } else if (typeof showAuthLogin === 'function') {
+                        showAuthLogin();
+                    } else {
+                        showModalError($modal, 'Please log in to regenerate alt text.');
+                    }
                 } else {
                     var message = errorData.message || 'Failed to regenerate alt text';
                     showModalError($modal, message);
@@ -721,6 +741,22 @@
                 closeRegenerateModal($modal);
                 reenableButton($btn, originalBtnText);
                 handleLimitReached(errorData);
+            } else if (errorData.code === 'auth_required' || (errorData.message && errorData.message.toLowerCase().includes('authentication required'))) {
+                // Authentication required - show login modal
+                closeRegenerateModal($modal);
+                reenableButton($btn, originalBtnText);
+                
+                // Show login modal
+                if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
+                    window.authModal.show();
+                    window.authModal.showLoginForm();
+                } else if (typeof showAuthModal === 'function') {
+                    showAuthModal('login');
+                } else if (typeof showAuthLogin === 'function') {
+                    showAuthLogin();
+                } else {
+                    showModalError($modal, 'Please log in to regenerate alt text.');
+                }
             } else {
                 var message = errorData.message || 'Failed to regenerate alt text. Please try again.';
                 showModalError($modal, message);

@@ -3121,16 +3121,20 @@ class Core {
         // The api_response is $response['data'] from generate_alt_text()
         // If generate_alt_text() returns WP_Error, it's already handled above
         // So at this point, api_response should be the data object
-        // Validate that alt_text exists in the response
-        if (!isset($api_response['alt_text']) || empty($api_response['alt_text'])) {
+        // Validate that altText (camelCase) or alt_text (snake_case) exists in the response
+        // Backend returns altText (camelCase), but support both for compatibility
+        $alt_text = $api_response['altText'] ?? $api_response['alt_text'] ?? null;
+        if (empty($alt_text)) {
             $error_message = __('Backend API returned response but no alt text was generated.', 'beepbeep-ai-alt-text-generator');
             
             // Log this error with full response structure for debugging
             if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-                Debug_Log::log('error', 'Alt text generation failed - missing alt_text in response', [
+                Debug_Log::log('error', 'Alt text generation failed - missing altText/alt_text in response', [
                     'attachment_id' => $attachment_id,
                     'response_keys' => is_array($api_response) ? array_keys($api_response) : 'not array',
                     'response_type' => gettype($api_response),
+                    'has_altText' => isset($api_response['altText']),
+                    'has_alt_text' => isset($api_response['alt_text']),
                     'has_usage' => isset($api_response['usage']),
                     'has_tokens' => isset($api_response['tokens']),
                     'response_preview' => is_array($api_response) ? wp_json_encode(array_slice($api_response, 0, 5)) : 'not array',
@@ -3141,6 +3145,9 @@ class Core {
             // The backend may have consumed credits, but we shouldn't record it as successful usage
             return new \WP_Error('missing_alt_text', $error_message, ['code' => 'api_response_invalid']);
         }
+        
+        // Normalize to alt_text for consistent usage throughout the codebase
+        $api_response['alt_text'] = $alt_text;
 
         // Refresh license usage data when backend returns updated organization details
         if ($has_license && !empty($api_response['organization'])) {
@@ -3518,97 +3525,30 @@ class Core {
             $auth_css    = $asset_path($css_base, 'auth-modal', $use_debug_assets, 'css');
             $auth_js     = $asset_path($js_base, 'auth-modal', $use_debug_assets, 'js');
 
-            // Enqueue design system (FIRST - foundation for all styles)
+            // Enqueue unified CSS bundle (v6.0 - single optimized stylesheet)
+            // This replaces: design-system, components, dashboard, ui, button-enhancements,
+            // guide-settings, debug, bulk-progress, success-modal, auth-modal, upgrade-modal
+            $unified_css = $use_debug_assets ? 'assets/css/unified.css' : 'assets/css/unified.min.css';
             wp_enqueue_style(
-                'bbai-design-system',
-                $base_url . $asset_path($css_base, 'design-system', $use_debug_assets, 'css'),
+                'bbai-unified',
+                $base_url . $unified_css,
                 [],
-                $asset_version($asset_path($css_base, 'design-system', $use_debug_assets, 'css'), '1.0.0')
+                $asset_version($unified_css, '6.0.0')
             );
 
-            // Enqueue reusable components (SECOND - uses design tokens)
-            wp_enqueue_style(
-                'bbai-components',
-                $base_url . $asset_path($css_base, 'components', $use_debug_assets, 'css'),
-                ['bbai-design-system'],
-                $asset_version($asset_path($css_base, 'components', $use_debug_assets, 'css'), '1.0.0')
-            );
-
-            // Enqueue page-specific styles (use design system + components)
-            wp_enqueue_style(
-                'bbai-dashboard',
-                $base_url . $css_file,
-                ['bbai-components'],
-                $asset_version($css_file, '3.0.0')
-            );
-            // Enqueue modular modern CSS (Phase 4 refactor - v5.0.0)
+            // Enqueue modern bundle CSS (contains page-specific layouts from modern-style.css)
             wp_enqueue_style(
                 'bbai-modern',
                 $base_url . 'assets/css/modern.bundle.min.css',
-                ['bbai-components'],
+                ['bbai-unified'],
                 $asset_version('assets/css/modern.bundle.min.css', '5.0.0')
-            );
-            // Enqueue modern-style CSS (has premium card styles)
-            wp_enqueue_style(
-                'bbai-modern-style',
-                $base_url . $asset_path($css_base, 'modern-style', $use_debug_assets, 'css'),
-                ['bbai-modern'],
-                $asset_version($asset_path($css_base, 'modern-style', $use_debug_assets, 'css'), '1.0.0')
-            );
-            wp_enqueue_style(
-                'bbai-ui',
-                $base_url . $asset_path($css_base, 'ui', $use_debug_assets, 'css'),
-                ['bbai-modern-style'],
-                $asset_version($asset_path($css_base, 'ui', $use_debug_assets, 'css'), '1.0.0')
-            );
-            wp_enqueue_style(
-                'bbai-upgrade',
-                $base_url . $upgrade_css,
-                ['bbai-components'],
-                $asset_version($upgrade_css, '3.1.0')
-            );
-            wp_enqueue_style(
-                'bbai-auth',
-                $base_url . $auth_css,
-                ['bbai-components'],
-                $asset_version($auth_css, '4.0.0')
-            );
-            wp_enqueue_style(
-                'bbai-button-enhancements',
-                $base_url . $asset_path($css_base, 'button-enhancements', $use_debug_assets, 'css'),
-                ['bbai-components'],
-                $asset_version($asset_path($css_base, 'button-enhancements', $use_debug_assets, 'css'), '1.0.0')
-            );
-            wp_enqueue_style(
-                'bbai-guide-settings',
-                $base_url . $asset_path($css_base, 'guide-settings-pages', $use_debug_assets, 'css'),
-                ['bbai-components'],
-                $asset_version($asset_path($css_base, 'guide-settings-pages', $use_debug_assets, 'css'), '1.0.0')
-            );
-            wp_enqueue_style(
-                'bbai-debug-styles',
-                $base_url . $asset_path($css_base, 'bbai-debug', $use_debug_assets, 'css'),
-                ['bbai-components'],
-                $asset_version($asset_path($css_base, 'bbai-debug', $use_debug_assets, 'css'), '1.0.0')
-            );
-            wp_enqueue_style(
-                'bbai-bulk-progress',
-                $base_url . $asset_path($css_base, 'bulk-progress-modal', $use_debug_assets, 'css'),
-                ['bbai-components'],
-                $asset_version($asset_path($css_base, 'bulk-progress-modal', $use_debug_assets, 'css'), '1.0.0')
-            );
-            wp_enqueue_style(
-                'bbai-success-modal',
-                $base_url . $asset_path($css_base, 'success-modal', $use_debug_assets, 'css'),
-                ['bbai-components'],
-                $asset_version($asset_path($css_base, 'success-modal', $use_debug_assets, 'css'), '1.0.0')
             );
 
             // Custom modal system (replaces native alert())
             wp_enqueue_style(
                 'bbai-modal',
                 $base_url . $asset_path($css_base, 'bbai-modal', $use_debug_assets, 'css'),
-                ['bbai-components'],
+                ['bbai-unified'],
                 $asset_version($asset_path($css_base, 'bbai-modal', $use_debug_assets, 'css'), '4.3.0')
             );
 
@@ -3651,7 +3591,7 @@ class Core {
             wp_enqueue_style(
                 'bbai-tooltips',
                 $base_url . $asset_path($css_base, 'bbai-tooltips', $use_debug_assets, 'css'),
-                ['bbai-components'],
+                ['bbai-unified'],
                 $asset_version($asset_path($css_base, 'bbai-tooltips', $use_debug_assets, 'css'), '4.3.0')
             );
             wp_enqueue_script(
@@ -5320,8 +5260,11 @@ add_action('admin_footer-upload.php', function(){
                 restore(btn);
                 
                 if (response.success){
-                    // Response structure: {success: true, data: {alt_text: "...", attachment_id: 123, data: {alt_text: "..."}}}
-                    var altText = (response.data && response.data.alt_text) || 
+                    // Backend returns altText (camelCase), support both for compatibility
+                    // Response structure: {success: true, data: {altText: "...", attachment_id: 123, ...}}
+                    var altText = (response.data && response.data.altText) || 
+                                  (response.data && response.data.alt_text) || 
+                                  (response.data && response.data.data && response.data.data.altText) ||
                                   (response.data && response.data.data && response.data.data.alt_text) ||
                                   (typeof response.data === 'string' ? response.data : '');
                     

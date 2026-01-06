@@ -312,10 +312,12 @@ class API_Client_V2 {
             }
         }
 
-        // Priority: License key > JWT token
+        // CRITICAL: Backend /generate endpoint requires BOTH license key AND JWT token
+        // Send both headers when available to ensure proper authentication
         if (!empty($license_key)) {
             $headers['X-License-Key'] = $license_key;
-        } elseif ($token) {
+        }
+        if ($token) {
             $headers['Authorization'] = 'Bearer ' . $token;
         }
 
@@ -393,7 +395,7 @@ class API_Client_V2 {
         if ($timeout === null) {
             // Check for generate endpoint (with or without leading slash)
             $endpoint_str = is_string($endpoint) ? $endpoint : '';
-            $is_generate_endpoint = $endpoint_str && ((strpos($endpoint_str, '/api/generate') !== false) || (strpos($endpoint_str, 'api/generate') !== false));
+            $is_generate_endpoint = $endpoint_str && ((strpos($endpoint_str, '/generate') !== false) || (strpos($endpoint_str, 'generate') !== false)) && strpos($endpoint_str, '/api/') === false;
             $timeout = $is_generate_endpoint ? 90 : 30;
         }
         
@@ -494,7 +496,7 @@ class API_Client_V2 {
             if ($error_message_str && strpos($error_message_str, 'timeout') !== false) {
                 // Provide more specific message for generation timeouts
                 $endpoint_str = is_string($endpoint) ? $endpoint : '';
-                $is_generate_endpoint = $endpoint_str && ((strpos($endpoint_str, '/api/generate') !== false) || (strpos($endpoint_str, 'api/generate') !== false));
+                $is_generate_endpoint = $endpoint_str && ((strpos($endpoint_str, '/generate') !== false) || (strpos($endpoint_str, 'generate') !== false)) && strpos($endpoint_str, '/api/') === false;
                 if ($is_generate_endpoint) {
                     return new \WP_Error('api_timeout', __('The image generation is taking longer than expected. This may happen with large images or during high server load. Please try again.', 'beepbeep-ai-alt-text-generator'));
                 }
@@ -513,9 +515,11 @@ class API_Client_V2 {
             'endpoint' => $endpoint,
             'method'   => $method,
             'status'   => $status_code,
+            'url'      => $url,
         ];
         if ($status_code >= 400) {
             $log_context['body_preview'] = is_string($body) ? substr($body, 0, 300) : '';
+            $log_context['body_contains_html'] = is_string($body) && (strpos($body, '<html') !== false || strpos($body, 'Cannot POST') !== false || strpos($body, 'Cannot GET') !== false);
         }
         $this->log_api_event($status_code >= 400 ? 'warning' : 'debug', 'API response received', $log_context);
         
@@ -580,6 +584,16 @@ class API_Client_V2 {
             // Check if it's an HTML error page (means endpoint doesn't exist)
             $body_str = is_string($body) ? $body : '';
             $endpoint_str = is_string($endpoint) ? $endpoint : '';
+            
+            // Log detailed 404 information for debugging
+            $this->log_api_event('error', '404 response received', [
+                'endpoint' => $endpoint,
+                'url' => $url,
+                'body_preview' => substr($body_str, 0, 500),
+                'body_contains_html' => strpos($body_str, '<html') !== false || strpos($body_str, 'Cannot POST') !== false || strpos($body_str, 'Cannot GET') !== false,
+                'has_auth_header' => !empty($headers['Authorization']) || !empty($headers['X-License-Key']),
+            ]);
+            
             if ($body_str && (strpos($body_str, '<html') !== false || strpos($body_str, 'Cannot POST') !== false || strpos($body_str, 'Cannot GET') !== false)) {
                 // Provide context-specific error messages
                 $error_message = __('This feature is not yet available. Please contact support for assistance or try again later.', 'beepbeep-ai-alt-text-generator');
@@ -589,16 +603,30 @@ class API_Client_V2 {
                     $error_message = __('Password reset functionality is currently being set up on our backend. Please contact support for assistance or try again later.', 'beepbeep-ai-alt-text-generator');
                 } elseif ($endpoint_str && (strpos($endpoint_str, '/licenses/sites') !== false || strpos($endpoint_str, '/api/licenses/sites') !== false)) {
                     $error_message = __('License site usage tracking is currently being set up on our backend. Please contact support for assistance or try again later.', 'beepbeep-ai-alt-text-generator');
+                } elseif ($endpoint_str && (strpos($endpoint_str, '/generate') !== false || strpos($endpoint_str, 'generate') !== false)) {
+                    // For generate endpoint, provide more helpful message
+                    $error_message = __('The alt text generation endpoint is not available. Please check your backend configuration or contact support.', 'beepbeep-ai-alt-text-generator');
                 }
                 
                 return new \WP_Error(
                     'endpoint_not_found',
-                    $error_message
+                    $error_message,
+                    [
+                        'status_code' => 404,
+                        'endpoint' => $endpoint,
+                        'url' => $url,
+                        'body_preview' => substr($body_str, 0, 200),
+                    ]
                 );
             }
             return new \WP_Error(
                 'not_found',
-                $data['error'] ?? $data['message'] ?? __('The requested resource was not found.', 'beepbeep-ai-alt-text-generator')
+                $data['error'] ?? $data['message'] ?? __('The requested resource was not found.', 'beepbeep-ai-alt-text-generator'),
+                [
+                    'status_code' => 404,
+                    'endpoint' => $endpoint,
+                    'url' => $url,
+                ]
             );
         }
         
@@ -678,7 +706,7 @@ class API_Client_V2 {
             
             // Check for generate endpoint (with or without leading slash)
             $endpoint_str = is_string($endpoint) ? $endpoint : '';
-            $is_generate_endpoint = $endpoint_str && ((strpos($endpoint_str, '/api/generate') !== false) || (strpos($endpoint_str, 'api/generate') !== false));
+            $is_generate_endpoint = $endpoint_str && ((strpos($endpoint_str, '/generate') !== false) || (strpos($endpoint_str, 'generate') !== false)) && strpos($endpoint_str, '/api/') === false;
             $is_checkout_endpoint = strpos($endpoint_str, '/billing/checkout') !== false;
             
             if ($is_checkout_endpoint) {
@@ -799,6 +827,13 @@ class API_Client_V2 {
         if ($response['success'] && isset($response['data']['token'])) {
             $this->set_token($response['data']['token']);
             $this->set_user_data($response['data']['user']);
+            
+            // CRITICAL: Store license key from user data if available
+            // Backend /api/generate endpoint requires BOTH JWT token AND license key
+            if (isset($response['data']['user']['license_key']) && !empty($response['data']['user']['license_key'])) {
+                $this->set_license_key($response['data']['user']['license_key']);
+            }
+            
             return $response['data'];
         }
         
@@ -831,6 +866,13 @@ class API_Client_V2 {
         if ($response['success'] && isset($response['data']['token'])) {
             $this->set_token($response['data']['token']);
             $this->set_user_data($response['data']['user']);
+            
+            // CRITICAL: Store license key from user data if available
+            // Backend /api/generate endpoint requires BOTH JWT token AND license key
+            if (isset($response['data']['user']['license_key']) && !empty($response['data']['user']['license_key'])) {
+                $this->set_license_key($response['data']['user']['license_key']);
+            }
+            
             return $response['data'];
         }
         
@@ -1221,6 +1263,21 @@ class API_Client_V2 {
      * Generate alt text via API (Phase 2)
      */
     public function generate_alt_text($image_id, $context = [], $regenerate = false) {
+        // Check if user is authenticated BEFORE making request
+        // But allow the request to proceed if they have a token (even if validation hasn't run yet)
+        // The backend will handle authentication errors properly
+        $has_license = $this->has_active_license();
+        $has_token = !empty($this->get_token());
+        
+        if (!$has_license && !$has_token) {
+            // No license and no token - definitely not authenticated
+            return new \WP_Error(
+                'auth_required',
+                __('Authentication required. Please log in or register to generate alt text.', 'beepbeep-ai-alt-text-generator'),
+                ['requires_auth' => true]
+            );
+        }
+        
         // Validate authentication before making request
         // If we haven't checked recently and token exists, validate it first
         if (!$this->has_active_license()) {
@@ -1266,7 +1323,9 @@ class API_Client_V2 {
             return $fingerprint_check;
         }
         
-        $endpoint = 'api/generate';
+        // Backend endpoint: /api/alt-text (correct endpoint path)
+        // Backend requires BOTH JWT token AND license key headers
+        $endpoint = 'api/alt-text';
         
         // CRITICAL: Log image_id being used for generation (to debug backend receiving wrong ID)
         if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
@@ -1392,14 +1451,47 @@ class API_Client_V2 {
             ], 'api');
         }
         
+        // Backend expects 'image' (not 'image_data') and specific field names
+        // Map image_data fields to backend's expected 'image' object structure
+        $image = [];
+        
+        // Backend accepts: base64, image_base64, url, width, height, mime_type, filename
+        if (!empty($image_payload['image_base64'])) {
+            $image['base64'] = $image_payload['image_base64'];
+            $image['image_base64'] = $image_payload['image_base64']; // Support both
+        }
+        if (!empty($image_payload['image_url'])) {
+            $image['url'] = $image_payload['image_url'];
+        }
+        if (!empty($image_payload['width'])) {
+            $image['width'] = intval($image_payload['width']);
+        }
+        if (!empty($image_payload['height'])) {
+            $image['height'] = intval($image_payload['height']);
+        }
+        if (!empty($image_payload['mime_type'])) {
+            $image['mime_type'] = $image_payload['mime_type'];
+        }
+        if (!empty($image_payload['filename'])) {
+            $image['filename'] = $image_payload['filename'];
+        }
+        
+        // Backend expects context with: title, caption, pageTitle, altTextSuggestion
+        $backend_context = [];
+        if (!empty($context['post_title'])) {
+            $backend_context['pageTitle'] = $context['post_title'];
+        }
+        if (!empty($context['title'])) {
+            $backend_context['title'] = $context['title'];
+        }
+        if (!empty($context['caption'])) {
+            $backend_context['caption'] = $context['caption'];
+        }
+        
         $body = [
-            'image_data' => $image_payload,
-            'context' => $context,
+            'image' => $image,
+            'context' => $backend_context,
             'regenerate' => $regenerate ? true : false, // Explicitly cast to boolean
-            // Add timestamp and image_id to prevent caching issues
-            'timestamp' => time(),
-            'image_id' => (string) $image_id, // Include image_id at root level AND in image_data
-            'attachment_id' => (string) $image_id, // Redundant identifier for backend parsers
         ];
 
         // Include user ID and explicit image identifiers in headers for traceability
@@ -1407,6 +1499,12 @@ class API_Client_V2 {
             'X-Image-ID' => (string) $image_id,
             'X-Attachment-ID' => (string) $image_id,
         ];
+
+        // CRITICAL: Add cache bypass header when regenerating to force fresh AI generation
+        // Backend caches by MD5 hash of base64 for 7 days, so regenerate needs to bypass cache
+        if ($regenerate) {
+            $extra_headers['X-Bypass-Cache'] = 'true';
+        }
 
         $response = $this->request_with_retry($endpoint, 'POST', $body, 3, true, $extra_headers);
 
@@ -1906,8 +2004,8 @@ class API_Client_V2 {
                     $orig_width = $metadata['width'] ?? 0;
                     $orig_height = $metadata['height'] ?? 0;
                     
-                    // Resize to max 800px on longest side for large files
-                    $max_size = 800;
+                    // Resize to max 512px on longest side for optimal token cost
+                    $max_size = 512;
                     
                     if ($orig_width > $max_size || $orig_height > $max_size) {
                         if ($orig_width > $orig_height) {
@@ -1922,9 +2020,9 @@ class API_Client_V2 {
                         if (!is_wp_error($editor)) {
                             $editor->resize($new_width, $new_height, false);
                             
-                            // Set quality to reduce file size
+                            // Set quality to reduce file size and optimize token cost
                             if (method_exists($editor, 'set_quality')) {
-                                $editor->set_quality(85);
+                                $editor->set_quality(57);
                             }
                             
                             $upload_dir = wp_upload_dir();
@@ -1940,6 +2038,8 @@ class API_Client_V2 {
                                     if (strlen($base64) <= 5.5 * 1024 * 1024) {
                                         $payload['image_base64'] = $base64;
                                         $payload['mime_type'] = 'image/jpeg';
+                                        // CRITICAL: Remove image_url when we have base64 to force backend to use optimized resized image
+                                        unset($payload['image_url']);
                                     } else {
                                         // Still too large, send URL as fallback
                                         $payload['image_url'] = $image_url;
@@ -1991,6 +2091,8 @@ class API_Client_V2 {
                         $mime_type = $mime_type ?? get_post_mime_type($image_id) ?: 'image/jpeg';
                         $payload['image_base64'] = $base64;
                         $payload['mime_type'] = $mime_type;
+                        // CRITICAL: Remove image_url when we have base64 to force backend to use our image data
+                        unset($payload['image_url']);
                     }
                 }
             }
