@@ -1,0 +1,261 @@
+/**
+ * Card Components
+ * Base cards, stat cards, usage cards, and upsell cards
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Base Cards */
+.bbai-card {
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-space-6);
+    box-shadow: var(--bbai-shadow-sm);
+}
+
+.bbai-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--bbai-space-4);
+    padding-bottom: var(--bbai-space-4);
+    border-bottom: 1px solid var(--bbai-border);
+}
+
+.bbai-card-title {
+    font-size: var(--bbai-text-lg);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0;
+}
+
+.bbai-card-body {
+    padding: 0;
+}
+
+.bbai-card-footer {
+    margin-top: var(--bbai-space-4);
+    padding-top: var(--bbai-space-4);
+    border-top: 1px solid var(--bbai-border);
+}
+
+/* Stat Cards */
+.bbai-stat-card {
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-space-6);
+    text-align: center;
+}
+
+.bbai-stat-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto var(--bbai-space-3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--bbai-radius-full);
+    background: var(--bbai-bg-secondary);
+    color: var(--bbai-primary);
+}
+
+.bbai-stat-value {
+    font-size: var(--bbai-text-3xl);
+    font-weight: var(--bbai-font-bold);
+    color: var(--bbai-text);
+    line-height: 1;
+    margin-bottom: var(--bbai-space-1);
+}
+
+.bbai-stat-label {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Usage Card */
+.bbai-usage-card {
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-space-8);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.bbai-usage-ring {
+    position: relative;
+    width: 160px;
+    height: 160px;
+    margin: 0 auto var(--bbai-space-4);
+}
+
+.bbai-usage-ring svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.bbai-usage-ring-bg {
+    fill: none;
+    stroke: var(--bbai-gray-200);
+    stroke-width: 12;
+}
+
+.bbai-usage-ring-progress {
+    fill: none;
+    stroke: var(--bbai-primary);
+    stroke-width: 12;
+    stroke-linecap: round;
+    transition: stroke-dashoffset var(--bbai-transition-slow);
+}
+
+.bbai-usage-percent {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: var(--bbai-text-2xl);
+    font-weight: var(--bbai-font-bold);
+    color: var(--bbai-text);
+}
+
+.bbai-usage-count {
+    font-size: var(--bbai-text-lg);
+    color: var(--bbai-text);
+    margin-bottom: var(--bbai-space-1);
+}
+
+.bbai-usage-reset {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+}
+
+/* Usage Card Action Links */
+.bbai-usage-upgrade-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: var(--bbai-space-4);
+    padding: 10px 20px;
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-semibold);
+    color: white;
+    background: var(--bbai-gradient-primary);
+    border-radius: var(--bbai-radius);
+    text-decoration: none;
+    transition: all var(--bbai-transition);
+    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.25);
+}
+
+.bbai-usage-upgrade-link:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    color: white;
+    text-decoration: none;
+}
+
+.bbai-usage-billing-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: var(--bbai-space-3);
+    padding: 8px 16px;
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-medium);
+    color: var(--bbai-primary);
+    background: transparent;
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius);
+    text-decoration: none;
+    transition: all var(--bbai-transition);
+}
+
+.bbai-usage-billing-link:hover {
+    background: var(--bbai-bg-secondary);
+    border-color: var(--bbai-primary);
+    color: var(--bbai-primary);
+    text-decoration: none;
+}
+
+/* Upsell Card */
+.bbai-upsell-card {
+    background: var(--bbai-gradient-upsell);
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-space-8);
+    color: white;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.bbai-upsell-card * {
+    color: white;
+}
+
+.bbai-upsell-badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.2);
+    padding: var(--bbai-space-1) var(--bbai-space-3);
+    border-radius: var(--bbai-radius-full);
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--bbai-space-4);
+}
+
+.bbai-upsell-title {
+    font-size: var(--bbai-text-xl);
+    font-weight: var(--bbai-font-bold);
+    margin-bottom: var(--bbai-space-4);
+}
+
+.bbai-upsell-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--bbai-space-6) 0;
+}
+
+.bbai-upsell-features li {
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+    padding: var(--bbai-space-2) 0;
+    font-size: var(--bbai-text-sm);
+}
+
+.bbai-upsell-features li svg {
+    flex-shrink: 0;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.bbai-upsell-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--bbai-space-2);
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--bbai-primary) !important;
+    padding: var(--bbai-space-3) var(--bbai-space-6);
+    border-radius: var(--bbai-radius);
+    font-weight: var(--bbai-font-semibold);
+    text-decoration: none;
+    transition: all var(--bbai-transition);
+}
+
+.bbai-upsell-cta:hover {
+    background: white;
+    transform: translateY(-1px);
+    box-shadow: var(--bbai-shadow-md);
+}

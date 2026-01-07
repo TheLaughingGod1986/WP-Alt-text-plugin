@@ -272,4 +272,38 @@ class BBAI_SEO_Quality_Checker {
 
         return implode("\n", $lines);
     }
+
+    /**
+     * Generate unified SEO quality badge HTML combining grade and character count
+     *
+     * This is the preferred method for displaying SEO quality - it shows a single
+     * badge with the grade and character count, with a detailed tooltip breakdown.
+     *
+     * @param string $text The alt text to check
+     * @return string HTML for unified quality badge
+     * @since 5.0.0
+     */
+    public static function create_unified_badge($text) {
+        $quality = self::calculate_quality($text);
+
+        // For missing alt text, return a dash indicator
+        if ($quality['badge'] === 'missing') {
+            return '<span class="bbai-seo-unified-badge bbai-seo-unified-badge--empty" data-bbai-tooltip="' . esc_attr__('No alt text', 'beepbeep-ai-alt-text-generator') . '">—</span>';
+        }
+
+        $char_count = mb_strlen($text);
+        $badge_class = 'bbai-seo-unified-badge bbai-seo-unified-badge--' . esc_attr($quality['badge']);
+
+        // Build detailed tooltip content
+        $tooltip = self::build_tooltip_content($text, $quality, $char_count);
+
+        // Format: "A (84)" - grade with character count
+        return sprintf(
+            '<span class="%s" data-bbai-tooltip="%s" data-bbai-tooltip-position="top">%s <span class="bbai-seo-unified-badge__chars">(%d)</span></span>',
+            $badge_class,
+            esc_attr($tooltip),
+            esc_html($quality['grade']),
+            $char_count
+        );
+    }
 }

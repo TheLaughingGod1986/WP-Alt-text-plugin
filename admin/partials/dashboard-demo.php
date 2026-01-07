@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) { exit; }
                                         <span class="bbai-dashboard-emoji">📊</span>
                                         <?php esc_html_e('0 of 50 image descriptions generated this month.', 'beepbeep-ai-alt-text-generator'); ?>
                                     </h2>
-                                    <p style="margin: 12px 0 0 0; font-size: 14px; color: #6b7280;">
+                                    <p class="bbai-text-sm bbai-text-muted bbai-mt-4">
                                         <?php esc_html_e('Sign in to track your usage and access premium features.', 'beepbeep-ai-alt-text-generator'); ?>
                                     </p>
                                 </div>
@@ -51,7 +51,7 @@ if (!defined('ABSPATH')) { exit; }
                                         <span class="bbai-dashboard-emoji">⏱️</span>
                                         <?php esc_html_e('Ready to optimize your images', 'beepbeep-ai-alt-text-generator'); ?>
                                     </h2>
-                                    <p class="bbai-seo-impact" style="margin-top: 8px; font-size: 14px; color: #6b7280;"><?php esc_html_e('Start generating alt text to improve SEO and accessibility', 'beepbeep-ai-alt-text-generator'); ?></p>
+                                    <p class="bbai-seo-impact bbai-text-sm bbai-text-muted bbai-mt-2"><?php esc_html_e('Start generating alt text to improve SEO and accessibility', 'beepbeep-ai-alt-text-generator'); ?></p>
                                 </div>
                             </div>
 

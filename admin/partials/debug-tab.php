@@ -22,10 +22,10 @@ if (!$can_access_debug) : ?>
             <div class="bbai-settings-required-icon">🔒</div>
             <h2><?php esc_html_e('Authentication Required', 'beepbeep-ai-alt-text-generator'); ?></h2>
             <p><?php esc_html_e('Debug Logs are available to all authenticated users. Please log in or enter your license key to access this section.', 'beepbeep-ai-alt-text-generator'); ?></p>
-            <p style="margin-top: 12px; font-size: 14px; color: #6b7280;">
+            <p class="bbai-debug-hint">
                 <?php esc_html_e('If you don\'t have an account, you can create one for free or subscribe to a plan.', 'beepbeep-ai-alt-text-generator'); ?>
             </p>
-            <button type="button" class="bbai-btn-primary bbai-btn-icon" data-action="show-auth-modal" data-auth-tab="login" style="margin-top: 20px;">
+            <button type="button" class="bbai-btn-primary bbai-btn-icon bbai-debug-auth-btn" data-action="show-auth-modal" data-auth-tab="login">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                     <circle cx="8" cy="8" r="2" fill="currentColor"/>

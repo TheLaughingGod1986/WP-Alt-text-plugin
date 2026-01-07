@@ -1,0 +1,297 @@
+/**
+ * Utility Classes
+ * Text, spacing, display, and helper classes
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Text Sizes */
+.bbai-text-xs { font-size: var(--bbai-text-xs); }
+.bbai-text-sm { font-size: var(--bbai-text-sm); }
+.bbai-text-base { font-size: var(--bbai-text-base); }
+.bbai-text-lg { font-size: var(--bbai-text-lg); }
+.bbai-text-xl { font-size: var(--bbai-text-xl); }
+.bbai-text-2xl { font-size: var(--bbai-text-2xl); }
+
+/* Font Weights */
+.bbai-font-medium { font-weight: var(--bbai-font-medium); }
+.bbai-font-semibold { font-weight: var(--bbai-font-semibold); }
+.bbai-font-bold { font-weight: var(--bbai-font-bold); }
+
+/* Text Colors */
+.bbai-text-primary { color: var(--bbai-text); }
+.bbai-text-secondary { color: var(--bbai-text-secondary); }
+.bbai-text-muted { color: var(--bbai-text-muted); }
+.bbai-text-success { color: var(--bbai-success); }
+.bbai-text-error { color: var(--bbai-error); }
+
+/* Text Alignment */
+.bbai-text-center { text-align: center; }
+.bbai-text-right { text-align: right; }
+
+/* Spacing - Margin */
+.bbai-mt-2 { margin-top: var(--bbai-space-2); }
+.bbai-mt-4 { margin-top: var(--bbai-space-4); }
+.bbai-mt-5 { margin-top: var(--bbai-space-5, 1.25rem); }
+.bbai-mt-6 { margin-top: var(--bbai-space-6); }
+.bbai-mb-2 { margin-bottom: var(--bbai-space-2); }
+.bbai-mb-3 { margin-bottom: var(--bbai-space-3); }
+.bbai-mb-4 { margin-bottom: var(--bbai-space-4); }
+.bbai-mb-6 { margin-bottom: var(--bbai-space-6); }
+.bbai-mr-2 { margin-right: var(--bbai-space-2); }
+.bbai-ml-3 { margin-left: var(--bbai-space-3); }
+
+/* Spacing - Padding */
+.bbai-p-4 { padding: var(--bbai-space-4); }
+.bbai-p-6 { padding: var(--bbai-space-6); }
+
+/* Display */
+.bbai-hidden { display: none !important; }
+.bbai-block { display: block; }
+.bbai-inline { display: inline; }
+.bbai-inline-block { display: inline-block; }
+
+/* Width */
+.bbai-w-full { width: 100%; }
+
+/* Icon Utilities */
+.bbai-icon-inline {
+    margin-right: 12px;
+    vertical-align: middle;
+}
+
+.bbai-icon-inline--sm {
+    margin-right: 10px;
+}
+
+.bbai-icon-inline--xs {
+    margin-right: 8px;
+}
+
+/* Tab Content Visibility */
+.bbai-admin-tab-content {
+    display: none;
+}
+
+.bbai-admin-tab-content.is-active {
+    display: block;
+}
+
+/* Progress Status Visibility */
+.bbai-dashboard__status {
+    display: none;
+}
+
+.bbai-dashboard__status.is-visible {
+    display: block;
+}
+
+/* Context Rows */
+.bbai-debug-context-row {
+    display: none;
+}
+
+.bbai-debug-context-row.is-expanded {
+    display: table-row;
+}
+
+/* Usage Bar */
+.bbai-dashboard-usage-bar-fill {
+    transition: width var(--bbai-transition-slow);
+}
+
+/* ===========================================
+   CREDIT USAGE PAGE COMPONENTS
+   =========================================== */
+
+/* Page Title */
+.bbai-credit-page-title {
+    font-size: var(--bbai-text-2xl);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin-bottom: var(--bbai-space-6);
+}
+
+/* Summary Cards Grid */
+.bbai-usage-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--bbai-space-6);
+    margin: var(--bbai-space-8) 0;
+}
+
+/* Stat Card Component */
+.bbai-credit-stat-card {
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-space-6);
+    box-shadow: var(--bbai-shadow-sm);
+    transition: box-shadow var(--bbai-transition);
+}
+
+.bbai-credit-stat-card:hover {
+    box-shadow: var(--bbai-shadow);
+}
+
+.bbai-credit-stat-title {
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0 0 var(--bbai-space-3) 0;
+}
+
+.bbai-credit-stat-value {
+    font-size: var(--bbai-text-3xl);
+    font-weight: var(--bbai-font-bold);
+    margin: var(--bbai-space-2) 0;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+.bbai-credit-stat-value--primary { color: var(--bbai-text); }
+.bbai-credit-stat-value--secondary { color: var(--bbai-text-secondary); }
+.bbai-credit-stat-value--success { color: var(--bbai-success); }
+.bbai-credit-stat-value--primary-brand { color: var(--bbai-primary); }
+
+.bbai-credit-stat-desc {
+    color: var(--bbai-text-muted);
+    font-size: var(--bbai-text-sm);
+    margin: 0;
+}
+
+/* Filter Form */
+.bbai-filter-form {
+    background: var(--bbai-bg-secondary);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-space-4);
+    margin-bottom: var(--bbai-space-6);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--bbai-space-3);
+}
+
+.bbai-filter-label {
+    display: block;
+    font-weight: var(--bbai-font-semibold);
+    margin-bottom: var(--bbai-space-2);
+    color: var(--bbai-text);
+}
+
+.bbai-filter-input,
+.bbai-filter-select {
+    width: 100%;
+    padding: var(--bbai-space-2) var(--bbai-space-3);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-md);
+    font-size: var(--bbai-text-sm);
+    background: var(--bbai-bg);
+    color: var(--bbai-text);
+}
+
+.bbai-filter-input:focus,
+.bbai-filter-select:focus {
+    outline: none;
+    border-color: var(--bbai-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.bbai-filter-submit {
+    align-self: flex-end;
+}
+
+/* User Details Card */
+.bbai-user-details-card {
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-space-5);
+    margin-bottom: var(--bbai-space-6);
+}
+
+.bbai-user-details-title {
+    font-size: var(--bbai-text-xl);
+    font-weight: var(--bbai-font-bold);
+    margin-top: 0;
+    margin-bottom: var(--bbai-space-4);
+    color: var(--bbai-text);
+}
+
+/* Table Card */
+.bbai-table-card {
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-space-4);
+}
+
+.bbai-table-title {
+    font-size: var(--bbai-text-lg);
+    font-weight: var(--bbai-font-bold);
+    margin-top: 0;
+    margin-bottom: var(--bbai-space-3);
+    color: var(--bbai-text);
+}
+
+.bbai-table-subtitle {
+    color: var(--bbai-text-muted);
+    font-size: var(--bbai-text-xs);
+}
+
+/* Pagination */
+.bbai-pagination {
+    display: inline-flex;
+    gap: var(--bbai-space-1);
+}
+
+/* Maintenance Warning Card */
+.bbai-maintenance-card {
+    margin-top: var(--bbai-space-6);
+    padding: var(--bbai-space-4);
+    background: var(--bbai-error-bg);
+    border: 1px solid var(--bbai-error-light);
+    border-radius: var(--bbai-radius-md);
+}
+
+.bbai-maintenance-title {
+    margin-top: 0;
+    color: var(--bbai-error);
+    font-weight: var(--bbai-font-bold);
+}
+
+.bbai-maintenance-desc {
+    margin-bottom: var(--bbai-space-3);
+}
+
+/* License Key Display */
+.bbai-license-key-display {
+    margin-top: var(--bbai-space-2);
+    font-size: var(--bbai-text-xs);
+    color: var(--bbai-text-muted);
+    font-family: var(--bbai-font-mono);
+    word-break: break-all;
+}
+
+/* Back Button Link */
+.bbai-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+    padding: var(--bbai-space-2) var(--bbai-space-4);
+    background: var(--bbai-primary);
+    color: white;
+    border: none;
+    border-radius: var(--bbai-radius);
+    font-weight: var(--bbai-font-medium);
+    font-size: var(--bbai-text-sm);
+    text-decoration: none;
+    transition: background var(--bbai-transition);
+}
+
+.bbai-back-btn:hover {
+    background: var(--bbai-primary-hover);
+    color: white;
+    text-decoration: none;
+}

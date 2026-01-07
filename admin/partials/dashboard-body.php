@@ -48,7 +48,7 @@ use BeepBeepAI\AltTextGenerator\Usage_Tracker;
                         ?>
                         
                         <!-- Multi-User Token Bar Container -->
-                        <div id="bbai-multiuser-token-bar-root" class="bbai-multiuser-token-bar-container" style="margin-bottom: 24px;"></div>
+                        <div id="bbai-multiuser-token-bar-root" class="bbai-multiuser-token-bar-container bbai-mb-6"></div>
                         
                         <!-- Premium Stats Grid -->
                         <div class="bbai-premium-stats-grid<?php echo esc_attr($is_agency ? ' bbai-premium-stats-grid--single' : ''); ?>">
@@ -91,7 +91,7 @@ use BeepBeepAI\AltTextGenerator\Usage_Tracker;
                                             </div>
                                         </div>
                                         <div class="bbai-usage-card-reset">
-                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="margin-right: 6px;" aria-hidden="true">
+                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="bbai-mr-2" aria-hidden="true">
                                                 <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                                 <path d="M8 4V8L10 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                                             </svg>
@@ -119,7 +119,7 @@ use BeepBeepAI\AltTextGenerator\Usage_Tracker;
                                         <?php if (!empty($billing_portal)) : ?>
                                         <div class="bbai-usage-card-actions">
                                             <a href="#" class="bbai-usage-billing-link" data-action="open-billing-portal">
-                                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="margin-right: 6px;" aria-hidden="true">
+                                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="bbai-mr-2" aria-hidden="true">
                                                     <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                                     <circle cx="8" cy="8" r="2" fill="currentColor"/>
                                                 </svg>
@@ -489,7 +489,7 @@ use BeepBeepAI\AltTextGenerator\Usage_Tracker;
                             <?php else : ?>
                                 <div class="bbai-optimization-empty">
                                     <p><?php esc_html_e('Upload images to your Media Library and generate SEO-optimized alt text automatically. Every image gets WCAG-compliant descriptions that boost Google Images rankings.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                                    <a href="<?php echo esc_url(admin_url('upload.php')); ?>" class="bbai-btn-primary">
+                                    <a href="<?php echo esc_url(admin_url('upload.php')); ?>" class="bbai-btn bbai-btn-primary">
                                         <?php esc_html_e('Go to Media Library', 'beepbeep-ai-alt-text-generator'); ?>
                                     </a>
                                 </div>

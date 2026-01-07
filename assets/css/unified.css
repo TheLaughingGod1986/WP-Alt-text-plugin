@@ -1,27 +1,23 @@
 /**
- * AltText AI - Unified Stylesheet
+ * AltText AI - Unified Stylesheet (Modular)
  *
  * A single, optimized CSS file for the entire plugin.
- * Organized in layers for predictable specificity.
+ * Split into modular components for maintainability.
  *
- * Structure:
- * 1. Design Tokens (CSS Variables)
- * 2. Reset & Base Styles
- * 3. Layout Components
- * 4. UI Components (buttons, cards, badges, etc.)
- * 5. Form Elements
- * 6. Data Display (tables, lists)
- * 7. Modals & Overlays
- * 8. Page-Specific Styles
- * 9. Utility Classes
- * 10. Animations
- *
- * Version: 6.0.0
+ * @package BeepBeep_AI
+ * @version 6.0.0
+ * @generated 2026-01-07T21:19:04.201Z
  */
 
-/* ============================================
-   1. DESIGN TOKENS
-   ============================================ */
+/* 1. Design Tokens (CSS Variables) */
+/* Imported from: _tokens.css */
+/**
+ * Design Tokens
+ * CSS Variables for colors, typography, spacing, etc.
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
 
 :root {
     /* Brand Colors */
@@ -144,10 +140,18 @@
     --bbai-z-tooltip: 1100;
 }
 
-/* ============================================
-   2. RESET & BASE STYLES
-   ============================================ */
 
+/* 2. Base & Reset Styles */
+/* Imported from: _base.css */
+/**
+ * Base Styles & Reset
+ * Foundation styles for the plugin wrapper
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Reset */
 .bbai-wrap,
 .bbai-wrap * {
     box-sizing: border-box;
@@ -162,9 +166,41 @@
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* ============================================
-   3. LAYOUT COMPONENTS
-   ============================================ */
+/* WordPress Admin Reset */
+.bbai-wrap,
+.bbai-modern {
+    margin: 0;
+    padding: 20px;
+    background: var(--bbai-bg-secondary);
+    font-family: var(--bbai-font);
+    line-height: var(--bbai-leading-normal);
+    color: var(--bbai-text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.bbai-wrap *,
+.bbai-modern * {
+    box-sizing: border-box;
+}
+
+/* Prevent WP admin overflow issues */
+body.media_page_bbai #wpwrap,
+body.media_page_bbai #wpcontent,
+body.media_page_bbai #wpbody-content {
+    overflow-x: hidden;
+}
+
+
+/* 3. Layout Components */
+/* Imported from: _layout.css */
+/**
+ * Layout Components
+ * Container, grid system, and flex utilities
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
 
 /* Container */
 .bbai-container {
@@ -220,11 +256,43 @@
 .bbai-gap-4 { gap: var(--bbai-space-4); }
 .bbai-gap-6 { gap: var(--bbai-space-6); }
 
-/* ============================================
-   4. UI COMPONENTS
-   ============================================ */
+/* Dashboard Layout */
+.bbai-dashboard {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: var(--bbai-space-6);
+}
 
-/* Cards */
+@media (max-width: 1200px) {
+    .bbai-dashboard {
+        grid-template-columns: 1fr;
+    }
+}
+
+.bbai-dashboard-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bbai-space-6);
+}
+
+.bbai-dashboard-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bbai-space-6);
+}
+
+
+/* 4. UI Components - Cards */
+/* Imported from: _cards.css */
+/**
+ * Card Components
+ * Base cards, stat cards, usage cards, and upsell cards
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Base Cards */
 .bbai-card {
     background: var(--bbai-bg);
     border: 1px solid var(--bbai-border);
@@ -302,6 +370,9 @@
     border-radius: var(--bbai-radius-lg);
     padding: var(--bbai-space-8);
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .bbai-usage-ring {
@@ -352,6 +423,55 @@
     color: var(--bbai-text-muted);
 }
 
+/* Usage Card Action Links */
+.bbai-usage-upgrade-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: var(--bbai-space-4);
+    padding: 10px 20px;
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-semibold);
+    color: white;
+    background: var(--bbai-gradient-primary);
+    border-radius: var(--bbai-radius);
+    text-decoration: none;
+    transition: all var(--bbai-transition);
+    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.25);
+}
+
+.bbai-usage-upgrade-link:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    color: white;
+    text-decoration: none;
+}
+
+.bbai-usage-billing-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: var(--bbai-space-3);
+    padding: 8px 16px;
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-medium);
+    color: var(--bbai-primary);
+    background: transparent;
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius);
+    text-decoration: none;
+    transition: all var(--bbai-transition);
+}
+
+.bbai-usage-billing-link:hover {
+    background: var(--bbai-bg-secondary);
+    border-color: var(--bbai-primary);
+    color: var(--bbai-primary);
+    text-decoration: none;
+}
+
 /* Upsell Card */
 .bbai-upsell-card {
     background: var(--bbai-gradient-upsell);
@@ -360,6 +480,9 @@
     color: white;
     position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .bbai-upsell-card * {
@@ -423,7 +546,18 @@
     box-shadow: var(--bbai-shadow-md);
 }
 
-/* Buttons */
+
+/* 4. UI Components - Buttons */
+/* Imported from: _buttons.css */
+/**
+ * Button Components
+ * Base buttons and variants
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Base Button */
 .bbai-btn {
     display: inline-flex;
     align-items: center;
@@ -506,6 +640,33 @@
     font-size: var(--bbai-text-base);
 }
 
+/* Button Icon */
+.bbai-btn-icon {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+}
+
+/* Button Spinner */
+.bbai-btn__spinner {
+    display: none;
+}
+
+.bbai-btn.is-loading .bbai-btn__spinner {
+    display: inline-block;
+}
+
+
+/* 4. UI Components - Badges */
+/* Imported from: _badges.css */
+/**
+ * Badge & Progress Components
+ * Badges, progress bars, and tabs
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
 /* Badges */
 .bbai-badge {
     display: inline-flex;
@@ -541,6 +702,142 @@
 .bbai-badge-gray {
     background: var(--bbai-gray-100);
     color: var(--bbai-gray-600);
+}
+
+/* ===========================================
+   STATUS BADGES (Library Tab)
+   =========================================== */
+
+.bbai-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-1);
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: var(--bbai-font-medium);
+    border-radius: var(--bbai-radius-full);
+    white-space: nowrap;
+}
+
+.bbai-status-badge--optimized {
+    background: var(--bbai-success-light);
+    color: var(--bbai-success);
+}
+
+.bbai-status-badge--missing {
+    background: var(--bbai-warning-light);
+    color: #b45309;
+}
+
+.bbai-status-badge--regenerated {
+    background: var(--bbai-info-light);
+    color: var(--bbai-info);
+}
+
+/* ===========================================
+   SEO QUALITY BADGES
+   =========================================== */
+
+.bbai-seo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: var(--bbai-font-semibold);
+    border-radius: var(--bbai-radius-full);
+    white-space: nowrap;
+    cursor: help;
+}
+
+.bbai-seo-badge--excellent {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #065f46;
+}
+
+.bbai-seo-badge--good {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #1e40af;
+}
+
+.bbai-seo-badge--fair {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #92400e;
+}
+
+.bbai-seo-badge--poor {
+    background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
+    color: #c2410c;
+}
+
+.bbai-seo-badge--needs-work {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #b91c1c;
+}
+
+/* ===========================================
+   PLAN BADGES
+   =========================================== */
+
+.bbai-usage-plan-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    font-size: 10px;
+    font-weight: var(--bbai-font-bold);
+    letter-spacing: 0.05em;
+    border-radius: var(--bbai-radius-full);
+    text-transform: uppercase;
+}
+
+.bbai-usage-plan-badge--free {
+    background: var(--bbai-gray-100);
+    color: var(--bbai-gray-600);
+}
+
+.bbai-usage-plan-badge--pro {
+    background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+    color: var(--bbai-primary);
+}
+
+.bbai-usage-plan-badge--agency,
+.bbai-usage-plan-badge--agency-polished {
+    background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+    color: #7c3aed;
+}
+
+/* ===========================================
+   CHARACTER COUNTER BADGES
+   =========================================== */
+
+.bbai-char-counter--optimal {
+    display: inline-flex;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: var(--bbai-font-medium);
+    background: var(--bbai-success-light);
+    color: var(--bbai-success);
+    border-radius: var(--bbai-radius);
+}
+
+.bbai-char-counter--warning {
+    display: inline-flex;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: var(--bbai-font-medium);
+    background: var(--bbai-warning-light);
+    color: #b45309;
+    border-radius: var(--bbai-radius);
+}
+
+.bbai-char-counter--empty {
+    display: inline-flex;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: var(--bbai-font-medium);
+    background: var(--bbai-gray-100);
+    color: var(--bbai-gray-500);
+    border-radius: var(--bbai-radius);
 }
 
 /* Progress Bar */
@@ -593,9 +890,16 @@
     border-bottom-color: var(--bbai-primary);
 }
 
-/* ============================================
-   5. FORM ELEMENTS
-   ============================================ */
+
+/* 5. Form Elements */
+/* Imported from: _forms.css */
+/**
+ * Form Elements
+ * Inputs, selects, textareas, toggles
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
 
 .bbai-form-group {
     margin-bottom: var(--bbai-space-4);
@@ -697,9 +1001,16 @@
     color: var(--bbai-text);
 }
 
-/* ============================================
-   6. DATA DISPLAY
-   ============================================ */
+
+/* 6. Data Display */
+/* Imported from: _tables.css */
+/**
+ * Table Components
+ * Data display tables
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
 
 /* Tables */
 .bbai-table-wrap {
@@ -764,30 +1075,54 @@
     line-height: 1.4;
 }
 
-/* ============================================
-   7. MODALS & OVERLAYS
-   ============================================ */
 
+/* 7. Modals & Overlays */
+/* Imported from: _modals.css */
+/**
+ * Modal Components
+ * Modal backdrop, container, and elements
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Modal Backdrop */
 .bbai-modal-backdrop {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
     z-index: var(--bbai-z-modal-backdrop);
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     padding: var(--bbai-space-4);
     opacity: 0;
     visibility: hidden;
-    transition: all var(--bbai-transition);
+    transition: opacity var(--bbai-transition), visibility var(--bbai-transition);
 }
 
-.bbai-modal-backdrop.active {
+.bbai-modal-backdrop.active,
+.bbai-modal-backdrop.is-visible {
+    display: flex;
     opacity: 1;
     visibility: visible;
 }
 
+/* Upgrade modal specific - allow JS inline styles to override */
+#bbai-upgrade-modal[style*="display: flex"],
+#bbai-upgrade-modal[style*="display:flex"] {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Body state when modal is open */
+body.bbai-modal-open {
+    overflow: hidden;
+}
+
+/* Modal Container */
 .bbai-modal {
     background: var(--bbai-bg);
     border-radius: var(--bbai-radius-xl);
@@ -806,6 +1141,7 @@
     transform: scale(1) translateY(0);
 }
 
+/* Modal Header */
 .bbai-modal-header {
     display: flex;
     align-items: center;
@@ -821,6 +1157,7 @@
     margin: 0;
 }
 
+/* Modal Close Button */
 .bbai-modal-close {
     width: 32px;
     height: 32px;
@@ -840,12 +1177,14 @@
     color: var(--bbai-text);
 }
 
+/* Modal Body */
 .bbai-modal-body {
     padding: var(--bbai-space-6);
     overflow-y: auto;
     flex: 1;
 }
 
+/* Modal Footer */
 .bbai-modal-footer {
     display: flex;
     align-items: center;
@@ -916,33 +1255,71 @@
     opacity: 1;
 }
 
-/* ============================================
-   8. PAGE-SPECIFIC STYLES
-   ============================================ */
 
-/* Dashboard Page */
-.bbai-dashboard {
-    display: grid;
-    grid-template-columns: 1fr 380px;
-    gap: var(--bbai-space-6);
+/* 8. Page-Specific Styles */
+/* Imported from: _pages.css */
+/**
+ * Page-Specific Styles
+ * Premium stats, optimization, library, settings, debug
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ===========================================
+   UNIFIED PAGE TITLES & SUBTITLES
+   Consistent typography across all tabs
+   =========================================== */
+
+.bbai-page-header {
+    margin-bottom: var(--bbai-space-6);
 }
 
-@media (max-width: 1200px) {
-    .bbai-dashboard {
-        grid-template-columns: 1fr;
-    }
+.bbai-page-title,
+.bbai-dashboard-title,
+.bbai-library-title,
+.bbai-settings-page-title,
+.bbai-guide-title,
+.bbai-debug-title {
+    font-size: var(--bbai-text-2xl);
+    font-weight: var(--bbai-font-bold);
+    color: var(--bbai-text);
+    margin: 0 0 var(--bbai-space-2) 0;
+    line-height: var(--bbai-leading-tight);
 }
 
-.bbai-dashboard-main {
-    display: flex;
-    flex-direction: column;
-    gap: var(--bbai-space-6);
+.bbai-page-subtitle,
+.bbai-dashboard-subtitle,
+.bbai-library-subtitle,
+.bbai-settings-page-subtitle,
+.bbai-guide-subtitle,
+.bbai-debug-subtitle {
+    font-size: var(--bbai-text-base);
+    color: var(--bbai-text-secondary);
+    margin: 0;
+    line-height: var(--bbai-leading-relaxed);
 }
 
-.bbai-dashboard-sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: var(--bbai-space-6);
+/* Section headers within pages */
+.bbai-section-title {
+    font-size: var(--bbai-text-lg);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0 0 var(--bbai-space-4) 0;
+}
+
+.bbai-section-subtitle {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+    margin: 0 0 var(--bbai-space-4) 0;
+}
+
+/* ===========================================
+   DASHBOARD HEADER SECTION
+   =========================================== */
+
+.bbai-dashboard-header-section {
+    margin-bottom: var(--bbai-space-6);
 }
 
 /* Premium Stats Grid - Two Column Hero Layout */
@@ -976,6 +1353,60 @@
     .bbai-premium-stats-grid > .bbai-premium-card {
         flex: 1 1 100%;
         max-width: 100%;
+    }
+}
+
+/* Premium Metrics Grid - 3 Equal Cards */
+.bbai-premium-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.bbai-metric-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+    padding: 28px;
+}
+
+.bbai-metric-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bbai-bg-secondary);
+    border-radius: var(--bbai-radius-full);
+    color: var(--bbai-primary);
+}
+
+.bbai-metric-value {
+    font-size: var(--bbai-text-3xl);
+    font-weight: var(--bbai-font-bold);
+    color: var(--bbai-text);
+    line-height: 1;
+}
+
+.bbai-metric-label {
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.bbai-metric-description {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-secondary);
+}
+
+@media (max-width: 768px) {
+    .bbai-premium-metrics-grid {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -1014,14 +1445,111 @@
 
 .bbai-optimization-actions {
     display: flex;
-    gap: var(--bbai-space-3);
+    gap: var(--bbai-space-4);
     flex-wrap: wrap;
+    margin-top: var(--bbai-space-4);
 }
 
-.bbai-optimization-btn {
+.bbai-optimization-cta {
     flex: 1;
     min-width: 200px;
-    padding: var(--bbai-space-3) var(--bbai-space-4);
+    padding: 14px 24px;
+    border-radius: var(--bbai-radius-md);
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-semibold);
+    cursor: pointer;
+    transition: all var(--bbai-transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: none;
+    text-decoration: none;
+}
+
+.bbai-optimization-cta--primary {
+    background: var(--bbai-gradient-primary);
+    color: white;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.bbai-optimization-cta--primary:hover:not(:disabled):not(.bbai-optimization-cta--locked) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+}
+
+.bbai-optimization-cta--secondary {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    color: var(--bbai-text);
+    border: 2px solid var(--bbai-primary);
+    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.12);
+}
+
+.bbai-optimization-cta--secondary .bbai-btn-icon {
+    color: var(--bbai-primary);
+}
+
+.bbai-optimization-cta--secondary:hover:not(:disabled):not(.bbai-optimization-cta--locked) {
+    background: linear-gradient(135deg, var(--bbai-primary-light) 0%, #ffffff 100%);
+    border-color: var(--bbai-primary-hover);
+    color: var(--bbai-primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+.bbai-optimization-cta:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.bbai-optimization-cta--locked,
+.bbai-optimization-cta:disabled {
+    opacity: 1;
+    background: linear-gradient(135deg, var(--bbai-gray-200) 0%, var(--bbai-gray-100) 100%) !important;
+    color: var(--bbai-gray-500) !important;
+    cursor: not-allowed;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+    border: 2px solid var(--bbai-gray-300) !important;
+    position: relative;
+}
+
+.bbai-optimization-cta--locked::before,
+.bbai-optimization-cta:disabled::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 8px,
+        rgba(0, 0, 0, 0.02) 8px,
+        rgba(0, 0, 0, 0.02) 16px
+    );
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+.bbai-optimization-cta--locked .bbai-btn-icon,
+.bbai-optimization-cta:disabled .bbai-btn-icon {
+    color: var(--bbai-warning);
+}
+
+.bbai-optimization-cta--locked:hover,
+.bbai-optimization-cta:disabled:hover {
+    transform: none;
+    background: linear-gradient(135deg, var(--bbai-gray-300) 0%, var(--bbai-gray-200) 100%) !important;
+}
+
+@media (max-width: 640px) {
+    .bbai-optimization-actions {
+        flex-direction: column;
+    }
+
+    .bbai-optimization-cta {
+        min-width: 100%;
+    }
 }
 
 /* Library Tab */
@@ -1129,11 +1657,18 @@
     color: var(--bbai-error);
 }
 
-/* ============================================
-   9. UTILITY CLASSES
-   ============================================ */
 
-/* Text */
+/* 9. Utility Classes */
+/* Imported from: _utilities.css */
+/**
+ * Utility Classes
+ * Text, spacing, display, and helper classes
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Text Sizes */
 .bbai-text-xs { font-size: var(--bbai-text-xs); }
 .bbai-text-sm { font-size: var(--bbai-text-sm); }
 .bbai-text-base { font-size: var(--bbai-text-base); }
@@ -1141,27 +1676,35 @@
 .bbai-text-xl { font-size: var(--bbai-text-xl); }
 .bbai-text-2xl { font-size: var(--bbai-text-2xl); }
 
+/* Font Weights */
 .bbai-font-medium { font-weight: var(--bbai-font-medium); }
 .bbai-font-semibold { font-weight: var(--bbai-font-semibold); }
 .bbai-font-bold { font-weight: var(--bbai-font-bold); }
 
+/* Text Colors */
 .bbai-text-primary { color: var(--bbai-text); }
 .bbai-text-secondary { color: var(--bbai-text-secondary); }
 .bbai-text-muted { color: var(--bbai-text-muted); }
 .bbai-text-success { color: var(--bbai-success); }
 .bbai-text-error { color: var(--bbai-error); }
 
+/* Text Alignment */
 .bbai-text-center { text-align: center; }
 .bbai-text-right { text-align: right; }
 
-/* Spacing */
+/* Spacing - Margin */
 .bbai-mt-2 { margin-top: var(--bbai-space-2); }
 .bbai-mt-4 { margin-top: var(--bbai-space-4); }
+.bbai-mt-5 { margin-top: var(--bbai-space-5, 1.25rem); }
 .bbai-mt-6 { margin-top: var(--bbai-space-6); }
 .bbai-mb-2 { margin-bottom: var(--bbai-space-2); }
+.bbai-mb-3 { margin-bottom: var(--bbai-space-3); }
 .bbai-mb-4 { margin-bottom: var(--bbai-space-4); }
 .bbai-mb-6 { margin-bottom: var(--bbai-space-6); }
+.bbai-mr-2 { margin-right: var(--bbai-space-2); }
+.bbai-ml-3 { margin-left: var(--bbai-space-3); }
 
+/* Spacing - Padding */
 .bbai-p-4 { padding: var(--bbai-space-4); }
 .bbai-p-6 { padding: var(--bbai-space-6); }
 
@@ -1174,10 +1717,259 @@
 /* Width */
 .bbai-w-full { width: 100%; }
 
-/* ============================================
-   10. ANIMATIONS
-   ============================================ */
+/* Icon Utilities */
+.bbai-icon-inline {
+    margin-right: 12px;
+    vertical-align: middle;
+}
 
+.bbai-icon-inline--sm {
+    margin-right: 10px;
+}
+
+.bbai-icon-inline--xs {
+    margin-right: 8px;
+}
+
+/* Tab Content Visibility */
+.bbai-admin-tab-content {
+    display: none;
+}
+
+.bbai-admin-tab-content.is-active {
+    display: block;
+}
+
+/* Progress Status Visibility */
+.bbai-dashboard__status {
+    display: none;
+}
+
+.bbai-dashboard__status.is-visible {
+    display: block;
+}
+
+/* Context Rows */
+.bbai-debug-context-row {
+    display: none;
+}
+
+.bbai-debug-context-row.is-expanded {
+    display: table-row;
+}
+
+/* Usage Bar */
+.bbai-dashboard-usage-bar-fill {
+    transition: width var(--bbai-transition-slow);
+}
+
+/* ===========================================
+   CREDIT USAGE PAGE COMPONENTS
+   =========================================== */
+
+/* Page Title */
+.bbai-credit-page-title {
+    font-size: var(--bbai-text-2xl);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin-bottom: var(--bbai-space-6);
+}
+
+/* Summary Cards Grid */
+.bbai-usage-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--bbai-space-6);
+    margin: var(--bbai-space-8) 0;
+}
+
+/* Stat Card Component */
+.bbai-credit-stat-card {
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-space-6);
+    box-shadow: var(--bbai-shadow-sm);
+    transition: box-shadow var(--bbai-transition);
+}
+
+.bbai-credit-stat-card:hover {
+    box-shadow: var(--bbai-shadow);
+}
+
+.bbai-credit-stat-title {
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0 0 var(--bbai-space-3) 0;
+}
+
+.bbai-credit-stat-value {
+    font-size: var(--bbai-text-3xl);
+    font-weight: var(--bbai-font-bold);
+    margin: var(--bbai-space-2) 0;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+.bbai-credit-stat-value--primary { color: var(--bbai-text); }
+.bbai-credit-stat-value--secondary { color: var(--bbai-text-secondary); }
+.bbai-credit-stat-value--success { color: var(--bbai-success); }
+.bbai-credit-stat-value--primary-brand { color: var(--bbai-primary); }
+
+.bbai-credit-stat-desc {
+    color: var(--bbai-text-muted);
+    font-size: var(--bbai-text-sm);
+    margin: 0;
+}
+
+/* Filter Form */
+.bbai-filter-form {
+    background: var(--bbai-bg-secondary);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-space-4);
+    margin-bottom: var(--bbai-space-6);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--bbai-space-3);
+}
+
+.bbai-filter-label {
+    display: block;
+    font-weight: var(--bbai-font-semibold);
+    margin-bottom: var(--bbai-space-2);
+    color: var(--bbai-text);
+}
+
+.bbai-filter-input,
+.bbai-filter-select {
+    width: 100%;
+    padding: var(--bbai-space-2) var(--bbai-space-3);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-md);
+    font-size: var(--bbai-text-sm);
+    background: var(--bbai-bg);
+    color: var(--bbai-text);
+}
+
+.bbai-filter-input:focus,
+.bbai-filter-select:focus {
+    outline: none;
+    border-color: var(--bbai-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.bbai-filter-submit {
+    align-self: flex-end;
+}
+
+/* User Details Card */
+.bbai-user-details-card {
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-space-5);
+    margin-bottom: var(--bbai-space-6);
+}
+
+.bbai-user-details-title {
+    font-size: var(--bbai-text-xl);
+    font-weight: var(--bbai-font-bold);
+    margin-top: 0;
+    margin-bottom: var(--bbai-space-4);
+    color: var(--bbai-text);
+}
+
+/* Table Card */
+.bbai-table-card {
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-space-4);
+}
+
+.bbai-table-title {
+    font-size: var(--bbai-text-lg);
+    font-weight: var(--bbai-font-bold);
+    margin-top: 0;
+    margin-bottom: var(--bbai-space-3);
+    color: var(--bbai-text);
+}
+
+.bbai-table-subtitle {
+    color: var(--bbai-text-muted);
+    font-size: var(--bbai-text-xs);
+}
+
+/* Pagination */
+.bbai-pagination {
+    display: inline-flex;
+    gap: var(--bbai-space-1);
+}
+
+/* Maintenance Warning Card */
+.bbai-maintenance-card {
+    margin-top: var(--bbai-space-6);
+    padding: var(--bbai-space-4);
+    background: var(--bbai-error-bg);
+    border: 1px solid var(--bbai-error-light);
+    border-radius: var(--bbai-radius-md);
+}
+
+.bbai-maintenance-title {
+    margin-top: 0;
+    color: var(--bbai-error);
+    font-weight: var(--bbai-font-bold);
+}
+
+.bbai-maintenance-desc {
+    margin-bottom: var(--bbai-space-3);
+}
+
+/* License Key Display */
+.bbai-license-key-display {
+    margin-top: var(--bbai-space-2);
+    font-size: var(--bbai-text-xs);
+    color: var(--bbai-text-muted);
+    font-family: var(--bbai-font-mono);
+    word-break: break-all;
+}
+
+/* Back Button Link */
+.bbai-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+    padding: var(--bbai-space-2) var(--bbai-space-4);
+    background: var(--bbai-primary);
+    color: white;
+    border: none;
+    border-radius: var(--bbai-radius);
+    font-weight: var(--bbai-font-medium);
+    font-size: var(--bbai-text-sm);
+    text-decoration: none;
+    transition: background var(--bbai-transition);
+}
+
+.bbai-back-btn:hover {
+    background: var(--bbai-primary-hover);
+    color: white;
+    text-decoration: none;
+}
+
+
+/* 10. Animations */
+/* Imported from: _animations.css */
+/**
+ * Animations
+ * Keyframes and animation classes
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Keyframes */
 @keyframes bbai-spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
@@ -1198,6 +1990,23 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes bbai-toast-in {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes bbai-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Animation Classes */
 .bbai-animate-spin {
     animation: bbai-spin 1s linear infinite;
 }
@@ -1230,9 +2039,51 @@
     border-width: 3px;
 }
 
-/* ============================================
-   11. HEADER & NAVIGATION
-   ============================================ */
+/* Skeleton Loading */
+.bbai-skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--bbai-gray-200) 0%,
+        var(--bbai-gray-100) 50%,
+        var(--bbai-gray-200) 100%
+    );
+    background-size: 200% 100%;
+    animation: bbai-shimmer 1.5s ease-in-out infinite;
+    border-radius: var(--bbai-radius);
+}
+
+.bbai-skeleton-text {
+    height: 1em;
+    margin-bottom: var(--bbai-space-2);
+}
+
+.bbai-skeleton-title {
+    height: 1.5em;
+    width: 60%;
+    margin-bottom: var(--bbai-space-4);
+}
+
+.bbai-skeleton-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+}
+
+.bbai-skeleton-card {
+    height: 200px;
+    border-radius: var(--bbai-radius-lg);
+}
+
+
+/* 11. Header & Navigation */
+/* Imported from: _header.css */
+/**
+ * Header & Navigation
+ * Dark header, logo, nav links, auth badge
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
 
 /* Dark Header */
 .bbai-header {
@@ -1250,6 +2101,7 @@
     gap: var(--bbai-space-6);
 }
 
+/* Logo */
 .bbai-logo {
     display: flex;
     align-items: center;
@@ -1267,6 +2119,7 @@
     color: white;
 }
 
+/* Navigation */
 .bbai-nav {
     display: flex;
     align-items: center;
@@ -1328,6 +2181,7 @@
     gap: var(--bbai-space-3);
 }
 
+/* Auth Badge */
 .bbai-auth-badge {
     display: inline-flex;
     align-items: center;
@@ -1393,9 +2247,16 @@
     transform: none;
 }
 
-/* ============================================
-   12. ALERTS & NOTIFICATIONS
-   ============================================ */
+
+/* 12. Alerts & Notifications */
+/* Imported from: _alerts.css */
+/**
+ * Alerts & Notifications
+ * Alert component and toast notifications
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
 
 /* Alert Component */
 .bbai-alert {
@@ -1428,6 +2289,7 @@
     font-size: var(--bbai-text-sm);
 }
 
+/* Alert Variants */
 .bbai-alert-success {
     background: var(--bbai-success-bg);
     border-left-color: var(--bbai-success);
@@ -1448,7 +2310,7 @@
     border-left-color: var(--bbai-info);
 }
 
-/* Toast Notifications */
+/* Toast Container */
 .bbai-toast-container {
     position: fixed;
     top: var(--bbai-space-8);
@@ -1460,6 +2322,7 @@
     max-width: 400px;
 }
 
+/* Toast */
 .bbai-toast {
     background: var(--bbai-bg);
     border-radius: var(--bbai-radius-lg);
@@ -1472,17 +2335,7 @@
     animation: bbai-toast-in 0.3s ease-out;
 }
 
-@keyframes bbai-toast-in {
-    from {
-        transform: translateX(400px);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
+/* Toast Variants */
 .bbai-toast-success { border-left-color: var(--bbai-success); }
 .bbai-toast-error { border-left-color: var(--bbai-error); }
 .bbai-toast-warning { border-left-color: var(--bbai-warning); }
@@ -1523,9 +2376,39 @@
     color: var(--bbai-text);
 }
 
-/* ============================================
-   13. AUTH MODAL
-   ============================================ */
+/* Login Status */
+.bbai-login-status {
+    display: none;
+    padding: 12px;
+    border-radius: var(--bbai-radius);
+    margin-bottom: var(--bbai-space-4);
+    font-size: var(--bbai-text-sm);
+}
+
+.bbai-login-status.is-visible {
+    display: block;
+}
+
+.bbai-login-status--success {
+    color: var(--bbai-success);
+    background: var(--bbai-success-light);
+}
+
+.bbai-login-status--error {
+    color: var(--bbai-error);
+    background: var(--bbai-error-light);
+}
+
+
+/* 13. Auth Modal */
+/* Imported from: _auth-modal.css */
+/**
+ * Auth Modal
+ * Authentication modal styles
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
 
 .bbai-auth-modal {
     position: fixed;
@@ -1596,10 +2479,18 @@
     color: var(--bbai-text);
 }
 
-/* ============================================
-   14. UPGRADE MODAL
-   ============================================ */
 
+/* 14. Upgrade Modal & Pricing */
+/* Imported from: _upgrade-modal.css */
+/**
+ * Upgrade Modal & Pricing
+ * Upgrade modal and plan cards
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Upgrade Modal Content */
 .bbai-upgrade-modal__content {
     background: var(--bbai-bg);
     border-radius: var(--bbai-radius-xl);
@@ -1636,7 +2527,7 @@
     padding: var(--bbai-space-8) var(--bbai-space-10) var(--bbai-space-10);
 }
 
-/* Plan Cards */
+/* Pricing Container */
 .bbai-pricing-container {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -1650,6 +2541,7 @@
     }
 }
 
+/* Plan Cards */
 .bbai-plan-card {
     border: 2px solid var(--bbai-border);
     border-radius: var(--bbai-radius-xl);
@@ -1670,6 +2562,7 @@
     border-color: var(--bbai-success);
 }
 
+/* Plan Badge */
 .bbai-plan-badge {
     position: absolute;
     top: -12px;
@@ -1693,6 +2586,7 @@
     color: white;
 }
 
+/* Plan Header */
 .bbai-plan-header {
     text-align: center;
     margin-bottom: var(--bbai-space-6);
@@ -1705,6 +2599,7 @@
     color: var(--bbai-text);
 }
 
+/* Plan Price */
 .bbai-plan-price {
     text-align: center;
     margin-bottom: var(--bbai-space-2);
@@ -1723,6 +2618,7 @@
     margin-left: var(--bbai-space-1);
 }
 
+/* Plan Features */
 .bbai-plan-features {
     flex: 1;
     margin-bottom: var(--bbai-space-6);
@@ -1763,6 +2659,7 @@
     top: var(--bbai-space-3);
 }
 
+/* Plan CTA */
 .bbai-plan-cta {
     width: 100%;
     padding: var(--bbai-space-4) var(--bbai-space-6);
@@ -1790,9 +2687,16 @@
     box-shadow: var(--bbai-shadow-md);
 }
 
-/* ============================================
-   15. BULK PROGRESS MODAL
-   ============================================ */
+
+/* 15. Bulk Progress Modal */
+/* Imported from: _bulk-progress.css */
+/**
+ * Bulk Progress Modal
+ * Progress modal for bulk operations
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
 
 .bbai-bulk-progress-modal {
     position: fixed;
@@ -1827,6 +2731,7 @@
     box-shadow: var(--bbai-shadow-xl);
 }
 
+/* Header */
 .bbai-bulk-progress__header {
     padding: var(--bbai-space-6) var(--bbai-space-8);
     border-bottom: 1px solid var(--bbai-border);
@@ -1863,6 +2768,7 @@
     color: var(--bbai-text);
 }
 
+/* Body */
 .bbai-bulk-progress__body {
     padding: var(--bbai-space-6) var(--bbai-space-8);
     overflow-y: auto;
@@ -1944,6 +2850,7 @@
     padding: var(--bbai-space-3);
 }
 
+/* Log Entries */
 .bbai-bulk-progress__log-entry {
     display: flex;
     align-items: center;
@@ -1981,81 +2888,170 @@
     color: var(--bbai-text);
 }
 
-/* ============================================
-   16. SKELETON LOADING
-   ============================================ */
 
-.bbai-skeleton {
-    background: linear-gradient(
-        90deg,
-        var(--bbai-gray-200) 0%,
-        var(--bbai-gray-100) 50%,
-        var(--bbai-gray-200) 100%
-    );
-    background-size: 200% 100%;
-    animation: bbai-shimmer 1.5s ease-in-out infinite;
+/* 16. API Notice */
+/* Imported from: _api-notice.css */
+/**
+ * API Notice Modal
+ * API key notice and related elements
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+.bbai-api-notice-modal-content {
+    max-width: 600px;
+}
+
+.bbai-api-notice-body {
+    padding: 24px;
+}
+
+.bbai-api-notice-text {
+    margin: 0 0 20px 0;
+    color: var(--bbai-gray-700);
+    line-height: 1.6;
+    font-size: var(--bbai-text-sm);
+}
+
+.bbai-api-notice-box {
+    background: var(--bbai-gray-50);
+    border: 1px solid var(--bbai-gray-200);
+    border-radius: var(--bbai-radius-md);
+    padding: var(--bbai-space-4);
+    margin-bottom: 0;
+}
+
+.bbai-api-notice-label {
+    margin: 0 0 12px 0;
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-gray-900);
+    font-size: var(--bbai-text-sm);
+}
+
+.bbai-api-notice-value {
+    margin: 0 0 16px 0;
+    color: var(--bbai-gray-500);
+    font-size: 13px;
+    font-family: var(--bbai-font-mono);
+    word-break: break-all;
+    line-height: 1.5;
+}
+
+.bbai-api-notice-value:last-child {
+    margin-bottom: 0;
+}
+
+.bbai-api-notice-link {
+    color: var(--bbai-info);
+    text-decoration: underline;
+    font-size: 13px;
+}
+
+.bbai-api-notice-link:hover {
+    color: var(--bbai-primary);
+}
+
+.bbai-api-notice-footer {
+    padding: 20px 24px;
+    border-top: 1px solid var(--bbai-gray-200);
+    text-align: right;
+    background: var(--bbai-bg);
+}
+
+.bbai-api-notice-footer .button {
+    min-width: 100px;
+}
+
+
+/* 17. Miscellaneous */
+/* Imported from: _misc.css */
+/**
+ * Miscellaneous Styles
+ * Footer, license, accessibility, print, WP admin fixes
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Footer Section */
+.bbai-footer {
+    text-align: center;
+    padding: 24px 0;
+    margin-top: 48px;
+    border-top: 1px solid var(--bbai-gray-200);
+    color: var(--bbai-gray-500);
+    font-size: 13px;
+}
+
+.bbai-footer a {
+    color: var(--bbai-accent);
+    text-decoration: none;
+}
+
+.bbai-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Unauthenticated Container */
+.bbai-unauth-container {
+    padding: 40px;
+    text-align: center;
+}
+
+.bbai-unauth-list {
+    text-align: left;
+    display: inline-block;
+}
+
+/* Settings Required Section */
+.bbai-settings-required-note {
+    margin-top: 12px;
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-gray-500);
+}
+
+.bbai-settings-required-actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* Debug Tab Extras */
+.bbai-debug-hint {
+    margin-top: 12px;
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-gray-500);
+}
+
+.bbai-debug-auth-btn {
+    margin-top: 20px;
+    display: inline-block;
+}
+
+/* License Section */
+.bbai-settings-license-key {
+    margin-top: var(--bbai-space-2);
+    font-size: var(--bbai-text-xs);
+    color: var(--bbai-gray-500);
+    font-family: var(--bbai-font-mono);
+    word-break: break-all;
+}
+
+#license-activation-status {
+    display: none;
+    padding: 12px;
     border-radius: var(--bbai-radius);
-}
-
-@keyframes bbai-shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-}
-
-.bbai-skeleton-text {
-    height: 1em;
-    margin-bottom: var(--bbai-space-2);
-}
-
-.bbai-skeleton-title {
-    height: 1.5em;
-    width: 60%;
     margin-bottom: var(--bbai-space-4);
+    font-size: var(--bbai-text-sm);
 }
 
-.bbai-skeleton-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
+#license-activation-status.is-visible {
+    display: block;
 }
 
-.bbai-skeleton-card {
-    height: 200px;
-    border-radius: var(--bbai-radius-lg);
-}
-
-/* ============================================
-   17. WORDPRESS ADMIN RESET
-   ============================================ */
-
-.bbai-wrap,
-.bbai-modern {
-    margin: 0;
-    padding: 20px;
-    background: var(--bbai-bg-secondary);
-    font-family: var(--bbai-font);
-    line-height: var(--bbai-leading-normal);
-    color: var(--bbai-text);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-.bbai-wrap *,
-.bbai-modern * {
-    box-sizing: border-box;
-}
-
-/* Prevent WP admin overflow issues */
-body.media_page_bbai #wpwrap,
-body.media_page_bbai #wpcontent,
-body.media_page_bbai #wpbody-content {
-    overflow-x: hidden;
-}
-
-/* ============================================
-   18. PRINT STYLES
-   ============================================ */
-
+/* Print Styles */
 @media print {
     .bbai-modal-backdrop,
     .bbai-tooltip,
@@ -2066,11 +3062,7 @@ body.media_page_bbai #wpbody-content {
     }
 }
 
-/* ============================================
-   19. ACCESSIBILITY
-   ============================================ */
-
-/* Screen Reader Only */
+/* Accessibility - Screen Reader Only */
 .bbai-sr-only {
     position: absolute;
     width: 1px;
@@ -2111,11 +3103,7 @@ body.media_page_bbai #wpbody-content {
     }
 }
 
-/* ============================================
-   20. WORDPRESS ADMIN MENU READABILITY
-   ============================================ */
-
-/* Ensure admin menu items are readable with proper contrast */
+/* WordPress Admin Menu Readability */
 #adminmenu,
 #adminmenu a {
     color: #a7aaad !important;
@@ -2142,7 +3130,7 @@ body.media_page_bbai #wpbody-content {
     color: #00a0d2 !important;
 }
 
-/* Ensure menu icons are visible */
+/* Menu icons visibility */
 #adminmenu .dashicons,
 #adminmenu .dashicons-before:before {
     color: #a7aaad !important;
@@ -2181,3 +3169,5 @@ body.media_page_bbai #wpbody-content {
 #adminmenu li.wp-menu-open a.menu-top {
     color: #fff !important;
 }
+
+

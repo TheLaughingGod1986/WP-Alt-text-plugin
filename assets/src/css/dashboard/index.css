@@ -1,0 +1,21 @@
+/**
+ * Dashboard CSS - Index
+ * Imports all dashboard component styles
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Variables & Legacy Aliases */
+@import '_variables.css';
+
+/* Components */
+@import '_gamification.css';
+@import '_cards.css';
+@import '_buttons.css';
+@import '_table.css';
+@import '_seo-badge.css';
+@import '_utilities.css';
+
+/* Responsive */
+@import '_responsive.css';

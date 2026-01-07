@@ -1,0 +1,203 @@
+/**
+ * Miscellaneous Styles
+ * Footer, license, accessibility, print, WP admin fixes
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Footer Section */
+.bbai-footer {
+    text-align: center;
+    padding: 24px 0;
+    margin-top: 48px;
+    border-top: 1px solid var(--bbai-gray-200);
+    color: var(--bbai-gray-500);
+    font-size: 13px;
+}
+
+.bbai-footer a {
+    color: var(--bbai-accent);
+    text-decoration: none;
+}
+
+.bbai-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Unauthenticated Container */
+.bbai-unauth-container {
+    padding: 40px;
+    text-align: center;
+}
+
+.bbai-unauth-list {
+    text-align: left;
+    display: inline-block;
+}
+
+/* Settings Required Section */
+.bbai-settings-required-note {
+    margin-top: 12px;
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-gray-500);
+}
+
+.bbai-settings-required-actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* Debug Tab Extras */
+.bbai-debug-hint {
+    margin-top: 12px;
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-gray-500);
+}
+
+.bbai-debug-auth-btn {
+    margin-top: 20px;
+    display: inline-block;
+}
+
+/* License Section */
+.bbai-settings-license-key {
+    margin-top: var(--bbai-space-2);
+    font-size: var(--bbai-text-xs);
+    color: var(--bbai-gray-500);
+    font-family: var(--bbai-font-mono);
+    word-break: break-all;
+}
+
+#license-activation-status {
+    display: none;
+    padding: 12px;
+    border-radius: var(--bbai-radius);
+    margin-bottom: var(--bbai-space-4);
+    font-size: var(--bbai-text-sm);
+}
+
+#license-activation-status.is-visible {
+    display: block;
+}
+
+/* Print Styles */
+@media print {
+    .bbai-modal-backdrop,
+    .bbai-tooltip,
+    .bbai-btn,
+    .bbai-toast-container,
+    .bbai-header {
+        display: none !important;
+    }
+}
+
+/* Accessibility - Screen Reader Only */
+.bbai-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Focus Visible */
+.bbai-focus-visible:focus-visible,
+.bbai-btn:focus-visible,
+.bbai-input:focus-visible,
+.bbai-nav-link:focus-visible {
+    outline: 2px solid var(--bbai-primary);
+    outline-offset: 2px;
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    :root {
+        --bbai-border: var(--bbai-gray-900);
+        --bbai-text: #000000;
+    }
+}
+
+/* WordPress Admin Menu Readability */
+#adminmenu,
+#adminmenu a {
+    color: #a7aaad !important;
+}
+
+#adminmenu .wp-submenu,
+#adminmenu .wp-submenu a {
+    color: #a7aaad !important;
+}
+
+#adminmenu a:hover,
+#adminmenu li:hover > a,
+#adminmenu .wp-submenu a:hover {
+    color: #00a0d2 !important;
+}
+
+#adminmenu li.current a.menu-top,
+#adminmenu li.wp-menu-open a.menu-top,
+#adminmenu .wp-submenu li.current a {
+    color: #fff !important;
+}
+
+#adminmenu .wp-submenu li.current a:hover {
+    color: #00a0d2 !important;
+}
+
+/* Menu icons visibility */
+#adminmenu .dashicons,
+#adminmenu .dashicons-before:before {
+    color: #a7aaad !important;
+    opacity: 1 !important;
+}
+
+#adminmenu li:hover .dashicons,
+#adminmenu li:hover .dashicons-before:before,
+#adminmenu li.current .dashicons,
+#adminmenu li.current .dashicons-before:before,
+#adminmenu li.wp-menu-open .dashicons,
+#adminmenu li.wp-menu-open .dashicons-before:before {
+    color: #fff !important;
+}
+
+/* Submenu items readability */
+#adminmenu .wp-submenu li a {
+    color: #a7aaad !important;
+}
+
+#adminmenu .wp-submenu li a:hover {
+    color: #00a0d2 !important;
+}
+
+/* Active/hover states */
+#adminmenu li.menu-top:hover,
+#adminmenu li.opensub > a.menu-top,
+#adminmenu li.current,
+#adminmenu li.wp-menu-open {
+    background-color: #23282d !important;
+}
+
+#adminmenu li.menu-top:hover,
+#adminmenu li.opensub > a.menu-top,
+#adminmenu li.current a.menu-top,
+#adminmenu li.wp-menu-open a.menu-top {
+    color: #fff !important;
+}

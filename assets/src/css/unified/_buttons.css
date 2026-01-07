@@ -1,0 +1,106 @@
+/**
+ * Button Components
+ * Base buttons and variants
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Base Button */
+.bbai-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--bbai-space-2);
+    padding: var(--bbai-space-2) var(--bbai-space-4);
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-medium);
+    line-height: 1.5;
+    border-radius: var(--bbai-radius);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all var(--bbai-transition);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.bbai-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+}
+
+.bbai-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Button Variants */
+.bbai-btn-primary {
+    background: var(--bbai-gradient-primary);
+    color: white;
+    border-color: transparent;
+}
+
+.bbai-btn-primary:hover:not(:disabled) {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+    box-shadow: var(--bbai-shadow-md);
+}
+
+.bbai-btn-secondary {
+    background: var(--bbai-bg);
+    color: var(--bbai-text);
+    border-color: var(--bbai-border);
+}
+
+.bbai-btn-secondary:hover:not(:disabled) {
+    background: var(--bbai-bg-secondary);
+    border-color: var(--bbai-border-dark);
+}
+
+.bbai-btn-success {
+    background: var(--bbai-gradient-success);
+    color: white;
+}
+
+.bbai-btn-success:hover:not(:disabled) {
+    filter: brightness(1.1);
+}
+
+.bbai-btn-ghost {
+    background: transparent;
+    color: var(--bbai-text-secondary);
+    border-color: transparent;
+}
+
+.bbai-btn-ghost:hover:not(:disabled) {
+    background: var(--bbai-bg-secondary);
+    color: var(--bbai-text);
+}
+
+/* Button Sizes */
+.bbai-btn-sm {
+    padding: var(--bbai-space-1) var(--bbai-space-3);
+    font-size: var(--bbai-text-xs);
+}
+
+.bbai-btn-lg {
+    padding: var(--bbai-space-3) var(--bbai-space-6);
+    font-size: var(--bbai-text-base);
+}
+
+/* Button Icon */
+.bbai-btn-icon {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+}
+
+/* Button Spinner */
+.bbai-btn__spinner {
+    display: none;
+}
+
+.bbai-btn.is-loading .bbai-btn__spinner {
+    display: inline-block;
+}

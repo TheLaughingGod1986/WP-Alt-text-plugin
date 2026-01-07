@@ -26,10 +26,10 @@ if (!$is_authenticated && !$has_license) :
                         <div class="bbai-settings-required-icon">🔒</div>
                         <h2><?php esc_html_e('Authentication Required', 'beepbeep-ai-alt-text-generator'); ?></h2>
                         <p><?php esc_html_e('Settings are now available to all users. Log in to save settings to your account.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        <p style="margin-top: 12px; font-size: 14px; color: #6b7280;">
+                        <p class="bbai-settings-required-note">
                             <?php esc_html_e('If you continue without logging in, your changes may be stored locally for this site only.', 'beepbeep-ai-alt-text-generator'); ?>
                         </p>
-                        <div style="margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap;">
+                        <div class="bbai-settings-required-actions">
                             <button type="button" class="bbai-btn-primary bbai-btn-icon" data-action="show-auth-modal" data-auth-tab="login">
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                     <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
@@ -222,12 +222,12 @@ if (!$is_authenticated && !$has_license) :
                                         $license_plan = strtolower($org['plan'] ?? 'free');
                                         if ($license_plan === 'pro' || $license_plan === 'agency') :
                                     ?>
-                                    <div class="bbai-settings-license-key" style="margin-top: 8px; font-size: 12px; color: #6b7280; font-family: monospace; word-break: break-all;">
+                                    <div class="bbai-settings-license-key bbai-license-key-display">
                                         <strong><?php esc_html_e('License Key:', 'beepbeep-ai-alt-text-generator'); ?></strong> <?php echo esc_html($license_key); ?>
                                     </div>
-                                    <?php 
+                                    <?php
                                         endif;
-                                    endif; 
+                                    endif;
                                     ?>
                                 </div>
                             </div>
@@ -235,12 +235,12 @@ if (!$is_authenticated && !$has_license) :
                                 <?php esc_html_e('Deactivate', 'beepbeep-ai-alt-text-generator'); ?>
                             </button>
                         </div>
-                        
-                        <?php 
+
+                        <?php
                         // Show site usage for agency licenses (can use license key or JWT auth)
                         $is_authenticated = $this->api_client->is_authenticated();
                         $is_agency_license = isset($license_data['organization']['plan']) && $license_data['organization']['plan'] === 'agency';
-                        
+
                         // Show for agency licenses with either JWT auth or license key
                         if ($is_agency_license && ($is_authenticated || $has_license)) :
                         ?>
@@ -248,7 +248,7 @@ if (!$is_authenticated && !$has_license) :
                         <div class="bbai-settings-license-sites" id="bbai-license-sites">
                             <div class="bbai-settings-license-sites-header">
                                 <h3 class="bbai-settings-license-sites-title">
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="margin-right: 8px;">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="bbai-mr-2">
                                         <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                         <circle cx="8" cy="8" r="2" fill="currentColor"/>
                                     </svg>
@@ -277,7 +277,7 @@ if (!$is_authenticated && !$has_license) :
                                 <div>
                                     <div class="bbai-settings-license-title"><?php esc_html_e('License Active', 'beepbeep-ai-alt-text-generator'); ?></div>
                                     <div class="bbai-settings-license-subtitle"><?php esc_html_e('Your license key is active and ready to use.', 'beepbeep-ai-alt-text-generator'); ?></div>
-                                    <div class="bbai-settings-license-key" style="margin-top: 8px; font-size: 12px; color: #6b7280; font-family: monospace; word-break: break-all;">
+                                    <div class="bbai-settings-license-key bbai-license-key-display">
                                         <strong><?php esc_html_e('License Key:', 'beepbeep-ai-alt-text-generator'); ?></strong> <?php echo esc_html($stored_license_key); ?>
                                     </div>
                                 </div>
@@ -305,7 +305,7 @@ if (!$is_authenticated && !$has_license) :
                                            pattern="[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
                                            required>
                                 </div>
-                                <div id="license-activation-status" style="display: none; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 14px;"></div>
+                                <div id="license-activation-status" class="bbai-hidden bbai-alert"></div>
                                 <button type="submit" id="activate-license-btn" class="bbai-settings-license-activate-btn">
                                     <?php esc_html_e('Activate License', 'beepbeep-ai-alt-text-generator'); ?>
                                 </button>

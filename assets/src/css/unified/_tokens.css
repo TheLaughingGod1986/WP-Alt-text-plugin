@@ -1,0 +1,128 @@
+/**
+ * Design Tokens
+ * CSS Variables for colors, typography, spacing, etc.
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+:root {
+    /* Brand Colors */
+    --bbai-primary: #6366f1;
+    --bbai-primary-hover: #4f46e5;
+    --bbai-primary-light: #eef2ff;
+    --bbai-primary-dark: #4338ca;
+
+    /* Accent Colors */
+    --bbai-accent: #14b8a6;
+    --bbai-accent-hover: #0d9488;
+    --bbai-accent-light: #ccfbf1;
+
+    /* Status Colors */
+    --bbai-success: #10b981;
+    --bbai-success-light: #d1fae5;
+    --bbai-success-bg: #f0fdf4;
+
+    --bbai-warning: #f59e0b;
+    --bbai-warning-light: #fef3c7;
+    --bbai-warning-bg: #fffbeb;
+
+    --bbai-error: #ef4444;
+    --bbai-error-light: #fee2e2;
+    --bbai-error-bg: #fef2f2;
+
+    --bbai-info: #3b82f6;
+    --bbai-info-light: #dbeafe;
+    --bbai-info-bg: #eff6ff;
+
+    /* Neutral Colors */
+    --bbai-gray-50: #f9fafb;
+    --bbai-gray-100: #f3f4f6;
+    --bbai-gray-200: #e5e7eb;
+    --bbai-gray-300: #d1d5db;
+    --bbai-gray-400: #9ca3af;
+    --bbai-gray-500: #6b7280;
+    --bbai-gray-600: #4b5563;
+    --bbai-gray-700: #374151;
+    --bbai-gray-800: #1f2937;
+    --bbai-gray-900: #111827;
+
+    /* Semantic Colors */
+    --bbai-text: var(--bbai-gray-800);
+    --bbai-text-secondary: var(--bbai-gray-600);
+    --bbai-text-muted: var(--bbai-gray-500);
+    --bbai-text-light: var(--bbai-gray-400);
+
+    --bbai-bg: #ffffff;
+    --bbai-bg-secondary: var(--bbai-gray-50);
+    --bbai-bg-tertiary: var(--bbai-gray-100);
+
+    --bbai-border: var(--bbai-gray-200);
+    --bbai-border-dark: var(--bbai-gray-300);
+
+    /* Gradients */
+    --bbai-gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    --bbai-gradient-accent: linear-gradient(135deg, #14b8a6 0%, #0891b2 100%);
+    --bbai-gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    --bbai-gradient-upsell: linear-gradient(180deg, #4f8dfc 0%, #6aa8ff 100%);
+
+    /* Typography */
+    --bbai-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --bbai-font-mono: 'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+
+    --bbai-text-xs: 0.75rem;
+    --bbai-text-sm: 0.875rem;
+    --bbai-text-base: 1rem;
+    --bbai-text-lg: 1.125rem;
+    --bbai-text-xl: 1.25rem;
+    --bbai-text-2xl: 1.5rem;
+    --bbai-text-3xl: 1.875rem;
+
+    --bbai-font-normal: 400;
+    --bbai-font-medium: 500;
+    --bbai-font-semibold: 600;
+    --bbai-font-bold: 700;
+
+    --bbai-leading-tight: 1.25;
+    --bbai-leading-normal: 1.5;
+    --bbai-leading-relaxed: 1.625;
+
+    /* Spacing */
+    --bbai-space-1: 0.25rem;
+    --bbai-space-2: 0.5rem;
+    --bbai-space-3: 0.75rem;
+    --bbai-space-4: 1rem;
+    --bbai-space-5: 1.25rem;
+    --bbai-space-6: 1.5rem;
+    --bbai-space-8: 2rem;
+    --bbai-space-10: 2.5rem;
+    --bbai-space-12: 3rem;
+    --bbai-space-16: 4rem;
+
+    /* Border Radius */
+    --bbai-radius-sm: 4px;
+    --bbai-radius: 6px;
+    --bbai-radius-md: 8px;
+    --bbai-radius-lg: 12px;
+    --bbai-radius-xl: 16px;
+    --bbai-radius-full: 9999px;
+
+    /* Shadows */
+    --bbai-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --bbai-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+    --bbai-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    --bbai-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    --bbai-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+
+    /* Transitions */
+    --bbai-transition-fast: 150ms ease;
+    --bbai-transition: 200ms ease;
+    --bbai-transition-slow: 300ms ease;
+
+    /* Z-Index */
+    --bbai-z-dropdown: 100;
+    --bbai-z-sticky: 200;
+    --bbai-z-modal-backdrop: 1000;
+    --bbai-z-modal: 1010;
+    --bbai-z-tooltip: 1100;
+}

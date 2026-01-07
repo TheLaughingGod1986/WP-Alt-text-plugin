@@ -112,29 +112,35 @@ bbaiRunWithJQuery(function($) {
         $(document).on('click', '[data-action="show-upgrade-modal"]', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            
+
             console.log('[AltText AI] Upgrade CTA clicked via jQuery handler', this);
-            
-            // Use new pricing modal if available
+
+            // Direct fallback - show the modal directly (most reliable method)
+            const modal = document.getElementById('bbai-upgrade-modal');
+            if (modal) {
+                console.log('[AltText AI] Found modal, showing directly');
+                modal.removeAttribute('style');
+                modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important;';
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+                return false;
+            }
+
+            // Fallback: Use new pricing modal if available
             if (typeof window.openPricingModal === 'function') {
                 window.openPricingModal('enterprise');
-            } else if (typeof bbaiApp && typeof bbaiApp.showModal === 'function') {
+            } else if (typeof bbaiApp !== 'undefined' && typeof bbaiApp.showModal === 'function') {
                 // Fallback to old modal
                 bbaiApp.showModal();
             } else if (typeof alttextaiShowModal === 'function') {
                 alttextaiShowModal(); // Legacy fallback
             } else {
-                console.error('[AltText AI] Pricing modal not available!');
-                // Direct fallback
-                const modal = document.getElementById('bbai-upgrade-modal');
-                if (modal) {
-                    modal.removeAttribute('style');
-                    modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important;';
-                } else {
+                console.error('[AltText AI] Pricing modal not available and DOM element not found!');
+                if (typeof window.bbaiModal !== 'undefined') {
                     window.bbaiModal.warning('Upgrade modal not found. Please refresh the page.');
                 }
             }
-            
+
             return false;
         });
         
@@ -2510,7 +2516,7 @@ window.bbaiSEOChecker = {
             return '';
         }
 
-        var badgeClass = 'bbai-seo-quality-badge bbai-seo-quality-badge--' + quality.badge;
+        var badgeClass = 'bbai-seo-badge bbai-seo-badge--' + quality.badge;
         var icon = quality.grade === 'A' ?
             '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 5l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' :
             quality.grade === 'B' ?
@@ -2542,7 +2548,7 @@ window.bbaiSEOChecker = {
             var text = $altText.attr('data-full-text') || $altText.text().trim();
 
             // Check if badge already exists
-            if ($altText.parent().find('.bbai-seo-quality-badge').length === 0) {
+            if ($altText.parent().find('.bbai-seo-badge').length === 0) {
                 var badgeHTML = self.createBadge(text);
                 if (badgeHTML) {
                     var $counter = $altText.next('.bbai-char-counter');

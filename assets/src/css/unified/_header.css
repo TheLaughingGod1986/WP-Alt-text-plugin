@@ -1,0 +1,169 @@
+/**
+ * Header & Navigation
+ * Dark header, logo, nav links, auth badge
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Dark Header */
+.bbai-header {
+    background: #212B36;
+    padding: var(--bbai-space-4) var(--bbai-space-8);
+    box-shadow: var(--bbai-shadow);
+}
+
+.bbai-header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1600px;
+    margin: 0 auto;
+    gap: var(--bbai-space-6);
+}
+
+/* Logo */
+.bbai-logo {
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-space-3);
+}
+
+.bbai-logo-icon {
+    width: 32px;
+    height: 32px;
+}
+
+.bbai-logo-text {
+    font-size: var(--bbai-text-base);
+    font-weight: var(--bbai-font-bold);
+    color: white;
+}
+
+/* Navigation */
+.bbai-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+}
+
+.bbai-nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+    padding: var(--bbai-space-2) var(--bbai-space-4);
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+    border-radius: var(--bbai-radius-full);
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-medium);
+    transition: all var(--bbai-transition);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+/* Ensure inactive links are clearly visible */
+.bbai-nav-link:not(.active) {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.bbai-nav-link:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.12);
+    color: white;
+}
+
+.bbai-nav-link.active {
+    background: var(--bbai-gray-700);
+    font-weight: var(--bbai-font-semibold);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    color: white;
+}
+
+.bbai-nav-link.active:hover {
+    background: #4B5563;
+}
+
+.bbai-nav-link svg {
+    width: 16px;
+    height: 16px;
+    opacity: 0.75;
+}
+
+.bbai-nav-link:hover:not(.active) svg,
+.bbai-nav-link.active svg {
+    opacity: 1;
+}
+
+/* Header Actions */
+.bbai-header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-space-3);
+}
+
+/* Auth Badge */
+.bbai-auth-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+    padding: var(--bbai-space-2) var(--bbai-space-3);
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--bbai-radius);
+    font-size: var(--bbai-text-sm);
+    color: white;
+}
+
+.bbai-auth-badge__user {
+    font-weight: var(--bbai-font-medium);
+}
+
+.bbai-auth-badge__logout {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: var(--bbai-text-xs);
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+}
+
+.bbai-auth-badge__logout:hover {
+    color: white;
+}
+
+/* Header Logout Button */
+.bbai-header-logout-btn,
+.bbai-header-disconnect-btn {
+    padding: 6px 14px;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.bbai-header-logout-btn:hover,
+.bbai-header-disconnect-btn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.bbai-header-logout-btn:active,
+.bbai-header-disconnect-btn:active {
+    transform: translateY(0);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.bbai-header-logout-btn:disabled,
+.bbai-header-disconnect-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}

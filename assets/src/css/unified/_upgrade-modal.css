@@ -1,0 +1,204 @@
+/**
+ * Upgrade Modal & Pricing
+ * Upgrade modal and plan cards
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Upgrade Modal Content */
+.bbai-upgrade-modal__content {
+    background: var(--bbai-bg);
+    border-radius: var(--bbai-radius-xl);
+    box-shadow: var(--bbai-shadow-xl);
+    max-width: 1100px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: bbai-slide-up 0.3s ease-out;
+}
+
+.bbai-upgrade-modal__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: var(--bbai-space-10) var(--bbai-space-10) var(--bbai-space-8);
+    border-bottom: 1px solid var(--bbai-border);
+}
+
+.bbai-upgrade-modal__header h2 {
+    margin: 0 0 var(--bbai-space-4) 0;
+    font-size: var(--bbai-text-3xl);
+    font-weight: var(--bbai-font-bold);
+    color: var(--bbai-text);
+}
+
+.bbai-upgrade-modal__subtitle {
+    font-size: var(--bbai-text-lg);
+    color: var(--bbai-text-secondary);
+    margin: 0;
+}
+
+.bbai-upgrade-modal__body {
+    padding: var(--bbai-space-8) var(--bbai-space-10) var(--bbai-space-10);
+}
+
+/* Pricing Container */
+.bbai-pricing-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--bbai-space-6);
+    margin-bottom: var(--bbai-space-8);
+}
+
+@media (max-width: 768px) {
+    .bbai-pricing-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Plan Cards */
+.bbai-plan-card {
+    border: 2px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-xl);
+    padding: var(--bbai-space-8);
+    position: relative;
+    background: var(--bbai-bg);
+    transition: all var(--bbai-transition);
+    display: flex;
+    flex-direction: column;
+}
+
+.bbai-plan-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--bbai-shadow-lg);
+}
+
+.bbai-plan-card--featured {
+    border-color: var(--bbai-success);
+}
+
+/* Plan Badge */
+.bbai-plan-badge {
+    position: absolute;
+    top: -12px;
+    left: var(--bbai-space-6);
+    padding: var(--bbai-space-1) var(--bbai-space-4);
+    border-radius: var(--bbai-radius-full);
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    box-shadow: var(--bbai-shadow);
+}
+
+.bbai-plan-badge--popular {
+    background: var(--bbai-warning);
+    color: white;
+}
+
+.bbai-plan-badge--professional {
+    background: var(--bbai-success);
+    color: white;
+}
+
+/* Plan Header */
+.bbai-plan-header {
+    text-align: center;
+    margin-bottom: var(--bbai-space-6);
+}
+
+.bbai-plan-header h3 {
+    margin: 0 0 var(--bbai-space-4) 0;
+    font-size: var(--bbai-text-xl);
+    font-weight: var(--bbai-font-bold);
+    color: var(--bbai-text);
+}
+
+/* Plan Price */
+.bbai-plan-price {
+    text-align: center;
+    margin-bottom: var(--bbai-space-2);
+}
+
+.bbai-price-amount {
+    font-size: 42px;
+    font-weight: var(--bbai-font-bold);
+    color: var(--bbai-text);
+    line-height: 1;
+}
+
+.bbai-price-period {
+    font-size: var(--bbai-text-lg);
+    color: var(--bbai-text-muted);
+    margin-left: var(--bbai-space-1);
+}
+
+/* Plan Features */
+.bbai-plan-features {
+    flex: 1;
+    margin-bottom: var(--bbai-space-6);
+}
+
+.bbai-plan-features ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.bbai-plan-features li {
+    padding: var(--bbai-space-3) 0 var(--bbai-space-3) var(--bbai-space-8);
+    border-bottom: 1px solid var(--bbai-border);
+    position: relative;
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-secondary);
+}
+
+.bbai-plan-features li:last-child {
+    border-bottom: none;
+}
+
+.bbai-plan-features li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bbai-success);
+    color: white;
+    font-size: 12px;
+    font-weight: var(--bbai-font-bold);
+    border-radius: 50%;
+    top: var(--bbai-space-3);
+}
+
+/* Plan CTA */
+.bbai-plan-cta {
+    width: 100%;
+    padding: var(--bbai-space-4) var(--bbai-space-6);
+    font-size: var(--bbai-text-base);
+    font-weight: var(--bbai-font-bold);
+    border-radius: var(--bbai-radius-md);
+    border: none;
+    cursor: pointer;
+    transition: all var(--bbai-transition);
+    text-transform: none;
+}
+
+.bbai-plan-cta--pro {
+    background: var(--bbai-gradient-primary);
+    color: white;
+}
+
+.bbai-plan-cta--agency {
+    background: var(--bbai-gradient-success);
+    color: white;
+}
+
+.bbai-plan-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--bbai-shadow-md);
+}

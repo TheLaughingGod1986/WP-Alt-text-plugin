@@ -1,0 +1,398 @@
+/**
+ * Page-Specific Styles
+ * Premium stats, optimization, library, settings, debug
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ===========================================
+   UNIFIED PAGE TITLES & SUBTITLES
+   Consistent typography across all tabs
+   =========================================== */
+
+.bbai-page-header {
+    margin-bottom: var(--bbai-space-6);
+}
+
+.bbai-page-title,
+.bbai-dashboard-title,
+.bbai-library-title,
+.bbai-settings-page-title,
+.bbai-guide-title,
+.bbai-debug-title {
+    font-size: var(--bbai-text-2xl);
+    font-weight: var(--bbai-font-bold);
+    color: var(--bbai-text);
+    margin: 0 0 var(--bbai-space-2) 0;
+    line-height: var(--bbai-leading-tight);
+}
+
+.bbai-page-subtitle,
+.bbai-dashboard-subtitle,
+.bbai-library-subtitle,
+.bbai-settings-page-subtitle,
+.bbai-guide-subtitle,
+.bbai-debug-subtitle {
+    font-size: var(--bbai-text-base);
+    color: var(--bbai-text-secondary);
+    margin: 0;
+    line-height: var(--bbai-leading-relaxed);
+}
+
+/* Section headers within pages */
+.bbai-section-title {
+    font-size: var(--bbai-text-lg);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0 0 var(--bbai-space-4) 0;
+}
+
+.bbai-section-subtitle {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+    margin: 0 0 var(--bbai-space-4) 0;
+}
+
+/* ===========================================
+   DASHBOARD HEADER SECTION
+   =========================================== */
+
+.bbai-dashboard-header-section {
+    margin-bottom: var(--bbai-space-6);
+}
+
+/* Premium Stats Grid - Two Column Hero Layout */
+.bbai-premium-stats-grid {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 24px;
+    align-items: stretch;
+}
+
+.bbai-premium-stats-grid > .bbai-premium-card {
+    flex: 1 1 50%;
+    min-width: 0;
+    max-width: 50%;
+}
+
+/* Single card mode (Agency plan) */
+.bbai-premium-stats-grid--single {
+    display: block;
+}
+
+.bbai-premium-stats-grid--single > .bbai-premium-card {
+    max-width: 100%;
+}
+
+@media (max-width: 900px) {
+    .bbai-premium-stats-grid {
+        flex-direction: column;
+    }
+
+    .bbai-premium-stats-grid > .bbai-premium-card {
+        flex: 1 1 100%;
+        max-width: 100%;
+    }
+}
+
+/* Premium Metrics Grid - 3 Equal Cards */
+.bbai-premium-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.bbai-metric-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+    padding: 28px;
+}
+
+.bbai-metric-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bbai-bg-secondary);
+    border-radius: var(--bbai-radius-full);
+    color: var(--bbai-primary);
+}
+
+.bbai-metric-value {
+    font-size: var(--bbai-text-3xl);
+    font-weight: var(--bbai-font-bold);
+    color: var(--bbai-text);
+    line-height: 1;
+}
+
+.bbai-metric-label {
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.bbai-metric-description {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-secondary);
+}
+
+@media (max-width: 768px) {
+    .bbai-premium-metrics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Optimization Section */
+.bbai-optimization {
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-space-6);
+}
+
+.bbai-optimization-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--bbai-space-4);
+    margin-bottom: var(--bbai-space-6);
+    text-align: center;
+}
+
+.bbai-optimization-stat-value {
+    font-size: var(--bbai-text-2xl);
+    font-weight: var(--bbai-font-bold);
+    color: var(--bbai-text);
+}
+
+.bbai-optimization-stat-label {
+    font-size: var(--bbai-text-xs);
+    color: var(--bbai-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.bbai-optimization-progress {
+    margin-bottom: var(--bbai-space-6);
+}
+
+.bbai-optimization-actions {
+    display: flex;
+    gap: var(--bbai-space-4);
+    flex-wrap: wrap;
+    margin-top: var(--bbai-space-4);
+}
+
+.bbai-optimization-cta {
+    flex: 1;
+    min-width: 200px;
+    padding: 14px 24px;
+    border-radius: var(--bbai-radius-md);
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-semibold);
+    cursor: pointer;
+    transition: all var(--bbai-transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: none;
+    text-decoration: none;
+}
+
+.bbai-optimization-cta--primary {
+    background: var(--bbai-gradient-primary);
+    color: white;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.bbai-optimization-cta--primary:hover:not(:disabled):not(.bbai-optimization-cta--locked) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+}
+
+.bbai-optimization-cta--secondary {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    color: var(--bbai-text);
+    border: 2px solid var(--bbai-primary);
+    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.12);
+}
+
+.bbai-optimization-cta--secondary .bbai-btn-icon {
+    color: var(--bbai-primary);
+}
+
+.bbai-optimization-cta--secondary:hover:not(:disabled):not(.bbai-optimization-cta--locked) {
+    background: linear-gradient(135deg, var(--bbai-primary-light) 0%, #ffffff 100%);
+    border-color: var(--bbai-primary-hover);
+    color: var(--bbai-primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+.bbai-optimization-cta:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.bbai-optimization-cta--locked,
+.bbai-optimization-cta:disabled {
+    opacity: 1;
+    background: linear-gradient(135deg, var(--bbai-gray-200) 0%, var(--bbai-gray-100) 100%) !important;
+    color: var(--bbai-gray-500) !important;
+    cursor: not-allowed;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+    border: 2px solid var(--bbai-gray-300) !important;
+    position: relative;
+}
+
+.bbai-optimization-cta--locked::before,
+.bbai-optimization-cta:disabled::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 8px,
+        rgba(0, 0, 0, 0.02) 8px,
+        rgba(0, 0, 0, 0.02) 16px
+    );
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+.bbai-optimization-cta--locked .bbai-btn-icon,
+.bbai-optimization-cta:disabled .bbai-btn-icon {
+    color: var(--bbai-warning);
+}
+
+.bbai-optimization-cta--locked:hover,
+.bbai-optimization-cta:disabled:hover {
+    transform: none;
+    background: linear-gradient(135deg, var(--bbai-gray-300) 0%, var(--bbai-gray-200) 100%) !important;
+}
+
+@media (max-width: 640px) {
+    .bbai-optimization-actions {
+        flex-direction: column;
+    }
+
+    .bbai-optimization-cta {
+        min-width: 100%;
+    }
+}
+
+/* Library Tab */
+.bbai-library-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--bbai-space-4);
+    margin-bottom: var(--bbai-space-4);
+    flex-wrap: wrap;
+}
+
+.bbai-library-search {
+    flex: 1;
+    min-width: 250px;
+    max-width: 400px;
+}
+
+.bbai-library-filters {
+    display: flex;
+    gap: var(--bbai-space-2);
+}
+
+/* Settings Tab */
+.bbai-settings-section {
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-space-6);
+    margin-bottom: var(--bbai-space-6);
+}
+
+.bbai-settings-section-title {
+    font-size: var(--bbai-text-lg);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0 0 var(--bbai-space-4) 0;
+    padding-bottom: var(--bbai-space-4);
+    border-bottom: 1px solid var(--bbai-border);
+}
+
+.bbai-settings-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--bbai-space-4);
+    padding: var(--bbai-space-4) 0;
+    border-bottom: 1px solid var(--bbai-border);
+}
+
+.bbai-settings-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.bbai-settings-info {
+    flex: 1;
+}
+
+.bbai-settings-label {
+    font-weight: var(--bbai-font-medium);
+    color: var(--bbai-text);
+    margin-bottom: var(--bbai-space-1);
+}
+
+.bbai-settings-desc {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+}
+
+/* Debug Tab */
+.bbai-debug-panel {
+    background: var(--bbai-gray-900);
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-space-4);
+    font-family: var(--bbai-font-mono);
+    font-size: var(--bbai-text-xs);
+    color: var(--bbai-gray-300);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.bbai-debug-entry {
+    padding: var(--bbai-space-2) 0;
+    border-bottom: 1px solid var(--bbai-gray-800);
+}
+
+.bbai-debug-entry:last-child {
+    border-bottom: none;
+}
+
+.bbai-debug-time {
+    color: var(--bbai-gray-500);
+}
+
+.bbai-debug-level-info {
+    color: var(--bbai-info);
+}
+
+.bbai-debug-level-warning {
+    color: var(--bbai-warning);
+}
+
+.bbai-debug-level-error {
+    color: var(--bbai-error);
+}

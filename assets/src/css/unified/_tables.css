@@ -1,0 +1,70 @@
+/**
+ * Table Components
+ * Data display tables
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Tables */
+.bbai-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-lg);
+}
+
+.bbai-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--bbai-text-sm);
+}
+
+.bbai-table th {
+    background: var(--bbai-bg-secondary);
+    padding: var(--bbai-space-3) var(--bbai-space-4);
+    text-align: left;
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text-secondary);
+    text-transform: uppercase;
+    font-size: var(--bbai-text-xs);
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--bbai-border);
+}
+
+.bbai-table td {
+    padding: var(--bbai-space-3) var(--bbai-space-4);
+    border-bottom: 1px solid var(--bbai-border);
+    vertical-align: middle;
+}
+
+.bbai-table tr:last-child td {
+    border-bottom: none;
+}
+
+.bbai-table tr:hover {
+    background: var(--bbai-bg-secondary);
+}
+
+/* Image Thumbnail in Table */
+.bbai-table-thumb {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: var(--bbai-radius);
+    border: 1px solid var(--bbai-border);
+}
+
+/* Alt Text Cell */
+.bbai-table-alt {
+    max-width: 300px;
+}
+
+.bbai-table-alt-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text);
+    line-height: 1.4;
+}

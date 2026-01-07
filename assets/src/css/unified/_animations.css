@@ -1,0 +1,112 @@
+/**
+ * Animations
+ * Keyframes and animation classes
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Keyframes */
+@keyframes bbai-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes bbai-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes bbai-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes bbai-slide-up {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes bbai-toast-in {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes bbai-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Animation Classes */
+.bbai-animate-spin {
+    animation: bbai-spin 1s linear infinite;
+}
+
+.bbai-animate-pulse {
+    animation: bbai-pulse 2s ease-in-out infinite;
+}
+
+.bbai-animate-fade-in {
+    animation: bbai-fade-in var(--bbai-transition);
+}
+
+.bbai-animate-slide-up {
+    animation: bbai-slide-up var(--bbai-transition);
+}
+
+/* Loading Spinner */
+.bbai-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--bbai-gray-200);
+    border-top-color: var(--bbai-primary);
+    border-radius: 50%;
+    animation: bbai-spin 0.8s linear infinite;
+}
+
+.bbai-spinner-lg {
+    width: 32px;
+    height: 32px;
+    border-width: 3px;
+}
+
+/* Skeleton Loading */
+.bbai-skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--bbai-gray-200) 0%,
+        var(--bbai-gray-100) 50%,
+        var(--bbai-gray-200) 100%
+    );
+    background-size: 200% 100%;
+    animation: bbai-shimmer 1.5s ease-in-out infinite;
+    border-radius: var(--bbai-radius);
+}
+
+.bbai-skeleton-text {
+    height: 1em;
+    margin-bottom: var(--bbai-space-2);
+}
+
+.bbai-skeleton-title {
+    height: 1.5em;
+    width: 60%;
+    margin-bottom: var(--bbai-space-4);
+}
+
+.bbai-skeleton-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+}
+
+.bbai-skeleton-card {
+    height: 200px;
+    border-radius: var(--bbai-radius-lg);
+}

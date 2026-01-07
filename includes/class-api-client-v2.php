@@ -1041,7 +1041,27 @@ class API_Client_V2 {
             return $response;
         }
 
-        if ($response['success'] && isset($response['data']['usage'])) {
+        // Handle production API response format (data at root level with different field names)
+        // Production returns: {success: true, data: {credits_used, credits_remaining, total_limit, plan_type, reset_date, ...}}
+        $api_data = $response['data'] ?? $response;
+        if (is_array($api_data) && isset($api_data['credits_used'])) {
+            $usage = [
+                'used' => intval($api_data['credits_used']),
+                'remaining' => intval($api_data['credits_remaining'] ?? 0),
+                'limit' => intval($api_data['total_limit'] ?? 50),
+                'plan' => $api_data['plan_type'] ?? 'free',
+                'resetDate' => $api_data['reset_date'] ?? '',
+            ];
+
+            // Update usage cache
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+            \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($usage);
+
+            return $usage;
+        }
+
+        // Handle legacy/mock API response format (wrapped in success/data/usage)
+        if (isset($response['success']) && $response['success'] && isset($response['data']['usage'])) {
             $usage = $response['data']['usage'];
 
             if ($has_license && is_array($usage)) {
