@@ -634,8 +634,8 @@ class Core {
         $terms_url = 'https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/';
         $nonce = wp_create_nonce('beepbeepai_nonce');
         ?>
-        <div id="bbai-api-notice-modal" class="bbai-modal-backdrop" style="display: none; opacity: 0;" role="dialog" aria-modal="true" aria-labelledby="bbai-api-notice-title" aria-describedby="bbai-api-notice-desc">
-            <div class="bbai-upgrade-modal__content bbai-api-notice-modal-content" style="max-width: 600px;">
+        <div id="bbai-api-notice-modal" class="bbai-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="bbai-api-notice-title" aria-describedby="bbai-api-notice-desc">
+            <div class="bbai-upgrade-modal__content bbai-api-notice-modal-content">
                 <div class="bbai-upgrade-modal__header">
                     <div class="bbai-upgrade-modal__header-content">
                         <h2 id="wp-alt-text-api-notice-title"><?php esc_html_e('External Service Notice', 'beepbeep-ai-alt-text-generator'); ?></h2>
@@ -646,42 +646,42 @@ class Core {
                         </svg>
                     </button>
                 </div>
-                
-                <div class="bbai-upgrade-modal__body" id="bbai-api-notice-desc" style="padding: 24px;">
-                    <p style="margin: 0 0 20px 0; color: #374151; line-height: 1.6; font-size: 14px;">
+
+                <div class="bbai-upgrade-modal__body bbai-api-notice-body" id="bbai-api-notice-desc">
+                    <p class="bbai-api-notice-text">
                         <?php esc_html_e('This plugin connects to an external API service to generate alt text. Image data is transmitted securely to process generation. No personal user data is collected.', 'beepbeep-ai-alt-text-generator'); ?>
                     </p>
-                    
-                    <div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 16px; margin-bottom: 0;">
-                        <p style="margin: 0 0 12px 0; font-weight: 600; color: #111827; font-size: 14px;">
+
+                    <div class="bbai-api-notice-box">
+                        <p class="bbai-api-notice-label">
                             <?php esc_html_e('API Endpoint:', 'beepbeep-ai-alt-text-generator'); ?>
                         </p>
-                        <p style="margin: 0 0 16px 0; color: #6B7280; font-size: 13px; font-family: monospace; word-break: break-all; line-height: 1.5;">
+                        <p class="bbai-api-notice-value">
                             <?php echo esc_html($api_url); ?>
                         </p>
-                        
-                        <p style="margin: 0 0 8px 0; font-weight: 600; color: #111827; font-size: 14px;">
+
+                        <p class="bbai-api-notice-label">
                             <?php esc_html_e('Privacy Policy:', 'beepbeep-ai-alt-text-generator'); ?>
                         </p>
-                        <p style="margin: 0 0 16px 0;">
-                            <a href="<?php echo esc_url($privacy_url); ?>" target="_blank" rel="noopener" style="color: #2563EB; text-decoration: underline; font-size: 13px;">
+                        <p class="bbai-api-notice-value">
+                            <a href="<?php echo esc_url($privacy_url); ?>" target="_blank" rel="noopener" class="bbai-api-notice-link">
                                 <?php echo esc_html($privacy_url); ?>
                             </a>
                         </p>
-                        
-                        <p style="margin: 0 0 8px 0; font-weight: 600; color: #111827; font-size: 14px;">
+
+                        <p class="bbai-api-notice-label">
                             <?php esc_html_e('Terms of Service:', 'beepbeep-ai-alt-text-generator'); ?>
                         </p>
-                        <p style="margin: 0;">
-                            <a href="<?php echo esc_url($terms_url); ?>" target="_blank" rel="noopener" style="color: #2563EB; text-decoration: underline; font-size: 13px;">
+                        <p class="bbai-api-notice-value">
+                            <a href="<?php echo esc_url($terms_url); ?>" target="_blank" rel="noopener" class="bbai-api-notice-link">
                                 <?php echo esc_html($terms_url); ?>
                             </a>
                         </p>
                     </div>
                 </div>
-                
-                <div class="bbai-upgrade-modal__footer" style="padding: 20px 24px; border-top: 1px solid #E5E7EB; text-align: right; background: #FFFFFF;">
-                    <button type="button" class="button button-primary" onclick="bbaiCloseApiNotice();" style="min-width: 100px;">
+
+                <div class="bbai-upgrade-modal__footer bbai-api-notice-footer">
+                    <button type="button" class="button button-primary" onclick="bbaiCloseApiNotice();">
                         <?php esc_html_e('Got it', 'beepbeep-ai-alt-text-generator'); ?>
                     </button>
                 </div>
@@ -992,14 +992,24 @@ class Core {
     }
 
     public function handle_checkout_redirect() {
+        if (!$this->user_can_manage()) {
+            wp_die(esc_html__('Unauthorized access.', 'beepbeep-ai-alt-text-generator'));
+        }
+
+        // Verify nonce for CSRF protection
+        $nonce = isset($_GET['_wpnonce']) ? sanitize_text_field(wp_unslash($_GET['_wpnonce'])) : '';
+        if (!wp_verify_nonce($nonce, 'bbai_checkout_redirect')) {
+            wp_die(esc_html__('Security check failed.', 'beepbeep-ai-alt-text-generator'));
+        }
+
         if (!$this->api_client->is_authenticated()) {
-            wp_die('Please sign in first to upgrade.');
+            wp_die(esc_html__('Please sign in first to upgrade.', 'beepbeep-ai-alt-text-generator'));
         }
 
         $price_id_raw = isset($_GET['price_id']) ? wp_unslash($_GET['price_id']) : '';
         $price_id = is_string($price_id_raw) ? sanitize_text_field($price_id_raw) : '';
         if (empty($price_id)) {
-            wp_die('Invalid checkout request.');
+            wp_die(esc_html__('Invalid checkout request.', 'beepbeep-ai-alt-text-generator'));
         }
 
         $success_url = admin_url('admin.php?page=bbai&checkout=success');
@@ -1008,7 +1018,7 @@ class Core {
         $result = $this->api_client->create_checkout_session($price_id, $success_url, $cancel_url);
 
         if (is_wp_error($result)) {
-            wp_die('Checkout error: ' . $result->get_error_message());
+            wp_die(esc_html(sprintf(__('Checkout error: %s', 'beepbeep-ai-alt-text-generator'), $result->get_error_message())));
         }
 
         if (!empty($result['url'])) {
@@ -1016,7 +1026,7 @@ class Core {
             exit;
         }
 
-        wp_die('Failed to create checkout session.');
+        wp_die(esc_html__('Failed to create checkout session.', 'beepbeep-ai-alt-text-generator'));
     }
 
     public function register_settings() {
@@ -1070,6 +1080,10 @@ class Core {
 
     public function render_settings_page() {
         if (!$this->user_can_manage()) return;
+
+        // Allocate free credits on first dashboard view so usage displays correctly
+        Usage_Tracker::allocate_free_credits_if_needed();
+
         $opts  = get_option(self::OPTION_KEY, []);
         $stats = $this->get_media_stats();
         $nonce = wp_create_nonce(self::NONCE_KEY);
@@ -1706,13 +1720,13 @@ class Core {
             </div><!-- .bbai-container -->
             
             <!-- Footer -->
-            <div style="text-align: center; padding: 24px 0; margin-top: 48px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 13px;">
-                <?php esc_html_e('BeepBeep AI • WordPress AI Tools', 'beepbeep-ai-alt-text-generator'); ?> — <a href="<?php echo esc_url('https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/'); ?>" target="_blank" rel="noopener noreferrer" style="color: #14b8a6; text-decoration: none;"><?php echo esc_html__('WordPress.org Plugin', 'beepbeep-ai-alt-text-generator'); ?></a>
+            <div class="bbai-footer">
+                <?php esc_html_e('BeepBeep AI • WordPress AI Tools', 'beepbeep-ai-alt-text-generator'); ?> — <a href="<?php echo esc_url('https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/'); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html__('WordPress.org Plugin', 'beepbeep-ai-alt-text-generator'); ?></a>
             <?php else : ?>
                 <!-- Fallback: No tab matched -->
-                <div class="bbai-container" style="padding: 40px; text-align: center;">
+                <div class="bbai-container bbai-unauth-container">
                     <h2><?php esc_html_e('Tab not found', 'beepbeep-ai-alt-text-generator'); ?></h2>
-                    <p><?php 
+                    <p><?php
                     printf(
                         esc_html__('The requested tab "%s" could not be loaded. Available tabs: %s', 'beepbeep-ai-alt-text-generator'),
                         esc_html($tab),
@@ -1720,7 +1734,7 @@ class Core {
                     );
                     ?></p>
                     <p><strong><?php esc_html_e('Debug info:', 'beepbeep-ai-alt-text-generator'); ?></strong></p>
-                    <ul style="text-align: left; display: inline-block;">
+                    <ul class="bbai-unauth-list">
                         <li><?php printf(esc_html__('Tab: %s', 'beepbeep-ai-alt-text-generator'), esc_html($tab)); ?></li>
                         <li><?php printf(esc_html__('Is Authenticated: %s', 'beepbeep-ai-alt-text-generator'), $is_authenticated ? 'Yes' : 'No'); ?></li>
                         <li><?php printf(esc_html__('Has License: %s', 'beepbeep-ai-alt-text-generator'), $has_license ? 'Yes' : 'No'); ?></li>
@@ -1729,10 +1743,10 @@ class Core {
                     </ul>
                 </div>
             </div><!-- .bbai-container -->
-            
+
             <!-- Footer -->
-            <div style="text-align: center; padding: 24px 0; margin-top: 48px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 13px;">
-                <?php esc_html_e('BeepBeep AI • WordPress AI Tools', 'beepbeep-ai-alt-text-generator'); ?> — <a href="<?php echo esc_url('https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/'); ?>" target="_blank" rel="noopener noreferrer" style="color: #14b8a6; text-decoration: none;"><?php echo esc_html__('WordPress.org Plugin', 'beepbeep-ai-alt-text-generator'); ?></a>
+            <div class="bbai-footer">
+                <?php esc_html_e('BeepBeep AI • WordPress AI Tools', 'beepbeep-ai-alt-text-generator'); ?> — <a href="<?php echo esc_url('https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/'); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html__('WordPress.org Plugin', 'beepbeep-ai-alt-text-generator'); ?></a>
             </div>
         </div>
         
@@ -3213,7 +3227,29 @@ class Core {
             }
         }
         
-        // Update usage if we have credits information
+        // Log token usage prominently for each generation
+        if (!empty($usage_data) && (isset($usage_data['prompt_tokens']) || isset($usage_data['completion_tokens']) || isset($usage_data['total_tokens']))) {
+            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                $token_summary = sprintf(
+                    'Token Usage: %s prompt + %s completion = %s total tokens',
+                    isset($usage_data['prompt_tokens']) ? number_format($usage_data['prompt_tokens']) : 'N/A',
+                    isset($usage_data['completion_tokens']) ? number_format($usage_data['completion_tokens']) : 'N/A',
+                    isset($usage_data['total_tokens']) ? number_format($usage_data['total_tokens']) : 'N/A'
+                );
+                
+                Debug_Log::log('info', $token_summary, [
+                    'attachment_id' => $attachment_id,
+                    'prompt_tokens' => $usage_data['prompt_tokens'] ?? 0,
+                    'completion_tokens' => $usage_data['completion_tokens'] ?? 0,
+                    'total_tokens' => $usage_data['total_tokens'] ?? 0,
+                    'alt_text_length' => strlen($alt_text ?? ''),
+                    'model' => $api_response['meta']['modelUsed'] ?? 'unknown',
+                    'generation_time_ms' => $api_response['meta']['generation_time_ms'] ?? null,
+                ], 'generation');
+            }
+        }
+        
+        // Update usage if we have credits information from generation response
         if (!empty($usage_data) && (isset($usage_data['used']) || isset($usage_data['remaining']))) {
             // Log what we're updating for debugging
             if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
@@ -3228,90 +3264,103 @@ class Core {
                     'limit_in_response' => $api_response['limit'] ?? 'not set',
                 ], 'generation');
             }
-            
+
             Usage_Tracker::update_usage($usage_data);
-            
-            // Also log what was actually cached
-            $cached_after = Usage_Tracker::get_cached_usage(false);
+        } else {
+            // Generation response didn't include credits info - fetch fresh usage from API
+            // This ensures the dashboard shows accurate counts even if the backend doesn't
+            // return credits in the generation response
             if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-                Debug_Log::log('info', 'Usage cache updated - verifying', [
-                    'cached_usage' => $cached_after,
-                    'cached_used' => $cached_after['used'] ?? 'not set',
-                    'cached_remaining' => $cached_after['remaining'] ?? 'not set',
-                    'cached_limit' => $cached_after['limit'] ?? 'not set',
+                Debug_Log::log('info', 'Generation response missing credits info, fetching fresh usage from API', [
+                    'api_response_keys' => is_array($api_response) ? array_keys($api_response) : 'not array',
                 ], 'generation');
             }
 
-            if ($has_license) {
-                $existing_license = $this->api_client->get_license_data() ?? [];
-                $updated_license  = $existing_license ?: [];
-                $organization     = $updated_license['organization'] ?? [];
+            // Clear the cached usage to force a fresh fetch
+            Usage_Tracker::clear_cache();
 
-                // Update limit first
-                if (isset($usage_data['limit'])) {
-                    $organization['tokenLimit'] = intval($usage_data['limit']);
-                } elseif (isset($usage_data['used']) && isset($usage_data['remaining'])) {
-                    // Calculate limit from used + remaining if not provided
-                    $organization['tokenLimit'] = intval($usage_data['used']) + intval($usage_data['remaining']);
-                }
+            // Fetch fresh usage from the API
+            $fresh_usage = $this->api_client->get_usage();
+            if (!is_wp_error($fresh_usage) && is_array($fresh_usage)) {
+                Usage_Tracker::update_usage($fresh_usage);
+                $usage_data = $fresh_usage;
 
-                // Update remaining credits (this is the critical value for display)
-                if (isset($usage_data['remaining'])) {
-                    $organization['tokensRemaining'] = max(0, intval($usage_data['remaining']));
-                } elseif (isset($usage_data['used']) && isset($organization['tokenLimit'])) {
-                    // Calculate remaining from limit and used
-                    $organization['tokensRemaining'] = max(0, intval($organization['tokenLimit']) - intval($usage_data['used']));
-                } elseif (isset($usage_data['limit']) && isset($usage_data['used'])) {
-                    // Calculate remaining from limit and used if remaining not provided
-                    $organization['tokensRemaining'] = max(0, intval($usage_data['limit']) - intval($usage_data['used']));
-                    if (!isset($organization['tokenLimit'])) {
-                        $organization['tokenLimit'] = intval($usage_data['limit']);
-                    }
-                }
-                
-                // Log the update for debugging
                 if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-                    Debug_Log::log('info', 'Updating license organization data with usage', [
-                        'tokensRemaining' => $organization['tokensRemaining'] ?? 'not set',
-                        'tokenLimit' => $organization['tokenLimit'] ?? 'not set',
-                        'usage_data' => $usage_data,
+                    Debug_Log::log('info', 'Fresh usage fetched and cached after generation', [
+                        'used' => $fresh_usage['used'] ?? 'not set',
+                        'remaining' => $fresh_usage['remaining'] ?? 'not set',
+                        'limit' => $fresh_usage['limit'] ?? 'not set',
                     ], 'generation');
                 }
-
-                // Get reset date from api_response root level if available
-                if (isset($api_response['resetDate']) && !empty($api_response['resetDate'])) {
-                    $organization['resetDate'] = sanitize_text_field($api_response['resetDate']);
-                } elseif (isset($api_response['reset_date']) && !empty($api_response['reset_date'])) {
-                    $organization['resetDate'] = sanitize_text_field($api_response['reset_date']);
-                } elseif (!empty($api_response['usage']['resetDate'])) {
-                    $organization['resetDate'] = sanitize_text_field($api_response['usage']['resetDate']);
-                } elseif (!empty($api_response['usage']['nextReset'])) {
-                    $organization['resetDate'] = sanitize_text_field($api_response['usage']['nextReset']);
-                }
-
-                if (!empty($api_response['usage']['plan'])) {
-                    $organization['plan'] = sanitize_key($api_response['usage']['plan']);
-                }
-
-                $updated_license['organization'] = $organization;
-                $updated_license['updated_at'] = current_time('mysql');
-                $this->api_client->set_license_data($updated_license);
-                Usage_Tracker::clear_cache();
             }
-        } else {
-            // Backend didn't return credits in response - refresh from API to get updated credit count
-            // BUT only do this AFTER we've confirmed alt_text exists (which we have at this point)
-            // This ensures credits are properly reflected even if backend doesn't include usage in response
-            // CRITICAL: Only refresh usage AFTER successful generation (alt_text exists)
-            // If backend deducted credits on failed attempts, we don't want to record those here
-            Usage_Tracker::clear_cache();
-            $updated_usage = $this->api_client->get_usage();
-            if (!is_wp_error($updated_usage) && is_array($updated_usage) && !empty($updated_usage)) {
-                // Only update if we have a valid alt_text (successful generation)
-                // This check is redundant since we already returned if alt_text is missing above,
-                // but it's a safety check to ensure we never record usage for failed generations
-                Usage_Tracker::update_usage($updated_usage);
+        }
+
+        // Also log what was actually cached (runs after either path updates usage)
+        $cached_after = Usage_Tracker::get_cached_usage(false);
+        if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+            Debug_Log::log('info', 'Usage cache updated - verifying', [
+                'cached_usage' => $cached_after,
+                'cached_used' => $cached_after['used'] ?? 'not set',
+                'cached_remaining' => $cached_after['remaining'] ?? 'not set',
+                'cached_limit' => $cached_after['limit'] ?? 'not set',
+            ], 'generation');
+        }
+
+        // Update license data if user has a license
+        if ($has_license && !empty($usage_data)) {
+            $existing_license = $this->api_client->get_license_data() ?? [];
+            $updated_license  = $existing_license ?: [];
+            $organization     = $updated_license['organization'] ?? [];
+
+            // Update limit first
+            if (isset($usage_data['limit'])) {
+                $organization['tokenLimit'] = intval($usage_data['limit']);
+            } elseif (isset($usage_data['used']) && isset($usage_data['remaining'])) {
+                // Calculate limit from used + remaining if not provided
+                $organization['tokenLimit'] = intval($usage_data['used']) + intval($usage_data['remaining']);
             }
+
+            // Update remaining credits (this is the critical value for display)
+            if (isset($usage_data['remaining'])) {
+                $organization['tokensRemaining'] = max(0, intval($usage_data['remaining']));
+            } elseif (isset($usage_data['used']) && isset($organization['tokenLimit'])) {
+                // Calculate remaining from limit and used
+                $organization['tokensRemaining'] = max(0, intval($organization['tokenLimit']) - intval($usage_data['used']));
+            } elseif (isset($usage_data['limit']) && isset($usage_data['used'])) {
+                // Calculate remaining from limit and used if remaining not provided
+                $organization['tokensRemaining'] = max(0, intval($usage_data['limit']) - intval($usage_data['used']));
+                if (!isset($organization['tokenLimit'])) {
+                    $organization['tokenLimit'] = intval($usage_data['limit']);
+                }
+            }
+
+            // Log the update for debugging
+            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                Debug_Log::log('info', 'Updating license organization data with usage', [
+                    'tokensRemaining' => $organization['tokensRemaining'] ?? 'not set',
+                    'tokenLimit' => $organization['tokenLimit'] ?? 'not set',
+                    'usage_data' => $usage_data,
+                ], 'generation');
+            }
+
+            // Get reset date from api_response root level if available
+            if (isset($api_response['resetDate']) && !empty($api_response['resetDate'])) {
+                $organization['resetDate'] = sanitize_text_field($api_response['resetDate']);
+            } elseif (isset($api_response['reset_date']) && !empty($api_response['reset_date'])) {
+                $organization['resetDate'] = sanitize_text_field($api_response['reset_date']);
+            } elseif (!empty($api_response['usage']['resetDate'])) {
+                $organization['resetDate'] = sanitize_text_field($api_response['usage']['resetDate']);
+            } elseif (!empty($api_response['usage']['nextReset'])) {
+                $organization['resetDate'] = sanitize_text_field($api_response['usage']['nextReset']);
+            }
+
+            if (!empty($api_response['usage']['plan'])) {
+                $organization['plan'] = sanitize_key($api_response['usage']['plan']);
+            }
+
+            $updated_license['organization'] = $organization;
+            $updated_license['updated_at'] = current_time('mysql');
+            $this->api_client->set_license_data($updated_license);
         }
         
         $alt = trim($api_response['alt_text']);
@@ -3457,6 +3506,7 @@ class Core {
 
     public function handle_bulk_action($redirect_to, $doaction, $post_ids){
         if ($doaction !== 'bbai_generate') return $redirect_to;
+        if (!$this->user_can_manage()) return $redirect_to;
         $queued = 0;
         foreach ($post_ids as $id){
             if ($this->queue_attachment($id, 'bulk')) {
