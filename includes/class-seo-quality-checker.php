@@ -188,7 +188,7 @@ class BBAI_SEO_Quality_Checker {
     }
 
     /**
-     * Generate SEO quality badge HTML
+     * Generate SEO quality badge HTML with detailed tooltip breakdown
      *
      * @param string $text The alt text to check
      * @return string HTML for quality badge
@@ -200,37 +200,76 @@ class BBAI_SEO_Quality_Checker {
             return '';
         }
 
-        $badge_class = 'bbai-seo-quality-badge bbai-seo-quality-badge--' . esc_attr($quality['badge']);
+        $char_count = mb_strlen($text);
+        $badge_class = 'bbai-seo-badge bbai-seo-badge--' . esc_attr($quality['badge']);
 
-        // Icon based on grade
-        $icon = '';
-        if ($quality['grade'] === 'A') {
-            $icon = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 5l3 3 5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-        } elseif ($quality['grade'] === 'B') {
-            $icon = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M5 2v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
-        } else {
-            $icon = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M2 8l6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
-        }
-
-        // Build tooltip
-        $tooltip_parts = [
-            sprintf(__('SEO Quality: %s (%d/100)', 'beepbeep-ai-alt-text-generator'), $quality['grade'], $quality['score'])
-        ];
-
-        if (!empty($quality['issues'])) {
-            $tooltip_parts = array_merge($tooltip_parts, $quality['issues']);
-        } else {
-            $tooltip_parts[] = __('Excellent SEO optimization!', 'beepbeep-ai-alt-text-generator');
-        }
-
-        $tooltip = esc_attr(implode("\n", $tooltip_parts));
+        // Build detailed tooltip content
+        $tooltip = self::build_tooltip_content($text, $quality, $char_count);
 
         return sprintf(
-            '<span class="%s" title="%s">%sSEO: %s</span>',
+            '<span class="%s" data-bbai-tooltip="%s" data-bbai-tooltip-position="top">SEO: %s</span>',
             $badge_class,
-            $tooltip,
-            $icon,
+            esc_attr($tooltip),
             esc_html($quality['grade'])
         );
+    }
+
+    /**
+     * Build detailed tooltip content for SEO quality badge
+     *
+     * @param string $text The alt text
+     * @param array $quality Quality data from calculate_quality()
+     * @param int $char_count Character count
+     * @return string Formatted tooltip content
+     */
+    private static function build_tooltip_content($text, $quality, $char_count) {
+        $lines = [];
+
+        // Header with grade and score
+        $lines[] = sprintf(
+            __('SEO Score: %s (%d/100)', 'beepbeep-ai-alt-text-generator'),
+            $quality['grade'],
+            $quality['score']
+        );
+        $lines[] = '';
+
+        // Character length check
+        $length_status = $char_count <= 125 ? '✓' : '✗';
+        $length_label = $char_count <= 125
+            ? __('Optimal length', 'beepbeep-ai-alt-text-generator')
+            : __('Too long', 'beepbeep-ai-alt-text-generator');
+        $lines[] = sprintf('%s %s (%d/125)', $length_status, $length_label, $char_count);
+
+        // Redundant prefix check
+        $has_prefix = self::has_redundant_prefix($text);
+        $prefix_status = $has_prefix ? '✗' : '✓';
+        $prefix_label = $has_prefix
+            ? __('Remove "image of" prefix', 'beepbeep-ai-alt-text-generator')
+            : __('No redundant prefix', 'beepbeep-ai-alt-text-generator');
+        $lines[] = sprintf('%s %s', $prefix_status, $prefix_label);
+
+        // Filename check
+        $is_filename = self::is_just_filename($text);
+        $filename_status = $is_filename ? '✗' : '✓';
+        $filename_label = $is_filename
+            ? __('Looks like a filename', 'beepbeep-ai-alt-text-generator')
+            : __('Descriptive text', 'beepbeep-ai-alt-text-generator');
+        $lines[] = sprintf('%s %s', $filename_status, $filename_label);
+
+        // Descriptive content check
+        $is_descriptive = self::has_descriptive_content($text);
+        $descriptive_status = $is_descriptive ? '✓' : '✗';
+        $descriptive_label = $is_descriptive
+            ? __('Good keyword content', 'beepbeep-ai-alt-text-generator')
+            : __('Needs more detail', 'beepbeep-ai-alt-text-generator');
+        $lines[] = sprintf('%s %s', $descriptive_status, $descriptive_label);
+
+        // Add tip for non-A grades
+        if ($quality['grade'] !== 'A') {
+            $lines[] = '';
+            $lines[] = __('Tip: Regenerate for better SEO', 'beepbeep-ai-alt-text-generator');
+        }
+
+        return implode("\n", $lines);
     }
 }

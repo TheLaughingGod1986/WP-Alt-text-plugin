@@ -247,6 +247,74 @@
     --bbai-bg-soft-blue: #F0F7FF;
 }
 
+/* WordPress Admin Menu Readability Fixes */
+/* Ensure admin menu items are readable with proper contrast */
+#adminmenu,
+#adminmenu a {
+    color: #a7aaad !important;
+}
+
+#adminmenu .wp-submenu,
+#adminmenu .wp-submenu a {
+    color: #a7aaad !important;
+}
+
+#adminmenu a:hover,
+#adminmenu li:hover > a,
+#adminmenu .wp-submenu a:hover {
+    color: #00a0d2 !important;
+}
+
+#adminmenu li.current a.menu-top,
+#adminmenu li.wp-menu-open a.menu-top,
+#adminmenu .wp-submenu li.current a {
+    color: #fff !important;
+}
+
+#adminmenu .wp-submenu li.current a:hover {
+    color: #00a0d2 !important;
+}
+
+/* Ensure menu icons are visible */
+#adminmenu .dashicons,
+#adminmenu .dashicons-before:before {
+    color: #a7aaad !important;
+    opacity: 1 !important;
+}
+
+#adminmenu li:hover .dashicons,
+#adminmenu li:hover .dashicons-before:before,
+#adminmenu li.current .dashicons,
+#adminmenu li.current .dashicons-before:before,
+#adminmenu li.wp-menu-open .dashicons,
+#adminmenu li.wp-menu-open .dashicons-before:before {
+    color: #fff !important;
+}
+
+/* Submenu items readability */
+#adminmenu .wp-submenu li a {
+    color: #a7aaad !important;
+}
+
+#adminmenu .wp-submenu li a:hover {
+    color: #00a0d2 !important;
+}
+
+/* Active/hover states */
+#adminmenu li.menu-top:hover,
+#adminmenu li.opensub > a.menu-top,
+#adminmenu li.current,
+#adminmenu li.wp-menu-open {
+    background-color: #23282d !important;
+}
+
+#adminmenu li.menu-top:hover,
+#adminmenu li.opensub > a.menu-top,
+#adminmenu li.current a.menu-top,
+#adminmenu li.wp-menu-open a.menu-top {
+    color: #fff !important;
+}
+
 /* Dashboard Container */
 .bbai-dashboard-container {
     max-width: 1400px;

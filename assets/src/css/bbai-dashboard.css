@@ -2179,17 +2179,42 @@
     opacity: 0.8;
 }
 
-/* Alt text wrapper with counter */
-.bbai-library-alt-text-wrapper {
+/* ==========================================
+   Alt Text Cell Content
+   Two-row layout: text preview + metrics row
+   ========================================== */
+
+.bbai-alt-text-content {
     display: flex;
     flex-direction: column;
-    gap: var(--bbai-space-1);
+    gap: 6px;
 }
 
-/* Enhanced alt text display */
-.bbai-library-alt-text {
+.bbai-alt-text-preview {
     line-height: 1.5;
     color: var(--bbai-text-primary);
+    font-size: 13px;
+}
+
+.bbai-alt-text-missing {
+    color: var(--bbai-text-muted);
+    font-style: italic;
+    font-size: 13px;
+}
+
+/* Metrics row: character count + SEO badge */
+.bbai-alt-text-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+/* Circle separator between metrics */
+.bbai-meta-separator {
+    color: #d1d5db;
+    font-size: 8px;
+    line-height: 1;
 }
 
 /* Table cell alignment */
@@ -2197,31 +2222,129 @@
     vertical-align: top;
 }
 
-/* Tooltip for character counter */
-.bbai-char-counter[title]:hover {
+/* Legacy wrapper (kept for compatibility) */
+.bbai-library-alt-text-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bbai-space-1);
+}
+
+.bbai-library-alt-text {
+    line-height: 1.5;
+    color: var(--bbai-text-primary);
+}
+
+/* ==========================================
+   SEO Metrics Row
+   Contains character counter + SEO grade badge on second line
+   ========================================== */
+
+.bbai-seo-metrics {
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+    margin-top: var(--bbai-space-2);
+}
+
+/* ==========================================
+   SEO Quality Badge (with detailed tooltip)
+   Displays "SEO: A" format with hover breakdown
+   ========================================== */
+
+.bbai-seo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: var(--bbai-radius-sm);
     cursor: help;
-    opacity: 0.9;
+    transition: all 0.15s ease;
+}
+
+.bbai-seo-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.bbai-seo-badge__icon {
+    width: 10px;
+    height: 10px;
+    flex-shrink: 0;
+}
+
+/* Grade A - Excellent (Green) */
+.bbai-seo-badge--excellent {
+    color: #059669;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.bbai-seo-badge--excellent:hover {
+    background: rgba(16, 185, 129, 0.18);
+}
+
+/* Grade B - Good (Blue) */
+.bbai-seo-badge--good {
+    color: #2563eb;
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.bbai-seo-badge--good:hover {
+    background: rgba(59, 130, 246, 0.18);
+}
+
+/* Grade C - Fair (Yellow/Amber) */
+.bbai-seo-badge--fair {
+    color: #d97706;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.bbai-seo-badge--fair:hover {
+    background: rgba(245, 158, 11, 0.18);
+}
+
+/* Grade D - Poor (Orange) */
+.bbai-seo-badge--poor {
+    color: #ea580c;
+    background: rgba(249, 115, 22, 0.12);
+    border: 1px solid rgba(249, 115, 22, 0.2);
+}
+
+.bbai-seo-badge--poor:hover {
+    background: rgba(249, 115, 22, 0.18);
+}
+
+/* Grade F - Needs Work (Red) */
+.bbai-seo-badge--needs-work {
+    color: #dc2626;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.bbai-seo-badge--needs-work:hover {
+    background: rgba(239, 68, 68, 0.18);
 }
 
 /* Responsive adjustments */
 @media (max-width: 782px) {
-    .bbai-char-counter {
-        font-size: 10px;
-        padding: 1px 6px;
+    .bbai-seo-metrics {
+        flex-wrap: wrap;
+        gap: var(--bbai-space-1);
+    }
+
+    .bbai-seo-badge {
+        font-size: 9px;
+        padding: 2px 6px;
     }
 }
 
-/* Animation for counter changes */
-@keyframes bbai-counter-update {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-}
-
-.bbai-char-counter--updating {
-    animation: bbai-counter-update 0.3s ease;
-}
-
-/* SEO quality badge (for future use with checklist) */
+/* Legacy styles (kept for backwards compatibility) */
 .bbai-seo-quality-badge {
     display: inline-flex;
     align-items: center;

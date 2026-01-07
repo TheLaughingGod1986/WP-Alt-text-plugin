@@ -1015,7 +1015,7 @@ class API_Client_V2 {
         $has_license   = $this->has_active_license();
         $license_cache = $has_license ? $this->get_license_data() : null;
 
-        $response = $this->make_request('/usage');
+        $response = $this->make_request('/api/usage');
 
         if (is_wp_error($response)) {
             // If API call fails, try to use cached usage as fallback

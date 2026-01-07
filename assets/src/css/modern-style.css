@@ -143,7 +143,7 @@ body.media_page_bbai #wpwrap {
     align-items: center;
     gap: 0.5rem;
     padding: 8px 16px;
-    color: #ffffff;
+    color: rgba(255, 255, 255, 0.85);
     text-decoration: none;
     border-radius: 20px;
     transition: all 0.2s ease;
@@ -156,25 +156,34 @@ body.media_page_bbai #wpwrap {
     white-space: nowrap;
 }
 
+/* Ensure inactive links are clearly visible */
+.bbai-nav-link:not(.active) {
+    color: rgba(255, 255, 255, 0.9);
+}
+
 .bbai-nav-link svg {
-    opacity: 0.7;
+    opacity: 0.8;
     transition: opacity 0.2s ease;
 }
 
-.bbai-nav-link:hover {
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.08);
+.bbai-nav-link:not(.active) svg {
+    opacity: 0.75;
 }
 
-.bbai-nav-link:hover svg {
+.bbai-nav-link:hover:not(.active) {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.bbai-nav-link:hover:not(.active) svg {
     opacity: 1;
 }
 
 .bbai-nav-link:focus {
     outline: none;
     color: #ffffff;
-    background: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
 }
 
 .bbai-nav-link:focus svg {
@@ -183,7 +192,7 @@ body.media_page_bbai #wpwrap {
 
 .bbai-nav-link:active {
     color: #ffffff;
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.15);
     transform: scale(0.98);
 }
 
@@ -191,10 +200,48 @@ body.media_page_bbai #wpwrap {
     color: #ffffff;
     background: #374151;
     font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .bbai-nav-link.active svg {
     opacity: 1;
+}
+
+.bbai-nav-link.active:hover {
+    background: #4B5563;
+    color: #ffffff;
+}
+
+/* Header Logout Button */
+.bbai-header-logout-btn {
+    padding: 6px 14px;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.bbai-header-logout-btn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.bbai-header-logout-btn:active {
+    transform: translateY(0);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.bbai-header-logout-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .bbai-plan-banner {
@@ -4456,9 +4503,10 @@ body.media_page_bbai #wpwrap {
     transform: translateY(-2px);
 }
 
-/* Premium Stats Grid */
+/* Premium Stats Grid - 50/50 layout for usage + upsell cards */
 .bbai-premium-stats-grid {
     display: flex;
+    flex-wrap: nowrap;
     gap: 24px;
     margin-bottom: 24px;
     align-items: stretch;
@@ -4467,8 +4515,15 @@ body.media_page_bbai #wpwrap {
 }
 
 .bbai-premium-stats-grid > .bbai-premium-card {
-    flex: 1;
+    flex: 1 1 0;
     min-width: 0;
+    max-width: 50%;
+}
+
+/* When both cards present, ensure equal widths */
+.bbai-premium-stats-grid > .bbai-usage-card,
+.bbai-premium-stats-grid > .bbai-upsell-card {
+    flex-basis: calc(50% - 12px);
 }
 
 .bbai-premium-stats-grid--single {
@@ -5160,7 +5215,12 @@ body.media_page_bbai #wpwrap {
 /* Responsive Design */
 @media (max-width: 780px) {
     .bbai-premium-stats-grid {
-        grid-template-columns: 1fr;
+        flex-direction: column;
+    }
+
+    .bbai-premium-stats-grid > .bbai-premium-card {
+        max-width: 100%;
+        flex-basis: auto;
     }
     
     .bbai-premium-metrics-grid {

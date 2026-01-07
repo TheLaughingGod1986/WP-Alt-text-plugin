@@ -836,6 +836,55 @@
     }
 
     /**
+     * Calculate SEO quality score for alt text (client-side version)
+     */
+    function calculateSeoQuality(text) {
+        if (!text || text.trim() === '') {
+            return { score: 0, grade: 'F', badge: 'missing' };
+        }
+
+        var score = 100;
+        var textLength = text.length;
+
+        // Check length (125 chars recommended)
+        if (textLength > 125) {
+            score -= 25;
+        }
+
+        // Check for redundant prefixes
+        var lowerText = text.toLowerCase().trim();
+        var redundantPrefixes = ['image of', 'picture of', 'photo of', 'photograph of', 'graphic of', 'illustration of'];
+        for (var i = 0; i < redundantPrefixes.length; i++) {
+            if (lowerText.indexOf(redundantPrefixes[i]) === 0) {
+                score -= 20;
+                break;
+            }
+        }
+
+        // Check for filename patterns
+        if (/^IMG[-_]\d+/i.test(text) || /^DSC[-_]\d+/i.test(text) || /\.(jpg|jpeg|png|gif|webp)$/i.test(text)) {
+            score -= 30;
+        }
+
+        // Check for descriptive content (at least 3 words)
+        var words = text.trim().split(/\s+/);
+        if (words.length < 3) {
+            score -= 15;
+        }
+
+        score = Math.max(0, score);
+
+        var grade, badge;
+        if (score >= 90) { grade = 'A'; badge = 'excellent'; }
+        else if (score >= 75) { grade = 'B'; badge = 'good'; }
+        else if (score >= 60) { grade = 'C'; badge = 'fair'; }
+        else if (score >= 40) { grade = 'D'; badge = 'poor'; }
+        else { grade = 'F'; badge = 'needs-work'; }
+
+        return { score: score, grade: grade, badge: badge };
+    }
+
+    /**
      * Accept regenerated alt text and update the UI
      */
     function acceptRegeneratedAltText(attachmentId, newAltText, $btn, originalBtnText, $modal) {
@@ -851,16 +900,31 @@
                 var safeAlt = $('<div>').text(newAltText).html();
                 var truncated = newAltText.length > 80 ? newAltText.substring(0, 77) + '…' : newAltText;
                 var safeTruncated = $('<div>').text(truncated).html();
+                var charCount = newAltText.length;
+                var isOptimal = charCount <= 125;
+                var counterClass = isOptimal ? 'bbai-char-counter--optimal' : 'bbai-char-counter--warning';
+                var counterTooltip = isOptimal ? 'Optimal length for Google Images SEO' : 'Consider shortening to 125 chars or less';
 
-                var $existing = $altCell.find('.bbai-library-alt-text');
-                if ($existing.length) {
-                    $existing.text(truncated);
-                    $existing.attr('title', newAltText);
-                } else {
-                    $altCell.html(
-                        '<div class="bbai-library-alt-text" title="' + safeAlt + '">' + safeTruncated + '</div>'
-                    );
+                // Calculate SEO quality
+                var seoQuality = calculateSeoQuality(newAltText);
+                var seoBadgeHtml = '';
+                if (seoQuality.badge !== 'missing') {
+                    seoBadgeHtml = '<span class="bbai-meta-separator">○</span>' +
+                        '<span class="bbai-seo-badge bbai-seo-badge--' + seoQuality.badge + '" data-bbai-tooltip="SEO Score: ' + seoQuality.grade + ' (' + seoQuality.score + '/100)" data-bbai-tooltip-position="top">SEO: ' + seoQuality.grade + '</span>' +
+                        '<span class="bbai-meta-separator">○</span>';
                 }
+
+                // Build the full alt text cell content with metrics
+                var cellHtml =
+                    '<div class="bbai-alt-text-content">' +
+                        '<div class="bbai-alt-text-preview" title="' + safeAlt + '">' + safeTruncated + '</div>' +
+                        '<div class="bbai-alt-text-meta">' +
+                            '<span class="' + counterClass + '" data-bbai-tooltip="' + counterTooltip + '" data-bbai-tooltip-position="top">' + charCount + '/125</span>' +
+                            seoBadgeHtml +
+                        '</div>' +
+                    '</div>';
+
+                $altCell.html(cellHtml);
 
                 // Update status badge to "Regenerated"
                 var $statusCell = $row.find('.bbai-library-cell--status span');

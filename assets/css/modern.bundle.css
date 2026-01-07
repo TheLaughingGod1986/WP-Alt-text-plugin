@@ -808,7 +808,7 @@ body.media_page_bbai #wpwrap {
     align-items: center;
     gap: 0.5rem;
     padding: 8px 16px;
-    color: #ffffff;
+    color: rgba(255, 255, 255, 0.85);
     text-decoration: none;
     border-radius: 20px;
     transition: all 0.2s ease;
@@ -821,25 +821,34 @@ body.media_page_bbai #wpwrap {
     white-space: nowrap;
 }
 
+/* Ensure inactive links are clearly visible */
+.bbai-nav-link:not(.active) {
+    color: rgba(255, 255, 255, 0.9);
+}
+
 .bbai-nav-link svg {
-    opacity: 0.7;
+    opacity: 0.8;
     transition: opacity 0.2s ease;
 }
 
-.bbai-nav-link:hover {
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.08);
+.bbai-nav-link:not(.active) svg {
+    opacity: 0.75;
 }
 
-.bbai-nav-link:hover svg {
+.bbai-nav-link:hover:not(.active) {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.bbai-nav-link:hover:not(.active) svg {
     opacity: 1;
 }
 
 .bbai-nav-link:focus {
     outline: none;
     color: #ffffff;
-    background: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
 }
 
 .bbai-nav-link:focus svg {
@@ -848,7 +857,7 @@ body.media_page_bbai #wpwrap {
 
 .bbai-nav-link:active {
     color: #ffffff;
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.15);
     transform: scale(0.98);
 }
 
@@ -856,10 +865,16 @@ body.media_page_bbai #wpwrap {
     color: #ffffff;
     background: #374151;
     font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .bbai-nav-link.active svg {
     opacity: 1;
+}
+
+.bbai-nav-link.active:hover {
+    background: #4B5563;
+    color: #ffffff;
 }
 
 /* Account Bar */
@@ -923,10 +938,11 @@ body.media_page_bbai #wpwrap {
     transform: translateY(-1px);
 }
 
-.bbai-header-disconnect-btn {
+.bbai-header-disconnect-btn,
+.bbai-header-logout-btn {
     padding: 6px 14px;
-    background: transparent;
-    color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 6px;
     font-size: 12px;
@@ -936,10 +952,25 @@ body.media_page_bbai #wpwrap {
     white-space: nowrap;
 }
 
-.bbai-header-disconnect-btn:hover {
+.bbai-header-disconnect-btn:hover,
+.bbai-header-logout-btn:hover {
     color: #ffffff;
-    border-color: rgba(255, 255, 255, 0.4);
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.bbai-header-disconnect-btn:active,
+.bbai-header-logout-btn:active {
+    transform: translateY(0);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.bbai-header-disconnect-btn:disabled,
+.bbai-header-logout-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
 }
 
 /* Responsive */
@@ -1737,22 +1768,92 @@ body.media_page_bbai #wpwrap {
 
 /* ==================================================
    UPSELL CARD
+   Premium upgrade card with solid blue gradient
    ================================================== */
 
 .bbai-upsell-card {
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(168, 85, 247, 0.08) 100%);
-    border: 2px solid rgba(139, 92, 246, 0.2);
-    border-radius: 16px;
+    background: linear-gradient(180deg, #4f8dfc 0%, #6aa8ff 100%);
+    color: white !important;
     padding: 32px;
-    text-align: center;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+    border-radius: 14px;
+    position: relative;
+    min-height: 100%;
+    border: none;
+    z-index: 1;
+    overflow: hidden;
     transition: all 0.3s ease;
 }
 
 .bbai-upsell-card:hover {
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(168, 85, 247, 0.12) 100%);
-    border-color: rgba(139, 92, 246, 0.4);
-    box-shadow: 0 8px 20px rgba(139, 92, 246, 0.2);
+    box-shadow: 0 8px 24px rgba(79, 141, 252, 0.3);
     transform: translateY(-2px);
+}
+
+/* Force all text in upsell card to be white */
+.bbai-upsell-card *:not(svg):not(path):not(circle) {
+    color: white !important;
+}
+
+.bbai-upsell-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: white !important;
+    margin: 0 0 24px 0;
+    line-height: 1.3;
+}
+
+.bbai-upsell-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 32px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.bbai-upsell-features li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.95) !important;
+    line-height: 1.5;
+}
+
+.bbai-upsell-cta {
+    width: 100%;
+    height: 48px;
+    padding: 0 24px;
+    background: #0EAD4B;
+    color: white !important;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(14, 173, 75, 0.4), 0 0 20px rgba(14, 173, 75, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bbai-upsell-cta:hover {
+    background: #0D9D42;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(14, 173, 75, 0.5), 0 0 24px rgba(14, 173, 75, 0.3);
+}
+
+.bbai-upsell-microcopy {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.85) !important;
+    margin: 20px 0 0 0;
+    text-align: center;
 }
 
 /* ==================================================
@@ -3014,6 +3115,214 @@ body.media_page_bbai #wpwrap {
     .bbai-modal-overlay {
         padding: 16px;
     }
+}
+
+/* ==================================================
+   REGENERATE MODAL
+   Modal for regenerating alt text with preview
+   ================================================== */
+
+.bbai-regenerate-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 999999;
+    align-items: center;
+    justify-content: center;
+    animation: bbai-modal-fade-in 0.2s ease-out;
+}
+
+.bbai-regenerate-modal.active {
+    display: flex;
+}
+
+.bbai-regenerate-modal__content {
+    background: white;
+    border-radius: 12px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: bbai-modal-slide-up 0.3s ease-out;
+}
+
+.bbai-regenerate-modal__header {
+    padding: 24px 24px 16px 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.bbai-regenerate-modal__title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 8px 0;
+}
+
+.bbai-regenerate-modal__subtitle {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.bbai-regenerate-modal__body {
+    padding: 24px;
+}
+
+.bbai-regenerate-modal__image-preview {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding: 16px;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+.bbai-regenerate-modal__thumbnail {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+.bbai-regenerate-modal__image-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.bbai-regenerate-modal__image-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 4px 0;
+}
+
+.bbai-regenerate-modal__image-meta {
+    font-size: 12px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.bbai-regenerate-modal__loading {
+    display: none;
+    text-align: center;
+    padding: 32px 0;
+}
+
+.bbai-regenerate-modal__loading.active {
+    display: block;
+}
+
+.bbai-regenerate-modal__spinner {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e5e7eb;
+    border-top-color: #6366f1;
+    border-radius: 50%;
+    animation: bbai-spin 0.8s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes bbai-spin {
+    to { transform: rotate(360deg); }
+}
+
+.bbai-regenerate-modal__loading-text {
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.bbai-regenerate-modal__result {
+    display: none;
+}
+
+.bbai-regenerate-modal__result.active {
+    display: block;
+}
+
+.bbai-regenerate-modal__alt-text-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 8px 0;
+}
+
+.bbai-regenerate-modal__alt-text {
+    padding: 16px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #1f2937;
+    margin: 0 0 16px 0;
+    min-height: 80px;
+}
+
+.bbai-regenerate-modal__footer {
+    padding: 16px 24px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.bbai-regenerate-modal__btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    outline: none;
+}
+
+.bbai-regenerate-modal__btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.bbai-regenerate-modal__btn--cancel {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.bbai-regenerate-modal__btn--cancel:hover:not(:disabled) {
+    background: #e5e7eb;
+}
+
+.bbai-regenerate-modal__btn--accept {
+    background: #6366f1;
+    color: white;
+}
+
+.bbai-regenerate-modal__btn--accept:hover:not(:disabled) {
+    background: #4f46e5;
+}
+
+.bbai-regenerate-modal__error {
+    display: none;
+    padding: 12px 16px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    color: #dc2626;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+.bbai-regenerate-modal__error.active {
+    display: block;
 }
 
 

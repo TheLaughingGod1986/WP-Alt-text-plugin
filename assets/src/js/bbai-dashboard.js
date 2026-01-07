@@ -358,6 +358,91 @@ bbaiRunWithJQuery(function($) {
             disconnectAccount($(this));
         });
 
+        // Handle logout button (consolidated disconnect/logout)
+        $(document).on('click', '[data-action="logout"]', function(e) {
+            e.preventDefault();
+            const $button = $(this);
+            
+            if (alttextaiDebug) console.log('[AltText AI] Logout button clicked');
+            
+            if (!window.bbai_ajax || !window.bbai_ajax.ajaxurl) {
+                window.bbaiModal.error('Configuration error. Please refresh the page.');
+                return;
+            }
+
+            // Show loading state
+            $button.prop('disabled', true)
+                   .addClass('bbai-btn-loading')
+                   .attr('aria-busy', 'true');
+            
+            const originalText = $button.text();
+            $button.html('<span class="bbai-spinner"></span> Logging out...');
+
+            $.ajax({
+                url: window.bbai_ajax.ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'beepbeepai_logout',
+                    nonce: window.bbai_ajax.nonce
+                },
+                timeout: 15000,
+                success: function(response) {
+                    if (alttextaiDebug) console.log('[AltText AI] Logout response:', response);
+                    
+                    if (response.success) {
+                        // Show success message briefly
+                        $button.removeClass('bbai-btn-loading')
+                               .html('✓ Logged out')
+                               .attr('aria-busy', 'false');
+                        
+                        // Clear any cached data
+                        if (typeof localStorage !== 'undefined') {
+                            localStorage.removeItem('bbai_subscription_cache');
+                            localStorage.removeItem('alttextai_token');
+                            localStorage.removeItem('bbai_open_portal_after_login');
+                        }
+                        
+                        // Redirect or reload
+                        if (response.data && response.data.redirect) {
+                            window.location.href = response.data.redirect;
+                        } else {
+                            setTimeout(function() {
+                                window.location.reload();
+                            }, 500);
+                        }
+                    } else {
+                        // Restore button
+                        $button.prop('disabled', false)
+                               .removeClass('bbai-btn-loading')
+                               .text(originalText)
+                               .attr('aria-busy', 'false');
+                        
+                        const errorMsg = response.data?.message || 'Failed to log out. Please try again.';
+                        window.bbaiModal.error(errorMsg);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    if (alttextaiDebug) console.error('[AltText AI] Logout error:', status, error);
+                    
+                    // Restore button
+                    $button.prop('disabled', false)
+                           .removeClass('bbai-btn-loading')
+                           .text(originalText)
+                           .attr('aria-busy', 'false');
+                    
+                    let errorMessage = 'Unable to log out. Please try again.';
+                    
+                    if (status === 'timeout') {
+                        errorMessage = 'Request timed out. Try refreshing the page.';
+                    } else if (xhr.status === 0) {
+                        errorMessage = 'Network error. Please check your connection and try again.';
+                    }
+                    
+                    window.bbaiModal.error(errorMessage);
+                }
+            });
+        });
+
         // Handle checkout plan buttons in upgrade modal
         $(document).on('click', '[data-action="checkout-plan"]', function(e) {
             e.preventDefault();

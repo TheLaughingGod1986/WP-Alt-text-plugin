@@ -970,6 +970,15 @@ class Core {
             'bbai-settings',
             [$this, 'render_settings_page']
         );
+        
+        add_submenu_page(
+            'bbai',
+            __('Debug Logs', 'beepbeep-ai-alt-text-generator'),
+            __('Debug Logs', 'beepbeep-ai-alt-text-generator'),
+            $cap,
+            'bbai-debug',
+            [$this, 'render_settings_page']
+        );
 
         // Hidden checkout redirect page
         add_submenu_page(
@@ -1196,6 +1205,7 @@ class Core {
                 'bbai-credit-usage' => 'credit-usage',
                 'bbai-guide' => 'guide',
                 'bbai-settings' => 'settings',
+                'bbai-debug' => 'debug',
             ];
             
             // Determine current tab from URL
@@ -1261,14 +1271,14 @@ class Core {
                             'credit-usage' => 'bbai-credit-usage',
                             'guide' => 'bbai-guide',
                             'settings' => 'bbai-settings',
-                            'debug' => 'bbai', // Debug uses dashboard page with tab parameter
+                            'debug' => 'bbai-debug', // Debug now has its own page
                             'admin' => 'bbai', // Admin uses dashboard page with tab parameter
                         ];
                         
                         foreach ($tabs as $slug => $label) :
                             // Generate proper URL using page slug if available, otherwise use tab parameter
                             $page_slug = $tab_to_page[$slug] ?? 'bbai';
-                            if ($slug === 'dashboard' || $slug === 'debug' || $slug === 'admin') {
+                            if ($slug === 'dashboard' || $slug === 'admin') {
                                 // These tabs use the main page with tab parameter
                                 $url = admin_url('admin.php?page=' . $page_slug . ($slug !== 'dashboard' ? '&tab=' . $slug : ''));
                             } else {
@@ -1324,19 +1334,10 @@ class Core {
                                         <?php esc_html_e('Manage', 'beepbeep-ai-alt-text-generator'); ?>
                                     </button>
                                 <?php endif; ?>
-                                <?php if ($is_authenticated) : ?>
-                                <button type="button" class="bbai-header-disconnect-btn" data-action="disconnect-account">
-                                    <?php esc_html_e('Disconnect', 'beepbeep-ai-alt-text-generator'); ?>
-                                </button>
-                                <?php endif; ?>
                                 <?php if ($is_authenticated || $has_license) : ?>
-                                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display: inline; margin: 0;" onsubmit="console.log('Form submitting to:', this.action); return true;">
-                                    <input type="hidden" name="action" value="bbai_logout">
-                                    <?php wp_nonce_field('bbai_logout_action', 'bbai_logout_nonce'); ?>
-                                    <button type="submit" class="bbai-header-logout-btn" onclick="console.log('Logout button clicked - form will submit');">
-                                        <?php esc_html_e('Logout', 'beepbeep-ai-alt-text-generator'); ?>
-                                    </button>
-                                </form>
+                                <button type="button" class="bbai-header-logout-btn" data-action="logout">
+                                    <?php esc_html_e('Logout', 'beepbeep-ai-alt-text-generator'); ?>
+                                </button>
                                 <?php endif; ?>
                             </div>
                         <?php else : ?>
@@ -1411,6 +1412,16 @@ class Core {
                 include $settings_partial;
             } else {
                 esc_html_e('Settings content unavailable.', 'beepbeep-ai-alt-text-generator');
+            }
+            ?>
+            
+<?php elseif ($tab === 'debug' && ($is_authenticated || $has_license)) : ?>
+            <?php
+            $debug_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/debug-tab.php';
+            if (file_exists($debug_partial)) {
+                include $debug_partial;
+            } else {
+                esc_html_e('Debug logs content unavailable.', 'beepbeep-ai-alt-text-generator');
             }
             ?>
 
@@ -3169,25 +3180,110 @@ class Core {
         // This ensures we NEVER log credits for failed generations, even if backend consumed them
         // The backend may have consumed credits when calling OpenAI, but if alt_text is missing,
         // we should NOT record it as successful usage locally
+        
+        // Backend returns credits_used and credits_remaining at root level, not nested in 'usage'
+        // The 'usage' key contains token information (prompt_tokens, completion_tokens, etc.)
+        // Build usage data from both root-level credits and nested usage token info
+        $usage_data = [];
+        
+        // Get credits from root level (primary source)
+        if (isset($api_response['credits_used'])) {
+            $usage_data['used'] = intval($api_response['credits_used']);
+        }
+        if (isset($api_response['credits_remaining'])) {
+            $usage_data['remaining'] = intval($api_response['credits_remaining']);
+        }
+        // Get limit from root level if provided, otherwise calculate from used + remaining
+        if (isset($api_response['limit'])) {
+            $usage_data['limit'] = intval($api_response['limit']);
+        } elseif (isset($usage_data['used']) && isset($usage_data['remaining'])) {
+            $usage_data['limit'] = $usage_data['used'] + $usage_data['remaining'];
+        }
+        
+        // Get token info from nested usage object if available
         if (!empty($api_response['usage']) && is_array($api_response['usage'])) {
-            Usage_Tracker::update_usage($api_response['usage']);
+            if (isset($api_response['usage']['prompt_tokens'])) {
+                $usage_data['prompt_tokens'] = intval($api_response['usage']['prompt_tokens']);
+            }
+            if (isset($api_response['usage']['completion_tokens'])) {
+                $usage_data['completion_tokens'] = intval($api_response['usage']['completion_tokens']);
+            }
+            if (isset($api_response['usage']['total_tokens'])) {
+                $usage_data['total_tokens'] = intval($api_response['usage']['total_tokens']);
+            }
+        }
+        
+        // Update usage if we have credits information
+        if (!empty($usage_data) && (isset($usage_data['used']) || isset($usage_data['remaining']))) {
+            // Log what we're updating for debugging
+            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                Debug_Log::log('info', 'Updating usage cache after generation', [
+                    'usage_data' => $usage_data,
+                    'has_used' => isset($usage_data['used']),
+                    'has_remaining' => isset($usage_data['remaining']),
+                    'has_limit' => isset($usage_data['limit']),
+                    'api_response_keys' => array_keys($api_response),
+                    'credits_used_in_response' => $api_response['credits_used'] ?? 'not set',
+                    'credits_remaining_in_response' => $api_response['credits_remaining'] ?? 'not set',
+                    'limit_in_response' => $api_response['limit'] ?? 'not set',
+                ], 'generation');
+            }
+            
+            Usage_Tracker::update_usage($usage_data);
+            
+            // Also log what was actually cached
+            $cached_after = Usage_Tracker::get_cached_usage(false);
+            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                Debug_Log::log('info', 'Usage cache updated - verifying', [
+                    'cached_usage' => $cached_after,
+                    'cached_used' => $cached_after['used'] ?? 'not set',
+                    'cached_remaining' => $cached_after['remaining'] ?? 'not set',
+                    'cached_limit' => $cached_after['limit'] ?? 'not set',
+                ], 'generation');
+            }
 
             if ($has_license) {
                 $existing_license = $this->api_client->get_license_data() ?? [];
                 $updated_license  = $existing_license ?: [];
                 $organization     = $updated_license['organization'] ?? [];
 
-                if (isset($api_response['usage']['limit'])) {
-                    $organization['tokenLimit'] = intval($api_response['usage']['limit']);
+                // Update limit first
+                if (isset($usage_data['limit'])) {
+                    $organization['tokenLimit'] = intval($usage_data['limit']);
+                } elseif (isset($usage_data['used']) && isset($usage_data['remaining'])) {
+                    // Calculate limit from used + remaining if not provided
+                    $organization['tokenLimit'] = intval($usage_data['used']) + intval($usage_data['remaining']);
                 }
 
-                if (isset($api_response['usage']['remaining'])) {
-                    $organization['tokensRemaining'] = max(0, intval($api_response['usage']['remaining']));
-                } elseif (isset($api_response['usage']['used']) && isset($organization['tokenLimit'])) {
-                    $organization['tokensRemaining'] = max(0, intval($organization['tokenLimit']) - intval($api_response['usage']['used']));
+                // Update remaining credits (this is the critical value for display)
+                if (isset($usage_data['remaining'])) {
+                    $organization['tokensRemaining'] = max(0, intval($usage_data['remaining']));
+                } elseif (isset($usage_data['used']) && isset($organization['tokenLimit'])) {
+                    // Calculate remaining from limit and used
+                    $organization['tokensRemaining'] = max(0, intval($organization['tokenLimit']) - intval($usage_data['used']));
+                } elseif (isset($usage_data['limit']) && isset($usage_data['used'])) {
+                    // Calculate remaining from limit and used if remaining not provided
+                    $organization['tokensRemaining'] = max(0, intval($usage_data['limit']) - intval($usage_data['used']));
+                    if (!isset($organization['tokenLimit'])) {
+                        $organization['tokenLimit'] = intval($usage_data['limit']);
+                    }
+                }
+                
+                // Log the update for debugging
+                if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                    Debug_Log::log('info', 'Updating license organization data with usage', [
+                        'tokensRemaining' => $organization['tokensRemaining'] ?? 'not set',
+                        'tokenLimit' => $organization['tokenLimit'] ?? 'not set',
+                        'usage_data' => $usage_data,
+                    ], 'generation');
                 }
 
-                if (!empty($api_response['usage']['resetDate'])) {
+                // Get reset date from api_response root level if available
+                if (isset($api_response['resetDate']) && !empty($api_response['resetDate'])) {
+                    $organization['resetDate'] = sanitize_text_field($api_response['resetDate']);
+                } elseif (isset($api_response['reset_date']) && !empty($api_response['reset_date'])) {
+                    $organization['resetDate'] = sanitize_text_field($api_response['reset_date']);
+                } elseif (!empty($api_response['usage']['resetDate'])) {
                     $organization['resetDate'] = sanitize_text_field($api_response['usage']['resetDate']);
                 } elseif (!empty($api_response['usage']['nextReset'])) {
                     $organization['resetDate'] = sanitize_text_field($api_response['usage']['nextReset']);
@@ -3203,7 +3299,7 @@ class Core {
                 Usage_Tracker::clear_cache();
             }
         } else {
-            // Backend didn't return usage in response - refresh from API to get updated credit count
+            // Backend didn't return credits in response - refresh from API to get updated credit count
             // BUT only do this AFTER we've confirmed alt_text exists (which we have at this point)
             // This ensures credits are properly reflected even if backend doesn't include usage in response
             // CRITICAL: Only refresh usage AFTER successful generation (alt_text exists)
@@ -3482,6 +3578,7 @@ class Core {
         $is_bbai_page = strpos($hook, 'toplevel_page_bbai') === 0
             || strpos($hook, 'bbai_page_bbai') === 0
             || strpos($hook, 'media_page_bbai') === 0
+            || strpos($hook, '_page_bbai') !== false
             || (!empty($current_page) && strpos($current_page, 'bbai') === 0);
 
         // Load on Media Library, attachment edit, and any BeepBeep AI admin screen
@@ -4296,6 +4393,7 @@ class Core {
 
     /**
      * AJAX handler: User logout
+     * Clears authentication token, license key, and all cached data
      */
     public function ajax_logout() {
         check_ajax_referer('beepbeepai_nonce', 'nonce');
@@ -4303,9 +4401,26 @@ class Core {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
         }
 
+        // Clear JWT token (for authenticated users)
         $this->api_client->clear_token();
+        
+        // Clear license key (for agency/license-based users)
+        $this->api_client->clear_license_key();
+        
+        // Clear user data
+        delete_option('opptibbai_user_data');
+        delete_option('opptibbai_site_id');
+        
+        // Clear usage cache
+        Usage_Tracker::clear_cache();
+        delete_transient('bbai_usage_cache');
+        delete_transient('opptibbai_usage_cache');
+        delete_transient('opptibbai_token_last_check');
 
-        wp_send_json_success(['message' => __('Logged out successfully', 'beepbeep-ai-alt-text-generator')]);
+        wp_send_json_success([
+            'message' => __('Logged out successfully', 'beepbeep-ai-alt-text-generator'),
+            'redirect' => admin_url('admin.php?page=bbai')
+        ]);
     }
 
     /**

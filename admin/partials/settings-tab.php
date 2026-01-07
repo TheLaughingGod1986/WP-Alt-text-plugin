@@ -186,6 +186,10 @@ if (!$is_authenticated && !$has_license) :
                     $has_license = $this->api_client->has_active_license();
                     $license_data = $this->api_client->get_license_data();
                 }
+                
+                // Also check if license key exists (even if data not fully loaded)
+                $stored_license_key = $this->api_client->get_license_key();
+                $has_stored_license_key = !empty($stored_license_key);
                 ?>
 
                 <div class="bbai-settings-card">
@@ -235,7 +239,6 @@ if (!$is_authenticated && !$has_license) :
                         <?php 
                         // Show site usage for agency licenses (can use license key or JWT auth)
                         $is_authenticated = $this->api_client->is_authenticated();
-                        $has_license = $this->api_client->has_active_license();
                         $is_agency_license = isset($license_data['organization']['plan']) && $license_data['organization']['plan'] === 'agency';
                         
                         // Show for agency licenses with either JWT auth or license key
@@ -262,6 +265,27 @@ if (!$is_authenticated && !$has_license) :
                         <?php endif; ?>
                         
                         <?php endif; ?>
+                        
+                    <?php elseif ($has_stored_license_key) : ?>
+                        <!-- License Key Exists But Data Not Loaded -->
+                        <div class="bbai-settings-license-active">
+                            <div class="bbai-settings-license-status">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                    <circle cx="10" cy="10" r="8" fill="#10b981" opacity="0.1"/>
+                                    <path d="M6 10L9 13L14 7" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <div>
+                                    <div class="bbai-settings-license-title"><?php esc_html_e('License Active', 'beepbeep-ai-alt-text-generator'); ?></div>
+                                    <div class="bbai-settings-license-subtitle"><?php esc_html_e('Your license key is active and ready to use.', 'beepbeep-ai-alt-text-generator'); ?></div>
+                                    <div class="bbai-settings-license-key" style="margin-top: 8px; font-size: 12px; color: #6b7280; font-family: monospace; word-break: break-all;">
+                                        <strong><?php esc_html_e('License Key:', 'beepbeep-ai-alt-text-generator'); ?></strong> <?php echo esc_html($stored_license_key); ?>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="bbai-settings-license-deactivate-btn" data-action="deactivate-license">
+                                <?php esc_html_e('Deactivate', 'beepbeep-ai-alt-text-generator'); ?>
+                            </button>
+                        </div>
                     <?php else : ?>
                         <!-- License Activation Form -->
                         <div class="bbai-settings-license-form">

@@ -102,16 +102,23 @@ class Usage_Tracker {
                 }
 
                 $current_ts = current_time('timestamp');
-                $tokens_remaining = isset($org['tokensRemaining']) ? max(0, intval($org['tokensRemaining'])) : 10000;
-                $limit = 10000; // Agency plan default
+                
+                // Get limit from organization data or license, with proper plan-based defaults
+                $limit = isset($org['tokenLimit']) ? intval($org['tokenLimit']) : 
+                         (isset($license_data['plan']) && $license_data['plan'] === 'free' ? 50 : 10000);
+                
+                $tokens_remaining = isset($org['tokensRemaining']) ? max(0, intval($org['tokensRemaining'])) : $limit;
                 $used = max(0, $limit - $tokens_remaining);
+                
+                // Get plan from license data
+                $plan = isset($license_data['plan']) ? $license_data['plan'] : 'free';
 
                 // Return organization quota instead of personal account
                 return [
                     'used' => $used,
                     'limit' => $limit,
                     'remaining' => $tokens_remaining,
-                    'plan' => 'agency',
+                    'plan' => $plan,
                     'resetDate' => date('Y-m-01', $reset_ts),
                     'reset_timestamp' => $reset_ts,
                     'seconds_until_reset' => max(0, $reset_ts - $current_ts),
