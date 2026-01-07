@@ -5,7 +5,7 @@
  *
  * @package BeepBeep_AI
  * @since 5.0.0
- * @generated 2026-01-07T21:09:13.691Z
+ * @generated 2026-01-07T21:22:38.713Z
  */
 
 
@@ -1706,14 +1706,10 @@
 
     // Initialize on document ready
     $(document).ready(function() {
-        console.log('[AI Alt Text] Admin JavaScript loaded');
-        console.log('[AI Alt Text] Config:', window.bbaiAdminConfig);
-        console.log('[AI Alt Text] Has bulk config:', window.bbaiHasBulkConfig);
-        console.log('[AI Alt Text] bbai_ajax:', window.bbai_ajax);
-
-        // Count regenerate buttons
-        var regenButtons = $('[data-action="regenerate-single"]');
-        console.log('[AI Alt Text] Found ' + regenButtons.length + ' regenerate buttons');
+        if (window.BBAI_DEBUG) {
+            console.log('[AI Alt Text] Admin JavaScript loaded');
+            console.log('[AI Alt Text] Config:', window.bbaiAdminConfig);
+        }
 
         // Handle generate missing button
         $(document).on('click', '[data-action="generate-missing"]', handleGenerateMissing);
@@ -1723,15 +1719,12 @@
 
         // Handle individual regenerate buttons
         $(document).on('click', '[data-action="regenerate-single"]', function(e) {
-            console.log('[AI Alt Text] Regenerate button click event fired!');
             handleRegenerateSingle.call(this, e);
         });
 
         // License management handlers
         $('#license-activation-form').on('submit', handleLicenseActivation);
         $(document).on('click', '[data-action="deactivate-license"]', handleLicenseDeactivation);
-
-        console.log('[AI Alt Text] Admin handlers registered');
     });
 
 })(jQuery);

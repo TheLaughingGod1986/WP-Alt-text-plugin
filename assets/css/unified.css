@@ -6,7 +6,7 @@
  *
  * @package BeepBeep_AI
  * @version 6.0.0
- * @generated 2026-01-07T21:19:04.201Z
+ * @generated 2026-01-07T21:21:10.078Z
  */
 
 /* 1. Design Tokens (CSS Variables) */
@@ -773,6 +773,71 @@ body.media_page_bbai #wpbody-content {
 .bbai-seo-badge--needs-work {
     background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
     color: #b91c1c;
+}
+
+/* ===========================================
+   UNIFIED SEO BADGES (Grade + Char Count)
+   Replaces separate char counter + SEO badge
+   =========================================== */
+
+.bbai-seo-unified-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: var(--bbai-font-bold);
+    border-radius: var(--bbai-radius-full);
+    white-space: nowrap;
+    cursor: help;
+    transition: transform var(--bbai-transition-fast), box-shadow var(--bbai-transition-fast);
+}
+
+.bbai-seo-unified-badge:hover {
+    transform: scale(1.05);
+    box-shadow: var(--bbai-shadow-sm);
+}
+
+.bbai-seo-unified-badge__chars {
+    font-weight: var(--bbai-font-medium);
+    opacity: 0.8;
+}
+
+/* Grade color variants */
+.bbai-seo-unified-badge--excellent {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+}
+
+.bbai-seo-unified-badge--good {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #1e40af;
+    border: 1px solid #93c5fd;
+}
+
+.bbai-seo-unified-badge--fair {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #92400e;
+    border: 1px solid #fcd34d;
+}
+
+.bbai-seo-unified-badge--poor {
+    background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
+    color: #c2410c;
+    border: 1px solid #fdba74;
+}
+
+.bbai-seo-unified-badge--needs-work {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
+}
+
+.bbai-seo-unified-badge--empty {
+    background: var(--bbai-gray-100);
+    color: var(--bbai-gray-400);
+    border: 1px solid var(--bbai-gray-200);
 }
 
 /* ===========================================

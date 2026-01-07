@@ -1303,9 +1303,9 @@ class Core {
                             $active = (isset($tab) && $tab === $slug) ? ' active' : '';
                             $aria_current = $active ? ' aria-current="page"' : '';
                         ?>
-                            <a href="<?php echo esc_url($url); ?>" 
+                            <a href="<?php echo esc_url($url); ?>"
                                class="bbai-nav-link<?php echo esc_attr($active); ?>"
-                               <?php echo $aria_current; ?>>
+                               <?php echo esc_attr($aria_current); ?>>
                                 <?php echo esc_html($label); ?>
                             </a>
                         <?php endforeach; ?>

@@ -48,8 +48,6 @@ foreach ( $bbai_options as $option ) {
 
 // Delete all legacy options
 $legacy_options = [
-	'beepbeepai_settings',
-	'beepbeepai_settings',
 	'beepbeepai_jwt_token',
 	'beepbeepai_user_data',
 	'beepbeepai_site_id',
@@ -92,8 +90,6 @@ foreach ( $bbai_transients as $transient ) {
 
 // Delete all legacy transients
 $legacy_transients = [
-	'beepbeepai_token_notice',
-	'beepbeepai_token_notice',
 	'beepbeepai_limit_notice',
 	'beepbeepai_token_last_check',
 	'opptibbai_usage_cache',

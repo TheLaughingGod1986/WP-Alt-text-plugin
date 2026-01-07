@@ -255,18 +255,16 @@ if (!defined('ABSPATH')) {
                                             <?php if ($has_alt) : ?>
                                                 <?php
                                                 $char_count = mb_strlen($clean_current_alt);
-                                                $is_optimal = $char_count <= 125;
-                                                $counter_class = $is_optimal ? 'bbai-char-counter--optimal' : 'bbai-char-counter--warning';
                                                 ?>
                                                 <div class="bbai-alt-text-content">
                                                     <div class="bbai-alt-text-preview" title="<?php echo esc_attr($clean_current_alt); ?>">
                                                         <?php echo esc_html($truncated_alt); ?>
                                                     </div>
                                                     <div class="bbai-alt-text-meta">
-                                                        <span class="<?php echo esc_attr($counter_class); ?>" data-bbai-tooltip="<?php echo $is_optimal ? esc_attr__('Optimal length for Google Images SEO', 'beepbeep-ai-alt-text-generator') : esc_attr__('Consider shortening to 125 chars or less', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="top"><?php echo esc_html($char_count); ?>/125</span>
                                                         <?php
+                                                        // Use unified badge that combines grade + char count
                                                         if (class_exists('BBAI_SEO_Quality_Checker')) {
-                                                            echo BBAI_SEO_Quality_Checker::create_badge($clean_current_alt);
+                                                            echo BBAI_SEO_Quality_Checker::create_unified_badge($clean_current_alt);
                                                         }
                                                         ?>
                                                     </div>
@@ -275,7 +273,13 @@ if (!defined('ABSPATH')) {
                                                 <div class="bbai-alt-text-content">
                                                     <span class="bbai-alt-text-missing"><?php esc_html_e('No alt text', 'beepbeep-ai-alt-text-generator'); ?></span>
                                                     <div class="bbai-alt-text-meta">
-                                                        <span class="bbai-char-counter--empty">0/125</span>
+                                                        <?php
+                                                        if (class_exists('BBAI_SEO_Quality_Checker')) {
+                                                            echo BBAI_SEO_Quality_Checker::create_unified_badge('');
+                                                        } else {
+                                                            echo '<span class="bbai-seo-unified-badge bbai-seo-unified-badge--empty">—</span>';
+                                                        }
+                                                        ?>
                                                     </div>
                                                 </div>
                                             <?php endif; ?>

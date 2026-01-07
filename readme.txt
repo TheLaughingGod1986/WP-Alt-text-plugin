@@ -7,7 +7,7 @@ Tags: alt text, image SEO, accessibility, AI alt text generator, automatic alt t
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 4.3.0
+Stable tag: 4.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
@@ -190,6 +190,16 @@ Yes. BeepBeep AI works with any WordPress theme or page builder because it adds 
 4. **Settings page: Configure auto-generation and manage account** — Easy setup for automatic alt text on image upload with usage tracking dashboard
 
 == Changelog ==
+
+= 4.4.0 =
+* 🔧 Fixed credit usage display not updating after alt text generation
+* 🔧 Fixed backend cached responses now include accurate credit counts
+* 🔧 Plugin now fetches fresh usage data when generation response lacks credits
+* 🛡️ Security: Fixed output escaping for pagination links
+* 🛡️ Security: Fixed ARIA attribute escaping in navigation
+* 🧹 Codebase cleanup for WordPress.org submission
+* 🧹 Removed development files, scripts, and legacy code
+* ⚡ Improved API response handling for production backend
 
 = 4.3.0 =
 * 🎯 SEO Enhancements: Character counter for 125-char Google Images limit

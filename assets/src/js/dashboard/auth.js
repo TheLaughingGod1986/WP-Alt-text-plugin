@@ -73,10 +73,10 @@ function showAuthModal(tab) {
  * Handle logout
  */
 function handleLogout() {
-    if (alttextaiDebug) console.log('[AltText AI] Handling logout');
+    if (window.alttextaiDebug) console.log('[AltText AI] Handling logout');
 
     if (typeof window.bbai_ajax === 'undefined') {
-        console.error('[AltText AI] bbai_ajax object not found');
+        if (window.alttextaiDebug) console.warn('[AltText AI] bbai_ajax object not found');
         if (typeof localStorage !== 'undefined') {
             localStorage.removeItem('alttextai_token');
         }
@@ -88,7 +88,7 @@ function handleLogout() {
     var nonce = window.bbai_ajax.nonce || '';
 
     if (!ajaxUrl) {
-        console.error('[AltText AI] AJAX URL not found');
+        if (window.alttextaiDebug) console.warn('[AltText AI] AJAX URL not found');
         window.location.reload();
         return;
     }
@@ -103,7 +103,7 @@ function handleLogout() {
                 nonce: nonce
             },
             success: function(response) {
-                if (alttextaiDebug) console.log('[AltText AI] Logout successful', response);
+                if (window.alttextaiDebug) console.log('[AltText AI] Logout successful', response);
                 if (typeof localStorage !== 'undefined') {
                     localStorage.removeItem('alttextai_token');
                 }
@@ -111,7 +111,7 @@ function handleLogout() {
                 window.location.href = redirect;
             },
             error: function(xhr, status, error) {
-                console.error('[AltText AI] Logout failed:', error, xhr.responseText);
+                if (window.alttextaiDebug) console.warn('[AltText AI] Logout failed:', error);
                 if (typeof localStorage !== 'undefined') {
                     localStorage.removeItem('alttextai_token');
                 }

@@ -72,12 +72,6 @@ class API_Client_V2 {
 
             // Force update WordPress settings to production (clean up legacy configs)
             $options = get_option('beepbeepai_settings', []);
-            if ($options === false || $options === null) {
-                $options = get_option('beepbeepai_settings', []);
-                if ($options === false || $options === null) {
-                    $options = get_option('beepbeepai_settings', []);
-                }
-            }
             $options = is_array($options) ? $options : [];
             if (!isset($options['api_url']) || $options['api_url'] !== $production_url) {
                 $options['api_url'] = $production_url;

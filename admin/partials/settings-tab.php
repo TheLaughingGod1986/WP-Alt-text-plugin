@@ -23,7 +23,12 @@ if (!$is_authenticated && !$has_license) :
                 <!-- Settings require authentication -->
                 <div class="bbai-settings-required">
                     <div class="bbai-settings-required-content">
-                        <div class="bbai-settings-required-icon">🔒</div>
+                        <div class="bbai-settings-required-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <rect x="4" y="10" width="16" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
+                                <path d="M7 10V7C7 4.23858 9.23858 2 12 2C14.7614 2 17 4.23858 17 7V10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
                         <h2><?php esc_html_e('Authentication Required', 'beepbeep-ai-alt-text-generator'); ?></h2>
                         <p><?php esc_html_e('Settings are now available to all users. Log in to save settings to your account.', 'beepbeep-ai-alt-text-generator'); ?></p>
                         <p class="bbai-settings-required-note">
@@ -195,7 +200,10 @@ if (!$is_authenticated && !$has_license) :
                 <div class="bbai-settings-card">
                     <div class="bbai-settings-card-header">
                         <div class="bbai-settings-card-header-icon">
-                            <span class="bbai-settings-card-icon-emoji">🔑</span>
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                <circle cx="7" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/>
+                                <path d="M10 10L18 18M18 18V14M18 18H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
                         </div>
                         <h3 class="bbai-settings-card-title"><?php esc_html_e('License', 'beepbeep-ai-alt-text-generator'); ?></h3>
                     </div>
@@ -321,7 +329,10 @@ if (!$is_authenticated && !$has_license) :
                 <div class="bbai-settings-card">
                     <div class="bbai-settings-card-header">
                         <div class="bbai-settings-card-header-icon">
-                            <span class="bbai-settings-card-icon-emoji">👤</span>
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                <circle cx="10" cy="6" r="4" stroke="currentColor" stroke-width="1.5"/>
+                                <path d="M3 18C3 14.134 6.13401 11 10 11C13.866 11 17 14.134 17 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
                         </div>
                         <h3 class="bbai-settings-card-title"><?php esc_html_e('Account Management', 'beepbeep-ai-alt-text-generator'); ?></h3>
                     </div>

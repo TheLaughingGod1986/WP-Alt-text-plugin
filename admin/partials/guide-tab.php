@@ -138,21 +138,37 @@ $is_agency = ($plan_slug === 'agency');
 
         <!-- Why Alt Text Matters Section -->
         <div class="bbai-guide-why-card">
-            <div class="bbai-guide-why-icon">💡</div>
+            <div class="bbai-guide-why-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M9 21h6M12 3a6 6 0 016 6c0 2.22-1.21 4.16-3 5.2V17a1 1 0 01-1 1h-4a1 1 0 01-1-1v-2.8c-1.79-1.04-3-2.98-3-5.2a6 6 0 016-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
             <h3 class="bbai-guide-why-title">
                 <?php esc_html_e('Why Alt Text Matters', 'beepbeep-ai-alt-text-generator'); ?>
             </h3>
             <ul class="bbai-guide-why-list">
                 <li class="bbai-guide-why-item">
-                    <span class="bbai-guide-why-check">✓</span>
+                    <span class="bbai-guide-why-check">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                            <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
                     <span><?php esc_html_e('Boosts SEO visibility by up to 20%', 'beepbeep-ai-alt-text-generator'); ?></span>
                 </li>
                 <li class="bbai-guide-why-item">
-                    <span class="bbai-guide-why-check">✓</span>
+                    <span class="bbai-guide-why-check">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                            <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
                     <span><?php esc_html_e('Improves Google Images ranking', 'beepbeep-ai-alt-text-generator'); ?></span>
                 </li>
                 <li class="bbai-guide-why-item">
-                    <span class="bbai-guide-why-check">✓</span>
+                    <span class="bbai-guide-why-check">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                            <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
                     <span><?php esc_html_e('Helps achieve WCAG compliance for accessibility', 'beepbeep-ai-alt-text-generator'); ?></span>
                 </li>
             </ul>
@@ -167,25 +183,41 @@ $is_agency = ($plan_slug === 'agency');
                 </h3>
                 <div class="bbai-guide-tips-list">
                     <div class="bbai-guide-tip">
-                        <div class="bbai-guide-tip-icon">✓</div>
+                        <div class="bbai-guide-tip-icon">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
                         <div class="bbai-guide-tip-content">
                             <div class="bbai-guide-tip-title"><?php esc_html_e('Keep it concise', 'beepbeep-ai-alt-text-generator'); ?></div>
                         </div>
                     </div>
                     <div class="bbai-guide-tip">
-                        <div class="bbai-guide-tip-icon">✓</div>
+                        <div class="bbai-guide-tip-icon">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
                         <div class="bbai-guide-tip-content">
                             <div class="bbai-guide-tip-title"><?php esc_html_e('Be specific', 'beepbeep-ai-alt-text-generator'); ?></div>
                         </div>
                     </div>
                     <div class="bbai-guide-tip">
-                        <div class="bbai-guide-tip-icon">✓</div>
+                        <div class="bbai-guide-tip-icon">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
                         <div class="bbai-guide-tip-content">
                             <div class="bbai-guide-tip-title"><?php esc_html_e('Avoid redundancy', 'beepbeep-ai-alt-text-generator'); ?></div>
                         </div>
                     </div>
                     <div class="bbai-guide-tip">
-                        <div class="bbai-guide-tip-icon">✓</div>
+                        <div class="bbai-guide-tip-icon">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
                         <div class="bbai-guide-tip-content">
                             <div class="bbai-guide-tip-title"><?php esc_html_e('Think context', 'beepbeep-ai-alt-text-generator'); ?></div>
                         </div>
@@ -200,52 +232,102 @@ $is_agency = ($plan_slug === 'agency');
                 </h3>
                 <div class="bbai-guide-features-list">
                     <div class="bbai-guide-feature">
-                        <div class="bbai-guide-feature-icon">🤖</div>
+                        <div class="bbai-guide-feature-icon">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                <rect x="3" y="4" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                                <circle cx="7" cy="10" r="1.5" fill="currentColor"/>
+                                <circle cx="13" cy="10" r="1.5" fill="currentColor"/>
+                                <path d="M6 2V4M14 2V4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                        </div>
                         <div class="bbai-guide-feature-content">
                             <div class="bbai-guide-feature-title"><?php esc_html_e('AI-Powered', 'beepbeep-ai-alt-text-generator'); ?></div>
                         </div>
                     </div>
                     <div class="bbai-guide-feature">
-                        <div class="bbai-guide-feature-icon">≡</div>
+                        <div class="bbai-guide-feature-icon">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                <path d="M3 5H17M3 10H17M3 15H17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                        </div>
                         <div class="bbai-guide-feature-content">
                             <div class="bbai-guide-feature-title">
                                 <?php esc_html_e('Bulk Processing', 'beepbeep-ai-alt-text-generator'); ?>
                                 <?php if (!$is_pro) : ?>
-                                    <span class="bbai-guide-feature-lock">🔒</span>
+                                    <span class="bbai-guide-feature-lock">
+                                        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                            <rect x="3" y="7" width="10" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+                                            <path d="M5 7V5C5 3.34315 6.34315 2 8 2C9.65685 2 11 3.34315 11 5V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                        </svg>
+                                    </span>
                                 <?php endif; ?>
                             </div>
                         </div>
                     </div>
                     <div class="bbai-guide-feature">
-                        <div class="bbai-guide-feature-icon">◆</div>
+                        <div class="bbai-guide-feature-icon">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                <path d="M10 2L12.5 7.5L18 10L12.5 12.5L10 18L7.5 12.5L2 10L7.5 7.5L10 2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
                         <div class="bbai-guide-feature-content">
                             <div class="bbai-guide-feature-title"><?php esc_html_e('SEO Optimized', 'beepbeep-ai-alt-text-generator'); ?></div>
                         </div>
                     </div>
                     <div class="bbai-guide-feature">
-                        <div class="bbai-guide-feature-icon">🎨</div>
+                        <div class="bbai-guide-feature-icon">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                <path d="M10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18Z" stroke="currentColor" stroke-width="1.5"/>
+                                <circle cx="7" cy="8" r="1" fill="currentColor"/>
+                                <circle cx="13" cy="8" r="1" fill="currentColor"/>
+                                <circle cx="6" cy="12" r="1" fill="currentColor"/>
+                                <circle cx="10" cy="14" r="1" fill="currentColor"/>
+                            </svg>
+                        </div>
                         <div class="bbai-guide-feature-content">
                             <div class="bbai-guide-feature-title">
                                 <?php esc_html_e('Smart tone tuning', 'beepbeep-ai-alt-text-generator'); ?>
                                 <?php if (!$is_pro) : ?>
-                                    <span class="bbai-guide-feature-lock">🔒</span>
+                                    <span class="bbai-guide-feature-lock">
+                                        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                            <rect x="3" y="7" width="10" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+                                            <path d="M5 7V5C5 3.34315 6.34315 2 8 2C9.65685 2 11 3.34315 11 5V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                        </svg>
+                                    </span>
                                 <?php endif; ?>
                             </div>
                         </div>
                     </div>
                     <div class="bbai-guide-feature">
-                        <div class="bbai-guide-feature-icon">🌍</div>
+                        <div class="bbai-guide-feature-icon">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/>
+                                <ellipse cx="10" cy="10" rx="3" ry="8" stroke="currentColor" stroke-width="1.5"/>
+                                <path d="M2 10H18" stroke="currentColor" stroke-width="1.5"/>
+                            </svg>
+                        </div>
                         <div class="bbai-guide-feature-content">
                             <div class="bbai-guide-feature-title">
                                 <?php esc_html_e('Multilingual alt text', 'beepbeep-ai-alt-text-generator'); ?>
                                 <?php if (!$is_pro) : ?>
-                                    <span class="bbai-guide-feature-lock">🔒</span>
+                                    <span class="bbai-guide-feature-lock">
+                                        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                            <rect x="3" y="7" width="10" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+                                            <path d="M5 7V5C5 3.34315 6.34315 2 8 2C9.65685 2 11 3.34315 11 5V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                        </svg>
+                                    </span>
                                 <?php endif; ?>
                             </div>
                         </div>
                     </div>
                     <div class="bbai-guide-feature">
-                        <div class="bbai-guide-feature-icon">♿</div>
+                        <div class="bbai-guide-feature-icon">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                <circle cx="10" cy="4" r="2" stroke="currentColor" stroke-width="1.5"/>
+                                <path d="M10 7V11M10 11L7 18M10 11L13 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M5 9H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                        </div>
                         <div class="bbai-guide-feature-content">
                             <div class="bbai-guide-feature-title"><?php esc_html_e('Accessibility', 'beepbeep-ai-alt-text-generator'); ?></div>
                         </div>
@@ -258,7 +340,11 @@ $is_agency = ($plan_slug === 'agency');
         <?php if (!$is_agency) : ?>
         <div class="bbai-guide-cta-card">
             <h3 class="bbai-guide-cta-title">
-                <span class="bbai-guide-cta-icon">⚡</span>
+                <span class="bbai-guide-cta-icon">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                        <path d="M11 2L4 11H10L9 18L16 9H10L11 2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                    </svg>
+                </span>
                 <?php esc_html_e('Ready for More?', 'beepbeep-ai-alt-text-generator'); ?>
             </h3>
             <p class="bbai-guide-cta-text">
