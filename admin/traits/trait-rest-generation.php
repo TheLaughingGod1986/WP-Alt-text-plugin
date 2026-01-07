@@ -13,6 +13,7 @@ if (!defined('ABSPATH')) { exit; }
 
 use BeepBeepAI\AltTextGenerator\Queue;
 use BeepBeepAI\AltTextGenerator\Debug_Log;
+use BeepBeepAI\AltTextGenerator\Input_Validator;
 
 trait REST_Generation {
 
@@ -20,9 +21,11 @@ trait REST_Generation {
      * Handle single image generation
      */
     public function handle_generate_single(\WP_REST_Request $request) {
-        $attachment_id = absint($request->get_param('id'));
+        $attachment_id = Input_Validator::attachment_id(
+            Input_Validator::int_param($request, 'id')
+        );
 
-        if (!wp_attachment_is_image($attachment_id)) {
+        if ($attachment_id === false) {
             return new \WP_Error(
                 'invalid_attachment',
                 __('Not a valid image attachment', 'beepbeep-ai-alt-text-generator'),
@@ -47,7 +50,7 @@ trait REST_Generation {
             );
         }
 
-        $regenerate = $request->get_param('regenerate') === true || $request->get_param('regenerate') === 'true';
+        $regenerate = Input_Validator::bool_param($request, 'regenerate');
         $result = $this->core->generate_and_save($attachment_id, 'rest', 0, [], $regenerate);
 
         if (is_wp_error($result)) {
@@ -80,26 +83,18 @@ trait REST_Generation {
      * Handle save alt text
      */
     public function handle_save_alt(\WP_REST_Request $request) {
-        $attachment_id = absint($request->get_param('id'));
-        $alt_text = $request->get_param('alt_text');
+        $attachment_id = Input_Validator::attachment_id(
+            Input_Validator::int_param($request, 'id')
+        );
+        $alt_text = Input_Validator::string_param($request, 'alt_text');
 
-        if (!is_string($alt_text)) {
-            return new \WP_Error(
-                'invalid_alt_text',
-                __('Alt text must be a string', 'beepbeep-ai-alt-text-generator'),
-                ['status' => 400]
-            );
-        }
-
-        if (!wp_attachment_is_image($attachment_id)) {
+        if ($attachment_id === false) {
             return new \WP_Error(
                 'invalid_attachment',
                 __('Not a valid image attachment', 'beepbeep-ai-alt-text-generator'),
                 ['status' => 400]
             );
         }
-
-        $alt_text = sanitize_text_field($alt_text);
         update_post_meta($attachment_id, '_wp_attachment_image_alt', $alt_text);
 
         $snapshot = $this->core->prepare_attachment_snapshot($attachment_id);
@@ -115,9 +110,9 @@ trait REST_Generation {
      * Handle list attachments
      */
     public function handle_list(\WP_REST_Request $request) {
-        $scope = $request->get_param('scope') ?: 'missing';
-        $limit = min(500, absint($request->get_param('limit') ?: 100));
-        $offset = absint($request->get_param('offset') ?: 0);
+        $scope = Input_Validator::scope($request->get_param('scope') ?: 'missing');
+        $limit = Input_Validator::int_param($request, 'limit', 100, 1, 500);
+        $offset = Input_Validator::int_param($request, 'offset', 0, 0);
 
         if ($scope === 'missing') {
             $ids = $this->core->get_missing_attachment_ids($limit);

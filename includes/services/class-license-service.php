@@ -1,6 +1,10 @@
 <?php
 declare(strict_types=1);
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 namespace BeepBeep\AltText\Services;
 
 use BeepBeep\AltText\Core\Event_Bus;

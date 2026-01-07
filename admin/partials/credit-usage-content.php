@@ -166,8 +166,8 @@ if (!defined('ABSPATH')) {
                         $pagination = paginate_links([
                             'base'      => add_query_arg('paged', '%#%'),
                             'format'    => '',
-                            'prev_text' => __('&laquo;'),
-                            'next_text' => __('&raquo;'),
+                            'prev_text' => __('&laquo;', 'beepbeep-ai-alt-text-generator'),
+                            'next_text' => __('&raquo;', 'beepbeep-ai-alt-text-generator'),
                             'total'     => ceil($usage_by_user['total'] / 50),
                             'current'   => $page,
                             'type'      => 'array',

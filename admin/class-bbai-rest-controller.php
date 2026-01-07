@@ -11,6 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use BeepBeepAI\AltTextGenerator\Queue;
 use BeepBeepAI\AltTextGenerator\Debug_Log;
+use BeepBeepAI\AltTextGenerator\Input_Validator;
 
 class REST_Controller {
 
@@ -694,11 +695,13 @@ class REST_Controller {
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/usage/class-usage-helpers.php';
 
 		$user_id = get_current_user_id();
-		$tokens_used = absint($request->get_param('tokens_used') ?: 1);
-		$action_type = sanitize_key($request->get_param('action_type') ?: 'generate');
+		$tokens_used = Input_Validator::int_param($request, 'tokens_used', 1, 1);
+		$action_type = Input_Validator::key_param($request, 'action_type', 'generate');
+		$image_id = Input_Validator::int_param($request, 'image_id', 0);
+		$post_id = Input_Validator::int_param($request, 'post_id', 0);
 		$context = [
-			'image_id' => $request->get_param('image_id') ? absint($request->get_param('image_id')) : null,
-			'post_id'  => $request->get_param('post_id') ? absint($request->get_param('post_id')) : null,
+			'image_id' => $image_id > 0 ? $image_id : null,
+			'post_id'  => $post_id > 0 ? $post_id : null,
 		];
 
 		$result = \BeepBeepAI\AltTextGenerator\Usage\record_usage_event($user_id, $tokens_used, $action_type, $context);
@@ -775,18 +778,22 @@ class REST_Controller {
 	 */
 	public function handle_usage_events( \WP_REST_Request $request ) {
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/usage/class-usage-helpers.php';
-		
+
+		$pagination = Input_Validator::pagination($request, 50, 100);
+		$user_id = Input_Validator::int_param($request, 'user_id', 0);
+		$action_type = Input_Validator::key_param($request, 'action_type');
+
 		$filters = [
-			'user_id' => $request->get_param('user_id'),
-			'date_from' => $request->get_param('from'),
-			'date_to' => $request->get_param('to'),
-			'action_type' => $request->get_param('action_type'),
-			'per_page' => $request->get_param('per_page') ? absint($request->get_param('per_page')) : 50,
-			'page' => $request->get_param('page') ? absint($request->get_param('page')) : 1,
+			'user_id' => $user_id > 0 ? $user_id : null,
+			'date_from' => Input_Validator::string_param($request, 'from'),
+			'date_to' => Input_Validator::string_param($request, 'to'),
+			'action_type' => $action_type ?: null,
+			'per_page' => $pagination['per_page'],
+			'page' => $pagination['page'],
 		];
-		
+
 		$result = \BeepBeepAI\AltTextGenerator\Usage\get_usage_events($filters);
-		
+
 		return $result;
 	}
 

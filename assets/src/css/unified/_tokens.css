@@ -126,3 +126,74 @@
     --bbai-z-modal: 1010;
     --bbai-z-tooltip: 1100;
 }
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* Inverted Gray Scale */
+        --bbai-gray-50: #18181b;
+        --bbai-gray-100: #27272a;
+        --bbai-gray-200: #3f3f46;
+        --bbai-gray-300: #52525b;
+        --bbai-gray-400: #71717a;
+        --bbai-gray-500: #a1a1aa;
+        --bbai-gray-600: #d4d4d8;
+        --bbai-gray-700: #e4e4e7;
+        --bbai-gray-800: #f4f4f5;
+        --bbai-gray-900: #fafafa;
+
+        /* Adjusted Brand Colors for dark mode */
+        --bbai-primary: #818cf8;
+        --bbai-primary-hover: #a5b4fc;
+        --bbai-primary-light: #312e81;
+        --bbai-primary-dark: #6366f1;
+
+        /* Adjusted Accent Colors */
+        --bbai-accent: #2dd4bf;
+        --bbai-accent-hover: #5eead4;
+        --bbai-accent-light: #134e4a;
+
+        /* Adjusted Status Colors */
+        --bbai-success: #34d399;
+        --bbai-success-light: #064e3b;
+        --bbai-success-bg: #052e16;
+
+        --bbai-warning: #fbbf24;
+        --bbai-warning-light: #78350f;
+        --bbai-warning-bg: #451a03;
+
+        --bbai-error: #f87171;
+        --bbai-error-light: #7f1d1d;
+        --bbai-error-bg: #450a0a;
+
+        --bbai-info: #60a5fa;
+        --bbai-info-light: #1e3a8a;
+        --bbai-info-bg: #172554;
+
+        /* Semantic Colors - Dark Mode */
+        --bbai-text: var(--bbai-gray-800);
+        --bbai-text-secondary: var(--bbai-gray-600);
+        --bbai-text-muted: var(--bbai-gray-500);
+        --bbai-text-light: var(--bbai-gray-400);
+
+        --bbai-bg: #1f1f23;
+        --bbai-bg-secondary: #27272a;
+        --bbai-bg-tertiary: #3f3f46;
+
+        --bbai-border: var(--bbai-gray-200);
+        --bbai-border-dark: var(--bbai-gray-300);
+
+        /* Adjusted Gradients for Dark Mode */
+        --bbai-gradient-primary: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
+        --bbai-gradient-accent: linear-gradient(135deg, #2dd4bf 0%, #22d3ee 100%);
+        --bbai-gradient-success: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+        --bbai-gradient-upsell: linear-gradient(180deg, #60a5fa 0%, #93c5fd 100%);
+
+        /* Stronger Shadows for Dark Mode */
+        --bbai-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+        --bbai-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.3);
+        --bbai-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+        --bbai-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+        --bbai-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+    }
+}

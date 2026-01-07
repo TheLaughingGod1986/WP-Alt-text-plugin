@@ -13,6 +13,7 @@ if (!defined('ABSPATH')) { exit; }
 
 use BeepBeepAI\AltTextGenerator\Queue;
 use BeepBeepAI\AltTextGenerator\Debug_Log;
+use BeepBeepAI\AltTextGenerator\Input_Validator;
 
 trait REST_Queue {
 
@@ -53,22 +54,21 @@ trait REST_Queue {
      * Handle logs request
      */
     public function handle_logs(\WP_REST_Request $request) {
-        $page = max(1, absint($request->get_param('page') ?: 1));
-        $per_page = min(100, absint($request->get_param('per_page') ?: 50));
-        $level = $request->get_param('level');
-        $source = $request->get_param('source');
+        $pagination = Input_Validator::pagination($request, 50, 100);
+        $level = Input_Validator::key_param($request, 'level', '', ['debug', 'info', 'warning', 'error']);
+        $source = Input_Validator::key_param($request, 'source');
 
         $filters = [
-            'page' => $page,
-            'per_page' => $per_page,
+            'page' => $pagination['page'],
+            'per_page' => $pagination['per_page'],
         ];
 
-        if ($level && in_array($level, ['debug', 'info', 'warning', 'error'], true)) {
+        if ($level) {
             $filters['level'] = $level;
         }
 
         if ($source) {
-            $filters['source'] = sanitize_key($source);
+            $filters['source'] = $source;
         }
 
         if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
@@ -79,8 +79,8 @@ trait REST_Queue {
         return rest_ensure_response([
             'logs' => [],
             'pagination' => [
-                'current_page' => $page,
-                'per_page' => $per_page,
+                'current_page' => $pagination['page'],
+                'per_page' => $pagination['per_page'],
                 'total' => 0,
                 'total_pages' => 0,
             ],
@@ -91,7 +91,7 @@ trait REST_Queue {
      * Handle clear logs request
      */
     public function handle_logs_clear(\WP_REST_Request $request) {
-        $before_days = absint($request->get_param('before_days') ?: 0);
+        $before_days = Input_Validator::int_param($request, 'before_days', 0, 0);
 
         if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
             if ($before_days > 0) {
@@ -116,8 +116,8 @@ trait REST_Queue {
      * Handle events request
      */
     public function handle_events(\WP_REST_Request $request) {
-        $limit = min(100, absint($request->get_param('limit') ?: 50));
-        $offset = absint($request->get_param('offset') ?: 0);
+        $limit = Input_Validator::int_param($request, 'limit', 50, 1, 100);
+        $offset = Input_Validator::int_param($request, 'offset', 0, 0);
 
         if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
             $events = Debug_Log::get_logs([
@@ -138,12 +138,12 @@ trait REST_Queue {
      * Handle log event request
      */
     public function handle_log_event(\WP_REST_Request $request) {
-        $level = $request->get_param('level') ?: 'info';
-        $message = $request->get_param('message');
-        $context = $request->get_param('context') ?: [];
-        $source = $request->get_param('source') ?: 'client';
+        $level = Input_Validator::log_level($request->get_param('level') ?: 'info');
+        $message = Input_Validator::string_param($request, 'message');
+        $context = Input_Validator::array_param($request, 'context', []);
+        $source = Input_Validator::key_param($request, 'source', 'client');
 
-        if (!$message || !is_string($message)) {
+        if (empty($message)) {
             return new \WP_Error(
                 'invalid_message',
                 __('Message is required', 'beepbeep-ai-alt-text-generator'),
@@ -151,12 +151,8 @@ trait REST_Queue {
             );
         }
 
-        if (!in_array($level, ['debug', 'info', 'warning', 'error'], true)) {
-            $level = 'info';
-        }
-
         if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-            Debug_Log::log($level, sanitize_text_field($message), is_array($context) ? $context : [], sanitize_key($source));
+            Debug_Log::log($level, $message, $context, $source);
         }
 
         return rest_ensure_response(['success' => true]);

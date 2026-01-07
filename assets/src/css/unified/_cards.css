@@ -259,3 +259,120 @@
     transform: translateY(-1px);
     box-shadow: var(--bbai-shadow-md);
 }
+
+/* ==========================================================================
+   Card Modifiers (BEM Pattern)
+   Use these for consistent card variations across the plugin
+   ========================================================================== */
+
+/* Stat Card Modifier - Centered stats with icon */
+.bbai-card--stat {
+    text-align: center;
+}
+
+.bbai-card--stat .bbai-card-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto var(--bbai-space-3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--bbai-radius-full);
+    background: var(--bbai-bg-secondary);
+    color: var(--bbai-primary);
+}
+
+.bbai-card--stat .bbai-card-value {
+    font-size: var(--bbai-text-3xl);
+    font-weight: var(--bbai-font-bold);
+    color: var(--bbai-text);
+    line-height: 1;
+    margin-bottom: var(--bbai-space-1);
+}
+
+.bbai-card--stat .bbai-card-label {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Metric Card Modifier - Flex column layout */
+.bbai-card--metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Upsell Card Modifier - Gradient background */
+.bbai-card--upsell {
+    background: var(--bbai-gradient-upsell);
+    color: white;
+    border: none;
+}
+
+.bbai-card--upsell * {
+    color: white;
+}
+
+/* Table Card Modifier - For data tables */
+.bbai-card--table {
+    padding: var(--bbai-space-4);
+    overflow-x: auto;
+}
+
+.bbai-card--table .bbai-card-body {
+    margin: 0 calc(-1 * var(--bbai-space-4));
+}
+
+/* Compact Card Modifier - Less padding */
+.bbai-card--compact {
+    padding: var(--bbai-space-4);
+}
+
+/* Featured Card Modifier - Highlighted border */
+.bbai-card--featured {
+    border-color: var(--bbai-primary);
+    box-shadow: 0 0 0 1px var(--bbai-primary), var(--bbai-shadow-md);
+}
+
+/* Success/Warning/Error State Cards */
+.bbai-card--success {
+    border-color: var(--bbai-success);
+    background: var(--bbai-success-bg);
+}
+
+.bbai-card--warning {
+    border-color: var(--bbai-warning);
+    background: var(--bbai-warning-bg);
+}
+
+.bbai-card--error {
+    border-color: var(--bbai-error);
+    background: var(--bbai-error-bg);
+}
+
+/* Clickable Card Modifier */
+.bbai-card--clickable {
+    cursor: pointer;
+    transition: all var(--bbai-transition);
+}
+
+.bbai-card--clickable:hover {
+    border-color: var(--bbai-primary);
+    box-shadow: var(--bbai-shadow-md);
+    transform: translateY(-2px);
+}
+
+/* Backward Compatibility Aliases */
+/* These ensure existing class names continue to work */
+.bbai-stat-card,
+.bbai-usage-card {
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-lg);
+}
+
+.bbai-upsell-card {
+    border: none;
+}

@@ -12,6 +12,7 @@ namespace BeepBeepAI\AltTextGenerator\Traits;
 if (!defined('ABSPATH')) { exit; }
 
 use BeepBeepAI\AltTextGenerator\Usage_Tracker;
+use BeepBeepAI\AltTextGenerator\Input_Validator;
 
 trait REST_Usage {
 
@@ -55,7 +56,7 @@ trait REST_Usage {
      * Handle usage summary request
      */
     public function handle_usage_summary(\WP_REST_Request $request) {
-        $period = $request->get_param('period') ?: 'month';
+        $period = Input_Validator::period($request->get_param('period') ?: 'month');
 
         if (class_exists('\BeepBeepAI\AltTextGenerator\Usage\Usage_Logs')) {
             $summary = \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::get_summary($period);
@@ -73,8 +74,8 @@ trait REST_Usage {
      * Handle usage by user request
      */
     public function handle_usage_by_user(\WP_REST_Request $request) {
-        $period = $request->get_param('period') ?: 'month';
-        $limit = min(100, absint($request->get_param('limit') ?: 50));
+        $period = Input_Validator::period($request->get_param('period') ?: 'month');
+        $limit = Input_Validator::int_param($request, 'limit', 50, 1, 100);
 
         if (class_exists('\BeepBeepAI\AltTextGenerator\Usage\Usage_Logs')) {
             $data = \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::get_by_user($period, $limit);
@@ -88,8 +89,8 @@ trait REST_Usage {
      * Handle usage events request
      */
     public function handle_usage_events(\WP_REST_Request $request) {
-        $limit = min(500, absint($request->get_param('limit') ?: 100));
-        $offset = absint($request->get_param('offset') ?: 0);
+        $limit = Input_Validator::int_param($request, 'limit', 100, 1, 500);
+        $offset = Input_Validator::int_param($request, 'offset', 0, 0);
 
         if (class_exists('\BeepBeepAI\AltTextGenerator\Usage\Usage_Logs')) {
             $events = \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::get_events($limit, $offset);
@@ -112,7 +113,7 @@ trait REST_Usage {
             );
         }
 
-        $period = $request->get_param('period') ?: 'month';
+        $period = Input_Validator::period($request->get_param('period') ?: 'month');
 
         if (class_exists('\BeepBeepAI\AltTextGenerator\Usage\Usage_Logs')) {
             $usage = \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::get_user_usage($user_id, $period);
