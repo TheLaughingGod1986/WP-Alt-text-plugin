@@ -252,5 +252,86 @@ if (!defined('ABSPATH')) {
             }
         }, 250);
     });
+    
+    /**
+     * Refresh usage stats from API and update display
+     * Called after alt text generation to update the usage counter
+     */
+    window.alttextai_refresh_usage = function() {
+        if (!window.BBAI_DASH || !window.BBAI_DASH.restUsage) {
+            console.warn('[AltText AI] Cannot refresh usage: REST endpoint not available');
+            return;
+        }
+        
+        $.ajax({
+            url: window.BBAI_DASH.restUsage,
+            method: 'GET',
+            headers: {
+                'X-WP-Nonce': window.BBAI_DASH.nonce || ''
+            },
+            success: function(response) {
+                if (response && typeof response === 'object') {
+                    // Update the usage data in global object
+                    if (window.BBAI_DASH) {
+                        window.BBAI_DASH.usage = response;
+                        window.BBAI_DASH.initialUsage = response;
+                    }
+                    
+                    // Update the displayed numbers
+                    var used = response.used || 0;
+                    var limit = response.limit || 50;
+                    var remaining = response.remaining !== undefined ? response.remaining : (limit - used);
+                    
+                    // Find all usage stat value elements and update them
+                    $('.bbai-usage-stat-item').each(function() {
+                        var $item = $(this);
+                        var label = $item.find('.bbai-usage-stat-label').text().trim().toLowerCase();
+                        var $value = $item.find('.bbai-usage-stat-value');
+                        
+                        if (label.includes('generated') || label.includes('used')) {
+                            $value.data('bbai-animated', false);
+                            $value.text(parseInt(used).toLocaleString());
+                            animateNumberElement($value, 0);
+                        } else if (label.includes('limit') || label.includes('monthly')) {
+                            $value.data('bbai-animated', false);
+                            $value.text(parseInt(limit).toLocaleString());
+                            animateNumberElement($value, 0);
+                        } else if (label.includes('remaining')) {
+                            $value.data('bbai-animated', false);
+                            $value.text(parseInt(remaining).toLocaleString());
+                            animateNumberElement($value, 0);
+                        }
+                    });
+                    
+                    // Update circular progress if present
+                    if (response.limit && response.limit > 0) {
+                        var percentage = Math.min(100, (response.used / response.limit) * 100);
+                        var circumference = 2 * Math.PI * 45; // Assuming radius of 45
+                        var offset = circumference - (percentage / 100) * circumference;
+                        
+                        $('.bbai-circular-progress-bar').each(function() {
+                            var $ring = $(this);
+                            $ring.attr('data-offset', offset);
+                            var ring = this;
+                            ring.style.strokeDashoffset = circumference;
+                            setTimeout(function() {
+                                ring.style.strokeDashoffset = offset;
+                            }, 50);
+                        });
+                    }
+                    
+                    console.log('[AltText AI] Usage refreshed:', { used: used, limit: limit, remaining: remaining });
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('[AltText AI] Failed to refresh usage:', error);
+            }
+        });
+    };
+    
+    // Also create a global refreshUsageStats function for compatibility
+    if (typeof window.refreshUsageStats === 'undefined') {
+        window.refreshUsageStats = window.alttextai_refresh_usage;
+    }
 })(jQuery);
 </script>

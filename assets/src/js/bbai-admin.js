@@ -688,6 +688,13 @@
                     $modal.find('.bbai-regenerate-modal__alt-text').text(newAltText);
                     $modal.find('.bbai-regenerate-modal__result').addClass('active');
 
+                    // Refresh usage stats after successful generation
+                    if (typeof refreshUsageStats === 'function') {
+                        refreshUsageStats();
+                    } else if (typeof window.alttextai_refresh_usage === 'function') {
+                        window.alttextai_refresh_usage();
+                    }
+
                     // Enable accept button
                     $modal.find('.bbai-regenerate-modal__btn--accept')
                         .prop('disabled', false)

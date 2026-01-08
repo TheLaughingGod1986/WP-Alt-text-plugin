@@ -3235,8 +3235,10 @@ class Core {
         if (isset($api_response['credits_remaining'])) {
             $usage_data['remaining'] = intval($api_response['credits_remaining']);
         }
-        // Get limit from root level if provided, otherwise calculate from used + remaining
-        if (isset($api_response['limit'])) {
+        // Get limit from root level if provided (check both 'total_limit' and 'limit' for compatibility)
+        if (isset($api_response['total_limit'])) {
+            $usage_data['limit'] = intval($api_response['total_limit']);
+        } elseif (isset($api_response['limit'])) {
             $usage_data['limit'] = intval($api_response['limit']);
         } elseif (isset($usage_data['used']) && isset($usage_data['remaining'])) {
             $usage_data['limit'] = $usage_data['used'] + $usage_data['remaining'];
@@ -3293,6 +3295,7 @@ class Core {
                     'api_response_keys' => array_keys($api_response),
                     'credits_used_in_response' => $api_response['credits_used'] ?? 'not set',
                     'credits_remaining_in_response' => $api_response['credits_remaining'] ?? 'not set',
+                    'total_limit_in_response' => $api_response['total_limit'] ?? 'not set',
                     'limit_in_response' => $api_response['limit'] ?? 'not set',
                 ], 'generation');
             }
