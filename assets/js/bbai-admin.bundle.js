@@ -5,7 +5,7 @@
  *
  * @package BeepBeep_AI
  * @since 5.0.0
- * @generated 2026-01-07T21:27:07.678Z
+ * @generated 2026-01-08T08:57:05.456Z
  */
 
 
@@ -1260,6 +1260,17 @@
         var imageTitle = $row.find('.bbai-table__cell--title').text().trim() || 'Image';
         var imageSrc = $row.find('img').attr('src') || '';
 
+        // Show skeleton in alt text cell while processing
+        var $altCell = $row.find('.bbai-library-cell--alt-text');
+        var originalCellContent = $altCell.html();
+        $altCell.data('original-content', originalCellContent);
+        $altCell.html(
+            '<div class="bbai-alt-text-content">' +
+                '<div class="bbai-skeleton bbai-skeleton--text" style="width: 90%; margin-bottom: 8px;"></div>' +
+                '<div class="bbai-skeleton bbai-skeleton--text-sm" style="width: 60%;"></div>' +
+            '</div>'
+        );
+
         showRegenerateModal(attachmentId, imageTitle, imageSrc, $btn, originalText);
     };
 
@@ -1434,11 +1445,20 @@
     }
 
     /**
-     * Re-enable the regenerate button
+     * Re-enable the regenerate button and restore cell content if cancelled
      */
     function reenableButton($btn, originalText) {
         $btn.prop('disabled', false).removeClass('regenerating');
         $btn.text(originalText);
+
+        // Restore original cell content if it was saved (user cancelled)
+        var $row = $btn.closest('tr');
+        var $altCell = $row.find('.bbai-library-cell--alt-text');
+        var originalContent = $altCell.data('original-content');
+        if (originalContent && $altCell.find('.bbai-skeleton').length) {
+            $altCell.html(originalContent);
+            $altCell.removeData('original-content');
+        }
     }
 
     /**
