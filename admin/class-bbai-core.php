@@ -4133,13 +4133,28 @@ class Core {
 
         Usage_Tracker::clear_cache();
         $this->invalidate_stats_cache();
+        
+        // Get updated usage to include in response
+        $updated_usage = Usage_Tracker::get_cached_usage(false);
+        if (!$updated_usage || !is_array($updated_usage)) {
+            // Force fresh fetch if cache is empty
+            $fresh_usage = $this->api_client->get_usage();
+            if (!is_wp_error($fresh_usage) && is_array($fresh_usage)) {
+                Usage_Tracker::update_usage($fresh_usage);
+                $updated_usage = $fresh_usage;
+            }
+        }
 
         wp_send_json_success([
             'message'        => __('Alt text generated successfully.', 'beepbeep-ai-alt-text-generator'),
             'alt_text'       => $result,
+            'altText'        => $result, // Also include camelCase for compatibility
             'attachment_id'  => $attachment_id,
+            'usage'          => $updated_usage ?: null, // Include updated usage in response
             'data'           => [
                 'alt_text' => $result,
+                'altText'  => $result,
+                'usage'    => $updated_usage ?: null,
             ],
         ]);
     }

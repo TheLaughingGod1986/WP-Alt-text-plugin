@@ -256,31 +256,208 @@ if (!defined('ABSPATH')) {
     /**
      * Refresh usage stats from API and update display
      * Called after alt text generation to update the usage counter
+     * @param {Object} usageData - Optional usage data to use directly (avoids API call)
      */
-    window.alttextai_refresh_usage = function() {
-        if (!window.BBAI_DASH || !window.BBAI_DASH.restUsage) {
-            console.warn('[AltText AI] Cannot refresh usage: REST endpoint not available');
+    window.alttextai_refresh_usage = function(usageData) {
+        // If usage data is provided directly, use it without API call
+        if (usageData && typeof usageData === 'object') {
+            console.log('[AltText AI] Using provided usage data:', usageData);
+            updateUsageDisplay(usageData);
             return;
         }
         
+        var config = window.BBAI_DASH || window.BBAI || {};
+        var usageUrl = config.restUsage;
+        var nonce = config.nonce || '';
+        
+        if (!usageUrl) {
+            console.warn('[AltText AI] Cannot refresh usage: REST endpoint not available', config);
+            return;
+        }
+        
+        console.log('[AltText AI] Refreshing usage from:', usageUrl);
+        
         $.ajax({
-            url: window.BBAI_DASH.restUsage,
+            url: usageUrl,
             method: 'GET',
             headers: {
-                'X-WP-Nonce': window.BBAI_DASH.nonce || ''
+                'X-WP-Nonce': nonce
             },
             success: function(response) {
+                console.log('[AltText AI] Usage API response:', response);
+                
+                if (response && typeof response === 'object') {
+                    updateUsageDisplay(response);
+                } else {
+                    console.warn('[AltText AI] Invalid usage response format:', response);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('[AltText AI] Failed to refresh usage:', {
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                    error: error,
+                    responseText: xhr.responseText
+                });
+            }
+        });
+    };
+    
+    /**
+     * Update usage display with provided data
+     * @param {Object} response - Usage data object
+     */
+    function updateUsageDisplay(response) {
+        if (!response || typeof response !== 'object') {
+            console.warn('[AltText AI] Invalid usage data for display:', response);
+            return;
+        }
+        
+        // Update the usage data in global object
+        if (window.BBAI_DASH) {
+            window.BBAI_DASH.usage = response;
+            window.BBAI_DASH.initialUsage = response;
+        }
+        if (window.BBAI) {
+            window.BBAI.usage = response;
+        }
+        
+        // Extract usage values - handle both direct response and nested data
+        var used = response.used !== undefined ? response.used : 0;
+        var limit = response.limit !== undefined ? response.limit : 50;
+        var remaining = response.remaining !== undefined ? response.remaining : (limit - used);
+        
+        console.log('[AltText AI] Updating usage display:', { used: used, limit: limit, remaining: remaining });
+        
+        // Find all usage stat value elements and update them
+        $('.bbai-usage-stat-item').each(function() {
+            var $item = $(this);
+            var label = $item.find('.bbai-usage-stat-label').text().trim().toLowerCase();
+            var $value = $item.find('.bbai-usage-stat-value');
+            
+            if ($value.length) {
+                var newValue = null;
+                if (label.includes('generated') || label.includes('used')) {
+                    newValue = parseInt(used).toLocaleString();
+                } else if (label.includes('limit') || label.includes('monthly')) {
+                    newValue = parseInt(limit).toLocaleString();
+                } else if (label.includes('remaining')) {
+                    newValue = parseInt(remaining).toLocaleString();
+                }
+                
+                if (newValue !== null) {
+                    // Reset animation flag and update value
+                    $value.removeData('bbai-animated');
+                    var oldValue = $value.text();
+                    $value.text(newValue);
+                    // Re-animate if function exists and value changed
+                    if (typeof animateNumberElement === 'function' && oldValue !== newValue) {
+                        animateNumberElement($value, 0);
+                    }
+                    console.log('[AltText AI] Updated', label, 'from', oldValue, 'to', newValue);
+                }
+            }
+        });
+        
+        // Also update any generic number-counting elements that might be usage related
+        $('.bbai-number-counting').each(function() {
+            var $el = $(this);
+            var text = $el.text().trim();
+            // Only update if it looks like a number (potential usage value)
+            if (/^\d[\d,]*$/.test(text.replace(/,/g, ''))) {
+                var parentText = $el.closest('.bbai-usage-card-stats, .bbai-usage-stat-item').text().toLowerCase();
+                if (parentText.includes('generated') || parentText.includes('used')) {
+                    var newValue = parseInt(used).toLocaleString();
+                    if ($el.text() !== newValue) {
+                        $el.removeData('bbai-animated');
+                        $el.text(newValue);
+                        if (typeof animateNumberElement === 'function') {
+                            animateNumberElement($el, 0);
+                        }
+                    }
+                } else if (parentText.includes('limit') || parentText.includes('monthly')) {
+                    var newValue = parseInt(limit).toLocaleString();
+                    if ($el.text() !== newValue) {
+                        $el.removeData('bbai-animated');
+                        $el.text(newValue);
+                        if (typeof animateNumberElement === 'function') {
+                            animateNumberElement($el, 0);
+                        }
+                    }
+                } else if (parentText.includes('remaining')) {
+                    var newValue = parseInt(remaining).toLocaleString();
+                    if ($el.text() !== newValue) {
+                        $el.removeData('bbai-animated');
+                        $el.text(newValue);
+                        if (typeof animateNumberElement === 'function') {
+                            animateNumberElement($el, 0);
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Update circular progress if present
+        if (response.limit && response.limit > 0) {
+            var percentage = Math.min(100, (response.used / response.limit) * 100);
+            var circumference = 2 * Math.PI * 45; // Assuming radius of 45
+            var offset = circumference - (percentage / 100) * circumference;
+            
+            $('.bbai-circular-progress-bar').each(function() {
+                var $ring = $(this);
+                $ring.attr('data-offset', offset);
+                var ring = this;
+                if (ring.style) {
+                    ring.style.strokeDashoffset = circumference;
+                    setTimeout(function() {
+                        ring.style.strokeDashoffset = offset;
+                    }, 50);
+                }
+            });
+        }
+        
+        console.log('[AltText AI] Usage display update complete');
+        
+        // If we're not on the dashboard tab, navigate to it to see the updated usage
+        var currentTab = window.location.hash.replace('#', '') || 'dashboard';
+        if (currentTab !== 'dashboard' && currentTab !== '') {
+            // Check if dashboard tab link exists
+            var $dashboardLink = $('.bbai-nav-link[href*="dashboard"], .bbai-nav-link[data-tab="dashboard"]');
+            if ($dashboardLink.length) {
+                console.log('[AltText AI] Updated usage - navigate to dashboard tab to view');
+                // Optionally auto-navigate - commented out for now, just update if on dashboard
+                // $dashboardLink.trigger('click');
+            }
+        }
+    }
+    
+    // Update the original ajax call to use the new function structure
+    if (false) {
+        $.ajax({
+            url: usageUrl,
+            method: 'GET',
+            headers: {
+                'X-WP-Nonce': nonce
+            },
+            success: function(response) {
+                console.log('[AltText AI] Usage API response:', response);
+                
                 if (response && typeof response === 'object') {
                     // Update the usage data in global object
                     if (window.BBAI_DASH) {
                         window.BBAI_DASH.usage = response;
                         window.BBAI_DASH.initialUsage = response;
                     }
+                    if (window.BBAI) {
+                        window.BBAI.usage = response;
+                    }
                     
-                    // Update the displayed numbers
-                    var used = response.used || 0;
-                    var limit = response.limit || 50;
+                    // Extract usage values - handle both direct response and nested data
+                    var used = response.used !== undefined ? response.used : 0;
+                    var limit = response.limit !== undefined ? response.limit : 50;
                     var remaining = response.remaining !== undefined ? response.remaining : (limit - used);
+                    
+                    console.log('[AltText AI] Updating usage display:', { used: used, limit: limit, remaining: remaining });
                     
                     // Find all usage stat value elements and update them
                     $('.bbai-usage-stat-item').each(function() {
@@ -288,18 +465,46 @@ if (!defined('ABSPATH')) {
                         var label = $item.find('.bbai-usage-stat-label').text().trim().toLowerCase();
                         var $value = $item.find('.bbai-usage-stat-value');
                         
-                        if (label.includes('generated') || label.includes('used')) {
-                            $value.data('bbai-animated', false);
-                            $value.text(parseInt(used).toLocaleString());
-                            animateNumberElement($value, 0);
-                        } else if (label.includes('limit') || label.includes('monthly')) {
-                            $value.data('bbai-animated', false);
-                            $value.text(parseInt(limit).toLocaleString());
-                            animateNumberElement($value, 0);
-                        } else if (label.includes('remaining')) {
-                            $value.data('bbai-animated', false);
-                            $value.text(parseInt(remaining).toLocaleString());
-                            animateNumberElement($value, 0);
+                        if ($value.length) {
+                            var newValue = null;
+                            if (label.includes('generated') || label.includes('used')) {
+                                newValue = parseInt(used).toLocaleString();
+                            } else if (label.includes('limit') || label.includes('monthly')) {
+                                newValue = parseInt(limit).toLocaleString();
+                            } else if (label.includes('remaining')) {
+                                newValue = parseInt(remaining).toLocaleString();
+                            }
+                            
+                            if (newValue !== null) {
+                                // Reset animation flag and update value
+                                $value.removeData('bbai-animated');
+                                $value.text(newValue);
+                                // Re-animate if function exists
+                                if (typeof animateNumberElement === 'function') {
+                                    animateNumberElement($value, 0);
+                                }
+                                console.log('[AltText AI] Updated', label, 'to', newValue);
+                            }
+                        }
+                    });
+                    
+                    // Also update any generic number-counting elements that might be usage related
+                    $('.bbai-number-counting').each(function() {
+                        var $el = $(this);
+                        var text = $el.text().trim();
+                        // Only update if it looks like a number (potential usage value)
+                        if (/^\d[\d,]*$/.test(text.replace(/,/g, ''))) {
+                            var parentText = $el.closest('.bbai-usage-card-stats, .bbai-usage-stat-item').text().toLowerCase();
+                            if (parentText.includes('generated') || parentText.includes('used')) {
+                                $el.removeData('bbai-animated');
+                                $el.text(parseInt(used).toLocaleString());
+                            } else if (parentText.includes('limit') || parentText.includes('monthly')) {
+                                $el.removeData('bbai-animated');
+                                $el.text(parseInt(limit).toLocaleString());
+                            } else if (parentText.includes('remaining')) {
+                                $el.removeData('bbai-animated');
+                                $el.text(parseInt(remaining).toLocaleString());
+                            }
                         }
                     });
                     
@@ -313,18 +518,39 @@ if (!defined('ABSPATH')) {
                             var $ring = $(this);
                             $ring.attr('data-offset', offset);
                             var ring = this;
-                            ring.style.strokeDashoffset = circumference;
-                            setTimeout(function() {
-                                ring.style.strokeDashoffset = offset;
-                            }, 50);
+                            if (ring.style) {
+                                ring.style.strokeDashoffset = circumference;
+                                setTimeout(function() {
+                                    ring.style.strokeDashoffset = offset;
+                                }, 50);
+                            }
                         });
                     }
                     
-                    console.log('[AltText AI] Usage refreshed:', { used: used, limit: limit, remaining: remaining });
+                    console.log('[AltText AI] Usage refresh complete');
+                    
+                    // If we're not on the dashboard tab, navigate to it to see the updated usage
+                    var currentTab = window.location.hash.replace('#', '') || 'dashboard';
+                    if (currentTab !== 'dashboard' && currentTab !== '') {
+                        // Check if dashboard tab link exists
+                        var $dashboardLink = $('.bbai-nav-link[href*="dashboard"], .bbai-nav-link[data-tab="dashboard"]');
+                        if ($dashboardLink.length) {
+                            console.log('[AltText AI] Navigating to dashboard tab to show updated usage');
+                            // Optionally auto-navigate - commented out for now, just update if on dashboard
+                            // $dashboardLink.trigger('click');
+                        }
+                    }
+                } else {
+                    console.warn('[AltText AI] Invalid usage response format:', response);
                 }
             },
             error: function(xhr, status, error) {
-                console.error('[AltText AI] Failed to refresh usage:', error);
+                console.error('[AltText AI] Failed to refresh usage:', {
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                    error: error,
+                    responseText: xhr.responseText
+                });
             }
         });
     };

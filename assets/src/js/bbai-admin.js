@@ -679,20 +679,43 @@
 
             if (response && response.success) {
                 // Backend returns altText (camelCase), support both for compatibility
-                var newAltText = (response.data && response.data.altText) || (response.data && response.data.alt_text) || '';
+                var newAltText = (response.data && response.data.altText) || (response.data && response.data.alt_text) || response.altText || response.alt_text || '';
                 console.log('[AI Alt Text] New alt text:', newAltText);
                 console.log('[AI Alt Text] Alt text length:', newAltText.length);
+                console.log('[AI Alt Text] Full response:', response);
 
                 if (newAltText) {
                     // Show result
                     $modal.find('.bbai-regenerate-modal__alt-text').text(newAltText);
                     $modal.find('.bbai-regenerate-modal__result').addClass('active');
 
-                    // Refresh usage stats after successful generation
-                    if (typeof refreshUsageStats === 'function') {
-                        refreshUsageStats();
-                    } else if (typeof window.alttextai_refresh_usage === 'function') {
-                        window.alttextai_refresh_usage();
+                    // Update usage from response if available (avoids extra API call)
+                    var usageInResponse = (response.data && response.data.usage) || response.usage;
+                    if (usageInResponse && typeof usageInResponse === 'object') {
+                        console.log('[AI Alt Text] Updating usage from response:', usageInResponse);
+                        if (window.BBAI_DASH) {
+                            window.BBAI_DASH.usage = usageInResponse;
+                            window.BBAI_DASH.initialUsage = usageInResponse;
+                        }
+                        if (window.BBAI) {
+                            window.BBAI.usage = usageInResponse;
+                        }
+                        
+                        // Update display immediately
+                        if (typeof window.alttextai_refresh_usage === 'function') {
+                            // Pass usage data directly to avoid API call
+                            window.alttextai_refresh_usage(usageInResponse);
+                        } else if (typeof refreshUsageStats === 'function') {
+                            refreshUsageStats(usageInResponse);
+                        }
+                    } else {
+                        // Fallback: Refresh usage stats from API
+                        console.log('[AI Alt Text] No usage in response, fetching from API');
+                        if (typeof refreshUsageStats === 'function') {
+                            refreshUsageStats();
+                        } else if (typeof window.alttextai_refresh_usage === 'function') {
+                            window.alttextai_refresh_usage();
+                        }
                     }
 
                     // Enable accept button
