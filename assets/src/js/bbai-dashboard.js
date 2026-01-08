@@ -968,7 +968,8 @@ bbaiRunWithJQuery(function($) {
     window.loadLicenseSiteUsage = function loadLicenseSiteUsage() {
         const $sitesContent = $('#bbai-license-sites-content');
         if (!$sitesContent.length) {
-            console.log('[AltText AI] License sites content element not found');
+            // This is expected for free/Pro users - element only exists for Agency licenses
+            // Silently return without logging (no need to clutter console for expected behavior)
             return; // Not on settings page or not agency license
         }
 

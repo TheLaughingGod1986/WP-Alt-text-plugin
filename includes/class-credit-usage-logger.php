@@ -387,6 +387,7 @@ class Credit_Usage_Logger {
 				user_id,
 				SUM(credits_used) as total_credits,
 				COUNT(DISTINCT attachment_id) as total_images,
+				COUNT(DISTINCT attachment_id) as images_processed, -- Alias for template compatibility
 				SUM(token_cost) as total_cost,
 				MAX(generated_at) as last_activity
 			FROM `{$table_escaped}` 
@@ -416,9 +417,29 @@ class Credit_Usage_Logger {
 
 		$users = array_slice($all_results, $offset, $per_page);
 
-		// Enrich with user display names
+		// Enrich with user display names and format dates
 		foreach ($users as &$user_data) {
 			$user_id = intval($user_data['user_id']);
+			
+			// Ensure images_processed field exists (for template compatibility)
+			if (!isset($user_data['images_processed'])) {
+				$user_data['images_processed'] = isset($user_data['total_images']) ? intval($user_data['total_images']) : 0;
+			} else {
+				$user_data['images_processed'] = intval($user_data['images_processed']);
+			}
+			
+			// Format last_activity date for display
+			if (!empty($user_data['last_activity'])) {
+				$last_activity_timestamp = strtotime($user_data['last_activity']);
+				if ($last_activity_timestamp !== false) {
+					$user_data['latest_activity'] = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $last_activity_timestamp);
+				} else {
+					$user_data['latest_activity'] = '';
+				}
+			} else {
+				$user_data['latest_activity'] = '';
+			}
+			
 			if ($user_id > 0) {
 				$wp_user = get_user_by('ID', $user_id);
 				if ($wp_user) {
@@ -501,9 +522,25 @@ class Credit_Usage_Logger {
 
 		$where_sql = 'WHERE ' . implode(' AND ', $where);
 
+		// Get summary stats for this user (before pagination)
+		$summary_query = "SELECT 
+				SUM(credits_used) as total_credits,
+				COUNT(DISTINCT attachment_id) as total_images,
+				COUNT(DISTINCT attachment_id) as images_processed,
+				SUM(token_cost) as total_cost
+			FROM `{$table_escaped}` 
+			{$where_sql}";
+		
+		// Use params without LIMIT (LIMIT params are added later)
+		$summary = count($params) > 0 
+			? $wpdb->get_row($wpdb->prepare($summary_query, $params), ARRAY_A)
+			: $wpdb->get_row($summary_query, ARRAY_A);
+
 		// Count total
 		$count_query = "SELECT COUNT(*) FROM `{$table_escaped}` {$where_sql}";
-		$total = intval($wpdb->get_var($wpdb->prepare($count_query, $params)));
+		$total = count($params) > 0 
+			? intval($wpdb->get_var($wpdb->prepare($count_query, $params)))
+			: intval($wpdb->get_var($count_query));
 
 		// Get paginated results
 		$per_page = absint($args['per_page']);
@@ -516,10 +553,13 @@ class Credit_Usage_Logger {
 			ORDER BY generated_at DESC
 			LIMIT %d OFFSET %d";
 
-		$params[] = $per_page;
-		$params[] = $offset;
-
-		$items = $wpdb->get_results($wpdb->prepare($query, $params), ARRAY_A);
+		$limit_params = array_merge($params, [$per_page, $offset]);
+		$items = $wpdb->get_results($wpdb->prepare($query, $limit_params), ARRAY_A);
+		
+		// Get user info
+		$wp_user = get_user_by('ID', $user_id);
+		$user_name = $wp_user ? $wp_user->display_name : __('Unknown User', 'beepbeep-ai-alt-text-generator');
+		$user_email = $wp_user ? $wp_user->user_email : '';
 
 		// Enrich with attachment info
 		foreach ($items as &$item) {
@@ -533,6 +573,11 @@ class Credit_Usage_Logger {
 		}
 
 		return [
+			'name' => $user_name,
+			'email' => $user_email,
+			'total_credits' => isset($summary['total_credits']) ? intval($summary['total_credits']) : 0,
+			'images_processed' => isset($summary['images_processed']) ? intval($summary['images_processed']) : (isset($summary['total_images']) ? intval($summary['total_images']) : 0),
+			'total_cost' => isset($summary['total_cost']) ? floatval($summary['total_cost']) : 0.0,
 			'items' => $items,
 			'total' => $total,
 			'pages' => $pages,

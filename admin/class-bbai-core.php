@@ -3465,9 +3465,16 @@ class Core {
         $alt = $result['alt'];
 
         // Log credit usage for this generation
+        // Backend tracks 1 credit per generation, not based on tokens
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-credit-usage-logger.php';
-        $credits_used = isset($usage_summary['total_tokens']) ? intval($usage_summary['total_tokens']) : 1;
-        $token_cost = isset($usage_summary['cost']) ? floatval($usage_summary['cost']) : null;
+        // Always use 1 credit per generation (backend API charges 1 credit per alt text generation)
+        $credits_used = 1;
+        // Try to get token cost from usage summary if available (for reporting)
+        $token_cost = null;
+        if (isset($usage_summary['cost']) && is_numeric($usage_summary['cost'])) {
+            $token_cost = floatval($usage_summary['cost']);
+        }
+        // Get model from usage summary or use default
         $model_used = isset($usage_summary['model']) ? sanitize_text_field($usage_summary['model']) : $model;
         \BeepBeepAI\AltTextGenerator\Credit_Usage_Logger::log_usage(
             $attachment_id,
@@ -3495,9 +3502,11 @@ class Core {
 
         $this->record_usage($usage_summary);
         
-        // Refresh quota cache after successful generation
-        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-token-quota-service.php';
-        \BeepBeepAI\AltTextGenerator\Token_Quota_Service::record_local_usage($tokens_used);
+        // Note: We do NOT call Token_Quota_Service::record_local_usage() here because:
+        // 1. We already update usage correctly via Usage_Tracker::update_usage() above (line 3303)
+        // 2. Usage_Tracker gets the correct credits from the backend API response
+        // 3. Calling record_local_usage() with token counts would double-count and treat tokens as credits
+        // 4. The backend API response already contains the accurate credits_used value
         
         if ($has_license) {
             $this->refresh_license_usage_snapshot();

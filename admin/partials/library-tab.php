@@ -46,15 +46,30 @@ if (!defined('ABSPATH')) {
                 $optimization_percentage = $total_images > 0 ? round(($with_alt_count / $total_images) * 100) : 0;
                 
                 // Get all images with their alt text status
+                // Use GROUP BY to prevent duplicate rows if multiple meta entries exist
+                // Since each attachment should have only one _wp_attachment_image_alt meta entry,
+                // we use MAX() to handle any edge cases where duplicates might exist
                 $all_images = $wpdb->get_results($wpdb->prepare("
-                    SELECT p.*, 
-                           COALESCE(pm.meta_value, '') as alt_text,
-                           CASE WHEN pm.meta_value IS NOT NULL AND TRIM(pm.meta_value) <> '' THEN 1 ELSE 0 END as has_alt
+                    SELECT p.ID,
+                           p.post_title,
+                           p.post_excerpt,
+                           p.post_content,
+                           p.post_author,
+                           p.post_date,
+                           p.post_date_gmt,
+                           p.post_modified,
+                           p.post_modified_gmt,
+                           p.post_parent,
+                           p.post_mime_type,
+                           p.post_status,
+                           MAX(COALESCE(pm.meta_value, '')) as alt_text,
+                           MAX(CASE WHEN pm.meta_value IS NOT NULL AND TRIM(pm.meta_value) <> '' THEN 1 ELSE 0 END) as has_alt
                     FROM {$wpdb->posts} p
                     LEFT JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id AND pm.meta_key = '_wp_attachment_image_alt'
                     WHERE p.post_type = 'attachment'
                     AND p.post_mime_type LIKE 'image/%'
                     AND p.post_status = 'inherit'
+                    GROUP BY p.ID, p.post_title, p.post_excerpt, p.post_content, p.post_author, p.post_date, p.post_date_gmt, p.post_modified, p.post_modified_gmt, p.post_parent, p.post_mime_type, p.post_status
                     ORDER BY p.post_date DESC
                     LIMIT %d OFFSET %d
                 ", $per_page, $offset));

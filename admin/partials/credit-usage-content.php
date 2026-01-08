@@ -126,7 +126,18 @@ if (!defined('ABSPATH')) {
 
     <!-- Usage Table -->
     <div class="bbai-table-card">
-        <h2 class="bbai-table-title"><?php esc_html_e('Usage by User', 'beepbeep-ai-alt-text-generator'); ?></h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2 class="bbai-table-title" style="margin: 0;"><?php esc_html_e('Usage by User', 'beepbeep-ai-alt-text-generator'); ?></h2>
+        </div>
+        
+        <?php if (empty($date_from) && empty($date_to)) : ?>
+            <div class="notice notice-info" style="margin-bottom: 16px; padding: 12px;">
+                <p style="margin: 0;">
+                    <strong><?php esc_html_e('Note:', 'beepbeep-ai-alt-text-generator'); ?></strong>
+                    <?php esc_html_e('The summary cards above show your current accurate usage from the backend. The table below shows historical WordPress user activity, which may include data from previous periods or different sites. Use the date filters to view recent usage only.', 'beepbeep-ai-alt-text-generator'); ?>
+                </p>
+            </div>
+        <?php endif; ?>
 
         <?php if (!empty($usage_by_user['users'])) : ?>
             <table class="widefat fixed striped bbai-mt-4">
