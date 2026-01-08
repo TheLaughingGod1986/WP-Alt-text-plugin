@@ -23,8 +23,19 @@ Items are organized by priority and complexity.
 
 ### Architecture Improvements
 - [x] **PHP Modular Architecture** - Split large classes into traits
-  - Admin traits in `admin/traits/` (10 files)
+  - Admin REST traits in `admin/traits/` (10 files)
   - API client traits in `includes/traits/` (5 files)
+  - Core class traits in `admin/traits/` (6 files):
+    - `trait-core-ajax-auth.php` - User registration, login, logout
+    - `trait-core-ajax-license.php` - License activation, site management
+    - `trait-core-ajax-billing.php` - Stripe checkout, customer portal
+    - `trait-core-ajax-queue.php` - Queue management, usage refresh
+    - `trait-core-media.php` - Media stats, attachment queries
+- [x] **Input Validator adopted** across REST endpoints
+  - `admin/class-bbai-rest-controller.php`
+  - `admin/traits/trait-rest-generation.php`
+  - `admin/traits/trait-rest-usage.php`
+  - `admin/traits/trait-rest-queue.php`
 - [x] **JavaScript Modular Architecture** - Split large JS files into modules
   - Dashboard modules in `assets/src/js/dashboard/` (10 files)
   - Admin modules in `assets/src/js/admin/` (9 files)
@@ -53,11 +64,11 @@ use BeepBeepAI\AltTextGenerator\Input_Validator;
 $pagination = Input_Validator::pagination($request, 50, 100);
 ```
 
-**Files to update:**
-- [ ] `admin/class-bbai-rest-controller.php`
-- [ ] `admin/traits/trait-rest-generation.php`
-- [ ] `admin/traits/trait-rest-usage.php`
-- [ ] `admin/traits/trait-rest-queue.php`
+**Files updated:** ✅ All complete
+- [x] `admin/class-bbai-rest-controller.php`
+- [x] `admin/traits/trait-rest-generation.php`
+- [x] `admin/traits/trait-rest-usage.php`
+- [x] `admin/traits/trait-rest-queue.php`
 
 ### 1.2 Security Audit on User Input
 **Files affected:** All AJAX and REST handlers
@@ -182,19 +193,21 @@ Add parameter and return type declarations:
 ```
 WP-Alt-text-plugin/
 ├── admin/
+│   ├── class-bbai-core.php (now uses traits)
 │   └── traits/
-│       ├── trait-ajax-auth.php
-│       ├── trait-ajax-billing.php
-│       ├── trait-ajax-generation.php
-│       ├── trait-ajax-license.php
-│       ├── trait-ajax-queue.php
-│       ├── trait-media-stats.php
-│       ├── trait-meta-compat.php
+│       ├── trait-core-ajax-auth.php     (NEW - user auth AJAX)
+│       ├── trait-core-ajax-billing.php  (NEW - Stripe/billing AJAX)
+│       ├── trait-core-ajax-license.php  (NEW - license AJAX)
+│       ├── trait-core-ajax-queue.php    (NEW - queue AJAX)
+│       ├── trait-core-assets.php        (NEW - enqueue scripts/styles)
+│       ├── trait-core-generation.php    (NEW - alt text generation)
+│       ├── trait-core-media.php         (NEW - media stats/queries)
+│       ├── trait-core-review.php        (NEW - alt text health scoring)
 │       ├── trait-rest-generation.php
 │       ├── trait-rest-queue.php
 │       └── trait-rest-usage.php
 ├── includes/
-│   ├── class-input-validator.php (NEW)
+│   ├── class-input-validator.php
 │   └── traits/
 │       ├── trait-api-auth.php
 │       ├── trait-api-billing.php
@@ -222,9 +235,10 @@ WP-Alt-text-plugin/
 ### Current State
 - **Total PHP lines:** ~15,000
 - **Total JS lines:** ~7,000
-- **Largest PHP file:** `class-bbai-core.php` (5,559 lines) - needs splitting
+- **Largest PHP file:** `class-bbai-core.php` (5,559 lines) - **trait splitting in progress**
 - **Largest JS file:** `bbai-dashboard.js` (2,581 lines) - modular version exists
 - **Test coverage:** 0%
+- **Core class traits created:** 8 traits (~1,500 lines extracted)
 
 ### Target State
 - All files under 500 lines
@@ -237,7 +251,15 @@ WP-Alt-text-plugin/
 
 ## Notes
 
-- The `class-bbai-core.php` file (5,559 lines) still needs to be split using the trait pattern
+- The `class-bbai-core.php` file now uses 8 traits for modular functionality:
+  - `Core_Ajax_Auth` - User registration, login, logout
+  - `Core_Ajax_License` - License activation, site management
+  - `Core_Ajax_Billing` - Stripe checkout, customer portal
+  - `Core_Ajax_Queue` - Queue operations, usage refresh
+  - `Core_Media` - Media statistics, attachment queries
+  - `Core_Generation` - Alt text generation helpers
+  - `Core_Review` - Alt text health evaluation
+  - `Core_Assets` - Script/style enqueuing
 - The existing traits can be used by adding `use` statements to the main classes
 - Build scripts exist for both CSS and JS - run `npm run build:css` and `npm run build:js`
 - The mock backend (`mock-backend.js`) is for local development only

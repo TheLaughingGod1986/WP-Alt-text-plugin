@@ -3258,11 +3258,15 @@ class Core {
         // Log token usage prominently for each generation
         if (!empty($usage_data) && (isset($usage_data['prompt_tokens']) || isset($usage_data['completion_tokens']) || isset($usage_data['total_tokens']))) {
             if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                $prompt_tokens = isset($usage_data['prompt_tokens']) ? intval($usage_data['prompt_tokens']) : 0;
+                $completion_tokens = isset($usage_data['completion_tokens']) ? intval($usage_data['completion_tokens']) : 0;
+                $total_tokens = isset($usage_data['total_tokens']) ? intval($usage_data['total_tokens']) : 0;
+                
                 $token_summary = sprintf(
                     'Token Usage: %s prompt + %s completion = %s total tokens',
-                    isset($usage_data['prompt_tokens']) ? number_format($usage_data['prompt_tokens']) : 'N/A',
-                    isset($usage_data['completion_tokens']) ? number_format($usage_data['completion_tokens']) : 'N/A',
-                    isset($usage_data['total_tokens']) ? number_format($usage_data['total_tokens']) : 'N/A'
+                    $prompt_tokens > 0 ? number_format($prompt_tokens) : 'N/A',
+                    $completion_tokens > 0 ? number_format($completion_tokens) : 'N/A',
+                    $total_tokens > 0 ? number_format($total_tokens) : 'N/A'
                 );
                 
                 Debug_Log::log('info', $token_summary, [
