@@ -45,12 +45,40 @@ require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-queue.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-debug-log.php';
 
+// Load Core class traits
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/traits/trait-core-ajax-auth.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/traits/trait-core-ajax-license.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/traits/trait-core-ajax-billing.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/traits/trait-core-ajax-queue.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/traits/trait-core-media.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/traits/trait-core-generation.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/traits/trait-core-review.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/traits/trait-core-assets.php';
+
 use BeepBeepAI\AltTextGenerator\Queue;
 use BeepBeepAI\AltTextGenerator\Debug_Log;
 use BeepBeepAI\AltTextGenerator\Usage_Tracker;
 use BeepBeepAI\AltTextGenerator\API_Client_V2;
+use BeepBeepAI\AltTextGenerator\Traits\Core_Ajax_Auth;
+use BeepBeepAI\AltTextGenerator\Traits\Core_Ajax_License;
+use BeepBeepAI\AltTextGenerator\Traits\Core_Ajax_Billing;
+use BeepBeepAI\AltTextGenerator\Traits\Core_Ajax_Queue;
+use BeepBeepAI\AltTextGenerator\Traits\Core_Media;
+use BeepBeepAI\AltTextGenerator\Traits\Core_Generation;
+use BeepBeepAI\AltTextGenerator\Traits\Core_Review;
+use BeepBeepAI\AltTextGenerator\Traits\Core_Assets;
 
 class Core {
+    // Use traits for modular functionality
+    use Core_Ajax_Auth;
+    use Core_Ajax_License;
+    use Core_Ajax_Billing;
+    use Core_Ajax_Queue;
+    use Core_Media;
+    use Core_Generation;
+    use Core_Review;
+    use Core_Assets;
+
     const OPTION_KEY = 'bbai_settings';
     const NONCE_KEY  = 'bbai_nonce';
     const CAPABILITY = 'manage_bbbbai_text';
@@ -3243,8 +3271,8 @@ class Core {
                     'completion_tokens' => $usage_data['completion_tokens'] ?? 0,
                     'total_tokens' => $usage_data['total_tokens'] ?? 0,
                     'alt_text_length' => strlen($alt_text ?? ''),
-                    'model' => $api_response['meta']['modelUsed'] ?? 'unknown',
-                    'generation_time_ms' => $api_response['meta']['generation_time_ms'] ?? null,
+                    'model' => (isset($api_response['meta']) && is_array($api_response['meta'])) ? ($api_response['meta']['modelUsed'] ?? 'unknown') : 'unknown',
+                    'generation_time_ms' => (isset($api_response['meta']) && is_array($api_response['meta'])) ? ($api_response['meta']['generation_time_ms'] ?? null) : null,
                 ], 'generation');
             }
         }
