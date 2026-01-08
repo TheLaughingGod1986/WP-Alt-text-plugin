@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
+namespace BeepBeep\AltText\Core;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
-
-namespace BeepBeep\AltText\Core;
 
 /**
  * Event Bus
