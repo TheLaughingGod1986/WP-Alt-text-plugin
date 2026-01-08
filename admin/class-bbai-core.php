@@ -4131,18 +4131,103 @@ class Core {
             return;
         }
 
-        Usage_Tracker::clear_cache();
-        $this->invalidate_stats_cache();
+        // Get updated usage AFTER generation
+        // generate_and_save() updates the cache, but we need to ensure we have the latest data
+        // For free users, fetch fresh from API to ensure accuracy
+        // For license users, read from license data
         
-        // Get updated usage to include in response
-        $updated_usage = Usage_Tracker::get_cached_usage(false);
-        if (!$updated_usage || !is_array($updated_usage)) {
-            // Force fresh fetch if cache is empty
+        $updated_usage = null;
+        
+        // For license users, read directly from license data
+        if ($this->api_client->has_active_license()) {
+            $license_data = $this->api_client->get_license_data();
+            if ($license_data && isset($license_data['organization'])) {
+                $org = $license_data['organization'];
+                $plan = isset($org['plan']) ? strtolower($org['plan']) : 'free';
+                $limit = isset($org['tokenLimit']) ? intval($org['tokenLimit']) : 
+                         ($plan === 'free' ? 50 : ($plan === 'pro' ? 1000 : 10000));
+                $tokens_remaining = isset($org['tokensRemaining']) ? max(0, intval($org['tokensRemaining'])) : $limit;
+                $used = max(0, $limit - $tokens_remaining);
+                
+                $reset_ts = strtotime('first day of next month');
+                if (!empty($org['resetDate'])) {
+                    $parsed = strtotime($org['resetDate']);
+                    if ($parsed > 0) {
+                        $reset_ts = $parsed;
+                    }
+                }
+                
+                $updated_usage = [
+                    'used' => $used,
+                    'limit' => $limit,
+                    'remaining' => $tokens_remaining,
+                    'plan' => $plan,
+                    'resetDate' => date('Y-m-01', $reset_ts),
+                    'reset_timestamp' => $reset_ts,
+                    'seconds_until_reset' => max(0, $reset_ts - current_time('timestamp')),
+                ];
+                
+                // Update the cache with this fresh data
+                Usage_Tracker::update_usage($updated_usage);
+            }
+        }
+        
+        // For free users OR if license data didn't provide usage, fetch fresh from API
+        // This ensures we have the most up-to-date usage data from the backend
+        if (!$updated_usage || !is_array($updated_usage) || !isset($updated_usage['used'])) {
+            // Clear cache first to force fresh fetch
+            Usage_Tracker::clear_cache();
+            
+            // Fetch fresh usage from API - this should reflect the generation we just did
             $fresh_usage = $this->api_client->get_usage();
             if (!is_wp_error($fresh_usage) && is_array($fresh_usage)) {
                 Usage_Tracker::update_usage($fresh_usage);
                 $updated_usage = $fresh_usage;
+                
+                // Log for debugging
+                if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                    Debug_Log::log('info', 'Fetched fresh usage from API after regeneration', [
+                        'used' => $fresh_usage['used'] ?? 'not set',
+                        'remaining' => $fresh_usage['remaining'] ?? 'not set',
+                        'limit' => $fresh_usage['limit'] ?? 'not set',
+                    ], 'generation');
+                }
+            } else {
+                // Fallback to cached usage if API fails
+                $updated_usage = Usage_Tracker::get_cached_usage(false);
+                if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                    Debug_Log::log('warning', 'API usage fetch failed, using cached usage', [
+                        'api_error' => is_wp_error($fresh_usage) ? $fresh_usage->get_error_message() : 'unknown error',
+                        'cached_usage' => $updated_usage,
+                    ], 'generation');
+                }
             }
+        }
+        
+        // Only clear stats cache, not usage cache (we want to keep the fresh usage)
+        $this->invalidate_stats_cache();
+        
+        // Ensure we have valid usage data to return
+        if (!$updated_usage || !is_array($updated_usage) || !isset($updated_usage['used'])) {
+            // Last resort: try to get cached usage
+            $updated_usage = Usage_Tracker::get_cached_usage(false);
+            
+            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+                Debug_Log::log('warning', 'No usage data available after regeneration, using cached fallback', [
+                    'updated_usage_was_null' => $updated_usage === null,
+                    'final_usage' => $updated_usage,
+                ], 'generation');
+            }
+        }
+        
+        // Log final usage data being sent to frontend
+        if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+            Debug_Log::log('info', 'Sending usage data in AJAX response', [
+                'usage' => $updated_usage,
+                'has_used' => isset($updated_usage['used']),
+                'has_remaining' => isset($updated_usage['remaining']),
+                'has_limit' => isset($updated_usage['limit']),
+            ], 'generation');
         }
 
         wp_send_json_success([

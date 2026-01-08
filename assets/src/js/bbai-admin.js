@@ -1939,4 +1939,252 @@
         console.log('[AI Alt Text] License management handlers registered');
     });
 
+    /**
+     * Refresh usage stats from API and update display
+     * Called after alt text generation to update the usage counter
+     * Available globally on all admin pages
+     * @param {Object} usageData - Optional usage data to use directly (avoids API call)
+     */
+    window.alttextai_refresh_usage = function(usageData) {
+        // If usage data is provided directly, use it without API call
+        if (usageData && typeof usageData === 'object') {
+            console.log('[AltText AI] Using provided usage data:', usageData);
+            updateUsageDisplayGlobally(usageData);
+            return;
+        }
+        
+        var config = window.BBAI_DASH || window.BBAI || {};
+        var usageUrl = config.restUsage;
+        var nonce = config.nonce || '';
+        
+        if (!usageUrl) {
+            console.warn('[AltText AI] Cannot refresh usage: REST endpoint not available', config);
+            return;
+        }
+        
+        console.log('[AltText AI] Refreshing usage from:', usageUrl);
+        
+        $.ajax({
+            url: usageUrl,
+            method: 'GET',
+            headers: {
+                'X-WP-Nonce': nonce
+            },
+            success: function(response) {
+                console.log('[AltText AI] Usage API response:', response);
+                
+                if (response && typeof response === 'object') {
+                    updateUsageDisplayGlobally(response);
+                } else {
+                    console.warn('[AltText AI] Invalid usage response format:', response);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('[AltText AI] Failed to refresh usage:', {
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                    error: error,
+                    responseText: xhr.responseText
+                });
+            }
+        });
+    };
+    
+    /**
+     * Update usage display with provided data
+     * @param {Object} response - Usage data object
+     */
+    function updateUsageDisplayGlobally(response) {
+        if (!response || typeof response !== 'object') {
+            console.warn('[AltText AI] Invalid usage data for display:', response);
+            return;
+        }
+        
+        // Update the usage data in global object
+        if (window.BBAI_DASH) {
+            window.BBAI_DASH.usage = response;
+            window.BBAI_DASH.initialUsage = response;
+        }
+        if (window.BBAI) {
+            window.BBAI.usage = response;
+        }
+        
+        // Extract usage values - handle both direct response and nested data
+        var used = response.used !== undefined ? response.used : 0;
+        var limit = response.limit !== undefined ? response.limit : 50;
+        var remaining = response.remaining !== undefined ? response.remaining : (limit - used);
+        
+        console.log('[AltText AI] Updating usage display:', { used: used, limit: limit, remaining: remaining });
+        
+        // Find all usage stat value elements and update them
+        $('.bbai-usage-stat-item').each(function() {
+            var $item = $(this);
+            var label = $item.find('.bbai-usage-stat-label').text().trim().toLowerCase();
+            var $value = $item.find('.bbai-usage-stat-value');
+            
+            if ($value.length) {
+                var newValue = null;
+                if (label.includes('generated') || label.includes('used')) {
+                    newValue = parseInt(used).toLocaleString();
+                } else if (label.includes('limit') || label.includes('monthly')) {
+                    newValue = parseInt(limit).toLocaleString();
+                } else if (label.includes('remaining')) {
+                    newValue = parseInt(remaining).toLocaleString();
+                }
+                
+                if (newValue !== null) {
+                    var oldValue = $value.text();
+                    $value.removeData('bbai-animated');
+                    $value.text(newValue);
+                    // Simple fade animation if value changed
+                    if (oldValue !== newValue) {
+                        $value.fadeOut(100, function() {
+                            $(this).fadeIn(100);
+                        });
+                    }
+                    console.log('[AltText AI] Updated', label, 'from', oldValue, 'to', newValue);
+                }
+            }
+        });
+        
+        // Also update any generic number-counting elements that might be usage related
+        $('.bbai-number-counting').each(function() {
+            var $el = $(this);
+            var text = $el.text().trim();
+            // Only update if it looks like a number (potential usage value)
+            if (/^\d[\d,]*$/.test(text.replace(/,/g, ''))) {
+                var parentText = $el.closest('.bbai-usage-card-stats, .bbai-usage-stat-item, .bbai-usage-card').text().toLowerCase();
+                var newValue = null;
+                if (parentText.includes('generated') || parentText.includes('used')) {
+                    newValue = parseInt(used).toLocaleString();
+                } else if (parentText.includes('limit') || parentText.includes('monthly')) {
+                    newValue = parseInt(limit).toLocaleString();
+                } else if (parentText.includes('remaining')) {
+                    newValue = parseInt(remaining).toLocaleString();
+                }
+                
+                if (newValue !== null && $el.text() !== newValue) {
+                    var oldValue = $el.text();
+                    $el.removeData('bbai-animated');
+                    $el.text(newValue);
+                    $el.fadeOut(100, function() {
+                        $(this).fadeIn(100);
+                    });
+                    console.log('[AltText AI] Updated number element from', oldValue, 'to', newValue);
+                }
+            }
+        });
+        
+        // Update the "7 / 50" format in .bbai-usage-text (regular layout)
+        $('.bbai-usage-text').each(function() {
+            var $container = $(this);
+            var $strongs = $container.find('strong.bbai-number-counting');
+            if ($strongs.length === 2) {
+                // First strong is used, second is limit (format: "7 / 50")
+                var $usedEl = $strongs.eq(0);
+                var $limitEl = $strongs.eq(1);
+                var usedValue = parseInt(used).toString();
+                var limitValue = parseInt(limit).toString();
+                
+                if ($usedEl.text().trim() !== usedValue) {
+                    var oldUsed = $usedEl.text().trim();
+                    $usedEl.removeData('bbai-animated');
+                    $usedEl.text(usedValue);
+                    $usedEl.fadeOut(100, function() {
+                        $(this).fadeIn(100);
+                    });
+                    console.log('[AltText AI] Updated usage-text used from', oldUsed, 'to', usedValue);
+                }
+                
+                if ($limitEl.text().trim() !== limitValue) {
+                    var oldLimit = $limitEl.text().trim();
+                    $limitEl.removeData('bbai-animated');
+                    $limitEl.text(limitValue);
+                    $limitEl.fadeOut(100, function() {
+                        $(this).fadeIn(100);
+                    });
+                    console.log('[AltText AI] Updated usage-text limit from', oldLimit, 'to', limitValue);
+                }
+            }
+        });
+        
+        // Update text-based usage displays (e.g., "7 / 50" format on dashboard) - fallback
+        $('.bbai-usage-card strong.bbai-number-counting').each(function() {
+            var $el = $(this);
+            var text = $el.text().trim();
+            var parentText = $el.closest('.bbai-usage-card').text().toLowerCase();
+            
+            // Check if it's a usage number
+            if (/^\d+$/.test(text)) {
+                var numValue = parseInt(text);
+                // Try to match context
+                if (parentText.includes('generated') || parentText.includes('used')) {
+                    if (numValue !== used) {
+                        $el.removeData('bbai-animated');
+                        $el.text(used);
+                        console.log('[AltText AI] Updated card used from', numValue, 'to', used);
+                    }
+                } else if (parentText.includes('limit') || parentText.includes('monthly')) {
+                    if (numValue !== limit) {
+                        $el.removeData('bbai-animated');
+                        $el.text(limit);
+                        console.log('[AltText AI] Updated card limit from', numValue, 'to', limit);
+                    }
+                } else if (parentText.includes('remaining')) {
+                    if (numValue !== remaining) {
+                        $el.removeData('bbai-animated');
+                        $el.text(remaining);
+                        console.log('[AltText AI] Updated card remaining from', numValue, 'to', remaining);
+                    }
+                }
+            }
+        });
+        
+        // Update circular progress percentage and visual
+        if (limit && limit > 0) {
+            var percentage = Math.min(100, Math.round((used / limit) * 100));
+            var percentageDisplay = percentage + '%';
+            
+            // Update percentage text
+            $('.bbai-circular-progress-percent').each(function() {
+                var $el = $(this);
+                if ($el.text().trim() !== percentageDisplay) {
+                    var oldPercent = $el.text().trim();
+                    $el.removeData('bbai-animated');
+                    $el.text(percentageDisplay);
+                    $el.fadeOut(100, function() {
+                        $(this).fadeIn(100);
+                    });
+                    console.log('[AltText AI] Updated circular progress percent from', oldPercent, 'to', percentageDisplay);
+                }
+            });
+            
+            // Update circular progress bar visual (stroke-dashoffset)
+            $('.bbai-circular-progress-bar').each(function() {
+                var $ring = $(this);
+                var circumference = parseFloat($ring.data('circumference')) || parseFloat($ring.attr('stroke-dasharray')) || (2 * Math.PI * 45);
+                var offset = circumference - (percentage / 100 * circumference);
+                
+                // Get current offset
+                var currentOffset = parseFloat($ring.css('stroke-dashoffset')) || parseFloat($ring.attr('stroke-dashoffset')) || circumference;
+                
+                // Update if changed
+                if (Math.abs(currentOffset - offset) > 0.1) {
+                    $ring.attr('data-offset', offset);
+                    if ($ring[0].style) {
+                        $ring[0].style.strokeDashoffset = offset;
+                    }
+                    console.log('[AltText AI] Updated circular progress bar offset from', currentOffset, 'to', offset);
+                }
+            });
+        }
+        
+        console.log('[AltText AI] Usage display update complete');
+    }
+    
+    // Also create a global refreshUsageStats function for compatibility
+    if (typeof window.refreshUsageStats === 'undefined') {
+        window.refreshUsageStats = window.alttextai_refresh_usage;
+    }
+
 })(jQuery);

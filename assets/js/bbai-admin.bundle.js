@@ -5,7 +5,7 @@
  *
  * @package BeepBeep_AI
  * @since 5.0.0
- * @generated 2026-01-08T08:57:05.456Z
+ * @generated 2026-01-08T13:20:37.882Z
  */
 
 

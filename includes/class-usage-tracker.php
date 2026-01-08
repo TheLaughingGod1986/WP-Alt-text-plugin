@@ -103,15 +103,15 @@ class Usage_Tracker {
 
                 $current_ts = current_time('timestamp');
                 
-                // Get limit from organization data or license, with proper plan-based defaults
+                // Get plan from organization data (correct location)
+                $plan = isset($org['plan']) ? strtolower($org['plan']) : 'free';
+                
+                // Get limit from organization data or calculate based on plan
                 $limit = isset($org['tokenLimit']) ? intval($org['tokenLimit']) : 
-                         (isset($license_data['plan']) && $license_data['plan'] === 'free' ? 50 : 10000);
+                         ($plan === 'free' ? 50 : ($plan === 'pro' ? 1000 : 10000));
                 
                 $tokens_remaining = isset($org['tokensRemaining']) ? max(0, intval($org['tokensRemaining'])) : $limit;
                 $used = max(0, $limit - $tokens_remaining);
-                
-                // Get plan from license data
-                $plan = isset($license_data['plan']) ? $license_data['plan'] : 'free';
 
                 // Return organization quota instead of personal account
                 return [
