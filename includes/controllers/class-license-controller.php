@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
+namespace BeepBeep\AltText\Controllers;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
-
-namespace BeepBeep\AltText\Controllers;
 
 use BeepBeep\AltText\Services\License_Service;
 
