@@ -30,8 +30,12 @@ bbaiRunWithJQuery(function($) {
     function showUpgradeModal() {
         var modal = document.getElementById('bbai-upgrade-modal');
         if (modal) {
+            // Add active class to trigger CSS visibility
+            modal.classList.add('active');
+            modal.classList.add('is-visible');
+            
             modal.removeAttribute('style');
-            modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important;';
+            modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important; visibility: visible !important; opacity: 1 !important;';
             modal.setAttribute('aria-hidden', 'false');
             document.body.style.overflow = 'hidden';
             return true;

@@ -5,7 +5,7 @@
  *
  * @package BeepBeep_AI
  * @since 5.0.0
- * @generated 2026-01-08T14:31:17.371Z
+ * @generated 2026-01-09T23:16:14.512Z
  */
 
 
@@ -121,20 +121,25 @@ function alttextaiShowModal() {
         return false;
     }
 
-    // Remove the inline display:none style completely, then set to flex
+    // Add active class to trigger CSS visibility
+    modal.classList.add('active');
+    modal.classList.add('is-visible');
+    
+    // Remove inline display:none and ensure visibility
     modal.removeAttribute('style');
-    modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0, 0, 0, 0.6) !important;';
+    modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0, 0, 0, 0.6) !important; visibility: visible !important; opacity: 1 !important;';
     modal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
 
     // Verify it worked
     setTimeout(function() {
         var computed = window.getComputedStyle(modal);
-        if (computed.display === 'none' || computed.visibility === 'hidden') {
-            // Nuclear option - rebuild styles
-            modal.className = 'bbai-modal-backdrop';
-            modal.style.cssText = '';
+        if (computed.display === 'none' || computed.visibility === 'hidden' || computed.opacity === '0') {
+            // Nuclear option - ensure all visibility properties are set
+            modal.classList.add('active');
             modal.style.display = 'flex';
+            modal.style.visibility = 'visible';
+            modal.style.opacity = '1';
             modal.style.position = 'fixed';
             modal.style.top = '0';
             modal.style.right = '0';
@@ -1579,8 +1584,12 @@ bbaiRunWithJQuery(function($) {
     function showUpgradeModal() {
         var modal = document.getElementById('bbai-upgrade-modal');
         if (modal) {
+            // Add active class to trigger CSS visibility
+            modal.classList.add('active');
+            modal.classList.add('is-visible');
+            
             modal.removeAttribute('style');
-            modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important;';
+            modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important; visibility: visible !important; opacity: 1 !important;';
             modal.setAttribute('aria-hidden', 'false');
             document.body.style.overflow = 'hidden';
             return true;

@@ -107,11 +107,161 @@
                 }
             } else {
                 var errorData = response && response.data ? response.data : {};
-                if (errorData.code === 'limit_reached') {
-                    closeRegenerateModal($modal);
-                    reenableButton($btn, originalBtnText);
-                    window.bbaiHandleLimitReached(errorData);
-                } else if (errorData.code === 'auth_required' || (errorData.message && errorData.message.toLowerCase().includes('authentication required'))) {
+                var errorMessage = errorData.message || errorData.error || 'Failed to regenerate alt text';
+                var errorMessageLower = errorMessage.toLowerCase();
+                
+                // Check for quota exceeded errors (limit_reached or quota-related messages)
+                var isQuotaError = errorData.code === 'limit_reached' || 
+                                  errorMessageLower.includes('quota exceeded') ||
+                                  errorMessageLower.includes('quota exhausted') ||
+                                  errorMessageLower.includes('limit reached') ||
+                                  errorMessageLower.includes('monthly limit');
+                
+                if (isQuotaError) {
+                    // Show error message in modal first
+                    var quotaMessage = errorMessage || 'Your monthly quota has been exceeded. Upgrade to continue generating alt text.';
+                    showModalError($modal, quotaMessage);
+                    
+                    // Disable accept button since quota is exceeded
+                    $modal.find('.bbai-regenerate-modal__btn--accept').prop('disabled', true);
+                    
+                    // Wait 2.5 seconds for user to read the message, then close modal and show upgrade popup
+                    setTimeout(function() {
+                        closeRegenerateModal($modal);
+                        reenableButton($btn, originalBtnText);
+                        
+                        // Small delay to ensure regenerate modal is fully closed before showing upgrade modal
+                        setTimeout(function() {
+                            console.log('[AI Alt Text] Showing upgrade modal after quota exceeded');
+                            
+                            // Function to show modal with retry logic
+                            function tryShowUpgradeModal(retries) {
+                                retries = retries || 0;
+                                var maxRetries = 5;
+                                
+                                console.log('[AI Alt Text] Attempting to show upgrade modal (attempt ' + (retries + 1) + ')');
+                                
+                                // Method 1: Directly manipulate DOM element (most reliable - same as dashboard.js)
+                                var upgradeModal = document.getElementById('bbai-upgrade-modal');
+                                
+                                // Also try finding by class if ID doesn't exist
+                                if (!upgradeModal) {
+                                    var modals = document.querySelectorAll('.bbai-modal-backdrop, .bbai-upgrade-modal');
+                                    if (modals.length > 0) {
+                                        upgradeModal = modals[0];
+                                        console.log('[AI Alt Text] Found modal by class:', upgradeModal);
+                                        if (!upgradeModal.id) {
+                                            upgradeModal.id = 'bbai-upgrade-modal';
+                                        }
+                                    }
+                                }
+                                
+                                if (upgradeModal) {
+                                    console.log('[AI Alt Text] Found upgrade modal element, showing directly...');
+                                    upgradeModal.removeAttribute('style');
+                                    upgradeModal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important;';
+                                    upgradeModal.setAttribute('aria-hidden', 'false');
+                                    upgradeModal.classList.add('active');
+                                    document.body.style.overflow = 'hidden';
+                                    
+                                    // Verify it's actually visible
+                                    setTimeout(function() {
+                                        var computedStyle = window.getComputedStyle(upgradeModal);
+                                        if (computedStyle.display === 'flex' || computedStyle.display === 'block') {
+                                            console.log('[AI Alt Text] Upgrade modal shown successfully');
+                                        } else {
+                                            console.warn('[AI Alt Text] Modal style applied but still not visible. Display:', computedStyle.display);
+                                            if (retries < maxRetries) {
+                                                setTimeout(function() { tryShowUpgradeModal(retries + 1); }, 200);
+                                            }
+                                        }
+                                    }, 100);
+                                    return;
+                                }
+                    
+                    // Method 2: Try finding modal by class name
+                    var modalByClass = document.querySelector('.bbai-modal-backdrop');
+                    if (modalByClass && !modalByClass.id) {
+                        console.log('[AI Alt Text] Found modal by class, assigning ID and showing...');
+                        modalByClass.id = 'bbai-upgrade-modal';
+                        modalByClass.removeAttribute('style');
+                        modalByClass.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important;';
+                        modalByClass.setAttribute('aria-hidden', 'false');
+                        document.body.style.overflow = 'hidden';
+                        console.log('[AI Alt Text] Upgrade modal shown successfully (by class)');
+                        return;
+                    }
+                    
+                    // Method 3: Try React pricing modal
+                    if (typeof window.openPricingModal === 'function') {
+                        console.log('[AI Alt Text] Using React openPricingModal...');
+                        try {
+                            window.openPricingModal('enterprise');
+                            console.log('[AI Alt Text] React modal opened');
+                            return;
+                        } catch (e) {
+                            console.error('[AI Alt Text] Error calling openPricingModal:', e);
+                        }
+                    }
+                    
+                    // Method 4: Use jQuery to find and click upgrade button
+                    var $upgradeBtn = $('[data-action="show-upgrade-modal"]');
+                    if ($upgradeBtn.length > 0) {
+                        console.log('[AI Alt Text] Found upgrade button, clicking...');
+                        $upgradeBtn.first().trigger('click');
+                        return;
+                    }
+                    
+                    // Method 5: Try window.alttextaiShowModal
+                    if (typeof window.alttextaiShowModal === 'function') {
+                        console.log('[AI Alt Text] Using alttextaiShowModal...');
+                        try {
+                            window.alttextaiShowModal();
+                            return;
+                        } catch (e) {
+                            console.error('[AI Alt Text] Error calling alttextaiShowModal:', e);
+                        }
+                    }
+                    
+                    // Method 6: Try window.bbaiHandleLimitReached
+                    if (typeof window.bbaiHandleLimitReached === 'function') {
+                        console.log('[AI Alt Text] Using bbaiHandleLimitReached...');
+                        try {
+                            window.bbaiHandleLimitReached(errorData);
+                            return;
+                        } catch (e) {
+                            console.error('[AI Alt Text] Error calling bbaiHandleLimitReached:', e);
+                        }
+                    }
+                    
+                    // Method 7: Try triggering jQuery event
+                    console.log('[AI Alt Text] Triggering jQuery event as last resort...');
+                    $(document).trigger('alttextai:show-upgrade-modal', [errorData.usage || null]);
+                    
+                                // Final fallback: Redirect to settings page or show alert
+                                setTimeout(function() {
+                                    var upgradeModalCheck = document.getElementById('bbai-upgrade-modal');
+                                    var stillNoModal = !upgradeModalCheck || 
+                                                      (upgradeModalCheck && window.getComputedStyle(upgradeModalCheck).display === 'none');
+                                    if (stillNoModal) {
+                                        console.error('[AI Alt Text] Could not show upgrade modal - no method worked');
+                                        // Try redirecting to settings page with upgrade section
+                                        if (confirm('Your monthly quota has been exceeded. Would you like to go to the Settings page to upgrade?')) {
+                                            var settingsUrl = window.location.href.split('?')[0] + '?page=bbai&tab=settings';
+                                            window.location.href = settingsUrl;
+                                        } else {
+                                            alert('Your monthly quota has been exceeded. Please upgrade to continue generating alt text. You can upgrade from the Settings page.');
+                                        }
+                                    }
+                                }, 1000);
+                            }
+                            
+                            // Start trying to show the modal
+                            tryShowUpgradeModal(0);
+                        }, 100); // Small delay after closing regenerate modal
+                    }, 2500); // 2.5 second delay for user to read quota message
+                    
+                } else if (errorData.code === 'auth_required' || (errorMessageLower.includes('authentication required'))) {
                     closeRegenerateModal($modal);
                     reenableButton($btn, originalBtnText);
 
@@ -126,8 +276,7 @@
                         showModalError($modal, 'Please log in to regenerate alt text.');
                     }
                 } else {
-                    var message = errorData.message || 'Failed to regenerate alt text';
-                    showModalError($modal, message);
+                    showModalError($modal, errorMessage);
                     reenableButton($btn, originalBtnText);
                 }
             }
@@ -138,10 +287,172 @@
             $modal.find('.bbai-regenerate-modal__loading').removeClass('active');
 
             var errorData = xhr.responseJSON && xhr.responseJSON.data ? xhr.responseJSON.data : {};
-            if (errorData.code === 'limit_reached') {
-                closeRegenerateModal($modal);
-                reenableButton($btn, originalBtnText);
-                window.bbaiHandleLimitReached(errorData);
+            var errorMessage = errorData.message || errorData.error || 'Failed to regenerate alt text. Please try again.';
+            var errorMessageLower = errorMessage.toLowerCase();
+            
+            // Check for quota exceeded errors
+            var isQuotaError = errorData.code === 'limit_reached' || 
+                              errorMessageLower.includes('quota exceeded') ||
+                              errorMessageLower.includes('quota exhausted') ||
+                              errorMessageLower.includes('limit reached') ||
+                              errorMessageLower.includes('monthly limit');
+            
+            if (isQuotaError) {
+                // Show error message in modal first
+                var quotaMessage = errorMessage || 'Your monthly quota has been exceeded. Upgrade to continue generating alt text.';
+                showModalError($modal, quotaMessage);
+                
+                // Disable accept button since quota is exceeded
+                $modal.find('.bbai-regenerate-modal__btn--accept').prop('disabled', true);
+                
+                // Wait 2.5 seconds for user to read the message, then close modal and show upgrade popup
+                setTimeout(function() {
+                    closeRegenerateModal($modal);
+                    reenableButton($btn, originalBtnText);
+                    
+                    // Small delay to ensure regenerate modal is fully closed before showing upgrade modal
+                    setTimeout(function() {
+                        console.log('[AI Alt Text] Showing upgrade modal after quota exceeded (fail handler)');
+                        
+                        // Function to show modal with retry logic (same as success handler)
+                        function tryShowUpgradeModalFail(retries) {
+                            retries = retries || 0;
+                            var maxRetries = 5;
+                            
+                            console.log('[AI Alt Text] Attempting to show upgrade modal (fail handler, attempt ' + (retries + 1) + ')');
+                            
+                            // Method 1: Directly manipulate DOM element (most reliable - same as dashboard.js)
+                            var upgradeModal = document.getElementById('bbai-upgrade-modal');
+                            
+                            // Also try finding by class if ID doesn't exist
+                            if (!upgradeModal) {
+                                var modals = document.querySelectorAll('.bbai-modal-backdrop, .bbai-upgrade-modal');
+                                if (modals.length > 0) {
+                                    upgradeModal = modals[0];
+                                    console.log('[AI Alt Text] Found modal by class:', upgradeModal);
+                                    if (!upgradeModal.id) {
+                                        upgradeModal.id = 'bbai-upgrade-modal';
+                                    }
+                                }
+                            }
+                            
+                            if (upgradeModal) {
+                                console.log('[AI Alt Text] Found upgrade modal element, showing directly...');
+                                upgradeModal.removeAttribute('style');
+                                upgradeModal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important;';
+                                upgradeModal.setAttribute('aria-hidden', 'false');
+                                upgradeModal.classList.add('active');
+                                document.body.style.overflow = 'hidden';
+                                
+                                // Verify it's actually visible
+                                setTimeout(function() {
+                                    var computedStyle = window.getComputedStyle(upgradeModal);
+                                    if (computedStyle.display === 'flex' || computedStyle.display === 'block') {
+                                        console.log('[AI Alt Text] Upgrade modal shown successfully');
+                                    } else {
+                                        console.warn('[AI Alt Text] Modal style applied but still not visible. Display:', computedStyle.display);
+                                        if (retries < maxRetries) {
+                                            setTimeout(function() { tryShowUpgradeModalFail(retries + 1); }, 200);
+                                        }
+                                    }
+                                }, 100);
+                                return;
+                            }
+                            
+                            // If modal not found and we have retries left, try again
+                            if (retries < maxRetries) {
+                                console.log('[AI Alt Text] Modal not found yet, retrying in 200ms...');
+                                setTimeout(function() { tryShowUpgradeModalFail(retries + 1); }, 200);
+                                return;
+                            }
+                            
+                            // All retries exhausted, try other methods
+                            console.warn('[AI Alt Text] Upgrade modal element not found after ' + (retries + 1) + ' attempts');
+                            
+                            // Method 2: Try React pricing modal
+                    
+                    // Method 2: Try finding modal by class name
+                    var modalByClass = document.querySelector('.bbai-modal-backdrop');
+                    if (modalByClass && !modalByClass.id) {
+                        console.log('[AI Alt Text] Found modal by class, assigning ID and showing...');
+                        modalByClass.id = 'bbai-upgrade-modal';
+                        modalByClass.removeAttribute('style');
+                        modalByClass.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important;';
+                        modalByClass.setAttribute('aria-hidden', 'false');
+                        document.body.style.overflow = 'hidden';
+                        console.log('[AI Alt Text] Upgrade modal shown successfully (by class)');
+                        return;
+                    }
+                    
+                    // Method 3: Try React pricing modal
+                    if (typeof window.openPricingModal === 'function') {
+                        console.log('[AI Alt Text] Using React openPricingModal...');
+                        try {
+                            window.openPricingModal('enterprise');
+                            console.log('[AI Alt Text] React modal opened');
+                            return;
+                        } catch (e) {
+                            console.error('[AI Alt Text] Error calling openPricingModal:', e);
+                        }
+                    }
+                    
+                    // Method 4: Use jQuery to find and click upgrade button
+                    var $upgradeBtn = $('[data-action="show-upgrade-modal"]');
+                    if ($upgradeBtn.length > 0) {
+                        console.log('[AI Alt Text] Found upgrade button, clicking...');
+                        $upgradeBtn.first().trigger('click');
+                        return;
+                    }
+                    
+                    // Method 5: Try window.alttextaiShowModal
+                    if (typeof window.alttextaiShowModal === 'function') {
+                        console.log('[AI Alt Text] Using alttextaiShowModal...');
+                        try {
+                            window.alttextaiShowModal();
+                            return;
+                        } catch (e) {
+                            console.error('[AI Alt Text] Error calling alttextaiShowModal:', e);
+                        }
+                    }
+                    
+                    // Method 6: Try window.bbaiHandleLimitReached
+                    if (typeof window.bbaiHandleLimitReached === 'function') {
+                        console.log('[AI Alt Text] Using bbaiHandleLimitReached...');
+                        try {
+                            window.bbaiHandleLimitReached(errorData);
+                            return;
+                        } catch (e) {
+                            console.error('[AI Alt Text] Error calling bbaiHandleLimitReached:', e);
+                        }
+                    }
+                    
+                    // Method 7: Try triggering jQuery event
+                    console.log('[AI Alt Text] Triggering jQuery event as last resort...');
+                    $(document).trigger('alttextai:show-upgrade-modal', [errorData.usage || null]);
+                    
+                            // Final fallback: Redirect to settings page or show alert
+                            setTimeout(function() {
+                                var upgradeModalCheck = document.getElementById('bbai-upgrade-modal');
+                                var stillNoModal = !upgradeModalCheck || 
+                                                  (upgradeModalCheck && window.getComputedStyle(upgradeModalCheck).display === 'none');
+                                if (stillNoModal) {
+                                    console.error('[AI Alt Text] Could not show upgrade modal - no method worked');
+                                    // Try redirecting to settings page with upgrade section
+                                    if (confirm('Your monthly quota has been exceeded. Would you like to go to the Settings page to upgrade?')) {
+                                        var settingsUrl = window.location.href.split('?')[0] + '?page=bbai&tab=settings';
+                                        window.location.href = settingsUrl;
+                                    } else {
+                                        alert('Your monthly quota has been exceeded. Please upgrade to continue generating alt text. You can upgrade from the Settings page.');
+                                    }
+                                }
+                            }, 1000);
+                        }
+                        
+                        // Start trying to show the modal
+                        tryShowUpgradeModalFail(0);
+                    }, 100); // Small delay after closing regenerate modal
+                }, 2500); // 2.5 second delay for user to read quota message
+                
             } else if (errorData.code === 'auth_required') {
                 closeRegenerateModal($modal);
                 reenableButton($btn, originalBtnText);
@@ -150,8 +461,7 @@
                     showAuthModal('login');
                 }
             } else {
-                var message = errorData.message || 'Failed to regenerate alt text. Please try again.';
-                showModalError($modal, message);
+                showModalError($modal, errorMessage);
                 reenableButton($btn, originalBtnText);
             }
         });
@@ -207,7 +517,32 @@
      * Show error in modal
      */
     function showModalError($modal, message) {
-        $modal.find('.bbai-regenerate-modal__error').text(message).addClass('active');
+        var $errorDiv = $modal.find('.bbai-regenerate-modal__error');
+        var isQuotaError = message.toLowerCase().includes('quota') || 
+                          message.toLowerCase().includes('limit reached') ||
+                          message.toLowerCase().includes('limit exceeded');
+        
+        // Add error icon and better styling for quota errors
+        var errorHtml = '<div style="display: flex; align-items: center; gap: 12px;">' +
+            '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="flex-shrink: 0;">' +
+            '<circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5" fill="none"/>' +
+            '<path d="M10 6V10M10 14H10.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' +
+            '</svg>' +
+            '<span style="flex: 1;">' + $('<div>').text(message).html() + '</span>' +
+            '</div>';
+        
+        $errorDiv.html(errorHtml).addClass('active');
+        
+        // Add special class for quota errors for enhanced styling
+        if (isQuotaError) {
+            $errorDiv.addClass('bbai-regenerate-modal__error--quota');
+        } else {
+            $errorDiv.removeClass('bbai-regenerate-modal__error--quota');
+        }
+        
+        // Hide loading and result sections
+        $modal.find('.bbai-regenerate-modal__loading').removeClass('active');
+        $modal.find('.bbai-regenerate-modal__result').removeClass('active');
     }
 
     /**
