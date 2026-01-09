@@ -102,47 +102,47 @@ if (!defined('ABSPATH')) {
                         <h1 class="bbai-dashboard-title"><?php esc_html_e('Image Alt Text Library', 'beepbeep-ai-alt-text-generator'); ?></h1>
                         <p class="bbai-dashboard-subtitle"><?php esc_html_e('Browse, search, and regenerate SEO-optimized alt text for all images in your media library. Boost Google Images rankings and improve accessibility instantly.', 'beepbeep-ai-alt-text-generator'); ?></p>
                         
-                        <!-- Optimization Progress Badge -->
-                        <div class="bbai-library-progress-badge" style="margin-top: 24px; display: inline-flex;">
-                            <div class="bbai-library-progress-value"><?php echo esc_html($optimization_percentage); ?>%</div>
-                            <div class="bbai-library-progress-label"><?php esc_html_e('Optimized', 'beepbeep-ai-alt-text-generator'); ?></div>
+                        <!-- Optimization Stats (matching dashboard style) -->
+                        <div class="bbai-library-stats-header">
+                            <span class="bbai-library-stats-value"><?php echo esc_html($optimization_percentage); ?>%</span>
+                            <span class="bbai-library-stats-label"><?php esc_html_e('Optimized', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </div>
                         
-                        <!-- Optimization Notice -->
+                        <!-- Optimization Notice (matching dashboard info notice style) -->
                         <?php if ($optimization_percentage >= 100) : ?>
-                            <div class="bbai-library-success-notice" style="margin-top: 16px;">
+                            <div class="bbai-premium-card bbai-info-notice bbai-library-notice-card">
                                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                                    <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                                    <path d="M6 10l2.5 2.5L14 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <circle cx="10" cy="10" r="9" stroke="#10b981" stroke-width="1.5" fill="none"/>
+                                    <path d="M6 10l2.5 2.5L14 7" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
-                                <span class="bbai-library-success-text">
+                                <span>
                                     <?php esc_html_e('100% of your library is fully optimized!', 'beepbeep-ai-alt-text-generator'); ?>
+                                    <?php if (!$is_pro) : ?>
+                                        <a href="#" class="bbai-usage-upgrade-link" data-action="show-upgrade-modal">
+                                            <?php esc_html_e('Upgrade to Pro', 'beepbeep-ai-alt-text-generator'); ?> →
+                                        </a>
+                                    <?php endif; ?>
                                 </span>
-                                <?php if (!$is_pro) : ?>
-                                    <button type="button" class="bbai-library-success-btn" data-action="show-upgrade-modal">
-                                        <?php esc_html_e('Upgrade to Pro', 'beepbeep-ai-alt-text-generator'); ?>
-                                    </button>
-                                <?php endif; ?>
                             </div>
                         <?php elseif ($optimization_percentage > 0) : ?>
-                            <div class="bbai-library-notice" style="margin-top: 16px;">
+                            <div class="bbai-premium-card bbai-info-notice bbai-library-notice-card">
                                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                                    <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                                    <path d="M10 5v5M10 13h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                    <circle cx="10" cy="10" r="9" stroke="#0ea5e9" stroke-width="1.5" fill="none"/>
+                                    <path d="M10 6V10M10 14H10.01" stroke="#0ea5e9" stroke-width="1.5" stroke-linecap="round"/>
                                 </svg>
-                                <span class="bbai-library-notice-text">
+                                <span>
                                     <?php 
                                     printf(
                                         esc_html__('%1$d%% of your library is optimized', 'beepbeep-ai-alt-text-generator'),
                                         $optimization_percentage
                                     );
                                     ?>
+                                    <?php if (!$is_pro) : ?>
+                                        <a href="#" class="bbai-usage-upgrade-link" data-action="show-upgrade-modal">
+                                            <?php esc_html_e('Upgrade for bulk optimization', 'beepbeep-ai-alt-text-generator'); ?> →
+                                        </a>
+                                    <?php endif; ?>
                                 </span>
-                                <?php if (!$is_pro) : ?>
-                                    <button type="button" class="bbai-library-notice-link" data-action="show-upgrade-modal">
-                                        <?php esc_html_e('Upgrade for bulk optimization', 'beepbeep-ai-alt-text-generator'); ?>
-                                    </button>
-                                <?php endif; ?>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -177,7 +177,7 @@ if (!defined('ABSPATH')) {
                     </div>
                     
                     <!-- Table Card -->
-                    <div class="bbai-library-table-card<?php echo esc_attr($is_agency ? ' bbai-library-table-card--full-width' : ''); ?>">
+                    <div class="bbai-premium-card bbai-library-table-wrapper">
                         <div class="bbai-table-scroll">
                             <table class="bbai-library-table" role="table" aria-label="<?php esc_attr_e('Image alt text library', 'beepbeep-ai-alt-text-generator'); ?>">
                                 <thead>

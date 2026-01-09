@@ -41,7 +41,7 @@ $is_agency = ($plan_slug === 'agency');
 
         <!-- Pro Features Card (LOCKED) -->
         <?php if (!$is_pro) : ?>
-        <div class="bbai-guide-pro-card">
+        <div class="bbai-premium-card bbai-guide-pro-card">
             <div class="bbai-guide-pro-ribbon">
                 <?php esc_html_e('LOCKED PRO FEATURES', 'beepbeep-ai-alt-text-generator'); ?>
             </div>
@@ -91,7 +91,7 @@ $is_agency = ($plan_slug === 'agency');
         <?php endif; ?>
 
         <!-- Getting Started Card -->
-        <div class="bbai-guide-steps-card">
+        <div class="bbai-premium-card bbai-guide-steps-card">
             <h2 class="bbai-guide-steps-title">
                 <?php esc_html_e('Getting Started in 4 Easy Steps', 'beepbeep-ai-alt-text-generator'); ?>
             </h2>
@@ -136,7 +136,7 @@ $is_agency = ($plan_slug === 'agency');
         </div>
 
         <!-- Why Alt Text Matters Section -->
-        <div class="bbai-guide-why-card">
+        <div class="bbai-premium-card bbai-guide-why-card">
             <div class="bbai-guide-why-icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="M9 21h6M12 3a6 6 0 016 6c0 2.22-1.21 4.16-3 5.2V17a1 1 0 01-1 1h-4a1 1 0 01-1-1v-2.8c-1.79-1.04-3-2.98-3-5.2a6 6 0 016-6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -176,7 +176,7 @@ $is_agency = ($plan_slug === 'agency');
         <!-- Two Column Layout -->
         <div class="bbai-guide-grid">
             <!-- Tips Card -->
-            <div class="bbai-guide-card">
+            <div class="bbai-premium-card bbai-guide-card">
                 <h3 class="bbai-guide-card-title">
                     <?php esc_html_e('Tips for Better Alt Text', 'beepbeep-ai-alt-text-generator'); ?>
                 </h3>
@@ -225,7 +225,7 @@ $is_agency = ($plan_slug === 'agency');
             </div>
 
             <!-- Features Card -->
-            <div class="bbai-guide-card">
+            <div class="bbai-premium-card bbai-guide-card">
                 <h3 class="bbai-guide-card-title">
                     <?php esc_html_e('Key Features', 'beepbeep-ai-alt-text-generator'); ?>
                 </h3>
