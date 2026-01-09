@@ -86,7 +86,9 @@
     text-align: center;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: space-between;
+    align-self: stretch !important;
+    height: 100% !important;
 }
 
 .bbai-usage-ring {
@@ -197,6 +199,8 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    align-self: stretch !important;
+    height: 100% !important;
 }
 
 .bbai-upsell-card * {

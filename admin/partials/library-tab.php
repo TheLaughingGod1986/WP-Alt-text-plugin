@@ -98,23 +98,19 @@ if (!defined('ABSPATH')) {
                 ?>
                 <div class="bbai-dashboard-container">
                     <!-- Header Section -->
-                    <div class="bbai-library-header">
-                        <div class="bbai-library-header-content">
-                            <div>
-                                <h1 class="bbai-library-title"><?php esc_html_e('Image Alt Text Library', 'beepbeep-ai-alt-text-generator'); ?></h1>
-                                <p class="bbai-library-subtitle"><?php esc_html_e('Browse, search, and regenerate SEO-optimized alt text for all images in your media library. Boost Google Images rankings and improve accessibility instantly.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                            </div>
-                            
-                            <!-- Optimization Progress Badge -->
-                            <div class="bbai-library-progress-badge">
-                                <div class="bbai-library-progress-value"><?php echo esc_html($optimization_percentage); ?>%</div>
-                                <div class="bbai-library-progress-label"><?php esc_html_e('Optimized', 'beepbeep-ai-alt-text-generator'); ?></div>
-                            </div>
+                    <div class="bbai-dashboard-header-section">
+                        <h1 class="bbai-dashboard-title"><?php esc_html_e('Image Alt Text Library', 'beepbeep-ai-alt-text-generator'); ?></h1>
+                        <p class="bbai-dashboard-subtitle"><?php esc_html_e('Browse, search, and regenerate SEO-optimized alt text for all images in your media library. Boost Google Images rankings and improve accessibility instantly.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                        
+                        <!-- Optimization Progress Badge -->
+                        <div class="bbai-library-progress-badge" style="margin-top: 24px; display: inline-flex;">
+                            <div class="bbai-library-progress-value"><?php echo esc_html($optimization_percentage); ?>%</div>
+                            <div class="bbai-library-progress-label"><?php esc_html_e('Optimized', 'beepbeep-ai-alt-text-generator'); ?></div>
                         </div>
                         
                         <!-- Optimization Notice -->
                         <?php if ($optimization_percentage >= 100) : ?>
-                            <div class="bbai-library-success-notice">
+                            <div class="bbai-library-success-notice" style="margin-top: 16px;">
                                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                                     <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                     <path d="M6 10l2.5 2.5L14 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -129,7 +125,7 @@ if (!defined('ABSPATH')) {
                                 <?php endif; ?>
                             </div>
                         <?php elseif ($optimization_percentage > 0) : ?>
-                            <div class="bbai-library-notice">
+                            <div class="bbai-library-notice" style="margin-top: 16px;">
                                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                                     <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                     <path d="M10 5v5M10 13h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>

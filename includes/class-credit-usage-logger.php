@@ -555,7 +555,7 @@ class Credit_Usage_Logger {
 
 		$limit_params = array_merge($params, [$per_page, $offset]);
 		$items = $wpdb->get_results($wpdb->prepare($query, $limit_params), ARRAY_A);
-		
+
 		// Get user info
 		$wp_user = get_user_by('ID', $user_id);
 		$user_name = $wp_user ? $wp_user->display_name : __('Unknown User', 'beepbeep-ai-alt-text-generator');

@@ -21,7 +21,8 @@ $has_license = $this->api_client->has_active_license();
 if (!$is_authenticated && !$has_license) :
 ?>
                 <!-- Settings require authentication -->
-                <div class="bbai-settings-required">
+                <div class="bbai-dashboard-container">
+                    <div class="bbai-settings-required">
                     <div class="bbai-settings-required-content">
                         <div class="bbai-settings-required-icon">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -48,9 +49,10 @@ if (!$is_authenticated && !$has_license) :
                         </div>
                     </div>
                 </div>
+            </div>
             <?php else : ?>
             <!-- Settings Page -->
-            <div class="bbai-settings-page">
+            <div class="bbai-dashboard-container">
                 <?php
                     // Pull fresh usage from backend to avoid stale cache in Settings
                     if (isset($this->api_client)) {
@@ -88,9 +90,9 @@ if (!$is_authenticated && !$has_license) :
                 ?>
 
                 <!-- Header Section -->
-                <div class="bbai-settings-page-header">
-                    <h1 class="bbai-settings-page-title"><?php esc_html_e('Settings & Account', 'beepbeep-ai-alt-text-generator'); ?></h1>
-                    <p class="bbai-settings-page-subtitle"><?php esc_html_e('Configure automatic alt text generation, manage your monthly quota, and track usage. Optimize settings to maximize Google Images rankings.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                <div class="bbai-dashboard-header-section">
+                    <h1 class="bbai-dashboard-title"><?php esc_html_e('Settings & Account', 'beepbeep-ai-alt-text-generator'); ?></h1>
+                    <p class="bbai-dashboard-subtitle"><?php esc_html_e('Configure automatic alt text generation, manage your monthly quota, and track usage. Optimize settings to maximize Google Images rankings.', 'beepbeep-ai-alt-text-generator'); ?></p>
                 </div>
                 
                 <!-- Site-Wide Settings Banner -->

@@ -8,9 +8,14 @@
    ======================================== */
 
 .bbai-guide-container {
-    max-width: 900px;
+    max-width: 900px !important;
     margin: 0 auto;
     padding: var(--bbai-space-8) var(--bbai-space-4);
+}
+
+/* Ensure guide styles apply even when combined with dashboard-container */
+.bbai-dashboard-container.bbai-guide-container {
+    max-width: 900px !important;
 }
 
 /* Header Section */

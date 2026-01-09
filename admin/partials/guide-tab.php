@@ -32,13 +32,12 @@ $is_pro    = ($plan_slug === 'pro' || $plan_slug === 'agency');
 $is_agency = ($plan_slug === 'agency');
 ?>
 <!-- How to Use Page -->
-<div class="bbai-guide-wrapper">
-    <div class="bbai-guide-container">
-        <!-- Header Section -->
-        <div class="bbai-guide-header">
-            <h1 class="bbai-guide-title"><?php esc_html_e('How to Use BeepBeep AI', 'beepbeep-ai-alt-text-generator'); ?></h1>
-            <p class="bbai-guide-subtitle"><?php esc_html_e('Learn how to generate and manage alt text for your images.', 'beepbeep-ai-alt-text-generator'); ?></p>
-        </div>
+<div class="bbai-dashboard-container bbai-guide-container">
+    <!-- Header Section -->
+    <div class="bbai-dashboard-header-section">
+        <h1 class="bbai-dashboard-title"><?php esc_html_e('How to Use BeepBeep AI', 'beepbeep-ai-alt-text-generator'); ?></h1>
+        <p class="bbai-dashboard-subtitle"><?php esc_html_e('Learn how to generate and manage alt text for your images.', 'beepbeep-ai-alt-text-generator'); ?></p>
+    </div>
 
         <!-- Pro Features Card (LOCKED) -->
         <?php if (!$is_pro) : ?>
@@ -359,5 +358,4 @@ $is_agency = ($plan_slug === 'agency');
             </button>
         </div>
         <?php endif; ?>
-    </div>
-</div><!-- End guide wrapper -->
+</div>

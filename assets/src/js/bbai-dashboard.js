@@ -112,9 +112,9 @@ bbaiRunWithJQuery(function($) {
         $(document).on('click', '[data-action="show-upgrade-modal"]', function(e) {
             e.preventDefault();
             e.stopPropagation();
-
+            
             console.log('[AltText AI] Upgrade CTA clicked via jQuery handler', this);
-
+            
             // Direct fallback - show the modal directly (most reliable method)
             const modal = document.getElementById('bbai-upgrade-modal');
             if (modal) {
@@ -140,7 +140,7 @@ bbaiRunWithJQuery(function($) {
                     window.bbaiModal.warning('Upgrade modal not found. Please refresh the page.');
                 }
             }
-
+            
             return false;
         });
         

@@ -3029,9 +3029,27 @@ class Core {
                         $usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
                     }
                     
+                    $reset_date = isset($usage['resetDate']) ? $usage['resetDate'] : null;
+                    $reset_message = __('Monthly quota exhausted. Upgrade to Pro for 1,000 generations per month, or wait for your quota to reset. You can manage your subscription in Settings.', 'beepbeep-ai-alt-text-generator');
+                    
+                    if ($reset_date) {
+                        try {
+                            $reset_ts = strtotime($reset_date);
+                            if ($reset_ts !== false) {
+                                $formatted_date = date_i18n('F j, Y', $reset_ts);
+                                $reset_message = sprintf(
+                                    __('Monthly quota exhausted. Your quota will reset on %s. Upgrade to Pro for 1,000 generations per month, or manage your subscription in Settings.', 'beepbeep-ai-alt-text-generator'),
+                                    $formatted_date
+                                );
+                            }
+                        } catch (\Exception $e) {
+                            // Keep default message if date parsing fails
+                        }
+                    }
+                    
                     return new \WP_Error(
                         'limit_reached',
-                        __('Monthly quota exhausted. Upgrade to Pro to continue generating alt text.', 'beepbeep-ai-alt-text-generator'),
+                        $reset_message,
                         ['code' => 'quota_exhausted', 'usage' => is_array($usage) ? $usage : null]
                     );
                 }
@@ -4125,7 +4143,27 @@ class Core {
             } elseif ($error_code === 'quota_check_mismatch') {
                 $user_message = __('Credits appear available but the backend reported a limit. Please try again in a moment.', 'beepbeep-ai-alt-text-generator');
             } elseif ($error_code === 'limit_reached' || $error_code === 'quota_exhausted') {
-                $user_message = __('Monthly quota exhausted. Please upgrade to continue generating alt text.', 'beepbeep-ai-alt-text-generator');
+                $reset_date = null;
+                if (is_array($error_data) && isset($error_data['usage']) && is_array($error_data['usage'])) {
+                    $reset_date = $error_data['usage']['resetDate'] ?? null;
+                }
+                
+                $user_message = __('Monthly quota exhausted. Your quota will reset on the first of next month. Upgrade to Pro for 1,000 generations per month, or manage your subscription in Settings.', 'beepbeep-ai-alt-text-generator');
+                
+                if ($reset_date) {
+                    try {
+                        $reset_ts = strtotime($reset_date);
+                        if ($reset_ts !== false) {
+                            $formatted_date = date_i18n('F j, Y', $reset_ts);
+                            $user_message = sprintf(
+                                __('Monthly quota exhausted. Your quota will reset on %s. Upgrade to Pro for 1,000 generations per month, or manage your subscription in Settings.', 'beepbeep-ai-alt-text-generator'),
+                                $formatted_date
+                            );
+                        }
+                    } catch (\Exception $e) {
+                        // Keep default message if date parsing fails
+                    }
+                }
             } elseif ($error_code === 'api_timeout') {
                 $user_message = __('The request timed out. Please try again.', 'beepbeep-ai-alt-text-generator');
             } elseif ($error_code === 'api_unreachable') {

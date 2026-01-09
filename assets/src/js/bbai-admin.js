@@ -21,7 +21,21 @@
     }
 
     function handleLimitReached(errorData) {
-        var message = (errorData && errorData.message) || 'Monthly limit reached. Please contact a site administrator.';
+        var message = (errorData && errorData.message) || 'Monthly quota exhausted. Upgrade to Pro for 1,000 generations per month, or wait for your quota to reset.';
+        
+        // Enhance message with reset date if available
+        if (errorData && errorData.usage && errorData.usage.resetDate) {
+            try {
+                var resetDate = new Date(errorData.usage.resetDate);
+                if (!isNaN(resetDate.getTime())) {
+                    var formattedDate = resetDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                    message = 'Monthly quota exhausted. Your quota will reset on ' + formattedDate + '. Upgrade to Pro for 1,000 generations per month, or manage your subscription in Settings.';
+                }
+            } catch (e) {
+                // Keep default message if date parsing fails
+            }
+        }
+        
         if (!canManageAccount()) {
             showNotification(message, 'warning');
             return;
@@ -48,9 +62,15 @@
             }
         }
 
-        // Show notification
+        // Show notification with subscription management info
+        var notificationMessage = message;
+        var isAuthenticated = window.bbai_ajax && window.bbai_ajax.is_authenticated;
+        if (isAuthenticated) {
+            notificationMessage += ' Go to Settings to manage your subscription.';
+        }
+        
         if (typeof showNotification === 'function') {
-            showNotification(message, 'error');
+            showNotification(notificationMessage, 'error');
         }
     }
 

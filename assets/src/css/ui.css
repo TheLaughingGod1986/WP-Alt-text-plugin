@@ -319,23 +319,32 @@
 .bbai-dashboard-container {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 0 24px;
+    padding: 0 24px 48px;
 }
 
-/* Header Section */
+@media (max-width: 768px) {
+    .bbai-dashboard-container {
+        padding: 0 16px 32px;
+    }
+}
+
+/* Header Section - Unified for all tabs */
 .bbai-dashboard-header-section {
     text-align: center;
     padding: 12px 0 32px;
     margin-bottom: 24px;
+    border-bottom: 0.5px solid rgba(0, 0, 0, 0.06);
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.5), transparent);
 }
 
 .bbai-dashboard-title {
     font-size: 28px;
-    font-weight: 600;
+    font-weight: 700;
     color: #111827;
     margin: 0 0 12px 0;
     line-height: 1.2;
     text-align: center;
+    letter-spacing: -0.02em;
 }
 
 .bbai-dashboard-subtitle {
@@ -360,12 +369,26 @@
     display: flex;
     gap: 24px;
     margin-bottom: 24px;
-    align-items: stretch;
+    align-items: stretch !important;
+}
+
+.bbai-premium-stats-grid > * {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    min-width: 0;
+    align-self: stretch !important;
+    height: 100% !important;
 }
 
 .bbai-premium-stats-grid > .bbai-premium-card {
-    flex: 1;
+    flex: 1 1 0;
     min-width: 0;
+    max-width: 50%;
+    display: flex;
+    flex-direction: column;
+    align-self: stretch !important;
+    height: 100% !important;
 }
 
 .bbai-usage-card--full-width {
@@ -519,8 +542,9 @@
     text-align: center;
     gap: 24px;
     padding: 32px;
-    height: 100%;
     justify-content: space-between;
+    align-self: stretch !important;
+    height: 100% !important;
     min-height: 100%;
     position: relative;
 }
@@ -748,12 +772,12 @@
     background: linear-gradient(180deg, var(--bbai-blue-start) 0%, var(--bbai-blue-end) 100%);
     color: white;
     padding: 32px;
-    height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     border: none;
-    min-height: 100%;
+    align-self: stretch !important;
+    height: 100% !important;
 }
 
 .bbai-upsell-title {
@@ -1684,9 +1708,19 @@
    ============================================ */
 
 .bbai-guide-container {
-    max-width: 900px;
+    max-width: 900px !important;
     margin: 0 auto;
     padding: 0 24px;
+}
+
+/* Ensure guide styles apply even when using dashboard-container */
+.bbai-dashboard-container.bbai-guide-container {
+    max-width: 900px !important;
+}
+
+/* Ensure guide styles apply even when using dashboard-container */
+.bbai-dashboard-container.bbai-guide-container {
+    max-width: 900px;
 }
 
 /* Header Section */

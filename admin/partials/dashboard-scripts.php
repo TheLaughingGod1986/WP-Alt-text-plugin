@@ -39,6 +39,61 @@ if (!defined('ABSPATH')) {
 })();
 </script>
 
+<!-- Equal Height Cards Script -->
+<script>
+(function() {
+    function equalizeCardHeights() {
+        var grid = document.querySelector('.bbai-premium-stats-grid');
+        if (!grid) return;
+        
+        var usageCard = grid.querySelector('.bbai-usage-card');
+        var upsellCard = grid.querySelector('.bbai-upsell-card');
+        
+        if (usageCard && upsellCard) {
+            // Reset heights first
+            usageCard.style.height = 'auto';
+            upsellCard.style.height = 'auto';
+            
+            // Get the tallest card height
+            var usageHeight = usageCard.offsetHeight;
+            var upsellHeight = upsellCard.offsetHeight;
+            var maxHeight = Math.max(usageHeight, upsellHeight);
+            
+            // Set both cards to the same height
+            if (maxHeight > 0) {
+                usageCard.style.height = maxHeight + 'px';
+                upsellCard.style.height = maxHeight + 'px';
+            }
+        }
+    }
+    
+    function initEqualHeights() {
+        equalizeCardHeights();
+        
+        // Re-check after images and fonts load
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(function() {
+                setTimeout(equalizeCardHeights, 100);
+            });
+        }
+        
+        // Re-check after a delay to handle dynamic content
+        setTimeout(equalizeCardHeights, 500);
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initEqualHeights);
+    } else {
+        initEqualHeights();
+    }
+    
+    // Re-check on window resize
+    window.addEventListener('resize', function() {
+        setTimeout(equalizeCardHeights, 100);
+    });
+})();
+</script>
+
 <!-- Dashboard UI Animations -->
 <script>
 (function($) {

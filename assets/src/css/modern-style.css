@@ -4512,7 +4512,7 @@ body.media_page_bbai #wpwrap {
     flex-wrap: nowrap;
     gap: 24px;
     margin-bottom: 24px;
-    align-items: stretch;
+    align-items: stretch !important;
     position: relative;
     z-index: 1;
 }
@@ -4520,15 +4520,19 @@ body.media_page_bbai #wpwrap {
 .bbai-premium-stats-grid > * {
     display: flex;
     flex-direction: column;
+    flex: 1 1 0;
+    min-width: 0;
+    align-self: stretch !important;
 }
 
 .bbai-premium-stats-grid > .bbai-premium-card {
     flex: 1 1 0;
     min-width: 0;
     max-width: 50%;
-    height: 100%;
     display: flex;
     flex-direction: column;
+    align-self: stretch !important;
+    height: 100%;
 }
 
 /* When both cards present, ensure equal widths */
@@ -4538,7 +4542,7 @@ body.media_page_bbai #wpwrap {
 }
 
 .bbai-premium-stats-grid--single {
-    /* When upgrade card is hidden, make usage card full width */
+    /* When upgrade card is hidden, usage card becomes full width via .bbai-premium-stats-grid--single > .bbai-premium-card rule below */
 }
 
 .bbai-premium-stats-grid--single > .bbai-premium-card {
@@ -4558,10 +4562,11 @@ body.media_page_bbai #wpwrap {
     text-align: center;
     gap: 24px;
     padding: 32px;
-    height: 100%;
+    flex: 1 1 auto;
     justify-content: space-between;
     position: relative;
-    flex: 1 1 auto;
+    align-self: stretch !important;
+    height: 100% !important;
 }
 
 .bbai-usage-plan-badge {
@@ -4719,7 +4724,6 @@ body.media_page_bbai #wpwrap {
     background: linear-gradient(180deg, #4f8dfc 0%, #6aa8ff 100%);
     color: white !important;
     padding: 32px;
-    height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -4730,6 +4734,8 @@ body.media_page_bbai #wpwrap {
     z-index: 1;
     overflow: hidden;
     flex: 1 1 auto;
+    align-self: stretch !important;
+    height: 100% !important;
 }
 
 /* Force all text in upgrade card to be white */
@@ -5318,9 +5324,14 @@ body.media_page_bbai #wpwrap {
 
 /* Guide Container Styling */
 .bbai-guide-container {
-    max-width: 1120px;
+    max-width: 900px !important;
     margin: 0 auto;
     padding: 0 24px 48px;
+}
+
+/* Ensure guide styles apply even when combined with dashboard-container */
+.bbai-dashboard-container.bbai-guide-container {
+    max-width: 900px !important;
 }
 
 @media (max-width: 768px) {
