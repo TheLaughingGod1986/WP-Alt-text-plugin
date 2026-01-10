@@ -201,10 +201,5 @@ if (!defined('ABSPATH')) {
         <?php endif; ?>
     </div>
 
-    <!-- Debug Info -->
-    <details class="bbai-mt-5">
-        <summary class="bbai-font-semibold" style="cursor: pointer;"><?php esc_html_e('Debug Info', 'beepbeep-ai-alt-text-generator'); ?></summary>
-        <pre><?php echo esc_html(wp_json_encode($debug_info, JSON_PRETTY_PRINT)); ?></pre>
-    </details>
 
 </div>
