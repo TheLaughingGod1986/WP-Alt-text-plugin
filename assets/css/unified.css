@@ -165,6 +165,7 @@
 }
 
 /* Dark Mode Support */
+/* System preference dark mode */
 @media (prefers-color-scheme: dark) {
     :root {
         /* Inverted Gray Scale */
@@ -302,6 +303,14 @@ body.media_page_bbai #wpbody-content {
     max-width: 1400px;
     margin: 0 auto;
     padding: var(--bbai-space-6);
+}
+
+/* Dashboard Container - unified page wrapper */
+.bbai-dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--bbai-space-6);
+    background: transparent;
 }
 
 /* Page Header */
