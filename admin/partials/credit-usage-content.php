@@ -207,14 +207,4 @@ if (!defined('ABSPATH')) {
         <pre><?php echo esc_html(wp_json_encode($debug_info, JSON_PRETTY_PRINT)); ?></pre>
     </details>
 
-    <!-- Manual Table Creation -->
-    <div class="bbai-maintenance-card">
-        <h2 class="bbai-maintenance-title"><?php esc_html_e('Table Maintenance', 'beepbeep-ai-alt-text-generator'); ?></h2>
-        <p class="bbai-maintenance-desc"><?php esc_html_e('If the credit usage table is missing, you can recreate it here.', 'beepbeep-ai-alt-text-generator'); ?></p>
-        <form method="post">
-            <?php wp_nonce_field('bbai_create_credit_table', 'bbai_create_table_nonce'); ?>
-            <input type="hidden" name="bbai_action" value="create_credit_table">
-            <button type="submit" class="bbai-btn bbai-btn-primary"><?php esc_html_e('Create Credit Usage Table', 'beepbeep-ai-alt-text-generator'); ?></button>
-        </form>
-    </div>
 </div>
