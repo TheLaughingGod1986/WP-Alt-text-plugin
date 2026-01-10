@@ -11,21 +11,27 @@ if (!defined('ABSPATH')) {
     exit;
 }
 ?>
-<div class="bbai-wrap">
-    <h1 class="bbai-credit-page-title">
-        <?php echo esc_html(get_admin_page_title()); ?>
-    </h1>
-
-    <?php if ($view === 'user_detail' && $user_id > 0) : ?>
-        <p class="bbai-mb-6">
-            <a href="<?php echo esc_url(admin_url('admin.php?page=bbai-credit-usage')); ?>" class="bbai-back-btn">
-                <?php esc_html_e('← Back to Summary', 'beepbeep-ai-alt-text-generator'); ?>
-            </a>
+<div class="bbai-dashboard-container">
+    <!-- Header Section -->
+    <div class="bbai-dashboard-header-section">
+        <?php if ($view === 'user_detail' && $user_id > 0) : ?>
+            <div style="margin-bottom: 16px;">
+                <a href="<?php echo esc_url(admin_url('admin.php?page=bbai-credit-usage')); ?>" class="bbai-back-btn">
+                    <?php esc_html_e('← Back to Summary', 'beepbeep-ai-alt-text-generator'); ?>
+                </a>
+            </div>
+        <?php endif; ?>
+        <h1 class="bbai-dashboard-title">
+            <?php echo esc_html(get_admin_page_title()); ?>
+        </h1>
+        <p class="bbai-dashboard-subtitle">
+            <?php esc_html_e('Track your credit usage, view detailed activity by user, and monitor your monthly quota. Use filters to analyze usage patterns over time.', 'beepbeep-ai-alt-text-generator'); ?>
         </p>
-    <?php endif; ?>
+    </div>
 
     <!-- Usage Summary Cards -->
-    <div class="bbai-usage-summary-grid">
+    <div class="bbai-premium-card" style="margin-bottom: 24px;">
+        <div class="bbai-usage-summary-grid">
         <div class="bbai-credit-stat-card">
             <h3 class="bbai-credit-stat-title">
                 <?php esc_html_e('Total Credits Allocated', 'beepbeep-ai-alt-text-generator'); ?>
@@ -77,8 +83,10 @@ if (!defined('ABSPATH')) {
             </p>
         </div>
     </div>
+    </div>
 
     <!-- Filters -->
+    <div class="bbai-premium-card" style="margin-bottom: 24px;">
     <form method="get" class="bbai-filter-form">
         <input type="hidden" name="page" value="bbai-credit-usage" />
         <div>
@@ -113,9 +121,10 @@ if (!defined('ABSPATH')) {
             <button type="submit" class="bbai-btn bbai-btn-primary"><?php esc_html_e('Filter', 'beepbeep-ai-alt-text-generator'); ?></button>
         </div>
     </form>
+    </div>
 
     <?php if ($view === 'user_detail' && $user_details) : ?>
-        <div class="bbai-user-details-card">
+        <div class="bbai-premium-card bbai-user-details-card" style="margin-bottom: 24px;">
             <h2 class="bbai-user-details-title"><?php esc_html_e('User Details', 'beepbeep-ai-alt-text-generator'); ?></h2>
             <p><strong><?php esc_html_e('Name:', 'beepbeep-ai-alt-text-generator'); ?></strong> <?php echo esc_html($user_details['name'] ?? ''); ?></p>
             <p><strong><?php esc_html_e('Email:', 'beepbeep-ai-alt-text-generator'); ?></strong> <?php echo esc_html($user_details['email'] ?? ''); ?></p>
@@ -125,17 +134,21 @@ if (!defined('ABSPATH')) {
     <?php endif; ?>
 
     <!-- Usage Table -->
-    <div class="bbai-table-card">
+    <div class="bbai-premium-card bbai-table-card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <h2 class="bbai-table-title" style="margin: 0;"><?php esc_html_e('Usage by User', 'beepbeep-ai-alt-text-generator'); ?></h2>
         </div>
         
         <?php if (empty($date_from) && empty($date_to)) : ?>
-            <div class="notice notice-info" style="margin-bottom: 16px; padding: 12px;">
-                <p style="margin: 0;">
+            <div class="bbai-premium-card bbai-info-notice" style="margin-bottom: 16px;">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <circle cx="10" cy="10" r="9" stroke="#3b82f6" stroke-width="1.5" fill="none"/>
+                    <path d="M10 6V10M10 14H10.01" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                <span>
                     <strong><?php esc_html_e('Note:', 'beepbeep-ai-alt-text-generator'); ?></strong>
                     <?php esc_html_e('The summary cards above show your current accurate usage from the backend. The table below shows historical WordPress user activity, which may include data from previous periods or different sites. Use the date filters to view recent usage only.', 'beepbeep-ai-alt-text-generator'); ?>
-                </p>
+                </span>
             </div>
         <?php endif; ?>
 
