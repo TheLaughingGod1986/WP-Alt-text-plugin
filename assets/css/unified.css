@@ -58,6 +58,28 @@
     --bbai-info-light: #dbeafe;
     --bbai-info-bg: #eff6ff;
 
+    /* Extended Color Variants for Badges */
+    --bbai-success-900: #065f46;
+    --bbai-success-800: #047857;
+    --bbai-success-100: #d1fae5;
+    --bbai-success-50: #a7f3d0;
+    
+    --bbai-info-900: #1e40af;
+    --bbai-info-100: #dbeafe;
+    --bbai-info-50: #bfdbfe;
+    
+    --bbai-warning-900: #92400e;
+    --bbai-warning-100: #fef3c7;
+    --bbai-warning-50: #fde68a;
+    --bbai-warning-800: #c2410c;
+    --bbai-warning-900-alt: #b91c1c;
+    --bbai-warning-50-alt: #ffedd5;
+    --bbai-warning-100-alt: #fed7aa;
+    
+    --bbai-error-900: #b91c1c;
+    --bbai-error-100: #fee2e2;
+    --bbai-error-50: #fecaca;
+
     /* Neutral Colors */
     --bbai-gray-50: #f9fafb;
     --bbai-gray-100: #f3f4f6;
@@ -111,16 +133,20 @@
     --bbai-leading-relaxed: 1.625;
 
     /* Spacing */
-    --bbai-space-1: 0.25rem;
-    --bbai-space-2: 0.5rem;
-    --bbai-space-3: 0.75rem;
-    --bbai-space-4: 1rem;
-    --bbai-space-5: 1.25rem;
-    --bbai-space-6: 1.5rem;
-    --bbai-space-8: 2rem;
-    --bbai-space-10: 2.5rem;
-    --bbai-space-12: 3rem;
-    --bbai-space-16: 4rem;
+    --bbai-space-0_5: 0.125rem; /* 2px */
+    --bbai-space-1: 0.25rem;    /* 4px */
+    --bbai-space-2: 0.5rem;     /* 8px */
+    --bbai-space-3: 0.75rem;    /* 12px */
+    --bbai-space-4: 1rem;       /* 16px */
+    --bbai-space-5: 1.25rem;    /* 20px */
+    --bbai-space-6: 1.5rem;     /* 24px */
+    --bbai-space-8: 2rem;       /* 32px */
+    --bbai-space-10: 2.5rem;    /* 40px */
+    --bbai-space-12: 3rem;      /* 48px */
+    --bbai-space-16: 4rem;      /* 64px */
+    --bbai-space-18: 4.5rem;    /* 72px */
+    --bbai-space-9: 2.25rem;    /* 36px */
+    --bbai-space-7: 1.75rem;    /* 28px */
 
     /* Border Radius */
     --bbai-radius-sm: 4px;
@@ -266,7 +292,7 @@
 .bbai-wrap,
 .bbai-modern {
     margin: 0;
-    padding: 20px;
+    padding: var(--bbai-space-5);
     background: var(--bbai-bg-secondary);
     font-family: var(--bbai-font);
     line-height: var(--bbai-leading-normal);
@@ -396,9 +422,11 @@ body.media_page_bbai #wpbody-content {
  * @since 5.0.0
  */
 
-/* Base Cards */
+/* Base Cards - Single source of truth for all card styles */
 .bbai-card,
-.bbai-premium-card {
+.bbai-premium-card,
+.bbai-stat-card,
+.bbai-usage-card {
     background: var(--bbai-bg);
     border: 1px solid var(--bbai-border);
     border-radius: var(--bbai-radius-lg);
@@ -408,7 +436,9 @@ body.media_page_bbai #wpbody-content {
 }
 
 .bbai-card:hover,
-.bbai-premium-card:hover {
+.bbai-premium-card:hover,
+.bbai-stat-card:hover,
+.bbai-usage-card:hover {
     box-shadow: var(--bbai-shadow-md);
     transform: var(--bbai-hover-lift-small);
     border-color: var(--bbai-border-dark);
@@ -441,20 +471,9 @@ body.media_page_bbai #wpbody-content {
     border-top: 1px solid var(--bbai-border);
 }
 
-/* Stat Cards */
+/* Stat Cards - extends .bbai-premium-card */
 .bbai-stat-card {
-    background: var(--bbai-bg);
-    border: 1px solid var(--bbai-border);
-    border-radius: var(--bbai-radius-lg);
-    padding: var(--bbai-space-6);
     text-align: center;
-    transition: var(--bbai-transition-shadow), var(--bbai-transition-transform), var(--bbai-transition-colors);
-}
-
-.bbai-stat-card:hover {
-    box-shadow: var(--bbai-shadow-md);
-    transform: var(--bbai-hover-lift-small);
-    border-color: var(--bbai-border-dark);
 }
 
 .bbai-stat-icon {
@@ -484,11 +503,9 @@ body.media_page_bbai #wpbody-content {
     letter-spacing: 0.05em;
 }
 
-/* Usage Card */
+/* Usage Card - extends .bbai-premium-card */
 .bbai-usage-card {
-    background: var(--bbai-bg);
-    border: 1px solid var(--bbai-border);
-    border-radius: var(--bbai-radius-lg);
+    /* Inherit base card styles from .bbai-premium-card */
     padding: var(--bbai-space-8);
     text-align: center;
     display: flex;
@@ -547,38 +564,19 @@ body.media_page_bbai #wpbody-content {
     color: var(--bbai-text-muted);
 }
 
-/* Usage Card Action Links */
+/* Usage Card Action Links - Standardized to use .bbai-btn-primary */
 .bbai-usage-upgrade-link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
+    /* Extends .bbai-btn-primary for consistency */
     margin-top: var(--bbai-space-4);
-    padding: 10px 20px;
-    font-size: var(--bbai-text-sm);
-    font-weight: var(--bbai-font-semibold);
-    color: white;
-    background: var(--bbai-gradient-primary);
-    border-radius: var(--bbai-radius);
-    text-decoration: none;
-    transition: all var(--bbai-transition);
-    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.25);
-}
-
-.bbai-usage-upgrade-link:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
-    color: white;
-    text-decoration: none;
 }
 
 .bbai-usage-billing-link {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: var(--bbai-space-2);
     margin-top: var(--bbai-space-3);
-    padding: 8px 16px;
+    padding: var(--bbai-space-2) var(--bbai-space-4);
     font-size: var(--bbai-text-sm);
     font-weight: var(--bbai-font-medium);
     color: var(--bbai-primary);
@@ -653,24 +651,16 @@ body.media_page_bbai #wpbody-content {
     color: rgba(255, 255, 255, 0.9);
 }
 
+/* Upsell CTA - Standardized button styling */
 .bbai-upsell-cta {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--bbai-space-2);
+    /* Use .bbai-btn-primary as base, override for white on blue background */
     background: rgba(255, 255, 255, 0.95);
     color: var(--bbai-primary) !important;
-    padding: var(--bbai-space-3) var(--bbai-space-6);
-    border-radius: var(--bbai-radius);
-    font-weight: var(--bbai-font-semibold);
-    text-decoration: none;
-    transition: all var(--bbai-transition);
+    border: 1px solid transparent;
 }
 
 .bbai-upsell-cta:hover {
     background: white;
-    transform: translateY(-1px);
-    box-shadow: var(--bbai-shadow-md);
 }
 
 /* ==========================================================================
@@ -777,14 +767,7 @@ body.media_page_bbai #wpbody-content {
     transform: translateY(-2px);
 }
 
-/* Backward Compatibility Aliases */
-/* These ensure existing class names continue to work */
-.bbai-stat-card,
-.bbai-usage-card {
-    background: var(--bbai-bg);
-    border: 1px solid var(--bbai-border);
-    border-radius: var(--bbai-radius-lg);
-}
+/* Backward Compatibility - Stat/usage cards inherit from .bbai-premium-card via shared selector above */
 
 .bbai-upsell-card {
     border: none;
@@ -951,7 +934,7 @@ body.media_page_bbai #wpbody-content {
 
 .bbai-badge-warning {
     background: var(--bbai-warning-light);
-    color: #b45309;
+    color: var(--bbai-warning);
 }
 
 .bbai-badge-error {
@@ -977,8 +960,8 @@ body.media_page_bbai #wpbody-content {
     display: inline-flex;
     align-items: center;
     gap: var(--bbai-space-1);
-    padding: 2px 8px;
-    font-size: 11px;
+    padding: var(--bbai-space-0_5) var(--bbai-space-2);
+    font-size: var(--bbai-text-xs);
     font-weight: var(--bbai-font-medium);
     border-radius: var(--bbai-radius-full);
     white-space: nowrap;
@@ -991,7 +974,7 @@ body.media_page_bbai #wpbody-content {
 
 .bbai-status-badge--missing {
     background: var(--bbai-warning-light);
-    color: #b45309;
+    color: var(--bbai-warning);
 }
 
 .bbai-status-badge--regenerated {
@@ -1006,9 +989,9 @@ body.media_page_bbai #wpbody-content {
 .bbai-seo-badge {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    font-size: 11px;
+    gap: var(--bbai-space-1);
+    padding: var(--bbai-space-0_5) var(--bbai-space-2);
+    font-size: var(--bbai-text-xs);
     font-weight: var(--bbai-font-semibold);
     border-radius: var(--bbai-radius-full);
     white-space: nowrap;
@@ -1016,28 +999,28 @@ body.media_page_bbai #wpbody-content {
 }
 
 .bbai-seo-badge--excellent {
-    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-    color: #065f46;
+    background: linear-gradient(135deg, var(--bbai-success-100) 0%, var(--bbai-success-50) 100%);
+    color: var(--bbai-success-900);
 }
 
 .bbai-seo-badge--good {
-    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-    color: #1e40af;
+    background: linear-gradient(135deg, var(--bbai-info-100) 0%, var(--bbai-info-50) 100%);
+    color: var(--bbai-info-900);
 }
 
 .bbai-seo-badge--fair {
-    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-    color: #92400e;
+    background: linear-gradient(135deg, var(--bbai-warning-100) 0%, var(--bbai-warning-50) 100%);
+    color: var(--bbai-warning-900);
 }
 
 .bbai-seo-badge--poor {
-    background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
-    color: #c2410c;
+    background: linear-gradient(135deg, var(--bbai-warning-50-alt) 0%, var(--bbai-warning-100-alt) 100%);
+    color: var(--bbai-warning-800);
 }
 
 .bbai-seo-badge--needs-work {
-    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-    color: #b91c1c;
+    background: linear-gradient(135deg, var(--bbai-error-100) 0%, var(--bbai-error-50) 100%);
+    color: var(--bbai-error-900);
 }
 
 /* ===========================================
@@ -1048,9 +1031,9 @@ body.media_page_bbai #wpbody-content {
 .bbai-seo-unified-badge {
     display: inline-flex;
     align-items: center;
-    gap: 2px;
-    padding: 3px 10px;
-    font-size: 12px;
+    gap: var(--bbai-space-0_5);
+    padding: var(--bbai-space-1) var(--bbai-space-3);
+    font-size: var(--bbai-text-sm);
     font-weight: var(--bbai-font-bold);
     border-radius: var(--bbai-radius-full);
     white-space: nowrap;
@@ -1896,8 +1879,8 @@ body.bbai-modal-open {
 /* Premium Stats Grid - Two Column Hero Layout */
 .bbai-premium-stats-grid {
     display: flex;
-    gap: 24px;
-    margin-bottom: 24px;
+    gap: var(--bbai-space-6);
+    margin-bottom: var(--bbai-space-6);
     align-items: stretch !important;
 }
 
@@ -1943,8 +1926,8 @@ body.bbai-modal-open {
 .bbai-premium-metrics-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
-    margin-bottom: 24px;
+    gap: var(--bbai-space-6);
+    margin-bottom: var(--bbai-space-6);
 }
 
 .bbai-metric-card {
@@ -2141,7 +2124,7 @@ body.bbai-modal-open {
     align-items: baseline;
     gap: 8px;
     justify-content: center;
-    margin-top: 24px;
+    margin-top: var(--bbai-space-6);
     margin-bottom: 0;
 }
 
@@ -2162,8 +2145,8 @@ body.bbai-modal-open {
 }
 
 .bbai-library-notice-card {
-    margin-top: 24px;
-    padding: 20px 24px !important;
+    margin-top: var(--bbai-space-6);
+    padding: var(--bbai-space-5) var(--bbai-space-6) !important;
 }
 
 .bbai-library-notice-card .bbai-usage-upgrade-link {
@@ -2184,15 +2167,15 @@ body.bbai-modal-open {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    margin-top: 24px;
-    margin-bottom: 24px;
+    gap: var(--bbai-space-4);
+    margin-top: var(--bbai-space-6);
+    margin-bottom: var(--bbai-space-6);
     flex-wrap: wrap;
     padding: 0;
 }
 
 .bbai-library-table-wrapper {
-    margin-top: 24px;
+    margin-top: var(--bbai-space-6);
     padding: 0 !important;
     overflow: hidden;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.04);
@@ -2403,7 +2386,7 @@ body.bbai-modal-open {
 }
 
 .bbai-library-table-wrapper .bbai-library-cell {
-    padding: 20px;
+    padding: var(--bbai-space-5);
     vertical-align: middle;
     border-bottom: 1px solid #f3f4f6;
     position: relative;
@@ -2621,7 +2604,7 @@ body.bbai-modal-open {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
+    gap: var(--bbai-space-4);
     max-width: 400px;
     margin: 0 auto;
 }
@@ -2894,9 +2877,9 @@ body.bbai-modal-open {
 .bbai-guide-pro-features {
     display: flex;
     flex-wrap: wrap;
-    gap: 20px;
-    margin-top: 36px;
-    margin-bottom: 24px;
+    gap: var(--bbai-space-5);
+    margin-top: var(--bbai-space-9);
+    margin-bottom: var(--bbai-space-6);
     justify-content: space-between;
 }
 
@@ -2928,38 +2911,34 @@ body.bbai-modal-open {
 }
 
 .bbai-guide-pro-feature span {
-    font-size: 14px;
-    color: #1f2937;
-    font-weight: 500;
-    line-height: 1.6;
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text);
+    font-weight: var(--bbai-font-medium);
+    line-height: var(--bbai-leading-relaxed);
     letter-spacing: -0.01em;
 }
 
 .bbai-guide-pro-cta {
     text-align: right;
-    margin-top: 24px;
-    padding-top: 20px;
-    border-top: 1px solid #f3f4f6;
+    margin-top: var(--bbai-space-6);
+    padding-top: var(--bbai-space-5);
+    border-top: 1px solid var(--bbai-border);
 }
 
+/* Guide Pro Link - Uses secondary button style for subtle CTA */
 .bbai-guide-pro-link {
-    font-size: 14px;
-    font-weight: 600;
-    color: #6366f1;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s ease;
-    padding: 8px 16px;
-    border-radius: 8px;
-    background: rgba(99, 102, 241, 0.05);
+    /* Extends .bbai-btn-secondary with custom styling */
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-primary);
+    background: var(--bbai-primary-light);
+    padding: var(--bbai-space-2) var(--bbai-space-4);
+    border-radius: var(--bbai-radius-md);
 }
 
 .bbai-guide-pro-link:hover {
-    color: #4f46e5;
-    background: rgba(99, 102, 241, 0.1);
-    text-decoration: none;
+    color: var(--bbai-primary-dark);
+    background: var(--bbai-primary-light);
     transform: translateX(2px);
 }
 
@@ -3010,12 +2989,12 @@ body.bbai-modal-open {
 .bbai-guide-steps-list {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: var(--bbai-space-6);
 }
 
 .bbai-guide-step {
     display: flex;
-    gap: 20px;
+    gap: var(--bbai-space-5);
     align-items: flex-start;
     padding: 16px;
     border-radius: 12px;
@@ -3211,8 +3190,8 @@ body.bbai-modal-open {
 .bbai-guide-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 24px;
-    margin-bottom: 24px;
+    gap: var(--bbai-space-6);
+    margin-bottom: var(--bbai-space-6);
 }
 
 /* Ensure cards in grid have equal height */
@@ -3225,7 +3204,7 @@ body.bbai-modal-open {
 @media (max-width: 768px) {
     .bbai-guide-grid {
         grid-template-columns: 1fr;
-        gap: 24px;
+        gap: var(--bbai-space-6);
     }
 }
 
@@ -3444,29 +3423,25 @@ body.bbai-modal-open {
 }
 
 .bbai-guide-cta-text {
-    font-size: 15px;
+    font-size: var(--bbai-text-base);
     color: rgba(255, 255, 255, 0.9);
-    margin: 0 0 28px 0;
-    line-height: 1.6;
+    margin: 0 0 var(--bbai-space-7) 0;
+    line-height: var(--bbai-leading-relaxed);
     position: relative;
     z-index: 1;
 }
 
+/* Guide CTA Button - Enhanced primary button variant */
 .bbai-guide-cta-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 14px 32px;
+    /* Extends .bbai-btn-primary with larger size and enhanced styling */
+    gap: var(--bbai-space-2);
+    padding: var(--bbai-space-4) var(--bbai-space-8);
     background: white;
     color: var(--bbai-primary);
-    font-size: 15px;
-    font-weight: 700;
-    border: none;
+    font-size: var(--bbai-text-base);
+    font-weight: var(--bbai-font-bold);
     border-radius: var(--bbai-radius-lg);
-    cursor: pointer;
-    transition: var(--bbai-transition-slow), var(--bbai-transition-transform), var(--bbai-transition-shadow), var(--bbai-transition-colors);
     box-shadow: var(--bbai-shadow-md);
-    text-decoration: none;
     position: relative;
     z-index: 1;
     letter-spacing: -0.01em;
@@ -3477,36 +3452,30 @@ body.bbai-modal-open {
     box-shadow: var(--bbai-shadow-xl);
     color: var(--bbai-primary-dark);
     background: var(--bbai-gray-50);
-    text-decoration: none;
 }
 
 .bbai-guide-cta-btn:active {
     transform: var(--bbai-hover-lift-small) scale(1);
 }
 
-.bbai-guide-cta-btn:focus-visible {
-    outline: 2px solid var(--bbai-primary);
-    outline-offset: 2px;
-}
-
 .bbai-guide-cta-badge-new {
     display: inline-block;
-    background: #10b981;
+    background: var(--bbai-success);
     color: white;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 12px;
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-bold);
+    padding: var(--bbai-space-0_5) var(--bbai-space-2);
+    border-radius: var(--bbai-radius-lg);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-left: 8px;
+    margin-left: var(--bbai-space-2);
 }
 
 /* Responsive */
 @media (max-width: 768px) {
     .bbai-guide-pro-features {
         flex-direction: column;
-        gap: 16px;
+        gap: var(--bbai-space-4);
     }
     
     .bbai-guide-pro-feature {
@@ -3525,7 +3494,7 @@ body.bbai-modal-open {
     
     .bbai-guide-steps-title {
         font-size: 18px;
-        margin-bottom: 24px;
+        margin-bottom: var(--bbai-space-6);
     }
     
     .bbai-guide-why-icon {
@@ -5059,7 +5028,7 @@ body.bbai-modal-open {
 
 /* Unauthenticated Container */
 .bbai-unauth-container {
-    padding: 40px;
+    padding: var(--bbai-space-10);
     text-align: center;
 }
 

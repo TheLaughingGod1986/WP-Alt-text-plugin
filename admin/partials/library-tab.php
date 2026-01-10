@@ -118,7 +118,7 @@ if (!defined('ABSPATH')) {
                                 <span>
                                     <?php esc_html_e('100% of your library is fully optimized!', 'beepbeep-ai-alt-text-generator'); ?>
                                     <?php if (!$is_pro) : ?>
-                                        <a href="#" class="bbai-usage-upgrade-link" data-action="show-upgrade-modal">
+                                        <a href="#" class="bbai-btn bbai-btn-primary bbai-usage-upgrade-link" data-action="show-upgrade-modal">
                                             <?php esc_html_e('Upgrade to Pro', 'beepbeep-ai-alt-text-generator'); ?> →
                                         </a>
                                     <?php endif; ?>

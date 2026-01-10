@@ -266,7 +266,7 @@ use BeepBeepAI\AltTextGenerator\Usage_Tracker;
                                     $is_pro = ($plan_slug === 'pro' || $plan_slug === 'agency');
                                     ?>
                                     <?php if (!$is_pro) : ?>
-                                    <a href="#" class="bbai-usage-upgrade-link" data-action="show-upgrade-modal">
+                                    <a href="#" class="bbai-btn bbai-btn-primary bbai-usage-upgrade-link" data-action="show-upgrade-modal">
                                             <?php esc_html_e('Upgrade for 1,000 generations monthly', 'beepbeep-ai-alt-text-generator'); ?> →
                                     </a>
                                         <a href="#" class="bbai-usage-billing-link" data-action="open-billing-portal">

@@ -83,7 +83,7 @@ $is_agency = ($plan_slug === 'agency');
                 </div>
             </div>
             <div class="bbai-guide-pro-cta">
-                <a href="#" class="bbai-guide-pro-link" data-action="show-upgrade-modal">
+                <a href="#" class="bbai-btn bbai-btn-secondary bbai-guide-pro-link" data-action="show-upgrade-modal">
                     <?php esc_html_e('Upgrade to Pro', 'beepbeep-ai-alt-text-generator'); ?> →
                 </a>
             </div>
@@ -349,7 +349,7 @@ $is_agency = ($plan_slug === 'agency');
             <p class="bbai-guide-cta-text">
                 <?php esc_html_e('Save hours each month with automated alt text generation. Upgrade for 1,000 images/month and priority processing.', 'beepbeep-ai-alt-text-generator'); ?>
             </p>
-            <button type="button" class="bbai-guide-cta-btn" data-action="show-upgrade-modal">
+            <button type="button" class="bbai-btn bbai-btn-primary bbai-guide-cta-btn" data-action="show-upgrade-modal">
                 <span><?php esc_html_e('View Plans & Pricing', 'beepbeep-ai-alt-text-generator'); ?></span>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
