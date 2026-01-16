@@ -1,35 +1,39 @@
 /**
- * Modal Components
- * Modal backdrop, container, and elements
+ * Modals - Premium SaaS Design
+ * Refined animations, accessible focus management
  *
  * @package BeepBeep_AI
- * @since 5.0.0
+ * @since 8.0.0
  */
 
-/* Modal Backdrop */
+/* ============================================
+   MODAL BACKDROP
+   ============================================ */
+
 .bbai-modal-backdrop {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     z-index: var(--bbai-z-modal-backdrop);
-    display: none;
+    display: flex;
     align-items: center;
     justify-content: center;
     padding: var(--bbai-space-4);
     opacity: 0;
     visibility: hidden;
-    transition: opacity var(--bbai-transition), visibility var(--bbai-transition);
+    transition: opacity var(--bbai-transition-base) var(--bbai-ease-out),
+                visibility var(--bbai-transition-base) var(--bbai-ease-out);
 }
 
 .bbai-modal-backdrop.active,
 .bbai-modal-backdrop.is-visible {
-    display: flex;
     opacity: 1;
     visibility: visible;
 }
 
-/* Upgrade modal specific - allow JS inline styles to override */
+/* Force display for inline styles */
 #bbai-upgrade-modal[style*="display: flex"],
 #bbai-upgrade-modal[style*="display:flex"] {
     display: flex !important;
@@ -37,37 +41,48 @@
     visibility: visible !important;
 }
 
-/* Body state when modal is open */
 body.bbai-modal-open {
     overflow: hidden;
 }
 
-/* Modal Container */
+/* ============================================
+   MODAL CONTAINER
+   ============================================ */
+
 .bbai-modal {
     background: var(--bbai-bg);
     border-radius: var(--bbai-radius-xl);
-    box-shadow: var(--bbai-shadow-xl);
+    box-shadow: var(--bbai-shadow-modal);
     width: 100%;
-    max-width: 480px;
+    max-width: var(--bbai-modal-max-width);
     max-height: 90vh;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     transform: scale(0.95) translateY(10px);
-    transition: transform var(--bbai-transition);
+    opacity: 0;
+    transition: transform var(--bbai-transition-base) var(--bbai-ease-spring),
+                opacity var(--bbai-transition-base) var(--bbai-ease-out);
 }
 
-.bbai-modal-backdrop.active .bbai-modal {
+.bbai-modal-backdrop.active .bbai-modal,
+.bbai-modal-backdrop.is-visible .bbai-modal {
     transform: scale(1) translateY(0);
+    opacity: 1;
 }
 
-/* Modal Header */
+/* ============================================
+   MODAL HEADER
+   ============================================ */
+
 .bbai-modal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--bbai-space-4) var(--bbai-space-6);
+    gap: var(--bbai-space-4);
+    padding: var(--bbai-space-5) var(--bbai-space-6);
     border-bottom: 1px solid var(--bbai-border);
+    flex-shrink: 0;
 }
 
 .bbai-modal-title {
@@ -75,21 +90,26 @@ body.bbai-modal-open {
     font-weight: var(--bbai-font-semibold);
     color: var(--bbai-text);
     margin: 0;
+    line-height: var(--bbai-leading-tight);
 }
 
-/* Modal Close Button */
+/* ============================================
+   MODAL CLOSE BUTTON
+   ============================================ */
+
 .bbai-modal-close {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: none;
+    background: transparent;
     border: none;
     border-radius: var(--bbai-radius);
     color: var(--bbai-text-muted);
     cursor: pointer;
-    transition: all var(--bbai-transition);
+    transition: all var(--bbai-transition-fast) var(--bbai-ease-out);
+    flex-shrink: 0;
 }
 
 .bbai-modal-close:hover {
@@ -97,14 +117,30 @@ body.bbai-modal-open {
     color: var(--bbai-text);
 }
 
-/* Modal Body */
+.bbai-modal-close:focus-visible {
+    outline: 2px solid var(--bbai-primary);
+    outline-offset: 2px;
+}
+
+.bbai-modal-close svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* ============================================
+   MODAL BODY
+   ============================================ */
+
 .bbai-modal-body {
     padding: var(--bbai-space-6);
     overflow-y: auto;
     flex: 1;
 }
 
-/* Modal Footer */
+/* ============================================
+   MODAL FOOTER
+   ============================================ */
+
 .bbai-modal-footer {
     display: flex;
     align-items: center;
@@ -113,9 +149,13 @@ body.bbai-modal-open {
     padding: var(--bbai-space-4) var(--bbai-space-6);
     border-top: 1px solid var(--bbai-border);
     background: var(--bbai-bg-secondary);
+    flex-shrink: 0;
 }
 
-/* Regenerate Modal Specific */
+/* ============================================
+   REGENERATE MODAL
+   ============================================ */
+
 .bbai-regenerate-preview {
     display: flex;
     align-items: center;
@@ -123,7 +163,7 @@ body.bbai-modal-open {
     padding: var(--bbai-space-4);
     background: var(--bbai-bg-secondary);
     border-radius: var(--bbai-radius-lg);
-    margin-bottom: var(--bbai-space-4);
+    margin-bottom: var(--bbai-space-5);
 }
 
 .bbai-regenerate-thumb {
@@ -144,33 +184,72 @@ body.bbai-modal-open {
     font-weight: var(--bbai-font-medium);
     color: var(--bbai-text);
     margin-bottom: var(--bbai-space-1);
+    word-break: break-word;
 }
 
 .bbai-regenerate-result {
     background: var(--bbai-bg-secondary);
     border: 1px solid var(--bbai-border);
-    border-radius: var(--bbai-radius);
+    border-radius: var(--bbai-radius-lg);
     padding: var(--bbai-space-4);
     font-size: var(--bbai-text-sm);
     color: var(--bbai-text);
     min-height: 80px;
+    line-height: 1.6;
 }
 
-/* Tooltip */
+/* ============================================
+   TOOLTIP
+   ============================================ */
+
 .bbai-tooltip {
     position: absolute;
-    background: var(--bbai-gray-800);
+    background: var(--bbai-gray-900);
     color: white;
     padding: var(--bbai-space-2) var(--bbai-space-3);
     font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-medium);
     border-radius: var(--bbai-radius);
     z-index: var(--bbai-z-tooltip);
     max-width: 250px;
     pointer-events: none;
     opacity: 0;
-    transition: opacity var(--bbai-transition-fast);
+    transition: opacity var(--bbai-transition-fast) var(--bbai-ease-out);
+    box-shadow: var(--bbai-shadow-lg);
+    line-height: 1.4;
 }
 
 .bbai-tooltip.visible {
     opacity: 1;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 640px) {
+    .bbai-modal-backdrop {
+        padding: var(--bbai-space-3);
+        align-items: flex-end;
+    }
+
+    .bbai-modal {
+        max-height: 85vh;
+        border-radius: var(--bbai-radius-xl) var(--bbai-radius-xl) 0 0;
+    }
+
+    .bbai-modal-header,
+    .bbai-modal-body,
+    .bbai-modal-footer {
+        padding-left: var(--bbai-space-4);
+        padding-right: var(--bbai-space-4);
+    }
+
+    .bbai-modal-footer {
+        flex-direction: column;
+    }
+
+    .bbai-modal-footer .bbai-btn {
+        width: 100%;
+    }
 }

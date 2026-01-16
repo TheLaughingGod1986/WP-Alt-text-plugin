@@ -36,8 +36,18 @@ bbaiRunWithJQuery(function($) {
             
             modal.removeAttribute('style');
             modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important; visibility: visible !important; opacity: 1 !important;';
-            modal.setAttribute('aria-hidden', 'false');
+            
+            // Remove aria-hidden entirely when modal is visible (don't set to false)
+            modal.removeAttribute('aria-hidden');
             document.body.style.overflow = 'hidden';
+            
+            // Focus the close button or first focusable element to avoid accessibility warnings
+            setTimeout(function() {
+                var closeBtn = modal.querySelector('.bbai-modal-close, [data-action="close-modal"], button');
+                if (closeBtn && typeof closeBtn.focus === 'function') {
+                    closeBtn.focus();
+                }
+            }, 10);
             return true;
         }
         return false;

@@ -1,0 +1,165 @@
+<?php
+/**
+ * Credit Usage Admin Page for BeepBeep AI
+ * Displays per-user credit usage breakdown and detailed statistics
+ */
+
+namespace BeepBeepAI\AltTextGenerator;
+
+if (!defined('ABSPATH')) {
+	exit;
+}
+
+class Credit_Usage_Page {
+
+	/**
+	 * Register admin menu page (deprecated - now integrated as a tab).
+	 * Kept for backward compatibility.
+	 */
+	public static function register_admin_page() {
+		// This is now handled as a tab in the main plugin page
+		// Keeping method for backward compatibility but not registering menu
+		// add_submenu_page(
+		// 	'upload.php', // Parent: Media menu
+		// 	__('Credit Usage', 'beepbeep-ai-alt-text-generator'),
+		// 	__('Credit Usage', 'beepbeep-ai-alt-text-generator'),
+		// 	'manage_options',
+		// 	'bbai-credit-usage',
+		// 	[__CLASS__, 'render_page']
+		// );
+	}
+
+	/**
+	 * Render the credit usage content (for use in tabs).
+	 */
+	public static function render_page_content() {
+	if (!current_user_can('manage_options')) {
+		echo '<div class="notice notice-error"><p>' . esc_html__('You do not have permission to access this page.', 'beepbeep-ai-alt-text-generator') . '</p></div>';
+		return;
+	}
+
+	// Handle table creation request
+	if (isset($_POST['bbai_action']) && $_POST['bbai_action'] === 'create_credit_table') {
+		check_admin_referer('bbai_create_credit_table', 'bbai_create_table_nonce');
+		Credit_Usage_Logger::create_table();
+		echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Credit usage table created successfully!', 'beepbeep-ai-alt-text-generator') . '</p></div>';
+	}
+
+	// Get filter parameters
+	$date_from = isset($_GET['date_from']) ? sanitize_text_field(wp_unslash($_GET['date_from'])) : '';
+	$date_to = isset($_GET['date_to']) ? sanitize_text_field(wp_unslash($_GET['date_to'])) : '';
+	$user_id = isset($_GET['user_id']) ? absint($_GET['user_id']) : 0;
+	$source = isset($_GET['source']) ? sanitize_key($_GET['source']) : '';
+	$page = isset($_GET['paged']) ? max(1, absint($_GET['paged'])) : 1;
+	$view = isset($_GET['view']) ? sanitize_key($_GET['view']) : 'summary'; // 'summary' or 'user_detail'
+
+	// Build query args
+	$query_args = [
+		'date_from' => $date_from,
+		'date_to'   => $date_to,
+		'source'    => $source,
+		'user_id'   => $user_id > 0 ? $user_id : null,
+		'per_page'  => 50,
+		'page'      => $page,
+	];
+
+	// Get site-wide usage summary
+	$site_usage = Credit_Usage_Logger::get_site_usage($query_args);
+
+	// Get current usage stats - use Token Quota Service for accurate site-wide quota
+	require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-token-quota-service.php';
+	$quota = \BeepBeepAI\AltTextGenerator\Token_Quota_Service::get_site_quota();
+	if (is_wp_error($quota)) {
+		// Fallback to usage tracker
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+		$current_usage = Usage_Tracker::get_stats_display();
+	} else {
+		$used = max(0, intval($quota['used'] ?? 0));
+		$limit = max(1, intval($quota['limit'] ?? 50));
+		// Always calculate remaining from limit - used for accuracy
+		$remaining = max(0, $limit - $used);
+		$current_usage = [
+			'used' => $used,
+			'limit' => $limit,
+			'remaining' => $remaining,
+			'percentage' => $limit > 0 ? round(($used / $limit) * 100) : 0,
+		];
+	}
+
+	// Ensure credit usage table exists - create if missing
+	if (!Credit_Usage_Logger::table_exists()) {
+		Credit_Usage_Logger::create_table();
+	}
+	
+	// Get usage by user
+	$usage_by_user = Credit_Usage_Logger::get_usage_by_user($query_args);
+	
+	// Diagnostic: Check if table exists and has any data
+	$table_exists = Credit_Usage_Logger::table_exists();
+	$debug_info = [];
+	
+	if ($table_exists) {
+		global $wpdb;
+		$table_name = Credit_Usage_Logger::table();
+		$table_name_escaped = esc_sql($table_name);
+		
+		// Get total row count
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
+		$total_rows = $wpdb->get_var("SELECT COUNT(*) FROM `{$table_name_escaped}`");
+		$debug_info['total_rows'] = absint($total_rows);
+		
+		// Get distinct user count
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
+		$distinct_users = $wpdb->get_var("SELECT COUNT(DISTINCT user_id) FROM `{$table_name_escaped}`");
+		$debug_info['distinct_users'] = absint($distinct_users);
+		
+		// Get sample of actual data (for debugging) - raw query without filters
+		if ($total_rows > 0) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
+			$sample_data = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT user_id, attachment_id, credits_used, source, generated_at FROM `{$table_name_escaped}` ORDER BY generated_at DESC LIMIT %d",
+					10
+				),
+				ARRAY_A
+			);
+			$debug_info['sample_data'] = $sample_data;
+			
+			// Get user breakdown summary
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
+			$user_breakdown = $wpdb->get_results(
+				"SELECT user_id, COUNT(*) as count, SUM(credits_used) as total_credits FROM `{$table_name_escaped}` GROUP BY user_id ORDER BY total_credits DESC",
+				ARRAY_A
+			);
+			$debug_info['user_breakdown'] = $user_breakdown;
+		} else {
+			$debug_info['sample_data'] = [];
+			$debug_info['user_breakdown'] = [];
+		}
+	} else {
+		$debug_info['table_exists'] = false;
+	}
+	
+	// Additional check: verify query returned results
+	$debug_info['query_returned_users'] = count($usage_by_user['users'] ?? []);
+	$debug_info['query_total'] = $usage_by_user['total'] ?? 0;
+
+	// Get all users for filter dropdown
+	$all_users = get_users(['fields' => ['ID', 'display_name', 'user_email']]);
+
+	// Get user details if viewing specific user
+	$user_details = null;
+	if ($view === 'user_detail' && $user_id > 0) {
+		$user_details = Credit_Usage_Logger::get_user_details($user_id, $query_args);
+	}
+
+	$partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/credit-usage-content.php';
+	if (file_exists($partial)) {
+		include $partial;
+	} else {
+		esc_html_e('Credit usage content unavailable.', 'beepbeep-ai-alt-text-generator');
+	}
+	}
+
+}
+

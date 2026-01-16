@@ -1,76 +1,54 @@
 /**
  * Auth Modal
- * Authentication modal styles
- *
- * @package BeepBeep_AI
- * @since 5.0.0
  */
+.alttext-auth-modal { position: fixed; inset: 0; z-index: 999999; font-family: var(--bbai-font); }
+.alttext-auth-modal__overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.32); display: flex; align-items: center; justify-content: center; padding: 20px; animation: auth-fade-in 0.2s ease-out; }
+@keyframes auth-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.alttext-auth-modal__content { background: #fff; border-radius: var(--bbai-radius-lg); box-shadow: var(--bbai-shadow-lg); max-width: 560px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative; animation: auth-scale-in 0.2s ease-out; }
+@keyframes auth-scale-in { from { opacity: 0; transform: scale(0.95) translateY(-10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.alttext-auth-modal__close { position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 28px; line-height: 1; color: var(--bbai-gray-400); cursor: pointer; padding: 4px 8px; border-radius: var(--bbai-radius); transition: all var(--bbai-transition-fast); z-index: 10; }
+.alttext-auth-modal__close:hover { background: var(--bbai-gray-100); color: var(--bbai-gray-500); }
+.alttext-auth-modal__header { text-align: center; padding: 40px 48px 24px; }
+.alttext-auth-modal__title { font-size: var(--bbai-text-2xl); font-weight: var(--bbai-font-bold); color: var(--bbai-text); margin: 0 0 8px; line-height: 1.2; }
+.alttext-auth-modal__subtitle { font-size: var(--bbai-text-sm); color: var(--bbai-text-muted); margin: 0; line-height: 1.5; }
+.alttext-auth-modal__body { padding: 0 48px 32px; }
 
-.bbai-auth-modal {
-    position: fixed;
-    inset: 0;
-    z-index: 999999;
-}
+/* Form */
+.alttext-form-group { margin-bottom: 20px; }
+.alttext-form-group label { display: block; font-weight: var(--bbai-font-semibold); font-size: var(--bbai-text-sm); color: var(--bbai-gray-700); margin-bottom: 8px; }
+.alttext-form-group__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.alttext-form-group input { width: 100%; padding: 12px 14px; border: 1px solid var(--bbai-border); border-radius: var(--bbai-radius-md); font-size: 15px; color: var(--bbai-text); transition: all var(--bbai-transition-fast); }
+.alttext-form-group input::placeholder { color: var(--bbai-gray-400); }
+.alttext-form-group input:focus { outline: none; border-color: var(--bbai-primary); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); }
+.alttext-form-group input[readonly] { background-color: var(--bbai-gray-50); cursor: not-allowed; }
+.alttext-form-group small { display: block; color: var(--bbai-text-muted); font-size: 13px; margin-top: 6px; }
+.alttext-forgot-password-link { color: var(--bbai-primary); font-size: 13px; text-decoration: none; font-weight: var(--bbai-font-medium); }
+.alttext-forgot-password-link:hover { opacity: 0.7; }
 
-.bbai-auth-modal__overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--bbai-space-4);
-    animation: bbai-fade-in 0.2s ease-out;
-}
+/* Button */
+.alttext-btn { display: inline-flex; align-items: center; justify-content: center; padding: 14px 24px; border: none; border-radius: var(--bbai-radius-md); font-size: 16px; font-weight: var(--bbai-font-semibold); cursor: pointer; transition: all var(--bbai-transition-fast); width: 100%; margin-bottom: 16px; }
+.alttext-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.alttext-btn--primary { background: var(--bbai-primary); color: white; }
+.alttext-btn--primary:hover:not(:disabled) { background: var(--bbai-primary-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+.alttext-btn__spinner { margin-left: 8px; }
 
-.bbai-auth-modal__content {
-    background: var(--bbai-bg);
-    border-radius: var(--bbai-radius-lg);
-    box-shadow: var(--bbai-shadow-xl);
-    max-width: 480px;
-    width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
-    animation: bbai-slide-up 0.2s ease-out;
-}
+/* Auth Switch */
+.alttext-auth-switch { text-align: center; color: var(--bbai-text-muted); font-size: var(--bbai-text-sm); margin: 0; }
+.alttext-auth-switch a { color: var(--bbai-primary); text-decoration: none; font-weight: var(--bbai-font-semibold); }
+.alttext-auth-switch a:hover { opacity: 0.7; }
 
-.bbai-auth-modal__header {
-    text-align: center;
-    padding: var(--bbai-space-10) var(--bbai-space-8) var(--bbai-space-6);
-}
+/* Alert */
+.alttext-alert { padding: 12px 16px; border-radius: var(--bbai-radius-md); margin-bottom: 20px; font-size: var(--bbai-text-sm); }
+.alttext-alert--error { background: var(--bbai-error-light); color: #991b1b; border-left: 4px solid var(--bbai-error); }
+.alttext-alert--success { background: var(--bbai-success-light); color: #065f46; border-left: 4px solid var(--bbai-success); }
 
-.bbai-auth-modal__title {
-    font-size: var(--bbai-text-2xl);
-    font-weight: var(--bbai-font-bold);
-    color: var(--bbai-text);
-    margin: 0 0 var(--bbai-space-2) 0;
-}
+/* Footer */
+.alttext-auth-modal__footer { padding: 20px 48px 32px; text-align: center; border-top: 1px solid var(--bbai-border); }
+.alttext-auth-modal__upsell { font-size: 13px; color: var(--bbai-text-muted); margin: 0; line-height: 1.5; }
 
-.bbai-auth-modal__subtitle {
-    font-size: var(--bbai-text-sm);
-    color: var(--bbai-text-muted);
-    margin: 0;
-}
-
-.bbai-auth-modal__body {
-    padding: 0 var(--bbai-space-8) var(--bbai-space-8);
-}
-
-.bbai-auth-modal__close {
-    position: absolute;
-    top: var(--bbai-space-4);
-    right: var(--bbai-space-4);
-    background: none;
-    border: none;
-    font-size: var(--bbai-text-2xl);
-    color: var(--bbai-text-muted);
-    cursor: pointer;
-    padding: var(--bbai-space-2);
-    border-radius: var(--bbai-radius);
-    transition: all var(--bbai-transition);
-}
-
-.bbai-auth-modal__close:hover {
-    background: var(--bbai-bg-secondary);
-    color: var(--bbai-text);
+@media (max-width: 640px) {
+    .alttext-auth-modal__content { max-width: 100%; margin: 0 10px; }
+    .alttext-auth-modal__header { padding: 32px 24px 20px; }
+    .alttext-auth-modal__body { padding: 0 24px 24px; }
+    .alttext-auth-modal__footer { padding: 16px 24px 24px; }
 }

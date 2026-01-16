@@ -245,6 +245,19 @@
                     // Update modal to show success and keep it open
                     updateBulkProgressTitle('Successfully Queued!');
                     logBulkProgressSuccess('Successfully queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' for processing');
+                    
+                    // Trigger celebration for bulk operation
+                    if (window.bbaiCelebrations && typeof window.bbaiCelebrations.showConfetti === 'function') {
+                        window.bbaiCelebrations.showConfetti();
+                    }
+                    if (window.bbaiPushToast && typeof window.bbaiPushToast === 'function') {
+                        window.bbaiPushToast('success', 'Successfully queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' for processing!', { duration: 5000 });
+                    }
+                    
+                    // Dispatch custom event for celebrations
+                    var event = new CustomEvent('bbai:generation:success', { detail: { count: queued, type: 'bulk' } });
+                    document.dispatchEvent(event);
+                    
                     startInlineGeneration(processedIds || ids, 'bulk');
 
                     // Don't hide modal - let user close it manually or monitor progress
@@ -479,6 +492,19 @@
                     // Update modal to show success and keep it open
                     updateBulkProgressTitle('Successfully Queued!');
                     logBulkProgressSuccess('Successfully queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' for regeneration');
+                    
+                    // Trigger celebration for bulk regeneration
+                    if (window.bbaiCelebrations && typeof window.bbaiCelebrations.showConfetti === 'function') {
+                        window.bbaiCelebrations.showConfetti();
+                    }
+                    if (window.bbaiPushToast && typeof window.bbaiPushToast === 'function') {
+                        window.bbaiPushToast('success', 'Successfully queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' for regeneration!', { duration: 5000 });
+                    }
+                    
+                    // Dispatch custom event for celebrations
+                    var event = new CustomEvent('bbai:generation:success', { detail: { count: queued, type: 'bulk-regenerate' } });
+                    document.dispatchEvent(event);
+                    
                     startInlineGeneration(processedIds || ids, 'bulk-regenerate');
 
                     // Don't hide modal - let user close it manually or monitor progress
@@ -874,7 +900,15 @@
      */
     function closeRegenerateModal($modal) {
         $modal.removeClass('active');
+        // Restore body scroll - use both jQuery and vanilla JS to ensure it works
         $('body').css('overflow', '');
+        if (document.body) {
+            document.body.style.overflow = '';
+        }
+        // Also check html element in case overflow is set there
+        if (document.documentElement) {
+            document.documentElement.style.overflow = '';
+        }
     }
 
     /**
@@ -990,14 +1024,28 @@
             }
         }
 
+        // Show success message in toast notification before closing modal
+        if (window.bbaiPushToast && typeof window.bbaiPushToast === 'function') {
+            window.bbaiPushToast('success', 'Alt text updated successfully!', { duration: 4000 });
+        } else if (window.bbaiToast && typeof window.bbaiToast.success === 'function') {
+            window.bbaiToast.success('Alt text updated successfully!', { duration: 4000 });
+        }
+
         // Close modal
         closeRegenerateModal($modal);
 
         // Re-enable button
         reenableButton($btn, originalBtnText);
 
-        // Show success message
-        showNotification('Alt text updated successfully!', 'success');
+        // Ensure scrolling is restored after modal closes
+        setTimeout(function() {
+            if (document.body && document.body.style.overflow === 'hidden') {
+                document.body.style.overflow = '';
+            }
+            if (document.documentElement && document.documentElement.style.overflow === 'hidden') {
+                document.documentElement.style.overflow = '';
+            }
+        }, 100);
 
         // Refresh usage stats if available
         if (typeof refreshUsageStats === 'function') {
@@ -1656,9 +1704,33 @@
         var $modal = $('#bbai-bulk-progress-modal');
         if ($modal.length) {
             $modal.removeClass('active');
-            $('body').css('overflow', '');
+        }
+        // Restore body scroll - use both jQuery and vanilla JS to ensure it works
+        $('body').css('overflow', '');
+        if (document.body) {
+            document.body.style.overflow = '';
+        }
+        // Also check html element in case overflow is set there
+        if (document.documentElement) {
+            document.documentElement.style.overflow = '';
         }
     }
+    
+    /**
+     * Global safety function to restore page scrolling
+     * Can be called if scrolling gets stuck after modal operations
+     */
+    window.restorePageScroll = function() {
+        $('body').css('overflow', '');
+        if (document.body) {
+            document.body.style.overflow = '';
+        }
+        if (document.documentElement) {
+            document.documentElement.style.overflow = '';
+        }
+        // Also remove any active modal classes that might be blocking
+        $('.bbai-regenerate-modal.active, .bbai-bulk-progress-modal.active').removeClass('active');
+    };
 
     /**
      * Create and show success modal
@@ -1957,6 +2029,30 @@
         $(document).on('click', '[data-action="deactivate-license"]', handleLicenseDeactivation);
 
         console.log('[AI Alt Text] License management handlers registered');
+        
+        // Safety check: Ensure scrolling is enabled on page load
+        // This fixes cases where a previous modal operation left scrolling disabled
+        setTimeout(function() {
+            var hasActiveModals = $('.bbai-regenerate-modal.active, .bbai-bulk-progress-modal.active').length;
+            if (!hasActiveModals && (document.body.style.overflow === 'hidden' || document.documentElement.style.overflow === 'hidden')) {
+                console.log('[AI Alt Text] Restoring page scroll - no active modals but overflow is hidden');
+                if (window.restorePageScroll) {
+                    window.restorePageScroll();
+                }
+            }
+        }, 500);
+        
+        // Periodic safety check: Every 2 seconds, check if scrolling is stuck
+        // Only fix if no modals are active
+        setInterval(function() {
+            var hasActiveModals = $('.bbai-regenerate-modal.active, .bbai-bulk-progress-modal.active').length;
+            if (!hasActiveModals && (document.body.style.overflow === 'hidden' || document.documentElement.style.overflow === 'hidden')) {
+                console.log('[AI Alt Text] Auto-restoring page scroll - detected stuck scrolling');
+                if (window.restorePageScroll) {
+                    window.restorePageScroll();
+                }
+            }
+        }, 2000);
     });
 
     /**

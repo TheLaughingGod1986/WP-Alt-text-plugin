@@ -1,0 +1,63 @@
+ADDITIONAL INFORMATION FOR WORDPRESS.ORG SUBMISSION
+
+Plugin: BeepBeep AI – Alt Text Generator
+Version: 4.4.0
+Plugin Slug: beepbeep-ai-alt-text-generator
+
+---
+
+FOR REVIEWERS:
+
+This plugin automatically generates SEO-optimized, WCAG-compliant alt text for WordPress images using AI technology.
+
+KEY TECHNICAL NOTES:
+
+1. **External Services:**
+   - Connects to our secure backend API (https://alttext-ai-backend.onrender.com) for AI processing
+   - Uses Stripe Checkout (buy.stripe.com) for subscription payments
+   - All external connections use HTTPS
+   - Full privacy disclosure in readme.txt "External Services" section
+
+2. **Security Implementation:**
+   - All user inputs sanitized (sanitize_text_field, absint, etc.)
+   - All outputs escaped (esc_html, esc_attr, esc_url)
+   - Nonces verified on all form submissions and AJAX actions
+   - Capability checks on all admin actions (manage_options)
+   - SQL queries use prepared statements exclusively
+
+3. **Data Handling:**
+   - Images sent to API only when generating alt text (user-initiated)
+   - Images processed and immediately deleted from servers (documented in privacy section)
+   - No personal data collected without user consent
+   - Free tier: 50 generations/month (no credit card required)
+   - Comprehensive uninstall.php removes all plugin data
+
+4. **Build Process:**
+   - All JavaScript and CSS assets are pre-built and minified
+   - No Node.js or build tools required by end users
+   - React components in /admin/components/ are loaded via bridge files
+   - Source files excluded from production ZIP
+
+5. **Testing Notes:**
+   - Works with standard WordPress media library
+   - Compatible with all major page builders (tested with Gutenberg, Elementor)
+   - Requires active internet connection for AI generation (free tier available)
+   - Plugin can be tested without account (generates alt text in demo mode)
+
+6. **Code Quality:**
+   - All PHP files syntax validated
+   - Follows WordPress coding standards
+   - Comprehensive internationalization (text domain: beepbeep-ai-alt-text-generator)
+   - Debug code properly guarded behind WP_DEBUG flags
+
+TESTING ACCESS:
+
+The plugin includes a free tier (50 generations/month) that can be used for testing. No credit card required for basic functionality testing. Full feature testing may require account creation.
+
+QUESTIONS OR CONCERNS:
+
+All external services, data handling, and privacy policies are clearly documented in readme.txt. If you have any specific questions about implementation, security, or external connections, please let me know.
+
+---
+
+Thank you for reviewing!

@@ -1,51 +1,113 @@
 /**
- * Button Components
- * Base buttons and variants
+ * Buttons - Premium SaaS Design
+ * Refined interactions, accessible focus states, polished feel
  *
  * @package BeepBeep_AI
- * @since 5.0.0
+ * @since 8.0.0
  */
 
-/* Base Button */
+/* ============================================
+   BASE BUTTON
+   ============================================ */
+
 .bbai-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: var(--bbai-space-2);
-    padding: var(--bbai-space-2) var(--bbai-space-4);
+    padding: var(--bbai-btn-padding-y) var(--bbai-btn-padding-x);
     font-size: var(--bbai-text-sm);
-    font-weight: var(--bbai-font-medium);
+    font-weight: var(--bbai-font-semibold);
+    font-family: inherit;
     line-height: 1.5;
-    border-radius: var(--bbai-radius);
+    border-radius: var(--bbai-btn-radius);
     border: 1px solid transparent;
     cursor: pointer;
-    transition: all var(--bbai-transition);
     text-decoration: none;
     white-space: nowrap;
+    transition: all var(--bbai-transition-base) var(--bbai-ease-out);
+    position: relative;
+    overflow: hidden;
 }
 
+/* Focus States - Accessible */
 .bbai-btn:focus {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
 }
 
-.bbai-btn:disabled {
-    opacity: 0.6;
+.bbai-btn:focus-visible {
+    outline: 2px solid var(--bbai-primary);
+    outline-offset: 2px;
+    box-shadow: var(--bbai-shadow-focus);
+}
+
+/* Disabled State - WCAG AA Compliant (4.5:1 contrast ratio) */
+.bbai-btn:disabled,
+.bbai-btn.is-disabled {
+    background: var(--bbai-gray-200) !important;
+    color: var(--bbai-gray-600) !important;
+    border-color: var(--bbai-gray-300) !important;
     cursor: not-allowed;
+    pointer-events: none;
+    box-shadow: none !important;
+    transform: none !important;
 }
 
-/* Button Variants */
+.bbai-btn:disabled::before,
+.bbai-btn.is-disabled::before {
+    display: none;
+}
+
+/* ============================================
+   PRIMARY BUTTON - Main CTA
+   ============================================ */
+
 .bbai-btn-primary {
-    background: var(--bbai-gradient-primary);
-    color: white;
-    border-color: transparent;
+    background: var(--bbai-primary-gradient);
+    color: white !important;
+    border-color: var(--bbai-primary);
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4), 0 0 0 1px rgba(16, 185, 129, 0.1);
+    font-weight: var(--bbai-font-bold);
+    position: relative;
+    overflow: hidden;
+}
+
+.bbai-btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
 }
 
 .bbai-btn-primary:hover:not(:disabled) {
-    filter: brightness(1.1);
-    transform: translateY(-1px);
-    box-shadow: var(--bbai-shadow-md);
+    background: var(--bbai-primary-gradient);
+    border-color: var(--bbai-primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5), 0 0 0 1px rgba(16, 185, 129, 0.2);
 }
+
+.bbai-btn-primary:hover:not(:disabled)::before {
+    left: 100%;
+}
+
+.bbai-btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+}
+
+.bbai-btn-primary:focus-visible {
+    box-shadow: var(--bbai-shadow-focus), 0 6px 20px rgba(16, 185, 129, 0.5);
+    outline: 2px solid white;
+    outline-offset: 2px;
+}
+
+/* ============================================
+   SECONDARY BUTTON - Outlined
+   ============================================ */
 
 .bbai-btn-secondary {
     background: var(--bbai-bg);
@@ -55,52 +117,451 @@
 
 .bbai-btn-secondary:hover:not(:disabled) {
     background: var(--bbai-bg-secondary);
-    border-color: var(--bbai-border-dark);
+    border-color: var(--bbai-gray-300);
+    transform: translateY(-1px);
+    box-shadow: var(--bbai-shadow-sm);
 }
 
-.bbai-btn-success {
-    background: var(--bbai-gradient-success);
-    color: white;
+.bbai-btn-secondary:active:not(:disabled) {
+    transform: translateY(0);
+    background: var(--bbai-bg-tertiary);
 }
 
-.bbai-btn-success:hover:not(:disabled) {
-    filter: brightness(1.1);
-}
+/* ============================================
+   TERTIARY / GHOST BUTTON
+   ============================================ */
 
+.bbai-btn-tertiary,
 .bbai-btn-ghost {
     background: transparent;
     color: var(--bbai-text-secondary);
     border-color: transparent;
+    padding: var(--bbai-space-2) var(--bbai-space-3);
 }
 
+.bbai-btn-tertiary:hover:not(:disabled),
 .bbai-btn-ghost:hover:not(:disabled) {
-    background: var(--bbai-bg-secondary);
-    color: var(--bbai-text);
+    color: var(--bbai-primary);
+    background: var(--bbai-primary-soft);
 }
 
-/* Button Sizes */
+/* ============================================
+   LINK BUTTON
+   ============================================ */
+
+.bbai-link-btn,
+.bbai-link-sm {
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: var(--bbai-primary);
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-medium);
+    cursor: pointer;
+    text-decoration: none;
+    transition: color var(--bbai-transition-fast) var(--bbai-ease-out);
+}
+
+.bbai-link-btn:hover,
+.bbai-link-sm:hover {
+    color: var(--bbai-primary-hover);
+    text-decoration: underline;
+}
+
+.bbai-link-btn:focus-visible,
+.bbai-link-sm:focus-visible {
+    outline: 2px solid var(--bbai-primary);
+    outline-offset: 2px;
+}
+
+/* ============================================
+   SUCCESS BUTTON
+   ============================================ */
+
+.bbai-btn-success {
+    background: var(--bbai-success);
+    color: white !important;
+    border-color: var(--bbai-success);
+    box-shadow: var(--bbai-shadow-button);
+}
+
+.bbai-btn-success:hover:not(:disabled) {
+    background: var(--bbai-success-dark);
+    border-color: var(--bbai-success-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+.bbai-btn-success:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+/* ============================================
+   DANGER BUTTON
+   ============================================ */
+
+.bbai-btn-danger {
+    background: var(--bbai-error);
+    color: white !important;
+    border-color: var(--bbai-error);
+}
+
+.bbai-btn-danger:hover:not(:disabled) {
+    background: #dc2626;
+    border-color: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+}
+
+.bbai-btn-danger:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+/* ============================================
+   INFO BUTTON
+   ============================================ */
+
+.bbai-btn-info {
+    background: var(--bbai-info);
+    color: white !important;
+    border-color: var(--bbai-info);
+}
+
+.bbai-btn-info:hover:not(:disabled) {
+    background: var(--bbai-info-dark);
+    border-color: var(--bbai-info-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+/* ============================================
+   BUTTON SIZES
+   ============================================ */
+
 .bbai-btn-sm {
-    padding: var(--bbai-space-1) var(--bbai-space-3);
+    padding: var(--bbai-btn-padding-sm-y) var(--bbai-btn-padding-sm-x);
     font-size: var(--bbai-text-xs);
+    border-radius: var(--bbai-radius-sm);
 }
 
 .bbai-btn-lg {
-    padding: var(--bbai-space-3) var(--bbai-space-6);
+    padding: var(--bbai-btn-padding-lg-y) var(--bbai-btn-padding-lg-x);
     font-size: var(--bbai-text-base);
+    border-radius: var(--bbai-radius);
 }
 
-/* Button Icon */
+.bbai-btn-xl {
+    padding: 1rem 2rem;
+    font-size: var(--bbai-text-base);
+    font-weight: var(--bbai-font-bold);
+    border-radius: var(--bbai-radius-lg);
+}
+
+/* Full width */
+.bbai-btn-block {
+    width: 100%;
+}
+
+/* ============================================
+   BUTTON ICONS & LOADING
+   ============================================ */
+
 .bbai-btn-icon {
     flex-shrink: 0;
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
 }
 
-/* Button Spinner */
+.bbai-btn-lg .bbai-btn-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.bbai-btn-sm .bbai-btn-icon {
+    width: 14px;
+    height: 14px;
+}
+
+/* Icon-only button - 44px minimum touch target for accessibility */
+.bbai-btn-icon-only {
+    padding: var(--bbai-space-2);
+    aspect-ratio: 1;
+    min-width: 44px;
+    min-height: 44px;
+}
+
+.bbai-btn-icon-only.bbai-btn-sm {
+    padding: var(--bbai-space-1-5);
+    min-width: 36px;
+    min-height: 36px;
+}
+
+.bbai-btn-icon-only.bbai-btn-lg {
+    padding: var(--bbai-space-3);
+    min-width: 48px;
+    min-height: 48px;
+}
+
+/* Loading spinner */
 .bbai-btn__spinner {
     display: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: bbai-spin 0.6s linear infinite;
 }
 
 .bbai-btn.is-loading .bbai-btn__spinner {
     display: inline-block;
+}
+
+.bbai-btn.is-loading .bbai-btn-icon,
+.bbai-btn.is-loading .bbai-btn__text {
+    opacity: 0;
+}
+
+.bbai-btn.is-loading {
+    pointer-events: none;
+    position: relative;
+}
+
+.bbai-btn.is-loading .bbai-btn__spinner {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+@keyframes bbai-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================
+   REGENERATE BUTTON (Library Table)
+   ============================================ */
+
+.bbai-btn-regenerate {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-1);
+    padding: 6px 12px;
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-medium);
+    color: var(--bbai-primary);
+    background: transparent;
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-sm);
+    cursor: pointer;
+    transition: all var(--bbai-transition-fast) var(--bbai-ease-out);
+}
+
+.bbai-btn-regenerate:hover:not(:disabled) {
+    border-color: var(--bbai-primary);
+    background: var(--bbai-primary-soft);
+}
+
+.bbai-btn-regenerate:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.bbai-btn-regenerate svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* ============================================
+   OPTIMIZATION CTA BUTTONS
+   ============================================ */
+
+.bbai-optimization-cta {
+    flex: 1;
+    min-width: 200px;
+    padding: 16px 28px;
+    border-radius: var(--bbai-radius-lg);
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-bold);
+    cursor: pointer;
+    transition: all var(--bbai-transition-base) var(--bbai-ease-out);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--bbai-space-2);
+    border: 2px solid transparent;
+    text-decoration: none;
+}
+
+.bbai-optimization-cta--primary {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    color: white !important;
+    border-color: transparent;
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.45), 0 0 0 1px rgba(16, 185, 129, 0.1);
+    font-weight: var(--bbai-font-bold);
+    font-size: var(--bbai-text-base);
+    padding: 18px 32px;
+    position: relative;
+    overflow: hidden;
+}
+
+.bbai-optimization-cta--primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.bbai-optimization-cta--primary:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.55), 0 0 0 1px rgba(16, 185, 129, 0.2);
+}
+
+.bbai-optimization-cta--primary:hover:not(:disabled)::before {
+    left: 100%;
+}
+
+.bbai-optimization-cta--primary:active:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.45);
+}
+
+.bbai-optimization-cta--primary:focus-visible {
+    outline: 3px solid white;
+    outline-offset: 3px;
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.3), 0 8px 24px rgba(16, 185, 129, 0.55);
+}
+
+.bbai-optimization-cta--secondary {
+    background: var(--bbai-bg);
+    color: var(--bbai-text);
+    border-color: var(--bbai-border);
+}
+
+.bbai-optimization-cta--secondary:hover:not(:disabled) {
+    background: var(--bbai-bg-secondary);
+    border-color: var(--bbai-gray-300);
+    transform: translateY(-1px);
+    box-shadow: var(--bbai-shadow-sm);
+}
+
+.bbai-optimization-cta--secondary:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.bbai-optimization-cta--locked,
+.bbai-optimization-cta:disabled {
+    background: var(--bbai-gray-100) !important;
+    color: var(--bbai-gray-400) !important;
+    border-color: var(--bbai-gray-200) !important;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* ============================================
+   BUTTON GROUPS
+   ============================================ */
+
+.bbai-btn-group {
+    display: flex;
+    gap: var(--bbai-space-2);
+    flex-wrap: wrap;
+}
+
+.bbai-btn-group--center {
+    justify-content: center;
+}
+
+.bbai-btn-group--stretch .bbai-btn {
+    flex: 1;
+}
+
+/* Segmented buttons */
+.bbai-btn-group--segmented {
+    gap: 0;
+}
+
+.bbai-btn-group--segmented .bbai-btn {
+    border-radius: 0;
+}
+
+.bbai-btn-group--segmented .bbai-btn:first-child {
+    border-radius: var(--bbai-radius) 0 0 var(--bbai-radius);
+}
+
+.bbai-btn-group--segmented .bbai-btn:last-child {
+    border-radius: 0 var(--bbai-radius) var(--bbai-radius) 0;
+}
+
+.bbai-btn-group--segmented .bbai-btn:not(:last-child) {
+    border-right: none;
+}
+
+/* ============================================
+   SPECIAL VARIANTS
+   ============================================ */
+
+/* Outline primary */
+.bbai-btn-outline-primary {
+    background: transparent;
+    color: var(--bbai-primary);
+    border-color: var(--bbai-primary);
+}
+
+.bbai-btn-outline-primary:hover:not(:disabled) {
+    background: var(--bbai-primary);
+    color: white;
+}
+
+/* Gradient button */
+.bbai-btn-gradient {
+    background: var(--bbai-gradient-primary);
+    color: white !important;
+    border: none;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+
+.bbai-btn-gradient:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+}
+
+/* Dark button */
+.bbai-btn-dark {
+    background: var(--bbai-gray-900);
+    color: white !important;
+    border-color: var(--bbai-gray-900);
+}
+
+.bbai-btn-dark:hover:not(:disabled) {
+    background: var(--bbai-gray-800);
+    border-color: var(--bbai-gray-800);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 640px) {
+    .bbai-optimization-cta {
+        min-width: 100%;
+        padding: 14px 24px;
+    }
+
+    .bbai-btn-group:not(.bbai-btn-group--segmented) {
+        flex-direction: column;
+    }
+
+    .bbai-btn-group:not(.bbai-btn-group--segmented) .bbai-btn {
+        width: 100%;
+    }
 }

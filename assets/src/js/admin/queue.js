@@ -134,13 +134,15 @@
             var endIndex = Math.min(startIndex + batchSize, total);
             var batch = ids.slice(startIndex, endIndex);
 
+            var regenerate = source === 'bulk-regenerate' || source === 'regenerate';
             var promises = batch.map(function(id) {
                 return $.ajax({
                     url: (config.restRoot || config.rest || '') + 'bbai/v1/generate/' + id,
                     method: 'POST',
                     headers: {
                         'X-WP-Nonce': config.nonce
-                    }
+                    },
+                    data: regenerate ? { regenerate: 1 } : {}
                 })
                 .done(function() {
                     queued++;

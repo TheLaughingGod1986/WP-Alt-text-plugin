@@ -1,47 +1,19 @@
 /**
  * Base Styles & Reset
- * Foundation styles for the plugin wrapper
- *
- * @package BeepBeep_AI
- * @since 5.0.0
  */
+.bbai-wrap, .bbai-wrap *, .bbai-modern, .bbai-modern * { box-sizing: border-box; }
 
-/* Reset */
-.bbai-wrap,
-.bbai-wrap * {
-    box-sizing: border-box;
-}
-
-.bbai-wrap {
+.bbai-wrap, .bbai-modern {
+    margin: 0;
+    padding: var(--bbai-space-6);
+    background: var(--bbai-bg-page);
     font-family: var(--bbai-font);
     font-size: var(--bbai-text-base);
-    line-height: var(--bbai-leading-normal);
+    line-height: 1.5;
     color: var(--bbai-text);
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
 }
 
-/* WordPress Admin Reset */
-.bbai-wrap,
-.bbai-modern {
-    margin: 0;
-    padding: 20px;
-    background: var(--bbai-bg-secondary);
-    font-family: var(--bbai-font);
-    line-height: var(--bbai-leading-normal);
-    color: var(--bbai-text);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-.bbai-wrap *,
-.bbai-modern * {
-    box-sizing: border-box;
-}
-
-/* Prevent WP admin overflow issues */
 body.media_page_bbai #wpwrap,
 body.media_page_bbai #wpcontent,
-body.media_page_bbai #wpbody-content {
-    overflow-x: hidden;
-}
+body.media_page_bbai #wpbody-content { overflow-x: hidden; }

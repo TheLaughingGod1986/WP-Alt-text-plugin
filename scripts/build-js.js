@@ -52,6 +52,32 @@ const jsBundles = [
 ];
 
 /**
+ * Standalone JS files configuration
+ * These are individual files that need to be copied and minified
+ */
+const standaloneFiles = [
+    'bbai-performance.js',
+    'bbai-error-handler.js',
+    'bbai-accessibility.js',
+    'bbai-copy-export.js',
+    'bbai-celebrations.js',
+    'bbai-context-upgrades.js',
+    'bbai-toast.js',
+    'bbai-onboarding.js',
+    'bbai-social-proof.js',
+    'bbai-analytics.js',
+    'bbai-loading-states.js',
+    'bbai-tooltips.js',
+    'bbai-modal.js',
+    'bbai-logger.js',
+    'bbai-queue-monitor.js',
+    'bbai-debug.js',
+    'auth-modal.js',
+    'upgrade-modal.js',
+    'usage-components-bridge.js'
+];
+
+/**
  * Read and concatenate files
  */
 function buildBundle(bundle) {
@@ -139,6 +165,60 @@ function minifyBundle(bundlePath) {
 }
 
 /**
+ * Minify standalone file content
+ */
+function minifyContent(content) {
+    // Basic minification - remove block comments and collapse whitespace
+    return content
+        // Remove multi-line comments (but keep license/doc comments with @)
+        .replace(/\/\*(?![\s\S]*?@)[\s\S]*?\*\//g, '')
+        // Remove single-line comments (but not URLs)
+        .replace(/(?<![:\/"'])\/\/[^\n]*/g, '')
+        // Collapse multiple newlines
+        .replace(/\n\s*\n\s*\n/g, '\n\n')
+        // Remove leading whitespace on lines
+        .replace(/^\s+/gm, '')
+        // Remove trailing whitespace
+        .replace(/\s+$/gm, '');
+}
+
+/**
+ * Build standalone JavaScript file
+ * Reads from assets/src/js/ and outputs minified version to assets/dist/js/
+ */
+function buildStandaloneFile(fileName) {
+    const sourcePath = path.join(projectRoot, 'assets', 'src', 'js', fileName);
+    const distDir = path.join(projectRoot, 'assets', 'dist', 'js');
+    const minFileName = fileName.replace('.js', '.min.js');
+    const minPath = path.join(distDir, minFileName);
+
+    if (!fs.existsSync(sourcePath)) {
+        console.error(`  ERROR: File not found: ${sourcePath}`);
+        return null;
+    }
+
+    // Read source file
+    const content = fs.readFileSync(sourcePath, 'utf8');
+
+    // Ensure output directory exists
+    if (!fs.existsSync(distDir)) {
+        fs.mkdirSync(distDir, { recursive: true });
+    }
+
+    // Minify content
+    const minified = minifyContent(content);
+
+    // Write minified file
+    fs.writeFileSync(minPath, minified);
+    const stats = fs.statSync(minPath);
+    const sizeKB = (stats.size / 1024).toFixed(1);
+
+    console.log(`  + ${fileName} -> ${minFileName} (${sizeKB} KB)`);
+
+    return { name: fileName, size: stats.size, path: minPath };
+}
+
+/**
  * Main build function
  */
 function build() {
@@ -146,13 +226,15 @@ function build() {
     console.log('JavaScript Build Script');
     console.log('='.repeat(50));
 
-    const results = [];
+    const bundleResults = [];
+    const standaloneResults = [];
 
+    // Build bundles
     for (const bundle of jsBundles) {
         try {
             const result = buildBundle(bundle);
             const minResult = minifyBundle(result.path);
-            results.push({
+            bundleResults.push({
                 ...result,
                 minSize: minResult.size,
                 minPath: minResult.path
@@ -162,15 +244,48 @@ function build() {
         }
     }
 
+    // Build standalone files
+    if (standaloneFiles.length > 0) {
+        console.log('\n' + '='.repeat(50));
+        console.log('Building Standalone Files');
+        console.log('='.repeat(50));
+
+        for (const fileName of standaloneFiles) {
+            try {
+                const result = buildStandaloneFile(fileName);
+                if (result) {
+                    standaloneResults.push(result);
+                }
+            } catch (error) {
+                console.error(`\nERROR building ${fileName}:`, error.message);
+            }
+        }
+    }
+
+    // Build Summary
     console.log('\n' + '='.repeat(50));
     console.log('Build Summary');
     console.log('='.repeat(50));
 
-    for (const result of results) {
-        const sizeKB = (result.size / 1024).toFixed(1);
-        const minSizeKB = (result.minSize / 1024).toFixed(1);
-        const savings = ((1 - result.minSize / result.size) * 100).toFixed(0);
-        console.log(`${result.name}: ${sizeKB} KB -> ${minSizeKB} KB (${savings}% smaller)`);
+    if (bundleResults.length > 0) {
+        console.log('\nBundles:');
+        for (const result of bundleResults) {
+            const sizeKB = (result.size / 1024).toFixed(1);
+            const minSizeKB = (result.minSize / 1024).toFixed(1);
+            const savings = ((1 - result.minSize / result.size) * 100).toFixed(0);
+            console.log(`  ${result.name}: ${sizeKB} KB -> ${minSizeKB} KB (${savings}% smaller)`);
+        }
+    }
+
+    if (standaloneResults.length > 0) {
+        console.log('\nStandalone Files:');
+        const totalSize = standaloneResults.reduce((sum, r) => sum + r.size, 0);
+        const totalSizeKB = (totalSize / 1024).toFixed(1);
+        console.log(`  ${standaloneResults.length} files built (${totalSizeKB} KB total)`);
+        for (const result of standaloneResults) {
+            const sizeKB = (result.size / 1024).toFixed(1);
+            console.log(`    ${result.name}: ${sizeKB} KB`);
+        }
     }
 
     console.log('\nBuild complete!\n');

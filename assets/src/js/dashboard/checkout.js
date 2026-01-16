@@ -32,7 +32,7 @@ function initiateCheckout($btn, priceId, plan) {
         url: window.bbai_ajax.ajaxurl,
         type: 'POST',
         data: {
-            action: 'beepbeepai_create_checkout_session',
+            action: 'beepbeepai_create_checkout',
             nonce: window.bbai_ajax.nonce,
             price_id: priceId,
             plan: plan
@@ -40,8 +40,9 @@ function initiateCheckout($btn, priceId, plan) {
         timeout: 30000,
         success: function(response) {
             if (response.success && response.data && response.data.url) {
-                if (alttextaiDebug) console.log('[AltText AI] Checkout URL received, redirecting');
-                window.location.href = response.data.url;
+                if (alttextaiDebug) console.log('[AltText AI] Checkout URL received, opening in new window:', response.data.url);
+                // Open Stripe checkout in new window
+                window.open(response.data.url, '_blank', 'noopener,noreferrer');
             } else {
                 // Restore button state
                 $btn.prop('disabled', false)
@@ -49,6 +50,14 @@ function initiateCheckout($btn, priceId, plan) {
                     .text(originalText);
 
                 var errorMsg = response.data?.message || 'Could not initiate checkout. Please try again.';
+                var fallbackUrl = $btn.attr('data-fallback-url');
+
+                // If we have a fallback URL, use it instead of showing error
+                if (fallbackUrl) {
+                    if (alttextaiDebug) console.log('[AltText AI] Checkout API failed, using fallback URL:', fallbackUrl);
+                    window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+                    return;
+                }
 
                 // Check for authentication error
                 if (response.data?.code === 'not_authenticated' || errorMsg.toLowerCase().includes('log in')) {
@@ -68,6 +77,14 @@ function initiateCheckout($btn, priceId, plan) {
                 .text(originalText);
 
             if (alttextaiDebug) console.error('[AltText AI] Checkout error:', status, error);
+
+            // Try fallback URL first
+            var fallbackUrl = $btn.attr('data-fallback-url');
+            if (fallbackUrl) {
+                if (alttextaiDebug) console.log('[AltText AI] Checkout AJAX failed, using fallback URL:', fallbackUrl);
+                window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+                return;
+            }
 
             var errorMessage = 'Unable to initiate checkout. Please try again.';
             if (status === 'timeout') {

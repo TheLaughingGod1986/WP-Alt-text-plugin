@@ -45,6 +45,79 @@ bbaiRunWithJQuery(function($) {
     }
 
     // Initialize when DOM is ready
+    // Add vanilla JS handler as fallback (works even if jQuery isn't ready)
+    (function() {
+        function handleCheckoutClick(e) {
+            const btn = e.target.closest('[data-action="checkout-plan"]');
+            if (!btn) return;
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            console.log('[AltText AI] Checkout button clicked (vanilla JS handler)!');
+            
+            const plan = btn.getAttribute('data-plan') || btn.dataset.plan;
+            const priceId = btn.getAttribute('data-price-id') || btn.dataset.priceId;
+            const fallbackUrl = btn.getAttribute('data-fallback-url') || btn.dataset.fallbackUrl;
+            
+            console.log('[AltText AI] Checkout plan:', plan, 'priceId:', priceId, 'fallbackUrl:', fallbackUrl);
+            
+            // Try to use backend checkout API if we have a price ID
+            if (priceId && window.bbai_ajax && window.bbai_ajax.ajaxurl) {
+                console.log('[AltText AI] Using backend checkout API');
+                // Use jQuery if available, otherwise use fetch
+                if (typeof $ !== 'undefined' && typeof window.initiateCheckout === 'function') {
+                    window.initiateCheckout($(btn), priceId, plan);
+                } else if (typeof $ !== 'undefined' && typeof initiateCheckout === 'function') {
+                    initiateCheckout($(btn), priceId, plan);
+                } else {
+                    // Fallback to direct URL if jQuery/initiateCheckout not available
+                    if (fallbackUrl) {
+                        window.location.href = fallbackUrl;
+                    }
+                }
+            } else if (fallbackUrl) {
+                console.log('[AltText AI] Using fallback Stripe payment link:', fallbackUrl);
+                window.location.href = fallbackUrl;
+                if (typeof alttextaiCloseModal === 'function') {
+                    alttextaiCloseModal();
+                }
+            } else {
+                // Construct default URL based on plan
+                let stripeUrl = '';
+                if (plan === 'pro' || plan === 'growth') {
+                    stripeUrl = 'https://buy.stripe.com/dRm28s4rc5Raf0GbY77ss02';
+                } else if (plan === 'agency') {
+                    stripeUrl = 'https://buy.stripe.com/28E14og9U0wQ19Q4vF7ss01';
+                } else if (plan === 'credits') {
+                    stripeUrl = 'https://buy.stripe.com/6oU9AUf5Q2EYaKq0fp7ss00';
+                }
+                
+                if (stripeUrl) {
+                    console.log('[AltText AI] Using default Stripe payment link:', stripeUrl);
+                    window.location.href = stripeUrl;
+                    if (typeof alttextaiCloseModal === 'function') {
+                        alttextaiCloseModal();
+                    }
+                } else {
+                    console.error('[AltText AI] No checkout URL available!');
+                    alert('Unable to initiate checkout. Please try again or contact support.');
+                }
+            }
+            
+            return false;
+        }
+        
+        // Attach event listener
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                document.addEventListener('click', handleCheckoutClick, true);
+            });
+        } else {
+            document.addEventListener('click', handleCheckoutClick, true);
+        }
+    })();
+
     $(document).ready(function() {
         console.log('[AltText AI] jQuery ready - setting up upgrade modal handlers');
         
@@ -452,31 +525,72 @@ bbaiRunWithJQuery(function($) {
         // Handle checkout plan buttons in upgrade modal
         $(document).on('click', '[data-action="checkout-plan"]', function(e) {
             e.preventDefault();
-            const $btn = $(this);
-            const plan = $btn.attr('data-plan');
-            const priceId = $btn.attr('data-price-id');
-            const fallbackUrl = $btn.attr('data-fallback-url');
+            e.stopPropagation();
             
-            if (alttextaiDebug) console.log('[AltText AI] Checkout plan:', plan, priceId);
+            console.log('[AltText AI] Checkout button clicked!');
+            
+            const $btn = $(this);
+            const plan = $btn.attr('data-plan') || $btn.data('plan');
+            const priceId = $btn.attr('data-price-id') || $btn.data('price-id');
+            const fallbackUrl = $btn.attr('data-fallback-url') || $btn.data('fallback-url');
+            
+            console.log('[AltText AI] Checkout plan:', plan, 'priceId:', priceId, 'fallbackUrl:', fallbackUrl);
             
             // Try to use backend checkout API if we have a price ID
             // This provides better tracking, custom success URLs, and account linking
             if (priceId && window.bbai_ajax && window.bbai_ajax.ajaxurl) {
-                // Use backend checkout session API
-                initiateCheckout($btn, priceId, plan);
-            } else {
+                console.log('[AltText AI] Using backend checkout API');
+                // Use backend checkout session API - try window.initiateCheckout first (from bundle)
+                if (typeof window.initiateCheckout === 'function') {
+                    console.log('[AltText AI] Using window.initiateCheckout');
+                    window.initiateCheckout($btn, priceId, plan);
+                } else if (typeof initiateCheckout === 'function') {
+                    console.log('[AltText AI] Using local initiateCheckout');
+                    initiateCheckout($btn, priceId, plan);
+                } else {
+                    console.error('[AltText AI] initiateCheckout function not found!');
+                    // Fallback to direct URL
+                    if (fallbackUrl) {
+                        window.location.href = fallbackUrl;
+                    }
+                }
+            } else if (fallbackUrl) {
                 // Fall back to direct Stripe payment link if no price ID or AJAX not available
-                if (fallbackUrl) {
-                    if (alttextaiDebug) console.log('[AltText AI] Using fallback Stripe payment link');
-                    window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
-                    // Close the upgrade modal after opening the payment link
+                console.log('[AltText AI] Using fallback Stripe payment link:', fallbackUrl);
+                // Open in same window to go directly to Stripe checkout
+                window.location.href = fallbackUrl;
+                // Close the upgrade modal after redirecting
+                if (typeof alttextaiCloseModal === 'function') {
+                    alttextaiCloseModal();
+                }
+            } else {
+                // If no fallback URL, try to construct one based on plan
+                let stripeUrl = '';
+                if (plan === 'pro' || plan === 'growth') {
+                    stripeUrl = 'https://buy.stripe.com/dRm28s4rc5Raf0GbY77ss02';
+                } else if (plan === 'agency') {
+                    stripeUrl = 'https://buy.stripe.com/28E14og9U0wQ19Q4vF7ss01';
+                } else if (plan === 'credits') {
+                    stripeUrl = 'https://buy.stripe.com/6oU9AUf5Q2EYaKq0fp7ss00';
+                }
+                
+                if (stripeUrl) {
+                    console.log('[AltText AI] Using default Stripe payment link:', stripeUrl);
+                    window.location.href = stripeUrl;
                     if (typeof alttextaiCloseModal === 'function') {
                         alttextaiCloseModal();
                     }
                 } else {
-                    window.bbaiModal.error('Unable to initiate checkout. Please try again or contact support.');
+                    console.error('[AltText AI] No checkout URL available!');
+                    if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
+                        window.bbaiModal.error('Unable to initiate checkout. Please try again or contact support.');
+                    } else {
+                        alert('Unable to initiate checkout. Please try again or contact support.');
+                    }
                 }
             }
+            
+            return false;
         });
 
         // Handle retry subscription fetch
@@ -1487,35 +1601,23 @@ bbaiRunWithJQuery(function($) {
                        .attr('aria-busy', 'false');
 
                 if (response.success && response.data && response.data.url) {
-                    if (alttextaiDebug) console.log('[AltText AI] Opening checkout URL:', response.data.url);
+                    if (alttextaiDebug) console.log('[AltText AI] Redirecting to checkout URL:', response.data.url);
                     
-                    // Open checkout in new tab
-                    const checkoutWindow = window.open(response.data.url, '_blank', 'noopener,noreferrer');
-                    
-                    if (!checkoutWindow) {
-                        window.bbaiModal.warning('Please allow popups for this site to complete checkout.');
-                        return;
-                    }
-                    
-                    // Close the upgrade modal
-                    alttextaiCloseModal();
-                    
-                    // Monitor for successful checkout (user returns to success page)
-                    const urlParams = new URLSearchParams(window.location.search);
-                    if (urlParams.get('checkout') === 'success') {
-                        // Refresh data after successful checkout
-                        if (typeof window.alttextai_refresh_usage === 'function') {
-                            window.alttextai_refresh_usage();
-                        }
-                    }
+                    // Redirect to Stripe checkout in same window
+                    window.location.href = response.data.url;
                 } else {
                     // Backend API failed - fall back to direct Stripe payment link
                     const fallbackUrl = $button.attr('data-fallback-url');
                     if (fallbackUrl) {
                         if (alttextaiDebug) console.log('[AltText AI] Backend checkout failed, using fallback Stripe link');
-                        window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
-                        alttextaiCloseModal();
+                        window.location.href = fallbackUrl;
                     } else {
+                        // Restore button state
+                        $button.prop('disabled', false)
+                               .removeClass('bbai-btn-loading')
+                               .html(originalHtml)
+                               .attr('aria-busy', 'false');
+                        
                         // No fallback available - show error
                         let errorMessage = response.data?.message || 'Failed to create checkout session. Please try again.';
                         const errorCode = response.data?.code || '';
@@ -1541,8 +1643,7 @@ bbaiRunWithJQuery(function($) {
                 const fallbackUrl = $button.attr('data-fallback-url');
                 if (fallbackUrl) {
                     if (alttextaiDebug) console.log('[AltText AI] Backend checkout error, using fallback Stripe link');
-                    window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
-                    alttextaiCloseModal();
+                    window.location.href = fallbackUrl;
                 } else {
                     // No fallback available - show error
                     let errorMessage = 'Unable to connect to checkout system. Please try again.';
@@ -1694,38 +1795,28 @@ function alttextaiShowModal() {
     console.log('[AltText AI] Modal element found:', modal);
     console.log('[AltText AI] Current display:', window.getComputedStyle(modal).display);
     
-    // Remove the inline display:none style completely, then set to flex
-    modal.removeAttribute('style');
+    // Remove inline display:none to allow transition
+    if (modal.style.display === 'none') {
+        modal.style.display = 'flex';
+        modal.style.opacity = '0';
+        modal.style.visibility = 'hidden';
+    }
     
-    // Now set display to flex with !important
-    modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0, 0, 0, 0.6) !important;';
-    modal.setAttribute('aria-hidden', 'false');
+    // Force reflow to ensure initial state is applied
+    void modal.offsetHeight;
+    
+    // Now add active class to trigger smooth animation
+    modal.classList.add('active');
+    modal.removeAttribute('aria-hidden');
     document.body.style.overflow = 'hidden';
     
-    // Verify it worked
+    // Focus the close button after animation starts
     setTimeout(function() {
-        const computed = window.getComputedStyle(modal);
-        console.log('[AltText AI] Modal computed display:', computed.display);
-        console.log('[AltText AI] Modal computed visibility:', computed.visibility);
-        console.log('[AltText AI] Modal computed z-index:', computed.zIndex);
-        
-        if (computed.display === 'none' || computed.visibility === 'hidden') {
-            console.error('[AltText AI] Modal still not visible!');
-            // Nuclear option - remove all classes and inline styles, rebuild
-            modal.className = 'bbai-modal-backdrop';
-            modal.style.cssText = '';
-        modal.style.display = 'flex';
-            modal.style.position = 'fixed';
-            modal.style.top = '0';
-            modal.style.right = '0';
-            modal.style.bottom = '0';
-            modal.style.left = '0';
-            modal.style.zIndex = '999999';
-            modal.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
-        } else {
-            console.log('[AltText AI] ✓ Modal is now visible!');
+        const closeBtn = modal.querySelector('.bbai-upgrade-modal__close, .bbai-modal-close, [data-action="close-modal"], button[aria-label*="Close"]');
+        if (closeBtn && typeof closeBtn.focus === 'function') {
+            closeBtn.focus();
         }
-    }, 50);
+    }, 150);
     
     return true;
 }
@@ -1754,8 +1845,15 @@ window.testUpgradeModal = function() {
 function alttextaiCloseModal() {
     const modal = document.getElementById('bbai-upgrade-modal');
     if (modal) {
-        modal.style.display = 'none';
-        modal.setAttribute('aria-hidden', 'true');
+        // Remove active class to trigger CSS transition
+        modal.classList.remove('active');
+        
+        // Wait for animation to complete before hiding
+        setTimeout(function() {
+            modal.style.display = 'none';
+            modal.setAttribute('aria-hidden', 'true');
+        }, 300); // Match animation duration
+        
         // Restore body scroll
         document.body.style.overflow = '';
     }

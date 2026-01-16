@@ -42,34 +42,28 @@ function alttextaiShowModal() {
         return false;
     }
 
-    // Add active class to trigger CSS visibility
-    modal.classList.add('active');
-    modal.classList.add('is-visible');
+    // Remove inline display:none to allow transition
+    if (modal.style.display === 'none') {
+        modal.style.display = 'flex';
+        modal.style.opacity = '0';
+        modal.style.visibility = 'hidden';
+    }
     
-    // Remove inline display:none and ensure visibility
-    modal.removeAttribute('style');
-    modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0, 0, 0, 0.6) !important; visibility: visible !important; opacity: 1 !important;';
-    modal.setAttribute('aria-hidden', 'false');
+    // Force reflow to ensure initial state is applied
+    void modal.offsetHeight;
+    
+    // Now add active class to trigger smooth animation
+    modal.classList.add('active');
+    modal.removeAttribute('aria-hidden');
     document.body.style.overflow = 'hidden';
-
-    // Verify it worked
+    
+    // Focus the close button after animation starts
     setTimeout(function() {
-        var computed = window.getComputedStyle(modal);
-        if (computed.display === 'none' || computed.visibility === 'hidden' || computed.opacity === '0') {
-            // Nuclear option - ensure all visibility properties are set
-            modal.classList.add('active');
-            modal.style.display = 'flex';
-            modal.style.visibility = 'visible';
-            modal.style.opacity = '1';
-            modal.style.position = 'fixed';
-            modal.style.top = '0';
-            modal.style.right = '0';
-            modal.style.bottom = '0';
-            modal.style.left = '0';
-            modal.style.zIndex = '999999';
-            modal.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+        var closeBtn = modal.querySelector('.bbai-upgrade-modal__close, .bbai-modal-close, [data-action="close-modal"], button[aria-label*="Close"]');
+        if (closeBtn && typeof closeBtn.focus === 'function') {
+            closeBtn.focus();
         }
-    }, 50);
+    }, 150);
 
     return true;
 }
@@ -80,8 +74,15 @@ function alttextaiShowModal() {
 function alttextaiCloseModal() {
     var modal = document.getElementById('bbai-upgrade-modal');
     if (modal) {
-        modal.style.display = 'none';
-        modal.setAttribute('aria-hidden', 'true');
+        // Remove active class to trigger CSS transition
+        modal.classList.remove('active');
+        
+        // Wait for animation to complete before hiding
+        setTimeout(function() {
+            modal.style.display = 'none';
+            modal.setAttribute('aria-hidden', 'true');
+        }, 300); // Match animation duration
+        
         document.body.style.overflow = '';
     }
 }

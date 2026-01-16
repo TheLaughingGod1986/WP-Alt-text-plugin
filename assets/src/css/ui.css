@@ -1495,8 +1495,9 @@
 }
 
 .bbai-status-badge--optimized {
-    background: #e7f9ef;
-    color: #1a8f4b;
+    background: #D1FAE5;
+    color: #065F46;
+    border: 1px solid #A7F3D0;
 }
 
 .bbai-status-badge--missing {

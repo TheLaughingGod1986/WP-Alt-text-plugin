@@ -32,6 +32,11 @@ const cssBundle = {
         { path: 'assets/src/css/unified/_tables.css', section: '6. Data Display' },
         { path: 'assets/src/css/unified/_modals.css', section: '7. Modals & Overlays' },
         { path: 'assets/src/css/unified/_pages.css', section: '8. Page-Specific Styles' },
+        { path: 'assets/src/css/unified/_dashboard.css', section: '8b. Dashboard Layout' },
+        { path: 'assets/src/css/unified/_dashboard-polish.css', section: '8c. Dashboard Polish & Animations' },
+        { path: 'assets/src/css/unified/_usage-card-actions.css', section: '8d. Usage Card Action Buttons' },
+        { path: 'assets/src/css/unified/_dashboard-redesign.css', section: '8e. Dashboard Redesign - Premium SaaS Design' },
+        { path: 'assets/src/css/unified/_social-proof.css', section: '8f. Social Proof' },
         { path: 'assets/src/css/unified/_utilities.css', section: '9. Utility Classes' },
         { path: 'assets/src/css/unified/_animations.css', section: '10. Animations' },
         { path: 'assets/src/css/unified/_header.css', section: '11. Header & Navigation' },
@@ -40,7 +45,19 @@ const cssBundle = {
         { path: 'assets/src/css/unified/_upgrade-modal.css', section: '14. Upgrade Modal & Pricing' },
         { path: 'assets/src/css/unified/_bulk-progress.css', section: '15. Bulk Progress Modal' },
         { path: 'assets/src/css/unified/_api-notice.css', section: '16. API Notice' },
-        { path: 'assets/src/css/unified/_misc.css', section: '17. Miscellaneous' }
+        { path: 'assets/src/css/unified/_toast.css', section: '17. Toast Notifications' },
+        { path: 'assets/src/css/unified/_tooltips.css', section: '18. Tooltips' },
+        { path: 'assets/src/css/unified/_onboarding.css', section: '19. Onboarding' },
+        { path: 'assets/src/css/unified/_celebrations.css', section: '20. Celebrations' },
+        { path: 'assets/src/css/unified/_analytics.css', section: '21. Analytics Dashboard' },
+        { path: 'assets/src/css/unified/_seo-analytics.css', section: '22. SEO Analytics' },
+        { path: 'assets/src/css/unified/_conversion.css', section: '23. Conversion Optimization' },
+        { path: 'assets/src/css/unified/_quality-insights.css', section: '24. Quality Insights' },
+        { path: 'assets/src/css/unified/_bulk-edit.css', section: '25. Bulk Edit' },
+        { path: 'assets/src/css/unified/_guide.css', section: '26. Guide Page' },
+        { path: 'assets/src/css/unified/_errors.css', section: '27. Error Handling' },
+        { path: 'assets/src/css/unified/_accessibility.css', section: '28. Accessibility' },
+        { path: 'assets/src/css/unified/_misc.css', section: '29. Miscellaneous' }
     ]
 };
 

@@ -1,50 +1,62 @@
 /**
- * Header & Navigation
- * Dark header, logo, nav links, auth badge
+ * Header & Navigation - Premium SaaS Design
+ * Dark header with refined navigation
  *
  * @package BeepBeep_AI
- * @since 5.0.0
+ * @since 8.0.0
  */
 
-/* Dark Header */
+/* ============================================
+   HEADER
+   ============================================ */
+
 .bbai-header {
-    background: #212B36;
-    padding: var(--bbai-space-4) var(--bbai-space-8);
-    box-shadow: var(--bbai-shadow);
+    background: #0f172a;
+    padding: var(--bbai-space-4) var(--bbai-space-6);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .bbai-header-content {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    max-width: 1600px;
+    max-width: var(--bbai-dashboard-max-width);
     margin: 0 auto;
     gap: var(--bbai-space-6);
 }
 
-/* Logo */
+/* ============================================
+   LOGO
+   ============================================ */
+
 .bbai-logo {
     display: flex;
     align-items: center;
     gap: var(--bbai-space-3);
+    text-decoration: none;
 }
 
 .bbai-logo-icon {
     width: 32px;
     height: 32px;
+    flex-shrink: 0;
 }
 
 .bbai-logo-text {
     font-size: var(--bbai-text-base);
     font-weight: var(--bbai-font-bold);
     color: white;
+    letter-spacing: -0.01em;
 }
 
-/* Navigation */
+/* ============================================
+   NAVIGATION
+   ============================================ */
+
 .bbai-nav {
     display: flex;
     align-items: center;
-    gap: var(--bbai-space-2);
+    gap: var(--bbai-space-1);
 }
 
 .bbai-nav-link {
@@ -52,50 +64,50 @@
     align-items: center;
     gap: var(--bbai-space-2);
     padding: var(--bbai-space-2) var(--bbai-space-4);
-    color: rgba(255, 255, 255, 0.9);
+    color: rgba(255, 255, 255, 0.75);
     text-decoration: none;
-    border-radius: var(--bbai-radius-full);
+    border-radius: var(--bbai-radius);
     font-size: var(--bbai-text-sm);
     font-weight: var(--bbai-font-medium);
-    transition: all var(--bbai-transition);
+    transition: all var(--bbai-transition-fast) var(--bbai-ease-out);
     background: transparent;
     border: none;
     cursor: pointer;
-}
-
-/* Ensure inactive links are clearly visible */
-.bbai-nav-link:not(.active) {
-    color: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
 }
 
 .bbai-nav-link:hover:not(.active) {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.1);
     color: white;
 }
 
 .bbai-nav-link.active {
-    background: var(--bbai-gray-700);
-    font-weight: var(--bbai-font-semibold);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.15);
     color: white;
+    font-weight: var(--bbai-font-semibold);
 }
 
-.bbai-nav-link.active:hover {
-    background: #4B5563;
+.bbai-nav-link:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 2px;
 }
 
 .bbai-nav-link svg {
     width: 16px;
     height: 16px;
-    opacity: 0.75;
+    opacity: 0.7;
+    flex-shrink: 0;
 }
 
-.bbai-nav-link:hover:not(.active) svg,
+.bbai-nav-link:hover svg,
 .bbai-nav-link.active svg {
     opacity: 1;
 }
 
-/* Header Actions */
+/* ============================================
+   HEADER ACTIONS
+   ============================================ */
+
 .bbai-header-actions {
     display: flex;
     align-items: center;
@@ -116,6 +128,10 @@
 
 .bbai-auth-badge__user {
     font-weight: var(--bbai-font-medium);
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .bbai-auth-badge__logout {
@@ -126,44 +142,90 @@
     cursor: pointer;
     text-decoration: underline;
     padding: 0;
+    transition: color var(--bbai-transition-fast);
 }
 
 .bbai-auth-badge__logout:hover {
     color: white;
 }
 
-/* Header Logout Button */
+/* Logout/Disconnect Button */
 .bbai-header-logout-btn,
 .bbai-header-disconnect-btn {
-    padding: 6px 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+    padding: 8px 16px;
     background: rgba(255, 255, 255, 0.1);
     color: rgba(255, 255, 255, 0.9);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 500;
+    border-radius: var(--bbai-radius);
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-medium);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--bbai-transition-fast) var(--bbai-ease-out);
     white-space: nowrap;
+    text-decoration: none;
 }
 
 .bbai-header-logout-btn:hover,
 .bbai-header-disconnect-btn:hover {
-    color: #ffffff;
+    color: white;
     background: rgba(255, 255, 255, 0.15);
     border-color: rgba(255, 255, 255, 0.3);
-    transform: translateY(-1px);
 }
 
-.bbai-header-logout-btn:active,
-.bbai-header-disconnect-btn:active {
-    transform: translateY(0);
-    background: rgba(255, 255, 255, 0.2);
+.bbai-header-logout-btn:focus-visible,
+.bbai-header-disconnect-btn:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 2px;
 }
 
 .bbai-header-logout-btn:disabled,
 .bbai-header-disconnect-btn:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
-    transform: none;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 900px) {
+    .bbai-header-content {
+        flex-wrap: wrap;
+    }
+
+    .bbai-nav {
+        order: 3;
+        width: 100%;
+        justify-content: flex-start;
+        overflow-x: auto;
+        padding-bottom: var(--bbai-space-2);
+        margin-top: var(--bbai-space-2);
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .bbai-nav-link {
+        padding: var(--bbai-space-2) var(--bbai-space-3);
+        font-size: var(--bbai-text-xs);
+    }
+}
+
+@media (max-width: 640px) {
+    .bbai-header {
+        padding: var(--bbai-space-3) var(--bbai-space-4);
+    }
+
+    .bbai-logo-text {
+        display: none;
+    }
+
+    .bbai-header-actions {
+        gap: var(--bbai-space-2);
+    }
+
+    .bbai-auth-badge__user {
+        max-width: 100px;
+    }
 }

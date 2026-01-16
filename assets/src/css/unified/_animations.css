@@ -1,12 +1,14 @@
 /**
- * Animations
- * Keyframes and animation classes
- *
- * @package BeepBeep_AI
- * @since 5.0.0
+ * Animation System - BeepBeep AI
+ * Standard animations for consistent UX across the plugin
+ * 
+ * All animations respect prefers-reduced-motion
  */
 
-/* Keyframes */
+/* ============================================
+   KEYFRAME ANIMATIONS
+   ============================================ */
+
 @keyframes bbai-spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
@@ -22,9 +24,75 @@
     to { opacity: 1; }
 }
 
+@keyframes bbai-fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
 @keyframes bbai-slide-up {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bbai-slide-down {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bbai-slide-left {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes bbai-slide-right {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes bbai-scale-in {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes bbai-scale-out {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.95);
+    }
 }
 
 @keyframes bbai-toast-in {
@@ -39,13 +107,20 @@
 }
 
 @keyframes bbai-shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
 }
 
-/* Animation Classes */
+/* ============================================
+   ANIMATION UTILITY CLASSES
+   ============================================ */
+
 .bbai-animate-spin {
-    animation: bbai-spin 1s linear infinite;
+    animation: bbai-spin var(--bbai-animation-base) linear infinite;
 }
 
 .bbai-animate-pulse {
@@ -53,14 +128,42 @@
 }
 
 .bbai-animate-fade-in {
-    animation: bbai-fade-in var(--bbai-transition);
+    animation: bbai-fade-in var(--bbai-animation-base) ease-out;
+}
+
+.bbai-animate-fade-out {
+    animation: bbai-fade-out var(--bbai-animation-base) ease-out;
 }
 
 .bbai-animate-slide-up {
-    animation: bbai-slide-up var(--bbai-transition);
+    animation: bbai-slide-up var(--bbai-animation-base) ease-out;
 }
 
-/* Loading Spinner */
+.bbai-animate-slide-down {
+    animation: bbai-slide-down var(--bbai-animation-base) ease-out;
+}
+
+.bbai-animate-slide-left {
+    animation: bbai-slide-left var(--bbai-animation-base) ease-out;
+}
+
+.bbai-animate-slide-right {
+    animation: bbai-slide-right var(--bbai-animation-base) ease-out;
+}
+
+.bbai-animate-scale-in {
+    animation: bbai-scale-in var(--bbai-animation-base) ease-out;
+}
+
+.bbai-animate-scale-out {
+    animation: bbai-scale-out var(--bbai-animation-base) ease-out;
+}
+
+/* ============================================
+   LOADING STATES
+   ============================================ */
+
+/* Spinner */
 .bbai-spinner {
     width: 20px;
     height: 20px;
@@ -76,13 +179,19 @@
     border-width: 3px;
 }
 
-/* Skeleton Loading */
+.bbai-spinner-sm {
+    width: 16px;
+    height: 16px;
+    border-width: 2px;
+}
+
+/* Skeleton Loader */
 .bbai-skeleton {
     background: linear-gradient(
         90deg,
-        var(--bbai-gray-200) 0%,
-        var(--bbai-gray-100) 50%,
-        var(--bbai-gray-200) 100%
+        var(--bbai-gray-100) 0%,
+        var(--bbai-gray-200) 50%,
+        var(--bbai-gray-100) 100%
     );
     background-size: 200% 100%;
     animation: bbai-shimmer 1.5s ease-in-out infinite;
@@ -91,13 +200,13 @@
 
 .bbai-skeleton-text {
     height: 1em;
-    margin-bottom: var(--bbai-space-2);
+    margin-bottom: 0.5em;
 }
 
 .bbai-skeleton-title {
     height: 1.5em;
     width: 60%;
-    margin-bottom: var(--bbai-space-4);
+    margin-bottom: 1em;
 }
 
 .bbai-skeleton-avatar {
@@ -106,7 +215,47 @@
     border-radius: 50%;
 }
 
-.bbai-skeleton-card {
-    height: 200px;
-    border-radius: var(--bbai-radius-lg);
+/* ============================================
+   MODAL ANIMATIONS
+   ============================================ */
+
+.bbai-modal-backdrop {
+    animation: bbai-fade-in var(--bbai-animation-base) ease-out;
+}
+
+.bbai-modal {
+    animation: bbai-scale-in var(--bbai-animation-base) ease-out;
+}
+
+/* ============================================
+   TAB TRANSITIONS
+   ============================================ */
+
+.bbai-tab-content {
+    animation: bbai-fade-in var(--bbai-animation-fast) ease-out;
+}
+
+/* ============================================
+   RESPECT REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+    .bbai-animate-spin,
+    .bbai-animate-pulse,
+    .bbai-animate-fade-in,
+    .bbai-animate-fade-out,
+    .bbai-animate-slide-up,
+    .bbai-animate-slide-down,
+    .bbai-animate-slide-left,
+    .bbai-animate-slide-right,
+    .bbai-animate-scale-in,
+    .bbai-animate-scale-out,
+    .bbai-spinner,
+    .bbai-skeleton {
+        animation: none !important;
+    }
+    
+    .bbai-skeleton {
+        background: var(--bbai-gray-100);
+    }
 }

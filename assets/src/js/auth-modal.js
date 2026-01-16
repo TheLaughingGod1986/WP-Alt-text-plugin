@@ -262,12 +262,23 @@ class BbAIAuthModal {
         // Use event delegation from document for all modal events
         document.addEventListener('click', function(e) {
             // Global CTA triggers (works even if dashboard script fails)
-            const authTrigger = e.target.closest('[data-action="show-auth-modal"], #bbai-show-auth-banner-btn, #bbai-show-auth-login-btn');
+            const target = e.target;
+            let authTrigger = target.closest('[data-action="show-auth-modal"]');
+            
+            // Also check for ID-based triggers (for hero section buttons)
+            if (!authTrigger) {
+                const clickedElement = target.closest('button, a') || target;
+                if (clickedElement.id === 'bbai-show-auth-banner-btn' || clickedElement.id === 'bbai-show-auth-login-btn') {
+                    authTrigger = clickedElement;
+                }
+            }
+            
             if (authTrigger) {
                 e.preventDefault();
                 e.stopPropagation();
 
-                const requestedTab = authTrigger.getAttribute('data-auth-tab') || authTrigger.dataset?.authTab || 'login';
+                const requestedTab = authTrigger.getAttribute('data-auth-tab') || authTrigger.dataset?.authTab || 
+                                   (authTrigger.id === 'bbai-show-auth-login-btn' ? 'login' : 'register');
                 self.show();
                 if (requestedTab === 'register') {
                     self.showRegisterForm();
@@ -975,7 +986,7 @@ class BbAIAuthModal {
 }
 
 // Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
+function initAuthModal() {
     // Create instance and add to bbaiApp namespace
     var authModalInstance = new BbAIAuthModal();
     window.AltTextAuthModal = authModalInstance; // Legacy support
@@ -983,7 +994,15 @@ document.addEventListener('DOMContentLoaded', () => {
         bbaiApp.authModal = authModalInstance;
     }
     window.authModal = authModalInstance; // Alias for compatibility
-});
+}
+
+// Initialize immediately if DOM is already loaded, otherwise wait for DOMContentLoaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAuthModal);
+} else {
+    // DOM is already loaded, initialize immediately
+    initAuthModal();
+}
 
 // Export for use in other scripts
 if (typeof module !== 'undefined' && module.exports) {

@@ -1,0 +1,112 @@
+/**
+ * Quality Insights Styles
+ * Quality badges, hints, and improvement suggestions
+ */
+
+/* Quality Badge */
+.bbai-quality-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: var(--bbai-radius-full);
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-right: var(--bbai-space-2);
+}
+
+.bbai-quality-badge--good {
+    background: var(--bbai-success-light);
+    color: var(--bbai-success);
+}
+
+.bbai-quality-badge--fair {
+    background: #fffbeb;
+    color: #f59e0b;
+}
+
+.bbai-quality-badge--poor {
+    background: #fef2f2;
+    color: var(--bbai-error);
+}
+
+/* Quality Hints */
+.bbai-quality-hint {
+    display: inline-flex;
+    align-items: center;
+    color: var(--bbai-warning);
+    cursor: help;
+    margin-left: var(--bbai-space-1);
+}
+
+.bbai-quality-insights {
+    display: flex;
+    align-items: center;
+    margin-top: var(--bbai-space-2);
+    flex-wrap: wrap;
+    gap: var(--bbai-space-2);
+}
+
+/* Quality Suggestions */
+.bbai-quality-suggestions {
+    margin-top: var(--bbai-space-4);
+    padding: var(--bbai-space-4);
+    background: var(--bbai-gray-50);
+    border-radius: var(--bbai-radius-lg);
+    border-left: 4px solid var(--bbai-primary);
+}
+
+.bbai-quality-suggestions-title {
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin-bottom: var(--bbai-space-3);
+}
+
+.bbai-quality-suggestions-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.bbai-quality-suggestion-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--bbai-space-2);
+    padding: var(--bbai-space-2) 0;
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+}
+
+.bbai-quality-suggestion-item svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--bbai-primary);
+}
+
+/* Dark Mode */
+[data-theme="dark"] .bbai-quality-suggestions,
+.bbai-dark-mode .bbai-quality-suggestions {
+    background: var(--bbai-gray-800);
+    border-left-color: var(--bbai-primary);
+}
+
+[data-theme="dark"] .bbai-quality-badge--good,
+.bbai-dark-mode .bbai-quality-badge--good {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--bbai-success);
+}
+
+[data-theme="dark"] .bbai-quality-badge--fair,
+.bbai-dark-mode .bbai-quality-badge--fair {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+}
+
+[data-theme="dark"] .bbai-quality-badge--poor,
+.bbai-dark-mode .bbai-quality-badge--poor {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--bbai-error);
+}

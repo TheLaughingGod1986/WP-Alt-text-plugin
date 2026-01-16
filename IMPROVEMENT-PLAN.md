@@ -275,5 +275,231 @@ WP-Alt-text-plugin/
 
 ---
 
+## Implementation Roadmap
+
+This roadmap organizes all remaining work into phases with clear dependencies.
+
+### Phase 1: Foundation (Error Handling + Modular Migration)
+**Goal:** Complete the architecture migration and establish consistent error handling.
+
+#### 1A. Error Factory Class
+Create `includes/class-error-factory.php`:
+```php
+class Error_Factory {
+    const UNAUTHORIZED = 'unauthorized';
+    const INVALID_INPUT = 'invalid_input';
+    const NOT_FOUND = 'not_found';
+    const API_ERROR = 'api_error';
+    const RATE_LIMITED = 'rate_limited';
+
+    public static function create(string $code, string $message = '', array $data = []): \WP_Error;
+    public static function unauthorized(string $message = ''): \WP_Error;
+    public static function invalid_input(string $field, string $message = ''): \WP_Error;
+    public static function not_found(string $resource): \WP_Error;
+    public static function api_error(string $message, array $response = []): \WP_Error;
+}
+```
+
+**Tasks:**
+- [ ] Create `Error_Factory` class with standard error codes
+- [ ] Define HTTP status mappings for each error type
+- [ ] Add `to_rest_response()` helper for REST endpoints
+- [ ] Document error codes in `docs/ERROR-CODES.md`
+- [ ] Adopt `Error_Factory` in REST controller
+- [ ] Adopt `Error_Factory` in AJAX handlers
+
+#### 1B. Complete Modular Architecture Migration
+**Tasks:**
+- [ ] Update `class-bbai.php` to conditionally load modular bundles
+- [ ] Add feature flag: `BBAI_USE_MODULAR_ASSETS`
+- [ ] Test dashboard with modular JS bundle
+- [ ] Test admin with modular JS bundle
+- [ ] Test CSS with modular bundle
+- [ ] Create fallback mechanism for legacy files
+- [ ] Update `wp_enqueue_script` calls to use bundled files
+- [ ] Mark monolithic files as deprecated with comments
+
+**Dependency:** Build scripts must be working (`npm run build:js`, `npm run build:css`)
+
+---
+
+### Phase 2: Testing Infrastructure
+**Goal:** Establish test coverage for critical code paths.
+
+#### 2A. PHPUnit Setup
+**Tasks:**
+- [ ] Install PHPUnit via Composer: `composer require --dev phpunit/phpunit`
+- [ ] Install WP test library: `composer require --dev wp-phpunit/wp-phpunit`
+- [ ] Create `phpunit.xml.dist` configuration
+- [ ] Create `tests/bootstrap.php` for WordPress test setup
+- [ ] Create `tests/Unit/` directory structure
+- [ ] Add `composer test` script
+
+#### 2B. Core Unit Tests
+**Tasks:**
+- [ ] Test `Input_Validator::int_param()` edge cases
+- [ ] Test `Input_Validator::pagination()` bounds
+- [ ] Test `Input_Validator::log_level()` allowed values
+- [ ] Test `Error_Factory` output format
+- [ ] Test `Queue::add_job()` and `Queue::get_stats()`
+
+#### 2C. Integration Tests
+**Tasks:**
+- [ ] Test REST endpoint authentication
+- [ ] Test `/wp-json/beepbeepai/v1/generate` flow
+- [ ] Test `/wp-json/beepbeepai/v1/stats` response format
+- [ ] Test AJAX handler responses
+
+**Target:** 80% coverage on `Input_Validator`, `Error_Factory`, `Queue`
+
+---
+
+### Phase 3: v4.x Deprecation Strategy
+**Goal:** Plan the removal of legacy v4.x code paths.
+
+#### 3A. Audit v4.x Code
+**Tasks:**
+- [ ] Identify all v4.x-specific options (`wp_alt_text_*` keys)
+- [ ] Identify all v4.x AJAX handlers
+- [ ] Identify all v4.x template files
+- [ ] Document v4.x vs v5.x feature differences
+- [ ] Create migration matrix for settings
+
+#### 3B. Deprecation Notices
+**Tasks:**
+- [ ] Add `_deprecated_function()` calls to v4.x methods
+- [ ] Add admin notice for v4.x settings migration
+- [ ] Create automated v4.x → v5.x settings migrator
+- [ ] Plan v6.0 release timeline for v4.x removal
+
+#### 3C. Migration Helper
+Create `includes/class-migration-helper.php`:
+- [ ] `migrate_v4_settings()` - One-click migration
+- [ ] `get_legacy_settings()` - Read v4.x options
+- [ ] `cleanup_legacy_data()` - Remove v4.x options after migration
+
+---
+
+### Phase 4: Code Quality
+**Goal:** Improve maintainability and developer experience.
+
+#### 4A. PHP Type Hints
+**Files to update (in order):**
+- [ ] `includes/class-input-validator.php` (already done)
+- [ ] `includes/class-error-factory.php` (new)
+- [ ] `includes/class-queue.php`
+- [ ] `includes/class-api-client-v2.php`
+- [ ] `admin/class-bbai-rest-controller.php`
+- [ ] All trait files in `admin/traits/`
+
+#### 4B. Debug Statement Cleanup
+**Tasks:**
+- [ ] Run: `grep -rn "console.log" assets/src/js/bbai-*.js | wc -l`
+- [ ] Replace `console.log` with `bbaiLogger.debug()` in `bbai-dashboard.js`
+- [ ] Replace `console.log` with `bbaiLogger.debug()` in `bbai-admin.js`
+- [ ] Wrap remaining logs in `if (window.BBAI_DEBUG)` checks
+- [ ] Verify production builds have no console output
+
+#### 4C. Logging Strategy
+**Tasks:**
+- [ ] Audit `Debug_Log` class for sensitive data exposure
+- [ ] Add log rotation (delete logs older than 30 days)
+- [ ] Add admin UI for log management
+- [ ] Integrate with `WP_DEBUG` constant
+- [ ] Add log level filtering in admin
+
+---
+
+### Phase 5: Documentation
+**Goal:** Make the codebase accessible to new developers.
+
+#### 5A. PHPDoc Coverage
+**Tasks:**
+- [ ] Document all public methods in `class-bbai-core.php`
+- [ ] Document all REST endpoints with `@since`, `@param`, `@return`
+- [ ] Document all hooks/filters with `@hook` annotations
+- [ ] Add `@throws` annotations where applicable
+
+#### 5B. REST API Documentation
+**Tasks:**
+- [ ] Create `docs/REST-API.md` with endpoint reference
+- [ ] Document request/response formats
+- [ ] Add authentication requirements
+- [ ] Add rate limiting info
+- [ ] Consider OpenAPI/Swagger spec generation
+
+#### 5C. Developer Guide
+**Tasks:**
+- [ ] Create `docs/DEVELOPER.md` with architecture overview
+- [ ] Document trait usage pattern
+- [ ] Document build scripts usage
+- [ ] Document local development setup
+- [ ] Document hooks for extensibility
+
+---
+
+### Phase 6: Polish (Future)
+**Goal:** Enhance user experience and performance.
+
+#### 6A. Performance
+- [ ] Profile database queries with Query Monitor
+- [ ] Add object caching for stats queries
+- [ ] Optimize `get_media_stats()` for large libraries
+- [ ] Consider background stats calculation
+
+#### 6B. Code Quality Tools
+- [ ] Add `phpcs.xml.dist` with WordPress standards
+- [ ] Add `.eslintrc.js` configuration
+- [ ] Set up Husky pre-commit hooks
+- [ ] Add GitHub Actions CI workflow
+
+#### 6C. Accessibility
+- [ ] Audit admin pages with axe DevTools
+- [ ] Add ARIA labels to interactive elements
+- [ ] Test keyboard navigation
+- [ ] Verify color contrast ratios
+
+#### 6D. Internationalization
+- [ ] Run `wp i18n make-pot` to generate POT file
+- [ ] Audit for untranslated strings
+- [ ] Test with RTL language pack
+- [ ] Add translator comments where needed
+
+---
+
+## Quick Reference: Commands
+
+```bash
+# Build assets
+npm run build:js
+npm run build:css
+
+# Run tests (after Phase 2)
+composer test
+
+# Check coding standards (after Phase 6B)
+composer phpcs
+
+# Generate translations
+wp i18n make-pot . languages/beepbeep-ai.pot
+```
+
+---
+
+## Progress Tracking
+
+| Phase | Status | Progress |
+|-------|--------|----------|
+| Phase 1: Foundation | Not Started | 0/12 tasks |
+| Phase 2: Testing | Not Started | 0/12 tasks |
+| Phase 3: Deprecation | Not Started | 0/10 tasks |
+| Phase 4: Code Quality | Not Started | 0/14 tasks |
+| Phase 5: Documentation | Not Started | 0/11 tasks |
+| Phase 6: Polish | Not Started | 0/12 tasks |
+
+**Total remaining:** 71 tasks
+
+---
+
 *Last updated: January 2026*
 *Generated during codebase modularization session*
