@@ -961,6 +961,35 @@ class Core {
     public function add_settings_page() {
         $cap = current_user_can(self::CAPABILITY) ? self::CAPABILITY : 'manage_options';
         
+        // Check authentication status (same logic as render_settings_page)
+        try {
+            $is_authenticated = $this->api_client->is_authenticated();
+            $has_license = $this->api_client->has_active_license();
+        } catch (Exception $e) {
+            $is_authenticated = false;
+            $has_license = false;
+        } catch (Error $e) {
+            $is_authenticated = false;
+            $has_license = false;
+        }
+        
+        // Also check stored credentials
+        $stored_token = get_option('beepbeepai_jwt_token', '');
+        $has_stored_token = !empty($stored_token);
+        
+        $stored_license = '';
+        try {
+            $stored_license = $this->api_client->get_license_key();
+        } catch (Exception $e) {
+            $stored_license = '';
+        } catch (Error $e) {
+            $stored_license = '';
+        }
+        $has_stored_license = !empty($stored_license);
+        
+        // Determine if user is registered (authenticated/licensed)
+        $has_registered_user = $is_authenticated || $has_license || $has_stored_token || $has_stored_license;
+        
         // Top-level menu for BeepBeep AI (always visible)
         add_menu_page(
             'BeepBeep AI – Alt Text Generator',
@@ -972,7 +1001,7 @@ class Core {
             30
         );
         
-        // Submenus (always register; access control happens inside the page)
+        // Dashboard (always visible)
         add_submenu_page(
             'bbai',
             __('Dashboard', 'beepbeep-ai-alt-text-generator'),
@@ -982,57 +1011,64 @@ class Core {
             [$this, 'render_settings_page']
         );
         
-        add_submenu_page(
-            'bbai',
-            __('ALT Library', 'beepbeep-ai-alt-text-generator'),
-            __('ALT Library', 'beepbeep-ai-alt-text-generator'),
-            $cap,
-            'bbai-library',
-            [$this, 'render_settings_page']
-        );
+        // Only show authenticated/licensed menu items if user is registered
+        if ($has_registered_user) {
+            add_submenu_page(
+                'bbai',
+                __('ALT Library', 'beepbeep-ai-alt-text-generator'),
+                __('ALT Library', 'beepbeep-ai-alt-text-generator'),
+                $cap,
+                'bbai-library',
+                [$this, 'render_settings_page']
+            );
+            
+            add_submenu_page(
+                'bbai',
+                __('Credit Usage', 'beepbeep-ai-alt-text-generator'),
+                __('Credit Usage', 'beepbeep-ai-alt-text-generator'),
+                $cap,
+                'bbai-credit-usage',
+                [$this, 'render_settings_page']
+            );
+            
+            add_submenu_page(
+                'bbai',
+                __('Analytics', 'beepbeep-ai-alt-text-generator'),
+                __('Analytics', 'beepbeep-ai-alt-text-generator'),
+                $cap,
+                'bbai-analytics',
+                [$this, 'render_settings_page']
+            );
+            
+            // Settings and Debug only for authenticated/licensed users
+            if ($is_authenticated || $has_license || $has_stored_token || $has_stored_license) {
+                add_submenu_page(
+                    'bbai',
+                    __('Settings', 'beepbeep-ai-alt-text-generator'),
+                    __('Settings', 'beepbeep-ai-alt-text-generator'),
+                    $cap,
+                    'bbai-settings',
+                    [$this, 'render_settings_page']
+                );
+                
+                add_submenu_page(
+                    'bbai',
+                    __('Debug Logs', 'beepbeep-ai-alt-text-generator'),
+                    __('Debug Logs', 'beepbeep-ai-alt-text-generator'),
+                    $cap,
+                    'bbai-debug',
+                    [$this, 'render_settings_page']
+                );
+            }
+        }
         
-        add_submenu_page(
-            'bbai',
-            __('Credit Usage', 'beepbeep-ai-alt-text-generator'),
-            __('Credit Usage', 'beepbeep-ai-alt-text-generator'),
-            $cap,
-            'bbai-credit-usage',
-            [$this, 'render_settings_page']
-        );
-        
-        add_submenu_page(
-            'bbai',
-            __('Analytics', 'beepbeep-ai-alt-text-generator'),
-            __('Analytics', 'beepbeep-ai-alt-text-generator'),
-            $cap,
-            'bbai-analytics',
-            [$this, 'render_settings_page']
-        );
-        
+        // How to (always visible for all users)
         add_submenu_page(
             'bbai',
             __('How to', 'beepbeep-ai-alt-text-generator'),
             __('How to', 'beepbeep-ai-alt-text-generator'),
             $cap,
             'bbai-guide',
-            [$this, 'render_settings_page']
-        );
-        
-        add_submenu_page(
-            'bbai',
-            __('Settings', 'beepbeep-ai-alt-text-generator'),
-            __('Settings', 'beepbeep-ai-alt-text-generator'),
-            $cap,
-            'bbai-settings',
-            [$this, 'render_settings_page']
-        );
-        
-        add_submenu_page(
-            'bbai',
-            __('Debug Logs', 'beepbeep-ai-alt-text-generator'),
-            __('Debug Logs', 'beepbeep-ai-alt-text-generator'),
-            $cap,
-            'bbai-debug',
             [$this, 'render_settings_page']
         );
 
@@ -1856,8 +1892,8 @@ class Core {
         
         // Include upgrade modal OUTSIDE of tab conditionals so it's always available
         // Set up currency for upgrade modal - Always use GBP (£) with Stripe prices
-        // GBP prices: Growth £14.99, Agency £59.99, Credits £9.99 (matching Stripe payment links)
-        $currency = ['symbol' => '£', 'code' => 'GBP', 'free' => 0, 'growth' => 14.99, 'pro' => 14.99, 'agency' => 59.99, 'credits' => 9.99];
+        // GBP prices: Growth £12.99, Agency £49.99, Credits £9.99 (matching Stripe payment links)
+        $currency = ['symbol' => '£', 'code' => 'GBP', 'free' => 0, 'growth' => 12.99, 'pro' => 12.99, 'agency' => 49.99, 'credits' => 9.99];
         
         // Include upgrade modal - always available for all tabs
         $checkout_prices = $this->get_checkout_price_ids();

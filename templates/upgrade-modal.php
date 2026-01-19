@@ -30,12 +30,12 @@ $stripe_links = [
 ];
 
 // Currency - Default to GBP, but support detection
-$currency = $currency ?? ['symbol' => '£', 'code' => 'GBP', 'free' => 0, 'growth' => 14.99, 'pro' => 14.99, 'agency' => 59.99, 'credits' => 19.99];
+$currency = $currency ?? ['symbol' => '£', 'code' => 'GBP', 'free' => 0, 'growth' => 12.99, 'pro' => 12.99, 'agency' => 49.99, 'credits' => 19.99];
 
 // Calculate annual prices (2 months free = 10 months of monthly price)
-$growth_monthly = $currency['growth'] ?? 14.99;
+$growth_monthly = $currency['growth'] ?? 12.99;
 $growth_annual = round($growth_monthly * 10, 2);
-$agency_monthly = $currency['agency'] ?? 59.99;
+$agency_monthly = $currency['agency'] ?? 49.99;
 $agency_annual = round($agency_monthly * 10, 2);
 
 // Calculate annual savings (20% = 2 months free)
