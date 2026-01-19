@@ -96,6 +96,44 @@ These hooks keep the WordPress dashboard in sync with your SaaS checkout/portal 
    - **Individual**: Click "Generate Alt Text (AI)" on any image
    - **Dashboard**: Use quick actions to process missing or all images
 
+### Contact Form (Resend Integration)
+
+The plugin includes a contact form accessible via the "Contact Us" link in the footer. To enable email sending via Resend API, configure the API key using one of these methods (checked in priority order):
+
+**Configuration Methods (Priority Order):**
+
+1. **WordPress Constant** (`wp-config.php`):
+   ```php
+   define('BBAI_RESEND_API_KEY', 're_your_resend_api_key_here');
+   define('BBAI_CONTACT_EMAIL', 'support@example.com'); // Optional
+   ```
+
+2. **Environment Variable** (Server/Host Configuration):
+   ```bash
+   RESEND_API_KEY=re_your_resend_api_key_here
+   RESEND_CONTACT_EMAIL=support@example.com  # Optional
+   ```
+   This is useful if you're using host-based environment variables (e.g., Render, Heroku, etc.)
+
+3. **WordPress Option** (Database):
+   ```php
+   update_option('bbai_resend_api_key', 're_your_resend_api_key_here');
+   update_option('bbai_contact_email', 'support@example.com'); // Optional
+   ```
+
+**Setup Instructions:**
+1. Sign up for a [Resend account](https://resend.com)
+2. Create an API key in your Resend dashboard
+3. Configure the API key using any of the methods above (recommended: environment variable if using host-based config)
+4. Contact email defaults to WordPress admin email if not specified
+5. The contact form is accessible via the "Contact Us" link in the footer of admin pages
+
+**Features:**
+- Rate limiting: 3 submissions per hour per user
+- Auto-includes WordPress version and plugin version
+- Secure nonce verification
+- User-friendly error handling
+
 ## Usage
 
 ### Dashboard Quick Actions

@@ -166,7 +166,7 @@ if (file_exists($onboarding_modal_path)) {
                                 <!-- Upgrade CTA -->
                                 <button
                                     type="button"
-                                    class="bbai-upgrade-cta-green"
+                                    class="bbai-btn bbai-btn-primary bbai-upgrade-cta-green"
                                     data-action="show-upgrade-modal"
                                     aria-label="<?php esc_attr_e('Upgrade to Pro plan for 1,000 monthly credits', 'beepbeep-ai-alt-text-generator'); ?>"
                                 >
@@ -178,13 +178,13 @@ if (file_exists($onboarding_modal_path)) {
 
                                 <!-- Action Buttons Grid -->
                                 <div class="bbai-action-buttons-grid">
-                                    <button
-                                        type="button"
-                                        class="bbai-action-btn bbai-action-btn-primary <?php echo esc_attr((!$can_generate) ? 'disabled' : ''); ?>"
-                                        data-action="generate-missing"
-                                        <?php echo (!$can_generate) ? 'disabled' : ''; ?>
-                                        aria-label="<?php esc_attr_e('Generate missing alt text', 'beepbeep-ai-alt-text-generator'); ?>"
-                                    >
+                                <button
+                                    type="button"
+                                    class="bbai-btn bbai-action-btn bbai-action-btn-primary <?php echo esc_attr((!$can_generate) ? 'disabled' : ''); ?>"
+                                    data-action="generate-missing"
+                                    <?php echo (!$can_generate) ? 'disabled' : ''; ?>
+                                    aria-label="<?php esc_attr_e('Generate missing alt text', 'beepbeep-ai-alt-text-generator'); ?>"
+                                >
                                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
                                             <rect x="2" y="2" width="12" height="12" rx="2" />
                                             <path d="M6 6H10M6 10H10" stroke-linecap="round" />
@@ -193,7 +193,7 @@ if (file_exists($onboarding_modal_path)) {
                                     </button>
                                     <button
                                         type="button"
-                                        class="bbai-action-btn bbai-action-btn-secondary <?php echo esc_attr((!$can_generate) ? 'disabled' : ''); ?>"
+                                        class="bbai-btn bbai-action-btn bbai-action-btn-secondary <?php echo esc_attr((!$can_generate) ? 'disabled' : ''); ?>"
                                         data-action="regenerate-all"
                                         <?php echo (!$can_generate) ? 'disabled' : ''; ?>
                                         aria-label="<?php esc_attr_e('Re-optimize all alt text', 'beepbeep-ai-alt-text-generator'); ?>"
@@ -400,13 +400,13 @@ if (file_exists($onboarding_modal_path)) {
                                                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
                                                     <path d="M12 6V4a4 4 0 00-8 0v2M4 6h8l1 8H3L4 6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                                                 </svg>
-                                                <span><?php esc_html_e('Generate Missing Alt Text', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                                <span><?php esc_html_e('Generate Missing', 'beepbeep-ai-alt-text-generator'); ?></span>
                                             <?php else : ?>
                                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
                                                     <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                                     <path d="M6 6H10M6 10H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                                                 </svg>
-                                                <span><?php esc_html_e('Generate Missing Alt Text', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                                <span><?php esc_html_e('Generate Missing', 'beepbeep-ai-alt-text-generator'); ?></span>
                                             <?php endif; ?>
                                         </button>
                                         <button type="button" class="bbai-optimization-cta bbai-optimization-cta--secondary bbai-cta-glow-blue <?php echo esc_attr((!$can_generate) ? 'bbai-optimization-cta--locked' : ''); ?>" data-action="regenerate-all" <?php echo (!$can_generate) ? 'disabled title="' . esc_attr__('Unlock 1,000 alt text generations with Pro →', 'beepbeep-ai-alt-text-generator') . '"' : 'data-bbai-tooltip="' . esc_attr__('Regenerate alt text for ALL images, even those that already have it. Useful after changing your tone/style settings or brand guidelines.', 'beepbeep-ai-alt-text-generator') . '" data-bbai-tooltip-position="bottom"'; ?>>
@@ -414,7 +414,7 @@ if (file_exists($onboarding_modal_path)) {
                                                 <path d="M8 2L10 6L14 8L10 10L8 14L6 10L2 8L6 6L8 2Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                                 <circle cx="8" cy="8" r="2" fill="currentColor"/>
                                             </svg>
-                                            <span><?php esc_html_e('Re-optimize All Alt Text', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                            <span><?php esc_html_e('Re-optimize All', 'beepbeep-ai-alt-text-generator'); ?></span>
                                         </button>
                                     </div>
                                 </div>

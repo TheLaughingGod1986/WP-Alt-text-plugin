@@ -36,14 +36,14 @@ if (!$is_authenticated && !$has_license) :
                             <?php esc_html_e('If you continue without logging in, your changes may be stored locally for this site only.', 'beepbeep-ai-alt-text-generator'); ?>
                         </p>
                         <div class="bbai-settings-required-actions">
-                            <button type="button" class="bbai-btn-primary bbai-btn-icon" data-action="show-auth-modal" data-auth-tab="login">
+                            <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-icon" data-action="show-auth-modal" data-auth-tab="login">
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                     <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                     <circle cx="8" cy="8" r="2" fill="currentColor"/>
                                 </svg>
                                 <span><?php esc_html_e('Log In', 'beepbeep-ai-alt-text-generator'); ?></span>
                             </button>
-                            <a class="bbai-btn-outline" href="<?php echo esc_url(add_query_arg(['tab' => 'settings'])); ?>">
+                            <a class="bbai-btn bbai-btn-outline-primary" href="<?php echo esc_url(add_query_arg(['tab' => 'settings'])); ?>">
                                 <?php esc_html_e('Continue without login', 'beepbeep-ai-alt-text-generator'); ?>
                             </a>
                         </div>
@@ -180,7 +180,7 @@ if (!$is_authenticated && !$has_license) :
                         <?php endif; ?>
                     </div>
                     <?php if (!$is_pro && !$is_agency) : ?>
-                    <button type="button" class="bbai-settings-plan-upgrade-btn-large" data-action="show-upgrade-modal">
+                    <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-lg bbai-settings-plan-upgrade-btn-large" data-action="show-upgrade-modal">
                         <?php esc_html_e('Upgrade to Pro', 'beepbeep-ai-alt-text-generator'); ?>
                     </button>
                     <?php endif; ?>
@@ -241,7 +241,7 @@ if (!$is_authenticated && !$has_license) :
                                     ?>
                                 </div>
                             </div>
-                            <button type="button" class="bbai-settings-license-deactivate-btn" data-action="deactivate-license">
+                            <button type="button" class="bbai-btn bbai-btn-danger bbai-settings-license-deactivate-btn" data-action="deactivate-license">
                                 <?php esc_html_e('Deactivate', 'beepbeep-ai-alt-text-generator'); ?>
                             </button>
                         </div>
@@ -292,7 +292,7 @@ if (!$is_authenticated && !$has_license) :
                                     </div>
                                 </div>
                             </div>
-                            <button type="button" class="bbai-settings-license-deactivate-btn" data-action="deactivate-license">
+                            <button type="button" class="bbai-btn bbai-btn-danger bbai-settings-license-deactivate-btn" data-action="deactivate-license">
                                 <?php esc_html_e('Deactivate', 'beepbeep-ai-alt-text-generator'); ?>
                             </button>
                         </div>
@@ -316,7 +316,7 @@ if (!$is_authenticated && !$has_license) :
                                            required>
                                 </div>
                                 <div id="license-activation-status" class="bbai-hidden bbai-alert"></div>
-                                <button type="submit" id="activate-license-btn" class="bbai-settings-license-activate-btn">
+                                <button type="submit" id="activate-license-btn" class="bbai-btn bbai-btn-primary bbai-settings-license-activate-btn">
                                     <?php esc_html_e('Activate License', 'beepbeep-ai-alt-text-generator'); ?>
                                 </button>
                             </form>
@@ -344,7 +344,7 @@ if (!$is_authenticated && !$has_license) :
                         <span><?php esc_html_e('You are on the free plan.', 'beepbeep-ai-alt-text-generator'); ?></span>
                     </div>
                     <div class="bbai-settings-account-upgrade-link">
-                        <button type="button" class="bbai-settings-account-upgrade-btn" data-action="show-upgrade-modal">
+                        <button type="button" class="bbai-btn bbai-btn-primary bbai-settings-account-upgrade-btn" data-action="show-upgrade-modal">
                             <?php esc_html_e('Upgrade Now', 'beepbeep-ai-alt-text-generator'); ?>
                         </button>
                     </div>
@@ -382,7 +382,7 @@ if (!$is_authenticated && !$has_license) :
                         // Authenticated user - show Stripe portal
                     ?>
                     <div class="bbai-settings-account-actions">
-                        <button type="button" class="bbai-settings-account-action-btn" data-action="manage-subscription">
+                        <button type="button" class="bbai-btn bbai-btn-secondary bbai-settings-account-action-btn" data-action="manage-subscription">
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                 <circle cx="8" cy="8" r="2" fill="currentColor"/>
@@ -462,7 +462,7 @@ if (!$is_authenticated && !$has_license) :
                         </div>
 
                         <div class="bbai-settings-form-actions">
-                            <button type="submit" class="bbai-settings-save-btn">
+                            <button type="submit" class="bbai-btn bbai-btn-primary bbai-settings-save-btn">
                                 <?php esc_html_e('Save Settings', 'beepbeep-ai-alt-text-generator'); ?>
                             </button>
                         </div>

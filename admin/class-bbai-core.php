@@ -3674,29 +3674,26 @@ class Core {
         }
 
         $has_alt = (bool) get_post_meta($post->ID, '_wp_attachment_image_alt', true);
-        $label_generate   = __('Generate Alt', 'beepbeep-ai-alt-text-generator');
-        $label_regenerate = __('Regenerate Alt', 'beepbeep-ai-alt-text-generator');
+        $label_generate   = __('Generate Alt Text', 'beepbeep-ai-alt-text-generator');
+        $label_regenerate = __('Regenerate Alt Text', 'beepbeep-ai-alt-text-generator');
         $current_label    = $has_alt ? $label_regenerate : $label_generate;
         $is_authenticated = $this->api_client->is_authenticated();
         $disabled_attr    = !$is_authenticated ? ' disabled title="' . esc_attr__('Please log in to generate alt text', 'beepbeep-ai-alt-text-generator') . '"' : '';
+        
+        // Use unified button classes and correct data attributes for JavaScript handler
         $button = sprintf(
-            '<button type="button" class="button bbai-generate" data-id="%1$d" data-has-alt="%2$d" data-label-generate="%3$s" data-label-regenerate="%4$s"%5$s>%6$s</button>',
+            '<button type="button" class="button button-secondary bbai-btn bbai-btn-secondary" data-action="regenerate-single" data-attachment-id="%1$d"%2$s>%3$s</button>',
             intval($post->ID),
-            $has_alt ? 1 : 0,
-            esc_attr($label_generate),
-            esc_attr($label_regenerate),
             $disabled_attr,
             esc_html($current_label)
         );
 
-        // Hide attachment screen field by default to avoid confusion; can be re-enabled via filter
-        if (apply_filters('bbai_show_attachment_button', false)){
-        $fields['bbai_generate'] = [
+        // Always show the regenerate button on attachment edit screen
+        $fields['bbai_regenerate'] = [
             'label' => __('AI Alt Text', 'beepbeep-ai-alt-text-generator'),
             'input' => 'html',
-            'html'  => $button . '<p class="description">' . esc_html__('Use AI to suggest alternative text for this image.', 'beepbeep-ai-alt-text-generator') . '</p>',
+            'html'  => $button . '<p class="description">' . esc_html__('Use AI to generate or regenerate alternative text for this image.', 'beepbeep-ai-alt-text-generator') . '</p>',
         ];
-        }
 
         return $fields;
     }
@@ -3912,6 +3909,28 @@ class Core {
                 $asset_version($asset_path($js_base, 'bbai-debug', $use_debug_assets, 'js'), '1.0.0'),
                 true
             );
+
+            // Enqueue contact modal script and styles
+            wp_enqueue_script(
+                'bbai-contact-modal',
+                $base_url . $asset_path($js_base, 'bbai-contact-modal', $use_debug_assets, 'js'),
+                ['jquery'],
+                $asset_version($asset_path($js_base, 'bbai-contact-modal', $use_debug_assets, 'js'), '1.0.0'),
+                true
+            );
+
+            wp_enqueue_style(
+                'bbai-contact-modal',
+                $base_url . $asset_path($css_base, 'bbai-contact-modal', $use_debug_assets, 'css'),
+                ['bbai-unified'],
+                $asset_version($asset_path($css_base, 'bbai-contact-modal', $use_debug_assets, 'css'), '1.0.0')
+            );
+
+            // Localize contact modal script
+            wp_localize_script('bbai-contact-modal', 'bbaiContactData', [
+                'wp_version' => get_bloginfo('version'),
+                'plugin_version' => BEEPBEEP_AI_VERSION,
+            ]);
             
             // Localize debug script configuration
             wp_localize_script('bbai-debug', 'BBAI_DEBUG', [
@@ -4248,9 +4267,9 @@ class Core {
             wp_send_json_error(['message' => 'Invalid attachment ID']);
         }
         
-        // CRITICAL: Log the attachment_id being received to debug why backend sees wrong ID
+        // Log the attachment_id being received for debugging
         if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-            \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Regenerate request received', [
+            \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'Regenerate request received', [
                 'attachment_id_raw' => $attachment_id_raw,
                 'attachment_id' => $attachment_id,
                 'post_data_keys' => array_keys($_POST),
@@ -5633,6 +5652,99 @@ class Core {
         } else {
             return date_i18n(get_option('date_format'), $time);
         }
+    }
+
+    /**
+     * AJAX handler: Send contact form via Resend
+     */
+    public function ajax_send_contact_form() {
+        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        
+        if (!$this->user_can_manage()) {
+            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+        }
+
+        // Rate limiting check (3 submissions per hour per user)
+        $user_id = get_current_user_id();
+        $current_hour = date('Y-m-d-H');
+        $rate_limit_key = 'bbai_contact_limit_' . $user_id . '_' . $current_hour;
+        $submission_count = get_transient($rate_limit_key);
+        
+        if ($submission_count !== false && intval($submission_count) >= 3) {
+            wp_send_json_error([
+                'message' => __('Rate limit exceeded. Please wait before submitting another message.', 'beepbeep-ai-alt-text-generator')
+            ]);
+        }
+
+        // Sanitize and validate input
+        $name = isset($_POST['name']) ? sanitize_text_field(wp_unslash($_POST['name'])) : '';
+        $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
+        $subject = isset($_POST['subject']) ? sanitize_text_field(wp_unslash($_POST['subject'])) : '';
+        $message = isset($_POST['message']) ? sanitize_textarea_field(wp_unslash($_POST['message'])) : '';
+        $wp_version = isset($_POST['wp_version']) ? sanitize_text_field(wp_unslash($_POST['wp_version'])) : get_bloginfo('version');
+        $plugin_version = isset($_POST['plugin_version']) ? sanitize_text_field(wp_unslash($_POST['plugin_version'])) : BEEPBEEP_AI_VERSION;
+
+        // Validate required fields
+        if (empty($name) || empty($email) || empty($subject) || empty($message)) {
+            wp_send_json_error([
+                'message' => __('Please fill in all required fields.', 'beepbeep-ai-alt-text-generator')
+            ]);
+        }
+
+        if (!is_email($email)) {
+            wp_send_json_error([
+                'message' => __('Invalid email address format.', 'beepbeep-ai-alt-text-generator')
+            ]);
+        }
+
+        // Prepare contact data
+        $contact_data = [
+            'name' => $name,
+            'email' => $email,
+            'subject' => $subject,
+            'message' => $message,
+            'wp_version' => $wp_version,
+            'plugin_version' => $plugin_version
+        ];
+
+        // Send via backend API (backend has Resend configured)
+        $backend_response = $this->api_client->send_contact_email($contact_data);
+        
+        if (is_wp_error($backend_response)) {
+            // Backend API failed - show user-friendly error
+            $error_code = $backend_response->get_error_code();
+            $error_message = $backend_response->get_error_message();
+            
+            // Provide more helpful error messages based on error type
+            if ($error_code === 'auth_required' || $error_code === 'license_required') {
+                $user_message = __('Unable to send message. Please ensure you are logged in and try again.', 'beepbeep-ai-alt-text-generator');
+            } elseif ($error_code === 'api_unreachable' || $error_code === 'api_timeout') {
+                $user_message = __('Unable to connect to the server. Please check your internet connection and try again.', 'beepbeep-ai-alt-text-generator');
+            } elseif ($error_code === 'contact_email_failed') {
+                $user_message = $error_message ?: __('Failed to send message. Please try again later.', 'beepbeep-ai-alt-text-generator');
+            } else {
+                $user_message = sprintf(__('Unable to send message: %s', 'beepbeep-ai-alt-text-generator'), $error_message ?: __('Unknown error', 'beepbeep-ai-alt-text-generator'));
+            }
+            
+            wp_send_json_error([
+                'message' => $user_message
+            ]);
+        }
+        
+        // Success via backend
+        $result = $backend_response;
+
+        // Increment rate limit counter
+        if ($submission_count === false) {
+            set_transient($rate_limit_key, 1, HOUR_IN_SECONDS);
+        } else {
+            set_transient($rate_limit_key, intval($submission_count) + 1, HOUR_IN_SECONDS);
+        }
+
+        // Success
+        wp_send_json_success([
+            'message' => $result['message'] ?? __('Your message has been sent successfully. We\'ll get back to you soon!', 'beepbeep-ai-alt-text-generator')
+        ]);
     }
 
     public function ajax_export_analytics() {

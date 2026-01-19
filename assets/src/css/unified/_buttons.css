@@ -381,7 +381,8 @@
 .bbai-optimization-cta {
     flex: 1;
     min-width: 200px;
-    padding: 16px 28px;
+    height: 48px; /* Consistent height with other elements */
+    padding: 0 28px; /* Use horizontal padding only with fixed height */
     border-radius: var(--bbai-radius-lg);
     font-size: var(--bbai-text-sm);
     font-weight: var(--bbai-font-bold);
@@ -393,6 +394,7 @@
     gap: var(--bbai-space-2);
     border: 2px solid transparent;
     text-decoration: none;
+    box-sizing: border-box;
 }
 
 .bbai-optimization-cta--primary {
@@ -402,7 +404,8 @@
     box-shadow: 0 4px 16px rgba(16, 185, 129, 0.45), 0 0 0 1px rgba(16, 185, 129, 0.1);
     font-weight: var(--bbai-font-bold);
     font-size: var(--bbai-text-base);
-    padding: 18px 32px;
+    height: 48px; /* Match base height */
+    padding: 0 32px; /* Use horizontal padding only with fixed height */
     position: relative;
     overflow: hidden;
 }
@@ -545,6 +548,191 @@
     border-color: var(--bbai-gray-800);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* ============================================
+   COMPATIBILITY/ALIAS CLASSES
+   Legacy button classes that map to unified system
+   These are kept for backwards compatibility while templates are being migrated.
+   New code should use bbai-btn + bbai-btn-{variant} directly.
+   ============================================ */
+
+/* Action buttons (dashboard) - map to primary/secondary */
+.bbai-action-btn {
+    /* Base button styles applied via unified classes */
+    /* In templates, use: bbai-btn bbai-action-btn bbai-action-btn-primary */
+}
+
+.bbai-action-btn-primary {
+    background: var(--bbai-primary-gradient);
+    color: white !important;
+    border-color: var(--bbai-primary);
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4), 0 0 0 1px rgba(16, 185, 129, 0.1);
+}
+
+.bbai-action-btn-primary:hover:not(:disabled) {
+    background: var(--bbai-primary-gradient);
+    border-color: var(--bbai-primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5), 0 0 0 1px rgba(16, 185, 129, 0.2);
+}
+
+.bbai-action-btn-secondary {
+    background: var(--bbai-bg);
+    color: var(--bbai-text);
+    border-color: var(--bbai-border);
+}
+
+.bbai-action-btn-secondary:hover:not(:disabled) {
+    background: var(--bbai-bg-secondary);
+    border-color: var(--bbai-gray-300);
+    transform: translateY(-1px);
+    box-shadow: var(--bbai-shadow-sm);
+}
+
+/* Bulk buttons - map to primary/secondary */
+.bbai-bulk-btn--primary {
+    /* Use bbai-btn bbai-btn-primary instead */
+    background: var(--bbai-primary-gradient);
+    color: white !important;
+    border: none;
+    padding: var(--bbai-btn-padding-y) var(--bbai-btn-padding-x);
+    font-size: var(--bbai-text-base);
+    font-weight: var(--bbai-button-font-weight);
+    border-radius: var(--bbai-button-border-radius);
+    box-shadow: var(--bbai-shadow-button);
+}
+
+.bbai-bulk-btn--primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--bbai-shadow-button-hover);
+}
+
+.bbai-bulk-btn--secondary {
+    /* Use bbai-btn bbai-btn-secondary instead */
+    background: var(--bbai-gradient-secondary);
+    color: var(--bbai-text-inverse);
+    border: none;
+    padding: var(--bbai-btn-padding-y) var(--bbai-btn-padding-x);
+    font-size: var(--bbai-text-base);
+    font-weight: var(--bbai-button-font-weight);
+    border-radius: var(--bbai-button-border-radius);
+    box-shadow: var(--bbai-shadow-button);
+}
+
+.bbai-bulk-btn--secondary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--bbai-shadow-button-hover);
+}
+
+/* Settings page buttons - use unified variants */
+.bbai-settings-plan-upgrade-btn-large,
+.bbai-settings-license-activate-btn,
+.bbai-settings-account-upgrade-btn,
+.bbai-settings-save-btn {
+    /* Use bbai-btn bbai-btn-primary instead */
+    background: var(--bbai-primary-gradient);
+    color: white !important;
+    border-color: var(--bbai-primary);
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4), 0 0 0 1px rgba(16, 185, 129, 0.1);
+}
+
+.bbai-settings-plan-upgrade-btn-large {
+    padding: var(--bbai-btn-padding-lg-y) var(--bbai-btn-padding-lg-x);
+    font-size: var(--bbai-text-base);
+}
+
+.bbai-settings-license-deactivate-btn {
+    /* Use bbai-btn bbai-btn-danger instead */
+    background: var(--bbai-error);
+    color: white !important;
+    border-color: var(--bbai-error);
+}
+
+.bbai-settings-license-deactivate-btn:hover:not(:disabled) {
+    background: #dc2626;
+    border-color: #dc2626;
+    transform: translateY(-1px);
+}
+
+.bbai-settings-account-action-btn {
+    /* Use bbai-btn bbai-btn-secondary instead */
+    background: var(--bbai-bg);
+    color: var(--bbai-text);
+    border-color: var(--bbai-border);
+}
+
+.bbai-settings-account-action-btn:hover:not(:disabled) {
+    background: var(--bbai-bg-secondary);
+    border-color: var(--bbai-gray-300);
+}
+
+/* Outline button compatibility (legacy) - maps to outline-primary */
+.bbai-btn-outline {
+    background: transparent;
+    color: var(--bbai-primary);
+    border-color: var(--bbai-primary);
+    border-width: 2px;
+}
+
+.bbai-btn-outline:hover:not(:disabled) {
+    background: var(--bbai-primary);
+    color: white;
+}
+
+/* Back button (link style) */
+.bbai-back-btn {
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: var(--bbai-primary);
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-medium);
+    text-decoration: none;
+}
+
+.bbai-back-btn:hover {
+    color: var(--bbai-primary-hover);
+    text-decoration: underline;
+}
+
+/* Upgrade CTA buttons - map to primary */
+.bbai-upgrade-cta-green {
+    /* Use bbai-btn bbai-btn-primary instead */
+    background: var(--bbai-primary-gradient);
+    color: white !important;
+}
+
+/* Pagination buttons - map to secondary */
+.bbai-pagination-btn {
+    /* Use bbai-btn bbai-btn-secondary bbai-btn-sm instead */
+    background: var(--bbai-bg);
+    color: var(--bbai-text);
+    border-color: var(--bbai-border);
+    padding: var(--bbai-btn-padding-sm-y) var(--bbai-btn-padding-sm-x);
+    font-size: var(--bbai-text-xs);
+}
+
+.bbai-pagination-btn:hover:not(:disabled) {
+    background: var(--bbai-bg-secondary);
+}
+
+.bbai-pagination-btn--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Agency export button */
+.bbai-agency-export-btn {
+    /* Use bbai-btn bbai-btn-secondary instead */
+    background: var(--bbai-bg);
+    color: var(--bbai-text);
+    border-color: var(--bbai-border);
+}
+
+.bbai-agency-export-btn:hover:not(:disabled) {
+    background: var(--bbai-bg-secondary);
 }
 
 /* ============================================

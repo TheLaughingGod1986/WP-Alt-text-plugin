@@ -17,23 +17,27 @@
          * Setup copy to clipboard buttons
          */
         setupCopyButtons: function() {
+            const self = this; // Store reference to avoid 'this' binding issues
+            
             // Copy buttons for individual alt text
-            document.addEventListener('click', (e) => {
+            document.addEventListener('click', function(e) {
                 const copyBtn = e.target.closest('[data-action="copy-alt-text"]');
                 if (copyBtn) {
                     e.preventDefault();
+                    e.stopPropagation(); // Prevent event bubbling
                     const altText = copyBtn.dataset.altText || '';
                     const attachmentId = copyBtn.dataset.attachmentId || '';
-                    this.copyToClipboard(altText, attachmentId);
+                    self.copyToClipboard(altText, attachmentId);
                 }
             });
 
             // Copy all alt text from selected rows
-            document.addEventListener('click', (e) => {
+            document.addEventListener('click', function(e) {
                 const copyAllBtn = e.target.closest('[data-action="copy-selected-alt"]');
                 if (copyAllBtn) {
                     e.preventDefault();
-                    this.copySelectedAltText();
+                    e.stopPropagation(); // Prevent event bubbling
+                    self.copySelectedAltText();
                 }
             });
         },

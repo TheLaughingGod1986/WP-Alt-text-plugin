@@ -593,7 +593,9 @@ class API_Client_V2 {
                 $error_message = __('This feature is not yet available. Please contact support for assistance or try again later.', 'beepbeep-ai-alt-text-generator');
                 
                 // Check endpoint to provide more specific message
-                if ($endpoint_str && (strpos($endpoint_str, '/auth/forgot-password') !== false || strpos($endpoint_str, '/auth/reset-password') !== false)) {
+                if ($endpoint_str && (strpos($endpoint_str, '/api/contact') !== false)) {
+                    $error_message = __('The contact form endpoint is not yet available on the backend. Please ensure the /api/contact endpoint is configured with Resend.', 'beepbeep-ai-alt-text-generator');
+                } elseif ($endpoint_str && (strpos($endpoint_str, '/auth/forgot-password') !== false || strpos($endpoint_str, '/auth/reset-password') !== false)) {
                     $error_message = __('Password reset functionality is currently being set up on our backend. Please contact support for assistance or try again later.', 'beepbeep-ai-alt-text-generator');
                 } elseif ($endpoint_str && (strpos($endpoint_str, '/licenses/sites') !== false || strpos($endpoint_str, '/api/licenses/sites') !== false)) {
                     $error_message = __('License site usage tracking is currently being set up on our backend. Please contact support for assistance or try again later.', 'beepbeep-ai-alt-text-generator');
@@ -1343,9 +1345,9 @@ class API_Client_V2 {
         // Backend requires BOTH JWT token AND license key headers
         $endpoint = 'api/alt-text';
         
-        // CRITICAL: Log image_id being used for generation (to debug backend receiving wrong ID)
+        // Log image_id being used for generation
         if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-            \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'generate_alt_text called', [
+            \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'generate_alt_text called', [
                 'image_id' => $image_id,
                 'regenerate' => $regenerate,
                 'endpoint' => $endpoint,
@@ -1378,11 +1380,20 @@ class API_Client_V2 {
 
         $image_payload = $this->prepare_image_payload($image_id, $image_url, $title, $caption, $filename);
 
-        // Check if image preparation failed due to size
+        // Check if image preparation failed due to size (too large)
         if (isset($image_payload['_error']) && $image_payload['_error'] === 'image_too_large') {
             return new \WP_Error(
                 'image_too_large',
                 $image_payload['_error_message'] ?? __('Image file is too large.', 'beepbeep-ai-alt-text-generator'),
+                ['image_id' => $image_id]
+            );
+        }
+        
+        // Check if image is too small or invalid
+        if (isset($image_payload['_error']) && $image_payload['_error'] === 'image_too_small') {
+            return new \WP_Error(
+                'image_too_small',
+                $image_payload['_error_message'] ?? __('Image file is too small or invalid. Please use a valid image file.', 'beepbeep-ai-alt-text-generator'),
                 ['image_id' => $image_id]
             );
         }
@@ -1398,7 +1409,7 @@ class API_Client_V2 {
         
         // Debug: Log what's being sent to backend (always, not just on regenerate)
         if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-            $log_level = $regenerate ? 'warning' : 'info';
+            $log_level = 'info'; // Use info level for normal operations
             \BeepBeepAI\AltTextGenerator\Debug_Log::log($log_level, 'Sending image to backend API', [
                 'image_id' => $image_id,
                 'regenerate' => $regenerate,
@@ -1445,7 +1456,7 @@ class API_Client_V2 {
             $image_payload['attachment_id'] = (string) $image_id;
 
             if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-                \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Attachment ID normalized on payload', [
+                \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'Attachment ID normalized on payload', [
                     'expected_attachment_id' => $image_id,
                     'payload_attachment_before' => $payload_attachment_before,
                     'payload_attachment_after' => (string) $image_id,
@@ -1453,9 +1464,9 @@ class API_Client_V2 {
             }
         }
         
-        // Log the exact payload being sent to verify image_id is correct
+        // Log the exact payload being sent to verify image_id is correct (debug-level information)
         if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-            \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'API Request Payload (BEFORE sending to backend)', [
+            \BeepBeepAI\AltTextGenerator\Debug_Log::log('debug', 'API Request Payload (BEFORE sending to backend)', [
                 'image_id_param' => $image_id,
                 'root_image_id_in_body' => (string) $image_id,
                 'image_data.image_id' => $image_payload['image_id'] ?? 'missing',
@@ -1982,6 +1993,49 @@ class API_Client_V2 {
             $response['data']['error'] ?? __('Failed to fetch subscription information', 'beepbeep-ai-alt-text-generator')
         );
     }
+
+    /**
+     * Send contact form email via backend API (which uses Resend)
+     *
+     * @param array $data {
+     *     Contact form data.
+     *
+     *     @type string $name       User's name.
+     *     @type string $email      User's email.
+     *     @type string $subject    Email subject.
+     *     @type string $message    Message content.
+     *     @type string $wp_version WordPress version (optional).
+     *     @type string $plugin_version Plugin version (optional).
+     * }
+     * @return array|\WP_Error Success response or WP_Error on failure.
+     */
+    public function send_contact_email($data) {
+        $response = $this->make_request('/api/contact', 'POST', [
+            'name' => $data['name'] ?? '',
+            'email' => $data['email'] ?? '',
+            'subject' => $data['subject'] ?? '',
+            'message' => $data['message'] ?? '',
+            'wp_version' => $data['wp_version'] ?? get_bloginfo('version'),
+            'plugin_version' => $data['plugin_version'] ?? BEEPBEEP_AI_VERSION
+        ]);
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        // Backend should return success/error structure
+        if (isset($response['error'])) {
+            return new \WP_Error(
+                'contact_email_failed',
+                $response['error'] ?? __('Failed to send contact email', 'beepbeep-ai-alt-text-generator')
+            );
+        }
+
+        return [
+            'success' => true,
+            'message' => $response['message'] ?? __('Your message has been sent successfully. We\'ll get back to you soon!', 'beepbeep-ai-alt-text-generator')
+        ];
+    }
     
     /**
      * Prepare image payload for API
@@ -2002,11 +2056,40 @@ class API_Client_V2 {
             $payload['height'] = $metadata['height'];
         }
         
+        // Validate image is not too small or invalid
+        $file_path = get_attached_file($image_id);
+        if ($file_path && file_exists($file_path)) {
+            $file_size = filesize($file_path);
+            $min_file_size = 100; // Minimum 100 bytes for a valid image
+            
+            // Check if image is too small (likely corrupted or placeholder)
+            if ($file_size < $min_file_size) {
+                $payload['_error'] = 'image_too_small';
+                $payload['_error_message'] = __('Image file is too small or invalid. Please use a valid image file with at least 100 bytes.', 'beepbeep-ai-alt-text-generator');
+                return $payload;
+            }
+            
+            // Check if image dimensions are too small (likely placeholder)
+            if (isset($metadata['width'], $metadata['height'])) {
+                $min_dimension = 10; // Minimum 10x10 pixels
+                if ($metadata['width'] < $min_dimension || $metadata['height'] < $min_dimension) {
+                    $payload['_error'] = 'image_too_small';
+                    $payload['_error_message'] = sprintf(
+                        __('Image dimensions are too small (%dx%d pixels). Please use a valid image with at least %dx%d pixels.', 'beepbeep-ai-alt-text-generator'),
+                        $metadata['width'],
+                        $metadata['height'],
+                        $min_dimension,
+                        $min_dimension
+                    );
+                    return $payload;
+                }
+            }
+        }
+        
         if ($image_url) {
             // Always send image URL to backend - backend handles all image processing
             // For public URLs, check if image is too large and resize if needed
             // Large images should be resized and sent as base64 to avoid 413 errors
-            $file_path = get_attached_file($image_id);
             if ($file_path && file_exists($file_path)) {
                 $file_size = filesize($file_path);
                 // Very aggressive threshold - resize if over 512KB to prevent backend errors

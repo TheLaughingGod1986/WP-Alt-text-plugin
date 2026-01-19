@@ -799,8 +799,22 @@
                         showModalError($modal, 'Please log in to regenerate alt text.');
                     }
                 } else {
-                    var message = errorData.message || 'Failed to regenerate alt text';
-                    showModalError($modal, message);
+                    // Check for image validation errors
+                    var errorCode = errorData.code || '';
+                    var errorMessage = errorData.message || 'Failed to regenerate alt text';
+                    
+                    // Provide user-friendly messages for common image errors
+                    if (errorCode === 'image_too_small') {
+                        errorMessage = 'This image is too small or invalid. Please use a valid image file (at least 10x10 pixels and 100 bytes).';
+                    } else if (errorCode === 'image_too_large') {
+                        errorMessage = 'This image file is too large. Please try a smaller image or contact support.';
+                    } else if (errorCode === 'missing_image_data') {
+                        errorMessage = 'Image data could not be loaded. Please ensure the image file exists and is accessible.';
+                    } else if (errorMessage.toLowerCase().includes('validation failed')) {
+                        errorMessage = 'Image validation failed. This image may be corrupted, too small, or in an unsupported format. Please try a different image.';
+                    }
+                    
+                    showModalError($modal, errorMessage);
                     reenableButton($btn, originalBtnText);
                 }
             }

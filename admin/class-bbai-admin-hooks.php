@@ -109,6 +109,7 @@ class Admin_Hooks {
 			'bbai_track_milestone'             => 'ajax_track_milestone',
 			'bbai_export_analytics'            => 'ajax_export_analytics',
 			'bbai_get_activity'                => 'ajax_get_activity',
+			'bbai_send_contact_form'           => 'ajax_send_contact_form',
 		];
 
 		foreach ( $ajax_actions as $action => $callback ) {

@@ -35,19 +35,21 @@
     gap: 24px;
 }
 
-/* Badge */
+/* Badge - FREE badge with purple gradient */
+.bbai-usage-card-redesign .bbai-badge--free,
 .bbai-usage-card-redesign .bbai-badge-free {
     display: inline-flex;
     align-items: center;
     border-radius: 9999px;
-    background: #f3f4f6;
-    padding: 4px 12px;
+    background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%) !important;
+    padding: 6px 14px;
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #4b5563;
+    color: #ffffff !important;
     width: fit-content;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
 }
 
 /* Title */
@@ -315,22 +317,47 @@
     display: flex;
     flex-direction: column;
     gap: 24px;
+    color: #ffffff; /* Default text color for card content */
 }
 
-/* Badge */
-.bbai-upgrade-growth-card .bbai-badge-growth {
-    display: inline-flex;
+/* Full width variant for bottom CTA */
+.bbai-bottom-upsell-cta .bbai-upgrade-growth-card {
+    width: 100%;
+    max-width: 100%;
+}
+
+/* Badge - GROWTH badge - white background with dark text for visibility on blue card */
+.bbai-upgrade-growth-card .bbai-badge--growth,
+.bbai-upgrade-growth-card .bbai-badge-growth,
+.bbai-upgrade-growth-card .bbai-badge.bbai-badge--growth,
+.bbai-upgrade-growth-card span.bbai-badge--growth,
+.bbai-upgrade-growth-card .flex .bbai-badge--growth {
+    display: inline-flex !important;
     align-items: center;
     border-radius: 9999px;
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.95) !important;
     backdrop-filter: blur(4px);
-    padding: 4px 12px;
+    padding: 6px 14px;
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #ffffff;
+    color: #111827 !important;
     width: fit-content;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Ensure text color is applied with maximum specificity - target all possible nested elements and text nodes */
+.bbai-upgrade-growth-card .bbai-badge--growth,
+.bbai-upgrade-growth-card .bbai-badge-growth,
+.bbai-upgrade-growth-card .bbai-badge.bbai-badge--growth,
+.bbai-upgrade-growth-card span.bbai-badge--growth,
+.bbai-upgrade-growth-card .flex .bbai-badge--growth,
+.bbai-upgrade-growth-card .bbai-badge--growth *,
+.bbai-upgrade-growth-card .bbai-badge-growth *,
+.bbai-upgrade-growth-card .bbai-badge.bbai-badge--growth *,
+.bbai-upgrade-growth-card span.bbai-badge--growth * {
+    color: #111827 !important;
 }
 
 /* Title */

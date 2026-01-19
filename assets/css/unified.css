@@ -6,7 +6,7 @@
  *
  * @package BeepBeep_AI
  * @version 6.0.0
- * @generated 2026-01-16T22:06:51.477Z
+ * @generated 2026-01-19T14:57:15.652Z
  */
 
 /* 1. Design Tokens (CSS Variables) */
@@ -1305,7 +1305,7 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
     display: inline-flex;
     align-items: center;
     gap: var(--bbai-space-1);
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(8px);
     padding: 6px 14px;
     border-radius: var(--bbai-radius-full);
@@ -1315,7 +1315,8 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
     letter-spacing: 0.08em;
     margin-bottom: var(--bbai-space-5);
     width: fit-content;
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: #1e293b;
 }
 
 /* Headline */
@@ -2124,7 +2125,8 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
 .bbai-optimization-cta {
     flex: 1;
     min-width: 200px;
-    padding: 16px 28px;
+    height: 48px; /* Consistent height with other elements */
+    padding: 0 28px; /* Use horizontal padding only with fixed height */
     border-radius: var(--bbai-radius-lg);
     font-size: var(--bbai-text-sm);
     font-weight: var(--bbai-font-bold);
@@ -2136,6 +2138,7 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
     gap: var(--bbai-space-2);
     border: 2px solid transparent;
     text-decoration: none;
+    box-sizing: border-box;
 }
 
 .bbai-optimization-cta--primary {
@@ -2145,7 +2148,8 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
     box-shadow: 0 4px 16px rgba(16, 185, 129, 0.45), 0 0 0 1px rgba(16, 185, 129, 0.1);
     font-weight: var(--bbai-font-bold);
     font-size: var(--bbai-text-base);
-    padding: 18px 32px;
+    height: 48px; /* Match base height */
+    padding: 0 32px; /* Use horizontal padding only with fixed height */
     position: relative;
     overflow: hidden;
 }
@@ -2291,6 +2295,191 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
 }
 
 /* ============================================
+   COMPATIBILITY/ALIAS CLASSES
+   Legacy button classes that map to unified system
+   These are kept for backwards compatibility while templates are being migrated.
+   New code should use bbai-btn + bbai-btn-{variant} directly.
+   ============================================ */
+
+/* Action buttons (dashboard) - map to primary/secondary */
+.bbai-action-btn {
+    /* Base button styles applied via unified classes */
+    /* In templates, use: bbai-btn bbai-action-btn bbai-action-btn-primary */
+}
+
+.bbai-action-btn-primary {
+    background: var(--bbai-primary-gradient);
+    color: white !important;
+    border-color: var(--bbai-primary);
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4), 0 0 0 1px rgba(16, 185, 129, 0.1);
+}
+
+.bbai-action-btn-primary:hover:not(:disabled) {
+    background: var(--bbai-primary-gradient);
+    border-color: var(--bbai-primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5), 0 0 0 1px rgba(16, 185, 129, 0.2);
+}
+
+.bbai-action-btn-secondary {
+    background: var(--bbai-bg);
+    color: var(--bbai-text);
+    border-color: var(--bbai-border);
+}
+
+.bbai-action-btn-secondary:hover:not(:disabled) {
+    background: var(--bbai-bg-secondary);
+    border-color: var(--bbai-gray-300);
+    transform: translateY(-1px);
+    box-shadow: var(--bbai-shadow-sm);
+}
+
+/* Bulk buttons - map to primary/secondary */
+.bbai-bulk-btn--primary {
+    /* Use bbai-btn bbai-btn-primary instead */
+    background: var(--bbai-primary-gradient);
+    color: white !important;
+    border: none;
+    padding: var(--bbai-btn-padding-y) var(--bbai-btn-padding-x);
+    font-size: var(--bbai-text-base);
+    font-weight: var(--bbai-button-font-weight);
+    border-radius: var(--bbai-button-border-radius);
+    box-shadow: var(--bbai-shadow-button);
+}
+
+.bbai-bulk-btn--primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--bbai-shadow-button-hover);
+}
+
+.bbai-bulk-btn--secondary {
+    /* Use bbai-btn bbai-btn-secondary instead */
+    background: var(--bbai-gradient-secondary);
+    color: var(--bbai-text-inverse);
+    border: none;
+    padding: var(--bbai-btn-padding-y) var(--bbai-btn-padding-x);
+    font-size: var(--bbai-text-base);
+    font-weight: var(--bbai-button-font-weight);
+    border-radius: var(--bbai-button-border-radius);
+    box-shadow: var(--bbai-shadow-button);
+}
+
+.bbai-bulk-btn--secondary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--bbai-shadow-button-hover);
+}
+
+/* Settings page buttons - use unified variants */
+.bbai-settings-plan-upgrade-btn-large,
+.bbai-settings-license-activate-btn,
+.bbai-settings-account-upgrade-btn,
+.bbai-settings-save-btn {
+    /* Use bbai-btn bbai-btn-primary instead */
+    background: var(--bbai-primary-gradient);
+    color: white !important;
+    border-color: var(--bbai-primary);
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4), 0 0 0 1px rgba(16, 185, 129, 0.1);
+}
+
+.bbai-settings-plan-upgrade-btn-large {
+    padding: var(--bbai-btn-padding-lg-y) var(--bbai-btn-padding-lg-x);
+    font-size: var(--bbai-text-base);
+}
+
+.bbai-settings-license-deactivate-btn {
+    /* Use bbai-btn bbai-btn-danger instead */
+    background: var(--bbai-error);
+    color: white !important;
+    border-color: var(--bbai-error);
+}
+
+.bbai-settings-license-deactivate-btn:hover:not(:disabled) {
+    background: #dc2626;
+    border-color: #dc2626;
+    transform: translateY(-1px);
+}
+
+.bbai-settings-account-action-btn {
+    /* Use bbai-btn bbai-btn-secondary instead */
+    background: var(--bbai-bg);
+    color: var(--bbai-text);
+    border-color: var(--bbai-border);
+}
+
+.bbai-settings-account-action-btn:hover:not(:disabled) {
+    background: var(--bbai-bg-secondary);
+    border-color: var(--bbai-gray-300);
+}
+
+/* Outline button compatibility (legacy) - maps to outline-primary */
+.bbai-btn-outline {
+    background: transparent;
+    color: var(--bbai-primary);
+    border-color: var(--bbai-primary);
+    border-width: 2px;
+}
+
+.bbai-btn-outline:hover:not(:disabled) {
+    background: var(--bbai-primary);
+    color: white;
+}
+
+/* Back button (link style) */
+.bbai-back-btn {
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: var(--bbai-primary);
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-medium);
+    text-decoration: none;
+}
+
+.bbai-back-btn:hover {
+    color: var(--bbai-primary-hover);
+    text-decoration: underline;
+}
+
+/* Upgrade CTA buttons - map to primary */
+.bbai-upgrade-cta-green {
+    /* Use bbai-btn bbai-btn-primary instead */
+    background: var(--bbai-primary-gradient);
+    color: white !important;
+}
+
+/* Pagination buttons - map to secondary */
+.bbai-pagination-btn {
+    /* Use bbai-btn bbai-btn-secondary bbai-btn-sm instead */
+    background: var(--bbai-bg);
+    color: var(--bbai-text);
+    border-color: var(--bbai-border);
+    padding: var(--bbai-btn-padding-sm-y) var(--bbai-btn-padding-sm-x);
+    font-size: var(--bbai-text-xs);
+}
+
+.bbai-pagination-btn:hover:not(:disabled) {
+    background: var(--bbai-bg-secondary);
+}
+
+.bbai-pagination-btn--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Agency export button */
+.bbai-agency-export-btn {
+    /* Use bbai-btn bbai-btn-secondary instead */
+    background: var(--bbai-bg);
+    color: var(--bbai-text);
+    border-color: var(--bbai-border);
+}
+
+.bbai-agency-export-btn:hover:not(:disabled) {
+    background: var(--bbai-bg-secondary);
+}
+
+/* ============================================
    RESPONSIVE
    ============================================ */
 
@@ -2407,26 +2596,27 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
 
 /* Unified Badge Variants - Use with bbai-badge component */
 .bbai-badge--free {
-    background: #f3f4f6;
-    color: #4b5563;
-    padding: 4px 12px;
+    background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+    color: #ffffff;
+    padding: 6px 14px;
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     border-radius: 9999px;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
 }
 
 .bbai-badge--growth {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(4px);
-    color: #ffffff;
-    padding: 4px 12px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #3B82F6;
+    padding: 6px 14px;
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     border-radius: 9999px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .bbai-badge--pro {
@@ -2477,9 +2667,9 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
 }
 
 .bbai-badge-growth {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(4px);
-    color: #ffffff;
+    color: #1e293b;
     padding: 4px 12px;
     font-size: 11px;
     font-weight: 700;
@@ -2494,7 +2684,7 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
     display: inline-flex;
     align-items: center;
     gap: var(--bbai-space-1);
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(8px);
     padding: var(--bbai-space-1) var(--bbai-space-3);
     border-radius: var(--bbai-radius-full);
@@ -2502,7 +2692,7 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
     font-weight: var(--bbai-font-bold);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #ffffff;
+    color: #1e293b;
 }
 
 .bbai-ready-optimise__badge {
@@ -4483,11 +4673,11 @@ h1.bbai-heading {
 }
 
 /* ============================================
-   CREDIT USAGE PAGE
+   CREDIT USAGE PAGE - Premium SaaS Design
    ============================================ */
 
 .bbai-credit-usage-header-section {
-    margin-bottom: var(--bbai-space-6);
+    margin-bottom: var(--bbai-space-8);
 }
 
 .bbai-credit-usage-header-section .bbai-page-header-content {
@@ -4496,18 +4686,31 @@ h1.bbai-heading {
 
 .bbai-credit-usage-header-section .bbai-page-title {
     text-align: left;
+    font-size: 28px;
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
     margin-bottom: var(--bbai-space-2);
 }
 
 .bbai-credit-usage-header-section .bbai-page-subtitle {
     text-align: left;
-    color: var(--bbai-text-secondary);
+    font-size: 14px;
+    color: var(--bbai-text-muted);
+    max-width: 600px;
+    line-height: 1.5;
 }
 
+/* Credit Summary Cards Container */
 .bbai-credit-summary-cards {
     margin-bottom: var(--bbai-space-6);
+    padding: var(--bbai-space-6);
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-gray-100);
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
+/* 4-Column Grid for Metrics */
 .bbai-credit-stats-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -4516,42 +4719,83 @@ h1.bbai-heading {
 
 @media (min-width: 768px) {
     .bbai-credit-stats-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(4, 1fr);
     }
 }
 
+/* Individual Stat Card */
 .bbai-credit-stat-card {
-    background: var(--bbai-bg);
-    border: 1px solid var(--bbai-border);
-    border-radius: var(--bbai-radius-lg);
+    background: var(--bbai-gray-50);
+    border: 1px solid var(--bbai-gray-100);
+    border-radius: 12px;
     padding: var(--bbai-space-5);
     text-align: left;
-    box-shadow: var(--bbai-shadow-sm);
+    transition: all 0.2s ease;
 }
 
+.bbai-credit-stat-card:hover {
+    border-color: var(--bbai-gray-200);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Stat Title - Muted label */
 .bbai-credit-stat-title {
-    font-size: var(--bbai-text-sm);
+    font-size: 12px;
     font-weight: var(--bbai-font-medium);
-    color: var(--bbai-text-secondary);
-    margin: 0 0 var(--bbai-space-2) 0;
+    color: var(--bbai-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 var(--bbai-space-3) 0;
 }
 
+/* Stat Value - Bold metric */
 .bbai-credit-stat-value {
-    font-size: var(--bbai-text-3xl);
+    font-size: 28px;
     font-weight: var(--bbai-font-bold);
     color: var(--bbai-text);
     line-height: 1;
-    margin-bottom: var(--bbai-space-1);
+    margin-bottom: var(--bbai-space-2);
 }
 
+/* Status-aware coloring */
 .bbai-credit-stat-value--success {
-    color: var(--bbai-success);
+    color: #10B981;
 }
 
+.bbai-credit-stat-value--warning {
+    color: #F59E0B;
+}
+
+.bbai-credit-stat-value--danger {
+    color: #EF4444;
+}
+
+.bbai-credit-stat-value--primary {
+    color: var(--bbai-primary);
+}
+
+/* Stat Description - Plan info */
 .bbai-credit-stat-desc {
-    font-size: var(--bbai-text-sm);
+    font-size: 13px;
     color: var(--bbai-text-muted);
-    margin: var(--bbai-space-1) 0 0 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+}
+
+/* Plan Badge in stat card */
+.bbai-credit-stat-desc .bbai-plan-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    background: var(--bbai-gray-100);
+    border-radius: 9999px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--bbai-text-secondary);
 }
 
 .bbai-credit-stat-label {
@@ -4561,9 +4805,14 @@ h1.bbai-heading {
     letter-spacing: 0.05em;
 }
 
-/* Credit Usage Filters */
+/* Credit Usage Filters - Premium Card Design */
 .bbai-credit-filters-card {
     margin-bottom: var(--bbai-space-6);
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-gray-100);
+    border-radius: 16px;
+    padding: var(--bbai-space-6);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .bbai-credit-filter-form {
@@ -4591,9 +4840,11 @@ h1.bbai-heading {
 }
 
 .bbai-credit-filter-label {
-    font-size: var(--bbai-text-sm);
+    font-size: 12px;
     font-weight: var(--bbai-font-medium);
-    color: var(--bbai-text);
+    color: var(--bbai-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .bbai-credit-filter-input-wrapper {
@@ -4604,11 +4855,11 @@ h1.bbai-heading {
 
 .bbai-credit-filter-input {
     width: 100%;
-    padding: var(--bbai-space-3) var(--bbai-space-4);
+    padding: 10px 14px;
     padding-right: 36px;
-    border: 1px solid var(--bbai-border);
-    border-radius: var(--bbai-radius);
-    font-size: var(--bbai-text-sm);
+    border: 1px solid var(--bbai-gray-200);
+    border-radius: 8px;
+    font-size: 14px;
     color: var(--bbai-text);
     background: var(--bbai-bg);
     transition: all 0.2s ease;
@@ -4631,13 +4882,14 @@ h1.bbai-heading {
 
 .bbai-credit-filter-select {
     width: 100%;
-    padding: var(--bbai-space-3) var(--bbai-space-4);
-    border: 1px solid var(--bbai-border);
-    border-radius: var(--bbai-radius);
-    font-size: var(--bbai-text-sm);
+    padding: 10px 14px;
+    border: 1px solid var(--bbai-gray-200);
+    border-radius: 8px;
+    font-size: 14px;
     color: var(--bbai-text);
     background: var(--bbai-bg);
     transition: all 0.2s ease;
+    cursor: pointer;
 }
 
 .bbai-credit-filter-select:focus {
@@ -4649,8 +4901,11 @@ h1.bbai-heading {
 .bbai-credit-filter-actions {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: var(--bbai-space-4);
     margin-top: var(--bbai-space-2);
+    padding-top: var(--bbai-space-4);
+    border-top: 1px solid var(--bbai-gray-100);
 }
 
 /* Ensure Clear link is plain text like Save Settings */
@@ -4696,15 +4951,96 @@ h1.bbai-heading {
     margin: 0 !important;
 }
 
+/* Usage Table Card - Premium SaaS Design */
 .bbai-usage-table-card {
-    margin-bottom: var(--bbai-space-6);
+    margin-bottom: var(--bbai-space-8);
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-gray-100);
+    border-radius: 16px;
+    padding: var(--bbai-space-6);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.bbai-usage-table-card .bbai-card-title {
+    font-size: 18px;
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0 0 var(--bbai-space-4) 0;
+}
+
+/* Premium Table Styling */
+.bbai-usage-table-card table,
+.bbai-usage-table-card .widefat {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid var(--bbai-gray-100);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.bbai-usage-table-card thead tr {
+    background: var(--bbai-gray-50);
+}
+
+.bbai-usage-table-card thead th {
+    padding: 14px 16px;
+    font-size: 12px;
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: left;
+    border-bottom: 1px solid var(--bbai-gray-100);
+    background: var(--bbai-gray-50);
+    position: sticky;
+    top: 0;
+}
+
+.bbai-usage-table-card tbody tr {
+    transition: background 0.15s ease;
+}
+
+.bbai-usage-table-card tbody tr:hover {
+    background: var(--bbai-gray-50);
+}
+
+/* Zebra striping */
+.bbai-usage-table-card tbody tr:nth-child(even) {
+    background: rgba(249, 250, 251, 0.5);
+}
+
+.bbai-usage-table-card tbody tr:nth-child(even):hover {
+    background: var(--bbai-gray-50);
+}
+
+.bbai-usage-table-card tbody td {
+    padding: 14px 16px;
+    font-size: 14px;
+    color: var(--bbai-text);
+    border-bottom: 1px solid var(--bbai-gray-100);
+    vertical-align: middle;
+}
+
+.bbai-usage-table-card tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Table subtitle (email under name) */
+.bbai-table-subtitle {
+    font-size: 12px;
+    color: var(--bbai-text-muted);
+    margin-top: 2px;
 }
 
 .bbai-empty-table-message {
     text-align: center;
-    padding: var(--bbai-space-8);
+    padding: var(--bbai-space-10);
     color: var(--bbai-text-muted);
-    font-size: var(--bbai-text-base);
+    font-size: 14px;
+    background: var(--bbai-gray-50);
+    border-radius: 12px;
+    border: 1px dashed var(--bbai-gray-200);
 }
 
 /* Usage Filters */
@@ -6731,19 +7067,21 @@ h1.bbai-heading {
     gap: 24px;
 }
 
-/* Badge */
+/* Badge - FREE badge with purple gradient */
+.bbai-usage-card-redesign .bbai-badge--free,
 .bbai-usage-card-redesign .bbai-badge-free {
     display: inline-flex;
     align-items: center;
     border-radius: 9999px;
-    background: #f3f4f6;
-    padding: 4px 12px;
+    background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%) !important;
+    padding: 6px 14px;
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #4b5563;
+    color: #ffffff !important;
     width: fit-content;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
 }
 
 /* Title */
@@ -7013,20 +7351,22 @@ h1.bbai-heading {
     gap: 24px;
 }
 
-/* Badge */
+/* Badge - GROWTH badge with white background on blue card */
+.bbai-upgrade-growth-card .bbai-badge--growth,
 .bbai-upgrade-growth-card .bbai-badge-growth {
     display: inline-flex;
     align-items: center;
     border-radius: 9999px;
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.95) !important;
     backdrop-filter: blur(4px);
-    padding: 4px 12px;
+    padding: 6px 14px;
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #ffffff;
+    color: #3B82F6 !important;
     width: fit-content;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Title */
@@ -12315,202 +12655,199 @@ button.bbai-btn.bbai-topup-section__btn:hover:not(:disabled) {
 /* 26. Guide Page */
 /* Imported from: _guide.css */
 /**
- * Guide Tab - Premium Polished Design
- * Enhanced visual hierarchy, animations, and quality
+ * Guide Tab - Premium SaaS Onboarding Design
+ * Clean, conversion-optimized documentation panel
+ *
+ * @package BeepBeep_AI
+ * @since 8.0.0
  */
 
-/* ========================================
-   CONTAINER & LAYOUT
-   ======================================== */
+/* ============================================
+   GUIDE HEADER
+   ============================================ */
 
-.bbai-library-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    animation: fadeInUp 0.5s ease-out;
+.bbai-guide-header {
+    margin-bottom: var(--bbai-space-6);
 }
 
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* ========================================
-   PRO FEATURES CARD - Enhanced
-   ======================================== */
-
-.bbai-guide-pro-features-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: var(--bbai-space-4);
-}
-
-.bbai-guide-pro-feature-item {
-    display: flex;
-    align-items: center;
-    gap: var(--bbai-space-3);
-    padding: var(--bbai-space-4);
-    border-radius: var(--bbai-radius-lg);
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.02) 100%);
-    border: 1px solid rgba(16, 185, 129, 0.15);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
-}
-
-.bbai-guide-pro-feature-item::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-    transition: left 0.5s ease;
-}
-
-.bbai-guide-pro-feature-item:hover {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
-    border-color: rgba(16, 185, 129, 0.3);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
-}
-
-.bbai-guide-pro-feature-item:hover::before {
-    left: 100%;
-}
-
-.bbai-guide-pro-feature-item svg {
-    flex-shrink: 0;
-    width: 24px;
-    height: 24px;
-    filter: drop-shadow(0 2px 4px rgba(16, 185, 129, 0.3));
-    animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-    0%, 100% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.05);
-    }
-}
-
-.bbai-guide-pro-feature-item span {
-    font-size: var(--bbai-text-sm);
-    color: var(--bbai-text);
+.bbai-guide-header .bbai-page-title {
+    font-size: 28px;
     font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0 0 var(--bbai-space-2) 0;
+    line-height: 1.3;
+}
+
+.bbai-guide-header .bbai-page-subtitle {
+    font-size: 14px;
+    color: var(--bbai-text-muted);
+    margin: 0;
     line-height: 1.5;
 }
 
-/* ========================================
-   STEPS LIST - Clean & Refined
-   ======================================== */
+/* ============================================
+   PRO FEATURES CARD
+   ============================================ */
 
-.bbai-guide-steps-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--bbai-space-5);
+.bbai-guide-pro-card {
+    padding: var(--bbai-space-6);
+    margin-bottom: var(--bbai-space-6);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-xl);
+    background: var(--bbai-bg);
 }
 
-.bbai-guide-step-item {
+.bbai-guide-pro-header {
     display: flex;
-    gap: var(--bbai-space-5);
     align-items: center;
-    justify-content: space-between;
-    padding: var(--bbai-space-4);
+    gap: var(--bbai-space-3);
+    margin-bottom: var(--bbai-space-5);
+}
+
+.bbai-guide-pro-title {
+    font-size: 20px;
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0;
+}
+
+.bbai-guide-pro-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--bbai-space-6) 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--bbai-space-3);
+}
+
+.bbai-guide-pro-item {
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-space-3);
+    padding: var(--bbai-space-3) var(--bbai-space-4);
+    background: var(--bbai-success-bg);
+    border: 1px solid rgba(16, 185, 129, 0.15);
     border-radius: var(--bbai-radius-lg);
     transition: all 0.2s ease;
-    position: relative;
 }
 
-.bbai-guide-step-item:hover {
+.bbai-guide-pro-item:hover {
+    border-color: rgba(16, 185, 129, 0.3);
+    transform: translateX(4px);
+}
+
+.bbai-guide-pro-item svg {
+    flex-shrink: 0;
+}
+
+.bbai-guide-pro-item span {
+    font-size: 14px;
+    font-weight: var(--bbai-font-medium);
+    color: var(--bbai-text);
+    line-height: 1.4;
+}
+
+.bbai-guide-pro-cta {
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-space-4);
+}
+
+.bbai-guide-pro-cta .bbai-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+}
+
+/* ============================================
+   GETTING STARTED STEPS
+   ============================================ */
+
+.bbai-guide-steps-card {
+    padding: var(--bbai-space-6);
+    margin-bottom: var(--bbai-space-6);
+}
+
+.bbai-guide-steps-card .bbai-card-title {
+    font-size: 20px;
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0 0 var(--bbai-space-6) 0;
+}
+
+.bbai-guide-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--bbai-space-5);
+}
+
+.bbai-guide-step {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--bbai-space-4);
+    padding: var(--bbai-space-4);
+    border-radius: var(--bbai-radius-lg);
+    transition: background 0.2s ease;
+}
+
+.bbai-guide-step:hover {
     background: var(--bbai-bg-secondary);
 }
 
 .bbai-guide-step-number {
     flex-shrink: 0;
-    width: 72px;
-    height: 72px;
-    min-width: 72px;
-    background: var(--bbai-primary-gradient);
-    border: 3px solid rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--bbai-white);
-    font-weight: var(--bbai-font-bold);
-    font-size: 32px;
-    line-height: 1;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3), 0 0 0 4px rgba(16, 185, 129, 0.1);
-    position: relative;
-}
-
-.bbai-guide-step-number::before {
-    content: '';
-    position: absolute;
-    inset: -4px;
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
     border-radius: 50%;
-    background: var(--bbai-primary-gradient);
-    opacity: 0;
-    z-index: -1;
-    filter: blur(12px);
-    transition: opacity 0.3s ease;
-}
-
-.bbai-guide-step-item:hover .bbai-guide-step-number {
-    transform: scale(1.1);
-    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4), 0 0 0 6px rgba(16, 185, 129, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
-}
-
-.bbai-guide-step-item:hover .bbai-guide-step-number::before {
-    opacity: 0.5;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: var(--bbai-font-bold);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .bbai-guide-step-content {
     flex: 1;
-    padding-top: 0;
-    order: 1;
-}
-
-.bbai-guide-step-number {
-    order: 2;
+    min-width: 0;
 }
 
 .bbai-guide-step-title {
-    font-size: var(--bbai-text-base);
+    font-size: 15px;
     font-weight: var(--bbai-font-semibold);
     color: var(--bbai-text);
-    margin: 0 0 var(--bbai-space-1);
+    margin: 0 0 var(--bbai-space-1) 0;
     line-height: 1.4;
 }
 
-.bbai-guide-step-description {
-    font-size: var(--bbai-text-sm);
+.bbai-guide-step-desc {
+    font-size: 14px;
     color: var(--bbai-text-muted);
     margin: 0;
-    line-height: 1.6;
+    line-height: 1.5;
 }
 
-/* ========================================
-   WHY ALT TEXT LIST - Enhanced
-   ======================================== */
+/* ============================================
+   WHY ALT TEXT MATTERS
+   ============================================ */
 
-.bbai-guide-why-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
+.bbai-guide-why-card {
+    padding: var(--bbai-space-6);
+    margin-bottom: var(--bbai-space-6);
+}
+
+.bbai-guide-why-card .bbai-card-title {
+    font-size: 20px;
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0 0 var(--bbai-space-5) 0;
+}
+
+.bbai-guide-why-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: var(--bbai-space-4);
 }
 
@@ -12519,94 +12856,91 @@ button.bbai-btn.bbai-topup-section__btn:hover:not(:disabled) {
     align-items: flex-start;
     gap: var(--bbai-space-4);
     padding: var(--bbai-space-4);
+    background: var(--bbai-bg-secondary);
+    border: 1px solid var(--bbai-border);
     border-radius: var(--bbai-radius-lg);
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, transparent 100%);
-    border: 1px solid rgba(16, 185, 129, 0.1);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
-}
-
-.bbai-guide-why-item::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: var(--bbai-success);
-    transform: scaleY(0);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    transform-origin: bottom;
+    transition: all 0.2s ease;
 }
 
 .bbai-guide-why-item:hover {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
-    border-color: rgba(16, 185, 129, 0.25);
-    transform: translateX(4px);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+    border-color: var(--bbai-gray-300);
+    transform: translateY(-2px);
+    box-shadow: var(--bbai-shadow-sm);
 }
 
-.bbai-guide-why-item:hover::before {
-    transform: scaleY(1);
-    transform-origin: top;
-}
-
-.bbai-guide-why-item svg {
+.bbai-guide-why-icon {
     flex-shrink: 0;
-    width: 24px;
-    height: 24px;
-    margin-top: 2px;
-    filter: drop-shadow(0 2px 4px rgba(16, 185, 129, 0.2));
-    transition: transform 0.3s ease;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--bbai-radius-lg);
 }
 
-.bbai-guide-why-item:hover svg {
-    transform: scale(1.15) rotate(5deg);
+.bbai-guide-why-icon--seo {
+    background: var(--bbai-primary-soft);
+    color: var(--bbai-primary);
 }
 
-.bbai-guide-why-item span {
-    font-size: var(--bbai-text-base);
-    color: var(--bbai-text);
+.bbai-guide-why-icon--images {
+    background: rgba(139, 92, 246, 0.1);
+    color: #8B5CF6;
+}
+
+.bbai-guide-why-icon--accessibility {
+    background: var(--bbai-info-bg);
+    color: var(--bbai-info);
+}
+
+.bbai-guide-why-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.bbai-guide-why-text h4 {
+    font-size: 15px;
     font-weight: var(--bbai-font-semibold);
-    line-height: 1.6;
+    color: var(--bbai-text);
+    margin: 0 0 var(--bbai-space-1) 0;
+    line-height: 1.4;
 }
 
-/* ========================================
-   GRID LAYOUT (TIPS & FEATURES) - Enhanced
-   ======================================== */
+.bbai-guide-why-text p {
+    font-size: 14px;
+    color: var(--bbai-text-muted);
+    margin: 0;
+    line-height: 1.5;
+}
 
-.bbai-guide-grid {
+/* ============================================
+   TWO-COLUMN LAYOUT (TIPS & FEATURES)
+   ============================================ */
+
+.bbai-guide-two-col {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: var(--bbai-space-6);
+    margin-bottom: var(--bbai-space-6);
 }
 
-.bbai-guide-grid .bbai-card {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
+@media (max-width: 768px) {
+    .bbai-guide-two-col {
+        grid-template-columns: 1fr;
+    }
 }
 
-.bbai-guide-grid .bbai-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: var(--bbai-primary-gradient);
-    transform: scaleX(0);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+.bbai-guide-tips-card,
+.bbai-guide-features-card {
+    padding: var(--bbai-space-6);
 }
 
-.bbai-guide-grid .bbai-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
-}
-
-.bbai-guide-grid .bbai-card:hover::before {
-    transform: scaleX(1);
+.bbai-guide-tips-card .bbai-card-title,
+.bbai-guide-features-card .bbai-card-title {
+    font-size: 18px;
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0 0 var(--bbai-space-5) 0;
 }
 
 /* Tips List */
@@ -12619,46 +12953,30 @@ button.bbai-btn.bbai-topup-section__btn:hover:not(:disabled) {
     gap: var(--bbai-space-3);
 }
 
-.bbai-guide-tip-item {
+.bbai-guide-tip {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--bbai-space-3);
-    padding: var(--bbai-space-4);
-    border-radius: var(--bbai-radius-lg);
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.03) 0%, transparent 100%);
-    border: 1px solid rgba(16, 185, 129, 0.1);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
+    padding: var(--bbai-space-3);
+    border-radius: var(--bbai-radius);
+    transition: background 0.2s ease;
 }
 
-.bbai-guide-tip-item:hover {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.03) 100%);
-    border-color: rgba(16, 185, 129, 0.2);
-    transform: translateX(6px);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+.bbai-guide-tip:hover {
+    background: var(--bbai-bg-secondary);
 }
 
-.bbai-guide-tip-item svg {
+.bbai-guide-tip svg {
     flex-shrink: 0;
     width: 20px;
     height: 20px;
-    color: var(--bbai-primary);
-    background: rgba(16, 185, 129, 0.1);
-    border-radius: 50%;
-    padding: 4px;
-    transition: all 0.3s ease;
+    color: var(--bbai-success);
+    margin-top: 1px;
 }
 
-.bbai-guide-tip-item:hover svg {
-    background: var(--bbai-primary);
-    color: var(--bbai-white);
-    transform: scale(1.1) rotate(5deg);
-}
-
-.bbai-guide-tip-item span {
-    font-size: var(--bbai-text-sm);
+.bbai-guide-tip span {
+    font-size: 14px;
     color: var(--bbai-text);
-    font-weight: var(--bbai-font-semibold);
     line-height: 1.5;
 }
 
@@ -12672,608 +12990,90 @@ button.bbai-btn.bbai-topup-section__btn:hover:not(:disabled) {
     gap: var(--bbai-space-3);
 }
 
-.bbai-guide-feature-item {
+.bbai-guide-feature {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--bbai-space-3);
-    padding: var(--bbai-space-4);
-    border-radius: var(--bbai-radius-lg);
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.03) 0%, transparent 100%);
-    border: 1px solid rgba(99, 102, 241, 0.1);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-}
-
-.bbai-guide-feature-item:hover {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0.03) 100%);
-    border-color: rgba(99, 102, 241, 0.2);
-    transform: translateX(6px);
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
-}
-
-.bbai-guide-feature-item svg {
-    flex-shrink: 0;
-    width: 24px;
-    height: 24px;
-    color: var(--bbai-primary);
-    background: rgba(99, 102, 241, 0.1);
+    padding: var(--bbai-space-3);
     border-radius: var(--bbai-radius);
-    padding: 6px;
-    transition: all 0.3s ease;
+    transition: background 0.2s ease;
 }
 
-.bbai-guide-feature-item:hover svg {
-    background: var(--bbai-primary);
-    color: var(--bbai-white);
-    transform: scale(1.1) rotate(-5deg);
+.bbai-guide-feature:hover {
+    background: var(--bbai-bg-secondary);
 }
 
-.bbai-guide-feature-item span {
-    font-size: var(--bbai-text-sm);
+.bbai-guide-feature svg {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    color: var(--bbai-primary);
+    margin-top: 1px;
+}
+
+.bbai-guide-feature span {
+    font-size: 14px;
     color: var(--bbai-text);
-    font-weight: var(--bbai-font-semibold);
     line-height: 1.5;
-    display: flex;
+    display: inline-flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: var(--bbai-space-2);
 }
 
-/* ========================================
-   ENHANCED CARD HEADERS
-   ======================================== */
-
-.bbai-guide-grid .bbai-card-header {
-    position: relative;
-    padding-bottom: var(--bbai-space-4);
-    margin-bottom: var(--bbai-space-6);
-}
-
-.bbai-guide-grid .bbai-card-header::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 40px;
-    height: 3px;
-    background: var(--bbai-primary-gradient);
+/* Pro Badge (Small) */
+.bbai-badge--pro-sm {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    background: var(--bbai-gray-100);
+    color: var(--bbai-gray-600);
+    font-size: 10px;
+    font-weight: var(--bbai-font-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     border-radius: var(--bbai-radius-full);
 }
 
-.bbai-guide-grid .bbai-card-title {
-    font-size: var(--bbai-text-xl);
-    font-weight: var(--bbai-font-bold);
-    background: linear-gradient(135deg, var(--bbai-text) 0%, var(--bbai-text-secondary) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-/* ========================================
-   RESPONSIVE DESIGN
-   ======================================== */
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
 
 @media (max-width: 768px) {
-    .bbai-guide-pro-features-grid {
+    .bbai-guide-header .bbai-page-title {
+        font-size: 24px;
+    }
+
+    .bbai-guide-pro-list {
         grid-template-columns: 1fr;
     }
 
-    .bbai-guide-grid {
+    .bbai-guide-steps {
+        grid-template-columns: 1fr;
+    }
+
+    .bbai-guide-why-grid {
         grid-template-columns: 1fr;
     }
 
     .bbai-guide-step-number {
-        width: 40px;
-        height: 40px;
-        font-size: var(--bbai-text-lg);
-    }
-
-    .bbai-guide-step-item {
-        padding: var(--bbai-space-4);
-    }
-
-    .bbai-guide-step-item:hover {
-        transform: translateX(4px);
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
     }
 }
 
 @media (max-width: 480px) {
-    .bbai-guide-step-number {
-        width: 36px;
-        height: 36px;
-        font-size: var(--bbai-text-base);
+    .bbai-guide-header .bbai-page-title {
+        font-size: 22px;
     }
-}
 
-/* ========================================
-   GUIDE TAB - TAILWIND UTILITY CLASSES
-   ======================================== */
-
-/* Container */
-.min-h-screen {
-    min-height: 100vh;
-}
-
-.bg-slate-50 {
-    background-color: #f8fafc;
-}
-
-.px-4 {
-    padding-left: 1rem;
-    padding-right: 1rem;
-}
-
-.py-6 {
-    padding-top: 1.5rem;
-    padding-bottom: 1.5rem;
-}
-
-.mx-auto {
-    margin-left: auto;
-    margin-right: auto;
-}
-
-/* Media queries for responsive classes - consolidated */
-@media (min-width: 768px) {
-    .md\:px-6 {
-        padding-left: 1.5rem;
-        padding-right: 1.5rem;
-    }
-    
-    .md\:px-7 {
-        padding-left: 1.75rem;
-        padding-right: 1.75rem;
-    }
-    
-    .md\:px-8 {
-        padding-left: 2rem;
-        padding-right: 2rem;
-    }
-    
-    .md\:py-6 {
-        padding-top: 1.5rem;
-        padding-bottom: 1.5rem;
-    }
-    
-    .md\:py-8 {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-    }
-    
-    .md\:grid-cols-2 {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-.max-w-6xl {
-    max-width: 72rem;
-}
-
-.space-y-6 > * + * {
-    margin-top: 1.5rem;
-}
-
-@media (min-width: 768px) {
-    .md\:space-y-8 > * + * {
-        margin-top: 2rem;
-    }
-}
-
-.space-y-1 > * + * {
-    margin-top: 0.25rem;
-}
-
-.space-y-2 > * + * {
-    margin-top: 0.5rem;
-}
-
-.space-y-3 > * + * {
-    margin-top: 0.75rem;
-}
-
-.space-y-4 > * + * {
-    margin-top: 1rem;
-}
-
-/* Typography */
-.text-2xl {
-    font-size: 1.5rem;
-    line-height: 2rem;
-}
-
-.text-xl {
-    font-size: 1.25rem;
-    line-height: 1.75rem;
-}
-
-.text-base {
-    font-size: 1rem;
-    line-height: 1.5rem;
-}
-
-.text-sm {
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-}
-
-.text-xs {
-    font-size: 0.75rem;
-    line-height: 1rem;
-}
-
-.text-\[10px\] {
-    font-size: 10px;
-}
-
-.text-\[11px\] {
-    font-size: 11px;
-}
-
-/* Media queries for responsive classes */
-@media (min-width: 768px) {
-    .md\:text-2xl {
-        font-size: 1.5rem;
-        line-height: 2rem;
-    }
-    
-    .md\:text-base {
-        font-size: 1rem;
-        line-height: 1.5rem;
-    }
-    
-    .md\:text-xs {
-        font-size: 0.75rem;
-        line-height: 1rem;
-    }
-    
-    .md\:text-\[15px\] {
-        font-size: 15px;
-    }
-}
-
-.font-semibold {
-    font-weight: 600;
-}
-
-.font-bold {
-    font-weight: 700;
-}
-
-.text-slate-900 {
-    color: #0f172a;
-}
-
-.text-slate-800 {
-    color: #1e293b;
-}
-
-.text-slate-700 {
-    color: #334155;
-}
-
-.text-slate-600 {
-    color: #475569;
-}
-
-.text-slate-500 {
-    color: #64748b;
-}
-
-.text-emerald-600 {
-    color: #059669;
-}
-
-.text-sky-700 {
-    color: #0369a1;
-}
-
-.text-sky-50\/90 {
-    color: rgba(240, 249, 255, 0.9);
-}
-
-.text-sky-50\/85 {
-    color: rgba(240, 249, 255, 0.85);
-}
-
-.text-white {
-    color: #ffffff;
-}
-
-/* Cards */
-.rounded-3xl {
-    border-radius: 1.5rem;
-}
-
-.rounded-full {
-    border-radius: 9999px;
-}
-
-.bg-white {
-    background-color: #ffffff;
-}
-
-.bg-slate-50 {
-    background-color: #f8fafc;
-}
-
-.bg-slate-100 {
-    background-color: #f1f5f9;
-}
-
-.bg-emerald-50 {
-    background-color: #ecfdf5;
-}
-
-.bg-emerald-500 {
-    background-color: #10b981;
-}
-
-.bg-gradient-to-br {
-    background-image: linear-gradient(to bottom right, var(--tw-gradient-stops));
-}
-
-.from-sky-500 {
-    --tw-gradient-from: #0ea5e9;
-    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(14, 165, 233, 0));
-}
-
-.via-sky-500 {
-    --tw-gradient-stops: var(--tw-gradient-from), #0ea5e9, var(--tw-gradient-to, rgba(14, 165, 233, 0));
-}
-
-.to-indigo-500 {
-    --tw-gradient-to: #6366f1;
-}
-
-.bg-white\/20 {
-    background-color: rgba(255, 255, 255, 0.2);
-}
-
-.shadow-xl {
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-.shadow-lg {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-.shadow-sky-900\/20 {
-    box-shadow: 0 10px 15px -3px rgba(12, 74, 110, 0.2), 0 4px 6px -2px rgba(12, 74, 110, 0.1);
-}
-
-.px-6 {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-}
-
-.py-5 {
-    padding-top: 1.25rem;
-    padding-bottom: 1.25rem;
-}
-
-/* Padding media queries added below */
-
-.px-3 {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-}
-
-.py-1 {
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
-}
-
-.py-3 {
-    padding-top: 0.75rem;
-    padding-bottom: 0.75rem;
-}
-
-.px-6 {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-}
-
-.py-7 {
-    padding-top: 1.75rem;
-    padding-bottom: 1.75rem;
-}
-
-/* Padding media queries added below */
-
-.py-0\.5 {
-    padding-top: 0.125rem;
-    padding-bottom: 0.125rem;
-}
-
-.px-1\.5 {
-    padding-left: 0.375rem;
-    padding-right: 0.375rem;
-}
-
-/* Layout */
-.inline-flex {
-    display: inline-flex;
-}
-
-.items-center {
-    align-items: center;
-}
-
-.items-start {
-    align-items: flex-start;
-}
-
-.justify-center {
-    justify-content: center;
-}
-
-.flex {
-    display: flex;
-}
-
-.gap-2 {
-    gap: 0.5rem;
-}
-
-.gap-3 {
-    gap: 0.75rem;
-}
-
-.gap-4 {
-    gap: 1rem;
-}
-
-.mt-0\.5 {
-    margin-top: 0.125rem;
-}
-
-.mt-2 {
-    margin-top: 0.5rem;
-}
-
-.mt-3 {
-    margin-top: 0.75rem;
-}
-
-.mt-4 {
-    margin-top: 1rem;
-}
-
-.mx-1 {
-    margin-left: 0.25rem;
-    margin-right: 0.25rem;
-}
-
-.ml-1 {
-    margin-left: 0.25rem;
-}
-
-.mt-1 {
-    margin-top: 0.25rem;
-}
-
-/* Sizing */
-.h-4 {
-    height: 1rem;
-}
-
-.w-4 {
-    width: 1rem;
-}
-
-.h-5 {
-    height: 1.25rem;
-}
-
-.w-5 {
-    width: 1.25rem;
-}
-
-.h-6 {
-    height: 1.5rem;
-}
-
-.w-6 {
-    width: 1.5rem;
-}
-
-.w-full {
-    width: 100%;
-}
-
-.max-w-2xl {
-    max-width: 42rem;
-}
-
-.h-6\.w-6 {
-    height: 1.5rem;
-    width: 1.5rem;
-}
-
-/* Grid */
-.grid {
-    display: grid;
-}
-
-/* Grid media queries added below */
-
-/* Utilities */
-.tracking-\[0\.18em\] {
-    letter-spacing: 0.18em;
-}
-
-.uppercase {
-    text-transform: uppercase;
-}
-
-.leading-snug {
-    line-height: 1.375;
-}
-
-.underline-offset-2 {
-    text-underline-offset: 2px;
-}
-
-.hover\:brightness-105:hover {
-    filter: brightness(1.05);
-}
-
-.hover\:underline:hover {
-    text-decoration: underline;
-}
-
-.transition {
-    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 150ms;
-}
-
-.font-medium {
-    font-weight: 500;
-}
-
-.focus-visible\:outline-none:focus-visible {
-    outline: 2px solid transparent;
-    outline-offset: 2px;
-}
-
-.focus-visible\:ring-2:focus-visible {
-    box-shadow: 0 0 0 2px var(--tw-ring-inset), 0 0 0 4px var(--tw-ring-color);
-}
-
-.focus-visible\:ring-white:focus-visible {
-    --tw-ring-color: #ffffff;
-}
-
-.focus-visible\:ring-white\/70:focus-visible {
-    --tw-ring-color: rgba(255, 255, 255, 0.7);
-}
-
-.focus-visible\:ring-offset-2:focus-visible {
-    --tw-ring-offset-width: 2px;
-}
-
-.focus-visible\:ring-offset-sky-500:focus-visible {
-    --tw-ring-offset-color: #0ea5e9;
-}
-
-/* Responsive */
-@media (max-width: 767px) {
-    .md\:px-6,
-    .md\:px-7,
-    .md\:px-8,
-    .md\:py-6,
-    .md\:py-8,
-    .md\:space-y-8,
-    .md\:grid-cols-2,
-    .md\:text-2xl,
-    .md\:text-base,
-    .md\:text-xs,
-    .md\:text-\[15px\] {
-        /* Reset to base values on mobile */
-    }
-    
-    .grid {
-        grid-template-columns: 1fr;
+    .bbai-guide-pro-card,
+    .bbai-guide-steps-card,
+    .bbai-guide-why-card,
+    .bbai-guide-tips-card,
+    .bbai-guide-features-card {
+        padding: var(--bbai-space-4);
     }
 }
 

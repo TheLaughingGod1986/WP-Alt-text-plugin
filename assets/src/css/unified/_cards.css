@@ -593,7 +593,7 @@
     display: inline-flex;
     align-items: center;
     gap: var(--bbai-space-1);
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(8px);
     padding: 6px 14px;
     border-radius: var(--bbai-radius-full);
@@ -603,7 +603,8 @@
     letter-spacing: 0.08em;
     margin-bottom: var(--bbai-space-5);
     width: fit-content;
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: #1e293b;
 }
 
 /* Headline */

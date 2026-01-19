@@ -346,7 +346,7 @@ const MultiUserUsageTab = ({ apiUrl, nonce }) => {
             <button
               type="button"
               onClick={handleClearFilters}
-              className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2"
+              className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-2 text-xs font-medium text-slate-900 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2"
             >
               Clear
             </button>
@@ -365,32 +365,38 @@ const MultiUserUsageTab = ({ apiUrl, nonce }) => {
             </p>
           </div>
 
-          {usageRows.length > 0 ? (
-            <div className="mt-4 overflow-x-auto">
-              <table className="min-w-full text-left text-xs md:text-sm">
-                <thead className="border-b border-slate-100 text-slate-500">
+          <div className="bbai-card bbai-mt-4">
+            <div className="bbai-table-wrap">
+              <table className="bbai-table">
+                <thead>
                   <tr>
-                    <th className="py-2 pr-6 font-medium">User</th>
-                    <th className="py-2 pr-6 font-medium">Credits Used</th>
-                    <th className="py-2 pr-6 font-medium">Last Activity</th>
-                    <th className="py-2 pr-6 font-medium">Avg Per Day</th>
+                    <th>User</th>
+                    <th>Credits Used</th>
+                    <th>Last Activity</th>
+                    <th>Avg Per Day</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {usageRows.map((row) => (
-                    <tr key={row.userId}>
-                      <td className="py-2 pr-6 text-slate-800">{row.userName}</td>
-                      <td className="py-2 pr-6 text-slate-800">{row.creditsUsed.toLocaleString()}</td>
-                      <td className="py-2 pr-6 text-slate-600">{row.lastActivity}</td>
-                      <td className="py-2 pr-6 text-slate-600">{row.avgPerDay}</td>
+                <tbody>
+                  {usageRows.length > 0 ? (
+                    usageRows.map((row) => (
+                      <tr key={row.userId}>
+                        <td className="bbai-text-base">{row.userName}</td>
+                        <td className="bbai-text-base">{row.creditsUsed.toLocaleString()}</td>
+                        <td className="bbai-text-muted">{row.lastActivity || '—'}</td>
+                        <td className="bbai-text-muted">{row.avgPerDay || '—'}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="4" className="bbai-text-center bbai-text-muted bbai-text-sm">
+                        {emptyStateMessage}
+                      </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
-          ) : (
-            <p className={emptyStateClassName}>{emptyStateMessage}</p>
-          )}
+          </div>
         </section>
 
         <GrowthPanel onStartTrial={handleStartGrowthTrial} onComparePlans={handleComparePlans} />

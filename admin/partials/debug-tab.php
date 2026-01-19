@@ -32,7 +32,7 @@ if (!$can_access_debug) : ?>
                     <?php esc_html_e('If you don\'t have an account, you can create one for free or subscribe to a plan.', 'beepbeep-ai-alt-text-generator'); ?>
                 </p>
                 <div class="bbai-settings-required-actions">
-                    <button type="button" class="bbai-btn-primary bbai-btn-icon" data-action="show-auth-modal" data-auth-tab="login">
+                    <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-icon" data-action="show-auth-modal" data-auth-tab="login">
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                             <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                             <circle cx="8" cy="8" r="2" fill="currentColor"/>
@@ -269,10 +269,10 @@ if (!$can_access_debug) : ?>
                 ?>
             </span>
             <div class="bbai-pagination-controls">
-                <button type="button" class="bbai-pagination-btn <?php echo esc_attr( $debug_page <= 1 ? 'bbai-pagination-btn--disabled' : '' ); ?>" data-debug-page="prev" <?php disabled($debug_page <= 1); ?>>
+                <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm bbai-pagination-btn <?php echo esc_attr( $debug_page <= 1 ? 'bbai-pagination-btn--disabled' : '' ); ?>" data-debug-page="prev" <?php disabled($debug_page <= 1); ?>>
                     <?php esc_html_e('Previous', 'beepbeep-ai-alt-text-generator'); ?>
                 </button>
-                <button type="button" class="bbai-pagination-btn <?php echo esc_attr( $debug_page >= $debug_pages ? 'bbai-pagination-btn--disabled' : '' ); ?>" data-debug-page="next" <?php disabled($debug_page >= $debug_pages); ?>>
+                <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm bbai-pagination-btn <?php echo esc_attr( $debug_page >= $debug_pages ? 'bbai-pagination-btn--disabled' : '' ); ?>" data-debug-page="next" <?php disabled($debug_page >= $debug_pages); ?>>
                     <?php esc_html_e('Next', 'beepbeep-ai-alt-text-generator'); ?>
                 </button>
             </div>

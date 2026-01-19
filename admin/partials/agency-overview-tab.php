@@ -57,7 +57,7 @@ $export_url = wp_nonce_url(admin_url('admin-post.php?action=bbai_usage_export'),
                 <h1 class="bbai-agency-overview-title"><?php esc_html_e('Agency Overview', 'beepbeep-ai-alt-text-generator'); ?></h1>
             </div>
             <div class="bbai-agency-overview-header-right">
-                <a href="<?php echo esc_url($export_url); ?>" class="bbai-agency-export-btn">
+                <a href="<?php echo esc_url($export_url); ?>" class="bbai-btn bbai-btn-secondary bbai-agency-export-btn">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="bbai-export-icon">
                         <path d="M17.5 12.5V16.25C17.5 16.913 17.2366 17.5489 16.7678 18.0178C16.2989 18.4866 15.663 18.75 15 18.75H5C4.33696 18.75 3.70107 18.4866 3.23223 18.0178C2.76339 17.5489 2.5 16.913 2.5 16.25V12.5M14.1667 8.33333L10 12.5M10 12.5L5.83333 8.33333M10 12.5V2.5" stroke="currentColor" stroke-width="1.67" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>

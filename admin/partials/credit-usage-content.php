@@ -66,7 +66,17 @@ if (!defined('ABSPATH')) {
                 <h3 class="bbai-credit-stat-title">
                     <?php esc_html_e('Credits Remaining', 'beepbeep-ai-alt-text-generator'); ?>
                 </h3>
-                <p class="bbai-credit-stat-value bbai-credit-stat-value--success">
+                <?php
+                // Determine status class based on remaining percentage
+                $remaining_pct = $current_usage['limit'] > 0 ? ($current_usage['remaining'] / $current_usage['limit']) * 100 : 100;
+                $remaining_class = 'bbai-credit-stat-value--success';
+                if ($remaining_pct <= 10) {
+                    $remaining_class = 'bbai-credit-stat-value--danger';
+                } elseif ($remaining_pct <= 30) {
+                    $remaining_class = 'bbai-credit-stat-value--warning';
+                }
+                ?>
+                <p class="bbai-credit-stat-value <?php echo esc_attr($remaining_class); ?>">
                     <?php echo esc_html(number_format_i18n($current_usage['remaining'])); ?>
                 </p>
                 <p class="bbai-credit-stat-desc">
@@ -77,7 +87,17 @@ if (!defined('ABSPATH')) {
                 <h3 class="bbai-credit-stat-title">
                     <?php esc_html_e('Usage Percentage', 'beepbeep-ai-alt-text-generator'); ?>
                 </h3>
-                <p class="bbai-credit-stat-value bbai-credit-stat-value--success">
+                <?php
+                // Status-aware coloring: success <70%, warning 70-90%, danger >90%
+                $usage_pct = $current_usage['percentage'];
+                $usage_class = 'bbai-credit-stat-value--success';
+                if ($usage_pct >= 90) {
+                    $usage_class = 'bbai-credit-stat-value--danger';
+                } elseif ($usage_pct >= 70) {
+                    $usage_class = 'bbai-credit-stat-value--warning';
+                }
+                ?>
+                <p class="bbai-credit-stat-value <?php echo esc_attr($usage_class); ?>">
                     <?php echo esc_html(number_format_i18n($current_usage['percentage'])); ?>%
                 </p>
                 <p class="bbai-credit-stat-desc">

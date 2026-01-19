@@ -295,9 +295,9 @@ $seo_lift_display = $seo_lift_percent > 0 ? '+' . $seo_lift_percent . '%' : $seo
                         <p><?php esc_html_e('No recent activity recorded yet.', 'beepbeep-ai-alt-text-generator'); ?></p>
                     </div>
                 </div>
-                <a href="<?php echo esc_url(admin_url('admin.php?page=beepbeep-ai-alt-text-generator&tab=pricing')); ?>" class="bbai-link-btn bbai-link-sm bbai-mt-4">
+                <button type="button" class="bbai-link-btn bbai-link-sm bbai-mt-4" data-action="show-upgrade-modal" onclick="if(typeof window.openPricingModal === 'function'){window.openPricingModal('enterprise');} else if(typeof window.bbaiShowUpgradeModal === 'function'){window.bbaiShowUpgradeModal();} else if(typeof window.alttextaiShowUpgradeModal === 'function'){window.alttextaiShowUpgradeModal();}">
                     <?php esc_html_e('Compare all plans', 'beepbeep-ai-alt-text-generator'); ?> ›
-                </a>
+                </button>
             </div>
         </div>
 
@@ -502,38 +502,70 @@ window.bbaiAnalyticsData = {
     }
 
     function initAnalytics() {
-        // Ensure bbai_ajax is available for activity timeline
-        if (typeof bbai_ajax === 'undefined' && typeof window.bbai_ajax !== 'undefined') {
-            window.bbai_ajax = window.bbai_ajax;
+        // Ensure bbai_ajax is available for activity timeline (check multiple sources)
+        const bbaiAjax = (typeof bbai_ajax !== 'undefined' ? bbai_ajax : (typeof window !== 'undefined' && window.bbai_ajax ? window.bbai_ajax : null));
+        
+        if (!window.bbai_ajax && bbaiAjax) {
+            window.bbai_ajax = bbaiAjax;
         }
         
         if (typeof window.bbaiAnalytics !== 'undefined' && window.bbaiAnalytics.init) {
             window.bbaiAnalytics.init();
         } else {
             // Fallback: try to load activity directly if bbaiAnalytics not available
-            if (typeof bbai_ajax !== 'undefined' && bbai_ajax.ajaxurl) {
+            if (bbaiAjax && bbaiAjax.ajaxurl) {
                 const timeline = document.getElementById('bbai-activity-timeline');
                 if (timeline) {
-                    jQuery.ajax({
-                        url: bbai_ajax.ajaxurl,
-                        type: 'POST',
-                        data: {
-                            action: 'bbai_get_activity',
-                            nonce: bbai_ajax.nonce || ''
-                        },
-                        success: (response) => {
-                            if (response && response.success && response.data && response.data.length > 0) {
-                                // Use the render function from bbaiAnalytics if available
+                    // Use jQuery if available
+                    if (typeof jQuery !== 'undefined' && jQuery.ajax) {
+                        jQuery.ajax({
+                            url: bbaiAjax.ajaxurl,
+                            type: 'POST',
+                            data: {
+                                action: 'bbai_get_activity',
+                                nonce: bbaiAjax.nonce || ''
+                            },
+                            success: (response) => {
+                                if (response && response.success && response.data && response.data.length > 0) {
+                                    // Use the render function from bbaiAnalytics if available
+                                    if (typeof window.bbaiAnalytics !== 'undefined' && window.bbaiAnalytics.renderActivityTimeline) {
+                                        window.bbaiAnalytics.renderActivityTimeline(response.data);
+                                    } else {
+                                        // Fallback rendering if bbaiAnalytics.renderActivityTimeline is not available
+                                        console.warn('[BeepBeep AI] bbaiAnalytics.renderActivityTimeline not available');
+                                    }
+                                }
+                            },
+                            error: (xhr, status, error) => {
+                                console.error('[BeepBeep AI] Failed to load activity:', error);
+                                // Keep empty state
+                            }
+                        });
+                    } else if (typeof fetch !== 'undefined') {
+                        // Fallback to fetch API if jQuery is not available
+                        const formData = new FormData();
+                        formData.append('action', 'bbai_get_activity');
+                        formData.append('nonce', bbaiAjax.nonce || '');
+                        
+                        fetch(bbaiAjax.ajaxurl, {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data && data.success && data.data && data.data.length > 0) {
                                 if (typeof window.bbaiAnalytics !== 'undefined' && window.bbaiAnalytics.renderActivityTimeline) {
-                                    window.bbaiAnalytics.renderActivityTimeline(response.data);
+                                    window.bbaiAnalytics.renderActivityTimeline(data.data);
                                 }
                             }
-                        },
-                        error: () => {
-                            // Keep empty state
-                        }
-                    });
+                        })
+                        .catch(error => {
+                            console.error('[BeepBeep AI] Failed to load activity:', error);
+                        });
+                    }
                 }
+            } else {
+                console.warn('[BeepBeep AI] bbai_ajax not available for activity timeline');
             }
         }
     }

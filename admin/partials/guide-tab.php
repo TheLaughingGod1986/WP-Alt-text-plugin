@@ -1,7 +1,7 @@
 <?php
 /**
- * Guide (How to) tab content.
- * Uses consistent card structure and layout as the rest of the system.
+ * Guide (How to) tab content - Premium SaaS Design.
+ * Uses consistent card structure and unified CSS system.
  *
  * Expects $this (core class) and $usage_stats in scope.
  */
@@ -35,170 +35,242 @@ $is_agency = ($plan_slug === 'agency');
 $is_pro    = ($is_growth || $is_agency);
 ?>
 
-<div class="min-h-screen bg-slate-50 px-4 py-6 md:px-6">
-    <div class="mx-auto max-w-6xl space-y-6 md:space-y-8">
-        <header class="space-y-1">
-            <h1 class="text-2xl font-semibold text-slate-900"><?php esc_html_e('How to Use BeepBeep AI', 'beepbeep-ai-alt-text-generator'); ?></h1>
-            <p class="text-sm text-slate-600"><?php esc_html_e('Learn how to generate and manage alt text for your images.', 'beepbeep-ai-alt-text-generator'); ?></p>
-        </header>
+<div class="bbai-dashboard-container">
+    <!-- Header Section -->
+    <div class="bbai-guide-header">
+        <h1 class="bbai-page-title"><?php esc_html_e('How to Use BeepBeep AI', 'beepbeep-ai-alt-text-generator'); ?></h1>
+        <p class="bbai-page-subtitle"><?php esc_html_e('Generate SEO-optimized alt text for your images in minutes, not hours.', 'beepbeep-ai-alt-text-generator'); ?></p>
+    </div>
 
-        <?php if (!$is_pro) : ?>
-            <section class="rounded-3xl bg-white shadow-xl px-6 py-5 md:px-7 md:py-6">
-                <p class="inline-flex items-center rounded-full bg-slate-50 px-3 py-1 text-[11px] font-semibold tracking-[0.18em] text-slate-500 uppercase">
-                    <?php esc_html_e('Pro Features', 'beepbeep-ai-alt-text-generator'); ?>
-                </p>
+    <!-- Pro Features Block (Free users only) -->
+    <?php if (!$is_pro) : ?>
+    <div class="bbai-card bbai-guide-pro-card">
+        <div class="bbai-guide-pro-header">
+            <span class="bbai-badge bbai-badge--growth"><?php esc_html_e('Growth', 'beepbeep-ai-alt-text-generator'); ?></span>
+            <h2 class="bbai-guide-pro-title"><?php esc_html_e('Unlock Pro Features', 'beepbeep-ai-alt-text-generator'); ?></h2>
+        </div>
+        <ul class="bbai-guide-pro-list">
+            <li class="bbai-guide-pro-item">
+                <svg width="20" height="20" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M13 4L6 11L3 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span><?php esc_html_e('1,000 alt text generations per month', 'beepbeep-ai-alt-text-generator'); ?></span>
+            </li>
+            <li class="bbai-guide-pro-item">
+                <svg width="20" height="20" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M13 4L6 11L3 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span><?php esc_html_e('Bulk processing for entire media libraries', 'beepbeep-ai-alt-text-generator'); ?></span>
+            </li>
+            <li class="bbai-guide-pro-item">
+                <svg width="20" height="20" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M13 4L6 11L3 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span><?php esc_html_e('Priority queue for 3x faster results', 'beepbeep-ai-alt-text-generator'); ?></span>
+            </li>
+            <li class="bbai-guide-pro-item">
+                <svg width="20" height="20" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M13 4L6 11L3 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span><?php esc_html_e('Smart tone & style tuning', 'beepbeep-ai-alt-text-generator'); ?></span>
+            </li>
+            <li class="bbai-guide-pro-item">
+                <svg width="20" height="20" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M13 4L6 11L3 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span><?php esc_html_e('Multilingual alt text for global SEO', 'beepbeep-ai-alt-text-generator'); ?></span>
+            </li>
+        </ul>
+        <div class="bbai-guide-pro-cta">
+            <button type="button" class="bbai-btn bbai-btn-primary" data-action="show-upgrade-modal">
+                <?php esc_html_e('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'); ?>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+    <?php endif; ?>
 
-                <ul class="mt-4 space-y-2 text-sm text-slate-800">
-                    <li class="flex items-start gap-2">
-                        <span class="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-50 text-[10px] text-emerald-600">
-                            &#10003;
-                        </span>
-                        <span><?php esc_html_e('Priority queue generation for faster alt text.', 'beepbeep-ai-alt-text-generator'); ?></span>
-                    </li>
-                    <li class="flex items-start gap-2">
-                        <span class="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-50 text-[10px] text-emerald-600">
-                            &#10003;
-                        </span>
-                        <span><?php esc_html_e('Bulk optimisation for large media libraries.', 'beepbeep-ai-alt-text-generator'); ?></span>
-                    </li>
-                    <li class="flex items-start gap-2">
-                        <span class="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-50 text-[10px] text-emerald-600">
-                            &#10003;
-                        </span>
-                        <span><?php esc_html_e('Multilingual alt text for global SEO.', 'beepbeep-ai-alt-text-generator'); ?></span>
-                    </li>
-                    <li class="flex items-start gap-2">
-                        <span class="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-50 text-[10px] text-emerald-600">
-                            &#10003;
-                        </span>
-                        <span><?php esc_html_e('Smart tone & style tuning to match your brand.', 'beepbeep-ai-alt-text-generator'); ?></span>
-                    </li>
-                    <li class="flex items-start gap-2">
-                        <span class="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-50 text-[10px] text-emerald-600">
-                            &#10003;
-                        </span>
-                        <span><?php esc_html_e('1,000 alt text generations per month on Growth.', 'beepbeep-ai-alt-text-generator'); ?></span>
-                    </li>
-                </ul>
-            </section>
-        <?php endif; ?>
-
-        <section class="rounded-3xl bg-white shadow-xl px-6 py-5 md:px-7 md:py-6">
-            <h2 class="text-base font-semibold text-slate-900"><?php esc_html_e('Getting Started in 4 Easy Steps', 'beepbeep-ai-alt-text-generator'); ?></h2>
-
-            <div class="mt-4 space-y-4 text-sm text-slate-800">
-                <div class="flex gap-3">
-                    <div class="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-xs font-semibold text-white">1</div>
-                    <div>
-                        <p class="font-semibold"><?php esc_html_e('Upload Images', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        <p class="text-xs text-slate-600"><?php esc_html_e('Add images to your WordPress Media Library.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                    </div>
-                </div>
-                <div class="flex gap-3">
-                    <div class="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-xs font-semibold text-white">2</div>
-                    <div>
-                        <p class="font-semibold"><?php esc_html_e('Bulk Optimise', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        <p class="text-xs text-slate-600"><?php esc_html_e('Generate alt text for multiple images at once from the Dashboard.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                    </div>
-                </div>
-                <div class="flex gap-3">
-                    <div class="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-xs font-semibold text-white">3</div>
-                    <div>
-                        <p class="font-semibold"><?php esc_html_e('Review & Edit', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        <p class="text-xs text-slate-600"><?php esc_html_e('Review and fine-tune generated alt text in the ALT Text Library.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                    </div>
-                </div>
-                <div class="flex gap-3">
-                    <div class="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-xs font-semibold text-white">4</div>
-                    <div>
-                        <p class="font-semibold"><?php esc_html_e('Regenerate if Needed', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        <p class="text-xs text-slate-600"><?php esc_html_e('Use Regenerate to improve alt text quality at any time.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                    </div>
+    <!-- Getting Started Block -->
+    <div class="bbai-card bbai-guide-steps-card">
+        <h2 class="bbai-card-title"><?php esc_html_e('Get Started in 4 Steps', 'beepbeep-ai-alt-text-generator'); ?></h2>
+        <div class="bbai-guide-steps">
+            <div class="bbai-guide-step">
+                <div class="bbai-guide-step-number">1</div>
+                <div class="bbai-guide-step-content">
+                    <h3 class="bbai-guide-step-title"><?php esc_html_e('Upload Images', 'beepbeep-ai-alt-text-generator'); ?></h3>
+                    <p class="bbai-guide-step-desc"><?php esc_html_e('Add images to your WordPress Media Library as usual.', 'beepbeep-ai-alt-text-generator'); ?></p>
                 </div>
             </div>
-        </section>
-
-        <section class="rounded-3xl bg-white shadow-xl px-6 py-5 md:px-7 md:py-6">
-            <div class="flex items-center gap-2">
-                <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-50 text-[11px] text-slate-700">&#128161;</span>
-                <h2 class="text-base font-semibold text-slate-900"><?php esc_html_e('Why Alt Text Matters', 'beepbeep-ai-alt-text-generator'); ?></h2>
+            <div class="bbai-guide-step">
+                <div class="bbai-guide-step-number">2</div>
+                <div class="bbai-guide-step-content">
+                    <h3 class="bbai-guide-step-title"><?php esc_html_e('Generate Alt Text', 'beepbeep-ai-alt-text-generator'); ?></h3>
+                    <p class="bbai-guide-step-desc"><?php esc_html_e('Click "Generate Missing" on the Dashboard to process images in bulk.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                </div>
             </div>
+            <div class="bbai-guide-step">
+                <div class="bbai-guide-step-number">3</div>
+                <div class="bbai-guide-step-content">
+                    <h3 class="bbai-guide-step-title"><?php esc_html_e('Review & Edit', 'beepbeep-ai-alt-text-generator'); ?></h3>
+                    <p class="bbai-guide-step-desc"><?php esc_html_e('Fine-tune generated alt text in the ALT Library tab.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                </div>
+            </div>
+            <div class="bbai-guide-step">
+                <div class="bbai-guide-step-number">4</div>
+                <div class="bbai-guide-step-content">
+                    <h3 class="bbai-guide-step-title"><?php esc_html_e('Regenerate Anytime', 'beepbeep-ai-alt-text-generator'); ?></h3>
+                    <p class="bbai-guide-step-desc"><?php esc_html_e('Use "Re-optimize All" to refresh alt text after changing settings.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            <ul class="mt-3 space-y-2 text-sm text-slate-800">
-                <li class="flex items-start gap-2">
-                    <span class="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-50 text-[10px] text-emerald-600">
-                        &#10003;
-                    </span>
-                    <span><?php esc_html_e('Boosts SEO visibility and click-through rates.', 'beepbeep-ai-alt-text-generator'); ?></span>
+    <!-- Why Alt Text Matters -->
+    <div class="bbai-card bbai-guide-why-card">
+        <h2 class="bbai-card-title"><?php esc_html_e('Why Alt Text Matters', 'beepbeep-ai-alt-text-generator'); ?></h2>
+        <div class="bbai-guide-why-grid">
+            <div class="bbai-guide-why-item">
+                <div class="bbai-guide-why-icon bbai-guide-why-icon--seo">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M21 21L16.5 16.5M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div class="bbai-guide-why-text">
+                    <h4><?php esc_html_e('Boost SEO Rankings', 'beepbeep-ai-alt-text-generator'); ?></h4>
+                    <p><?php esc_html_e('Search engines index alt text to understand image content and improve page relevance.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                </div>
+            </div>
+            <div class="bbai-guide-why-item">
+                <div class="bbai-guide-why-icon bbai-guide-why-icon--images">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
+                        <path d="M21 15L16 10L5 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div class="bbai-guide-why-text">
+                    <h4><?php esc_html_e('Google Images Traffic', 'beepbeep-ai-alt-text-generator'); ?></h4>
+                    <p><?php esc_html_e('Well-described images rank higher in Google Images and visual search results.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                </div>
+            </div>
+            <div class="bbai-guide-why-item">
+                <div class="bbai-guide-why-icon bbai-guide-why-icon--accessibility">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                        <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div class="bbai-guide-why-text">
+                    <h4><?php esc_html_e('Accessibility Compliance', 'beepbeep-ai-alt-text-generator'); ?></h4>
+                    <p><?php esc_html_e('Meet WCAG guidelines and make your site accessible to screen reader users.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tips & Features Side-by-Side -->
+    <div class="bbai-guide-two-col">
+        <!-- Tips Card -->
+        <div class="bbai-card bbai-guide-tips-card">
+            <h2 class="bbai-card-title"><?php esc_html_e('Tips for Better Alt Text', 'beepbeep-ai-alt-text-generator'); ?></h2>
+            <ul class="bbai-guide-tips-list">
+                <li class="bbai-guide-tip">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span><?php esc_html_e('Keep it concise: 80-125 characters is ideal', 'beepbeep-ai-alt-text-generator'); ?></span>
                 </li>
-                <li class="flex items-start gap-2">
-                    <span class="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-50 text-[10px] text-emerald-600">
-                        &#10003;
-                    </span>
-                    <span><?php esc_html_e('Improves Google Images and visual search rankings.', 'beepbeep-ai-alt-text-generator'); ?></span>
+                <li class="bbai-guide-tip">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span><?php esc_html_e('Describe what matters most in the image', 'beepbeep-ai-alt-text-generator'); ?></span>
                 </li>
-                <li class="flex items-start gap-2">
-                    <span class="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-50 text-[10px] text-emerald-600">
-                        &#10003;
-                    </span>
-                    <span><?php esc_html_e('Helps achieve WCAG accessibility compliance.', 'beepbeep-ai-alt-text-generator'); ?></span>
+                <li class="bbai-guide-tip">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span><?php esc_html_e('Avoid keyword stuffing or repeating page text', 'beepbeep-ai-alt-text-generator'); ?></span>
+                </li>
+                <li class="bbai-guide-tip">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span><?php esc_html_e('Include context: what, who, where, why', 'beepbeep-ai-alt-text-generator'); ?></span>
                 </li>
             </ul>
-        </section>
+        </div>
 
-        <section class="grid gap-4 md:grid-cols-2">
-            <div class="rounded-3xl bg-white shadow-xl px-6 py-5 md:px-7 md:py-6">
-                <div class="flex items-center gap-2">
-                    <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-50 text-[11px] text-slate-700">&#10022;</span>
-                    <h2 class="text-base font-semibold text-slate-900"><?php esc_html_e('Tips for Better Alt Text', 'beepbeep-ai-alt-text-generator'); ?></h2>
-                </div>
-                <ul class="mt-3 space-y-2 text-sm text-slate-800">
-                    <li><?php esc_html_e('Keep it concise and descriptive.', 'beepbeep-ai-alt-text-generator'); ?></li>
-                    <li><?php esc_html_e('Be specific about what\'s important in the image.', 'beepbeep-ai-alt-text-generator'); ?></li>
-                    <li><?php esc_html_e('Avoid repeating surrounding text or keywords unnaturally.', 'beepbeep-ai-alt-text-generator'); ?></li>
-                    <li><?php esc_html_e('Describe context and intent, not just objects.', 'beepbeep-ai-alt-text-generator'); ?></li>
-                </ul>
-            </div>
-
-            <div class="rounded-3xl bg-white shadow-xl px-6 py-5 md:px-7 md:py-6">
-                <div class="flex items-center gap-2">
-                    <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-50 text-[11px] text-slate-700">&#9881;</span>
-                    <h2 class="text-base font-semibold text-slate-900"><?php esc_html_e('Key Features', 'beepbeep-ai-alt-text-generator'); ?></h2>
-                </div>
-                <ul class="mt-3 space-y-2 text-sm text-slate-800">
-                    <li><?php esc_html_e('AI-powered alt text generation.', 'beepbeep-ai-alt-text-generator'); ?></li>
-                    <li>
-                        <?php esc_html_e('Bulk processing for entire media libraries', 'beepbeep-ai-alt-text-generator'); ?>
+        <!-- Features Card -->
+        <div class="bbai-card bbai-guide-features-card">
+            <h2 class="bbai-card-title"><?php esc_html_e('Key Features', 'beepbeep-ai-alt-text-generator'); ?></h2>
+            <ul class="bbai-guide-features-list">
+                <li class="bbai-guide-feature">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="M8 2L10 6L14 8L10 10L8 14L6 10L2 8L6 6L8 2Z" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                    <span><?php esc_html_e('AI-powered alt text generation', 'beepbeep-ai-alt-text-generator'); ?></span>
+                </li>
+                <li class="bbai-guide-feature">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M5 8H11M8 5V11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    <span>
+                        <?php esc_html_e('Bulk processing', 'beepbeep-ai-alt-text-generator'); ?>
                         <?php if (!$is_pro) : ?>
-                            <span class="ml-1 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-slate-500"><?php esc_html_e('Pro', 'beepbeep-ai-alt-text-generator'); ?></span>
+                            <span class="bbai-badge bbai-badge--pro-sm"><?php esc_html_e('Pro', 'beepbeep-ai-alt-text-generator'); ?></span>
                         <?php endif; ?>
-                    </li>
-                    <li><?php esc_html_e('SEO-optimised descriptions aligned with best practices.', 'beepbeep-ai-alt-text-generator'); ?></li>
-                    <li>
-                        <?php esc_html_e('Smart tone and style tuning', 'beepbeep-ai-alt-text-generator'); ?>
+                    </span>
+                </li>
+                <li class="bbai-guide-feature">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M8 5V8L10 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    <span>
+                        <?php esc_html_e('Tone & style tuning', 'beepbeep-ai-alt-text-generator'); ?>
                         <?php if (!$is_pro) : ?>
-                            <span class="ml-1 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-slate-500"><?php esc_html_e('Pro', 'beepbeep-ai-alt-text-generator'); ?></span>
+                            <span class="bbai-badge bbai-badge--pro-sm"><?php esc_html_e('Pro', 'beepbeep-ai-alt-text-generator'); ?></span>
                         <?php endif; ?>
-                    </li>
-                    <li>
-                        <?php esc_html_e('Multilingual alt text support', 'beepbeep-ai-alt-text-generator'); ?>
+                    </span>
+                </li>
+                <li class="bbai-guide-feature">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M5 8H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    <span>
+                        <?php esc_html_e('Multilingual support', 'beepbeep-ai-alt-text-generator'); ?>
                         <?php if (!$is_pro) : ?>
-                            <span class="ml-1 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-slate-500"><?php esc_html_e('Pro', 'beepbeep-ai-alt-text-generator'); ?></span>
+                            <span class="bbai-badge bbai-badge--pro-sm"><?php esc_html_e('Pro', 'beepbeep-ai-alt-text-generator'); ?></span>
                         <?php endif; ?>
-                    </li>
-                    <li><?php esc_html_e('Accessibility tools to support WCAG guidelines.', 'beepbeep-ai-alt-text-generator'); ?></li>
-                </ul>
-            </div>
-        </section>
-
-        <!-- Bottom Upsell CTA (reusable component - same as dashboard) -->
-        <?php
-        // Set plan variables for bottom CTA component
-        // $is_free, $is_growth, and $is_agency are already set above
-        $bottom_upsell_partial = dirname(__FILE__) . '/bottom-upsell-cta.php';
-        if (file_exists($bottom_upsell_partial)) {
-            include $bottom_upsell_partial;
-        }
-        ?>
+                    </span>
+                </li>
+                <li class="bbai-guide-feature">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span><?php esc_html_e('SEO-optimized descriptions', 'beepbeep-ai-alt-text-generator'); ?></span>
+                </li>
+                <li class="bbai-guide-feature">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M8 6V8M8 10H8.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    <span><?php esc_html_e('WCAG accessibility tools', 'beepbeep-ai-alt-text-generator'); ?></span>
+                </li>
+            </ul>
+        </div>
     </div>
+
+    <!-- Bottom Upsell CTA (reusable component) -->
+    <?php
+    $bottom_upsell_partial = dirname(__FILE__) . '/bottom-upsell-cta.php';
+    if (file_exists($bottom_upsell_partial)) {
+        include $bottom_upsell_partial;
+    }
+    ?>
 </div>

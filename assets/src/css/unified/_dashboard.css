@@ -424,6 +424,12 @@
     justify-content: center;
 }
 
+/* Ensure CTAs can shrink without clipping on narrower layouts */
+.bbai-optimization-actions .bbai-optimization-cta {
+    flex: 1 1 240px;
+    min-width: 0;
+}
+
 /* Primary CTA - Premium gradient */
 .bbai-optimization-actions .bbai-btn-success,
 .bbai-optimization-actions .bbai-optimization-cta--primary {
@@ -471,6 +477,16 @@
     box-shadow: var(--bbai-shadow-sm);
     transition: all var(--bbai-transition-base) var(--bbai-ease-out);
     min-height: 52px;
+}
+
+@media (max-width: 900px) {
+    .bbai-optimization-actions .bbai-btn-success,
+    .bbai-optimization-actions .bbai-optimization-cta--primary,
+    .bbai-optimization-actions .bbai-btn-secondary,
+    .bbai-optimization-actions .bbai-optimization-cta--secondary {
+        padding: var(--bbai-space-3) var(--bbai-space-5);
+        font-size: var(--bbai-text-sm);
+    }
 }
 
 .bbai-optimization-actions .bbai-btn-secondary:hover:not(:disabled),

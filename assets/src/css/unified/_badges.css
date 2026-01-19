@@ -93,26 +93,27 @@
 
 /* Unified Badge Variants - Use with bbai-badge component */
 .bbai-badge--free {
-    background: #f3f4f6;
-    color: #4b5563;
-    padding: 4px 12px;
+    background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+    color: #ffffff;
+    padding: 6px 14px;
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     border-radius: 9999px;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
 }
 
 .bbai-badge--growth {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(4px);
-    color: #ffffff;
-    padding: 4px 12px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #3B82F6;
+    padding: 6px 14px;
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     border-radius: 9999px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .bbai-badge--pro {
@@ -163,9 +164,9 @@
 }
 
 .bbai-badge-growth {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(4px);
-    color: #ffffff;
+    color: #1e293b;
     padding: 4px 12px;
     font-size: 11px;
     font-weight: 700;
@@ -180,7 +181,7 @@
     display: inline-flex;
     align-items: center;
     gap: var(--bbai-space-1);
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(8px);
     padding: var(--bbai-space-1) var(--bbai-space-3);
     border-radius: var(--bbai-radius-full);
@@ -188,7 +189,7 @@
     font-weight: var(--bbai-font-bold);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #ffffff;
+    color: #1e293b;
 }
 
 .bbai-ready-optimise__badge {

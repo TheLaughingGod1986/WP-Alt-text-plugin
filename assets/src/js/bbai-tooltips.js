@@ -55,10 +55,28 @@
                 return;
             }
 
-            const element = e.target.closest('[data-bbai-tooltip]');
-            if (!element) return;
+            // Check if mouse left the tooltip itself
+            const tooltip = e.target.closest('.bbai-tooltip');
+            if (tooltip) {
+                // Find the element that triggered this tooltip
+                for (const [element, tooltipEl] of this.tooltips.entries()) {
+                    if (tooltipEl === tooltip) {
+                        this.hideTooltip(element);
+                        return;
+                    }
+                }
+            }
 
-            this.hideTooltip(element);
+            // Check if mouse left the element with tooltip
+            const element = e.target.closest('[data-bbai-tooltip]');
+            if (element) {
+                // Only hide if we're not moving to the tooltip
+                const relatedTarget = e.relatedTarget;
+                if (relatedTarget && relatedTarget.closest('.bbai-tooltip')) {
+                    return; // Don't hide if moving to tooltip
+                }
+                this.hideTooltip(element);
+            }
         },
 
         /**
@@ -122,6 +140,16 @@
 
             // Store reference
             this.tooltips.set(element, tooltip);
+
+            // Hide tooltip when mouse leaves the tooltip itself
+            tooltip.addEventListener('mouseleave', (e) => {
+                // Only hide if not moving back to the element
+                const relatedTarget = e.relatedTarget;
+                if (relatedTarget && relatedTarget.closest('[data-bbai-tooltip]') === element) {
+                    return; // Don't hide if moving back to element
+                }
+                this.hideTooltip(element);
+            });
 
             // Handle window resize
             const resizeHandler = () => this.positionTooltip(element, tooltip, position);

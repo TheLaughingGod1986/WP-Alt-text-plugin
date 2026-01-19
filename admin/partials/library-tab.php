@@ -261,12 +261,6 @@ $optimized_percent = $total_images > 0 ? round(($with_alt_count / $total_images)
                 </button>
                 </div>
                 <div class="bbai-flex bbai-gap-2 bbai-flex-wrap">
-                    <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm" data-action="copy-selected-alt" data-bbai-tooltip="<?php esc_attr_e('Copy alt text from selected images', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="top">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
-                            <path d="M13 6V13C13 13.5523 12.5523 14 12 14H3C2.44772 14 2 13.5523 2 13V4C2 3.44772 2.44772 3 3 3H6M10 1H14C14.5523 1 15 1.44772 15 2V6M10 1L15 6M10 1V6H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <?php esc_html_e('Copy Selected', 'beepbeep-ai-alt-text-generator'); ?>
-                    </button>
                     <div class="bbai-dropdown" style="position: relative;">
                         <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm" data-action="export-alt-text" data-format="csv" data-bbai-tooltip="<?php esc_attr_e('Export alt text data', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="top">
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
@@ -445,14 +439,6 @@ $optimized_percent = $total_images > 0 ? round(($with_alt_count / $total_images)
                                                 data-attachment-id="<?php echo esc_attr($attachment_id); ?>">
                                             <?php esc_html_e('Regen', 'beepbeep-ai-alt-text-generator'); ?>
                                         </button>
-                                        <?php if ($has_alt) : ?>
-                                            <button type="button"
-                                                    class="bbai-link-sm"
-                                                    data-action="copy-alt-text"
-                                                    data-alt-text="<?php echo esc_attr($clean_alt); ?>">
-                                                <?php esc_html_e('Copy', 'beepbeep-ai-alt-text-generator'); ?>
-                                            </button>
-                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>

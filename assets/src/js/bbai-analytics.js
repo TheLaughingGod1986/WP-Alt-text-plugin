@@ -136,24 +136,49 @@
             const timeline = document.getElementById('bbai-activity-timeline');
             if (!timeline) return;
 
+            // Get bbai_ajax from window object or global scope
+            const bbaiAjax = (typeof bbai_ajax !== 'undefined' ? bbai_ajax : (typeof window !== 'undefined' && window.bbai_ajax ? window.bbai_ajax : null));
+
             // Fetch activity data via AJAX
-            if (typeof bbai_ajax !== 'undefined' && bbai_ajax.ajaxurl) {
-                jQuery.ajax({
-                    url: bbai_ajax.ajaxurl,
-                    type: 'POST',
-                    data: {
-                        action: 'bbai_get_activity',
-                        nonce: bbai_ajax.nonce || ''
-                    },
-                    success: (response) => {
-                        if (response && response.success && response.data && response.data.length > 0) {
-                            this.renderActivityTimeline(response.data);
+            if (bbaiAjax && bbaiAjax.ajaxurl) {
+                // Use jQuery if available, otherwise use fetch
+                if (typeof jQuery !== 'undefined' && jQuery.ajax) {
+                    jQuery.ajax({
+                        url: bbaiAjax.ajaxurl,
+                        type: 'POST',
+                        data: {
+                            action: 'bbai_get_activity',
+                            nonce: bbaiAjax.nonce || ''
+                        },
+                        success: (response) => {
+                            if (response && response.success && response.data && response.data.length > 0) {
+                                this.renderActivityTimeline(response.data);
+                            }
+                        },
+                        error: () => {
+                            // Keep empty state
                         }
-                    },
-                    error: () => {
+                    });
+                } else if (typeof fetch !== 'undefined') {
+                    // Fallback to fetch API if jQuery is not available
+                    const formData = new FormData();
+                    formData.append('action', 'bbai_get_activity');
+                    formData.append('nonce', bbaiAjax.nonce || '');
+                    
+                    fetch(bbaiAjax.ajaxurl, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data.success && data.data && data.data.length > 0) {
+                            this.renderActivityTimeline(data.data);
+                        }
+                    })
+                    .catch(() => {
                         // Keep empty state
-                    }
-                });
+                    });
+                }
             }
         },
 
