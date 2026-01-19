@@ -110,6 +110,9 @@ class Admin_Hooks {
 			'bbai_export_analytics'            => 'ajax_export_analytics',
 			'bbai_get_activity'                => 'ajax_get_activity',
 			'bbai_send_contact_form'           => 'ajax_send_contact_form',
+			'bbai_get_contact_submissions'     => 'ajax_get_contact_submissions',
+			'bbai_update_contact_submission_status' => 'ajax_update_contact_submission_status',
+			'bbai_delete_contact_submission'   => 'ajax_delete_contact_submission',
 		];
 
 		foreach ( $ajax_actions as $action => $callback ) {

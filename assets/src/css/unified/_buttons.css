@@ -11,23 +11,26 @@
    ============================================ */
 
 .bbai-btn {
-    display: inline-flex;
+    display: inline-flex !important;
     align-items: center;
     justify-content: center;
-    gap: var(--bbai-space-2);
-    padding: var(--bbai-btn-padding-y) var(--bbai-btn-padding-x);
-    font-size: var(--bbai-text-sm);
-    font-weight: var(--bbai-font-semibold);
+    gap: 8px;
+    padding: 10px 20px !important; /* Consistent base padding */
+    font-size: 14px;
+    font-weight: 600;
     font-family: inherit;
     line-height: 1.5;
-    border-radius: var(--bbai-btn-radius);
+    border-radius: 8px;
     border: 1px solid transparent;
     cursor: pointer;
-    text-decoration: none;
+    text-decoration: none !important;
     white-space: nowrap;
-    transition: all var(--bbai-transition-base) var(--bbai-ease-out);
+    transition: all 0.2s ease;
     position: relative;
     overflow: hidden;
+    /* Ensure visibility - explicit defaults */
+    background-color: #f3f4f6;
+    color: #111827;
 }
 
 /* Focus States - Accessible */
@@ -63,9 +66,9 @@
    ============================================ */
 
 .bbai-btn-primary {
-    background: var(--bbai-primary-gradient);
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
     color: white !important;
-    border-color: var(--bbai-primary);
+    border-color: #10B981 !important;
     box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4), 0 0 0 1px rgba(16, 185, 129, 0.1);
     font-weight: var(--bbai-font-bold);
     position: relative;
@@ -84,8 +87,8 @@
 }
 
 .bbai-btn-primary:hover:not(:disabled) {
-    background: var(--bbai-primary-gradient);
-    border-color: var(--bbai-primary-hover);
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    border-color: #059669 !important;
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5), 0 0 0 1px rgba(16, 185, 129, 0.2);
 }
@@ -110,16 +113,16 @@
    ============================================ */
 
 .bbai-btn-secondary {
-    background: var(--bbai-bg);
-    color: var(--bbai-text);
-    border-color: var(--bbai-border);
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid #e5e7eb !important;
 }
 
 .bbai-btn-secondary:hover:not(:disabled) {
-    background: var(--bbai-bg-secondary);
-    border-color: var(--bbai-gray-300);
+    background: #f9fafb !important;
+    border-color: #d1d5db !important;
     transform: translateY(-1px);
-    box-shadow: var(--bbai-shadow-sm);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .bbai-btn-secondary:active:not(:disabled) {
@@ -201,14 +204,14 @@
    ============================================ */
 
 .bbai-btn-danger {
-    background: var(--bbai-error);
+    background: #ef4444 !important;
     color: white !important;
-    border-color: var(--bbai-error);
+    border-color: #ef4444 !important;
 }
 
 .bbai-btn-danger:hover:not(:disabled) {
-    background: #dc2626;
-    border-color: #dc2626;
+    background: #dc2626 !important;
+    border-color: #dc2626 !important;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
 }
@@ -752,4 +755,109 @@
     .bbai-btn-group:not(.bbai-btn-group--segmented) .bbai-btn {
         width: 100%;
     }
+}
+
+/* ============================================
+   WORDPRESS ADMIN OVERRIDES
+   High-specificity rules to override WP admin CSS
+   ============================================ */
+
+/* Primary Button - Green Gradient */
+.wrap .bbai-btn.bbai-btn-primary,
+.bbai-dashboard-container .bbai-btn.bbai-btn-primary,
+.bbai-settings-card .bbai-btn.bbai-btn-primary,
+.bbai-card .bbai-btn.bbai-btn-primary,
+button.bbai-btn.bbai-btn-primary,
+a.bbai-btn.bbai-btn-primary {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
+    color: #ffffff !important;
+    border-color: #10B981 !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4) !important;
+}
+
+.wrap .bbai-btn.bbai-btn-primary:hover,
+.bbai-dashboard-container .bbai-btn.bbai-btn-primary:hover,
+.bbai-settings-card .bbai-btn.bbai-btn-primary:hover,
+.bbai-card .bbai-btn.bbai-btn-primary:hover,
+button.bbai-btn.bbai-btn-primary:hover,
+a.bbai-btn.bbai-btn-primary:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5) !important;
+}
+
+/* Secondary Button - White with Border */
+.wrap .bbai-btn.bbai-btn-secondary,
+.bbai-dashboard-container .bbai-btn.bbai-btn-secondary,
+.bbai-settings-card .bbai-btn.bbai-btn-secondary,
+.bbai-card .bbai-btn.bbai-btn-secondary,
+button.bbai-btn.bbai-btn-secondary,
+a.bbai-btn.bbai-btn-secondary {
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.wrap .bbai-btn.bbai-btn-secondary:hover,
+.bbai-dashboard-container .bbai-btn.bbai-btn-secondary:hover,
+.bbai-settings-card .bbai-btn.bbai-btn-secondary:hover,
+.bbai-card .bbai-btn.bbai-btn-secondary:hover,
+button.bbai-btn.bbai-btn-secondary:hover,
+a.bbai-btn.bbai-btn-secondary:hover {
+    background: #f9fafb !important;
+    border-color: #d1d5db !important;
+    transform: translateY(-1px);
+}
+
+/* Danger Button - Red */
+.wrap .bbai-btn.bbai-btn-danger,
+.bbai-dashboard-container .bbai-btn.bbai-btn-danger,
+.bbai-settings-card .bbai-btn.bbai-btn-danger,
+.bbai-card .bbai-btn.bbai-btn-danger,
+button.bbai-btn.bbai-btn-danger,
+a.bbai-btn.bbai-btn-danger {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    border-color: #ef4444 !important;
+}
+
+.wrap .bbai-btn.bbai-btn-danger:hover,
+.bbai-dashboard-container .bbai-btn.bbai-btn-danger:hover,
+.bbai-settings-card .bbai-btn.bbai-btn-danger:hover,
+.bbai-card .bbai-btn.bbai-btn-danger:hover,
+button.bbai-btn.bbai-btn-danger:hover,
+a.bbai-btn.bbai-btn-danger:hover {
+    background: #dc2626 !important;
+    border-color: #dc2626 !important;
+    transform: translateY(-1px);
+}
+
+/* Outline Primary Button */
+.wrap .bbai-btn.bbai-btn-outline-primary,
+.bbai-dashboard-container .bbai-btn.bbai-btn-outline-primary,
+.bbai-settings-card .bbai-btn.bbai-btn-outline-primary,
+.bbai-card .bbai-btn.bbai-btn-outline-primary,
+button.bbai-btn.bbai-btn-outline-primary,
+a.bbai-btn.bbai-btn-outline-primary {
+    background: transparent !important;
+    color: #10B981 !important;
+    border: 1px solid #10B981 !important;
+}
+
+.wrap .bbai-btn.bbai-btn-outline-primary:hover,
+.bbai-dashboard-container .bbai-btn.bbai-btn-outline-primary:hover,
+.bbai-settings-card .bbai-btn.bbai-btn-outline-primary:hover,
+.bbai-card .bbai-btn.bbai-btn-outline-primary:hover,
+button.bbai-btn.bbai-btn-outline-primary:hover,
+a.bbai-btn.bbai-btn-outline-primary:hover {
+    background: rgba(16, 185, 129, 0.08) !important;
+}
+
+/* Large Button Size */
+.bbai-btn.bbai-btn-lg,
+.bbai-btn-lg {
+    padding: 14px 28px !important;
+    font-size: 15px !important;
+    border-radius: 12px !important;
 }

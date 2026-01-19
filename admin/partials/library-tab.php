@@ -414,9 +414,6 @@ $optimized_percent = $total_images > 0 ? round(($with_alt_count / $total_images)
                                                     </span>
                                                 <?php endif; ?>
                                             </div>
-                                            <button type="button" class="bbai-link-sm" data-action="expand-alt-text" data-id="<?php echo esc_attr($attachment_id); ?>">
-                                                <?php esc_html_e('Expand', 'beepbeep-ai-alt-text-generator'); ?>
-                                            </button>
                                         <?php else : ?>
                                             <span class="bbai-alt-text-missing"><?php esc_html_e('No alt text', 'beepbeep-ai-alt-text-generator'); ?></span>
                                         <?php endif; ?>

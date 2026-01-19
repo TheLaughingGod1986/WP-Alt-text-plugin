@@ -274,15 +274,33 @@
                 data: requestData,
                 success: function(response) {
                     if (response && response.success) {
-                        self.showSuccess(response.data && response.data.message 
-                            ? response.data.message 
-                            : 'Your message has been sent successfully. We\'ll get back to you soon!');
+                        // Hide form fields and show success message prominently
+                        self.form.find('.bbai-contact-form-group').hide();
+                        self.form.find('.bbai-contact-form-actions').hide();
+                        self.form.find('.bbai-contact-form-info').hide();
                         
-                        // Reset form after 2 seconds
+                        const successMessage = response.data && response.data.message 
+                            ? response.data.message 
+                            : 'Your message has been sent successfully. We\'ll get back to you soon!';
+                        
+                        self.showSuccess('<strong style="font-size: 16px; display: block; margin-bottom: 8px;">✓ Success!</strong>' + successMessage);
+                        
+                        // Scroll to top of modal to show success message
+                        const modalContent = self.modal.find('.bbai-contact-modal-content');
+                        const formContainer = self.modal.find('.bbai-contact-form');
+                        if (formContainer.length) {
+                            formContainer.scrollTop(0);
+                        }
+                        
+                        // Reset form and close modal after 3 seconds
                         setTimeout(() => {
                             self.form[0].reset();
+                            self.form.find('.bbai-contact-form-group').show();
+                            self.form.find('.bbai-contact-form-actions').show();
+                            self.form.find('.bbai-contact-form-info').show();
+                            self.hideSuccess();
                             self.close();
-                        }, 2000);
+                        }, 3000);
                     } else {
                         const errorMessage = response && response.data && response.data.message 
                             ? response.data.message 
@@ -331,7 +349,22 @@
          */
         showSuccess(message) {
             const successDiv = $('#bbai-contact-form-success');
-            successDiv.text(message).fadeIn(200);
+            successDiv.html(message).fadeIn(200);
+            
+            // Scroll success message into view within the modal
+            const modalContent = this.modal.find('.bbai-contact-modal-content');
+            const successOffset = successDiv.offset();
+            const modalOffset = modalContent.offset();
+            
+            if (successOffset && modalOffset) {
+                // Scroll within the modal's scrollable container
+                const formContainer = this.modal.find('.bbai-contact-form');
+                if (formContainer.length) {
+                    const scrollTop = formContainer.scrollTop();
+                    const elementTop = successDiv.position().top;
+                    formContainer.scrollTop(scrollTop + elementTop - 20);
+                }
+            }
         }
 
         /**

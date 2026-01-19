@@ -643,16 +643,30 @@
      */
     function handleRegenerateSingle(e) {
         e.preventDefault();
+        e.stopPropagation();
 
         console.log('[AI Alt Text] Regenerate button clicked');
         var $btn = $(this);
-        var attachmentId = $btn.data('attachment-id');
+        
+        // Try multiple ways to get attachment ID (jQuery data() converts kebab-case)
+        var attachmentId = $btn.data('attachment-id') || 
+                          $btn.data('attachmentId') || 
+                          $btn.attr('data-attachment-id') ||
+                          null;
 
         console.log('[AI Alt Text] Attachment ID:', attachmentId);
+        console.log('[AI Alt Text] Button element:', this);
         console.log('[AI Alt Text] Button disabled?', $btn.prop('disabled'));
+        console.log('[AI Alt Text] All data attributes:', $btn.data());
 
-        if (!attachmentId || $btn.prop('disabled')) {
-            console.warn('[AI Alt Text] Cannot regenerate - missing ID or button disabled');
+        if (!attachmentId) {
+            console.error('[AI Alt Text] Cannot regenerate - missing attachment ID');
+            alert('Error: Unable to find attachment ID. Please refresh the page and try again.');
+            return false;
+        }
+
+        if ($btn.prop('disabled')) {
+            console.warn('[AI Alt Text] Cannot regenerate - button is disabled');
             return false;
         }
 
@@ -661,12 +675,48 @@
         $btn.prop('disabled', true).addClass('regenerating');
         $btn.text('Processing...');
 
-        // Get image info from the row
+        // Get image info - handle both table view (media library) and form view (edit media page)
+        var imageTitle = 'Image';
+        var imageSrc = '';
+        
+        // Try to find in table row (media library view)
         var $row = $btn.closest('tr');
-        var imageTitle = $row.find('.bbai-table__cell--title').text().trim() || 'Image';
-        var imageSrc = $row.find('img').attr('src') || '';
+        if ($row.length) {
+            imageTitle = $row.find('.bbai-table__cell--title').text().trim() || imageTitle;
+            imageSrc = $row.find('img').attr('src') || imageSrc;
+        }
+        
+        // If not found, try to find in form (edit media page)
+        if (!imageSrc || imageTitle === 'Image') {
+            // Try to get from attachment details form
+            var $form = $btn.closest('form');
+            if ($form.length) {
+                // Try to get title from various possible locations
+                var $titleInput = $form.find('input[name="post_title"]');
+                if ($titleInput.length) {
+                    imageTitle = $titleInput.val() || imageTitle;
+                }
+                
+                // Try to get image preview from attachment details
+                var $preview = $form.find('img.attachment-thumbnail, img.attachment-preview, .attachment-preview img, #postimagediv img');
+                if ($preview.length) {
+                    imageSrc = $preview.attr('src') || $preview.attr('data-src') || imageSrc;
+                }
+            }
+        }
+        
+        // If still no image, try to get from attachment details area
+        if (!imageSrc) {
+            var $attachmentDetails = $('#attachment-details, .attachment-details');
+            if ($attachmentDetails.length) {
+                var $img = $attachmentDetails.find('img');
+                if ($img.length) {
+                    imageSrc = $img.attr('src') || $img.attr('data-src') || imageSrc;
+                }
+            }
+        }
 
-        // Show modal
+        // Show modal (imageSrc can be empty - modal will handle it)
         showRegenerateModal(attachmentId, imageTitle, imageSrc, $btn, originalText);
     }
 
@@ -2032,9 +2082,18 @@
         // Handle regenerate all button
         $(document).on('click', '[data-action="regenerate-all"]', handleRegenerateAll);
 
-        // Handle individual regenerate buttons
+        // Handle individual regenerate buttons - use event delegation for dynamically added buttons
         $(document).on('click', '[data-action="regenerate-single"]', function(e) {
             console.log('[AI Alt Text] Regenerate button click event fired!');
+            console.log('[AI Alt Text] Button element:', this);
+            console.log('[AI Alt Text] jQuery object:', $(this));
+            console.log('[AI Alt Text] Attachment ID from data:', $(this).data('attachment-id'));
+            handleRegenerateSingle.call(this, e);
+        });
+        
+        // Also try direct binding for buttons that exist on page load (Edit Media page)
+        $('[data-action="regenerate-single"]').on('click', function(e) {
+            console.log('[AI Alt Text] Direct binding - Regenerate button clicked');
             handleRegenerateSingle.call(this, e);
         });
 

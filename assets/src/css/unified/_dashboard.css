@@ -433,9 +433,9 @@
 /* Primary CTA - Premium gradient */
 .bbai-optimization-actions .bbai-btn-success,
 .bbai-optimization-actions .bbai-optimization-cta--primary {
-    background: linear-gradient(135deg, var(--bbai-primary) 0%, #0d9488 100%);
-    color: white;
-    border: none;
+    background: linear-gradient(135deg, var(--bbai-primary) 0%, #0d9488 100%) !important;
+    color: white !important;
+    border: none !important;
     padding: var(--bbai-space-4) var(--bbai-space-8);
     font-size: var(--bbai-text-base);
     font-weight: var(--bbai-font-semibold);
@@ -467,9 +467,9 @@
 /* Secondary CTA */
 .bbai-optimization-actions .bbai-btn-secondary,
 .bbai-optimization-actions .bbai-optimization-cta--secondary {
-    background: var(--bbai-gray-800);
-    color: white;
-    border: none;
+    background: var(--bbai-gray-800) !important;
+    color: white !important;
+    border: none !important;
     padding: var(--bbai-space-4) var(--bbai-space-8);
     font-size: var(--bbai-text-base);
     font-weight: var(--bbai-font-semibold);

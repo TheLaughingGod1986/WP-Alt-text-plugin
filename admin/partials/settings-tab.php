@@ -133,10 +133,18 @@ if (!$is_authenticated && !$has_license) :
                                 </svg>
                                 <span>
                                     <?php
-                                    if (isset($usage_box['reset_date'])) {
+                                    if (isset($usage_box['reset_date']) && !empty($usage_box['reset_date'])) {
+                                        // Ensure consistent date format - parse and reformat if needed
+                                        $reset_date = $usage_box['reset_date'];
+                                        $reset_timestamp = isset($usage_box['reset_timestamp']) ? $usage_box['reset_timestamp'] : strtotime($reset_date);
+                                        if ($reset_timestamp !== false && $reset_timestamp > 0) {
+                                            $formatted_date = date_i18n('F j, Y', $reset_timestamp);
+                                        } else {
+                                            $formatted_date = $reset_date; // Fallback to original if parsing fails
+                                        }
                                         printf(
                                             esc_html__('Resets %s', 'beepbeep-ai-alt-text-generator'),
-                                            '<strong>' . esc_html($usage_box['reset_date']) . '</strong>'
+                                            '<strong>' . esc_html($formatted_date) . '</strong>'
                                         );
                                     } else {
                                         esc_html_e('Monthly quota', 'beepbeep-ai-alt-text-generator');
@@ -162,7 +170,21 @@ if (!$is_authenticated && !$has_license) :
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                     <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
-                                <span><?php echo sprintf(esc_html__('Resets %s', 'beepbeep-ai-alt-text-generator'), '<strong>' . esc_html($usage_box['reset_date'] ?? 'Monthly') . '</strong>'); ?></span>
+                                <span><?php 
+                                    $reset_date = $usage_box['reset_date'] ?? '';
+                                    if (!empty($reset_date) && $reset_date !== 'Monthly') {
+                                        // Ensure consistent date format - parse and reformat if needed
+                                        $reset_timestamp = isset($usage_box['reset_timestamp']) ? $usage_box['reset_timestamp'] : strtotime($reset_date);
+                                        if ($reset_timestamp !== false && $reset_timestamp > 0) {
+                                            $formatted_date = date_i18n('F j, Y', $reset_timestamp);
+                                        } else {
+                                            $formatted_date = $reset_date; // Fallback to original if parsing fails
+                                        }
+                                        echo sprintf(esc_html__('Resets %s', 'beepbeep-ai-alt-text-generator'), '<strong>' . esc_html($formatted_date) . '</strong>');
+                                    } else {
+                                        esc_html_e('Monthly quota', 'beepbeep-ai-alt-text-generator');
+                                    }
+                                ?></span>
                             </div>
                         <?php else : ?>
                             <div class="bbai-settings-plan-info-item">
@@ -180,7 +202,7 @@ if (!$is_authenticated && !$has_license) :
                         <?php endif; ?>
                     </div>
                     <?php if (!$is_pro && !$is_agency) : ?>
-                    <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-lg bbai-settings-plan-upgrade-btn-large" data-action="show-upgrade-modal">
+                    <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-lg" data-action="show-upgrade-modal">
                         <?php esc_html_e('Upgrade to Pro', 'beepbeep-ai-alt-text-generator'); ?>
                     </button>
                     <?php endif; ?>
@@ -241,7 +263,7 @@ if (!$is_authenticated && !$has_license) :
                                     ?>
                                 </div>
                             </div>
-                            <button type="button" class="bbai-btn bbai-btn-danger bbai-settings-license-deactivate-btn" data-action="deactivate-license">
+                            <button type="button" class="bbai-btn bbai-btn-danger" data-action="deactivate-license">
                                 <?php esc_html_e('Deactivate', 'beepbeep-ai-alt-text-generator'); ?>
                             </button>
                         </div>
@@ -292,7 +314,7 @@ if (!$is_authenticated && !$has_license) :
                                     </div>
                                 </div>
                             </div>
-                            <button type="button" class="bbai-btn bbai-btn-danger bbai-settings-license-deactivate-btn" data-action="deactivate-license">
+                            <button type="button" class="bbai-btn bbai-btn-danger" data-action="deactivate-license">
                                 <?php esc_html_e('Deactivate', 'beepbeep-ai-alt-text-generator'); ?>
                             </button>
                         </div>
@@ -316,7 +338,7 @@ if (!$is_authenticated && !$has_license) :
                                            required>
                                 </div>
                                 <div id="license-activation-status" class="bbai-hidden bbai-alert"></div>
-                                <button type="submit" id="activate-license-btn" class="bbai-btn bbai-btn-primary bbai-settings-license-activate-btn">
+                                <button type="submit" id="activate-license-btn" class="bbai-btn bbai-btn-primary">
                                     <?php esc_html_e('Activate License', 'beepbeep-ai-alt-text-generator'); ?>
                                 </button>
                             </form>
@@ -344,7 +366,7 @@ if (!$is_authenticated && !$has_license) :
                         <span><?php esc_html_e('You are on the free plan.', 'beepbeep-ai-alt-text-generator'); ?></span>
                     </div>
                     <div class="bbai-settings-account-upgrade-link">
-                        <button type="button" class="bbai-btn bbai-btn-primary bbai-settings-account-upgrade-btn" data-action="show-upgrade-modal">
+                        <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-lg" data-action="show-upgrade-modal">
                             <?php esc_html_e('Upgrade Now', 'beepbeep-ai-alt-text-generator'); ?>
                         </button>
                     </div>
@@ -382,7 +404,7 @@ if (!$is_authenticated && !$has_license) :
                         // Authenticated user - show Stripe portal
                     ?>
                     <div class="bbai-settings-account-actions">
-                        <button type="button" class="bbai-btn bbai-btn-secondary bbai-settings-account-action-btn" data-action="manage-subscription">
+                        <button type="button" class="bbai-btn bbai-btn-secondary" data-action="manage-subscription">
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                 <circle cx="8" cy="8" r="2" fill="currentColor"/>
@@ -462,7 +484,7 @@ if (!$is_authenticated && !$has_license) :
                         </div>
 
                         <div class="bbai-settings-form-actions">
-                            <button type="submit" class="bbai-btn bbai-btn-primary bbai-settings-save-btn">
+                            <button type="submit" class="bbai-btn bbai-btn-primary">
                                 <?php esc_html_e('Save Settings', 'beepbeep-ai-alt-text-generator'); ?>
                             </button>
                         </div>

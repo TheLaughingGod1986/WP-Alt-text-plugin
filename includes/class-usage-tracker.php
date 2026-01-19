@@ -241,14 +241,14 @@ class Usage_Tracker {
         // Get plan with fallback
         $plan = isset($usage['plan']) && !empty($usage['plan']) ? $usage['plan'] : 'free';
         
-        // Get reset date with fallback
-        $reset_date_display = $reset_timestamp ? date('F j, Y', $reset_timestamp) : '';
+        // Get reset date with fallback - use consistent format: "February 11, 2026" (no ordinals)
+        $reset_date_display = $reset_timestamp ? date_i18n('F j, Y', $reset_timestamp) : '';
         if (empty($reset_date_display) && !empty($usage['resetDate'])) {
             $parsed_reset = strtotime($usage['resetDate']);
-            $reset_date_display = $parsed_reset > 0 ? date('F j, Y', $parsed_reset) : date('F j, Y', strtotime('first day of next month'));
+            $reset_date_display = $parsed_reset > 0 ? date_i18n('F j, Y', $parsed_reset) : date_i18n('F j, Y', strtotime('first day of next month'));
         }
         if (empty($reset_date_display)) {
-            $reset_date_display = date('F j, Y', strtotime('first day of next month'));
+            $reset_date_display = date_i18n('F j, Y', strtotime('first day of next month'));
         }
         
         return [

@@ -833,6 +833,10 @@ class Core {
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/usage/class-usage-logs.php';
         \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::create_table();
         
+        // Create contact submissions table
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-contact-submissions.php';
+        \BeepBeepAI\AltTextGenerator\Contact_Submissions::create_table();
+        
         // Migrate existing usage logs table to include site_id if needed
         $this->migrate_usage_logs_table();
 
@@ -5734,6 +5738,19 @@ class Core {
         // Success via backend
         $result = $backend_response;
 
+        // Save to database for viewing in admin
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-contact-submissions.php';
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
+        
+        $site_hash = \BeepBeepAI\AltTextGenerator\get_site_identifier();
+        $license_key = $this->api_client->get_license_key();
+        
+        $contact_data['site_url'] = get_site_url();
+        $contact_data['site_hash'] = $site_hash;
+        $contact_data['license_key'] = $license_key ?: null;
+        
+        \BeepBeepAI\AltTextGenerator\Contact_Submissions::save_submission($contact_data);
+
         // Increment rate limit counter
         if ($submission_count === false) {
             set_transient($rate_limit_key, 1, HOUR_IN_SECONDS);
@@ -5745,6 +5762,103 @@ class Core {
         wp_send_json_success([
             'message' => $result['message'] ?? __('Your message has been sent successfully. We\'ll get back to you soon!', 'beepbeep-ai-alt-text-generator')
         ]);
+    }
+
+    /**
+     * AJAX handler: Get contact form submissions
+     */
+    public function ajax_get_contact_submissions() {
+        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        
+        if (!$this->user_can_manage()) {
+            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+        }
+
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-contact-submissions.php';
+
+        $args = [
+            'per_page' => isset($_POST['per_page']) ? absint($_POST['per_page']) : 20,
+            'page'     => isset($_POST['page']) ? absint($_POST['page']) : 1,
+            'status'   => isset($_POST['status']) ? sanitize_text_field($_POST['status']) : '',
+            'search'   => isset($_POST['search']) ? sanitize_text_field($_POST['search']) : '',
+            'orderby'  => isset($_POST['orderby']) ? sanitize_text_field($_POST['orderby']) : 'created_at',
+            'order'    => isset($_POST['order']) ? sanitize_text_field($_POST['order']) : 'DESC',
+        ];
+
+        // If ID is provided, get single submission
+        if (isset($_POST['id']) && !empty($_POST['id'])) {
+            $id = absint($_POST['id']);
+            $submission = \BeepBeepAI\AltTextGenerator\Contact_Submissions::get_submission($id);
+            if ($submission) {
+                wp_send_json_success([
+                    'items' => [$submission],
+                    'total' => 1,
+                    'pages' => 1
+                ]);
+            } else {
+                wp_send_json_error(['message' => __('Submission not found', 'beepbeep-ai-alt-text-generator')]);
+            }
+            return;
+        }
+
+        $result = \BeepBeepAI\AltTextGenerator\Contact_Submissions::get_submissions($args);
+
+        wp_send_json_success($result);
+    }
+
+    /**
+     * AJAX handler: Update contact submission status
+     */
+    public function ajax_update_contact_submission_status() {
+        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        
+        if (!$this->user_can_manage()) {
+            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+        }
+
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-contact-submissions.php';
+
+        $id = isset($_POST['id']) ? absint($_POST['id']) : 0;
+        $status = isset($_POST['status']) ? sanitize_text_field($_POST['status']) : '';
+
+        if (!$id) {
+            wp_send_json_error(['message' => __('Invalid submission ID', 'beepbeep-ai-alt-text-generator')]);
+        }
+
+        $result = \BeepBeepAI\AltTextGenerator\Contact_Submissions::update_status($id, $status);
+
+        if ($result) {
+            wp_send_json_success(['message' => __('Status updated successfully', 'beepbeep-ai-alt-text-generator')]);
+        } else {
+            wp_send_json_error(['message' => __('Failed to update status', 'beepbeep-ai-alt-text-generator')]);
+        }
+    }
+
+    /**
+     * AJAX handler: Delete contact submission
+     */
+    public function ajax_delete_contact_submission() {
+        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        
+        if (!$this->user_can_manage()) {
+            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+        }
+
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-contact-submissions.php';
+
+        $id = isset($_POST['id']) ? absint($_POST['id']) : 0;
+
+        if (!$id) {
+            wp_send_json_error(['message' => __('Invalid submission ID', 'beepbeep-ai-alt-text-generator')]);
+        }
+
+        $result = \BeepBeepAI\AltTextGenerator\Contact_Submissions::delete_submission($id);
+
+        if ($result) {
+            wp_send_json_success(['message' => __('Submission deleted successfully', 'beepbeep-ai-alt-text-generator')]);
+        } else {
+            wp_send_json_error(['message' => __('Failed to delete submission', 'beepbeep-ai-alt-text-generator')]);
+        }
     }
 
     public function ajax_export_analytics() {

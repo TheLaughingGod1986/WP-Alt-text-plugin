@@ -6,7 +6,7 @@
  *
  * @package BeepBeep_AI
  * @version 6.0.0
- * @generated 2026-01-19T14:57:15.652Z
+ * @generated 2026-01-19T22:30:55.999Z
  */
 
 /* 1. Design Tokens (CSS Variables) */
@@ -1755,23 +1755,26 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
    ============================================ */
 
 .bbai-btn {
-    display: inline-flex;
+    display: inline-flex !important;
     align-items: center;
     justify-content: center;
-    gap: var(--bbai-space-2);
-    padding: var(--bbai-btn-padding-y) var(--bbai-btn-padding-x);
-    font-size: var(--bbai-text-sm);
-    font-weight: var(--bbai-font-semibold);
+    gap: 8px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
     font-family: inherit;
     line-height: 1.5;
-    border-radius: var(--bbai-btn-radius);
+    border-radius: 8px;
     border: 1px solid transparent;
     cursor: pointer;
-    text-decoration: none;
+    text-decoration: none !important;
     white-space: nowrap;
-    transition: all var(--bbai-transition-base) var(--bbai-ease-out);
+    transition: all 0.2s ease;
     position: relative;
     overflow: hidden;
+    /* Ensure visibility - explicit defaults */
+    background-color: #f3f4f6;
+    color: #111827;
 }
 
 /* Focus States - Accessible */
@@ -1807,9 +1810,9 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
    ============================================ */
 
 .bbai-btn-primary {
-    background: var(--bbai-primary-gradient);
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
     color: white !important;
-    border-color: var(--bbai-primary);
+    border-color: #10B981 !important;
     box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4), 0 0 0 1px rgba(16, 185, 129, 0.1);
     font-weight: var(--bbai-font-bold);
     position: relative;
@@ -1828,8 +1831,8 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
 }
 
 .bbai-btn-primary:hover:not(:disabled) {
-    background: var(--bbai-primary-gradient);
-    border-color: var(--bbai-primary-hover);
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    border-color: #059669 !important;
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5), 0 0 0 1px rgba(16, 185, 129, 0.2);
 }
@@ -1854,16 +1857,16 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
    ============================================ */
 
 .bbai-btn-secondary {
-    background: var(--bbai-bg);
-    color: var(--bbai-text);
-    border-color: var(--bbai-border);
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid #e5e7eb !important;
 }
 
 .bbai-btn-secondary:hover:not(:disabled) {
-    background: var(--bbai-bg-secondary);
-    border-color: var(--bbai-gray-300);
+    background: #f9fafb !important;
+    border-color: #d1d5db !important;
     transform: translateY(-1px);
-    box-shadow: var(--bbai-shadow-sm);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .bbai-btn-secondary:active:not(:disabled) {
@@ -1945,14 +1948,14 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
    ============================================ */
 
 .bbai-btn-danger {
-    background: var(--bbai-error);
+    background: #ef4444 !important;
     color: white !important;
-    border-color: var(--bbai-error);
+    border-color: #ef4444 !important;
 }
 
 .bbai-btn-danger:hover:not(:disabled) {
-    background: #dc2626;
-    border-color: #dc2626;
+    background: #dc2626 !important;
+    border-color: #dc2626 !important;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
 }
@@ -2496,6 +2499,111 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
     .bbai-btn-group:not(.bbai-btn-group--segmented) .bbai-btn {
         width: 100%;
     }
+}
+
+/* ============================================
+   WORDPRESS ADMIN OVERRIDES
+   High-specificity rules to override WP admin CSS
+   ============================================ */
+
+/* Primary Button - Green Gradient */
+.wrap .bbai-btn.bbai-btn-primary,
+.bbai-dashboard-container .bbai-btn.bbai-btn-primary,
+.bbai-settings-card .bbai-btn.bbai-btn-primary,
+.bbai-card .bbai-btn.bbai-btn-primary,
+button.bbai-btn.bbai-btn-primary,
+a.bbai-btn.bbai-btn-primary {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
+    color: #ffffff !important;
+    border-color: #10B981 !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4) !important;
+}
+
+.wrap .bbai-btn.bbai-btn-primary:hover,
+.bbai-dashboard-container .bbai-btn.bbai-btn-primary:hover,
+.bbai-settings-card .bbai-btn.bbai-btn-primary:hover,
+.bbai-card .bbai-btn.bbai-btn-primary:hover,
+button.bbai-btn.bbai-btn-primary:hover,
+a.bbai-btn.bbai-btn-primary:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5) !important;
+}
+
+/* Secondary Button - White with Border */
+.wrap .bbai-btn.bbai-btn-secondary,
+.bbai-dashboard-container .bbai-btn.bbai-btn-secondary,
+.bbai-settings-card .bbai-btn.bbai-btn-secondary,
+.bbai-card .bbai-btn.bbai-btn-secondary,
+button.bbai-btn.bbai-btn-secondary,
+a.bbai-btn.bbai-btn-secondary {
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.wrap .bbai-btn.bbai-btn-secondary:hover,
+.bbai-dashboard-container .bbai-btn.bbai-btn-secondary:hover,
+.bbai-settings-card .bbai-btn.bbai-btn-secondary:hover,
+.bbai-card .bbai-btn.bbai-btn-secondary:hover,
+button.bbai-btn.bbai-btn-secondary:hover,
+a.bbai-btn.bbai-btn-secondary:hover {
+    background: #f9fafb !important;
+    border-color: #d1d5db !important;
+    transform: translateY(-1px);
+}
+
+/* Danger Button - Red */
+.wrap .bbai-btn.bbai-btn-danger,
+.bbai-dashboard-container .bbai-btn.bbai-btn-danger,
+.bbai-settings-card .bbai-btn.bbai-btn-danger,
+.bbai-card .bbai-btn.bbai-btn-danger,
+button.bbai-btn.bbai-btn-danger,
+a.bbai-btn.bbai-btn-danger {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    border-color: #ef4444 !important;
+}
+
+.wrap .bbai-btn.bbai-btn-danger:hover,
+.bbai-dashboard-container .bbai-btn.bbai-btn-danger:hover,
+.bbai-settings-card .bbai-btn.bbai-btn-danger:hover,
+.bbai-card .bbai-btn.bbai-btn-danger:hover,
+button.bbai-btn.bbai-btn-danger:hover,
+a.bbai-btn.bbai-btn-danger:hover {
+    background: #dc2626 !important;
+    border-color: #dc2626 !important;
+    transform: translateY(-1px);
+}
+
+/* Outline Primary Button */
+.wrap .bbai-btn.bbai-btn-outline-primary,
+.bbai-dashboard-container .bbai-btn.bbai-btn-outline-primary,
+.bbai-settings-card .bbai-btn.bbai-btn-outline-primary,
+.bbai-card .bbai-btn.bbai-btn-outline-primary,
+button.bbai-btn.bbai-btn-outline-primary,
+a.bbai-btn.bbai-btn-outline-primary {
+    background: transparent !important;
+    color: #10B981 !important;
+    border: 1px solid #10B981 !important;
+}
+
+.wrap .bbai-btn.bbai-btn-outline-primary:hover,
+.bbai-dashboard-container .bbai-btn.bbai-btn-outline-primary:hover,
+.bbai-settings-card .bbai-btn.bbai-btn-outline-primary:hover,
+.bbai-card .bbai-btn.bbai-btn-outline-primary:hover,
+button.bbai-btn.bbai-btn-outline-primary:hover,
+a.bbai-btn.bbai-btn-outline-primary:hover {
+    background: rgba(16, 185, 129, 0.08) !important;
+}
+
+/* Large Button Size */
+.bbai-btn.bbai-btn-lg,
+.bbai-btn-lg {
+    padding: 14px 28px !important;
+    font-size: 15px !important;
+    border-radius: 12px !important;
 }
 
 
@@ -5224,6 +5332,639 @@ h1.bbai-heading {
     text-decoration: underline;
 }
 
+/* ============================================
+   SETTINGS PAGE - Premium SaaS Design
+   ============================================ */
+
+/* Settings Header */
+.bbai-settings-header {
+    margin-bottom: var(--bbai-space-6);
+}
+
+.bbai-settings-header .bbai-page-title {
+    font-size: 28px;
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0 0 var(--bbai-space-2) 0;
+    line-height: 1.3;
+}
+
+.bbai-settings-header .bbai-page-subtitle {
+    font-size: 14px;
+    color: var(--bbai-text-muted);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Site-Wide Banner */
+.bbai-settings-sitewide-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--bbai-space-3);
+    padding: var(--bbai-space-4);
+    background: var(--bbai-info-bg);
+    border-radius: var(--bbai-radius-lg);
+    margin-bottom: var(--bbai-space-6);
+}
+
+.bbai-settings-sitewide-icon {
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.bbai-settings-sitewide-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.bbai-settings-sitewide-title {
+    font-size: 14px;
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-info-dark);
+}
+
+.bbai-settings-sitewide-text {
+    font-size: 14px;
+    color: var(--bbai-info-dark);
+}
+
+/* Plan Summary Card - Elevated Design */
+.bbai-settings-plan-summary-card {
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: 16px;
+    padding: var(--bbai-space-6);
+    margin-bottom: var(--bbai-space-6);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.bbai-settings-plan-badge-top {
+    margin-bottom: var(--bbai-space-4);
+}
+
+.bbai-settings-plan-badge-text {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+/* Plan Quota Display */
+.bbai-settings-plan-quota {
+    margin-bottom: var(--bbai-space-5);
+}
+
+.bbai-settings-plan-quota-meter {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-bottom: var(--bbai-space-1);
+}
+
+.bbai-settings-plan-quota-used {
+    font-size: 42px;
+    font-weight: var(--bbai-font-bold);
+    color: var(--bbai-text);
+    line-height: 1;
+}
+
+.bbai-settings-plan-quota-divider {
+    font-size: 28px;
+    font-weight: var(--bbai-font-light);
+    color: var(--bbai-text-muted);
+}
+
+.bbai-settings-plan-quota-limit {
+    font-size: 28px;
+    font-weight: var(--bbai-font-medium);
+    color: var(--bbai-text-muted);
+}
+
+.bbai-settings-plan-quota-label {
+    font-size: 14px;
+    color: var(--bbai-text-muted);
+}
+
+/* Plan Info Items */
+.bbai-settings-plan-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bbai-space-3);
+    margin-bottom: var(--bbai-space-5);
+    padding-top: var(--bbai-space-4);
+    border-top: 1px solid var(--bbai-border);
+}
+
+.bbai-settings-plan-info-item {
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-space-3);
+    font-size: 14px;
+    color: var(--bbai-text-secondary);
+}
+
+.bbai-settings-plan-info-item svg {
+    flex-shrink: 0;
+    color: var(--bbai-text-muted);
+}
+
+/* Large Upgrade Button */
+.bbai-settings-plan-upgrade-btn-large {
+    width: 100%;
+    padding: 16px 24px;
+    font-size: 15px;
+    font-weight: var(--bbai-font-semibold);
+    border-radius: 12px;
+}
+
+/* Settings Cards */
+.bbai-settings-card {
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: 16px;
+    padding: var(--bbai-space-6);
+    margin-bottom: var(--bbai-space-6);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.bbai-settings-card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-space-3);
+    margin-bottom: var(--bbai-space-5);
+    padding-bottom: var(--bbai-space-4);
+    border-bottom: 1px solid var(--bbai-border);
+}
+
+.bbai-settings-card-header-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bbai-primary-soft);
+    border-radius: var(--bbai-radius-lg);
+    color: var(--bbai-primary);
+}
+
+.bbai-settings-card-title {
+    font-size: 18px;
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0;
+}
+
+/* License Card Styles */
+.bbai-settings-license-active {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--bbai-space-4);
+    padding: var(--bbai-space-4);
+    background: var(--bbai-success-bg);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: var(--bbai-radius-lg);
+    margin-bottom: var(--bbai-space-4);
+}
+
+.bbai-settings-license-status {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--bbai-space-3);
+}
+
+.bbai-settings-license-title {
+    font-size: 15px;
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-success-dark);
+    margin-bottom: 2px;
+}
+
+.bbai-settings-license-subtitle {
+    font-size: 14px;
+    color: var(--bbai-text-secondary);
+}
+
+.bbai-settings-license-key {
+    margin-top: var(--bbai-space-2);
+    font-size: 12px;
+    color: var(--bbai-text-muted);
+    font-family: var(--bbai-font-mono);
+    word-break: break-all;
+    background: var(--bbai-bg);
+    padding: 6px 10px;
+    border-radius: var(--bbai-radius);
+    border: 1px solid var(--bbai-border);
+}
+
+.bbai-license-key-display {
+    background: var(--bbai-bg);
+    padding: 6px 10px;
+    border-radius: var(--bbai-radius);
+    border: 1px solid var(--bbai-border);
+}
+
+.bbai-settings-license-deactivate-btn {
+    flex-shrink: 0;
+    padding: 10px 20px !important;
+}
+
+/* License Form */
+.bbai-settings-license-form {
+    padding: var(--bbai-space-4);
+    background: var(--bbai-bg-secondary);
+    border-radius: var(--bbai-radius-lg);
+}
+
+.bbai-settings-license-description {
+    font-size: 14px;
+    color: var(--bbai-text-secondary);
+    margin: 0 0 var(--bbai-space-4) 0;
+}
+
+.bbai-settings-license-input-group {
+    margin-bottom: var(--bbai-space-4);
+}
+
+.bbai-settings-license-label {
+    display: block;
+    font-size: 13px;
+    font-weight: var(--bbai-font-medium);
+    color: var(--bbai-text-secondary);
+    margin-bottom: var(--bbai-space-2);
+}
+
+.bbai-settings-license-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius);
+    font-size: 14px;
+    font-family: var(--bbai-font-mono);
+    color: var(--bbai-text);
+    background: var(--bbai-bg);
+    transition: all 0.2s ease;
+}
+
+.bbai-settings-license-input:focus {
+    outline: none;
+    border-color: var(--bbai-primary);
+    box-shadow: 0 0 0 3px var(--bbai-primary-soft);
+}
+
+.bbai-settings-license-input::placeholder {
+    color: var(--bbai-text-muted);
+}
+
+.bbai-settings-license-activate-btn {
+    width: 100%;
+}
+
+/* License Sites Section (Agency) */
+.bbai-settings-license-sites {
+    margin-top: var(--bbai-space-4);
+    padding-top: var(--bbai-space-4);
+    border-top: 1px solid var(--bbai-border);
+}
+
+.bbai-settings-license-sites-header {
+    margin-bottom: var(--bbai-space-3);
+}
+
+.bbai-settings-license-sites-title {
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+    font-size: 14px;
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0;
+}
+
+.bbai-settings-license-sites-content {
+    background: var(--bbai-bg-secondary);
+    border-radius: var(--bbai-radius);
+    padding: var(--bbai-space-4);
+}
+
+.bbai-settings-license-sites-loading {
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+    font-size: 14px;
+    color: var(--bbai-text-muted);
+}
+
+/* Account Management Card */
+.bbai-settings-account-info-banner {
+    display: flex;
+    align-items: center;
+    padding: var(--bbai-space-3) var(--bbai-space-4);
+    background: var(--bbai-gray-50);
+    border-radius: var(--bbai-radius);
+    margin-bottom: var(--bbai-space-4);
+}
+
+.bbai-settings-account-info-banner span {
+    font-size: 14px;
+    color: var(--bbai-text-secondary);
+}
+
+.bbai-settings-account-upgrade-link {
+    margin-top: var(--bbai-space-4);
+}
+
+.bbai-settings-account-upgrade-btn {
+    width: 100%;
+}
+
+.bbai-settings-account-status {
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-space-3);
+    margin-bottom: var(--bbai-space-4);
+}
+
+.bbai-settings-account-status-label {
+    font-size: 14px;
+    color: var(--bbai-text-muted);
+}
+
+.bbai-settings-account-status-value {
+    font-size: 14px;
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+}
+
+.bbai-settings-account-actions {
+    padding-top: var(--bbai-space-4);
+    border-top: 1px solid var(--bbai-border);
+}
+
+.bbai-settings-account-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+    margin-bottom: var(--bbai-space-4);
+}
+
+.bbai-settings-account-action-info {
+    font-size: 13px;
+    color: var(--bbai-text-secondary);
+    line-height: 1.6;
+}
+
+.bbai-settings-account-action-info p {
+    margin: 0 0 var(--bbai-space-2) 0;
+}
+
+.bbai-settings-account-action-info ul {
+    margin: 0;
+    padding-left: var(--bbai-space-5);
+}
+
+.bbai-settings-account-action-info li {
+    margin-bottom: var(--bbai-space-1);
+}
+
+/* Generation Settings Card */
+.bbai-settings-generation-title {
+    font-size: 18px;
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0 0 var(--bbai-space-6) 0;
+}
+
+.bbai-settings-form-group {
+    margin-bottom: var(--bbai-space-5);
+    padding-bottom: var(--bbai-space-5);
+    border-bottom: 1px solid var(--bbai-border);
+}
+
+.bbai-settings-form-group:last-of-type {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.bbai-settings-form-field--toggle {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--bbai-space-4);
+}
+
+.bbai-settings-form-field-content {
+    flex: 1;
+}
+
+.bbai-settings-form-label {
+    display: block;
+    font-size: 15px;
+    font-weight: var(--bbai-font-medium);
+    color: var(--bbai-text);
+    margin-bottom: var(--bbai-space-1);
+}
+
+.bbai-settings-form-description {
+    font-size: 13px;
+    color: var(--bbai-text-muted);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.bbai-settings-form-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius);
+    font-size: 14px;
+    color: var(--bbai-text);
+    background: var(--bbai-bg);
+    margin-top: var(--bbai-space-2);
+    transition: all 0.2s ease;
+}
+
+.bbai-settings-form-input:focus {
+    outline: none;
+    border-color: var(--bbai-primary);
+    box-shadow: 0 0 0 3px var(--bbai-primary-soft);
+}
+
+.bbai-settings-form-input::placeholder {
+    color: var(--bbai-text-muted);
+}
+
+.bbai-settings-form-textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius);
+    font-size: 14px;
+    color: var(--bbai-text);
+    background: var(--bbai-bg);
+    margin-top: var(--bbai-space-2);
+    resize: vertical;
+    min-height: 100px;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.bbai-settings-form-textarea:focus {
+    outline: none;
+    border-color: var(--bbai-primary);
+    box-shadow: 0 0 0 3px var(--bbai-primary-soft);
+}
+
+.bbai-settings-form-textarea::placeholder {
+    color: var(--bbai-text-muted);
+}
+
+.bbai-settings-form-actions {
+    margin-top: var(--bbai-space-6);
+    padding-top: var(--bbai-space-4);
+    border-top: 1px solid var(--bbai-border);
+}
+
+.bbai-settings-save-btn {
+    min-width: 140px;
+}
+
+/* Settings Toggle Switch */
+.bbai-settings-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.bbai-settings-toggle input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.bbai-settings-toggle-slider {
+    position: relative;
+    width: 48px;
+    height: 26px;
+    background: var(--bbai-gray-300);
+    border-radius: 9999px;
+    transition: all 0.2s ease;
+}
+
+.bbai-settings-toggle-slider::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    background: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+.bbai-settings-toggle input:checked + .bbai-settings-toggle-slider {
+    background: var(--bbai-primary);
+}
+
+.bbai-settings-toggle input:checked + .bbai-settings-toggle-slider::after {
+    transform: translateX(22px);
+}
+
+.bbai-settings-toggle input:focus + .bbai-settings-toggle-slider {
+    box-shadow: 0 0 0 3px var(--bbai-primary-soft);
+}
+
+/* Auth Required State */
+.bbai-settings-required {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    padding: var(--bbai-space-8);
+}
+
+.bbai-settings-required-content {
+    text-align: center;
+    max-width: 400px;
+}
+
+.bbai-settings-required-icon {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bbai-gray-100);
+    border-radius: 50%;
+    margin: 0 auto var(--bbai-space-5);
+    color: var(--bbai-text-muted);
+}
+
+.bbai-settings-required h2 {
+    font-size: 20px;
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0 0 var(--bbai-space-2) 0;
+}
+
+.bbai-settings-required p {
+    font-size: 14px;
+    color: var(--bbai-text-secondary);
+    margin: 0 0 var(--bbai-space-3) 0;
+}
+
+.bbai-settings-required-note {
+    font-size: 13px;
+    color: var(--bbai-text-muted);
+    margin-top: var(--bbai-space-3);
+}
+
+.bbai-settings-required-actions {
+    display: flex;
+    gap: var(--bbai-space-3);
+    justify-content: center;
+    margin-top: var(--bbai-space-5);
+}
+
+/* Responsive Settings */
+@media (max-width: 640px) {
+    .bbai-settings-form-field--toggle {
+        flex-direction: column;
+        gap: var(--bbai-space-3);
+    }
+
+    .bbai-settings-plan-quota-used {
+        font-size: 36px;
+    }
+
+    .bbai-settings-plan-quota-divider,
+    .bbai-settings-plan-quota-limit {
+        font-size: 24px;
+    }
+
+    .bbai-settings-license-active {
+        flex-direction: column;
+    }
+
+    .bbai-settings-required-actions {
+        flex-direction: column;
+    }
+}
+
 
 /* 8b. Dashboard Layout */
 /* Imported from: _dashboard.css */
@@ -5653,12 +6394,18 @@ h1.bbai-heading {
     justify-content: center;
 }
 
+/* Ensure CTAs can shrink without clipping on narrower layouts */
+.bbai-optimization-actions .bbai-optimization-cta {
+    flex: 1 1 240px;
+    min-width: 0;
+}
+
 /* Primary CTA - Premium gradient */
 .bbai-optimization-actions .bbai-btn-success,
 .bbai-optimization-actions .bbai-optimization-cta--primary {
-    background: linear-gradient(135deg, var(--bbai-primary) 0%, #0d9488 100%);
-    color: white;
-    border: none;
+    background: linear-gradient(135deg, var(--bbai-primary) 0%, #0d9488 100%) !important;
+    color: white !important;
+    border: none !important;
     padding: var(--bbai-space-4) var(--bbai-space-8);
     font-size: var(--bbai-text-base);
     font-weight: var(--bbai-font-semibold);
@@ -5690,9 +6437,9 @@ h1.bbai-heading {
 /* Secondary CTA */
 .bbai-optimization-actions .bbai-btn-secondary,
 .bbai-optimization-actions .bbai-optimization-cta--secondary {
-    background: var(--bbai-gray-800);
-    color: white;
-    border: none;
+    background: var(--bbai-gray-800) !important;
+    color: white !important;
+    border: none !important;
     padding: var(--bbai-space-4) var(--bbai-space-8);
     font-size: var(--bbai-text-base);
     font-weight: var(--bbai-font-semibold);
@@ -5700,6 +6447,16 @@ h1.bbai-heading {
     box-shadow: var(--bbai-shadow-sm);
     transition: all var(--bbai-transition-base) var(--bbai-ease-out);
     min-height: 52px;
+}
+
+@media (max-width: 900px) {
+    .bbai-optimization-actions .bbai-btn-success,
+    .bbai-optimization-actions .bbai-optimization-cta--primary,
+    .bbai-optimization-actions .bbai-btn-secondary,
+    .bbai-optimization-actions .bbai-optimization-cta--secondary {
+        padding: var(--bbai-space-3) var(--bbai-space-5);
+        font-size: var(--bbai-text-sm);
+    }
 }
 
 .bbai-optimization-actions .bbai-btn-secondary:hover:not(:disabled),
@@ -7349,12 +8106,22 @@ h1.bbai-heading {
     display: flex;
     flex-direction: column;
     gap: 24px;
+    color: #ffffff; /* Default text color for card content */
 }
 
-/* Badge - GROWTH badge with white background on blue card */
+/* Full width variant for bottom CTA */
+.bbai-bottom-upsell-cta .bbai-upgrade-growth-card {
+    width: 100%;
+    max-width: 100%;
+}
+
+/* Badge - GROWTH badge - white background with dark text for visibility on blue card */
 .bbai-upgrade-growth-card .bbai-badge--growth,
-.bbai-upgrade-growth-card .bbai-badge-growth {
-    display: inline-flex;
+.bbai-upgrade-growth-card .bbai-badge-growth,
+.bbai-upgrade-growth-card .bbai-badge.bbai-badge--growth,
+.bbai-upgrade-growth-card span.bbai-badge--growth,
+.bbai-upgrade-growth-card .flex .bbai-badge--growth {
+    display: inline-flex !important;
     align-items: center;
     border-radius: 9999px;
     background: rgba(255, 255, 255, 0.95) !important;
@@ -7364,9 +8131,22 @@ h1.bbai-heading {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #3B82F6 !important;
+    color: #111827 !important;
     width: fit-content;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Ensure text color is applied with maximum specificity - target all possible nested elements and text nodes */
+.bbai-upgrade-growth-card .bbai-badge--growth,
+.bbai-upgrade-growth-card .bbai-badge-growth,
+.bbai-upgrade-growth-card .bbai-badge.bbai-badge--growth,
+.bbai-upgrade-growth-card span.bbai-badge--growth,
+.bbai-upgrade-growth-card .flex .bbai-badge--growth,
+.bbai-upgrade-growth-card .bbai-badge--growth *,
+.bbai-upgrade-growth-card .bbai-badge-growth *,
+.bbai-upgrade-growth-card .bbai-badge.bbai-badge--growth *,
+.bbai-upgrade-growth-card span.bbai-badge--growth * {
+    color: #111827 !important;
 }
 
 /* Title */

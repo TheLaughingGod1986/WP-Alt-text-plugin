@@ -6134,13 +6134,15 @@ body.media_page_bbai #wpwrap {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 4px 0;
+    gap: var(--bbai-space-4, 16px);
+    padding: var(--bbai-space-4, 16px);
 }
 
 .bbai-settings-license-status {
     display: flex;
     align-items: center;
     gap: 12px;
+    flex: 1;
 }
 
 .bbai-settings-license-status svg {
@@ -6242,7 +6244,9 @@ body.media_page_bbai #wpwrap {
     margin-top: var(--bbai-space-8, 32px);
     padding-top: var(--bbai-space-6, 24px);
     border-top: 1px solid #F3F4F6;
-    text-align: center;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
 }
 
 /* Save Settings Button - Plain Text Style */
@@ -6840,12 +6844,7 @@ body.media_page_bbai #wpwrap {
     min-height: 100px;
 }
 
-.bbai-settings-form-actions {
-    margin-top: 32px;
-    padding-top: 24px;
-    border-top: 1px solid #f3f4f6;
-    text-align: center;
-}
+/* Removed duplicate - using unified styles from line 6243 */
 
 /* Settings Buttons */
 .bbai-settings-btn {
