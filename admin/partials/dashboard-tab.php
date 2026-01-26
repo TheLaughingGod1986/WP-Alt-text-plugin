@@ -26,12 +26,10 @@ $stats = (isset($stats) && is_array($stats)) ? $stats : $this->get_media_stats()
 $usage_stats = Usage_Helper::get_usage($this->api_client, $has_registered_user);
 
 // Partial paths.
-$dashboard_auth_partial    = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-authenticated.php';
-$dashboard_hero_partial    = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-hero.php';
-$dashboard_demo_partial    = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-demo.php';
-$dashboard_scripts_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-scripts.php';
+$dashboard_auth_partial       = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-authenticated.php';
+$dashboard_logged_out_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-logged-out.php';
 
-// Render authenticated/licensed view or fallback demo.
+// Render authenticated/licensed view or clean logged-out onboarding.
 if ($has_registered_user || $is_authenticated || $has_license) {
     if (file_exists($dashboard_auth_partial)) {
         include $dashboard_auth_partial;
@@ -39,15 +37,11 @@ if ($has_registered_user || $is_authenticated || $has_license) {
         esc_html_e('Dashboard content unavailable.', 'beepbeep-ai-alt-text-generator');
     }
 } else {
-    if (file_exists($dashboard_hero_partial)) {
-        include $dashboard_hero_partial;
+    // Show clean onboarding screen for logged-out users
+    // No usage counters, progress bars, or demo widgets
+    if (file_exists($dashboard_logged_out_partial)) {
+        include $dashboard_logged_out_partial;
+    } else {
+        esc_html_e('Please sign in to access the dashboard.', 'beepbeep-ai-alt-text-generator');
     }
-    if (file_exists($dashboard_demo_partial)) {
-        include $dashboard_demo_partial;
-    }
-}
-
-// Load dashboard scripts/styles.
-if (file_exists($dashboard_scripts_partial)) {
-    include $dashboard_scripts_partial;
 }

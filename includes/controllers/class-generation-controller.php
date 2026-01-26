@@ -55,6 +55,12 @@ class Generation_Controller {
 
 		$attachment_id_raw = isset( $_POST['attachment_id'] ) ? wp_unslash( $_POST['attachment_id'] ) : '';
 		$attachment_id     = absint( $attachment_id_raw );
+		if ( $attachment_id <= 0 || ! current_user_can( 'edit_post', $attachment_id ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
+			);
+		}
 
 		return $this->generation_service->regenerate_single( $attachment_id );
 	}
@@ -81,6 +87,15 @@ class Generation_Controller {
 		if ( ! is_array( $attachment_ids ) ) {
 			$attachment_ids = array();
 		}
+		$attachment_ids = array_filter( array_map( 'absint', $attachment_ids ) );
+		$attachment_ids = array_values(
+			array_filter(
+				$attachment_ids,
+				static function ( int $attachment_id ): bool {
+					return $attachment_id > 0 && current_user_can( 'edit_post', $attachment_id );
+				}
+			)
+		);
 
 		return $this->generation_service->bulk_queue( $attachment_ids );
 	}
@@ -93,6 +108,15 @@ class Generation_Controller {
 	 * @return array Response data.
 	 */
 	public function inline_generate(): array {
+		$nonce_raw = isset( $_POST['nonce'] ) ? wp_unslash( $_POST['nonce'] ) : '';
+		$nonce     = is_string( $nonce_raw ) ? sanitize_text_field( $nonce_raw ) : '';
+		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'bbai_inline_generate' ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ),
+			);
+		}
+
 		// Check permission.
 		if ( ! $this->user_can_manage() ) {
 			return array(
@@ -103,6 +127,12 @@ class Generation_Controller {
 
 		$attachment_id_raw = isset( $_POST['attachment_id'] ) ? wp_unslash( $_POST['attachment_id'] ) : '';
 		$attachment_id     = absint( $attachment_id_raw );
+		if ( $attachment_id <= 0 || ! current_user_can( 'edit_post', $attachment_id ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
+			);
+		}
 
 		return $this->generation_service->inline_generate( $attachment_id );
 	}

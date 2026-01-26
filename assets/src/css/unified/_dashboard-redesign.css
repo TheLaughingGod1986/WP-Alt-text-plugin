@@ -217,12 +217,15 @@
 }
 
 .bbai-usage-card-redesign .bbai-action-btn-primary {
-    background: linear-gradient(to right, #6366F1, #8B5CF6);
-    color: #ffffff;
+    background: linear-gradient(to right, #6366F1, #8B5CF6) !important;
+    color: #ffffff !important;
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    border: none !important;
 }
 
 .bbai-usage-card-redesign .bbai-action-btn-primary:hover:not(:disabled) {
+    background: linear-gradient(to right, #4F46E5, #7C3AED) !important;
+    color: #ffffff !important;
     box-shadow: 0 6px 16px rgba(99, 102, 241, 0.5);
     transform: translateY(-2px);
 }
@@ -232,18 +235,25 @@
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4), 0 0 0 4px rgba(99, 102, 241, 0.3);
 }
 
-.bbai-usage-card-redesign .bbai-action-btn-primary:disabled {
-    opacity: 0.5;
+.bbai-usage-card-redesign .bbai-action-btn-primary:disabled,
+.bbai-usage-card-redesign .bbai-action-btn-primary.disabled {
+    opacity: 0.6;
     cursor: not-allowed;
+    background: var(--bbai-gray-300, #d1d5db) !important;
+    color: var(--bbai-gray-500, #6b7280) !important;
+    box-shadow: none !important;
 }
 
 .bbai-usage-card-redesign .bbai-action-btn-secondary {
-    background: linear-gradient(to right, #F59E0B, #F97316);
-    color: #ffffff;
+    background: linear-gradient(to right, #F59E0B, #F97316) !important;
+    color: #ffffff !important;
     box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+    border: none !important;
 }
 
 .bbai-usage-card-redesign .bbai-action-btn-secondary:hover:not(:disabled) {
+    background: linear-gradient(to right, #D97706, #EA580C) !important;
+    color: #ffffff !important;
     box-shadow: 0 6px 16px rgba(245, 158, 11, 0.5);
     transform: translateY(-2px);
 }
@@ -253,9 +263,13 @@
     box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4), 0 0 0 4px rgba(245, 158, 11, 0.3);
 }
 
-.bbai-usage-card-redesign .bbai-action-btn-secondary:disabled {
-    opacity: 0.5;
+.bbai-usage-card-redesign .bbai-action-btn-secondary:disabled,
+.bbai-usage-card-redesign .bbai-action-btn-secondary.disabled {
+    opacity: 0.6;
     cursor: not-allowed;
+    background: var(--bbai-gray-300, #d1d5db) !important;
+    color: var(--bbai-gray-500, #6b7280) !important;
+    box-shadow: none !important;
 }
 
 /* Stats Tiles */

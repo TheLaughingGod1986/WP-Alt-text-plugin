@@ -244,9 +244,9 @@ class BbAIAuthModal {
                             </div>
                         </div>
                         
-                        <!-- Pro Upsell Strip -->
+                        <!-- Growth Upsell Strip -->
                         <div class="alttext-auth-modal__footer">
-                            <p class="alttext-auth-modal__upsell">Pro users get 1,000 AI alt texts per month + bulk processing + priority queue.</p>
+                            <p class="alttext-auth-modal__upsell">Growth users get 1,000 AI alt texts per month + bulk processing + priority queue.</p>
                         </div>
                     </div>
                 </div>
@@ -918,7 +918,11 @@ class BbAIAuthModal {
     storeToken(token) {
         localStorage.setItem('alttextai_token', token);
         // Also store in WordPress for server-side access
-        fetch(window.bbai_ajax?.ajax_url || '/wp-admin/admin-ajax.php', {
+        const ajaxUrl = window.bbai_ajax?.ajax_url || window.bbai_ajax?.ajaxurl;
+        if (!ajaxUrl) {
+            return;
+        }
+        fetch(ajaxUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'

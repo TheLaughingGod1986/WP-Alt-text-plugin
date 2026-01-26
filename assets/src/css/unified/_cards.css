@@ -13,9 +13,9 @@
 .bbai-card {
     background: var(--bbai-bg);
     border: 1px solid var(--bbai-border);
-    border-radius: var(--bbai-radius-xl);
-    padding: var(--bbai-space-6);
-    box-shadow: var(--bbai-shadow-card);
+    border-radius: 16px; /* Consistent card radius */
+    padding: 24px; /* Consistent card padding */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     transition: box-shadow var(--bbai-transition-base) var(--bbai-ease-out),
                 border-color var(--bbai-transition-base) var(--bbai-ease-out),
                 transform var(--bbai-transition-base) var(--bbai-ease-out);
@@ -66,10 +66,10 @@
 .bbai-stat-card {
     background: var(--bbai-bg);
     border: 1px solid var(--bbai-border);
-    border-radius: var(--bbai-radius-xl);
-    padding: var(--bbai-space-6);
+    border-radius: 16px; /* Consistent card radius */
+    padding: 24px; /* Consistent card padding */
     text-align: center;
-    box-shadow: var(--bbai-shadow-card);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     transition: all var(--bbai-transition-base) var(--bbai-ease-out);
 }
 
@@ -978,6 +978,107 @@
 .bbai-premium-card > .bbai-usage-card,
 .bbai-premium-card > .bbai-upsell-card {
     height: 100%;
+}
+
+/* ============================================
+   AGENCY THANK YOU CARD
+   ============================================ */
+
+.bbai-agency-thank-you-card {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0fdfa 100%);
+    border: 1px solid var(--bbai-success-light);
+    border-radius: var(--bbai-radius-xl);
+    padding: var(--bbai-space-8);
+    text-align: center;
+}
+
+.bbai-thank-you-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--bbai-space-4);
+    margin-bottom: var(--bbai-space-6);
+}
+
+.bbai-thank-you-icon {
+    color: var(--bbai-success);
+}
+
+.bbai-thank-you-text {
+    text-align: center;
+}
+
+.bbai-thank-you-text .bbai-card-title {
+    color: var(--bbai-success-dark);
+    margin-bottom: var(--bbai-space-2);
+}
+
+.bbai-thank-you-text .bbai-card-subtitle {
+    color: var(--bbai-text-muted);
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.bbai-agency-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--bbai-space-4);
+}
+
+.bbai-agency-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+    padding: var(--bbai-space-3) var(--bbai-space-5);
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-lg);
+    color: var(--bbai-text);
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-medium);
+    text-decoration: none;
+    transition: all var(--bbai-transition-base);
+}
+
+.bbai-agency-link:hover {
+    background: var(--bbai-gray-50);
+    border-color: var(--bbai-primary);
+    color: var(--bbai-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+}
+
+.bbai-agency-link svg {
+    flex-shrink: 0;
+}
+
+/* Agency upgrade card variant */
+.bbai-upgrade-agency-card {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+}
+
+.bbai-upgrade-agency-card .bbai-card-title,
+.bbai-upgrade-agency-card .bbai-card-subtitle,
+.bbai-upgrade-agency-card .bbai-benefit-text {
+    color: #ffffff;
+}
+
+.bbai-upgrade-agency-card .bbai-benefit-icon {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.bbai-upgrade-agency-card .bbai-cta-microcopy {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.bbai-upgrade-agency-card .bbai-compare-link {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.bbai-upgrade-agency-card .bbai-compare-link:hover {
+    color: #ffffff;
 }
 
 /* ============================================

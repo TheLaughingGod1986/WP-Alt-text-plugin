@@ -3,6 +3,10 @@ declare(strict_types=1);
 
 namespace BeepBeep\AltText\Services;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use BeepBeep\AltText\Core\Event_Bus;
 
 /**
@@ -68,7 +72,7 @@ class Authentication_Service {
 			if ( ! is_wp_error( $usage ) && isset( $usage['plan'] ) && 'free' === $usage['plan'] ) {
 				return array(
 					'success' => false,
-					'message' => __( 'This site is already linked to a free account. Ask an administrator to upgrade to Pro or Agency for higher limits.', 'beepbeep-ai-alt-text-generator' ),
+					'message' => __( 'This site is already linked to a free account. Ask an administrator to upgrade to Growth or Agency for higher limits.', 'beepbeep-ai-alt-text-generator' ),
 					'code'    => 'free_plan_exists',
 				);
 			}
@@ -85,7 +89,7 @@ class Authentication_Service {
 			if ( 'free_plan_exists' === $error_code || ( is_string( $error_message ) && false !== strpos( strtolower( $error_message ), 'free plan' ) ) ) {
 				return array(
 					'success' => false,
-					'message' => __( 'A free plan has already been used for this site. Upgrade to Pro or Agency to increase your quota.', 'beepbeep-ai-alt-text-generator' ),
+					'message' => __( 'A free plan has already been used for this site. Upgrade to Growth or Agency to increase your quota.', 'beepbeep-ai-alt-text-generator' ),
 					'code'    => 'free_plan_exists',
 				);
 			}

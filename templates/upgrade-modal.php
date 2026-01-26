@@ -8,9 +8,15 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 // Get current plan from API client
 $current_plan = 'free';
-$usage_data = $this->api_client->get_usage();
-if (!is_wp_error($usage_data) && is_array($usage_data) && isset($usage_data['plan'])) {
-    $current_plan = strtolower($usage_data['plan']);
+try {
+    if (isset($this->api_client) && is_object($this->api_client) && method_exists($this->api_client, 'get_usage')) {
+        $usage_data = $this->api_client->get_usage();
+        if (!is_wp_error($usage_data) && is_array($usage_data) && isset($usage_data['plan'])) {
+            $current_plan = strtolower($usage_data['plan']);
+        }
+    }
+} catch (Exception $e) {
+    // Silently fail, use default free plan
 }
 // Map 'pro' to 'growth' for consistency
 if ($current_plan === 'pro') {
@@ -58,13 +64,13 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
             <!-- Header -->
             <div class="bbai-upgrade-modal__header">
                 <h2 class="bbai-heading-2 bbai-text-center" id="bbai-upgrade-modal-title"><?php esc_html_e('Choose your BeepBeep AI plan', 'beepbeep-ai-alt-text-generator'); ?></h2>
-                <p class="bbai-subtitle bbai-text-center"><?php esc_html_e('Automate all alt text, improve image SEO, and save hours every month.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                <p class="bbai-subtitle bbai-text-center"><?php esc_html_e('Choose a plan that matches your monthly usage. Cancel anytime.', 'beepbeep-ai-alt-text-generator'); ?></p>
             </div>
 
 
             <!-- Trust Badges -->
             <div class="bbai-trust-badges bbai-trust-badges--modal">
-                <p class="bbai-trust-badges__text"><?php esc_html_e('14 days free trial · No credit card · Cancel anytime', 'beepbeep-ai-alt-text-generator'); ?></p>
+                <p class="bbai-trust-badges__text"><?php esc_html_e('Cancel anytime', 'beepbeep-ai-alt-text-generator'); ?></p>
             </div>
 
             <!-- Pricing Grid -->
@@ -268,7 +274,7 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
                             <span><?php esc_html_e('Can I downgrade anytime?', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </div>
                         <div class="bbai-pricing-faq__answer">
-                            <?php esc_html_e('Yes, you can downgrade or cancel anytime.', 'beepbeep-ai-alt-text-generator'); ?>
+                            <?php esc_html_e('Yes. You can downgrade or cancel anytime.', 'beepbeep-ai-alt-text-generator'); ?>
                         </div>
                     </div>
                     <div class="bbai-pricing-faq__item">
@@ -279,7 +285,7 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
                             <span><?php esc_html_e('Do credits roll over?', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </div>
                         <div class="bbai-pricing-faq__answer">
-                            <?php esc_html_e('Yes, unused credits roll over every month.', 'beepbeep-ai-alt-text-generator'); ?>
+                            <?php esc_html_e('Monthly credits reset each month. One-time credits do not expire.', 'beepbeep-ai-alt-text-generator'); ?>
                         </div>
                     </div>
                     <div class="bbai-pricing-faq__item">
@@ -287,10 +293,10 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <span><?php esc_html_e('Will it work with WooCommerce & all themes?', 'beepbeep-ai-alt-text-generator'); ?></span>
+                            <span><?php esc_html_e('Will it work with WooCommerce and all themes?', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </div>
                         <div class="bbai-pricing-faq__answer">
-                            <?php esc_html_e('Yes, compatible with WooCommerce, Gutenberg & all themes.', 'beepbeep-ai-alt-text-generator'); ?>
+                            <?php esc_html_e('Yes. It works with WooCommerce, Gutenberg, and most themes.', 'beepbeep-ai-alt-text-generator'); ?>
                         </div>
                     </div>
                 </div>
@@ -298,4 +304,3 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
         </div>
     </div>
 </div>
-

@@ -16,23 +16,38 @@ const PricingModalWrapper = ({ onPlanSelect }) => {
     const fetchUserPlan = async () => {
       try {
         setIsLoading(true);
-        const apiUrl = window.bbai_ajax?.api_url || '/api/user/plan';
-        const token = window.bbai_ajax?.jwt_token || localStorage.getItem('bbai_jwt_token');
-        
-        const response = await fetch(apiUrl, {
+        const restUsageUrl = window.BBAI_DASH?.restUsage || window.BBAI?.restUsage || '';
+        const restNonce = window.BBAI_DASH?.nonce || window.BBAI?.nonce || '';
+        const initialUsage = window.BBAI_DASH?.initialUsage || window.BBAI?.initialUsage || null;
+
+        const extractPlan = (payload) =>
+          payload?.plan || payload?.plan_type || payload?.data?.plan || payload?.data?.plan_type || '';
+
+        const cachedPlan = extractPlan(initialUsage);
+        if (cachedPlan) {
+          setCurrentPlan(cachedPlan);
+          setIsLoading(false);
+          return;
+        }
+
+        if (!restUsageUrl) {
+          setCurrentPlan('free');
+          return;
+        }
+
+        const response = await fetch(restUsageUrl, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            ...(token && { 'Authorization': `Bearer ${token}` }),
+            'X-WP-Nonce': restNonce,
           },
-          credentials: 'include',
+          credentials: 'same-origin',
         });
 
         if (response.ok) {
           const data = await response.json();
-          setCurrentPlan(data.plan || data.data?.plan || 'free');
+          setCurrentPlan(extractPlan(data) || 'free');
         } else {
-          // If API not available, default to free
           setCurrentPlan('free');
         }
       } catch (error) {
@@ -182,4 +197,3 @@ if (typeof window !== 'undefined' && window.document) {
 }
 
 export default PricingModalWrapper;
-

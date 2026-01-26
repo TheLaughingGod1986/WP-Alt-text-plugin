@@ -6,6 +6,9 @@
  * @since 5.0.0
  */
 
+// Ensure global variables exist (may not be defined if this file loads before main bundle)
+var alttextaiDebug = (typeof alttextaiDebug !== 'undefined') ? alttextaiDebug : ((typeof window !== 'undefined' && typeof window.bbai_ajax !== 'undefined' && window.bbai_ajax.debug) || false);
+
 bbaiRunWithJQuery(function($) {
     'use strict';
 
@@ -28,29 +31,60 @@ bbaiRunWithJQuery(function($) {
      * Show upgrade modal directly
      */
     function showUpgradeModal() {
+        console.log('[AltText AI] showUpgradeModal() called');
         var modal = document.getElementById('bbai-upgrade-modal');
-        if (modal) {
-            // Add active class to trigger CSS visibility
-            modal.classList.add('active');
-            modal.classList.add('is-visible');
-            
-            modal.removeAttribute('style');
-            modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important; visibility: visible !important; opacity: 1 !important;';
-            
-            // Remove aria-hidden entirely when modal is visible (don't set to false)
-            modal.removeAttribute('aria-hidden');
-            document.body.style.overflow = 'hidden';
-            
-            // Focus the close button or first focusable element to avoid accessibility warnings
-            setTimeout(function() {
-                var closeBtn = modal.querySelector('.bbai-modal-close, [data-action="close-modal"], button');
-                if (closeBtn && typeof closeBtn.focus === 'function') {
-                    closeBtn.focus();
-                }
-            }, 10);
-            return true;
+        
+        if (!modal) {
+            console.error('[AltText AI] Modal element #bbai-upgrade-modal not found in DOM');
+            // Try finding by class as fallback
+            modal = document.querySelector('.bbai-modal-backdrop');
+            if (modal) {
+                console.log('[AltText AI] Found modal by class, setting ID');
+                modal.id = 'bbai-upgrade-modal';
+            } else {
+                console.error('[AltText AI] No modal element found at all');
+                return false;
+            }
         }
-        return false;
+        
+        console.log('[AltText AI] Modal found, showing it');
+        
+        // Remove any inline display:none
+        modal.style.display = '';
+        
+        // Add active class to trigger CSS visibility
+        modal.classList.add('active');
+        modal.classList.add('is-visible');
+        
+        // Force display with inline styles
+        modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important; visibility: visible !important; opacity: 1 !important;';
+
+        // Also force the modal content to be visible (CSS might have opacity: 0 by default)
+        var modalContent = modal.querySelector('.bbai-upgrade-modal__content');
+        if (modalContent) {
+            modalContent.style.cssText = 'opacity: 1 !important; visibility: visible !important; transform: translateY(0) scale(1) !important;';
+        }
+
+        // Remove aria-hidden entirely when modal is visible
+        modal.removeAttribute('aria-hidden');
+        modal.setAttribute('aria-modal', 'true');
+        
+        // Prevent body scroll
+        document.body.style.overflow = 'hidden';
+        if (document.documentElement) {
+            document.documentElement.style.overflow = 'hidden';
+        }
+        
+        // Focus the close button or first focusable element
+        setTimeout(function() {
+            var closeBtn = modal.querySelector('.bbai-upgrade-modal__close, .bbai-modal-close, [data-action="close-modal"], button[aria-label*="Close"]');
+            if (closeBtn && typeof closeBtn.focus === 'function') {
+                closeBtn.focus();
+            }
+        }, 100);
+        
+        console.log('[AltText AI] Modal should now be visible');
+        return true;
     }
 
     /**
@@ -317,23 +351,53 @@ bbaiRunWithJQuery(function($) {
         observeFutureUpgradeTriggers();
         bindDirectUpgradeHandlers();
 
-        // Handle upgrade CTA
+        // Handle upgrade CTA - prioritize direct modal opening
         $(document).on('click', '[data-action="show-upgrade-modal"]', function(e) {
             e.preventDefault();
             e.stopPropagation();
 
-            if (!showUpgradeModal()) {
-                if (typeof window.openPricingModal === 'function') {
-                    window.openPricingModal('enterprise');
-                } else if (typeof bbaiApp !== 'undefined' && typeof bbaiApp.showModal === 'function') {
-                    bbaiApp.showModal();
-                } else if (typeof alttextaiShowModal === 'function') {
-                    alttextaiShowModal();
-                } else {
-                    if (typeof window.bbaiModal !== 'undefined') {
-                        window.bbaiModal.warning('Upgrade modal not found. Please refresh the page.');
-                    }
+            console.log('[AltText AI] Upgrade button clicked in dashboard init');
+
+            // Try direct modal opening first (most reliable)
+            if (showUpgradeModal()) {
+                console.log('[AltText AI] Modal opened via showUpgradeModal()');
+                return false;
+            }
+
+            // Try alttextaiShowModal (from dashboard bundle)
+            if (typeof window.alttextaiShowModal === 'function') {
+                console.log('[AltText AI] Trying window.alttextaiShowModal()');
+                if (window.alttextaiShowModal()) {
+                    return false;
                 }
+            }
+            if (typeof alttextaiShowModal === 'function') {
+                console.log('[AltText AI] Trying alttextaiShowModal()');
+                if (alttextaiShowModal()) {
+                    return false;
+                }
+            }
+
+            // Try pricing modal bridge
+            if (typeof window.openPricingModal === 'function') {
+                console.log('[AltText AI] Trying window.openPricingModal()');
+                window.openPricingModal('enterprise');
+                return false;
+            }
+
+            // Try legacy methods
+            if (typeof bbaiApp !== 'undefined' && typeof bbaiApp.showModal === 'function') {
+                console.log('[AltText AI] Trying bbaiApp.showModal()');
+                bbaiApp.showModal();
+                return false;
+            }
+
+            // Last resort: error message
+            console.error('[AltText AI] All modal opening methods failed');
+            if (typeof window.bbaiModal !== 'undefined') {
+                window.bbaiModal.warning('Upgrade modal not found. Please refresh the page.');
+            } else {
+                alert('Unable to open upgrade modal. Please refresh the page.');
             }
 
             return false;

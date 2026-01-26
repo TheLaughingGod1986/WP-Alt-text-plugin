@@ -785,7 +785,7 @@ class API_Client_V2 {
             if (!is_wp_error($usage) && isset($usage['plan']) && $usage['plan'] === 'free') {
                 return new \WP_Error(
                     'free_plan_exists',
-                    __('A free plan has already been used for this site. Upgrade to Pro or Agency to increase your quota.', 'beepbeep-ai-alt-text-generator'),
+                    __('A free plan has already been used for this site. Upgrade to Growth or Agency to increase your quota.', 'beepbeep-ai-alt-text-generator'),
                     ['code' => 'free_plan_already_used']
                 );
             }
@@ -814,7 +814,7 @@ class API_Client_V2 {
                 $response->get_error_code() === 'free_plan_exists') {
                 return new \WP_Error(
                     'free_plan_exists',
-                    __('A free plan has already been used for this site. Upgrade to Pro or Agency to increase your quota.', 'beepbeep-ai-alt-text-generator'),
+                    __('A free plan has already been used for this site. Upgrade to Growth or Agency to increase your quota.', 'beepbeep-ai-alt-text-generator'),
                     ['code' => 'free_plan_already_used']
                 );
             }

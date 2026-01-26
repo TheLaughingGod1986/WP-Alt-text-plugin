@@ -25,7 +25,8 @@ trait Core_Ajax_Queue {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
         }
 
-        update_option('wp_alt_text_api_notice_dismissed', true, false);
+        update_option('bbai_api_notice_dismissed', true, false);
+        delete_option('wp_alt_text_api_notice_dismissed');
         wp_send_json_success(['message' => __('Notice dismissed', 'beepbeep-ai-alt-text-generator')]);
     }
 

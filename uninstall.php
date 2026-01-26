@@ -6,6 +6,10 @@
  * It removes all plugin data including options, transients, and custom tables.
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
@@ -39,6 +43,7 @@ $bbai_options = [
 	'bbai_logs_ready',
 	'bbai_checkout_prices',
 	'bbai_remote_price_ids',
+	'bbai_api_notice_dismissed',
 	'wp_alt_text_api_notice_dismissed',
 ];
 

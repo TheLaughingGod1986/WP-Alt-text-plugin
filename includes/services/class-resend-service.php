@@ -261,44 +261,33 @@ class Resend_Service {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contact Form Submission</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: #10b981; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
-        .content { background: #f9fafb; padding: 20px; border: 1px solid #e5e7eb; border-top: none; }
-        .field { margin-bottom: 15px; }
-        .field-label { font-weight: 600; color: #6b7280; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
-        .field-value { color: #111827; font-size: 14px; }
-        .message-box { background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #10b981; margin-top: 10px; }
-        .footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #6b7280; }
-    </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
+<body style="font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, sans-serif; line-height: 1.6; color: #333;">
+    <div class="container" style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div class="header" style="background: #10b981; color: #ffffff; padding: 20px; border-radius: 8px 8px 0 0;">
             <h1 style="margin: 0; font-size: 20px;">New Contact Form Submission</h1>
         </div>
-        <div class="content">
-            <div class="field">
-                <div class="field-label">Name</div>
-                <div class="field-value">' . $name . '</div>
+        <div class="content" style="background: #f9fafb; padding: 20px; border: 1px solid #e5e7eb; border-top: none;">
+            <div class="field" style="margin-bottom: 15px;">
+                <div class="field-label" style="font-weight: 600; color: #6b7280; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px;">Name</div>
+                <div class="field-value" style="color: #111827; font-size: 14px;">' . $name . '</div>
             </div>
-            <div class="field">
-                <div class="field-label">Email</div>
-                <div class="field-value"><a href="mailto:' . $email . '">' . $email . '</a></div>
+            <div class="field" style="margin-bottom: 15px;">
+                <div class="field-label" style="font-weight: 600; color: #6b7280; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px;">Email</div>
+                <div class="field-value" style="color: #111827; font-size: 14px;"><a href="mailto:' . $email . '" style="color: #111827; text-decoration: none;">' . $email . '</a></div>
             </div>
-            <div class="field">
-                <div class="field-label">Subject</div>
-                <div class="field-value">' . $subject . '</div>
+            <div class="field" style="margin-bottom: 15px;">
+                <div class="field-label" style="font-weight: 600; color: #6b7280; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px;">Subject</div>
+                <div class="field-value" style="color: #111827; font-size: 14px;">' . $subject . '</div>
             </div>
-            <div class="field">
-                <div class="field-label">Message</div>
-                <div class="message-box">' . $message . '</div>
+            <div class="field" style="margin-bottom: 15px;">
+                <div class="field-label" style="font-weight: 600; color: #6b7280; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px;">Message</div>
+                <div class="message-box" style="background: #ffffff; padding: 15px; border-radius: 6px; border-left: 4px solid #10b981; margin-top: 10px;">' . $message . '</div>
             </div>
-            <div class="footer">
-                <div class="field">
-                    <div class="field-label">System Information</div>
-                    <div class="field-value">WordPress Version: ' . $wp_version . '<br>Plugin Version: ' . $plugin_version . '</div>
+            <div class="footer" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">
+                <div class="field" style="margin-bottom: 0;">
+                    <div class="field-label" style="font-weight: 600; color: #6b7280; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px;">System Information</div>
+                    <div class="field-value" style="color: #111827; font-size: 14px;">WordPress Version: ' . $wp_version . '<br>Plugin Version: ' . $plugin_version . '</div>
                 </div>
             </div>
         </div>

@@ -11,6 +11,11 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+use BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers;
+
+// Load Plan_Helpers class
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/class-plan-helpers.php';
+
 // Get stats and usage data
 $stats = isset($stats) && is_array($stats) ? $stats : [];
 $usage_stats = isset($usage_stats) && is_array($usage_stats) ? $usage_stats : [];
@@ -51,10 +56,12 @@ $images_delta_percent = $usage_stats['imagesDeltaPercent'] ?? $usage_stats['imag
 $images_delta_percent = max(0, floatval($images_delta_percent));
 $coverage_improvement = max(0, round($coverage_percent));
 
-$plan_slug = isset($usage_stats['plan']) ? strtolower($usage_stats['plan']) : 'free';
-$is_free = ($plan_slug === 'free');
-$is_growth = ($plan_slug === 'pro' || $plan_slug === 'growth');
-$is_agency = ($plan_slug === 'agency');
+// Get plan data from centralized helper
+$plan_data = Plan_Helpers::get_plan_data();
+$plan_slug = $plan_data['plan_slug'];
+$is_free = $plan_data['is_free'];
+$is_growth = $plan_data['is_growth'];
+$is_agency = $plan_data['is_agency'];
 
 $has_trend_data = false;
 foreach ($historical_coverage as $point) {
@@ -65,6 +72,18 @@ foreach ($historical_coverage as $point) {
 }
 
 $seo_lift_display = $seo_lift_percent > 0 ? '+' . $seo_lift_percent . '%' : $seo_lift_percent . '%';
+
+$analytics_payload = [
+    'coverage' => $historical_coverage,
+    'usage' => $usage_stats,
+];
+if (function_exists('wp_add_inline_script')) {
+    wp_add_inline_script(
+        'bbai-analytics',
+        'window.bbaiAnalyticsData = ' . wp_json_encode($analytics_payload) . ';',
+        'before'
+    );
+}
 ?>
 
 <div class="bbai-premium-dashboard">
@@ -285,19 +304,54 @@ $seo_lift_display = $seo_lift_percent > 0 ? '+' . $seo_lift_percent . '%' : $seo
 
             <!-- Recent Activity Card -->
             <div class="bbai-card">
-                <h2 class="bbai-card-title bbai-mb-4"><?php esc_html_e('Recent Activity', 'beepbeep-ai-alt-text-generator'); ?></h2>
-                <div class="bbai-activity-timeline" id="bbai-activity-timeline">
-                    <div class="bbai-activity-empty">
-                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" style="margin-bottom: 12px; opacity: 0.4;">
-                            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/>
-                            <path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                <div class="bbai-card-header--with-action bbai-mb-4">
+                    <h2 class="bbai-card-title"><?php esc_html_e('Recent Activity', 'beepbeep-ai-alt-text-generator'); ?></h2>
+                    <button type="button" class="bbai-icon-btn bbai-icon-btn-sm" id="bbai-refresh-activity" title="<?php esc_attr_e('Refresh activity', 'beepbeep-ai-alt-text-generator'); ?>">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M14 8A6 6 0 1 1 8 2" stroke-linecap="round"/>
+                            <path d="M8 2V5L11 3" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                        <p><?php esc_html_e('No recent activity recorded yet.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                    </button>
+                </div>
+                <div class="bbai-activity-timeline" id="bbai-activity-timeline">
+                    <!-- Loading State (shown initially) -->
+                    <div class="bbai-activity-loading" id="bbai-activity-loading">
+                        <div class="bbai-spinner"></div>
+                        <p><?php esc_html_e('Loading activity...', 'beepbeep-ai-alt-text-generator'); ?></p>
+                    </div>
+                    <!-- Empty State (shown when no activity) -->
+                    <div class="bbai-activity-empty" id="bbai-activity-empty" style="display: none;">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" style="margin-bottom: 16px;">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+                            <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+                        </svg>
+                        <p class="bbai-empty-title"><?php esc_html_e('No activity yet', 'beepbeep-ai-alt-text-generator'); ?></p>
+                        <p class="bbai-empty-description"><?php esc_html_e('Generate your first alt text to see your activity here.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                        <a href="<?php echo esc_url(admin_url('admin.php?page=bbai')); ?>" class="bbai-btn bbai-btn-primary bbai-btn-sm bbai-mt-4">
+                            <?php esc_html_e('Go to Dashboard', 'beepbeep-ai-alt-text-generator'); ?>
+                        </a>
                     </div>
                 </div>
-                <button type="button" class="bbai-link-btn bbai-link-sm bbai-mt-4" data-action="show-upgrade-modal" onclick="if(typeof window.openPricingModal === 'function'){window.openPricingModal('enterprise');} else if(typeof window.bbaiShowUpgradeModal === 'function'){window.bbaiShowUpgradeModal();} else if(typeof window.alttextaiShowUpgradeModal === 'function'){window.alttextaiShowUpgradeModal();}">
-                    <?php esc_html_e('Compare all plans', 'beepbeep-ai-alt-text-generator'); ?> ›
-                </button>
+                <?php if ($is_free) : ?>
+                    <button type="button" class="bbai-link-btn bbai-link-sm bbai-mt-4" data-action="show-upgrade-modal">
+                        <?php esc_html_e('Compare plans', 'beepbeep-ai-alt-text-generator'); ?> ›
+                    </button>
+                <?php elseif ($is_growth) : ?>
+                    <button type="button" class="bbai-link-btn bbai-link-sm bbai-mt-4" data-action="show-upgrade-modal">
+                        <?php esc_html_e('Upgrade to Agency', 'beepbeep-ai-alt-text-generator'); ?> ›
+                    </button>
+                <?php elseif ($is_agency) : ?>
+                    <?php
+                    $billing_portal_url = '';
+                    if (class_exists('BeepBeepAI\AltTextGenerator\Usage_Tracker')) {
+                        $billing_portal_url = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_billing_portal_url();
+                    }
+                    if (!empty($billing_portal_url)) : ?>
+                        <a href="<?php echo esc_url($billing_portal_url); ?>" class="bbai-link-btn bbai-link-sm bbai-mt-4" target="_blank" rel="noopener">
+                            <?php esc_html_e('Manage subscription', 'beepbeep-ai-alt-text-generator'); ?> ›
+                        </a>
+                    <?php endif; ?>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -311,270 +365,3 @@ $seo_lift_display = $seo_lift_percent > 0 ? '+' . $seo_lift_percent . '%' : $seo
     </div>
 </div>
 
-<script>
-(function() {
-    function drawChart() {
-        const canvas = document.getElementById('bbai-coverage-chart');
-        if (!canvas || !window.bbaiAnalyticsData) return;
-
-        const ctx = canvas.getContext('2d');
-        const data = window.bbaiAnalyticsData.coverage || [];
-        if (data.length === 0) return;
-
-        // Get container dimensions for responsive sizing
-        const container = canvas.parentElement;
-        const containerWidth = container ? container.clientWidth : 800;
-        const containerHeight = 300; // Fixed height for consistency
-        
-        // Set canvas size to match container (with device pixel ratio for crisp rendering)
-        const dpr = window.devicePixelRatio || 1;
-        canvas.width = containerWidth * dpr;
-        canvas.height = containerHeight * dpr;
-        canvas.style.width = containerWidth + 'px';
-        canvas.style.height = containerHeight + 'px';
-        ctx.scale(dpr, dpr);
-        
-        // Use container dimensions for calculations
-        const width = containerWidth;
-        const height = containerHeight;
-        const padding = 40;
-        const chartWidth = width - (padding * 2);
-        const chartHeight = height - (padding * 2);
-
-        ctx.clearRect(0, 0, width, height);
-
-        ctx.strokeStyle = '#e2e8f0';
-        ctx.lineWidth = 1;
-        const gridLines = 5;
-        for (let i = 0; i <= gridLines; i++) {
-            const y = padding + (chartHeight / gridLines) * i;
-            ctx.beginPath();
-            ctx.moveTo(padding, y);
-            ctx.lineTo(width - padding, y);
-            ctx.stroke();
-        }
-
-        ctx.strokeStyle = '#cbd5e1';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(padding, padding);
-        ctx.lineTo(padding, height - padding);
-        ctx.lineTo(width - padding, height - padding);
-        ctx.stroke();
-
-        const maxValue = Math.max(100, Math.max.apply(null, data.map((item) => item.coverage || 0)));
-        const points = data.map((item, index) => {
-            const x = padding + (chartWidth / Math.max(1, data.length - 1)) * index;
-            const y = height - padding - ((item.coverage || 0) / maxValue) * chartHeight;
-            return { x, y, label: item.date || '', value: item.coverage || 0 };
-        });
-
-        const gradient = ctx.createLinearGradient(0, padding, 0, height - padding);
-        gradient.addColorStop(0, 'rgba(96, 165, 250, 0.28)');
-        gradient.addColorStop(1, 'rgba(96, 165, 250, 0.04)');
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.moveTo(points[0].x, height - padding);
-        points.forEach((point) => ctx.lineTo(point.x, point.y));
-        ctx.lineTo(points[points.length - 1].x, height - padding);
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.strokeStyle = '#60a5fa';
-        ctx.lineWidth = 2.5;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.beginPath();
-        ctx.moveTo(points[0].x, points[0].y);
-        for (let i = 1; i < points.length; i++) {
-            ctx.lineTo(points[i].x, points[i].y);
-        }
-        ctx.stroke();
-
-        points.forEach((point) => {
-            if (point.value > 0) {
-                ctx.fillStyle = '#60a5fa';
-                ctx.beginPath();
-                ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = '#ffffff';
-                ctx.beginPath();
-                ctx.arc(point.x, point.y, 2, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        });
-
-        ctx.fillStyle = '#64748b';
-        ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        points.forEach((point) => {
-            ctx.fillText(point.label, point.x, height - padding + 16);
-        });
-
-        const tickValues = maxValue >= 80 ? [80, 70, 60, 50, 0] : [100, 75, 50, 25, 0];
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = '11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'middle';
-        tickValues.forEach((value) => {
-            const y = height - padding - (value / maxValue) * chartHeight;
-            ctx.fillText(value + '%', padding - 10, y);
-        });
-
-        ctx.fillStyle = '#0f172a';
-        ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
-        const lastPoint = points[points.length - 1];
-        if (lastPoint && lastPoint.value > 0) {
-            ctx.setLineDash([4, 4]);
-            ctx.strokeStyle = 'rgba(96, 165, 250, 0.4)';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(lastPoint.x, lastPoint.y);
-            ctx.lineTo(lastPoint.x, height - padding);
-            ctx.stroke();
-            ctx.setLineDash([]);
-            ctx.fillText(lastPoint.value + '%', lastPoint.x + 12, lastPoint.y);
-        }
-    }
-
-    // Draw chart on load
-    function initChart() {
-        if (typeof window.bbaiAnalytics !== 'undefined' && window.bbaiAnalytics.init) {
-            window.bbaiAnalytics.init();
-        } else {
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', drawChart);
-            } else {
-                drawChart();
-            }
-        }
-    }
-    
-    initChart();
-    
-    // Redraw chart on window resize (debounced)
-    let resizeTimeout;
-    window.addEventListener('resize', function() {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(function() {
-            drawChart();
-        }, 250);
-    });
-})();
-</script>
-
-<script>
-window.bbaiAnalyticsData = {
-    coverage: <?php echo wp_json_encode($historical_coverage); ?>,
-    usage: <?php echo wp_json_encode($usage_stats); ?>
-};
-
-(function() {
-    'use strict';
-
-    const periodButton = document.getElementById('bbai-analytics-period');
-    if (periodButton) {
-        periodButton.addEventListener('click', function(event) {
-            const target = event.target instanceof Element ? event.target.closest('button[data-period]') : null;
-            if (!target) {
-                return;
-            }
-
-            const period = target.getAttribute('data-period') || '30d';
-            periodButton.querySelectorAll('button[data-period]').forEach((button) => {
-                const isActive = button === target;
-                if (isActive) {
-                    button.classList.add('bbai-period-btn--active');
-                    button.setAttribute('aria-pressed', 'true');
-                } else {
-                    button.classList.remove('bbai-period-btn--active');
-                    button.setAttribute('aria-pressed', 'false');
-                }
-            });
-
-            if (typeof window.bbaiAnalytics !== 'undefined' && window.bbaiAnalytics.loadChartData) {
-                window.bbaiAnalytics.loadChartData(period);
-            }
-        });
-    }
-
-    function initAnalytics() {
-        // Ensure bbai_ajax is available for activity timeline (check multiple sources)
-        const bbaiAjax = (typeof bbai_ajax !== 'undefined' ? bbai_ajax : (typeof window !== 'undefined' && window.bbai_ajax ? window.bbai_ajax : null));
-        
-        if (!window.bbai_ajax && bbaiAjax) {
-            window.bbai_ajax = bbaiAjax;
-        }
-        
-        if (typeof window.bbaiAnalytics !== 'undefined' && window.bbaiAnalytics.init) {
-            window.bbaiAnalytics.init();
-        } else {
-            // Fallback: try to load activity directly if bbaiAnalytics not available
-            if (bbaiAjax && bbaiAjax.ajaxurl) {
-                const timeline = document.getElementById('bbai-activity-timeline');
-                if (timeline) {
-                    // Use jQuery if available
-                    if (typeof jQuery !== 'undefined' && jQuery.ajax) {
-                        jQuery.ajax({
-                            url: bbaiAjax.ajaxurl,
-                            type: 'POST',
-                            data: {
-                                action: 'bbai_get_activity',
-                                nonce: bbaiAjax.nonce || ''
-                            },
-                            success: (response) => {
-                                if (response && response.success && response.data && response.data.length > 0) {
-                                    // Use the render function from bbaiAnalytics if available
-                                    if (typeof window.bbaiAnalytics !== 'undefined' && window.bbaiAnalytics.renderActivityTimeline) {
-                                        window.bbaiAnalytics.renderActivityTimeline(response.data);
-                                    } else {
-                                        // Fallback rendering if bbaiAnalytics.renderActivityTimeline is not available
-                                        console.warn('[BeepBeep AI] bbaiAnalytics.renderActivityTimeline not available');
-                                    }
-                                }
-                            },
-                            error: (xhr, status, error) => {
-                                console.error('[BeepBeep AI] Failed to load activity:', error);
-                                // Keep empty state
-                            }
-                        });
-                    } else if (typeof fetch !== 'undefined') {
-                        // Fallback to fetch API if jQuery is not available
-                        const formData = new FormData();
-                        formData.append('action', 'bbai_get_activity');
-                        formData.append('nonce', bbaiAjax.nonce || '');
-                        
-                        fetch(bbaiAjax.ajaxurl, {
-                            method: 'POST',
-                            body: formData
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data && data.success && data.data && data.data.length > 0) {
-                                if (typeof window.bbaiAnalytics !== 'undefined' && window.bbaiAnalytics.renderActivityTimeline) {
-                                    window.bbaiAnalytics.renderActivityTimeline(data.data);
-                                }
-                            }
-                        })
-                        .catch(error => {
-                            console.error('[BeepBeep AI] Failed to load activity:', error);
-                        });
-                    }
-                }
-            } else {
-                console.warn('[BeepBeep AI] bbai_ajax not available for activity timeline');
-            }
-        }
-    }
-
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        initAnalytics();
-    } else {
-        document.addEventListener('DOMContentLoaded', initAnalytics);
-        window.addEventListener('load', initAnalytics);
-    }
-})();
-</script>

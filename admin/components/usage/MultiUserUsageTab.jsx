@@ -379,7 +379,7 @@ const MultiUserUsageTab = ({ apiUrl, nonce }) => {
                 <tbody>
                   {usageRows.length > 0 ? (
                     usageRows.map((row) => (
-                      <tr key={row.userId}>
+                    <tr key={row.userId}>
                         <td className="bbai-text-base">{row.userName}</td>
                         <td className="bbai-text-base">{row.creditsUsed.toLocaleString()}</td>
                         <td className="bbai-text-muted">{row.lastActivity || '—'}</td>

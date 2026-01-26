@@ -39,7 +39,7 @@ trait Core_Ajax_Auth {
             $usage = $this->api_client->get_usage();
             if (!is_wp_error($usage) && isset($usage['plan']) && $usage['plan'] === 'free') {
                 wp_send_json_error([
-                    'message' => __('This site is already linked to a free account. Ask an administrator to upgrade to Pro or Agency for higher limits.', 'beepbeep-ai-alt-text-generator'),
+                    'message' => __('This site is already linked to a free account. Ask an administrator to upgrade to Growth or Agency for higher limits.', 'beepbeep-ai-alt-text-generator'),
                     'code' => 'free_plan_exists'
                 ]);
             }
@@ -53,7 +53,7 @@ trait Core_Ajax_Auth {
 
             if ($error_code === 'free_plan_exists' || (is_string($error_message) && strpos(strtolower($error_message), 'free plan') !== false)) {
                 wp_send_json_error([
-                    'message' => __('A free plan has already been used for this site. Upgrade to Pro or Agency to increase your quota.', 'beepbeep-ai-alt-text-generator'),
+                    'message' => __('A free plan has already been used for this site. Upgrade to Growth or Agency to increase your quota.', 'beepbeep-ai-alt-text-generator'),
                     'code' => 'free_plan_exists'
                 ]);
             }
@@ -130,7 +130,9 @@ trait Core_Ajax_Auth {
      * Handle logout via form submission (admin-post handler)
      */
     public function handle_logout() {
-        if (!isset($_POST['bbai_logout_nonce']) || !wp_verify_nonce($_POST['bbai_logout_nonce'], 'bbai_logout_action')) {
+        $nonce_raw = isset($_POST['bbai_logout_nonce']) ? wp_unslash($_POST['bbai_logout_nonce']) : '';
+        $nonce = is_string($nonce_raw) ? sanitize_text_field($nonce_raw) : '';
+        if (!$nonce || !wp_verify_nonce($nonce, 'bbai_logout_action')) {
             wp_die(__('Security check failed', 'beepbeep-ai-alt-text-generator'));
         }
 

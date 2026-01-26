@@ -6,6 +6,9 @@
  * @since 5.0.0
  */
 
+// Ensure global variables exist (may not be defined if this file loads before main bundle)
+var alttextaiDebug = (typeof alttextaiDebug !== 'undefined') ? alttextaiDebug : ((typeof window !== 'undefined' && typeof window.bbai_ajax !== 'undefined' && window.bbai_ajax.debug) || false);
+
 /**
  * Show auth banner
  */
@@ -84,7 +87,7 @@ function handleLogout() {
         return;
     }
 
-    var ajaxUrl = window.bbai_ajax.ajax_url || window.bbai_ajax.ajaxurl || window.ajaxurl;
+    var ajaxUrl = window.bbai_ajax.ajax_url || window.bbai_ajax.ajaxurl || '';
     var nonce = window.bbai_ajax.nonce || '';
 
     if (!ajaxUrl) {

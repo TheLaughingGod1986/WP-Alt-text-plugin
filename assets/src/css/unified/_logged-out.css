@@ -1,0 +1,357 @@
+/**
+ * Logged-Out Dashboard Styles
+ * Clean onboarding screen for unauthenticated users
+ *
+ * @since 6.1.0
+ */
+
+/* Container */
+.bbai-logged-out {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 70vh;
+    padding: 48px 16px;
+    background: #f9fafb;
+}
+
+.bbai-logged-out__container {
+    width: 100%;
+    max-width: 480px;
+}
+
+/* Main Card - Clean, no border/shadow */
+.bbai-logged-out__card {
+    background: transparent;
+    padding: 0;
+    text-align: center;
+}
+
+/* Header Section */
+.bbai-logged-out__header {
+    margin-bottom: 32px;
+}
+
+.bbai-logged-out__title {
+    margin: 0 0 16px 0;
+    font-size: 32px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}
+
+.bbai-logged-out__subtitle {
+    margin: 0;
+    font-size: 15px;
+    color: #6b7280;
+    line-height: 1.6;
+    max-width: 360px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Actions Section */
+.bbai-logged-out__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 40px;
+}
+
+.bbai-logged-out__btn-primary {
+    width: 100%;
+    max-width: 320px;
+    padding: 14px 32px;
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    color: #ffffff !important;
+    border: none;
+    border-radius: 50px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.4;
+}
+
+.bbai-logged-out__btn-primary:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+    color: #ffffff !important;
+}
+
+.bbai-logged-out__btn-primary:focus,
+.bbai-logged-out__btn-primary:focus-visible {
+    outline: 2px solid #10B981;
+    outline-offset: 2px;
+    color: #ffffff !important;
+}
+
+.bbai-logged-out__link-secondary {
+    display: inline-block;
+    color: #3b82f6;
+    font-size: 14px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+.bbai-logged-out__link-secondary:hover {
+    color: #2563eb;
+}
+
+.bbai-logged-out__link-secondary:focus,
+.bbai-logged-out__link-secondary:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+/* How It Works Section */
+.bbai-logged-out__how-it-works {
+    margin-bottom: 32px;
+    padding-top: 32px;
+    border-top: none;
+}
+
+.bbai-logged-out__section-title {
+    margin: 0 0 28px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.bbai-logged-out__steps {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+.bbai-logged-out__step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    flex: 0 0 auto;
+    width: 120px;
+}
+
+.bbai-logged-out__step-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    background: #f1f5f9;
+    border-radius: 16px;
+    color: #334155;
+    transition: all 0.2s ease;
+}
+
+.bbai-logged-out__step-icon svg {
+    width: 28px;
+    height: 28px;
+}
+
+.bbai-logged-out__step-text {
+    margin: 0;
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.5;
+    text-align: center;
+}
+
+/* Supporting Line */
+.bbai-logged-out__supporting-line {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+}
+
+/* Reassurance Strip */
+.bbai-logged-out__reassurance {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 32px;
+    padding: 16px 24px;
+    background: #f1f5f9;
+    border-radius: 12px;
+    border: none;
+}
+
+.bbai-logged-out__reassurance-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #334155;
+    flex-shrink: 0;
+}
+
+.bbai-logged-out__reassurance-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.bbai-logged-out__reassurance-text {
+    margin: 0;
+    font-size: 14px;
+    color: #475569;
+}
+
+.bbai-logged-out__reassurance-text a {
+    color: #3b82f6;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.bbai-logged-out__reassurance-text a:hover {
+    color: #2563eb;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .bbai-logged-out {
+        padding: 16px 12px;
+    }
+
+    .bbai-logged-out__card {
+        padding: 24px 16px;
+    }
+
+    .bbai-logged-out__title {
+        font-size: 20px;
+    }
+
+    .bbai-logged-out__steps {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .bbai-logged-out__step {
+        flex-direction: row;
+        max-width: none;
+        text-align: left;
+    }
+
+    .bbai-logged-out__step-text {
+        text-align: left;
+    }
+
+    .bbai-logged-out__reassurance {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+/* Dark Mode */
+[data-theme="dark"] .bbai-logged-out,
+.bbai-dark-mode .bbai-logged-out {
+    background: #111827;
+}
+
+[data-theme="dark"] .bbai-logged-out__card,
+.bbai-dark-mode .bbai-logged-out__card {
+    background: #1f2937;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.24);
+}
+
+[data-theme="dark"] .bbai-logged-out__title,
+.bbai-dark-mode .bbai-logged-out__title {
+    color: #f1f5f9;
+}
+
+[data-theme="dark"] .bbai-logged-out__section-title,
+.bbai-dark-mode .bbai-logged-out__section-title {
+    color: #f1f5f9;
+}
+
+[data-theme="dark"] .bbai-logged-out__step-icon,
+.bbai-dark-mode .bbai-logged-out__step-icon {
+    background: #374151;
+}
+
+[data-theme="dark"] .bbai-logged-out__how-it-works,
+.bbai-dark-mode .bbai-logged-out__how-it-works {
+    border-top-color: #374151;
+}
+
+[data-theme="dark"] .bbai-logged-out__reassurance,
+.bbai-dark-mode .bbai-logged-out__reassurance {
+    background: #1f2937;
+    border-color: #374151;
+}
+
+/* WordPress Admin Overrides - High Specificity */
+.wrap .bbai-logged-out__btn-primary,
+.bbai-wrap .bbai-logged-out__btn-primary,
+.bbai-modern .bbai-logged-out__btn-primary,
+button.bbai-logged-out__btn-primary,
+.bbai-logged-out button.bbai-logged-out__btn-primary {
+    width: 100%;
+    max-width: 320px;
+    padding: 14px 32px !important;
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 50px !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25) !important;
+    text-decoration: none !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.4 !important;
+    height: auto !important;
+    min-height: auto !important;
+    text-shadow: none !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+.wrap .bbai-logged-out__btn-primary:hover,
+.bbai-wrap .bbai-logged-out__btn-primary:hover,
+.bbai-modern .bbai-logged-out__btn-primary:hover,
+button.bbai-logged-out__btn-primary:hover,
+.bbai-logged-out button.bbai-logged-out__btn-primary:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35) !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+
+.wrap .bbai-logged-out__btn-primary:focus,
+.wrap .bbai-logged-out__btn-primary:focus-visible,
+.bbai-wrap .bbai-logged-out__btn-primary:focus,
+.bbai-wrap .bbai-logged-out__btn-primary:focus-visible,
+button.bbai-logged-out__btn-primary:focus,
+button.bbai-logged-out__btn-primary:focus-visible {
+    outline: 2px solid #10B981 !important;
+    outline-offset: 2px !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25), 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Ensure font inheritance for logged-out container */
+.bbai-logged-out,
+.bbai-logged-out * {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+    box-sizing: border-box;
+}

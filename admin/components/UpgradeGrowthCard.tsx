@@ -90,12 +90,13 @@ const UpgradeGrowthCard: React.FC<UpgradeGrowthCardProps> = ({ onUpgrade, onComp
           type="button"
           onClick={onUpgrade}
           className="mt-5 w-full rounded-full bg-white px-6 py-3 text-[15px] font-semibold text-slate-900 shadow-lg transition duration-200 hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-sky-600"
+          aria-label="Upgrade to Growth plan"
         >
-          Start free trial
+          Upgrade to Growth
         </button>
 
         <p className="mt-2 text-[12px] text-slate-200">
-          14 days free. No credit card. Cancel anytime.
+          Includes 1,000 AI alt texts per month. Cancel anytime.
         </p>
 
         <button

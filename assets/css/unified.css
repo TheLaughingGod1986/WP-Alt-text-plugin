@@ -6,7 +6,7 @@
  *
  * @package BeepBeep_AI
  * @version 6.0.0
- * @generated 2026-01-19T22:30:55.999Z
+ * @generated 2026-01-26T09:46:46.548Z
  */
 
 /* 1. Design Tokens (CSS Variables) */
@@ -239,6 +239,12 @@
     --bbai-shadow-focus: 0 0 0 3px var(--bbai-primary-glow);
     --bbai-shadow-focus-error: 0 0 0 3px rgba(239, 68, 68, 0.15);
 
+    /* Focus Ring System - Consistent across all interactive elements */
+    --bbai-focus-ring-width: 2px;
+    --bbai-focus-ring-offset: 2px;
+    --bbai-focus-ring-color: var(--bbai-primary);
+    --bbai-focus-ring: var(--bbai-focus-ring-width) solid var(--bbai-focus-ring-color);
+
     /* Component shadows */
     --bbai-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
     --bbai-shadow-card-hover: 0 8px 16px -4px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
@@ -470,9 +476,35 @@
     border: 0;
 }
 
+/* Consistent Focus Ring utility */
 .bbai-focus-ring:focus-visible {
-    outline: 2px solid var(--bbai-primary);
-    outline-offset: 2px;
+    outline: var(--bbai-focus-ring);
+    outline-offset: var(--bbai-focus-ring-offset);
+}
+
+/* ========================================
+   UNIFIED INTERACTIVE STATES
+   Apply to all interactive elements for consistency
+   ======================================== */
+
+/* Standard hover lift effect */
+.bbai-hover-lift {
+    transition: transform var(--bbai-transition-fast) var(--bbai-ease-out),
+                box-shadow var(--bbai-transition-fast) var(--bbai-ease-out);
+}
+
+.bbai-hover-lift:hover {
+    transform: translateY(-2px);
+}
+
+/* Subtle hover for cards/rows */
+.bbai-hover-subtle {
+    transition: background-color var(--bbai-transition-fast) var(--bbai-ease-out),
+                border-color var(--bbai-transition-fast) var(--bbai-ease-out);
+}
+
+.bbai-hover-subtle:hover {
+    background-color: var(--bbai-bg-secondary);
 }
 
 
@@ -725,9 +757,9 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
 .bbai-card {
     background: var(--bbai-bg);
     border: 1px solid var(--bbai-border);
-    border-radius: var(--bbai-radius-xl);
-    padding: var(--bbai-space-6);
-    box-shadow: var(--bbai-shadow-card);
+    border-radius: 16px; /* Consistent card radius */
+    padding: 24px; /* Consistent card padding */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     transition: box-shadow var(--bbai-transition-base) var(--bbai-ease-out),
                 border-color var(--bbai-transition-base) var(--bbai-ease-out),
                 transform var(--bbai-transition-base) var(--bbai-ease-out);
@@ -778,10 +810,10 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
 .bbai-stat-card {
     background: var(--bbai-bg);
     border: 1px solid var(--bbai-border);
-    border-radius: var(--bbai-radius-xl);
-    padding: var(--bbai-space-6);
+    border-radius: 16px; /* Consistent card radius */
+    padding: 24px; /* Consistent card padding */
     text-align: center;
-    box-shadow: var(--bbai-shadow-card);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     transition: all var(--bbai-transition-base) var(--bbai-ease-out);
 }
 
@@ -1693,6 +1725,107 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
 }
 
 /* ============================================
+   AGENCY THANK YOU CARD
+   ============================================ */
+
+.bbai-agency-thank-you-card {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0fdfa 100%);
+    border: 1px solid var(--bbai-success-light);
+    border-radius: var(--bbai-radius-xl);
+    padding: var(--bbai-space-8);
+    text-align: center;
+}
+
+.bbai-thank-you-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--bbai-space-4);
+    margin-bottom: var(--bbai-space-6);
+}
+
+.bbai-thank-you-icon {
+    color: var(--bbai-success);
+}
+
+.bbai-thank-you-text {
+    text-align: center;
+}
+
+.bbai-thank-you-text .bbai-card-title {
+    color: var(--bbai-success-dark);
+    margin-bottom: var(--bbai-space-2);
+}
+
+.bbai-thank-you-text .bbai-card-subtitle {
+    color: var(--bbai-text-muted);
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.bbai-agency-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--bbai-space-4);
+}
+
+.bbai-agency-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+    padding: var(--bbai-space-3) var(--bbai-space-5);
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-lg);
+    color: var(--bbai-text);
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-medium);
+    text-decoration: none;
+    transition: all var(--bbai-transition-base);
+}
+
+.bbai-agency-link:hover {
+    background: var(--bbai-gray-50);
+    border-color: var(--bbai-primary);
+    color: var(--bbai-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+}
+
+.bbai-agency-link svg {
+    flex-shrink: 0;
+}
+
+/* Agency upgrade card variant */
+.bbai-upgrade-agency-card {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+}
+
+.bbai-upgrade-agency-card .bbai-card-title,
+.bbai-upgrade-agency-card .bbai-card-subtitle,
+.bbai-upgrade-agency-card .bbai-benefit-text {
+    color: #ffffff;
+}
+
+.bbai-upgrade-agency-card .bbai-benefit-icon {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.bbai-upgrade-agency-card .bbai-cta-microcopy {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.bbai-upgrade-agency-card .bbai-compare-link {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.bbai-upgrade-agency-card .bbai-compare-link:hover {
+    color: #ffffff;
+}
+
+/* ============================================
    RESPONSIVE
    ============================================ */
 
@@ -1759,7 +1892,7 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 10px 20px;
+    padding: 10px 20px !important; /* Consistent base padding */
     font-size: 14px;
     font-weight: 600;
     font-family: inherit;
@@ -1986,15 +2119,15 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
    ============================================ */
 
 .bbai-btn-sm {
-    padding: var(--bbai-btn-padding-sm-y) var(--bbai-btn-padding-sm-x);
-    font-size: var(--bbai-text-xs);
-    border-radius: var(--bbai-radius-sm);
+    padding: 8px 16px !important; /* Consistent small padding */
+    font-size: 13px !important;
+    border-radius: 6px !important;
 }
 
 .bbai-btn-lg {
-    padding: var(--bbai-btn-padding-lg-y) var(--bbai-btn-padding-lg-x);
-    font-size: var(--bbai-text-base);
-    border-radius: var(--bbai-radius);
+    padding: 14px 28px !important; /* Consistent large padding */
+    font-size: 15px !important;
+    border-radius: 12px !important;
 }
 
 .bbai-btn-xl {
@@ -2095,13 +2228,13 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
     display: inline-flex;
     align-items: center;
     gap: var(--bbai-space-1);
-    padding: 6px 12px;
-    font-size: var(--bbai-text-xs);
+    padding: 8px 16px !important; /* Consistent with small buttons */
+    font-size: 13px !important;
     font-weight: var(--bbai-font-medium);
     color: var(--bbai-primary);
     background: transparent;
     border: 1px solid var(--bbai-border);
-    border-radius: var(--bbai-radius-sm);
+    border-radius: 6px !important;
     cursor: pointer;
     transition: all var(--bbai-transition-fast) var(--bbai-ease-out);
 }
@@ -2128,11 +2261,10 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
 .bbai-optimization-cta {
     flex: 1;
     min-width: 200px;
-    height: 48px; /* Consistent height with other elements */
-    padding: 0 28px; /* Use horizontal padding only with fixed height */
-    border-radius: var(--bbai-radius-lg);
-    font-size: var(--bbai-text-sm);
-    font-weight: var(--bbai-font-bold);
+    padding: 14px 28px !important; /* Consistent large button padding */
+    border-radius: 12px !important;
+    font-size: 15px !important;
+    font-weight: 600;
     cursor: pointer;
     transition: all var(--bbai-transition-base) var(--bbai-ease-out);
     display: inline-flex;
@@ -2149,10 +2281,9 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
     color: white !important;
     border-color: transparent;
     box-shadow: 0 4px 16px rgba(16, 185, 129, 0.45), 0 0 0 1px rgba(16, 185, 129, 0.1);
-    font-weight: var(--bbai-font-bold);
-    font-size: var(--bbai-text-base);
-    height: 48px; /* Match base height */
-    padding: 0 32px; /* Use horizontal padding only with fixed height */
+    font-weight: 600;
+    font-size: 15px !important;
+    padding: 14px 28px !important; /* Consistent large button padding */
     position: relative;
     overflow: hidden;
 }
@@ -2207,12 +2338,13 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
 
 .bbai-optimization-cta--locked,
 .bbai-optimization-cta:disabled {
-    background: var(--bbai-gray-100) !important;
-    color: var(--bbai-gray-400) !important;
-    border-color: var(--bbai-gray-200) !important;
+    background: var(--bbai-gray-200) !important;
+    color: var(--bbai-gray-500) !important;
+    border-color: var(--bbai-gray-300) !important;
     cursor: not-allowed;
     transform: none !important;
     box-shadow: none !important;
+    opacity: 0.7;
 }
 
 /* ============================================
@@ -2304,37 +2436,12 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
    New code should use bbai-btn + bbai-btn-{variant} directly.
    ============================================ */
 
-/* Action buttons (dashboard) - map to primary/secondary */
+/* Action buttons (dashboard) - styles defined in _dashboard-redesign.css */
+/* NOTE: .bbai-action-btn-primary and .bbai-action-btn-secondary are styled
+   specifically within .bbai-usage-card-redesign context in _dashboard-redesign.css
+   to maintain purple/orange gradients. Do not add generic styles here. */
 .bbai-action-btn {
-    /* Base button styles applied via unified classes */
-    /* In templates, use: bbai-btn bbai-action-btn bbai-action-btn-primary */
-}
-
-.bbai-action-btn-primary {
-    background: var(--bbai-primary-gradient);
-    color: white !important;
-    border-color: var(--bbai-primary);
-    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4), 0 0 0 1px rgba(16, 185, 129, 0.1);
-}
-
-.bbai-action-btn-primary:hover:not(:disabled) {
-    background: var(--bbai-primary-gradient);
-    border-color: var(--bbai-primary-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5), 0 0 0 1px rgba(16, 185, 129, 0.2);
-}
-
-.bbai-action-btn-secondary {
-    background: var(--bbai-bg);
-    color: var(--bbai-text);
-    border-color: var(--bbai-border);
-}
-
-.bbai-action-btn-secondary:hover:not(:disabled) {
-    background: var(--bbai-bg-secondary);
-    border-color: var(--bbai-gray-300);
-    transform: translateY(-1px);
-    box-shadow: var(--bbai-shadow-sm);
+    /* Base button styles applied via .bbai-btn class */
 }
 
 /* Bulk buttons - map to primary/secondary */
@@ -2343,10 +2450,10 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
     background: var(--bbai-primary-gradient);
     color: white !important;
     border: none;
-    padding: var(--bbai-btn-padding-y) var(--bbai-btn-padding-x);
-    font-size: var(--bbai-text-base);
+    padding: 10px 20px !important;
+    font-size: 14px !important;
+    border-radius: 8px !important;
     font-weight: var(--bbai-button-font-weight);
-    border-radius: var(--bbai-button-border-radius);
     box-shadow: var(--bbai-shadow-button);
 }
 
@@ -2360,10 +2467,10 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
     background: var(--bbai-gradient-secondary);
     color: var(--bbai-text-inverse);
     border: none;
-    padding: var(--bbai-btn-padding-y) var(--bbai-btn-padding-x);
-    font-size: var(--bbai-text-base);
+    padding: 10px 20px !important;
+    font-size: 14px !important;
+    border-radius: 8px !important;
     font-weight: var(--bbai-button-font-weight);
-    border-radius: var(--bbai-button-border-radius);
     box-shadow: var(--bbai-shadow-button);
 }
 
@@ -2382,11 +2489,15 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
     color: white !important;
     border-color: var(--bbai-primary);
     box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4), 0 0 0 1px rgba(16, 185, 129, 0.1);
+    padding: 10px 20px !important;
+    font-size: 14px !important;
+    border-radius: 8px !important;
 }
 
 .bbai-settings-plan-upgrade-btn-large {
-    padding: var(--bbai-btn-padding-lg-y) var(--bbai-btn-padding-lg-x);
-    font-size: var(--bbai-text-base);
+    padding: 14px 28px !important;
+    font-size: 15px !important;
+    border-radius: 12px !important;
 }
 
 .bbai-settings-license-deactivate-btn {
@@ -2456,8 +2567,9 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
     background: var(--bbai-bg);
     color: var(--bbai-text);
     border-color: var(--bbai-border);
-    padding: var(--bbai-btn-padding-sm-y) var(--bbai-btn-padding-sm-x);
-    font-size: var(--bbai-text-xs);
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+    border-radius: 6px !important;
 }
 
 .bbai-pagination-btn:hover:not(:disabled) {
@@ -2489,7 +2601,7 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
 @media (max-width: 640px) {
     .bbai-optimization-cta {
         min-width: 100%;
-        padding: 14px 24px;
+        padding: 14px 28px !important; /* Consistent large padding */
     }
 
     .bbai-btn-group:not(.bbai-btn-group--segmented) {
@@ -2598,12 +2710,38 @@ a.bbai-btn.bbai-btn-outline-primary:hover {
     background: rgba(16, 185, 129, 0.08) !important;
 }
 
+/* ============================================
+   CONSISTENT BUTTON SIZING
+   Standard sizes across all variants
+   ============================================ */
+
+/* Base size: 10px 20px (applied to .bbai-btn above) */
+
+/* Small Button Size */
+.bbai-btn.bbai-btn-sm,
+.bbai-btn-sm,
+.wrap .bbai-btn.bbai-btn-sm {
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+    border-radius: 6px !important;
+}
+
 /* Large Button Size */
 .bbai-btn.bbai-btn-lg,
-.bbai-btn-lg {
+.bbai-btn-lg,
+.wrap .bbai-btn.bbai-btn-lg {
     padding: 14px 28px !important;
     font-size: 15px !important;
     border-radius: 12px !important;
+}
+
+/* XL Button Size */
+.bbai-btn.bbai-btn-xl,
+.bbai-btn-xl,
+.wrap .bbai-btn.bbai-btn-xl {
+    padding: 16px 32px !important;
+    font-size: 16px !important;
+    border-radius: 14px !important;
 }
 
 
@@ -2678,11 +2816,11 @@ a.bbai-btn.bbai-btn-outline-primary:hover {
     display: inline-flex;
     align-items: center;
     gap: var(--bbai-space-1);
-    padding: 5px 12px;
-    font-size: 10px;
-    font-weight: var(--bbai-font-bold);
-    letter-spacing: 0.06em;
-    border-radius: var(--bbai-radius-full);
+    padding: 6px 14px; /* Consistent plan badge padding */
+    font-size: 11px; /* Consistent badge font size */
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    border-radius: 9999px;
     text-transform: uppercase;
 }
 
@@ -2730,7 +2868,7 @@ a.bbai-btn.bbai-btn-outline-primary:hover {
 .bbai-badge--pro {
     background: var(--bbai-primary-soft);
     color: var(--bbai-primary);
-    padding: 4px 12px;
+    padding: 6px 14px; /* Consistent plan badge padding */
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
@@ -2741,7 +2879,7 @@ a.bbai-btn.bbai-btn-outline-primary:hover {
 .bbai-badge--agency {
     background: #ede9fe;
     color: #7c3aed;
-    padding: 4px 12px;
+    padding: 6px 14px; /* Consistent plan badge padding */
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
@@ -2752,19 +2890,19 @@ a.bbai-btn.bbai-btn-outline-primary:hover {
 .bbai-badge--getting-started {
     background: var(--bbai-gray-100);
     color: var(--bbai-gray-600);
-    padding: 4px 12px;
+    padding: 6px 14px; /* Consistent plan badge padding */
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border-radius: var(--bbai-radius-full);
+    border-radius: 9999px;
 }
 
 /* Legacy compatibility - map old classes to new system */
 .bbai-badge-free {
     background: #f3f4f6;
     color: #4b5563;
-    padding: 4px 12px;
+    padding: 6px 14px; /* Consistent plan badge padding */
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
@@ -2778,7 +2916,7 @@ a.bbai-btn.bbai-btn-outline-primary:hover {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(4px);
     color: #1e293b;
-    padding: 4px 12px;
+    padding: 6px 14px; /* Consistent plan badge padding */
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
@@ -2794,10 +2932,10 @@ a.bbai-btn.bbai-btn-outline-primary:hover {
     gap: var(--bbai-space-1);
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(8px);
-    padding: var(--bbai-space-1) var(--bbai-space-3);
-    border-radius: var(--bbai-radius-full);
-    font-size: var(--bbai-text-xs);
-    font-weight: var(--bbai-font-bold);
+    padding: 6px 14px; /* Consistent plan badge padding */
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: #1e293b;
@@ -2806,12 +2944,12 @@ a.bbai-btn.bbai-btn-outline-primary:hover {
 .bbai-ready-optimise__badge {
     background: var(--bbai-gray-100);
     color: var(--bbai-gray-600);
-    padding: 4px 12px;
+    padding: 6px 14px; /* Consistent plan badge padding */
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border-radius: var(--bbai-radius-full);
+    border-radius: 9999px;
     display: inline-flex;
     align-items: center;
 }
@@ -2823,11 +2961,11 @@ a.bbai-btn.bbai-btn-outline-primary:hover {
 .bbai-status-badge {
     display: inline-flex;
     align-items: center;
-    gap: var(--bbai-space-1);
-    padding: 4px 10px;
+    gap: 4px;
+    padding: 4px 10px; /* Consistent status badge padding */
     font-size: 11px;
-    font-weight: var(--bbai-font-semibold);
-    border-radius: var(--bbai-radius-full);
+    font-weight: 600;
+    border-radius: 9999px;
     white-space: nowrap;
 }
 
@@ -2867,10 +3005,10 @@ a.bbai-btn.bbai-btn-outline-primary:hover {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 4px 10px;
+    padding: 4px 10px; /* Consistent status badge padding */
     font-size: 11px;
-    font-weight: var(--bbai-font-bold);
-    border-radius: var(--bbai-radius-full);
+    font-weight: 700;
+    border-radius: 9999px;
     white-space: nowrap;
     cursor: help;
     transition: transform var(--bbai-transition-fast) var(--bbai-ease-out);
@@ -3050,14 +3188,14 @@ a.bbai-btn.bbai-btn-outline-primary:hover {
 .bbai-textarea {
     display: block;
     width: 100%;
-    padding: var(--bbai-input-padding-y) var(--bbai-input-padding-x);
-    font-size: var(--bbai-text-sm);
+    padding: 12px 14px; /* Consistent input padding */
+    font-size: 14px;
     font-family: inherit;
     line-height: 1.5;
     color: var(--bbai-text);
     background: var(--bbai-bg);
-    border: 1px solid var(--bbai-gray-300);
-    border-radius: var(--bbai-input-radius);
+    border: 1px solid var(--bbai-border);
+    border-radius: 8px; /* Consistent input radius */
     transition: border-color var(--bbai-transition-fast) var(--bbai-ease-out),
                 box-shadow var(--bbai-transition-fast) var(--bbai-ease-out);
     appearance: none;
@@ -3277,9 +3415,9 @@ a.bbai-btn.bbai-btn-outline-primary:hover {
 .bbai-library-table-wrapper {
     background: var(--bbai-bg);
     border: 1px solid var(--bbai-border);
-    border-radius: var(--bbai-radius-xl);
+    border-radius: 16px; /* Consistent card radius */
     overflow: hidden;
-    box-shadow: var(--bbai-shadow-card);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 /* ============================================
@@ -3290,15 +3428,15 @@ a.bbai-btn.bbai-btn-outline-primary:hover {
 .bbai-library-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: var(--bbai-text-sm);
+    font-size: 14px; /* Consistent body font size */
 }
 
 .bbai-table th,
 .bbai-library-table th {
     background: var(--bbai-bg-secondary);
-    padding: var(--bbai-space-3) var(--bbai-space-4);
+    padding: 12px 16px; /* Consistent table header padding */
     text-align: left;
-    font-weight: var(--bbai-font-semibold);
+    font-weight: 600;
     color: var(--bbai-text-muted);
     text-transform: uppercase;
     font-size: 11px;
@@ -3322,12 +3460,14 @@ a.bbai-btn.bbai-btn-outline-primary:hover {
 
 .bbai-table tbody tr,
 .bbai-library-table tbody tr {
-    transition: background-color var(--bbai-transition-fast) var(--bbai-ease-out);
+    transition: background-color var(--bbai-transition-fast) var(--bbai-ease-out),
+                box-shadow var(--bbai-transition-fast) var(--bbai-ease-out);
 }
 
 .bbai-table tbody tr:hover,
 .bbai-library-table tbody tr:hover {
     background: var(--bbai-bg-secondary);
+    box-shadow: inset 3px 0 0 var(--bbai-primary);
 }
 
 /* Sortable headers */
@@ -3578,8 +3718,8 @@ a.bbai-btn.bbai-btn-outline-primary:hover {
 .bbai-library-stat-card {
     background: var(--bbai-bg);
     border: 1px solid var(--bbai-border);
-    border-radius: var(--bbai-radius-xl);
-    padding: var(--bbai-space-5);
+    border-radius: 16px; /* Consistent card radius */
+    padding: 20px; /* Consistent card padding (slightly less for stats) */
     text-align: center;
     transition: all var(--bbai-transition-base) var(--bbai-ease-out);
 }
@@ -3590,16 +3730,16 @@ a.bbai-btn.bbai-btn-outline-primary:hover {
 }
 
 .bbai-library-stat-value {
-    font-size: var(--bbai-text-3xl);
-    font-weight: var(--bbai-font-bold);
+    font-size: 30px; /* Consistent stat value size */
+    font-weight: 700;
     color: var(--bbai-text);
     line-height: 1;
-    margin-bottom: var(--bbai-space-2);
+    margin-bottom: 8px;
 }
 
 .bbai-library-stat-label {
-    font-size: var(--bbai-text-xs);
-    font-weight: var(--bbai-font-semibold);
+    font-size: 12px;
+    font-weight: 600;
     color: var(--bbai-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -3730,6 +3870,11 @@ a.bbai-btn.bbai-btn-outline-primary:hover {
 .bbai-pagination-btn--disabled {
     opacity: 0.4;
     cursor: not-allowed;
+}
+
+.bbai-pagination-btn:focus-visible {
+    outline: var(--bbai-focus-ring-width, 2px) solid var(--bbai-primary);
+    outline-offset: var(--bbai-focus-ring-offset, 2px);
 }
 
 .bbai-pagination-ellipsis {
@@ -5525,7 +5670,7 @@ h1.bbai-heading {
 /* License Card Styles */
 .bbai-settings-license-active {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
     gap: var(--bbai-space-4);
     padding: var(--bbai-space-4);
@@ -5537,8 +5682,9 @@ h1.bbai-heading {
 
 .bbai-settings-license-status {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: var(--bbai-space-3);
+    flex: 1;
 }
 
 .bbai-settings-license-title {
@@ -5572,9 +5718,11 @@ h1.bbai-heading {
     border: 1px solid var(--bbai-border);
 }
 
-.bbai-settings-license-deactivate-btn {
+.bbai-settings-license-active .bbai-btn-danger {
     flex-shrink: 0;
-    padding: 10px 20px !important;
+    align-self: center;
+    white-space: nowrap;
+    margin-left: auto;
 }
 
 /* License Form */
@@ -5832,6 +5980,9 @@ h1.bbai-heading {
     margin-top: var(--bbai-space-6);
     padding-top: var(--bbai-space-4);
     border-top: 1px solid var(--bbai-border);
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
 }
 
 .bbai-settings-save-btn {
@@ -8006,12 +8157,15 @@ h1.bbai-heading {
 }
 
 .bbai-usage-card-redesign .bbai-action-btn-primary {
-    background: linear-gradient(to right, #6366F1, #8B5CF6);
-    color: #ffffff;
+    background: linear-gradient(to right, #6366F1, #8B5CF6) !important;
+    color: #ffffff !important;
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    border: none !important;
 }
 
 .bbai-usage-card-redesign .bbai-action-btn-primary:hover:not(:disabled) {
+    background: linear-gradient(to right, #4F46E5, #7C3AED) !important;
+    color: #ffffff !important;
     box-shadow: 0 6px 16px rgba(99, 102, 241, 0.5);
     transform: translateY(-2px);
 }
@@ -8021,18 +8175,25 @@ h1.bbai-heading {
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4), 0 0 0 4px rgba(99, 102, 241, 0.3);
 }
 
-.bbai-usage-card-redesign .bbai-action-btn-primary:disabled {
-    opacity: 0.5;
+.bbai-usage-card-redesign .bbai-action-btn-primary:disabled,
+.bbai-usage-card-redesign .bbai-action-btn-primary.disabled {
+    opacity: 0.6;
     cursor: not-allowed;
+    background: var(--bbai-gray-300, #d1d5db) !important;
+    color: var(--bbai-gray-500, #6b7280) !important;
+    box-shadow: none !important;
 }
 
 .bbai-usage-card-redesign .bbai-action-btn-secondary {
-    background: linear-gradient(to right, #F59E0B, #F97316);
-    color: #ffffff;
+    background: linear-gradient(to right, #F59E0B, #F97316) !important;
+    color: #ffffff !important;
     box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+    border: none !important;
 }
 
 .bbai-usage-card-redesign .bbai-action-btn-secondary:hover:not(:disabled) {
+    background: linear-gradient(to right, #D97706, #EA580C) !important;
+    color: #ffffff !important;
     box-shadow: 0 6px 16px rgba(245, 158, 11, 0.5);
     transform: translateY(-2px);
 }
@@ -8042,9 +8203,13 @@ h1.bbai-heading {
     box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4), 0 0 0 4px rgba(245, 158, 11, 0.3);
 }
 
-.bbai-usage-card-redesign .bbai-action-btn-secondary:disabled {
-    opacity: 0.5;
+.bbai-usage-card-redesign .bbai-action-btn-secondary:disabled,
+.bbai-usage-card-redesign .bbai-action-btn-secondary.disabled {
+    opacity: 0.6;
     cursor: not-allowed;
+    background: var(--bbai-gray-300, #d1d5db) !important;
+    color: var(--bbai-gray-500, #6b7280) !important;
+    box-shadow: none !important;
 }
 
 /* Stats Tiles */
@@ -9991,6 +10156,58 @@ h4.bbai-heading {
     cursor: not-allowed;
 }
 
+/* Login Button - Header specific */
+.bbai-header-login-btn,
+.bbai-header .bbai-header-login-btn,
+.wrap .bbai-header-login-btn,
+button.bbai-header-login-btn {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px !important;
+    background: #10B981 !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 6px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none !important;
+    white-space: nowrap;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    height: auto !important;
+    min-height: auto !important;
+    line-height: 1.4 !important;
+}
+
+.bbai-header-login-btn:hover,
+.bbai-header .bbai-header-login-btn:hover,
+.wrap .bbai-header-login-btn:hover,
+button.bbai-header-login-btn:hover {
+    background: #059669 !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+
+.bbai-header-login-btn:focus,
+.bbai-header-login-btn:focus-visible,
+.bbai-header .bbai-header-login-btn:focus,
+.bbai-header .bbai-header-login-btn:focus-visible {
+    outline: 2px solid rgba(16, 185, 129, 0.5) !important;
+    outline-offset: 2px !important;
+    background: #10B981 !important;
+    color: #ffffff !important;
+}
+
+.bbai-header-login-btn svg,
+.bbai-header .bbai-header-login-btn svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
 /* ============================================
    RESPONSIVE
    ============================================ */
@@ -11450,11 +11667,18 @@ button.bbai-btn.bbai-topup-section__btn:hover:not(:disabled) {
  * Reusable tooltips with data-bbai-tooltip attribute
  */
 
-/* Tooltip Container */
-[data-bbai-tooltip] {
+/* Tooltip Container - only apply help cursor to non-interactive elements */
+[data-bbai-tooltip]:not(button):not(a):not(.bbai-btn):not([role="button"]) {
     position: relative;
     cursor: help;
-    display: inline-block;
+}
+
+/* Buttons with tooltips should keep their natural cursor and display */
+button[data-bbai-tooltip],
+a[data-bbai-tooltip],
+.bbai-btn[data-bbai-tooltip],
+[role="button"][data-bbai-tooltip] {
+    /* Don't override button styling */
 }
 
 /* Tooltip Base */
@@ -12056,6 +12280,367 @@ button.bbai-btn.bbai-topup-section__btn:hover:not(:disabled) {
 }
 
 
+/* 19b. Logged-Out Dashboard */
+/* Imported from: _logged-out.css */
+/**
+ * Logged-Out Dashboard Styles
+ * Clean onboarding screen for unauthenticated users
+ *
+ * @since 6.1.0
+ */
+
+/* Container */
+.bbai-logged-out {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 70vh;
+    padding: 48px 16px;
+    background: #f9fafb;
+}
+
+.bbai-logged-out__container {
+    width: 100%;
+    max-width: 480px;
+}
+
+/* Main Card - Clean, no border/shadow */
+.bbai-logged-out__card {
+    background: transparent;
+    padding: 0;
+    text-align: center;
+}
+
+/* Header Section */
+.bbai-logged-out__header {
+    margin-bottom: 32px;
+}
+
+.bbai-logged-out__title {
+    margin: 0 0 16px 0;
+    font-size: 32px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}
+
+.bbai-logged-out__subtitle {
+    margin: 0;
+    font-size: 15px;
+    color: #6b7280;
+    line-height: 1.6;
+    max-width: 360px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Actions Section */
+.bbai-logged-out__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 40px;
+}
+
+.bbai-logged-out__btn-primary {
+    width: 100%;
+    max-width: 320px;
+    padding: 14px 32px;
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    color: #ffffff !important;
+    border: none;
+    border-radius: 50px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.4;
+}
+
+.bbai-logged-out__btn-primary:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+    color: #ffffff !important;
+}
+
+.bbai-logged-out__btn-primary:focus,
+.bbai-logged-out__btn-primary:focus-visible {
+    outline: 2px solid #10B981;
+    outline-offset: 2px;
+    color: #ffffff !important;
+}
+
+.bbai-logged-out__link-secondary {
+    display: inline-block;
+    color: #3b82f6;
+    font-size: 14px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+.bbai-logged-out__link-secondary:hover {
+    color: #2563eb;
+}
+
+.bbai-logged-out__link-secondary:focus,
+.bbai-logged-out__link-secondary:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+/* How It Works Section */
+.bbai-logged-out__how-it-works {
+    margin-bottom: 32px;
+    padding-top: 32px;
+    border-top: none;
+}
+
+.bbai-logged-out__section-title {
+    margin: 0 0 28px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.bbai-logged-out__steps {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+.bbai-logged-out__step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    flex: 0 0 auto;
+    width: 120px;
+}
+
+.bbai-logged-out__step-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    background: #f1f5f9;
+    border-radius: 16px;
+    color: #334155;
+    transition: all 0.2s ease;
+}
+
+.bbai-logged-out__step-icon svg {
+    width: 28px;
+    height: 28px;
+}
+
+.bbai-logged-out__step-text {
+    margin: 0;
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.5;
+    text-align: center;
+}
+
+/* Supporting Line */
+.bbai-logged-out__supporting-line {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+}
+
+/* Reassurance Strip */
+.bbai-logged-out__reassurance {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 32px;
+    padding: 16px 24px;
+    background: #f1f5f9;
+    border-radius: 12px;
+    border: none;
+}
+
+.bbai-logged-out__reassurance-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #334155;
+    flex-shrink: 0;
+}
+
+.bbai-logged-out__reassurance-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.bbai-logged-out__reassurance-text {
+    margin: 0;
+    font-size: 14px;
+    color: #475569;
+}
+
+.bbai-logged-out__reassurance-text a {
+    color: #3b82f6;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.bbai-logged-out__reassurance-text a:hover {
+    color: #2563eb;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .bbai-logged-out {
+        padding: 16px 12px;
+    }
+
+    .bbai-logged-out__card {
+        padding: 24px 16px;
+    }
+
+    .bbai-logged-out__title {
+        font-size: 20px;
+    }
+
+    .bbai-logged-out__steps {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .bbai-logged-out__step {
+        flex-direction: row;
+        max-width: none;
+        text-align: left;
+    }
+
+    .bbai-logged-out__step-text {
+        text-align: left;
+    }
+
+    .bbai-logged-out__reassurance {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+/* Dark Mode */
+[data-theme="dark"] .bbai-logged-out,
+.bbai-dark-mode .bbai-logged-out {
+    background: #111827;
+}
+
+[data-theme="dark"] .bbai-logged-out__card,
+.bbai-dark-mode .bbai-logged-out__card {
+    background: #1f2937;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.24);
+}
+
+[data-theme="dark"] .bbai-logged-out__title,
+.bbai-dark-mode .bbai-logged-out__title {
+    color: #f1f5f9;
+}
+
+[data-theme="dark"] .bbai-logged-out__section-title,
+.bbai-dark-mode .bbai-logged-out__section-title {
+    color: #f1f5f9;
+}
+
+[data-theme="dark"] .bbai-logged-out__step-icon,
+.bbai-dark-mode .bbai-logged-out__step-icon {
+    background: #374151;
+}
+
+[data-theme="dark"] .bbai-logged-out__how-it-works,
+.bbai-dark-mode .bbai-logged-out__how-it-works {
+    border-top-color: #374151;
+}
+
+[data-theme="dark"] .bbai-logged-out__reassurance,
+.bbai-dark-mode .bbai-logged-out__reassurance {
+    background: #1f2937;
+    border-color: #374151;
+}
+
+/* WordPress Admin Overrides - High Specificity */
+.wrap .bbai-logged-out__btn-primary,
+.bbai-wrap .bbai-logged-out__btn-primary,
+.bbai-modern .bbai-logged-out__btn-primary,
+button.bbai-logged-out__btn-primary,
+.bbai-logged-out button.bbai-logged-out__btn-primary {
+    width: 100%;
+    max-width: 320px;
+    padding: 14px 32px !important;
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 50px !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25) !important;
+    text-decoration: none !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.4 !important;
+    height: auto !important;
+    min-height: auto !important;
+    text-shadow: none !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+.wrap .bbai-logged-out__btn-primary:hover,
+.bbai-wrap .bbai-logged-out__btn-primary:hover,
+.bbai-modern .bbai-logged-out__btn-primary:hover,
+button.bbai-logged-out__btn-primary:hover,
+.bbai-logged-out button.bbai-logged-out__btn-primary:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35) !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+
+.wrap .bbai-logged-out__btn-primary:focus,
+.wrap .bbai-logged-out__btn-primary:focus-visible,
+.bbai-wrap .bbai-logged-out__btn-primary:focus,
+.bbai-wrap .bbai-logged-out__btn-primary:focus-visible,
+button.bbai-logged-out__btn-primary:focus,
+button.bbai-logged-out__btn-primary:focus-visible {
+    outline: 2px solid #10B981 !important;
+    outline-offset: 2px !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25), 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Ensure font inheritance for logged-out container */
+.bbai-logged-out,
+.bbai-logged-out * {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+    box-sizing: border-box;
+}
+
+
 /* 20. Celebrations */
 /* Imported from: _celebrations.css */
 /**
@@ -12372,6 +12957,134 @@ button.bbai-btn.bbai-topup-section__btn:hover:not(:disabled) {
     opacity: 0.5;
 }
 
+/* Activity Item - Flex layout for icon + content */
+.bbai-activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--bbai-space-3);
+    position: relative;
+    padding-bottom: var(--bbai-space-4);
+    padding-left: 0;
+}
+
+.bbai-activity-item.is-hidden {
+    display: none;
+}
+
+.bbai-activity-item::before {
+    display: none; /* Remove the dot since we have icons now */
+}
+
+.bbai-activity-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: 50%;
+    background: var(--bbai-gray-100);
+    color: var(--bbai-text-muted);
+}
+
+.bbai-activity-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.bbai-activity-icon--success {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.bbai-activity-icon--warning {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.bbai-activity-icon--default {
+    background: #e0f2fe;
+    color: #0284c7;
+}
+
+.bbai-activity-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.bbai-activity-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--bbai-space-2);
+    flex-wrap: wrap;
+    margin-bottom: var(--bbai-space-1);
+}
+
+.bbai-activity-title {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text);
+    margin: 0;
+    font-weight: var(--bbai-font-medium);
+}
+
+.bbai-activity-time {
+    font-size: var(--bbai-text-xs);
+    color: var(--bbai-text-muted);
+    white-space: nowrap;
+}
+
+.bbai-activity-description {
+    font-size: var(--bbai-text-xs);
+    color: var(--bbai-text-muted);
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* Reset timeline line for new layout */
+.bbai-activity-timeline {
+    padding-left: 0;
+}
+
+.bbai-activity-timeline::before {
+    display: none;
+}
+
+/* Activity Toggle Button */
+.bbai-activity-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--bbai-space-1);
+    width: 100%;
+    padding: var(--bbai-space-3) var(--bbai-space-4);
+    margin-top: var(--bbai-space-2);
+    background: var(--bbai-gray-50);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-md);
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-medium);
+    color: var(--bbai-text-muted);
+    cursor: pointer;
+    transition: all var(--bbai-transition-base);
+}
+
+.bbai-activity-toggle:hover {
+    background: var(--bbai-gray-100);
+    color: var(--bbai-text);
+    border-color: var(--bbai-gray-300);
+}
+
+.bbai-toggle-icon {
+    font-size: 10px;
+    line-height: 1;
+    transition: transform var(--bbai-transition-base);
+}
+
+.bbai-activity-toggle.is-expanded .bbai-toggle-icon {
+    transform: rotate(180deg);
+}
+
 /* Usage Breakdown */
 .bbai-usage-breakdown-grid {
     display: grid;
@@ -12596,6 +13309,112 @@ button.bbai-btn.bbai-topup-section__btn:hover:not(:disabled) {
     }
 }
 
+/* Loading State */
+.bbai-activity-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--bbai-space-12);
+    gap: var(--bbai-space-3);
+    color: var(--bbai-text-muted);
+}
+
+.bbai-activity-loading p {
+    margin: 0;
+    font-size: var(--bbai-text-sm);
+}
+
+/* Spinner */
+.bbai-spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--bbai-gray-200);
+    border-top-color: var(--bbai-primary);
+    border-radius: 50%;
+    animation: bbai-spin 0.8s linear infinite;
+}
+
+@keyframes bbai-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Icon Button */
+.bbai-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--bbai-space-2);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--bbai-radius-md);
+    color: var(--bbai-text-muted);
+    cursor: pointer;
+    transition: all var(--bbai-transition-base);
+}
+
+.bbai-icon-btn:hover {
+    background: var(--bbai-gray-100);
+    color: var(--bbai-text);
+    border-color: var(--bbai-border);
+}
+
+.bbai-icon-btn:focus-visible {
+    outline: 2px solid var(--bbai-primary);
+    outline-offset: 2px;
+}
+
+.bbai-icon-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.bbai-icon-btn-sm {
+    padding: var(--bbai-space-1);
+}
+
+.bbai-icon-btn-sm svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Spinning animation for refresh button */
+.bbai-icon-btn.bbai-spinning svg {
+    animation: bbai-spin 0.8s linear infinite;
+}
+
+/* Improved Empty State */
+.bbai-activity-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--bbai-space-12);
+    color: var(--bbai-text-muted);
+}
+
+.bbai-activity-empty svg {
+    opacity: 0.4;
+    color: var(--bbai-text-muted);
+}
+
+.bbai-empty-title {
+    font-size: var(--bbai-text-base);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0 0 var(--bbai-space-2) 0;
+}
+
+.bbai-empty-description {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+    margin: 0;
+    max-width: 280px;
+}
+
 /* Dark Mode */
 [data-theme="dark"] .bbai-usage-breakdown-item,
 .bbai-dark-mode .bbai-usage-breakdown-item {
@@ -12618,6 +13437,23 @@ button.bbai-btn.bbai-topup-section__btn:hover:not(:disabled) {
 .bbai-dark-mode .bbai-comparison-improvement {
     background: rgba(16, 185, 129, 0.1);
     color: var(--bbai-primary-light);
+}
+
+[data-theme="dark"] .bbai-icon-btn:hover,
+.bbai-dark-mode .bbai-icon-btn:hover {
+    background: var(--bbai-gray-700);
+    border-color: var(--bbai-gray-600);
+}
+
+[data-theme="dark"] .bbai-spinner,
+.bbai-dark-mode .bbai-spinner {
+    border-color: var(--bbai-gray-600);
+    border-top-color: var(--bbai-primary-light);
+}
+
+[data-theme="dark"] .bbai-empty-title,
+.bbai-dark-mode .bbai-empty-title {
+    color: var(--bbai-gray-100);
 }
 
 

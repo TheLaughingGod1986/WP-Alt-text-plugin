@@ -13,7 +13,6 @@ import React, { useState } from 'react';
  */
 const PricingCard = ({ plan, currentPlan = null, onSelect, billingPeriod = 'monthly', annualSavings = null }) => {
   const [ripple, setRipple] = useState(null);
-  const [isPressed, setIsPressed] = useState(false);
 
   // Check if user is already on this plan
   const isCurrentPlan = currentPlan && currentPlan.toLowerCase() === plan.id.toLowerCase();
@@ -46,11 +45,8 @@ const PricingCard = ({ plan, currentPlan = null, onSelect, billingPeriod = 'mont
     const y = e.clientY - rect.top - size / 2;
     
     setRipple({ x, y, size });
-    setIsPressed(true);
-    
     setTimeout(() => {
       setRipple(null);
-      setIsPressed(false);
     }, 600);
   };
 
@@ -64,6 +60,14 @@ const PricingCard = ({ plan, currentPlan = null, onSelect, billingPeriod = 'mont
     }
     return billingPeriod === 'annual' ? 'Get Started' : 'Upgrade';
   };
+
+  const planButtonClass = plan.id === 'free'
+    ? 'bbai-pricing-card__btn--free'
+    : plan.id === 'growth'
+    ? 'bbai-pricing-card__btn--growth'
+    : plan.id === 'agency'
+    ? 'bbai-pricing-card__btn--agency'
+    : 'bbai-btn-primary';
 
   return (
     <div
@@ -151,21 +155,8 @@ const PricingCard = ({ plan, currentPlan = null, onSelect, billingPeriod = 'mont
       {/* CTA Button */}
       <button
         onClick={handleSelectPlan}
-        onMouseDown={() => !isDisabled && setIsPressed(true)}
-        onMouseUp={() => setIsPressed(false)}
-        onMouseLeave={() => setIsPressed(false)}
         disabled={isDisabled}
-        className={`relative w-full py-4 px-6 rounded-xl font-semibold text-base font-inter transition-all duration-200 overflow-hidden focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-          isDisabled
-            ? 'bg-gradient-to-r from-slate-400 to-slate-500 text-white cursor-not-allowed opacity-70'
-            : plan.popular
-            ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 shadow-lg hover:shadow-xl'
-            : plan.id === 'free'
-            ? 'bg-gradient-to-r from-slate-500 to-slate-600 text-white hover:from-slate-600 hover:to-slate-700 border-2 border-slate-500 shadow-md hover:shadow-lg'
-            : 'bg-gradient-to-r from-violet-600 to-violet-700 text-white hover:from-violet-700 hover:to-violet-800 shadow-md hover:shadow-lg'
-        } ${
-          isPressed && !isDisabled ? 'scale-95' : ''
-        }`}
+        className={`bbai-btn bbai-btn-lg bbai-btn-block bbai-pricing-card__btn ${planButtonClass}`}
         tabIndex={isDisabled ? -1 : 0}
         aria-label={isDisabled ? `Current plan: ${plan.name}` : `Select ${plan.name} plan`}
         aria-disabled={isDisabled}

@@ -31,8 +31,16 @@
         $button.prop('disabled', true).text('Activating...');
         $input.prop('disabled', true);
 
+        var ajaxUrl = (window.bbai_ajax && (window.bbai_ajax.ajaxurl || window.bbai_ajax.ajax_url)) || '';
+        if (!ajaxUrl) {
+            showLicenseStatus('error', 'AJAX endpoint unavailable.');
+            $button.prop('disabled', false).text('Activate License');
+            $input.prop('disabled', false);
+            return;
+        }
+
         $.ajax({
-            url: ajaxurl,
+            url: ajaxUrl,
             type: 'POST',
             data: {
                 action: 'beepbeepai_activate_license',
@@ -75,8 +83,15 @@
 
         $button.prop('disabled', true).text('Deactivating...');
 
+        var ajaxUrl = (window.bbai_ajax && (window.bbai_ajax.ajaxurl || window.bbai_ajax.ajax_url)) || '';
+        if (!ajaxUrl) {
+            window.bbaiModal.error('AJAX endpoint unavailable.');
+            $button.prop('disabled', false).text('Deactivate License');
+            return;
+        }
+
         $.ajax({
-            url: ajaxurl,
+            url: ajaxUrl,
             type: 'POST',
             data: {
                 action: 'beepbeepai_deactivate_license',

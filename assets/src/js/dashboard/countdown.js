@@ -6,6 +6,9 @@
  * @since 5.0.0
  */
 
+// Ensure global variables exist (may not be defined if this file loads before main bundle)
+var alttextaiDebug = (typeof alttextaiDebug !== 'undefined') ? alttextaiDebug : ((typeof window !== 'undefined' && typeof window.bbai_ajax !== 'undefined' && window.bbai_ajax.debug) || false);
+
 /**
  * Initialize and update countdown timer for limit reset
  */

@@ -69,12 +69,15 @@
         $modal.addClass('active');
         $('body').css('overflow', 'hidden');
 
-        var ajaxUrl = (window.bbai_ajax && window.bbai_ajax.ajaxurl) ||
-                     (window.BBAI && window.BBAI.restRoot ? window.BBAI.restRoot.replace(/\/$/, '') + '/admin-ajax.php' : null) ||
-                     (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php');
+        var ajaxUrl = (window.bbai_ajax && window.bbai_ajax.ajaxurl) || '';
         var nonceValue = (window.bbai_ajax && window.bbai_ajax.nonce) ||
                        (window.BBAI && window.BBAI.nonce) ||
                        '';
+        if (!ajaxUrl) {
+            showModalError($modal, 'AJAX endpoint unavailable.');
+            reenableButton($btn, originalBtnText);
+            return;
+        }
 
         $.ajax({
             url: ajaxUrl,

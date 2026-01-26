@@ -3,6 +3,10 @@ declare(strict_types=1);
 
 namespace BeepBeep\AltText\Services;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use BeepBeep\AltText\Core\Event_Bus;
 
 /**

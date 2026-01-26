@@ -66,8 +66,8 @@
         getActionLabel: function(action) {
             const labels = {
                 'show-upgrade-modal': 'Open upgrade modal',
-                'generate-missing': 'Generate missing alt text',
-                'regenerate-all': 'Regenerate all alt text',
+                'generate-missing': 'Generate Missing',
+                'regenerate-all': 'Re-optimise All',
                 'regenerate-single': 'Regenerate alt text for this image',
                 'open-billing-portal': 'Open billing portal',
                 'logout': 'Log out',

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BeepBeep AI – Alt Text Generator
  * Description: Automatically generates SEO-optimized AI alt text for WordPress.
- * Version: 4.4.0
+ * Version: 4.4.1
  * Author: beepbeepv2
  * Author URI: https://oppti.dev
  * Plugin URI: https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/
@@ -32,8 +32,8 @@ if (PHP_VERSION_ID >= 80100 && defined('WP_DEBUG') && WP_DEBUG) {
 }
 
 // Define plugin constants
-define( 'BEEPBEEP_AI_VERSION', '4.4.0' );
-define( 'BBAI_VERSION', '4.4.0' ); // Legacy alias for compatibility
+define( 'BEEPBEEP_AI_VERSION', '4.4.1' );
+define( 'BBAI_VERSION', '4.4.1' ); // Legacy alias for compatibility
 define( 'BEEPBEEP_AI_PLUGIN_FILE', __FILE__ );
 define( 'BBAI_PLUGIN_FILE', __FILE__ ); // Legacy alias
 define( 'BEEPBEEP_AI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
@@ -42,6 +42,64 @@ define( 'BEEPBEEP_AI_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BBAI_PLUGIN_URL', plugin_dir_url( __FILE__ ) ); // Legacy alias
 define( 'BEEPBEEP_AI_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 define( 'BBAI_PLUGIN_BASENAME', plugin_basename( __FILE__ ) ); // Legacy alias
+
+if ( ! function_exists( 'bbai_is_authenticated' ) ) {
+	/**
+	 * Check if the plugin has stored auth credentials.
+	 *
+	 * @return bool
+	 */
+	function bbai_is_authenticated() {
+		if ( ! function_exists( 'get_option' ) && function_exists( 'is_user_logged_in' ) ) {
+			return is_user_logged_in();
+		}
+
+		$token        = get_option( 'beepbeepai_jwt_token', '' );
+		$legacy_token = get_option( 'opptibbai_jwt_token', '' );
+		$license_key  = get_option( 'beepbeepai_license_key', '' );
+		$license_data = get_option( 'beepbeepai_license_data', [] );
+
+		if ( ! empty( $token ) || ! empty( $legacy_token ) || ! empty( $license_key ) || ! empty( $license_data ) ) {
+			return true;
+		}
+
+		return false;
+	}
+}
+
+if ( ! function_exists( 'bbai_enqueue_logged_out_styles' ) ) {
+	/**
+	 * Enqueue logged-out onboarding styles only on BeepBeep AI admin screens.
+	 *
+	 * @param string $hook Current admin page hook.
+	 */
+	function bbai_enqueue_logged_out_styles( $hook ) {
+		$current_page = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : '';
+		$hook         = is_string( $hook ) ? $hook : '';
+		$is_bbai_page = strpos( $hook, 'toplevel_page_bbai' ) === 0
+			|| strpos( $hook, 'bbai_page_bbai' ) === 0
+			|| strpos( $hook, 'bbai_page_beepbeep-ai' ) === 0
+			|| strpos( $hook, '_page_bbai' ) !== false
+			|| strpos( $hook, '_page_beepbeep-ai' ) !== false
+			|| ( ! empty( $current_page ) && ( strpos( $current_page, 'bbai' ) === 0 || $current_page === 'beepbeep-ai' ) );
+
+		if ( ! $is_bbai_page || bbai_is_authenticated() ) {
+			return;
+		}
+
+		$css_rel  = 'assets/admin/logged-out.css';
+		$css_path = BEEPBEEP_AI_PLUGIN_DIR . $css_rel;
+
+		wp_enqueue_style(
+			'bbai-logged-out',
+			BEEPBEEP_AI_PLUGIN_URL . $css_rel,
+			[],
+			file_exists( $css_path ) ? filemtime( $css_path ) : BEEPBEEP_AI_VERSION
+		);
+	}
+}
+
+add_action( 'admin_enqueue_scripts', 'bbai_enqueue_logged_out_styles', 20 );
 
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-input-validator.php';

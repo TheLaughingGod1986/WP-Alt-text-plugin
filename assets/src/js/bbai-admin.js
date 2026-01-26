@@ -21,7 +21,7 @@
     }
 
     function handleLimitReached(errorData) {
-        var message = (errorData && errorData.message) || 'Monthly quota exhausted. Upgrade to Pro for 1,000 generations per month, or wait for your quota to reset.';
+        var message = (errorData && errorData.message) || 'Monthly quota exhausted. Upgrade to Growth for 1,000 generations per month, or wait for your quota to reset.';
         
         // Enhance message with reset date if available
         if (errorData && errorData.usage && errorData.usage.resetDate) {
@@ -29,7 +29,7 @@
                 var resetDate = new Date(errorData.usage.resetDate);
                 if (!isNaN(resetDate.getTime())) {
                     var formattedDate = resetDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-                    message = 'Monthly quota exhausted. Your quota will reset on ' + formattedDate + '. Upgrade to Pro for 1,000 generations per month, or manage your subscription in Settings.';
+                    message = 'Monthly quota exhausted. Your quota will reset on ' + formattedDate + '. Upgrade to Growth for 1,000 generations per month, or manage your subscription in Settings.';
                 }
             } catch (e) {
                 // Keep default message if date parsing fails
@@ -749,12 +749,16 @@
         console.log('[AI Alt Text] Starting AJAX request...');
 
         // Use AJAX endpoint for single regeneration
-        var ajaxUrl = (window.bbai_ajax && window.bbai_ajax.ajaxurl) ||
-                     (window.BBAI && window.BBAI.restRoot ? window.BBAI.restRoot.replace(/\/$/, '') + '/admin-ajax.php' : null) ||
-                     (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php');
+        var ajaxUrl = (window.bbai_ajax && (window.bbai_ajax.ajaxurl || window.bbai_ajax.ajax_url)) || '';
         var nonceValue = (window.bbai_ajax && window.bbai_ajax.nonce) ||
                        (window.BBAI && window.BBAI.nonce) ||
                        '';
+        if (!ajaxUrl) {
+            console.error('[AI Alt Text] AJAX endpoint unavailable.');
+            showModalError($modal, 'AJAX endpoint unavailable.');
+            reenableButton($btn, originalBtnText);
+            return;
+        }
 
         $.ajax({
             url: ajaxUrl,
@@ -1132,13 +1136,12 @@
         
         // Use AJAX to queue images
         // We'll create a single AJAX call that queues all images
-        var ajaxUrl = '/wp-admin/admin-ajax.php';
-        if (window.bbai_ajax) {
-            ajaxUrl = window.bbai_ajax.ajax_url || window.bbai_ajax.ajaxurl || ajaxUrl;
-        } else if (typeof ajaxurl !== 'undefined') {
-            ajaxUrl = ajaxurl;
-        }
+        var ajaxUrl = (window.bbai_ajax && (window.bbai_ajax.ajax_url || window.bbai_ajax.ajaxurl)) || '';
         var nonceValue = (window.bbai_ajax && window.bbai_ajax.nonce) || config.nonce;
+        if (!ajaxUrl) {
+            callback(false, 0);
+            return;
+        }
         
         // Queueing images (debug info removed for production)
         
@@ -1447,9 +1450,12 @@
 
     function generateAltTextForId(id) {
         return new Promise(function(resolve, reject) {
-            var ajaxUrl = (window.bbai_ajax && (window.bbai_ajax.ajax_url || window.bbai_ajax.ajaxurl)) ||
-                (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php');
+            var ajaxUrl = (window.bbai_ajax && (window.bbai_ajax.ajax_url || window.bbai_ajax.ajaxurl)) || '';
             var nonceValue = (window.bbai_ajax && window.bbai_ajax.nonce) || '';
+            if (!ajaxUrl) {
+                reject({ message: 'AJAX endpoint unavailable.', code: 'ajax_unavailable' });
+                return;
+            }
 
             $.ajax({
                 url: ajaxUrl,
@@ -1800,6 +1806,8 @@
      * Create and show success modal
      */
     function createSuccessModal() {
+        var adminBaseUrl = (window.bbai_ajax && window.bbai_ajax.admin_url) || '';
+        var libraryUrl = adminBaseUrl ? (adminBaseUrl + '?page=bbai&tab=library') : '#';
         var modalHtml =
             '<div id="bbai-modal-success" class="bbai-modal-success" role="dialog" aria-modal="true" aria-labelledby="bbai-modal-success-title">' +
             '    <div class="bbai-modal-success__overlay"></div>' +
@@ -1833,7 +1841,7 @@
             '            <div class="bbai-modal-success__summary-text">All images were processed successfully.</div>' +
             '        </div>' +
             '        <div class="bbai-modal-success__actions">' +
-            '            <a href="' + escapeHtml((typeof ajaxurl !== 'undefined' ? ajaxurl.replace('/admin-ajax.php', '/admin.php') : '/wp-admin/admin.php') + '?page=bbai&tab=library') + '" class="bbai-modal-success__btn bbai-modal-success__btn--primary">View ALT Library →</a>' +
+            '            <a href="' + escapeHtml(libraryUrl) + '" class="bbai-modal-success__btn bbai-modal-success__btn--primary">View ALT Library →</a>' +
             '            <button type="button" class="bbai-modal-success__btn bbai-modal-success__btn--secondary" data-action="view-warnings" style="display: none;">View Warnings</button>' +
             '        </div>' +
             '    </div>' +
@@ -1856,8 +1864,9 @@
         $modal.find('[data-action="view-warnings"]').on('click', function() {
             hideSuccessModal();
             // Show the ALT Library tab with filters applied
-            var libraryUrl = (typeof ajaxurl !== 'undefined' ? ajaxurl.replace('/admin-ajax.php', '/admin.php') : '/wp-admin/admin.php') + '?page=bbai&tab=library';
-            window.location.href = libraryUrl;
+            if (libraryUrl && libraryUrl !== '#') {
+                window.location.href = libraryUrl;
+            }
         });
 
         // ESC key handler
@@ -1964,9 +1973,17 @@
         $button.prop('disabled', true).text('Activating...');
         $input.prop('disabled', true);
 
+        var ajaxUrl = (window.bbai_ajax && (window.bbai_ajax.ajaxurl || window.bbai_ajax.ajax_url)) || '';
+        if (!ajaxUrl) {
+            showLicenseStatus('error', 'AJAX endpoint unavailable.');
+            $button.prop('disabled', false).text('Activate License');
+            $input.prop('disabled', false);
+            return;
+        }
+
         // Make AJAX request
         $.ajax({
-            url: ajaxurl,
+            url: ajaxUrl,
             type: 'POST',
             data: {
                 action: 'beepbeepai_activate_license',
@@ -2009,9 +2026,16 @@
         // Disable button
         $button.prop('disabled', true).text('Deactivating...');
 
+        var ajaxUrl = (window.bbai_ajax && (window.bbai_ajax.ajaxurl || window.bbai_ajax.ajax_url)) || '';
+        if (!ajaxUrl) {
+            window.bbaiModal.error('AJAX endpoint unavailable.');
+            $button.prop('disabled', false).text('Deactivate License');
+            return;
+        }
+
         // Make AJAX request
         $.ajax({
-            url: ajaxurl,
+            url: ajaxUrl,
             type: 'POST',
             data: {
                 action: 'beepbeepai_deactivate_license',
@@ -2065,6 +2089,11 @@
         ).show();
     }
 
+    // Expose bulk handlers for non-jQuery fallback bindings.
+    window.bbaiHandleGenerateMissing = handleGenerateMissing;
+    window.bbaiHandleRegenerateAll = handleRegenerateAll;
+    window.bbaiHandleRegenerateSingle = handleRegenerateSingle;
+
     // Initialize on document ready
     $(document).ready(function() {
         console.log('[AI Alt Text] Admin JavaScript loaded');
@@ -2096,6 +2125,8 @@
             console.log('[AI Alt Text] Direct binding - Regenerate button clicked');
             handleRegenerateSingle.call(this, e);
         });
+
+        window.bbaiBulkHandlersReady = true;
 
         // License management handlers
         $('#license-activation-form').on('submit', handleLicenseActivation);

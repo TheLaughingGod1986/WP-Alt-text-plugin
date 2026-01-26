@@ -21,11 +21,10 @@
             return;
         }
 
-        var ajaxUrl = '/wp-admin/admin-ajax.php';
-        if (window.bbai_ajax) {
-            ajaxUrl = window.bbai_ajax.ajax_url || window.bbai_ajax.ajaxurl || ajaxUrl;
-        } else if (typeof ajaxurl !== 'undefined') {
-            ajaxUrl = ajaxurl;
+        var ajaxUrl = (window.bbai_ajax && (window.bbai_ajax.ajax_url || window.bbai_ajax.ajaxurl)) || '';
+        if (!ajaxUrl) {
+            callback(false, 0, { message: 'AJAX endpoint unavailable.' }, ids.slice(0));
+            return;
         }
         var nonceValue = (window.bbai_ajax && window.bbai_ajax.nonce) || config.nonce;
 

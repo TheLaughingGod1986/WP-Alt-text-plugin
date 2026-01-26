@@ -1824,6 +1824,43 @@ function alttextaiShowModal() {
 // Make it available globally for onclick handlers (legacy support)
 window.alttextaiShowModal = alttextaiShowModal;
 
+// Also create a simple global function that always tries to show the modal
+window.showUpgradeModal = function() {
+    console.log('[AltText AI] window.showUpgradeModal() called');
+    
+    // Try the main function first
+    if (typeof alttextaiShowModal === 'function') {
+        if (alttextaiShowModal()) {
+            return true;
+        }
+    }
+    
+    // Direct DOM manipulation as ultimate fallback
+    var modal = document.getElementById('bbai-upgrade-modal');
+    if (!modal) {
+        modal = document.querySelector('.bbai-modal-backdrop');
+    }
+    
+    if (modal) {
+        console.log('[AltText AI] Found modal, showing directly');
+        modal.style.display = 'flex';
+        modal.style.visibility = 'visible';
+        modal.style.opacity = '1';
+        modal.style.zIndex = '999999';
+        modal.classList.add('active');
+        modal.removeAttribute('aria-hidden');
+        document.body.style.overflow = 'hidden';
+        return true;
+    }
+    
+    console.error('[AltText AI] Modal not found in DOM');
+    return false;
+};
+
+// Provide legacy/global aliases used by dashboard bridge code.
+window.bbaiShowUpgradeModal = window.showUpgradeModal;
+window.alttextaiShowUpgradeModal = window.showUpgradeModal;
+
 // Also add to bbaiApp namespace
 bbaiApp.showModal = alttextaiShowModal;
 
@@ -2046,7 +2083,7 @@ function handleLogout() {
                     return;
                 }
 
-    const ajaxUrl = window.bbai_ajax.ajax_url || window.bbai_ajax.ajaxurl || ajaxurl;
+    const ajaxUrl = window.bbai_ajax.ajax_url || window.bbai_ajax.ajaxurl || '';
     const nonce = window.bbai_ajax.nonce || '';
     
     if (!ajaxUrl) {
@@ -2678,3 +2715,61 @@ bbaiRunWithJQuery(function($) {
         });
     });
 });
+
+(function() {
+    'use strict';
+
+    function showUpgradeModalFallback() {
+        if (typeof window.openPricingModal === 'function') {
+            window.openPricingModal('enterprise');
+            return true;
+        }
+
+        if (typeof window.alttextaiShowModal === 'function') {
+            return window.alttextaiShowModal();
+        }
+
+        var modal = document.getElementById('bbai-upgrade-modal');
+        if (modal) {
+            modal.removeAttribute('style');
+            modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important;';
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            return true;
+        }
+
+        return false;
+    }
+
+    document.addEventListener('click', function(e) {
+        if (e.defaultPrevented) {
+            return;
+        }
+
+        var trigger = e.target.closest('[data-action="show-upgrade-modal"], [data-action="generate-missing"], [data-action="regenerate-all"]');
+        if (!trigger) {
+            return;
+        }
+
+        if (trigger.matches('[data-action="show-upgrade-modal"]')) {
+            e.preventDefault();
+            showUpgradeModalFallback();
+            return;
+        }
+
+        if (window.bbaiBulkHandlersReady) {
+            return;
+        }
+
+        var handler = trigger.matches('[data-action="generate-missing"]')
+            ? window.bbaiHandleGenerateMissing
+            : window.bbaiHandleRegenerateAll;
+
+        if (typeof handler !== 'function') {
+            return;
+        }
+
+        e.preventDefault();
+        handler.call(trigger, e);
+    }, true);
+})();

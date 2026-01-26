@@ -187,6 +187,58 @@
     cursor: not-allowed;
 }
 
+/* Login Button - Header specific */
+.bbai-header-login-btn,
+.bbai-header .bbai-header-login-btn,
+.wrap .bbai-header-login-btn,
+button.bbai-header-login-btn {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px !important;
+    background: #10B981 !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 6px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none !important;
+    white-space: nowrap;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    height: auto !important;
+    min-height: auto !important;
+    line-height: 1.4 !important;
+}
+
+.bbai-header-login-btn:hover,
+.bbai-header .bbai-header-login-btn:hover,
+.wrap .bbai-header-login-btn:hover,
+button.bbai-header-login-btn:hover {
+    background: #059669 !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+
+.bbai-header-login-btn:focus,
+.bbai-header-login-btn:focus-visible,
+.bbai-header .bbai-header-login-btn:focus,
+.bbai-header .bbai-header-login-btn:focus-visible {
+    outline: 2px solid rgba(16, 185, 129, 0.5) !important;
+    outline-offset: 2px !important;
+    background: #10B981 !important;
+    color: #ffffff !important;
+}
+
+.bbai-header-login-btn svg,
+.bbai-header .bbai-header-login-btn svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
 /* ============================================
    RESPONSIVE
    ============================================ */

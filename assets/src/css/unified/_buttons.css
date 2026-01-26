@@ -242,15 +242,15 @@
    ============================================ */
 
 .bbai-btn-sm {
-    padding: var(--bbai-btn-padding-sm-y) var(--bbai-btn-padding-sm-x);
-    font-size: var(--bbai-text-xs);
-    border-radius: var(--bbai-radius-sm);
+    padding: 8px 16px !important; /* Consistent small padding */
+    font-size: 13px !important;
+    border-radius: 6px !important;
 }
 
 .bbai-btn-lg {
-    padding: var(--bbai-btn-padding-lg-y) var(--bbai-btn-padding-lg-x);
-    font-size: var(--bbai-text-base);
-    border-radius: var(--bbai-radius);
+    padding: 14px 28px !important; /* Consistent large padding */
+    font-size: 15px !important;
+    border-radius: 12px !important;
 }
 
 .bbai-btn-xl {
@@ -351,13 +351,13 @@
     display: inline-flex;
     align-items: center;
     gap: var(--bbai-space-1);
-    padding: 6px 12px;
-    font-size: var(--bbai-text-xs);
+    padding: 8px 16px !important; /* Consistent with small buttons */
+    font-size: 13px !important;
     font-weight: var(--bbai-font-medium);
     color: var(--bbai-primary);
     background: transparent;
     border: 1px solid var(--bbai-border);
-    border-radius: var(--bbai-radius-sm);
+    border-radius: 6px !important;
     cursor: pointer;
     transition: all var(--bbai-transition-fast) var(--bbai-ease-out);
 }
@@ -384,11 +384,10 @@
 .bbai-optimization-cta {
     flex: 1;
     min-width: 200px;
-    height: 48px; /* Consistent height with other elements */
-    padding: 0 28px; /* Use horizontal padding only with fixed height */
-    border-radius: var(--bbai-radius-lg);
-    font-size: var(--bbai-text-sm);
-    font-weight: var(--bbai-font-bold);
+    padding: 14px 28px !important; /* Consistent large button padding */
+    border-radius: 12px !important;
+    font-size: 15px !important;
+    font-weight: 600;
     cursor: pointer;
     transition: all var(--bbai-transition-base) var(--bbai-ease-out);
     display: inline-flex;
@@ -405,10 +404,9 @@
     color: white !important;
     border-color: transparent;
     box-shadow: 0 4px 16px rgba(16, 185, 129, 0.45), 0 0 0 1px rgba(16, 185, 129, 0.1);
-    font-weight: var(--bbai-font-bold);
-    font-size: var(--bbai-text-base);
-    height: 48px; /* Match base height */
-    padding: 0 32px; /* Use horizontal padding only with fixed height */
+    font-weight: 600;
+    font-size: 15px !important;
+    padding: 14px 28px !important; /* Consistent large button padding */
     position: relative;
     overflow: hidden;
 }
@@ -463,12 +461,13 @@
 
 .bbai-optimization-cta--locked,
 .bbai-optimization-cta:disabled {
-    background: var(--bbai-gray-100) !important;
-    color: var(--bbai-gray-400) !important;
-    border-color: var(--bbai-gray-200) !important;
+    background: var(--bbai-gray-200) !important;
+    color: var(--bbai-gray-500) !important;
+    border-color: var(--bbai-gray-300) !important;
     cursor: not-allowed;
     transform: none !important;
     box-shadow: none !important;
+    opacity: 0.7;
 }
 
 /* ============================================
@@ -560,37 +559,12 @@
    New code should use bbai-btn + bbai-btn-{variant} directly.
    ============================================ */
 
-/* Action buttons (dashboard) - map to primary/secondary */
+/* Action buttons (dashboard) - styles defined in _dashboard-redesign.css */
+/* NOTE: .bbai-action-btn-primary and .bbai-action-btn-secondary are styled
+   specifically within .bbai-usage-card-redesign context in _dashboard-redesign.css
+   to maintain purple/orange gradients. Do not add generic styles here. */
 .bbai-action-btn {
-    /* Base button styles applied via unified classes */
-    /* In templates, use: bbai-btn bbai-action-btn bbai-action-btn-primary */
-}
-
-.bbai-action-btn-primary {
-    background: var(--bbai-primary-gradient);
-    color: white !important;
-    border-color: var(--bbai-primary);
-    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4), 0 0 0 1px rgba(16, 185, 129, 0.1);
-}
-
-.bbai-action-btn-primary:hover:not(:disabled) {
-    background: var(--bbai-primary-gradient);
-    border-color: var(--bbai-primary-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5), 0 0 0 1px rgba(16, 185, 129, 0.2);
-}
-
-.bbai-action-btn-secondary {
-    background: var(--bbai-bg);
-    color: var(--bbai-text);
-    border-color: var(--bbai-border);
-}
-
-.bbai-action-btn-secondary:hover:not(:disabled) {
-    background: var(--bbai-bg-secondary);
-    border-color: var(--bbai-gray-300);
-    transform: translateY(-1px);
-    box-shadow: var(--bbai-shadow-sm);
+    /* Base button styles applied via .bbai-btn class */
 }
 
 /* Bulk buttons - map to primary/secondary */
@@ -599,10 +573,10 @@
     background: var(--bbai-primary-gradient);
     color: white !important;
     border: none;
-    padding: var(--bbai-btn-padding-y) var(--bbai-btn-padding-x);
-    font-size: var(--bbai-text-base);
+    padding: 10px 20px !important;
+    font-size: 14px !important;
+    border-radius: 8px !important;
     font-weight: var(--bbai-button-font-weight);
-    border-radius: var(--bbai-button-border-radius);
     box-shadow: var(--bbai-shadow-button);
 }
 
@@ -616,10 +590,10 @@
     background: var(--bbai-gradient-secondary);
     color: var(--bbai-text-inverse);
     border: none;
-    padding: var(--bbai-btn-padding-y) var(--bbai-btn-padding-x);
-    font-size: var(--bbai-text-base);
+    padding: 10px 20px !important;
+    font-size: 14px !important;
+    border-radius: 8px !important;
     font-weight: var(--bbai-button-font-weight);
-    border-radius: var(--bbai-button-border-radius);
     box-shadow: var(--bbai-shadow-button);
 }
 
@@ -638,11 +612,15 @@
     color: white !important;
     border-color: var(--bbai-primary);
     box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4), 0 0 0 1px rgba(16, 185, 129, 0.1);
+    padding: 10px 20px !important;
+    font-size: 14px !important;
+    border-radius: 8px !important;
 }
 
 .bbai-settings-plan-upgrade-btn-large {
-    padding: var(--bbai-btn-padding-lg-y) var(--bbai-btn-padding-lg-x);
-    font-size: var(--bbai-text-base);
+    padding: 14px 28px !important;
+    font-size: 15px !important;
+    border-radius: 12px !important;
 }
 
 .bbai-settings-license-deactivate-btn {
@@ -712,8 +690,9 @@
     background: var(--bbai-bg);
     color: var(--bbai-text);
     border-color: var(--bbai-border);
-    padding: var(--bbai-btn-padding-sm-y) var(--bbai-btn-padding-sm-x);
-    font-size: var(--bbai-text-xs);
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+    border-radius: 6px !important;
 }
 
 .bbai-pagination-btn:hover:not(:disabled) {
@@ -745,7 +724,7 @@
 @media (max-width: 640px) {
     .bbai-optimization-cta {
         min-width: 100%;
-        padding: 14px 24px;
+        padding: 14px 28px !important; /* Consistent large padding */
     }
 
     .bbai-btn-group:not(.bbai-btn-group--segmented) {
@@ -854,10 +833,36 @@ a.bbai-btn.bbai-btn-outline-primary:hover {
     background: rgba(16, 185, 129, 0.08) !important;
 }
 
+/* ============================================
+   CONSISTENT BUTTON SIZING
+   Standard sizes across all variants
+   ============================================ */
+
+/* Base size: 10px 20px (applied to .bbai-btn above) */
+
+/* Small Button Size */
+.bbai-btn.bbai-btn-sm,
+.bbai-btn-sm,
+.wrap .bbai-btn.bbai-btn-sm {
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+    border-radius: 6px !important;
+}
+
 /* Large Button Size */
 .bbai-btn.bbai-btn-lg,
-.bbai-btn-lg {
+.bbai-btn-lg,
+.wrap .bbai-btn.bbai-btn-lg {
     padding: 14px 28px !important;
     font-size: 15px !important;
     border-radius: 12px !important;
+}
+
+/* XL Button Size */
+.bbai-btn.bbai-btn-xl,
+.bbai-btn-xl,
+.wrap .bbai-btn.bbai-btn-xl {
+    padding: 16px 32px !important;
+    font-size: 16px !important;
+    border-radius: 14px !important;
 }

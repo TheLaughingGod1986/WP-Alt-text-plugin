@@ -1,21 +1,22 @@
 import React from 'react';
 
 const DEFAULT_BULLETS = [
-  '1,000 credits/month - Optimise hundreds of images automatically.',
-  'Bulk processing - Fix your entire library in one click.',
-  'Priority queue - Skip the line, generate 3x faster.'
+  '1,000 AI alt texts per month',
+  'Bulk processing for the media library',
+  'Priority queue for faster results',
+  'Multilingual support for global SEO'
 ];
 
 const GrowthCtaBanner = ({
   badgeLabel = 'Growth',
-  title = 'Stop Losing SEO Traffic to Missing Alt Text',
-  description = 'Growth gives you 20x more credits and bulk processing to optimise your entire media library in minutes - not months.',
+  title = 'Upgrade to Growth',
+  description = 'Automate alt text generation and scale image optimisation each month.',
   bullets = DEFAULT_BULLETS,
-  primaryCtaLabel = 'Start 14-day free trial',
+  primaryCtaLabel = 'Upgrade to Growth',
   onStartTrial = null,
-  footnoteItems = ['14 days free', 'No credit card', 'Cancel anytime.'],
+  footnoteItems = ['Includes 1,000 AI alt texts per month. Cancel anytime.'],
   onComparePlans = null,
-  comparePlansLabel = 'Compare all plans',
+  comparePlansLabel = 'Compare plans',
   footerLines = [],
   className = ''
 }) => {

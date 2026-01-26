@@ -54,7 +54,7 @@ $wrapper_class = isset($wrapper_class) ? $wrapper_class : 'bbai-premium-metrics-
             if ($description_mode === 'empty') {
                 esc_html_e('Start optimizing to see your time savings', 'beepbeep-ai-alt-text-generator');
             } else {
-                esc_html_e('Est. saved for manual alt text creation.', 'beepbeep-ai-alt-text-generator');
+                esc_html_e('Estimated manual work saved.', 'beepbeep-ai-alt-text-generator');
             }
             ?>
         </div>
@@ -76,7 +76,7 @@ $wrapper_class = isset($wrapper_class) ? $wrapper_class : 'bbai-premium-metrics-
             if ($description_mode === 'empty') {
                 esc_html_e('Start optimizing to see your progress', 'beepbeep-ai-alt-text-generator');
             } else {
-                esc_html_e('Optimizes your existing content for free trial.', 'beepbeep-ai-alt-text-generator');
+                esc_html_e('Automatically generates alt text for existing images.', 'beepbeep-ai-alt-text-generator');
             }
             ?>
         </div>
@@ -102,7 +102,7 @@ $wrapper_class = isset($wrapper_class) ? $wrapper_class : 'bbai-premium-metrics-
             if ($description_mode === 'empty') {
                 esc_html_e('Start optimizing to boost your SEO score', 'beepbeep-ai-alt-text-generator');
             } else {
-                esc_html_e('Estimated lift in search visibility due to generated alt text.', 'beepbeep-ai-alt-text-generator');
+                esc_html_e('Estimated improvement in alt text coverage.', 'beepbeep-ai-alt-text-generator');
             }
             ?>
         </div>

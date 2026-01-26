@@ -22,12 +22,25 @@
             const canvas = document.getElementById('bbai-coverage-chart');
             if (!canvas || !window.bbaiAnalyticsData) return;
 
-            const ctx = canvas.getContext('2d');
             const data = window.bbaiAnalyticsData.coverage || [];
             if (data.length === 0) return;
 
-            const width = canvas.width;
-            const height = canvas.height;
+            const container = canvas.parentElement;
+            const containerWidth = container ? container.clientWidth : (canvas.width || 800);
+            const containerHeight = 300;
+            const dpr = window.devicePixelRatio || 1;
+
+            canvas.width = containerWidth * dpr;
+            canvas.height = containerHeight * dpr;
+            canvas.style.width = containerWidth + 'px';
+            canvas.style.height = containerHeight + 'px';
+
+            const ctx = canvas.getContext('2d');
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.scale(dpr, dpr);
+
+            const width = containerWidth;
+            const height = containerHeight;
             const padding = 40;
             const chartWidth = width - (padding * 2);
             const chartHeight = height - (padding * 2);
@@ -136,49 +149,67 @@
             const timeline = document.getElementById('bbai-activity-timeline');
             if (!timeline) return;
 
-            // Get bbai_ajax from window object or global scope
-            const bbaiAjax = (typeof bbai_ajax !== 'undefined' ? bbai_ajax : (typeof window !== 'undefined' && window.bbai_ajax ? window.bbai_ajax : null));
+            this.setActivityLoading(true);
+            this.showActivityEmpty(false);
 
-            // Fetch activity data via AJAX
-            if (bbaiAjax && bbaiAjax.ajaxurl) {
-                // Use jQuery if available, otherwise use fetch
-                if (typeof jQuery !== 'undefined' && jQuery.ajax) {
-                    jQuery.ajax({
-                        url: bbaiAjax.ajaxurl,
-                        type: 'POST',
-                        data: {
-                            action: 'bbai_get_activity',
-                            nonce: bbaiAjax.nonce || ''
-                        },
-                        success: (response) => {
-                            if (response && response.success && response.data && response.data.length > 0) {
-                                this.renderActivityTimeline(response.data);
-                            }
-                        },
-                        error: () => {
-                            // Keep empty state
+            const bbaiAjax = (typeof window !== 'undefined' && window.bbai_ajax) ? window.bbai_ajax : (typeof bbai_ajax !== 'undefined' ? bbai_ajax : null);
+            const ajaxUrl = bbaiAjax ? (bbaiAjax.ajax_url || bbaiAjax.ajaxurl) : '';
+
+            if (!ajaxUrl) {
+                this.setActivityLoading(false);
+                this.showActivityEmpty(true);
+                return;
+            }
+
+            this.setRefreshButtonSpinning(true);
+
+            if (typeof jQuery !== 'undefined' && jQuery.ajax) {
+                jQuery.ajax({
+                    url: ajaxUrl,
+                    type: 'POST',
+                    data: {
+                        action: 'bbai_get_activity',
+                        nonce: bbaiAjax ? (bbaiAjax.nonce || '') : ''
+                    },
+                    success: (response) => {
+                        this.setRefreshButtonSpinning(false);
+                        if (response && response.success && response.data && response.data.length > 0) {
+                            this.renderActivityTimeline(response.data);
+                        } else {
+                            this.showActivityEmpty(true);
                         }
-                    });
-                } else if (typeof fetch !== 'undefined') {
-                    // Fallback to fetch API if jQuery is not available
-                    const formData = new FormData();
-                    formData.append('action', 'bbai_get_activity');
-                    formData.append('nonce', bbaiAjax.nonce || '');
-                    
-                    fetch(bbaiAjax.ajaxurl, {
-                        method: 'POST',
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data && data.success && data.data && data.data.length > 0) {
-                            this.renderActivityTimeline(data.data);
-                        }
-                    })
-                    .catch(() => {
-                        // Keep empty state
-                    });
-                }
+                        this.setActivityLoading(false);
+                    },
+                    error: () => {
+                        this.setRefreshButtonSpinning(false);
+                        this.setActivityLoading(false);
+                        this.showActivityEmpty(true);
+                    }
+                });
+            } else if (typeof fetch !== 'undefined') {
+                const formData = new FormData();
+                formData.append('action', 'bbai_get_activity');
+                formData.append('nonce', bbaiAjax ? (bbaiAjax.nonce || '') : '');
+
+                fetch(ajaxUrl, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    this.setRefreshButtonSpinning(false);
+                    if (data && data.success && data.data && data.data.length > 0) {
+                        this.renderActivityTimeline(data.data);
+                    } else {
+                        this.showActivityEmpty(true);
+                    }
+                    this.setActivityLoading(false);
+                })
+                .catch(() => {
+                    this.setRefreshButtonSpinning(false);
+                    this.setActivityLoading(false);
+                    this.showActivityEmpty(true);
+                });
             }
         },
 
@@ -189,14 +220,22 @@
             const timeline = document.getElementById('bbai-activity-timeline');
             if (!timeline) return;
 
-            const emptyState = timeline.querySelector('.bbai-activity-empty');
-            if (emptyState) {
-                emptyState.remove();
+            this.setActivityLoading(false);
+            this.showActivityEmpty(false);
+
+            timeline.querySelectorAll('.bbai-activity-item, .bbai-activity-toggle').forEach((el) => {
+                el.remove();
+            });
+
+            if (!Array.isArray(activities) || activities.length === 0) {
+                this.showActivityEmpty(true);
+                return;
             }
 
-            timeline.innerHTML = '';
+            const maxVisible = 3;
+            const hasOverflow = activities.length > maxVisible;
 
-            activities.forEach(activity => {
+            activities.forEach((activity, index) => {
                 const item = document.createElement('div');
                 const type = (activity.type || activity.action || '').toLowerCase();
                 let iconClass = 'bg-sky-100 text-sky-600';
@@ -215,6 +254,9 @@
                 const timeLabel = activity.timeAgo ? this.escapeHtml(activity.timeAgo) : this.formatTime(activity.timestamp);
 
                 item.className = 'bbai-activity-item flex items-start gap-3';
+                if (hasOverflow && index >= maxVisible) {
+                    item.classList.add('bbai-activity-item--extra', 'is-hidden');
+                }
                 item.innerHTML = `
                     <span class="flex h-8 w-8 items-center justify-center rounded-full ${iconClass}">
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">${iconSvg}</svg>
@@ -229,6 +271,62 @@
                 `;
                 timeline.appendChild(item);
             });
+
+            if (hasOverflow) {
+                const hiddenCount = activities.length - maxVisible;
+                const toggle = document.createElement('button');
+                toggle.type = 'button';
+                toggle.className = 'bbai-activity-toggle';
+                toggle.setAttribute('aria-expanded', 'false');
+                toggle.innerHTML = `
+                    <span class="bbai-toggle-label">Show ${hiddenCount} more</span>
+                    <span class="bbai-toggle-icon" aria-hidden="true">v</span>
+                `;
+
+                toggle.addEventListener('click', () => {
+                    const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+                    const nextExpanded = !isExpanded;
+                    const extraItems = timeline.querySelectorAll('.bbai-activity-item--extra');
+
+                    extraItems.forEach((item) => {
+                        item.classList.toggle('is-hidden', !nextExpanded);
+                    });
+
+                    toggle.setAttribute('aria-expanded', nextExpanded ? 'true' : 'false');
+                    toggle.classList.toggle('is-expanded', nextExpanded);
+                    const label = toggle.querySelector('.bbai-toggle-label');
+                    if (label) {
+                        label.textContent = nextExpanded ? 'Show less' : `Show ${hiddenCount} more`;
+                    }
+                });
+
+                timeline.appendChild(toggle);
+            }
+        },
+
+        setRefreshButtonSpinning: function(isSpinning) {
+            const refreshBtn = document.getElementById('bbai-refresh-activity');
+            if (!refreshBtn) return;
+
+            const icon = refreshBtn.querySelector('svg');
+            if (icon) {
+                icon.classList.toggle('bbai-animate-spin', !!isSpinning);
+            }
+            refreshBtn.disabled = !!isSpinning;
+        },
+
+        setActivityLoading: function(isLoading) {
+            const loading = document.getElementById('bbai-activity-loading');
+            if (loading) {
+                loading.style.display = isLoading ? 'flex' : 'none';
+            }
+        },
+
+        showActivityEmpty: function(show) {
+            const empty = document.getElementById('bbai-activity-empty');
+            if (empty) {
+                empty.style.display = show ? 'block' : 'none';
+            }
         },
 
         /**
@@ -290,6 +388,21 @@
                     this.exportReport();
                 });
             }
+
+            const refreshBtn = document.getElementById('bbai-refresh-activity');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', () => {
+                    this.loadActivityTimeline();
+                });
+            }
+
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    this.initChart();
+                }, 150);
+            });
         },
 
         /**
@@ -305,10 +418,13 @@
          * Export report
          */
         exportReport: function() {
-            if (typeof bbai_ajax !== 'undefined' && bbai_ajax.ajaxurl) {
-                const url = bbai_ajax.ajaxurl + '?action=bbai_export_analytics&nonce=' + (bbai_ajax.nonce || '');
-                window.open(url, '_blank');
+            const bbaiAjax = (typeof window !== 'undefined' && window.bbai_ajax) ? window.bbai_ajax : (typeof bbai_ajax !== 'undefined' ? bbai_ajax : null);
+            const ajaxUrl = bbaiAjax ? (bbaiAjax.ajax_url || bbaiAjax.ajaxurl) : '';
+            if (!ajaxUrl) {
+                return;
             }
+            const url = ajaxUrl + '?action=bbai_export_analytics&nonce=' + (bbaiAjax.nonce || '');
+            window.open(url, '_blank');
         },
 
         /**

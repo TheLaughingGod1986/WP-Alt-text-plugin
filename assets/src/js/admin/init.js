@@ -17,14 +17,36 @@
         }
 
         // Handle generate missing button
-        $(document).on('click', '[data-action="generate-missing"]', handleGenerateMissing);
+        $(document).on('click', '[data-action="generate-missing"]', function(e) {
+            if (typeof window.handleGenerateMissing === 'function') {
+                window.handleGenerateMissing.call(this, e);
+            } else if (typeof handleGenerateMissing === 'function') {
+                handleGenerateMissing.call(this, e);
+            } else {
+                console.error('[AI Alt Text] handleGenerateMissing function not found');
+            }
+        });
 
         // Handle regenerate all button
-        $(document).on('click', '[data-action="regenerate-all"]', handleRegenerateAll);
+        $(document).on('click', '[data-action="regenerate-all"]', function(e) {
+            if (typeof window.handleRegenerateAll === 'function') {
+                window.handleRegenerateAll.call(this, e);
+            } else if (typeof handleRegenerateAll === 'function') {
+                handleRegenerateAll.call(this, e);
+            } else {
+                console.error('[AI Alt Text] handleRegenerateAll function not found');
+            }
+        });
 
         // Handle individual regenerate buttons
         $(document).on('click', '[data-action="regenerate-single"]', function(e) {
-            handleRegenerateSingle.call(this, e);
+            if (typeof window.handleRegenerateSingle === 'function') {
+                window.handleRegenerateSingle.call(this, e);
+            } else if (typeof handleRegenerateSingle === 'function') {
+                handleRegenerateSingle.call(this, e);
+            } else {
+                console.error('[AI Alt Text] handleRegenerateSingle function not found');
+            }
         });
 
         // License management handlers

@@ -12,7 +12,6 @@ import React, { useState } from 'react';
  */
 const CreditsPack = ({ onPurchase }) => {
   const [ripples, setRipples] = useState({});
-  const [pressed, setPressed] = useState({});
 
   const creditPacks = [
     {
@@ -47,15 +46,8 @@ const CreditsPack = ({ onPurchase }) => {
     const y = e.clientY - rect.top - size / 2;
     
     setRipples((prev) => ({ ...prev, [packId]: { x, y, size } }));
-    setPressed((prev) => ({ ...prev, [packId]: true }));
-    
     setTimeout(() => {
       setRipples((prev) => {
-        const next = { ...prev };
-        delete next[packId];
-        return next;
-      });
-      setPressed((prev) => {
         const next = { ...prev };
         delete next[packId];
         return next;
@@ -131,20 +123,7 @@ const CreditsPack = ({ onPurchase }) => {
             {/* CTA Button */}
             <button
               onClick={(e) => handlePurchaseCredits(pack.id, e)}
-              onMouseDown={() => setPressed((prev) => ({ ...prev, [pack.id]: true }))}
-              onMouseUp={() => setPressed((prev) => {
-                const next = { ...prev };
-                delete next[pack.id];
-                return next;
-              })}
-              onMouseLeave={() => setPressed((prev) => {
-                const next = { ...prev };
-                delete next[pack.id];
-                return next;
-              })}
-              className={`relative w-full py-3 px-6 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2 transition-all duration-200 overflow-hidden text-sm font-inter shadow-md hover:shadow-lg ${
-                pressed[pack.id] ? 'scale-95' : ''
-              }`}
+              className="bbai-btn bbai-btn-lg bbai-btn-info bbai-btn-block"
               tabIndex={0}
               aria-label={`Buy ${pack.credits} credits pack`}
             >

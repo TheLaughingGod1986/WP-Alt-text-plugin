@@ -182,8 +182,8 @@ class Router {
 					'callback'            => function ( \WP_REST_Request $request ) use ( $config ) {
 						return $this->handle_rest( $request, $config );
 					},
-					'permission_callback' => function () {
-						return current_user_can( 'edit_posts' );
+					'permission_callback' => function ( \WP_REST_Request $request ) {
+						return current_user_can( 'upload_files' );
 					},
 				)
 			);

@@ -45,14 +45,14 @@
 .bbai-textarea {
     display: block;
     width: 100%;
-    padding: var(--bbai-input-padding-y) var(--bbai-input-padding-x);
-    font-size: var(--bbai-text-sm);
+    padding: 12px 14px; /* Consistent input padding */
+    font-size: 14px;
     font-family: inherit;
     line-height: 1.5;
     color: var(--bbai-text);
     background: var(--bbai-bg);
-    border: 1px solid var(--bbai-gray-300);
-    border-radius: var(--bbai-input-radius);
+    border: 1px solid var(--bbai-border);
+    border-radius: 8px; /* Consistent input radius */
     transition: border-color var(--bbai-transition-fast) var(--bbai-ease-out),
                 box-shadow var(--bbai-transition-fast) var(--bbai-ease-out);
     appearance: none;

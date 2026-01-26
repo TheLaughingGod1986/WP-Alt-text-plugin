@@ -42,12 +42,12 @@ $is_pro    = ($is_growth || $is_agency);
         <p class="bbai-page-subtitle"><?php esc_html_e('Generate SEO-optimized alt text for your images in minutes, not hours.', 'beepbeep-ai-alt-text-generator'); ?></p>
     </div>
 
-    <!-- Pro Features Block (Free users only) -->
+    <!-- Growth Features Block (Free users only) -->
     <?php if (!$is_pro) : ?>
     <div class="bbai-card bbai-guide-pro-card">
         <div class="bbai-guide-pro-header">
             <span class="bbai-badge bbai-badge--growth"><?php esc_html_e('Growth', 'beepbeep-ai-alt-text-generator'); ?></span>
-            <h2 class="bbai-guide-pro-title"><?php esc_html_e('Unlock Pro Features', 'beepbeep-ai-alt-text-generator'); ?></h2>
+            <h2 class="bbai-guide-pro-title"><?php esc_html_e('Unlock Growth Features', 'beepbeep-ai-alt-text-generator'); ?></h2>
         </div>
         <ul class="bbai-guide-pro-list">
             <li class="bbai-guide-pro-item">
@@ -66,7 +66,7 @@ $is_pro    = ($is_growth || $is_agency);
                 <svg width="20" height="20" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                     <path d="M13 4L6 11L3 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                <span><?php esc_html_e('Priority queue for 3x faster results', 'beepbeep-ai-alt-text-generator'); ?></span>
+                <span><?php esc_html_e('Priority queue for faster results', 'beepbeep-ai-alt-text-generator'); ?></span>
             </li>
             <li class="bbai-guide-pro-item">
                 <svg width="20" height="20" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -121,7 +121,7 @@ $is_pro    = ($is_growth || $is_agency);
                 <div class="bbai-guide-step-number">4</div>
                 <div class="bbai-guide-step-content">
                     <h3 class="bbai-guide-step-title"><?php esc_html_e('Regenerate Anytime', 'beepbeep-ai-alt-text-generator'); ?></h3>
-                    <p class="bbai-guide-step-desc"><?php esc_html_e('Use "Re-optimize All" to refresh alt text after changing settings.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                    <p class="bbai-guide-step-desc"><?php esc_html_e('Use "Re-optimise All" to refresh alt text after changing settings.', 'beepbeep-ai-alt-text-generator'); ?></p>
                 </div>
             </div>
         </div>
@@ -221,7 +221,7 @@ $is_pro    = ($is_growth || $is_agency);
                     <span>
                         <?php esc_html_e('Bulk processing', 'beepbeep-ai-alt-text-generator'); ?>
                         <?php if (!$is_pro) : ?>
-                            <span class="bbai-badge bbai-badge--pro-sm"><?php esc_html_e('Pro', 'beepbeep-ai-alt-text-generator'); ?></span>
+                            <span class="bbai-badge bbai-badge--pro-sm"><?php esc_html_e('Growth', 'beepbeep-ai-alt-text-generator'); ?></span>
                         <?php endif; ?>
                     </span>
                 </li>
@@ -233,7 +233,7 @@ $is_pro    = ($is_growth || $is_agency);
                     <span>
                         <?php esc_html_e('Tone & style tuning', 'beepbeep-ai-alt-text-generator'); ?>
                         <?php if (!$is_pro) : ?>
-                            <span class="bbai-badge bbai-badge--pro-sm"><?php esc_html_e('Pro', 'beepbeep-ai-alt-text-generator'); ?></span>
+                            <span class="bbai-badge bbai-badge--pro-sm"><?php esc_html_e('Growth', 'beepbeep-ai-alt-text-generator'); ?></span>
                         <?php endif; ?>
                     </span>
                 </li>
@@ -245,7 +245,7 @@ $is_pro    = ($is_growth || $is_agency);
                     <span>
                         <?php esc_html_e('Multilingual support', 'beepbeep-ai-alt-text-generator'); ?>
                         <?php if (!$is_pro) : ?>
-                            <span class="bbai-badge bbai-badge--pro-sm"><?php esc_html_e('Pro', 'beepbeep-ai-alt-text-generator'); ?></span>
+                            <span class="bbai-badge bbai-badge--pro-sm"><?php esc_html_e('Growth', 'beepbeep-ai-alt-text-generator'); ?></span>
                         <?php endif; ?>
                     </span>
                 </li>

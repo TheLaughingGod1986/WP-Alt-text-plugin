@@ -6,6 +6,10 @@
  * @since 5.0.0
  */
 
+// Ensure global variables exist (may not be defined if this file loads before main bundle)
+var alttextaiDebug = (typeof alttextaiDebug !== 'undefined') ? alttextaiDebug : ((typeof window !== 'undefined' && typeof window.bbai_ajax !== 'undefined' && window.bbai_ajax.debug) || false);
+var bbaiApp = (typeof bbaiApp !== 'undefined') ? bbaiApp : {};
+
 // Fallback upgrade selectors
 var FALLBACK_UPGRADE_SELECTOR = [
     '.bbai-upgrade-link',
@@ -42,21 +46,25 @@ function alttextaiShowModal() {
         return false;
     }
 
-    // Remove inline display:none to allow transition
-    if (modal.style.display === 'none') {
-        modal.style.display = 'flex';
-        modal.style.opacity = '0';
-        modal.style.visibility = 'hidden';
+    // Force display with inline styles (most reliable)
+    modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important; visibility: visible !important; opacity: 1 !important;';
+
+    // Also force the modal content to be visible
+    var modalContent = modal.querySelector('.bbai-upgrade-modal__content');
+    if (modalContent) {
+        modalContent.style.cssText = 'opacity: 1 !important; visibility: visible !important; transform: translateY(0) scale(1) !important;';
     }
-    
-    // Force reflow to ensure initial state is applied
-    void modal.offsetHeight;
-    
-    // Now add active class to trigger smooth animation
+
+    // Add active class for CSS consistency
     modal.classList.add('active');
+    modal.classList.add('is-visible');
     modal.removeAttribute('aria-hidden');
+    modal.setAttribute('aria-modal', 'true');
     document.body.style.overflow = 'hidden';
-    
+    if (document.documentElement) {
+        document.documentElement.style.overflow = 'hidden';
+    }
+
     // Focus the close button after animation starts
     setTimeout(function() {
         var closeBtn = modal.querySelector('.bbai-upgrade-modal__close, .bbai-modal-close, [data-action="close-modal"], button[aria-label*="Close"]');
@@ -65,6 +73,7 @@ function alttextaiShowModal() {
         }
     }, 150);
 
+    if (alttextaiDebug) console.log('[AltText AI] Modal should now be visible');
     return true;
 }
 

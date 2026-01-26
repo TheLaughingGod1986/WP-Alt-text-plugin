@@ -146,9 +146,12 @@
      */
     function generateAltTextForId(id) {
         return new Promise(function(resolve, reject) {
-            var ajaxUrl = (window.bbai_ajax && (window.bbai_ajax.ajax_url || window.bbai_ajax.ajaxurl)) ||
-                (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php');
+            var ajaxUrl = (window.bbai_ajax && (window.bbai_ajax.ajax_url || window.bbai_ajax.ajaxurl)) || '';
             var nonceValue = (window.bbai_ajax && window.bbai_ajax.nonce) || '';
+            if (!ajaxUrl) {
+                reject({ message: 'AJAX endpoint unavailable.', code: 'ajax_unavailable' });
+                return;
+            }
 
             $.ajax({
                 url: ajaxUrl,

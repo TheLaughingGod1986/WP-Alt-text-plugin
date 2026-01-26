@@ -51,99 +51,99 @@ const ComparisonTable = ({ plans, isLoading = false }) => {
   const features = [
     {
       name: 'AI-generations per month',
-      pro: '1,000',
-      agency: '10,000',
-      enterprise: 'Unlimited',
+      free: '50',
+      growth: '1,000',
+      agency: '10,000+',
     },
     {
       name: 'Priority queue',
-      pro: true,
+      free: false,
+      growth: true,
       agency: true,
-      enterprise: true,
     },
     {
       name: 'Bulk optimisation',
-      pro: true,
+      free: false,
+      growth: true,
       agency: true,
-      enterprise: true,
     },
     {
       name: 'Advanced SEO scoring',
-      pro: true,
+      free: false,
+      growth: true,
       agency: true,
-      enterprise: true,
     },
     {
       name: 'API access',
-      pro: true,
+      free: false,
+      growth: true,
       agency: true,
-      enterprise: true,
     },
     {
       name: 'Bulk queue unlimited images',
-      pro: false,
+      free: false,
+      growth: false,
       agency: true,
-      enterprise: true,
     },
     {
       name: 'Faster model tier',
-      pro: false,
+      free: false,
+      growth: false,
       agency: true,
-      enterprise: true,
     },
     {
       name: 'Priority support',
-      pro: false,
+      free: false,
+      growth: false,
       agency: true,
-      enterprise: true,
     },
     {
       name: 'Multi-user support',
-      pro: false,
+      free: false,
+      growth: false,
       agency: true,
-      enterprise: true,
     },
     {
       name: 'Dedicated queue',
-      pro: false,
+      free: false,
+      growth: false,
       agency: false,
-      enterprise: true,
     },
     {
       name: 'SLA (99.9%)',
-      pro: false,
+      free: false,
+      growth: false,
       agency: false,
-      enterprise: true,
     },
     {
       name: 'Dedicated support engineer',
-      pro: false,
+      free: false,
+      growth: false,
       agency: false,
-      enterprise: true,
     },
     {
       name: 'API + Webhooks',
-      pro: false,
+      free: false,
+      growth: false,
       agency: false,
-      enterprise: true,
     },
     {
       name: 'Custom credits',
-      pro: false,
+      free: false,
+      growth: false,
       agency: false,
-      enterprise: true,
     },
     {
       name: 'Onboarding session',
-      pro: false,
+      free: false,
+      growth: false,
       agency: false,
-      enterprise: true,
     },
     {
       name: 'SSO + SCIM (coming soon)',
-      pro: false,
+      free: false,
+      growth: false,
       agency: false,
-      enterprise: 'Coming soon',
     },
   ];
 
@@ -206,13 +206,13 @@ const ComparisonTable = ({ plans, isLoading = false }) => {
               Features
             </th>
             <th className="text-center py-4 px-6 font-semibold text-slate-900 font-inter text-sm">
-              Pro
+              Free
+            </th>
+            <th className="text-center py-4 px-6 font-semibold text-slate-900 font-inter text-sm">
+              Growth
             </th>
             <th className="text-center py-4 px-6 font-semibold text-slate-900 font-inter text-sm">
               Agency
-            </th>
-            <th className="text-center py-4 px-6 font-semibold text-slate-900 font-inter text-sm">
-              Enterprise
             </th>
           </tr>
         </thead>
@@ -225,9 +225,9 @@ const ComparisonTable = ({ plans, isLoading = false }) => {
               <td className="py-4 px-6 text-slate-700 font-normal text-sm font-inter text-left">
                 {feature.name}
               </td>
-              <td className="py-4 px-6">{renderFeatureValue(feature.pro)}</td>
+              <td className="py-4 px-6">{renderFeatureValue(feature.free)}</td>
+              <td className="py-4 px-6">{renderFeatureValue(feature.growth)}</td>
               <td className="py-4 px-6">{renderFeatureValue(feature.agency)}</td>
-              <td className="py-4 px-6">{renderFeatureValue(feature.enterprise)}</td>
             </tr>
           ))}
         </tbody>
@@ -237,4 +237,3 @@ const ComparisonTable = ({ plans, isLoading = false }) => {
 };
 
 export default ComparisonTable;
-

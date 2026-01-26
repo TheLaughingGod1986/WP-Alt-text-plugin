@@ -45,6 +45,15 @@ class License_Controller {
 	 * @return array Response data.
 	 */
 	public function activate_license(): array {
+		$nonce_raw = isset( $_POST['nonce'] ) ? wp_unslash( $_POST['nonce'] ) : '';
+		$nonce     = is_string( $nonce_raw ) ? sanitize_text_field( $nonce_raw ) : '';
+		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'bbai_activate_license' ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ),
+			);
+		}
+
 		// Check permission.
 		if ( ! $this->user_can_manage() ) {
 			return array(

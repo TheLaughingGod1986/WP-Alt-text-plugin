@@ -129,7 +129,7 @@ class BBAI_Schema_Markup {
 
         echo "\n<!-- BeepBeep AI - Image Schema Markup -->\n";
         echo '<script type="application/ld+json">';
-        echo wp_json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        echo wp_json_encode($schema);
         echo '</script>';
         echo "\n<!-- /BeepBeep AI - Image Schema Markup -->\n";
     }
@@ -141,12 +141,18 @@ class BBAI_Schema_Markup {
      * @return array Schema object
      */
     private static function build_image_object_schema($image_data) {
+        $url = isset( $image_data['url'] ) ? esc_url_raw( $image_data['url'] ) : '';
+        $alt = isset( $image_data['alt'] ) ? sanitize_text_field( $image_data['alt'] ) : '';
+        $title = isset( $image_data['title'] ) ? sanitize_text_field( $image_data['title'] ) : '';
+        $caption = isset( $image_data['caption'] ) ? wp_strip_all_tags( $image_data['caption'] ) : '';
+        $author = isset( $image_data['author'] ) ? sanitize_text_field( $image_data['author'] ) : '';
+
         $schema = [
             '@context' => 'https://schema.org',
             '@type' => 'ImageObject',
-            'contentUrl' => $image_data['url'],
-            'description' => $image_data['alt'],
-            'name' => $image_data['title'],
+            'contentUrl' => $url,
+            'description' => $alt,
+            'name' => $title,
         ];
 
         // Add optional properties if available
@@ -158,18 +164,18 @@ class BBAI_Schema_Markup {
             $schema['height'] = (int) $image_data['height'];
         }
 
-        if (!empty($image_data['caption'])) {
-            $schema['caption'] = $image_data['caption'];
+        if (!empty($caption)) {
+            $schema['caption'] = $caption;
         }
 
         if (!empty($image_data['date'])) {
             $schema['uploadDate'] = $image_data['date'];
         }
 
-        if (!empty($image_data['author'])) {
+        if (!empty($author)) {
             $schema['author'] = [
                 '@type' => 'Person',
-                'name' => $image_data['author'],
+                'name' => $author,
             ];
         }
 
@@ -191,7 +197,7 @@ class BBAI_Schema_Markup {
         // Add license if specified
         $license = get_post_meta(get_post_thumbnail_id(), '_wp_attachment_image_license', true);
         if ($license) {
-            $schema['license'] = $license;
+            $schema['license'] = sanitize_text_field( $license );
         }
 
         return $schema;

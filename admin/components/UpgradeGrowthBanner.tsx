@@ -97,13 +97,14 @@ const UpgradeGrowthBanner: React.FC = () => {
           <button
             type="button"
             className="w-full min-h-[44px] rounded-full bg-white px-6 py-3 text-[15px] font-semibold text-slate-900 shadow-lg transition duration-200 hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-sky-600 active:translate-y-0 lg:w-auto"
+            aria-label="Upgrade to Growth plan"
           >
-            Start 14 day free trial
+            Upgrade to Growth
           </button>
 
           {/* Microcopy */}
           <p className="text-center text-[12px] text-slate-200 lg:text-right">
-            Upgrade to Growth. Cancel anytime.
+            Includes 1,000 AI alt texts per month. Cancel anytime.
           </p>
 
           {/* Optional Compare Plans Link */}

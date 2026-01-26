@@ -75,7 +75,7 @@
                 if (relatedTarget && relatedTarget.closest('.bbai-tooltip')) {
                     return; // Don't hide if moving to tooltip
                 }
-                this.hideTooltip(element);
+            this.hideTooltip(element);
             }
         },
 

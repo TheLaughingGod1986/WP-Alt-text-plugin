@@ -3,11 +3,18 @@
  * Reusable tooltips with data-bbai-tooltip attribute
  */
 
-/* Tooltip Container */
-[data-bbai-tooltip] {
+/* Tooltip Container - only apply help cursor to non-interactive elements */
+[data-bbai-tooltip]:not(button):not(a):not(.bbai-btn):not([role="button"]) {
     position: relative;
     cursor: help;
-    display: inline-block;
+}
+
+/* Buttons with tooltips should keep their natural cursor and display */
+button[data-bbai-tooltip],
+a[data-bbai-tooltip],
+.bbai-btn[data-bbai-tooltip],
+[role="button"][data-bbai-tooltip] {
+    /* Don't override button styling */
 }
 
 /* Tooltip Base */

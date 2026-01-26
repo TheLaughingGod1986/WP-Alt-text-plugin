@@ -48,6 +48,7 @@ const cssBundle = {
         { path: 'assets/src/css/unified/_toast.css', section: '17. Toast Notifications' },
         { path: 'assets/src/css/unified/_tooltips.css', section: '18. Tooltips' },
         { path: 'assets/src/css/unified/_onboarding.css', section: '19. Onboarding' },
+        { path: 'assets/src/css/unified/_logged-out.css', section: '19b. Logged-Out Dashboard' },
         { path: 'assets/src/css/unified/_celebrations.css', section: '20. Celebrations' },
         { path: 'assets/src/css/unified/_analytics.css', section: '21. Analytics Dashboard' },
         { path: 'assets/src/css/unified/_seo-analytics.css', section: '22. SEO Analytics' },

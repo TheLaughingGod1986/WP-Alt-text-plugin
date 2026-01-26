@@ -18,8 +18,7 @@ $testimonials = file_exists($testimonials_file) ? include $testimonials_file : [
 // Get usage stats for social proof
 $usage_stats = isset($usage_stats) && is_array($usage_stats) ? $usage_stats : [];
 $total_sites = 10000; // This could be dynamic from API
-$plugin_file = defined('BBAI_PLUGIN_FILE') ? BBAI_PLUGIN_FILE : dirname(__FILE__, 3) . '/beepbeep-ai-alt-text-generator.php';
-$plugin_url = defined('BBAI_PLUGIN_URL') ? BBAI_PLUGIN_URL : plugin_dir_url($plugin_file);
+$plugin_url = defined('BEEPBEEP_AI_PLUGIN_URL') ? BEEPBEEP_AI_PLUGIN_URL : (defined('BBAI_PLUGIN_URL') ? BBAI_PLUGIN_URL : '');
 ?>
 
 <div class="bbai-social-proof-widget">

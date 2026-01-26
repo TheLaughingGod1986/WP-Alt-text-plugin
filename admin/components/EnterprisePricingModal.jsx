@@ -10,7 +10,7 @@ import './pricing-modal.css';
  * Enterprise Pricing Modal - Redesigned for Maximum Conversion
  * 
  * Key Improvements:
- * - Added Free, Growth, Agency plans (replacing Pro, Agency, Enterprise)
+ * - Added Free, Growth, Agency plans (replacing legacy plan labels)
  * - Monthly/Annual billing toggle with savings highlights
  * - Use case labels under each plan title
  * - Value-driven feature bullets (outcomes vs features)
@@ -190,7 +190,7 @@ const EnterprisePricingModal = ({ isOpen, onClose, currentPlan = null, onPlanSel
         <button
           ref={lastFocusableRef}
           onClick={onClose}
-          className="absolute top-6 right-6 z-10 text-slate-500 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-lg p-1 transition-colors"
+          className="bbai-btn bbai-btn-icon-only bbai-upgrade-modal__close"
           aria-label="Close modal"
           tabIndex={0}
         >
@@ -217,26 +217,23 @@ const EnterprisePricingModal = ({ isOpen, onClose, currentPlan = null, onPlanSel
               id="modal-title"
               className="text-4xl font-semibold text-slate-900 mb-4 font-inter text-left"
             >
-              Choose Your Plan
+              Choose your BeepBeep AI plan
             </h2>
             <p
               id="modal-description"
               className="text-base text-slate-600 font-normal font-inter text-left max-w-2xl"
             >
-              Select the plan that best fits your needs. All plans include
-              our core features with varying capacity and support levels.
+              Choose a plan that matches your monthly usage. Cancel anytime.
             </p>
           </div>
 
           {/* Billing Period Toggle */}
-          <div className="flex items-center justify-center">
-            <div className="bg-slate-100 rounded-lg p-1 inline-flex">
+          <div className="bbai-billing-toggle-wrapper">
+            <div className="bbai-billing-toggle">
               <button
                 onClick={() => setBillingPeriod('monthly')}
-                className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
-                  billingPeriod === 'monthly'
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                className={`bbai-btn bbai-billing-toggle__option ${
+                  billingPeriod === 'monthly' ? 'bbai-billing-toggle__option--active' : ''
                 }`}
                 aria-label="Monthly billing"
               >
@@ -244,15 +241,13 @@ const EnterprisePricingModal = ({ isOpen, onClose, currentPlan = null, onPlanSel
               </button>
               <button
                 onClick={() => setBillingPeriod('annual')}
-                className={`px-6 py-2 rounded-md text-sm font-medium transition-all relative ${
-                  billingPeriod === 'annual'
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                className={`bbai-btn bbai-billing-toggle__option ${
+                  billingPeriod === 'annual' ? 'bbai-billing-toggle__option--active' : ''
                 }`}
                 aria-label="Annual billing"
               >
                 Annual
-                <span className="ml-2 text-xs bg-emerald-500 text-white px-2 py-0.5 rounded-full font-semibold">
+                <span className="bbai-billing-savings">
                   Save 2 months
                 </span>
               </button>

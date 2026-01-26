@@ -79,7 +79,7 @@ const FreeUsageCard = ({
       </div>
 
       <h2 className="text-[11px] font-semibold tracking-[0.2em] text-slate-500 uppercase">
-        YOUR ALT TEXT PROGRESS THIS MONTH
+        Alt Text Progress This Month
       </h2>
 
       <div className="flex items-center gap-4">
@@ -144,7 +144,7 @@ const FreeUsageCard = ({
       </div>
 
       <p className="text-[12px] text-slate-500">
-        Limited to 50 images/month. Upgrade to Growth for 1,000 images/month.
+        Free plan includes 50 images per month. Growth includes 1,000 images per month.
       </p>
     </section>
   );
@@ -160,7 +160,7 @@ const GrowthCard = ({ onUpgradeClick, onComparePlans }) => (
       <div className="space-y-2">
         <h2 className="text-[24px] font-semibold text-white">Upgrade to Growth</h2>
         <p className="text-[15px] leading-relaxed text-slate-100">
-          Automate alt text coverage with more credits, bulk processing, and faster queues.
+          Automate alt text generation and scale image optimisation each month.
         </p>
       </div>
 
@@ -175,19 +175,19 @@ const GrowthCard = ({ onUpgradeClick, onComparePlans }) => (
           <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20">
             <CheckIcon className="h-4 w-4 text-white" />
           </span>
-          <span>Bulk processing for entire image libraries</span>
+          <span>Bulk processing for the media library</span>
         </li>
         <li className="flex items-start gap-3">
           <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20">
             <CheckIcon className="h-4 w-4 text-white" />
           </span>
-          <span>Priority queues for 3x faster results</span>
+          <span>Priority queue for faster results</span>
         </li>
         <li className="flex items-start gap-3">
           <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20">
             <CheckIcon className="h-4 w-4 text-white" />
           </span>
-          <span>Multilingual support for global SEO reach</span>
+          <span>Multilingual support for global SEO</span>
         </li>
       </ul>
 
@@ -197,10 +197,11 @@ const GrowthCard = ({ onUpgradeClick, onComparePlans }) => (
           data-action="show-upgrade-modal"
           onClick={onUpgradeClick}
           className="w-full rounded-full bg-white px-6 py-3 text-[15px] font-semibold text-slate-900 shadow-lg transition duration-200 hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-sky-500"
+          aria-label="Upgrade to Growth"
         >
-          Start 14 day free trial
+          Upgrade to Growth
         </button>
-        <p className="text-[12px] text-slate-200">Upgrade to Growth. Cancel anytime.</p>
+        <p className="text-[12px] text-slate-200">Includes 1,000 AI alt texts per month. Cancel anytime.</p>
         <button
           type="button"
           onClick={onComparePlans}

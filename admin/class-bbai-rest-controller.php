@@ -41,7 +41,7 @@ class REST_Controller {
 			[
 				'methods'             => 'POST',
 				'callback'            => [ $this, 'handle_generate_single' ],
-				'permission_callback' => [ $this, 'can_edit_media' ],
+				'permission_callback' => [ $this, 'can_edit_attachment' ],
 			]
 		);
 
@@ -51,7 +51,7 @@ class REST_Controller {
 			[
 				'methods'             => 'POST',
 				'callback'            => [ $this, 'handle_save_alt' ],
-				'permission_callback' => [ $this, 'can_edit_media' ],
+				'permission_callback' => [ $this, 'can_edit_attachment' ],
 			]
 		);
 
@@ -101,7 +101,7 @@ class REST_Controller {
 			[
 				'methods'             => 'GET',
 				'callback'            => [ $this, 'handle_usage_summary' ],
-				'permission_callback' => [ $this, 'can_view_usage' ],
+				'permission_callback' => [ $this, 'can_manage_admin' ],
 			]
 		);
 
@@ -111,7 +111,7 @@ class REST_Controller {
 			[
 				'methods'             => 'GET',
 				'callback'            => [ $this, 'handle_usage_by_user' ],
-				'permission_callback' => [ $this, 'can_view_team_usage' ],
+				'permission_callback' => [ $this, 'can_manage_admin' ],
 			]
 		);
 
@@ -121,7 +121,7 @@ class REST_Controller {
 			[
 				'methods'             => 'GET',
 				'callback'            => [ $this, 'handle_usage_events' ],
-				'permission_callback' => [ $this, 'can_view_team_usage' ],
+				'permission_callback' => [ $this, 'can_manage_admin' ],
 			]
 		);
 
@@ -131,7 +131,7 @@ class REST_Controller {
 			[
 				'methods'             => 'GET',
 				'callback'            => [ $this, 'handle_queue' ],
-				'permission_callback' => [ $this, 'can_edit_media' ],
+				'permission_callback' => [ $this, 'can_manage_admin' ],
 			]
 		);
 
@@ -141,7 +141,7 @@ class REST_Controller {
 			[
 				'methods'             => 'GET',
 				'callback'            => [ $this, 'handle_logs' ],
-				'permission_callback' => [ $this, 'can_edit_media' ],
+				'permission_callback' => [ $this, 'can_manage_admin' ],
 			]
 		);
 
@@ -151,7 +151,7 @@ class REST_Controller {
 			[
 				'methods'             => 'POST',
 				'callback'            => [ $this, 'handle_logs_clear' ],
-				'permission_callback' => [ $this, 'can_edit_media' ],
+				'permission_callback' => [ $this, 'can_manage_admin' ],
 			]
 		);
 
@@ -161,7 +161,7 @@ class REST_Controller {
 			[
 				'methods'             => 'GET',
 				'callback'            => [ $this, 'handle_user_usage' ],
-				'permission_callback' => [ $this, 'can_edit_media' ],
+				'permission_callback' => [ $this, 'can_manage_admin' ],
 			]
 		);
 
@@ -171,7 +171,7 @@ class REST_Controller {
 			[
 				'methods'             => 'GET',
 				'callback'            => [ $this, 'handle_events' ],
-				'permission_callback' => [ $this, 'can_edit_media' ],
+				'permission_callback' => [ $this, 'can_manage_admin' ],
 			]
 		);
 
@@ -187,12 +187,29 @@ class REST_Controller {
 	}
 
 	/**
-	 * Permission callback shared across routes.
+	 * Permission callback: can edit a specific attachment.
+	 *
+	 * @param \WP_REST_Request $request REST request instance.
+	 * @return bool
+	 */
+	public function can_edit_attachment( \WP_REST_Request $request ) {
+		$id = absint( $request['id'] ?? 0 );
+		if ( $id <= 0 ) {
+			return false;
+		}
+
+		return current_user_can( 'edit_post', $id );
+	}
+
+	/**
+	 * Permission callback shared across media routes.
 	 * When a license key is active, allows any user who can upload files to use shared credits
+	 *
+	 * @param \WP_REST_Request $request REST request instance.
 	 *
 	 * @return bool
 	 */
-	public function can_edit_media() {
+	public function can_edit_media( \WP_REST_Request $request ) {
 		// If license is active, allow any user who can upload files (site-wide licensing)
 		if ( method_exists( $this->core, 'api_client' ) && $this->core->api_client->has_active_license() ) {
 			return is_user_logged_in() && current_user_can( 'upload_files' );
@@ -203,6 +220,16 @@ class REST_Controller {
 			return true;
 		}
 
+		return current_user_can( 'manage_options' );
+	}
+
+	/**
+	 * Permission callback: admin-only routes.
+	 *
+	 * @param \WP_REST_Request $request REST request instance.
+	 * @return bool
+	 */
+	public function can_manage_admin( \WP_REST_Request $request ) {
 		return current_user_can( 'manage_options' );
 	}
 
@@ -808,7 +835,7 @@ class REST_Controller {
 	 *
 	 * @return bool
 	 */
-	public function can_view_usage() {
+	public function can_view_usage( \WP_REST_Request $request ) {
 		return is_user_logged_in() && current_user_can('upload_files');
 	}
 
@@ -817,7 +844,7 @@ class REST_Controller {
 	 *
 	 * @return bool
 	 */
-	public function can_view_team_usage() {
-		return current_user_can('manage_options') || current_user_can('bbai_view_team_usage');
+	public function can_view_team_usage( \WP_REST_Request $request ) {
+		return current_user_can('manage_options');
 	}
 }

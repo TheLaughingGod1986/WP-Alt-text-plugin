@@ -354,10 +354,7 @@
                     return window.bbai_ajax.ajaxurl;
                 }
             }
-            if (typeof ajaxurl !== 'undefined') {
-                return ajaxurl;
-            }
-            return '/wp-admin/admin-ajax.php';
+            return null;
         },
 
         getAjaxNonce: function() {

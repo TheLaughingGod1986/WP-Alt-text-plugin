@@ -5,7 +5,7 @@
  *
  * @package BeepBeep_AI
  * @since 5.0.0
- * @generated 2026-01-16T22:06:49.029Z
+ * @generated 2026-01-23T20:33:53.591Z
  */
 
 
@@ -138,11 +138,10 @@
             return;
         }
 
-        var ajaxUrl = '/wp-admin/admin-ajax.php';
-        if (window.bbai_ajax) {
-            ajaxUrl = window.bbai_ajax.ajax_url || window.bbai_ajax.ajaxurl || ajaxUrl;
-        } else if (typeof ajaxurl !== 'undefined') {
-            ajaxUrl = ajaxurl;
+        var ajaxUrl = (window.bbai_ajax && (window.bbai_ajax.ajax_url || window.bbai_ajax.ajaxurl)) || '';
+        if (!ajaxUrl) {
+            callback(false, 0, { message: 'AJAX endpoint unavailable.' }, ids.slice(0));
+            return;
         }
         var nonceValue = (window.bbai_ajax && window.bbai_ajax.nonce) || config.nonce;
 
@@ -542,6 +541,8 @@
      * Create and show success modal
      */
     function createSuccessModal() {
+        var adminBaseUrl = (window.bbai_ajax && window.bbai_ajax.admin_url) || '';
+        var libraryUrl = adminBaseUrl ? (adminBaseUrl + '?page=bbai&tab=library') : '#';
         var modalHtml =
             '<div id="bbai-modal-success" class="bbai-modal-success" role="dialog" aria-modal="true" aria-labelledby="bbai-modal-success-title">' +
             '    <div class="bbai-modal-success__overlay"></div>' +
@@ -575,7 +576,7 @@
             '            <div class="bbai-modal-success__summary-text">All images were processed successfully.</div>' +
             '        </div>' +
             '        <div class="bbai-modal-success__actions">' +
-            '            <a href="' + escapeHtml((typeof ajaxurl !== 'undefined' ? ajaxurl.replace('/admin-ajax.php', '/admin.php') : '/wp-admin/admin.php') + '?page=bbai&tab=library') + '" class="bbai-modal-success__btn bbai-modal-success__btn--primary">View ALT Library →</a>' +
+            '            <a href="' + escapeHtml(libraryUrl) + '" class="bbai-modal-success__btn bbai-modal-success__btn--primary">View ALT Library →</a>' +
             '            <button type="button" class="bbai-modal-success__btn bbai-modal-success__btn--secondary" data-action="view-warnings" style="display: none;">View Warnings</button>' +
             '        </div>' +
             '    </div>' +
@@ -595,8 +596,9 @@
 
         $modal.find('[data-action="view-warnings"]').on('click', function() {
             hideSuccessModal();
-            var libraryUrl = (typeof ajaxurl !== 'undefined' ? ajaxurl.replace('/admin-ajax.php', '/admin.php') : '/wp-admin/admin.php') + '?page=bbai&tab=library';
-            window.location.href = libraryUrl;
+            if (libraryUrl && libraryUrl !== '#') {
+                window.location.href = libraryUrl;
+            }
         });
 
         $(document).on('keydown.bbai-success-modal', function(e) {
@@ -811,9 +813,12 @@
      */
     function generateAltTextForId(id) {
         return new Promise(function(resolve, reject) {
-            var ajaxUrl = (window.bbai_ajax && (window.bbai_ajax.ajax_url || window.bbai_ajax.ajaxurl)) ||
-                (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php');
+            var ajaxUrl = (window.bbai_ajax && (window.bbai_ajax.ajax_url || window.bbai_ajax.ajaxurl)) || '';
             var nonceValue = (window.bbai_ajax && window.bbai_ajax.nonce) || '';
+            if (!ajaxUrl) {
+                reject({ message: 'AJAX endpoint unavailable.', code: 'ajax_unavailable' });
+                return;
+            }
 
             $.ajax({
                 url: ajaxUrl,
@@ -1297,12 +1302,15 @@
         $modal.addClass('active');
         $('body').css('overflow', 'hidden');
 
-        var ajaxUrl = (window.bbai_ajax && window.bbai_ajax.ajaxurl) ||
-                     (window.BBAI && window.BBAI.restRoot ? window.BBAI.restRoot.replace(/\/$/, '') + '/admin-ajax.php' : null) ||
-                     (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php');
+        var ajaxUrl = (window.bbai_ajax && window.bbai_ajax.ajaxurl) || '';
         var nonceValue = (window.bbai_ajax && window.bbai_ajax.nonce) ||
                        (window.BBAI && window.BBAI.nonce) ||
                        '';
+        if (!ajaxUrl) {
+            showModalError($modal, 'AJAX endpoint unavailable.');
+            reenableButton($btn, originalBtnText);
+            return;
+        }
 
         $.ajax({
             url: ajaxUrl,
@@ -1944,8 +1952,16 @@
         $button.prop('disabled', true).text('Activating...');
         $input.prop('disabled', true);
 
+        var ajaxUrl = (window.bbai_ajax && (window.bbai_ajax.ajaxurl || window.bbai_ajax.ajax_url)) || '';
+        if (!ajaxUrl) {
+            showLicenseStatus('error', 'AJAX endpoint unavailable.');
+            $button.prop('disabled', false).text('Activate License');
+            $input.prop('disabled', false);
+            return;
+        }
+
         $.ajax({
-            url: ajaxurl,
+            url: ajaxUrl,
             type: 'POST',
             data: {
                 action: 'beepbeepai_activate_license',
@@ -1988,8 +2004,15 @@
 
         $button.prop('disabled', true).text('Deactivating...');
 
+        var ajaxUrl = (window.bbai_ajax && (window.bbai_ajax.ajaxurl || window.bbai_ajax.ajax_url)) || '';
+        if (!ajaxUrl) {
+            window.bbaiModal.error('AJAX endpoint unavailable.');
+            $button.prop('disabled', false).text('Deactivate License');
+            return;
+        }
+
         $.ajax({
-            url: ajaxurl,
+            url: ajaxUrl,
             type: 'POST',
             data: {
                 action: 'beepbeepai_deactivate_license',
@@ -2069,14 +2092,36 @@
         }
 
         // Handle generate missing button
-        $(document).on('click', '[data-action="generate-missing"]', handleGenerateMissing);
+        $(document).on('click', '[data-action="generate-missing"]', function(e) {
+            if (typeof window.handleGenerateMissing === 'function') {
+                window.handleGenerateMissing.call(this, e);
+            } else if (typeof handleGenerateMissing === 'function') {
+                handleGenerateMissing.call(this, e);
+            } else {
+                console.error('[AI Alt Text] handleGenerateMissing function not found');
+            }
+        });
 
         // Handle regenerate all button
-        $(document).on('click', '[data-action="regenerate-all"]', handleRegenerateAll);
+        $(document).on('click', '[data-action="regenerate-all"]', function(e) {
+            if (typeof window.handleRegenerateAll === 'function') {
+                window.handleRegenerateAll.call(this, e);
+            } else if (typeof handleRegenerateAll === 'function') {
+                handleRegenerateAll.call(this, e);
+            } else {
+                console.error('[AI Alt Text] handleRegenerateAll function not found');
+            }
+        });
 
         // Handle individual regenerate buttons
         $(document).on('click', '[data-action="regenerate-single"]', function(e) {
-            handleRegenerateSingle.call(this, e);
+            if (typeof window.handleRegenerateSingle === 'function') {
+                window.handleRegenerateSingle.call(this, e);
+            } else if (typeof handleRegenerateSingle === 'function') {
+                handleRegenerateSingle.call(this, e);
+            } else {
+                console.error('[AI Alt Text] handleRegenerateSingle function not found');
+            }
         });
 
         // License management handlers

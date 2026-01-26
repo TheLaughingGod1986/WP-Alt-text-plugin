@@ -44,7 +44,16 @@ node_modules/
 
 # Build artifacts
 build/
+build-release/
 dist/
+
+# Documentation (development only)
+AUDIT_*.md
+*_REPORT.md
+*_SUMMARY.md
+*_PLAN.md
+IMPROVEMENT*.md
+REFACTORING*.md
 
 # Phase 5: Testing Infrastructure
 /vendor/

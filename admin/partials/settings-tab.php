@@ -202,8 +202,8 @@ if (!$is_authenticated && !$has_license) :
                         <?php endif; ?>
                     </div>
                     <?php if (!$is_pro && !$is_agency) : ?>
-                    <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-lg" data-action="show-upgrade-modal">
-                        <?php esc_html_e('Upgrade to Pro', 'beepbeep-ai-alt-text-generator'); ?>
+                    <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-lg" data-action="show-upgrade-modal" data-bbai-tooltip="<?php esc_attr_e('Get 1,000 images/month and advanced features', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="bottom">
+                        <?php esc_html_e('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'); ?>
                     </button>
                     <?php endif; ?>
                 </div>
@@ -248,7 +248,7 @@ if (!$is_authenticated && !$has_license) :
                                     <div class="bbai-settings-license-title"><?php esc_html_e('License Active', 'beepbeep-ai-alt-text-generator'); ?></div>
                                     <div class="bbai-settings-license-subtitle"><?php echo esc_html($org['name'] ?? ''); ?></div>
                                     <?php 
-                                    // Display license key for Pro and Agency users
+                                    // Display license key for Growth and Agency users
                                     $license_key = $this->api_client->get_license_key();
                                     if (!empty($license_key)) :
                                         $license_plan = strtolower($org['plan'] ?? 'free');
@@ -263,7 +263,7 @@ if (!$is_authenticated && !$has_license) :
                                     ?>
                                 </div>
                             </div>
-                            <button type="button" class="bbai-btn bbai-btn-danger" data-action="deactivate-license">
+                            <button type="button" class="bbai-btn bbai-btn-danger" data-action="deactivate-license" data-bbai-tooltip="<?php esc_attr_e('Remove license from this site', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="top">
                                 <?php esc_html_e('Deactivate', 'beepbeep-ai-alt-text-generator'); ?>
                             </button>
                         </div>
@@ -314,7 +314,7 @@ if (!$is_authenticated && !$has_license) :
                                     </div>
                                 </div>
                             </div>
-                            <button type="button" class="bbai-btn bbai-btn-danger" data-action="deactivate-license">
+                            <button type="button" class="bbai-btn bbai-btn-danger" data-action="deactivate-license" data-bbai-tooltip="<?php esc_attr_e('Remove license from this site', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="top">
                                 <?php esc_html_e('Deactivate', 'beepbeep-ai-alt-text-generator'); ?>
                             </button>
                         </div>
@@ -338,7 +338,7 @@ if (!$is_authenticated && !$has_license) :
                                            required>
                                 </div>
                                 <div id="license-activation-status" class="bbai-hidden bbai-alert"></div>
-                                <button type="submit" id="activate-license-btn" class="bbai-btn bbai-btn-primary">
+                                <button type="submit" id="activate-license-btn" class="bbai-btn bbai-btn-primary" data-bbai-tooltip="<?php esc_attr_e('Activate your Growth or Agency license on this site', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="right">
                                     <?php esc_html_e('Activate License', 'beepbeep-ai-alt-text-generator'); ?>
                                 </button>
                             </form>
@@ -366,7 +366,7 @@ if (!$is_authenticated && !$has_license) :
                         <span><?php esc_html_e('You are on the free plan.', 'beepbeep-ai-alt-text-generator'); ?></span>
                     </div>
                     <div class="bbai-settings-account-upgrade-link">
-                        <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-lg" data-action="show-upgrade-modal">
+                        <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-lg" data-action="show-upgrade-modal" data-bbai-tooltip="<?php esc_attr_e('Get 1,000 images/month and advanced features', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="bottom">
                             <?php esc_html_e('Upgrade Now', 'beepbeep-ai-alt-text-generator'); ?>
                         </button>
                     </div>
@@ -377,7 +377,7 @@ if (!$is_authenticated && !$has_license) :
                             if ($is_agency) {
                                 esc_html_e('Agency', 'beepbeep-ai-alt-text-generator');
                             } else {
-                                esc_html_e('Pro', 'beepbeep-ai-alt-text-generator');
+                                esc_html_e('Growth', 'beepbeep-ai-alt-text-generator');
                             }
                         ?></span>
                     </div>
@@ -404,7 +404,7 @@ if (!$is_authenticated && !$has_license) :
                         // Authenticated user - show Stripe portal
                     ?>
                     <div class="bbai-settings-account-actions">
-                        <button type="button" class="bbai-btn bbai-btn-secondary" data-action="manage-subscription">
+                        <button type="button" class="bbai-btn bbai-btn-secondary" data-action="manage-subscription" data-bbai-tooltip="<?php esc_attr_e('View invoices, update payment method, or modify your subscription', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="bottom">
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                 <circle cx="8" cy="8" r="2" fill="currentColor"/>
@@ -490,14 +490,6 @@ if (!$is_authenticated && !$has_license) :
                         </div>
                     </div>
                 </form>
-
-                <script>
-                (function($) {
-                    'use strict';
-                    // Toggle is handled by CSS, no JavaScript needed for visual updates
-                })(jQuery);
-                </script>
-
 
             </div>
             <?php endif; // End if/else for authentication check in settings tab ?>

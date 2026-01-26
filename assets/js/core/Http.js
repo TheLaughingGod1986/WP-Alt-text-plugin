@@ -16,7 +16,7 @@ export class Http {
 	 */
 	constructor(config = {}) {
 		this.config = {
-			baseUrl: window.bbaiData?.ajaxUrl || '/wp-admin/admin-ajax.php',
+			baseUrl: window.bbaiData?.ajaxUrl || window.bbai_ajax?.ajaxurl || window.bbai_ajax?.ajax_url || '',
 			nonce: window.bbaiData?.nonce || '',
 			timeout: 30000,
 			...config

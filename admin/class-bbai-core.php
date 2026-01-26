@@ -10,12 +10,16 @@ namespace BeepBeepAI\AltTextGenerator;
 
 if (!defined('ABSPATH')) { exit; }
 
-// Constants should be defined in main plugin file, but provide fallbacks
-$bbai_plugin_file = (defined('BEEPBEEP_AI_PLUGIN_FILE') && is_string(BEEPBEEP_AI_PLUGIN_FILE) && BEEPBEEP_AI_PLUGIN_FILE !== '')
-    ? BEEPBEEP_AI_PLUGIN_FILE
-    : ((defined('BBAI_PLUGIN_FILE') && is_string(BBAI_PLUGIN_FILE) && BBAI_PLUGIN_FILE !== '')
-        ? BBAI_PLUGIN_FILE
-        : dirname(__FILE__, 2) . '/beepbeep-ai-alt-text-generator.php');
+// Constants should be defined in main plugin file, but provide minimal fallbacks.
+$bbai_plugin_file = '';
+if (defined('BEEPBEEP_AI_PLUGIN_FILE') && is_string(BEEPBEEP_AI_PLUGIN_FILE) && BEEPBEEP_AI_PLUGIN_FILE !== '') {
+    $bbai_plugin_file = BEEPBEEP_AI_PLUGIN_FILE;
+} elseif (defined('BBAI_PLUGIN_FILE') && is_string(BBAI_PLUGIN_FILE) && BBAI_PLUGIN_FILE !== '') {
+    $bbai_plugin_file = BBAI_PLUGIN_FILE;
+}
+if ($bbai_plugin_file === '') {
+    $bbai_plugin_file = __FILE__;
+}
 
 if (!defined('BBAI_PLUGIN_FILE')) {
     define('BBAI_PLUGIN_FILE', $bbai_plugin_file);
@@ -49,7 +53,7 @@ if (!defined('BBAI_PLUGIN_BASENAME')) {
 }
 
 if (!defined('BBAI_VERSION')) {
-    define('BBAI_VERSION', defined('BEEPBEEP_AI_VERSION') ? BEEPBEEP_AI_VERSION : '4.2.3');
+    define('BBAI_VERSION', defined('BEEPBEEP_AI_VERSION') ? BEEPBEEP_AI_VERSION : '4.4.1');
 }
 
 // Load API clients, usage tracker, and queue infrastructure
@@ -570,13 +574,13 @@ class Core {
             if ($checkout === 'success') {
                 ?>
                 <div class="notice notice-success is-dismissible">
-                    <p><?php esc_html_e('Redirecting to secure checkout... Complete your payment to unlock up to 1,000 alt text generations per month with Pro.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                    <p><?php esc_html_e('Redirecting to secure checkout... Complete your payment to unlock up to 1,000 alt text generations per month with Growth.', 'beepbeep-ai-alt-text-generator'); ?></p>
                 </div>
                 <?php
             } elseif ($checkout === 'cancel') {
                 ?>
                 <div class="notice notice-warning is-dismissible">
-                    <p><?php esc_html_e('Checkout cancelled. Your plan remains unchanged. Upgrade anytime to unlock 1,000 generations per month with Pro.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                    <p><?php esc_html_e('Checkout cancelled. Your plan remains unchanged. Upgrade anytime to unlock 1,000 generations per month with Growth.', 'beepbeep-ai-alt-text-generator'); ?></p>
                 </div>
                 <?php
             }
@@ -665,8 +669,15 @@ class Core {
             return;
         }
 
+        // Migrate legacy option to plugin-prefixed name (site-wide).
+        $legacy_dismissed = get_option('wp_alt_text_api_notice_dismissed', null);
+        if (null !== $legacy_dismissed) {
+            update_option('bbai_api_notice_dismissed', (bool) $legacy_dismissed, false);
+            delete_option('wp_alt_text_api_notice_dismissed');
+        }
+
         // Check if modal has been dismissed (site-wide option, shows once for all users)
-        $dismissed = get_option('wp_alt_text_api_notice_dismissed', false);
+        $dismissed = get_option('bbai_api_notice_dismissed', false);
         if ($dismissed) {
             return;
         }
@@ -730,86 +741,6 @@ class Core {
                 </div>
             </div>
         </div>
-        
-        <script>
-        (function($) {
-            // Ensure jQuery and ajaxurl are available
-            if (typeof $ === 'undefined') {
-                console.error('[WP Alt Text AI] jQuery is required for the API notice modal');
-                return;
-            }
-            
-            // Show modal on page load with a small delay to ensure styles are loaded
-            $(document).ready(function() {
-                var $modal = $('#bbai-api-notice-modal');
-                if ($modal.length === 0) {
-                    return;
-                }
-                
-                // Small delay to ensure CSS is loaded
-                setTimeout(function() {
-                    $modal.css({
-                        'display': 'flex',
-                        'opacity': '0'
-                    }).animate({
-                        'opacity': '1'
-                    }, 300);
-                }, 500);
-            });
-            
-            // Handle close button
-            window.bbaiCloseApiNotice = function() {
-                var $modal = $('#bbai-api-notice-modal');
-                if ($modal.length === 0) {
-                    return;
-                }
-                
-                // Fade out and remove
-                $modal.animate({
-                    'opacity': '0'
-                }, 200, function() {
-                    // Dismiss via AJAX
-                    var ajaxUrl = (typeof ajaxurl !== 'undefined') ? ajaxurl : '<?php echo esc_js(admin_url('admin-ajax.php')); ?>';
-                    $.ajax({
-                        url: ajaxUrl,
-                        type: 'POST',
-                        data: {
-                            action: 'beepbeepai_dismiss_api_notice',
-                            nonce: '<?php echo esc_js($nonce); ?>'
-                        },
-                        success: function(response) {
-                            if (window.alttextaiDebug) console.log('[WP Alt Text AI] API notice dismissed');
-                        },
-                        error: function() {
-                            if (window.alttextaiDebug) console.log('[WP Alt Text AI] Failed to dismiss notice');
-                        }
-                    });
-                    
-                    // Remove modal from DOM
-                    $modal.remove();
-                });
-            };
-            
-            // Close on backdrop click (use event delegation)
-            $(document).on('click', '#bbai-api-notice-modal.bbai-modal-backdrop', function(e) {
-                if (e.target === this) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    bbaiCloseApiNotice();
-                }
-            });
-            
-            // Close on ESC key
-            $(document).on('keydown', function(e) {
-                if (e.key === 'Escape' || e.keyCode === 27) {
-                    var $modal = $('#bbai-api-notice-modal');
-                    if ($modal.length > 0 && $modal.is(':visible')) {
-                        bbaiCloseApiNotice();
-                    }
-                }
-            });
-        })(jQuery);
-        </script>
         <?php
     }
 
@@ -1173,16 +1104,6 @@ class Core {
     public function render_settings_page() {
         if (!$this->user_can_manage()) return;
 
-        // Suppress PHP 8.1+ deprecation warnings (these come from WordPress core, not our code)
-        // This prevents "headers already sent" errors while keeping other errors visible
-        $old_error_reporting = error_reporting();
-        error_reporting($old_error_reporting & ~E_DEPRECATED & ~E_STRICT);
-
-        // Start output buffering to catch any warnings that slip through
-        if (!ob_get_level()) {
-            ob_start();
-        }
-
         // Allocate free credits on first dashboard view so usage displays correctly
         Usage_Tracker::allocate_free_credits_if_needed();
 
@@ -1456,7 +1377,7 @@ class Core {
                                 <span class="bbai-header-plan-badge"><?php echo esc_html(is_string($plan_label) ? $plan_label : ucfirst($plan_slug ?? 'free')); ?></span>
                                 <?php if ($plan_slug === 'free' && !$has_license) : ?>
                                     <button type="button" class="bbai-header-upgrade-btn" data-action="show-upgrade-modal">
-                                        <?php esc_html_e('Upgrade to Pro — 1,000 Generations Monthly', 'beepbeep-ai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Upgrade to Growth — 1,000 Generations Monthly', 'beepbeep-ai-alt-text-generator'); ?>
                                     </button>
                                 <?php elseif (!empty($billing_portal) && $is_authenticated) : ?>
                                     <button type="button" class="bbai-header-manage-btn" data-action="open-billing-portal">
@@ -1470,7 +1391,7 @@ class Core {
                                 <?php endif; ?>
                             </div>
                         <?php else : ?>
-                            <button type="button" class="bbai-btn-primary" data-action="show-auth-modal" data-auth-tab="login">
+                            <button type="button" class="bbai-header-login-btn" data-action="show-auth-modal" data-auth-tab="login">
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                     <path d="M10 14H13C13.5523 14 14 13.5523 14 13V3C14 2.44772 13.5523 2 13 2H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                                     <path d="M5 11L2 8L5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1651,61 +1572,6 @@ class Core {
                         </form>
                     </div>
                 </div>
-                
-                <script>
-                (function($) {
-                    'use strict';
-                    
-                    $('#bbai-admin-login-form').on('submit', function(e) {
-                        e.preventDefault();
-                        
-                        const $form = $(this);
-                        const $status = $('#bbai-admin-login-status');
-                        const $btn = $('#admin-login-submit-btn');
-                        const $btnText = $btn.find('.bbai-btn__text');
-                        const $btnSpinner = $btn.find('.bbai-btn__spinner');
-                        
-                        const email = $('#admin-login-email').val().trim();
-                        const password = $('#admin-login-password').val();
-                        
-                        // Show loading
-                        $btn.prop('disabled', true);
-                        $btnText.hide();
-                        $btnSpinner.show();
-                        $status.hide();
-                        
-                        $.ajax({
-                            url: window.bbai_ajax.ajaxurl,
-                            type: 'POST',
-                            data: {
-                                action: 'bbai_admin_login',
-                                nonce: window.bbai_ajax.nonce,
-                                email: email,
-                                password: password
-                            },
-                            success: function(response) {
-                                if (response.success) {
-                                    $status.removeClass('error').addClass('success').text(response.data.message || 'Successfully logged in').show();
-                                    setTimeout(function() {
-                                        window.location.href = response.data.redirect || window.location.href;
-                                    }, 1000);
-                                } else {
-                                    $status.removeClass('success').addClass('error').text(response.data?.message || 'Login failed').show();
-                                    $btn.prop('disabled', false);
-                                    $btnText.show();
-                                    $btnSpinner.hide();
-                                }
-                            },
-                            error: function() {
-                                $status.removeClass('success').addClass('error').text('Network error. Please try again.').show();
-                                $btn.prop('disabled', false);
-                                $btnText.show();
-                                $btnSpinner.hide();
-                            }
-                        });
-                    });
-                })(jQuery);
-                </script>
             <?php else : ?>
                 <!-- Admin Content: Debug Logs and Settings -->
                 <div class="bbai-admin-content">
@@ -1780,80 +1646,6 @@ class Core {
                         }
                         ?>
                     </div>
-
-                <script>
-                (function($) {
-                    'use strict';
-                    
-                    // Admin tab switching
-                    $('.bbai-admin-tab').on('click', function(e) {
-                        e.preventDefault();
-                        
-                        const $tab = $(this);
-                        const tabName = $tab.data('admin-tab');
-                        
-                        // Update active tab
-                        $('.bbai-admin-tab').removeClass('active');
-                        $tab.addClass('active');
-                        
-                        // Show/hide content
-                        $('.bbai-admin-tab-content').hide();
-                        $('.bbai-admin-tab-content[data-admin-tab-content="' + tabName + '"]').show();
-                        
-                        // Load license site usage when switching to settings tab
-                        if (tabName === 'settings' && typeof window.loadLicenseSiteUsage === 'function') {
-                            // Small delay to ensure DOM is updated
-                            setTimeout(function() {
-                                window.loadLicenseSiteUsage();
-                            }, 100);
-                        }
-                        
-                        // Update URL hash without scrolling
-                        if (history.pushState) {
-                            history.pushState(null, null, '#' + tabName);
-                        }
-                    });
-                    
-                    // Check for hash on load
-                    const hash = window.location.hash.replace('#', '');
-                    if (hash === 'debug' || hash === 'settings') {
-                        $('.bbai-admin-tab[data-admin-tab="' + hash + '"]').trigger('click');
-                    }
-                    
-                    // Logout handler
-                    $('#bbai-admin-logout-btn').on('click', function(e) {
-                        e.preventDefault();
-                        
-                        if (!confirm('<?php echo esc_js(__('Are you sure you want to log out of the admin panel?', 'beepbeep-ai-alt-text-generator')); ?>')) {
-                            return;
-                        }
-                        
-                        const $btn = $(this);
-                        $btn.prop('disabled', true);
-                        
-                        $.ajax({
-                            url: window.bbai_ajax.ajaxurl,
-                            type: 'POST',
-                            data: {
-                                action: 'bbai_admin_logout',
-                                nonce: window.bbai_ajax.nonce
-                            },
-                            success: function(response) {
-                                if (response.success) {
-                                    window.location.href = response.data.redirect || window.location.href;
-                                } else {
-                                    window.bbaiModal.error(response.data?.message || 'Logout failed');
-                                    $btn.prop('disabled', false);
-                                }
-                            },
-                            error: function() {
-                                window.bbaiModal.error('Network error. Please try again.');
-                                $btn.prop('disabled', false);
-                            }
-                        });
-                    });
-                })(jQuery);
-                </script>
             <?php endif; ?>
             </div><!-- .bbai-container -->
             
@@ -1898,16 +1690,6 @@ class Core {
         // Include upgrade modal - always available for all tabs
         $checkout_prices = $this->get_checkout_price_ids();
         include BBAI_PLUGIN_DIR . 'templates/upgrade-modal.php';
-
-        // Clean output buffer of any deprecation warnings and restore error reporting
-        $output = ob_get_clean();
-        if ($output) {
-            // Remove deprecation warnings from output
-            $output = preg_replace('/Deprecated:.*?on line \d+.*?\n/i', '', $output);
-            $output = preg_replace('/Warning:.*?headers already sent.*?\n/i', '', $output);
-            echo $output;
-        }
-        error_reporting($old_error_reporting);
     }
 
     /**
@@ -3136,7 +2918,7 @@ class Core {
                     }
                     
                     $reset_date = isset($usage['resetDate']) ? $usage['resetDate'] : null;
-                    $reset_message = __('Monthly quota exhausted. Upgrade to Pro for 1,000 generations per month, or wait for your quota to reset. You can manage your subscription in Settings.', 'beepbeep-ai-alt-text-generator');
+                    $reset_message = __('Monthly quota exhausted. Upgrade to Growth for 1,000 generations per month, or wait for your quota to reset. You can manage your subscription in Settings.', 'beepbeep-ai-alt-text-generator');
                     
                     if ($reset_date) {
                         try {
@@ -3144,7 +2926,7 @@ class Core {
                             if ($reset_ts !== false) {
                                 $formatted_date = date_i18n('F j, Y', $reset_ts);
                                 $reset_message = sprintf(
-                                    __('Monthly quota exhausted. Your quota will reset on %s. Upgrade to Pro for 1,000 generations per month, or manage your subscription in Settings.', 'beepbeep-ai-alt-text-generator'),
+                                    __('Monthly quota exhausted. Your quota will reset on %s. Upgrade to Growth for 1,000 generations per month, or manage your subscription in Settings.', 'beepbeep-ai-alt-text-generator'),
                                     $formatted_date
                                 );
                             }
@@ -3764,13 +3546,23 @@ class Core {
         $css_base = $use_debug_assets ? 'assets/src/css/' : 'assets/dist/css/';
         $asset_path = static function(string $base, string $name, bool $debug, string $type) use ($base_path): string {
             $extension = $debug ? ".$type" : ".min.$type";
-            $minified_path = $base . $name . $extension;
+            $path = $base . $name . $extension;
+
+            if ($debug && !file_exists($base_path . $path)) {
+                $dist_base = str_replace('assets/src/', 'assets/dist/', $base);
+                $dist_path = $dist_base . $name . ".min.$type";
+                if (file_exists($base_path . $dist_path)) {
+                    return $dist_path;
+                }
+            }
+
             // If minified file doesn't exist, fall back to source file
-            if (!$debug && !file_exists($base_path . $minified_path)) {
+            if (!$debug && !file_exists($base_path . $path)) {
                 $source_base = str_replace('assets/dist/', 'assets/src/', $base);
                 return $source_base . $name . ".$type";
             }
-            return $minified_path;
+
+            return $path;
         };
 
         $admin_file    = $asset_path($js_base, 'bbai-admin', $use_debug_assets, 'js');
@@ -3825,9 +3617,22 @@ class Core {
                 'ajaxurl' => admin_url('admin-ajax.php'),
                 'ajax_url'=> admin_url('admin-ajax.php'),
                 'nonce'   => wp_create_nonce('beepbeepai_nonce'),
+                'admin_url' => admin_url('admin.php'),
+                'admin_logout_confirm' => __('Are you sure you want to log out of the admin panel?', 'beepbeep-ai-alt-text-generator'),
                 'can_manage' => $this->user_can_manage(),
                 'logout_redirect' => admin_url('admin.php?page=bbai'),
             ]);
+
+            if (in_array($hook, ['upload.php', 'post.php', 'post-new.php'], true)) {
+                $upload_fallback = $asset_path($js_base, 'bbai-upload-fallback', $use_debug_assets, 'js');
+                wp_enqueue_script(
+                    'bbai-upload-fallback',
+                    $base_url . $upload_fallback,
+                    ['jquery', 'bbai-admin'],
+                    $asset_version($upload_fallback, '1.0.0'),
+                    true
+                );
+            }
         }
 
         // Always load dashboard CSS/JS if on a bbai page (double-check with $_GET)
@@ -3839,6 +3644,8 @@ class Core {
             $upgrade_js  = $asset_path($js_base, 'upgrade-modal', $use_debug_assets, 'js');
             $auth_css    = $asset_path($css_base, 'auth-modal', $use_debug_assets, 'css');
             $auth_js     = $asset_path($js_base, 'auth-modal', $use_debug_assets, 'js');
+            $dashboard_scripts_js = $asset_path($js_base, 'bbai-dashboard-scripts', $use_debug_assets, 'js');
+            $admin_panel_js = $asset_path($js_base, 'bbai-admin-panel', $use_debug_assets, 'js');
 
             // Enqueue unified CSS bundle (v6.0 - single optimized stylesheet)
             // This replaces: design-system, components, dashboard, ui, button-enhancements,
@@ -3859,6 +3666,78 @@ class Core {
                 $asset_version('assets/css/modern.bundle.min.css', '5.0.0')
             );
 
+            $hero_css = <<<CSS
+.bbai-hero-section {
+    background: linear-gradient(to bottom, #f7fee7 0%, #ffffff 100%);
+    border-radius: 24px;
+    margin-bottom: 32px;
+    padding: 48px 40px;
+    text-align: center;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+.bbai-hero-content {
+    margin-bottom: 32px;
+}
+.bbai-hero-title {
+    margin: 0 0 16px 0;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.2;
+}
+.bbai-hero-subtitle {
+    margin: 0;
+    font-size: 1.125rem;
+    color: #475569;
+    line-height: 1.6;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.bbai-hero-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.bbai-hero-btn-primary {
+    background: linear-gradient(135deg, #14b8a6 0%, #84cc16 100%);
+    color: white;
+    border: none;
+    padding: 16px 32px;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+}
+.bbai-hero-btn-primary:hover {
+    opacity: 0.9;
+}
+.bbai-hero-link-secondary {
+    background: transparent;
+    border: none;
+    color: #6b7280;
+    text-decoration: underline;
+    font-size: 14px;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    padding: 0;
+}
+.bbai-hero-link-secondary:hover {
+    color: #14b8a6;
+}
+.bbai-hero-micro-copy {
+    font-size: 14px;
+    color: #64748b;
+    font-weight: 500;
+}
+CSS;
+
+            wp_add_inline_style('bbai-unified', $hero_css);
+
             // Custom modal system (replaces native alert())
             wp_enqueue_style(
                 'bbai-modal',
@@ -3878,6 +3757,15 @@ class Core {
                 $asset_version($js_file, '3.0.0'),
                 true
             );
+
+            $analytics_js = $asset_path($js_base, 'bbai-analytics', $use_debug_assets, 'js');
+            wp_enqueue_script(
+                'bbai-analytics',
+                $base_url . $analytics_js,
+                ['jquery', 'bbai-dashboard'],
+                $asset_version($analytics_js, '1.0.0'),
+                true
+            );
             wp_enqueue_script(
                 'bbai-upgrade',
                 $base_url . $upgrade_js,
@@ -3890,6 +3778,22 @@ class Core {
                 $base_url . $auth_js,
                 ['jquery'],
                 $asset_version($auth_js, '4.0.0'),
+                true
+            );
+
+            wp_enqueue_script(
+                'bbai-admin-panel',
+                $base_url . $admin_panel_js,
+                ['jquery', 'bbai-dashboard'],
+                $asset_version($admin_panel_js, '1.0.0'),
+                true
+            );
+
+            wp_enqueue_script(
+                'bbai-dashboard-scripts',
+                $base_url . $dashboard_scripts_js,
+                ['jquery', 'bbai-dashboard'],
+                $asset_version($dashboard_scripts_js, '1.0.0'),
                 true
             );
 
@@ -3925,6 +3829,19 @@ class Core {
                 $asset_version($asset_path($js_base, 'bbai-modal', $use_debug_assets, 'js'), '4.3.0'),
                 true
             );
+
+            // Pricing modal bridge (handles upgrade modal triggers)
+            $pricing_bridge_path = 'admin/components/pricing-modal-bridge.js';
+            $pricing_bridge_full_path = $base_path . $pricing_bridge_path;
+            if (file_exists($pricing_bridge_full_path)) {
+                wp_enqueue_script(
+                    'bbai-pricing-modal-bridge',
+                    $base_url . $pricing_bridge_path,
+                    ['jquery', 'bbai-dashboard'],
+                    filemtime($pricing_bridge_full_path),
+                    true
+                );
+            }
 
             // Enqueue usage components bridge (requires React/ReactDOM to be loaded separately)
             // This is optional and should not block other functionality if missing
@@ -4026,6 +3943,8 @@ class Core {
                 'api_url' => $api_url,
                 'is_authenticated' => $this->api_client->is_authenticated(),
                 'user_data' => $this->api_client->get_user_data(),
+                'admin_url' => admin_url('admin.php'),
+                'admin_logout_confirm' => __('Are you sure you want to log out of the admin panel?', 'beepbeep-ai-alt-text-generator'),
                 'can_manage' => $this->user_can_manage(),
                 'logout_redirect' => admin_url('admin.php?page=bbai'),
             ]);
@@ -4183,7 +4102,8 @@ class Core {
         }
         
         // Store as site option so it shows only once globally, not per user
-        update_option('wp_alt_text_api_notice_dismissed', true, false);
+        update_option('bbai_api_notice_dismissed', true, false);
+        delete_option('wp_alt_text_api_notice_dismissed');
         wp_send_json_success(['message' => __('Notice dismissed', 'beepbeep-ai-alt-text-generator')]);
     }
 
@@ -4312,7 +4232,6 @@ class Core {
             \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'Regenerate request received', [
                 'attachment_id_raw' => $attachment_id_raw,
                 'attachment_id' => $attachment_id,
-                'post_data_keys' => array_keys($_POST),
             ], 'generation');
         }
         
@@ -4361,7 +4280,7 @@ class Core {
                     $reset_date = $error_data['usage']['resetDate'] ?? null;
                 }
                 
-                $user_message = __('Monthly quota exhausted. Your quota will reset on the first of next month. Upgrade to Pro for 1,000 generations per month, or manage your subscription in Settings.', 'beepbeep-ai-alt-text-generator');
+                $user_message = __('Monthly quota exhausted. Your quota will reset on the first of next month. Upgrade to Growth for 1,000 generations per month, or manage your subscription in Settings.', 'beepbeep-ai-alt-text-generator');
                 
                 if ($reset_date) {
                     try {
@@ -4369,7 +4288,7 @@ class Core {
                         if ($reset_ts !== false) {
                             $formatted_date = date_i18n('F j, Y', $reset_ts);
                             $user_message = sprintf(
-                                __('Monthly quota exhausted. Your quota will reset on %s. Upgrade to Pro for 1,000 generations per month, or manage your subscription in Settings.', 'beepbeep-ai-alt-text-generator'),
+                                __('Monthly quota exhausted. Your quota will reset on %s. Upgrade to Growth for 1,000 generations per month, or manage your subscription in Settings.', 'beepbeep-ai-alt-text-generator'),
                                 $formatted_date
                             );
                         }
@@ -4774,7 +4693,7 @@ class Core {
             $usage = $this->api_client->get_usage();
             if (!is_wp_error($usage) && isset($usage['plan']) && $usage['plan'] === 'free') {
                 wp_send_json_error([
-                    'message' => __('This site is already linked to a free account. Ask an administrator to upgrade to Pro or Agency for higher limits.', 'beepbeep-ai-alt-text-generator'),
+                    'message' => __('This site is already linked to a free account. Ask an administrator to upgrade to Growth or Agency for higher limits.', 'beepbeep-ai-alt-text-generator'),
                     'code' => 'free_plan_exists'
                 ]);
             }
@@ -4789,7 +4708,7 @@ class Core {
             // Handle free plan already used error
             if ($error_code === 'free_plan_exists' || (is_string($error_message) && strpos(strtolower($error_message), 'free plan') !== false)) {
                 wp_send_json_error([
-                    'message' => __('A free plan has already been used for this site. Upgrade to Pro or Agency to increase your quota.', 'beepbeep-ai-alt-text-generator'),
+                    'message' => __('A free plan has already been used for this site. Upgrade to Growth or Agency to increase your quota.', 'beepbeep-ai-alt-text-generator'),
                     'code' => 'free_plan_exists'
                 ]);
             }
@@ -4878,7 +4797,9 @@ class Core {
         }
 
         // Verify nonce
-        if (!isset($_POST['bbai_logout_nonce']) || !wp_verify_nonce($_POST['bbai_logout_nonce'], 'bbai_logout_action')) {
+        $nonce_raw = isset($_POST['bbai_logout_nonce']) ? wp_unslash($_POST['bbai_logout_nonce']) : '';
+        $nonce = is_string($nonce_raw) ? sanitize_text_field($nonce_raw) : '';
+        if (!$nonce || !wp_verify_nonce($nonce, 'bbai_logout_action')) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('BeepBeep AI: Nonce verification failed');
             }
@@ -5672,7 +5593,7 @@ class Core {
         }
 
         $time = strtotime($timestamp);
-        if ($time === false) {
+        if ($time === false || $time <= 0) {
             return __('Just now', 'beepbeep-ai-alt-text-generator');
         }
 
@@ -5960,325 +5881,4 @@ class Core {
 // Class instantiation moved to class-bbai-admin.php bootstrap_core()
 // to prevent duplicate menu registration
 
-// Inline JS fallback to add row-action behaviour
-add_action('admin_footer-upload.php', function(){
-    ?>
-    <script>
-    (function($){
-        function refreshDashboard(){
-            if (!window.BBAI || !BBAI.restStats || !window.fetch){
-                return;
-            }
-
-            var nonce = (BBAI.nonce || (window.wpApiSettings ? wpApiSettings.nonce : ''));
-            var headers = {
-                'X-WP-Nonce': nonce,
-                    'Accept': 'application/json'
-            };
-            var statsUrl = BBAI.restStats + (BBAI.restStats.indexOf('?') === -1 ? '?' : '&') + 'fresh=1';
-            var usageUrl = BBAI.restUsage || '';
-
-            Promise.all([
-                fetch(statsUrl, { credentials: 'same-origin', headers: headers }).then(function(res){ return res.ok ? res.json() : null; }),
-                usageUrl ? fetch(usageUrl, { credentials: 'same-origin', headers: headers }).then(function(res){ return res.ok ? res.json() : null; }) : Promise.resolve(null)
-            ])
-            .then(function(results){
-                var stats = results[0], usage = results[1];
-                if (!stats){ return; }
-                if (typeof window.dispatchEvent === 'function'){
-                    try {
-                        window.dispatchEvent(new CustomEvent('bbai-stats-update', { detail: { stats: stats, usage: usage } }));
-                    } catch(e){}
-                }
-            })
-            .catch(function(){});
-        }
-
-        function restore(btn){
-            var original = btn.data('original-text');
-            btn.text(original || 'Generate Alt');
-            if (btn.is('button, input')){
-                btn.prop('disabled', false);
-            }
-        }
-
-        function updateAltField(id, value, context){
-            var selectors = [
-                '#attachment_alt',
-                '#attachments-' + id + '-alt',
-                '[data-setting="alt"] textarea',
-                '[data-setting="alt"] input',
-                '[name="attachments[' + id + '][alt]"]',
-                '[name="attachments[' + id + '][_wp_attachment_image_alt]"]',
-                '[name="attachments[' + id + '][image_alt]"]',
-                'textarea[name="_wp_attachment_image_alt"]',
-                'input[name="_wp_attachment_image_alt"]',
-                'textarea[aria-label="Alternative Text"]',
-                '.attachment-details textarea',
-                '.attachment-details input[name*="_wp_attachment_image_alt"]'
-            ];
-            var field;
-            selectors.some(function(sel){
-                var scoped = context && context.length ? context.find(sel) : $(sel);
-                if (scoped.length){
-                    field = scoped.first();
-                    return true;
-                }
-                return false;
-            });
-            // Hard fallback: directly probe common fields on the attachment edit screen
-            if ((!field || !field.length)){
-                var fallback = $('#attachment_alt');
-                if (!fallback.length){ fallback = $('textarea[name="_wp_attachment_image_alt"]'); }
-                if (!fallback.length){ fallback = $('textarea[aria-label="Alternative Text"]'); }
-                if (fallback.length){ field = fallback.first(); }
-            }
-            if (field && field.length){
-                field.val(value);
-                field.text(value);
-                field.attr('value', value);
-                field.trigger('input').trigger('change');
-            } else {
-                // Fallback: update via REST media endpoint (alt_text)
-                try {
-                    var mediaUrl = (window.wp && window.wpApiSettings && window.wpApiSettings.root) ? window.wpApiSettings.root : (window.ajaxurl ? window.ajaxurl.replace('admin-ajax.php', 'index.php?rest_route=/') : '/wp-json/');
-                    var nonce = (BBAI && BBAI.nonce) ? BBAI.nonce : (window.wpApiSettings ? wpApiSettings.nonce : '');
-                    if (mediaUrl && nonce){
-                        fetch(mediaUrl + 'wp/v2/media/' + id, {
-                            method: 'POST',
-                            headers: { 'X-WP-Nonce': nonce, 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ alt_text: value })
-                        }).then(function(){
-                            var c = context && context.length ? context : $('.attachment-details');
-                            var tf = c.find('textarea, input').filter('[name*="_wp_attachment_image_alt"], [aria-label="Alternative Text"], #attachment_alt').first();
-                            if (tf && tf.length){ tf.val(value).text(value).attr('value', value).trigger('input').trigger('change'); }
-                        }).catch(function(){});
-                    }
-                } catch(e){}
-            }
-
-            if (window.wp && wp.media && typeof wp.media.attachment === 'function'){
-                var attachment = wp.media.attachment(id);
-                if (attachment){
-                    try { attachment.set('alt', value); } catch (err) {}
-                }
-            }
-        }
-
-        function pushNotice(type, message){
-            if (window.wp && wp.data && wp.data.dispatch){
-                try {
-                    wp.data.dispatch('core/notices').createNotice(type, message, { isDismissible: true });
-                    return;
-                } catch(err) {}
-            }
-            var $notice = $('<div class="notice notice-' + type + ' is-dismissible"><p>' + message + '</p></div>');
-            var $target = $('#wpbody-content').find('.wrap').first();
-            if ($target.length){
-                $target.prepend($notice);
-            } else {
-                $('#wpbody-content').prepend($notice);
-            }
-        }
-
-        function canManageAccount(){
-            return !!(window.BBAI && BBAI.canManage);
-        }
-
-        function handleLimitReachedNotice(payload){
-            var message = (payload && payload.message) ? payload.message : 'Monthly limit reached. Please contact a site administrator.';
-            pushNotice('warning', message);
-
-            if (!canManageAccount()){
-                return;
-            }
-
-            try {
-                // Try bbaiApp namespace first
-                if (window.bbaiApp && bbaiApp.upgradeUrl) {
-                    window.open(bbaiApp.upgradeUrl, '_blank');
-                } else if (window.BBAI && BBAI.upgradeUrl) {
-                    window.open(BBAI.upgradeUrl, '_blank');
-                } else if (window.bbaiApp && bbaiApp.upgradeUrl) {
-                    // Legacy fallback
-                    window.open(bbaiApp.upgradeUrl, '_blank');
-                }
-            } catch(e){}
-
-            if (jQuery('.bbai-upgrade-banner').length){
-                jQuery('.bbai-upgrade-banner .show-upgrade-modal').trigger('click');
-            }
-        }
-
-        // Handler for ALT Library regenerate button
-        $(document).on('click', '[data-action="regenerate-single"]', function(e){
-            e.preventDefault();
-            
-            var btn = $(this);
-            var btnElement = btn[0]; // Get native DOM element
-            
-            // CRITICAL FIX: Read directly from native DOM attribute to avoid any jQuery caching
-            // This is the most reliable way to get the data attribute value
-            var attachment_id = btnElement ? btnElement.getAttribute('data-attachment-id') : null;
-            
-            // Fallback: Try parent row if button doesn't have it
-            if (!attachment_id) {
-                var parentRow = btn.closest('tr[data-attachment-id]');
-                if (parentRow.length) {
-                    attachment_id = parentRow[0].getAttribute('data-attachment-id');
-                }
-            }
-            
-            // Final fallback: Use jQuery methods (but log warning)
-            if (!attachment_id) {
-                console.warn('WARNING: Could not read attachment_id from HTML attribute, using jQuery fallback');
-                attachment_id = btn.attr('data-attachment-id') || btn.data('attachment-id');
-            }
-            
-            // Convert to integer to ensure it's a number
-            attachment_id = parseInt(attachment_id, 10);
-            
-            // CRITICAL: Debug - Log attachment ID multiple ways to catch any issues
-            // Use alert() as fallback since console.log might not be showing
-            if (!attachment_id || isNaN(attachment_id) || attachment_id <= 0){
-                console.error('ERROR: Invalid attachment ID:', attachment_id);
-                return pushNotice('error', 'AI ALT: Invalid attachment ID. Please refresh the page and try again.');
-            }
-
-            if (typeof btn.data('original-text') === 'undefined'){
-                btn.data('original-text', btn.text());
-            }
-
-            var originalText = btn.data('original-text') || 'Regenerate';
-            btn.text('Regenerating…').prop('disabled', true);
-
-            // Get nonce - try multiple sources
-            var nonce = (BBAI && BBAI.nonce) ||
-                       (window.wpApiSettings && wpApiSettings.nonce) ||
-                       (bbai_ajax && bbai_ajax.nonce) ||
-                       jQuery('#license-nonce').val() ||
-                       '';
-
-            // Call AJAX endpoint
-            var ajaxData = {
-                action: 'beepbeepai_regenerate_single',
-                nonce: nonce,
-                attachment_id: attachment_id,
-                // Add timestamp to prevent caching
-                _timestamp: Date.now()
-            };
-
-            // CRITICAL: Read attachment_id ONE MORE TIME right before sending (fresh from DOM)
-            // This ensures we have the absolute latest value from the HTML
-            var final_check_id = null;
-            if (btnElement) {
-                // Try multiple attributes in order of preference
-                final_check_id = btnElement.getAttribute('data-attachment-id') || 
-                                btnElement.getAttribute('data-image-id') || 
-                                btnElement.getAttribute('data-id');
-            }
-            
-            // If button doesn't have it, check parent row
-            if (!final_check_id) {
-                var parentRowCheck = btn.closest('tr[data-attachment-id]')[0];
-                if (parentRowCheck) {
-                    final_check_id = parentRowCheck.getAttribute('data-attachment-id');
-                }
-            }
-            
-            // Convert to integer
-            final_check_id = final_check_id ? parseInt(final_check_id, 10) : null;
-            
-            // If we got a valid ID from final check, use it (it's fresher)
-            if (final_check_id && !isNaN(final_check_id) && final_check_id > 0) {
-                attachment_id = final_check_id;
-                ajaxData.attachment_id = attachment_id;
-            }
-
-            jQuery.post(ajaxurl, ajaxData, function(response){
-                restore(btn);
-                
-                if (response.success){
-                    // Backend returns altText (camelCase), support both for compatibility
-                    // Response structure: {success: true, data: {altText: "...", attachment_id: 123, ...}}
-                    var altText = (response.data && response.data.altText) || 
-                                  (response.data && response.data.alt_text) || 
-                                  (response.data && response.data.data && response.data.data.altText) ||
-                                  (response.data && response.data.data && response.data.data.alt_text) ||
-                                  (typeof response.data === 'string' ? response.data : '');
-                    
-                    if (altText && typeof altText === 'string' && altText.length > 0){
-                        // Check if there's an existing modal with id "bbai-regenerate-modal"
-                        var existingModal = $('#bbai-regenerate-modal');
-                        if (existingModal.length && existingModal.is(':visible')){
-                            // Modal already exists and is visible - update it
-                            existingModal.find('#bbai-regenerate-content').html(
-                                '<p style="color: #059669; padding: 10px; background: #d1fae5; border-radius: 4px;">' + 
-                                'Success! New alt text: ' + altText + '</p>'
-                            );
-                            
-                            // Update apply button to save the alt text
-                            existingModal.find('.bbai-btn-apply, [data-action="accept"]').off('click').on('click', function(){
-                                // Use REST API to save alt text
-                                var saveNonce = (BBAI && BBAI.nonce) || (window.wpApiSettings && wpApiSettings.nonce) || '';
-                                fetch((BBAI && BBAI.restAlt) || '/wp-json/bbai/v1/alt/' + attachment_id, {
-                                    method: 'POST',
-                                    headers: {
-                                        'X-WP-Nonce': saveNonce,
-                                        'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify({alt_text: altText})
-                                }).then(function(r){ return r.json(); }).then(function(saveData){
-                                    if (saveData && saveData.alt_text){
-                                        pushNotice('success', 'Alt text updated successfully.');
-                                        existingModal.hide();
-                                        location.reload();
-                                    } else {
-                                        pushNotice('error', 'Failed to save alt text. Please try again.');
-                                    }
-                                }).catch(function(){
-                                    pushNotice('error', 'Failed to save alt text. Please try again.');
-                                });
-                            });
-                        } else {
-                            // No modal - just save and reload
-                            pushNotice('success', 'Alt text regenerated successfully.');
-                            setTimeout(function(){ location.reload(); }, 1000);
-                        }
-                    } else {
-                        pushNotice('error', 'Alt text was generated but the response format was invalid.');
-                    }
-                } else {
-                    var errorMsg = (response.data && response.data.message) || 'Failed to regenerate alt text';
-                    pushNotice('error', errorMsg);
-                    
-                    // Check if there's a visible modal to update
-                    var errorModal = $('#bbai-regenerate-modal');
-                    if (errorModal.length && errorModal.is(':visible')){
-                        errorModal.find('#bbai-regenerate-content').html(
-                            '<p style="color: #dc2626; padding: 10px; background: #fef2f2; border-radius: 4px;">' + 
-                            errorMsg + '</p>'
-                        );
-                    }
-                    
-                    if (response.data && response.data.code === 'limit_reached'){
-                        handleLimitReachedNotice(response.data);
-                    }
-                }
-            }).fail(function(xhr, status, error){
-                restore(btn);
-                var errorMsg = 'Request failed. Please try again.';
-                if (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message){
-                    errorMsg = xhr.responseJSON.data.message;
-                }
-                pushNotice('error', errorMsg);
-            });
-        });
-    })(jQuery);
-    </script>
-    <?php
-});
-
 // Attachment edit screen behaviour handled via enqueued scripts; inline scripts removed for compliance.
-
-// Inline admin CSS removed; if needed, add via wp_add_inline_style on an enqueued handle.

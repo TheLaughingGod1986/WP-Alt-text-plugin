@@ -99,10 +99,20 @@
 
         // Callback functions
         function handleUpgradeClick() {
-            if (typeof window.bbaiShowUpgradeModal === 'function') {
-                window.bbaiShowUpgradeModal();
-            } else if (typeof window.alttextaiShowUpgradeModal === 'function') {
-                window.alttextaiShowUpgradeModal();
+            if (typeof window.showUpgradeModal === 'function') {
+                window.showUpgradeModal();
+                return;
+            }
+            if (typeof window.openPricingModal === 'function') {
+                window.openPricingModal('enterprise');
+                return;
+            }
+            if (typeof window.alttextaiShowModal === 'function') {
+                window.alttextaiShowModal();
+                return;
+            }
+            if (typeof window.bbaiApp !== 'undefined' && typeof window.bbaiApp.showModal === 'function') {
+                window.bbaiApp.showModal();
             }
         }
 

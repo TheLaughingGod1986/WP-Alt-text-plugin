@@ -115,7 +115,7 @@ const MultiUserTokenBar = ({ apiUrl, nonce }) => {
       {/* Shared Quota Notice */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
         <p className="text-sm text-blue-800">
-          <strong>Shared Quota:</strong> This monthly quota is shared across all users on <strong>this WordPress site</strong>. Upgrade to Pro for 1,000 generations per month.
+          <strong>Shared Quota:</strong> Monthly quota is shared across all site users. Upgrade to Growth for 1,000 generations per month.
         </p>
       </div>
 
@@ -138,4 +138,3 @@ const MultiUserTokenBar = ({ apiUrl, nonce }) => {
 };
 
 export default MultiUserTokenBar;
-

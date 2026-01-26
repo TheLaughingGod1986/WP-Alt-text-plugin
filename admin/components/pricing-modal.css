@@ -56,9 +56,9 @@
 }
 
 /* Focus styles for accessibility - WCAG AA compliant */
-button:focus-visible,
-a:focus-visible,
-[tabindex]:focus-visible {
+button:focus-visible:not(.bbai-btn),
+a:focus-visible:not(.bbai-btn),
+[tabindex]:focus-visible:not(.bbai-btn) {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
@@ -195,13 +195,13 @@ p, span, li, td, th {
 }
 
 /* Improved button hover states */
-button:not(:disabled):hover {
-  transform: translateY(-1px);
-  transition: all 0.2s ease-in-out;
+button:not(.bbai-btn):not(:disabled):hover {
+    transform: translateY(-1px);
+    transition: all 0.2s ease-in-out;
 }
 
-button:not(:disabled):active {
-  transform: translateY(0);
+button:not(.bbai-btn):not(:disabled):active {
+    transform: translateY(0);
 }
 
 /* Enhanced gradient backgrounds */
@@ -302,4 +302,3 @@ button:not(:disabled):active {
     max-width: 1280px;
   }
 }
-

@@ -42,12 +42,22 @@ trait Core_Assets {
      */
     private function get_asset_path(string $base, string $name, bool $debug, string $type, string $base_path): string {
         $extension = $debug ? ".$type" : ".min.$type";
-        $minified_path = $base . $name . $extension;
-        if (!$debug && !file_exists($base_path . $minified_path)) {
+        $path = $base . $name . $extension;
+
+        if ($debug && !file_exists($base_path . $path)) {
+            $dist_base = str_replace('assets/src/', 'assets/dist/', $base);
+            $dist_path = $dist_base . $name . ".min.$type";
+            if (file_exists($base_path . $dist_path)) {
+                return $dist_path;
+            }
+        }
+
+        if (!$debug && !file_exists($base_path . $path)) {
             $source_base = str_replace('assets/dist/', 'assets/src/', $base);
             return $source_base . $name . ".$type";
         }
-        return $minified_path;
+
+        return $path;
     }
 
     /**

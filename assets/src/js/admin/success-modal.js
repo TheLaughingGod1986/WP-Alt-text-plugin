@@ -19,6 +19,8 @@
      * Create and show success modal
      */
     function createSuccessModal() {
+        var adminBaseUrl = (window.bbai_ajax && window.bbai_ajax.admin_url) || '';
+        var libraryUrl = adminBaseUrl ? (adminBaseUrl + '?page=bbai&tab=library') : '#';
         var modalHtml =
             '<div id="bbai-modal-success" class="bbai-modal-success" role="dialog" aria-modal="true" aria-labelledby="bbai-modal-success-title">' +
             '    <div class="bbai-modal-success__overlay"></div>' +
@@ -52,7 +54,7 @@
             '            <div class="bbai-modal-success__summary-text">All images were processed successfully.</div>' +
             '        </div>' +
             '        <div class="bbai-modal-success__actions">' +
-            '            <a href="' + escapeHtml((typeof ajaxurl !== 'undefined' ? ajaxurl.replace('/admin-ajax.php', '/admin.php') : '/wp-admin/admin.php') + '?page=bbai&tab=library') + '" class="bbai-modal-success__btn bbai-modal-success__btn--primary">View ALT Library →</a>' +
+            '            <a href="' + escapeHtml(libraryUrl) + '" class="bbai-modal-success__btn bbai-modal-success__btn--primary">View ALT Library →</a>' +
             '            <button type="button" class="bbai-modal-success__btn bbai-modal-success__btn--secondary" data-action="view-warnings" style="display: none;">View Warnings</button>' +
             '        </div>' +
             '    </div>' +
@@ -72,8 +74,9 @@
 
         $modal.find('[data-action="view-warnings"]').on('click', function() {
             hideSuccessModal();
-            var libraryUrl = (typeof ajaxurl !== 'undefined' ? ajaxurl.replace('/admin-ajax.php', '/admin.php') : '/wp-admin/admin.php') + '?page=bbai&tab=library';
-            window.location.href = libraryUrl;
+            if (libraryUrl && libraryUrl !== '#') {
+                window.location.href = libraryUrl;
+            }
         });
 
         $(document).on('keydown.bbai-success-modal', function(e) {

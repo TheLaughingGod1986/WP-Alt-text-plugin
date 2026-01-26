@@ -226,6 +226,12 @@
     --bbai-shadow-focus: 0 0 0 3px var(--bbai-primary-glow);
     --bbai-shadow-focus-error: 0 0 0 3px rgba(239, 68, 68, 0.15);
 
+    /* Focus Ring System - Consistent across all interactive elements */
+    --bbai-focus-ring-width: 2px;
+    --bbai-focus-ring-offset: 2px;
+    --bbai-focus-ring-color: var(--bbai-primary);
+    --bbai-focus-ring: var(--bbai-focus-ring-width) solid var(--bbai-focus-ring-color);
+
     /* Component shadows */
     --bbai-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
     --bbai-shadow-card-hover: 0 8px 16px -4px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
@@ -457,7 +463,33 @@
     border: 0;
 }
 
+/* Consistent Focus Ring utility */
 .bbai-focus-ring:focus-visible {
-    outline: 2px solid var(--bbai-primary);
-    outline-offset: 2px;
+    outline: var(--bbai-focus-ring);
+    outline-offset: var(--bbai-focus-ring-offset);
+}
+
+/* ========================================
+   UNIFIED INTERACTIVE STATES
+   Apply to all interactive elements for consistency
+   ======================================== */
+
+/* Standard hover lift effect */
+.bbai-hover-lift {
+    transition: transform var(--bbai-transition-fast) var(--bbai-ease-out),
+                box-shadow var(--bbai-transition-fast) var(--bbai-ease-out);
+}
+
+.bbai-hover-lift:hover {
+    transform: translateY(-2px);
+}
+
+/* Subtle hover for cards/rows */
+.bbai-hover-subtle {
+    transition: background-color var(--bbai-transition-fast) var(--bbai-ease-out),
+                border-color var(--bbai-transition-fast) var(--bbai-ease-out);
+}
+
+.bbai-hover-subtle:hover {
+    background-color: var(--bbai-bg-secondary);
 }
