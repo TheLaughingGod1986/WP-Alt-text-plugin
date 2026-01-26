@@ -166,7 +166,13 @@
                                     upgradeModal.setAttribute('aria-hidden', 'false');
                                     upgradeModal.classList.add('active');
                                     document.body.style.overflow = 'hidden';
-                                    
+
+                                    // Also ensure modal content is visible (CSS has opacity: 0 by default)
+                                    var modalContent = upgradeModal.querySelector('.bbai-upgrade-modal__content');
+                                    if (modalContent) {
+                                        modalContent.style.cssText = 'opacity: 1 !important; transform: translateY(0) scale(1) !important;';
+                                    }
+
                                     // Verify it's actually visible
                                     setTimeout(function() {
                                         var computedStyle = window.getComputedStyle(upgradeModal);
@@ -189,8 +195,15 @@
                         modalByClass.id = 'bbai-upgrade-modal';
                         modalByClass.removeAttribute('style');
                         modalByClass.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important;';
+                        modalByClass.classList.add('active');
                         modalByClass.setAttribute('aria-hidden', 'false');
                         document.body.style.overflow = 'hidden';
+
+                        // Also ensure modal content is visible
+                        var modalContent2 = modalByClass.querySelector('.bbai-upgrade-modal__content');
+                        if (modalContent2) {
+                            modalContent2.style.cssText = 'opacity: 1 !important; transform: translateY(0) scale(1) !important;';
+                        }
                         console.log('[AI Alt Text] Upgrade modal shown successfully (by class)');
                         return;
                     }
@@ -381,8 +394,15 @@
                         modalByClass.id = 'bbai-upgrade-modal';
                         modalByClass.removeAttribute('style');
                         modalByClass.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important;';
+                        modalByClass.classList.add('active');
                         modalByClass.setAttribute('aria-hidden', 'false');
                         document.body.style.overflow = 'hidden';
+
+                        // Also ensure modal content is visible
+                        var modalContent2 = modalByClass.querySelector('.bbai-upgrade-modal__content');
+                        if (modalContent2) {
+                            modalContent2.style.cssText = 'opacity: 1 !important; transform: translateY(0) scale(1) !important;';
+                        }
                         console.log('[AI Alt Text] Upgrade modal shown successfully (by class)');
                         return;
                     }

@@ -304,3 +304,64 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
         </div>
     </div>
 </div>
+
+<!-- Inline modal opener script - ensures modal can be triggered -->
+<script>
+(function() {
+    'use strict';
+
+    // Direct modal opener function
+    window.bbaiOpenUpgradeModal = function() {
+        var modal = document.getElementById('bbai-upgrade-modal');
+        if (!modal) return false;
+
+        modal.removeAttribute('style');
+        modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important;';
+        modal.classList.add('active');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+
+        var content = modal.querySelector('.bbai-upgrade-modal__content');
+        if (content) {
+            content.style.cssText = 'opacity: 1 !important; transform: translateY(0) scale(1) !important;';
+        }
+
+        return true;
+    };
+
+    // Close modal function
+    window.bbaiCloseUpgradeModal = function() {
+        var modal = document.getElementById('bbai-upgrade-modal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.remove('active');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+        }
+    };
+
+    // Event delegation for upgrade buttons
+    document.addEventListener('click', function(e) {
+        var target = e.target.closest('[data-action="show-upgrade-modal"]');
+        if (target) {
+            e.preventDefault();
+            e.stopPropagation();
+            window.bbaiOpenUpgradeModal();
+        }
+    }, true);
+
+    // Close on backdrop click
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.id === 'bbai-upgrade-modal') {
+            window.bbaiCloseUpgradeModal();
+        }
+    });
+
+    // Close on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            window.bbaiCloseUpgradeModal();
+        }
+    });
+})();
+</script>

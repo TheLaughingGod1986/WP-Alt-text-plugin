@@ -92,7 +92,7 @@ bbaiRunWithJQuery(function($) {
                 } else if (plan === 'credits') {
                     stripeUrl = 'https://buy.stripe.com/6oU9AUf5Q2EYaKq0fp7ss00';
                 }
-                
+
                 if (stripeUrl) {
                     console.log('[AltText AI] Using default Stripe payment link:', stripeUrl);
                     window.location.href = stripeUrl;
@@ -194,8 +194,15 @@ bbaiRunWithJQuery(function($) {
                 console.log('[AltText AI] Found modal, showing directly');
                 modal.removeAttribute('style');
                 modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important;';
+                modal.classList.add('active'); // Required for content to become visible (opacity: 1)
                 modal.setAttribute('aria-hidden', 'false');
                 document.body.style.overflow = 'hidden';
+
+                // Also ensure modal content is visible
+                const modalContent = modal.querySelector('.bbai-upgrade-modal__content');
+                if (modalContent) {
+                    modalContent.style.cssText = 'opacity: 1 !important; transform: translateY(0) scale(1) !important;';
+                }
                 return false;
             }
 
@@ -549,7 +556,7 @@ bbaiRunWithJQuery(function($) {
                     initiateCheckout($btn, priceId, plan);
                 } else {
                     console.error('[AltText AI] initiateCheckout function not found!');
-                    // Fallback to direct URL
+                    // Fallback to direct URL - open in new tab
                     if (fallbackUrl) {
                         window.location.href = fallbackUrl;
                     }
@@ -557,9 +564,9 @@ bbaiRunWithJQuery(function($) {
             } else if (fallbackUrl) {
                 // Fall back to direct Stripe payment link if no price ID or AJAX not available
                 console.log('[AltText AI] Using fallback Stripe payment link:', fallbackUrl);
-                // Open in same window to go directly to Stripe checkout
+                // Open in new tab to go directly to Stripe checkout
                 window.location.href = fallbackUrl;
-                // Close the upgrade modal after redirecting
+                // Close the upgrade modal
                 if (typeof alttextaiCloseModal === 'function') {
                     alttextaiCloseModal();
                 }
@@ -573,7 +580,7 @@ bbaiRunWithJQuery(function($) {
                 } else if (plan === 'credits') {
                     stripeUrl = 'https://buy.stripe.com/6oU9AUf5Q2EYaKq0fp7ss00';
                 }
-                
+
                 if (stripeUrl) {
                     console.log('[AltText AI] Using default Stripe payment link:', stripeUrl);
                     window.location.href = stripeUrl;
@@ -589,7 +596,7 @@ bbaiRunWithJQuery(function($) {
                     }
                 }
             }
-            
+
             return false;
         });
 
