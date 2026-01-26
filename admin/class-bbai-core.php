@@ -454,8 +454,6 @@ class Core {
 
         if (is_wp_error($result) || empty($result['url'])) {
             $message = is_wp_error($result) ? $result->get_error_message() : __('Unable to start checkout. Please try again.', 'beepbeep-ai-alt-text-generator');
-            $plan_raw = isset($_GET['plan']) ? wp_unslash($_GET['plan']) : (isset($_GET['type']) ? wp_unslash($_GET['type']) : '');
-        $plan_param = sanitize_key($plan_raw);
             $query_args = [
                 'page'            => 'beepbeep-ai-alt-text-generator',
                 'checkout_error'  => rawurlencode($message),
@@ -470,7 +468,6 @@ class Core {
 
         // Redirect to Stripe checkout
         wp_safe_redirect( $result['url'] );
-        exit;
         exit;
     }
 
@@ -1857,13 +1854,17 @@ class Core {
             ));
             $latest_generated = $latest_generated_raw ? mysql2date($datetime_format, $latest_generated_raw) : '';
 
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Aggregate query for stats, cached above
             $top_source_row = $wpdb->get_row(
-                "SELECT meta_value AS source, COUNT(*) AS count
-                 FROM {$wpdb->postmeta}
-                 WHERE meta_key = '_bbai_source' AND meta_value <> ''
-                 GROUP BY meta_value
-                 ORDER BY COUNT(*) DESC
-                 LIMIT 1",
+                $wpdb->prepare(
+                    "SELECT meta_value AS source, COUNT(*) AS count
+                     FROM {$wpdb->postmeta}
+                     WHERE meta_key = %s AND meta_value <> ''
+                     GROUP BY meta_value
+                     ORDER BY COUNT(*) DESC
+                     LIMIT 1",
+                    '_beepbeepai_source'
+                ),
                 ARRAY_A
             );
             $top_source_key = sanitize_key($top_source_row['source'] ?? '');
@@ -2616,6 +2617,7 @@ class Core {
             return new \WP_Error('inline_image_too_large', __('Image exceeds the inline embedding size limit.', 'beepbeep-ai-alt-text-generator'), ['size' => $size, 'limit' => $limit]);
         }
 
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading binary image data for base64 encoding
         $contents = file_get_contents($file);
         if ($contents === false){
             return new \WP_Error('inline_image_read_failed', __('Unable to read the image file for inline embedding.', 'beepbeep-ai-alt-text-generator'));
@@ -4335,15 +4337,15 @@ CSS;
                         $reset_ts = $parsed;
                     }
                 }
-                
+
                 $updated_usage = [
                     'used' => $used,
                     'limit' => $limit,
                     'remaining' => $tokens_remaining,
                     'plan' => $plan,
-                    'resetDate' => date('Y-m-01', $reset_ts),
+                    'resetDate' => wp_date('Y-m-d', $reset_ts),
                     'reset_timestamp' => $reset_ts,
-                    'seconds_until_reset' => max(0, $reset_ts - current_time('timestamp')),
+                    'seconds_until_reset' => max(0, $reset_ts - time()),
                 ];
                 
                 // Update the cache with this fresh data
@@ -5627,7 +5629,7 @@ CSS;
 
         // Rate limiting check (3 submissions per hour per user)
         $user_id = get_current_user_id();
-        $current_hour = date('Y-m-d-H');
+        $current_hour = wp_date('Y-m-d-H');
         $rate_limit_key = 'bbai_contact_limit_' . $user_id . '_' . $current_hour;
         $submission_count = get_transient($rate_limit_key);
         

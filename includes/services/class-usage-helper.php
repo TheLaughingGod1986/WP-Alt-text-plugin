@@ -83,6 +83,15 @@ class Usage_Helper {
         }
         if (isset($live_usage['reset_timestamp'])) {
             $usage_stats['reset_timestamp'] = $live_usage['reset_timestamp'];
+            // Also update the display-formatted reset_date to match
+            $usage_stats['reset_date'] = date_i18n('F j, Y', $live_usage['reset_timestamp']);
+        } elseif (isset($live_usage['resetDate'])) {
+            // If we have resetDate but not reset_timestamp, parse and update reset_date display
+            $parsed_ts = strtotime($live_usage['resetDate']);
+            if ($parsed_ts > 0) {
+                $usage_stats['reset_timestamp'] = $parsed_ts;
+                $usage_stats['reset_date'] = date_i18n('F j, Y', $parsed_ts);
+            }
         }
 
         return $usage_stats;

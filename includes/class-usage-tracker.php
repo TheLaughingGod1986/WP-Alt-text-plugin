@@ -37,7 +37,7 @@ class Usage_Tracker {
             'limit' => 50,
             'remaining' => 50,
             'plan' => 'free',
-            'resetDate' => date('Y-m-01', $reset_ts),
+            'resetDate' => wp_date('Y-m-01', $reset_ts),
             'resetTimestamp' => $reset_ts,
         ];
         self::update_usage($usage_data);
@@ -56,7 +56,7 @@ class Usage_Tracker {
         $remaining = isset($usage_data['remaining']) ? intval($usage_data['remaining']) : ($limit - $used);
         if ($remaining < 0) { $remaining = 0; }
 
-        $current_ts = current_time('timestamp');
+        $current_ts = time();
         $reset_raw = $usage_data['resetDate'] ?? '';
         $reset_ts = isset($usage_data['resetTimestamp']) ? intval($usage_data['resetTimestamp']) : 0;
         if ($reset_ts <= 0 && $reset_raw) {
@@ -72,7 +72,7 @@ class Usage_Tracker {
             'limit'      => $limit,
             'remaining'  => $remaining,
             'plan'       => $usage_data['plan'] ?? 'free',
-            'resetDate'  => $reset_raw ?: date('Y-m-01', strtotime('+1 month', $current_ts)),
+            'resetDate'  => wp_date('Y-m-d', $reset_ts),
             'reset_timestamp' => $reset_ts,
             'seconds_until_reset' => $seconds_until_reset,
         ];
@@ -100,16 +100,15 @@ class Usage_Tracker {
                         $reset_ts = $parsed;
                     }
                 }
+                $current_ts = time();
 
-                $current_ts = current_time('timestamp');
-                
                 // Get plan from organization data (correct location)
                 $plan = isset($org['plan']) ? strtolower($org['plan']) : 'free';
-                
+
                 // Get limit from organization data or calculate based on plan
-                $limit = isset($org['tokenLimit']) ? intval($org['tokenLimit']) : 
+                $limit = isset($org['tokenLimit']) ? intval($org['tokenLimit']) :
                          ($plan === 'free' ? 50 : ($plan === 'pro' ? 1000 : 10000));
-                
+
                 $tokens_remaining = isset($org['tokensRemaining']) ? max(0, intval($org['tokensRemaining'])) : $limit;
                 $used = max(0, $limit - $tokens_remaining);
 
@@ -119,7 +118,7 @@ class Usage_Tracker {
                     'limit' => $limit,
                     'remaining' => $tokens_remaining,
                     'plan' => $plan,
-                    'resetDate' => date('Y-m-01', $reset_ts),
+                    'resetDate' => wp_date('Y-m-d', $reset_ts),
                     'reset_timestamp' => $reset_ts,
                     'seconds_until_reset' => max(0, $reset_ts - $current_ts),
                 ];
@@ -149,9 +148,9 @@ class Usage_Tracker {
                     'limit' => 50,
                     'remaining' => 50,
                     'plan' => 'free',
-                    'resetDate' => date('Y-m-01', $reset_ts),
+                    'resetDate' => wp_date('Y-m-01', $reset_ts),
                     'reset_timestamp' => $reset_ts,
-                    'seconds_until_reset' => max(0, $reset_ts - current_time('timestamp')),
+                    'seconds_until_reset' => max(0, $reset_ts - time()),
                 ];
             } else {
                 // Free credits not yet allocated - show as unavailable
@@ -160,9 +159,9 @@ class Usage_Tracker {
                     'limit' => 0,
                     'remaining' => 0,
                     'plan' => 'free',
-                    'resetDate' => date('Y-m-01', $reset_ts),
+                    'resetDate' => wp_date('Y-m-01', $reset_ts),
                     'reset_timestamp' => $reset_ts,
-                    'seconds_until_reset' => max(0, $reset_ts - current_time('timestamp')),
+                    'seconds_until_reset' => max(0, $reset_ts - time()),
                 ];
             }
         }
@@ -210,13 +209,13 @@ class Usage_Tracker {
         
         // Calculate days until reset
         $reset_timestamp = isset($usage['reset_timestamp']) ? intval($usage['reset_timestamp']) : 0;
-        $current_timestamp = current_time('timestamp');
-        
+        $current_timestamp = time();
+
         if ($reset_timestamp <= 0 && !empty($usage['resetDate'])) {
             // Try parsing the reset date - handle both Y-m-d and other formats
             $reset_date_str = $usage['resetDate'];
             $parsed_timestamp = strtotime($reset_date_str);
-            
+
             // Validate the parsed timestamp - it should be in the future and not more than 2 months away
             $max_future = strtotime('+2 months', $current_timestamp);
             if ($parsed_timestamp > 0 && $parsed_timestamp > $current_timestamp && $parsed_timestamp <= $max_future) {
@@ -226,27 +225,23 @@ class Usage_Tracker {
                 $reset_timestamp = strtotime('first day of next month', $current_timestamp);
             }
         }
-        
+
         // Fallback to next month if no reset date is set or invalid
         if ($reset_timestamp <= 0 || $reset_timestamp <= $current_timestamp) {
             $reset_timestamp = strtotime('first day of next month', $current_timestamp);
         }
-        
-        // Ensure reset is at midnight (start of day)
-        $reset_timestamp = strtotime('midnight', $reset_timestamp);
-        
+
+        // Ensure reset timestamp is at midnight for consistency
+        $reset_timestamp = strtotime(wp_date('Y-m-d 00:00:00', $reset_timestamp));
+
         $seconds_until_reset = max(0, $reset_timestamp - $current_timestamp);
         $days_until_reset = (int) floor($seconds_until_reset / DAY_IN_SECONDS);
 
         // Get plan with fallback
         $plan = isset($usage['plan']) && !empty($usage['plan']) ? $usage['plan'] : 'free';
-        
-        // Get reset date with fallback - use consistent format: "February 11, 2026" (no ordinals)
+
+        // Get reset date with fallback - format: "February 1, 2026"
         $reset_date_display = $reset_timestamp ? date_i18n('F j, Y', $reset_timestamp) : '';
-        if (empty($reset_date_display) && !empty($usage['resetDate'])) {
-            $parsed_reset = strtotime($usage['resetDate']);
-            $reset_date_display = $parsed_reset > 0 ? date_i18n('F j, Y', $parsed_reset) : date_i18n('F j, Y', strtotime('first day of next month'));
-        }
         if (empty($reset_date_display)) {
             $reset_date_display = date_i18n('F j, Y', strtotime('first day of next month'));
         }

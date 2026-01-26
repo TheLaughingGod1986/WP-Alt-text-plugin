@@ -1126,9 +1126,9 @@ class API_Client_V2 {
                 'limit' => $limit,
                 'remaining' => $remaining,
                 'plan' => strtolower($org['plan'] ?? 'agency'),
-                'resetDate' => $org['resetDate'] ?? '',
+                'resetDate' => wp_date('Y-m-d', $reset_ts),
                 'reset_timestamp' => $reset_ts,
-                'seconds_until_reset' => max(0, $reset_ts - current_time('timestamp')),
+                'seconds_until_reset' => max(0, $reset_ts - time()),
             ];
         }
 
@@ -2135,6 +2135,7 @@ class API_Client_V2 {
                             $saved = $editor->save($temp_path, 'image/jpeg');
                             
                             if (!is_wp_error($saved) && isset($saved['path'])) {
+                                // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading binary image data for base64 encoding
                                 $resized_contents = file_get_contents($saved['path']);
                                 @unlink($saved['path']);
                                 if ($resized_contents !== false) {
@@ -2187,6 +2188,7 @@ class API_Client_V2 {
             $file_size = filesize($file_path);
             $max_inline_size = 5.5 * 1024 * 1024; // ~5.5MB upper bound
             if ($file_size > 0 && $file_size <= $max_inline_size) {
+                // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading binary image data for base64 encoding
                 $contents = file_get_contents($file_path);
                 if ($contents !== false) {
                     $base64 = base64_encode($contents);

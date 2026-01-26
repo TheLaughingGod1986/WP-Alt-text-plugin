@@ -204,8 +204,8 @@ class Usage_Logs {
 		$site_id = \BeepBeepAI\AltTextGenerator\get_site_identifier();
 		$site_id = sanitize_text_field(substr($site_id, 0, 64));
 
-		$current_month_start = date('Y-m-01 00:00:00');
-		$current_month_end = date('Y-m-t 23:59:59');
+		$current_month_start = wp_date('Y-m-01 00:00:00');
+		$current_month_end = wp_date('Y-m-t 23:59:59');
 
 		$total = $wpdb->get_var($wpdb->prepare(
 			"SELECT SUM(tokens_used) FROM `{$table_escaped}` 
@@ -236,8 +236,8 @@ class Usage_Logs {
 		$site_id = \BeepBeepAI\AltTextGenerator\get_site_identifier();
 		$site_id = sanitize_text_field(substr($site_id, 0, 64));
 
-		$current_month_start = date('Y-m-01 00:00:00');
-		$current_month_end = date('Y-m-t 23:59:59');
+		$current_month_start = wp_date('Y-m-01 00:00:00');
+		$current_month_end = wp_date('Y-m-t 23:59:59');
 
 		$results = $wpdb->get_results($wpdb->prepare(
 			"SELECT 
