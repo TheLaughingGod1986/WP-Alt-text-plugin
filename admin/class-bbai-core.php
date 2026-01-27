@@ -988,17 +988,17 @@ class Core {
                     [$this, 'render_settings_page']
                 );
             }
+
+            // How to (only for registered users)
+            add_submenu_page(
+                'bbai',
+                __('How to', 'beepbeep-ai-alt-text-generator'),
+                __('How to', 'beepbeep-ai-alt-text-generator'),
+                $cap,
+                'bbai-guide',
+                [$this, 'render_settings_page']
+            );
         }
-        
-        // How to (always visible for all users)
-        add_submenu_page(
-            'bbai',
-            __('How to', 'beepbeep-ai-alt-text-generator'),
-            __('How to', 'beepbeep-ai-alt-text-generator'),
-            $cap,
-            'bbai-guide',
-            [$this, 'render_settings_page']
-        );
 
         // Hidden checkout redirect page
         add_submenu_page(
@@ -1158,25 +1158,19 @@ class Core {
         // Initialize $tabs array (will be populated in if/else blocks below)
         $tabs = [];
         
-        // Build tabs - show only Dashboard and How to if no registered user
+        // Build tabs - show only Dashboard if no registered user
         if (!$has_registered_user) {
             $tabs = [
                 'dashboard' => __('Dashboard', 'beepbeep-ai-alt-text-generator'),
-                'guide'     => __('How to', 'beepbeep-ai-alt-text-generator'),
             ];
-            
+
             // Force dashboard tab if trying to access restricted tabs
-            $allowed_tabs = ['dashboard', 'analytics', 'guide'];
+            $allowed_tabs = ['dashboard', 'analytics'];
             
             // Check if accessed via submenu (determine tab from page slug)
             $current_page = isset($_GET['page']) ? sanitize_key($_GET['page']) : 'bbai';
-            $tab_from_page = 'dashboard'; // Default
-            
-            // Map page slugs to tabs (only allow guide for non-registered users)
-            if ($current_page === 'bbai-guide') {
-                $tab_from_page = 'guide';
-            }
-            
+            $tab_from_page = 'dashboard'; // Default for non-registered users
+
             // Use tab from URL parameter if provided, otherwise use page slug
             $tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : $tab_from_page;
             
@@ -1301,11 +1295,10 @@ class Core {
                     </div>
                     <nav class="bbai-nav" role="navigation" aria-label="<?php esc_attr_e('Main navigation', 'beepbeep-ai-alt-text-generator'); ?>">
                         <?php 
-                        // Ensure $tabs is always defined with fallback
+                        // Ensure $tabs is always defined with fallback (dashboard only for non-registered users)
                         if (!isset($tabs) || !is_array($tabs) || empty($tabs)) {
                             $tabs = [
                                 'dashboard' => __('Dashboard', 'beepbeep-ai-alt-text-generator'),
-                                'guide' => __('How to', 'beepbeep-ai-alt-text-generator'),
                             ];
                         }
                         
