@@ -929,18 +929,17 @@ class Core {
             30
         );
         
-        // Dashboard (always visible)
-        add_submenu_page(
-            'bbai',
-            __('Dashboard', 'beepbeep-ai-alt-text-generator'),
-            __('Dashboard', 'beepbeep-ai-alt-text-generator'),
-            $cap,
-            'bbai',
-            [$this, 'render_settings_page']
-        );
-        
-        // Only show authenticated/licensed menu items if user is registered
+        // Only show menu items if user is registered
         if ($has_registered_user) {
+            // Dashboard (only for registered users)
+            add_submenu_page(
+                'bbai',
+                __('Dashboard', 'beepbeep-ai-alt-text-generator'),
+                __('Dashboard', 'beepbeep-ai-alt-text-generator'),
+                $cap,
+                'bbai',
+                [$this, 'render_settings_page']
+            );
             add_submenu_page(
                 'bbai',
                 __('ALT Library', 'beepbeep-ai-alt-text-generator'),
@@ -1158,27 +1157,10 @@ class Core {
         // Initialize $tabs array (will be populated in if/else blocks below)
         $tabs = [];
         
-        // Build tabs - show only Dashboard if no registered user
+        // No tabs for non-registered users - show onboarding page only
         if (!$has_registered_user) {
-            $tabs = [
-                'dashboard' => __('Dashboard', 'beepbeep-ai-alt-text-generator'),
-            ];
-
-            // Force dashboard tab if trying to access restricted tabs
-            $allowed_tabs = ['dashboard', 'analytics'];
-            
-            // Check if accessed via submenu (determine tab from page slug)
-            $current_page = isset($_GET['page']) ? sanitize_key($_GET['page']) : 'bbai';
-            $tab_from_page = 'dashboard'; // Default for non-registered users
-
-            // Use tab from URL parameter if provided, otherwise use page slug
-            $tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : $tab_from_page;
-            
-            if (!in_array($tab, $allowed_tabs)) {
-                $tab = 'dashboard';
-            }
-            
-            // Not a registered user - set defaults
+            $tabs = [];
+            $tab = 'dashboard'; // Default to dashboard/onboarding view
             $is_pro_for_admin = false;
             $is_agency_for_admin = false;
         } else {
@@ -1294,14 +1276,12 @@ class Core {
                         </div>
                     </div>
                     <nav class="bbai-nav" role="navigation" aria-label="<?php esc_attr_e('Main navigation', 'beepbeep-ai-alt-text-generator'); ?>">
-                        <?php 
-                        // Ensure $tabs is always defined with fallback (dashboard only for non-registered users)
-                        if (!isset($tabs) || !is_array($tabs) || empty($tabs)) {
-                            $tabs = [
-                                'dashboard' => __('Dashboard', 'beepbeep-ai-alt-text-generator'),
-                            ];
+                        <?php
+                        // Ensure $tabs is defined (empty array is valid for non-registered users)
+                        if (!isset($tabs) || !is_array($tabs)) {
+                            $tabs = [];
                         }
-                        
+
                         // Map tab slugs to page slugs for proper URL generation
                         $tab_to_page = [
                             'dashboard' => 'bbai',
