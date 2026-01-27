@@ -27,7 +27,7 @@
 .bbai-logged-out__card {
     background: #ffffff;
     border-radius: 20px;
-    padding: 40px 48px 32px;
+    padding: 48px 56px 40px;
     text-align: center;
     border: 1px solid #eef0f4;
     box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(15, 23, 42, 0.05);
@@ -38,17 +38,12 @@
 }
 
 .bbai-logged-out__title {
-    margin: 0 0 14px;
-    font-size: 30px;
+    margin: 0 0 16px;
+    font-size: 32px;
     font-weight: 700;
-    line-height: 1.2;
+    line-height: 1.25;
     color: #111827;
     letter-spacing: -0.02em;
-}
-
-.bbai-logged-out__title-line,
-.bbai-logged-out__subtitle-line {
-    display: block;
 }
 
 .bbai-logged-out__subtitle {
@@ -63,20 +58,20 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 24px;
+    gap: 12px;
+    margin-bottom: 28px;
 }
 
 .bbai-logged-out__btn-primary {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 46px;
-    padding: 0 30px;
+    min-height: 48px;
+    padding: 0 32px;
     border-radius: 999px;
     background: linear-gradient(90deg, #1ab97a 0%, #0ea36a 100%);
     color: #ffffff;
-    font-size: 14.5px;
+    font-size: 15px;
     font-weight: 600;
     border: none;
     text-decoration: none;
@@ -128,16 +123,15 @@
 }
 
 .bbai-logged-out__link-secondary {
-    font-size: 13.5px;
-    color: #6b7280;
-    text-decoration: none;
-    border-bottom: 1px solid transparent;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    font-size: 14px;
+    color: #4b5563;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: color 0.15s ease;
 }
 
 .bbai-logged-out__link-secondary:hover {
-    color: #374151;
-    border-bottom-color: #9ca3af;
+    color: #111827;
 }
 
 .bbai-logged-out__link-secondary:focus-visible {
@@ -148,12 +142,12 @@
 .bbai-logged-out__divider {
     height: 1px;
     background: #e5e7eb;
-    margin: 24px 0;
+    margin: 0 0 28px;
 }
 
 /* Benefits section */
 .bbai-logged-out__benefits {
-    margin-bottom: 24px;
+    margin-bottom: 32px;
 }
 
 .bbai-logged-out__benefits-list {
@@ -162,27 +156,28 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
 }
 
 .bbai-logged-out__benefit {
     display: flex;
-    align-items: flex-start;
-    gap: 10px;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
     text-align: left;
+    padding-left: 40px;
 }
 
 .bbai-logged-out__benefit-icon {
     flex-shrink: 0;
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     border-radius: 999px;
     background: #dcfce7;
     color: #16a34a;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-top: 1px;
 }
 
 .bbai-logged-out__benefit-icon svg {
@@ -191,37 +186,41 @@
 }
 
 .bbai-logged-out__benefit-text {
-    font-size: 14px;
-    line-height: 1.5;
-    color: #374151;
+    font-size: 15px;
+    line-height: 1.4;
+    color: #111827;
 }
 
 .bbai-logged-out__benefit-text strong {
     font-weight: 600;
-    color: #111827;
+}
+
+/* How it works section */
+.bbai-logged-out__how-it-works {
+    margin-bottom: 24px;
 }
 
 .bbai-logged-out__section-title {
-    margin: 0 0 18px;
-    font-size: 15px;
-    font-weight: 600;
+    margin: 0 0 24px;
+    font-size: 18px;
+    font-weight: 700;
     color: #111827;
 }
 
 .bbai-logged-out__steps {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 20px;
+    gap: 24px;
 }
 
 .bbai-logged-out__step {
     text-align: center;
-    padding: 0 6px;
+    padding: 0 8px;
 }
 
 .bbai-logged-out__step-icon {
-    width: 44px;
-    height: 44px;
+    width: 56px;
+    height: 56px;
     border-radius: 999px;
     background: #f3f4f6;
     border: 1px solid #e5e7eb;
@@ -229,12 +228,32 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 10px;
+    margin: 0 auto 14px;
+    position: relative;
 }
 
 .bbai-logged-out__step-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Sparkle for generate step */
+.bbai-logged-out__step-icon--generate {
+    position: relative;
+}
+
+.bbai-logged-out__sparkle {
+    position: absolute;
+    top: -4px;
+    right: -4px;
     width: 20px;
     height: 20px;
+    color: #10b981;
+}
+
+.bbai-logged-out__sparkle svg {
+    width: 100%;
+    height: 100%;
 }
 
 .bbai-logged-out__step-title {
@@ -254,28 +273,28 @@
 
 .bbai-logged-out__step-text {
     margin: 0;
-    font-size: 13px;
-    line-height: 1.45;
+    font-size: 13.5px;
+    line-height: 1.5;
     color: #4b5563;
 }
 
 .bbai-logged-out__supporting-line {
-    margin: 20px 0 0;
-    font-size: 13px;
+    margin: 0 0 16px;
+    font-size: 14px;
     color: #6b7280;
 }
 
 .bbai-logged-out__pill {
-    margin: 16px auto 0;
-    padding: 10px 14px;
-    background: #f1f3f6;
-    border: 1px solid #e6e8ee;
+    margin: 0 auto;
+    padding: 10px 16px;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
     border-radius: 999px;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    color: #475569;
-    font-size: 12.5px;
+    gap: 10px;
+    color: #4b5563;
+    font-size: 13px;
 }
 
 .bbai-logged-out__pill-icon {
@@ -283,16 +302,17 @@
     height: 20px;
     border-radius: 999px;
     background: #ffffff;
-    border: 1px solid #dbe0e6;
+    border: 1px solid #e5e7eb;
     color: #64748b;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    padding: 3px;
 }
 
 .bbai-logged-out__pill-icon svg {
-    width: 12px;
-    height: 12px;
+    width: 100%;
+    height: 100%;
 }
 
 @media (max-width: 680px) {
@@ -317,34 +337,30 @@
         width: 100%;
     }
 
+    .bbai-logged-out__benefit {
+        padding-left: 0;
+    }
+
     .bbai-logged-out__steps {
         grid-template-columns: 1fr;
-        gap: 16px;
+        gap: 20px;
     }
 
     .bbai-logged-out__step {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 16px;
         text-align: left;
+        padding: 0;
     }
 
     .bbai-logged-out__step-icon {
         margin: 0;
+        flex-shrink: 0;
     }
 
-    .bbai-logged-out__step-text,
-    .bbai-logged-out__step-title,
-    .bbai-logged-out__step-desc {
+    .bbai-logged-out__step-text {
         text-align: left;
-    }
-
-    .bbai-logged-out__step-content {
-        flex: 1;
-    }
-
-    .bbai-logged-out__benefit {
-        align-items: flex-start;
     }
 
     .bbai-logged-out__pill {
