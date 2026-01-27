@@ -20,19 +20,14 @@ $fallback_url = admin_url('admin.php?page=' . $current_page);
             <header class="bbai-logged-out__header">
                 <h1 id="bbai-logged-out-title" class="bbai-logged-out__title">
                     <span class="bbai-logged-out__title-line">
-                        <?php esc_html_e('Generate alt text automatically', 'beepbeep-ai-alt-text-generator'); ?>
+                        <?php esc_html_e('Get found in Google Images', 'beepbeep-ai-alt-text-generator'); ?>
                     </span>
                     <span class="bbai-logged-out__title-line">
-                        <?php esc_html_e('for your WordPress images', 'beepbeep-ai-alt-text-generator'); ?>
+                        <?php esc_html_e('with complete alt text', 'beepbeep-ai-alt-text-generator'); ?>
                     </span>
                 </h1>
                 <p class="bbai-logged-out__subtitle">
-                    <span class="bbai-logged-out__subtitle-line">
-                        <?php esc_html_e('Sign in to generate SEO-optimized, WCAG-compliant alt text', 'beepbeep-ai-alt-text-generator'); ?>
-                    </span>
-                    <span class="bbai-logged-out__subtitle-line">
-                        <?php esc_html_e('directly from your media library.', 'beepbeep-ai-alt-text-generator'); ?>
-                    </span>
+                    <?php esc_html_e('Generate SEO-ready, accessible alt text for your entire media library — directly from WordPress.', 'beepbeep-ai-alt-text-generator'); ?>
                 </p>
             </header>
 
@@ -43,7 +38,7 @@ $fallback_url = admin_url('admin.php?page=' . $current_page);
                     data-action="show-auth-modal"
                     data-auth-tab="login"
                 >
-                    <?php esc_html_e('Sign in to start generating alt text', 'beepbeep-ai-alt-text-generator'); ?>
+                    <?php esc_html_e('Sign in to start generating', 'beepbeep-ai-alt-text-generator'); ?>
                 </a>
                 <a
                     class="bbai-logged-out__link-secondary"
@@ -51,11 +46,49 @@ $fallback_url = admin_url('admin.php?page=' . $current_page);
                     data-action="show-auth-modal"
                     data-auth-tab="register"
                 >
-                    <?php esc_html_e('Create an account', 'beepbeep-ai-alt-text-generator'); ?>
+                    <?php esc_html_e('Create a free account', 'beepbeep-ai-alt-text-generator'); ?>
                 </a>
             </div>
 
             <div class="bbai-logged-out__divider" aria-hidden="true"></div>
+
+            <section class="bbai-logged-out__benefits" aria-label="<?php esc_attr_e('Benefits', 'beepbeep-ai-alt-text-generator'); ?>">
+                <ul class="bbai-logged-out__benefits-list">
+                    <li class="bbai-logged-out__benefit">
+                        <span class="bbai-logged-out__benefit-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </span>
+                        <span class="bbai-logged-out__benefit-text">
+                            <strong><?php esc_html_e('Rank in Google Images', 'beepbeep-ai-alt-text-generator'); ?></strong>
+                            <?php esc_html_e('— descriptive alt text helps images appear in search', 'beepbeep-ai-alt-text-generator'); ?>
+                        </span>
+                    </li>
+                    <li class="bbai-logged-out__benefit">
+                        <span class="bbai-logged-out__benefit-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </span>
+                        <span class="bbai-logged-out__benefit-text">
+                            <strong><?php esc_html_e('Meet accessibility standards', 'beepbeep-ai-alt-text-generator'); ?></strong>
+                            <?php esc_html_e('— WCAG-compliant descriptions for screen readers', 'beepbeep-ai-alt-text-generator'); ?>
+                        </span>
+                    </li>
+                    <li class="bbai-logged-out__benefit">
+                        <span class="bbai-logged-out__benefit-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </span>
+                        <span class="bbai-logged-out__benefit-text">
+                            <strong><?php esc_html_e('Save hours of writing', 'beepbeep-ai-alt-text-generator'); ?></strong>
+                            <?php esc_html_e('— generate alt text in seconds, not minutes per image', 'beepbeep-ai-alt-text-generator'); ?>
+                        </span>
+                    </li>
+                </ul>
+            </section>
 
             <section class="bbai-logged-out__how-it-works" aria-labelledby="bbai-how-it-works-title">
                 <h2 id="bbai-how-it-works-title" class="bbai-logged-out__section-title">
@@ -71,8 +104,11 @@ $fallback_url = admin_url('admin.php?page=' . $current_page);
                                 <circle cx="12" cy="15" r="1.5" fill="currentColor" />
                             </svg>
                         </div>
-                        <p class="bbai-logged-out__step-text">
-                            <?php esc_html_e('Sign in to your BeepBeep AI account', 'beepbeep-ai-alt-text-generator'); ?>
+                        <p class="bbai-logged-out__step-title">
+                            <?php esc_html_e('Create your free account', 'beepbeep-ai-alt-text-generator'); ?>
+                        </p>
+                        <p class="bbai-logged-out__step-desc">
+                            <?php esc_html_e('No credit card required', 'beepbeep-ai-alt-text-generator'); ?>
                         </p>
                     </div>
 
@@ -88,8 +124,11 @@ $fallback_url = admin_url('admin.php?page=' . $current_page);
                                 </g>
                             </svg>
                         </div>
-                        <p class="bbai-logged-out__step-text">
-                            <?php esc_html_e('Connect your WordPress site', 'beepbeep-ai-alt-text-generator'); ?>
+                        <p class="bbai-logged-out__step-title">
+                            <?php esc_html_e('Connect your site', 'beepbeep-ai-alt-text-generator'); ?>
+                        </p>
+                        <p class="bbai-logged-out__step-desc">
+                            <?php esc_html_e('One click, fully automatic', 'beepbeep-ai-alt-text-generator'); ?>
                         </p>
                     </div>
 
@@ -101,15 +140,18 @@ $fallback_url = admin_url('admin.php?page=' . $current_page);
                                 <circle cx="9" cy="9" r="1.5" fill="currentColor" />
                             </svg>
                         </div>
-                        <p class="bbai-logged-out__step-text">
-                            <?php esc_html_e('Generate alt text automatically for your images.', 'beepbeep-ai-alt-text-generator'); ?>
+                        <p class="bbai-logged-out__step-title">
+                            <?php esc_html_e('Generate alt text', 'beepbeep-ai-alt-text-generator'); ?>
+                        </p>
+                        <p class="bbai-logged-out__step-desc">
+                            <?php esc_html_e('Select images or process your entire library', 'beepbeep-ai-alt-text-generator'); ?>
                         </p>
                     </div>
                 </div>
             </section>
 
             <p class="bbai-logged-out__supporting-line">
-                <?php esc_html_e('Free plan includes 50 images per month.', 'beepbeep-ai-alt-text-generator'); ?>
+                <?php esc_html_e('Free plan includes 50 images per month. No credit card required.', 'beepbeep-ai-alt-text-generator'); ?>
             </p>
 
             <div class="bbai-logged-out__pill" role="note">
