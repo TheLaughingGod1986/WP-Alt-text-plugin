@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Load testimonials data
-$testimonials_file = dirname(__FILE__) . '/data/testimonials.php';
+$testimonials_file = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/data/testimonials.php';
 $testimonials = file_exists($testimonials_file) ? include $testimonials_file : [];
 
 // Get usage stats for social proof
@@ -33,7 +33,7 @@ $plugin_url = defined('BEEPBEEP_AI_PLUGIN_URL') ? BEEPBEEP_AI_PLUGIN_URL : (defi
                 </svg>
             </span>
             <span class="bbai-trust-badge-text">
-                <span class="bbai-trust-badge-title"><?php esc_html_e('WCAG Compliant', 'beepbeep-ai-alt-text-generator'); ?></span>
+                <span class="bbai-trust-badge-title"><?php esc_html_e('WCAG Compliant', 'opptiai-alt'); ?></span>
             </span>
         </div>
         <div class="bbai-trust-badge bbai-trust-badge--gdpr">
@@ -44,7 +44,7 @@ $plugin_url = defined('BEEPBEEP_AI_PLUGIN_URL') ? BEEPBEEP_AI_PLUGIN_URL : (defi
                 </svg>
             </span>
             <span class="bbai-trust-badge-text">
-                <span class="bbai-trust-badge-title"><?php esc_html_e('GDPR Ready', 'beepbeep-ai-alt-text-generator'); ?></span>
+                <span class="bbai-trust-badge-title"><?php esc_html_e('GDPR Ready', 'opptiai-alt'); ?></span>
             </span>
         </div>
         <div class="bbai-trust-badge bbai-trust-badge--uptime">
@@ -55,7 +55,7 @@ $plugin_url = defined('BEEPBEEP_AI_PLUGIN_URL') ? BEEPBEEP_AI_PLUGIN_URL : (defi
                 </svg>
             </span>
             <span class="bbai-trust-badge-text">
-                <span class="bbai-trust-badge-title"><?php esc_html_e('99.9% Uptime', 'beepbeep-ai-alt-text-generator'); ?></span>
+                <span class="bbai-trust-badge-title"><?php esc_html_e('99.9% Uptime', 'opptiai-alt'); ?></span>
             </span>
         </div>
         <div class="bbai-trust-badge bbai-trust-badge--users">
@@ -68,15 +68,16 @@ $plugin_url = defined('BEEPBEEP_AI_PLUGIN_URL') ? BEEPBEEP_AI_PLUGIN_URL : (defi
                 </svg>
             </span>
             <span class="bbai-trust-badge-text">
-                <span class="bbai-trust-badge-title">
+                    <span class="bbai-trust-badge-title">
                     <?php
                     printf(
-                        esc_html__('Join %s+ sites', 'beepbeep-ai-alt-text-generator'),
+                        /* translators: 1: site count */
+                        esc_html__('Join %s+ sites', 'opptiai-alt'),
                         esc_html(number_format($total_sites))
                     );
                     ?>
                 </span>
-                <span class="bbai-trust-badge-subtitle"><?php esc_html_e('Using BeepBeep AI', 'beepbeep-ai-alt-text-generator'); ?></span>
+                <span class="bbai-trust-badge-subtitle"><?php esc_html_e('Using BeepBeep AI', 'opptiai-alt'); ?></span>
             </span>
         </div>
     </div>
@@ -114,7 +115,8 @@ $plugin_url = defined('BEEPBEEP_AI_PLUGIN_URL') ? BEEPBEEP_AI_PLUGIN_URL : (defi
                     $initials = 'AI';
                 }
                 $rating_label = sprintf(
-                    esc_attr__('%d out of 5 stars', 'beepbeep-ai-alt-text-generator'),
+                    /* translators: 1: star rating */
+                    esc_attr__('%d out of 5 stars', 'opptiai-alt'),
                     $rating
                 );
                 ?>
@@ -149,7 +151,7 @@ $plugin_url = defined('BEEPBEEP_AI_PLUGIN_URL') ? BEEPBEEP_AI_PLUGIN_URL : (defi
                                     </svg>
                                 <?php endfor; ?>
                             </div>
-                            <p class="bbai-testimonial-tagline"><?php esc_html_e('Alt text automation for SEO & accessibility teams.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                            <p class="bbai-testimonial-tagline"><?php esc_html_e('Alt text automation for SEO & accessibility teams.', 'opptiai-alt'); ?></p>
                         </div>
                     </article>
                 </div>

@@ -42,6 +42,8 @@ class Admin_Hooks {
 		}
 		add_action( 'admin_menu', [ __CLASS__, 'register_credit_usage_page' ] );
 		add_action( 'admin_init', [ $this->core, 'register_settings' ] );
+		add_action( 'admin_init', [ $this->core, 'maybe_redirect_to_onboarding' ] );
+		add_action( 'admin_init', [ __CLASS__, 'maybe_clear_usage_cache' ] );
 		add_action( 'add_attachment', [ $this->core, 'handle_media_change' ], 5 );
 		add_action( 'delete_attachment', [ $this->core, 'handle_media_change' ], 5 );
 		add_action( 'attachment_updated', [ $this->core, 'handle_attachment_updated' ], 5, 3 );
@@ -124,6 +126,8 @@ class Admin_Hooks {
 			'beepbeepai_dismiss_api_notice'   => 'ajax_dismiss_api_notice',
 			'bbai_check_onboarding'            => 'ajax_check_onboarding',
 			'bbai_complete_onboarding'         => 'ajax_complete_onboarding',
+			'bbai_start_scan'                  => 'ajax_start_scan',
+			'bbai_onboarding_skip'             => 'ajax_onboarding_skip',
 			'bbai_check_milestone'             => 'ajax_check_milestone',
 			'bbai_track_milestone'             => 'ajax_track_milestone',
 			'bbai_export_analytics'            => 'ajax_export_analytics',
@@ -157,5 +161,34 @@ class Admin_Hooks {
 	public static function register_credit_usage_page() {
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/class-bbai-credit-usage-page.php';
 		Credit_Usage_Page::register_admin_page();
+	}
+
+	/**
+	 * Clear usage cache when ?clear_cache=1 is in URL with valid nonce.
+	 */
+	public static function maybe_clear_usage_cache() {
+		$clear_cache_raw = isset( $_GET['clear_cache'] ) ? wp_unslash( $_GET['clear_cache'] ) : '';
+		$clear_cache     = is_string( $clear_cache_raw ) ? sanitize_text_field( $clear_cache_raw ) : '';
+
+		if ( $clear_cache !== '1' ) {
+			return;
+		}
+
+		// Verify nonce for cache clearing action.
+		$nonce_raw = isset( $_GET['_bbai_nonce'] ) ? wp_unslash( $_GET['_bbai_nonce'] ) : '';
+		$nonce     = is_string( $nonce_raw ) ? sanitize_text_field( $nonce_raw ) : '';
+		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'bbai_clear_cache' ) ) {
+			return;
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		delete_transient( 'bbai_usage_cache' );
+		delete_transient( 'bbai_token_last_check' );
+		// Also clear any usage tracker cache.
+		delete_option( 'bbai_usage_stats_cache' );
+		delete_option( 'beepbeep_ai_usage_cache' );
 	}
 }

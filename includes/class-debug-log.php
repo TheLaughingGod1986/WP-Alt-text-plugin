@@ -327,17 +327,27 @@ class Debug_Log {
             }
         }
         
+        // Safely decode context JSON with sanitization.
+        $context = [];
+        if ( ! empty( $row['context'] ) ) {
+            if ( ! function_exists( 'bbai_json_decode_array' ) && defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) ) {
+                require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-json.php';
+            }
+            $decoded_context = function_exists( 'bbai_json_decode_array' ) ? bbai_json_decode_array( $row['context'] ) : null;
+            $context = is_array( $decoded_context ) ? $decoded_context : [];
+        }
+
         return [
             'id'        => intval($row['id']),
-            'level'     => $row['level'],
-            'message'   => $row['message'],
-            'source'    => $row['source'],
-            'meta'      => $row['meta'],
+            'level'     => sanitize_key( $row['level'] ),
+            'message'   => sanitize_text_field( $row['message'] ),
+            'source'    => sanitize_text_field( $row['source'] ),
+            'meta'      => sanitize_text_field( $row['meta'] ),
             'user_id'   => $user_id,
             'user'      => $user_info,
             'created_at'=> mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $row['created_at']),
-            'timestamp' => $row['created_at'],
-            'context'   => $row['context'] ? json_decode($row['context'], true) : [],
+            'timestamp' => sanitize_text_field( $row['created_at'] ),
+            'context'   => $context,
         ];
     }
 

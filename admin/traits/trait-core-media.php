@@ -287,44 +287,44 @@ trait Core_Media {
     private function get_source_meta_map() {
         return [
             'auto' => [
-                'label' => __('Auto (Upload)', 'beepbeep-ai-alt-text-generator'),
-                'description' => __('Generated automatically on upload', 'beepbeep-ai-alt-text-generator'),
+                'label' => __('Auto (Upload)', 'opptiai-alt'),
+                'description' => __('Generated automatically on upload', 'opptiai-alt'),
             ],
             'manual' => [
-                'label' => __('Manual', 'beepbeep-ai-alt-text-generator'),
-                'description' => __('Generated via manual trigger', 'beepbeep-ai-alt-text-generator'),
+                'label' => __('Manual', 'opptiai-alt'),
+                'description' => __('Generated via manual trigger', 'opptiai-alt'),
             ],
             'bulk' => [
-                'label' => __('Bulk', 'beepbeep-ai-alt-text-generator'),
-                'description' => __('Generated via bulk action', 'beepbeep-ai-alt-text-generator'),
+                'label' => __('Bulk', 'opptiai-alt'),
+                'description' => __('Generated via bulk action', 'opptiai-alt'),
             ],
             'ajax' => [
-                'label' => __('Dashboard', 'beepbeep-ai-alt-text-generator'),
-                'description' => __('Generated from dashboard', 'beepbeep-ai-alt-text-generator'),
+                'label' => __('Dashboard', 'opptiai-alt'),
+                'description' => __('Generated from dashboard', 'opptiai-alt'),
             ],
             'inline' => [
-                'label' => __('Inline', 'beepbeep-ai-alt-text-generator'),
-                'description' => __('Generated inline from media library', 'beepbeep-ai-alt-text-generator'),
+                'label' => __('Inline', 'opptiai-alt'),
+                'description' => __('Generated inline from media library', 'opptiai-alt'),
             ],
             'rest' => [
-                'label' => __('REST API', 'beepbeep-ai-alt-text-generator'),
-                'description' => __('Generated via REST API', 'beepbeep-ai-alt-text-generator'),
+                'label' => __('REST API', 'opptiai-alt'),
+                'description' => __('Generated via REST API', 'opptiai-alt'),
             ],
             'queue' => [
-                'label' => __('Queue', 'beepbeep-ai-alt-text-generator'),
-                'description' => __('Generated via background queue', 'beepbeep-ai-alt-text-generator'),
+                'label' => __('Queue', 'opptiai-alt'),
+                'description' => __('Generated via background queue', 'opptiai-alt'),
             ],
             'wpcli' => [
-                'label' => __('WP-CLI', 'beepbeep-ai-alt-text-generator'),
-                'description' => __('Generated via WP-CLI command', 'beepbeep-ai-alt-text-generator'),
+                'label' => __('WP-CLI', 'opptiai-alt'),
+                'description' => __('Generated via WP-CLI command', 'opptiai-alt'),
             ],
             'dry-run' => [
-                'label' => __('Dry Run', 'beepbeep-ai-alt-text-generator'),
-                'description' => __('Test run without API call', 'beepbeep-ai-alt-text-generator'),
+                'label' => __('Dry Run', 'opptiai-alt'),
+                'description' => __('Test run without API call', 'opptiai-alt'),
             ],
             'unknown' => [
-                'label' => __('Unknown', 'beepbeep-ai-alt-text-generator'),
-                'description' => __('Source not recorded', 'beepbeep-ai-alt-text-generator'),
+                'label' => __('Unknown', 'opptiai-alt'),
+                'description' => __('Source not recorded', 'opptiai-alt'),
             ],
         ];
     }

@@ -34,7 +34,7 @@ class Router {
 	/**
 	 * REST routes.
 	 *
-	 * @var array<string, array{controller: string, method: string, methods: string}>
+	 * @var array<string, array{controller: string, method: string, methods: string, permission_callback: callable|null}>
 	 */
 	private array $rest_routes = array();
 
@@ -73,17 +73,19 @@ class Router {
 	 *
 	 * @since 5.0.0
 	 *
-	 * @param string $route      REST route pattern.
-	 * @param string $controller Controller service name.
-	 * @param string $method     Controller method name.
-	 * @param string $methods    HTTP methods (default 'POST').
+	 * @param string        $route               REST route pattern.
+	 * @param string        $controller          Controller service name.
+	 * @param string        $method              Controller method name.
+	 * @param string        $methods             HTTP methods (default 'POST').
+	 * @param callable|null $permission_callback Permission callback (default requires manage_options).
 	 * @return void
 	 */
-	public function rest(string $route, string $controller, string $method, string $methods = 'POST'): void {
+	public function rest(string $route, string $controller, string $method, string $methods = 'POST', ?callable $permission_callback = null): void {
 		$this->rest_routes[ $route ] = array(
-			'controller' => $controller,
-			'method'     => $method,
-			'methods'    => $methods,
+			'controller'          => $controller,
+			'method'              => $method,
+			'methods'             => $methods,
+			'permission_callback' => $permission_callback,
 		);
 	}
 
@@ -174,6 +176,9 @@ class Router {
 	 */
 	public function register_rest_routes(): void {
 		foreach ( $this->rest_routes as $route => $config ) {
+			// Use route-specific permission callback or default to manage_options for security.
+			$permission_callback = $config['permission_callback'] ?? array( $this, 'default_permission_callback' );
+
 			register_rest_route(
 				'bbai/v1',
 				$route,
@@ -182,12 +187,24 @@ class Router {
 					'callback'            => function ( \WP_REST_Request $request ) use ( $config ) {
 						return $this->handle_rest( $request, $config );
 					},
-					'permission_callback' => function ( \WP_REST_Request $request ) {
-						return current_user_can( 'upload_files' );
-					},
+					'permission_callback' => $permission_callback,
 				)
 			);
 		}
+	}
+
+	/**
+	 * Default permission callback - requires manage_options for security.
+	 *
+	 * Routes should specify their own permission_callback for more granular control.
+	 *
+	 * @since 5.0.0
+	 *
+	 * @param \WP_REST_Request $request REST request instance.
+	 * @return bool
+	 */
+	public function default_permission_callback( \WP_REST_Request $request ): bool {
+		return current_user_can( 'manage_options' );
 	}
 
 	/**

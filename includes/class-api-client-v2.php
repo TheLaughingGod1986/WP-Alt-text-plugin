@@ -10,6 +10,26 @@ if (!defined('ABSPATH')) { exit; }
 
 class API_Client_V2 {
     /**
+     * Singleton instance.
+     *
+     * @var self|null
+     */
+    private static $instance = null;
+
+    /**
+     * Get singleton instance.
+     *
+     * @return self
+     */
+    public static function get_instance() {
+        if (null === self::$instance) {
+            self::$instance = new self();
+        }
+
+        return self::$instance;
+    }
+
+    /**
      * Helper to make requests with retry/backoff for transient failures.
      */
     protected function request_with_retry($endpoint, $method = 'GET', $data = null, $max_attempts = 3, $include_user_id = false, $extra_headers = []) {
@@ -49,7 +69,7 @@ class API_Client_V2 {
             }
         }
 
-        return $last_error ?: new \WP_Error('api_error', __('Unknown API error', 'beepbeep-ai-alt-text-generator'));
+        return $last_error ?: new \WP_Error('api_error', __('Unknown API error', 'opptiai-alt'));
     }
 
     
@@ -62,6 +82,10 @@ class API_Client_V2 {
     private $encryption_prefix = 'enc:';
     
     public function __construct() {
+        if (null === self::$instance) {
+            self::$instance = $this;
+        }
+
         // Check for local development override first
         if (defined('BEEPBEEP_AI_API_URL')) {
             $this->api_url = BEEPBEEP_AI_API_URL;
@@ -83,7 +107,7 @@ class API_Client_V2 {
     /**
      * Get stored JWT token
      */
-    protected function get_token() {
+    public function get_token() {
         $token = get_option($this->token_option_key, '');
         if ($token === '' || $token === false) {
             $legacy = get_option('beepbeepai_jwt_token', '');
@@ -294,6 +318,7 @@ class API_Client_V2 {
         $headers = [
             'Content-Type' => 'application/json',
             'X-Site-Hash' => $site_id,  // Site-based licensing identifier
+            'X-Site-Key' => $site_id,   // Alias for backend compatibility
             'X-Site-URL' => get_site_url(),  // For backend reference
             'X-Site-Fingerprint' => $fingerprint,  // Site fingerprint for abuse prevention
         ];
@@ -407,14 +432,14 @@ class API_Client_V2 {
                     'endpoint' => $endpoint,
                     'data_type' => gettype($data),
                 ]);
-                return new \WP_Error('invalid_data', __('Request data must be an array', 'beepbeep-ai-alt-text-generator'));
+                return new \WP_Error('invalid_data', __('Request data must be an array', 'opptiai-alt'));
             }
             
             // Clean data to ensure it's JSON-encodable (remove any non-serializable values)
             $clean_data = $this->clean_json_data($data);
             
             // Encode to JSON with error handling
-            $json_body = wp_json_encode($clean_data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            $json_body = wp_json_encode($clean_data);
             
             if ($json_body === false || $json_body === null) {
                 $json_error = json_last_error_msg();
@@ -423,7 +448,11 @@ class API_Client_V2 {
                     'json_error' => $json_error,
                     'data_keys' => array_keys($clean_data),
                 ]);
-                return new \WP_Error('json_encode_error', sprintf(__('Failed to encode request data: %s', 'beepbeep-ai-alt-text-generator'), $json_error));
+                return new \WP_Error('json_encode_error', sprintf(
+                    /* translators: 1: JSON error message */
+                    __('Failed to encode request data: %s', 'opptiai-alt'),
+                    $json_error
+                ));
             }
             
             // Validate JSON is not empty
@@ -432,7 +461,7 @@ class API_Client_V2 {
                     'endpoint' => $endpoint,
                     'json_body' => $json_body,
                 ]);
-                return new \WP_Error('empty_json', __('Request body cannot be empty', 'beepbeep-ai-alt-text-generator'));
+                return new \WP_Error('empty_json', __('Request body cannot be empty', 'opptiai-alt'));
             }
             
             // Clean JSON: remove BOM, trim whitespace, ensure it starts with valid JSON character
@@ -447,7 +476,7 @@ class API_Client_V2 {
                     'endpoint' => $endpoint,
                     'json_start' => substr($json_body, 0, 10),
                 ]);
-                return new \WP_Error('invalid_json_format', __('JSON body format is invalid', 'beepbeep-ai-alt-text-generator'));
+                return new \WP_Error('invalid_json_format', __('JSON body format is invalid', 'opptiai-alt'));
             }
             
             $args['body'] = $json_body;
@@ -464,8 +493,8 @@ class API_Client_V2 {
             'endpoint' => $endpoint,
             'method'   => $method,
             'url'      => $url,
-            'api_host' => parse_url($url, PHP_URL_HOST) ?: '',
-            'api_path' => parse_url($url, PHP_URL_PATH) ?: '',
+            'api_host' => wp_parse_url($url, PHP_URL_HOST) ?: '',
+            'api_path' => wp_parse_url($url, PHP_URL_PATH) ?: '',
             'headers'  => array_keys($headers), // Log header names only (not values for security)
             'has_body' => isset($args['body']),
             'body_size' => isset($args['body']) ? strlen($args['body']) : 0,
@@ -492,18 +521,28 @@ class API_Client_V2 {
                 $endpoint_str = is_string($endpoint) ? $endpoint : '';
                 $is_generate_endpoint = $endpoint_str && ((strpos($endpoint_str, '/generate') !== false) || (strpos($endpoint_str, 'generate') !== false)) && strpos($endpoint_str, '/api/') === false;
                 if ($is_generate_endpoint) {
-                    return new \WP_Error('api_timeout', __('The image generation is taking longer than expected. This may happen with large images or during high server load. Please try again.', 'beepbeep-ai-alt-text-generator'));
+                    return new \WP_Error('api_timeout', __('The image generation is taking longer than expected. This may happen with large images or during high server load. Please try again.', 'opptiai-alt'));
                 }
-                return new \WP_Error('api_timeout', __('The server is taking too long to respond. Please try again in a few minutes.', 'beepbeep-ai-alt-text-generator'));
+                return new \WP_Error('api_timeout', __('The server is taking too long to respond. Please try again in a few minutes.', 'opptiai-alt'));
             } elseif ($error_message_str && strpos($error_message_str, 'could not resolve') !== false) {
-                return new \WP_Error('api_unreachable', __('Unable to reach authentication server. Please check your internet connection and try again.', 'beepbeep-ai-alt-text-generator'));
+                return new \WP_Error('api_unreachable', __('Unable to reach authentication server. Please check your internet connection and try again.', 'opptiai-alt'));
+            } elseif ($error_message_str && (strpos($error_message_str, 'ssl') !== false || strpos($error_message_str, 'certificate') !== false || strpos($error_message_str, 'SSL') !== false)) {
+                return new \WP_Error('ssl_error', __('SSL certificate verification failed. Please contact your hosting provider or try again later.', 'opptiai-alt'));
+            } elseif ($error_message_str && (strpos($error_message_str, 'connection refused') !== false || strpos($error_message_str, 'Connection refused') !== false)) {
+                return new \WP_Error('connection_refused', __('Connection to authentication server was refused. The service may be temporarily unavailable. Please try again in a few minutes.', 'opptiai-alt'));
+            } elseif ($error_message_str && strpos($error_message_str, 'cURL error') !== false) {
+                return new \WP_Error('network_error', __('Network error while connecting to authentication server. Please check your server\'s outbound connections and try again.', 'opptiai-alt'));
             }
-            return new \WP_Error('api_error', $error_message ?: __('API request failed', 'beepbeep-ai-alt-text-generator'));
+            return new \WP_Error('api_error', $error_message ?: __('API request failed', 'opptiai-alt'));
         }
         
         $status_code = wp_remote_retrieve_response_code($response);
         $body = wp_remote_retrieve_body($response);
-        $data = json_decode($body, true);
+        if ( ! function_exists( 'bbai_json_decode_array' ) && defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) ) {
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-json.php';
+        }
+        $decoded = function_exists( 'bbai_json_decode_array' ) ? bbai_json_decode_array( $body ) : null;
+        $data = is_array( $decoded ) ? $decoded : [];
 
         $log_context = [
             'endpoint' => $endpoint,
@@ -545,7 +584,7 @@ class API_Client_V2 {
                 if (empty($license_key)) {
                     return new \WP_Error(
                         'license_required',
-                        __('License key is required to generate alt text. Please activate your license key in the Settings page.', 'beepbeep-ai-alt-text-generator'),
+                        __('License key is required to generate alt text. Please activate your license key in the Settings page.', 'opptiai-alt'),
                         [
                             'status_code' => $status_code,
                             'requires_license' => true,
@@ -555,7 +594,7 @@ class API_Client_V2 {
                 } else {
                     return new \WP_Error(
                         'invalid_license',
-                        __('Your license key is invalid or expired. Please check your license key in the Settings page.', 'beepbeep-ai-alt-text-generator'),
+                        __('Your license key is invalid or expired. Please check your license key in the Settings page.', 'opptiai-alt'),
                         [
                             'status_code' => $status_code,
                             'requires_license' => true,
@@ -568,7 +607,7 @@ class API_Client_V2 {
             // Generic authentication error
             return new \WP_Error(
                 'auth_required',
-                __('Authentication required. Please log in to continue.', 'beepbeep-ai-alt-text-generator'),
+                __('Authentication required. Please log in to continue.', 'opptiai-alt'),
                 ['status_code' => $status_code, 'requires_auth' => true]
             );
         }
@@ -590,18 +629,18 @@ class API_Client_V2 {
             
             if ($body_str && (strpos($body_str, '<html') !== false || strpos($body_str, 'Cannot POST') !== false || strpos($body_str, 'Cannot GET') !== false)) {
                 // Provide context-specific error messages
-                $error_message = __('This feature is not yet available. Please contact support for assistance or try again later.', 'beepbeep-ai-alt-text-generator');
+                $error_message = __('This feature is not yet available. Please contact support for assistance or try again later.', 'opptiai-alt');
                 
                 // Check endpoint to provide more specific message
                 if ($endpoint_str && (strpos($endpoint_str, '/api/contact') !== false)) {
-                    $error_message = __('The contact form endpoint is not yet available on the backend. Please ensure the /api/contact endpoint is configured with Resend.', 'beepbeep-ai-alt-text-generator');
+                    $error_message = __('The contact form endpoint is not yet available on the backend. Please ensure the /api/contact endpoint is configured with Resend.', 'opptiai-alt');
                 } elseif ($endpoint_str && (strpos($endpoint_str, '/auth/forgot-password') !== false || strpos($endpoint_str, '/auth/reset-password') !== false)) {
-                    $error_message = __('Password reset functionality is currently being set up on our backend. Please contact support for assistance or try again later.', 'beepbeep-ai-alt-text-generator');
+                    $error_message = __('Password reset functionality is currently being set up on our backend. Please contact support for assistance or try again later.', 'opptiai-alt');
                 } elseif ($endpoint_str && (strpos($endpoint_str, '/licenses/sites') !== false || strpos($endpoint_str, '/api/licenses/sites') !== false)) {
-                    $error_message = __('License site usage tracking is currently being set up on our backend. Please contact support for assistance or try again later.', 'beepbeep-ai-alt-text-generator');
+                    $error_message = __('License site usage tracking is currently being set up on our backend. Please contact support for assistance or try again later.', 'opptiai-alt');
                 } elseif ($endpoint_str && (strpos($endpoint_str, '/generate') !== false || strpos($endpoint_str, 'generate') !== false)) {
                     // For generate endpoint, provide more helpful message
-                    $error_message = __('The alt text generation endpoint is not available. Please check your backend configuration or contact support.', 'beepbeep-ai-alt-text-generator');
+                    $error_message = __('The alt text generation endpoint is not available. Please check your backend configuration or contact support.', 'opptiai-alt');
                 }
                 
                 return new \WP_Error(
@@ -617,7 +656,7 @@ class API_Client_V2 {
             }
             return new \WP_Error(
                 'not_found',
-                $data['error'] ?? $data['message'] ?? __('The requested resource was not found.', 'beepbeep-ai-alt-text-generator'),
+                $data['error'] ?? $data['message'] ?? __('The requested resource was not found.', 'opptiai-alt'),
                 [
                     'status_code' => 404,
                     'endpoint' => $endpoint,
@@ -672,7 +711,7 @@ class API_Client_V2 {
                 if ($is_checkout_endpoint) {
                     return new \WP_Error(
                         'user_not_found',
-                        __('User not found', 'beepbeep-ai-alt-text-generator'),
+                        __('User not found', 'opptiai-alt'),
                         [
                             'requires_auth' => false,
                             'status_code' => $status_code,
@@ -688,7 +727,7 @@ class API_Client_V2 {
                 delete_transient('bbai_token_last_check');
                 return new \WP_Error(
                     'auth_required',
-                    __('Your session has expired or your account is no longer available. Please log in again.', 'beepbeep-ai-alt-text-generator'),
+                    __('Your session has expired or your account is no longer available. Please log in again.', 'opptiai-alt'),
                     [
                         'requires_auth' => true,
                         'status_code' => $status_code,
@@ -698,7 +737,7 @@ class API_Client_V2 {
             }
             
             // Provide more specific error message based on endpoint and error details
-            $error_message = __('The server encountered an error processing your request. Please try again in a few minutes.', 'beepbeep-ai-alt-text-generator');
+            $error_message = __('The server encountered an error processing your request. Please try again in a few minutes.', 'opptiai-alt');
             
             // Check for generate endpoint (with or without leading slash)
             $endpoint_str = is_string($endpoint) ? $endpoint : '';
@@ -708,7 +747,7 @@ class API_Client_V2 {
             if ($is_checkout_endpoint) {
                 // For checkout, provide a more user-friendly error message
                 // The backend is having issues with checkout - likely needs authentication fix
-                $error_message = __('Unable to create checkout session. This may be a temporary backend issue. Please try again in a moment or contact support if the problem persists.', 'beepbeep-ai-alt-text-generator');
+                $error_message = __('Unable to create checkout session. This may be a temporary backend issue. Please try again in a moment or contact support if the problem persists.', 'opptiai-alt');
             } elseif ($is_generate_endpoint) {
                 // Check if it's an OpenAI API key issue (backend configuration problem)
                 $error_details_str = is_string($error_details) ? $error_details : '';
@@ -716,12 +755,12 @@ class API_Client_V2 {
                 if (($error_details_str && (strpos(strtolower($error_details_str), 'incorrect api key') !== false || 
                     strpos(strtolower($error_details_str), 'invalid api key') !== false)) ||
                     ($backend_error_code_str && strpos(strtolower($backend_error_code_str), 'generation_error') !== false)) {
-                    $error_message = __('The image generation service is temporarily unavailable due to a backend configuration issue. Please contact support.', 'beepbeep-ai-alt-text-generator');
+                    $error_message = __('The image generation service is temporarily unavailable due to a backend configuration issue. Please contact support.', 'opptiai-alt');
                 } else {
-                    $error_message = __('The image generation service is temporarily unavailable. Please try again in a few minutes.', 'beepbeep-ai-alt-text-generator');
+                    $error_message = __('The image generation service is temporarily unavailable. Please try again in a few minutes.', 'opptiai-alt');
                 }
             } elseif (is_string($endpoint) && strpos($endpoint, '/auth/') !== false) {
-                $error_message = __('The authentication server is temporarily unavailable. Please try again in a few minutes.', 'beepbeep-ai-alt-text-generator');
+                $error_message = __('The authentication server is temporarily unavailable. Please try again in a few minutes.', 'opptiai-alt');
             }
             
             return new \WP_Error(
@@ -785,7 +824,7 @@ class API_Client_V2 {
             if (!is_wp_error($usage) && isset($usage['plan']) && $usage['plan'] === 'free') {
                 return new \WP_Error(
                     'free_plan_exists',
-                    __('A free plan has already been used for this site. Upgrade to Growth or Agency to increase your quota.', 'beepbeep-ai-alt-text-generator'),
+                    __('A free plan has already been used for this site. Upgrade to Growth or Agency to increase your quota.', 'opptiai-alt'),
                     ['code' => 'free_plan_already_used']
                 );
             }
@@ -806,37 +845,97 @@ class API_Client_V2 {
         ]);
         
         if (is_wp_error($response)) {
-            // Check for "free plan already used" error from backend
+            $error_code = $response->get_error_code();
             $raw_msg = $response->get_error_message();
+            $error_data = $response->get_error_data();
             $error_message = is_string($raw_msg) ? strtolower($raw_msg) : '';
+
+            // Check for "site already has license" error (credit sharing)
+            if ($error_code === 'SITE_HAS_LICENSE' || $error_code === 'site_has_license' ||
+                strpos($error_message, 'site is already connected') !== false) {
+                $existing_email = '';
+                if (is_array($error_data) && isset($error_data['existing_email'])) {
+                    $existing_email = $error_data['existing_email'];
+                }
+                return new \WP_Error(
+                    'site_has_license',
+                    $raw_msg ?: __('This site is already connected to an account. Log in with the existing credentials.', 'opptiai-alt'),
+                    ['existing_email' => $existing_email]
+                );
+            }
+
+            // Check for "free plan already used" error from backend
             if (strpos($error_message, 'free plan') !== false ||
                 strpos($error_message, 'already used') !== false ||
-                $response->get_error_code() === 'free_plan_exists') {
+                $error_code === 'free_plan_exists') {
                 return new \WP_Error(
                     'free_plan_exists',
-                    __('A free plan has already been used for this site. Upgrade to Growth or Agency to increase your quota.', 'beepbeep-ai-alt-text-generator'),
+                    __('A free plan has already been used for this site. Upgrade to Growth or Agency to increase your quota.', 'opptiai-alt'),
                     ['code' => 'free_plan_already_used']
                 );
             }
             return $response;
         }
-        
-        if ($response['success'] && isset($response['data']['token'])) {
-            $this->set_token($response['data']['token']);
-            $this->set_user_data($response['data']['user']);
-            
+
+        // make_request wraps response: ['status_code' => ..., 'data' => <backend_response>, 'success' => ...]
+        // Backend returns: {'success': true, 'data': {'token': ..., 'user': ...}}
+        // So token is at: $response['data']['data']['token'] OR $response['data']['token'] (for backward compat)
+        $backend_data = $response['data'] ?? [];
+        $status_code = $response['status_code'] ?? 0;
+
+        // Handle 4xx errors (like 409 Conflict for site already has license)
+        if (!$response['success'] && $status_code >= 400 && $status_code < 500) {
+            $error_code = $backend_data['error'] ?? $backend_data['code'] ?? '';
+            $error_message = $backend_data['message'] ?? '';
+            $existing_email = $backend_data['existing_email'] ?? '';
+
+            // Check for site already has license error (409)
+            if ($error_code === 'SITE_HAS_LICENSE' || $error_code === 'site_has_license' || $status_code === 409) {
+                return new \WP_Error(
+                    'site_has_license',
+                    $error_message ?: __('This site is already connected to an account. Log in with the existing credentials.', 'opptiai-alt'),
+                    ['existing_email' => $existing_email, 'status_code' => $status_code]
+                );
+            }
+
+            // Check for user already exists (409)
+            if ($error_code === 'USER_EXISTS') {
+                return new \WP_Error(
+                    'user_exists',
+                    $error_message ?: __('An account with this email already exists. Please log in instead.', 'opptiai-alt'),
+                    ['status_code' => $status_code]
+                );
+            }
+
+            // Generic 4xx error
+            return new \WP_Error(
+                'registration_failed',
+                $error_message ?: __('Registration failed', 'opptiai-alt'),
+                ['status_code' => $status_code, 'error_code' => $error_code]
+            );
+        }
+
+        $token = $backend_data['data']['token'] ?? $backend_data['token'] ?? null;
+        $user = $backend_data['data']['user'] ?? $backend_data['user'] ?? null;
+
+        if ($response['success'] && $token) {
+            $this->set_token($token);
+            if ($user) {
+                $this->set_user_data($user);
+            }
+
             // CRITICAL: Store license key from user data if available
             // Backend /api/generate endpoint requires BOTH JWT token AND license key
-            if (isset($response['data']['user']['license_key']) && !empty($response['data']['user']['license_key'])) {
-                $this->set_license_key($response['data']['user']['license_key']);
+            if (isset($user['license_key']) && !empty($user['license_key'])) {
+                $this->set_license_key($user['license_key']);
             }
-            
-            return $response['data'];
+
+            return $backend_data['data'] ?? $backend_data;
         }
-        
+
         return new \WP_Error(
             'registration_failed',
-            $response['data']['error'] ?? __('Registration failed', 'beepbeep-ai-alt-text-generator')
+            $backend_data['data']['error'] ?? $backend_data['error'] ?? $backend_data['message'] ?? __('Registration failed', 'opptiai-alt')
         );
     }
     
@@ -859,23 +958,34 @@ class API_Client_V2 {
         if (is_wp_error($response)) {
             return $response;
         }
-        
-        if ($response['success'] && isset($response['data']['token'])) {
-            $this->set_token($response['data']['token']);
-            $this->set_user_data($response['data']['user']);
-            
+
+        // make_request wraps response: ['status_code' => ..., 'data' => <backend_response>, 'success' => ...]
+        // Backend returns: {'success': true, 'data': {'token': ..., 'user': ...}, 'token': ..., 'user': ...}
+        $backend_data = $response['data'] ?? [];
+        $token = $backend_data['data']['token'] ?? $backend_data['token'] ?? null;
+        $user = $backend_data['data']['user'] ?? $backend_data['user'] ?? null;
+
+        if ($response['success'] && $token) {
+            $this->set_token($token);
+            if ($user) {
+                $this->set_user_data($user);
+            }
+
             // CRITICAL: Store license key from user data if available
             // Backend /api/generate endpoint requires BOTH JWT token AND license key
-            if (isset($response['data']['user']['license_key']) && !empty($response['data']['user']['license_key'])) {
-                $this->set_license_key($response['data']['user']['license_key']);
+            // BUT: Only set license key if site doesn't already have one
+            // This preserves site-wide quota sharing across WordPress users
+            $existing_license = $this->get_license_key();
+            if (empty($existing_license) && isset($user['license_key']) && !empty($user['license_key'])) {
+                $this->set_license_key($user['license_key']);
             }
-            
-            return $response['data'];
+
+            return $backend_data['data'] ?? $backend_data;
         }
-        
+
         return new \WP_Error(
             'login_failed',
-            $response['data']['error'] ?? __('Login failed', 'beepbeep-ai-alt-text-generator')
+            $backend_data['data']['error'] ?? $backend_data['error'] ?? $backend_data['message'] ?? __('Login failed', 'opptiai-alt')
         );
     }
     
@@ -896,7 +1006,7 @@ class API_Client_V2 {
 
         return new \WP_Error(
             'user_info_failed',
-            $response['data']['error'] ?? __('Failed to get user info', 'beepbeep-ai-alt-text-generator')
+            $response['data']['error'] ?? __('Failed to get user info', 'opptiai-alt')
         );
     }
 
@@ -941,7 +1051,7 @@ class API_Client_V2 {
 
         return new \WP_Error(
             'license_activation_failed',
-            $response['error'] ?? __('Failed to activate license', 'beepbeep-ai-alt-text-generator')
+            $response['error'] ?? __('Failed to activate license', 'opptiai-alt')
         );
     }
 
@@ -953,7 +1063,7 @@ class API_Client_V2 {
 
         return [
             'success' => true,
-            'message' => __('License deactivated successfully', 'beepbeep-ai-alt-text-generator')
+            'message' => __('License deactivated successfully', 'opptiai-alt')
         ];
     }
 
@@ -967,7 +1077,7 @@ class API_Client_V2 {
         $has_license = $this->has_active_license();
         
         if (!$is_authenticated && !$has_license) {
-            return new \WP_Error('not_authenticated', __('Must be authenticated or have an active license to view license site usage', 'beepbeep-ai-alt-text-generator'));
+            return new \WP_Error('not_authenticated', __('Must be authenticated or have an active license to view license site usage', 'opptiai-alt'));
         }
 
         $response = $this->make_request('/api/licenses/sites', 'GET');
@@ -980,7 +1090,7 @@ class API_Client_V2 {
             return $response['data'] ?? ['sites' => []];
         }
 
-        return new \WP_Error('api_error', $response['message'] ?? __('Failed to fetch license site usage', 'beepbeep-ai-alt-text-generator'));
+        return new \WP_Error('api_error', $response['message'] ?? __('Failed to fetch license site usage', 'opptiai-alt'));
     }
 
     /**
@@ -989,7 +1099,7 @@ class API_Client_V2 {
      */
     public function disconnect_license_site($site_id) {
         if (!$this->is_authenticated()) {
-            return new \WP_Error('not_authenticated', __('Must be authenticated to disconnect license sites', 'beepbeep-ai-alt-text-generator'));
+            return new \WP_Error('not_authenticated', __('Must be authenticated to disconnect license sites', 'opptiai-alt'));
         }
 
         $response = $this->make_request('/api/licenses/sites/' . urlencode($site_id), 'DELETE');
@@ -999,16 +1109,32 @@ class API_Client_V2 {
         }
 
         if ($response['success']) {
-            return $response['data'] ?? ['message' => __('Site disconnected successfully', 'beepbeep-ai-alt-text-generator')];
+            return $response['data'] ?? ['message' => __('Site disconnected successfully', 'opptiai-alt')];
         }
 
-        return new \WP_Error('api_error', $response['message'] ?? __('Failed to disconnect site', 'beepbeep-ai-alt-text-generator'));
+        return new \WP_Error('api_error', $response['message'] ?? __('Failed to disconnect site', 'opptiai-alt'));
     }
 
     /**
      * Get usage information
      */
     public function get_usage() {
+        // Check if we have any form of authentication before making API call
+        $token = $this->get_token();
+        $license_key = $this->get_license_key();
+
+        if (empty($token) && empty($license_key)) {
+            // Not authenticated - return default free usage without hitting API
+            return [
+                'used' => 0,
+                'remaining' => 50,
+                'limit' => 50,
+                'plan' => 'free',
+                'resetDate' => '',
+                'authenticated' => false,
+            ];
+        }
+
         $has_license   = $this->has_active_license();
         $license_cache = $has_license ? $this->get_license_data() : null;
 
@@ -1038,16 +1164,27 @@ class API_Client_V2 {
             return $response;
         }
 
-        // Handle production API response format (data at root level with different field names)
-        // Production returns: {success: true, data: {credits_used, credits_remaining, total_limit, plan_type, reset_date, ...}}
-        $api_data = $response['data'] ?? $response;
-        if (is_array($api_data) && isset($api_data['credits_used'])) {
+        // Unwrap the response from make_request
+        // make_request returns: ['status_code' => 200, 'data' => {...backend JSON...}, 'success' => true]
+        // Backend returns: { success: true, data: { usage: {...}, credits_used: X, ... } }
+        $backend_response = $response['data'] ?? $response;
+
+        // Extract the actual data from backend's wrapper
+        $api_data = $backend_response['data'] ?? $backend_response;
+
+        // Check if usage data is in a nested 'usage' key and merge it up
+        if (isset($api_data['usage']) && is_array($api_data['usage'])) {
+            $api_data = array_merge($api_data, $api_data['usage']);
+        }
+
+        // Handle production API response format
+        if (is_array($api_data) && (isset($api_data['credits_used']) || isset($api_data['used']))) {
             $usage = [
-                'used' => intval($api_data['credits_used']),
-                'remaining' => intval($api_data['credits_remaining'] ?? 0),
-                'limit' => intval($api_data['total_limit'] ?? 50),
-                'plan' => $api_data['plan_type'] ?? 'free',
-                'resetDate' => $api_data['reset_date'] ?? '',
+                'used' => intval($api_data['used'] ?? $api_data['credits_used'] ?? 0),
+                'remaining' => intval($api_data['remaining'] ?? $api_data['credits_remaining'] ?? 0),
+                'limit' => intval($api_data['limit'] ?? $api_data['total_limit'] ?? 50),
+                'plan' => $api_data['plan'] ?? $api_data['plan_type'] ?? 'free',
+                'resetDate' => $api_data['resetDate'] ?? $api_data['reset_date'] ?? '',
             ];
 
             // Update usage cache
@@ -1058,8 +1195,8 @@ class API_Client_V2 {
         }
 
         // Handle legacy/mock API response format (wrapped in success/data/usage)
-        if (isset($response['success']) && $response['success'] && isset($response['data']['usage'])) {
-            $usage = $response['data']['usage'];
+        if (isset($response['success']) && $response['success'] && isset($backend_response['usage'])) {
+            $usage = $backend_response['usage'];
 
             if ($has_license && is_array($usage)) {
                 $this->sync_license_usage_snapshot(
@@ -1096,7 +1233,7 @@ class API_Client_V2 {
 
         return new \WP_Error(
             'usage_failed',
-            $response['data']['error'] ?? __('Failed to get usage info', 'beepbeep-ai-alt-text-generator')
+            $response['data']['error'] ?? __('Failed to get usage info', 'opptiai-alt')
         );
     }
 
@@ -1290,7 +1427,7 @@ class API_Client_V2 {
             // No license and no token - definitely not authenticated
             return new \WP_Error(
                 'auth_required',
-                __('Authentication required. Please log in or register to generate alt text.', 'beepbeep-ai-alt-text-generator'),
+                __('Authentication required. Please log in or register to generate alt text.', 'opptiai-alt'),
                 ['requires_auth' => true]
             );
         }
@@ -1320,7 +1457,7 @@ class API_Client_V2 {
                             delete_transient('bbai_token_last_check');
                             return new \WP_Error(
                                 'auth_required',
-                                __('Your session has expired. Please log in again.', 'beepbeep-ai-alt-text-generator'),
+                                __('Your session has expired. Please log in again.', 'opptiai-alt'),
                                 ['requires_auth' => true]
                             );
                         }
@@ -1358,7 +1495,7 @@ class API_Client_V2 {
         $image_url = wp_get_attachment_url($image_id);
         $title     = get_the_title($image_id);
         $caption   = wp_get_attachment_caption($image_id);
-        $filename  = $image_url ? wp_basename(parse_url($image_url, PHP_URL_PATH)) : '';
+        $filename  = $image_url ? wp_basename(wp_parse_url($image_url, PHP_URL_PATH)) : '';
 
         // Debug: Log image details when regenerating to ensure correct image is being processed
         if ($regenerate && class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
@@ -1384,7 +1521,7 @@ class API_Client_V2 {
         if (isset($image_payload['_error']) && $image_payload['_error'] === 'image_too_large') {
             return new \WP_Error(
                 'image_too_large',
-                $image_payload['_error_message'] ?? __('Image file is too large.', 'beepbeep-ai-alt-text-generator'),
+                $image_payload['_error_message'] ?? __('Image file is too large.', 'opptiai-alt'),
                 ['image_id' => $image_id]
             );
         }
@@ -1393,7 +1530,7 @@ class API_Client_V2 {
         if (isset($image_payload['_error']) && $image_payload['_error'] === 'image_too_small') {
             return new \WP_Error(
                 'image_too_small',
-                $image_payload['_error_message'] ?? __('Image file is too small or invalid. Please use a valid image file.', 'beepbeep-ai-alt-text-generator'),
+                $image_payload['_error_message'] ?? __('Image file is too small or invalid. Please use a valid image file.', 'opptiai-alt'),
                 ['image_id' => $image_id]
             );
         }
@@ -1402,7 +1539,7 @@ class API_Client_V2 {
         if (isset($image_payload['_error']) && $image_payload['_error'] === 'missing_image_data') {
             return new \WP_Error(
                 'missing_image_data',
-                $image_payload['_error_message'] ?? __('Image data is missing. Cannot generate alt text.', 'beepbeep-ai-alt-text-generator'),
+                $image_payload['_error_message'] ?? __('Image data is missing. Cannot generate alt text.', 'opptiai-alt'),
                 ['image_id' => $image_id]
             );
         }
@@ -1581,7 +1718,7 @@ class API_Client_V2 {
                     // Return a retry error instead of blocking completely
                     return new \WP_Error(
                         'quota_check_mismatch',
-                        __('Backend reported quota limit, but credits appear available. Please try again in a moment.', 'beepbeep-ai-alt-text-generator'),
+                        __('Backend reported quota limit, but credits appear available. Please try again in a moment.', 'opptiai-alt'),
                         ['usage' => $fresh_usage, 'retry_after' => 3]
                     );
                 } elseif (!is_wp_error($fresh_usage) && is_array($fresh_usage) && isset($fresh_usage['remaining']) && is_numeric($fresh_usage['remaining']) && $fresh_usage['remaining'] === 0) {
@@ -1593,7 +1730,7 @@ class API_Client_V2 {
             // Cached usage confirms no credits OR fresh check also shows exhausted
             return new \WP_Error(
                 'limit_reached',
-                $response['data']['error'] ?? __('Monthly limit reached', 'beepbeep-ai-alt-text-generator'),
+                $response['data']['error'] ?? __('Monthly limit reached', 'opptiai-alt'),
                 ['usage' => $response['data']['usage'] ?? null]
             );
         }
@@ -1601,7 +1738,7 @@ class API_Client_V2 {
         if (!$response['success']) {
             // Extract detailed error information
             $error_data = $response['data'] ?? [];
-            $error_message = $error_data['message'] ?? $error_data['error'] ?? __('Failed to generate alt text', 'beepbeep-ai-alt-text-generator');
+            $error_message = $error_data['message'] ?? $error_data['error'] ?? __('Failed to generate alt text', 'opptiai-alt');
             $error_code = $error_data['code'] ?? 'api_error';
             
             // Handle authentication/user errors - only clear token if definitely invalid
@@ -1622,7 +1759,7 @@ class API_Client_V2 {
                 delete_transient('bbai_token_last_check');
                 return new \WP_Error(
                     'auth_required',
-                    __('Your session has expired or your account is no longer available. Please log in again.', 'beepbeep-ai-alt-text-generator'),
+                    __('Your session has expired or your account is no longer available. Please log in again.', 'opptiai-alt'),
                     [
                         'requires_auth' => true,
                         'status_code' => $status_code_check,
@@ -1633,7 +1770,7 @@ class API_Client_V2 {
             
             // Handle 413 Payload Too Large specifically
             if ($response['status_code'] === 413) {
-                $error_message = __('Image file is too large. Please compress or resize the image before generating alt text.', 'beepbeep-ai-alt-text-generator');
+                $error_message = __('Image file is too large. Please compress or resize the image before generating alt text.', 'opptiai-alt');
                 $error_code = 'payload_too_large';
             }
             
@@ -1647,7 +1784,7 @@ class API_Client_V2 {
                 $error_code === 'GENERATION_ERROR') {
                 // This is a backend configuration issue - the backend's OpenAI API key is invalid/expired
                 // This is NOT a plugin issue, but a backend server configuration problem
-                $error_message = __('The backend service is experiencing a configuration issue. This is a temporary backend problem that needs to be fixed on the server side. Please try again in a few minutes or contact support if the issue persists.', 'beepbeep-ai-alt-text-generator');
+                $error_message = __('The backend service is experiencing a configuration issue. This is a temporary backend problem that needs to be fixed on the server side. Please try again in a few minutes or contact support if the issue persists.', 'opptiai-alt');
                 $error_code = 'backend_config_error';
             }
             
@@ -1688,7 +1825,7 @@ class API_Client_V2 {
         $image_url = wp_get_attachment_url($image_id);
         $title     = get_the_title($image_id);
         $caption   = wp_get_attachment_caption($image_id);
-        $filename  = $image_url ? wp_basename(parse_url($image_url, PHP_URL_PATH)) : '';
+        $filename  = $image_url ? wp_basename(wp_parse_url($image_url, PHP_URL_PATH)) : '';
 
         $body = [
             'alt_text' => $alt_text,
@@ -1703,7 +1840,7 @@ class API_Client_V2 {
         }
         
         if (!$response['success']) {
-            $error_message = $response['data']['message'] ?? $response['data']['error'] ?? __('Failed to review alt text', 'beepbeep-ai-alt-text-generator');
+            $error_message = $response['data']['message'] ?? $response['data']['error'] ?? __('Failed to review alt text', 'opptiai-alt');
             return new \WP_Error(
                 'api_error',
                 $error_message,
@@ -1730,7 +1867,7 @@ class API_Client_V2 {
         
         return new \WP_Error(
             'billing_failed',
-            $response['data']['error'] ?? __('Failed to get billing info', 'beepbeep-ai-alt-text-generator')
+            $response['data']['error'] ?? __('Failed to get billing info', 'opptiai-alt')
         );
     }
 
@@ -1750,7 +1887,7 @@ class API_Client_V2 {
 
         return new \WP_Error(
             'plans_failed',
-            $response['data']['error'] ?? __('Failed to fetch pricing plans', 'beepbeep-ai-alt-text-generator')
+            $response['data']['error'] ?? __('Failed to fetch pricing plans', 'opptiai-alt')
         );
     }
     
@@ -1839,7 +1976,7 @@ class API_Client_V2 {
                 // For checkout errors, provide a helpful message
                 return new \WP_Error(
                     'checkout_failed',
-                    __('Unable to create checkout session. This may be a temporary backend issue. Please try again in a moment or contact support if the problem persists.', 'beepbeep-ai-alt-text-generator'),
+                    __('Unable to create checkout session. This may be a temporary backend issue. Please try again in a moment or contact support if the problem persists.', 'opptiai-alt'),
                     ['response' => $error_data]
                 );
             }
@@ -1860,7 +1997,7 @@ class API_Client_V2 {
         }
 
         if (!$error_message) {
-            $error_message = __('Failed to create checkout session', 'beepbeep-ai-alt-text-generator');
+            $error_message = __('Failed to create checkout session', 'opptiai-alt');
         }
 
         return new \WP_Error(
@@ -1888,7 +2025,7 @@ class API_Client_V2 {
         
         return new \WP_Error(
             'portal_failed',
-            $response['data']['error'] ?? __('Failed to create customer portal session', 'beepbeep-ai-alt-text-generator')
+            $response['data']['error'] ?? __('Failed to create customer portal session', 'opptiai-alt')
         );
     }
     
@@ -1923,15 +2060,15 @@ class API_Client_V2 {
         }
         
         // Extract error message with better context
-        $error_message = $response['data']['error'] ?? $response['data']['message'] ?? __('Failed to send password reset email', 'beepbeep-ai-alt-text-generator');
+        $error_message = $response['data']['error'] ?? $response['data']['message'] ?? __('Failed to send password reset email', 'opptiai-alt');
         
         // Check for specific error cases
         if ($response['status_code'] === 404) {
-            $error_message = __('Password reset is currently being set up. This feature is not yet available on our backend. Please contact support for assistance.', 'beepbeep-ai-alt-text-generator');
+            $error_message = __('Password reset is currently being set up. This feature is not yet available on our backend. Please contact support for assistance.', 'opptiai-alt');
         } elseif ($response['status_code'] === 429) {
-            $error_message = __('Too many password reset requests. Please wait 15 minutes before trying again.', 'beepbeep-ai-alt-text-generator');
+            $error_message = __('Too many password reset requests. Please wait 15 minutes before trying again.', 'opptiai-alt');
         } elseif ($response['status_code'] >= 500) {
-            $error_message = __('The authentication server is temporarily unavailable. Please try again in a few minutes.', 'beepbeep-ai-alt-text-generator');
+            $error_message = __('The authentication server is temporarily unavailable. Please try again in a few minutes.', 'opptiai-alt');
         }
         
         return new \WP_Error(
@@ -1970,7 +2107,7 @@ class API_Client_V2 {
         
         return new \WP_Error(
             'reset_password_failed',
-            $response['data']['error'] ?? $response['data']['message'] ?? __('Failed to reset password', 'beepbeep-ai-alt-text-generator')
+            $response['data']['error'] ?? $response['data']['message'] ?? __('Failed to reset password', 'opptiai-alt')
         );
     }
     
@@ -1990,7 +2127,7 @@ class API_Client_V2 {
         
         return new \WP_Error(
             'subscription_info_failed',
-            $response['data']['error'] ?? __('Failed to fetch subscription information', 'beepbeep-ai-alt-text-generator')
+            $response['data']['error'] ?? __('Failed to fetch subscription information', 'opptiai-alt')
         );
     }
 
@@ -2027,13 +2164,13 @@ class API_Client_V2 {
         if (isset($response['error'])) {
             return new \WP_Error(
                 'contact_email_failed',
-                $response['error'] ?? __('Failed to send contact email', 'beepbeep-ai-alt-text-generator')
+                $response['error'] ?? __('Failed to send contact email', 'opptiai-alt')
             );
         }
 
         return [
             'success' => true,
-            'message' => $response['message'] ?? __('Your message has been sent successfully. We\'ll get back to you soon!', 'beepbeep-ai-alt-text-generator')
+            'message' => $response['message'] ?? __('Your message has been sent successfully. We\'ll get back to you soon!', 'opptiai-alt')
         ];
     }
     
@@ -2065,7 +2202,7 @@ class API_Client_V2 {
             // Check if image is too small (likely corrupted or placeholder)
             if ($file_size < $min_file_size) {
                 $payload['_error'] = 'image_too_small';
-                $payload['_error_message'] = __('Image file is too small or invalid. Please use a valid image file with at least 100 bytes.', 'beepbeep-ai-alt-text-generator');
+                $payload['_error_message'] = __('Image file is too small or invalid. Please use a valid image file with at least 100 bytes.', 'opptiai-alt');
                 return $payload;
             }
             
@@ -2075,7 +2212,8 @@ class API_Client_V2 {
                 if ($metadata['width'] < $min_dimension || $metadata['height'] < $min_dimension) {
                     $payload['_error'] = 'image_too_small';
                     $payload['_error_message'] = sprintf(
-                        __('Image dimensions are too small (%dx%d pixels). Please use a valid image with at least %dx%d pixels.', 'beepbeep-ai-alt-text-generator'),
+                        /* translators: 1: image width, 2: image height, 3: minimum width, 4: minimum height */
+                        __('Image dimensions are too small (%1$dx%2$d pixels). Please use a valid image with at least %3$dx%4$d pixels.', 'opptiai-alt'),
                         $metadata['width'],
                         $metadata['height'],
                         $min_dimension,
@@ -2137,7 +2275,9 @@ class API_Client_V2 {
                             if (!is_wp_error($saved) && isset($saved['path'])) {
                                 // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading binary image data for base64 encoding
                                 $resized_contents = file_get_contents($saved['path']);
-                                @unlink($saved['path']);
+                                if (is_string($saved['path']) && is_file($saved['path'])) {
+                                    wp_delete_file($saved['path']);
+                                }
                                 if ($resized_contents !== false) {
                                     $base64 = base64_encode($resized_contents);
                                     if (strlen($base64) <= 5.5 * 1024 * 1024) {
@@ -2296,7 +2436,7 @@ class API_Client_V2 {
             // Sanitize URLs - only show endpoint path, not full URL
             if ($key === 'url' && is_string($value)) {
                 // Extract just the endpoint path, remove base URL
-                $parsed = parse_url($value);
+                $parsed = wp_parse_url($value);
                 if (isset($parsed['path'])) {
                     $sanitized[$key] = $parsed['path'] . (isset($parsed['query']) ? '?' . '[QUERY_PARAMS]' : '');
                 } else {
@@ -2341,4 +2481,40 @@ class API_Client_V2 {
             \BeepBeepAI\AltTextGenerator\Debug_Log::log($level, $message, $sanitized_context, 'api');
         }
     }
+
+    /**
+     * Get user-level usage breakdown from the backend
+     * Returns users who have generated alt text for this site with their credit counts
+     */
+    public function get_backend_user_usage() {
+        $response = $this->make_request('/api/usage/users');
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        // Unwrap the response
+        $api_response = $response['data'] ?? $response;
+        $data = $api_response['data'] ?? $api_response;
+
+        // Extract users array
+        $users = $data['users'] ?? [];
+
+        // Sort by credits_used descending (SEO heroes first)
+        usort($users, function($a, $b) {
+            return ($b['credits_used'] ?? 0) - ($a['credits_used'] ?? 0);
+        });
+
+        return [
+            'success' => true,
+            'users' => $users,
+            'total_credits_used' => $data['total_credits_used'] ?? 0,
+            'period_start' => $data['period_start'] ?? null,
+            'period_end' => $data['period_end'] ?? null,
+        ];
+    }
+}
+
+if (!class_exists('BbAI_API_Client_V2')) {
+    class_alias(__NAMESPACE__ . '\\API_Client_V2', 'BbAI_API_Client_V2');
 }

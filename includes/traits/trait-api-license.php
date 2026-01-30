@@ -48,7 +48,7 @@ trait Api_License {
     public function deactivate_license() {
         $license_key = $this->get_license_key();
         if (empty($license_key)) {
-            return new \WP_Error('no_license', __('No license key to deactivate', 'beepbeep-ai-alt-text-generator'));
+            return new \WP_Error('no_license', __('No license key to deactivate', 'opptiai-alt'));
         }
 
         $site_fingerprint = $this->get_site_fingerprint();
@@ -68,7 +68,7 @@ trait Api_License {
      */
     public function get_license_sites() {
         if (!$this->is_authenticated()) {
-            return new \WP_Error('not_authenticated', __('Authentication required', 'beepbeep-ai-alt-text-generator'));
+            return new \WP_Error('not_authenticated', __('Authentication required', 'opptiai-alt'));
         }
 
         $response = $this->make_request('/license/sites', 'GET');
@@ -85,7 +85,7 @@ trait Api_License {
      */
     public function disconnect_license_site($site_id) {
         if (!$this->is_authenticated()) {
-            return new \WP_Error('not_authenticated', __('Authentication required', 'beepbeep-ai-alt-text-generator'));
+            return new \WP_Error('not_authenticated', __('Authentication required', 'opptiai-alt'));
         }
 
         $response = $this->make_request('/license/sites/' . $site_id, 'DELETE');

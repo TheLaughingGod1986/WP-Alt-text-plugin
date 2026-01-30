@@ -23,7 +23,7 @@ class Migrate_Usage {
 		if (get_option(self::MIGRATION_FLAG, false)) {
 			return [
 				'success' => true,
-				'message' => __('Credit usage migration already completed.', 'beepbeep-ai-alt-text-generator'),
+				'message' => __('Credit usage migration already completed.', 'opptiai-alt'),
 				'migrated' => 0,
 			];
 		}
@@ -53,7 +53,8 @@ class Migrate_Usage {
 		return [
 			'success' => true,
 			'message' => sprintf(
-				__('Migration completed. Migrated %d usage records.', 'beepbeep-ai-alt-text-generator'),
+				/* translators: 1: number of usage records */
+				__('Migration completed. Migrated %d usage records.', 'opptiai-alt'),
 				$migrated_count
 			),
 			'migrated' => $migrated_count,
@@ -333,4 +334,3 @@ class Migrate_Usage {
 		delete_option(self::MIGRATION_FLAG);
 	}
 }
-

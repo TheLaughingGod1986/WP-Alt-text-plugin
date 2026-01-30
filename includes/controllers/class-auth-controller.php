@@ -49,7 +49,7 @@ class Auth_Controller {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Only administrators can connect accounts.', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Only administrators can connect accounts.', 'opptiai-alt' ),
 			);
 		}
 
@@ -72,7 +72,7 @@ class Auth_Controller {
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Unauthorized', 'opptiai-alt' ),
 			);
 		}
 
@@ -95,7 +95,7 @@ class Auth_Controller {
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Unauthorized', 'opptiai-alt' ),
 			);
 		}
 
@@ -114,7 +114,7 @@ class Auth_Controller {
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Unauthorized', 'opptiai-alt' ),
 			);
 		}
 
@@ -133,7 +133,7 @@ class Auth_Controller {
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Unauthorized', 'opptiai-alt' ),
 			);
 		}
 
@@ -157,7 +157,7 @@ class Auth_Controller {
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Unauthorized', 'opptiai-alt' ),
 			);
 		}
 
@@ -176,7 +176,7 @@ class Auth_Controller {
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Unauthorized', 'opptiai-alt' ),
 			);
 		}
 

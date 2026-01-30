@@ -265,9 +265,13 @@
             // Ignore certain endpoints
             const ignoredPatterns = [
                 '/heartbeat',
-                '/admin-ajax.php.*action=heartbeat',
                 '/wp-json/wp/v2/users/me'
             ];
+            const env = (window.bbai_env || {});
+            if (env.ajax_url) {
+                const escaped = env.ajax_url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                ignoredPatterns.push(escaped + '.*action=heartbeat');
+            }
 
             return ignoredPatterns.some(pattern => {
                 const regex = new RegExp(pattern);

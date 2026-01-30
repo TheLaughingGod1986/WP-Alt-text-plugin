@@ -8,7 +8,7 @@
  * Plugin URI: https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: beepbeep-ai-alt-text-generator
+ * Text Domain: opptiai-alt
  * Domain Path: /languages
  */
 
@@ -99,7 +99,24 @@ if ( ! function_exists( 'bbai_enqueue_logged_out_styles' ) ) {
 	}
 }
 
+if ( ! function_exists( 'beepbeepai_load_textdomain' ) ) {
+	/**
+	 * Load plugin translations.
+	 */
+	function beepbeepai_load_textdomain() {
+		load_plugin_textdomain(
+			'opptiai-alt',
+			false,
+			dirname( plugin_basename( __FILE__ ) ) . '/languages'
+		);
+	}
+}
+
+add_action( 'plugins_loaded', 'beepbeepai_load_textdomain' );
 add_action( 'admin_enqueue_scripts', 'bbai_enqueue_logged_out_styles', 20 );
+
+// Load helper functions first.
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-json.php';
 
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-input-validator.php';

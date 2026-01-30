@@ -21,8 +21,8 @@ class BBAI_Schema_Markup {
         // Add schema markup to image attachments
         add_filter('wp_get_attachment_image_attributes', [__CLASS__, 'add_image_attributes'], 10, 3);
 
-        // Output schema JSON-LD in footer
-        add_action('wp_footer', [__CLASS__, 'output_schema_json_ld']);
+        // Output schema JSON-LD in head (standard location for structured data)
+        add_action('wp_head', [__CLASS__, 'output_schema_json_ld'], 99);
 
         // Admin setting to enable/disable schema
         add_action('admin_init', [__CLASS__, 'register_settings']);
@@ -104,10 +104,11 @@ class BBAI_Schema_Markup {
     }
 
     /**
-     * Output JSON-LD schema markup for images
+     * Output JSON-LD schema markup for images via wp_head hook.
+     * Uses wp_print_inline_script_tag for proper WordPress compliance.
      */
     public static function output_schema_json_ld() {
-        if (!self::is_enabled() || empty(self::$images_for_schema)) {
+        if (is_admin() || !self::is_enabled() || empty(self::$images_for_schema)) {
             return;
         }
 
@@ -128,10 +129,11 @@ class BBAI_Schema_Markup {
         }
 
         echo "\n<!-- BeepBeep AI - Image Schema Markup -->\n";
-        echo '<script type="application/ld+json">';
-        echo wp_json_encode($schema);
-        echo '</script>';
-        echo "\n<!-- /BeepBeep AI - Image Schema Markup -->\n";
+        wp_print_inline_script_tag(
+            wp_json_encode($schema),
+            ['type' => 'application/ld+json']
+        );
+        echo "<!-- /BeepBeep AI - Image Schema Markup -->\n";
     }
 
     /**
@@ -212,8 +214,8 @@ class BBAI_Schema_Markup {
     public static function add_settings_field($settings) {
         $settings[] = [
             'id' => 'bbai_enable_schema_markup',
-            'title' => __('Enable Schema.org Markup', 'beepbeep-ai-alt-text-generator'),
-            'desc' => __('Add ImageObject schema markup to images with alt text for enhanced Google Images SEO. Helps images appear in rich results.', 'beepbeep-ai-alt-text-generator'),
+            'title' => __('Enable Schema.org Markup', 'opptiai-alt'),
+            'desc' => __('Add ImageObject schema markup to images with alt text for enhanced Google Images SEO. Helps images appear in rich results.', 'opptiai-alt'),
             'type' => 'checkbox',
             'default' => true,
         ];

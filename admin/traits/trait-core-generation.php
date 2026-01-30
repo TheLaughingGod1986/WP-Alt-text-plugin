@@ -83,31 +83,32 @@ trait Core_Generation {
     private function build_inline_image_payload($attachment_id) {
         $file = get_attached_file($attachment_id);
         if (!$file || !file_exists($file)) {
-            return new \WP_Error('inline_image_missing', __('Unable to locate the image file for inline embedding.', 'beepbeep-ai-alt-text-generator'));
+            return new \WP_Error('inline_image_missing', __('Unable to locate the image file for inline embedding.', 'opptiai-alt'));
         }
 
         $size = filesize($file);
         if ($size === false || $size <= 0) {
-            return new \WP_Error('inline_image_size', __('Unable to read the image size for inline embedding.', 'beepbeep-ai-alt-text-generator'));
+            return new \WP_Error('inline_image_size', __('Unable to read the image size for inline embedding.', 'opptiai-alt'));
         }
 
         $limit = apply_filters('bbai_inline_image_limit', 1024 * 1024 * 2, $attachment_id, $file);
         if ($size > $limit) {
             return new \WP_Error('inline_image_large', sprintf(
-                __('Image exceeds the 2 MB limit for inline embedding (%s).', 'beepbeep-ai-alt-text-generator'),
+                /* translators: 1: image size */
+                __('Image exceeds the 2 MB limit for inline embedding (%s).', 'opptiai-alt'),
                 size_format($size)
             ));
         }
 
         $mime = mime_content_type($file);
         if (!$mime || strpos((string)$mime, 'image/') !== 0) {
-            return new \WP_Error('inline_image_mime', __('Invalid image MIME type for inline embedding.', 'beepbeep-ai-alt-text-generator'));
+            return new \WP_Error('inline_image_mime', __('Invalid image MIME type for inline embedding.', 'opptiai-alt'));
         }
 
         // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
         $data = file_get_contents($file);
         if ($data === false) {
-            return new \WP_Error('inline_image_read', __('Failed to read the image file for inline embedding.', 'beepbeep-ai-alt-text-generator'));
+            return new \WP_Error('inline_image_read', __('Failed to read the image file for inline embedding.', 'opptiai-alt'));
         }
 
         $base64 = base64_encode($data);
@@ -174,7 +175,7 @@ trait Core_Generation {
      * Extract JSON object from API response content
      *
      * @param string $content Raw response content
-     * @return array|null Parsed JSON or null
+     * @return array|null Parsed JSON or null (sanitized)
      */
     private function extract_json_object(string $content) {
         $content = trim($content);
@@ -196,9 +197,17 @@ trait Core_Generation {
             }
         }
 
+        // Use helper for sanitized decoding if available.
+        if (function_exists('bbai_json_decode_array')) {
+            return bbai_json_decode_array($content);
+        }
+
         $decoded = json_decode($content, true);
         if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-            return $decoded;
+            // Fallback: sanitize manually.
+            return array_map(function($val) {
+                return is_string($val) ? sanitize_text_field($val) : $val;
+            }, $decoded);
         }
 
         return null;

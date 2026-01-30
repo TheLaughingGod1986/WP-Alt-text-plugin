@@ -49,7 +49,7 @@ class Queue_Controller {
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Unauthorized', 'opptiai-alt' ),
 			);
 		}
 
@@ -71,7 +71,7 @@ class Queue_Controller {
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Unauthorized', 'opptiai-alt' ),
 			);
 		}
 
@@ -90,7 +90,7 @@ class Queue_Controller {
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Unauthorized', 'opptiai-alt' ),
 			);
 		}
 
@@ -109,7 +109,7 @@ class Queue_Controller {
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Unauthorized', 'opptiai-alt' ),
 			);
 		}
 

@@ -49,7 +49,7 @@ class Generation_Controller {
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Unauthorized', 'opptiai-alt' ),
 			);
 		}
 
@@ -58,7 +58,7 @@ class Generation_Controller {
 		if ( $attachment_id <= 0 || ! current_user_can( 'edit_post', $attachment_id ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Unauthorized', 'opptiai-alt' ),
 			);
 		}
 
@@ -77,7 +77,7 @@ class Generation_Controller {
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Unauthorized', 'opptiai-alt' ),
 			);
 		}
 
@@ -113,7 +113,7 @@ class Generation_Controller {
 		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'bbai_inline_generate' ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Invalid nonce.', 'opptiai-alt' ),
 			);
 		}
 
@@ -121,7 +121,7 @@ class Generation_Controller {
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Unauthorized', 'opptiai-alt' ),
 			);
 		}
 
@@ -130,7 +130,7 @@ class Generation_Controller {
 		if ( $attachment_id <= 0 || ! current_user_can( 'edit_post', $attachment_id ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Unauthorized', 'opptiai-alt' ),
 			);
 		}
 

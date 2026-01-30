@@ -125,7 +125,7 @@ class BBAI_SEO_Quality_Checker {
             return [
                 'score' => 0,
                 'grade' => 'F',
-                'issues' => [__('No alt text provided', 'beepbeep-ai-alt-text-generator')],
+                'issues' => [__('No alt text provided', 'opptiai-alt')],
                 'badge' => 'missing',
             ];
         }
@@ -135,7 +135,8 @@ class BBAI_SEO_Quality_Checker {
         // Check length (125 chars recommended for Google Images)
         if ($text_length > 125) {
             $issues[] = sprintf(
-                __('Too long (%d chars). Aim for ≤125 for optimal Google Images SEO', 'beepbeep-ai-alt-text-generator'),
+                /* translators: 1: character count */
+                __('Too long (%d chars). Aim for ≤125 for optimal Google Images SEO', 'opptiai-alt'),
                 $text_length
             );
             $score -= 25;
@@ -143,19 +144,19 @@ class BBAI_SEO_Quality_Checker {
 
         // Check for redundant prefixes
         if (self::has_redundant_prefix($text)) {
-            $issues[] = __('Starts with "image of" or similar. Remove redundant prefix', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('Starts with "image of" or similar. Remove redundant prefix', 'opptiai-alt');
             $score -= 20;
         }
 
         // Check if it's just a filename
         if (self::is_just_filename($text)) {
-            $issues[] = __('Appears to be a filename. Use descriptive text instead', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('Appears to be a filename. Use descriptive text instead', 'opptiai-alt');
             $score -= 30;
         }
 
         // Check for descriptive content
         if (!self::has_descriptive_content($text)) {
-            $issues[] = __('Too short or lacks descriptive keywords', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('Too short or lacks descriptive keywords', 'opptiai-alt');
             $score -= 15;
         }
 
@@ -227,7 +228,8 @@ class BBAI_SEO_Quality_Checker {
 
         // Header with grade and score
         $lines[] = sprintf(
-            __('SEO Score: %s (%d/100)', 'beepbeep-ai-alt-text-generator'),
+            /* translators: 1: grade, 2: score */
+            __('SEO Score: %1$s (%2$d/100)', 'opptiai-alt'),
             $quality['grade'],
             $quality['score']
         );
@@ -236,38 +238,38 @@ class BBAI_SEO_Quality_Checker {
         // Character length check
         $length_status = $char_count <= 125 ? '✓' : '✗';
         $length_label = $char_count <= 125
-            ? __('Optimal length', 'beepbeep-ai-alt-text-generator')
-            : __('Too long', 'beepbeep-ai-alt-text-generator');
+            ? __('Optimal length', 'opptiai-alt')
+            : __('Too long', 'opptiai-alt');
         $lines[] = sprintf('%s %s (%d/125)', $length_status, $length_label, $char_count);
 
         // Redundant prefix check
         $has_prefix = self::has_redundant_prefix($text);
         $prefix_status = $has_prefix ? '✗' : '✓';
         $prefix_label = $has_prefix
-            ? __('Remove "image of" prefix', 'beepbeep-ai-alt-text-generator')
-            : __('No redundant prefix', 'beepbeep-ai-alt-text-generator');
+            ? __('Remove "image of" prefix', 'opptiai-alt')
+            : __('No redundant prefix', 'opptiai-alt');
         $lines[] = sprintf('%s %s', $prefix_status, $prefix_label);
 
         // Filename check
         $is_filename = self::is_just_filename($text);
         $filename_status = $is_filename ? '✗' : '✓';
         $filename_label = $is_filename
-            ? __('Looks like a filename', 'beepbeep-ai-alt-text-generator')
-            : __('Descriptive text', 'beepbeep-ai-alt-text-generator');
+            ? __('Looks like a filename', 'opptiai-alt')
+            : __('Descriptive text', 'opptiai-alt');
         $lines[] = sprintf('%s %s', $filename_status, $filename_label);
 
         // Descriptive content check
         $is_descriptive = self::has_descriptive_content($text);
         $descriptive_status = $is_descriptive ? '✓' : '✗';
         $descriptive_label = $is_descriptive
-            ? __('Good keyword content', 'beepbeep-ai-alt-text-generator')
-            : __('Needs more detail', 'beepbeep-ai-alt-text-generator');
+            ? __('Good keyword content', 'opptiai-alt')
+            : __('Needs more detail', 'opptiai-alt');
         $lines[] = sprintf('%s %s', $descriptive_status, $descriptive_label);
 
         // Add tip for non-A grades
         if ($quality['grade'] !== 'A') {
             $lines[] = '';
-            $lines[] = __('Tip: Regenerate for better SEO', 'beepbeep-ai-alt-text-generator');
+            $lines[] = __('Tip: Regenerate for better SEO', 'opptiai-alt');
         }
 
         return implode("\n", $lines);
@@ -288,7 +290,7 @@ class BBAI_SEO_Quality_Checker {
 
         // For missing alt text, return a dash indicator
         if ($quality['badge'] === 'missing') {
-            return '<span class="bbai-seo-unified-badge bbai-seo-unified-badge--empty" data-bbai-tooltip="' . esc_attr__('No alt text', 'beepbeep-ai-alt-text-generator') . '">—</span>';
+            return '<span class="bbai-seo-unified-badge bbai-seo-unified-badge--empty" data-bbai-tooltip="' . esc_attr__('No alt text', 'opptiai-alt') . '">—</span>';
         }
 
         $char_count = mb_strlen($text);

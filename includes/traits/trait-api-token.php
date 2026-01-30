@@ -16,7 +16,7 @@ trait Api_Token {
     /**
      * Get stored JWT token
      */
-    protected function get_token() {
+    public function get_token() {
         $token = get_option($this->token_option_key, '');
         if ($token === '' || $token === false) {
             $legacy = get_option('beepbeepai_jwt_token', '');

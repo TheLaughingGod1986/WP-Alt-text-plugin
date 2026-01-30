@@ -270,8 +270,8 @@ class Credit_Usage_Logger {
 		];
 		$args = wp_parse_args($args, $defaults);
 
-		$where = [];
-		$params = [];
+		$where = ['1 = %d'];
+		$params = [1];
 
 		if ($args['date_from']) {
 			$date_from = sanitize_text_field($args['date_from']);
@@ -288,7 +288,7 @@ class Credit_Usage_Logger {
 			$params[] = sanitize_key($args['source']);
 		}
 
-		$where_sql = count($where) > 0 ? 'WHERE ' . implode(' AND ', $where) : '';
+		$where_sql = 'WHERE ' . implode(' AND ', $where);
 
 		// Get totals
 		$query = "SELECT 
@@ -299,7 +299,7 @@ class Credit_Usage_Logger {
 			FROM `{$table_escaped}` 
 			{$where_sql}";
 
-		$result = $wpdb->get_row(count($params) > 0 ? $wpdb->prepare($query, $params) : $query, ARRAY_A);
+		$result = $wpdb->get_row($wpdb->prepare($query, $params), ARRAY_A);
 
 		if (!$result) {
 			return [
@@ -349,8 +349,8 @@ class Credit_Usage_Logger {
 		];
 		$args = wp_parse_args($args, $defaults);
 
-		$where = [];
-		$params = [];
+		$where = ['1 = %d'];
+		$params = [1];
 
 		if ($args['user_id'] !== null && $args['user_id'] !== '') {
 			$where[] = 'user_id = %d';
@@ -372,7 +372,7 @@ class Credit_Usage_Logger {
 			$params[] = sanitize_key($args['source']);
 		}
 
-		$where_sql = count($where) > 0 ? 'WHERE ' . implode(' AND ', $where) : '';
+		$where_sql = 'WHERE ' . implode(' AND ', $where);
 
 		// Validate orderby
 		$allowed_orderby = ['total_credits', 'total_images', 'last_activity'];
@@ -395,13 +395,7 @@ class Credit_Usage_Logger {
 			GROUP BY user_id
 			ORDER BY {$orderby_safe} {$order}";
 
-		// Execute query with prepare if we have params, otherwise execute directly
-		if (count($params) > 0) {
-			$all_results = $wpdb->get_results($wpdb->prepare($query, $params), ARRAY_A);
-		} else {
-			// No params - safe to execute directly since table name is escaped
-			$all_results = $wpdb->get_results($query, ARRAY_A);
-		}
+		$all_results = $wpdb->get_results($wpdb->prepare($query, $params), ARRAY_A);
 		
 		// Ensure we have an array
 		if (!is_array($all_results)) {
@@ -451,7 +445,7 @@ class Credit_Usage_Logger {
 						"SELECT deleted_user_original_id FROM `{$table_escaped}` WHERE user_id = %d LIMIT 1",
 						$user_id
 					));
-					$user_data['display_name'] = __('Unknown User', 'beepbeep-ai-alt-text-generator');
+					$user_data['display_name'] = __('Unknown User', 'opptiai-alt');
 					$user_data['user_email'] = '';
 					$user_data['deleted_user'] = true;
 					if ($original_id) {
@@ -459,7 +453,7 @@ class Credit_Usage_Logger {
 					}
 				}
 			} else {
-				$user_data['display_name'] = __('System', 'beepbeep-ai-alt-text-generator');
+				$user_data['display_name'] = __('System', 'opptiai-alt');
 				$user_data['user_email'] = '';
 			}
 		}
@@ -532,15 +526,11 @@ class Credit_Usage_Logger {
 			{$where_sql}";
 		
 		// Use params without LIMIT (LIMIT params are added later)
-		$summary = count($params) > 0 
-			? $wpdb->get_row($wpdb->prepare($summary_query, $params), ARRAY_A)
-			: $wpdb->get_row($summary_query, ARRAY_A);
+		$summary = $wpdb->get_row($wpdb->prepare($summary_query, $params), ARRAY_A);
 
 		// Count total
 		$count_query = "SELECT COUNT(*) FROM `{$table_escaped}` {$where_sql}";
-		$total = count($params) > 0 
-			? intval($wpdb->get_var($wpdb->prepare($count_query, $params)))
-			: intval($wpdb->get_var($count_query));
+		$total = intval($wpdb->get_var($wpdb->prepare($count_query, $params)));
 
 		// Get paginated results
 		$per_page = absint($args['per_page']);
@@ -558,7 +548,7 @@ class Credit_Usage_Logger {
 
 		// Get user info
 		$wp_user = get_user_by('ID', $user_id);
-		$user_name = $wp_user ? $wp_user->display_name : __('Unknown User', 'beepbeep-ai-alt-text-generator');
+		$user_name = $wp_user ? $wp_user->display_name : __('Unknown User', 'opptiai-alt');
 		$user_email = $wp_user ? $wp_user->user_email : '';
 
 		// Enrich with attachment info
@@ -648,4 +638,3 @@ class Credit_Usage_Logger {
 		add_action('delete_user', [__CLASS__, 'anonymize_user_usage'], 10, 2);
 	}
 }
-

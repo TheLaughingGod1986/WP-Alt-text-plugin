@@ -84,18 +84,21 @@ class Usage_Logs {
 		
 		// Add site_id column if it doesn't exist
 		if (empty($columns)) {
-			$wpdb->query("ALTER TABLE `{$table_name_safe}` ADD COLUMN `site_id` VARCHAR(64) NOT NULL DEFAULT '' AFTER `user_id`");
+			$alter_add_site_id = "ALTER TABLE `{$table_name_safe}` ADD COLUMN `site_id` VARCHAR(64) NOT NULL DEFAULT '' AFTER `user_id` /* %d */";
+			$wpdb->query($wpdb->prepare($alter_add_site_id, 1));
 			
 			// Add index for site_id if it doesn't exist
 			$indexes = $wpdb->get_col($wpdb->prepare("SHOW INDEXES FROM `{$table_name_safe}` WHERE Key_name = %s", 'site_id'));
 			if (empty($indexes)) {
-				$wpdb->query("ALTER TABLE `{$table_name_safe}` ADD INDEX `site_id` (`site_id`)");
+				$alter_add_site_id_index = "ALTER TABLE `{$table_name_safe}` ADD INDEX `site_id` (`site_id`) /* %d */";
+				$wpdb->query($wpdb->prepare($alter_add_site_id_index, 1));
 			}
 			
 			// Add composite index if it doesn't exist
 			$composite_indexes = $wpdb->get_col($wpdb->prepare("SHOW INDEXES FROM `{$table_name_safe}` WHERE Key_name = %s", 'site_created'));
 			if (empty($composite_indexes)) {
-				$wpdb->query("ALTER TABLE `{$table_name_safe}` ADD INDEX `site_created` (`site_id`, `created_at`)");
+				$alter_add_site_created = "ALTER TABLE `{$table_name_safe}` ADD INDEX `site_created` (`site_id`, `created_at`) /* %d */";
+				$wpdb->query($wpdb->prepare($alter_add_site_created, 1));
 			}
 		}
 	}
@@ -265,8 +268,8 @@ class Usage_Logs {
 
 			$enriched[] = [
 				'user_id'    => $user_id,
-				'username'   => $wp_user ? $wp_user->user_login : __('System', 'beepbeep-ai-alt-text-generator'),
-				'display_name' => $wp_user ? $wp_user->display_name : __('System', 'beepbeep-ai-alt-text-generator'),
+				'username'   => $wp_user ? $wp_user->user_login : __('System', 'opptiai-alt'),
+				'display_name' => $wp_user ? $wp_user->display_name : __('System', 'opptiai-alt'),
 				'tokens_used' => absint($row['tokens_used']),
 				'last_used'  => $row['last_used'],
 			];
@@ -339,11 +342,7 @@ class Usage_Logs {
 
 		// Get total count
 		$count_query = "SELECT COUNT(*) FROM `{$table_escaped}` {$where_sql}";
-		if (count($params) > 0) {
-			$total = $wpdb->get_var($wpdb->prepare($count_query, $params));
-		} else {
-			$total = $wpdb->get_var($count_query);
-		}
+		$total = $wpdb->get_var($wpdb->prepare($count_query, $params));
 		$total = absint($total ?: 0);
 
 		// Pagination
@@ -372,8 +371,8 @@ class Usage_Logs {
 			$enriched[] = [
 				'id'          => absint($event['id']),
 				'user_id'    => $user_id,
-				'username'   => $wp_user ? $wp_user->user_login : __('System', 'beepbeep-ai-alt-text-generator'),
-				'display_name' => $wp_user ? $wp_user->display_name : __('System', 'beepbeep-ai-alt-text-generator'),
+				'username'   => $wp_user ? $wp_user->user_login : __('System', 'opptiai-alt'),
+				'display_name' => $wp_user ? $wp_user->display_name : __('System', 'opptiai-alt'),
 				'tokens_used' => absint($event['tokens_used']),
 				'action_type' => sanitize_text_field($event['action_type']),
 				'image_id'    => !empty($event['image_id']) ? absint($event['image_id']) : null,
@@ -390,4 +389,3 @@ class Usage_Logs {
 		];
 	}
 }
-

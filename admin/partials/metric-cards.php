@@ -47,14 +47,14 @@ $wrapper_class = isset($wrapper_class) ? $wrapper_class : 'bbai-premium-metrics-
             </svg>
         </div>
         <div class="bbai-metric-value" style="color: #10B981;"><?php echo esc_html(number_format($hours_saved, 1)); ?></div>
-        <div class="bbai-metric-label"><?php esc_html_e('HRS', 'beepbeep-ai-alt-text-generator'); ?></div>
-        <div class="bbai-metric-sublabel"><?php esc_html_e('TIME SAVED', 'beepbeep-ai-alt-text-generator'); ?></div>
+        <div class="bbai-metric-label"><?php esc_html_e('HRS', 'opptiai-alt'); ?></div>
+        <div class="bbai-metric-sublabel"><?php esc_html_e('TIME SAVED', 'opptiai-alt'); ?></div>
         <div class="bbai-metric-description">
             <?php 
             if ($description_mode === 'empty') {
-                esc_html_e('Start optimizing to see your time savings', 'beepbeep-ai-alt-text-generator');
+                esc_html_e('Start optimizing to see your time savings', 'opptiai-alt');
             } else {
-                esc_html_e('Estimated manual work saved.', 'beepbeep-ai-alt-text-generator');
+                esc_html_e('Estimated manual work saved.', 'opptiai-alt');
             }
             ?>
         </div>
@@ -69,14 +69,14 @@ $wrapper_class = isset($wrapper_class) ? $wrapper_class : 'bbai-premium-metrics-
             </svg>
         </div>
         <div class="bbai-metric-value"><?php echo esc_html(number_format_i18n($optimized)); ?></div>
-        <div class="bbai-metric-label"><?php esc_html_e('IMAGES', 'beepbeep-ai-alt-text-generator'); ?></div>
-        <div class="bbai-metric-sublabel"><?php esc_html_e('OPTIMIZED', 'beepbeep-ai-alt-text-generator'); ?></div>
+        <div class="bbai-metric-label"><?php esc_html_e('IMAGES', 'opptiai-alt'); ?></div>
+        <div class="bbai-metric-sublabel"><?php esc_html_e('OPTIMIZED', 'opptiai-alt'); ?></div>
         <div class="bbai-metric-description">
             <?php 
             if ($description_mode === 'empty') {
-                esc_html_e('Start optimizing to see your progress', 'beepbeep-ai-alt-text-generator');
+                esc_html_e('Start optimizing to see your progress', 'opptiai-alt');
             } else {
-                esc_html_e('Automatically generates alt text for existing images.', 'beepbeep-ai-alt-text-generator');
+                esc_html_e('Automatically generates alt text for existing images.', 'opptiai-alt');
             }
             ?>
         </div>
@@ -95,14 +95,14 @@ $wrapper_class = isset($wrapper_class) ? $wrapper_class : 'bbai-premium-metrics-
         $seo_display_formatted = $seo_display > 0 ? '+' . $seo_display . '%' : '0%';
         ?>
         <div class="bbai-metric-value" style="color: #10B981;"><?php echo esc_html($seo_display_formatted); ?></div>
-        <div class="bbai-metric-label"><?php esc_html_e('SEO', 'beepbeep-ai-alt-text-generator'); ?></div>
-        <div class="bbai-metric-sublabel"><?php esc_html_e('IMPACT', 'beepbeep-ai-alt-text-generator'); ?></div>
+        <div class="bbai-metric-label"><?php esc_html_e('SEO', 'opptiai-alt'); ?></div>
+        <div class="bbai-metric-sublabel"><?php esc_html_e('IMPACT', 'opptiai-alt'); ?></div>
         <div class="bbai-metric-description">
             <?php 
             if ($description_mode === 'empty') {
-                esc_html_e('Start optimizing to boost your SEO score', 'beepbeep-ai-alt-text-generator');
+                esc_html_e('Start optimizing to boost your SEO score', 'opptiai-alt');
             } else {
-                esc_html_e('Estimated improvement in alt text coverage.', 'beepbeep-ai-alt-text-generator');
+                esc_html_e('Estimated improvement in alt text coverage.', 'opptiai-alt');
             }
             ?>
         </div>

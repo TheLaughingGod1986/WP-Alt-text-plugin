@@ -21,8 +21,8 @@ class Credit_Usage_Page {
 		// Keeping method for backward compatibility but not registering menu
 		// add_submenu_page(
 		// 	'upload.php', // Parent: Media menu
-		// 	__('Credit Usage', 'beepbeep-ai-alt-text-generator'),
-		// 	__('Credit Usage', 'beepbeep-ai-alt-text-generator'),
+		// 	__('Credit Usage', 'opptiai-alt'),
+		// 	__('Credit Usage', 'opptiai-alt'),
 		// 	'manage_options',
 		// 	'bbai-credit-usage',
 		// 	[__CLASS__, 'render_page']
@@ -34,15 +34,17 @@ class Credit_Usage_Page {
 	 */
 	public static function render_page_content() {
 	if (!current_user_can('manage_options')) {
-		echo '<div class="notice notice-error"><p>' . esc_html__('You do not have permission to access this page.', 'beepbeep-ai-alt-text-generator') . '</p></div>';
+		echo '<div class="notice notice-error"><p>' . esc_html__('You do not have permission to access this page.', 'opptiai-alt') . '</p></div>';
 		return;
 	}
 
-	// Handle table creation request
-	if (isset($_POST['bbai_action']) && $_POST['bbai_action'] === 'create_credit_table') {
-		check_admin_referer('bbai_create_credit_table', 'bbai_create_table_nonce');
+	// Handle table creation request - sanitize and verify nonce first.
+	$bbai_action_raw = isset( $_POST['bbai_action'] ) ? wp_unslash( $_POST['bbai_action'] ) : '';
+	$bbai_action     = is_string( $bbai_action_raw ) ? sanitize_text_field( $bbai_action_raw ) : '';
+	if ( $bbai_action === 'create_credit_table' ) {
+		check_admin_referer( 'bbai_create_credit_table', 'bbai_create_table_nonce' );
 		Credit_Usage_Logger::create_table();
-		echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Credit usage table created successfully!', 'beepbeep-ai-alt-text-generator') . '</p></div>';
+		echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Credit usage table created successfully!', 'opptiai-alt' ) . '</p></div>';
 	}
 
 	// Get filter parameters
@@ -91,8 +93,22 @@ class Credit_Usage_Page {
 		Credit_Usage_Logger::create_table();
 	}
 	
-	// Get usage by user
+	// Get usage by user (local WordPress data)
 	$usage_by_user = Credit_Usage_Logger::get_usage_by_user($query_args);
+
+	// Get backend user activity (SEO Heroes - shows who's contributing most)
+	$backend_user_activity = [];
+	try {
+		$api_client = \BeepBeepAI\AltTextGenerator\Api_Client_V2::get_instance();
+		if ($api_client && method_exists($api_client, 'get_backend_user_usage')) {
+			$backend_result = $api_client->get_backend_user_usage();
+			if (!is_wp_error($backend_result) && !empty($backend_result['users'])) {
+				$backend_user_activity = $backend_result;
+			}
+		}
+	} catch (\Exception $e) {
+		// Silently fail - backend data is optional enhancement
+	}
 	
 	// Diagnostic: Check if table exists and has any data
 	$table_exists = Credit_Usage_Logger::table_exists();
@@ -157,7 +173,7 @@ class Credit_Usage_Page {
 	if (file_exists($partial)) {
 		include $partial;
 	} else {
-		esc_html_e('Credit usage content unavailable.', 'beepbeep-ai-alt-text-generator');
+		esc_html_e('Credit usage content unavailable.', 'opptiai-alt');
 	}
 	}
 

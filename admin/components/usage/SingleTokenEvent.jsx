@@ -22,6 +22,10 @@ const SingleTokenEvent = ({ event, isExpanded, onToggle }) => {
     return actions[actionType] || actionType;
   };
 
+  const env = window.bbai_env || {};
+  const uploadUrl = env.upload_url || (env.admin_url ? `${env.admin_url}upload.php` : 'upload.php');
+  const postUrl = env.admin_url ? `${env.admin_url}post.php` : 'post.php';
+
   return (
     <tr 
       className={`hover:bg-slate-50 transition-colors cursor-pointer ${isExpanded ? 'bg-blue-50' : ''}`}
@@ -40,7 +44,7 @@ const SingleTokenEvent = ({ event, isExpanded, onToggle }) => {
       <td className="px-4 py-3 text-sm text-slate-600">
         {event.image_id ? (
           <a
-            href={`/wp-admin/upload.php?item=${event.image_id}`}
+            href={`${uploadUrl}?item=${event.image_id}`}
             className="text-blue-600 hover:text-blue-700"
             onClick={(e) => e.stopPropagation()}
           >
@@ -53,7 +57,7 @@ const SingleTokenEvent = ({ event, isExpanded, onToggle }) => {
       <td className="px-4 py-3 text-sm text-slate-600">
         {event.post_id ? (
           <a
-            href={`/wp-admin/post.php?post=${event.post_id}&action=edit`}
+            href={`${postUrl}?post=${event.post_id}&action=edit`}
             className="text-blue-600 hover:text-blue-700"
             onClick={(e) => e.stopPropagation()}
           >
@@ -71,4 +75,3 @@ const SingleTokenEvent = ({ event, isExpanded, onToggle }) => {
 };
 
 export default SingleTokenEvent;
-

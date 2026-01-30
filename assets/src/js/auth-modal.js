@@ -627,7 +627,16 @@ class BbAIAuthModal {
             }
         } catch (error) {
             console.error('Registration error:', error);
-            this.showError('Network error. Please try again.');
+            // Provide more specific error messages
+            let errorMessage = 'Network error. Please try again.';
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                errorMessage = 'Unable to connect to the server. Please check your internet connection and try again.';
+            } else if (error.name === 'SyntaxError') {
+                errorMessage = 'Server returned an invalid response. Please try again or contact support if the issue persists.';
+            } else if (error.message && error.message.includes('timeout')) {
+                errorMessage = 'Request timed out. The server may be busy. Please try again in a moment.';
+            }
+            this.showError(errorMessage);
             // Clear portal flag on network error
             localStorage.removeItem('alttextai_open_portal_after_login');
         } finally {

@@ -8,7 +8,15 @@
 (function($) {
     'use strict';
 
+    function getEnv() {
+        return window.bbai_env || {};
+    }
+
     function getAjaxUrl() {
+        var env = getEnv();
+        if (env && env.ajax_url) {
+            return env.ajax_url;
+        }
         if (window.bbai_ajax) {
             return window.bbai_ajax.ajax_url || window.bbai_ajax.ajaxurl || '';
         }
@@ -89,18 +97,13 @@
             field.trigger('input').trigger('change');
         } else {
             try {
-                var restRoot = (window.wp && window.wpApiSettings && window.wpApiSettings.root) ? window.wpApiSettings.root : '';
-                if (!restRoot) {
-                    var ajaxUrl = getAjaxUrl();
-                    if (ajaxUrl) {
-                        restRoot = ajaxUrl.replace('admin-ajax.php', 'index.php?rest_route=/');
-                    }
-                }
+                var env = getEnv();
+                var restRoot = env.rest_root || ((window.wp && window.wpApiSettings && window.wpApiSettings.root) ? window.wpApiSettings.root : '');
                 if (!restRoot) {
                     restRoot = '/wp-json/';
                 }
 
-                var nonce = (window.BBAI && BBAI.nonce) ? BBAI.nonce : (window.wpApiSettings ? wpApiSettings.nonce : '');
+                var nonce = env.nonce || ((window.BBAI && BBAI.nonce) ? BBAI.nonce : (window.wpApiSettings ? wpApiSettings.nonce : ''));
                 if (restRoot && nonce) {
                     fetch(restRoot + 'wp/v2/media/' + id, {
                         method: 'POST',

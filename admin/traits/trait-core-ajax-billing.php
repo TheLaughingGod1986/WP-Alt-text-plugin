@@ -19,15 +19,18 @@ trait Core_Ajax_Billing {
      * AJAX handler: Create Stripe checkout session
      */
     public function ajax_create_checkout() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         $price_id_raw = isset($_POST['price_id']) ? wp_unslash($_POST['price_id']) : '';
         $price_id = sanitize_text_field($price_id_raw);
         if (empty($price_id)) {
-            wp_send_json_error(['message' => __('Price ID is required', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Price ID is required', 'opptiai-alt')]);
         }
 
         $success_url = admin_url('upload.php?page=bbai&checkout=success');
@@ -43,7 +46,7 @@ trait Core_Ajax_Billing {
             if ($error_code === 'auth_required' ||
                 strpos($error_message_lower, 'session') !== false ||
                 strpos($error_message_lower, 'log in') !== false) {
-                $error_message = __('Unable to create checkout session. Please try again or contact support.', 'beepbeep-ai-alt-text-generator');
+                $error_message = __('Unable to create checkout session. Please try again or contact support.', 'opptiai-alt');
             }
 
             wp_send_json_error(['message' => $error_message]);
@@ -59,9 +62,12 @@ trait Core_Ajax_Billing {
      * AJAX handler: Create customer portal session
      */
     public function ajax_create_portal() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         $is_authenticated = $this->api_client->is_authenticated();
@@ -81,7 +87,7 @@ trait Core_Ajax_Billing {
 
         if (!$is_authenticated && !($is_admin_authenticated && $has_agency_license)) {
             wp_send_json_error([
-                'message' => __('Please log in to manage billing', 'beepbeep-ai-alt-text-generator'),
+                'message' => __('Please log in to manage billing', 'opptiai-alt'),
                 'code' => 'not_authenticated'
             ]);
         }
@@ -106,7 +112,7 @@ trait Core_Ajax_Billing {
                 strpos((string)$error_message, 'not_authenticated') !== false
             )) {
                 wp_send_json_error([
-                    'message' => __('To manage your subscription, please log in with your account credentials (not just admin access). If you have an agency license, contact support to access billing management.', 'beepbeep-ai-alt-text-generator'),
+                    'message' => __('To manage your subscription, please log in with your account credentials (not just admin access). If you have an agency license, contact support to access billing management.', 'opptiai-alt'),
                     'code' => 'not_authenticated'
                 ]);
                 return;
@@ -122,14 +128,17 @@ trait Core_Ajax_Billing {
      * AJAX handler: Get subscription information
      */
     public function ajax_get_subscription_info() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         if (!$this->api_client->is_authenticated()) {
             wp_send_json_error([
-                'message' => __('Please log in to view subscription information', 'beepbeep-ai-alt-text-generator'),
+                'message' => __('Please log in to view subscription information', 'opptiai-alt'),
                 'code' => 'not_authenticated'
             ]);
         }

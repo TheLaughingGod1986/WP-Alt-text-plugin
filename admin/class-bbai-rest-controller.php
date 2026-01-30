@@ -435,7 +435,7 @@ class REST_Controller {
 		}
 
 		if ( '' === $alt ) {
-			return new \WP_Error( 'invalid_alt', __( 'ALT text cannot be empty.', 'beepbeep-ai-alt-text-generator' ), [ 'status' => 400 ] );
+			return new \WP_Error( 'invalid_alt', __( 'ALT text cannot be empty.', 'opptiai-alt' ), [ 'status' => 400 ] );
 		}
 
 		$alt_sanitized = wp_strip_all_tags( $alt );
@@ -556,9 +556,10 @@ class REST_Controller {
 	/**
 	 * Return usage metrics from backend.
 	 *
+	 * @param \WP_REST_Request $request REST request instance.
 	 * @return array|\WP_Error
 	 */
-	public function handle_usage() {
+	public function handle_usage( \WP_REST_Request $request ) {
 		$api_client = $this->core->get_api_client();
 		if ( ! $api_client ) {
 			return new \WP_Error( 'missing_client', 'API client not available.' );
@@ -575,9 +576,10 @@ class REST_Controller {
 	/**
 	 * Expose checkout plans/prices.
 	 *
+	 * @param \WP_REST_Request $request REST request instance.
 	 * @return array
 	 */
-	public function handle_plans() {
+	public function handle_plans( \WP_REST_Request $request ) {
 		return [
 			'prices' => $this->core->get_checkout_price_ids(),
 		];
@@ -586,9 +588,10 @@ class REST_Controller {
 	/**
 	 * Return queue status snapshot.
 	 *
+	 * @param \WP_REST_Request $request REST request instance.
 	 * @return array
 	 */
-	public function handle_queue() {
+	public function handle_queue( \WP_REST_Request $request ) {
 		$stats    = Queue::get_stats();
 		$recent   = Queue::get_recent( apply_filters( 'bbai_queue_recent_limit', 10 ) );
 		$failures = Queue::get_recent_failures( apply_filters( 'bbai_queue_fail_limit', 5 ) );
@@ -793,7 +796,7 @@ class REST_Controller {
 		foreach ($users as $user) {
 			$formatted[] = [
 				'user_id' => intval($user['user_id']),
-				'display_name' => $user['display_name'] ?? $user['username'] ?? __('System', 'beepbeep-ai-alt-text-generator'),
+				'display_name' => $user['display_name'] ?? $user['username'] ?? __('System', 'opptiai-alt'),
 				'username' => $user['username'] ?? '',
 				'tokens_used' => intval($user['tokens_used'] ?? 0),
 				'last_used' => $user['last_used'] ?? null,
@@ -830,21 +833,4 @@ class REST_Controller {
 		return $result;
 	}
 
-	/**
-	 * Permission check: Can view usage (any logged-in user with plugin access)
-	 *
-	 * @return bool
-	 */
-	public function can_view_usage( \WP_REST_Request $request ) {
-		return is_user_logged_in() && current_user_can('upload_files');
-	}
-
-	/**
-	 * Permission check: Can view team usage (admins only)
-	 *
-	 * @return bool
-	 */
-	public function can_view_team_usage( \WP_REST_Request $request ) {
-		return current_user_can('manage_options');
-	}
 }

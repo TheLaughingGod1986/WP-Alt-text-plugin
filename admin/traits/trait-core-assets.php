@@ -67,14 +67,14 @@ trait Core_Assets {
      */
     private function get_common_l10n(): array {
         return [
-            'reviewCue'           => __('Visit the ALT Library to double-check the wording.', 'beepbeep-ai-alt-text-generator'),
+            'reviewCue'           => __('Visit the ALT Library to double-check the wording.', 'opptiai-alt'),
             'statusReady'         => '',
-            'previewAltHeading'   => __('Review generated ALT text', 'beepbeep-ai-alt-text-generator'),
-            'previewAltHint'      => __('Review the generated description before applying it to your media item.', 'beepbeep-ai-alt-text-generator'),
-            'previewAltApply'     => __('Use this ALT', 'beepbeep-ai-alt-text-generator'),
-            'previewAltCancel'    => __('Keep current ALT', 'beepbeep-ai-alt-text-generator'),
-            'previewAltDismissed' => __('Preview dismissed. Existing ALT kept.', 'beepbeep-ai-alt-text-generator'),
-            'previewAltShortcut'  => __('Shift + Enter for newline.', 'beepbeep-ai-alt-text-generator'),
+            'previewAltHeading'   => __('Review generated ALT text', 'opptiai-alt'),
+            'previewAltHint'      => __('Review the generated description before applying it to your media item.', 'opptiai-alt'),
+            'previewAltApply'     => __('Use this ALT', 'opptiai-alt'),
+            'previewAltCancel'    => __('Keep current ALT', 'opptiai-alt'),
+            'previewAltDismissed' => __('Preview dismissed. Existing ALT kept.', 'opptiai-alt'),
+            'previewAltShortcut'  => __('Shift + Enter for newline.', 'opptiai-alt'),
         ];
     }
 
@@ -135,6 +135,13 @@ trait Core_Assets {
             'nonce'   => wp_create_nonce('beepbeepai_nonce'),
             'can_manage' => $this->user_can_manage(),
             'logout_redirect' => admin_url('admin.php?page=bbai'),
+        ]);
+        wp_localize_script('bbai-admin', 'bbai_env', [
+            'ajax_url'  => admin_url('admin-ajax.php'),
+            'admin_url' => admin_url(),
+            'upload_url'=> admin_url('upload.php'),
+            'rest_root' => esc_url_raw(rest_url()),
+            'nonce'     => wp_create_nonce('bbai_ajax_nonce'),
         ]);
     }
 
@@ -411,13 +418,13 @@ trait Core_Assets {
                 'stats' => ['total' => 0, 'warnings' => 0, 'errors' => 0, 'last_event' => null, 'last_api' => null],
             ],
             'strings' => [
-                'noLogs' => __('No logs recorded yet.', 'beepbeep-ai-alt-text-generator'),
-                'contextTitle' => __('Log Context', 'beepbeep-ai-alt-text-generator'),
-                'contextHide' => __('Hide Context', 'beepbeep-ai-alt-text-generator'),
-                'clearConfirm' => __('This will permanently delete all debug logs. Continue?', 'beepbeep-ai-alt-text-generator'),
-                'errorGeneric' => __('Unable to load debug logs. Please try again.', 'beepbeep-ai-alt-text-generator'),
-                'emptyContext' => __('No additional context was provided for this entry.', 'beepbeep-ai-alt-text-generator'),
-                'cleared' => __('Logs cleared successfully.', 'beepbeep-ai-alt-text-generator'),
+                'noLogs' => __('No logs recorded yet.', 'opptiai-alt'),
+                'contextTitle' => __('Log Context', 'opptiai-alt'),
+                'contextHide' => __('Hide Context', 'opptiai-alt'),
+                'clearConfirm' => __('This will permanently delete all debug logs. Continue?', 'opptiai-alt'),
+                'errorGeneric' => __('Unable to load debug logs. Please try again.', 'opptiai-alt'),
+                'emptyContext' => __('No additional context was provided for this entry.', 'opptiai-alt'),
+                'cleared' => __('Logs cleared successfully.', 'opptiai-alt'),
             ],
         ]);
 
@@ -458,26 +465,38 @@ trait Core_Assets {
             'can_manage' => $this->user_can_manage(),
             'logout_redirect' => admin_url('admin.php?page=bbai'),
         ]);
+        wp_localize_script('bbai-dashboard', 'bbai_env', [
+            'ajax_url'  => admin_url('admin-ajax.php'),
+            'admin_url' => admin_url(),
+            'upload_url'=> admin_url('upload.php'),
+            'rest_root' => esc_url_raw(rest_url()),
+            'nonce'     => wp_create_nonce('bbai_ajax_nonce'),
+        ]);
 
         // Dashboard L10n
         wp_localize_script('bbai-dashboard', 'BBAI_DASH_L10N', [
             'l10n' => array_merge([
-                'processing'         => __('Generating ALT text…', 'beepbeep-ai-alt-text-generator'),
-                'processingMissing'  => __('Generating ALT for #%d…', 'beepbeep-ai-alt-text-generator'),
-                'error'              => __('Something went wrong. Check console for details.', 'beepbeep-ai-alt-text-generator'),
-                'summary'            => __('Generated %1$d images (%2$d errors).', 'beepbeep-ai-alt-text-generator'),
-                'restUnavailable'    => __('REST endpoint unavailable', 'beepbeep-ai-alt-text-generator'),
-                'prepareBatch'       => __('Preparing image list…', 'beepbeep-ai-alt-text-generator'),
-                'coverageCopy'       => __('of images currently include ALT text.', 'beepbeep-ai-alt-text-generator'),
-                'noRequests'         => __('None yet', 'beepbeep-ai-alt-text-generator'),
-                'noAudit'            => __('No usage data recorded yet.', 'beepbeep-ai-alt-text-generator'),
-                'nothingToProcess'   => __('No images to process.', 'beepbeep-ai-alt-text-generator'),
-                'batchStart'         => __('Starting batch…', 'beepbeep-ai-alt-text-generator'),
-                'batchComplete'      => __('Batch complete.', 'beepbeep-ai-alt-text-generator'),
-                'batchCompleteAt'    => __('Batch complete at %s', 'beepbeep-ai-alt-text-generator'),
-                'completedItem'      => __('Finished #%d', 'beepbeep-ai-alt-text-generator'),
-                'failedItem'         => __('Failed #%d', 'beepbeep-ai-alt-text-generator'),
-                'loadingButton'      => __('Processing…', 'beepbeep-ai-alt-text-generator'),
+                'processing'         => __('Generating ALT text…', 'opptiai-alt'),
+                /* translators: 1: image ID */
+                'processingMissing'  => __('Generating ALT for #%d…', 'opptiai-alt'),
+                'error'              => __('Something went wrong. Check console for details.', 'opptiai-alt'),
+                /* translators: 1: images generated, 2: error count */
+                'summary'            => __('Generated %1$d images (%2$d errors).', 'opptiai-alt'),
+                'restUnavailable'    => __('REST endpoint unavailable', 'opptiai-alt'),
+                'prepareBatch'       => __('Preparing image list…', 'opptiai-alt'),
+                'coverageCopy'       => __('of images currently include ALT text.', 'opptiai-alt'),
+                'noRequests'         => __('None yet', 'opptiai-alt'),
+                'noAudit'            => __('No usage data recorded yet.', 'opptiai-alt'),
+                'nothingToProcess'   => __('No images to process.', 'opptiai-alt'),
+                'batchStart'         => __('Starting batch…', 'opptiai-alt'),
+                'batchComplete'      => __('Batch complete.', 'opptiai-alt'),
+                /* translators: 1: completion time */
+                'batchCompleteAt'    => __('Batch complete at %s', 'opptiai-alt'),
+                /* translators: 1: image ID */
+                'completedItem'      => __('Finished #%d', 'opptiai-alt'),
+                /* translators: 1: image ID */
+                'failedItem'         => __('Failed #%d', 'opptiai-alt'),
+                'loadingButton'      => __('Processing…', 'opptiai-alt'),
             ], $l10n_common),
         ]);
 

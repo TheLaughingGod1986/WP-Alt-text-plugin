@@ -104,7 +104,7 @@ class Site_Fingerprint {
 			self::generate();
 			return [
 				'valid' => true,
-				'message' => __('Site fingerprint generated successfully.', 'beepbeep-ai-alt-text-generator'),
+				'message' => __('Site fingerprint generated successfully.', 'opptiai-alt'),
 			];
 		}
 
@@ -121,7 +121,7 @@ class Site_Fingerprint {
 			if ($current === $stored) {
 				return [
 					'valid' => true,
-					'message' => __('Site fingerprint validated successfully.', 'beepbeep-ai-alt-text-generator'),
+					'message' => __('Site fingerprint validated successfully.', 'opptiai-alt'),
 				];
 			}
 		}
@@ -140,13 +140,14 @@ class Site_Fingerprint {
 		if ($current_fingerprint === $stored) {
 			return [
 				'valid' => true,
-				'message' => __('Site fingerprint validated successfully.', 'beepbeep-ai-alt-text-generator'),
+				'message' => __('Site fingerprint validated successfully.', 'opptiai-alt'),
 			];
 		}
 
 		// Fingerprint mismatch - log warning
 		$message = sprintf(
-			__('Site fingerprint mismatch detected. Site URL, database prefix, or install timestamp may have changed. Stored: %s, Current: %s', 'beepbeep-ai-alt-text-generator'),
+			/* translators: 1: stored fingerprint, 2: current fingerprint */
+			__('Site fingerprint mismatch detected. Site URL, database prefix, or install timestamp may have changed. Stored: %1$s, Current: %2$s', 'opptiai-alt'),
 			substr($stored, 0, 16) . '...',
 			substr($current_fingerprint, 0, 16) . '...'
 		);
@@ -187,7 +188,7 @@ class Site_Fingerprint {
 			if ($block_on_mismatch) {
 				return new \WP_Error(
 					'fingerprint_mismatch',
-					__('Site fingerprint validation failed. Credit operations are blocked. Please contact support.', 'beepbeep-ai-alt-text-generator'),
+					__('Site fingerprint validation failed. Credit operations are blocked. Please contact support.', 'opptiai-alt'),
 					['validation' => $validation]
 				);
 			}
@@ -208,5 +209,4 @@ class Site_Fingerprint {
 		return self::generate();
 	}
 }
-
 

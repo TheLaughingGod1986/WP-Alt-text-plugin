@@ -54,14 +54,14 @@ $export_url = wp_nonce_url(admin_url('admin-post.php?action=bbai_usage_export'),
                     <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                <h1 class="bbai-agency-overview-title"><?php esc_html_e('Agency Overview', 'beepbeep-ai-alt-text-generator'); ?></h1>
+                <h1 class="bbai-agency-overview-title"><?php esc_html_e('Agency Overview', 'opptiai-alt'); ?></h1>
             </div>
             <div class="bbai-agency-overview-header-right">
                 <a href="<?php echo esc_url($export_url); ?>" class="bbai-btn bbai-btn-secondary bbai-agency-export-btn">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="bbai-export-icon">
                         <path d="M17.5 12.5V16.25C17.5 16.913 17.2366 17.5489 16.7678 18.0178C16.2989 18.4866 15.663 18.75 15 18.75H5C4.33696 18.75 3.70107 18.4866 3.23223 18.0178C2.76339 17.5489 2.5 16.913 2.5 16.25V12.5M14.1667 8.33333L10 12.5M10 12.5L5.83333 8.33333M10 12.5V2.5" stroke="currentColor" stroke-width="1.67" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    <?php esc_html_e('Export Report', 'beepbeep-ai-alt-text-generator'); ?>
+                    <?php esc_html_e('Export Report', 'opptiai-alt'); ?>
                 </a>
             </div>
         </div>
@@ -70,16 +70,23 @@ $export_url = wp_nonce_url(admin_url('admin-post.php?action=bbai_usage_export'),
         <div class="bbai-agency-metrics-grid">
             <div class="bbai-agency-metric-card">
                 <div class="bbai-agency-metric-value"><?php echo esc_html(number_format_i18n($total_alt_text)); ?></div>
-                <div class="bbai-agency-metric-label"><?php esc_html_e('AI alt Text', 'beepbeep-ai-alt-text-generator'); ?></div>
-                <div class="bbai-agency-metric-sublabel"><?php printf(esc_html__('Across %d Site%s', 'beepbeep-ai-alt-text-generator'), $site_count, $site_count !== 1 ? 's' : ''); ?></div>
+                <div class="bbai-agency-metric-label"><?php esc_html_e('AI alt Text', 'opptiai-alt'); ?></div>
+                <div class="bbai-agency-metric-sublabel"><?php
+                /* translators: 1: site count, 2: plural suffix */
+                printf(
+                    esc_html__('Across %1$s Site%2$s', 'opptiai-alt'),
+                    esc_html(number_format_i18n($site_count)),
+                    esc_html($site_count !== 1 ? 's' : '')
+                );
+                ?></div>
             </div>
             <div class="bbai-agency-metric-card">
                 <div class="bbai-agency-metric-value"><?php echo esc_html(number_format_i18n($this_month_alt_text)); ?></div>
-                <div class="bbai-agency-metric-label"><?php esc_html_e('This Month', 'beepbeep-ai-alt-text-generator'); ?></div>
+                <div class="bbai-agency-metric-label"><?php esc_html_e('This Month', 'opptiai-alt'); ?></div>
             </div>
             <div class="bbai-agency-metric-card">
                 <div class="bbai-agency-metric-value"><?php echo esc_html(number_format_i18n($total_hours_saved)); ?></div>
-                <div class="bbai-agency-metric-label"><?php esc_html_e('Hours Saved', 'beepbeep-ai-alt-text-generator'); ?></div>
+                <div class="bbai-agency-metric-label"><?php esc_html_e('Hours Saved', 'opptiai-alt'); ?></div>
             </div>
         </div>
 
@@ -88,11 +95,11 @@ $export_url = wp_nonce_url(admin_url('admin-post.php?action=bbai_usage_export'),
             <table class="bbai-agency-sites-table">
                 <thead>
                     <tr>
-                        <th><?php esc_html_e('Site', 'beepbeep-ai-alt-text-generator'); ?></th>
-                        <th><?php esc_html_e('AI Alt Text Generated', 'beepbeep-ai-alt-text-generator'); ?></th>
-                        <th><?php esc_html_e('Images Optimised', 'beepbeep-ai-alt-text-generator'); ?></th>
+                        <th><?php esc_html_e('Site', 'opptiai-alt'); ?></th>
+                        <th><?php esc_html_e('AI Alt Text Generated', 'opptiai-alt'); ?></th>
+                        <th><?php esc_html_e('Images Optimised', 'opptiai-alt'); ?></th>
                         <th class="bbai-sortable">
-                            <?php esc_html_e('Last Activity', 'beepbeep-ai-alt-text-generator'); ?>
+                            <?php esc_html_e('Last Activity', 'opptiai-alt'); ?>
                             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" class="bbai-sort-icon">
                                 <path d="M3 4.5L6 1.5L9 4.5M3 7.5L6 10.5L9 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
@@ -103,12 +110,13 @@ $export_url = wp_nonce_url(admin_url('admin-post.php?action=bbai_usage_export'),
                     <?php if (empty($sites)) : ?>
                         <tr>
                             <td colspan="4" class="bbai-agency-empty-state">
-                                <?php esc_html_e('No sites found.', 'beepbeep-ai-alt-text-generator'); ?>
+                                <?php esc_html_e('No sites found.', 'opptiai-alt'); ?>
                             </td>
                         </tr>
                     <?php else : ?>
                         <?php foreach ($sites as $index => $site) : 
-                            $site_name = esc_html($site['siteName'] ?? sprintf(__('Site %d', 'beepbeep-ai-alt-text-generator'), $index + 1));
+                            /* translators: 1: site number */
+                            $site_name = esc_html($site['siteName'] ?? sprintf(__('Site %d', 'opptiai-alt'), $index + 1));
                             $alt_text_count = intval($site['altTextCount'] ?? 0);
                             $images_optimized = intval($site['imagesOptimized'] ?? 0);
                             $last_activity = $site['lastActivity'] ?? '';
@@ -122,7 +130,7 @@ $export_url = wp_nonce_url(admin_url('admin-post.php?action=bbai_usage_export'),
                                 }
                             }
                             if (empty($last_activity_formatted)) {
-                                $last_activity_formatted = __('Never', 'beepbeep-ai-alt-text-generator');
+                                $last_activity_formatted = __('Never', 'opptiai-alt');
                             }
                         ?>
                             <tr>
@@ -161,7 +169,7 @@ $is_agency = ($plan_slug === 'agency');
 
 // Only show upsell if not agency (though this tab is agency-only, keeping for consistency)
 if (!$is_agency) {
-    $bottom_upsell_partial = dirname(__FILE__) . '/bottom-upsell-cta.php';
+    $bottom_upsell_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/bottom-upsell-cta.php';
     if (file_exists($bottom_upsell_partial)) {
         include $bottom_upsell_partial;
     }

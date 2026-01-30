@@ -114,14 +114,14 @@ trait Core_Review {
         if ($alt === '') {
             return [
                 'score' => 0,
-                'grade' => __('Missing', 'beepbeep-ai-alt-text-generator'),
+                'grade' => __('Missing', 'opptiai-alt'),
                 'status' => 'critical',
-                'issues' => [__('ALT text is missing.', 'beepbeep-ai-alt-text-generator')],
+                'issues' => [__('ALT text is missing.', 'opptiai-alt')],
                 'heuristic' => [
                     'score' => 0,
-                    'grade' => __('Missing', 'beepbeep-ai-alt-text-generator'),
+                    'grade' => __('Missing', 'opptiai-alt'),
                     'status' => 'critical',
-                    'issues' => [__('ALT text is missing.', 'beepbeep-ai-alt-text-generator')],
+                    'issues' => [__('ALT text is missing.', 'opptiai-alt')],
                 ],
                 'review' => null,
             ];
@@ -135,14 +135,14 @@ trait Core_Review {
         if ($normalized === '' || preg_match($placeholder_pattern, $normalized)) {
             return [
                 'score' => 0,
-                'grade' => __('Critical', 'beepbeep-ai-alt-text-generator'),
+                'grade' => __('Critical', 'opptiai-alt'),
                 'status' => 'critical',
-                'issues' => [__('ALT text looks like placeholder content and must be rewritten.', 'beepbeep-ai-alt-text-generator')],
+                'issues' => [__('ALT text looks like placeholder content and must be rewritten.', 'opptiai-alt')],
                 'heuristic' => [
                     'score' => 0,
-                    'grade' => __('Critical', 'beepbeep-ai-alt-text-generator'),
+                    'grade' => __('Critical', 'opptiai-alt'),
                     'status'=> 'critical',
-                    'issues'=> [__('ALT text looks like placeholder content and must be rewritten.', 'beepbeep-ai-alt-text-generator')],
+                    'issues'=> [__('ALT text looks like placeholder content and must be rewritten.', 'opptiai-alt')],
                 ],
                 'review' => null,
             ];
@@ -151,40 +151,40 @@ trait Core_Review {
         $length = function_exists('mb_strlen') ? mb_strlen($alt) : strlen($alt);
         if ($length < 45) {
             $score -= 35;
-            $issues[] = __('Too short – add a richer description (45+ characters).', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('Too short – add a richer description (45+ characters).', 'opptiai-alt');
         } elseif ($length > 160) {
             $score -= 15;
-            $issues[] = __('Very long – trim to keep the description concise (under 160 characters).', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('Very long – trim to keep the description concise (under 160 characters).', 'opptiai-alt');
         }
 
         if (preg_match('/\b(image|picture|photo|screenshot)\b/i', $alt)) {
             $score -= 10;
-            $issues[] = __('Contains generic filler words like "image" or "photo".', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('Contains generic filler words like "image" or "photo".', 'opptiai-alt');
         }
 
         if (preg_match('/\b(test|testing|sample|example|dummy|placeholder|lorem|alt text)\b/i', $alt)) {
             $score = min($score - 80, 5);
-            $issues[] = __('Contains placeholder wording such as "test" or "sample". Replace with a real description.', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('Contains placeholder wording such as "test" or "sample". Replace with a real description.', 'opptiai-alt');
         }
 
         $word_count = str_word_count($alt, 0, '0123456789');
         if ($word_count < 4) {
             $score -= 70;
             $score = min($score, 5);
-            $issues[] = __('ALT text is extremely brief – add meaningful descriptive words.', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('ALT text is extremely brief – add meaningful descriptive words.', 'opptiai-alt');
         } elseif ($word_count < 6) {
             $score -= 50;
             $score = min($score, 20);
-            $issues[] = __('ALT text is too short to convey the subject in detail.', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('ALT text is too short to convey the subject in detail.', 'opptiai-alt');
         } elseif ($word_count < 8) {
             $score -= 35;
             $score = min($score, 40);
-            $issues[] = __('ALT text could use a few more descriptive words.', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('ALT text could use a few more descriptive words.', 'opptiai-alt');
         }
 
         if ($score > 40 && $length < 30) {
             $score = min($score, 40);
-            $issues[] = __('Expand the description with one or two concrete details.', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('Expand the description with one or two concrete details.', 'opptiai-alt');
         }
 
         $normalize = static function($value) {
@@ -199,7 +199,7 @@ trait Core_Review {
             $normalized_title = $normalize($title);
             if ($normalized_title !== '' && $normalized_alt === $normalized_title) {
                 $score -= 12;
-                $issues[] = __('Matches the attachment title – add more unique detail.', 'beepbeep-ai-alt-text-generator');
+                $issues[] = __('Matches the attachment title – add more unique detail.', 'opptiai-alt');
             }
         }
 
@@ -209,13 +209,13 @@ trait Core_Review {
             $normalized_base = $normalize($base);
             if ($normalized_base !== '' && $normalized_alt === $normalized_base) {
                 $score -= 20;
-                $issues[] = __('Matches the file name – rewrite it to describe the image.', 'beepbeep-ai-alt-text-generator');
+                $issues[] = __('Matches the file name – rewrite it to describe the image.', 'opptiai-alt');
             }
         }
 
         if (!preg_match('/[a-z]{4,}/i', $alt)) {
             $score -= 15;
-            $issues[] = __('Lacks descriptive language – include meaningful nouns or adjectives.', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('Lacks descriptive language – include meaningful nouns or adjectives.', 'opptiai-alt');
         }
 
         if (!preg_match('/\b[a-z]/i', $alt)) {
@@ -228,9 +228,9 @@ trait Core_Review {
         $grade  = $this->grade_from_status($status);
 
         if ($status === 'review' && empty($issues)) {
-            $issues[] = __('Give this ALT another look to ensure it reflects the image details.', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('Give this ALT another look to ensure it reflects the image details.', 'opptiai-alt');
         } elseif ($status === 'critical' && empty($issues)) {
-            $issues[] = __('ALT text should be rewritten for accessibility.', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('ALT text should be rewritten for accessibility.', 'opptiai-alt');
         }
 
         $heuristic = [
@@ -308,13 +308,13 @@ trait Core_Review {
     private function grade_from_status(string $status): string {
         switch ($status) {
             case 'great':
-                return __('Excellent', 'beepbeep-ai-alt-text-generator');
+                return __('Excellent', 'opptiai-alt');
             case 'good':
-                return __('Strong', 'beepbeep-ai-alt-text-generator');
+                return __('Strong', 'opptiai-alt');
             case 'review':
-                return __('Needs review', 'beepbeep-ai-alt-text-generator');
+                return __('Needs review', 'opptiai-alt');
             default:
-                return __('Critical', 'beepbeep-ai-alt-text-generator');
+                return __('Critical', 'opptiai-alt');
         }
     }
 
@@ -350,7 +350,7 @@ trait Core_Review {
         $alt_text = sanitize_text_field($alt_text);
 
         if ($attachment_id <= 0 || $alt_text === '') {
-            return new \WP_Error('invalid_input', __('Invalid attachment ID or alt text.', 'beepbeep-ai-alt-text-generator'));
+            return new \WP_Error('invalid_input', __('Invalid attachment ID or alt text.', 'opptiai-alt'));
         }
 
         if (!$force) {
@@ -378,7 +378,7 @@ Return JSON only:
         if (!method_exists($this->api_client, 'chat_completion')) {
             return new \WP_Error(
                 'method_not_available',
-                __('Alt text review is not available. The API client does not support chat completion.', 'beepbeep-ai-alt-text-generator')
+                __('Alt text review is not available. The API client does not support chat completion.', 'opptiai-alt')
             );
         }
 
@@ -397,7 +397,7 @@ Return JSON only:
         $parsed = $this->extract_json_object($content);
 
         if (!$parsed || !isset($parsed['score'])) {
-            return new \WP_Error('parse_error', __('Unable to parse review response.', 'beepbeep-ai-alt-text-generator'));
+            return new \WP_Error('parse_error', __('Unable to parse review response.', 'opptiai-alt'));
         }
 
         $score = max(0, min(100, intval($parsed['score'])));

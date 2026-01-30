@@ -62,6 +62,7 @@ require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-queue.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-debug-log.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-onboarding.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-auth-state.php';
 
 // Load Core class traits
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/traits/trait-core-ajax-auth.php';
@@ -300,9 +301,10 @@ class Core {
                 'limit' => $opts['token_limit'],
             ], DAY_IN_SECONDS);
             $this->send_notification(
-                __('AI Alt Text token usage alert', 'beepbeep-ai-alt-text-generator'),
+                __('AI Alt Text token usage alert', 'opptiai-alt'),
                 sprintf(
-                    __('Cumulative token usage has reached %1$d (threshold %2$d). Consider reviewing your OpenAI usage.', 'beepbeep-ai-alt-text-generator'),
+                    /* translators: 1: total tokens, 2: token limit */
+                    __('Cumulative token usage has reached %1$d (threshold %2$d). Consider reviewing your OpenAI usage.', 'opptiai-alt'),
                     $current['total'],
                     $opts['token_limit']
                 )
@@ -420,13 +422,13 @@ class Core {
         if ($page !== 'bbai-checkout') { return; }
 
         if (!$this->user_can_manage()) {
-            wp_die(__('You do not have permission to perform this action.', 'beepbeep-ai-alt-text-generator'));
+            wp_die(esc_html__('You do not have permission to perform this action.', 'opptiai-alt'));
         }
 
         $nonce_raw = isset($_GET['_bbai_nonce']) && $_GET['_bbai_nonce'] !== null ? wp_unslash($_GET['_bbai_nonce']) : '';
         $nonce = is_string($nonce_raw) ? sanitize_text_field($nonce_raw) : '';
         if (!$nonce || !wp_verify_nonce($nonce, 'bbai_direct_checkout')) {
-            wp_die(__('Security check failed. Please try again from the dashboard.', 'beepbeep-ai-alt-text-generator'));
+            wp_die(esc_html__('Security check failed. Please try again from the dashboard.', 'opptiai-alt'));
         }
 
         $plan_raw = isset($_GET['plan']) ? wp_unslash($_GET['plan']) : (isset($_GET['type']) ? wp_unslash($_GET['type']) : '');
@@ -453,7 +455,7 @@ class Core {
         $result = $this->api_client->create_checkout_session($price_id, $success_url, $cancel_url);
 
         if (is_wp_error($result) || empty($result['url'])) {
-            $message = is_wp_error($result) ? $result->get_error_message() : __('Unable to start checkout. Please try again.', 'beepbeep-ai-alt-text-generator');
+            $message = is_wp_error($result) ? $result->get_error_message() : __('Unable to start checkout. Please try again.', 'opptiai-alt');
             $query_args = [
                 'page'            => 'beepbeep-ai-alt-text-generator',
                 'checkout_error'  => rawurlencode($message),
@@ -557,13 +559,16 @@ class Core {
             ?>
             <div class="notice notice-error">
                 <p>
-                    <strong><?php esc_html_e('Unable to start checkout', 'beepbeep-ai-alt-text-generator'); ?>:</strong>
+                    <strong><?php esc_html_e('Unable to start checkout', 'opptiai-alt'); ?>:</strong>
                     <?php echo esc_html($message); ?>
                     <?php if ($plan) : ?>
-                        (<?php echo esc_html(sprintf(__('Plan: %s', 'beepbeep-ai-alt-text-generator'), $plan)); ?>)
+                        (<?php
+                        /* translators: 1: plan name */
+                        echo esc_html(sprintf(__('Plan: %s', 'opptiai-alt'), $plan));
+                        ?>)
                     <?php endif; ?>
                 </p>
-                <p><?php esc_html_e('Please check your account connection and try again. If the problem persists, contact support.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                <p><?php esc_html_e('Please check your account connection and try again. If the problem persists, contact support.', 'opptiai-alt'); ?></p>
             </div>
             <?php
         } else {
@@ -571,13 +576,13 @@ class Core {
             if ($checkout === 'success') {
                 ?>
                 <div class="notice notice-success is-dismissible">
-                    <p><?php esc_html_e('Redirecting to secure checkout... Complete your payment to unlock up to 1,000 alt text generations per month with Growth.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                    <p><?php esc_html_e('Redirecting to secure checkout... Complete your payment to unlock up to 1,000 alt text generations per month with Growth.', 'opptiai-alt'); ?></p>
                 </div>
                 <?php
             } elseif ($checkout === 'cancel') {
                 ?>
                 <div class="notice notice-warning is-dismissible">
-                    <p><?php esc_html_e('Checkout cancelled. Your plan remains unchanged. Upgrade anytime to unlock 1,000 generations per month with Growth.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                    <p><?php esc_html_e('Checkout cancelled. Your plan remains unchanged. Upgrade anytime to unlock 1,000 generations per month with Growth.', 'opptiai-alt'); ?></p>
                 </div>
                 <?php
             }
@@ -588,15 +593,15 @@ class Core {
         if ($password_reset === 'requested') {
             ?>
             <div class="notice notice-success is-dismissible">
-                <p><strong><?php esc_html_e('Password Reset Email Sent', 'beepbeep-ai-alt-text-generator'); ?></strong></p>
-                <p><?php esc_html_e('Check your email inbox (and spam folder) for password reset instructions. The link will expire in 1 hour.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                <p><strong><?php esc_html_e('Password Reset Email Sent', 'opptiai-alt'); ?></strong></p>
+                <p><?php esc_html_e('Check your email inbox (and spam folder) for password reset instructions. The link will expire in 1 hour.', 'opptiai-alt'); ?></p>
             </div>
             <?php
         } elseif ($password_reset === 'success') {
             ?>
             <div class="notice notice-success is-dismissible">
-                <p><strong><?php esc_html_e('Password Reset Successful', 'beepbeep-ai-alt-text-generator'); ?></strong></p>
-                <p><?php esc_html_e('Your password has been updated. You can now sign in with your new password.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                <p><strong><?php esc_html_e('Password Reset Successful', 'opptiai-alt'); ?></strong></p>
+                <p><?php esc_html_e('Your password has been updated. You can now sign in with your new password.', 'opptiai-alt'); ?></p>
             </div>
             <?php
         }
@@ -606,8 +611,8 @@ class Core {
         if (!empty($subscription_updated)) {
             ?>
             <div class="notice notice-success is-dismissible">
-                <p><strong><?php esc_html_e('Subscription Updated', 'beepbeep-ai-alt-text-generator'); ?></strong></p>
-                <p><?php esc_html_e('Your subscription information has been refreshed.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                <p><strong><?php esc_html_e('Subscription Updated', 'opptiai-alt'); ?></strong></p>
+                <p><?php esc_html_e('Your subscription information has been refreshed.', 'opptiai-alt'); ?></p>
             </div>
             <?php
         }
@@ -616,8 +621,8 @@ class Core {
         if ($portal_return === 'success') {
             ?>
             <div class="notice notice-success is-dismissible">
-                <p><strong><?php esc_html_e('Billing Updated', 'beepbeep-ai-alt-text-generator'); ?></strong></p>
-                <p><?php esc_html_e('Your billing information has been updated successfully. Changes may take a few moments to reflect.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                <p><strong><?php esc_html_e('Billing Updated', 'opptiai-alt'); ?></strong></p>
+                <p><?php esc_html_e('Your billing information has been updated successfully. Changes may take a few moments to reflect.', 'opptiai-alt'); ?></p>
             </div>
             <?php
         }
@@ -631,7 +636,12 @@ class Core {
         delete_transient('bbai_token_notice');
         $total = number_format_i18n($this->token_notice['total'] ?? 0);
         $limit = number_format_i18n($this->token_notice['limit'] ?? 0);
-        echo '<div class="notice notice-warning is-dismissible"><p>' . esc_html(sprintf(__('BeepBeep AI – Alt Text Generator has used %1$s tokens (threshold %2$s). Consider reviewing usage.', 'beepbeep-ai-alt-text-generator'), $total, $limit)) . '</p></div>';
+        echo '<div class="notice notice-warning is-dismissible"><p>' . esc_html(sprintf(
+            /* translators: 1: tokens used, 2: token threshold */
+            __('BeepBeep AI – Alt Text Generator has used %1$s tokens (threshold %2$s). Consider reviewing usage.', 'opptiai-alt'),
+            $total,
+            $limit
+        )) . '</p></div>';
         $this->token_notice = null;
     }
 
@@ -645,8 +655,12 @@ class Core {
             return;
         }
         $message = $count === 1
-            ? __('1 image queued for background optimisation. The alt text will appear shortly.', 'beepbeep-ai-alt-text-generator')
-            : sprintf(__('Queued %d images for background optimisation. Alt text will be generated shortly.', 'beepbeep-ai-alt-text-generator'), $count);
+            ? __('1 image queued for background optimisation. The alt text will appear shortly.', 'opptiai-alt')
+            : sprintf(
+                /* translators: 1: number of images queued */
+                __('Queued %d images for background optimisation. Alt text will be generated shortly.', 'opptiai-alt'),
+                $count
+            );
         echo '<div class="notice notice-info is-dismissible"><p>' . esc_html($message) . '</p></div>';
     }
 
@@ -689,9 +703,9 @@ class Core {
             <div class="bbai-upgrade-modal__content bbai-api-notice-modal-content">
                 <div class="bbai-upgrade-modal__header">
                     <div class="bbai-upgrade-modal__header-content">
-                        <h2 id="wp-alt-text-api-notice-title"><?php esc_html_e('External Service Notice', 'beepbeep-ai-alt-text-generator'); ?></h2>
+                        <h2 id="wp-alt-text-api-notice-title"><?php esc_html_e('External Service Notice', 'opptiai-alt'); ?></h2>
                     </div>
-                    <button type="button" class="bbai-modal-close" onclick="bbaiCloseApiNotice();" aria-label="<?php esc_attr_e('Close notice', 'beepbeep-ai-alt-text-generator'); ?>">
+                    <button type="button" class="bbai-modal-close" onclick="bbaiCloseApiNotice();" aria-label="<?php esc_attr_e('Close notice', 'opptiai-alt'); ?>">
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                             <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                         </svg>
@@ -700,19 +714,19 @@ class Core {
 
                 <div class="bbai-upgrade-modal__body bbai-api-notice-body" id="bbai-api-notice-desc">
                     <p class="bbai-api-notice-text">
-                        <?php esc_html_e('This plugin connects to an external API service to generate alt text. Image data is transmitted securely to process generation. No personal user data is collected.', 'beepbeep-ai-alt-text-generator'); ?>
+                        <?php esc_html_e('This plugin connects to an external API service to generate alt text. Image data is transmitted securely to process generation. No personal user data is collected.', 'opptiai-alt'); ?>
                     </p>
 
                     <div class="bbai-api-notice-box">
                         <p class="bbai-api-notice-label">
-                            <?php esc_html_e('API Endpoint:', 'beepbeep-ai-alt-text-generator'); ?>
+                            <?php esc_html_e('API Endpoint:', 'opptiai-alt'); ?>
                         </p>
                         <p class="bbai-api-notice-value">
                             <?php echo esc_html($api_url); ?>
                         </p>
 
                         <p class="bbai-api-notice-label">
-                            <?php esc_html_e('Privacy Policy:', 'beepbeep-ai-alt-text-generator'); ?>
+                            <?php esc_html_e('Privacy Policy:', 'opptiai-alt'); ?>
                         </p>
                         <p class="bbai-api-notice-value">
                             <a href="<?php echo esc_url($privacy_url); ?>" target="_blank" rel="noopener" class="bbai-api-notice-link">
@@ -721,7 +735,7 @@ class Core {
                         </p>
 
                         <p class="bbai-api-notice-label">
-                            <?php esc_html_e('Terms of Service:', 'beepbeep-ai-alt-text-generator'); ?>
+                            <?php esc_html_e('Terms of Service:', 'opptiai-alt'); ?>
                         </p>
                         <p class="bbai-api-notice-value">
                             <a href="<?php echo esc_url($terms_url); ?>" target="_blank" rel="noopener" class="bbai-api-notice-link">
@@ -733,7 +747,7 @@ class Core {
 
                 <div class="bbai-upgrade-modal__footer bbai-api-notice-footer">
                     <button type="button" class="button button-primary" onclick="bbaiCloseApiNotice();">
-                        <?php esc_html_e('Got it', 'beepbeep-ai-alt-text-generator'); ?>
+                        <?php esc_html_e('Got it', 'opptiai-alt'); ?>
                     </button>
                 </div>
             </div>
@@ -928,22 +942,31 @@ class Core {
             'dashicons-format-image',
             30
         );
+
+        add_submenu_page(
+            'bbai',
+            __('Getting Started', 'opptiai-alt'),
+            __('Getting Started', 'opptiai-alt'),
+            $cap,
+            'bbai-onboarding',
+            [$this, 'render_bbai_onboarding_step2']
+        );
         
         // Only show menu items if user is registered
         if ($has_registered_user) {
             // Dashboard (only for registered users)
             add_submenu_page(
                 'bbai',
-                __('Dashboard', 'beepbeep-ai-alt-text-generator'),
-                __('Dashboard', 'beepbeep-ai-alt-text-generator'),
+                __('Dashboard', 'opptiai-alt'),
+                __('Dashboard', 'opptiai-alt'),
                 $cap,
                 'bbai',
                 [$this, 'render_settings_page']
             );
             add_submenu_page(
                 'bbai',
-                __('ALT Library', 'beepbeep-ai-alt-text-generator'),
-                __('ALT Library', 'beepbeep-ai-alt-text-generator'),
+                __('ALT Library', 'opptiai-alt'),
+                __('ALT Library', 'opptiai-alt'),
                 $cap,
                 'bbai-library',
                 [$this, 'render_settings_page']
@@ -951,8 +974,8 @@ class Core {
             
             add_submenu_page(
                 'bbai',
-                __('Credit Usage', 'beepbeep-ai-alt-text-generator'),
-                __('Credit Usage', 'beepbeep-ai-alt-text-generator'),
+                __('Credit Usage', 'opptiai-alt'),
+                __('Credit Usage', 'opptiai-alt'),
                 $cap,
                 'bbai-credit-usage',
                 [$this, 'render_settings_page']
@@ -960,8 +983,8 @@ class Core {
             
             add_submenu_page(
                 'bbai',
-                __('Analytics', 'beepbeep-ai-alt-text-generator'),
-                __('Analytics', 'beepbeep-ai-alt-text-generator'),
+                __('Analytics', 'opptiai-alt'),
+                __('Analytics', 'opptiai-alt'),
                 $cap,
                 'bbai-analytics',
                 [$this, 'render_settings_page']
@@ -971,8 +994,8 @@ class Core {
             if ($is_authenticated || $has_license || $has_stored_token || $has_stored_license) {
                 add_submenu_page(
                     'bbai',
-                    __('Settings', 'beepbeep-ai-alt-text-generator'),
-                    __('Settings', 'beepbeep-ai-alt-text-generator'),
+                    __('Settings', 'opptiai-alt'),
+                    __('Settings', 'opptiai-alt'),
                     $cap,
                     'bbai-settings',
                     [$this, 'render_settings_page']
@@ -980,8 +1003,8 @@ class Core {
                 
                 add_submenu_page(
                     'bbai',
-                    __('Debug Logs', 'beepbeep-ai-alt-text-generator'),
-                    __('Debug Logs', 'beepbeep-ai-alt-text-generator'),
+                    __('Debug Logs', 'opptiai-alt'),
+                    __('Debug Logs', 'opptiai-alt'),
                     $cap,
                     'bbai-debug',
                     [$this, 'render_settings_page']
@@ -991,8 +1014,8 @@ class Core {
             // How to (only for registered users)
             add_submenu_page(
                 'bbai',
-                __('How to', 'beepbeep-ai-alt-text-generator'),
-                __('How to', 'beepbeep-ai-alt-text-generator'),
+                __('How to', 'opptiai-alt'),
+                __('How to', 'opptiai-alt'),
                 $cap,
                 'bbai-guide',
                 [$this, 'render_settings_page']
@@ -1012,23 +1035,23 @@ class Core {
 
     public function handle_checkout_redirect() {
         if (!$this->user_can_manage()) {
-            wp_die(esc_html__('Unauthorized access.', 'beepbeep-ai-alt-text-generator'));
+            wp_die(esc_html__('Unauthorized access.', 'opptiai-alt'));
         }
 
         // Verify nonce for CSRF protection
         $nonce = isset($_GET['_wpnonce']) ? sanitize_text_field(wp_unslash($_GET['_wpnonce'])) : '';
         if (!wp_verify_nonce($nonce, 'bbai_checkout_redirect')) {
-            wp_die(esc_html__('Security check failed.', 'beepbeep-ai-alt-text-generator'));
+            wp_die(esc_html__('Security check failed.', 'opptiai-alt'));
         }
 
         if (!$this->api_client->is_authenticated()) {
-            wp_die(esc_html__('Please sign in first to upgrade.', 'beepbeep-ai-alt-text-generator'));
+            wp_die(esc_html__('Please sign in first to upgrade.', 'opptiai-alt'));
         }
 
         $price_id_raw = isset($_GET['price_id']) ? wp_unslash($_GET['price_id']) : '';
         $price_id = is_string($price_id_raw) ? sanitize_text_field($price_id_raw) : '';
         if (empty($price_id)) {
-            wp_die(esc_html__('Invalid checkout request.', 'beepbeep-ai-alt-text-generator'));
+            wp_die(esc_html__('Invalid checkout request.', 'opptiai-alt'));
         }
 
         $success_url = admin_url('admin.php?page=bbai&checkout=success');
@@ -1037,7 +1060,13 @@ class Core {
         $result = $this->api_client->create_checkout_session($price_id, $success_url, $cancel_url);
 
         if (is_wp_error($result)) {
-            wp_die(esc_html(sprintf(__('Checkout error: %s', 'beepbeep-ai-alt-text-generator'), $result->get_error_message())));
+            $error_message = $result->get_error_message();
+            $error_message = is_string($error_message) ? sanitize_text_field($error_message) : '';
+            wp_die(esc_html(sprintf(
+                /* translators: 1: error message */
+                __('Checkout error: %s', 'opptiai-alt'),
+                $error_message
+            )));
         }
 
         if (!empty($result['url'])) {
@@ -1045,7 +1074,55 @@ class Core {
             exit;
         }
 
-        wp_die(esc_html__('Failed to create checkout session.', 'beepbeep-ai-alt-text-generator'));
+        wp_die(esc_html__('Failed to create checkout session.', 'opptiai-alt'));
+    }
+
+    public function maybe_redirect_to_onboarding(): void {
+        if (!is_admin() || !is_user_logged_in()) {
+            return;
+        }
+
+        if (wp_doing_ajax() || wp_doing_cron() || (defined('REST_REQUEST') && REST_REQUEST)) {
+            return;
+        }
+
+        if (!$this->user_can_manage()) {
+            return;
+        }
+
+        $current_page = isset($_GET['page']) ? sanitize_key($_GET['page']) : '';
+        $current_step = isset($_GET['step']) ? absint($_GET['step']) : 0;
+        $is_onboarding_page = ($current_page === 'bbai-onboarding');
+        $is_step3 = ($is_onboarding_page && $current_step === 3);
+
+        if (!class_exists('\BeepBeepAI\AltTextGenerator\Auth_State') || !class_exists('\BeepBeepAI\AltTextGenerator\Onboarding')) {
+            return;
+        }
+
+        $auth = \BeepBeepAI\AltTextGenerator\Auth_State::resolve($this->api_client);
+        if (empty($auth['has_registered_user'])) {
+            return;
+        }
+
+        $completed = \BeepBeepAI\AltTextGenerator\Onboarding::is_completed();
+
+        if ($completed) {
+            // Allow Step 3 to be viewed even if completed (it's the completion screen)
+            if ($is_step3) {
+                return;
+            }
+            // Redirect away from onboarding base page if completed
+            if ($is_onboarding_page) {
+                wp_safe_redirect(admin_url('admin.php?page=bbai'));
+                exit;
+            }
+            return;
+        }
+
+        if (!$is_onboarding_page) {
+            wp_safe_redirect(admin_url('admin.php?page=bbai-onboarding'));
+            exit;
+        }
     }
 
     public function register_settings() {
@@ -1095,6 +1172,297 @@ class Core {
                 return $out;
             }
         ]);
+    }
+
+    public function render_bbai_onboarding_step2() {
+        if (!$this->user_can_manage()) {
+            wp_die(esc_html__('Unauthorized access.', 'opptiai-alt'));
+        }
+
+        // Route to Step 3 if step=3 query param is present
+        $step = isset($_GET['step']) ? absint($_GET['step']) : 2;
+        if ($step === 3) {
+            $this->render_bbai_onboarding_step3();
+            return;
+        }
+
+        $dashboard_url = admin_url('admin.php?page=bbai');
+        $upgrade_url = class_exists('\BeepBeepAI\AltTextGenerator\Usage_Tracker')
+            ? \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_upgrade_url()
+            : $dashboard_url;
+        ?>
+        <div class="wrap bbai-wrap bbai-modern bbai-onboarding">
+            <div class="bbai-header">
+                <div class="bbai-header-content">
+                    <a class="bbai-logo" href="<?php echo esc_url($dashboard_url); ?>">
+                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" class="bbai-logo-icon" aria-hidden="true">
+                            <rect width="40" height="40" rx="10" fill="url(#logo-gradient)"/>
+                            <circle cx="20" cy="20" r="8" fill="white" opacity="0.15"/>
+                            <path d="M20 12L20.8 15.2L24 16L20.8 16.8L20 20L19.2 16.8L16 16L19.2 15.2L20 12Z" fill="white"/>
+                            <path d="M28 22L28.6 24.2L30.8 24.8L28.6 25.4L28 28L27.4 25.4L25.2 24.8L27.4 24.2L28 22Z" fill="white" opacity="0.8"/>
+                            <path d="M12 26L12.4 27.4L13.8 27.8L12.4 28.2L12 30L11.6 28.2L10.2 27.8L11.6 27.4L12 26Z" fill="white" opacity="0.6"/>
+                            <rect x="14" y="18" width="12" height="8" rx="1" stroke="white" stroke-width="1.5" fill="none"/>
+                            <defs>
+                                <linearGradient id="logo-gradient" x1="0" y1="0" x2="40" y2="40">
+                                    <stop stop-color="#14b8a6"/>
+                                    <stop offset="1" stop-color="#10b981"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <div class="bbai-logo-content">
+                            <span class="bbai-logo-text"><?php esc_html_e('BeepBeep AI – Alt Text Generator', 'opptiai-alt'); ?></span>
+                            <span class="bbai-logo-tagline"><?php esc_html_e('WordPress AI Tools', 'opptiai-alt'); ?></span>
+                        </div>
+                    </a>
+                    <nav class="bbai-nav" role="navigation" aria-label="<?php esc_attr_e('Main navigation', 'opptiai-alt'); ?>">
+                        <a class="bbai-nav-link" href="<?php echo esc_url($dashboard_url); ?>">
+                            <?php esc_html_e('Dashboard', 'opptiai-alt'); ?>
+                        </a>
+                        <a class="bbai-nav-link active" href="<?php echo esc_url(admin_url('admin.php?page=bbai-onboarding')); ?>">
+                            <?php esc_html_e('Getting started', 'opptiai-alt'); ?>
+                        </a>
+                    </nav>
+                </div>
+            </div>
+            <div class="bbai-container">
+                <div class="bbai-page-header bbai-mb-6">
+                    <div class="bbai-page-header-content">
+                        <h1 class="bbai-page-title"><?php esc_html_e('Getting started', 'opptiai-alt'); ?></h1>
+                        <p class="bbai-page-subtitle"><?php esc_html_e('Generate SEO-ready, accessible alt text for your media library', 'opptiai-alt'); ?></p>
+                    </div>
+                    <div class="bbai-page-header-actions">
+                        <div class="bbai-onboarding-progress">
+                            <span class="bbai-onboarding-progress-text"><?php esc_html_e('Step 2 of 3', 'opptiai-alt'); ?></span>
+                            <span class="bbai-badge bbai-badge--getting-started"><?php esc_html_e('Optimize your images', 'opptiai-alt'); ?></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bbai-card bbai-card--large bbai-onboarding-hero bbai-mb-6">
+                    <div class="bbai-card-body">
+                        <h2 class="bbai-card-title"><?php esc_html_e('Generate alt text for your images', 'opptiai-alt'); ?></h2>
+                        <p class="bbai-card-subtitle"><?php esc_html_e("We'll scan your media library and generate alt text only for images that are missing it.", 'opptiai-alt'); ?></p>
+                        <div class="bbai-onboarding-divider" aria-hidden="true"></div>
+                        <div class="bbai-btn-group bbai-mt-4">
+                            <button type="button" class="bbai-btn bbai-btn-primary" data-bbai-onboarding-action="start-scan">
+                                <?php esc_html_e('Generate alt text', 'opptiai-alt'); ?>
+                            </button>
+                            <button type="button" class="bbai-btn bbai-btn-secondary" data-bbai-onboarding-action="skip">
+                                <?php esc_html_e('Skip for now', 'opptiai-alt'); ?>
+                            </button>
+                        </div>
+                        <p class="bbai-onboarding-reassurance"><?php esc_html_e('Only images without alt text are processed. Review everything before publishing.', 'opptiai-alt'); ?></p>
+                        <p class="bbai-onboarding-helper"><?php esc_html_e('Initial scan processes up to 500 images. You can adjust this later.', 'opptiai-alt'); ?></p>
+                        <div class="bbai-onboarding-status" role="status" aria-live="polite"></div>
+                    </div>
+                </div>
+
+                <div class="bbai-mb-6">
+                    <h2 class="bbai-section-title"><?php esc_html_e('How it works', 'opptiai-alt'); ?></h2>
+                    <div class="bbai-grid bbai-grid-3 bbai-gap-4">
+                        <div class="bbai-card bbai-card--compact bbai-onboarding-step-card">
+                            <div class="bbai-card-body">
+                                <span class="bbai-onboarding-step-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                                        <circle cx="11" cy="11" r="6" fill="none" stroke="currentColor" stroke-width="2" />
+                                        <path d="M20 20l-4.2-4.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                    </svg>
+                                </span>
+                                <h3 class="bbai-card-title"><?php esc_html_e('Scan your library', 'opptiai-alt'); ?></h3>
+                                <p class="bbai-onboarding-step-text"><?php esc_html_e('Find images missing alt text in your library.', 'opptiai-alt'); ?></p>
+                            </div>
+                        </div>
+                        <div class="bbai-card bbai-card--compact bbai-onboarding-step-card">
+                            <div class="bbai-card-body">
+                                <span class="bbai-onboarding-step-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                                        <path d="M12 3l1.6 3.6L17 8l-3.4 1.4L12 13l-1.6-3.6L7 8l3.4-1.4L12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+                                    </svg>
+                                </span>
+                                <h3 class="bbai-card-title"><?php esc_html_e('Generate alt text', 'opptiai-alt'); ?></h3>
+                                <p class="bbai-onboarding-step-text"><?php esc_html_e('Generate clear, SEO-ready alt text.', 'opptiai-alt'); ?></p>
+                            </div>
+                        </div>
+                        <div class="bbai-card bbai-card--compact bbai-onboarding-step-card">
+                            <div class="bbai-card-body">
+                                <span class="bbai-onboarding-step-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                                        <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2" />
+                                        <path d="M8.5 12.5l2.5 2.5 4.5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                </span>
+                                <h3 class="bbai-card-title"><?php esc_html_e('Review and publish', 'opptiai-alt'); ?></h3>
+                                <p class="bbai-onboarding-step-text"><?php esc_html_e('Review and publish when you are ready.', 'opptiai-alt'); ?></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bbai-card bbai-card--compact bbai-onboarding-upsell">
+                    <div class="bbai-card-body bbai-onboarding-upsell-body">
+                        <div>
+                            <h3 class="bbai-card-title"><?php esc_html_e('Want faster processing?', 'opptiai-alt'); ?></h3>
+                            <p class="bbai-card-subtitle"><?php esc_html_e('Upgrade to Growth for priority queue and bulk optimisation across your full media library.', 'opptiai-alt'); ?></p>
+                        </div>
+                        <button type="button" class="bbai-btn bbai-btn-outline-primary" data-action="show-upgrade-modal" data-upgrade-trigger="true">
+                            <?php esc_html_e('View plans & pricing', 'opptiai-alt'); ?>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+
+    /**
+     * Render Onboarding Step 3 - Review ready screen
+     * Shown after scan started or skip, marks onboarding completed on view.
+     */
+    public function render_bbai_onboarding_step3() {
+        if (!$this->user_can_manage()) {
+            wp_die(esc_html__('Unauthorized access.', 'opptiai-alt'));
+        }
+
+        // Note: Onboarding completion is now triggered via AJAX when queue finishes
+        // (pending + processing === 0). This prevents premature completion while work is running.
+        // The JS calls bbai_complete_onboarding when stats show queue is empty.
+
+        $dashboard_url = admin_url('admin.php?page=bbai');
+        // TODO: Update this if ALT Library slug changes
+        $library_url = admin_url('admin.php?page=bbai-library');
+        $is_authenticated = bbai_is_authenticated();
+        ?>
+        <div class="wrap bbai-wrap bbai-modern bbai-onboarding bbai-onboarding-step3">
+            <div class="bbai-header">
+                <div class="bbai-header-content">
+                    <a class="bbai-logo" href="<?php echo esc_url($dashboard_url); ?>">
+                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" class="bbai-logo-icon" aria-hidden="true">
+                            <rect width="40" height="40" rx="10" fill="url(#logo-gradient-s3)"/>
+                            <circle cx="20" cy="20" r="8" fill="white" opacity="0.15"/>
+                            <path d="M20 12L20.8 15.2L24 16L20.8 16.8L20 20L19.2 16.8L16 16L19.2 15.2L20 12Z" fill="white"/>
+                            <path d="M28 22L28.6 24.2L30.8 24.8L28.6 25.4L28 28L27.4 25.4L25.2 24.8L27.4 24.2L28 22Z" fill="white" opacity="0.8"/>
+                            <path d="M12 26L12.4 27.4L13.8 27.8L12.4 28.2L12 30L11.6 28.2L10.2 27.8L11.6 27.4L12 26Z" fill="white" opacity="0.6"/>
+                            <rect x="14" y="18" width="12" height="8" rx="1" stroke="white" stroke-width="1.5" fill="none"/>
+                            <defs>
+                                <linearGradient id="logo-gradient-s3" x1="0" y1="0" x2="40" y2="40">
+                                    <stop stop-color="#14b8a6"/>
+                                    <stop offset="1" stop-color="#10b981"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <div class="bbai-logo-content">
+                            <span class="bbai-logo-text"><?php esc_html_e('BeepBeep AI – Alt Text Generator', 'opptiai-alt'); ?></span>
+                            <span class="bbai-logo-tagline"><?php esc_html_e('WordPress AI Tools', 'opptiai-alt'); ?></span>
+                        </div>
+                    </a>
+                    <nav class="bbai-nav" role="navigation" aria-label="<?php esc_attr_e('Main navigation', 'opptiai-alt'); ?>">
+                        <a class="bbai-nav-link" href="<?php echo esc_url($dashboard_url); ?>">
+                            <?php esc_html_e('Dashboard', 'opptiai-alt'); ?>
+                        </a>
+                        <a class="bbai-nav-link active" href="<?php echo esc_url(admin_url('admin.php?page=bbai-onboarding')); ?>">
+                            <?php esc_html_e('Getting started', 'opptiai-alt'); ?>
+                        </a>
+                    </nav>
+                </div>
+            </div>
+            <div class="bbai-container">
+                <div class="bbai-page-header bbai-mb-6">
+                    <div class="bbai-page-header-content">
+                        <h1 class="bbai-page-title"><?php esc_html_e("You're ready to review", 'opptiai-alt'); ?></h1>
+                        <p class="bbai-page-subtitle"><?php esc_html_e('Alt text is generating in the background. You can start reviewing immediately.', 'opptiai-alt'); ?></p>
+                    </div>
+                    <div class="bbai-page-header-actions">
+                        <div class="bbai-onboarding-progress">
+                            <span class="bbai-onboarding-progress-text"><?php esc_html_e('Step 3 of 3', 'opptiai-alt'); ?></span>
+                            <span class="bbai-badge bbai-badge--getting-started"><?php esc_html_e('Setup complete', 'opptiai-alt'); ?></span>
+                        </div>
+                    </div>
+                </div>
+
+                <?php if (!$is_authenticated) : ?>
+                <!-- Unauthenticated state: Show sign-in CTA -->
+                <div class="bbai-card bbai-card--large bbai-onboarding-hero bbai-mb-6">
+                    <div class="bbai-card-body">
+                        <h2 class="bbai-card-title"><?php esc_html_e('Sign in to start generating', 'opptiai-alt'); ?></h2>
+                        <p class="bbai-card-subtitle"><?php esc_html_e('Sign in to start generating and reviewing alt text.', 'opptiai-alt'); ?></p>
+                        <div class="bbai-onboarding-divider" aria-hidden="true"></div>
+                        <div class="bbai-btn-group bbai-mt-4">
+                            <button type="button" class="bbai-btn bbai-btn-primary" data-action="show-auth-modal" data-auth-tab="login">
+                                <?php esc_html_e('Sign in', 'opptiai-alt'); ?>
+                            </button>
+                            <button type="button" class="bbai-btn bbai-btn-outline-primary" data-action="show-upgrade-modal" data-upgrade-trigger="true">
+                                <?php esc_html_e('View plans & pricing', 'opptiai-alt'); ?>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <?php else : ?>
+                <!-- Authenticated state: Show queue stats and CTAs -->
+                <div class="bbai-card bbai-card--large bbai-onboarding-hero bbai-mb-6">
+                    <div class="bbai-card-body">
+                        <h2 class="bbai-card-title"><?php esc_html_e('Review your first results', 'opptiai-alt'); ?></h2>
+                        <p class="bbai-card-subtitle"><?php esc_html_e('Your images are being processed. Check the stats below and start reviewing when ready.', 'opptiai-alt'); ?></p>
+                        <div class="bbai-onboarding-divider" aria-hidden="true"></div>
+
+                        <!-- KPI Stats Row -->
+                        <div class="bbai-onboarding-kpi-row bbai-mt-4" data-bbai-step3-stats>
+                            <div class="bbai-onboarding-kpi">
+                                <span class="bbai-onboarding-kpi-label"><?php esc_html_e('In queue', 'opptiai-alt'); ?></span>
+                                <span class="bbai-onboarding-kpi-value" data-stat="queued">
+                                    <span class="bbai-onboarding-kpi-loading">&hellip;</span>
+                                </span>
+                            </div>
+                            <div class="bbai-onboarding-kpi">
+                                <span class="bbai-onboarding-kpi-label"><?php esc_html_e('Processed', 'opptiai-alt'); ?></span>
+                                <span class="bbai-onboarding-kpi-value" data-stat="processed">
+                                    <span class="bbai-onboarding-kpi-loading">&hellip;</span>
+                                </span>
+                            </div>
+                            <div class="bbai-onboarding-kpi bbai-onboarding-kpi--errors" data-stat-errors-wrapper style="display: none;">
+                                <span class="bbai-onboarding-kpi-label"><?php esc_html_e('Errors', 'opptiai-alt'); ?></span>
+                                <span class="bbai-onboarding-kpi-value" data-stat="errors">0</span>
+                            </div>
+                        </div>
+
+                        <div class="bbai-btn-group bbai-mt-4">
+                            <a href="<?php echo esc_url($library_url); ?>" class="bbai-btn bbai-btn-primary">
+                                <?php esc_html_e('Open ALT Library', 'opptiai-alt'); ?>
+                            </a>
+                            <a href="<?php echo esc_url($dashboard_url); ?>" class="bbai-btn bbai-btn-secondary">
+                                <?php esc_html_e('Go to Dashboard', 'opptiai-alt'); ?>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <!-- What happens next card -->
+                <div class="bbai-card bbai-card--compact bbai-mb-6">
+                    <div class="bbai-card-body">
+                        <h3 class="bbai-card-title"><?php esc_html_e('What happens next', 'opptiai-alt'); ?></h3>
+                        <ul class="bbai-onboarding-next-steps">
+                            <li><?php esc_html_e('We generate drafts for images missing alt text.', 'opptiai-alt'); ?></li>
+                            <li><?php esc_html_e('You review and edit anything before publishing.', 'opptiai-alt'); ?></li>
+                            <li><?php esc_html_e('You can re-run scans anytime from the Dashboard.', 'opptiai-alt'); ?></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Upsell banner -->
+                <div class="bbai-card bbai-card--compact bbai-onboarding-upsell">
+                    <div class="bbai-card-body bbai-onboarding-upsell-body">
+                        <div>
+                            <h3 class="bbai-card-title"><?php esc_html_e('Want faster processing?', 'opptiai-alt'); ?></h3>
+                            <p class="bbai-card-subtitle"><?php esc_html_e('Upgrade to Growth for priority queue and bulk optimisation across your full media library.', 'opptiai-alt'); ?></p>
+                        </div>
+                        <button type="button" class="bbai-btn bbai-btn-outline-primary" data-action="show-upgrade-modal" data-upgrade-trigger="true">
+                            <?php esc_html_e('View plans & pricing', 'opptiai-alt'); ?>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php
     }
 
     public function render_settings_page() {
@@ -1192,29 +1560,29 @@ class Core {
             // Build tabs array for registered users
             // Core tabs always available
             $tabs = [
-                'dashboard'    => __('Dashboard', 'beepbeep-ai-alt-text-generator'),
-                'library'      => __('ALT Library', 'beepbeep-ai-alt-text-generator'),
-                'analytics'    => __('Analytics', 'beepbeep-ai-alt-text-generator'),
-                'credit-usage' => __('Credit Usage', 'beepbeep-ai-alt-text-generator'),
-                'guide'        => __('How to', 'beepbeep-ai-alt-text-generator'),
+                'dashboard'    => __('Dashboard', 'opptiai-alt'),
+                'library'      => __('ALT Library', 'opptiai-alt'),
+                'analytics'    => __('Analytics', 'opptiai-alt'),
+                'credit-usage' => __('Credit Usage', 'opptiai-alt'),
+                'guide'        => __('How to', 'opptiai-alt'),
             ];
             
             // Additional tabs for authenticated/licensed users
             if ($is_authenticated || $has_license) {
-                $tabs['settings'] = __('Settings', 'beepbeep-ai-alt-text-generator');
-                $tabs['debug'] = __('Debug Logs', 'beepbeep-ai-alt-text-generator');
+                $tabs['settings'] = __('Settings', 'opptiai-alt');
+                $tabs['debug'] = __('Debug Logs', 'opptiai-alt');
             }
             
             // Admin tab for Pro/Agency plans (replaces Debug Logs and Settings)
             if ($is_pro) {
                 // Remove individual debug/settings tabs and add admin tab
                 unset($tabs['debug'], $tabs['settings']);
-                $tabs['admin'] = __('Admin', 'beepbeep-ai-alt-text-generator');
+                $tabs['admin'] = __('Admin', 'opptiai-alt');
             }
             
             // Agency Overview tab for Agency plans only
             if ($is_agency) {
-                $tabs['agency-overview'] = __('Agency Overview', 'beepbeep-ai-alt-text-generator');
+                $tabs['agency-overview'] = __('Agency Overview', 'opptiai-alt');
             }
             
             // Map page slugs to tab slugs (for determining current tab from URL)
@@ -1271,11 +1639,11 @@ class Core {
                             </defs>
                         </svg>
                         <div class="bbai-logo-content">
-                            <span class="bbai-logo-text"><?php esc_html_e('BeepBeep AI – Alt Text Generator', 'beepbeep-ai-alt-text-generator'); ?></span>
-                            <span class="bbai-logo-tagline"><?php esc_html_e('WordPress AI Tools', 'beepbeep-ai-alt-text-generator'); ?></span>
+                            <span class="bbai-logo-text"><?php esc_html_e('BeepBeep AI – Alt Text Generator', 'opptiai-alt'); ?></span>
+                            <span class="bbai-logo-tagline"><?php esc_html_e('WordPress AI Tools', 'opptiai-alt'); ?></span>
                         </div>
                     </div>
-                    <nav class="bbai-nav" role="navigation" aria-label="<?php esc_attr_e('Main navigation', 'beepbeep-ai-alt-text-generator'); ?>">
+                    <nav class="bbai-nav" role="navigation" aria-label="<?php esc_attr_e('Main navigation', 'opptiai-alt'); ?>">
                         <?php
                         // Ensure $tabs is defined (empty array is valid for non-registered users)
                         if (!isset($tabs) || !is_array($tabs)) {
@@ -1338,25 +1706,25 @@ class Core {
                             if ($has_license && !$is_authenticated) {
                                 $license_data = $this->api_client->get_license_data();
                                 $org_name = isset($license_data['organization']['name']) ? (string)$license_data['organization']['name'] : '';
-                                $connected_email = $org_name ?: __('License Active', 'beepbeep-ai-alt-text-generator');
+                                $connected_email = $org_name ?: __('License Active', 'opptiai-alt');
                             }
                         ?>
                             <!-- Compact Account Bar in Header -->
                             <div class="bbai-header-account-bar">
-                                <span class="bbai-header-account-email"><?php echo esc_html(is_string($connected_email) ? $connected_email : __('Connected', 'beepbeep-ai-alt-text-generator')); ?></span>
+                                <span class="bbai-header-account-email"><?php echo esc_html(is_string($connected_email) ? $connected_email : __('Connected', 'opptiai-alt')); ?></span>
                                 <span class="bbai-header-plan-badge"><?php echo esc_html(is_string($plan_label) ? $plan_label : ucfirst($plan_slug ?? 'free')); ?></span>
                                 <?php if ($plan_slug === 'free' && !$has_license) : ?>
                                     <button type="button" class="bbai-header-upgrade-btn" data-action="show-upgrade-modal">
-                                        <?php esc_html_e('Upgrade to Growth — 1,000 Generations Monthly', 'beepbeep-ai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Upgrade to Growth — 1,000 Generations Monthly', 'opptiai-alt'); ?>
                                     </button>
                                 <?php elseif (!empty($billing_portal) && $is_authenticated) : ?>
                                     <button type="button" class="bbai-header-manage-btn" data-action="open-billing-portal">
-                                        <?php esc_html_e('Manage', 'beepbeep-ai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Manage', 'opptiai-alt'); ?>
                                     </button>
                                 <?php endif; ?>
                                 <?php if ($is_authenticated || $has_license) : ?>
                                 <button type="button" class="bbai-header-logout-btn" data-action="logout">
-                                    <?php esc_html_e('Logout', 'beepbeep-ai-alt-text-generator'); ?>
+                                    <?php esc_html_e('Logout', 'opptiai-alt'); ?>
                                 </button>
                                 <?php endif; ?>
                             </div>
@@ -1367,7 +1735,7 @@ class Core {
                                     <path d="M5 11L2 8L5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                                     <path d="M2 8H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                                 </svg>
-                                <span><?php esc_html_e('Login', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                <span><?php esc_html_e('Login', 'opptiai-alt'); ?></span>
                             </button>
                         <?php endif; ?>
                 </div>
@@ -1383,7 +1751,7 @@ class Core {
     if (file_exists($dashboard_partial)) {
         include $dashboard_partial;
     } else {
-        esc_html_e('Dashboard content unavailable.', 'beepbeep-ai-alt-text-generator');
+        esc_html_e('Dashboard content unavailable.', 'opptiai-alt');
     }
     ?>
 
@@ -1393,7 +1761,7 @@ class Core {
     if (file_exists($library_partial)) {
         include $library_partial;
     } else {
-        esc_html_e('Library content unavailable.', 'beepbeep-ai-alt-text-generator');
+        esc_html_e('Library content unavailable.', 'opptiai-alt');
     }
     ?>
 
@@ -1403,7 +1771,7 @@ class Core {
     if (file_exists($debug_partial)) {
         include $debug_partial;
     } else {
-        esc_html_e('Debug content unavailable.', 'beepbeep-ai-alt-text-generator');
+        esc_html_e('Debug content unavailable.', 'opptiai-alt');
     }
     ?>
 <?php elseif ($tab === 'guide' || $bbai_page_slug === 'bbai-guide') : ?>
@@ -1412,7 +1780,7 @@ class Core {
             if (file_exists($guide_partial)) {
                 include $guide_partial;
             } else {
-                esc_html_e('Guide content unavailable.', 'beepbeep-ai-alt-text-generator');
+                esc_html_e('Guide content unavailable.', 'opptiai-alt');
             }
             ?>
 
@@ -1422,7 +1790,7 @@ class Core {
     if (file_exists($credit_partial)) {
         include $credit_partial;
     } else {
-        esc_html_e('Credit usage content unavailable.', 'beepbeep-ai-alt-text-generator');
+        esc_html_e('Credit usage content unavailable.', 'opptiai-alt');
     }
     ?>
 <?php elseif ($tab === 'agency-overview' && $is_agency) : ?>
@@ -1431,7 +1799,7 @@ class Core {
     if (file_exists($agency_overview_partial)) {
         include $agency_overview_partial;
     } else {
-        esc_html_e('Agency overview content unavailable.', 'beepbeep-ai-alt-text-generator');
+        esc_html_e('Agency overview content unavailable.', 'opptiai-alt');
     }
     ?>
 <?php elseif ($tab === 'analytics' && ($is_authenticated || $has_license)) : ?>
@@ -1444,7 +1812,7 @@ class Core {
     if (file_exists($analytics_partial)) {
         include $analytics_partial;
     } else {
-        esc_html_e('Analytics content unavailable.', 'beepbeep-ai-alt-text-generator');
+        esc_html_e('Analytics content unavailable.', 'opptiai-alt');
     }
     ?>
 
@@ -1454,7 +1822,7 @@ class Core {
             if (file_exists($settings_partial)) {
                 include $settings_partial;
             } else {
-                esc_html_e('Settings content unavailable.', 'beepbeep-ai-alt-text-generator');
+                esc_html_e('Settings content unavailable.', 'opptiai-alt');
             }
             ?>
             
@@ -1464,7 +1832,7 @@ class Core {
             if (file_exists($debug_partial)) {
                 include $debug_partial;
             } else {
-                esc_html_e('Debug logs content unavailable.', 'beepbeep-ai-alt-text-generator');
+                esc_html_e('Debug logs content unavailable.', 'opptiai-alt');
             }
             ?>
 
@@ -1489,14 +1857,14 @@ class Core {
                                     <path d="M12 1L23 12L12 23L1 12L12 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                     <circle cx="12" cy="12" r="3" fill="currentColor"/>
                                 </svg>
-                                <?php esc_html_e('Admin Access', 'beepbeep-ai-alt-text-generator'); ?>
+                                <?php esc_html_e('Admin Access', 'opptiai-alt'); ?>
                             </h2>
                             <p class="bbai-admin-login-subtitle">
                                 <?php 
                                 if ($is_agency_for_admin) {
-                                    esc_html_e('Enter your agency credentials to access Debug Logs and Settings.', 'beepbeep-ai-alt-text-generator');
+                                    esc_html_e('Enter your agency credentials to access Debug Logs and Settings.', 'opptiai-alt');
                                 } else {
-                                    esc_html_e('Enter your pro credentials to access Debug Logs and Settings.', 'beepbeep-ai-alt-text-generator');
+                                    esc_html_e('Enter your pro credentials to access Debug Logs and Settings.', 'opptiai-alt');
                                 }
                                 ?>
                             </p>
@@ -1507,30 +1875,30 @@ class Core {
                             
                             <div class="bbai-admin-login-field">
                                 <label for="admin-login-email" class="bbai-admin-login-label">
-                                    <?php esc_html_e('Email', 'beepbeep-ai-alt-text-generator'); ?>
+                                    <?php esc_html_e('Email', 'opptiai-alt'); ?>
                                 </label>
                                 <input type="email" 
                                        id="admin-login-email" 
                                        name="email" 
                                        class="bbai-admin-login-input" 
-                                       placeholder="<?php esc_attr_e('your-email@example.com', 'beepbeep-ai-alt-text-generator'); ?>"
+                                       placeholder="<?php esc_attr_e('your-email@example.com', 'opptiai-alt'); ?>"
                                        required>
                             </div>
                             
                             <div class="bbai-admin-login-field">
                                 <label for="admin-login-password" class="bbai-admin-login-label">
-                                    <?php esc_html_e('Password', 'beepbeep-ai-alt-text-generator'); ?>
+                                    <?php esc_html_e('Password', 'opptiai-alt'); ?>
                                 </label>
                                 <input type="password" 
                                        id="admin-login-password" 
                                        name="password" 
                                        class="bbai-admin-login-input" 
-                                       placeholder="<?php esc_attr_e('Enter your password', 'beepbeep-ai-alt-text-generator'); ?>"
+                                       placeholder="<?php esc_attr_e('Enter your password', 'opptiai-alt'); ?>"
                                        required>
                             </div>
                             
                             <button type="submit" id="admin-login-submit-btn" class="bbai-admin-login-btn">
-                                <span class="bbai-btn__text"><?php esc_html_e('Log In', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                <span class="bbai-btn__text"><?php esc_html_e('Log In', 'opptiai-alt'); ?></span>
                                 <span class="bbai-btn__spinner" style="display: none;">
                                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                         <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="2" stroke-dasharray="43.98" stroke-dashoffset="10.99" fill="none" opacity="0.5">
@@ -1553,10 +1921,10 @@ class Core {
                                     <path d="M10 1L19 10L10 19L1 10L10 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                     <circle cx="10" cy="10" r="2.5" fill="currentColor"/>
                                 </svg>
-                                <?php esc_html_e('Admin Panel', 'beepbeep-ai-alt-text-generator'); ?>
+                                <?php esc_html_e('Admin Panel', 'opptiai-alt'); ?>
                             </h2>
                             <p class="bbai-admin-header-subtitle">
-                                <?php esc_html_e('Debug Logs and Settings', 'beepbeep-ai-alt-text-generator'); ?>
+                                <?php esc_html_e('Debug Logs and Settings', 'opptiai-alt'); ?>
                             </p>
                         </div>
                         <button type="button" class="bbai-admin-logout-btn" id="bbai-admin-logout-btn">
@@ -1565,7 +1933,7 @@ class Core {
                                 <path d="M10 11L13 8L10 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                                 <path d="M13 8H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                             </svg>
-                            <?php esc_html_e('Log Out', 'beepbeep-ai-alt-text-generator'); ?>
+                            <?php esc_html_e('Log Out', 'opptiai-alt'); ?>
                         </button>
                     </div>
 
@@ -1576,28 +1944,28 @@ class Core {
                                 <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                 <circle cx="8" cy="8" r="2" fill="currentColor"/>
                             </svg>
-                            <?php esc_html_e('Debug Logs', 'beepbeep-ai-alt-text-generator'); ?>
+                            <?php esc_html_e('Debug Logs', 'opptiai-alt'); ?>
                         </button>
                         <button type="button" class="bbai-admin-tab" data-admin-tab="settings">
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="margin-right: 8px;">
                                 <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                 <path d="M8 4V8L10 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                             </svg>
-                            <?php esc_html_e('Settings', 'beepbeep-ai-alt-text-generator'); ?>
+                            <?php esc_html_e('Settings', 'opptiai-alt'); ?>
                         </button>
                     </div>
 
                     <!-- Debug Logs Section -->
                     <div class="bbai-admin-section bbai-admin-tab-content" data-admin-tab-content="debug">
                         <div class="bbai-admin-section-header">
-                            <h3 class="bbai-admin-section-title"><?php esc_html_e('Debug Logs', 'beepbeep-ai-alt-text-generator'); ?></h3>
+                            <h3 class="bbai-admin-section-title"><?php esc_html_e('Debug Logs', 'opptiai-alt'); ?></h3>
                         </div>
                         <?php
                         $debug_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/debug-tab.php';
                         if (file_exists($debug_partial)) {
                             include $debug_partial;
                         } else {
-                            esc_html_e('Debug content unavailable.', 'beepbeep-ai-alt-text-generator');
+                            esc_html_e('Debug content unavailable.', 'opptiai-alt');
                         }
                         ?>
                     </div>
@@ -1605,14 +1973,14 @@ class Core {
                     <!-- Settings Section -->
                     <div class="bbai-admin-section bbai-admin-tab-content" data-admin-tab-content="settings" style="display: none;">
                         <div class="bbai-admin-section-header">
-                            <h3 class="bbai-admin-section-title"><?php esc_html_e('Settings', 'beepbeep-ai-alt-text-generator'); ?></h3>
+                            <h3 class="bbai-admin-section-title"><?php esc_html_e('Settings', 'opptiai-alt'); ?></h3>
                         </div>
                         <?php
                         $settings_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/settings-tab.php';
                         if (file_exists($settings_partial)) {
                             include $settings_partial;
                         } else {
-                            esc_html_e('Settings content unavailable.', 'beepbeep-ai-alt-text-generator');
+                            esc_html_e('Settings content unavailable.', 'opptiai-alt');
                         }
                         ?>
                     </div>
@@ -1621,32 +1989,48 @@ class Core {
             
             <!-- Footer -->
             <div class="bbai-footer">
-                <?php esc_html_e('BeepBeep AI • WordPress AI Tools', 'beepbeep-ai-alt-text-generator'); ?> — <a href="<?php echo esc_url('https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/'); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html__('WordPress.org Plugin', 'beepbeep-ai-alt-text-generator'); ?></a>
+                <?php esc_html_e('BeepBeep AI • WordPress AI Tools', 'opptiai-alt'); ?> — <a href="<?php echo esc_url('https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/'); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html__('WordPress.org Plugin', 'opptiai-alt'); ?></a>
             <?php else : ?>
                 <!-- Fallback: No tab matched -->
                 <div class="bbai-container bbai-unauth-container">
-                    <h2><?php esc_html_e('Tab not found', 'beepbeep-ai-alt-text-generator'); ?></h2>
+                    <h2><?php esc_html_e('Tab not found', 'opptiai-alt'); ?></h2>
                     <p><?php
                     printf(
-                        esc_html__('The requested tab "%s" could not be loaded. Available tabs: %s', 'beepbeep-ai-alt-text-generator'),
+                        /* translators: 1: requested tab, 2: available tabs list */
+                        esc_html__('The requested tab "%1$s" could not be loaded. Available tabs: %2$s', 'opptiai-alt'),
                         esc_html($tab),
                         esc_html(implode(', ', array_keys($tabs ?? [])))
                     );
                     ?></p>
-                    <p><strong><?php esc_html_e('Debug info:', 'beepbeep-ai-alt-text-generator'); ?></strong></p>
+                    <p><strong><?php esc_html_e('Debug info:', 'opptiai-alt'); ?></strong></p>
                     <ul class="bbai-unauth-list">
-                        <li><?php printf(esc_html__('Tab: %s', 'beepbeep-ai-alt-text-generator'), esc_html($tab)); ?></li>
-                        <li><?php printf(esc_html__('Is Authenticated: %s', 'beepbeep-ai-alt-text-generator'), $is_authenticated ? 'Yes' : 'No'); ?></li>
-                        <li><?php printf(esc_html__('Has License: %s', 'beepbeep-ai-alt-text-generator'), $has_license ? 'Yes' : 'No'); ?></li>
-                        <li><?php printf(esc_html__('Has Stored Token: %s', 'beepbeep-ai-alt-text-generator'), $has_stored_token ? 'Yes' : 'No'); ?></li>
-                        <li><?php printf(esc_html__('Has Stored License: %s', 'beepbeep-ai-alt-text-generator'), $has_stored_license ? 'Yes' : 'No'); ?></li>
+                        <li><?php
+                        /* translators: 1: tab identifier */
+                        printf(esc_html__('Tab: %s', 'opptiai-alt'), esc_html($tab));
+                        ?></li>
+                        <li><?php
+                        /* translators: 1: yes/no value */
+                        printf(esc_html__('Is Authenticated: %s', 'opptiai-alt'), esc_html($is_authenticated ? 'Yes' : 'No'));
+                        ?></li>
+                        <li><?php
+                        /* translators: 1: yes/no value */
+                        printf(esc_html__('Has License: %s', 'opptiai-alt'), esc_html($has_license ? 'Yes' : 'No'));
+                        ?></li>
+                        <li><?php
+                        /* translators: 1: yes/no value */
+                        printf(esc_html__('Has Stored Token: %s', 'opptiai-alt'), esc_html($has_stored_token ? 'Yes' : 'No'));
+                        ?></li>
+                        <li><?php
+                        /* translators: 1: yes/no value */
+                        printf(esc_html__('Has Stored License: %s', 'opptiai-alt'), esc_html($has_stored_license ? 'Yes' : 'No'));
+                        ?></li>
                     </ul>
                 </div>
             </div><!-- .bbai-container -->
 
             <!-- Footer -->
             <div class="bbai-footer">
-                <?php esc_html_e('BeepBeep AI • WordPress AI Tools', 'beepbeep-ai-alt-text-generator'); ?> — <a href="<?php echo esc_url('https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/'); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html__('WordPress.org Plugin', 'beepbeep-ai-alt-text-generator'); ?></a>
+                <?php esc_html_e('BeepBeep AI • WordPress AI Tools', 'opptiai-alt'); ?> — <a href="<?php echo esc_url('https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/'); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html__('WordPress.org Plugin', 'opptiai-alt'); ?></a>
             </div>
         </div>
         
@@ -1997,14 +2381,14 @@ class Core {
         if ($alt === ''){
             return [
                 'score' => 0,
-                'grade' => __('Missing', 'beepbeep-ai-alt-text-generator'),
+                'grade' => __('Missing', 'opptiai-alt'),
                 'status' => 'critical',
-                'issues' => [__('ALT text is missing.', 'beepbeep-ai-alt-text-generator')],
+                'issues' => [__('ALT text is missing.', 'opptiai-alt')],
                 'heuristic' => [
                     'score' => 0,
-                    'grade' => __('Missing', 'beepbeep-ai-alt-text-generator'),
+                    'grade' => __('Missing', 'opptiai-alt'),
                     'status' => 'critical',
-                    'issues' => [__('ALT text is missing.', 'beepbeep-ai-alt-text-generator')],
+                    'issues' => [__('ALT text is missing.', 'opptiai-alt')],
                 ],
                 'review' => null,
             ];
@@ -2018,14 +2402,14 @@ class Core {
         if ($normalized === '' || preg_match($placeholder_pattern, $normalized)){
             return [
                 'score' => 0,
-                'grade' => __('Critical', 'beepbeep-ai-alt-text-generator'),
+                'grade' => __('Critical', 'opptiai-alt'),
                 'status' => 'critical',
-                'issues' => [__('ALT text looks like placeholder content and must be rewritten.', 'beepbeep-ai-alt-text-generator')],
+                'issues' => [__('ALT text looks like placeholder content and must be rewritten.', 'opptiai-alt')],
                 'heuristic' => [
                     'score' => 0,
-                    'grade' => __('Critical', 'beepbeep-ai-alt-text-generator'),
+                    'grade' => __('Critical', 'opptiai-alt'),
                     'status'=> 'critical',
-                    'issues'=> [__('ALT text looks like placeholder content and must be rewritten.', 'beepbeep-ai-alt-text-generator')],
+                    'issues'=> [__('ALT text looks like placeholder content and must be rewritten.', 'opptiai-alt')],
                 ],
                 'review' => null,
             ];
@@ -2034,40 +2418,40 @@ class Core {
         $length = function_exists('mb_strlen') ? mb_strlen($alt) : strlen($alt);
         if ($length < 45){
             $score -= 35;
-            $issues[] = __('Too short – add a richer description (45+ characters).', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('Too short – add a richer description (45+ characters).', 'opptiai-alt');
         } elseif ($length > 160){
             $score -= 15;
-            $issues[] = __('Very long – trim to keep the description concise (under 160 characters).', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('Very long – trim to keep the description concise (under 160 characters).', 'opptiai-alt');
         }
 
         if (preg_match('/\b(image|picture|photo|screenshot)\b/i', $alt)){
             $score -= 10;
-            $issues[] = __('Contains generic filler words like “image” or “photo”.', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('Contains generic filler words like “image” or “photo”.', 'opptiai-alt');
         }
 
         if (preg_match('/\b(test|testing|sample|example|dummy|placeholder|lorem|alt text)\b/i', $alt)){
             $score = min($score - 80, 5);
-            $issues[] = __('Contains placeholder wording such as “test” or “sample”. Replace with a real description.', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('Contains placeholder wording such as “test” or “sample”. Replace with a real description.', 'opptiai-alt');
         }
 
         $word_count = str_word_count($alt, 0, '0123456789');
         if ($word_count < 4){
             $score -= 70;
             $score = min($score, 5);
-            $issues[] = __('ALT text is extremely brief – add meaningful descriptive words.', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('ALT text is extremely brief – add meaningful descriptive words.', 'opptiai-alt');
         } elseif ($word_count < 6){
             $score -= 50;
             $score = min($score, 20);
-            $issues[] = __('ALT text is too short to convey the subject in detail.', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('ALT text is too short to convey the subject in detail.', 'opptiai-alt');
         } elseif ($word_count < 8){
             $score -= 35;
             $score = min($score, 40);
-            $issues[] = __('ALT text could use a few more descriptive words.', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('ALT text could use a few more descriptive words.', 'opptiai-alt');
         }
 
         if ($score > 40 && $length < 30){
             $score = min($score, 40);
-            $issues[] = __('Expand the description with one or two concrete details.', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('Expand the description with one or two concrete details.', 'opptiai-alt');
         }
 
         $normalize = static function($value){
@@ -2082,7 +2466,7 @@ class Core {
             $normalized_title = $normalize($title);
             if ($normalized_title !== '' && $normalized_alt === $normalized_title){
                 $score -= 12;
-                $issues[] = __('Matches the attachment title – add more unique detail.', 'beepbeep-ai-alt-text-generator');
+                $issues[] = __('Matches the attachment title – add more unique detail.', 'opptiai-alt');
             }
         }
 
@@ -2092,13 +2476,13 @@ class Core {
             $normalized_base = $normalize($base);
             if ($normalized_base !== '' && $normalized_alt === $normalized_base){
                 $score -= 20;
-                $issues[] = __('Matches the file name – rewrite it to describe the image.', 'beepbeep-ai-alt-text-generator');
+                $issues[] = __('Matches the file name – rewrite it to describe the image.', 'opptiai-alt');
             }
         }
 
         if (!preg_match('/[a-z]{4,}/i', $alt)){
             $score -= 15;
-            $issues[] = __('Lacks descriptive language – include meaningful nouns or adjectives.', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('Lacks descriptive language – include meaningful nouns or adjectives.', 'opptiai-alt');
         }
 
         if (!preg_match('/\b[a-z]/i', $alt)){
@@ -2111,9 +2495,9 @@ class Core {
         $grade  = $this->grade_from_status($status);
 
         if ($status === 'review' && empty($issues)){
-            $issues[] = __('Give this ALT another look to ensure it reflects the image details.', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('Give this ALT another look to ensure it reflects the image details.', 'opptiai-alt');
         } elseif ($status === 'critical' && empty($issues)){
-            $issues[] = __('ALT text should be rewritten for accessibility.', 'beepbeep-ai-alt-text-generator');
+            $issues[] = __('ALT text should be rewritten for accessibility.', 'opptiai-alt');
         }
 
         $heuristic = [
@@ -2179,13 +2563,13 @@ class Core {
     private function grade_from_status(string $status): string{
         switch ($status){
             case 'great':
-                return __('Excellent', 'beepbeep-ai-alt-text-generator');
+                return __('Excellent', 'opptiai-alt');
             case 'good':
-                return __('Strong', 'beepbeep-ai-alt-text-generator');
+                return __('Strong', 'opptiai-alt');
             case 'review':
-                return __('Needs review', 'beepbeep-ai-alt-text-generator');
+                return __('Needs review', 'opptiai-alt');
             default:
-                return __('Critical', 'beepbeep-ai-alt-text-generator');
+                return __('Critical', 'opptiai-alt');
         }
     }
 
@@ -2370,32 +2754,32 @@ class Core {
     private function get_source_meta_map(){
         return [
             'auto'     => [
-                'label' => __('Auto (upload)', 'beepbeep-ai-alt-text-generator'),
-                'description' => __('Generated automatically when the image was uploaded.', 'beepbeep-ai-alt-text-generator'),
+                'label' => __('Auto (upload)', 'opptiai-alt'),
+                'description' => __('Generated automatically when the image was uploaded.', 'opptiai-alt'),
             ],
             'ajax'     => [
-                'label' => __('Media Library (single)', 'beepbeep-ai-alt-text-generator'),
-                'description' => __('Triggered from the Media Library row action or attachment details screen.', 'beepbeep-ai-alt-text-generator'),
+                'label' => __('Media Library (single)', 'opptiai-alt'),
+                'description' => __('Triggered from the Media Library row action or attachment details screen.', 'opptiai-alt'),
             ],
             'bulk'     => [
-                'label' => __('Media Library (bulk)', 'beepbeep-ai-alt-text-generator'),
-                'description' => __('Generated via the Media Library bulk action.', 'beepbeep-ai-alt-text-generator'),
+                'label' => __('Media Library (bulk)', 'opptiai-alt'),
+                'description' => __('Generated via the Media Library bulk action.', 'opptiai-alt'),
             ],
             'dashboard' => [
-                'label' => __('Dashboard quick actions', 'beepbeep-ai-alt-text-generator'),
-                'description' => __('Generated from the dashboard buttons.', 'beepbeep-ai-alt-text-generator'),
+                'label' => __('Dashboard quick actions', 'opptiai-alt'),
+                'description' => __('Generated from the dashboard buttons.', 'opptiai-alt'),
             ],
             'wpcli'    => [
-                'label' => __('WP-CLI', 'beepbeep-ai-alt-text-generator'),
-                'description' => __('Generated via the wp ai-alt CLI command.', 'beepbeep-ai-alt-text-generator'),
+                'label' => __('WP-CLI', 'opptiai-alt'),
+                'description' => __('Generated via the wp ai-alt CLI command.', 'opptiai-alt'),
             ],
             'manual'   => [
-                'label' => __('Manual / custom', 'beepbeep-ai-alt-text-generator'),
-                'description' => __('Generated by custom code or integration.', 'beepbeep-ai-alt-text-generator'),
+                'label' => __('Manual / custom', 'opptiai-alt'),
+                'description' => __('Generated by custom code or integration.', 'opptiai-alt'),
             ],
             'unknown'  => [
-                'label' => __('Unknown', 'beepbeep-ai-alt-text-generator'),
-                'description' => __('Source not recorded for this ALT text.', 'beepbeep-ai-alt-text-generator'),
+                'label' => __('Unknown', 'opptiai-alt'),
+                'description' => __('Source not recorded for this ALT text.', 'opptiai-alt'),
             ],
         ];
     }
@@ -2414,7 +2798,7 @@ class Core {
 
     public function handle_usage_export(){
         if (!$this->user_can_manage()){
-            wp_die(__('You do not have permission to export usage data.', 'beepbeep-ai-alt-text-generator'));
+            wp_die(esc_html__('You do not have permission to export usage data.', 'opptiai-alt'));
         }
         check_admin_referer('bbai_usage_export');
 
@@ -2444,12 +2828,12 @@ class Core {
 
     public function handle_debug_log_export() {
         if (!$this->user_can_manage()){
-            wp_die(__('You do not have permission to export debug logs.', 'beepbeep-ai-alt-text-generator'));
+            wp_die(esc_html__('You do not have permission to export debug logs.', 'opptiai-alt'));
         }
         check_admin_referer('bbai_debug_export');
 
         if (!class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-            wp_die(__('Debug logging is not available.', 'beepbeep-ai-alt-text-generator'));
+            wp_die(esc_html__('Debug logging is not available.', 'opptiai-alt'));
         }
 
         global $wpdb;
@@ -2522,12 +2906,15 @@ class Core {
             }
         }
 
-        $decoded = json_decode($content, true);
-        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)){
+        if ( ! function_exists( 'bbai_json_decode_array' ) && defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) ) {
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-json.php';
+        }
+        $decoded = function_exists( 'bbai_json_decode_array' ) ? bbai_json_decode_array( $content ) : null;
+        if ( is_array( $decoded ) ) {
             return $decoded;
         }
 
-        return null;
+        return [];
     }
 
     private function should_retry_without_image($error){
@@ -2577,23 +2964,23 @@ class Core {
     private function build_inline_image_payload($attachment_id){
         $file = get_attached_file($attachment_id);
         if (!$file || !file_exists($file)){
-            return new \WP_Error('inline_image_missing', __('Unable to locate the image file for inline embedding.', 'beepbeep-ai-alt-text-generator'));
+            return new \WP_Error('inline_image_missing', __('Unable to locate the image file for inline embedding.', 'opptiai-alt'));
         }
 
         $size = filesize($file);
         if ($size === false || $size <= 0){
-            return new \WP_Error('inline_image_size', __('Unable to read the image size for inline embedding.', 'beepbeep-ai-alt-text-generator'));
+            return new \WP_Error('inline_image_size', __('Unable to read the image size for inline embedding.', 'opptiai-alt'));
         }
 
         $limit = apply_filters('bbai_inline_image_limit', 1024 * 1024 * 2, $attachment_id, $file);
         if ($size > $limit){
-            return new \WP_Error('inline_image_too_large', __('Image exceeds the inline embedding size limit.', 'beepbeep-ai-alt-text-generator'), ['size' => $size, 'limit' => $limit]);
+            return new \WP_Error('inline_image_too_large', __('Image exceeds the inline embedding size limit.', 'opptiai-alt'), ['size' => $size, 'limit' => $limit]);
         }
 
         // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading binary image data for base64 encoding
         $contents = file_get_contents($file);
         if ($contents === false){
-            return new \WP_Error('inline_image_read_failed', __('Unable to read the image file for inline embedding.', 'beepbeep-ai-alt-text-generator'));
+            return new \WP_Error('inline_image_read_failed', __('Unable to read the image file for inline embedding.', 'opptiai-alt'));
         }
 
         $mime = get_post_mime_type($attachment_id);
@@ -2603,7 +2990,7 @@ class Core {
 
         $base64 = base64_encode($contents);
         if (!$base64){
-            return new \WP_Error('inline_image_encode_failed', __('Failed to encode the image for inline embedding.', 'beepbeep-ai-alt-text-generator'));
+            return new \WP_Error('inline_image_encode_failed', __('Failed to encode the image for inline embedding.', 'opptiai-alt'));
         }
 
         unset($contents);
@@ -2621,13 +3008,13 @@ class Core {
     private function review_alt_text_with_model(int $attachment_id, string $alt, string $image_strategy, $image_payload_used, array $opts, string $api_key){
         $alt = trim((string) $alt);
         if ($alt === ''){
-            return new \WP_Error('review_skipped', __('ALT text is empty; skipped review.', 'beepbeep-ai-alt-text-generator'));
+            return new \WP_Error('review_skipped', __('ALT text is empty; skipped review.', 'opptiai-alt'));
         }
 
         $review_model = $opts['review_model'] ?? ($opts['model'] ?? 'gpt-4o-mini');
         $review_model = apply_filters('bbai_review_model', $review_model, $attachment_id, $opts);
         if (!$review_model){
-            return new \WP_Error('review_model_missing', __('No review model configured.', 'beepbeep-ai-alt-text-generator'));
+            return new \WP_Error('review_model_missing', __('No review model configured.', 'opptiai-alt'));
         }
 
         $image_payload = $image_payload_used;
@@ -2656,10 +3043,12 @@ class Core {
 
         $context_lines = [];
         if ($title){
-            $context_lines[] = sprintf(__('Media title: %s', 'beepbeep-ai-alt-text-generator'), $title);
+            /* translators: 1: media title */
+            $context_lines[] = sprintf(__('Media title: %s', 'opptiai-alt'), $title);
         }
         if ($filename){
-            $context_lines[] = sprintf(__('Filename: %s', 'beepbeep-ai-alt-text-generator'), $filename);
+            /* translators: 1: filename */
+            $context_lines[] = sprintf(__('Filename: %s', 'opptiai-alt'), $filename);
         }
 
         $quoted_alt = str_replace('"', '\"', (string)($alt ?? ''));
@@ -2725,7 +3114,11 @@ class Core {
 
         $code = wp_remote_retrieve_response_code($response);
         $raw_body = wp_remote_retrieve_body($response);
-        $data = json_decode($raw_body, true);
+        if ( ! function_exists( 'bbai_json_decode_array' ) && defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) ) {
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-json.php';
+        }
+        $decoded = function_exists( 'bbai_json_decode_array' ) ? bbai_json_decode_array( $raw_body ) : null;
+        $data = is_array( $decoded ) ? $decoded : [];
 
         if ($code >= 300 || empty($data['choices'][0]['message']['content'])){
             $api_message = isset($data['error']['message']) ? $data['error']['message'] : ($raw_body ?: 'OpenAI review failed.');
@@ -2736,7 +3129,7 @@ class Core {
         $content = $data['choices'][0]['message']['content'];
         $parsed = $this->extract_json_object($content);
         if (!$parsed){
-            return new \WP_Error('review_parse_failed', __('Unable to parse review response.', 'beepbeep-ai-alt-text-generator'), ['response' => $content]);
+            return new \WP_Error('review_parse_failed', __('Unable to parse review response.', 'opptiai-alt'), ['response' => $content]);
         }
 
         $score = isset($parsed['score']) ? intval($parsed['score']) : 0;
@@ -2893,7 +3286,7 @@ class Core {
                     }
                     
                     $reset_date = isset($usage['resetDate']) ? $usage['resetDate'] : null;
-                    $reset_message = __('Monthly quota exhausted. Upgrade to Growth for 1,000 generations per month, or wait for your quota to reset. You can manage your subscription in Settings.', 'beepbeep-ai-alt-text-generator');
+                    $reset_message = __('Monthly quota exhausted. Upgrade to Growth for 1,000 generations per month, or wait for your quota to reset. You can manage your subscription in Settings.', 'opptiai-alt');
                     
                     if ($reset_date) {
                         try {
@@ -2901,7 +3294,8 @@ class Core {
                             if ($reset_ts !== false) {
                                 $formatted_date = date_i18n('F j, Y', $reset_ts);
                                 $reset_message = sprintf(
-                                    __('Monthly quota exhausted. Your quota will reset on %s. Upgrade to Growth for 1,000 generations per month, or manage your subscription in Settings.', 'beepbeep-ai-alt-text-generator'),
+                                    /* translators: 1: reset date */
+                                    __('Monthly quota exhausted. Your quota will reset on %s. Upgrade to Growth for 1,000 generations per month, or manage your subscription in Settings.', 'opptiai-alt'),
                                     $formatted_date
                                 );
                             }
@@ -2924,7 +3318,7 @@ class Core {
         }
 
         if (!$this->is_image($attachment_id)) {
-            return new \WP_Error('not_image', __('Attachment is not an image.', 'beepbeep-ai-alt-text-generator'));
+            return new \WP_Error('not_image', __('Attachment is not an image.', 'opptiai-alt'));
         }
 
         // Prefer higher-quality default for better accuracy
@@ -2938,7 +3332,7 @@ class Core {
             update_post_meta($attachment_id, '_bbai_model', $model);
             update_post_meta($attachment_id, '_bbai_generated_at', current_time('mysql'));
             $this->stats_cache = null;
-            return new \WP_Error('bbai_dry_run', __('Dry run enabled. Prompt stored for review; ALT text not updated.', 'beepbeep-ai-alt-text-generator'), ['prompt' => $prompt]);
+            return new \WP_Error('bbai_dry_run', __('Dry run enabled. Prompt stored for review; ALT text not updated.', 'opptiai-alt'), ['prompt' => $prompt]);
         }
 
         // Build context for API
@@ -3012,7 +3406,7 @@ class Core {
                         // Return a retry error instead of blocking
                         return new \WP_Error(
                             'quota_check_mismatch',
-                            __('Backend reported quota limit, but credits appear available. Please try again in a moment.', 'beepbeep-ai-alt-text-generator'),
+                            __('Backend reported quota limit, but credits appear available. Please try again in a moment.', 'opptiai-alt'),
                             ['code' => 'quota_check_mismatch', 'retry_after' => 3, 'usage' => $fresh_usage]
                         );
                     }
@@ -3061,7 +3455,7 @@ class Core {
         // Backend returns altText (camelCase), but support both for compatibility
         $alt_text = $api_response['altText'] ?? $api_response['alt_text'] ?? null;
         if (empty($alt_text)) {
-            $error_message = __('Backend API returned response but no alt text was generated.', 'beepbeep-ai-alt-text-generator');
+            $error_message = __('Backend API returned response but no alt text was generated.', 'opptiai-alt');
             
             // Log this error with full response structure for debugging
             if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
@@ -3331,7 +3725,7 @@ class Core {
                 if (strcasecmp($generated, trim($existing_alt)) === 0){
                 $result = new \WP_Error(
                     'duplicate_alt',
-                    __('Generated ALT text matched the existing value.', 'beepbeep-ai-alt-text-generator'),
+                    __('Generated ALT text matched the existing value.', 'opptiai-alt'),
                     [
                         'existing' => $existing_alt,
                         'generated' => $generated,
@@ -3427,7 +3821,7 @@ class Core {
     }
 
     public function register_bulk_action($bulk_actions){
-        $bulk_actions['bbai_generate'] = __('Generate Alt Text (AI)', 'beepbeep-ai-alt-text-generator');
+        $bulk_actions['bbai_generate'] = __('Generate Alt Text (AI)', 'opptiai-alt');
         return $bulk_actions;
     }
 
@@ -3457,8 +3851,8 @@ class Core {
     public function row_action_link($actions, $post){
         if ($post->post_type === 'attachment' && $this->is_image($post->ID)){
             $has_alt = (bool) get_post_meta($post->ID, '_wp_attachment_image_alt', true);
-            $generate_label   = __('Generate Alt Text (AI)', 'beepbeep-ai-alt-text-generator');
-            $regenerate_label = __('Regenerate Alt Text (AI)', 'beepbeep-ai-alt-text-generator');
+            $generate_label   = __('Generate Alt Text (AI)', 'opptiai-alt');
+            $regenerate_label = __('Regenerate Alt Text (AI)', 'opptiai-alt');
             $text = $has_alt ? $regenerate_label : $generate_label;
             $actions['bbai_generate_single'] = '<a href="#" class="bbai-generate" data-id="' . intval($post->ID) . '" data-has-alt="' . ($has_alt ? '1' : '0') . '" data-label-generate="' . esc_attr($generate_label) . '" data-label-regenerate="' . esc_attr($regenerate_label) . '">' . esc_html($text) . '</a>';
         }
@@ -3471,11 +3865,11 @@ class Core {
         }
 
         $has_alt = (bool) get_post_meta($post->ID, '_wp_attachment_image_alt', true);
-        $label_generate   = __('Generate Alt Text', 'beepbeep-ai-alt-text-generator');
-        $label_regenerate = __('Regenerate Alt Text', 'beepbeep-ai-alt-text-generator');
+        $label_generate   = __('Generate Alt Text', 'opptiai-alt');
+        $label_regenerate = __('Regenerate Alt Text', 'opptiai-alt');
         $current_label    = $has_alt ? $label_regenerate : $label_generate;
         $is_authenticated = $this->api_client->is_authenticated();
-        $disabled_attr    = !$is_authenticated ? ' disabled title="' . esc_attr__('Please log in to generate alt text', 'beepbeep-ai-alt-text-generator') . '"' : '';
+        $disabled_attr    = !$is_authenticated ? ' disabled title="' . esc_attr__('Please log in to generate alt text', 'opptiai-alt') . '"' : '';
         
         // Use unified button classes and correct data attributes for JavaScript handler
         $button = sprintf(
@@ -3487,9 +3881,9 @@ class Core {
 
         // Always show the regenerate button on attachment edit screen
         $fields['bbai_regenerate'] = [
-            'label' => __('AI Alt Text', 'beepbeep-ai-alt-text-generator'),
+            'label' => __('AI Alt Text', 'opptiai-alt'),
             'input' => 'html',
-            'html'  => $button . '<p class="description">' . esc_html__('Use AI to generate or regenerate alternative text for this image.', 'beepbeep-ai-alt-text-generator') . '</p>',
+            'html'  => $button . '<p class="description">' . esc_html__('Use AI to generate or regenerate alternative text for this image.', 'opptiai-alt') . '</p>',
         ];
 
         return $fields;
@@ -3546,14 +3940,14 @@ class Core {
         $checkout_prices = $this->get_checkout_price_ids();
 
         $l10n_common = [
-            'reviewCue'           => __('Visit the ALT Library to double-check the wording.', 'beepbeep-ai-alt-text-generator'),
+            'reviewCue'           => __('Visit the ALT Library to double-check the wording.', 'opptiai-alt'),
             'statusReady'         => '',
-            'previewAltHeading'   => __('Review generated ALT text', 'beepbeep-ai-alt-text-generator'),
-            'previewAltHint'      => __('Review the generated description before applying it to your media item.', 'beepbeep-ai-alt-text-generator'),
-            'previewAltApply'     => __('Use this ALT', 'beepbeep-ai-alt-text-generator'),
-            'previewAltCancel'    => __('Keep current ALT', 'beepbeep-ai-alt-text-generator'),
-            'previewAltDismissed' => __('Preview dismissed. Existing ALT kept.', 'beepbeep-ai-alt-text-generator'),
-            'previewAltShortcut'  => __('Shift + Enter for newline.', 'beepbeep-ai-alt-text-generator'),
+            'previewAltHeading'   => __('Review generated ALT text', 'opptiai-alt'),
+            'previewAltHint'      => __('Review the generated description before applying it to your media item.', 'opptiai-alt'),
+            'previewAltApply'     => __('Use this ALT', 'opptiai-alt'),
+            'previewAltCancel'    => __('Keep current ALT', 'opptiai-alt'),
+            'previewAltDismissed' => __('Preview dismissed. Existing ALT kept.', 'opptiai-alt'),
+            'previewAltShortcut'  => __('Shift + Enter for newline.', 'opptiai-alt'),
         ];
 
         // Detect any BeepBeep AI admin screens (top-level or subpages)
@@ -3593,9 +3987,16 @@ class Core {
                 'ajax_url'=> admin_url('admin-ajax.php'),
                 'nonce'   => wp_create_nonce('beepbeepai_nonce'),
                 'admin_url' => admin_url('admin.php'),
-                'admin_logout_confirm' => __('Are you sure you want to log out of the admin panel?', 'beepbeep-ai-alt-text-generator'),
+                'admin_logout_confirm' => __('Are you sure you want to log out of the admin panel?', 'opptiai-alt'),
                 'can_manage' => $this->user_can_manage(),
                 'logout_redirect' => admin_url('admin.php?page=bbai'),
+            ]);
+            wp_localize_script('bbai-admin', 'bbai_env', [
+                'ajax_url'  => admin_url('admin-ajax.php'),
+                'admin_url' => admin_url(),
+                'upload_url'=> admin_url('upload.php'),
+                'rest_root' => esc_url_raw(rest_url()),
+                'nonce'     => wp_create_nonce('bbai_ajax_nonce'),
             ]);
 
             if (in_array($hook, ['upload.php', 'post.php', 'post-new.php'], true)) {
@@ -3640,6 +4041,60 @@ class Core {
                 ['bbai-unified'],
                 $asset_version('assets/css/modern.bundle.min.css', '5.0.0')
             );
+
+            if ($current_page === 'bbai-onboarding') {
+                $onboarding_css = 'assets/css/onboarding.css';
+                $onboarding_js  = 'assets/js/onboarding.js';
+
+                wp_enqueue_style(
+                    'bbai-onboarding',
+                    $base_url . $onboarding_css,
+                    ['bbai-unified', 'bbai-modern'],
+                    $asset_version($onboarding_css, '1.0.0')
+                );
+
+                wp_enqueue_script(
+                    'bbai-onboarding',
+                    $base_url . $onboarding_js,
+                    ['jquery'],
+                    $asset_version($onboarding_js, '1.0.0'),
+                    true
+                );
+
+                // Check if onboarding is already completed (for idempotent JS behavior)
+                $is_onboarding_completed = class_exists('\BeepBeepAI\AltTextGenerator\Onboarding')
+                    ? \BeepBeepAI\AltTextGenerator\Onboarding::is_completed()
+                    : false;
+
+                wp_localize_script('bbai-onboarding', 'bbai_env', [
+                    'ajax_url'  => admin_url('admin-ajax.php'),
+                    'admin_url' => admin_url(),
+                    'upload_url'=> admin_url('upload.php'),
+                    'rest_root' => esc_url_raw(rest_url()),
+                    'nonce'     => wp_create_nonce('bbai_ajax_nonce'),
+                ]);
+
+                wp_localize_script('bbai-onboarding', 'bbaiOnboarding', [
+                    'ajaxUrl'               => admin_url('admin-ajax.php'),
+                    'nonce'                 => wp_create_nonce('bbai_onboarding'),
+                    'queueStatsNonce'       => wp_create_nonce('beepbeepai_nonce'),
+                    'dashboardUrl'          => admin_url('admin.php?page=bbai'),
+                    'libraryUrl'            => admin_url('admin.php?page=bbai-library'),
+                    'step3Url'              => admin_url('admin.php?page=bbai-onboarding&step=3'),
+                    'isAuthenticated'       => bbai_is_authenticated(),
+                    'isOnboardingCompleted' => $is_onboarding_completed,
+                    'strings'               => [
+                        'scanStart'    => __('Starting your scan...', 'opptiai-alt'),
+                        'scanQueued'   => __('Scan queued.', 'opptiai-alt'),
+                        'scanFailed'   => __('Unable to start the scan. Please try again.', 'opptiai-alt'),
+                        'skipFailed'   => __('Unable to skip onboarding. Please try again.', 'opptiai-alt'),
+                        'scanLabel'    => __('Scanning...', 'opptiai-alt'),
+                        'skipLabel'    => __('Skipping...', 'opptiai-alt'),
+                        'statsLoading' => __('Loading...', 'opptiai-alt'),
+                        'statsFailed'  => __('Unable to load stats.', 'opptiai-alt'),
+                    ],
+                ]);
+            }
 
             $hero_css = <<<CSS
 .bbai-hero-section {
@@ -3878,13 +4333,13 @@ CSS;
                     'stats' => ['total' => 0, 'warnings' => 0, 'errors' => 0, 'last_event' => null, 'last_api' => null],
                 ],
                 'strings' => [
-                    'noLogs' => __('No logs recorded yet.', 'beepbeep-ai-alt-text-generator'),
-                    'contextTitle' => __('Log Context', 'beepbeep-ai-alt-text-generator'),
-                    'contextHide' => __('Hide Context', 'beepbeep-ai-alt-text-generator'),
-                    'clearConfirm' => __('This will permanently delete all debug logs. Continue?', 'beepbeep-ai-alt-text-generator'),
-                    'errorGeneric' => __('Unable to load debug logs. Please try again.', 'beepbeep-ai-alt-text-generator'),
-                    'emptyContext' => __('No additional context was provided for this entry.', 'beepbeep-ai-alt-text-generator'),
-                    'cleared' => __('Logs cleared successfully.', 'beepbeep-ai-alt-text-generator'),
+                    'noLogs' => __('No logs recorded yet.', 'opptiai-alt'),
+                    'contextTitle' => __('Log Context', 'opptiai-alt'),
+                    'contextHide' => __('Hide Context', 'opptiai-alt'),
+                    'clearConfirm' => __('This will permanently delete all debug logs. Continue?', 'opptiai-alt'),
+                    'errorGeneric' => __('Unable to load debug logs. Please try again.', 'opptiai-alt'),
+                    'emptyContext' => __('No additional context was provided for this entry.', 'opptiai-alt'),
+                    'cleared' => __('Logs cleared successfully.', 'opptiai-alt'),
                 ],
             ]);
 
@@ -3919,29 +4374,42 @@ CSS;
                 'is_authenticated' => $this->api_client->is_authenticated(),
                 'user_data' => $this->api_client->get_user_data(),
                 'admin_url' => admin_url('admin.php'),
-                'admin_logout_confirm' => __('Are you sure you want to log out of the admin panel?', 'beepbeep-ai-alt-text-generator'),
+                'admin_logout_confirm' => __('Are you sure you want to log out of the admin panel?', 'opptiai-alt'),
                 'can_manage' => $this->user_can_manage(),
                 'logout_redirect' => admin_url('admin.php?page=bbai'),
             ]);
             
+            wp_localize_script('bbai-dashboard', 'bbai_env', [
+                'ajax_url'  => admin_url('admin-ajax.php'),
+                'admin_url' => admin_url(),
+                'upload_url'=> admin_url('upload.php'),
+                'rest_root' => esc_url_raw(rest_url()),
+                'nonce'     => wp_create_nonce('bbai_ajax_nonce'),
+            ]);
+            
             wp_localize_script('bbai-dashboard', 'BBAI_DASH_L10N', [
                 'l10n'        => array_merge([
-                    'processing'         => __('Generating ALT text…', 'beepbeep-ai-alt-text-generator'),
-                    'processingMissing'  => __('Generating ALT for #%d…', 'beepbeep-ai-alt-text-generator'),
-                    'error'              => __('Something went wrong. Check console for details.', 'beepbeep-ai-alt-text-generator'),
-                    'summary'            => __('Generated %1$d images (%2$d errors).', 'beepbeep-ai-alt-text-generator'),
-                    'restUnavailable'    => __('REST endpoint unavailable', 'beepbeep-ai-alt-text-generator'),
-                    'prepareBatch'       => __('Preparing image list…', 'beepbeep-ai-alt-text-generator'),
-                    'coverageCopy'       => __('of images currently include ALT text.', 'beepbeep-ai-alt-text-generator'),
-                    'noRequests'         => __('None yet', 'beepbeep-ai-alt-text-generator'),
-                    'noAudit'            => __('No usage data recorded yet.', 'beepbeep-ai-alt-text-generator'),
-                    'nothingToProcess'   => __('No images to process.', 'beepbeep-ai-alt-text-generator'),
-                    'batchStart'         => __('Starting batch…', 'beepbeep-ai-alt-text-generator'),
-                    'batchComplete'      => __('Batch complete.', 'beepbeep-ai-alt-text-generator'),
-                    'batchCompleteAt'    => __('Batch complete at %s', 'beepbeep-ai-alt-text-generator'),
-                    'completedItem'      => __('Finished #%d', 'beepbeep-ai-alt-text-generator'),
-                    'failedItem'         => __('Failed #%d', 'beepbeep-ai-alt-text-generator'),
-                    'loadingButton'      => __('Processing…', 'beepbeep-ai-alt-text-generator'),
+                    'processing'         => __('Generating ALT text…', 'opptiai-alt'),
+                    /* translators: 1: image ID */
+                    'processingMissing'  => __('Generating ALT for #%d…', 'opptiai-alt'),
+                    'error'              => __('Something went wrong. Check console for details.', 'opptiai-alt'),
+                    /* translators: 1: images generated, 2: error count */
+                    'summary'            => __('Generated %1$d images (%2$d errors).', 'opptiai-alt'),
+                    'restUnavailable'    => __('REST endpoint unavailable', 'opptiai-alt'),
+                    'prepareBatch'       => __('Preparing image list…', 'opptiai-alt'),
+                    'coverageCopy'       => __('of images currently include ALT text.', 'opptiai-alt'),
+                    'noRequests'         => __('None yet', 'opptiai-alt'),
+                    'noAudit'            => __('No usage data recorded yet.', 'opptiai-alt'),
+                    'nothingToProcess'   => __('No images to process.', 'opptiai-alt'),
+                    'batchStart'         => __('Starting batch…', 'opptiai-alt'),
+                    'batchComplete'      => __('Batch complete.', 'opptiai-alt'),
+                    /* translators: 1: completion time */
+                    'batchCompleteAt'    => __('Batch complete at %s', 'opptiai-alt'),
+                    /* translators: 1: image ID */
+                    'completedItem'      => __('Finished #%d', 'opptiai-alt'),
+                    /* translators: 1: image ID */
+                    'failedItem'         => __('Failed #%d', 'opptiai-alt'),
+                    'loadingButton'      => __('Processing…', 'opptiai-alt'),
                 ], $l10n_common),
             ]);
             
@@ -3991,10 +4459,13 @@ CSS;
      */
     public function ajax_check_onboarding() {
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Permission denied.', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Permission denied.', 'opptiai-alt')]);
         }
 
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
 
         $completed = false;
         if (class_exists('\BeepBeepAI\AltTextGenerator\Onboarding')) {
@@ -4009,14 +4480,17 @@ CSS;
      */
     public function ajax_check_milestone() {
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Permission denied.', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Permission denied.', 'opptiai-alt')]);
         }
 
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
 
         $milestone = isset($_POST['milestone']) ? intval($_POST['milestone']) : 0;
         if ($milestone <= 0) {
-            wp_send_json_error(['message' => __('Invalid milestone.', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Invalid milestone.', 'opptiai-alt')]);
         }
 
         if (class_exists('\BeepBeepAI\AltTextGenerator\Onboarding')) {
@@ -4024,7 +4498,7 @@ CSS;
             $new_milestone = !in_array($milestone, $user_milestones, true);
             wp_send_json_success(['new_milestone' => $new_milestone]);
         } else {
-            wp_send_json_error(['message' => __('Onboarding class not found.', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Onboarding class not found.', 'opptiai-alt')]);
         }
     }
 
@@ -4033,21 +4507,24 @@ CSS;
      */
     public function ajax_track_milestone() {
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Permission denied.', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Permission denied.', 'opptiai-alt')]);
         }
 
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
 
         $milestone = isset($_POST['milestone']) ? intval($_POST['milestone']) : 0;
         if ($milestone <= 0) {
-            wp_send_json_error(['message' => __('Invalid milestone.', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Invalid milestone.', 'opptiai-alt')]);
         }
 
         if (class_exists('\BeepBeepAI\AltTextGenerator\Onboarding')) {
             \BeepBeepAI\AltTextGenerator\Onboarding::add_milestone($milestone);
-            wp_send_json_success(['message' => __('Milestone tracked.', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_success(['message' => __('Milestone tracked.', 'opptiai-alt')]);
         } else {
-            wp_send_json_error(['message' => __('Onboarding class not found.', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Onboarding class not found.', 'opptiai-alt')]);
         }
     }
 
@@ -4056,34 +4533,123 @@ CSS;
      */
     public function ajax_complete_onboarding() {
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Permission denied.', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Permission denied.', 'opptiai-alt')]);
         }
 
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
+
+        // Only mark completed if user is authenticated with BeepBeep
+        if (!bbai_is_authenticated()) {
+            wp_send_json_error(['message' => __('Authentication required.', 'opptiai-alt')]);
+        }
 
         if (class_exists('\BeepBeepAI\AltTextGenerator\Onboarding')) {
+            // Idempotent: safe to call multiple times
             \BeepBeepAI\AltTextGenerator\Onboarding::mark_completed();
             \BeepBeepAI\AltTextGenerator\Onboarding::update_last_seen();
-            wp_send_json_success(['message' => __('Onboarding completed.', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_success(['message' => __('Onboarding completed.', 'opptiai-alt')]);
         } else {
-            wp_send_json_error(['message' => __('Onboarding class not found.', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Onboarding class not found.', 'opptiai-alt')]);
         }
     }
 
-    public function ajax_dismiss_api_notice() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+    /**
+     * Start onboarding scan (queue missing images).
+     */
+    public function ajax_start_scan() {
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Permission denied.', 'opptiai-alt')]);
+        }
+
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "bbai_onboarding")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
+
+        $limit = apply_filters('bbai_onboarding_scan_limit', 500);
+        $limit = max(1, min(500, absint($limit)));
+
+        $ids = $this->get_missing_attachment_ids($limit);
+        if (empty($ids)) {
+            wp_send_json_success([
+                'message' => __('No images missing alt text were found.', 'opptiai-alt'),
+                'queued'  => 0,
+                'total'   => 0,
+            ]);
+        }
+
+        $queued = Queue::enqueue_many($ids, 'onboarding');
+        if ($queued > 0) {
+            Queue::schedule_processing();
+        }
+
+        // Note: We no longer mark completed here - Step 3 will mark it when viewed
+        // This ensures user always sees Step 3 at least once
+
+        // Redirect to Step 3 review screen
+        $step3_url = admin_url('admin.php?page=bbai-onboarding&step=3');
+
+        wp_send_json_success([
+            'message' => sprintf(
+                /* translators: 1: number of images queued */
+                _n('%d image queued for processing.', '%d images queued for processing.', $queued, 'opptiai-alt'),
+                intval($queued)
+            ),
+            'queued'   => intval($queued),
+            'total'    => count($ids),
+            'redirect' => $step3_url,
+        ]);
+    }
+
+    /**
+     * Skip onboarding step and redirect to Step 3.
+     * Note: Onboarding is marked completed when Step 3 is viewed, not here.
+     */
+    public function ajax_onboarding_skip() {
+        if (!$this->user_can_manage()) {
+            wp_send_json_error(['message' => __('Permission denied.', 'opptiai-alt')]);
+        }
+
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "bbai_onboarding")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
+
+        // Note: We no longer mark completed here - Step 3 will mark it when viewed
+        // This ensures user always sees Step 3 at least once
+
+        // Redirect to Step 3 review screen so user learns where to review
+        $step3_url = admin_url('admin.php?page=bbai-onboarding&step=3');
+
+        wp_send_json_success([
+            'message'  => __('Onboarding skipped.', 'opptiai-alt'),
+            'redirect' => $step3_url,
+        ]);
+    }
+
+    public function ajax_dismiss_api_notice() {
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
+        if (!$this->user_can_manage()) {
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
         
         // Store as site option so it shows only once globally, not per user
         update_option('bbai_api_notice_dismissed', true, false);
         delete_option('wp_alt_text_api_notice_dismissed');
-        wp_send_json_success(['message' => __('Notice dismissed', 'beepbeep-ai-alt-text-generator')]);
+        wp_send_json_success(['message' => __('Notice dismissed', 'opptiai-alt')]);
     }
 
     public function ajax_dismiss_upgrade() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => 'Unauthorized']);
@@ -4099,43 +4665,55 @@ CSS;
      * AJAX handler: Refresh usage data
      */
     public function ajax_queue_retry_job() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
         $job_id_raw = isset($_POST['job_id']) ? wp_unslash($_POST['job_id']) : '';
         $job_id = absint($job_id_raw);
         if ($job_id <= 0) {
-            wp_send_json_error(['message' => __('Invalid job ID.', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Invalid job ID.', 'opptiai-alt')]);
         }
         Queue::retry_job($job_id);
         Queue::schedule_processing(10);
-        wp_send_json_success(['message' => __('Job re-queued.', 'beepbeep-ai-alt-text-generator')]);
+        wp_send_json_success(['message' => __('Job re-queued.', 'opptiai-alt')]);
     }
 
     public function ajax_queue_retry_failed() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
         Queue::retry_failed();
         Queue::schedule_processing(10);
-        wp_send_json_success(['message' => __('Retry scheduled for failed jobs.', 'beepbeep-ai-alt-text-generator')]);
+        wp_send_json_success(['message' => __('Retry scheduled for failed jobs.', 'opptiai-alt')]);
     }
 
     public function ajax_queue_clear_completed() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
         Queue::clear_completed();
-        wp_send_json_success(['message' => __('Cleared completed jobs.', 'beepbeep-ai-alt-text-generator')]);
+        wp_send_json_success(['message' => __('Cleared completed jobs.', 'opptiai-alt')]);
     }
 
     public function ajax_queue_stats() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
         
         $stats = Queue::get_stats();
@@ -4148,9 +4726,12 @@ CSS;
     }
 
     public function ajax_track_upgrade() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         $source_raw = isset($_POST['source']) ? wp_unslash($_POST['source']) : 'dashboard';
@@ -4168,7 +4749,10 @@ CSS;
     }
 
     public function ajax_refresh_usage() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => 'Unauthorized']);
@@ -4190,7 +4774,10 @@ CSS;
      * AJAX handler: Regenerate single image alt text
      */
     public function ajax_regenerate_single() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => 'Unauthorized']);
@@ -4244,18 +4831,18 @@ CSS;
             
             // Handle specific error codes with better messages
             if ($error_code === 'missing_alt_text') {
-                $user_message = __('The API returned a response but no alt text was generated. This may be a temporary issue. Please try again.', 'beepbeep-ai-alt-text-generator');
+                $user_message = __('The API returned a response but no alt text was generated. This may be a temporary issue. Please try again.', 'opptiai-alt');
             } elseif ($error_code === 'api_response_invalid') {
-                $user_message = __('The API response was invalid. Please try again in a moment.', 'beepbeep-ai-alt-text-generator');
+                $user_message = __('The API response was invalid. Please try again in a moment.', 'opptiai-alt');
             } elseif ($error_code === 'quota_check_mismatch') {
-                $user_message = __('Credits appear available but the backend reported a limit. Please try again in a moment.', 'beepbeep-ai-alt-text-generator');
+                $user_message = __('Credits appear available but the backend reported a limit. Please try again in a moment.', 'opptiai-alt');
             } elseif ($error_code === 'limit_reached' || $error_code === 'quota_exhausted') {
                 $reset_date = null;
                 if (is_array($error_data) && isset($error_data['usage']) && is_array($error_data['usage'])) {
                     $reset_date = $error_data['usage']['resetDate'] ?? null;
                 }
                 
-                $user_message = __('Monthly quota exhausted. Your quota will reset on the first of next month. Upgrade to Growth for 1,000 generations per month, or manage your subscription in Settings.', 'beepbeep-ai-alt-text-generator');
+                $user_message = __('Monthly quota exhausted. Your quota will reset on the first of next month. Upgrade to Growth for 1,000 generations per month, or manage your subscription in Settings.', 'opptiai-alt');
                 
                 if ($reset_date) {
                     try {
@@ -4263,7 +4850,8 @@ CSS;
                         if ($reset_ts !== false) {
                             $formatted_date = date_i18n('F j, Y', $reset_ts);
                             $user_message = sprintf(
-                                __('Monthly quota exhausted. Your quota will reset on %s. Upgrade to Growth for 1,000 generations per month, or manage your subscription in Settings.', 'beepbeep-ai-alt-text-generator'),
+                                /* translators: 1: reset date */
+                                __('Monthly quota exhausted. Your quota will reset on %s. Upgrade to Growth for 1,000 generations per month, or manage your subscription in Settings.', 'opptiai-alt'),
                                 $formatted_date
                             );
                         }
@@ -4272,9 +4860,9 @@ CSS;
                     }
                 }
             } elseif ($error_code === 'api_timeout') {
-                $user_message = __('The request timed out. Please try again.', 'beepbeep-ai-alt-text-generator');
+                $user_message = __('The request timed out. Please try again.', 'opptiai-alt');
             } elseif ($error_code === 'api_unreachable') {
-                $user_message = __('Unable to reach the server. Please check your internet connection and try again.', 'beepbeep-ai-alt-text-generator');
+                $user_message = __('Unable to reach the server. Please check your internet connection and try again.', 'opptiai-alt');
             }
             
             wp_send_json_error([
@@ -4385,7 +4973,7 @@ CSS;
         }
 
         wp_send_json_success([
-            'message'        => __('Alt text generated successfully.', 'beepbeep-ai-alt-text-generator'),
+            'message'        => __('Alt text generated successfully.', 'opptiai-alt'),
             'alt_text'       => $result,
             'altText'        => $result, // Also include camelCase for compatibility
             'attachment_id'  => $attachment_id,
@@ -4402,7 +4990,10 @@ CSS;
      * AJAX handler: Bulk queue images for processing
      */
     public function ajax_bulk_queue() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         
         if (!$this->user_can_manage()) {
             wp_send_json_error(['message' => 'Unauthorized']);
@@ -4456,7 +5047,11 @@ CSS;
                 $remaining = $usage['remaining'] ?? 0;
                 if (count($ids) > $remaining) {
                     wp_send_json_error([
-                        'message' => sprintf(__('You only have %d generations remaining. Please upgrade or select fewer images.', 'beepbeep-ai-alt-text-generator'), $remaining),
+                        'message' => sprintf(
+                            /* translators: 1: remaining generations */
+                            __('You only have %d generations remaining. Please upgrade or select fewer images.', 'opptiai-alt'),
+                            $remaining
+                        ),
                         'code' => 'insufficient_credits',
                         'remaining' => $remaining
                     ]);
@@ -4482,7 +5077,11 @@ CSS;
                 Queue::schedule_processing();
                 
                 wp_send_json_success([
-                    'message' => sprintf(__('%d image(s) queued for processing', 'beepbeep-ai-alt-text-generator'), $queued),
+                    'message' => sprintf(
+                        /* translators: 1: number of images queued */
+                        __('%d image(s) queued for processing', 'opptiai-alt'),
+                        $queued
+                    ),
                     'queued' => $queued,
                     'total' => count($ids)
                 ]);
@@ -4492,19 +5091,19 @@ CSS;
                 
                 if ($source === 'bulk-regenerate') {
                     wp_send_json_error([
-                        'message' => __('No images queued. Images may already be processing or have alt text. Refresh the page to see current status.', 'beepbeep-ai-alt-text-generator'),
+                        'message' => __('No images queued. Images may already be processing or have alt text. Refresh the page to see current status.', 'opptiai-alt'),
                         'code' => 'already_queued'
                     ]);
                 } else {
                     wp_send_json_error([
-                        'message' => __('Failed to queue images. They may already be queued or processing.', 'beepbeep-ai-alt-text-generator')
+                        'message' => __('Failed to queue images. They may already be queued or processing.', 'opptiai-alt')
                     ]);
                 }
             }
         } catch ( \Exception $e ) {
             // Return proper JSON error instead of letting WordPress output HTML
             wp_send_json_error([
-                'message' => __('Failed to queue images due to a database error. Please try again.', 'beepbeep-ai-alt-text-generator'),
+                'message' => __('Failed to queue images due to a database error. Please try again.', 'opptiai-alt'),
                 'code' => 'queue_failed'
             ]);
         }
@@ -4639,75 +5238,19 @@ CSS;
 
     /**
      * Phase 2 Authentication AJAX Handlers
+     * NOTE: ajax_register and ajax_login are defined in Core_Ajax_Auth trait
      */
 
     /**
-     * AJAX handler: User registration
-     * Prevents multiple free accounts per site
-     */
-    public function ajax_register() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
-        
-        // Only admins can register/connect accounts
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('Only administrators can connect accounts.', 'beepbeep-ai-alt-text-generator')]);
-        }
-
-        $email_raw = isset($_POST['email']) ? wp_unslash($_POST['email']) : '';
-        $email = is_string($email_raw) ? sanitize_email($email_raw) : '';
-        $password = isset($_POST['password']) ? wp_unslash($_POST['password']) : '';
-
-        if (empty($email) || empty($password)) {
-            wp_send_json_error(['message' => __('Email and password are required', 'beepbeep-ai-alt-text-generator')]);
-        }
-
-        // Check if site already has an account
-        $existing_token = $this->api_client->get_token();
-        if (!empty($existing_token)) {
-            // Check if it's a free plan
-            $usage = $this->api_client->get_usage();
-            if (!is_wp_error($usage) && isset($usage['plan']) && $usage['plan'] === 'free') {
-                wp_send_json_error([
-                    'message' => __('This site is already linked to a free account. Ask an administrator to upgrade to Growth or Agency for higher limits.', 'beepbeep-ai-alt-text-generator'),
-                    'code' => 'free_plan_exists'
-                ]);
-            }
-        }
-
-        $result = $this->api_client->register($email, $password);
-
-        if (is_wp_error($result)) {
-            $error_code = $result->get_error_code();
-            $error_message = $result->get_error_message();
-            
-            // Handle free plan already used error
-            if ($error_code === 'free_plan_exists' || (is_string($error_message) && strpos(strtolower($error_message), 'free plan') !== false)) {
-                wp_send_json_error([
-                    'message' => __('A free plan has already been used for this site. Upgrade to Growth or Agency to increase your quota.', 'beepbeep-ai-alt-text-generator'),
-                    'code' => 'free_plan_exists'
-                ]);
-            }
-            
-            wp_send_json_error(['message' => $error_message]);
-        }
-
-        // Clear quota cache after successful registration
-        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-token-quota-service.php';
-        \BeepBeepAI\AltTextGenerator\Token_Quota_Service::clear_cache();
-
-        wp_send_json_success([
-            'message' => __('Account created successfully', 'beepbeep-ai-alt-text-generator'),
-            'user' => $result['user'] ?? null
-        ]);
-    }
-
-    /**
-     * AJAX handler: User login
+     * AJAX handler: User login (duplicate removed - using trait version)
      */
     public function ajax_login() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         $email_raw = isset($_POST['email']) ? wp_unslash($_POST['email']) : '';
@@ -4715,7 +5258,7 @@ CSS;
         $password = isset($_POST['password']) ? wp_unslash($_POST['password']) : '';
 
         if (empty($email) || empty($password)) {
-            wp_send_json_error(['message' => __('Email and password are required', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Email and password are required', 'opptiai-alt')]);
         }
 
         $result = $this->api_client->login($email, $password);
@@ -4725,7 +5268,7 @@ CSS;
         }
 
         wp_send_json_success([
-            'message' => __('Logged in successfully', 'beepbeep-ai-alt-text-generator'),
+            'message' => __('Logged in successfully', 'opptiai-alt'),
             'user' => $result['user'] ?? null
         ]);
     }
@@ -4735,9 +5278,12 @@ CSS;
      * Clears authentication token, license key, and all cached data
      */
     public function ajax_logout() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         // Clear JWT token (for authenticated users)
@@ -4757,7 +5303,7 @@ CSS;
         delete_transient('opptibbai_token_last_check');
 
         wp_send_json_success([
-            'message' => __('Logged out successfully', 'beepbeep-ai-alt-text-generator'),
+            'message' => __('Logged out successfully', 'opptiai-alt'),
             'redirect' => admin_url('admin.php?page=bbai')
         ]);
     }
@@ -4778,7 +5324,7 @@ CSS;
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('BeepBeep AI: Nonce verification failed');
             }
-            wp_die(__('Security check failed', 'beepbeep-ai-alt-text-generator'));
+            wp_die(esc_html__('Security check failed', 'opptiai-alt'));
         }
 
         // Check permissions
@@ -4786,7 +5332,7 @@ CSS;
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('BeepBeep AI: Permission check failed');
             }
-            wp_die(__('Unauthorized', 'beepbeep-ai-alt-text-generator'));
+            wp_die(esc_html__('Unauthorized', 'opptiai-alt'));
         }
 
         // Clear token and user data
@@ -4822,10 +5368,13 @@ CSS;
     }
 
     public function ajax_disconnect_account() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
 
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         // Clear JWT token (for authenticated users)
@@ -4846,7 +5395,7 @@ CSS;
         delete_transient('opptibbai_token_last_check');
 
         wp_send_json_success([
-            'message' => __('Account disconnected. Please sign in again to reconnect.', 'beepbeep-ai-alt-text-generator'),
+            'message' => __('Account disconnected. Please sign in again to reconnect.', 'opptiai-alt'),
         ]);
     }
 
@@ -4854,22 +5403,25 @@ CSS;
      * AJAX handler: Activate license key
      */
     public function ajax_activate_license() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
 
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         $license_key_raw = isset($_POST['license_key']) ? wp_unslash($_POST['license_key']) : '';
         $license_key = is_string($license_key_raw) ? sanitize_text_field($license_key_raw) : '';
 
         if (empty($license_key)) {
-            wp_send_json_error(['message' => __('License key is required', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('License key is required', 'opptiai-alt')]);
         }
 
         // Validate UUID format
         if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $license_key)) {
-            wp_send_json_error(['message' => __('Invalid license key format', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Invalid license key format', 'opptiai-alt')]);
         }
 
         $result = $this->api_client->activate_license($license_key);
@@ -4884,7 +5436,7 @@ CSS;
         delete_transient('opptibbai_usage_cache');
 
         wp_send_json_success([
-            'message' => __('License activated successfully', 'beepbeep-ai-alt-text-generator'),
+            'message' => __('License activated successfully', 'opptiai-alt'),
             'organization' => $result['organization'] ?? null,
             'site' => $result['site'] ?? null
         ]);
@@ -4894,10 +5446,13 @@ CSS;
      * AJAX handler: Deactivate license key
      */
     public function ajax_deactivate_license() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
 
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         $result = $this->api_client->deactivate_license();
@@ -4912,7 +5467,7 @@ CSS;
         }
 
         wp_send_json_success([
-            'message' => __('License deactivated successfully', 'beepbeep-ai-alt-text-generator')
+            'message' => __('License deactivated successfully', 'opptiai-alt')
         ]);
     }
 
@@ -4920,15 +5475,18 @@ CSS;
      * AJAX handler: Get license site usage
      */
     public function ajax_get_license_sites() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         // Must be authenticated to view license site usage
         if (!$this->api_client->is_authenticated()) {
             wp_send_json_error([
-                'message' => __('Please log in to view license site usage', 'beepbeep-ai-alt-text-generator')
+                'message' => __('Please log in to view license site usage', 'opptiai-alt')
             ]);
         }
 
@@ -4937,7 +5495,7 @@ CSS;
 
         if (is_wp_error($result)) {
             wp_send_json_error([
-                'message' => $result->get_error_message() ?: __('Failed to fetch license site usage', 'beepbeep-ai-alt-text-generator')
+                'message' => $result->get_error_message() ?: __('Failed to fetch license site usage', 'opptiai-alt')
             ]);
         }
 
@@ -4948,15 +5506,18 @@ CSS;
      * AJAX handler: Disconnect a site from the license
      */
     public function ajax_disconnect_license_site() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         // Must be authenticated to disconnect license sites
         if (!$this->api_client->is_authenticated()) {
             wp_send_json_error([
-                'message' => __('Please log in to disconnect license sites', 'beepbeep-ai-alt-text-generator')
+                'message' => __('Please log in to disconnect license sites', 'opptiai-alt')
             ]);
         }
 
@@ -4964,7 +5525,7 @@ CSS;
         $site_id = is_string($site_id_raw) ? sanitize_text_field($site_id_raw) : '';
         if (empty($site_id)) {
             wp_send_json_error([
-                'message' => __('Site ID is required', 'beepbeep-ai-alt-text-generator')
+                'message' => __('Site ID is required', 'opptiai-alt')
             ]);
         }
 
@@ -4973,12 +5534,12 @@ CSS;
 
         if (is_wp_error($result)) {
             wp_send_json_error([
-                'message' => $result->get_error_message() ?: __('Failed to disconnect site', 'beepbeep-ai-alt-text-generator')
+                'message' => $result->get_error_message() ?: __('Failed to disconnect site', 'opptiai-alt')
             ]);
         }
 
         wp_send_json_success([
-            'message' => __('Site disconnected successfully', 'beepbeep-ai-alt-text-generator'),
+            'message' => __('Site disconnected successfully', 'opptiai-alt'),
             'data' => $result
         ]);
     }
@@ -5025,9 +5586,12 @@ CSS;
      * AJAX handler: Admin login for agency users
      */
     public function ajax_admin_login() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         // Verify agency license
@@ -5042,7 +5606,7 @@ CSS;
         
         if (!$is_agency) {
             wp_send_json_error([
-                'message' => __('Admin access is only available for agency licenses', 'beepbeep-ai-alt-text-generator')
+                'message' => __('Admin access is only available for agency licenses', 'opptiai-alt')
             ]);
         }
 
@@ -5053,13 +5617,13 @@ CSS;
 
         if (empty($email) || !is_email($email)) {
             wp_send_json_error([
-                'message' => __('Please enter a valid email address', 'beepbeep-ai-alt-text-generator')
+                'message' => __('Please enter a valid email address', 'opptiai-alt')
             ]);
         }
 
         if (empty($password)) {
             wp_send_json_error([
-                'message' => __('Please enter your password', 'beepbeep-ai-alt-text-generator')
+                'message' => __('Please enter your password', 'opptiai-alt')
             ]);
         }
 
@@ -5068,7 +5632,7 @@ CSS;
 
         if (is_wp_error($result)) {
             wp_send_json_error([
-                'message' => $result->get_error_message() ?: __('Login failed. Please check your credentials.', 'beepbeep-ai-alt-text-generator')
+                'message' => $result->get_error_message() ?: __('Login failed. Please check your credentials.', 'opptiai-alt')
             ]);
         }
 
@@ -5076,7 +5640,7 @@ CSS;
         $this->set_admin_session();
 
         wp_send_json_success([
-            'message' => __('Successfully logged in', 'beepbeep-ai-alt-text-generator'),
+            'message' => __('Successfully logged in', 'opptiai-alt'),
             'redirect' => add_query_arg(['tab' => 'admin'], admin_url('upload.php?page=bbai'))
         ]);
     }
@@ -5085,15 +5649,18 @@ CSS;
      * AJAX handler: Admin logout
      */
     public function ajax_admin_logout() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         $this->clear_admin_session();
 
         wp_send_json_success([
-            'message' => __('Logged out successfully', 'beepbeep-ai-alt-text-generator'),
+            'message' => __('Logged out successfully', 'opptiai-alt'),
             'redirect' => add_query_arg(['tab' => 'admin'], admin_url('upload.php?page=bbai'))
         ]);
     }
@@ -5102,14 +5669,17 @@ CSS;
      * AJAX handler: Get user info
      */
     public function ajax_get_user_info() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         if (!$this->api_client->is_authenticated()) {
             wp_send_json_error([
-                'message' => __('Not authenticated', 'beepbeep-ai-alt-text-generator'),
+                'message' => __('Not authenticated', 'opptiai-alt'),
                 'code' => 'not_authenticated'
             ]);
         }
@@ -5131,9 +5701,12 @@ CSS;
      * AJAX handler: Create Stripe checkout session
      */
     public function ajax_create_checkout() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         // Allow checkout without authentication - users can create account during checkout
@@ -5142,7 +5715,7 @@ CSS;
         $price_id_raw = isset($_POST['price_id']) ? wp_unslash($_POST['price_id']) : '';
         $price_id = sanitize_text_field($price_id_raw);
         if (empty($price_id)) {
-            wp_send_json_error(['message' => __('Price ID is required', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Price ID is required', 'opptiai-alt')]);
         }
 
         $success_url = admin_url('upload.php?page=bbai&checkout=success');
@@ -5161,7 +5734,7 @@ CSS;
             if ($error_code === 'auth_required' ||
                 strpos($error_message_lower, 'session') !== false ||
                 strpos($error_message_lower, 'log in') !== false) {
-                $error_message = __('Unable to create checkout session. Please try again or contact support.', 'beepbeep-ai-alt-text-generator');
+                $error_message = __('Unable to create checkout session. Please try again or contact support.', 'opptiai-alt');
             }
             
             wp_send_json_error(['message' => $error_message]);
@@ -5177,9 +5750,12 @@ CSS;
      * AJAX handler: Create customer portal session
      */
     public function ajax_create_portal() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         // Check if user is authenticated via JWT token OR admin session with agency license
@@ -5202,7 +5778,7 @@ CSS;
         // Allow if authenticated via JWT OR admin-authenticated with agency/pro license
         if (!$is_authenticated && !($is_admin_authenticated && $has_agency_license)) {
             wp_send_json_error([
-                'message' => __('Please log in to manage billing', 'beepbeep-ai-alt-text-generator'),
+                'message' => __('Please log in to manage billing', 'opptiai-alt'),
                 'code' => 'not_authenticated'
             ]);
         }
@@ -5229,7 +5805,7 @@ CSS;
                 strpos((string)$error_message, 'Unauthorized') !== false ||
                 strpos((string)$error_message, 'not_authenticated') !== false)) {
                 wp_send_json_error([
-                    'message' => __('To manage your subscription, please log in with your account credentials (not just admin access). If you have an agency license, contact support to access billing management.', 'beepbeep-ai-alt-text-generator'),
+                    'message' => __('To manage your subscription, please log in with your account credentials (not just admin access). If you have an agency license, contact support to access billing management.', 'opptiai-alt'),
                     'code' => 'not_authenticated'
                 ]);
                 return;
@@ -5247,9 +5823,12 @@ CSS;
      * AJAX handler: Forgot password request
      */
     public function ajax_forgot_password() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         $email_raw = isset($_POST['email']) ? wp_unslash($_POST['email']) : '';
@@ -5257,7 +5836,7 @@ CSS;
         
         if (empty($email) || !is_email($email)) {
             wp_send_json_error([
-                'message' => __('Please enter a valid email address', 'beepbeep-ai-alt-text-generator')
+                'message' => __('Please enter a valid email address', 'opptiai-alt')
             ]);
         }
 
@@ -5271,13 +5850,13 @@ CSS;
 
         // Pass through all data from backend, including reset link if provided
         $response_data = [
-            'message' => __('Password reset link has been sent to your email. Please check your inbox and spam folder.', 'beepbeep-ai-alt-text-generator'),
+            'message' => __('Password reset link has been sent to your email. Please check your inbox and spam folder.', 'opptiai-alt'),
         ];
         
         // Include reset link if provided (for development/testing when email service isn't configured)
         if (isset($result['resetLink'])) {
             $response_data['resetLink'] = $result['resetLink'];
-            $response_data['note'] = $result['note'] ?? __('Email service is in development mode. Use this link to reset your password.', 'beepbeep-ai-alt-text-generator');
+            $response_data['note'] = $result['note'] ?? __('Email service is in development mode. Use this link to reset your password.', 'opptiai-alt');
         }
         
         wp_send_json_success($response_data);
@@ -5287,9 +5866,12 @@ CSS;
      * AJAX handler: Reset password with token
      */
     public function ajax_reset_password() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         $email_raw = isset($_POST['email']) ? wp_unslash($_POST['email']) : '';
@@ -5301,19 +5883,19 @@ CSS;
         
         if (empty($email) || !is_email($email)) {
             wp_send_json_error([
-                'message' => __('Please enter a valid email address', 'beepbeep-ai-alt-text-generator')
+                'message' => __('Please enter a valid email address', 'opptiai-alt')
             ]);
         }
 
         if (empty($token)) {
             wp_send_json_error([
-                'message' => __('Reset token is required', 'beepbeep-ai-alt-text-generator')
+                'message' => __('Reset token is required', 'opptiai-alt')
             ]);
         }
 
         if (empty($password) || strlen($password) < 8) {
             wp_send_json_error([
-                'message' => __('Password must be at least 8 characters long', 'beepbeep-ai-alt-text-generator')
+                'message' => __('Password must be at least 8 characters long', 'opptiai-alt')
             ]);
         }
 
@@ -5326,7 +5908,7 @@ CSS;
         }
 
         wp_send_json_success([
-            'message' => __('Password reset successfully. You can now sign in with your new password.', 'beepbeep-ai-alt-text-generator'),
+            'message' => __('Password reset successfully. You can now sign in with your new password.', 'opptiai-alt'),
             'redirect' => admin_url('upload.php?page=bbai&password_reset=success')
         ]);
     }
@@ -5335,14 +5917,17 @@ CSS;
      * AJAX handler: Get subscription information
      */
     public function ajax_get_subscription_info() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         if (!$this->api_client->is_authenticated()) {
             wp_send_json_error([
-                'message' => __('Please log in to view subscription information', 'beepbeep-ai-alt-text-generator'),
+                'message' => __('Please log in to view subscription information', 'opptiai-alt'),
                 'code' => 'not_authenticated'
             ]);
         }
@@ -5371,15 +5956,18 @@ CSS;
         }
         
         // Fix nonce check - use beepbeepai_nonce to match JavaScript
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         $attachment_ids_raw = isset($_POST['attachment_ids']) ? wp_unslash($_POST['attachment_ids']) : [];
         $attachment_ids = is_array($attachment_ids_raw) ? array_map('absint', (array) $attachment_ids_raw) : [];
         if (empty($attachment_ids)) {
-            wp_send_json_error(['message' => __('No attachment IDs provided.', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('No attachment IDs provided.', 'opptiai-alt')]);
         }
 
         $ids = array_map('intval', $attachment_ids);
@@ -5388,7 +5976,7 @@ CSS;
         });
 
         if (empty($ids)) {
-            wp_send_json_error(['message' => __('Invalid attachment IDs.', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Invalid attachment IDs.', 'opptiai-alt')]);
         }
 
         $results = [];
@@ -5397,7 +5985,7 @@ CSS;
                 $results[] = [
                     'attachment_id' => $id,
                     'success' => false,
-                    'message' => __('Attachment is not an image.', 'beepbeep-ai-alt-text-generator'),
+                    'message' => __('Attachment is not an image.', 'opptiai-alt'),
                 ];
                 continue;
             }
@@ -5429,7 +6017,11 @@ CSS;
                 $results[] = [
                     'attachment_id' => $id,
                     'success' => false,
-                    'message' => sprintf(__('Unexpected error during generation: %s', 'beepbeep-ai-alt-text-generator'), $e->getMessage()),
+                    'message' => sprintf(
+                        /* translators: 1: error message */
+                        __('Unexpected error during generation: %s', 'opptiai-alt'),
+                        $e->getMessage()
+                    ),
                     'code'    => 'generation_exception',
                 ];
             } catch (\Error $e) {
@@ -5437,7 +6029,11 @@ CSS;
                 $results[] = [
                     'attachment_id' => $id,
                     'success' => false,
-                    'message' => sprintf(__('Fatal error during generation: %s', 'beepbeep-ai-alt-text-generator'), $e->getMessage()),
+                    'message' => sprintf(
+                        /* translators: 1: error message */
+                        __('Fatal error during generation: %s', 'opptiai-alt'),
+                        $e->getMessage()
+                    ),
                     'code'    => 'generation_fatal',
                 ];
             }
@@ -5495,9 +6091,12 @@ CSS;
      * AJAX handler: Get recent activity for timeline
      */
     public function ajax_get_activity() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         // Get recent activity from usage logs
@@ -5517,7 +6116,7 @@ CSS;
         foreach ($events as $event) {
             $action_type = isset($event['action_type']) ? sanitize_text_field($event['action_type']) : 'generate';
             $image_id = isset($event['image_id']) ? absint($event['image_id']) : 0;
-            $user_name = isset($event['display_name']) ? sanitize_text_field($event['display_name']) : __('System', 'beepbeep-ai-alt-text-generator');
+            $user_name = isset($event['display_name']) ? sanitize_text_field($event['display_name']) : __('System', 'opptiai-alt');
             $created_at = isset($event['created_at']) ? $event['created_at'] : '';
             
             // Determine activity type and message
@@ -5527,21 +6126,45 @@ CSS;
             
             if (strpos($action_type, 'bulk') !== false) {
                 $type = 'bulk';
-                $title = sprintf(__('Bulk alt text generation', 'beepbeep-ai-alt-text-generator'));
-                $description = sprintf(__('Processed by %s', 'beepbeep-ai-alt-text-generator'), $user_name);
+                $title = sprintf(__('Bulk alt text generation', 'opptiai-alt'));
+                $description = sprintf(
+                    /* translators: 1: user name */
+                    __('Processed by %s', 'opptiai-alt'),
+                    $user_name
+                );
             } elseif (strpos($action_type, 'regenerate') !== false || strpos($action_type, 'reopt') !== false) {
                 $type = 'regenerate';
-                $title = sprintf(__('Alt text regenerated', 'beepbeep-ai-alt-text-generator'));
+                $title = sprintf(__('Alt text regenerated', 'opptiai-alt'));
                 if ($image_id > 0) {
                     $image_title = get_the_title($image_id);
-                    $description = $image_title ? sprintf(__('Image: %s', 'beepbeep-ai-alt-text-generator'), $image_title) : sprintf(__('Image ID: %d', 'beepbeep-ai-alt-text-generator'), $image_id);
+                    $description = $image_title
+                        ? sprintf(
+                            /* translators: 1: image title */
+                            __('Image: %s', 'opptiai-alt'),
+                            $image_title
+                        )
+                        : sprintf(
+                            /* translators: 1: image ID */
+                            __('Image ID: %d', 'opptiai-alt'),
+                            $image_id
+                        );
                 }
             } else {
                 $type = 'generate';
-                $title = sprintf(__('Alt text generated', 'beepbeep-ai-alt-text-generator'));
+                $title = sprintf(__('Alt text generated', 'opptiai-alt'));
                 if ($image_id > 0) {
                     $image_title = get_the_title($image_id);
-                    $description = $image_title ? sprintf(__('Image: %s', 'beepbeep-ai-alt-text-generator'), $image_title) : sprintf(__('Image ID: %d', 'beepbeep-ai-alt-text-generator'), $image_id);
+                    $description = $image_title
+                        ? sprintf(
+                            /* translators: 1: image title */
+                            __('Image: %s', 'opptiai-alt'),
+                            $image_title
+                        )
+                        : sprintf(
+                            /* translators: 1: image ID */
+                            __('Image ID: %d', 'opptiai-alt'),
+                            $image_id
+                        );
                 }
             }
 
@@ -5564,12 +6187,12 @@ CSS;
      */
     private function format_time_ago($timestamp) {
         if (empty($timestamp)) {
-            return __('Just now', 'beepbeep-ai-alt-text-generator');
+            return __('Just now', 'opptiai-alt');
         }
 
         $time = strtotime($timestamp);
         if ($time === false || $time <= 0) {
-            return __('Just now', 'beepbeep-ai-alt-text-generator');
+            return __('Just now', 'opptiai-alt');
         }
 
         $diff = time() - $time;
@@ -5578,13 +6201,25 @@ CSS;
         $days = floor($diff / 86400);
 
         if ($minutes < 1) {
-            return __('Just now', 'beepbeep-ai-alt-text-generator');
+            return __('Just now', 'opptiai-alt');
         } elseif ($minutes < 60) {
-            return sprintf(_n('%d minute ago', '%d minutes ago', $minutes, 'beepbeep-ai-alt-text-generator'), $minutes);
+            return sprintf(
+                /* translators: 1: number of minutes */
+                _n('%d minute ago', '%d minutes ago', $minutes, 'opptiai-alt'),
+                $minutes
+            );
         } elseif ($hours < 24) {
-            return sprintf(_n('%d hour ago', '%d hours ago', $hours, 'beepbeep-ai-alt-text-generator'), $hours);
+            return sprintf(
+                /* translators: 1: number of hours */
+                _n('%d hour ago', '%d hours ago', $hours, 'opptiai-alt'),
+                $hours
+            );
         } elseif ($days < 7) {
-            return sprintf(_n('%d day ago', '%d days ago', $days, 'beepbeep-ai-alt-text-generator'), $days);
+            return sprintf(
+                /* translators: 1: number of days */
+                _n('%d day ago', '%d days ago', $days, 'opptiai-alt'),
+                $days
+            );
         } else {
             return date_i18n(get_option('date_format'), $time);
         }
@@ -5594,10 +6229,13 @@ CSS;
      * AJAX handler: Send contact form via Resend
      */
     public function ajax_send_contact_form() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         // Rate limiting check (3 submissions per hour per user)
@@ -5608,7 +6246,7 @@ CSS;
         
         if ($submission_count !== false && intval($submission_count) >= 3) {
             wp_send_json_error([
-                'message' => __('Rate limit exceeded. Please wait before submitting another message.', 'beepbeep-ai-alt-text-generator')
+                'message' => __('Rate limit exceeded. Please wait before submitting another message.', 'opptiai-alt')
             ]);
         }
 
@@ -5623,13 +6261,13 @@ CSS;
         // Validate required fields
         if (empty($name) || empty($email) || empty($subject) || empty($message)) {
             wp_send_json_error([
-                'message' => __('Please fill in all required fields.', 'beepbeep-ai-alt-text-generator')
+                'message' => __('Please fill in all required fields.', 'opptiai-alt')
             ]);
         }
 
         if (!is_email($email)) {
             wp_send_json_error([
-                'message' => __('Invalid email address format.', 'beepbeep-ai-alt-text-generator')
+                'message' => __('Invalid email address format.', 'opptiai-alt')
             ]);
         }
 
@@ -5653,13 +6291,17 @@ CSS;
             
             // Provide more helpful error messages based on error type
             if ($error_code === 'auth_required' || $error_code === 'license_required') {
-                $user_message = __('Unable to send message. Please ensure you are logged in and try again.', 'beepbeep-ai-alt-text-generator');
+                $user_message = __('Unable to send message. Please ensure you are logged in and try again.', 'opptiai-alt');
             } elseif ($error_code === 'api_unreachable' || $error_code === 'api_timeout') {
-                $user_message = __('Unable to connect to the server. Please check your internet connection and try again.', 'beepbeep-ai-alt-text-generator');
+                $user_message = __('Unable to connect to the server. Please check your internet connection and try again.', 'opptiai-alt');
             } elseif ($error_code === 'contact_email_failed') {
-                $user_message = $error_message ?: __('Failed to send message. Please try again later.', 'beepbeep-ai-alt-text-generator');
+                $user_message = $error_message ?: __('Failed to send message. Please try again later.', 'opptiai-alt');
             } else {
-                $user_message = sprintf(__('Unable to send message: %s', 'beepbeep-ai-alt-text-generator'), $error_message ?: __('Unknown error', 'beepbeep-ai-alt-text-generator'));
+                $user_message = sprintf(
+                    /* translators: 1: error message */
+                    __('Unable to send message: %s', 'opptiai-alt'),
+                    $error_message ?: __('Unknown error', 'opptiai-alt')
+                );
             }
             
             wp_send_json_error([
@@ -5692,7 +6334,7 @@ CSS;
 
         // Success
         wp_send_json_success([
-            'message' => $result['message'] ?? __('Your message has been sent successfully. We\'ll get back to you soon!', 'beepbeep-ai-alt-text-generator')
+            'message' => $result['message'] ?? __('Your message has been sent successfully. We\'ll get back to you soon!', 'opptiai-alt')
         ]);
     }
 
@@ -5700,10 +6342,13 @@ CSS;
      * AJAX handler: Get contact form submissions
      */
     public function ajax_get_contact_submissions() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-contact-submissions.php';
@@ -5711,10 +6356,10 @@ CSS;
         $args = [
             'per_page' => isset($_POST['per_page']) ? absint($_POST['per_page']) : 20,
             'page'     => isset($_POST['page']) ? absint($_POST['page']) : 1,
-            'status'   => isset($_POST['status']) ? sanitize_text_field($_POST['status']) : '',
-            'search'   => isset($_POST['search']) ? sanitize_text_field($_POST['search']) : '',
-            'orderby'  => isset($_POST['orderby']) ? sanitize_text_field($_POST['orderby']) : 'created_at',
-            'order'    => isset($_POST['order']) ? sanitize_text_field($_POST['order']) : 'DESC',
+            'status'   => isset($_POST['status']) ? sanitize_text_field(wp_unslash($_POST['status'])) : '',
+            'search'   => isset($_POST['search']) ? sanitize_text_field(wp_unslash($_POST['search'])) : '',
+            'orderby'  => isset($_POST['orderby']) ? sanitize_text_field(wp_unslash($_POST['orderby'])) : 'created_at',
+            'order'    => isset($_POST['order']) ? sanitize_text_field(wp_unslash($_POST['order'])) : 'DESC',
         ];
 
         // If ID is provided, get single submission
@@ -5728,7 +6373,7 @@ CSS;
                     'pages' => 1
                 ]);
             } else {
-                wp_send_json_error(['message' => __('Submission not found', 'beepbeep-ai-alt-text-generator')]);
+                wp_send_json_error(['message' => __('Submission not found', 'opptiai-alt')]);
             }
             return;
         }
@@ -5742,27 +6387,30 @@ CSS;
      * AJAX handler: Update contact submission status
      */
     public function ajax_update_contact_submission_status() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-contact-submissions.php';
 
         $id = isset($_POST['id']) ? absint($_POST['id']) : 0;
-        $status = isset($_POST['status']) ? sanitize_text_field($_POST['status']) : '';
+        $status = isset($_POST['status']) ? sanitize_text_field(wp_unslash($_POST['status'])) : '';
 
         if (!$id) {
-            wp_send_json_error(['message' => __('Invalid submission ID', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Invalid submission ID', 'opptiai-alt')]);
         }
 
         $result = \BeepBeepAI\AltTextGenerator\Contact_Submissions::update_status($id, $status);
 
         if ($result) {
-            wp_send_json_success(['message' => __('Status updated successfully', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_success(['message' => __('Status updated successfully', 'opptiai-alt')]);
         } else {
-            wp_send_json_error(['message' => __('Failed to update status', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Failed to update status', 'opptiai-alt')]);
         }
     }
 
@@ -5770,10 +6418,13 @@ CSS;
      * AJAX handler: Delete contact submission
      */
     public function ajax_delete_contact_submission() {
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
         
         if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
         }
 
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-contact-submissions.php';
@@ -5781,24 +6432,27 @@ CSS;
         $id = isset($_POST['id']) ? absint($_POST['id']) : 0;
 
         if (!$id) {
-            wp_send_json_error(['message' => __('Invalid submission ID', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Invalid submission ID', 'opptiai-alt')]);
         }
 
         $result = \BeepBeepAI\AltTextGenerator\Contact_Submissions::delete_submission($id);
 
         if ($result) {
-            wp_send_json_success(['message' => __('Submission deleted successfully', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_success(['message' => __('Submission deleted successfully', 'opptiai-alt')]);
         } else {
-            wp_send_json_error(['message' => __('Failed to delete submission', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Failed to delete submission', 'opptiai-alt')]);
         }
     }
 
     public function ajax_export_analytics() {
         if (!$this->user_can_manage()) {
-            wp_die(__('Permission denied.', 'beepbeep-ai-alt-text-generator'));
+            wp_die(esc_html__('Permission denied.', 'opptiai-alt'));
         }
 
-        check_ajax_referer('beepbeepai_nonce', 'nonce');
+        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
+        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
+            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        }
 
         global $wpdb;
 

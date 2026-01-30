@@ -26,10 +26,10 @@ if (!$can_access_debug) : ?>
                         <path d="M7 10V7C7 4.23858 9.23858 2 12 2C14.7614 2 17 4.23858 17 7V10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                     </svg>
                 </div>
-                <h2><?php esc_html_e('Authentication Required', 'beepbeep-ai-alt-text-generator'); ?></h2>
-                <p><?php esc_html_e('Debug Logs are available to all authenticated users. Please log in or enter your license key to access this section.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                <h2><?php esc_html_e('Authentication Required', 'opptiai-alt'); ?></h2>
+                <p><?php esc_html_e('Debug Logs are available to all authenticated users. Please log in or enter your license key to access this section.', 'opptiai-alt'); ?></p>
                 <p class="bbai-settings-required-note">
-                    <?php esc_html_e('If you don\'t have an account, you can create one for free or subscribe to a plan.', 'beepbeep-ai-alt-text-generator'); ?>
+                    <?php esc_html_e('If you don\'t have an account, you can create one for free or subscribe to a plan.', 'opptiai-alt'); ?>
                 </p>
                 <div class="bbai-settings-required-actions">
                     <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-icon" data-action="show-auth-modal" data-auth-tab="login">
@@ -37,7 +37,7 @@ if (!$can_access_debug) : ?>
                             <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                             <circle cx="8" cy="8" r="2" fill="currentColor"/>
                         </svg>
-                        <span><?php esc_html_e('Log In', 'beepbeep-ai-alt-text-generator'); ?></span>
+                        <span><?php esc_html_e('Log In', 'opptiai-alt'); ?></span>
                     </button>
                 </div>
             </div>
@@ -46,7 +46,7 @@ if (!$can_access_debug) : ?>
 <?php elseif (!class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) : ?>
     <div class="bbai-section">
         <div class="notice notice-warning">
-            <p><?php esc_html_e('Debug logging is not available on this site. Please reinstall the logging module.', 'beepbeep-ai-alt-text-generator'); ?></p>
+            <p><?php esc_html_e('Debug logging is not available on this site. Please reinstall the logging module.', 'opptiai-alt'); ?></p>
         </div>
     </div>
 <?php else : ?>
@@ -71,15 +71,15 @@ if (!$can_access_debug) : ?>
     <div class="bbai-dashboard-container" data-bbai-debug-panel>
         <div class="bbai-page-header bbai-mb-6">
             <div class="bbai-page-header-content">
-                <h1 class="bbai-page-title"><?php esc_html_e('Debug Logs', 'beepbeep-ai-alt-text-generator'); ?></h1>
-                <p class="bbai-page-subtitle"><?php esc_html_e('API calls, queue events, and error logs', 'beepbeep-ai-alt-text-generator'); ?></p>
+                <h1 class="bbai-page-title"><?php esc_html_e('Debug Logs', 'opptiai-alt'); ?></h1>
+                <p class="bbai-page-subtitle"><?php esc_html_e('API calls, queue events, and error logs', 'opptiai-alt'); ?></p>
             </div>
             <div class="bbai-btn-group">
                 <a href="<?php echo esc_url($debug_export_url); ?>" class="bbai-btn bbai-btn-secondary">
-                    <?php esc_html_e('Export CSV', 'beepbeep-ai-alt-text-generator'); ?>
+                    <?php esc_html_e('Export CSV', 'opptiai-alt'); ?>
                 </a>
                 <button type="button" class="bbai-btn bbai-btn-secondary" data-debug-clear>
-                    <?php esc_html_e('Clear Logs', 'beepbeep-ai-alt-text-generator'); ?>
+                    <?php esc_html_e('Clear Logs', 'opptiai-alt'); ?>
                 </button>
             </div>
         </div>
@@ -94,7 +94,7 @@ if (!$can_access_debug) : ?>
                 <div class="bbai-stat-value" data-debug-stat="total">
                     <?php echo esc_html(number_format_i18n(intval($debug_stats['total'] ?? 0))); ?>
                 </div>
-                <div class="bbai-stat-label"><?php esc_html_e('Total Logs', 'beepbeep-ai-alt-text-generator'); ?></div>
+                <div class="bbai-stat-label"><?php esc_html_e('Total Logs', 'opptiai-alt'); ?></div>
             </div>
             <div class="bbai-stat-card">
                 <div class="bbai-stat-icon" style="background: var(--bbai-warning-bg); color: var(--bbai-warning);">
@@ -107,7 +107,7 @@ if (!$can_access_debug) : ?>
                 <div class="bbai-stat-value bbai-text-warning" data-debug-stat="warnings">
                     <?php echo esc_html(number_format_i18n(intval($debug_stats['warnings'] ?? 0))); ?>
                 </div>
-                <div class="bbai-stat-label"><?php esc_html_e('Warnings', 'beepbeep-ai-alt-text-generator'); ?></div>
+                <div class="bbai-stat-label"><?php esc_html_e('Warnings', 'opptiai-alt'); ?></div>
             </div>
             <div class="bbai-stat-card">
                 <div class="bbai-stat-icon" style="background: var(--bbai-error-bg); color: var(--bbai-error);">
@@ -119,7 +119,7 @@ if (!$can_access_debug) : ?>
                 <div class="bbai-stat-value bbai-text-error" data-debug-stat="errors">
                     <?php echo esc_html(number_format_i18n(intval($debug_stats['errors'] ?? 0))); ?>
                 </div>
-                <div class="bbai-stat-label"><?php esc_html_e('Errors', 'beepbeep-ai-alt-text-generator'); ?></div>
+                <div class="bbai-stat-label"><?php esc_html_e('Errors', 'opptiai-alt'); ?></div>
             </div>
             <div class="bbai-stat-card">
                 <div class="bbai-stat-icon">
@@ -131,35 +131,35 @@ if (!$can_access_debug) : ?>
                 <div class="bbai-stat-value bbai-text-secondary bbai-text-lg" data-debug-stat="last_api">
                     <?php echo esc_html($debug_stats['last_event'] ?? $debug_stats['last_api'] ?? '—'); ?>
                 </div>
-                <div class="bbai-stat-label"><?php esc_html_e('Last Event Timestamp', 'beepbeep-ai-alt-text-generator'); ?></div>
+                <div class="bbai-stat-label"><?php esc_html_e('Last Event Timestamp', 'opptiai-alt'); ?></div>
             </div>
         </section>
 
         <form data-debug-filter class="bbai-filter-form bbai-mb-6">
             <div>
-                <label for="bbai-debug-level" class="bbai-filter-label"><?php esc_html_e('Level', 'beepbeep-ai-alt-text-generator'); ?></label>
+                <label for="bbai-debug-level" class="bbai-filter-label"><?php esc_html_e('Level', 'opptiai-alt'); ?></label>
                 <select id="bbai-debug-level" name="level" class="bbai-filter-select">
-                    <option value=""><?php esc_html_e('All levels', 'beepbeep-ai-alt-text-generator'); ?></option>
-                    <option value="debug"><?php esc_html_e('Debug', 'beepbeep-ai-alt-text-generator'); ?></option>
-                    <option value="info"><?php esc_html_e('Info', 'beepbeep-ai-alt-text-generator'); ?></option>
-                    <option value="warning"><?php esc_html_e('Warning', 'beepbeep-ai-alt-text-generator'); ?></option>
-                    <option value="error"><?php esc_html_e('Error', 'beepbeep-ai-alt-text-generator'); ?></option>
+                    <option value=""><?php esc_html_e('All levels', 'opptiai-alt'); ?></option>
+                    <option value="debug"><?php esc_html_e('Debug', 'opptiai-alt'); ?></option>
+                    <option value="info"><?php esc_html_e('Info', 'opptiai-alt'); ?></option>
+                    <option value="warning"><?php esc_html_e('Warning', 'opptiai-alt'); ?></option>
+                    <option value="error"><?php esc_html_e('Error', 'opptiai-alt'); ?></option>
                 </select>
             </div>
             <div>
-                <label class="bbai-filter-label"><?php esc_html_e('Date Range', 'beepbeep-ai-alt-text-generator'); ?></label>
+                <label class="bbai-filter-label"><?php esc_html_e('Date Range', 'opptiai-alt'); ?></label>
                 <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--bbai-space-2);">
-                    <input type="date" id="bbai-debug-date-from" name="date_from" class="bbai-filter-input" aria-label="<?php esc_attr_e('Start date', 'beepbeep-ai-alt-text-generator'); ?>">
-                    <input type="date" id="bbai-debug-date-to" name="date_to" class="bbai-filter-input" aria-label="<?php esc_attr_e('End date', 'beepbeep-ai-alt-text-generator'); ?>">
+                    <input type="date" id="bbai-debug-date-from" name="date_from" class="bbai-filter-input" aria-label="<?php esc_attr_e('Start date', 'opptiai-alt'); ?>">
+                    <input type="date" id="bbai-debug-date-to" name="date_to" class="bbai-filter-input" aria-label="<?php esc_attr_e('End date', 'opptiai-alt'); ?>">
                 </div>
             </div>
             <div>
-                <label for="bbai-debug-search" class="bbai-filter-label"><?php esc_html_e('Search', 'beepbeep-ai-alt-text-generator'); ?></label>
-                <input type="search" id="bbai-debug-search" name="search" class="bbai-filter-input" placeholder="<?php esc_attr_e('Search logs', 'beepbeep-ai-alt-text-generator'); ?>">
+                <label for="bbai-debug-search" class="bbai-filter-label"><?php esc_html_e('Search', 'opptiai-alt'); ?></label>
+                <input type="search" id="bbai-debug-search" name="search" class="bbai-filter-input" placeholder="<?php esc_attr_e('Search logs', 'opptiai-alt'); ?>">
             </div>
             <div class="bbai-filter-submit">
                 <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm" data-debug-reset>
-                    <?php esc_html_e('Reset', 'beepbeep-ai-alt-text-generator'); ?>
+                    <?php esc_html_e('Reset', 'opptiai-alt'); ?>
                 </button>
             </div>
         </form>
@@ -169,10 +169,10 @@ if (!$can_access_debug) : ?>
                 <table class="bbai-table">
                     <thead>
                         <tr>
-                            <th><?php esc_html_e('Timestamp', 'beepbeep-ai-alt-text-generator'); ?></th>
-                            <th><?php esc_html_e('Level', 'beepbeep-ai-alt-text-generator'); ?></th>
-                            <th><?php esc_html_e('Message', 'beepbeep-ai-alt-text-generator'); ?></th>
-                            <th><?php esc_html_e('Context', 'beepbeep-ai-alt-text-generator'); ?></th>
+                            <th><?php esc_html_e('Timestamp', 'opptiai-alt'); ?></th>
+                            <th><?php esc_html_e('Level', 'opptiai-alt'); ?></th>
+                            <th><?php esc_html_e('Message', 'opptiai-alt'); ?></th>
+                            <th><?php esc_html_e('Context', 'opptiai-alt'); ?></th>
                         </tr>
                     </thead>
                     <tbody data-debug-rows>
@@ -187,13 +187,16 @@ if (!$can_access_debug) : ?>
                                 $context_source = $log['context'] ?? [];
                                 if (!empty($context_source)) {
                                     if (is_array($context_source)) {
-                                        $json = wp_json_encode($context_source, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                                        $json = wp_json_encode($context_source);
                                         $context_attr = base64_encode($json);
                                     } else {
                                         $context_str = (string) $context_source;
-                                        $decoded = json_decode($context_str, true);
-                                        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                                            $json = wp_json_encode($decoded, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                                        if ( ! function_exists( 'bbai_json_decode_array' ) && defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) ) {
+                                            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-json.php';
+                                        }
+                                        $decoded = function_exists( 'bbai_json_decode_array' ) ? bbai_json_decode_array( $context_str ) : null;
+                                        if (is_array($decoded)) {
+                                            $json = wp_json_encode($decoded);
                                             $context_attr = base64_encode($json);
                                         } else {
                                             $context_attr = base64_encode($context_str);
@@ -228,7 +231,7 @@ if (!$can_access_debug) : ?>
                                                 data-context-data="<?php echo esc_attr($context_attr); ?>"
                                                 data-row-index="<?php echo esc_attr($row_index); ?>"
                                                 aria-expanded="false">
-                                            <?php esc_html_e('Log Context', 'beepbeep-ai-alt-text-generator'); ?>
+                                            <?php esc_html_e('Log Context', 'opptiai-alt'); ?>
                                         </button>
                                     <?php else : ?>
                                         <span class="bbai-text-muted">—</span>
@@ -248,7 +251,7 @@ if (!$can_access_debug) : ?>
                         <?php else : ?>
                             <tr>
                                 <td colspan="4" class="bbai-text-center bbai-text-muted bbai-text-sm">
-                                    <?php esc_html_e('No logs recorded yet.', 'beepbeep-ai-alt-text-generator'); ?>
+                                    <?php esc_html_e('No logs recorded yet.', 'opptiai-alt'); ?>
                                 </td>
                             </tr>
                         <?php endif; ?>
@@ -262,7 +265,8 @@ if (!$can_access_debug) : ?>
             <span class="bbai-pagination-info" data-debug-page-indicator>
                 <?php
                     printf(
-                        esc_html__('Page %1$s of %2$s', 'beepbeep-ai-alt-text-generator'),
+                        /* translators: 1: current page number, 2: total pages */
+                        esc_html__('Page %1$s of %2$s', 'opptiai-alt'),
                         esc_html(number_format_i18n($debug_page)),
                         esc_html(number_format_i18n($debug_pages))
                     );
@@ -270,10 +274,10 @@ if (!$can_access_debug) : ?>
             </span>
             <div class="bbai-pagination-controls">
                 <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm bbai-pagination-btn <?php echo esc_attr( $debug_page <= 1 ? 'bbai-pagination-btn--disabled' : '' ); ?>" data-debug-page="prev" <?php disabled($debug_page <= 1); ?>>
-                    <?php esc_html_e('Previous', 'beepbeep-ai-alt-text-generator'); ?>
+                    <?php esc_html_e('Previous', 'opptiai-alt'); ?>
                 </button>
                 <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm bbai-pagination-btn <?php echo esc_attr( $debug_page >= $debug_pages ? 'bbai-pagination-btn--disabled' : '' ); ?>" data-debug-page="next" <?php disabled($debug_page >= $debug_pages); ?>>
-                    <?php esc_html_e('Next', 'beepbeep-ai-alt-text-generator'); ?>
+                    <?php esc_html_e('Next', 'opptiai-alt'); ?>
                 </button>
             </div>
         </div>
@@ -284,7 +288,7 @@ if (!$can_access_debug) : ?>
     
     <!-- Bottom Upsell CTA (reusable component) -->
     <?php
-    $bottom_upsell_partial = dirname(__FILE__) . '/bottom-upsell-cta.php';
+    $bottom_upsell_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/bottom-upsell-cta.php';
     if (file_exists($bottom_upsell_partial)) {
         include $bottom_upsell_partial;
     }

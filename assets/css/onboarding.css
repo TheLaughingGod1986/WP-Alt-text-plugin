@@ -1,0 +1,249 @@
+/* Onboarding (Getting Started) page styles */
+
+.bbai-onboarding {
+    background: #f5f6f7;
+    padding-bottom: var(--bbai-space-10);
+}
+
+.bbai-onboarding .bbai-container {
+    max-width: 1100px;
+    padding: var(--bbai-space-8) var(--bbai-space-6);
+}
+
+.bbai-onboarding .bbai-card {
+    border-radius: 18px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    background: #ffffff;
+}
+
+.bbai-onboarding .bbai-card--compact {
+    padding: var(--bbai-space-5);
+}
+
+.bbai-onboarding .bbai-logo-content {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+}
+
+.bbai-onboarding .bbai-logo-tagline {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.bbai-onboarding .bbai-onboarding-hero {
+    position: relative;
+    border-color: rgba(16, 185, 129, 0.25);
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
+}
+
+.bbai-onboarding .bbai-badge--getting-started {
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 12px;
+    border: 1px solid #e5e7eb;
+    background: #f3f4f6;
+}
+
+.bbai-onboarding .bbai-onboarding-progress {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+}
+
+.bbai-onboarding .bbai-onboarding-progress-text {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+}
+
+.bbai-onboarding .bbai-onboarding-divider {
+    height: 1px;
+    background: var(--bbai-border);
+    margin: var(--bbai-space-4) 0;
+}
+
+.bbai-onboarding .bbai-btn-group .bbai-btn {
+    border-radius: 999px;
+    padding-left: 24px;
+    padding-right: 24px;
+}
+
+.bbai-onboarding .bbai-onboarding-reassurance {
+    margin-top: var(--bbai-space-2);
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+}
+
+.bbai-onboarding .bbai-onboarding-helper {
+    margin-top: var(--bbai-space-2);
+    padding-left: 14px;
+    position: relative;
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+}
+
+.bbai-onboarding .bbai-onboarding-helper::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: var(--bbai-text-muted);
+}
+
+.bbai-onboarding .bbai-onboarding-status {
+    margin-top: var(--bbai-space-3);
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+}
+
+.bbai-onboarding .bbai-onboarding-status.is-success {
+    color: #166534;
+}
+
+.bbai-onboarding .bbai-onboarding-status.is-error {
+    color: #b91c1c;
+}
+
+.bbai-onboarding .bbai-onboarding-status.is-info {
+    color: #1e40af;
+}
+
+.bbai-onboarding .bbai-onboarding-step-card .bbai-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bbai-space-2);
+}
+
+.bbai-onboarding .bbai-onboarding-step-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #14b8a6 0%, #22c55e 100%);
+    box-shadow: 0 6px 14px rgba(16, 185, 129, 0.18);
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bbai-onboarding .bbai-onboarding-step-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.bbai-onboarding .bbai-onboarding-step-text {
+    margin: 0;
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-secondary);
+}
+
+.bbai-onboarding .bbai-onboarding-upsell {
+    background: #ecfdf5;
+    border-color: #bbf7d0;
+}
+
+.bbai-onboarding .bbai-onboarding-upsell-body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--bbai-space-4);
+    flex-wrap: wrap;
+}
+
+/* Step 3 - KPI Stats Row */
+.bbai-onboarding .bbai-onboarding-kpi-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--bbai-space-4);
+    margin-bottom: var(--bbai-space-2);
+}
+
+.bbai-onboarding .bbai-onboarding-kpi {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--bbai-space-3) var(--bbai-space-5);
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    min-width: 100px;
+}
+
+.bbai-onboarding .bbai-onboarding-kpi-label {
+    font-size: var(--bbai-text-xs);
+    font-weight: 500;
+    color: var(--bbai-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    margin-bottom: var(--bbai-space-1);
+}
+
+.bbai-onboarding .bbai-onboarding-kpi-value {
+    font-size: var(--bbai-text-2xl);
+    font-weight: 700;
+    color: var(--bbai-text-primary);
+    line-height: 1;
+}
+
+.bbai-onboarding .bbai-onboarding-kpi-loading {
+    color: var(--bbai-text-muted);
+    font-weight: 400;
+}
+
+.bbai-onboarding .bbai-onboarding-kpi--errors .bbai-onboarding-kpi-value {
+    color: #dc2626;
+}
+
+/* Step 3 - What happens next list */
+.bbai-onboarding .bbai-onboarding-next-steps {
+    margin: var(--bbai-space-3) 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.bbai-onboarding .bbai-onboarding-next-steps li {
+    position: relative;
+    padding-left: 24px;
+    margin-bottom: var(--bbai-space-2);
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-secondary);
+    line-height: 1.5;
+}
+
+.bbai-onboarding .bbai-onboarding-next-steps li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6px;
+    width: 8px;
+    height: 8px;
+    background: linear-gradient(135deg, #14b8a6 0%, #22c55e 100%);
+    border-radius: 50%;
+}
+
+.bbai-onboarding .bbai-onboarding-next-steps li:last-child {
+    margin-bottom: 0;
+}
+
+@media (max-width: 782px) {
+    .bbai-onboarding .bbai-page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--bbai-space-3);
+    }
+
+    .bbai-onboarding .bbai-onboarding-upsell-body {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .bbai-onboarding .bbai-onboarding-kpi-row {
+        justify-content: center;
+    }
+
+    .bbai-onboarding .bbai-onboarding-kpi {
+        flex: 1 1 auto;
+        min-width: 80px;
+    }
+}

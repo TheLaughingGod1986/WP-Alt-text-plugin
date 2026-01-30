@@ -25,17 +25,8 @@ trait Api_Usage {
             }
         }
 
-        if ($this->has_active_license()) {
-            $license_data = $this->get_license_data();
-            if (!empty($license_data) && isset($license_data['organization'])) {
-                $usage = $this->format_license_usage_from_cache($license_data);
-                if (!empty($usage)) {
-                    set_transient($cache_key, $usage, 5 * MINUTE_IN_SECONDS);
-                    return $usage;
-                }
-            }
-        }
-
+        // Always fetch fresh usage data from API (don't use stale license_data cache)
+        // The transient cache above provides short-term caching (5 minutes)
         $response = $this->make_request('/usage', 'GET');
 
         if (is_wp_error($response)) {
@@ -46,9 +37,22 @@ trait Api_Usage {
             return $response;
         }
 
-        $organization = $response['organization'] ?? [];
-        $site_data = $response['site'] ?? [];
-        $usage = $this->sync_license_usage_snapshot($response, $organization, $site_data);
+        // Unwrap the response from make_request
+        // make_request returns: ['status_code' => 200, 'data' => {...}, 'success' => true]
+        // Backend returns: { success: true, data: { usage: {...}, credits_used: X, ... } }
+        $api_response = $response['data'] ?? $response;
+
+        // Extract the actual data from the backend response wrapper
+        $usage_data = $api_response['data'] ?? $api_response;
+
+        // Check if usage data is nested in a 'usage' key
+        if (isset($usage_data['usage']) && is_array($usage_data['usage'])) {
+            $usage_data = array_merge($usage_data, $usage_data['usage']);
+        }
+
+        $organization = $usage_data['organization'] ?? [];
+        $site_data = $usage_data['site'] ?? [];
+        $usage = $this->sync_license_usage_snapshot($usage_data, $organization, $site_data);
 
         set_transient($cache_key, $usage, 5 * MINUTE_IN_SECONDS);
 
@@ -87,10 +91,10 @@ trait Api_Usage {
      * Sync usage snapshot from API response
      */
     private function sync_license_usage_snapshot($usage, $organization = [], $site_data = []) {
-        $plan = strtolower($usage['plan'] ?? 'free');
-        $limit = intval($usage['limit'] ?? $usage['monthly_limit'] ?? 0);
+        $plan = strtolower($usage['plan'] ?? $usage['plan_type'] ?? 'free');
+        $limit = intval($usage['limit'] ?? $usage['total_limit'] ?? $usage['monthly_limit'] ?? 0);
         $used = intval($usage['used'] ?? $usage['credits_used'] ?? 0);
-        $remaining = isset($usage['remaining']) ? intval($usage['remaining']) : max(0, $limit - $used);
+        $remaining = intval($usage['remaining'] ?? $usage['credits_remaining'] ?? max(0, $limit - $used));
 
         if (!empty($organization)) {
             $this->set_license_data([

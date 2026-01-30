@@ -50,7 +50,7 @@ class License_Controller {
 		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'bbai_activate_license' ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Invalid nonce.', 'opptiai-alt' ),
 			);
 		}
 
@@ -58,7 +58,7 @@ class License_Controller {
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Unauthorized', 'opptiai-alt' ),
 			);
 		}
 
@@ -80,7 +80,7 @@ class License_Controller {
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Unauthorized', 'opptiai-alt' ),
 			);
 		}
 
@@ -99,7 +99,7 @@ class License_Controller {
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Unauthorized', 'opptiai-alt' ),
 			);
 		}
 
@@ -118,7 +118,7 @@ class License_Controller {
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Unauthorized', 'opptiai-alt' ),
 			);
 		}
 

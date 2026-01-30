@@ -70,7 +70,7 @@ class Usage_Service {
 
 		return array(
 			'success' => false,
-			'message' => __( 'Failed to fetch usage data', 'beepbeep-ai-alt-text-generator' ),
+			'message' => __( 'Failed to fetch usage data', 'opptiai-alt' ),
 		);
 	}
 
@@ -247,10 +247,10 @@ class Usage_Service {
 	 * @return void
 	 */
 	private function send_threshold_notification( int $total, int $limit, string $email ): void {
-		$subject = __( 'AI Alt Text token usage alert', 'beepbeep-ai-alt-text-generator' );
+		$subject = __( 'AI Alt Text token usage alert', 'opptiai-alt' );
 		$message = sprintf(
 			/* translators: 1: total tokens, 2: token limit */
-			__( 'Your site has now used %1$d tokens, reaching the configured limit of %2$d.', 'beepbeep-ai-alt-text-generator' ),
+			__( 'Your site has now used %1$d tokens, reaching the configured limit of %2$d.', 'opptiai-alt' ),
 			$total,
 			$limit
 		);

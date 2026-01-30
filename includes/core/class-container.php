@@ -103,7 +103,8 @@ class Container {
 		$service_name = $this->aliases[ $name ] ?? $name;
 
 		if ( ! isset( $this->services[ $service_name ] ) ) {
-			throw new \Exception( "Service '{$service_name}' not found in container." );
+			$service_name_safe = sanitize_text_field( $service_name );
+			throw new \Exception( "Service '{$service_name_safe}' not found in container." );
 		}
 
 		return $this->services[ $service_name ]( $this );
@@ -174,8 +175,10 @@ class Container {
 					continue;
 				}
 
+				$parameter_name = sanitize_text_field( $parameter->getName() );
+				$class_name_safe = sanitize_text_field( $class_name );
 				throw new \Exception(
-					"Cannot resolve parameter '{$parameter->getName()}' in {$class_name}"
+					"Cannot resolve parameter '{$parameter_name}' in {$class_name_safe}"
 				);
 			}
 
@@ -186,7 +189,9 @@ class Container {
 			} elseif ( class_exists( $type_name ) ) {
 				$dependencies[] = $this->make( $type_name );
 			} else {
-				throw new \Exception( "Cannot resolve dependency '{$type_name}' for {$class_name}" );
+				$type_name_safe = sanitize_text_field( $type_name );
+				$class_name_safe = sanitize_text_field( $class_name );
+				throw new \Exception( "Cannot resolve dependency '{$type_name_safe}' for {$class_name_safe}" );
 			}
 		}
 

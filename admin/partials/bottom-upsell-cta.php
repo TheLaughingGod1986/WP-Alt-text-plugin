@@ -46,10 +46,10 @@ $show_upsell = !$is_agency;
             <!-- Badge -->
             <div class="flex">
                 <?php
-                $badge_text = esc_html__('GROWTH', 'beepbeep-ai-alt-text-generator');
+                $badge_text = esc_html__('GROWTH', 'opptiai-alt');
                 $badge_variant = 'growth';
                 $badge_class = '';
-                $badge_partial = dirname(__FILE__) . '/badge.php';
+                $badge_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/badge.php';
                 if (file_exists($badge_partial)) {
                     include $badge_partial;
                 }
@@ -57,10 +57,10 @@ $show_upsell = !$is_agency;
             </div>
 
             <!-- Title -->
-            <h3 id="upgrade-headline" class="bbai-card-title"><?php esc_html_e('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'); ?></h3>
+            <h3 id="upgrade-headline" class="bbai-card-title"><?php esc_html_e('Upgrade to Growth', 'opptiai-alt'); ?></h3>
 
             <!-- Subtitle -->
-            <p class="bbai-card-subtitle"><?php esc_html_e('Automate alt text generation and scale image optimisation each month.', 'beepbeep-ai-alt-text-generator'); ?></p>
+            <p class="bbai-card-subtitle"><?php esc_html_e('Automate alt text generation and scale image optimisation each month.', 'opptiai-alt'); ?></p>
 
             <!-- Benefit List -->
             <ul class="bbai-benefits-list">
@@ -70,7 +70,7 @@ $show_upsell = !$is_agency;
                             <path d="M13 4L6 11L3 8" />
                         </svg>
                     </div>
-                    <span class="bbai-benefit-text"><?php esc_html_e('1,000 AI alt texts per month', 'beepbeep-ai-alt-text-generator'); ?></span>
+                    <span class="bbai-benefit-text"><?php esc_html_e('1,000 AI alt texts per month', 'opptiai-alt'); ?></span>
                 </li>
                 <li class="bbai-benefit-item">
                     <div class="bbai-benefit-icon">
@@ -78,7 +78,7 @@ $show_upsell = !$is_agency;
                             <path d="M13 4L6 11L3 8" />
                         </svg>
                     </div>
-                    <span class="bbai-benefit-text"><?php esc_html_e('Bulk processing for the media library', 'beepbeep-ai-alt-text-generator'); ?></span>
+                    <span class="bbai-benefit-text"><?php esc_html_e('Bulk processing for the media library', 'opptiai-alt'); ?></span>
                 </li>
                 <li class="bbai-benefit-item">
                     <div class="bbai-benefit-icon">
@@ -86,7 +86,7 @@ $show_upsell = !$is_agency;
                             <path d="M13 4L6 11L3 8" />
                         </svg>
                     </div>
-                    <span class="bbai-benefit-text"><?php esc_html_e('Priority queue for faster results', 'beepbeep-ai-alt-text-generator'); ?></span>
+                    <span class="bbai-benefit-text"><?php esc_html_e('Priority queue for faster results', 'opptiai-alt'); ?></span>
                 </li>
                 <li class="bbai-benefit-item">
                     <div class="bbai-benefit-icon">
@@ -94,18 +94,18 @@ $show_upsell = !$is_agency;
                             <path d="M13 4L6 11L3 8" />
                         </svg>
                     </div>
-                    <span class="bbai-benefit-text"><?php esc_html_e('Multilingual support for global SEO', 'beepbeep-ai-alt-text-generator'); ?></span>
+                    <span class="bbai-benefit-text"><?php esc_html_e('Multilingual support for global SEO', 'opptiai-alt'); ?></span>
                 </li>
             </ul>
 
             <!-- CTA Section -->
             <div class="bbai-cta-section">
-                <button type="button" class="bbai-cta-primary" data-action="show-upgrade-modal" aria-label="<?php esc_attr_e('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'); ?>">
-                    <?php esc_html_e('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'); ?>
+                <button type="button" class="bbai-cta-primary" data-action="show-upgrade-modal" aria-label="<?php esc_attr_e('Upgrade to Growth', 'opptiai-alt'); ?>">
+                    <?php esc_html_e('Upgrade to Growth', 'opptiai-alt'); ?>
                 </button>
-                <p class="bbai-cta-microcopy"><?php esc_html_e('Includes 1,000 AI alt texts per month. Cancel anytime.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                <p class="bbai-cta-microcopy"><?php esc_html_e('Includes 1,000 AI alt texts per month. Cancel anytime.', 'opptiai-alt'); ?></p>
                 <a href="#" class="bbai-compare-link" data-action="show-upgrade-modal">
-                    <?php esc_html_e('Compare plans', 'beepbeep-ai-alt-text-generator'); ?>
+                    <?php esc_html_e('Compare plans', 'opptiai-alt'); ?>
                 </a>
             </div>
         </div>
@@ -116,10 +116,10 @@ $show_upsell = !$is_agency;
             <!-- Badge -->
             <div class="flex">
                 <?php
-                $badge_text = esc_html__('AGENCY', 'beepbeep-ai-alt-text-generator');
+                $badge_text = esc_html__('AGENCY', 'opptiai-alt');
                 $badge_variant = 'agency';
                 $badge_class = '';
-                $badge_partial = dirname(__FILE__) . '/badge.php';
+                $badge_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/badge.php';
                 if (file_exists($badge_partial)) {
                     include $badge_partial;
                 }
@@ -127,10 +127,10 @@ $show_upsell = !$is_agency;
             </div>
 
             <!-- Title -->
-            <h3 id="upgrade-headline" class="bbai-card-title"><?php esc_html_e('Scale with Agency', 'beepbeep-ai-alt-text-generator'); ?></h3>
+            <h3 id="upgrade-headline" class="bbai-card-title"><?php esc_html_e('Scale with Agency', 'opptiai-alt'); ?></h3>
 
             <!-- Subtitle -->
-            <p class="bbai-card-subtitle"><?php esc_html_e('Unlimited potential for agencies and high-volume sites.', 'beepbeep-ai-alt-text-generator'); ?></p>
+            <p class="bbai-card-subtitle"><?php esc_html_e('Unlimited potential for agencies and high-volume sites.', 'opptiai-alt'); ?></p>
 
             <!-- Benefit List -->
             <ul class="bbai-benefits-list">
@@ -140,7 +140,7 @@ $show_upsell = !$is_agency;
                             <path d="M13 4L6 11L3 8" />
                         </svg>
                     </div>
-                    <span class="bbai-benefit-text"><?php esc_html_e('5,000 alt texts per month', 'beepbeep-ai-alt-text-generator'); ?></span>
+                    <span class="bbai-benefit-text"><?php esc_html_e('5,000 alt texts per month', 'opptiai-alt'); ?></span>
                 </li>
                 <li class="bbai-benefit-item">
                     <div class="bbai-benefit-icon">
@@ -148,7 +148,7 @@ $show_upsell = !$is_agency;
                             <path d="M13 4L6 11L3 8" />
                         </svg>
                     </div>
-                    <span class="bbai-benefit-text"><?php esc_html_e('Multi-site license for unlimited WordPress sites', 'beepbeep-ai-alt-text-generator'); ?></span>
+                    <span class="bbai-benefit-text"><?php esc_html_e('Multi-site license for unlimited WordPress sites', 'opptiai-alt'); ?></span>
                 </li>
                 <li class="bbai-benefit-item">
                     <div class="bbai-benefit-icon">
@@ -156,7 +156,7 @@ $show_upsell = !$is_agency;
                             <path d="M13 4L6 11L3 8" />
                         </svg>
                     </div>
-                    <span class="bbai-benefit-text"><?php esc_html_e('Priority support with dedicated account manager', 'beepbeep-ai-alt-text-generator'); ?></span>
+                    <span class="bbai-benefit-text"><?php esc_html_e('Priority support with dedicated account manager', 'opptiai-alt'); ?></span>
                 </li>
                 <li class="bbai-benefit-item">
                     <div class="bbai-benefit-icon">
@@ -164,18 +164,18 @@ $show_upsell = !$is_agency;
                             <path d="M13 4L6 11L3 8" />
                         </svg>
                     </div>
-                    <span class="bbai-benefit-text"><?php esc_html_e('Custom brand voice & style guidelines', 'beepbeep-ai-alt-text-generator'); ?></span>
+                    <span class="bbai-benefit-text"><?php esc_html_e('Custom brand voice & style guidelines', 'opptiai-alt'); ?></span>
                 </li>
             </ul>
 
             <!-- CTA Section -->
             <div class="bbai-cta-section">
                 <button type="button" class="bbai-cta-primary" data-action="show-upgrade-modal">
-                    <?php esc_html_e('Upgrade to Agency', 'beepbeep-ai-alt-text-generator'); ?>
+                    <?php esc_html_e('Upgrade to Agency', 'opptiai-alt'); ?>
                 </button>
-                <p class="bbai-cta-microcopy"><?php esc_html_e('Perfect for agencies managing multiple client sites.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                <p class="bbai-cta-microcopy"><?php esc_html_e('Perfect for agencies managing multiple client sites.', 'opptiai-alt'); ?></p>
                 <a href="#" class="bbai-compare-link" data-action="show-upgrade-modal">
-                    <?php esc_html_e('Compare plans', 'beepbeep-ai-alt-text-generator'); ?>
+                    <?php esc_html_e('Compare plans', 'opptiai-alt'); ?>
                 </a>
             </div>
         </div>
@@ -191,8 +191,8 @@ $show_upsell = !$is_agency;
                     </svg>
                 </div>
                 <div class="bbai-thank-you-text">
-                    <h3 class="bbai-card-title"><?php esc_html_e('Thank you for being an Agency member!', 'beepbeep-ai-alt-text-generator'); ?></h3>
-                    <p class="bbai-card-subtitle"><?php esc_html_e('You have access to all features. We appreciate your support.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                    <h3 class="bbai-card-title"><?php esc_html_e('Thank you for being an Agency member!', 'opptiai-alt'); ?></h3>
+                    <p class="bbai-card-subtitle"><?php esc_html_e('You have access to all features. We appreciate your support.', 'opptiai-alt'); ?></p>
                 </div>
             </div>
             <div class="bbai-agency-links">
@@ -208,7 +208,7 @@ $show_upsell = !$is_agency;
                         <rect x="2" y="3" width="12" height="10" rx="2"/>
                         <path d="M2 6h12"/>
                     </svg>
-                    <?php esc_html_e('Manage Subscription', 'beepbeep-ai-alt-text-generator'); ?>
+                    <?php esc_html_e('Manage Subscription', 'opptiai-alt'); ?>
                 </a>
                 <?php endif; ?>
                 <a href="#" class="bbai-agency-link" data-action="open-contact-modal">
@@ -216,14 +216,14 @@ $show_upsell = !$is_agency;
                         <path d="M14 10.5V12a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 012 12V4a1.5 1.5 0 011.5-1.5h9A1.5 1.5 0 0114 4v1.5"/>
                         <path d="M8 9.5l6-4.5M8 9.5l-6-4.5"/>
                     </svg>
-                    <?php esc_html_e('Priority Support', 'beepbeep-ai-alt-text-generator'); ?>
+                    <?php esc_html_e('Priority Support', 'opptiai-alt'); ?>
                 </a>
                 <a href="https://beepbeepai.com/docs" class="bbai-agency-link" target="_blank" rel="noopener">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
                         <path d="M4 2h8a2 2 0 012 2v10l-3-2H4a2 2 0 01-2-2V4a2 2 0 012-2z"/>
                         <path d="M5 6h6M5 9h4"/>
                     </svg>
-                    <?php esc_html_e('Documentation', 'beepbeep-ai-alt-text-generator'); ?>
+                    <?php esc_html_e('Documentation', 'opptiai-alt'); ?>
                 </a>
             </div>
         </div>
@@ -234,7 +234,7 @@ $show_upsell = !$is_agency;
 <?php if (!$is_agency) : ?>
 <div class="bbai-footer-contact" style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
     <a href="#" class="bbai-contact-link" data-action="open-contact-modal" style="color: #6b7280; text-decoration: none; font-size: 14px; transition: color 0.2s;">
-        <?php esc_html_e('Contact Us', 'beepbeep-ai-alt-text-generator'); ?>
+        <?php esc_html_e('Contact Us', 'opptiai-alt'); ?>
     </a>
 </div>
 <?php endif; ?>

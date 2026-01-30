@@ -13,7 +13,11 @@ const ReadyToOptimizeCard: React.FC<ReadyToOptimizeCardProps> = ({
     if (onGoToMediaLibrary) {
       onGoToMediaLibrary();
     } else {
-      window.location.href = '/wp-admin/upload.php';
+      const env = (window as any).bbai_env || {};
+      const uploadUrl = env.upload_url || (env.admin_url ? `${env.admin_url}upload.php` : 'upload.php');
+      if (uploadUrl) {
+        window.location.href = uploadUrl;
+      }
     }
   };
 

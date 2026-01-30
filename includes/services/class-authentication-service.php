@@ -60,7 +60,7 @@ class Authentication_Service {
 		if ( empty( $email ) || empty( $password ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Email and password are required', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Email and password are required', 'opptiai-alt' ),
 			);
 		}
 
@@ -72,7 +72,7 @@ class Authentication_Service {
 			if ( ! is_wp_error( $usage ) && isset( $usage['plan'] ) && 'free' === $usage['plan'] ) {
 				return array(
 					'success' => false,
-					'message' => __( 'This site is already linked to a free account. Ask an administrator to upgrade to Growth or Agency for higher limits.', 'beepbeep-ai-alt-text-generator' ),
+					'message' => __( 'This site is already linked to a free account. Ask an administrator to upgrade to Growth or Agency for higher limits.', 'opptiai-alt' ),
 					'code'    => 'free_plan_exists',
 				);
 			}
@@ -89,7 +89,7 @@ class Authentication_Service {
 			if ( 'free_plan_exists' === $error_code || ( is_string( $error_message ) && false !== strpos( strtolower( $error_message ), 'free plan' ) ) ) {
 				return array(
 					'success' => false,
-					'message' => __( 'A free plan has already been used for this site. Upgrade to Growth or Agency to increase your quota.', 'beepbeep-ai-alt-text-generator' ),
+					'message' => __( 'A free plan has already been used for this site. Upgrade to Growth or Agency to increase your quota.', 'opptiai-alt' ),
 					'code'    => 'free_plan_exists',
 				);
 			}
@@ -110,7 +110,7 @@ class Authentication_Service {
 
 		return array(
 			'success' => true,
-			'message' => __( 'Account created successfully', 'beepbeep-ai-alt-text-generator' ),
+			'message' => __( 'Account created successfully', 'opptiai-alt' ),
 			'user'    => $result['user'] ?? null,
 		);
 	}
@@ -129,7 +129,7 @@ class Authentication_Service {
 		if ( empty( $email ) || empty( $password ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Email and password are required', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Email and password are required', 'opptiai-alt' ),
 			);
 		}
 
@@ -148,7 +148,7 @@ class Authentication_Service {
 
 		return array(
 			'success' => true,
-			'message' => __( 'Logged in successfully', 'beepbeep-ai-alt-text-generator' ),
+			'message' => __( 'Logged in successfully', 'opptiai-alt' ),
 			'user'    => $result['user'] ?? null,
 		);
 	}
@@ -168,7 +168,7 @@ class Authentication_Service {
 
 		return array(
 			'success' => true,
-			'message' => __( 'Logged out successfully', 'beepbeep-ai-alt-text-generator' ),
+			'message' => __( 'Logged out successfully', 'opptiai-alt' ),
 		);
 	}
 
@@ -205,7 +205,7 @@ class Authentication_Service {
 
 		return array(
 			'success' => true,
-			'message' => __( 'Account disconnected. Please sign in again to reconnect.', 'beepbeep-ai-alt-text-generator' ),
+			'message' => __( 'Account disconnected. Please sign in again to reconnect.', 'opptiai-alt' ),
 		);
 	}
 
@@ -232,7 +232,7 @@ class Authentication_Service {
 		if ( ! $is_agency ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Admin access is only available for agency licenses', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Admin access is only available for agency licenses', 'opptiai-alt' ),
 			);
 		}
 
@@ -240,7 +240,7 @@ class Authentication_Service {
 		if ( empty( $email ) || ! is_email( $email ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Please enter a valid email address', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Please enter a valid email address', 'opptiai-alt' ),
 			);
 		}
 
@@ -248,7 +248,7 @@ class Authentication_Service {
 		if ( empty( $password ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Please enter your password', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Please enter your password', 'opptiai-alt' ),
 			);
 		}
 
@@ -258,7 +258,7 @@ class Authentication_Service {
 		if ( is_wp_error( $result ) ) {
 			return array(
 				'success' => false,
-				'message' => $result->get_error_message() ?: __( 'Login failed. Please check your credentials.', 'beepbeep-ai-alt-text-generator' ),
+				'message' => $result->get_error_message() ?: __( 'Login failed. Please check your credentials.', 'opptiai-alt' ),
 			);
 		}
 
@@ -270,7 +270,7 @@ class Authentication_Service {
 
 		return array(
 			'success'  => true,
-			'message'  => __( 'Successfully logged in', 'beepbeep-ai-alt-text-generator' ),
+			'message'  => __( 'Successfully logged in', 'opptiai-alt' ),
 			'redirect' => add_query_arg( array( 'tab' => 'admin' ), admin_url( 'upload.php?page=bbai' ) ),
 		);
 	}
@@ -290,7 +290,7 @@ class Authentication_Service {
 
 		return array(
 			'success'  => true,
-			'message'  => __( 'Logged out successfully', 'beepbeep-ai-alt-text-generator' ),
+			'message'  => __( 'Logged out successfully', 'opptiai-alt' ),
 			'redirect' => add_query_arg( array( 'tab' => 'admin' ), admin_url( 'upload.php?page=bbai' ) ),
 		);
 	}
@@ -306,7 +306,7 @@ class Authentication_Service {
 		if ( ! $this->api_client->is_authenticated() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Not authenticated', 'beepbeep-ai-alt-text-generator' ),
+				'message' => __( 'Not authenticated', 'opptiai-alt' ),
 				'code'    => 'not_authenticated',
 			);
 		}
