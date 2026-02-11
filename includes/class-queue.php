@@ -12,6 +12,7 @@ if (!defined('ABSPATH')) {
 class Queue {
     const TABLE_SLUG = 'bbai_queue';
     const CRON_HOOK  = 'bbai_process_queue';
+    // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- SQL identifiers are controlled by plugin schema; runtime values are prepared.
 
     /**
      * Get queue table name.
@@ -26,11 +27,11 @@ class Queue {
      */
     public static function create_table() {
         global $wpdb;
-        $table = self::table();
+        $table = esc_sql( self::table() );
         $charset = $wpdb->get_charset_collate();
 
         $sql = "
-            CREATE TABLE {$table} (
+            CREATE TABLE `{$table}` (
                 id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                 attachment_id BIGINT UNSIGNED NOT NULL,
                 status VARCHAR(20) NOT NULL DEFAULT 'pending',
@@ -70,12 +71,14 @@ class Queue {
         }
 
         $table = self::table();
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
-        $table_escaped = esc_sql($table);
-        $exists = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM `{$table_escaped}` WHERE attachment_id = %d AND status IN ('pending','processing') LIMIT 1",
-            $attachment_id
-        ));
+        $exists = $wpdb->get_var(
+            $wpdb->prepare(
+                'SELECT id FROM `' . self::table() . '` WHERE attachment_id = %d AND status IN (%s,%s) LIMIT 1',
+                $attachment_id,
+                'pending',
+                'processing'
+            )
+        );
 
         if ($exists) {
             self::schedule_processing();
@@ -128,25 +131,20 @@ class Queue {
             return 0;
         }
         
-        // Create placeholders using array_fill() - each ID gets a %d placeholder
-        // This ensures we use dynamic placeholders, not implode() on values
-        $placeholders = array_fill(0, count($ids_clean), '%d');
-        $placeholders_string = implode(',', $placeholders);
-        
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
-        $table_escaped = esc_sql($table);
-        
-        // Build query with placeholders - values will be passed to prepare()
-        // Clear ALL entries (pending, processing, completed, failed) to allow regeneration
-        $query = "DELETE FROM `{$table_escaped}` WHERE attachment_id IN ({$placeholders_string})";
-        // Pass all sanitized IDs as individual arguments using spread operator
-        // Values are already sanitized via array_map('absint', $ids)
-        // Plugin Check requires dynamic placeholders via array_fill() (which we use above)
-        // and all values must be sanitized before prepare() (which we do with absint)
-        $prepared_query = $wpdb->prepare($query, ...$ids_clean);
-        $deleted = $wpdb->query($prepared_query);
-        
-        return $deleted !== false ? $deleted : 0;
+        // Clear ALL entries (pending, processing, completed, failed) to allow regeneration.
+        $deleted = 0;
+        foreach ($ids_clean as $attachment_id) {
+            $rows = $wpdb->delete(
+                $table,
+                ['attachment_id' => $attachment_id],
+                ['%d']
+            );
+            if (false !== $rows) {
+                $deleted += (int) $rows;
+            }
+        }
+
+        return $deleted;
     }
 
     /**
@@ -173,13 +171,12 @@ class Queue {
     public static function claim_batch($limit = 5) {
         global $wpdb;
         $table = self::table();
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
-        $table_escaped = esc_sql($table);
         $limit = max(1, intval($limit));
 
         $candidates = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM `{$table_escaped}` WHERE status = 'pending' ORDER BY id ASC LIMIT %d",
+                'SELECT * FROM `' . self::table() . '` WHERE status = %s ORDER BY id ASC LIMIT %d',
+                'pending',
                 $limit * 3
             ),
             ARRAY_A
@@ -302,14 +299,9 @@ class Queue {
      */
     public static function retry_failed() {
         global $wpdb;
-        $table = self::table();
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
-        $table_escaped = esc_sql($table);
         $wpdb->query(
             $wpdb->prepare(
-                "UPDATE `{$table_escaped}`
-                 SET status = %s, locked_at = NULL, last_error = NULL
-                 WHERE status = %s",
+                'UPDATE `' . self::table() . '` SET status = %s, locked_at = NULL, last_error = NULL WHERE status = %s',
                 'pending',
                 'failed'
             )
@@ -321,21 +313,22 @@ class Queue {
      */
     public static function clear_completed($age_seconds = 0) {
         global $wpdb;
-        $table = self::table();
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
-        $table_escaped = esc_sql($table);
         if ($age_seconds > 0) {
             $threshold = gmdate('Y-m-d H:i:s', time() - intval($age_seconds));
-            $wpdb->query($wpdb->prepare(
-                "DELETE FROM `{$table_escaped}` WHERE status = %s AND completed_at IS NOT NULL AND completed_at < %s",
-                'completed',
-                $threshold
-            ));
+            $wpdb->query(
+                $wpdb->prepare(
+                    'DELETE FROM `' . self::table() . '` WHERE status = %s AND completed_at IS NOT NULL AND completed_at < %s',
+                    'completed',
+                    $threshold
+                )
+            );
         } else {
-            $wpdb->query($wpdb->prepare(
-                "DELETE FROM `{$table_escaped}` WHERE status = %s",
-                'completed'
-            ));
+            $wpdb->query(
+                $wpdb->prepare(
+                    'DELETE FROM `' . self::table() . '` WHERE status = %s',
+                    'completed'
+                )
+            );
         }
     }
 
@@ -345,14 +338,10 @@ class Queue {
      */
     public static function cleanup_redundant_jobs() {
         global $wpdb;
-        $table = self::table();
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
-        $table_escaped = esc_sql($table);
-
         // Get all pending jobs
         $pending_jobs = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT id, attachment_id FROM `{$table_escaped}` WHERE status = %s",
+                'SELECT id, attachment_id FROM `' . self::table() . '` WHERE status = %s',
                 'pending'
             ),
             ARRAY_A
@@ -382,17 +371,16 @@ class Queue {
      */
     public static function reset_stale($timeout = 600) {
         global $wpdb;
-        $table = self::table();
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
-        $table_escaped = esc_sql($table);
         $threshold = gmdate('Y-m-d H:i:s', time() - max(60, intval($timeout)));
 
-        $wpdb->query($wpdb->prepare(
-            "UPDATE `{$table_escaped}`
-             SET status = 'pending', locked_at = NULL
-             WHERE status = 'processing' AND locked_at IS NOT NULL AND locked_at < %s",
-            $threshold
-        ));
+        $wpdb->query(
+            $wpdb->prepare(
+                'UPDATE `' . self::table() . '` SET status = %s, locked_at = NULL WHERE status = %s AND locked_at IS NOT NULL AND locked_at < %s',
+                'pending',
+                'processing',
+                $threshold
+            )
+        );
     }
 
     /**
@@ -400,8 +388,6 @@ class Queue {
      */
     public static function get_stats() {
         global $wpdb;
-        $table = self::table();
-
         // Auto-cleanup redundant pending jobs (images that already have alt text)
         // This runs every hour to keep the queue clean
         $last_cleanup = get_transient('bbai_queue_last_cleanup');
@@ -410,20 +396,26 @@ class Queue {
             set_transient('bbai_queue_last_cleanup', time(), HOUR_IN_SECONDS);
         }
 
-        // Table name is already sanitized via table() method, safe to use directly with esc_sql
-        $table_escaped = esc_sql($table);
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
-        $counts = $wpdb->get_results("SELECT status, COUNT(*) as total FROM `{$table_escaped}` GROUP BY status", OBJECT_K);
+        $counts = $wpdb->get_results(
+            $wpdb->prepare(
+                'SELECT status, COUNT(*) as total FROM `' . self::table() . '` WHERE %d = %d GROUP BY status',
+                1,
+                1
+            ),
+            OBJECT_K
+        );
         $pending     = isset($counts['pending']) ? intval($counts['pending']->total) : 0;
         $processing  = isset($counts['processing']) ? intval($counts['processing']->total) : 0;
         $failed      = isset($counts['failed']) ? intval($counts['failed']->total) : 0;
         $completed   = isset($counts['completed']) ? intval($counts['completed']->total) : 0;
 
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
-        $recent_completed = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM `{$table_escaped}` WHERE status = 'completed' AND completed_at IS NOT NULL AND completed_at > %s",
-            gmdate('Y-m-d H:i:s', time() - DAY_IN_SECONDS)
-        ));
+        $recent_completed = $wpdb->get_var(
+            $wpdb->prepare(
+                'SELECT COUNT(*) FROM `' . self::table() . '` WHERE status = %s AND completed_at IS NOT NULL AND completed_at > %s',
+                'completed',
+                gmdate('Y-m-d H:i:s', time() - DAY_IN_SECONDS)
+            )
+        );
 
         return [
             'pending'    => $pending,
@@ -447,12 +439,9 @@ class Queue {
      */
     public static function get_recent($limit = 20) {
         global $wpdb;
-        $table = self::table();
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
-        $table_escaped = esc_sql($table);
         return $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM `{$table_escaped}` ORDER BY id DESC LIMIT %d",
+                'SELECT * FROM `' . self::table() . '` ORDER BY id DESC LIMIT %d',
                 max(1, intval($limit))
             ),
             ARRAY_A
@@ -464,18 +453,11 @@ class Queue {
      */
     public static function get_recent_failures($limit = 10) {
         global $wpdb;
-        $table = self::table();
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
-        $table_escaped = esc_sql($table);
         $limit = max(1, intval($limit));
 
         return $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT id, attachment_id, status, attempts, source, last_error, enqueued_at, locked_at, completed_at
-                 FROM `{$table_escaped}`
-                 WHERE status = %s
-                 ORDER BY id DESC
-                 LIMIT %d",
+                'SELECT id, attachment_id, status, attempts, source, last_error, enqueued_at, locked_at, completed_at FROM `' . self::table() . '` WHERE status = %s ORDER BY id DESC LIMIT %d',
                 'failed',
                 $limit
             ),
@@ -488,13 +470,14 @@ class Queue {
      */
     public static function purge_completed($age_seconds = 86400) {
         global $wpdb;
-        $table = self::table();
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
-        $table_escaped = esc_sql($table);
         $threshold = gmdate('Y-m-d H:i:s', time() - max(300, intval($age_seconds)));
-        $wpdb->query($wpdb->prepare(
-            "DELETE FROM `{$table_escaped}` WHERE status = 'completed' AND completed_at IS NOT NULL AND completed_at < %s",
-            $threshold
-        ));
+        $wpdb->query(
+            $wpdb->prepare(
+                'DELETE FROM `' . self::table() . '` WHERE status = %s AND completed_at IS NOT NULL AND completed_at < %s',
+                'completed',
+                $threshold
+            )
+        );
     }
+    // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter
 }

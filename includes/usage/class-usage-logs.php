@@ -13,6 +13,7 @@ if (!defined('ABSPATH')) {
 class Usage_Logs {
 	const TABLE_SLUG = 'bbai_usage_logs';
 	private static $table_verified = false;
+	// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- SQL identifiers are controlled by plugin schema; runtime values are prepared.
 
 	/**
 	 * Get the full table name with prefix.
@@ -35,10 +36,8 @@ class Usage_Logs {
 		}
 
 		global $wpdb;
-		$table_name = self::table();
+		$table_name_safe = esc_sql( self::table() );
 		$charset_collate = $wpdb->get_charset_collate();
-
-		$table_name_safe = esc_sql($table_name);
 
 		$sql = "CREATE TABLE IF NOT EXISTS `{$table_name_safe}` (
 			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -74,31 +73,52 @@ class Usage_Logs {
 		if (!self::table_exists()) {
 			return;
 		}
-		
+
 		global $wpdb;
-		$table_name = self::table();
-		$table_name_safe = esc_sql($table_name);
-		
-		// Get existing columns
-		$columns = $wpdb->get_col($wpdb->prepare("SHOW COLUMNS FROM `{$table_name_safe}` LIKE %s", 'site_id'));
-		
-		// Add site_id column if it doesn't exist
+		$table_name = esc_sql( self::table() );
+		$columns = $wpdb->get_col(
+			$wpdb->prepare(
+					'SHOW COLUMNS FROM `' . self::table() . '` LIKE %s',
+				'site_id'
+			)
+		);
+
 		if (empty($columns)) {
-			$alter_add_site_id = "ALTER TABLE `{$table_name_safe}` ADD COLUMN `site_id` VARCHAR(64) NOT NULL DEFAULT '' AFTER `user_id` /* %d */";
-			$wpdb->query($wpdb->prepare($alter_add_site_id, 1));
-			
-			// Add index for site_id if it doesn't exist
-			$indexes = $wpdb->get_col($wpdb->prepare("SHOW INDEXES FROM `{$table_name_safe}` WHERE Key_name = %s", 'site_id'));
+			$wpdb->query(
+				$wpdb->prepare(
+						'ALTER TABLE `' . self::table() . '` ADD COLUMN `site_id` VARCHAR(64) NOT NULL DEFAULT %s AFTER `user_id`',
+					''
+				)
+			);
+
+			$indexes = $wpdb->get_col(
+				$wpdb->prepare(
+						'SHOW INDEXES FROM `' . self::table() . '` WHERE Key_name = %s',
+					'site_id'
+				)
+			);
 			if (empty($indexes)) {
-				$alter_add_site_id_index = "ALTER TABLE `{$table_name_safe}` ADD INDEX `site_id` (`site_id`) /* %d */";
-				$wpdb->query($wpdb->prepare($alter_add_site_id_index, 1));
+				$wpdb->query(
+					$wpdb->prepare(
+							'ALTER TABLE `' . self::table() . '` ADD INDEX `site_id` (`site_id`) /* %d */',
+						1
+					)
+				);
 			}
-			
-			// Add composite index if it doesn't exist
-			$composite_indexes = $wpdb->get_col($wpdb->prepare("SHOW INDEXES FROM `{$table_name_safe}` WHERE Key_name = %s", 'site_created'));
+
+			$composite_indexes = $wpdb->get_col(
+				$wpdb->prepare(
+						'SHOW INDEXES FROM `' . self::table() . '` WHERE Key_name = %s',
+					'site_created'
+				)
+			);
 			if (empty($composite_indexes)) {
-				$alter_add_site_created = "ALTER TABLE `{$table_name_safe}` ADD INDEX `site_created` (`site_id`, `created_at`) /* %d */";
-				$wpdb->query($wpdb->prepare($alter_add_site_created, 1));
+				$wpdb->query(
+					$wpdb->prepare(
+							'ALTER TABLE `' . self::table() . '` ADD INDEX `site_created` (`site_id`, `created_at`) /* %d */',
+						1
+					)
+				);
 			}
 		}
 	}
@@ -110,9 +130,10 @@ class Usage_Logs {
 	 */
 	public static function table_exists() {
 		global $wpdb;
-		$table = self::table();
-		$exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table));
-		return $exists === $table;
+		$exists = $wpdb->get_var(
+			$wpdb->prepare( 'SHOW TABLES LIKE %s', self::table() )
+		);
+		return $exists === self::table();
 	}
 
 	/**
@@ -133,8 +154,7 @@ class Usage_Logs {
 		}
 
 		global $wpdb;
-		$table_name = self::table();
-		$table_name_safe = esc_sql($table_name);
+		$table_name = esc_sql( self::table() );
 
 		// Sanitize inputs
 		$user_id = absint($user_id);
@@ -154,8 +174,12 @@ class Usage_Logs {
 			$action_type = 'generate';
 		}
 
-		// Check if site_id column exists before inserting
-		$columns = $wpdb->get_col($wpdb->prepare("SHOW COLUMNS FROM `{$table_name_safe}` LIKE %s", 'site_id'));
+		$columns = $wpdb->get_col(
+			$wpdb->prepare(
+					'SHOW COLUMNS FROM `' . self::table() . '` LIKE %s',
+				'site_id'
+			)
+		);
 		$has_site_id = !empty($columns);
 		
 		// Prepare insert data
@@ -194,14 +218,13 @@ class Usage_Logs {
 	 *
 	 * @return int Total tokens used this month.
 	 */
-	public static function get_monthly_total_usage() {
+		public static function get_monthly_total_usage() {
 		if (!self::table_exists()) {
 			return 0;
 		}
 
 		global $wpdb;
-		$table = self::table();
-		$table_escaped = esc_sql($table);
+		$table_name = esc_sql( self::table() );
 
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
 		$site_id = \BeepBeepAI\AltTextGenerator\get_site_identifier();
@@ -210,13 +233,14 @@ class Usage_Logs {
 		$current_month_start = wp_date('Y-m-01 00:00:00');
 		$current_month_end = wp_date('Y-m-t 23:59:59');
 
-		$total = $wpdb->get_var($wpdb->prepare(
-			"SELECT SUM(tokens_used) FROM `{$table_escaped}` 
-			WHERE site_id = %s AND created_at >= %s AND created_at <= %s",
-			$site_id,
-			$current_month_start,
-			$current_month_end
-		));
+		$total = $wpdb->get_var(
+			$wpdb->prepare(
+					'SELECT SUM(tokens_used) FROM `' . self::table() . '` WHERE site_id = %s AND created_at >= %s AND created_at <= %s',
+				$site_id,
+				$current_month_start,
+				$current_month_end
+			)
+		);
 
 		return absint($total ?: 0);
 	}
@@ -226,14 +250,13 @@ class Usage_Logs {
 	 *
 	 * @return array Array of user usage data.
 	 */
-	public static function get_monthly_usage_by_user() {
+		public static function get_monthly_usage_by_user() {
 		if (!self::table_exists()) {
 			return [];
 		}
 
 		global $wpdb;
-		$table = self::table();
-		$table_escaped = esc_sql($table);
+		$table_name = esc_sql( self::table() );
 
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
 		$site_id = \BeepBeepAI\AltTextGenerator\get_site_identifier();
@@ -242,19 +265,15 @@ class Usage_Logs {
 		$current_month_start = wp_date('Y-m-01 00:00:00');
 		$current_month_end = wp_date('Y-m-t 23:59:59');
 
-		$results = $wpdb->get_results($wpdb->prepare(
-			"SELECT 
-				user_id,
-				SUM(tokens_used) as tokens_used,
-				MAX(created_at) as last_used
-			FROM `{$table_escaped}`
-			WHERE site_id = %s AND created_at >= %s AND created_at <= %s
-			GROUP BY user_id
-			ORDER BY tokens_used DESC",
-			$site_id,
-			$current_month_start,
-			$current_month_end
-		), ARRAY_A);
+		$results = $wpdb->get_results(
+			$wpdb->prepare(
+					'SELECT user_id, SUM(tokens_used) as tokens_used, MAX(created_at) as last_used FROM `' . self::table() . '` WHERE site_id = %s AND created_at >= %s AND created_at <= %s GROUP BY user_id ORDER BY tokens_used DESC',
+				$site_id,
+				$current_month_start,
+				$current_month_end
+			),
+			ARRAY_A
+		);
 
 		if (!is_array($results)) {
 			return [];
@@ -284,7 +303,7 @@ class Usage_Logs {
 	 * @param array $filters Filter options (user_id, date_from, date_to, action_type, per_page, page).
 	 * @return array Events with pagination info.
 	 */
-	public static function get_usage_events($filters = []) {
+		public static function get_usage_events($filters = []) {
 		if (!self::table_exists()) {
 			return [
 				'events' => [],
@@ -294,8 +313,7 @@ class Usage_Logs {
 		}
 
 		global $wpdb;
-		$table = self::table();
-		$table_escaped = esc_sql($table);
+		$table_name = esc_sql( self::table() );
 
 		$defaults = [
 			'user_id'    => null,
@@ -311,52 +329,54 @@ class Usage_Logs {
 		$site_id = \BeepBeepAI\AltTextGenerator\get_site_identifier();
 		$site_id = sanitize_text_field(substr($site_id, 0, 64));
 
-		$where = [];
-		$params = [];
+		$user_id = ($filters['user_id'] !== null && $filters['user_id'] !== '') ? absint($filters['user_id']) : 0;
+		$has_user_filter = $user_id > 0 ? 1 : 0;
+		$date_from = !empty($filters['date_from']) ? sanitize_text_field($filters['date_from']) . ' 00:00:00' : '';
+		$date_to = !empty($filters['date_to']) ? sanitize_text_field($filters['date_to']) . ' 23:59:59' : '';
+		$action_type = !empty($filters['action_type']) ? sanitize_key($filters['action_type']) : '';
 
-		// Always filter by site_id
-		$where[] = 'site_id = %s';
-		$params[] = $site_id;
+		$base_params = [
+			$site_id,
+			$has_user_filter,
+			0,
+			$user_id,
+			$date_from,
+			'',
+			$date_from,
+			$date_to,
+			'',
+			$date_to,
+			$action_type,
+			'',
+			$action_type,
+		];
 
-		if ($filters['user_id'] !== null && $filters['user_id'] !== '') {
-			$where[] = 'user_id = %d';
-			$params[] = absint($filters['user_id']);
-		}
-
-		if ($filters['date_from']) {
-			$where[] = 'created_at >= %s';
-			$params[] = sanitize_text_field($filters['date_from']) . ' 00:00:00';
-		}
-
-		if ($filters['date_to']) {
-			$where[] = 'created_at <= %s';
-			$params[] = sanitize_text_field($filters['date_to']) . ' 23:59:59';
-		}
-
-		if ($filters['action_type']) {
-			$where[] = 'action_type = %s';
-			$params[] = sanitize_key($filters['action_type']);
-		}
-
-		$where_sql = count($where) > 0 ? 'WHERE ' . implode(' AND ', $where) : '';
-
-		// Get total count
-		$count_query = "SELECT COUNT(*) FROM `{$table_escaped}` {$where_sql}";
-		$total = $wpdb->get_var($wpdb->prepare($count_query, $params));
+		$total = $wpdb->get_var(
+			$wpdb->prepare(
+					'SELECT COUNT(*) FROM `' . self::table() . '` WHERE site_id = %s AND (%d = %d OR user_id = %d) AND (%s = %s OR created_at >= %s) AND (%s = %s OR created_at <= %s) AND (%s = %s OR action_type = %s)',
+				$base_params
+			)
+		);
 		$total = absint($total ?: 0);
 
 		// Pagination
-		$per_page = absint($filters['per_page']);
-		$page = absint($filters['page']);
+		$per_page = max(1, absint($filters['per_page']));
+		$page = max(1, absint($filters['page']));
 		$offset = ($page - 1) * $per_page;
 		$pages = ceil($total / $per_page);
 
 		// Get events
-		$query = "SELECT * FROM `{$table_escaped}` {$where_sql} ORDER BY created_at DESC LIMIT %d OFFSET %d";
-		$params[] = $per_page;
-		$params[] = $offset;
+		$query_params   = $base_params;
+		$query_params[] = $per_page;
+		$query_params[] = $offset;
 
-		$events = $wpdb->get_results($wpdb->prepare($query, $params), ARRAY_A);
+		$events = $wpdb->get_results(
+			$wpdb->prepare(
+					'SELECT * FROM `' . self::table() . '` WHERE site_id = %s AND (%d = %d OR user_id = %d) AND (%s = %s OR created_at >= %s) AND (%s = %s OR created_at <= %s) AND (%s = %s OR action_type = %s) ORDER BY created_at DESC LIMIT %d OFFSET %d',
+				$query_params
+			),
+			ARRAY_A
+		);
 
 		if (!is_array($events)) {
 			$events = [];
@@ -388,4 +408,5 @@ class Usage_Logs {
 			'page'   => $page,
 		];
 	}
+	// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter
 }

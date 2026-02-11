@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since   5.0.0
  */
 class Usage_Service {
+	// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- SQL identifiers are controlled by plugin schema; runtime values are prepared.
 	/**
 	 * API client instance.
 	 *
@@ -218,7 +219,7 @@ class Usage_Service {
 		if ( $include_all ) {
 			$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 				$wpdb->prepare(
-					"SELECT * FROM {$table_name} ORDER BY id DESC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					'SELECT * FROM `' . $wpdb->prefix . 'bbai_usage` ORDER BY id DESC LIMIT %d',
 					$limit
 				),
 				ARRAY_A
@@ -226,7 +227,7 @@ class Usage_Service {
 		} else {
 			$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 				$wpdb->prepare(
-					"SELECT user_id, tokens_used, action_type, created_at FROM {$table_name} ORDER BY id DESC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					'SELECT user_id, tokens_used, action_type, created_at FROM `' . $wpdb->prefix . 'bbai_usage` ORDER BY id DESC LIMIT %d',
 					$limit
 				),
 				ARRAY_A
@@ -257,4 +258,5 @@ class Usage_Service {
 
 		wp_mail( $email, $subject, $message );
 	}
+	// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter
 }

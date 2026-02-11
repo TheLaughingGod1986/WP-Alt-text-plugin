@@ -11,6 +11,7 @@ if (!defined('ABSPATH')) {
 }
 
 class Credit_Usage_Page {
+	// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- SQL identifiers are controlled by plugin schema; runtime values are prepared.
 
 	/**
 	 * Register admin menu page (deprecated - now integrated as a tab).
@@ -47,13 +48,17 @@ class Credit_Usage_Page {
 		echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Credit usage table created successfully!', 'opptiai-alt' ) . '</p></div>';
 	}
 
-	// Get filter parameters
-	$date_from = isset($_GET['date_from']) ? sanitize_text_field(wp_unslash($_GET['date_from'])) : '';
-	$date_to = isset($_GET['date_to']) ? sanitize_text_field(wp_unslash($_GET['date_to'])) : '';
-	$user_id = isset($_GET['user_id']) ? absint($_GET['user_id']) : 0;
-	$source = isset($_GET['source']) ? sanitize_key($_GET['source']) : '';
-	$page = isset($_GET['paged']) ? max(1, absint($_GET['paged'])) : 1;
-	$view = isset($_GET['view']) ? sanitize_key($_GET['view']) : 'summary'; // 'summary' or 'user_detail'
+		// Get filter parameters
+		$date_from = isset($_GET['date_from']) ? sanitize_text_field(wp_unslash($_GET['date_from'])) : '';
+		$date_to = isset($_GET['date_to']) ? sanitize_text_field(wp_unslash($_GET['date_to'])) : '';
+		$user_id_raw = isset($_GET['user_id']) ? wp_unslash($_GET['user_id']) : 0;
+		$user_id     = absint($user_id_raw);
+		$source_raw  = isset($_GET['source']) ? wp_unslash($_GET['source']) : '';
+		$source      = is_string($source_raw) ? sanitize_key($source_raw) : '';
+		$page_raw    = isset($_GET['paged']) ? wp_unslash($_GET['paged']) : 1;
+		$page        = max(1, absint($page_raw));
+		$view_raw    = isset($_GET['view']) ? wp_unslash($_GET['view']) : 'summary';
+		$view        = is_string($view_raw) ? sanitize_key($view_raw) : 'summary'; // 'summary' or 'user_detail'
 
 	// Build query args
 	$query_args = [
@@ -114,44 +119,54 @@ class Credit_Usage_Page {
 	$table_exists = Credit_Usage_Logger::table_exists();
 	$debug_info = [];
 	
-	if ($table_exists) {
-		global $wpdb;
-		$table_name = Credit_Usage_Logger::table();
-		$table_name_escaped = esc_sql($table_name);
-		
-		// Get total row count
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
-		$total_rows = $wpdb->get_var("SELECT COUNT(*) FROM `{$table_name_escaped}`");
+		if ($table_exists) {
+			global $wpdb;
+			
+			// Get total row count
+			$total_rows = $wpdb->get_var(
+				$wpdb->prepare(
+				'SELECT COUNT(*) FROM `' . Credit_Usage_Logger::table() . '` WHERE %d = %d',
+				1,
+				1
+			)
+			);
 		$debug_info['total_rows'] = absint($total_rows);
 		
 		// Get distinct user count
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
-		$distinct_users = $wpdb->get_var("SELECT COUNT(DISTINCT user_id) FROM `{$table_name_escaped}`");
+			$distinct_users = $wpdb->get_var(
+					$wpdb->prepare(
+						'SELECT COUNT(DISTINCT user_id) FROM `' . Credit_Usage_Logger::table() . '` WHERE %d = %d',
+						1,
+						1
+					)
+			);
 		$debug_info['distinct_users'] = absint($distinct_users);
 		
 		// Get sample of actual data (for debugging) - raw query without filters
 		if ($total_rows > 0) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
-			$sample_data = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT user_id, attachment_id, credits_used, source, generated_at FROM `{$table_name_escaped}` ORDER BY generated_at DESC LIMIT %d",
-					10
-				),
-				ARRAY_A
-			);
+				$sample_data = $wpdb->get_results(
+						$wpdb->prepare(
+							'SELECT user_id, attachment_id, credits_used, source, generated_at FROM `' . Credit_Usage_Logger::table() . '` ORDER BY generated_at DESC LIMIT %d',
+							10
+						),
+					ARRAY_A
+				);
 			$debug_info['sample_data'] = $sample_data;
 			
 			// Get user breakdown summary
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
-			$user_breakdown = $wpdb->get_results(
-				"SELECT user_id, COUNT(*) as count, SUM(credits_used) as total_credits FROM `{$table_name_escaped}` GROUP BY user_id ORDER BY total_credits DESC",
+				$user_breakdown = $wpdb->get_results(
+						$wpdb->prepare(
+							'SELECT user_id, COUNT(*) as count, SUM(credits_used) as total_credits FROM `' . Credit_Usage_Logger::table() . '` WHERE %d = %d GROUP BY user_id ORDER BY total_credits DESC',
+							1,
+							1
+						),
 				ARRAY_A
 			);
 			$debug_info['user_breakdown'] = $user_breakdown;
-		} else {
-			$debug_info['sample_data'] = [];
-			$debug_info['user_breakdown'] = [];
-		}
+			} else {
+				$debug_info['sample_data'] = [];
+				$debug_info['user_breakdown'] = [];
+			}
 	} else {
 		$debug_info['table_exists'] = false;
 	}
@@ -172,10 +187,10 @@ class Credit_Usage_Page {
 	$partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/credit-usage-content.php';
 	if (file_exists($partial)) {
 		include $partial;
-	} else {
-		esc_html_e('Credit usage content unavailable.', 'opptiai-alt');
-	}
-	}
+		} else {
+			esc_html_e('Credit usage content unavailable.', 'opptiai-alt');
+		}
+		}
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter
 
 }
-

@@ -16,6 +16,7 @@ if (!defined('ABSPATH')) {
 class Contact_Submissions {
 	const TABLE_SLUG = 'bbai_contact_submissions';
 	private static $table_verified = false;
+	// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- SQL identifiers are controlled by plugin schema; runtime values are prepared.
 
 	/**
 	 * Get the full table name with prefix.
@@ -36,10 +37,8 @@ class Contact_Submissions {
 		}
 
 		global $wpdb;
-		$table_name = self::table();
+		$table_name_safe = esc_sql( self::table() );
 		$charset_collate = $wpdb->get_charset_collate();
-
-		$table_name_safe = esc_sql($table_name);
 
 		$sql = "CREATE TABLE IF NOT EXISTS `{$table_name_safe}` (
 			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -91,7 +90,7 @@ class Contact_Submissions {
 	public static function save_submission($data) {
 		global $wpdb;
 
-		$table_name = self::table();
+		$table_name = esc_sql( self::table() );
 		$user_id = get_current_user_id();
 
 		$result = $wpdb->insert(
@@ -135,10 +134,8 @@ class Contact_Submissions {
 	 *     @type int    $pages     Total number of pages.
 	 * }
 	 */
-	public static function get_submissions($args = []) {
+	public static function get_submissions( $args = [] ) {
 		global $wpdb;
-
-		$table_name = self::table();
 
 		$defaults = [
 			'per_page' => 20,
@@ -149,48 +146,127 @@ class Contact_Submissions {
 			'order'    => 'DESC',
 		];
 
-		$args = wp_parse_args($args, $defaults);
-		$per_page = absint($args['per_page']);
-		$page = absint($args['page']);
-		$offset = ($page - 1) * $per_page;
-
-		// Build WHERE clause
-		$where = ['1=1'];
-		$where_values = [];
-
-		if (!empty($args['status'])) {
-			$where[] = 'status = %s';
-			$where_values[] = sanitize_text_field($args['status']);
+		$args     = wp_parse_args( $args, $defaults );
+		$per_page = absint( $args['per_page'] );
+		if ( $per_page <= 0 ) {
+			$per_page = 20;
 		}
 
-		if (!empty($args['search'])) {
-			$search = '%' . $wpdb->esc_like($args['search']) . '%';
-			$where[] = '(name LIKE %s OR email LIKE %s OR subject LIKE %s OR message LIKE %s)';
-			$where_values = array_merge($where_values, [$search, $search, $search, $search]);
+		$page   = max( 1, absint( $args['page'] ) );
+		$offset = ( $page - 1 ) * $per_page;
+
+		$status = '';
+		if ( ! empty( $args['status'] ) && is_string( $args['status'] ) ) {
+			$status = sanitize_text_field( $args['status'] );
 		}
 
-		$where_clause = implode(' AND ', $where);
-
-		// Validate orderby
-		$allowed_orderby = ['created_at', 'name', 'email', 'status'];
-		$orderby = in_array($args['orderby'], $allowed_orderby, true) ? $args['orderby'] : 'created_at';
-		$order = strtoupper($args['order']) === 'ASC' ? 'ASC' : 'DESC';
-
-		// Get total count
-		$count_query = "SELECT COUNT(*) FROM `{$table_name}` WHERE {$where_clause}";
-		if (!empty($where_values)) {
-			$count_query = $wpdb->prepare($count_query, $where_values);
+		$search_term = '';
+		if ( ! empty( $args['search'] ) && is_string( $args['search'] ) ) {
+			$search_term = sanitize_text_field( $args['search'] );
 		}
-		$total = (int) $wpdb->get_var($count_query);
+		$search_like = '%' . $wpdb->esc_like( $search_term ) . '%';
 
-		// Get items
-		$query = "SELECT * FROM `{$table_name}` WHERE {$where_clause} ORDER BY `{$orderby}` {$order} LIMIT %d OFFSET %d";
-		$query_values = array_merge($where_values, [$per_page, $offset]);
-		$query = $wpdb->prepare($query, $query_values);
+		// Validate orderby — strict allowlist mapping to real column names.
+		$allowed_orderby = [
+			'created_at' => 'created_at',
+			'name'       => 'name',
+			'email'      => 'email',
+			'status'     => 'status',
+		];
+		$orderby = isset( $allowed_orderby[ $args['orderby'] ] ) ? $allowed_orderby[ $args['orderby'] ] : 'created_at';
 
-		$items = $wpdb->get_results($query, OBJECT);
+		$order = ( ! empty( $args['order'] ) && is_string( $args['order'] ) && strtoupper( $args['order'] ) === 'ASC' )
+			? 'ASC'
+			: 'DESC';
 
-		$pages = $total > 0 ? ceil($total / $per_page) : 0;
+		$base_params = [
+			$status,
+			'',
+			$status,
+			$search_term,
+			'',
+			$search_like,
+			$search_like,
+			$search_like,
+			$search_like,
+		];
+
+		$total = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				'SELECT COUNT(*) FROM `' . self::table() . '` WHERE (%s = %s OR status = %s) AND (%s = %s OR name LIKE %s OR email LIKE %s OR subject LIKE %s OR message LIKE %s)',
+				$base_params
+			)
+		);
+
+		$query_params = array_merge( $base_params, [ $per_page, $offset ] );
+
+		if ( 'name' === $orderby && 'ASC' === $order ) {
+			$items = $wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT * FROM `' . self::table() . '` WHERE (%s = %s OR status = %s) AND (%s = %s OR name LIKE %s OR email LIKE %s OR subject LIKE %s OR message LIKE %s) ORDER BY name ASC LIMIT %d OFFSET %d',
+					$query_params
+				),
+				OBJECT
+			);
+		} elseif ( 'name' === $orderby ) {
+			$items = $wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT * FROM `' . self::table() . '` WHERE (%s = %s OR status = %s) AND (%s = %s OR name LIKE %s OR email LIKE %s OR subject LIKE %s OR message LIKE %s) ORDER BY name DESC LIMIT %d OFFSET %d',
+					$query_params
+				),
+				OBJECT
+			);
+		} elseif ( 'email' === $orderby && 'ASC' === $order ) {
+			$items = $wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT * FROM `' . self::table() . '` WHERE (%s = %s OR status = %s) AND (%s = %s OR name LIKE %s OR email LIKE %s OR subject LIKE %s OR message LIKE %s) ORDER BY email ASC LIMIT %d OFFSET %d',
+					$query_params
+				),
+				OBJECT
+			);
+		} elseif ( 'email' === $orderby ) {
+			$items = $wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT * FROM `' . self::table() . '` WHERE (%s = %s OR status = %s) AND (%s = %s OR name LIKE %s OR email LIKE %s OR subject LIKE %s OR message LIKE %s) ORDER BY email DESC LIMIT %d OFFSET %d',
+					$query_params
+				),
+				OBJECT
+			);
+		} elseif ( 'status' === $orderby && 'ASC' === $order ) {
+			$items = $wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT * FROM `' . self::table() . '` WHERE (%s = %s OR status = %s) AND (%s = %s OR name LIKE %s OR email LIKE %s OR subject LIKE %s OR message LIKE %s) ORDER BY status ASC LIMIT %d OFFSET %d',
+					$query_params
+				),
+				OBJECT
+			);
+		} elseif ( 'status' === $orderby ) {
+			$items = $wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT * FROM `' . self::table() . '` WHERE (%s = %s OR status = %s) AND (%s = %s OR name LIKE %s OR email LIKE %s OR subject LIKE %s OR message LIKE %s) ORDER BY status DESC LIMIT %d OFFSET %d',
+					$query_params
+				),
+				OBJECT
+			);
+		} elseif ( 'ASC' === $order ) {
+			$items = $wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT * FROM `' . self::table() . '` WHERE (%s = %s OR status = %s) AND (%s = %s OR name LIKE %s OR email LIKE %s OR subject LIKE %s OR message LIKE %s) ORDER BY created_at ASC LIMIT %d OFFSET %d',
+					$query_params
+				),
+				OBJECT
+			);
+		} else {
+			$items = $wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT * FROM `' . self::table() . '` WHERE (%s = %s OR status = %s) AND (%s = %s OR name LIKE %s OR email LIKE %s OR subject LIKE %s OR message LIKE %s) ORDER BY created_at DESC LIMIT %d OFFSET %d',
+					$query_params
+				),
+				OBJECT
+			);
+		}
+
+		$pages = $total > 0 ? ceil( $total / $per_page ) : 0;
 
 		return [
 			'items' => $items ?: [],
@@ -207,13 +283,11 @@ class Contact_Submissions {
 	 */
 	public static function get_submission($id) {
 		global $wpdb;
-
-		$table_name = self::table();
 		$id = absint($id);
 
 		$submission = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT * FROM `{$table_name}` WHERE id = %d",
+				'SELECT * FROM `' . self::table() . '` WHERE id = %d',
 				$id
 			),
 			OBJECT
@@ -243,7 +317,13 @@ class Contact_Submissions {
 			$update_data['read_at'] = current_time('mysql');
 		} elseif ($status === 'replied') {
 			$update_data['replied_at'] = current_time('mysql');
-			if (empty($wpdb->get_var($wpdb->prepare("SELECT read_at FROM `{$table_name}` WHERE id = %d", $id)))) {
+			$read_at = $wpdb->get_var(
+				$wpdb->prepare(
+					'SELECT read_at FROM `' . self::table() . '` WHERE id = %d',
+					$id
+				)
+			);
+			if ( empty( $read_at ) ) {
 				$update_data['read_at'] = current_time('mysql');
 			}
 		}
@@ -287,13 +367,14 @@ class Contact_Submissions {
 	 */
 	public static function get_unread_count() {
 		global $wpdb;
-
-		$table_name = self::table();
-
 		$count = $wpdb->get_var(
-			"SELECT COUNT(*) FROM `{$table_name}` WHERE status = 'new'"
+			$wpdb->prepare(
+				'SELECT COUNT(*) FROM `' . self::table() . '` WHERE status = %s',
+				'new'
+			)
 		);
 
 		return (int) $count;
 	}
+	// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter
 }

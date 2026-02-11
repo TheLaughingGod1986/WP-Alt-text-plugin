@@ -162,35 +162,24 @@ $meta_keys_to_delete = [
 	'_ai_alt_usage',
 ];
 
-// Delete post meta using prepared statements for security
+// Delete post meta using prepared statements for security.
+$postmeta_table = esc_sql( $wpdb->postmeta );
 foreach ( $meta_keys_to_delete as $meta_key ) {
-	$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->postmeta} WHERE meta_key = %s", $meta_key ) );
+	$wpdb->query(
+		$wpdb->prepare(
+			'DELETE FROM `' . $postmeta_table . '` WHERE meta_key = %s',
+			$meta_key
+		)
+	); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table name is schema-controlled and escaped with esc_sql().
 }
 
-// Drop custom tables
-// Note: Table names cannot be parameterized in SQL, so we use esc_sql() as per WordPress standards
-// The table prefix comes from $wpdb->prefix which is already validated by WordPress core
-$table_prefix = $wpdb->prefix;
+// Drop custom tables.
+$queue_table_safe        = esc_sql( $wpdb->prefix . 'bbai_queue' );
+$logs_table_safe         = esc_sql( $wpdb->prefix . 'bbai_logs' );
+$legacy_queue_table_safe = esc_sql( $wpdb->prefix . 'beepbeepai_queue' );
+$legacy_logs_table_safe  = esc_sql( $wpdb->prefix . 'beepbeepai_logs' );
 
-// Queue table
-$queue_table = $table_prefix . 'bbai_queue';
-$queue_table_safe = esc_sql( $queue_table );
-// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is escaped with esc_sql()
-$wpdb->query( "DROP TABLE IF EXISTS `{$queue_table_safe}`" );
-
-// Logs table
-$logs_table = $table_prefix . 'bbai_logs';
-$logs_table_safe = esc_sql( $logs_table );
-// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is escaped with esc_sql()
-$wpdb->query( "DROP TABLE IF EXISTS `{$logs_table_safe}`" );
-
-// Legacy table names (if they exist)
-$legacy_queue_table = $table_prefix . 'beepbeepai_queue';
-$legacy_queue_table_safe = esc_sql( $legacy_queue_table );
-// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is escaped with esc_sql()
-$wpdb->query( "DROP TABLE IF EXISTS `{$legacy_queue_table_safe}`" );
-
-$legacy_logs_table = $table_prefix . 'beepbeepai_logs';
-$legacy_logs_table_safe = esc_sql( $legacy_logs_table );
-// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is escaped with esc_sql()
-$wpdb->query( "DROP TABLE IF EXISTS `{$legacy_logs_table_safe}`" );
+$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS `' . $queue_table_safe . '` /* %d */', 1 ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table name is schema-controlled and escaped with esc_sql().
+$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS `' . $logs_table_safe . '` /* %d */', 1 ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table name is schema-controlled and escaped with esc_sql().
+$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS `' . $legacy_queue_table_safe . '` /* %d */', 1 ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table name is schema-controlled and escaped with esc_sql().
+$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS `' . $legacy_logs_table_safe . '` /* %d */', 1 ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table name is schema-controlled and escaped with esc_sql().

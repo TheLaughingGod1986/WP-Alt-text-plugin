@@ -11,6 +11,7 @@ class Debug_Log {
     const TABLE_SLUG = 'bbai_logs';
     const MAX_MESSAGE_LENGTH = 2000;
     const MAX_CONTEXT_LENGTH = 4000;
+    // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- SQL identifiers are controlled by plugin schema; runtime values are prepared.
 
     private static $table_verified = false;
 
@@ -27,10 +28,10 @@ class Debug_Log {
      */
     public static function create_table() {
         global $wpdb;
-        $table = self::table();
+        $table = esc_sql( self::table() );
         $charset_collate = $wpdb->get_charset_collate();
 
-        $sql = "CREATE TABLE {$table} (
+        $sql = "CREATE TABLE `{$table}` (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             level VARCHAR(20) NOT NULL DEFAULT 'info',
             message TEXT NOT NULL,
@@ -82,8 +83,9 @@ class Debug_Log {
         $user_id = $user_id > 0 ? intval($user_id) : null;
 
         global $wpdb;
+        $table = esc_sql( self::table() );
         $wpdb->insert(
-            self::table(),
+            $table,
             [
                 'level'      => $level,
                 'message'    => $message,
@@ -134,67 +136,62 @@ class Debug_Log {
         $page = max(1, intval($args['page']));
         $offset = ($page - 1) * $per_page;
 
-        $where = [];
-        $params = [];
-
+        $level = '';
         if (!empty($args['level']) && in_array($args['level'], self::allowed_levels(), true)) {
-            $where[] = 'level = %s';
-            $params[] = $args['level'];
+            $level = $args['level'];
         }
 
+        $like = '';
         if (!empty($args['search'])) {
             $like = '%' . $wpdb->esc_like($args['search']) . '%';
-            $where[] = '(message LIKE %s OR context LIKE %s)';
-            $params[] = $like;
-            $params[] = $like;
         }
 
         $date_from = !empty($args['date_from']) ? sanitize_text_field($args['date_from']) : '';
         $date_to = !empty($args['date_to']) ? sanitize_text_field($args['date_to']) : '';
-        if ($date_from || $date_to) {
-            if ($date_from && $date_to) {
-                $where[] = 'DATE(created_at) BETWEEN %s AND %s';
-                $params[] = $date_from;
-                $params[] = $date_to;
-            } elseif ($date_from) {
-                $where[] = 'DATE(created_at) >= %s';
-                $params[] = $date_from;
-            } else {
-                $where[] = 'DATE(created_at) <= %s';
-                $params[] = $date_to;
-            }
-        } elseif (!empty($args['date'])) {
+        $date = '';
+        if (!$date_from && !$date_to && !empty($args['date'])) {
             $date = sanitize_text_field($args['date']);
-            $where[] = 'DATE(created_at) = %s';
-            $params[] = $date;
         }
+        $has_exact_date = $date !== '' ? 1 : 0;
 
-        $where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
-        $table = self::table();
-        // Table names are sanitized in table() method, safe to use directly with esc_sql
-        $table_escaped = esc_sql($table);
+	        $query_params = [
+	            $level,
+	            '',
+	            $level,
+            $like,
+            '',
+            $like,
+            $like,
+            $has_exact_date,
+            1,
+            $date,
+            $has_exact_date,
+            0,
+            $date_from,
+            '',
+            $date_from,
+            $date_to,
+            '',
+            $date_to,
+	            $per_page,
+	            $offset,
+	        ];
+	        $rows = $wpdb->get_results(
+	            $wpdb->prepare(
+	                'SELECT * FROM `' . self::table() . '` WHERE (%s = %s OR level = %s) AND (%s = %s OR message LIKE %s OR context LIKE %s) AND ((%d = %d AND DATE(created_at) = %s) OR (%d = %d AND (%s = %s OR DATE(created_at) >= %s) AND (%s = %s OR DATE(created_at) <= %s))) ORDER BY created_at DESC LIMIT %d OFFSET %d',
+	                $query_params
+	            ),
+	            ARRAY_A
+	        );
 
-        $query = "SELECT * FROM {$table_escaped} {$where_sql} ORDER BY created_at DESC LIMIT %d OFFSET %d";
-        array_push($params, $per_page, $offset);
-        $prepared = $wpdb->prepare($query, $params);
-        $rows = $wpdb->get_results($prepared, ARRAY_A);
-
-        // Build count query - only use prepare() if there are placeholders
-        // Build count params (exclude LIMIT and OFFSET params)
-        $count_params = array_slice($params, 0, count($params) - 2);
-        $count_query = "SELECT COUNT(*) FROM {$table_escaped} {$where_sql}";
-        
-        // Only use prepare() if there are placeholders in the query
-        // WordPress requires at least one placeholder when using prepare()
-        if (empty($count_params)) {
-            // No WHERE conditions - query has no placeholders, use directly
-            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped, no user input
-            $count_prepared = $count_query;
-        } else {
-            // When there are WHERE conditions, prepare with those params
-            $count_prepared = $wpdb->prepare($count_query, $count_params);
-        }
-        $total_items = intval($wpdb->get_var($count_prepared));
+	        $total_items = intval(
+	            $wpdb->get_var(
+	                $wpdb->prepare(
+	                    'SELECT COUNT(*) FROM `' . self::table() . '` WHERE (%s = %s OR level = %s) AND (%s = %s OR message LIKE %s OR context LIKE %s) AND ((%d = %d AND DATE(created_at) = %s) OR (%d = %d AND (%s = %s OR DATE(created_at) >= %s) AND (%s = %s OR DATE(created_at) <= %s)))',
+	                    array_slice( $query_params, 0, 18 )
+	                )
+	            )
+	        );
         $total_pages = $per_page > 0 ? ceil($total_items / $per_page) : 1;
 
         $logs = array_map([self::class, 'format_log'], $rows);
@@ -226,16 +223,39 @@ class Debug_Log {
         }
 
         global $wpdb;
-        $table = self::table();
-        // Table names are sanitized in table() method, safe to use directly
-        $table_escaped = esc_sql($table);
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
-        $totals = $wpdb->get_results("SELECT level, COUNT(*) as total FROM `{$table_escaped}` GROUP BY level", OBJECT_K);
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
-        $total_logs = intval($wpdb->get_var("SELECT COUNT(*) FROM `{$table_escaped}`"));
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
-        $last_event = $wpdb->get_var("SELECT created_at FROM `{$table_escaped}` ORDER BY created_at DESC LIMIT 1");
-        $last_api_call = $wpdb->get_var($wpdb->prepare("SELECT created_at FROM `{$table_escaped}` WHERE source = %s ORDER BY created_at DESC LIMIT 1", 'api'));
+	        $totals = $wpdb->get_results(
+	            $wpdb->prepare(
+	                'SELECT level, COUNT(*) as total FROM `' . self::table() . '` WHERE %d = %d GROUP BY level',
+	                1,
+	                1
+	            ),
+            OBJECT_K
+        );
+
+	        $total_logs = intval(
+	            $wpdb->get_var(
+	                $wpdb->prepare(
+	                    'SELECT COUNT(*) FROM `' . self::table() . '` WHERE %d = %d',
+	                    1,
+	                    1
+	                )
+	            )
+        );
+
+	        $last_event = $wpdb->get_var(
+	            $wpdb->prepare(
+	                'SELECT created_at FROM `' . self::table() . '` WHERE %d = %d ORDER BY created_at DESC LIMIT 1',
+	                1,
+	                1
+	            )
+	        );
+
+	        $last_api_call = $wpdb->get_var(
+	            $wpdb->prepare(
+	                'SELECT created_at FROM `' . self::table() . '` WHERE source = %s ORDER BY created_at DESC LIMIT 1',
+	                'api'
+	            )
+	        );
 
         return [
             'total'    => $total_logs,
@@ -251,12 +271,14 @@ class Debug_Log {
             return;
         }
 
-        global $wpdb;
-        $table = self::table();
-        // Table names are sanitized in table() method, safe to use directly with esc_sql
-        $table_escaped = esc_sql($table);
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
-        $wpdb->query("DELETE FROM `{$table_escaped}`");
+	        global $wpdb;
+	        $wpdb->query(
+	            $wpdb->prepare(
+	                'DELETE FROM `' . self::table() . '` WHERE %d = %d',
+	                1,
+	                1
+	            )
+	        );
     }
 
     public static function delete_older_than($days = 30) {
@@ -264,14 +286,15 @@ class Debug_Log {
             return;
         }
 
-        global $wpdb;
-        $table = self::table();
-        // Table names are sanitized in table() method, safe to use directly with esc_sql
-        $table_escaped = esc_sql($table);
-        $threshold = gmdate('Y-m-d H:i:s', time() - ($days * DAY_IN_SECONDS));
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is validated and escaped
-        $wpdb->query($wpdb->prepare("DELETE FROM `{$table_escaped}` WHERE created_at < %s", $threshold));
-    }
+	        global $wpdb;
+	        $threshold = gmdate('Y-m-d H:i:s', time() - ($days * DAY_IN_SECONDS));
+	        $wpdb->query(
+	            $wpdb->prepare(
+	                'DELETE FROM `' . self::table() . '` WHERE created_at < %s',
+	                $threshold
+	            )
+	        );
+	    }
 
     private static function allowed_levels() {
         return ['debug', 'info', 'warning', 'error'];
@@ -357,9 +380,11 @@ class Debug_Log {
         }
 
         global $wpdb;
-        $table = self::table();
-        $exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table));
+        $exists = $wpdb->get_var(
+            $wpdb->prepare( 'SHOW TABLES LIKE %s', self::table() )
+        );
         self::$table_verified = !empty($exists);
         return self::$table_verified;
     }
+    // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter
 }

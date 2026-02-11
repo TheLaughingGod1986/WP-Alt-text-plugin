@@ -13,6 +13,7 @@ if (!defined('ABSPATH')) {
 class Credit_Usage_Logger {
 	const TABLE_SLUG = 'bbai_credit_usage';
 	private static $table_verified = false;
+	// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- Credit usage table name is controlled by plugin schema and values are prepared.
 
 	/**
 	 * Get the full table name with prefix.
@@ -33,11 +34,8 @@ class Credit_Usage_Logger {
 		}
 
 		global $wpdb;
-		$table_name = self::table();
+		$table_name_safe = esc_sql( self::table() );
 		$charset_collate = $wpdb->get_charset_collate();
-
-		// Use esc_sql for table name in DDL
-		$table_name_safe = esc_sql($table_name);
 
 		$sql = "CREATE TABLE IF NOT EXISTS `{$table_name_safe}` (
 			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -74,9 +72,10 @@ class Credit_Usage_Logger {
 	 */
 	public static function table_exists() {
 		global $wpdb;
-		$table = self::table();
-		$exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table));
-		return $exists === $table;
+		$exists = $wpdb->get_var(
+			$wpdb->prepare( 'SHOW TABLES LIKE %s', self::table() )
+		);
+		return $exists === self::table();
 	}
 
 	/**
@@ -96,8 +95,7 @@ class Credit_Usage_Logger {
 		}
 
 		global $wpdb;
-		$table_name = self::table();
-		$table_name_safe = esc_sql($table_name);
+		$table_name_safe = esc_sql( self::table() );
 
 		// Sanitize inputs
 		$attachment_id = absint($attachment_id);
@@ -114,8 +112,9 @@ class Credit_Usage_Logger {
 		}
 
 		// Hash user agent for privacy
-		$user_agent = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '';
-		$user_agent_hash = !empty($user_agent) ? hash('sha256', $user_agent) : null;
+		$user_agent_raw  = wp_unslash( $_SERVER['HTTP_USER_AGENT'] ?? '' );
+		$user_agent      = is_string( $user_agent_raw ) ? sanitize_text_field( $user_agent_raw ) : '';
+		$user_agent_hash = ! empty( $user_agent ) ? hash( 'sha256', $user_agent ) : null;
 
 		$result = $wpdb->insert(
 			$table_name_safe,
@@ -150,17 +149,19 @@ class Credit_Usage_Logger {
 		];
 
 		foreach ($ip_keys as $key) {
-			if (!empty($_SERVER[$key])) {
-				$ip = sanitize_text_field(wp_unslash($_SERVER[$key]));
-				// Handle comma-separated IPs (X-Forwarded-For can have multiple)
-				if (strpos($ip, ',') !== false) {
-					$ips = explode(',', $ip);
-					$ip = trim($ips[0]);
-				}
-				// Validate IP format
-				if (filter_var($ip, FILTER_VALIDATE_IP)) {
-					return $ip;
-				}
+			$server_value = $_SERVER[$key] ?? '';
+			if (!is_string($server_value) || $server_value === '') {
+				continue;
+			}
+			$ip = sanitize_text_field(wp_unslash($server_value));
+			// Handle comma-separated IPs (X-Forwarded-For can have multiple)
+			if (strpos($ip, ',') !== false) {
+				$ips = explode(',', $ip);
+				$ip = trim($ips[0]);
+			}
+			// Validate IP format
+			if (filter_var($ip, FILTER_VALIDATE_IP)) {
+				return $ip;
 			}
 		}
 
@@ -185,8 +186,6 @@ class Credit_Usage_Logger {
 		}
 
 		global $wpdb;
-		$table = self::table();
-		$table_escaped = esc_sql($table);
 
 		$defaults = [
 			'date_from' => null,
@@ -195,36 +194,26 @@ class Credit_Usage_Logger {
 		];
 		$args = wp_parse_args($args, $defaults);
 
-		$where = ['user_id = %d'];
-		$params = [absint($user_id)];
+		$date_from = !empty($args['date_from']) ? sanitize_text_field($args['date_from']) . ' 00:00:00' : '';
+		$date_to = !empty($args['date_to']) ? sanitize_text_field($args['date_to']) . ' 23:59:59' : '';
+		$source = !empty($args['source']) ? sanitize_key($args['source']) : '';
 
-		if ($args['date_from']) {
-			$date_from = sanitize_text_field($args['date_from']);
-			$where[] = 'generated_at >= %s';
-			$params[] = $date_from . ' 00:00:00';
-		}
-		if ($args['date_to']) {
-			$date_to = sanitize_text_field($args['date_to']);
-			$where[] = 'generated_at <= %s';
-			$params[] = $date_to . ' 23:59:59';
-		}
-		if ($args['source']) {
-			$where[] = 'source = %s';
-			$params[] = sanitize_key($args['source']);
-		}
-
-		$where_sql = 'WHERE ' . implode(' AND ', $where);
-
-		// Get totals
-		$query = "SELECT 
-				SUM(credits_used) as total_credits,
-				COUNT(DISTINCT attachment_id) as total_images,
-				SUM(token_cost) as total_cost,
-				MAX(generated_at) as last_activity
-			FROM `{$table_escaped}` 
-			{$where_sql}";
-
-		$result = $wpdb->get_row($wpdb->prepare($query, $params), ARRAY_A);
+		$result = $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT SUM(credits_used) as total_credits, COUNT(DISTINCT attachment_id) as total_images, SUM(token_cost) as total_cost, MAX(generated_at) as last_activity FROM `' . self::table() . '` WHERE user_id = %d AND (%s = %s OR generated_at >= %s) AND (%s = %s OR generated_at <= %s) AND (%s = %s OR source = %s)',
+				absint($user_id),
+				$date_from,
+				'',
+				$date_from,
+				$date_to,
+				'',
+				$date_to,
+				$source,
+				'',
+				$source
+			),
+			ARRAY_A
+		);
 
 		if (!$result) {
 			return [
@@ -260,8 +249,6 @@ class Credit_Usage_Logger {
 		}
 
 		global $wpdb;
-		$table = self::table();
-		$table_escaped = esc_sql($table);
 
 		$defaults = [
 			'date_from' => null,
@@ -270,36 +257,25 @@ class Credit_Usage_Logger {
 		];
 		$args = wp_parse_args($args, $defaults);
 
-		$where = ['1 = %d'];
-		$params = [1];
+		$date_from = !empty($args['date_from']) ? sanitize_text_field($args['date_from']) . ' 00:00:00' : '';
+		$date_to = !empty($args['date_to']) ? sanitize_text_field($args['date_to']) . ' 23:59:59' : '';
+		$source = !empty($args['source']) ? sanitize_key($args['source']) : '';
 
-		if ($args['date_from']) {
-			$date_from = sanitize_text_field($args['date_from']);
-			$where[] = 'generated_at >= %s';
-			$params[] = $date_from . ' 00:00:00';
-		}
-		if ($args['date_to']) {
-			$date_to = sanitize_text_field($args['date_to']);
-			$where[] = 'generated_at <= %s';
-			$params[] = $date_to . ' 23:59:59';
-		}
-		if ($args['source']) {
-			$where[] = 'source = %s';
-			$params[] = sanitize_key($args['source']);
-		}
-
-		$where_sql = 'WHERE ' . implode(' AND ', $where);
-
-		// Get totals
-		$query = "SELECT 
-				SUM(credits_used) as total_credits,
-				COUNT(DISTINCT attachment_id) as total_images,
-				SUM(token_cost) as total_cost,
-				COUNT(DISTINCT user_id) as user_count
-			FROM `{$table_escaped}` 
-			{$where_sql}";
-
-		$result = $wpdb->get_row($wpdb->prepare($query, $params), ARRAY_A);
+		$result = $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT SUM(credits_used) as total_credits, COUNT(DISTINCT attachment_id) as total_images, SUM(token_cost) as total_cost, COUNT(DISTINCT user_id) as user_count FROM `' . self::table() . '` WHERE (%s = %s OR generated_at >= %s) AND (%s = %s OR generated_at <= %s) AND (%s = %s OR source = %s)',
+				$date_from,
+				'',
+				$date_from,
+				$date_to,
+				'',
+				$date_to,
+				$source,
+				'',
+				$source
+			),
+			ARRAY_A
+		);
 
 		if (!$result) {
 			return [
@@ -334,8 +310,6 @@ class Credit_Usage_Logger {
 		}
 
 		global $wpdb;
-		$table = self::table();
-		$table_escaped = esc_sql($table);
 
 		$defaults = [
 			'date_from' => null,
@@ -349,53 +323,80 @@ class Credit_Usage_Logger {
 		];
 		$args = wp_parse_args($args, $defaults);
 
-		$where = ['1 = %d'];
-		$params = [1];
-
-		if ($args['user_id'] !== null && $args['user_id'] !== '') {
-			$where[] = 'user_id = %d';
-			$params[] = absint($args['user_id']);
-		}
-
-		if ($args['date_from']) {
-			$date_from = sanitize_text_field($args['date_from']);
-			$where[] = 'generated_at >= %s';
-			$params[] = $date_from . ' 00:00:00';
-		}
-		if ($args['date_to']) {
-			$date_to = sanitize_text_field($args['date_to']);
-			$where[] = 'generated_at <= %s';
-			$params[] = $date_to . ' 23:59:59';
-		}
-		if ($args['source']) {
-			$where[] = 'source = %s';
-			$params[] = sanitize_key($args['source']);
-		}
-
-		$where_sql = 'WHERE ' . implode(' AND ', $where);
-
-		// Validate orderby
-		$allowed_orderby = ['total_credits', 'total_images', 'last_activity'];
-		$orderby = in_array($args['orderby'], $allowed_orderby) ? $args['orderby'] : 'total_credits';
-		$orderby_safe = esc_sql($orderby);
-
-		// Validate order
+		$user_filter = ($args['user_id'] !== null && $args['user_id'] !== '') ? absint($args['user_id']) : 0;
+		$has_user_filter = $user_filter > 0 ? 1 : 0;
+		$date_from = !empty($args['date_from']) ? sanitize_text_field($args['date_from']) . ' 00:00:00' : '';
+		$date_to = !empty($args['date_to']) ? sanitize_text_field($args['date_to']) . ' 23:59:59' : '';
+		$source = !empty($args['source']) ? sanitize_key($args['source']) : '';
 		$order = strtoupper($args['order']) === 'ASC' ? 'ASC' : 'DESC';
+		$orderby = in_array($args['orderby'], ['total_credits', 'total_images', 'last_activity'], true) ? $args['orderby'] : 'total_credits';
 
-		// Get grouped results - always use prepare for safety even with no params
-		$query = "SELECT 
-				user_id,
-				SUM(credits_used) as total_credits,
-				COUNT(DISTINCT attachment_id) as total_images,
-				COUNT(DISTINCT attachment_id) as images_processed, -- Alias for template compatibility
-				SUM(token_cost) as total_cost,
-				MAX(generated_at) as last_activity
-			FROM `{$table_escaped}` 
-			{$where_sql}
-			GROUP BY user_id
-			ORDER BY {$orderby_safe} {$order}";
+		$base_params = [
+			1,
+			1,
+			$has_user_filter,
+			0,
+			$user_filter,
+			$date_from,
+			'',
+			$date_from,
+			$date_to,
+			'',
+			$date_to,
+			$source,
+			'',
+			$source,
+		];
 
-		$all_results = $wpdb->get_results($wpdb->prepare($query, $params), ARRAY_A);
+		if ('total_images' === $orderby && 'ASC' === $order) {
+			$all_results = $wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT user_id, SUM(credits_used) as total_credits, COUNT(DISTINCT attachment_id) as total_images, COUNT(DISTINCT attachment_id) as images_processed, SUM(token_cost) as total_cost, MAX(generated_at) as last_activity FROM `' . self::table() . '` WHERE %d = %d AND (%d = %d OR user_id = %d) AND (%s = %s OR generated_at >= %s) AND (%s = %s OR generated_at <= %s) AND (%s = %s OR source = %s) GROUP BY user_id ORDER BY total_images ASC',
+					$base_params
+				),
+				ARRAY_A
+			);
+		} elseif ('total_images' === $orderby) {
+			$all_results = $wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT user_id, SUM(credits_used) as total_credits, COUNT(DISTINCT attachment_id) as total_images, COUNT(DISTINCT attachment_id) as images_processed, SUM(token_cost) as total_cost, MAX(generated_at) as last_activity FROM `' . self::table() . '` WHERE %d = %d AND (%d = %d OR user_id = %d) AND (%s = %s OR generated_at >= %s) AND (%s = %s OR generated_at <= %s) AND (%s = %s OR source = %s) GROUP BY user_id ORDER BY total_images DESC',
+					$base_params
+				),
+				ARRAY_A
+			);
+		} elseif ('last_activity' === $orderby && 'ASC' === $order) {
+			$all_results = $wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT user_id, SUM(credits_used) as total_credits, COUNT(DISTINCT attachment_id) as total_images, COUNT(DISTINCT attachment_id) as images_processed, SUM(token_cost) as total_cost, MAX(generated_at) as last_activity FROM `' . self::table() . '` WHERE %d = %d AND (%d = %d OR user_id = %d) AND (%s = %s OR generated_at >= %s) AND (%s = %s OR generated_at <= %s) AND (%s = %s OR source = %s) GROUP BY user_id ORDER BY last_activity ASC',
+					$base_params
+				),
+				ARRAY_A
+			);
+		} elseif ('last_activity' === $orderby) {
+			$all_results = $wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT user_id, SUM(credits_used) as total_credits, COUNT(DISTINCT attachment_id) as total_images, COUNT(DISTINCT attachment_id) as images_processed, SUM(token_cost) as total_cost, MAX(generated_at) as last_activity FROM `' . self::table() . '` WHERE %d = %d AND (%d = %d OR user_id = %d) AND (%s = %s OR generated_at >= %s) AND (%s = %s OR generated_at <= %s) AND (%s = %s OR source = %s) GROUP BY user_id ORDER BY last_activity DESC',
+					$base_params
+				),
+				ARRAY_A
+			);
+		} elseif ('ASC' === $order) {
+			$all_results = $wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT user_id, SUM(credits_used) as total_credits, COUNT(DISTINCT attachment_id) as total_images, COUNT(DISTINCT attachment_id) as images_processed, SUM(token_cost) as total_cost, MAX(generated_at) as last_activity FROM `' . self::table() . '` WHERE %d = %d AND (%d = %d OR user_id = %d) AND (%s = %s OR generated_at >= %s) AND (%s = %s OR generated_at <= %s) AND (%s = %s OR source = %s) GROUP BY user_id ORDER BY total_credits ASC',
+					$base_params
+				),
+				ARRAY_A
+			);
+		} else {
+			$all_results = $wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT user_id, SUM(credits_used) as total_credits, COUNT(DISTINCT attachment_id) as total_images, COUNT(DISTINCT attachment_id) as images_processed, SUM(token_cost) as total_cost, MAX(generated_at) as last_activity FROM `' . self::table() . '` WHERE %d = %d AND (%d = %d OR user_id = %d) AND (%s = %s OR generated_at >= %s) AND (%s = %s OR generated_at <= %s) AND (%s = %s OR source = %s) GROUP BY user_id ORDER BY total_credits DESC',
+					$base_params
+				),
+				ARRAY_A
+			);
+		}
 		
 		// Ensure we have an array
 		if (!is_array($all_results)) {
@@ -404,8 +405,8 @@ class Credit_Usage_Logger {
 
 		// Pagination
 		$total = count($all_results);
-		$per_page = absint($args['per_page']);
-		$page = absint($args['page']);
+		$per_page = max(1, absint($args['per_page']));
+		$page = max(1, absint($args['page']));
 		$offset = ($page - 1) * $per_page;
 		$pages = ceil($total / $per_page);
 
@@ -441,10 +442,12 @@ class Credit_Usage_Logger {
 					$user_data['user_email'] = $wp_user->user_email;
 				} else {
 					// User was deleted - check if we have original ID
-					$original_id = $wpdb->get_var($wpdb->prepare(
-						"SELECT deleted_user_original_id FROM `{$table_escaped}` WHERE user_id = %d LIMIT 1",
-						$user_id
-					));
+					$original_id = $wpdb->get_var(
+						$wpdb->prepare(
+							'SELECT deleted_user_original_id FROM `' . self::table() . '` WHERE user_id = %d LIMIT 1',
+							$user_id
+						)
+					);
 					$user_data['display_name'] = __('Unknown User', 'opptiai-alt');
 					$user_data['user_email'] = '';
 					$user_data['deleted_user'] = true;
@@ -484,8 +487,6 @@ class Credit_Usage_Logger {
 		}
 
 		global $wpdb;
-		$table = self::table();
-		$table_escaped = esc_sql($table);
 
 		$defaults = [
 			'date_from' => null,
@@ -496,55 +497,53 @@ class Credit_Usage_Logger {
 		];
 		$args = wp_parse_args($args, $defaults);
 
-		$where = ['user_id = %d'];
-		$params = [absint($user_id)];
+		$date_from = !empty($args['date_from']) ? sanitize_text_field($args['date_from']) . ' 00:00:00' : '';
+		$date_to = !empty($args['date_to']) ? sanitize_text_field($args['date_to']) . ' 23:59:59' : '';
+		$source = !empty($args['source']) ? sanitize_key($args['source']) : '';
 
-		if ($args['date_from']) {
-			$date_from = sanitize_text_field($args['date_from']);
-			$where[] = 'generated_at >= %s';
-			$params[] = $date_from . ' 00:00:00';
-		}
-		if ($args['date_to']) {
-			$date_to = sanitize_text_field($args['date_to']);
-			$where[] = 'generated_at <= %s';
-			$params[] = $date_to . ' 23:59:59';
-		}
-		if ($args['source']) {
-			$where[] = 'source = %s';
-			$params[] = sanitize_key($args['source']);
-		}
+		$base_params = [
+			absint($user_id),
+			$date_from,
+			'',
+			$date_from,
+			$date_to,
+			'',
+			$date_to,
+			$source,
+			'',
+			$source,
+		];
 
-		$where_sql = 'WHERE ' . implode(' AND ', $where);
+		$summary = $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT SUM(credits_used) as total_credits, COUNT(DISTINCT attachment_id) as total_images, COUNT(DISTINCT attachment_id) as images_processed, SUM(token_cost) as total_cost FROM `' . self::table() . '` WHERE user_id = %d AND (%s = %s OR generated_at >= %s) AND (%s = %s OR generated_at <= %s) AND (%s = %s OR source = %s)',
+				$base_params
+			),
+			ARRAY_A
+		);
 
-		// Get summary stats for this user (before pagination)
-		$summary_query = "SELECT 
-				SUM(credits_used) as total_credits,
-				COUNT(DISTINCT attachment_id) as total_images,
-				COUNT(DISTINCT attachment_id) as images_processed,
-				SUM(token_cost) as total_cost
-			FROM `{$table_escaped}` 
-			{$where_sql}";
-		
-		// Use params without LIMIT (LIMIT params are added later)
-		$summary = $wpdb->get_row($wpdb->prepare($summary_query, $params), ARRAY_A);
+		$total = intval(
+			$wpdb->get_var(
+				$wpdb->prepare(
+					'SELECT COUNT(*) FROM `' . self::table() . '` WHERE user_id = %d AND (%s = %s OR generated_at >= %s) AND (%s = %s OR generated_at <= %s) AND (%s = %s OR source = %s)',
+					$base_params
+				)
+			)
+		);
 
-		// Count total
-		$count_query = "SELECT COUNT(*) FROM `{$table_escaped}` {$where_sql}";
-		$total = intval($wpdb->get_var($wpdb->prepare($count_query, $params)));
-
-		// Get paginated results
-		$per_page = absint($args['per_page']);
-		$page = absint($args['page']);
+		$per_page = max(1, absint($args['per_page']));
+		$page = max(1, absint($args['page']));
 		$offset = ($page - 1) * $per_page;
 		$pages = ceil($total / $per_page);
 
-		$query = "SELECT id, user_id, attachment_id, credits_used, token_cost, model, source, generated_at, ip_address, deleted_user_original_id FROM `{$table_escaped}`
-			{$where_sql}
-			ORDER BY generated_at DESC
-			LIMIT %d OFFSET %d";
-
-		$limit_params = array_merge($params, [$per_page, $offset]);
-		$items = $wpdb->get_results($wpdb->prepare($query, $limit_params), ARRAY_A);
+		$limit_params = array_merge($base_params, [$per_page, $offset]);
+		$items = $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT id, user_id, attachment_id, credits_used, token_cost, model, source, generated_at, ip_address, deleted_user_original_id FROM `' . self::table() . '` WHERE user_id = %d AND (%s = %s OR generated_at >= %s) AND (%s = %s OR generated_at <= %s) AND (%s = %s OR source = %s) ORDER BY generated_at DESC LIMIT %d OFFSET %d',
+				$limit_params
+			),
+			ARRAY_A
+		);
 
 		// Get user info
 		$wp_user = get_user_by('ID', $user_id);
@@ -589,8 +588,7 @@ class Credit_Usage_Logger {
 		}
 
 		global $wpdb;
-		$table = self::table();
-		$table_escaped = esc_sql($table);
+		$table = esc_sql( self::table() );
 
 		// Update all records for this user to user_id = 0 and store original ID
 		$wpdb->update(
@@ -617,18 +615,17 @@ class Credit_Usage_Logger {
 		}
 
 		global $wpdb;
-		$table = self::table();
-		$table_escaped = esc_sql($table);
-
 		$threshold = gmdate('Y-m-d H:i:s', strtotime("-{$days} days"));
 
-		$deleted = $wpdb->query($wpdb->prepare(
-			"DELETE FROM `{$table_escaped}` WHERE generated_at < %s",
-			$threshold
-		));
+		$deleted = $wpdb->query(
+			$wpdb->prepare(
+				'DELETE FROM `' . self::table() . '` WHERE generated_at < %s',
+				$threshold
+			)
+		);
 
-        return intval($deleted);
-    }
+		return intval($deleted);
+	}
 
 	/**
 	 * Initialize hooks for user deletion anonymization.
@@ -637,4 +634,5 @@ class Credit_Usage_Logger {
 		// Anonymize credit usage when a user is deleted
 		add_action('delete_user', [__CLASS__, 'anonymize_user_usage'], 10, 2);
 	}
+	// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter
 }

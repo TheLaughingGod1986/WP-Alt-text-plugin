@@ -21,6 +21,11 @@ const bbaiRunWithJQuery = (function() {
 bbaiRunWithJQuery(function($) {
     'use strict';
 
+    const i18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
+    const __ = i18n && typeof i18n.__ === 'function' ? i18n.__ : (text) => text;
+    const _n = i18n && typeof i18n._n === 'function' ? i18n._n : (single, plural, number) => (number === 1 ? single : plural);
+    const sprintf = i18n && typeof i18n.sprintf === 'function' ? i18n.sprintf : (format) => format;
+
     // Cache commonly used DOM elements (performance optimization)
     var $cachedElements = {};
     const FALLBACK_UPGRADE_SELECTOR = [
@@ -44,46 +49,131 @@ bbaiRunWithJQuery(function($) {
         return $cachedElements[selector];
     }
 
+    // ========================================
+    // Monthly Reset Insight Modal
+    // ========================================
+    (function initResetModal() {
+        var dashConfig = window.BBAI_DASH || {};
+        var resetData = dashConfig.resetModal;
+
+        if (!resetData || typeof resetData !== 'object') {
+            return;
+        }
+
+        // Delay to let onboarding and other modals initialise first.
+        setTimeout(function showIfIdle() {
+            if (window.bbaiModal && window.bbaiModal.activeModal) {
+                // Another modal is open — retry later.
+                setTimeout(showIfIdle, 3000);
+                return;
+            }
+
+            if (!window.bbaiModal || typeof window.bbaiModal.show !== 'function') {
+                return;
+            }
+
+            var lastUsed  = parseInt(resetData.lastMonthUsed, 10) || 0;
+            var lastLimit = parseInt(resetData.lastMonthLimit, 10) || 0;
+            var newLimit  = parseInt(resetData.newLimit, 10) || 0;
+            var plan      = resetData.plan || 'free';
+            var planLabel = resetData.planLabel || 'Free';
+
+            var message = '';
+            if (lastUsed > 0 && lastLimit > 0) {
+                var usagePct = Math.round((lastUsed / lastLimit) * 100);
+                message += __('Last month you generated alt text for', 'opptiai-alt')
+                    + ' ' + lastUsed.toLocaleString() + ' '
+                    + __('of', 'opptiai-alt') + ' ' + lastLimit.toLocaleString()
+                    + ' ' + __('images', 'opptiai-alt') + ' (' + usagePct + '%).\n\n';
+            } else {
+                message += __('Your monthly quota has been refreshed.', 'opptiai-alt') + '\n\n';
+            }
+
+            message += __('You now have', 'opptiai-alt') + ' '
+                + newLimit.toLocaleString() + ' '
+                + __('credits available on your', 'opptiai-alt') + ' '
+                + planLabel + ' ' + __('plan.', 'opptiai-alt');
+
+            var buttons = [
+                {
+                    text: __('Got it', 'opptiai-alt'),
+                    primary: true,
+                    action: function() {
+                        dismissResetModal();
+                        window.bbaiModal.close();
+                    }
+                }
+            ];
+
+            if (plan === 'free') {
+                buttons.unshift({
+                    text: __('Upgrade for more', 'opptiai-alt'),
+                    primary: false,
+                    action: function() {
+                        dismissResetModal();
+                        window.bbaiModal.close();
+                        var upgradeBtn = document.querySelector('[data-action="show-upgrade-modal"]');
+                        if (upgradeBtn) {
+                            upgradeBtn.click();
+                        }
+                    }
+                });
+            }
+
+            window.bbaiModal.show({
+                type: 'info',
+                title: __('Monthly Quota Reset', 'opptiai-alt'),
+                message: message,
+                buttons: buttons,
+                onClose: function() {
+                    dismissResetModal();
+                }
+            });
+        }, 1500);
+
+        function dismissResetModal() {
+            var ajaxUrl = (window.bbai_ajax && window.bbai_ajax.ajaxurl) || '';
+            var nonce   = (window.bbai_ajax && window.bbai_ajax.nonce) || '';
+            if (!ajaxUrl || !nonce) { return; }
+
+            $.ajax({
+                url: ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'bbai_dismiss_reset_modal',
+                    nonce: nonce
+                }
+            });
+        }
+    })();
+
     // Initialize when DOM is ready
     // Add vanilla JS handler as fallback (works even if jQuery isn't ready)
     (function() {
         function handleCheckoutClick(e) {
             const btn = e.target.closest('[data-action="checkout-plan"]');
             if (!btn) return;
-            
+
             e.preventDefault();
-            e.stopPropagation();
-            
+            e.stopImmediatePropagation();
+
             console.log('[AltText AI] Checkout button clicked (vanilla JS handler)!');
-            
+
             const plan = btn.getAttribute('data-plan') || btn.dataset.plan;
-            const priceId = btn.getAttribute('data-price-id') || btn.dataset.priceId;
             const fallbackUrl = btn.getAttribute('data-fallback-url') || btn.dataset.fallbackUrl;
-            
-            console.log('[AltText AI] Checkout plan:', plan, 'priceId:', priceId, 'fallbackUrl:', fallbackUrl);
-            
-            // Try to use backend checkout API if we have a price ID
-            if (priceId && window.bbai_ajax && window.bbai_ajax.ajaxurl) {
-                console.log('[AltText AI] Using backend checkout API');
-                // Use jQuery if available, otherwise use fetch
-                if (typeof $ !== 'undefined' && typeof window.initiateCheckout === 'function') {
-                    window.initiateCheckout($(btn), priceId, plan);
-                } else if (typeof $ !== 'undefined' && typeof initiateCheckout === 'function') {
-                    initiateCheckout($(btn), priceId, plan);
-                } else {
-                    // Fallback to direct URL if jQuery/initiateCheckout not available
-                    if (fallbackUrl) {
-                        window.location.href = fallbackUrl;
-                    }
-                }
-            } else if (fallbackUrl) {
-                console.log('[AltText AI] Using fallback Stripe payment link:', fallbackUrl);
-                window.location.href = fallbackUrl;
+
+            // Resolve Stripe Payment Link: prefer data attribute, then localized links
+            const stripeLinks = (window.bbai_ajax && window.bbai_ajax.stripe_links) || {};
+            const resolvedLink = fallbackUrl || stripeLinks[plan] || '';
+
+            if (resolvedLink) {
+                console.log('[AltText AI] Using Stripe payment link:', resolvedLink);
+                window.open(resolvedLink, '_blank', 'noopener,noreferrer');
                 if (typeof alttextaiCloseModal === 'function') {
                     alttextaiCloseModal();
                 }
             } else {
-                // Construct default URL based on plan
+                // Last resort: hardcoded Stripe Payment Links
                 let stripeUrl = '';
                 if (plan === 'pro' || plan === 'growth') {
                     stripeUrl = 'https://buy.stripe.com/dRm28s4rc5Raf0GbY77ss02';
@@ -95,16 +185,16 @@ bbaiRunWithJQuery(function($) {
 
                 if (stripeUrl) {
                     console.log('[AltText AI] Using default Stripe payment link:', stripeUrl);
-                    window.location.href = stripeUrl;
+                    window.open(stripeUrl, '_blank', 'noopener,noreferrer');
                     if (typeof alttextaiCloseModal === 'function') {
                         alttextaiCloseModal();
                     }
                 } else {
                     console.error('[AltText AI] No checkout URL available!');
-                    alert('Unable to initiate checkout. Please try again or contact support.');
+                    alert(__('Unable to initiate checkout. Please try again or contact support.', 'opptiai-alt'));
                 }
             }
-            
+
             return false;
         }
         
@@ -217,7 +307,7 @@ bbaiRunWithJQuery(function($) {
             } else {
                 console.error('[AltText AI] Pricing modal not available and DOM element not found!');
                 if (typeof window.bbaiModal !== 'undefined') {
-                    window.bbaiModal.warning('Upgrade modal not found. Please refresh the page.');
+                    window.bbaiModal.warning(__('Upgrade modal not found. Please refresh the page.', 'opptiai-alt'));
                 }
             }
             
@@ -284,7 +374,7 @@ bbaiRunWithJQuery(function($) {
                         authModal.style.display = 'block';
                         document.body.style.overflow = 'hidden';
                     } else {
-                        window.bbaiModal.warning('Please log in first to manage your subscription.');
+                        window.bbaiModal.warning(__('Please log in first to manage your subscription.', 'opptiai-alt'));
                     }
                 }
             }
@@ -329,7 +419,7 @@ bbaiRunWithJQuery(function($) {
                         authModal.style.display = 'block';
                         document.body.style.overflow = 'hidden';
                     } else {
-                        window.bbaiModal.warning('Please log in first to manage your subscription.');
+                        window.bbaiModal.warning(__('Please log in first to manage your subscription.', 'opptiai-alt'));
                     }
                 }
             }
@@ -425,7 +515,7 @@ bbaiRunWithJQuery(function($) {
                 
                 if (!modalShown) {
                     console.error('[AltText AI] Could not show auth modal');
-                    window.bbaiModal.warning('Please log in first to manage your subscription.\n\nUse the "Login" button in the header.');
+                    window.bbaiModal.warning(__('Please log in first to manage your subscription.\n\nUse the "Login" button in the header.', 'opptiai-alt'));
                 }
                 
                 return false;
@@ -438,7 +528,7 @@ bbaiRunWithJQuery(function($) {
 
         $(document).on('click', '[data-action="disconnect-account"]', function(e) {
             e.preventDefault();
-            if (!confirm('Disconnect this account for all WordPress users? You can reconnect at any time.')) {
+            if (!confirm(__('Disconnect this account for all WordPress users? You can reconnect at any time.', 'opptiai-alt'))) {
                 return;
             }
             disconnectAccount($(this));
@@ -452,7 +542,7 @@ bbaiRunWithJQuery(function($) {
             if (alttextaiDebug) console.log('[AltText AI] Logout button clicked');
             
             if (!window.bbai_ajax || !window.bbai_ajax.ajaxurl) {
-                window.bbaiModal.error('Configuration error. Please refresh the page.');
+                window.bbaiModal.error(__('Configuration error. Please refresh the page.', 'opptiai-alt'));
                 return;
             }
 
@@ -462,7 +552,7 @@ bbaiRunWithJQuery(function($) {
                    .attr('aria-busy', 'true');
             
             const originalText = $button.text();
-            $button.html('<span class="bbai-spinner"></span> Logging out...');
+            $button.html('<span class="bbai-spinner"></span> ' + __('Logging out...', 'opptiai-alt'));
 
             $.ajax({
                 url: window.bbai_ajax.ajaxurl,
@@ -478,7 +568,7 @@ bbaiRunWithJQuery(function($) {
                     if (response.success) {
                         // Show success message briefly
                         $button.removeClass('bbai-btn-loading')
-                               .html('✓ Logged out')
+                               .html('✓ ' + __('Logged out', 'opptiai-alt'))
                                .attr('aria-busy', 'false');
                         
                         // Clear any cached data
@@ -503,7 +593,7 @@ bbaiRunWithJQuery(function($) {
                                .text(originalText)
                                .attr('aria-busy', 'false');
                         
-                        const errorMsg = response.data?.message || 'Failed to log out. Please try again.';
+                        const errorMsg = response.data?.message || __('Failed to log out. Please try again.', 'opptiai-alt');
                         window.bbaiModal.error(errorMsg);
                     }
                 },
@@ -516,12 +606,12 @@ bbaiRunWithJQuery(function($) {
                            .text(originalText)
                            .attr('aria-busy', 'false');
                     
-                    let errorMessage = 'Unable to log out. Please try again.';
+                    let errorMessage = __('Unable to log out. Please try again.', 'opptiai-alt');
                     
                     if (status === 'timeout') {
-                        errorMessage = 'Request timed out. Try refreshing the page.';
+                        errorMessage = __('Request timed out. Try refreshing the page.', 'opptiai-alt');
                     } else if (xhr.status === 0) {
-                        errorMessage = 'Network error. Please check your connection and try again.';
+                        errorMessage = __('Network error. Please check your connection and try again.', 'opptiai-alt');
                     }
                     
                     window.bbaiModal.error(errorMessage);
@@ -542,31 +632,15 @@ bbaiRunWithJQuery(function($) {
             const fallbackUrl = $btn.attr('data-fallback-url') || $btn.data('fallback-url');
             
             console.log('[AltText AI] Checkout plan:', plan, 'priceId:', priceId, 'fallbackUrl:', fallbackUrl);
-            
-            // Try to use backend checkout API if we have a price ID
-            // This provides better tracking, custom success URLs, and account linking
-            if (priceId && window.bbai_ajax && window.bbai_ajax.ajaxurl) {
-                console.log('[AltText AI] Using backend checkout API');
-                // Use backend checkout session API - try window.initiateCheckout first (from bundle)
-                if (typeof window.initiateCheckout === 'function') {
-                    console.log('[AltText AI] Using window.initiateCheckout');
-                    window.initiateCheckout($btn, priceId, plan);
-                } else if (typeof initiateCheckout === 'function') {
-                    console.log('[AltText AI] Using local initiateCheckout');
-                    initiateCheckout($btn, priceId, plan);
-                } else {
-                    console.error('[AltText AI] initiateCheckout function not found!');
-                    // Fallback to direct URL - open in new tab
-                    if (fallbackUrl) {
-                        window.location.href = fallbackUrl;
-                    }
-                }
-            } else if (fallbackUrl) {
-                // Fall back to direct Stripe payment link if no price ID or AJAX not available
-                console.log('[AltText AI] Using fallback Stripe payment link:', fallbackUrl);
-                // Open in new tab to go directly to Stripe checkout
-                window.location.href = fallbackUrl;
-                // Close the upgrade modal
+
+            // Resolve Stripe Payment Link: prefer data attribute, then localized links
+            const stripeLinks = (window.bbai_ajax && window.bbai_ajax.stripe_links) || {};
+            const resolvedLink = fallbackUrl || stripeLinks[plan] || '';
+
+            // Use direct Stripe Payment Links for reliable checkout
+            if (resolvedLink) {
+                console.log('[AltText AI] Using Stripe payment link:', resolvedLink);
+                window.open(resolvedLink, '_blank', 'noopener,noreferrer');
                 if (typeof alttextaiCloseModal === 'function') {
                     alttextaiCloseModal();
                 }
@@ -590,9 +664,9 @@ bbaiRunWithJQuery(function($) {
                 } else {
                     console.error('[AltText AI] No checkout URL available!');
                     if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
-                        window.bbaiModal.error('Unable to initiate checkout. Please try again or contact support.');
+                        window.bbaiModal.error(__('Unable to initiate checkout. Please try again or contact support.', 'opptiai-alt'));
                     } else {
-                        alert('Unable to initiate checkout. Please try again or contact support.');
+                        alert(__('Unable to initiate checkout. Please try again or contact support.', 'opptiai-alt'));
                     }
                 }
             }
@@ -799,7 +873,7 @@ bbaiRunWithJQuery(function($) {
         $freeMessage.hide();
 
         if (!window.bbai_ajax || !window.bbai_ajax.ajaxurl) {
-            showSubscriptionError('Configuration error. Please refresh the page.');
+            showSubscriptionError(__('Configuration error. Please refresh the page.', 'opptiai-alt'));
                 return;
             }
 
@@ -841,12 +915,12 @@ bbaiRunWithJQuery(function($) {
                         $freeMessage.show();
             } else {
                         // Provide better error messages
-                        let errorMessage = response.data?.message || 'Failed to load subscription information.';
+                        let errorMessage = response.data?.message || __('Failed to load subscription information.', 'opptiai-alt');
                         
                         if (errorMessage.toLowerCase().includes('not authenticated') || errorMessage.toLowerCase().includes('login')) {
-                            errorMessage = 'Please log in to view your subscription information.';
+                            errorMessage = __('Please log in to view your subscription information.', 'opptiai-alt');
                         } else if (errorMessage.toLowerCase().includes('not found')) {
-                            errorMessage = 'Subscription not found. If you just upgraded, please wait a moment and refresh.';
+                            errorMessage = __('Subscription not found. If you just upgraded, please wait a moment and refresh.', 'opptiai-alt');
                         }
                         
                         showSubscriptionError(errorMessage);
@@ -857,18 +931,18 @@ bbaiRunWithJQuery(function($) {
                 $loading.hide();
                 
                 // Provide better error messages
-                let errorMessage = 'Network error. Please try again.';
+                let errorMessage = __('Network error. Please try again.', 'opptiai-alt');
                 
                 if (xhr.status === 401 || xhr.status === 403) {
-                    errorMessage = 'Please log in to view your subscription information.';
+                    errorMessage = __('Please log in to view your subscription information.', 'opptiai-alt');
                     showSubscriptionError(errorMessage);
                     return; // Don't retry auth errors
                 } else if (xhr.status === 404) {
-                    errorMessage = 'Subscription information not found. If you just signed up, please wait a moment and refresh.';
+                    errorMessage = __('Subscription information not found. If you just signed up, please wait a moment and refresh.', 'opptiai-alt');
                     showSubscriptionError(errorMessage);
                     return; // Don't retry 404 errors
                 } else if (xhr.status >= 500 || status === 'timeout' || status === 'error') {
-                    errorMessage = 'Service temporarily unavailable. Retrying automatically...';
+                    errorMessage = __('Service temporarily unavailable. Retrying automatically...', 'opptiai-alt');
                     showSubscriptionError(errorMessage);
                     
                     // Retry with exponential backoff
@@ -976,7 +1050,7 @@ bbaiRunWithJQuery(function($) {
 
     function retrySubscriptionLoad() {
         if (retryAttempts >= maxRetries) {
-            showSubscriptionError('Service unavailable after multiple attempts. Please try again later or refresh the page.');
+            showSubscriptionError(__('Service unavailable after multiple attempts. Please try again later or refresh the page.', 'opptiai-alt'));
             retryAttempts = 0;
                 return;
             }
@@ -988,7 +1062,12 @@ bbaiRunWithJQuery(function($) {
         
         const $error = $('#bbai-subscription-error');
         $error.find('.bbai-error-message').text(
-            'Service temporarily unavailable. Retrying in ' + Math.ceil(delay / 1000) + ' seconds... (Attempt ' + retryAttempts + '/' + maxRetries + ')'
+            sprintf(
+                __('Service temporarily unavailable. Retrying in %1$d seconds... (Attempt %2$d/%3$d)', 'opptiai-alt'),
+                Math.ceil(delay / 1000),
+                retryAttempts,
+                maxRetries
+            )
         );
 
         // Clear any existing timeout
@@ -1126,7 +1205,7 @@ bbaiRunWithJQuery(function($) {
         $sitesContent.html(
             '<div class="bbai-settings-license-sites-loading">' +
             '<span class="bbai-spinner"></span> ' +
-            'Loading site usage...' +
+            __('Loading site usage...', 'opptiai-alt') +
             '</div>'
         );
 
@@ -1148,7 +1227,7 @@ bbaiRunWithJQuery(function($) {
                     } else {
                         $sitesContent.html(
                             '<div class="bbai-settings-license-sites-empty">' +
-                            '<p>No sites are currently using this license.</p>' +
+                            '<p>' + __('No sites are currently using this license.', 'opptiai-alt') + '</p>' +
                             '</div>'
                         );
                     }
@@ -1156,7 +1235,7 @@ bbaiRunWithJQuery(function($) {
                     console.error('[AltText AI] License sites request failed:', response);
                     $sitesContent.html(
                         '<div class="bbai-settings-license-sites-error">' +
-                        '<p>' + (response.data?.message || 'Failed to load site usage. Please try again.') + '</p>' +
+                        '<p>' + (response.data?.message || __('Failed to load site usage. Please try again.', 'opptiai-alt')) + '</p>' +
                         '</div>'
                     );
                 }
@@ -1170,7 +1249,7 @@ bbaiRunWithJQuery(function($) {
                 });
                 $sitesContent.html(
                     '<div class="bbai-settings-license-sites-error">' +
-                    '<p>Failed to load site usage. Please refresh the page and try again.</p>' +
+                    '<p>' + __('Failed to load site usage. Please refresh the page and try again.', 'opptiai-alt') + '</p>' +
                     '</div>'
                 );
             }
@@ -1186,7 +1265,7 @@ bbaiRunWithJQuery(function($) {
         if (!sites || sites.length === 0) {
             $sitesContent.html(
                 '<div class="bbai-settings-license-sites-empty">' +
-                '<p>No sites are currently using this license.</p>' +
+                '<p>' + __('No sites are currently using this license.', 'opptiai-alt') + '</p>' +
                 '</div>'
             );
             return;
@@ -1194,15 +1273,17 @@ bbaiRunWithJQuery(function($) {
 
         let html = '<div class="bbai-settings-license-sites-list">';
         html += '<div class="bbai-settings-license-sites-summary">';
-        html += '<strong>' + sites.length + '</strong> site' + (sites.length !== 1 ? 's' : '') + ' using this license';
+        html += '<strong>' + sites.length + '</strong> ' + _n('site using this license', 'sites using this license', sites.length, 'opptiai-alt');
         html += '</div>';
         html += '<ul class="bbai-settings-license-sites-items">';
 
         sites.forEach(function(site) {
-            const siteName = site.site_name || site.install_id || 'Unknown Site';
+            const siteName = site.site_name || site.install_id || __('Unknown Site', 'opptiai-alt');
             const siteId = site.siteId || site.install_id || site.installId || '';
             const generations = site.total_generations || site.generations || 0;
-            const lastUsed = site.last_used ? new Date(site.last_used).toLocaleDateString() : 'Never';
+            const lastUsed = site.last_used ? new Date(site.last_used).toLocaleDateString() : __('Never', 'opptiai-alt');
+            const disconnectLabel = __('Disconnect', 'opptiai-alt');
+            const disconnectAriaLabel = sprintf(__('Disconnect %s', 'opptiai-alt'), siteName);
             
             html += '<li class="bbai-settings-license-sites-item">';
             html += '<div class="bbai-settings-license-sites-item-main">';
@@ -1210,10 +1291,10 @@ bbaiRunWithJQuery(function($) {
             html += '<div class="bbai-settings-license-sites-item-name">' + escapeHtml(siteName) + '</div>';
             html += '<div class="bbai-settings-license-sites-item-stats">';
             html += '<span class="bbai-settings-license-sites-item-generations">';
-            html += '<strong>' + generations.toLocaleString() + '</strong> alt text generated';
+            html += '<strong>' + generations.toLocaleString() + '</strong> ' + escapeHtml(__('alt text generated', 'opptiai-alt'));
             html += '</span>';
             html += '<span class="bbai-settings-license-sites-item-last">';
-            html += 'Last used: ' + escapeHtml(lastUsed);
+            html += escapeHtml(__('Last used:', 'opptiai-alt')) + ' ' + escapeHtml(lastUsed);
             html += '</span>';
             html += '</div>';
             html += '</div>';
@@ -1221,11 +1302,11 @@ bbaiRunWithJQuery(function($) {
             html += '<button type="button" class="bbai-settings-license-sites-disconnect-btn" ';
             html += 'data-site-id="' + escapeHtml(siteId) + '" ';
             html += 'data-site-name="' + escapeHtml(siteName) + '" ';
-            html += 'aria-label="Disconnect ' + escapeHtml(siteName) + '">';
+            html += 'aria-label="' + escapeHtml(disconnectAriaLabel) + '">';
             html += '<svg width="16" height="16" viewBox="0 0 16 16" fill="none">';
             html += '<path d="M12 4L4 12M4 4l8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>';
             html += '</svg>';
-            html += '<span>Disconnect</span>';
+            html += '<span>' + escapeHtml(disconnectLabel) + '</span>';
             html += '</button>';
             html += '</div>';
             html += '</div>';
@@ -1262,14 +1343,14 @@ bbaiRunWithJQuery(function($) {
             // Confirm disconnect action
             // For confirm dialog, we need plain text (not HTML-escaped)
             const siteNameText = siteName.replace(/"/g, '&quot;').replace(/\n/g, ' ');
-            if (!confirm('Are you sure you want to disconnect "' + siteNameText + '"?\n\nThis will remove the site from your license. The site will need to reconnect using the license key.')) {
+            if (!confirm(sprintf(__('Are you sure you want to disconnect "%s"?\n\nThis will remove the site from your license. The site will need to reconnect using the license key.', 'opptiai-alt'), siteNameText))) {
                 return;
             }
             
             // Disable button and show loading state
             $btn.prop('disabled', true)
                 .addClass('bbai-processing')
-                .html('<span class="bbai-spinner"></span> Disconnecting...');
+                .html('<span class="bbai-spinner"></span> ' + __('Disconnecting...', 'opptiai-alt'));
             
             // Make AJAX request to disconnect site
             $.ajax({
@@ -1289,22 +1370,25 @@ bbaiRunWithJQuery(function($) {
                         loadLicenseSiteUsage();
                     } else {
                         // Show error message
-                        window.bbaiModal.error('Failed to disconnect site: ' + (response.data?.message || 'Unknown error'));
+                        const details = response.data?.message || __('Unknown error', 'opptiai-alt');
+                        window.bbaiModal.error(sprintf(__('Failed to disconnect site: %s', 'opptiai-alt'), details));
                         
                         // Restore button
+                        const disconnectLabel = __('Disconnect', 'opptiai-alt');
                         $btn.prop('disabled', false)
                             .removeClass('bbai-processing')
-                            .html('<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M12 4L4 12M4 4l8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Disconnect</span>');
+                            .html('<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M12 4L4 12M4 4l8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>' + escapeHtml(disconnectLabel) + '</span>');
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error('[AltText AI] Failed to disconnect site:', error);
-                    window.bbaiModal.error('Failed to disconnect site. Please try again.');
+                    window.bbaiModal.error(__('Failed to disconnect site. Please try again.', 'opptiai-alt'));
                     
                     // Restore button
+                    const disconnectLabel = __('Disconnect', 'opptiai-alt');
                     $btn.prop('disabled', false)
                         .removeClass('bbai-processing')
-                        .html('<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M12 4L4 12M4 4l8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Disconnect</span>');
+                        .html('<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M12 4L4 12M4 4l8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>' + escapeHtml(disconnectLabel) + '</span>');
                 }
             });
         });
@@ -1327,7 +1411,7 @@ bbaiRunWithJQuery(function($) {
         if (alttextaiDebug) console.log('[AltText AI] Opening customer portal...');
         
         if (!window.bbai_ajax || !window.bbai_ajax.ajaxurl) {
-            window.bbaiModal.error('Configuration error. Please refresh the page.');
+            window.bbaiModal.error(__('Configuration error. Please refresh the page.', 'opptiai-alt'));
                     return;
                 }
         
@@ -1412,7 +1496,7 @@ bbaiRunWithJQuery(function($) {
             }
             
             if (!modalShown) {
-                window.bbaiModal.warning('Please log in first to manage your subscription.\n\nUse the "Login" button in the header.');
+                window.bbaiModal.warning(__('Please log in first to manage your subscription.\n\nUse the "Login" button in the header.', 'opptiai-alt'));
             }
             
             return;
@@ -1431,7 +1515,7 @@ bbaiRunWithJQuery(function($) {
         $buttons.each(function() {
             const $btn = $(this);
             originalText[$btn.attr('id') || 'btn'] = $btn.text();
-            $btn.html('<span class="bbai-spinner"></span> Opening portal...');
+            $btn.html('<span class="bbai-spinner"></span> ' + __('Opening portal...', 'opptiai-alt'));
         });
 
                 $.ajax({
@@ -1454,7 +1538,7 @@ bbaiRunWithJQuery(function($) {
                 $buttons.each(function() {
                     const $btn = $(this);
                     const key = $btn.attr('id') || 'btn';
-                    $btn.text(originalText[key] || 'Manage Subscription');
+                    $btn.text(originalText[key] || __('Manage Subscription', 'opptiai-alt'));
                 });
 
                 if (response.success && response.data && response.data.url) {
@@ -1464,7 +1548,7 @@ bbaiRunWithJQuery(function($) {
                     const portalWindow = window.open(response.data.url, '_blank', 'noopener,noreferrer');
                     
                     if (!portalWindow) {
-                        window.bbaiModal.warning('Please allow popups for this site to manage your subscription.');
+                        window.bbaiModal.warning(__('Please allow popups for this site to manage your subscription.', 'opptiai-alt'));
                         return;
                     }
                     
@@ -1491,7 +1575,7 @@ bbaiRunWithJQuery(function($) {
                     }, 2000);
                 } else {
                     // Provide context-aware error messages
-                    let errorMessage = response.data?.message || 'Failed to open customer portal. Please try again.';
+                    let errorMessage = response.data?.message || __('Failed to open customer portal. Please try again.', 'opptiai-alt');
                     
                     console.log('[AltText AI] Portal request failed:', errorMessage);
                     
@@ -1525,13 +1609,13 @@ bbaiRunWithJQuery(function($) {
                         }
                         
                         if (!modalShown) {
-                            window.bbaiModal.warning('Please log in first to manage your billing.\n\nClick the "Login" button in the top navigation.');
+                            window.bbaiModal.warning(__('Please log in first to manage your billing.\n\nClick the "Login" button in the top navigation.', 'opptiai-alt'));
                         }
                     } else if (errorMessage.toLowerCase().includes('not found') || errorMessage.toLowerCase().includes('subscription')) {
-                        errorMessage = 'No active subscription found.\n\nPlease upgrade to a paid plan first, then you can manage your subscription.';
+                        errorMessage = __('No active subscription found.\n\nPlease upgrade to a paid plan first, then you can manage your subscription.', 'opptiai-alt');
                         window.bbaiModal.error(errorMessage);
                     } else if (errorMessage.toLowerCase().includes('customer')) {
-                        errorMessage = 'Unable to find your billing account.\n\nPlease contact support for assistance.';
+                        errorMessage = __('Unable to find your billing account.\n\nPlease contact support for assistance.', 'opptiai-alt');
                         window.bbaiModal.error(errorMessage);
                     } else {
                     window.bbaiModal.error(errorMessage);
@@ -1550,18 +1634,18 @@ bbaiRunWithJQuery(function($) {
                 $buttons.each(function() {
                     const $btn = $(this);
                     const key = $btn.attr('id') || 'btn';
-                    $btn.text(originalText[key] || 'Manage Subscription');
+                    $btn.text(originalText[key] || __('Manage Subscription', 'opptiai-alt'));
                 });
                 
                 // Provide helpful error message based on status
-                let errorMessage = 'Unable to connect to billing system. Please try again.';
+                let errorMessage = __('Unable to connect to billing system. Please try again.', 'opptiai-alt');
                 
                 if (status === 'timeout') {
-                    errorMessage = 'Request timed out. Please check your internet connection and try again.';
+                    errorMessage = __('Request timed out. Please check your internet connection and try again.', 'opptiai-alt');
                 } else if (xhr.status === 0) {
-                    errorMessage = 'Network connection lost. Please check your internet and try again.';
+                    errorMessage = __('Network connection lost. Please check your internet and try again.', 'opptiai-alt');
                 } else if (xhr.status >= 500) {
-                    errorMessage = 'Billing system is temporarily unavailable. Please try again in a few minutes.';
+                    errorMessage = __('Billing system is temporarily unavailable. Please try again in a few minutes.', 'opptiai-alt');
                 }
                 
                 window.bbaiModal.error(errorMessage);
@@ -1575,98 +1659,34 @@ bbaiRunWithJQuery(function($) {
      */
     function initiateCheckout($button, priceId, planName) {
         if (alttextaiDebug) console.log('[AltText AI] Initiating checkout:', planName, priceId);
-        
-        if (!window.bbai_ajax || !window.bbai_ajax.ajaxurl) {
-            window.bbaiModal.error('Configuration error. Please refresh the page.');
+
+        // Resolve Stripe Payment Link from button data or localized config
+        const fallbackUrl = $button.attr('data-fallback-url') || '';
+        const stripeLinks = (window.bbai_ajax && window.bbai_ajax.stripe_links) || {};
+        let resolvedLink = fallbackUrl || stripeLinks[planName] || '';
+
+        if (!resolvedLink) {
+            // Hardcoded fallback Payment Links
+            if (planName === 'pro' || planName === 'growth') {
+                resolvedLink = 'https://buy.stripe.com/dRm28s4rc5Raf0GbY77ss02';
+            } else if (planName === 'agency') {
+                resolvedLink = 'https://buy.stripe.com/28E14og9U0wQ19Q4vF7ss01';
+            } else if (planName === 'credits') {
+                resolvedLink = 'https://buy.stripe.com/6oU9AUf5Q2EYaKq0fp7ss00';
+            }
+        }
+
+        if (resolvedLink) {
+            if (alttextaiDebug) console.log('[AltText AI] Opening Stripe payment link:', resolvedLink);
+            window.open(resolvedLink, '_blank', 'noopener,noreferrer');
             return;
         }
 
-        // Show loading state
-        $button.prop('disabled', true)
-               .addClass('bbai-btn-loading')
-               .attr('aria-busy', 'true');
-        
-        const originalHtml = $button.html();
-        $button.html('<span class="bbai-spinner"></span> Loading checkout...');
-
-        $.ajax({
-            url: window.bbai_ajax.ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'beepbeepai_create_checkout',
-                nonce: window.bbai_ajax.nonce,
-                price_id: priceId
-            },
-            timeout: 30000, // 30 second timeout
-            success: function(response) {
-                if (alttextaiDebug) console.log('[AltText AI] Checkout response:', response);
-                
-                // Restore button state
-                $button.prop('disabled', false)
-                       .removeClass('bbai-btn-loading')
-                       .html(originalHtml)
-                       .attr('aria-busy', 'false');
-
-                if (response.success && response.data && response.data.url) {
-                    if (alttextaiDebug) console.log('[AltText AI] Redirecting to checkout URL:', response.data.url);
-                    
-                    // Redirect to Stripe checkout in same window
-                    window.location.href = response.data.url;
-                } else {
-                    // Backend API failed - fall back to direct Stripe payment link
-                    const fallbackUrl = $button.attr('data-fallback-url');
-                    if (fallbackUrl) {
-                        if (alttextaiDebug) console.log('[AltText AI] Backend checkout failed, using fallback Stripe link');
-                        window.location.href = fallbackUrl;
-                    } else {
-                        // Restore button state
-                        $button.prop('disabled', false)
-                               .removeClass('bbai-btn-loading')
-                               .html(originalHtml)
-                               .attr('aria-busy', 'false');
-                        
-                        // No fallback available - show error
-                        let errorMessage = response.data?.message || 'Failed to create checkout session. Please try again.';
-                        const errorCode = response.data?.code || '';
-                        
-                        if (errorMessage.toLowerCase().includes('price')) {
-                            errorMessage = 'Unable to load pricing information.\n\nPlease try again or contact support.';
-                        }
-                        
-                        window.bbaiModal.error(errorMessage);
-                    }
-                }
-            },
-            error: function(xhr, status, error) {
-                if (alttextaiDebug) console.error('[AltText AI] Checkout error:', status, error, xhr);
-                
-                // Restore button state
-                $button.prop('disabled', false)
-                       .removeClass('bbai-btn-loading')
-                       .html(originalHtml)
-                       .attr('aria-busy', 'false');
-                
-                // Try fallback to direct Stripe payment link
-                const fallbackUrl = $button.attr('data-fallback-url');
-                if (fallbackUrl) {
-                    if (alttextaiDebug) console.log('[AltText AI] Backend checkout error, using fallback Stripe link');
-                    window.location.href = fallbackUrl;
-                } else {
-                    // No fallback available - show error
-                    let errorMessage = 'Unable to connect to checkout system. Please try again.';
-                    
-                    if (status === 'timeout') {
-                        errorMessage = 'Request timed out. Please check your internet connection and try again.';
-                    } else if (xhr.status === 0) {
-                        errorMessage = 'Network connection lost. Please check your internet and try again.';
-                    } else if (xhr.status >= 500) {
-                        errorMessage = 'Checkout system is temporarily unavailable. Please try again in a few minutes.';
-                    }
-                    
-                    window.bbaiModal.error(errorMessage);
-                }
-            }
-        });
+        // No link available
+        console.error('[AltText AI] No Stripe payment link available for plan:', planName);
+        if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
+            window.bbaiModal.error(__('Unable to initiate checkout. Please try again or contact support.', 'opptiai-alt'));
+        }
     }
 
     /**
@@ -1677,7 +1697,7 @@ bbaiRunWithJQuery(function($) {
         if (alttextaiDebug) console.log('[AltText AI] Disconnecting account...');
         
         if (!window.bbai_ajax || !window.bbai_ajax.ajaxurl) {
-            window.bbaiModal.error('Configuration error. Please refresh the page.');
+            window.bbaiModal.error(__('Configuration error. Please refresh the page.', 'opptiai-alt'));
             return;
         }
 
@@ -1687,7 +1707,7 @@ bbaiRunWithJQuery(function($) {
                .attr('aria-busy', 'true');
         
         const originalText = $button.text();
-        $button.html('<span class="bbai-spinner"></span> Disconnecting...');
+        $button.html('<span class="bbai-spinner"></span> ' + __('Disconnecting...', 'opptiai-alt'));
 
         $.ajax({
             url: window.bbai_ajax.ajaxurl,
@@ -1700,13 +1720,13 @@ bbaiRunWithJQuery(function($) {
             success: function(response) {
                 if (alttextaiDebug) console.log('[AltText AI] Disconnect response:', response);
                 
-                if (response.success) {
-                    // Show success message
-                    $button.removeClass('bbai-btn-loading')
-                           .removeClass('bbai-btn--ghost')
-                           .addClass('bbai-btn--success')
-                           .html('✓ Disconnected')
-                           .attr('aria-busy', 'false');
+	                if (response.success) {
+	                    // Show success message
+	                    $button.removeClass('bbai-btn-loading')
+	                           .removeClass('bbai-btn--ghost')
+	                           .addClass('bbai-btn--success')
+	                           .html('✓ ' + __('Disconnected', 'opptiai-alt'))
+	                           .attr('aria-busy', 'false');
                     
                     // Clear any cached data
                     if (typeof localStorage !== 'undefined') {
@@ -1725,32 +1745,32 @@ bbaiRunWithJQuery(function($) {
                            .text(originalText)
                            .attr('aria-busy', 'false');
                     
-                    const errorMsg = response.data?.message || 'Failed to disconnect account. Please try again.';
-                    window.bbaiModal.error(errorMsg);
-                }
-            },
+	                    const errorMsg = response.data?.message || __('Failed to disconnect account. Please try again.', 'opptiai-alt');
+	                    window.bbaiModal.error(errorMsg);
+	                }
+	            },
             error: function(xhr, status, error) {
                 if (alttextaiDebug) console.error('[AltText AI] Disconnect error:', status, error);
                 
                 // Restore button
-                $button.prop('disabled', false)
-                       .removeClass('bbai-btn-loading')
-                       .text(originalText)
-                       .attr('aria-busy', 'false');
-                
-                // Provide helpful error message
-                let errorMessage = 'Unable to disconnect account. Please try again.';
-                
-                if (status === 'timeout') {
-                    errorMessage = 'Request timed out. Your connection may still be disconnected. Try refreshing the page.';
-                } else if (xhr.status === 0) {
-                    errorMessage = 'Network error. Please check your connection and try again.';
-                }
-                
-                window.bbaiModal.error(errorMessage);
-            }
-        });
-    }
+	                $button.prop('disabled', false)
+	                       .removeClass('bbai-btn-loading')
+	                       .text(originalText)
+	                       .attr('aria-busy', 'false');
+	                
+	                // Provide helpful error message
+	                let errorMessage = __('Unable to disconnect account. Please try again.', 'opptiai-alt');
+	                
+	                if (status === 'timeout') {
+	                    errorMessage = __('Request timed out. Your connection may still be disconnected. Try refreshing the page.', 'opptiai-alt');
+	                } else if (xhr.status === 0) {
+	                    errorMessage = __('Network error. Please check your connection and try again.', 'opptiai-alt');
+	                }
+	                
+	                window.bbaiModal.error(errorMessage);
+	            }
+	        });
+	    }
 
 });
 
@@ -1795,7 +1815,7 @@ function alttextaiShowModal() {
             byClass.id = 'bbai-upgrade-modal';
             return alttextaiShowModal(); // Retry
         }
-        window.bbaiModal.warning('Upgrade modal not found. Please refresh the page.');
+        window.bbaiModal.warning(__('Upgrade modal not found. Please refresh the page.', 'opptiai-alt'));
         return false;
     }
     
@@ -2020,15 +2040,15 @@ function showAuthBanner() {
                         } else {
         // Try to find and show the auth modal directly
         const authModal = document.getElementById('alttext-auth-modal');
-        if (authModal) {
-            if (alttextaiDebug) console.log('[AltText AI] Showing auth modal directly');
-            authModal.style.display = 'block';
-        } else {
-            if (alttextaiDebug) console.log('[AltText AI] Auth modal not found');
-            window.bbaiModal.error('Authentication system not available. Please refresh the page.');
-        }
-    }
-}
+	        if (authModal) {
+	            if (alttextaiDebug) console.log('[AltText AI] Showing auth modal directly');
+	            authModal.style.display = 'block';
+	        } else {
+	            if (alttextaiDebug) console.log('[AltText AI] Auth modal not found');
+	            window.bbaiModal.error(__('Authentication system not available. Please refresh the page.', 'opptiai-alt'));
+	        }
+	    }
+	}
 
 function showAuthLogin() {
     if (alttextaiDebug) console.log('[AltText AI] Showing auth login');
@@ -2780,3 +2800,87 @@ bbaiRunWithJQuery(function($) {
         handler.call(trigger, e);
     }, true);
 })();
+
+// Update Generate Missing button state when stats change
+bbaiRunWithJQuery(function($) {
+    'use strict';
+    
+    function updateGenerateMissingButtons(stats) {
+        if (!stats) {
+            return;
+        }
+        
+        // Get missing count from various possible locations
+        var missingCount = parseInt(stats.missing || stats.missingImages || 0, 10) || 0;
+        var $buttons = $('[data-action="generate-missing"]');
+        
+        $buttons.each(function() {
+            var $btn = $(this);
+            var isLocked = $btn.hasClass('bbai-optimization-cta--locked') || $btn.hasClass('disabled');
+            
+            // Don't update if button is locked (no credits) - keep it disabled
+            if (isLocked && missingCount > 0) {
+                return;
+            }
+            
+            if (missingCount <= 0) {
+                // Disable button when no missing images
+                $btn.addClass('bbai-optimization-cta--disabled disabled').prop('disabled', true);
+                $btn.attr('title', 'All images already have alt text');
+                $btn.removeAttr('data-bbai-tooltip');
+                // Force grey styling
+                $btn.css({
+                    'background-color': '#f3f4f6',
+                    'color': '#9ca3af',
+                    'opacity': '0.6',
+                    'cursor': 'not-allowed'
+                });
+            } else {
+                // Enable button when there are missing images
+                $btn.removeClass('bbai-optimization-cta--disabled disabled').prop('disabled', false);
+                $btn.attr('data-bbai-tooltip', 'Automatically generate alt text for all images that don\'t have any. Processes in the background without slowing down your site.');
+                $btn.removeAttr('title');
+                // Remove forced styling to allow normal styles
+                $btn.css({
+                    'background-color': '',
+                    'color': '',
+                    'opacity': '',
+                    'cursor': ''
+                });
+            }
+        });
+    }
+    
+    // Check initial state on page load
+    function checkInitialState() {
+        // Try to get stats from window object
+        var stats = null;
+        if (window.BBAI_DASH && window.BBAI_DASH.stats) {
+            stats = window.BBAI_DASH.stats;
+        } else if (window.BBAI && window.BBAI.stats) {
+            stats = window.BBAI.stats;
+        } else if (window.bbaiDashboardData && window.bbaiDashboardData.stats) {
+            stats = window.bbaiDashboardData.stats;
+        }
+        
+        if (stats) {
+            updateGenerateMissingButtons(stats);
+        }
+    }
+    
+    // Listen for stats update events
+    if (typeof window.addEventListener === 'function') {
+        window.addEventListener('bbai-stats-update', function(e) {
+            if (e.detail && e.detail.stats) {
+                updateGenerateMissingButtons(e.detail.stats);
+            }
+        });
+    }
+    
+    // Check on DOM ready
+    $(document).ready(function() {
+        checkInitialState();
+        // Also check after a short delay in case stats load asynchronously
+        setTimeout(checkInitialState, 500);
+    });
+});

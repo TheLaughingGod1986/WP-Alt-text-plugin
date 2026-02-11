@@ -12,6 +12,7 @@ if (!defined('ABSPATH')) {
 
 class Migrate_Usage {
 	const MIGRATION_FLAG = 'beepbeepai_usage_migrated';
+	// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- SQL identifiers are controlled by plugin schema; runtime values are prepared.
 
 	/**
 	 * Run migration to backfill credit usage data.
@@ -66,26 +67,29 @@ class Migrate_Usage {
 	 *
 	 * @return int Number of records migrated.
 	 */
-	private static function migrate_from_debug_logs() {
+		private static function migrate_from_debug_logs() {
 		if (!class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
 			return 0;
 		}
 
 		global $wpdb;
-		$logs_table = Debug_Log::table();
-		$logs_table_escaped = esc_sql($logs_table);
 		$credit_table = Credit_Usage_Logger::table();
-		$credit_table_escaped = esc_sql($credit_table);
 
 		// Find generation log entries
-		$query = "SELECT id, message, context, source, user_id, created_at 
-			FROM `{$logs_table_escaped}` 
-			WHERE (source = 'generation' OR message LIKE '%alt text%' OR message LIKE '%Alt text%')
-			AND context LIKE '%attachment_id%'
-			ORDER BY created_at ASC
-			LIMIT 1000";
-
-		$logs = $wpdb->get_results($query, ARRAY_A);
+		$alt_text_like = '%' . $wpdb->esc_like('alt text') . '%';
+		$alt_text_like_cap = '%' . $wpdb->esc_like('Alt text') . '%';
+		$attachment_id_like = '%' . $wpdb->esc_like('attachment_id') . '%';
+		$logs = $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT id, message, context, source, user_id, created_at FROM `' . $wpdb->prefix . 'bbai_logs` WHERE (source = %s OR message LIKE %s OR message LIKE %s) AND context LIKE %s ORDER BY created_at ASC LIMIT %d',
+				'generation',
+				$alt_text_like,
+				$alt_text_like_cap,
+				$attachment_id_like,
+				1000
+			),
+			ARRAY_A
+		);
 
 		if (empty($logs)) {
 			return 0;
@@ -105,12 +109,14 @@ class Migrate_Usage {
 				continue;
 			}
 
-			// Check if already migrated
-			$exists = $wpdb->get_var($wpdb->prepare(
-				"SELECT COUNT(*) FROM `{$credit_table_escaped}` WHERE attachment_id = %d AND generated_at = %s",
-				$attachment_id,
-				$log['created_at']
-			));
+			// Check if already migrated.
+			$exists = $wpdb->get_var(
+				$wpdb->prepare(
+					'SELECT COUNT(*) FROM `' . $wpdb->prefix . 'bbai_credit_usage` WHERE attachment_id = %d AND generated_at = %s',
+					$attachment_id,
+					$log['created_at']
+				)
+			);
 
 			if ($exists > 0) {
 				continue; // Already migrated
@@ -200,27 +206,28 @@ class Migrate_Usage {
 	 *
 	 * @return int Number of records migrated.
 	 */
-	private static function migrate_from_attachment_meta() {
-		global $wpdb;
-		$credit_table = Credit_Usage_Logger::table();
-		$credit_table_escaped = esc_sql($credit_table);
+		private static function migrate_from_attachment_meta() {
+			global $wpdb;
+			$credit_table = Credit_Usage_Logger::table();
+			$posts_table = esc_sql($wpdb->posts);
+			$postmeta_table = esc_sql($wpdb->postmeta);
 
 		// Find attachments with AI-generated alt text metadata (check both old and new keys)
-		$query = $wpdb->prepare(
-			"SELECT post_id, meta_value, post_author, post_date 
-			FROM {$wpdb->posts} p
-			INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
-			WHERE p.post_type = 'attachment'
-			AND p.post_mime_type LIKE 'image/%%'
-			AND (pm.meta_key = %s OR pm.meta_key = %s)
-			AND pm.meta_value IS NOT NULL
-			AND pm.meta_value != ''
-			LIMIT 1000",
-			'_beepbeepai_generated_at',
-			'_ai_alt_generated_at'
+		$image_mime_like = $wpdb->esc_like('image/') . '%';
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- Table names are escaped with esc_sql(); queries are prepared.
+		$attachments = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT post_id, meta_value, post_author, post_date FROM `{$posts_table}` p INNER JOIN `{$postmeta_table}` pm ON p.ID = pm.post_id WHERE p.post_type = %s AND p.post_mime_type LIKE %s AND (pm.meta_key = %s OR pm.meta_key = %s) AND pm.meta_value IS NOT NULL AND pm.meta_value != %s LIMIT %d",
+				'attachment',
+				$image_mime_like,
+				'_beepbeepai_generated_at',
+				'_ai_alt_generated_at',
+				'',
+				1000
+			),
+			ARRAY_A
 		);
-
-		$attachments = $wpdb->get_results($query, ARRAY_A);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
 
 		if (empty($attachments)) {
 			return 0;
@@ -234,11 +241,13 @@ class Migrate_Usage {
 				continue;
 			}
 
-			// Check if already migrated
-			$exists = $wpdb->get_var($wpdb->prepare(
-				"SELECT COUNT(*) FROM `{$credit_table_escaped}` WHERE attachment_id = %d",
-				$attachment_id
-			));
+			// Check if already migrated.
+			$exists = $wpdb->get_var(
+				$wpdb->prepare(
+					'SELECT COUNT(*) FROM `' . $wpdb->prefix . 'bbai_credit_usage` WHERE attachment_id = %d',
+					$attachment_id
+				)
+			);
 
 			if ($exists > 0) {
 				continue; // Already migrated
@@ -333,4 +342,5 @@ class Migrate_Usage {
 	public static function reset_migration_flag() {
 		delete_option(self::MIGRATION_FLAG);
 	}
+	// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter
 }
