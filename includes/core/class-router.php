@@ -101,17 +101,7 @@ class Router {
 	public function init(): void {
 		// Register AJAX handlers.
 		foreach ( $this->ajax_routes as $action => $route ) {
-			// Public (unauthenticated) AJAX only when explicitly allowed.
-			if ( false === $route['auth'] ) {
-				add_action(
-					"wp_ajax_nopriv_{$action}",
-					function () use ( $action, $route ) {
-						$this->handle_ajax( $action, $route );
-					}
-				);
-			}
-
-			// Authenticated AJAX.
+			// All routes require authentication; nopriv is intentionally not registered.
 			add_action(
 				"wp_ajax_{$action}",
 				function () use ( $action, $route ) {

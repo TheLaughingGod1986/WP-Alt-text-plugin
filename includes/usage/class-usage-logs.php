@@ -181,29 +181,39 @@ class Usage_Logs {
 			);
 		$has_site_id = !empty($columns);
 		
-		// Prepare insert data
-		$insert_data = [
-			'user_id'     => $user_id,
-			'tokens_used' => $tokens_used,
-			'action_type' => $action_type,
-			'image_id'    => $image_id,
-			'post_id'     => $post_id,
-			'created_at'  => current_time('mysql'),
-		];
-		$insert_format = ['%d', '%d', '%s', '%d', '%d', '%s'];
-		
-		// Only include site_id if column exists
-		if ($has_site_id) {
-			$insert_data['site_id'] = $site_id;
-			// Insert site_id format at position 1 (after user_id)
-			array_splice($insert_format, 1, 0, ['%s']);
-		}
+	// Prepare insert data with matching format per column.
+	// wpdb::insert matches format to data by array order, so keep them aligned.
+	$insert_data   = [];
+	$insert_format = [];
 
-		$inserted = $wpdb->insert(
-			$table_name,
-			$insert_data,
-			$insert_format
-		);
+	$insert_data['user_id']     = $user_id;
+	$insert_format[]            = '%d';
+
+	if ($has_site_id) {
+		$insert_data['site_id'] = $site_id;
+		$insert_format[]        = '%s';
+	}
+
+	$insert_data['tokens_used'] = $tokens_used;
+	$insert_format[]            = '%d';
+
+	$insert_data['action_type'] = $action_type;
+	$insert_format[]            = '%s';
+
+	$insert_data['image_id']    = $image_id;
+	$insert_format[]            = '%d';
+
+	$insert_data['post_id']     = $post_id;
+	$insert_format[]            = '%d';
+
+	$insert_data['created_at']  = current_time( 'mysql' );
+	$insert_format[]            = '%s';
+
+	$inserted = $wpdb->insert(
+		$table_name,
+		$insert_data,
+		$insert_format
+	);
 
 		if ($inserted) {
 			return $wpdb->insert_id;
@@ -334,26 +344,22 @@ class Usage_Logs {
 		$date_to = !empty($filters['date_to']) ? sanitize_text_field($filters['date_to']) . ' 23:59:59' : '';
 		$action_type = !empty($filters['action_type']) ? sanitize_key($filters['action_type']) : '';
 
-		$base_params = [
-			$site_id,
-			$has_user_filter,
-			0,
-			$user_id,
-			$date_from,
-			'',
-			$date_from,
-			$date_to,
-			'',
-			$date_to,
-			$action_type,
-			'',
-			$action_type,
-		];
-
 			$total = $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM `{$table_name}` WHERE site_id = %s AND (%d = %d OR user_id = %d) AND (%s = %s OR created_at >= %s) AND (%s = %s OR created_at <= %s) AND (%s = %s OR action_type = %s)",
-					...$base_params
+					$site_id,
+					$has_user_filter,
+					0,
+					$user_id,
+					$date_from,
+					'',
+					$date_from,
+					$date_to,
+					'',
+					$date_to,
+					$action_type,
+					'',
+					$action_type
 				)
 			);
 		$total = absint($total ?: 0);
@@ -365,14 +371,24 @@ class Usage_Logs {
 		$pages = ceil($total / $per_page);
 
 		// Get events
-			$query_params   = $base_params;
-			$query_params[] = $per_page;
-			$query_params[] = $offset;
-
 			$events = $wpdb->get_results(
 				$wpdb->prepare(
 					"SELECT * FROM `{$table_name}` WHERE site_id = %s AND (%d = %d OR user_id = %d) AND (%s = %s OR created_at >= %s) AND (%s = %s OR created_at <= %s) AND (%s = %s OR action_type = %s) ORDER BY created_at DESC LIMIT %d OFFSET %d",
-					...$query_params
+					$site_id,
+					$has_user_filter,
+					0,
+					$user_id,
+					$date_from,
+					'',
+					$date_from,
+					$date_to,
+					'',
+					$date_to,
+					$action_type,
+					'',
+					$action_type,
+					$per_page,
+					$offset
 				),
 				ARRAY_A
 			);

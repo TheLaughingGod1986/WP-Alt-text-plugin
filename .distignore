@@ -99,6 +99,9 @@ CLAUDE_AUDIT.md
 ADDITIONAL_IMPROVEMENTS.md
 
 # React/TypeScript source (not used at runtime; keep only the bridge scripts/CSS)
+admin/components/*.jsx
+admin/components/*.tsx
+admin/components/*.ts
 admin/components/**/*.jsx
 admin/components/**/*.tsx
 admin/components/**/*.ts

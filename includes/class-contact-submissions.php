@@ -179,40 +179,64 @@ class Contact_Submissions {
 			? 'ASC'
 			: 'DESC';
 
-			$base_params = [
-				$status,
-				'',
-				$status,
-				$search_term,
-				'',
-				$search_like,
-				$search_like,
-				$search_like,
-				$search_like,
-			];
 			$table = esc_sql( self::table() );
 
 			$total = (int) $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM `{$table}` WHERE (%s = %s OR status = %s) AND (%s = %s OR name LIKE %s OR email LIKE %s OR subject LIKE %s OR message LIKE %s)",
-					...$base_params
+					$status,
+					'',
+					$status,
+					$search_term,
+					'',
+					$search_like,
+					$search_like,
+					$search_like,
+					$search_like
 				)
 			);
 
-			$query_params = array_merge( $base_params, [ $per_page, $offset ] );
 			if ( 'ASC' === $order ) {
 				$items = $wpdb->get_results(
 					$wpdb->prepare(
-						"SELECT * FROM `{$table}` WHERE (%s = %s OR status = %s) AND (%s = %s OR name LIKE %s OR email LIKE %s OR subject LIKE %s OR message LIKE %s) ORDER BY {$orderby} ASC LIMIT %d OFFSET %d",
-						...$query_params
+						"SELECT * FROM `{$table}` WHERE (%s = %s OR status = %s) AND (%s = %s OR name LIKE %s OR email LIKE %s OR subject LIKE %s OR message LIKE %s) ORDER BY CASE WHEN %s = 'created_at' THEN created_at END ASC, CASE WHEN %s = 'name' THEN name END ASC, CASE WHEN %s = 'email' THEN email END ASC, CASE WHEN %s = 'status' THEN status END ASC LIMIT %d OFFSET %d",
+						$status,
+						'',
+						$status,
+						$search_term,
+						'',
+						$search_like,
+						$search_like,
+						$search_like,
+						$search_like,
+						$orderby,
+						$orderby,
+						$orderby,
+						$orderby,
+						$per_page,
+						$offset
 					),
 					OBJECT
 				);
 			} else {
 				$items = $wpdb->get_results(
 					$wpdb->prepare(
-						"SELECT * FROM `{$table}` WHERE (%s = %s OR status = %s) AND (%s = %s OR name LIKE %s OR email LIKE %s OR subject LIKE %s OR message LIKE %s) ORDER BY {$orderby} DESC LIMIT %d OFFSET %d",
-						...$query_params
+						"SELECT * FROM `{$table}` WHERE (%s = %s OR status = %s) AND (%s = %s OR name LIKE %s OR email LIKE %s OR subject LIKE %s OR message LIKE %s) ORDER BY CASE WHEN %s = 'created_at' THEN created_at END DESC, CASE WHEN %s = 'name' THEN name END DESC, CASE WHEN %s = 'email' THEN email END DESC, CASE WHEN %s = 'status' THEN status END DESC LIMIT %d OFFSET %d",
+						$status,
+						'',
+						$status,
+						$search_term,
+						'',
+						$search_like,
+						$search_like,
+						$search_like,
+						$search_like,
+						$orderby,
+						$orderby,
+						$orderby,
+						$orderby,
+						$per_page,
+						$offset
 					),
 					OBJECT
 				);

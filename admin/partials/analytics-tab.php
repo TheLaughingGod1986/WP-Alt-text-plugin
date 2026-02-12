@@ -54,7 +54,13 @@ $images_processed = $stats['generated'] ?? $total_images_optimized;
 $images_processed = max(0, intval($images_processed));
 $images_delta_percent = $usage_stats['imagesDeltaPercent'] ?? $usage_stats['images_delta_percent'] ?? 0;
 $images_delta_percent = max(0, floatval($images_delta_percent));
+$generated = max(0, intval($stats['generated'] ?? 0));
 $coverage_improvement = max(0, round($coverage_percent));
+
+// "Before" = how many images lacked alt text before the plugin helped.
+// If all images are now covered, show the number the plugin generated (those WERE missing).
+// If some are still missing, show missing + generated as the original "before" count.
+$before_count = $missing + $generated;
 
 // Get plan data from centralized helper
 $plan_data = Plan_Helpers::get_plan_data();
@@ -273,7 +279,7 @@ if (function_exists('wp_add_inline_script')) {
                             </svg>
                         </div>
                         <div class="bbai-comparison-label"><?php esc_html_e('Before', 'beepbeep-ai-alt-text-generator'); ?></div>
-                        <div class="bbai-comparison-value"><?php echo esc_html(number_format_i18n($missing)); ?></div>
+                        <div class="bbai-comparison-value"><?php echo esc_html(number_format_i18n($before_count)); ?></div>
                         <div class="bbai-comparison-description"><?php esc_html_e('images without alt text', 'beepbeep-ai-alt-text-generator'); ?></div>
                     </div>
 
@@ -329,7 +335,19 @@ if (function_exists('wp_add_inline_script')) {
                             <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
                         </svg>
                         <p class="bbai-empty-title"><?php esc_html_e('No activity yet', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        <p class="bbai-empty-description"><?php esc_html_e('Generate your first alt text to see your activity here.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                        <p class="bbai-empty-description">
+                            <?php
+                            if ($generated > 0) {
+                                /* translators: %d: number of generated alt texts */
+                                printf(
+                                    esc_html__('You have %d generated alt texts, but recent activity tracking is new. Activity will appear here as you generate more.', 'beepbeep-ai-alt-text-generator'),
+                                    absint($generated)
+                                );
+                            } else {
+                                esc_html_e('Generate your first alt text to see your activity here.', 'beepbeep-ai-alt-text-generator');
+                            }
+                            ?>
+                        </p>
                         <a href="<?php echo esc_url(admin_url('admin.php?page=bbai')); ?>" class="bbai-btn bbai-btn-primary bbai-btn-sm bbai-mt-4">
                             <?php esc_html_e('Go to Dashboard', 'beepbeep-ai-alt-text-generator'); ?>
                         </a>

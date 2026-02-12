@@ -107,7 +107,7 @@ class Credit_Usage_Page {
 		if ($api_client && method_exists($api_client, 'get_backend_user_usage')) {
 			$backend_result = $api_client->get_backend_user_usage();
 			if (!is_wp_error($backend_result) && !empty($backend_result['users'])) {
-				$backend_user_activity = $backend_result;
+				$backend_user_activity = self::enrich_backend_user_activity($backend_result);
 			}
 		}
 	} catch (\Exception $e) {
@@ -187,9 +187,93 @@ class Credit_Usage_Page {
 	$partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/credit-usage-content.php';
 	if (file_exists($partial)) {
 		include $partial;
-		} else {
-			esc_html_e('Credit usage content unavailable.', 'beepbeep-ai-alt-text-generator');
-		}
+	} else {
+		esc_html_e('Credit usage content unavailable.', 'beepbeep-ai-alt-text-generator');
+	}
+	}
+
+	/**
+	 * Resolve backend hero rows to WordPress users when possible.
+	 *
+	 * @param array $backend_result Raw backend usage response.
+	 * @return array
+	 */
+	private static function enrich_backend_user_activity($backend_result) {
+		if (!is_array($backend_result) || empty($backend_result['users']) || !is_array($backend_result['users'])) {
+			return is_array($backend_result) ? $backend_result : [];
 		}
 
-}
+		foreach ($backend_result['users'] as &$hero) {
+			if (!is_array($hero)) {
+				continue;
+			}
+
+			$wp_user = self::resolve_backend_hero_wp_user($hero);
+			if ($wp_user instanceof \WP_User) {
+				$hero['display_name'] = $wp_user->display_name;
+				if (empty($hero['user_email']) && !empty($wp_user->user_email)) {
+					$hero['user_email'] = $wp_user->user_email;
+				}
+				$hero['wp_user_id'] = absint($wp_user->ID);
+				continue;
+			}
+
+			if (empty($hero['display_name'])) {
+				foreach (['user_name', 'name', 'username', 'user_email', 'email'] as $name_key) {
+					if (!empty($hero[$name_key]) && is_string($hero[$name_key])) {
+						$hero['display_name'] = $hero[$name_key];
+						break;
+					}
+				}
+			}
+		}
+		unset($hero);
+
+		return $backend_result;
+	}
+
+	/**
+	 * Attempt to find a matching WordPress user for a backend hero row.
+	 *
+	 * @param array $hero Backend user row.
+	 * @return \WP_User|null
+	 */
+	private static function resolve_backend_hero_wp_user(array $hero) {
+		$user_id_keys = ['wp_user_id', 'wordpress_user_id', 'wordpress_id', 'wp_id', 'user_id', 'site_user_id', 'local_user_id'];
+		foreach ($user_id_keys as $id_key) {
+			if (!isset($hero[$id_key])) {
+				continue;
+			}
+
+			$user_id = absint($hero[$id_key]);
+			if ($user_id <= 0) {
+				continue;
+			}
+
+			$wp_user = get_user_by('ID', $user_id);
+			if ($wp_user instanceof \WP_User) {
+				return $wp_user;
+			}
+		}
+
+		$email_keys = ['user_email', 'email'];
+		foreach ($email_keys as $email_key) {
+			if (empty($hero[$email_key]) || !is_string($hero[$email_key])) {
+				continue;
+			}
+
+			$email = sanitize_email($hero[$email_key]);
+			if (empty($email) || !is_email($email)) {
+				continue;
+			}
+
+			$wp_user = get_user_by('email', $email);
+			if ($wp_user instanceof \WP_User) {
+				return $wp_user;
+			}
+		}
+
+		return null;
+	}
+
+	}

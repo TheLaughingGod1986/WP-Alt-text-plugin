@@ -9,7 +9,7 @@ Requires PHP: 7.4
 Stable tag: 4.4.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
-Text Domain: opptiai-alt
+Text Domain: beepbeep-ai-alt-text-generator
 
 The fastest way to automatically generate SEO-optimized and WCAG-compliant alt text for every WordPress image. Boost Google Images rankings, improve accessibility, and save 10+ hours monthly.
 

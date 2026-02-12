@@ -3048,10 +3048,10 @@ class Core {
     }
 
     public function handle_usage_export(){
+        check_admin_referer('bbai_usage_export');
         if (!$this->user_can_manage()){
             wp_die(esc_html__('You do not have permission to export usage data.', 'beepbeep-ai-alt-text-generator'));
         }
-        check_admin_referer('bbai_usage_export');
 
         $rows = $this->get_usage_rows(10, true);
         $filename = 'bbai-usage-' . gmdate('Ymd-His') . '.csv';
@@ -3078,10 +3078,10 @@ class Core {
     }
 
     public function handle_debug_log_export() {
+        check_admin_referer('bbai_debug_export');
         if (!$this->user_can_manage()){
             wp_die(esc_html__('You do not have permission to export debug logs.', 'beepbeep-ai-alt-text-generator'));
         }
-        check_admin_referer('bbai_debug_export');
 
         if (!class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
             wp_die(esc_html__('Debug logging is not available.', 'beepbeep-ai-alt-text-generator'));

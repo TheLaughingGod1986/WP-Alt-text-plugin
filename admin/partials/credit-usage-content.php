@@ -213,7 +213,14 @@ if (!defined('ABSPATH')) {
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <strong><?php echo esc_html($hero['user_email'] ?? __('Unknown User', 'beepbeep-ai-alt-text-generator')); ?></strong>
+                                <?php
+                                $hero_name = $hero['display_name'] ?? $hero['user_name'] ?? $hero['name'] ?? $hero['user_email'] ?? $hero['email'] ?? __('Unknown User', 'beepbeep-ai-alt-text-generator');
+                                $hero_email = $hero['user_email'] ?? $hero['email'] ?? '';
+                                ?>
+                                <strong><?php echo esc_html($hero_name); ?></strong>
+                                <?php if (!empty($hero_email) && $hero_email !== $hero_name) : ?>
+                                    <div class="bbai-table-subtitle"><?php echo esc_html($hero_email); ?></div>
+                                <?php endif; ?>
                             </td>
                             <td>
                                 <span style="font-weight: 600; color: #059669;"><?php echo esc_html(number_format_i18n($hero['credits_used'] ?? 0)); ?></span>
@@ -252,88 +259,6 @@ if (!defined('ABSPATH')) {
             <?php endif; ?>
         </div>
     <?php endif; ?>
-
-    <!-- Usage Table -->
-    <div class="bbai-card bbai-usage-table-card">
-        <h2 class="bbai-card-title" style="margin-bottom: 16px;"><?php esc_html_e('Usage by User', 'beepbeep-ai-alt-text-generator'); ?></h2>
-        
-        <?php if (empty($date_from) && empty($date_to)) : ?>
-            <div class="bbai-info-notice bbai-mb-4">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                    <circle cx="10" cy="10" r="9" stroke="#3b82f6" stroke-width="1.5" fill="none"/>
-                    <path d="M10 6V10M10 14H10.01" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-                <span>
-                    <strong><?php esc_html_e('Note:', 'beepbeep-ai-alt-text-generator'); ?></strong>
-                    <?php esc_html_e('The summary cards above show your current accurate usage from the backend. The table below shows historical WordPress user activity, which may include data from previous periods or different filters. Use the filters to view recent usage only.', 'beepbeep-ai-alt-text-generator'); ?>
-                </span>
-            </div>
-        <?php endif; ?>
-
-        <?php if (!empty($usage_by_user['users'])) : ?>
-            <table class="widefat fixed striped bbai-mt-4">
-                <thead>
-                    <tr>
-                        <th><?php esc_html_e('User', 'beepbeep-ai-alt-text-generator'); ?></th>
-                        <th><?php esc_html_e('Credits Used', 'beepbeep-ai-alt-text-generator'); ?></th>
-                        <th><?php esc_html_e('Last Activity', 'beepbeep-ai-alt-text-generator'); ?></th>
-                        <th><?php esc_html_e('Avg Per Day', 'beepbeep-ai-alt-text-generator'); ?></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($usage_by_user['users'] as $user_usage) : ?>
-                        <tr>
-                            <td>
-                                <?php echo esc_html($user_usage['display_name'] ?? __('Unknown', 'beepbeep-ai-alt-text-generator')); ?>
-                                <div class="bbai-table-subtitle"><?php echo esc_html($user_usage['user_email'] ?? ''); ?></div>
-                            </td>
-                            <td><?php echo esc_html(number_format_i18n($user_usage['total_credits'] ?? 0)); ?></td>
-                            <td><?php echo esc_html($user_usage['latest_activity'] ?? '—'); ?></td>
-                            <td><?php 
-                                // Calculate average per day if we have date range
-                                $avg_per_day = '—';
-                                if (!empty($date_from) && !empty($date_to)) {
-                                    $days = max(1, (strtotime($date_to) - strtotime($date_from)) / 86400);
-                                    $credits = $user_usage['total_credits'] ?? 0;
-                                    $avg_per_day = number_format_i18n($credits / $days, 1);
-                                }
-                                echo esc_html($avg_per_day);
-                            ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-
-            <?php if (!empty($usage_by_user['total'])) : ?>
-                <div class="tablenav bbai-mt-4">
-                    <div class="tablenav-pages">
-                        <?php
-                        $pagination = paginate_links([
-                            'base'      => add_query_arg('paged', '%#%'),
-                            'format'    => '',
-                            'prev_text' => __('&laquo;', 'beepbeep-ai-alt-text-generator'),
-                            'next_text' => __('&raquo;', 'beepbeep-ai-alt-text-generator'),
-                            'total'     => ceil($usage_by_user['total'] / 50),
-                            'current'   => $page,
-                            'type'      => 'array',
-                        ]);
-
-                        if (!empty($pagination)) {
-                            echo '<span class="bbai-pagination">';
-                            foreach ($pagination as $link) {
-                                // $link is generated by paginate_links() which returns safe HTML
-                                echo wp_kses_post($link);
-                            }
-                            echo '</span>';
-                        }
-                        ?>
-                    </div>
-                </div>
-            <?php endif; ?>
-        <?php else : ?>
-            <p class="bbai-empty-table-message"><?php esc_html_e('No usage data found for selected filters.', 'beepbeep-ai-alt-text-generator'); ?></p>
-        <?php endif; ?>
-    </div>
 
     <!-- Bottom Upsell CTA (reusable component) -->
     <?php
