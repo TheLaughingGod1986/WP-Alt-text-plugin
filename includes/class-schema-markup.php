@@ -214,8 +214,8 @@ class BBAI_Schema_Markup {
     public static function add_settings_field($settings) {
         $settings[] = [
             'id' => 'bbai_enable_schema_markup',
-            'title' => __('Enable Schema.org Markup', 'opptiai-alt'),
-            'desc' => __('Add ImageObject schema markup to images with alt text for enhanced Google Images SEO. Helps images appear in rich results.', 'opptiai-alt'),
+            'title' => __('Enable Schema.org Markup', 'beepbeep-ai-alt-text-generator'),
+            'desc' => __('Add ImageObject schema markup to images with alt text for enhanced Google Images SEO. Helps images appear in rich results.', 'beepbeep-ai-alt-text-generator'),
             'type' => 'checkbox',
             'default' => true,
         ];

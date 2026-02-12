@@ -82,7 +82,7 @@ class Generation_Service {
 		if ( ! $attachment_id ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Invalid attachment ID', 'opptiai-alt' ),
+				'message' => __( 'Invalid attachment ID', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -100,7 +100,7 @@ class Generation_Service {
 
 				return array(
 					'success' => false,
-					'message' => __( 'Monthly limit reached', 'opptiai-alt' ),
+					'message' => __( 'Monthly limit reached', 'beepbeep-ai-alt-text-generator' ),
 					'code'    => 'limit_reached',
 					'usage'   => is_array( $usage ) ? $usage : null,
 				);
@@ -135,7 +135,7 @@ class Generation_Service {
 
 		return array(
 			'success'       => true,
-			'message'       => __( 'Alt text generated successfully.', 'opptiai-alt' ),
+			'message'       => __( 'Alt text generated successfully.', 'beepbeep-ai-alt-text-generator' ),
 			'alt_text'      => $result,
 			'attachment_id' => $attachment_id,
 			'data'          => array(
@@ -156,7 +156,7 @@ class Generation_Service {
 		if ( empty( $attachment_ids ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'No attachment IDs provided', 'opptiai-alt' ),
+				'message' => __( 'No attachment IDs provided', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -216,7 +216,7 @@ class Generation_Service {
 			'success'        => true,
 			'message'        => sprintf(
 				/* translators: %d: number of images queued */
-				_n( '%d image queued for processing', '%d images queued for processing', $queued, 'opptiai-alt' ),
+				_n( '%d image queued for processing', '%d images queued for processing', $queued, 'beepbeep-ai-alt-text-generator' ),
 				$queued
 			),
 			'queued'         => $queued,
@@ -237,7 +237,7 @@ class Generation_Service {
 		if ( ! $attachment_id ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Invalid attachment ID', 'opptiai-alt' ),
+				'message' => __( 'Invalid attachment ID', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -264,7 +264,7 @@ class Generation_Service {
 
 		return array(
 			'success' => true,
-			'message' => __( 'Alt text generated', 'opptiai-alt' ),
+			'message' => __( 'Alt text generated', 'beepbeep-ai-alt-text-generator' ),
 			'alt'     => $result,
 		);
 	}
@@ -280,13 +280,13 @@ class Generation_Service {
 	 */
 	private function get_user_friendly_error_message( string $error_code, string $error_message ): string {
 		$messages = array(
-			'missing_alt_text'      => __( 'The API returned a response but no alt text was generated. This may be a temporary issue. Please try again.', 'opptiai-alt' ),
-			'api_response_invalid'  => __( 'The API response was invalid. Please try again in a moment.', 'opptiai-alt' ),
-			'quota_check_mismatch'  => __( 'Credits appear available but the backend reported a limit. Please try again in a moment.', 'opptiai-alt' ),
-			'limit_reached'         => __( 'Monthly quota exhausted. Please upgrade to continue generating alt text.', 'opptiai-alt' ),
-			'quota_exhausted'       => __( 'Monthly quota exhausted. Please upgrade to continue generating alt text.', 'opptiai-alt' ),
-			'api_timeout'           => __( 'The request timed out. Please try again.', 'opptiai-alt' ),
-			'api_unreachable'       => __( 'Unable to reach the server. Please check your internet connection and try again.', 'opptiai-alt' ),
+			'missing_alt_text'      => __( 'The API returned a response but no alt text was generated. This may be a temporary issue. Please try again.', 'beepbeep-ai-alt-text-generator' ),
+			'api_response_invalid'  => __( 'The API response was invalid. Please try again in a moment.', 'beepbeep-ai-alt-text-generator' ),
+			'quota_check_mismatch'  => __( 'Credits appear available but the backend reported a limit. Please try again in a moment.', 'beepbeep-ai-alt-text-generator' ),
+			'limit_reached'         => __( 'Monthly quota exhausted. Please upgrade to continue generating alt text.', 'beepbeep-ai-alt-text-generator' ),
+			'quota_exhausted'       => __( 'Monthly quota exhausted. Please upgrade to continue generating alt text.', 'beepbeep-ai-alt-text-generator' ),
+			'api_timeout'           => __( 'The request timed out. Please try again.', 'beepbeep-ai-alt-text-generator' ),
+			'api_unreachable'       => __( 'Unable to reach the server. Please check your internet connection and try again.', 'beepbeep-ai-alt-text-generator' ),
 		);
 
 		return $messages[ $error_code ] ?? $error_message;

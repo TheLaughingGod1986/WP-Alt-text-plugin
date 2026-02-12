@@ -12,7 +12,6 @@ if (!defined('ABSPATH')) {
 class Queue {
     const TABLE_SLUG = 'bbai_queue';
     const CRON_HOOK  = 'bbai_process_queue';
-    // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- SQL identifiers are controlled by plugin schema; runtime values are prepared.
 
     /**
      * Get queue table name.
@@ -70,10 +69,10 @@ class Queue {
             return false;
         }
 
-        $table = self::table();
+        $table = esc_sql( self::table() );
         $exists = $wpdb->get_var(
             $wpdb->prepare(
-                'SELECT id FROM `' . self::table() . '` WHERE attachment_id = %d AND status IN (%s,%s) LIMIT 1',
+                "SELECT id FROM `{$table}` WHERE attachment_id = %d AND status IN (%s,%s) LIMIT 1",
                 $attachment_id,
                 'pending',
                 'processing'
@@ -113,7 +112,7 @@ class Queue {
             return 0;
         }
         
-        $table = self::table();
+        $table = esc_sql( self::table() );
         $ids = array_map('intval', $ids);
         $ids = array_filter($ids, function($id) {
             return $id > 0;
@@ -170,12 +169,12 @@ class Queue {
      */
     public static function claim_batch($limit = 5) {
         global $wpdb;
-        $table = self::table();
+        $table = esc_sql( self::table() );
         $limit = max(1, intval($limit));
 
         $candidates = $wpdb->get_results(
             $wpdb->prepare(
-                'SELECT * FROM `' . self::table() . '` WHERE status = %s ORDER BY id ASC LIMIT %d',
+                "SELECT * FROM `{$table}` WHERE status = %s ORDER BY id ASC LIMIT %d",
                 'pending',
                 $limit * 3
             ),
@@ -222,7 +221,7 @@ class Queue {
      */
     public static function mark_complete($job_id) {
         global $wpdb;
-        $table = self::table();
+        $table = esc_sql( self::table() );
         $wpdb->update(
             $table,
             [
@@ -242,7 +241,7 @@ class Queue {
      */
     public static function retry_job($job_id) {
         global $wpdb;
-        $table = self::table();
+        $table = esc_sql( self::table() );
         $wpdb->update(
             $table,
             [
@@ -261,7 +260,7 @@ class Queue {
      */
     public static function mark_retry($job_id, $message = '') {
         global $wpdb;
-        $table = self::table();
+        $table = esc_sql( self::table() );
         $wpdb->update(
             $table,
             [
@@ -280,7 +279,7 @@ class Queue {
      */
     public static function mark_failed($job_id, $message) {
         global $wpdb;
-        $table = self::table();
+        $table = esc_sql( self::table() );
         $wpdb->update(
             $table,
             [
@@ -299,9 +298,10 @@ class Queue {
      */
     public static function retry_failed() {
         global $wpdb;
+        $table = esc_sql( self::table() );
         $wpdb->query(
             $wpdb->prepare(
-                'UPDATE `' . self::table() . '` SET status = %s, locked_at = NULL, last_error = NULL WHERE status = %s',
+                "UPDATE `{$table}` SET status = %s, locked_at = NULL, last_error = NULL WHERE status = %s",
                 'pending',
                 'failed'
             )
@@ -313,11 +313,12 @@ class Queue {
      */
     public static function clear_completed($age_seconds = 0) {
         global $wpdb;
+        $table = esc_sql( self::table() );
         if ($age_seconds > 0) {
             $threshold = gmdate('Y-m-d H:i:s', time() - intval($age_seconds));
             $wpdb->query(
                 $wpdb->prepare(
-                    'DELETE FROM `' . self::table() . '` WHERE status = %s AND completed_at IS NOT NULL AND completed_at < %s',
+                    "DELETE FROM `{$table}` WHERE status = %s AND completed_at IS NOT NULL AND completed_at < %s",
                     'completed',
                     $threshold
                 )
@@ -325,7 +326,7 @@ class Queue {
         } else {
             $wpdb->query(
                 $wpdb->prepare(
-                    'DELETE FROM `' . self::table() . '` WHERE status = %s',
+                    "DELETE FROM `{$table}` WHERE status = %s",
                     'completed'
                 )
             );
@@ -338,10 +339,11 @@ class Queue {
      */
     public static function cleanup_redundant_jobs() {
         global $wpdb;
+        $table = esc_sql( self::table() );
         // Get all pending jobs
         $pending_jobs = $wpdb->get_results(
             $wpdb->prepare(
-                'SELECT id, attachment_id FROM `' . self::table() . '` WHERE status = %s',
+                "SELECT id, attachment_id FROM `{$table}` WHERE status = %s",
                 'pending'
             ),
             ARRAY_A
@@ -371,11 +373,12 @@ class Queue {
      */
     public static function reset_stale($timeout = 600) {
         global $wpdb;
+        $table = esc_sql( self::table() );
         $threshold = gmdate('Y-m-d H:i:s', time() - max(60, intval($timeout)));
 
         $wpdb->query(
             $wpdb->prepare(
-                'UPDATE `' . self::table() . '` SET status = %s, locked_at = NULL WHERE status = %s AND locked_at IS NOT NULL AND locked_at < %s',
+                "UPDATE `{$table}` SET status = %s, locked_at = NULL WHERE status = %s AND locked_at IS NOT NULL AND locked_at < %s",
                 'pending',
                 'processing',
                 $threshold
@@ -388,6 +391,7 @@ class Queue {
      */
     public static function get_stats() {
         global $wpdb;
+        $table = esc_sql( self::table() );
         // Auto-cleanup redundant pending jobs (images that already have alt text)
         // This runs every hour to keep the queue clean
         $last_cleanup = get_transient('bbai_queue_last_cleanup');
@@ -398,7 +402,7 @@ class Queue {
 
         $counts = $wpdb->get_results(
             $wpdb->prepare(
-                'SELECT status, COUNT(*) as total FROM `' . self::table() . '` WHERE %d = %d GROUP BY status',
+                "SELECT status, COUNT(*) as total FROM `{$table}` WHERE %d = %d GROUP BY status",
                 1,
                 1
             ),
@@ -411,7 +415,7 @@ class Queue {
 
         $recent_completed = $wpdb->get_var(
             $wpdb->prepare(
-                'SELECT COUNT(*) FROM `' . self::table() . '` WHERE status = %s AND completed_at IS NOT NULL AND completed_at > %s',
+                "SELECT COUNT(*) FROM `{$table}` WHERE status = %s AND completed_at IS NOT NULL AND completed_at > %s",
                 'completed',
                 gmdate('Y-m-d H:i:s', time() - DAY_IN_SECONDS)
             )
@@ -439,9 +443,10 @@ class Queue {
      */
     public static function get_recent($limit = 20) {
         global $wpdb;
+        $table = esc_sql( self::table() );
         return $wpdb->get_results(
             $wpdb->prepare(
-                'SELECT * FROM `' . self::table() . '` ORDER BY id DESC LIMIT %d',
+                "SELECT * FROM `{$table}` ORDER BY id DESC LIMIT %d",
                 max(1, intval($limit))
             ),
             ARRAY_A
@@ -453,11 +458,12 @@ class Queue {
      */
     public static function get_recent_failures($limit = 10) {
         global $wpdb;
+        $table = esc_sql( self::table() );
         $limit = max(1, intval($limit));
 
         return $wpdb->get_results(
             $wpdb->prepare(
-                'SELECT id, attachment_id, status, attempts, source, last_error, enqueued_at, locked_at, completed_at FROM `' . self::table() . '` WHERE status = %s ORDER BY id DESC LIMIT %d',
+                "SELECT id, attachment_id, status, attempts, source, last_error, enqueued_at, locked_at, completed_at FROM `{$table}` WHERE status = %s ORDER BY id DESC LIMIT %d",
                 'failed',
                 $limit
             ),
@@ -470,14 +476,14 @@ class Queue {
      */
     public static function purge_completed($age_seconds = 86400) {
         global $wpdb;
+        $table = esc_sql( self::table() );
         $threshold = gmdate('Y-m-d H:i:s', time() - max(300, intval($age_seconds)));
         $wpdb->query(
             $wpdb->prepare(
-                'DELETE FROM `' . self::table() . '` WHERE status = %s AND completed_at IS NOT NULL AND completed_at < %s',
+                "DELETE FROM `{$table}` WHERE status = %s AND completed_at IS NOT NULL AND completed_at < %s",
                 'completed',
                 $threshold
             )
         );
     }
-    // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter
 }

@@ -6,14 +6,19 @@
 (function() {
     'use strict';
 
+    const i18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
+    const __ = i18n && typeof i18n.__ === 'function' ? i18n.__ : (text) => text;
+
     const bbaiTooltips = {
         tooltips: new Map(),
         shortcutsModal: null,
+        mutationObserver: null,
 
         init: function() {
             this.initTooltips();
             this.initShortcutsModal();
             this.initKeyboardShortcuts();
+            this.initMutationObserver();
         },
 
         /**
@@ -25,6 +30,18 @@
             document.addEventListener('mouseleave', this.handleTooltipLeave.bind(this), true);
             document.addEventListener('focus', this.handleTooltipFocus.bind(this), true);
             document.addEventListener('blur', this.handleTooltipBlur.bind(this), true);
+            
+            // Hide tooltips on mousedown for interactive elements (immediate feedback)
+            document.addEventListener('mousedown', this.handleMouseDown.bind(this), true);
+            
+            // Hide tooltips on click anywhere (except on tooltip triggers)
+            document.addEventListener('click', this.handleDocumentClick.bind(this), true);
+            
+            // Hide tooltips on scroll
+            document.addEventListener('scroll', this.handleScroll.bind(this), true);
+            
+            // Hide tooltips when mouse leaves the window
+            document.addEventListener('mouseout', this.handleMouseOut.bind(this), true);
         },
 
         /**
@@ -38,6 +55,17 @@
 
             const element = e.target.closest('[data-bbai-tooltip]');
             if (!element) return;
+
+            // Cancel any pending hide for this element (prevents flicker
+            // when moving between child elements of the same trigger)
+            if (element._bbaiHideTimer) {
+                clearTimeout(element._bbaiHideTimer);
+                element._bbaiHideTimer = null;
+                // Tooltip is already showing for this element, no action needed
+                if (this.tooltips.has(element)) {
+                    return;
+                }
+            }
 
             const text = element.getAttribute('data-bbai-tooltip');
             if (!text) return;
@@ -61,7 +89,7 @@
                 // Find the element that triggered this tooltip
                 for (const [element, tooltipEl] of this.tooltips.entries()) {
                     if (tooltipEl === tooltip) {
-                        this.hideTooltip(element);
+                        this.scheduleHide(element);
                         return;
                     }
                 }
@@ -70,12 +98,23 @@
             // Check if mouse left the element with tooltip
             const element = e.target.closest('[data-bbai-tooltip]');
             if (element) {
-                // Only hide if we're not moving to the tooltip
                 const relatedTarget = e.relatedTarget;
-                if (relatedTarget && relatedTarget.closest('.bbai-tooltip')) {
+                
+                // If relatedTarget is null, mouse left the window - hide tooltip immediately
+                if (!relatedTarget) {
+                    this.hideTooltip(element);
+                    return;
+                }
+                
+                // Only hide if we're not moving to the tooltip
+                if (relatedTarget.closest('.bbai-tooltip')) {
                     return; // Don't hide if moving to tooltip
                 }
-            this.hideTooltip(element);
+                // Only hide if we're not moving to another child of the same trigger
+                if (relatedTarget.closest('[data-bbai-tooltip]') === element) {
+                    return;
+                }
+                this.scheduleHide(element);
             }
         },
 
@@ -110,7 +149,21 @@
             const element = e.target.closest('[data-bbai-tooltip]');
             if (!element) return;
 
-            this.hideTooltip(element);
+            this.scheduleHide(element);
+        },
+
+        /**
+         * Debounced hide — prevents rapid show/hide when moving between
+         * child elements of the same tooltip trigger (e.g. button → icon SVG).
+         */
+        scheduleHide: function(element) {
+            if (element._bbaiHideTimer) {
+                clearTimeout(element._bbaiHideTimer);
+            }
+            element._bbaiHideTimer = setTimeout(() => {
+                element._bbaiHideTimer = null;
+                this.hideTooltip(element);
+            }, 80);
         },
 
         /**
@@ -127,29 +180,25 @@
             tooltip.setAttribute('role', 'tooltip');
             tooltip.setAttribute('aria-hidden', 'false');
 
-            // Append to body for proper positioning
+            // Append to body for proper positioning (hidden initially to prevent jump)
+            tooltip.style.visibility = 'hidden';
             document.body.appendChild(tooltip);
 
-            // Calculate position
+            // Calculate position after tooltip is in DOM and can be measured
             this.positionTooltip(element, tooltip, position);
 
-            // Show with animation
+            // Show with animation after positioning is complete
             requestAnimationFrame(() => {
+                tooltip.style.visibility = 'visible';
                 tooltip.classList.add('show');
             });
 
             // Store reference
             this.tooltips.set(element, tooltip);
 
-            // Hide tooltip when mouse leaves the tooltip itself
-            tooltip.addEventListener('mouseleave', (e) => {
-                // Only hide if not moving back to the element
-                const relatedTarget = e.relatedTarget;
-                if (relatedTarget && relatedTarget.closest('[data-bbai-tooltip]') === element) {
-                    return; // Don't hide if moving back to element
-                }
-                this.hideTooltip(element);
-            });
+            // Note: tooltip has pointer-events: none via CSS, so direct
+            // mouseleave on tooltip won't fire. The capture-phase
+            // handleTooltipLeave on document handles hiding instead.
 
             // Handle window resize
             const resizeHandler = () => this.positionTooltip(element, tooltip, position);
@@ -164,22 +213,135 @@
             const tooltip = this.tooltips.get(element);
             if (!tooltip) return;
 
+            // Clear any pending hide timer
+            if (element._bbaiHideTimer) {
+                clearTimeout(element._bbaiHideTimer);
+                element._bbaiHideTimer = null;
+            }
+
+            // Remove from map IMMEDIATELY to prevent race condition where
+            // a delayed delete from an old tooltip removes a new tooltip's reference.
+            this.tooltips.delete(element);
+
             // Remove resize handler
             if (tooltip._resizeHandler) {
                 window.removeEventListener('resize', tooltip._resizeHandler);
+                tooltip._resizeHandler = null;
             }
 
             // Hide with animation
             tooltip.classList.remove('show');
             tooltip.setAttribute('aria-hidden', 'true');
 
-            // Remove after animation
+            // Remove from DOM after animation
             setTimeout(() => {
                 if (tooltip.parentNode) {
                     tooltip.parentNode.removeChild(tooltip);
                 }
-                this.tooltips.delete(element);
             }, 200);
+        },
+
+        /**
+         * Hide all tooltips
+         */
+        hideAllTooltips: function() {
+            // Create a copy of the entries array since we'll be modifying the map
+            const entries = Array.from(this.tooltips.entries());
+            entries.forEach(([element]) => {
+                this.hideTooltip(element);
+            });
+        },
+
+        /**
+         * Handle mousedown - hide tooltips immediately for interactive elements
+         */
+        handleMouseDown: function(e) {
+            // Hide tooltip if clicking on an interactive element with a tooltip
+            const element = e.target.closest('[data-bbai-tooltip]');
+            if (element) {
+                // Check if it's an interactive element (button, link, etc.)
+                const isInteractive = element.tagName === 'BUTTON' || 
+                                     element.tagName === 'A' || 
+                                     element.classList.contains('bbai-btn') ||
+                                     element.getAttribute('role') === 'button' ||
+                                     element.onclick !== null ||
+                                     element.getAttribute('tabindex') !== null;
+                
+                if (isInteractive && this.tooltips.has(element)) {
+                    // Hide immediately without delay for interactive elements
+                    this.hideTooltip(element);
+                }
+            }
+        },
+
+        /**
+         * Handle document click - hide tooltips when clicking outside
+         */
+        handleDocumentClick: function(e) {
+            // Hide tooltip if clicking on a tooltip trigger (in case mousedown didn't catch it)
+            const element = e.target.closest('[data-bbai-tooltip]');
+            if (element && this.tooltips.has(element)) {
+                this.hideTooltip(element);
+            }
+            
+            // Hide all other tooltips when clicking elsewhere
+            // (hideAllTooltips is safe to call even if we just hid one - it checks if tooltip exists)
+            this.hideAllTooltips();
+        },
+
+        /**
+         * Handle scroll - hide tooltips when scrolling
+         */
+        handleScroll: function(e) {
+            // Hide all tooltips on scroll
+            this.hideAllTooltips();
+        },
+
+        /**
+         * Handle mouse leaving the window
+         */
+        handleMouseOut: function(e) {
+            // If mouse leaves the document, hide all tooltips
+            if (!e.relatedTarget || !document.contains(e.relatedTarget)) {
+                this.hideAllTooltips();
+            }
+        },
+
+        /**
+         * Initialize MutationObserver to clean up tooltips when elements are removed
+         */
+        initMutationObserver: function() {
+            if (typeof MutationObserver === 'undefined') {
+                return;
+            }
+
+            this.mutationObserver = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    mutation.removedNodes.forEach((node) => {
+                        // Check if removed node had a tooltip
+                        if (node.nodeType === 1) { // Element node
+                            const tooltipElement = node.closest ? node.closest('[data-bbai-tooltip]') : null;
+                            if (tooltipElement && this.tooltips.has(tooltipElement)) {
+                                this.hideTooltip(tooltipElement);
+                            }
+                            
+                            // Also check if any removed node contains tooltip triggers
+                            const tooltipTriggers = node.querySelectorAll ? node.querySelectorAll('[data-bbai-tooltip]') : [];
+                            tooltipTriggers.forEach((trigger) => {
+                                if (this.tooltips.has(trigger)) {
+                                    this.hideTooltip(trigger);
+                                }
+                            });
+                        }
+                    });
+                });
+            });
+
+            // Observe the document body for removed nodes
+            this.mutationObserver.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
         },
 
         /**
@@ -241,12 +403,12 @@
          */
         initShortcutsModal: function() {
             const shortcuts = [
-                { key: 'G', description: 'Generate missing alt text' },
-                { key: 'R', description: 'Regenerate all alt text' },
-                { key: 'U', description: 'Open upgrade modal' },
-                { key: '?', description: 'Show keyboard shortcuts' },
-                { key: 'Esc', description: 'Close modals' },
-                { key: 'Ctrl', key2: 'K', description: 'Quick actions menu' }
+                { key: 'G', description: __('Generate missing alt text', 'beepbeep-ai-alt-text-generator') },
+                { key: 'R', description: __('Regenerate all alt text', 'beepbeep-ai-alt-text-generator') },
+                { key: 'U', description: __('Open upgrade modal', 'beepbeep-ai-alt-text-generator') },
+                { key: '?', description: __('Show keyboard shortcuts', 'beepbeep-ai-alt-text-generator') },
+                { key: 'Esc', description: __('Close modals', 'beepbeep-ai-alt-text-generator') },
+                { key: 'Ctrl', key2: 'K', description: __('Quick actions menu', 'beepbeep-ai-alt-text-generator') }
             ];
 
             // Create modal HTML
@@ -258,8 +420,8 @@
             modal.innerHTML = `
                 <div class="bbai-shortcuts-modal-content">
                     <div class="bbai-shortcuts-header">
-                        <h2 class="bbai-shortcuts-title" id="bbai-shortcuts-title">Keyboard Shortcuts</h2>
-                        <button type="button" class="bbai-shortcuts-close" aria-label="Close">
+                        <h2 class="bbai-shortcuts-title" id="bbai-shortcuts-title">${__('Keyboard Shortcuts', 'beepbeep-ai-alt-text-generator')}</h2>
+                        <button type="button" class="bbai-shortcuts-close" aria-label="${__('Close', 'beepbeep-ai-alt-text-generator')}">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M18 6L6 18M6 6l12 12"/>
                             </svg>
@@ -332,7 +494,7 @@
                 }
 
                 // Show shortcuts modal
-                if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+                if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
                     e.preventDefault();
                     this.showShortcutsModal();
                     return;

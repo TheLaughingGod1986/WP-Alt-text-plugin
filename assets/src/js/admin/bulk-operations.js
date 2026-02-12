@@ -9,6 +9,9 @@
 (function($) {
     'use strict';
 
+    var i18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
+    var __ = i18n && typeof i18n.__ === 'function' ? i18n.__ : function(text) { return text; };
+
     var config = window.bbaiAdminConfig || {};
 
     /**
@@ -93,7 +96,47 @@
             })
             .done(function(response) {
                 if (!response || !response.ids || response.ids.length === 0) {
-                    window.bbaiModal.info('No images found that need alt text.');
+                    // Show custom modal with options to go to library or regenerate all
+                    window.bbaiModal.show({
+                        type: 'info',
+                        title: __('No Missing Alt Text', 'beepbeep-ai-alt-text-generator'),
+                        message: __('All images in your library already have alt text. You can generate alt text for individual images in the ALT Library, or regenerate all alt text to update existing ones.', 'beepbeep-ai-alt-text-generator'),
+                        buttons: [
+                            {
+                                text: __('Go to ALT Library', 'beepbeep-ai-alt-text-generator'),
+                                primary: true,
+                                action: function() {
+                                    window.bbaiModal.close();
+                                    // Navigate to library tab
+                                    var libraryUrl = window.location.href.split('?')[0] + '?page=bbai-library';
+                                    window.location.href = libraryUrl;
+                                }
+                            },
+                            {
+                                text: __('Regenerate All Alt Text', 'beepbeep-ai-alt-text-generator'),
+                                primary: false,
+                                action: function() {
+                                    window.bbaiModal.close();
+                                    // Trigger regenerate all button
+                                    var regenerateBtn = document.querySelector('[data-action="regenerate-all"]');
+                                    if (regenerateBtn && !regenerateBtn.disabled) {
+                                        regenerateBtn.click();
+                                    } else if (typeof window.handleRegenerateAll === 'function') {
+                                        // Fallback: call the handler directly if button not found
+                                        var fakeEvent = { preventDefault: function() {} };
+                                        window.handleRegenerateAll.call(regenerateBtn || document.body, fakeEvent);
+                                    }
+                                }
+                            },
+                            {
+                                text: __('Close', 'beepbeep-ai-alt-text-generator'),
+                                primary: false,
+                                action: function() {
+                                    window.bbaiModal.close();
+                                }
+                            }
+                        ]
+                    });
                     $btn.prop('disabled', false);
                     $btn.text(originalText);
                     return;

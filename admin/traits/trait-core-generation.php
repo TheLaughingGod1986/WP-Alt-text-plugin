@@ -83,32 +83,37 @@ trait Core_Generation {
     private function build_inline_image_payload($attachment_id) {
         $file = get_attached_file($attachment_id);
         if (!$file || !file_exists($file)) {
-            return new \WP_Error('inline_image_missing', __('Unable to locate the image file for inline embedding.', 'opptiai-alt'));
+            return new \WP_Error('inline_image_missing', __('Unable to locate the image file for inline embedding.', 'beepbeep-ai-alt-text-generator'));
         }
 
         $size = filesize($file);
         if ($size === false || $size <= 0) {
-            return new \WP_Error('inline_image_size', __('Unable to read the image size for inline embedding.', 'opptiai-alt'));
+            return new \WP_Error('inline_image_size', __('Unable to read the image size for inline embedding.', 'beepbeep-ai-alt-text-generator'));
         }
 
         $limit = apply_filters('bbai_inline_image_limit', 1024 * 1024 * 2, $attachment_id, $file);
         if ($size > $limit) {
             return new \WP_Error('inline_image_large', sprintf(
                 /* translators: 1: image size */
-                __('Image exceeds the 2 MB limit for inline embedding (%s).', 'opptiai-alt'),
+                __('Image exceeds the 2 MB limit for inline embedding (%s).', 'beepbeep-ai-alt-text-generator'),
                 size_format($size)
             ));
         }
 
         $mime = mime_content_type($file);
         if (!$mime || strpos((string)$mime, 'image/') !== 0) {
-            return new \WP_Error('inline_image_mime', __('Invalid image MIME type for inline embedding.', 'opptiai-alt'));
+            return new \WP_Error('inline_image_mime', __('Invalid image MIME type for inline embedding.', 'beepbeep-ai-alt-text-generator'));
         }
 
-        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-        $data = file_get_contents($file);
+        if (!class_exists('\WP_Filesystem_Direct')) {
+            require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php';
+            require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php';
+        }
+
+        $fs = new \WP_Filesystem_Direct(null);
+        $data = method_exists($fs, 'get_contents') ? $fs->get_contents($file) : false;
         if ($data === false) {
-            return new \WP_Error('inline_image_read', __('Failed to read the image file for inline embedding.', 'opptiai-alt'));
+            return new \WP_Error('inline_image_read', __('Failed to read the image file for inline embedding.', 'beepbeep-ai-alt-text-generator'));
         }
 
         $base64 = base64_encode($data);

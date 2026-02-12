@@ -34,7 +34,7 @@ if ($has_registered_user || $is_authenticated || $has_license) {
     if (file_exists($dashboard_auth_partial)) {
         include $dashboard_auth_partial;
     } else {
-        esc_html_e('Dashboard content unavailable.', 'opptiai-alt');
+        esc_html_e('Dashboard content unavailable.', 'beepbeep-ai-alt-text-generator');
     }
 } else {
     // Show clean onboarding screen for logged-out users
@@ -42,6 +42,6 @@ if ($has_registered_user || $is_authenticated || $has_license) {
     if (file_exists($dashboard_logged_out_partial)) {
         include $dashboard_logged_out_partial;
     } else {
-        esc_html_e('Please sign in to access the dashboard.', 'opptiai-alt');
+        esc_html_e('Please sign in to access the dashboard.', 'beepbeep-ai-alt-text-generator');
     }
 }

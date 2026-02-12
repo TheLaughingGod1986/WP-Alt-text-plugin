@@ -33,7 +33,7 @@ $plugin_url = defined('BEEPBEEP_AI_PLUGIN_URL') ? BEEPBEEP_AI_PLUGIN_URL : (defi
                 </svg>
             </span>
             <span class="bbai-trust-badge-text">
-                <span class="bbai-trust-badge-title"><?php esc_html_e('WCAG Compliant', 'opptiai-alt'); ?></span>
+                <span class="bbai-trust-badge-title"><?php esc_html_e('WCAG Compliant', 'beepbeep-ai-alt-text-generator'); ?></span>
             </span>
         </div>
         <div class="bbai-trust-badge bbai-trust-badge--gdpr">
@@ -44,7 +44,7 @@ $plugin_url = defined('BEEPBEEP_AI_PLUGIN_URL') ? BEEPBEEP_AI_PLUGIN_URL : (defi
                 </svg>
             </span>
             <span class="bbai-trust-badge-text">
-                <span class="bbai-trust-badge-title"><?php esc_html_e('GDPR Ready', 'opptiai-alt'); ?></span>
+                <span class="bbai-trust-badge-title"><?php esc_html_e('GDPR Ready', 'beepbeep-ai-alt-text-generator'); ?></span>
             </span>
         </div>
         <div class="bbai-trust-badge bbai-trust-badge--uptime">
@@ -55,7 +55,7 @@ $plugin_url = defined('BEEPBEEP_AI_PLUGIN_URL') ? BEEPBEEP_AI_PLUGIN_URL : (defi
                 </svg>
             </span>
             <span class="bbai-trust-badge-text">
-                <span class="bbai-trust-badge-title"><?php esc_html_e('99.9% Uptime', 'opptiai-alt'); ?></span>
+                <span class="bbai-trust-badge-title"><?php esc_html_e('99.9% Uptime', 'beepbeep-ai-alt-text-generator'); ?></span>
             </span>
         </div>
         <div class="bbai-trust-badge bbai-trust-badge--users">
@@ -72,12 +72,12 @@ $plugin_url = defined('BEEPBEEP_AI_PLUGIN_URL') ? BEEPBEEP_AI_PLUGIN_URL : (defi
                     <?php
                     printf(
                         /* translators: 1: site count */
-                        esc_html__('Join %s+ sites', 'opptiai-alt'),
+                        esc_html__('Join %s+ sites', 'beepbeep-ai-alt-text-generator'),
                         esc_html(number_format($total_sites))
                     );
                     ?>
                 </span>
-                <span class="bbai-trust-badge-subtitle"><?php esc_html_e('Using BeepBeep AI', 'opptiai-alt'); ?></span>
+                <span class="bbai-trust-badge-subtitle"><?php esc_html_e('Using BeepBeep AI', 'beepbeep-ai-alt-text-generator'); ?></span>
             </span>
         </div>
     </div>
@@ -116,7 +116,7 @@ $plugin_url = defined('BEEPBEEP_AI_PLUGIN_URL') ? BEEPBEEP_AI_PLUGIN_URL : (defi
                 }
                 $rating_label = sprintf(
                     /* translators: 1: star rating */
-                    esc_attr__('%d out of 5 stars', 'opptiai-alt'),
+                    esc_attr__('%d out of 5 stars', 'beepbeep-ai-alt-text-generator'),
                     $rating
                 );
                 ?>
@@ -151,7 +151,7 @@ $plugin_url = defined('BEEPBEEP_AI_PLUGIN_URL') ? BEEPBEEP_AI_PLUGIN_URL : (defi
                                     </svg>
                                 <?php endfor; ?>
                             </div>
-                            <p class="bbai-testimonial-tagline"><?php esc_html_e('Alt text automation for SEO & accessibility teams.', 'opptiai-alt'); ?></p>
+                            <p class="bbai-testimonial-tagline"><?php esc_html_e('Alt text automation for SEO & accessibility teams.', 'beepbeep-ai-alt-text-generator'); ?></p>
                         </div>
                     </article>
                 </div>

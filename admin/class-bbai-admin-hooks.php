@@ -136,6 +136,7 @@ class Admin_Hooks {
 			'bbai_get_contact_submissions'     => 'ajax_get_contact_submissions',
 			'bbai_update_contact_submission_status' => 'ajax_update_contact_submission_status',
 			'bbai_delete_contact_submission'   => 'ajax_delete_contact_submission',
+			'bbai_dismiss_reset_modal'        => 'ajax_dismiss_reset_modal',
 		];
 
 		foreach ( $ajax_actions as $action => $callback ) {
@@ -174,12 +175,11 @@ class Admin_Hooks {
 			return;
 		}
 
-		// Verify nonce for cache clearing action.
-		$nonce_raw = isset( $_GET['_bbai_nonce'] ) ? wp_unslash( $_GET['_bbai_nonce'] ) : '';
-		$nonce     = is_string( $nonce_raw ) ? sanitize_text_field( $nonce_raw ) : '';
-		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'bbai_clear_cache' ) ) {
-			return;
-		}
+			// Verify nonce for cache clearing action.
+			$action = 'bbai_clear_cache';
+			if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_bbai_nonce'] ?? '' ) ), $action ) ) {
+				return;
+			}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;

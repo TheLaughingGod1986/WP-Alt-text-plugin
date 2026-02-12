@@ -163,14 +163,13 @@ $meta_keys_to_delete = [
 ];
 
 // Delete post meta using prepared statements for security.
-$postmeta_table = esc_sql( $wpdb->postmeta );
 foreach ( $meta_keys_to_delete as $meta_key ) {
 	$wpdb->query(
 		$wpdb->prepare(
-			'DELETE FROM `' . $postmeta_table . '` WHERE meta_key = %s',
+			"DELETE FROM {$wpdb->postmeta} WHERE meta_key = %s",
 			$meta_key
 		)
-	); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table name is schema-controlled and escaped with esc_sql().
+	);
 }
 
 // Drop custom tables.

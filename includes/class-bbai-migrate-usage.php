@@ -12,7 +12,6 @@ if (!defined('ABSPATH')) {
 
 class Migrate_Usage {
 	const MIGRATION_FLAG = 'beepbeepai_usage_migrated';
-	// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- SQL identifiers are controlled by plugin schema; runtime values are prepared.
 
 	/**
 	 * Run migration to backfill credit usage data.
@@ -24,7 +23,7 @@ class Migrate_Usage {
 		if (get_option(self::MIGRATION_FLAG, false)) {
 			return [
 				'success' => true,
-				'message' => __('Credit usage migration already completed.', 'opptiai-alt'),
+				'message' => __('Credit usage migration already completed.', 'beepbeep-ai-alt-text-generator'),
 				'migrated' => 0,
 			];
 		}
@@ -55,7 +54,7 @@ class Migrate_Usage {
 			'success' => true,
 			'message' => sprintf(
 				/* translators: 1: number of usage records */
-				__('Migration completed. Migrated %d usage records.', 'opptiai-alt'),
+				__('Migration completed. Migrated %d usage records.', 'beepbeep-ai-alt-text-generator'),
 				$migrated_count
 			),
 			'migrated' => $migrated_count,
@@ -73,7 +72,8 @@ class Migrate_Usage {
 		}
 
 		global $wpdb;
-		$credit_table = Credit_Usage_Logger::table();
+		$credit_table = esc_sql( Credit_Usage_Logger::table() );
+		$logs_table   = esc_sql( $wpdb->prefix . 'bbai_logs' );
 
 		// Find generation log entries
 		$alt_text_like = '%' . $wpdb->esc_like('alt text') . '%';
@@ -81,7 +81,7 @@ class Migrate_Usage {
 		$attachment_id_like = '%' . $wpdb->esc_like('attachment_id') . '%';
 		$logs = $wpdb->get_results(
 			$wpdb->prepare(
-				'SELECT id, message, context, source, user_id, created_at FROM `' . $wpdb->prefix . 'bbai_logs` WHERE (source = %s OR message LIKE %s OR message LIKE %s) AND context LIKE %s ORDER BY created_at ASC LIMIT %d',
+				"SELECT id, message, context, source, user_id, created_at FROM `{$logs_table}` WHERE (source = %s OR message LIKE %s OR message LIKE %s) AND context LIKE %s ORDER BY created_at ASC LIMIT %d",
 				'generation',
 				$alt_text_like,
 				$alt_text_like_cap,
@@ -112,7 +112,7 @@ class Migrate_Usage {
 			// Check if already migrated.
 			$exists = $wpdb->get_var(
 				$wpdb->prepare(
-					'SELECT COUNT(*) FROM `' . $wpdb->prefix . 'bbai_credit_usage` WHERE attachment_id = %d AND generated_at = %s',
+					"SELECT COUNT(*) FROM `{$credit_table}` WHERE attachment_id = %d AND generated_at = %s",
 					$attachment_id,
 					$log['created_at']
 				)
@@ -208,13 +208,12 @@ class Migrate_Usage {
 	 */
 		private static function migrate_from_attachment_meta() {
 			global $wpdb;
-			$credit_table = Credit_Usage_Logger::table();
+			$credit_table = esc_sql( Credit_Usage_Logger::table() );
 			$posts_table = esc_sql($wpdb->posts);
 			$postmeta_table = esc_sql($wpdb->postmeta);
 
 		// Find attachments with AI-generated alt text metadata (check both old and new keys)
 		$image_mime_like = $wpdb->esc_like('image/') . '%';
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared -- Table names are escaped with esc_sql(); queries are prepared.
 		$attachments = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT post_id, meta_value, post_author, post_date FROM `{$posts_table}` p INNER JOIN `{$postmeta_table}` pm ON p.ID = pm.post_id WHERE p.post_type = %s AND p.post_mime_type LIKE %s AND (pm.meta_key = %s OR pm.meta_key = %s) AND pm.meta_value IS NOT NULL AND pm.meta_value != %s LIMIT %d",
@@ -227,7 +226,6 @@ class Migrate_Usage {
 			),
 			ARRAY_A
 		);
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
 
 		if (empty($attachments)) {
 			return 0;
@@ -244,7 +242,7 @@ class Migrate_Usage {
 			// Check if already migrated.
 			$exists = $wpdb->get_var(
 				$wpdb->prepare(
-					'SELECT COUNT(*) FROM `' . $wpdb->prefix . 'bbai_credit_usage` WHERE attachment_id = %d',
+					"SELECT COUNT(*) FROM `{$credit_table}` WHERE attachment_id = %d",
 					$attachment_id
 				)
 			);
@@ -342,5 +340,4 @@ class Migrate_Usage {
 	public static function reset_migration_flag() {
 		delete_option(self::MIGRATION_FLAG);
 	}
-	// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter
 }

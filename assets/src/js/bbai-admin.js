@@ -6,6 +6,11 @@
 (function($) {
     'use strict';
 
+    const i18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
+    const __ = i18n && typeof i18n.__ === 'function' ? i18n.__ : (text) => text;
+    const _n = i18n && typeof i18n._n === 'function' ? i18n._n : (single, plural, number) => (number === 1 ? single : plural);
+    const sprintf = i18n && typeof i18n.sprintf === 'function' ? i18n.sprintf : (format) => format;
+
     // Ensure BBAI_DASH exists (from dashboard) or use BBAI
     var config = window.BBAI_DASH || window.BBAI || {};
     
@@ -21,7 +26,7 @@
     }
 
     function handleLimitReached(errorData) {
-        var message = (errorData && errorData.message) || 'Monthly quota exhausted. Upgrade to Growth for 1,000 generations per month, or wait for your quota to reset.';
+        var message = (errorData && errorData.message) || __('Monthly quota exhausted. Upgrade to Growth for 1,000 generations per month, or wait for your quota to reset.', 'beepbeep-ai-alt-text-generator');
         
         // Enhance message with reset date if available
         if (errorData && errorData.usage && errorData.usage.resetDate) {
@@ -29,7 +34,10 @@
                 var resetDate = new Date(errorData.usage.resetDate);
                 if (!isNaN(resetDate.getTime())) {
                     var formattedDate = resetDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-                    message = 'Monthly quota exhausted. Your quota will reset on ' + formattedDate + '. Upgrade to Growth for 1,000 generations per month, or manage your subscription in Settings.';
+                    message = sprintf(
+                        __('Monthly quota exhausted. Your quota will reset on %s. Upgrade to Growth for 1,000 generations per month, or manage your subscription in Settings.', 'beepbeep-ai-alt-text-generator'),
+                        formattedDate
+                    );
                 }
             } catch (e) {
                 // Keep default message if date parsing fails
@@ -66,7 +74,7 @@
         var notificationMessage = message;
         var isAuthenticated = window.bbai_ajax && window.bbai_ajax.is_authenticated;
         if (isAuthenticated) {
-            notificationMessage += ' Go to Settings to manage your subscription.';
+            notificationMessage += ' ' + __('Go to Settings to manage your subscription.', 'beepbeep-ai-alt-text-generator');
         }
         
         if (typeof showNotification === 'function') {
@@ -88,7 +96,7 @@
         
         // Check if we have necessary configuration
         if (!hasBulkConfig) {
-            window.bbaiModal.error('Configuration error. Please refresh the page and try again.');
+            window.bbaiModal.error(__('Configuration error. Please refresh the page and try again.', 'beepbeep-ai-alt-text-generator'));
             return false;
         }
 
@@ -150,7 +158,7 @@
                     if (!freshIsPremium && freshIsOutOfCredits) {
                         // Still at limit after refresh - only show modal when credits are exactly 0
                         handleLimitReached({
-                            message: 'Monthly limit reached. Upgrade to continue generating alt text.',
+                            message: __('Monthly limit reached. Upgrade to continue generating alt text.', 'beepbeep-ai-alt-text-generator'),
                             code: 'limit_reached',
                             usage: freshUsage
                         });
@@ -178,7 +186,7 @@
                     var cachedIsOutOfCredits = cachedRemaining !== null && cachedRemaining !== undefined && cachedRemaining === 0;
                     if (cachedIsOutOfCredits && !isPremium) {
                         handleLimitReached({
-                            message: 'Monthly limit reached. Upgrade to continue generating alt text.',
+                            message: __('Monthly limit reached. Upgrade to continue generating alt text.', 'beepbeep-ai-alt-text-generator'),
                             code: 'limit_reached',
                             usage: usageStats
                         });
@@ -197,7 +205,7 @@
             // User is out of credits (remaining === 0) and not on premium plan - show upgrade modal
             // Only show modal when credits are explicitly 0, not when null/undefined
             handleLimitReached({
-                message: 'Monthly limit reached. Upgrade to continue generating alt text.',
+                message: __('Monthly limit reached. Upgrade to continue generating alt text.', 'beepbeep-ai-alt-text-generator'),
                 code: 'limit_reached',
                 usage: usageStats
             });
@@ -209,7 +217,7 @@
 
         function continueWithGeneration() {
             $btn.prop('disabled', true);
-            $btn.text('Loading...');
+            $btn.text(__('Loading...', 'beepbeep-ai-alt-text-generator'));
 
             // Get list of images missing alt text
             $.ajax({
@@ -224,7 +232,47 @@
             })
             .done(function(response) {
             if (!response || !response.ids || response.ids.length === 0) {
-                window.bbaiModal.info('No images found that need alt text.');
+                // Show custom modal with options to go to library or regenerate all
+                window.bbaiModal.show({
+                    type: 'info',
+                    title: __('No Missing Alt Text', 'beepbeep-ai-alt-text-generator'),
+                    message: __('All images in your library already have alt text. You can generate alt text for individual images in the ALT Library, or regenerate all alt text to update existing ones.', 'beepbeep-ai-alt-text-generator'),
+                    buttons: [
+                        {
+                            text: __('Go to ALT Library', 'beepbeep-ai-alt-text-generator'),
+                            primary: true,
+                            action: function() {
+                                window.bbaiModal.close();
+                                // Navigate to library tab
+                                var libraryUrl = window.location.href.split('?')[0] + '?page=bbai-library';
+                                window.location.href = libraryUrl;
+                            }
+                        },
+                        {
+                            text: __('Regenerate All Alt Text', 'beepbeep-ai-alt-text-generator'),
+                            primary: false,
+                            action: function() {
+                                window.bbaiModal.close();
+                                // Trigger regenerate all button
+                                var regenerateBtn = document.querySelector('[data-action="regenerate-all"]');
+                                if (regenerateBtn && !regenerateBtn.disabled) {
+                                    regenerateBtn.click();
+                                } else if (typeof window.handleRegenerateAll === 'function') {
+                                    // Fallback: call the handler directly if button not found
+                                    var fakeEvent = { preventDefault: function() {} };
+                                    window.handleRegenerateAll.call(regenerateBtn || document.body, fakeEvent);
+                                }
+                            }
+                        },
+                        {
+                            text: __('Close', 'beepbeep-ai-alt-text-generator'),
+                            primary: false,
+                            action: function() {
+                                window.bbaiModal.close();
+                            }
+                        }
+                    ]
+                });
                 $btn.prop('disabled', false);
                 $btn.text(originalText);
                 return;
@@ -234,25 +282,25 @@
             var count = ids.length;
             
             // Show progress bar
-            showBulkProgress('Preparing bulk run...', count, 0);
+	            showBulkProgress(__('Preparing bulk run...', 'beepbeep-ai-alt-text-generator'), count, 0);
 
             // Queue all images
             queueImages(ids, 'bulk', function(success, queued, error, processedIds) {
                 $btn.prop('disabled', false);
                 $btn.text(originalText);
 
-                if (success && queued > 0) {
-                    // Update modal to show success and keep it open
-                    updateBulkProgressTitle('Successfully Queued!');
-                    logBulkProgressSuccess('Successfully queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' for processing');
+	                if (success && queued > 0) {
+	                    // Update modal to show success and keep it open
+	                    updateBulkProgressTitle(__('Successfully Queued!', 'beepbeep-ai-alt-text-generator'));
+	                    logBulkProgressSuccess(sprintf(_n('Successfully queued %d image for processing', 'Successfully queued %d images for processing', queued, 'beepbeep-ai-alt-text-generator'), queued));
                     
                     // Trigger celebration for bulk operation
                     if (window.bbaiCelebrations && typeof window.bbaiCelebrations.showConfetti === 'function') {
                         window.bbaiCelebrations.showConfetti();
                     }
-                    if (window.bbaiPushToast && typeof window.bbaiPushToast === 'function') {
-                        window.bbaiPushToast('success', 'Successfully queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' for processing!', { duration: 5000 });
-                    }
+	                    if (window.bbaiPushToast && typeof window.bbaiPushToast === 'function') {
+	                        window.bbaiPushToast('success', sprintf(_n('Successfully queued %d image for processing!', 'Successfully queued %d images for processing!', queued, 'beepbeep-ai-alt-text-generator'), queued), { duration: 5000 });
+	                    }
                     
                     // Dispatch custom event for celebrations
                     var event = new CustomEvent('bbai:generation:success', { detail: { count: queued, type: 'bulk' } });
@@ -261,10 +309,10 @@
                     startInlineGeneration(processedIds || ids, 'bulk');
 
                     // Don't hide modal - let user close it manually or monitor progress
-                } else if (success && queued === 0) {
-                    updateBulkProgressTitle('Already Queued');
-                    logBulkProgressSuccess('All images are already in queue or processing');
-                    startInlineGeneration(processedIds || ids, 'bulk');
+	                } else if (success && queued === 0) {
+	                    updateBulkProgressTitle(__('Already Queued', 'beepbeep-ai-alt-text-generator'));
+	                    logBulkProgressSuccess(__('All images are already in queue or processing', 'beepbeep-ai-alt-text-generator'));
+	                    startInlineGeneration(processedIds || ids, 'bulk');
 
                     // Don't hide modal - let user close it manually
                 } else {
@@ -286,7 +334,7 @@
                     if (error && error.message) {
                         logBulkProgressError(error.message);
                     } else {
-                        logBulkProgressError('Failed to queue images. Please try again.');
+                        logBulkProgressError(__('Failed to queue images. Please try again.', 'beepbeep-ai-alt-text-generator'));
                     }
 
                     // Error logging (keep minimal for production)
@@ -295,50 +343,65 @@
                     }
 
                     // Check for insufficient credits with remaining > 0 - offer partial generation
-                    if (error && error.code === 'insufficient_credits' && error.remaining !== null && error.remaining > 0) {
-                        hideBulkProgress();
-                        var remainingCount = error.remaining;
-                        var totalRequested = count;
-                        var errorMsg = error.message || 'You only have ' + remainingCount + ' generations remaining.';
-                        
-                        // Offer to generate with remaining credits or upgrade
-                        var generateWithRemaining = confirm(
-                            errorMsg + '\n\n' +
-                            'Would you like to generate ' + remainingCount + ' image' + (remainingCount !== 1 ? 's' : '') + 
-                            ' now using your remaining ' + remainingCount + ' credit' + (remainingCount !== 1 ? 's' : '') + '?\n\n' +
-                            '(Click "OK" to generate now, or "Cancel" to upgrade)'
-                        );
-                        
-                        if (generateWithRemaining) {
-                            // Generate with remaining credits
-                            var limitedIds = ids.slice(0, remainingCount);
-                            $btn.prop('disabled', true);
-                            $btn.text('Loading...');
-                            showBulkProgress('Queueing ' + remainingCount + ' image' + (remainingCount !== 1 ? 's' : '') + '...', remainingCount, 0);
-                            
-                            queueImages(limitedIds, 'bulk', function(success, queued, queueError, processedLimited) {
-                                $btn.prop('disabled', false);
-                                $btn.text(originalText);
-                                
-                                if (success && queued > 0) {
-                                    updateBulkProgressTitle('Successfully Queued!');
-                                    logBulkProgressSuccess('Queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' using remaining credits');
-                                    startInlineGeneration(processedLimited || limitedIds, 'bulk');
-                                } else {
-                                    var errorMsg = 'Failed to queue images.';
-                                    if (queueError && queueError.message) {
-                                        errorMsg = queueError.message;
-                                    }
-                                    logBulkProgressError(errorMsg);
+	                    if (error && error.code === 'insufficient_credits' && error.remaining !== null && error.remaining > 0) {
+	                        hideBulkProgress();
+	                        var remainingCount = error.remaining;
+	                        var totalRequested = count;
+	                        var errorMsg = error.message || sprintf(_n('You only have %d generation remaining.', 'You only have %d generations remaining.', remainingCount, 'beepbeep-ai-alt-text-generator'), remainingCount);
+	                        var generatePrompt = sprintf(
+	                            _n(
+	                                'Would you like to generate %1$d image now using your remaining %2$d credit?',
+	                                'Would you like to generate %1$d images now using your remaining %2$d credits?',
+	                                remainingCount,
+	                                'beepbeep-ai-alt-text-generator'
+	                            ),
+	                            remainingCount,
+	                            remainingCount
+	                        );
+	                        var generateHelp = __('(Click "OK" to generate now, or "Cancel" to upgrade)', 'beepbeep-ai-alt-text-generator');
+	                        
+	                        // Offer to generate with remaining credits or upgrade
+	                        var generateWithRemaining = confirm(
+	                            errorMsg + '\n\n' + generatePrompt + '\n\n' + generateHelp
+	                        );
+	                        
+	                        if (generateWithRemaining) {
+	                            // Generate with remaining credits
+	                            var limitedIds = ids.slice(0, remainingCount);
+	                            $btn.prop('disabled', true);
+	                            $btn.text(__('Loading...', 'beepbeep-ai-alt-text-generator'));
+	                            showBulkProgress(sprintf(_n('Queueing %d image...', 'Queueing %d images...', remainingCount, 'beepbeep-ai-alt-text-generator'), remainingCount), remainingCount, 0);
+	                            
+	                            queueImages(limitedIds, 'bulk', function(success, queued, queueError, processedLimited) {
+	                                $btn.prop('disabled', false);
+	                                $btn.text(originalText);
+	                                
+	                                if (success && queued > 0) {
+	                                    updateBulkProgressTitle(__('Successfully Queued!', 'beepbeep-ai-alt-text-generator'));
+	                                    logBulkProgressSuccess(sprintf(_n('Queued %d image using remaining credits', 'Queued %d images using remaining credits', queued, 'beepbeep-ai-alt-text-generator'), queued));
+	                                    startInlineGeneration(processedLimited || limitedIds, 'bulk');
+	                                } else {
+	                                    var errorMsg = __('Failed to queue images.', 'beepbeep-ai-alt-text-generator');
+	                                    if (queueError && queueError.message) {
+	                                        errorMsg = queueError.message;
+	                                    }
+	                                    logBulkProgressError(errorMsg);
                                 }
                             });
-                            return; // Exit early
-                        } else {
-                            // User clicked Cancel - offer upgrade
-                            var confirmUpgrade = confirm(
-                                'Would you like to upgrade to get more credits and generate all ' + totalRequested + 
-                                ' image' + (totalRequested !== 1 ? 's' : '') + '?'
-                            );
+	                            return; // Exit early
+	                        } else {
+	                            // User clicked Cancel - offer upgrade
+	                            var confirmUpgrade = confirm(
+	                                sprintf(
+	                                    _n(
+	                                        'Would you like to upgrade to get more credits and generate all %d image?',
+	                                        'Would you like to upgrade to get more credits and generate all %d images?',
+	                                        totalRequested,
+	                                        'beepbeep-ai-alt-text-generator'
+	                                    ),
+	                                    totalRequested
+	                                )
+	                            );
                             
                             if (confirmUpgrade) {
                                 // Upgrade
@@ -360,7 +423,7 @@
                     }
                     
                     // Handle other errors
-                    var errorMsg = 'Failed to queue images.';
+                    var errorMsg = __('Failed to queue images.', 'beepbeep-ai-alt-text-generator');
                     if (error && error.message) {
                         errorMsg = error.message;
                     } else {
@@ -386,7 +449,7 @@
                 $btn.prop('disabled', false);
                 $btn.text(originalText);
 
-                logBulkProgressError('Failed to load images. Please try again.');
+                logBulkProgressError(__('Failed to load images. Please try again.', 'beepbeep-ai-alt-text-generator'));
                 // Keep modal open to show error - user can close manually
             });
         }
@@ -398,7 +461,7 @@
     function handleRegenerateAll(e) {
         e.preventDefault();
         
-        if (!confirm('This will regenerate alt text for ALL images, replacing existing alt text. Are you sure?')) {
+        if (!confirm(__('This will regenerate alt text for ALL images, replacing existing alt text. Are you sure?', 'beepbeep-ai-alt-text-generator'))) {
             return false;
         }
 
@@ -411,7 +474,7 @@
         
         // Check if we have necessary configuration
         if (!hasBulkConfig) {
-            window.bbaiModal.error('Configuration error. Please refresh the page and try again.');
+            window.bbaiModal.error(__('Configuration error. Please refresh the page and try again.', 'beepbeep-ai-alt-text-generator'));
             return false;
         }
 
@@ -430,7 +493,7 @@
         if (remaining !== null && remaining !== undefined && remaining > 0) {
             // User has credits - continue with regeneration
             $btn.prop('disabled', true);
-            $btn.text('Loading...');
+            $btn.text(__('Loading...', 'beepbeep-ai-alt-text-generator'));
             // Continue with regeneration - user has credits
         } else {
             // Check if user has quota OR is on premium plan (pro/agency)
@@ -441,13 +504,13 @@
             // If no usage stats available, don't block - let the API handle it
             if (!usageStats) {
                 $btn.prop('disabled', true);
-                $btn.text('Loading...');
+                $btn.text(__('Loading...', 'beepbeep-ai-alt-text-generator'));
                 // Continue with regeneration - API will handle credit checks
             } else if (!isPremium && isOutOfCredits) {
                 // User is out of credits (remaining === 0) and not on premium plan - show upgrade modal
                 // Only show modal when credits are explicitly 0, not when null/undefined
                 handleLimitReached({
-                    message: 'Monthly limit reached. Upgrade to continue regenerating alt text.',
+                    message: __('Monthly limit reached. Upgrade to continue regenerating alt text.', 'beepbeep-ai-alt-text-generator'),
                     code: 'limit_reached',
                     usage: usageStats
                 });
@@ -456,7 +519,7 @@
         }
 
         $btn.prop('disabled', true);
-        $btn.text('Loading...');
+        $btn.text(__('Loading...', 'beepbeep-ai-alt-text-generator'));
 
         // Get list of all images
         $.ajax({
@@ -471,35 +534,35 @@
         })
         .done(function(response) {
             if (!response || !response.ids || response.ids.length === 0) {
-                window.bbaiModal.info('No images found.');
+                window.bbaiModal.info(__('No images found.', 'beepbeep-ai-alt-text-generator'));
                 $btn.prop('disabled', false);
                 $btn.text(originalText);
                 return;
             }
 
             var ids = response.ids || [];
-            var count = ids.length;
-            
-            // Show progress bar
-            showBulkProgress('Preparing bulk regeneration...', count, 0);
+	            var count = ids.length;
+	            
+	            // Show progress bar
+	            showBulkProgress(__('Preparing bulk regeneration...', 'beepbeep-ai-alt-text-generator'), count, 0);
 
             // Queue all images
             queueImages(ids, 'bulk-regenerate', function(success, queued, error, processedIds) {
                 $btn.prop('disabled', false);
                 $btn.text(originalText);
 
-                if (success && queued > 0) {
-                    // Update modal to show success and keep it open
-                    updateBulkProgressTitle('Successfully Queued!');
-                    logBulkProgressSuccess('Successfully queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' for regeneration');
+	                if (success && queued > 0) {
+	                    // Update modal to show success and keep it open
+	                    updateBulkProgressTitle(__('Successfully Queued!', 'beepbeep-ai-alt-text-generator'));
+	                    logBulkProgressSuccess(sprintf(_n('Successfully queued %d image for regeneration', 'Successfully queued %d images for regeneration', queued, 'beepbeep-ai-alt-text-generator'), queued));
                     
                     // Trigger celebration for bulk regeneration
                     if (window.bbaiCelebrations && typeof window.bbaiCelebrations.showConfetti === 'function') {
                         window.bbaiCelebrations.showConfetti();
                     }
-                    if (window.bbaiPushToast && typeof window.bbaiPushToast === 'function') {
-                        window.bbaiPushToast('success', 'Successfully queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' for regeneration!', { duration: 5000 });
-                    }
+	                    if (window.bbaiPushToast && typeof window.bbaiPushToast === 'function') {
+	                        window.bbaiPushToast('success', sprintf(_n('Successfully queued %d image for regeneration!', 'Successfully queued %d images for regeneration!', queued, 'beepbeep-ai-alt-text-generator'), queued), { duration: 5000 });
+	                    }
                     
                     // Dispatch custom event for celebrations
                     var event = new CustomEvent('bbai:generation:success', { detail: { count: queued, type: 'bulk-regenerate' } });
@@ -508,10 +571,10 @@
                     startInlineGeneration(processedIds || ids, 'bulk-regenerate');
 
                     // Don't hide modal - let user close it manually or monitor progress
-                } else if (success && queued === 0) {
-                    updateBulkProgressTitle('Already Queued');
-                    logBulkProgressSuccess('All images are already in queue or processing');
-                    startInlineGeneration(processedIds || ids, 'bulk-regenerate');
+	                } else if (success && queued === 0) {
+	                    updateBulkProgressTitle(__('Already Queued', 'beepbeep-ai-alt-text-generator'));
+	                    logBulkProgressSuccess(__('All images are already in queue or processing', 'beepbeep-ai-alt-text-generator'));
+	                    startInlineGeneration(processedIds || ids, 'bulk-regenerate');
 
                     // Don't hide modal - let user close it manually
                 } else {
@@ -533,7 +596,7 @@
                     if (error && error.message) {
                         logBulkProgressError(error.message);
                     } else {
-                        logBulkProgressError('Failed to queue images. Please try again.');
+                        logBulkProgressError(__('Failed to queue images. Please try again.', 'beepbeep-ai-alt-text-generator'));
                     }
 
                     // Error logging (keep minimal for production)
@@ -542,50 +605,65 @@
                     }
 
                     // Check for insufficient credits with remaining > 0 - offer partial regeneration
-                    if (error && error.code === 'insufficient_credits' && error.remaining !== null && error.remaining > 0) {
-                        hideBulkProgress();
-                        var remainingCount = error.remaining;
-                        var totalRequested = count;
-                        var errorMsg = error.message || 'You only have ' + remainingCount + ' generations remaining.';
-                        
-                        // Offer to regenerate with remaining credits or upgrade
-                        var regenerateWithRemaining = confirm(
-                            errorMsg + '\n\n' +
-                            'Would you like to regenerate ' + remainingCount + ' image' + (remainingCount !== 1 ? 's' : '') + 
-                            ' now using your remaining ' + remainingCount + ' credit' + (remainingCount !== 1 ? 's' : '') + '?\n\n' +
-                            '(Click "OK" to regenerate now, or "Cancel" to upgrade)'
-                        );
+	                    if (error && error.code === 'insufficient_credits' && error.remaining !== null && error.remaining > 0) {
+	                        hideBulkProgress();
+	                        var remainingCount = error.remaining;
+	                        var totalRequested = count;
+	                        var errorMsg = error.message || sprintf(_n('You only have %d generation remaining.', 'You only have %d generations remaining.', remainingCount, 'beepbeep-ai-alt-text-generator'), remainingCount);
+	                        var regeneratePrompt = sprintf(
+	                            _n(
+	                                'Would you like to regenerate %1$d image now using your remaining %2$d credit?',
+	                                'Would you like to regenerate %1$d images now using your remaining %2$d credits?',
+	                                remainingCount,
+	                                'beepbeep-ai-alt-text-generator'
+	                            ),
+	                            remainingCount,
+	                            remainingCount
+	                        );
+	                        var regenerateHelp = __('(Click "OK" to regenerate now, or "Cancel" to upgrade)', 'beepbeep-ai-alt-text-generator');
+	                        
+	                        // Offer to regenerate with remaining credits or upgrade
+	                        var regenerateWithRemaining = confirm(
+	                            errorMsg + '\n\n' + regeneratePrompt + '\n\n' + regenerateHelp
+	                        );
                         
                         if (regenerateWithRemaining) {
                             // Regenerate with remaining credits
-                            var limitedIds = ids.slice(0, remainingCount);
-                            $btn.prop('disabled', true);
-                            $btn.text('Loading...');
-                            showBulkProgress('Queueing ' + remainingCount + ' image' + (remainingCount !== 1 ? 's' : '') + ' for regeneration...', remainingCount, 0);
-                            
-                            queueImages(limitedIds, 'bulk-regenerate', function(success, queued, queueError, processedLimited) {
-                                $btn.prop('disabled', false);
-                                $btn.text(originalText);
-                                
-                                if (success && queued > 0) {
-                                    updateBulkProgressTitle('Successfully Queued!');
-                                    logBulkProgressSuccess('Queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' using remaining credits');
-                                    startInlineGeneration(processedLimited || limitedIds, 'bulk-regenerate');
-                                } else {
-                                    var errorMsg = 'Failed to queue images.';
-                                    if (queueError && queueError.message) {
-                                        errorMsg = queueError.message;
+	                            var limitedIds = ids.slice(0, remainingCount);
+	                            $btn.prop('disabled', true);
+	                            $btn.text(__('Loading...', 'beepbeep-ai-alt-text-generator'));
+	                            showBulkProgress(sprintf(_n('Queueing %d image for regeneration...', 'Queueing %d images for regeneration...', remainingCount, 'beepbeep-ai-alt-text-generator'), remainingCount), remainingCount, 0);
+	                            
+	                            queueImages(limitedIds, 'bulk-regenerate', function(success, queued, queueError, processedLimited) {
+	                                $btn.prop('disabled', false);
+	                                $btn.text(originalText);
+	                                
+	                                if (success && queued > 0) {
+	                                    updateBulkProgressTitle(__('Successfully Queued!', 'beepbeep-ai-alt-text-generator'));
+	                                    logBulkProgressSuccess(sprintf(_n('Queued %d image using remaining credits', 'Queued %d images using remaining credits', queued, 'beepbeep-ai-alt-text-generator'), queued));
+	                                    startInlineGeneration(processedLimited || limitedIds, 'bulk-regenerate');
+	                                } else {
+	                                    var errorMsg = __('Failed to queue images.', 'beepbeep-ai-alt-text-generator');
+	                                    if (queueError && queueError.message) {
+	                                        errorMsg = queueError.message;
                                     }
                                     logBulkProgressError(errorMsg);
                                 }
                             });
                             return; // Exit early
-                        } else {
-                            // User clicked Cancel - offer upgrade
-                            var confirmUpgrade = confirm(
-                                'Would you like to upgrade to get more credits and regenerate all ' + totalRequested + 
-                                ' image' + (totalRequested !== 1 ? 's' : '') + '?'
-                            );
+	                        } else {
+	                            // User clicked Cancel - offer upgrade
+	                            var confirmUpgrade = confirm(
+	                                sprintf(
+	                                    _n(
+	                                        'Would you like to upgrade to get more credits and regenerate all %d image?',
+	                                        'Would you like to upgrade to get more credits and regenerate all %d images?',
+	                                        totalRequested,
+	                                        'beepbeep-ai-alt-text-generator'
+	                                    ),
+	                                    totalRequested
+	                                )
+	                            );
                             
                             if (confirmUpgrade) {
                                 // Upgrade
@@ -607,16 +685,16 @@
                     }
                     
                     // Handle other errors
-                    var errorMsg = 'Failed to queue images.';
-                    if (error && error.message) {
-                        errorMsg = error.message;
-                    } else {
-                        if (count > 0) {
-                            errorMsg += ' Please check your browser console for details and try again.';
-                        } else {
-                            errorMsg += ' No images were found to queue.';
-                        }
-                    }
+                    var errorMsg = __('Failed to queue images.', 'beepbeep-ai-alt-text-generator');
+	                    if (error && error.message) {
+	                        errorMsg = error.message;
+	                    } else {
+	                        if (count > 0) {
+	                            errorMsg += ' ' + __('Please check your browser console for details and try again.', 'beepbeep-ai-alt-text-generator');
+	                        } else {
+	                            errorMsg += ' ' + __('No images were found to queue.', 'beepbeep-ai-alt-text-generator');
+	                        }
+	                    }
 
                     if (error && error.message) {
                         console.error('[AI Alt Text] Error details:', error);
@@ -633,7 +711,7 @@
             $btn.prop('disabled', false);
             $btn.text(originalText);
 
-            logBulkProgressError('Failed to load images. Please try again.');
+            logBulkProgressError(__('Failed to load images. Please try again.', 'beepbeep-ai-alt-text-generator'));
             // Keep modal open to show error - user can close manually
         });
     }
@@ -661,7 +739,7 @@
 
         if (!attachmentId) {
             console.error('[AI Alt Text] Cannot regenerate - missing attachment ID');
-            alert('Error: Unable to find attachment ID. Please refresh the page and try again.');
+            alert(__('Error: Unable to find attachment ID. Please refresh the page and try again.', 'beepbeep-ai-alt-text-generator'));
             return false;
         }
 
@@ -673,10 +751,11 @@
         // Disable the button immediately to prevent multiple clicks
         var originalText = $btn.text();
         $btn.prop('disabled', true).addClass('regenerating');
-        $btn.text('Processing...');
+        $btn.text(__('Processing...', 'beepbeep-ai-alt-text-generator'));
 
         // Get image info - handle both table view (media library) and form view (edit media page)
-        var imageTitle = 'Image';
+        var imageTitle = __('Image', 'beepbeep-ai-alt-text-generator');
+        var defaultImageTitle = imageTitle;
         var imageSrc = '';
         
         // Try to find in table row (media library view)
@@ -687,7 +766,7 @@
         }
         
         // If not found, try to find in form (edit media page)
-        if (!imageSrc || imageTitle === 'Image') {
+        if (!imageSrc || imageTitle === defaultImageTitle) {
             // Try to get from attachment details form
             var $form = $btn.closest('form');
             if ($form.length) {
@@ -755,7 +834,7 @@
                        '';
         if (!ajaxUrl) {
             console.error('[AI Alt Text] AJAX endpoint unavailable.');
-            showModalError($modal, 'AJAX endpoint unavailable.');
+            showModalError($modal, __('AJAX endpoint unavailable.', 'beepbeep-ai-alt-text-generator'));
             reenableButton($btn, originalBtnText);
             return;
         }
@@ -826,7 +905,7 @@
                             acceptRegeneratedAltText(attachmentId, newAltText, $btn, originalBtnText, $modal);
                         });
                 } else {
-                    showModalError($modal, 'No alt text was generated. Please try again.');
+                    showModalError($modal, __('No alt text was generated. Please try again.', 'beepbeep-ai-alt-text-generator'));
                     reenableButton($btn, originalBtnText);
                 }
             } else {
@@ -850,22 +929,22 @@
                     } else if (typeof showAuthLogin === 'function') {
                         showAuthLogin();
                     } else {
-                        showModalError($modal, 'Please log in to regenerate alt text.');
+                        showModalError($modal, __('Please log in to regenerate alt text.', 'beepbeep-ai-alt-text-generator'));
                     }
                 } else {
                     // Check for image validation errors
                     var errorCode = errorData.code || '';
-                    var errorMessage = errorData.message || 'Failed to regenerate alt text';
+                    var errorMessage = errorData.message || __('Failed to regenerate alt text', 'beepbeep-ai-alt-text-generator');
                     
                     // Provide user-friendly messages for common image errors
                     if (errorCode === 'image_too_small') {
-                        errorMessage = 'This image is too small or invalid. Please use a valid image file (at least 10x10 pixels and 100 bytes).';
+                        errorMessage = __('This image is too small or invalid. Please use a valid image file (at least 10x10 pixels and 100 bytes).', 'beepbeep-ai-alt-text-generator');
                     } else if (errorCode === 'image_too_large') {
-                        errorMessage = 'This image file is too large. Please try a smaller image or contact support.';
+                        errorMessage = __('This image file is too large. Please try a smaller image or contact support.', 'beepbeep-ai-alt-text-generator');
                     } else if (errorCode === 'missing_image_data') {
-                        errorMessage = 'Image data could not be loaded. Please ensure the image file exists and is accessible.';
+                        errorMessage = __('Image data could not be loaded. Please ensure the image file exists and is accessible.', 'beepbeep-ai-alt-text-generator');
                     } else if (errorMessage.toLowerCase().includes('validation failed')) {
-                        errorMessage = 'Image validation failed. This image may be corrupted, too small, or in an unsupported format. Please try a different image.';
+                        errorMessage = __('Image validation failed. This image may be corrupted, too small, or in an unsupported format. Please try a different image.', 'beepbeep-ai-alt-text-generator');
                     }
                     
                     showModalError($modal, errorMessage);
@@ -899,10 +978,10 @@
                 } else if (typeof showAuthLogin === 'function') {
                     showAuthLogin();
                 } else {
-                    showModalError($modal, 'Please log in to regenerate alt text.');
+                    showModalError($modal, __('Please log in to regenerate alt text.', 'beepbeep-ai-alt-text-generator'));
                 }
             } else {
-                var message = errorData.message || 'Failed to regenerate alt text. Please try again.';
+                var message = errorData.message || __('Failed to regenerate alt text. Please try again.', 'beepbeep-ai-alt-text-generator');
                 showModalError($modal, message);
                 reenableButton($btn, originalBtnText);
             }
@@ -925,8 +1004,8 @@
             '<div id="bbai-regenerate-modal" class="bbai-regenerate-modal">' +
             '    <div class="bbai-regenerate-modal__content">' +
             '        <div class="bbai-regenerate-modal__header">' +
-            '            <h2 class="bbai-regenerate-modal__title">Regenerate Alt Text</h2>' +
-            '            <p class="bbai-regenerate-modal__subtitle">Review the new alt text before applying</p>' +
+            '            <h2 class="bbai-regenerate-modal__title">' + escapeHtml(__('Regenerate Alt Text', 'beepbeep-ai-alt-text-generator')) + '</h2>' +
+            '            <p class="bbai-regenerate-modal__subtitle">' + escapeHtml(__('Review the new alt text before applying', 'beepbeep-ai-alt-text-generator')) + '</p>' +
             '        </div>' +
             '        <div class="bbai-regenerate-modal__body">' +
             '            <div class="bbai-regenerate-modal__image-preview">' +
@@ -938,16 +1017,16 @@
             '            <div class="bbai-regenerate-modal__error"></div>' +
             '            <div class="bbai-regenerate-modal__loading">' +
             '                <div class="bbai-regenerate-modal__spinner"></div>' +
-            '                <p class="bbai-regenerate-modal__loading-text">Generating new alt text...</p>' +
+            '                <p class="bbai-regenerate-modal__loading-text">' + escapeHtml(__('Generating new alt text...', 'beepbeep-ai-alt-text-generator')) + '</p>' +
             '            </div>' +
             '            <div class="bbai-regenerate-modal__result">' +
-            '                <p class="bbai-regenerate-modal__alt-text-label">New Alt Text:</p>' +
+            '                <p class="bbai-regenerate-modal__alt-text-label">' + escapeHtml(__('New Alt Text:', 'beepbeep-ai-alt-text-generator')) + '</p>' +
             '                <p class="bbai-regenerate-modal__alt-text"></p>' +
             '            </div>' +
             '        </div>' +
             '        <div class="bbai-regenerate-modal__footer">' +
-            '            <button type="button" class="bbai-regenerate-modal__btn bbai-regenerate-modal__btn--cancel">Cancel</button>' +
-            '            <button type="button" class="bbai-regenerate-modal__btn bbai-regenerate-modal__btn--accept" disabled>Accept & Apply</button>' +
+            '            <button type="button" class="bbai-regenerate-modal__btn bbai-regenerate-modal__btn--cancel">' + escapeHtml(__('Cancel', 'beepbeep-ai-alt-text-generator')) + '</button>' +
+            '            <button type="button" class="bbai-regenerate-modal__btn bbai-regenerate-modal__btn--accept" disabled>' + escapeHtml(__('Accept & Apply', 'beepbeep-ai-alt-text-generator')) + '</button>' +
             '        </div>' +
             '    </div>' +
             '</div>';
@@ -1055,14 +1134,23 @@
                 var charCount = newAltText.length;
                 var isOptimal = charCount <= 125;
                 var counterClass = isOptimal ? 'bbai-char-counter--optimal' : 'bbai-char-counter--warning';
-                var counterTooltip = isOptimal ? 'Optimal length for Google Images SEO' : 'Consider shortening to 125 chars or less';
+                var counterTooltip = isOptimal
+                    ? __('Optimal length for Google Images SEO', 'beepbeep-ai-alt-text-generator')
+                    : __('Consider shortening to 125 chars or less', 'beepbeep-ai-alt-text-generator');
 
                 // Calculate SEO quality
                 var seoQuality = calculateSeoQuality(newAltText);
                 var seoBadgeHtml = '';
                 if (seoQuality.badge !== 'missing') {
+                    var seoScoreLabel = sprintf(
+                        /* translators: 1: SEO grade letter, 2: SEO score out of 100 */
+                        __('SEO Score: %1$s (%2$d/100)', 'beepbeep-ai-alt-text-generator'),
+                        seoQuality.grade,
+                        seoQuality.score
+                    );
+                    var seoPrefix = __('SEO:', 'beepbeep-ai-alt-text-generator');
                     seoBadgeHtml = '<span class="bbai-meta-separator">○</span>' +
-                        '<span class="bbai-seo-badge bbai-seo-badge--' + seoQuality.badge + '" data-bbai-tooltip="SEO Score: ' + seoQuality.grade + ' (' + seoQuality.score + '/100)" data-bbai-tooltip-position="top">SEO: ' + seoQuality.grade + '</span>' +
+                        '<span class="bbai-seo-badge bbai-seo-badge--' + seoQuality.badge + '" data-bbai-tooltip="' + escapeHtml(seoScoreLabel) + '" data-bbai-tooltip-position="top">' + escapeHtml(seoPrefix) + ' ' + seoQuality.grade + '</span>' +
                         '<span class="bbai-meta-separator">○</span>';
                 }
 
@@ -1084,7 +1172,7 @@
                     $statusCell
                         .removeClass()
                         .addClass('bbai-status-badge bbai-status-badge--regenerated')
-                        .text('Regenerated');
+                        .text(__('Regenerated', 'beepbeep-ai-alt-text-generator'));
                 }
 
                 // Update row data attribute
@@ -1094,9 +1182,9 @@
 
         // Show success message in toast notification before closing modal
         if (window.bbaiPushToast && typeof window.bbaiPushToast === 'function') {
-            window.bbaiPushToast('success', 'Alt text updated successfully!', { duration: 4000 });
+            window.bbaiPushToast('success', __('Alt text updated successfully!', 'beepbeep-ai-alt-text-generator'), { duration: 4000 });
         } else if (window.bbaiToast && typeof window.bbaiToast.success === 'function') {
-            window.bbaiToast.success('Alt text updated successfully!', { duration: 4000 });
+            window.bbaiToast.success(__('Alt text updated successfully!', 'beepbeep-ai-alt-text-generator'), { duration: 4000 });
         }
 
         // Close modal
@@ -1172,7 +1260,7 @@
                 }
             } else {
                 // Error response from server
-                var errorMessage = 'Failed to queue images';
+                var errorMessage = __('Failed to queue images', 'beepbeep-ai-alt-text-generator');
                 var errorCode = null;
                 var errorRemaining = null;
                 
@@ -1217,7 +1305,7 @@
                 var parsed = JSON.parse(xhr.responseText);
                 if (parsed && parsed.data) {
                     errorData = {
-                        message: parsed.data.message || 'Failed to queue images',
+                        message: parsed.data.message || __('Failed to queue images', 'beepbeep-ai-alt-text-generator'),
                         code: parsed.data.code || null,
                         remaining: parsed.data.remaining || null
                     };
@@ -1346,11 +1434,19 @@
         $modal.find('.bbai-bulk-progress__total').text(normalized.length);
         $modal.find('.bbai-bulk-progress__current').text(0);
         $modal.find('.bbai-bulk-progress__percentage').text('0%');
-        $modal.find('.bbai-bulk-progress__eta').text('Calculating...');
+        $modal.find('.bbai-bulk-progress__eta').text(__('Calculating...', 'beepbeep-ai-alt-text-generator'));
         $modal.find('.bbai-bulk-progress__bar-fill').css('width', '0%');
 
-        var intro = 'Starting inline generation for ' + normalized.length + ' image' + (normalized.length !== 1 ? 's' : '') + '...';
-        updateBulkProgressTitle('Generating Alt Text…');
+        var intro = sprintf(
+            _n(
+                'Starting inline generation for %d image...',
+                'Starting inline generation for %d images...',
+                normalized.length,
+                'beepbeep-ai-alt-text-generator'
+            ),
+            normalized.length
+        );
+        updateBulkProgressTitle(__('Generating Alt Text…', 'beepbeep-ai-alt-text-generator'));
         logBulkProgressSuccess(intro);
 
         $modal.data('batchQueue', normalized.slice(0));
@@ -1392,13 +1488,17 @@
                 .then(function(result) {
                     successes++;
                     processed++;
-                    var title = result && result.title ? result.title : ('Generated alt text for image #' + id);
+                    var title = result && result.title
+                        ? result.title
+                        : sprintf(__('Generated alt text for image #%d', 'beepbeep-ai-alt-text-generator'), id);
                     updateBulkProgress(processed, total, title);
                 })
                 .catch(function(error) {
                     failures++;
                     processed++;
-                    var message = 'Image #' + id + ': ' + (error && error.message ? error.message : 'Failed to generate alt text.');
+                    var fallbackError = __('Failed to generate alt text.', 'beepbeep-ai-alt-text-generator');
+                    var details = (error && error.message) ? error.message : fallbackError;
+                    var message = sprintf(__('Image #%d: %s', 'beepbeep-ai-alt-text-generator'), id, details);
                     logBulkProgressError(message);
                     updateBulkProgress(processed, total);
                 })
@@ -1421,10 +1521,15 @@
         var startTime = $modal.length ? $modal.data('startTime') : Date.now();
         var elapsed = (Date.now() - startTime) / 1000; // seconds
         
-        // Calculate time saved (estimate: 2 minutes per image)
-        var timeSavedMinutes = successes * 2;
-        var timeSavedHours = Math.round(timeSavedMinutes / 60);
-        var timeSavedText = timeSavedHours > 0 ? timeSavedHours + ' hour' + (timeSavedHours !== 1 ? 's' : '') : '< 1 hour';
+	        // Calculate time saved (estimate: 2 minutes per image)
+	        var timeSavedMinutes = successes * 2;
+	        var timeSavedHours = Math.round(timeSavedMinutes / 60);
+	        var timeSavedText = timeSavedHours > 0
+	            ? sprintf(
+	                _n('%d hour', '%d hours', timeSavedHours, 'beepbeep-ai-alt-text-generator'),
+	                timeSavedHours
+	            )
+	            : __('< 1 hour', 'beepbeep-ai-alt-text-generator');
         
         // Calculate AI confidence (100% if no failures, otherwise percentage)
         var confidence = total > 0 ? Math.round((successes / total) * 100) : 100;
@@ -1453,7 +1558,7 @@
             var ajaxUrl = (window.bbai_ajax && (window.bbai_ajax.ajax_url || window.bbai_ajax.ajaxurl)) || '';
             var nonceValue = (window.bbai_ajax && window.bbai_ajax.nonce) || '';
             if (!ajaxUrl) {
-                reject({ message: 'AJAX endpoint unavailable.', code: 'ajax_unavailable' });
+                reject({ message: __('AJAX endpoint unavailable.', 'beepbeep-ai-alt-text-generator'), code: 'ajax_unavailable' });
                 return;
             }
 
@@ -1479,16 +1584,16 @@
                                 resolve({
                                     id: id,
                                     alt: first.alt_text || '',
-                                    title: first.title || ('Image #' + id)
+                                    title: first.title || sprintf(__('Image #%d', 'beepbeep-ai-alt-text-generator'), id)
                                 });
                                 return;
                             } else {
                                 // Generation failed for this image - extract error message
-                                var errorMsg = 'Failed to generate alt text.';
+                                var errorMsg = __('Failed to generate alt text.', 'beepbeep-ai-alt-text-generator');
                                 if (first && first.message) {
                                     errorMsg = first.message;
                                 } else if (first && first.code) {
-                                    errorMsg = 'Generation failed: ' + first.code;
+                                    errorMsg = sprintf(__('Generation failed: %s', 'beepbeep-ai-alt-text-generator'), first.code);
                                 }
                                 reject({ message: errorMsg, code: (first && first.code) ? first.code : 'generation_failed' });
                                 return;
@@ -1499,7 +1604,7 @@
                             resolve({
                                 id: id,
                                 alt: response.data.alt_text || '',
-                                title: 'Image #' + id
+                                title: sprintf(__('Image #%d', 'beepbeep-ai-alt-text-generator'), id)
                             });
                             return;
                         }
@@ -1512,7 +1617,7 @@
                     
                     // Handle error response (success: false)
                     if (response && response.success === false) {
-                        var errorMsg = 'Failed to generate alt text.';
+                        var errorMsg = __('Failed to generate alt text.', 'beepbeep-ai-alt-text-generator');
                         if (response.data && response.data.message) {
                             errorMsg = response.data.message;
                         } else if (response.message) {
@@ -1524,14 +1629,14 @@
                     
                     // Unexpected response structure
                     console.error('[AI Alt Text] Unexpected response structure:', response);
-                    reject({ message: 'Unexpected response from server. Response structure does not match expected format.' });
+                    reject({ message: __('Unexpected response from server. Response structure does not match expected format.', 'beepbeep-ai-alt-text-generator') });
                 } catch (e) {
                     console.error('[AI Alt Text] Error parsing response:', e, response);
-                    reject({ message: 'Error parsing server response: ' + (e.message || 'Unknown error') });
+                    reject({ message: sprintf(__('Error parsing server response: %s', 'beepbeep-ai-alt-text-generator'), (e && e.message) ? e.message : __('Unknown error', 'beepbeep-ai-alt-text-generator')) });
                 }
             })
             .fail(function(xhr) {
-                var message = 'Request failed';
+                var message = __('Request failed', 'beepbeep-ai-alt-text-generator');
                 var errorCode = null;
                 
                 // Try to extract detailed error information
@@ -1547,16 +1652,16 @@
                         errorCode = xhr.responseJSON.code;
                     }
                 } else if (xhr && xhr.status === 0) {
-                    message = 'Network error: Unable to connect to server. Please check your internet connection.';
+                    message = __('Network error: Unable to connect to server. Please check your internet connection.', 'beepbeep-ai-alt-text-generator');
                 } else if (xhr && xhr.status === 404) {
-                    message = 'AJAX endpoint not found. The plugin may need to be reactivated.';
+                    message = __('AJAX endpoint not found. The plugin may need to be reactivated.', 'beepbeep-ai-alt-text-generator');
                 } else if (xhr && xhr.status === 500) {
-                    message = 'Server error occurred. Please check your WordPress error logs.';
+                    message = __('Server error occurred. Please check your WordPress error logs.', 'beepbeep-ai-alt-text-generator');
                 } else if (xhr && xhr.status === 200) {
                     // Status 200 but response structure is invalid or parsing failed
-                    message = 'Server returned an invalid response. Please check the browser console for details.';
+                    message = __('Server returned an invalid response. Please check the browser console for details.', 'beepbeep-ai-alt-text-generator');
                 } else if (xhr && xhr.status) {
-                    message = 'Request failed with status ' + xhr.status;
+                    message = sprintf(__('Request failed with status %d', 'beepbeep-ai-alt-text-generator'), xhr.status);
                 }
                 
                 // Log detailed error for debugging
@@ -1590,7 +1695,7 @@
         $modal.data('current', current || 0);
 
         // Update initial state
-        $modal.find('.bbai-bulk-progress__title').text(label || 'Processing Images...');
+        $modal.find('.bbai-bulk-progress__title').text(label || __('Processing Images...', 'beepbeep-ai-alt-text-generator'));
         $modal.find('.bbai-bulk-progress__total').text(total);
         $modal.find('.bbai-bulk-progress__log').empty();
 
@@ -1610,25 +1715,25 @@
             '    <div class="bbai-bulk-progress-modal__overlay"></div>' +
             '    <div class="bbai-bulk-progress-modal__content">' +
             '        <div class="bbai-bulk-progress__header">' +
-            '            <h2 class="bbai-bulk-progress__title">Processing Images...</h2>' +
-            '            <button type="button" class="bbai-bulk-progress__close" aria-label="Close">×</button>' +
+            '            <h2 class="bbai-bulk-progress__title">' + escapeHtml(__('Processing Images...', 'beepbeep-ai-alt-text-generator')) + '</h2>' +
+            '            <button type="button" class="bbai-bulk-progress__close" aria-label="' + escapeHtml(__('Close', 'beepbeep-ai-alt-text-generator')) + '">×</button>' +
             '        </div>' +
             '        <div class="bbai-bulk-progress__body">' +
             '            <div class="bbai-bulk-progress__stats">' +
             '                <div class="bbai-bulk-progress__stat">' +
-            '                    <span class="bbai-bulk-progress__stat-label">Progress</span>' +
+            '                    <span class="bbai-bulk-progress__stat-label">' + escapeHtml(__('Progress', 'beepbeep-ai-alt-text-generator')) + '</span>' +
             '                    <span class="bbai-bulk-progress__stat-value">' +
             '                        <span class="bbai-bulk-progress__current">0</span> / ' +
             '                        <span class="bbai-bulk-progress__total">0</span>' +
             '                    </span>' +
             '                </div>' +
             '                <div class="bbai-bulk-progress__stat">' +
-            '                    <span class="bbai-bulk-progress__stat-label">Percentage</span>' +
+            '                    <span class="bbai-bulk-progress__stat-label">' + escapeHtml(__('Percentage', 'beepbeep-ai-alt-text-generator')) + '</span>' +
             '                    <span class="bbai-bulk-progress__stat-value bbai-bulk-progress__percentage">0%</span>' +
             '                </div>' +
             '                <div class="bbai-bulk-progress__stat">' +
-            '                    <span class="bbai-bulk-progress__stat-label">Estimated Time</span>' +
-            '                    <span class="bbai-bulk-progress__stat-value bbai-bulk-progress__eta">Calculating...</span>' +
+            '                    <span class="bbai-bulk-progress__stat-label">' + escapeHtml(__('Estimated Time', 'beepbeep-ai-alt-text-generator')) + '</span>' +
+            '                    <span class="bbai-bulk-progress__stat-value bbai-bulk-progress__eta">' + escapeHtml(__('Calculating...', 'beepbeep-ai-alt-text-generator')) + '</span>' +
             '                </div>' +
             '            </div>' +
             '            <div class="bbai-bulk-progress__bar-container">' +
@@ -1637,7 +1742,7 @@
             '                </div>' +
             '            </div>' +
             '            <div class="bbai-bulk-progress__log-container">' +
-            '                <h3 class="bbai-bulk-progress__log-title">Processing Log</h3>' +
+            '                <h3 class="bbai-bulk-progress__log-title">' + escapeHtml(__('Processing Log', 'beepbeep-ai-alt-text-generator')) + '</h3>' +
             '                <div class="bbai-bulk-progress__log"></div>' +
             '            </div>' +
             '        </div>' +
@@ -1667,20 +1772,20 @@
         var elapsed = (Date.now() - startTime) / 1000; // seconds
 
         // Calculate ETA
-        var eta = 'Calculating...';
+        var eta = __('Calculating...', 'beepbeep-ai-alt-text-generator');
         if (current > 0 && elapsed > 0) {
             var avgTimePerImage = elapsed / current;
             var remaining = total - current;
             var etaSeconds = remaining * avgTimePerImage;
 
             if (etaSeconds < 60) {
-                eta = Math.ceil(etaSeconds) + 's';
+                eta = sprintf(__('%ds', 'beepbeep-ai-alt-text-generator'), Math.ceil(etaSeconds));
             } else if (etaSeconds < 3600) {
-                eta = Math.ceil(etaSeconds / 60) + 'm';
+                eta = sprintf(__('%dm', 'beepbeep-ai-alt-text-generator'), Math.ceil(etaSeconds / 60));
             } else {
                 var hours = Math.floor(etaSeconds / 3600);
                 var mins = Math.ceil((etaSeconds % 3600) / 60);
-                eta = hours + 'h ' + mins + 'm';
+                eta = sprintf(__('%dh %dm', 'beepbeep-ai-alt-text-generator'), hours, mins);
             }
         }
 
@@ -1720,7 +1825,7 @@
             '<div class="bbai-bulk-progress__log-entry bbai-bulk-progress__log-entry--error">' +
             '    <span class="bbai-bulk-progress__log-time">' + timestamp + '</span>' +
             '    <span class="bbai-bulk-progress__log-icon">✗</span>' +
-            '    <span class="bbai-bulk-progress__log-text">' + escapeHtml(errorMessage || 'An error occurred') + '</span>' +
+            '    <span class="bbai-bulk-progress__log-text">' + escapeHtml(errorMessage || __('An error occurred', 'beepbeep-ai-alt-text-generator')) + '</span>' +
             '</div>';
 
         var $log = $modal.find('.bbai-bulk-progress__log');
@@ -1740,7 +1845,7 @@
             '<div class="bbai-bulk-progress__log-entry bbai-bulk-progress__log-entry--success">' +
             '    <span class="bbai-bulk-progress__log-time">' + timestamp + '</span>' +
             '    <span class="bbai-bulk-progress__log-icon">✓</span>' +
-            '    <span class="bbai-bulk-progress__log-text">' + escapeHtml(successMessage || 'Success') + '</span>' +
+            '    <span class="bbai-bulk-progress__log-text">' + escapeHtml(successMessage || __('Success', 'beepbeep-ai-alt-text-generator')) + '</span>' +
             '</div>';
 
         var $log = $modal.find('.bbai-bulk-progress__log');
@@ -1812,37 +1917,37 @@
             '<div id="bbai-modal-success" class="bbai-modal-success" role="dialog" aria-modal="true" aria-labelledby="bbai-modal-success-title">' +
             '    <div class="bbai-modal-success__overlay"></div>' +
             '    <div class="bbai-modal-success__content">' +
-            '        <button type="button" class="bbai-modal-success__close" aria-label="' + escapeHtml('Close') + '">×</button>' +
+            '        <button type="button" class="bbai-modal-success__close" aria-label="' + escapeHtml(__('Close', 'beepbeep-ai-alt-text-generator')) + '">×</button>' +
             '        <div class="bbai-modal-success__header">' +
             '            <div class="bbai-modal-success__badge">' +
             '                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
             '                    <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
             '                </svg>' +
             '            </div>' +
-            '            <h2 id="bbai-modal-success-title" class="bbai-modal-success__title">Alt Text Generated Successfully</h2>' +
-            '            <p class="bbai-modal-success__subtitle">Your images have been processed and are ready to review.</p>' +
+            '            <h2 id="bbai-modal-success-title" class="bbai-modal-success__title">' + escapeHtml(__('Alt Text Generated Successfully', 'beepbeep-ai-alt-text-generator')) + '</h2>' +
+            '            <p class="bbai-modal-success__subtitle">' + escapeHtml(__('Your images have been processed and are ready to review.', 'beepbeep-ai-alt-text-generator')) + '</p>' +
             '        </div>' +
             '        <div class="bbai-modal-success__stats">' +
             '            <div class="bbai-modal-success__stat-card">' +
             '                <div class="bbai-modal-success__stat-number" data-stat="processed">0</div>' +
-            '                <div class="bbai-modal-success__stat-label">Images Processed</div>' +
+            '                <div class="bbai-modal-success__stat-label">' + escapeHtml(__('Images Processed', 'beepbeep-ai-alt-text-generator')) + '</div>' +
             '            </div>' +
             '            <div class="bbai-modal-success__stat-card">' +
             '                <div class="bbai-modal-success__stat-number" data-stat="time">0</div>' +
-            '                <div class="bbai-modal-success__stat-label">Time Saved</div>' +
+            '                <div class="bbai-modal-success__stat-label">' + escapeHtml(__('Time Saved', 'beepbeep-ai-alt-text-generator')) + '</div>' +
             '            </div>' +
             '            <div class="bbai-modal-success__stat-card">' +
             '                <div class="bbai-modal-success__stat-number" data-stat="confidence">0%</div>' +
-            '                <div class="bbai-modal-success__stat-label">AI Confidence</div>' +
+            '                <div class="bbai-modal-success__stat-label">' + escapeHtml(__('AI Confidence', 'beepbeep-ai-alt-text-generator')) + '</div>' +
             '            </div>' +
             '        </div>' +
             '        <div class="bbai-modal-success__summary" data-summary-type="success">' +
             '            <div class="bbai-modal-success__summary-icon">✓</div>' +
-            '            <div class="bbai-modal-success__summary-text">All images were processed successfully.</div>' +
+            '            <div class="bbai-modal-success__summary-text">' + escapeHtml(__('All images were processed successfully.', 'beepbeep-ai-alt-text-generator')) + '</div>' +
             '        </div>' +
             '        <div class="bbai-modal-success__actions">' +
-            '            <a href="' + escapeHtml(libraryUrl) + '" class="bbai-modal-success__btn bbai-modal-success__btn--primary">View ALT Library →</a>' +
-            '            <button type="button" class="bbai-modal-success__btn bbai-modal-success__btn--secondary" data-action="view-warnings" style="display: none;">View Warnings</button>' +
+            '            <a href="' + escapeHtml(libraryUrl) + '" class="bbai-modal-success__btn bbai-modal-success__btn--primary">' + escapeHtml(__('View ALT Library →', 'beepbeep-ai-alt-text-generator')) + '</a>' +
+            '            <button type="button" class="bbai-modal-success__btn bbai-modal-success__btn--secondary" data-action="view-warnings" style="display: none;">' + escapeHtml(__('View Warnings', 'beepbeep-ai-alt-text-generator')) + '</button>' +
             '        </div>' +
             '    </div>' +
             '</div>';
@@ -1890,7 +1995,8 @@
 
         // Update stats
         $modal.find('[data-stat="processed"]').text(data.processed || 0);
-        $modal.find('[data-stat="time"]').text(data.timeSaved || '0 hours');
+        var defaultTime = sprintf(_n('%d hour', '%d hours', 0, 'beepbeep-ai-alt-text-generator'), 0);
+        $modal.find('[data-stat="time"]').text(data.timeSaved || defaultTime);
         $modal.find('[data-stat="confidence"]').text((data.confidence || 0) + '%');
 
         // Update summary based on failures
@@ -1900,12 +2006,12 @@
         if (data.failures > 0) {
             $summary.attr('data-summary-type', 'warning');
             $summary.find('.bbai-modal-success__summary-icon').text('⚠');
-            $summary.find('.bbai-modal-success__summary-text').text('Some images generated with warnings — review details below.');
+            $summary.find('.bbai-modal-success__summary-text').text(__('Some images generated with warnings — review details below.', 'beepbeep-ai-alt-text-generator'));
             $warningsBtn.show();
         } else {
             $summary.attr('data-summary-type', 'success');
             $summary.find('.bbai-modal-success__summary-icon').text('✓');
-            $summary.find('.bbai-modal-success__summary-text').text('All images were processed successfully.');
+            $summary.find('.bbai-modal-success__summary-text').text(__('All images were processed successfully.', 'beepbeep-ai-alt-text-generator'));
             $warningsBtn.hide();
         }
 
@@ -1965,18 +2071,18 @@
         var licenseKey = $input.val().trim();
 
         if (!licenseKey) {
-            showLicenseStatus('error', 'Please enter a license key');
+            showLicenseStatus('error', __('Please enter a license key', 'beepbeep-ai-alt-text-generator'));
             return;
         }
 
         // Disable form
-        $button.prop('disabled', true).text('Activating...');
+        $button.prop('disabled', true).text(__('Activating...', 'beepbeep-ai-alt-text-generator'));
         $input.prop('disabled', true);
 
         var ajaxUrl = (window.bbai_ajax && (window.bbai_ajax.ajaxurl || window.bbai_ajax.ajax_url)) || '';
         if (!ajaxUrl) {
-            showLicenseStatus('error', 'AJAX endpoint unavailable.');
-            $button.prop('disabled', false).text('Activate License');
+            showLicenseStatus('error', __('AJAX endpoint unavailable.', 'beepbeep-ai-alt-text-generator'));
+            $button.prop('disabled', false).text(__('Activate License', 'beepbeep-ai-alt-text-generator'));
             $input.prop('disabled', false);
             return;
         }
@@ -1992,21 +2098,21 @@
             },
             success: function(response) {
                 if (response.success) {
-                    showLicenseStatus('success', response.data.message || 'License activated successfully!');
+                    showLicenseStatus('success', response.data.message || __('License activated successfully!', 'beepbeep-ai-alt-text-generator'));
 
                     // Reload page after 1 second to show activated state
                     setTimeout(function() {
                         window.location.reload();
                     }, 1000);
                 } else {
-                    showLicenseStatus('error', response.data.message || 'Failed to activate license');
-                    $button.prop('disabled', false).text('Activate License');
+                    showLicenseStatus('error', response.data.message || __('Failed to activate license', 'beepbeep-ai-alt-text-generator'));
+                    $button.prop('disabled', false).text(__('Activate License', 'beepbeep-ai-alt-text-generator'));
                     $input.prop('disabled', false);
                 }
             },
             error: function(xhr, status, error) {
-                showLicenseStatus('error', 'Network error: ' + error);
-                $button.prop('disabled', false).text('Activate License');
+                showLicenseStatus('error', sprintf(__('Network error: %s', 'beepbeep-ai-alt-text-generator'), error));
+                $button.prop('disabled', false).text(__('Activate License', 'beepbeep-ai-alt-text-generator'));
                 $input.prop('disabled', false);
             }
         });
@@ -2016,7 +2122,7 @@
     function handleLicenseDeactivation(e) {
         e.preventDefault();
 
-        if (!confirm('Are you sure you want to deactivate this license? You will need to reactivate it to continue using the shared quota.')) {
+        if (!confirm(__('Are you sure you want to deactivate this license? You will need to reactivate it to continue using the shared quota.', 'beepbeep-ai-alt-text-generator'))) {
             return;
         }
 
@@ -2024,12 +2130,12 @@
         var nonce = $('#license-nonce').val();
 
         // Disable button
-        $button.prop('disabled', true).text('Deactivating...');
+        $button.prop('disabled', true).text(__('Deactivating...', 'beepbeep-ai-alt-text-generator'));
 
         var ajaxUrl = (window.bbai_ajax && (window.bbai_ajax.ajaxurl || window.bbai_ajax.ajax_url)) || '';
         if (!ajaxUrl) {
-            window.bbaiModal.error('AJAX endpoint unavailable.');
-            $button.prop('disabled', false).text('Deactivate License');
+            window.bbaiModal.error(__('AJAX endpoint unavailable.', 'beepbeep-ai-alt-text-generator'));
+            $button.prop('disabled', false).text(__('Deactivate License', 'beepbeep-ai-alt-text-generator'));
             return;
         }
 
@@ -2046,21 +2152,21 @@
                     // Show success message
                     window.bbaiModal.show({
                         type: 'success',
-                        title: 'Success',
-                        message: response.data.message || 'License deactivated successfully',
+                        title: __('Success', 'beepbeep-ai-alt-text-generator'),
+                        message: response.data.message || __('License deactivated successfully', 'beepbeep-ai-alt-text-generator'),
                         onClose: function() {
                             // Reload page to show deactivated state
                             window.location.reload();
                         }
                     });
                 } else {
-                    window.bbaiModal.error('Error: ' + (response.data.message || 'Failed to deactivate license'));
-                    $button.prop('disabled', false).text('Deactivate License');
+                    window.bbaiModal.error(sprintf(__('Error: %s', 'beepbeep-ai-alt-text-generator'), (response.data.message || __('Failed to deactivate license', 'beepbeep-ai-alt-text-generator'))));
+                    $button.prop('disabled', false).text(__('Deactivate License', 'beepbeep-ai-alt-text-generator'));
                 }
             },
             error: function(xhr, status, error) {
-                window.bbaiModal.error('Network error: ' + error);
-                $button.prop('disabled', false).text('Deactivate License');
+                window.bbaiModal.error(sprintf(__('Network error: %s', 'beepbeep-ai-alt-text-generator'), error));
+                $button.prop('disabled', false).text(__('Deactivate License', 'beepbeep-ai-alt-text-generator'));
             }
         });
     }
@@ -2136,8 +2242,19 @@
         
         // Safety check: Ensure scrolling is enabled on page load
         // This fixes cases where a previous modal operation left scrolling disabled
+        var MODAL_ACTIVE_SELECTOR = [
+            '.bbai-regenerate-modal.active',
+            '.bbai-bulk-progress-modal.active',
+            '#bbai-upgrade-modal.active',
+            '#bbai-upgrade-modal[style*="display: flex"]',
+            '#bbai-modal-overlay[style*="display: block"]',
+            '#bbai-modal-overlay[style*="display: flex"]',
+            '#alttext-auth-modal[style*="display: block"]',
+            '.bbai-shortcuts-modal.show'
+        ].join(', ');
+
         setTimeout(function() {
-            var hasActiveModals = $('.bbai-regenerate-modal.active, .bbai-bulk-progress-modal.active').length;
+            var hasActiveModals = $(MODAL_ACTIVE_SELECTOR).length;
             if (!hasActiveModals && (document.body.style.overflow === 'hidden' || document.documentElement.style.overflow === 'hidden')) {
                 console.log('[AI Alt Text] Restoring page scroll - no active modals but overflow is hidden');
                 if (window.restorePageScroll) {
@@ -2145,18 +2262,18 @@
                 }
             }
         }, 500);
-        
-        // Periodic safety check: Every 2 seconds, check if scrolling is stuck
+
+        // Periodic safety check: Every 5 seconds, check if scrolling is stuck
         // Only fix if no modals are active
         setInterval(function() {
-            var hasActiveModals = $('.bbai-regenerate-modal.active, .bbai-bulk-progress-modal.active').length;
+            var hasActiveModals = $(MODAL_ACTIVE_SELECTOR).length;
             if (!hasActiveModals && (document.body.style.overflow === 'hidden' || document.documentElement.style.overflow === 'hidden')) {
                 console.log('[AI Alt Text] Auto-restoring page scroll - detected stuck scrolling');
                 if (window.restorePageScroll) {
                     window.restorePageScroll();
                 }
             }
-        }, 2000);
+        }, 5000);
     });
 
     /**
@@ -2379,23 +2496,56 @@
                 }
             });
             
-            // Update circular progress bar visual (stroke-dashoffset)
+            // Update circular progress bar visual (stroke-dashoffset + adaptive color)
             $('.bbai-circular-progress-bar').each(function() {
                 var $ring = $(this);
-                var circumference = parseFloat($ring.data('circumference')) || parseFloat($ring.attr('stroke-dasharray')) || (2 * Math.PI * 45);
-                var offset = circumference - (percentage / 100 * circumference);
-                
+                var circumference = parseFloat($ring.data('circumference')) || parseFloat($ring.attr('stroke-dasharray')) || (2 * Math.PI * 48);
+                var offset = circumference * (1 - (percentage / 100));
+
                 // Get current offset
                 var currentOffset = parseFloat($ring.css('stroke-dashoffset')) || parseFloat($ring.attr('stroke-dashoffset')) || circumference;
-                
-                // Update if changed
+
+                // Update offset if changed
                 if (Math.abs(currentOffset - offset) > 0.1) {
                     $ring.attr('data-offset', offset);
+                    $ring.attr('data-percentage', percentage);
                     if ($ring[0].style) {
                         $ring[0].style.strokeDashoffset = offset;
                     }
                     console.log('[AltText AI] Updated circular progress bar offset from', currentOffset, 'to', offset);
                 }
+
+                // Adaptive stroke color based on usage percentage
+                var colorClass = 'bbai-usage-ring--healthy';
+                var strokeColor = '#10B981';
+                if (percentage >= 100) {
+                    colorClass = 'bbai-usage-ring--critical';
+                    strokeColor = '#EF4444';
+                } else if (percentage >= 86) {
+                    colorClass = 'bbai-usage-ring--danger';
+                    strokeColor = '#EF4444';
+                } else if (percentage >= 61) {
+                    colorClass = 'bbai-usage-ring--warning';
+                    strokeColor = '#F59E0B';
+                }
+
+                $ring.removeClass('bbai-usage-ring--healthy bbai-usage-ring--warning bbai-usage-ring--danger bbai-usage-ring--critical');
+                $ring.addClass(colorClass);
+                $ring.attr('stroke', strokeColor);
+            });
+
+            // Update linear progress bar color to match
+            $('.bbai-linear-progress-fill').each(function() {
+                var $bar = $(this);
+                var barColor = '#10B981';
+                if (percentage >= 100) {
+                    barColor = '#EF4444';
+                } else if (percentage >= 86) {
+                    barColor = '#EF4444';
+                } else if (percentage >= 61) {
+                    barColor = '#F59E0B';
+                }
+                $bar.css('background', barColor);
             });
         }
         

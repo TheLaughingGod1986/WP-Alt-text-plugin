@@ -7,6 +7,9 @@
 (function() {
     'use strict';
 
+    const i18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
+    const __ = i18n && typeof i18n.__ === 'function' ? i18n.__ : (text) => text;
+
     // Check if React and ReactDOM are available
     if (typeof React === 'undefined' || typeof ReactDOM === 'undefined') {
         console.warn('[BeepBeep AI] React is not loaded. Dashboard requires React and ReactDOM.');
@@ -20,8 +23,13 @@
             return;
         }
 
-        const apiUrl = window.BBAI?.restRoot || '/wp-json/bbai/v1';
-        const nonce = window.BBAI?.nonce || '';
+	        const restRoot = window.BBAI?.restRoot || ((window.wpApiSettings && window.wpApiSettings.root) ? window.wpApiSettings.root : '');
+	        if (!restRoot) {
+	            console.warn('[BeepBeep AI] REST root is not available. Dashboard bridge will not initialize.');
+	            return;
+	        }
+	        const apiUrl = `${String(restRoot).replace(/\/$/, '')}/bbai/v1`;
+	        const nonce = window.BBAI?.nonce || '';
 
         // Fetch dashboard data
         async function fetchDashboardData() {
@@ -193,11 +201,11 @@
                     }));
                 } else {
                     console.warn('[BeepBeep AI] Dashboard component not found. Make sure dashboard components are loaded.');
-                    dashboardContainer.innerHTML = '<p>Loading dashboard...</p>';
+                    dashboardContainer.innerHTML = '<p>' + __('Loading dashboard...', 'beepbeep-ai-alt-text-generator') + '</p>';
                 }
             } catch (error) {
                 console.error('[BeepBeep AI] Error rendering dashboard:', error);
-                dashboardContainer.innerHTML = '<p>Error loading dashboard. Please refresh the page.</p>';
+                dashboardContainer.innerHTML = '<p>' + __('Error loading dashboard. Please refresh the page.', 'beepbeep-ai-alt-text-generator') + '</p>';
             }
         }
 

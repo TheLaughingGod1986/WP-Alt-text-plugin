@@ -19,30 +19,35 @@ trait Core_Ajax_License {
      * AJAX handler: Activate license key
      */
     public function ajax_activate_license() {
-        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
-        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
-            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        $action = 'beepbeepai_nonce';
+        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+            wp_send_json_error( [ 'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ) ], 403 );
+            return;
         }
 
-        if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
+        if ( ! $this->user_can_manage() ) {
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ) ] );
+            return;
         }
 
         $license_key_raw = isset($_POST['license_key']) ? wp_unslash($_POST['license_key']) : '';
         $license_key = is_string($license_key_raw) ? sanitize_text_field($license_key_raw) : '';
 
         if (empty($license_key)) {
-            wp_send_json_error(['message' => __('License key is required', 'opptiai-alt')]);
+            wp_send_json_error(['message' => __('License key is required', 'beepbeep-ai-alt-text-generator')]);
+            return;
         }
 
         if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $license_key)) {
-            wp_send_json_error(['message' => __('Invalid license key format', 'opptiai-alt')]);
+            wp_send_json_error(['message' => __('Invalid license key format', 'beepbeep-ai-alt-text-generator')]);
+            return;
         }
 
         $result = $this->api_client->activate_license($license_key);
 
         if (is_wp_error($result)) {
             wp_send_json_error(['message' => $result->get_error_message()]);
+            return;
         }
 
         Usage_Tracker::clear_cache();
@@ -50,7 +55,7 @@ trait Core_Ajax_License {
         delete_transient('opptibbai_usage_cache');
 
         wp_send_json_success([
-            'message' => __('License activated successfully', 'opptiai-alt'),
+            'message' => __('License activated successfully', 'beepbeep-ai-alt-text-generator'),
             'organization' => $result['organization'] ?? null,
             'site' => $result['site'] ?? null
         ]);
@@ -60,13 +65,15 @@ trait Core_Ajax_License {
      * AJAX handler: Deactivate license key
      */
     public function ajax_deactivate_license() {
-        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
-        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
-            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        $action = 'beepbeepai_nonce';
+        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+            wp_send_json_error( [ 'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ) ], 403 );
+            return;
         }
 
-        if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
+        if ( ! $this->user_can_manage() ) {
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ) ] );
+            return;
         }
 
         $result = $this->api_client->deactivate_license();
@@ -77,10 +84,11 @@ trait Core_Ajax_License {
 
         if (is_wp_error($result)) {
             wp_send_json_error(['message' => $result->get_error_message()]);
+            return;
         }
 
         wp_send_json_success([
-            'message' => __('License deactivated successfully', 'opptiai-alt')
+            'message' => __('License deactivated successfully', 'beepbeep-ai-alt-text-generator')
         ]);
     }
 
@@ -88,26 +96,30 @@ trait Core_Ajax_License {
      * AJAX handler: Get license site usage
      */
     public function ajax_get_license_sites() {
-        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
-        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
-            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        $action = 'beepbeepai_nonce';
+        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+            wp_send_json_error( [ 'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ) ], 403 );
+            return;
         }
-        if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
+        if ( ! $this->user_can_manage() ) {
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ) ] );
+            return;
         }
 
         if (!$this->api_client->is_authenticated()) {
             wp_send_json_error([
-                'message' => __('Please log in to view license site usage', 'opptiai-alt')
+                'message' => __('Please log in to view license site usage', 'beepbeep-ai-alt-text-generator')
             ]);
+            return;
         }
 
         $result = $this->api_client->get_license_sites();
 
         if (is_wp_error($result)) {
             wp_send_json_error([
-                'message' => $result->get_error_message() ?: __('Failed to fetch license site usage', 'opptiai-alt')
+                'message' => $result->get_error_message() ?: __('Failed to fetch license site usage', 'beepbeep-ai-alt-text-generator')
             ]);
+            return;
         }
 
         wp_send_json_success($result);
@@ -117,38 +129,43 @@ trait Core_Ajax_License {
      * AJAX handler: Disconnect a site from the license
      */
     public function ajax_disconnect_license_site() {
-        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
-        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
-            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        $action = 'beepbeepai_nonce';
+        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+            wp_send_json_error( [ 'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ) ], 403 );
+            return;
         }
-        if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
+        if ( ! $this->user_can_manage() ) {
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ) ] );
+            return;
         }
 
         if (!$this->api_client->is_authenticated()) {
             wp_send_json_error([
-                'message' => __('Please log in to disconnect license sites', 'opptiai-alt')
+                'message' => __('Please log in to disconnect license sites', 'beepbeep-ai-alt-text-generator')
             ]);
+            return;
         }
 
         $site_id_raw = isset($_POST['site_id']) ? wp_unslash($_POST['site_id']) : '';
         $site_id = is_string($site_id_raw) ? sanitize_text_field($site_id_raw) : '';
         if (empty($site_id)) {
             wp_send_json_error([
-                'message' => __('Site ID is required', 'opptiai-alt')
+                'message' => __('Site ID is required', 'beepbeep-ai-alt-text-generator')
             ]);
+            return;
         }
 
         $result = $this->api_client->disconnect_license_site($site_id);
 
         if (is_wp_error($result)) {
             wp_send_json_error([
-                'message' => $result->get_error_message() ?: __('Failed to disconnect site', 'opptiai-alt')
+                'message' => $result->get_error_message() ?: __('Failed to disconnect site', 'beepbeep-ai-alt-text-generator')
             ]);
+            return;
         }
 
         wp_send_json_success([
-            'message' => __('Site disconnected successfully', 'opptiai-alt'),
+            'message' => __('Site disconnected successfully', 'beepbeep-ai-alt-text-generator'),
             'data' => $result
         ]);
     }
@@ -193,12 +210,14 @@ trait Core_Ajax_License {
      * AJAX handler: Admin login for agency users
      */
     public function ajax_admin_login() {
-        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
-        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
-            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        $action = 'beepbeepai_nonce';
+        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+            wp_send_json_error( [ 'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ) ], 403 );
+            return;
         }
-        if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
+        if ( ! $this->user_can_manage() ) {
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ) ] );
+            return;
         }
 
         $has_license = $this->api_client->has_active_license();
@@ -212,8 +231,9 @@ trait Core_Ajax_License {
 
         if (!$is_agency) {
             wp_send_json_error([
-                'message' => __('Admin access is only available for agency licenses', 'opptiai-alt')
+                'message' => __('Admin access is only available for agency licenses', 'beepbeep-ai-alt-text-generator')
             ]);
+            return;
         }
 
         $email_raw = isset($_POST['email']) ? wp_unslash($_POST['email']) : '';
@@ -223,28 +243,31 @@ trait Core_Ajax_License {
 
         if (empty($email) || !is_email($email)) {
             wp_send_json_error([
-                'message' => __('Please enter a valid email address', 'opptiai-alt')
+                'message' => __('Please enter a valid email address', 'beepbeep-ai-alt-text-generator')
             ]);
+            return;
         }
 
         if (empty($password)) {
             wp_send_json_error([
-                'message' => __('Please enter your password', 'opptiai-alt')
+                'message' => __('Please enter your password', 'beepbeep-ai-alt-text-generator')
             ]);
+            return;
         }
 
         $result = $this->api_client->login($email, $password);
 
         if (is_wp_error($result)) {
             wp_send_json_error([
-                'message' => $result->get_error_message() ?: __('Login failed. Please check your credentials.', 'opptiai-alt')
+                'message' => $result->get_error_message() ?: __('Login failed. Please check your credentials.', 'beepbeep-ai-alt-text-generator')
             ]);
+            return;
         }
 
         $this->set_admin_session();
 
         wp_send_json_success([
-            'message' => __('Successfully logged in', 'opptiai-alt'),
+            'message' => __('Successfully logged in', 'beepbeep-ai-alt-text-generator'),
             'redirect' => add_query_arg(['tab' => 'admin'], admin_url('upload.php?page=bbai'))
         ]);
     }
@@ -253,18 +276,20 @@ trait Core_Ajax_License {
      * AJAX handler: Admin logout
      */
     public function ajax_admin_logout() {
-        $nonce = isset($_POST["nonce"]) ? sanitize_text_field(wp_unslash($_POST["nonce"])) : "";
-        if (!$nonce || !wp_verify_nonce($nonce, "beepbeepai_nonce")) {
-            wp_send_json_error(["message" => __("Invalid nonce.", "opptiai-alt")], 403);
+        $action = 'beepbeepai_nonce';
+        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+            wp_send_json_error( [ 'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ) ], 403 );
+            return;
         }
-        if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'opptiai-alt')]);
+        if ( ! $this->user_can_manage() ) {
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ) ] );
+            return;
         }
 
         $this->clear_admin_session();
 
         wp_send_json_success([
-            'message' => __('Logged out successfully', 'opptiai-alt'),
+            'message' => __('Logged out successfully', 'beepbeep-ai-alt-text-generator'),
             'redirect' => add_query_arg(['tab' => 'admin'], admin_url('upload.php?page=bbai'))
         ]);
     }

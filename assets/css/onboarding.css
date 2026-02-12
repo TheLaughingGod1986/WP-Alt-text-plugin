@@ -138,6 +138,69 @@
     color: var(--bbai-text-secondary);
 }
 
+/* Step 1 - Features section */
+.bbai-onboarding .bbai-onboarding-features {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bbai-space-4);
+}
+
+.bbai-onboarding .bbai-feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--bbai-space-3);
+}
+
+.bbai-onboarding .bbai-feature-icon {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #14b8a6 0%, #22c55e 100%);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+}
+
+.bbai-onboarding .bbai-feature-content {
+    flex: 1;
+}
+
+.bbai-onboarding .bbai-feature-content strong {
+    display: block;
+    font-size: var(--bbai-text-base);
+    font-weight: 600;
+    color: var(--bbai-text-primary);
+    margin-bottom: var(--bbai-space-1);
+}
+
+.bbai-onboarding .bbai-feature-content p {
+    margin: 0;
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+    line-height: 1.5;
+}
+
+/* Step numbers in step cards */
+.bbai-onboarding .bbai-step-number {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.bbai-onboarding .bbai-onboarding-step-icon--active {
+    background: linear-gradient(135deg, #14b8a6 0%, #22c55e 100%);
+}
+
+.bbai-onboarding .bbai-onboarding-step-card:not(:has(.bbai-onboarding-step-icon--active)) .bbai-onboarding-step-icon {
+    background: #e5e7eb;
+    box-shadow: none;
+    color: #9ca3af;
+}
+
 .bbai-onboarding .bbai-onboarding-upsell {
     background: #ecfdf5;
     border-color: #bbf7d0;

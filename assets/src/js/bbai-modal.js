@@ -9,6 +9,9 @@
 (function($) {
     'use strict';
 
+    const i18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
+    const __ = i18n && typeof i18n.__ === 'function' ? i18n.__ : (text) => text;
+
     /**
      * Modal types with corresponding icons and styles
      */
@@ -16,22 +19,22 @@
         error: {
             icon: '<svg width="48" height="48" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="22" stroke="currentColor" stroke-width="2"/><path d="M24 14v14M24 32v2" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>',
             className: 'bbai-modal--error',
-            defaultTitle: 'Error'
+            defaultTitle: __('Error', 'beepbeep-ai-alt-text-generator')
         },
         warning: {
             icon: '<svg width="48" height="48" viewBox="0 0 48 48" fill="none"><path d="M24 4L44 40H4L24 4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M24 18v12M24 34v2" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>',
             className: 'bbai-modal--warning',
-            defaultTitle: 'Warning'
+            defaultTitle: __('Warning', 'beepbeep-ai-alt-text-generator')
         },
         info: {
             icon: '<svg width="48" height="48" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="22" stroke="currentColor" stroke-width="2"/><path d="M24 22v12M24 16v2" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>',
             className: 'bbai-modal--info',
-            defaultTitle: 'Information'
+            defaultTitle: __('Information', 'beepbeep-ai-alt-text-generator')
         },
         success: {
             icon: '<svg width="48" height="48" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="22" stroke="currentColor" stroke-width="2"/><path d="M14 24l8 8 16-16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
             className: 'bbai-modal--success',
-            defaultTitle: 'Success'
+            defaultTitle: __('Success', 'beepbeep-ai-alt-text-generator')
         }
     };
 
@@ -127,7 +130,7 @@
             const type = options.type || 'info';
             const config = MODAL_TYPES[type] || MODAL_TYPES.info;
             const title = options.title || config.defaultTitle;
-            const buttons = options.buttons || [{ text: 'OK', primary: true, action: () => this.close() }];
+            const buttons = options.buttons || [{ text: __('OK', 'beepbeep-ai-alt-text-generator'), primary: true, action: () => this.close() }];
 
             // Store previous focus
             this.previousFocus = document.activeElement;
@@ -262,11 +265,11 @@
         confirm(options) {
             const confirmOptions = {
                 type: options.type || 'warning',
-                title: options.title || 'Confirm',
+                title: options.title || __('Confirm', 'beepbeep-ai-alt-text-generator'),
                 message: options.message,
                 buttons: [
                     {
-                        text: options.cancelText || 'Cancel',
+                        text: options.cancelText || __('Cancel', 'beepbeep-ai-alt-text-generator'),
                         primary: false,
                         action: () => {
                             this.close();
@@ -274,7 +277,7 @@
                         }
                     },
                     {
-                        text: options.confirmText || 'OK',
+                        text: options.confirmText || __('OK', 'beepbeep-ai-alt-text-generator'),
                         primary: true,
                         action: () => {
                             this.close();

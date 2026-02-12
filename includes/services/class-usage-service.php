@@ -17,7 +17,6 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since   5.0.0
  */
 class Usage_Service {
-	// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- SQL identifiers are controlled by plugin schema; runtime values are prepared.
 	/**
 	 * API client instance.
 	 *
@@ -71,7 +70,7 @@ class Usage_Service {
 
 		return array(
 			'success' => false,
-			'message' => __( 'Failed to fetch usage data', 'opptiai-alt' ),
+			'message' => __( 'Failed to fetch usage data', 'beepbeep-ai-alt-text-generator' ),
 		);
 	}
 
@@ -202,7 +201,7 @@ class Usage_Service {
 		global $wpdb;
 		$limit = max( 1, intval( $limit ) );
 
-		$table_name = $wpdb->prefix . 'bbai_usage';
+		$table_name = esc_sql( $wpdb->prefix . 'bbai_usage' );
 
 		// Check if table exists.
 		$table_exists = $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
@@ -219,7 +218,7 @@ class Usage_Service {
 		if ( $include_all ) {
 			$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 				$wpdb->prepare(
-					'SELECT * FROM `' . $wpdb->prefix . 'bbai_usage` ORDER BY id DESC LIMIT %d',
+					"SELECT * FROM `{$table_name}` ORDER BY id DESC LIMIT %d",
 					$limit
 				),
 				ARRAY_A
@@ -227,7 +226,7 @@ class Usage_Service {
 		} else {
 			$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 				$wpdb->prepare(
-					'SELECT user_id, tokens_used, action_type, created_at FROM `' . $wpdb->prefix . 'bbai_usage` ORDER BY id DESC LIMIT %d',
+					"SELECT user_id, tokens_used, action_type, created_at FROM `{$table_name}` ORDER BY id DESC LIMIT %d",
 					$limit
 				),
 				ARRAY_A
@@ -248,15 +247,14 @@ class Usage_Service {
 	 * @return void
 	 */
 	private function send_threshold_notification( int $total, int $limit, string $email ): void {
-		$subject = __( 'AI Alt Text token usage alert', 'opptiai-alt' );
+		$subject = __( 'AI Alt Text token usage alert', 'beepbeep-ai-alt-text-generator' );
 		$message = sprintf(
 			/* translators: 1: total tokens, 2: token limit */
-			__( 'Your site has now used %1$d tokens, reaching the configured limit of %2$d.', 'opptiai-alt' ),
+			__( 'Your site has now used %1$d tokens, reaching the configured limit of %2$d.', 'beepbeep-ai-alt-text-generator' ),
 			$total,
 			$limit
 		);
 
 		wp_mail( $email, $subject, $message );
 	}
-	// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter
 }

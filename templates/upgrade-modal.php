@@ -54,7 +54,7 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
 
 <div id="bbai-upgrade-modal" class="bbai-modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="bbai-upgrade-modal-title">
     <div class="bbai-upgrade-modal__content">
-        <button type="button" class="bbai-btn bbai-btn-icon-only bbai-upgrade-modal__close" onclick="if(typeof alttextaiCloseModal==='function'){alttextaiCloseModal();}else if(typeof bbaiCloseModal==='function'){bbaiCloseModal();}" aria-label="<?php esc_attr_e('Close', 'opptiai-alt'); ?>">
+        <button type="button" class="bbai-btn bbai-btn-icon-only bbai-upgrade-modal__close" onclick="if(typeof alttextaiCloseModal==='function'){alttextaiCloseModal();}else if(typeof bbaiCloseModal==='function'){bbaiCloseModal();}" aria-label="<?php esc_attr_e('Close', 'beepbeep-ai-alt-text-generator'); ?>">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 6L6 18M6 6l12 12"/>
             </svg>
@@ -63,14 +63,14 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
         <div class="bbai-upgrade-modal__body">
             <!-- Header -->
             <div class="bbai-upgrade-modal__header">
-                <h2 class="bbai-heading-2 bbai-text-center" id="bbai-upgrade-modal-title"><?php esc_html_e('Choose your BeepBeep AI plan', 'opptiai-alt'); ?></h2>
-                <p class="bbai-subtitle bbai-text-center"><?php esc_html_e('Choose a plan that matches your monthly usage. Cancel anytime.', 'opptiai-alt'); ?></p>
+                <h2 class="bbai-heading-2 bbai-text-center" id="bbai-upgrade-modal-title"><?php esc_html_e('Choose your BeepBeep AI plan', 'beepbeep-ai-alt-text-generator'); ?></h2>
+                <p class="bbai-subtitle bbai-text-center"><?php esc_html_e('Choose a plan that matches your monthly usage. Cancel anytime.', 'beepbeep-ai-alt-text-generator'); ?></p>
             </div>
 
 
             <!-- Trust Badges -->
             <div class="bbai-trust-badges bbai-trust-badges--modal">
-                <p class="bbai-trust-badges__text"><?php esc_html_e('Cancel anytime', 'opptiai-alt'); ?></p>
+                <p class="bbai-trust-badges__text"><?php esc_html_e('Cancel anytime', 'beepbeep-ai-alt-text-generator'); ?></p>
             </div>
 
             <!-- Pricing Grid -->
@@ -78,9 +78,9 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
                 <!-- FREE Plan -->
                 <div class="bbai-pricing-card">
                     <?php if ($current_plan === 'free') : ?>
-                        <span class="bbai-pricing-card__badge bbai-pricing-card__badge--current"><?php esc_html_e('Current plan', 'opptiai-alt'); ?></span>
+                        <span class="bbai-pricing-card__badge bbai-pricing-card__badge--current"><?php esc_html_e('Current plan', 'beepbeep-ai-alt-text-generator'); ?></span>
                     <?php else : ?>
-                        <span class="bbai-pricing-card__badge bbai-pricing-card__badge--free"><?php esc_html_e('Free', 'opptiai-alt'); ?></span>
+                        <span class="bbai-pricing-card__badge bbai-pricing-card__badge--free"><?php esc_html_e('Free', 'beepbeep-ai-alt-text-generator'); ?></span>
                     <?php endif; ?>
                     
                     <div class="bbai-pricing-card__price">
@@ -88,77 +88,77 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
                         <span class="bbai-pricing-card__amount">0</span>
                     </div>
                     
-                    <div class="bbai-pricing-card__limit"><?php esc_html_e('50 AI alt text per month', 'opptiai-alt'); ?></div>
+                    <div class="bbai-pricing-card__limit"><?php esc_html_e('50 AI alt text per month', 'beepbeep-ai-alt-text-generator'); ?></div>
                     
                     <ul class="bbai-pricing-card__features">
                         <li>
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <?php esc_html_e('Great for trying BeepBeep AI', 'opptiai-alt'); ?>
+                            <?php esc_html_e('Great for trying BeepBeep AI', 'beepbeep-ai-alt-text-generator'); ?>
                         </li>
                     </ul>
                     
                     <?php if ($current_plan === 'free') : ?>
                         <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-lg bbai-btn-block bbai-pricing-card__btn bbai-pricing-card__btn--free" disabled>
-                            <?php esc_html_e('Current plan', 'opptiai-alt'); ?>
+                            <?php esc_html_e('Current plan', 'beepbeep-ai-alt-text-generator'); ?>
                         </button>
                     <?php else : ?>
                         <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-lg bbai-btn-block bbai-pricing-card__btn bbai-pricing-card__btn--free">
-                            <?php esc_html_e('Continue with Free', 'opptiai-alt'); ?>
+                            <?php esc_html_e('Continue with Free', 'beepbeep-ai-alt-text-generator'); ?>
                         </button>
                     <?php endif; ?>
                 </div>
 
                 <!-- GROWTH Plan (Most Popular) -->
                 <div class="bbai-pricing-card bbai-pricing-card--growth">
-                    <span class="bbai-pricing-card__badge bbai-pricing-card__badge--growth"><?php esc_html_e('Most Popular', 'opptiai-alt'); ?></span>
+                    <span class="bbai-pricing-card__badge bbai-pricing-card__badge--growth"><?php esc_html_e('Most Popular', 'beepbeep-ai-alt-text-generator'); ?></span>
                     
                     <div class="bbai-pricing-card__price">
                         <span class="bbai-pricing-card__currency"><?php echo esc_html($currency['symbol']); ?></span>
                         <span class="bbai-pricing-card__amount"><?php echo esc_html(number_format($growth_monthly, 2)); ?></span>
-                        <span class="bbai-pricing-card__period"><?php esc_html_e('/month', 'opptiai-alt'); ?></span>
+                        <span class="bbai-pricing-card__period"><?php esc_html_e('/month', 'beepbeep-ai-alt-text-generator'); ?></span>
                     </div>
                     
                     <p class="bbai-pricing-card__billing">
                         <?php
                         /* translators: 1: annual price */
-                        echo esc_html(sprintf(__('or £%s billed annually (2 months free)', 'opptiai-alt'), number_format($growth_annual, 2)));
+                        echo esc_html(sprintf(__('or £%s billed annually (2 months free)', 'beepbeep-ai-alt-text-generator'), number_format($growth_annual, 2)));
                         ?>
                     </p>
                     
-                    <div class="bbai-pricing-card__limit"><?php esc_html_e('1,000 AI alt text per month', 'opptiai-alt'); ?></div>
+                    <div class="bbai-pricing-card__limit"><?php esc_html_e('1,000 AI alt text per month', 'beepbeep-ai-alt-text-generator'); ?></div>
                     
                     <ul class="bbai-pricing-card__features">
                         <li>
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <strong><?php esc_html_e('1,000', 'opptiai-alt'); ?></strong> <?php esc_html_e('AI alt text per month', 'opptiai-alt'); ?>
+                            <strong><?php esc_html_e('1,000', 'beepbeep-ai-alt-text-generator'); ?></strong> <?php esc_html_e('AI alt text per month', 'beepbeep-ai-alt-text-generator'); ?>
                         </li>
                         <li>
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <?php esc_html_e('Bulk AI alt text for your full media library', 'opptiai-alt'); ?>
+                            <?php esc_html_e('Bulk AI alt text for your full media library', 'beepbeep-ai-alt-text-generator'); ?>
                         </li>
                         <li>
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <?php esc_html_e('Priority queue, set tone and style', 'opptiai-alt'); ?>
+                            <?php esc_html_e('Priority queue, set tone and style', 'beepbeep-ai-alt-text-generator'); ?>
                         </li>
                         <li>
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <?php esc_html_e('Cancel or downgrade anytime', 'opptiai-alt'); ?>
+                            <?php esc_html_e('Cancel or downgrade anytime', 'beepbeep-ai-alt-text-generator'); ?>
                         </li>
                     </ul>
                     
                     <?php if ($current_plan === 'growth') : ?>
                         <a href="<?php echo esc_url($billing_url); ?>" class="bbai-btn bbai-btn-primary bbai-btn-lg bbai-btn-block bbai-pricing-card__btn bbai-pricing-card__btn--growth">
-                            <?php esc_html_e('Manage billing', 'opptiai-alt'); ?>
+                            <?php esc_html_e('Manage billing', 'beepbeep-ai-alt-text-generator'); ?>
                         </a>
                     <?php else : ?>
                         <button type="button"
@@ -166,68 +166,67 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
                                 data-action="checkout-plan"
                                 data-plan="pro"
                                 data-price-id="<?php echo esc_attr($pro_price_id); ?>"
-                                data-fallback-url="<?php echo esc_url($stripe_links['pro']); ?>"
-                                onclick="window.open('<?php echo esc_js($stripe_links['pro']); ?>', '_blank', 'noopener,noreferrer');return false;">
-                            <?php esc_html_e('Upgrade to Growth', 'opptiai-alt'); ?>
+                                data-fallback-url="<?php echo esc_url($stripe_links['pro']); ?>">
+                            <?php esc_html_e('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'); ?>
                         </button>
                     <?php endif; ?>
                 </div>
 
                 <!-- AGENCY Plan -->
                 <div class="bbai-pricing-card bbai-pricing-card--agency">
-                    <span class="bbai-pricing-card__badge bbai-pricing-card__badge--agency"><?php esc_html_e('Agency', 'opptiai-alt'); ?></span>
+                    <span class="bbai-pricing-card__badge bbai-pricing-card__badge--agency"><?php esc_html_e('Agency', 'beepbeep-ai-alt-text-generator'); ?></span>
                     
                     <div class="bbai-pricing-card__price">
                         <span class="bbai-pricing-card__currency"><?php echo esc_html($currency['symbol']); ?></span>
                         <span class="bbai-pricing-card__amount"><?php echo esc_html(number_format($agency_monthly, 2)); ?></span>
-                        <span class="bbai-pricing-card__period"><?php esc_html_e('/month', 'opptiai-alt'); ?></span>
+                        <span class="bbai-pricing-card__period"><?php esc_html_e('/month', 'beepbeep-ai-alt-text-generator'); ?></span>
                     </div>
                     
                     <p class="bbai-pricing-card__billing">
                         <?php
                         /* translators: 1: annual price */
-                        echo esc_html(sprintf(__('or £%s billed annually (2 months free)', 'opptiai-alt'), number_format($agency_annual, 2)));
+                        echo esc_html(sprintf(__('or £%s billed annually (2 months free)', 'beepbeep-ai-alt-text-generator'), number_format($agency_annual, 2)));
                         ?>
                     </p>
                     
-                    <div class="bbai-pricing-card__limit"><?php esc_html_e('10,000+ AI alt text per month', 'opptiai-alt'); ?></div>
+                    <div class="bbai-pricing-card__limit"><?php esc_html_e('10,000+ AI alt text per month', 'beepbeep-ai-alt-text-generator'); ?></div>
                     
                     <ul class="bbai-pricing-card__features">
                         <li>
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <strong><?php esc_html_e('10,000+', 'opptiai-alt'); ?></strong> <?php esc_html_e('AI alt text for multiple client', 'opptiai-alt'); ?>
+                            <strong><?php esc_html_e('10,000+', 'beepbeep-ai-alt-text-generator'); ?></strong> <?php esc_html_e('AI alt text for multiple client', 'beepbeep-ai-alt-text-generator'); ?>
                         </li>
                         <li>
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <?php esc_html_e('Bulk AI alt text for mobile sites from one dashboard', 'opptiai-alt'); ?>
+                            <?php esc_html_e('Bulk AI alt text for mobile sites from one dashboard', 'beepbeep-ai-alt-text-generator'); ?>
                         </li>
                         <li>
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <?php esc_html_e('Usage reporting for detailed client billing', 'opptiai-alt'); ?>
+                            <?php esc_html_e('Usage reporting for detailed client billing', 'beepbeep-ai-alt-text-generator'); ?>
                         </li>
                         <li>
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <?php esc_html_e('Cancel or downgrade anytime', 'opptiai-alt'); ?>
+                            <?php esc_html_e('Cancel or downgrade anytime', 'beepbeep-ai-alt-text-generator'); ?>
                         </li>
                         <li>
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <span class="bbai-feature-coming-soon"><?php esc_html_e('White-label coming soon!', 'opptiai-alt'); ?></span>
+                            <span class="bbai-feature-coming-soon"><?php esc_html_e('White-label coming soon!', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </li>
                     </ul>
                     
                     <?php if ($current_plan === 'agency') : ?>
                         <a href="<?php echo esc_url($billing_url); ?>" class="bbai-btn bbai-btn-lg bbai-btn-block bbai-pricing-card__btn bbai-pricing-card__btn--agency">
-                            <?php esc_html_e('Manage billing', 'opptiai-alt'); ?>
+                            <?php esc_html_e('Manage billing', 'beepbeep-ai-alt-text-generator'); ?>
                         </a>
                     <?php else : ?>
                         <button type="button"
@@ -235,9 +234,8 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
                                 data-action="checkout-plan"
                                 data-plan="agency"
                                 data-price-id="<?php echo esc_attr($agency_price_id); ?>"
-                                data-fallback-url="<?php echo esc_url($stripe_links['agency']); ?>"
-                                onclick="window.open('<?php echo esc_js($stripe_links['agency']); ?>', '_blank', 'noopener,noreferrer');return false;">
-                            <?php esc_html_e('Upgrade to Agency', 'opptiai-alt'); ?>
+                                data-fallback-url="<?php echo esc_url($stripe_links['agency']); ?>">
+                            <?php esc_html_e('Upgrade to Agency', 'beepbeep-ai-alt-text-generator'); ?>
                         </button>
                     <?php endif; ?>
                 </div>
@@ -247,8 +245,8 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
             <div class="bbai-topup-section">
                 <div class="bbai-topup-section__content">
                     <div class="bbai-topup-section__text">
-                        <p class="bbai-topup-section__title"><?php esc_html_e('One-time credits', 'opptiai-alt'); ?> <span class="bbai-topup-section__subtitle-inline"><?php esc_html_e('Pay-as-you-go', 'opptiai-alt'); ?></span></p>
-                        <p class="bbai-topup-section__desc"><?php esc_html_e('Pay-as-you-go credits (never expire). Ideal for photographers and seasonal use.', 'opptiai-alt'); ?></p>
+                        <p class="bbai-topup-section__title"><?php esc_html_e('One-time credits', 'beepbeep-ai-alt-text-generator'); ?> <span class="bbai-topup-section__subtitle-inline"><?php esc_html_e('Pay-as-you-go', 'beepbeep-ai-alt-text-generator'); ?></span></p>
+                        <p class="bbai-topup-section__desc"><?php esc_html_e('Pay-as-you-go credits (never expire). Ideal for photographers and seasonal use.', 'beepbeep-ai-alt-text-generator'); ?></p>
                     </div>
                     <div class="bbai-topup-section__price-action">
                         <div class="bbai-topup-section__price">
@@ -260,9 +258,8 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
                                 data-action="checkout-plan"
                                 data-plan="credits"
                                 data-price-id="<?php echo esc_attr($credits_price_id); ?>"
-                                data-fallback-url="<?php echo esc_url($stripe_links['credits']); ?>"
-                                onclick="window.open('<?php echo esc_js($stripe_links['credits']); ?>', '_blank', 'noopener,noreferrer');return false;">
-                            <?php esc_html_e('Buy 100 credits', 'opptiai-alt'); ?>
+                                data-fallback-url="<?php echo esc_url($stripe_links['credits']); ?>">
+                            <?php esc_html_e('Buy 100 credits', 'beepbeep-ai-alt-text-generator'); ?>
                         </button>
                     </div>
                 </div>
@@ -270,17 +267,17 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
 
             <!-- FAQ Section -->
             <div class="bbai-pricing-faq">
-                <h3 class="bbai-pricing-faq__title"><?php esc_html_e('Frequently Asked Questions', 'opptiai-alt'); ?></h3>
+                <h3 class="bbai-pricing-faq__title"><?php esc_html_e('Frequently Asked Questions', 'beepbeep-ai-alt-text-generator'); ?></h3>
                 <div class="bbai-pricing-faq__list">
                     <div class="bbai-pricing-faq__item">
                         <div class="bbai-pricing-faq__question">
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <span><?php esc_html_e('Can I downgrade anytime?', 'opptiai-alt'); ?></span>
+                            <span><?php esc_html_e('Can I downgrade anytime?', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </div>
                         <div class="bbai-pricing-faq__answer">
-                            <?php esc_html_e('Yes. You can downgrade or cancel anytime.', 'opptiai-alt'); ?>
+                            <?php esc_html_e('Yes. You can downgrade or cancel anytime.', 'beepbeep-ai-alt-text-generator'); ?>
                         </div>
                     </div>
                     <div class="bbai-pricing-faq__item">
@@ -288,10 +285,10 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <span><?php esc_html_e('Do credits roll over?', 'opptiai-alt'); ?></span>
+                            <span><?php esc_html_e('Do credits roll over?', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </div>
                         <div class="bbai-pricing-faq__answer">
-                            <?php esc_html_e('Monthly credits reset each month. One-time credits do not expire.', 'opptiai-alt'); ?>
+                            <?php esc_html_e('Monthly credits reset each month. One-time credits do not expire.', 'beepbeep-ai-alt-text-generator'); ?>
                         </div>
                     </div>
                     <div class="bbai-pricing-faq__item">
@@ -299,10 +296,10 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <span><?php esc_html_e('Will it work with WooCommerce and all themes?', 'opptiai-alt'); ?></span>
+                            <span><?php esc_html_e('Will it work with WooCommerce and all themes?', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </div>
                         <div class="bbai-pricing-faq__answer">
-                            <?php esc_html_e('Yes. It works with WooCommerce, Gutenberg, and most themes.', 'opptiai-alt'); ?>
+                            <?php esc_html_e('Yes. It works with WooCommerce, Gutenberg, and most themes.', 'beepbeep-ai-alt-text-generator'); ?>
                         </div>
                     </div>
                 </div>

@@ -3,13 +3,13 @@ Contributors: beepbeepv2
 Plugin URI: https://oppti.dev/beepbeep-ai-alt-text-generator
 Author URI: https://oppti.dev
 Tags: alt text, image SEO, accessibility, AI alt text generator, automatic alt text, images, automation, ai, wcag, media library, seo, google images, alt tags, bulk alt text, image optimization, accessibility plugin, wcag compliance, alt attribute, image descriptions, automated SEO
-Requires at least: 5.8
-Tested up to: 6.8
+Requires at least: 6.2
+Tested up to: 6.9
 Requires PHP: 7.4
 Stable tag: 4.4.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
-Text Domain: beepbeep-ai-alt-text-generator
+Text Domain: opptiai-alt
 
 The fastest way to automatically generate SEO-optimized and WCAG-compliant alt text for every WordPress image. Boost Google Images rankings, improve accessibility, and save 10+ hours monthly.
 
@@ -171,7 +171,7 @@ Existing alt text is preserved by default. The plugin only adds alt text to imag
 
 = Is my image data secure? =
 
-Yes. Images are transmitted securely via HTTPS to our API for processing. We don't store your images permanently. Descriptions are generated and returned immediately. No personal data is collected or stored.
+Yes. Images are transmitted securely via HTTPS to our API for processing. We don't store your images permanently. Descriptions are generated and returned immediately. The plugin stores account/usage data locally and stores support submissions if you send them. See the Privacy & Security section for details.
 
 = Can I use this without paying? =
 
@@ -191,6 +191,30 @@ Yes. BeepBeep AI works with any WordPress theme or page builder because it adds 
 2. **Bulk optimize your media library to improve SEO** — Select hundreds of images and generate alt text for all of them instantly
 3. **AI-powered accessibility compliance assistant** — WCAG-compliant descriptions generated automatically with editable preview before saving
 4. **Settings page: Configure auto-generation and manage account** — Easy setup for automatic alt text on image upload with usage tracking dashboard
+
+== External Services ==
+
+This plugin connects to external APIs to generate image alt text and provide account/billing features.
+
+Service: AltText AI Backend API (https://alttext-ai-backend.onrender.com)
+Purpose: Generate alt text descriptions, perform alt text review checks, and handle authentication, license, usage, billing, and contact requests.
+Data sent: Image metadata and image content (image URL or base64), image context (title, caption, filename, optional parent post title), site URL/hash/fingerprint, and authenticated user/site identifiers.
+Privacy policy: https://oppti.dev/privacy
+
+Service: OpenAI API (used by the backend service)
+Purpose: Generate and review alt text descriptions.
+Data sent: Image metadata and image content, plus context text needed for generation/review.
+Privacy policy: https://openai.com/privacy
+
+Service: Stripe Checkout
+Purpose: Process plan upgrades and credit purchases.
+Data sent: Selected plan/price and checkout context. Payment details are handled by Stripe.
+Privacy policy: https://stripe.com/privacy
+
+Service: Resend Email API (used by backend contact delivery)
+Purpose: Deliver contact/support form messages.
+Data sent: Name, email, subject, message, site URL, WordPress version, and plugin version.
+Privacy policy: https://resend.com/legal/privacy
 
 == Changelog ==
 
@@ -272,30 +296,6 @@ Major update with redesigned UI and new agency features. Recommended for all use
 = 1.0.0 =
 First release of BeepBeep AI – Alt Text Generator. Install to start automatically generating SEO-optimized alt text.
 
-== External Services ==
-
-This plugin connects to external services to perform automated alt text generation and process subscription upgrades.
-
-1. OpenAI API (via our backend)
-   - Purpose: Generate AI alt text descriptions for images
-   - Data sent: Image data (base64 encoded or URL), image prompt text, WordPress site URL, user email address (if authenticated)
-   - Terms: https://openai.com/policies/terms-of-use
-   - Privacy: https://openai.com/policies/privacy-policy
-
-2. Oppti API (our backend)
-   - Purpose: Handle credits, authentication, usage tracking, license management
-   - Data sent: WordPress site URL, site identifier hash, user email address, user ID, number of images processed, subscription plan tier, license keys (encrypted)
-   - API URL: https://alttext-ai-backend.onrender.com
-   - Terms: https://oppti.dev/terms
-   - Privacy: https://oppti.dev/privacy
-
-3. Stripe Checkout
-   - Purpose: Process payments for upgrades
-   - Data sent: Payment information (handled by Stripe, not stored by plugin), subscription plan selection
-   - URLs used in plugin: all buy.stripe.com URLs
-   - Terms: https://stripe.com/legal
-   - Privacy: https://stripe.com/privacy
-
 == Credits ==
 
 Developed by beepbeepv2
@@ -304,12 +304,13 @@ https://profiles.wordpress.org/beepbeepv2/
 == Privacy & Security ==
 
 This plugin:
-* Stores all usage data locally in your WordPress database
-* Only transmits image files to the API service when generating alt text
-* Does not collect or store personal user data
-* Complies with WordPress.org privacy guidelines
+* Stores usage data locally in your WordPress database
+* Stores account and license details if you connect an account (e.g., email, plan)
+* Stores contact form submissions if you submit support requests (name, email, message)
+* Stores per-user usage logs linked to WordPress user IDs
+* Transmits image data and prompt/context text to external APIs during generation and review
 * Uses secure HTTPS connections for all API communication
-* Allows users to disable API calls through settings
+* Allows users to disable auto-generation through settings
 * Provides transparent information about external service usage
 * Images are processed and immediately deleted from our servers
-* No tracking, analytics, or user behavior monitoring
+* Supports WordPress privacy export/erasure tools for stored data

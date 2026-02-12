@@ -6,6 +6,10 @@
 (function() {
     'use strict';
 
+    const i18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
+    const __ = i18n && typeof i18n.__ === 'function' ? i18n.__ : (text) => text;
+    const sprintf = i18n && typeof i18n.sprintf === 'function' ? i18n.sprintf : (format) => format;
+
     const bbaiCopyExport = {
         init: function() {
             this.setupCopyButtons();
@@ -47,7 +51,7 @@
          */
         copyToClipboard: function(text, attachmentId = '') {
             if (!text) {
-                this.showToast('No alt text to copy.', 'error');
+                this.showToast(__('No alt text to copy.', 'beepbeep-ai-alt-text-generator'), 'error');
                 return;
             }
 
@@ -55,7 +59,7 @@
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(text)
                     .then(() => {
-                        this.showToast('Alt text copied to clipboard!', 'success');
+                        this.showToast(__('Alt text copied to clipboard!', 'beepbeep-ai-alt-text-generator'), 'success');
                         this.trackCopy(attachmentId);
                     })
                     .catch(err => {
@@ -82,14 +86,14 @@
             try {
                 const successful = document.execCommand('copy');
                 if (successful) {
-                    this.showToast('Alt text copied to clipboard!', 'success');
+                    this.showToast(__('Alt text copied to clipboard!', 'beepbeep-ai-alt-text-generator'), 'success');
                     this.trackCopy(attachmentId);
                 } else {
-                    this.showToast('Failed to copy. Please select and copy manually.', 'error');
+                    this.showToast(__('Failed to copy. Please select and copy manually.', 'beepbeep-ai-alt-text-generator'), 'error');
                 }
             } catch (err) {
                 console.error('Fallback copy failed:', err);
-                this.showToast('Failed to copy. Please select and copy manually.', 'error');
+                this.showToast(__('Failed to copy. Please select and copy manually.', 'beepbeep-ai-alt-text-generator'), 'error');
             }
             
             document.body.removeChild(textarea);
@@ -101,7 +105,7 @@
         copySelectedAltText: function() {
             const selectedRows = document.querySelectorAll('.bbai-library-row-check:checked');
             if (selectedRows.length === 0) {
-                this.showToast('Please select at least one image.', 'error');
+                this.showToast(__('Please select at least one image.', 'beepbeep-ai-alt-text-generator'), 'error');
                 return;
             }
 
@@ -121,7 +125,7 @@
             });
 
             if (altTexts.length === 0) {
-                this.showToast('No alt text found in selected images.', 'error');
+                this.showToast(__('No alt text found in selected images.', 'beepbeep-ai-alt-text-generator'), 'error');
                 return;
             }
 
@@ -184,7 +188,7 @@
         exportAltText: function(format = 'csv') {
             const rows = document.querySelectorAll('.bbai-library-row');
             if (rows.length === 0) {
-                this.showToast('No data to export.', 'error');
+                this.showToast(__('No data to export.', 'beepbeep-ai-alt-text-generator'), 'error');
                 return;
             }
 
@@ -224,7 +228,13 @@
          * Export as CSV
          */
         exportCSV: function(data) {
-            const headers = ['ID', 'Filename', 'Alt Text', 'Status', 'Last Updated'];
+            const headers = [
+                __('ID', 'beepbeep-ai-alt-text-generator'),
+                __('Filename', 'beepbeep-ai-alt-text-generator'),
+                __('Alt Text', 'beepbeep-ai-alt-text-generator'),
+                __('Status', 'beepbeep-ai-alt-text-generator'),
+                __('Last Updated', 'beepbeep-ai-alt-text-generator'),
+            ];
             const rows = data.map(item => [
                 item.id,
                 `"${item.filename.replace(/"/g, '""')}"`,
@@ -239,7 +249,7 @@
             ].join('\n');
 
             this.downloadFile(csvContent, 'beepbeep-ai-alt-text.csv', 'text/csv');
-            this.showToast('Alt text exported as CSV!', 'success');
+            this.showToast(__('Alt text exported as CSV!', 'beepbeep-ai-alt-text-generator'), 'success');
         },
 
         /**
@@ -248,7 +258,7 @@
         exportJSON: function(data) {
             const jsonContent = JSON.stringify(data, null, 2);
             this.downloadFile(jsonContent, 'beepbeep-ai-alt-text.json', 'application/json');
-            this.showToast('Alt text exported as JSON!', 'success');
+            this.showToast(__('Alt text exported as JSON!', 'beepbeep-ai-alt-text-generator'), 'success');
         },
 
         /**
@@ -256,11 +266,18 @@
          */
         exportTXT: function(data) {
             const txtContent = data.map(item => {
-                return `Filename: ${item.filename}\nAlt Text: ${item.altText}\nStatus: ${item.status}\nLast Updated: ${item.lastUpdated}\n${'='.repeat(50)}`;
+                return sprintf(
+                    /* translators: 1: filename, 2: alt text, 3: status, 4: last updated */
+                    __('Filename: %1$s\nAlt Text: %2$s\nStatus: %3$s\nLast Updated: %4$s', 'beepbeep-ai-alt-text-generator'),
+                    item.filename,
+                    item.altText,
+                    item.status,
+                    item.lastUpdated
+                ) + '\n' + '='.repeat(50);
             }).join('\n\n');
 
             this.downloadFile(txtContent, 'beepbeep-ai-alt-text.txt', 'text/plain');
-            this.showToast('Alt text exported as TXT!', 'success');
+            this.showToast(__('Alt text exported as TXT!', 'beepbeep-ai-alt-text-generator'), 'success');
         },
 
         /**
@@ -297,7 +314,7 @@
         trackCopy: function(attachmentId) {
             // Could send analytics event here
             if (window.bbaiAccessibility && typeof window.bbaiAccessibility.announce === 'function') {
-                window.bbaiAccessibility.announce('Alt text copied to clipboard');
+                window.bbaiAccessibility.announce(__('Alt text copied to clipboard', 'beepbeep-ai-alt-text-generator'));
             }
         }
     };

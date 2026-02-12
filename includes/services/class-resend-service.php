@@ -121,7 +121,7 @@ class Resend_Service {
         if (!$api_key) {
             return new \WP_Error(
                 'resend_api_key_missing',
-                __('Resend API key is not configured. Please set BBAI_RESEND_API_KEY constant, RESEND_API_KEY environment variable, or store it in WordPress options.', 'opptiai-alt')
+                __('Resend API key is not configured. Please set BBAI_RESEND_API_KEY constant, RESEND_API_KEY environment variable, or store it in WordPress options.', 'beepbeep-ai-alt-text-generator')
             );
         }
 
@@ -133,7 +133,7 @@ class Resend_Service {
                     'missing_field',
                     sprintf(
                         /* translators: 1: field name */
-                        __('Required field "%s" is missing.', 'opptiai-alt'),
+                        __('Required field "%s" is missing.', 'beepbeep-ai-alt-text-generator'),
                         $field
                     )
                 );
@@ -144,7 +144,7 @@ class Resend_Service {
         if (!is_email($data['email'])) {
             return new \WP_Error(
                 'invalid_email',
-                __('Invalid email address format.', 'opptiai-alt')
+                __('Invalid email address format.', 'beepbeep-ai-alt-text-generator')
             );
         }
 
@@ -155,7 +155,7 @@ class Resend_Service {
             // For now, require BBAI_CONTACT_EMAIL to be set
             return new \WP_Error(
                 'recipient_email_missing',
-                __('Contact email is not configured. Please set BBAI_CONTACT_EMAIL constant or configure in Resend.', 'opptiai-alt')
+                __('Contact email is not configured. Please set BBAI_CONTACT_EMAIL constant or configure in Resend.', 'beepbeep-ai-alt-text-generator')
             );
         }
 
@@ -208,7 +208,7 @@ class Resend_Service {
                 'resend_api_error',
                 sprintf(
                     /* translators: 1: error message */
-                    __('Failed to send email: %s', 'opptiai-alt'),
+                    __('Failed to send email: %s', 'beepbeep-ai-alt-text-generator'),
                     $error_message
                 )
             );
@@ -223,7 +223,7 @@ class Resend_Service {
         $response_data = is_array( $decoded ) ? $decoded : [];
 
         if ($status_code !== 200 && $status_code !== 201) {
-            $error_message = isset($response_data['message']) ? $response_data['message'] : __('Unknown error', 'opptiai-alt');
+            $error_message = isset($response_data['message']) ? $response_data['message'] : __('Unknown error', 'beepbeep-ai-alt-text-generator');
             if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
                 Debug_Log::log('error', 'Resend API returned error', [
                     'status_code' => $status_code,
@@ -235,7 +235,7 @@ class Resend_Service {
                 'resend_api_error',
                 sprintf(
                     /* translators: 1: error message */
-                    __('Email service error: %s', 'opptiai-alt'),
+                    __('Email service error: %s', 'beepbeep-ai-alt-text-generator'),
                     $error_message
                 )
             );
@@ -252,7 +252,7 @@ class Resend_Service {
 
         return [
             'success' => true,
-            'message' => __('Your message has been sent successfully. We\'ll get back to you soon!', 'opptiai-alt'),
+            'message' => __('Your message has been sent successfully. We\'ll get back to you soon!', 'beepbeep-ai-alt-text-generator'),
             'id' => $email_id
         ];
     }
@@ -268,8 +268,8 @@ class Resend_Service {
         $email = esc_html($data['email']);
         $subject = esc_html($data['subject']);
         $message = nl2br(esc_html($data['message']));
-        $wp_version = isset($data['wp_version']) ? esc_html($data['wp_version']) : __('Not provided', 'opptiai-alt');
-        $plugin_version = isset($data['plugin_version']) ? esc_html($data['plugin_version']) : __('Not provided', 'opptiai-alt');
+        $wp_version = isset($data['wp_version']) ? esc_html($data['wp_version']) : __('Not provided', 'beepbeep-ai-alt-text-generator');
+        $plugin_version = isset($data['plugin_version']) ? esc_html($data['plugin_version']) : __('Not provided', 'beepbeep-ai-alt-text-generator');
 
         $html = '<!DOCTYPE html>
 <html>

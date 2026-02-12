@@ -3,28 +3,32 @@ import React, { useState } from 'react';
 const TrustBadges = () => {
   const testimonials = [
     {
-      name: 'Sarah Chen',
-      role: 'Content Manager, TechStart Inc.',
+      name: 'Jessica M.',
+      role: 'Marketing Director, Bloom & Co',
       quote:
-        'BeepBeep AI saved us hours every week. Our images now rank better in Google Images, and we\'re fully WCAG compliant.',
+        'I was skeptical at first, but after running it on our blog images the descriptions were actually better than what we were writing manually.',
+      rating: 5,
     },
     {
-      name: 'Michael Rodriguez',
-      role: 'SEO Specialist, Digital Marketing Pro',
+      name: 'Ryan K.',
+      role: 'Freelance Developer',
       quote:
-        'The bulk processing feature is a game-changer. We optimised 500+ images in one go. Highly recommend!',
+        'Installed it for a client who needed WCAG compliance fast. Did 300+ images overnight. Client was happy, I looked like a hero.',
+      rating: 5,
     },
     {
-      name: 'Emma Thompson',
-      role: 'Web Developer, Creative Agency',
+      name: 'Maria Santos',
+      role: 'Store Owner, Coastal Living Decor',
       quote:
-        'Finally, an alt text tool that actually understands context. The AI descriptions are spot-on every time.',
+        'My WooCommerce shop had zero alt text on products. Now everything is tagged and I am actually showing up in Google image searches.',
+      rating: 4,
     },
     {
-      name: 'David Kim',
-      role: 'E-commerce Manager, ShopSmart',
+      name: 'Tom H.',
+      role: 'Agency Owner, Pixel Perfect',
       quote:
-        'Our product images now have descriptive alt text that helps with both SEO and accessibility. Worth every penny.',
+        'We use this on every client site now. The bulk feature alone pays for itself. Would be nice to have more language options though.',
+      rating: 4,
     },
   ];
 
@@ -106,11 +110,11 @@ const TrustBadges = () => {
             <div className="text-sm font-semibold text-slate-900">{activeTestimonial.name}</div>
             <div className="text-xs text-slate-500">{activeTestimonial.role}</div>
           </div>
-          <div className="flex items-center gap-1 text-amber-500" aria-label="Rated 5 out of 5">
+          <div className="flex items-center gap-1 text-amber-500" aria-label={`Rated ${activeTestimonial.rating || 5} out of 5`}>
             {Array.from({ length: 5 }).map((_, index) => (
               <svg
                 key={`star-${index}`}
-                className="h-4 w-4"
+                className={`h-4 w-4 ${index < (activeTestimonial.rating || 5) ? '' : 'opacity-30'}`}
                 viewBox="0 0 16 16"
                 fill="currentColor"
               >

@@ -20,8 +20,8 @@ if (file_exists($onboarding_modal_path)) {
                         <!-- Subtle Header Section -->
                         <div class="bbai-dashboard-header-section">
                             <div>
-                                <h1 class="bbai-heading-1"><?php esc_html_e('Dashboard', 'opptiai-alt'); ?></h1>
-                                <p class="bbai-subtitle"><?php esc_html_e('Automated, accessible alt text generation for your WordPress media library.', 'opptiai-alt'); ?></p>
+                                <h1 class="bbai-heading-1"><?php esc_html_e('Dashboard', 'beepbeep-ai-alt-text-generator'); ?></h1>
+                                <p class="bbai-subtitle"><?php esc_html_e('Automated, accessible alt text generation for your WordPress media library.', 'beepbeep-ai-alt-text-generator'); ?></p>
                             </div>
                         </div>
 
@@ -73,23 +73,30 @@ if (file_exists($onboarding_modal_path)) {
                                 $percentage_display = $usage_stats['percentage_display'] ?? Usage_Tracker::format_percentage_label($percentage);
                                 $radius = 48;
                                 $circumference = 2 * M_PI * $radius;
-                                // Calculate offset: at 0% = full circumference (hidden), at 100% = 0 (fully visible)
                                 $stroke_dashoffset = $circumference * (1 - ($percentage / 100));
-                                $gradient_id = 'grad-' . wp_generate_password(8, false);
+
+                                // Adaptive circle color based on usage percentage
+                                if ($percentage >= 100) {
+                                    $circle_stroke = '#EF4444';
+                                    $ring_color_class = 'bbai-usage-ring--critical';
+                                } elseif ($percentage >= 86) {
+                                    $circle_stroke = '#EF4444';
+                                    $ring_color_class = 'bbai-usage-ring--danger';
+                                } elseif ($percentage >= 61) {
+                                    $circle_stroke = '#F59E0B';
+                                    $ring_color_class = 'bbai-usage-ring--warning';
+                                } else {
+                                    $circle_stroke = '#10B981';
+                                    $ring_color_class = 'bbai-usage-ring--healthy';
+                                }
                                 ?>
                                 <!-- Title -->
-                                <h3 class="bbai-card-title"><?php esc_html_e('Alt Text Progress This Month', 'opptiai-alt'); ?></h3>
+                                <h3 class="bbai-card-title"><?php esc_html_e('Alt Text Progress This Month', 'beepbeep-ai-alt-text-generator'); ?></h3>
 
                                 <!-- Circular Progress -->
                                 <div class="bbai-circular-progress-wrapper">
                                     <div class="bbai-circular-progress-container">
-                                        <svg class="bbai-circular-progress-svg" viewBox="0 0 120 120" aria-hidden="true">
-                                            <defs>
-                                                <linearGradient id="<?php echo esc_attr($gradient_id); ?>" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                    <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
-                                                    <stop offset="100%" style="stop-color:#60A5FA;stop-opacity:1" />
-                                                </linearGradient>
-                                            </defs>
+                                        <svg id="bbai-usage-circle-svg" class="bbai-circular-progress-svg" viewBox="0 0 120 120" aria-hidden="true">
                                             <!-- Background circle -->
                                             <circle
                                                 cx="60"
@@ -100,20 +107,23 @@ if (file_exists($onboarding_modal_path)) {
                                                 stroke-width="12" />
                                             <!-- Progress circle -->
                                             <circle
+                                                id="bbai-usage-progress-ring"
+                                                class="bbai-circular-progress-bar bbai-usage-ring <?php echo esc_attr($ring_color_class); ?>"
                                                 cx="60"
                                                 cy="60"
                                                 r="48"
                                                 fill="none"
-                                                stroke="url(#<?php echo esc_attr($gradient_id); ?>)"
+                                                stroke="<?php echo esc_attr($circle_stroke); ?>"
                                                 stroke-width="12"
                                                 stroke-linecap="round"
                                                 stroke-dasharray="<?php echo esc_attr($circumference); ?>"
                                                 stroke-dashoffset="<?php echo esc_attr($stroke_dashoffset); ?>"
-                                                class="transition-all duration-500 ease-out" />
+                                                data-circumference="<?php echo esc_attr($circumference); ?>"
+                                                data-percentage="<?php echo esc_attr($percentage); ?>" />
                                         </svg>
                                         <div class="bbai-circular-progress-text">
                                             <div class="bbai-circular-progress-percent"><?php echo esc_html($percentage_display); ?>%</div>
-                                            <div class="bbai-circular-progress-label"><?php esc_html_e('IMAGES USED', 'opptiai-alt'); ?></div>
+                                            <div class="bbai-circular-progress-label"><?php esc_html_e('IMAGES USED', 'beepbeep-ai-alt-text-generator'); ?></div>
                                         </div>
                                     </div>
                                 </div>
@@ -127,7 +137,7 @@ if (file_exists($onboarding_modal_path)) {
 
                                 <!-- Linear Progress Bar -->
                                 <div class="bbai-linear-progress">
-                                    <div class="bbai-linear-progress-fill" style="width: <?php echo esc_attr($percentage); ?>%;"></div>
+                                    <div class="bbai-linear-progress-fill" style="width: <?php echo esc_attr($percentage); ?>%; background: <?php echo esc_attr($circle_stroke); ?>;"></div>
                                 </div>
 
                                 <!-- Reset Date -->
@@ -139,13 +149,13 @@ if (file_exists($onboarding_modal_path)) {
                                         if ($reset_timestamp !== false) {
                                             $formatted_date = date_i18n('F j, Y', $reset_timestamp);
                                             /* translators: 1: reset date */
-                                            printf(esc_html__('Resets %s', 'opptiai-alt'), esc_html($formatted_date));
+                                            printf(esc_html__('Resets %s', 'beepbeep-ai-alt-text-generator'), esc_html($formatted_date));
                                         } else {
                                             /* translators: 1: reset date */
-                                            printf(esc_html__('Resets %s', 'opptiai-alt'), esc_html($reset_date));
+                                            printf(esc_html__('Resets %s', 'beepbeep-ai-alt-text-generator'), esc_html($reset_date));
                                         }
                                     } else {
-                                        esc_html_e('Resets monthly', 'opptiai-alt');
+                                        esc_html_e('Resets monthly', 'beepbeep-ai-alt-text-generator');
                                     }
                                     ?>
                                 </p>
@@ -156,9 +166,9 @@ if (file_exists($onboarding_modal_path)) {
                                         type="button"
                                         class="bbai-btn bbai-btn-primary bbai-upgrade-cta-green"
                                         data-action="show-upgrade-modal"
-                                        aria-label="<?php esc_attr_e('Upgrade to 1,000 images/month', 'opptiai-alt'); ?>"
+                                        aria-label="<?php esc_attr_e('Upgrade to 1,000 images/month', 'beepbeep-ai-alt-text-generator'); ?>"
                                     >
-                                        <span><?php esc_html_e('Upgrade to 1,000 images/month', 'opptiai-alt'); ?></span>
+                                        <span><?php esc_html_e('Upgrade to 1,000 images/month', 'beepbeep-ai-alt-text-generator'); ?></span>
                                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5">
                                             <path d="M6 12L10 8L6 4" stroke-linecap="round" stroke-linejoin="round" />
                                         </svg>
@@ -168,9 +178,9 @@ if (file_exists($onboarding_modal_path)) {
                                         type="button"
                                         class="bbai-btn bbai-btn-primary bbai-upgrade-cta-green"
                                         data-action="show-upgrade-modal"
-                                        aria-label="<?php esc_attr_e('Upgrade to Agency plan for 5,000 monthly credits', 'opptiai-alt'); ?>"
+                                        aria-label="<?php esc_attr_e('Upgrade to Agency plan for 5,000 monthly credits', 'beepbeep-ai-alt-text-generator'); ?>"
                                     >
-                                        <span><?php esc_html_e('Upgrade to Agency', 'opptiai-alt'); ?></span>
+                                        <span><?php esc_html_e('Upgrade to Agency', 'beepbeep-ai-alt-text-generator'); ?></span>
                                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5">
                                             <path d="M6 12L10 8L6 4" stroke-linecap="round" stroke-linejoin="round" />
                                         </svg>
@@ -188,7 +198,7 @@ if (file_exists($onboarding_modal_path)) {
                                             target="_blank"
                                             rel="noopener"
                                         >
-                                            <span><?php esc_html_e('Manage Subscription', 'opptiai-alt'); ?></span>
+                                            <span><?php esc_html_e('Manage Subscription', 'beepbeep-ai-alt-text-generator'); ?></span>
                                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
                                                 <path d="M4 12L12 4M12 4H6M12 4V10" stroke-linecap="round" stroke-linejoin="round" />
                                             </svg>
@@ -200,24 +210,26 @@ if (file_exists($onboarding_modal_path)) {
                                 <div class="bbai-action-buttons-grid">
                                 <button
                                     type="button"
-                                    class="bbai-btn bbai-action-btn bbai-action-btn-primary <?php echo esc_attr((!$can_generate) ? 'disabled' : ''); ?>"
+                                    class="bbai-btn bbai-action-btn bbai-action-btn-primary <?php echo esc_attr((!$can_generate || $remaining_imgs === 0) ? 'disabled' : ''); ?>"
                                     data-action="generate-missing"
-                                    <?php if (!$can_generate) : ?>
+                                    <?php if (!$can_generate || $remaining_imgs === 0) : ?>
                                         disabled
                                     <?php endif; ?>
-                                    aria-label="<?php esc_attr_e('Generate Missing', 'opptiai-alt'); ?>"
-                                    <?php if ($can_generate) : ?>
-                                    data-bbai-tooltip="<?php esc_attr_e('Generate alt text for images that don\'t have any', 'opptiai-alt'); ?>"
+                                    aria-label="<?php esc_attr_e('Generate Missing', 'beepbeep-ai-alt-text-generator'); ?>"
+                                    <?php if ($can_generate && $remaining_imgs > 0) : ?>
+                                    data-bbai-tooltip="<?php esc_attr_e('Generate alt text for images that don\'t have any', 'beepbeep-ai-alt-text-generator'); ?>"
                                     data-bbai-tooltip-position="bottom"
+                                    <?php elseif ($remaining_imgs === 0) : ?>
+                                    title="<?php esc_attr_e('All images already have alt text', 'beepbeep-ai-alt-text-generator'); ?>"
                                     <?php else : ?>
-                                    title="<?php esc_attr_e('Upgrade to unlock more generations', 'opptiai-alt'); ?>"
+                                    title="<?php esc_attr_e('Upgrade to unlock more generations', 'beepbeep-ai-alt-text-generator'); ?>"
                                     <?php endif; ?>
                                 >
                                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
                                             <rect x="2" y="2" width="12" height="12" rx="2" />
                                             <path d="M6 6H10M6 10H10" stroke-linecap="round" />
                                         </svg>
-                                        <span><?php esc_html_e('Generate Missing', 'opptiai-alt'); ?></span>
+                                        <span><?php esc_html_e('Generate Missing', 'beepbeep-ai-alt-text-generator'); ?></span>
                                     </button>
                                     <button
                                         type="button"
@@ -226,25 +238,25 @@ if (file_exists($onboarding_modal_path)) {
                                         <?php if (!$can_generate) : ?>
                                             disabled
                                         <?php endif; ?>
-                                        aria-label="<?php esc_attr_e('Re-optimise All', 'opptiai-alt'); ?>"
+                                        aria-label="<?php esc_attr_e('Re-optimise All', 'beepbeep-ai-alt-text-generator'); ?>"
                                         <?php if ($can_generate) : ?>
-                                        data-bbai-tooltip="<?php esc_attr_e('Regenerate alt text for ALL images, replacing existing ones', 'opptiai-alt'); ?>"
+                                        data-bbai-tooltip="<?php esc_attr_e('Regenerate alt text for ALL images, replacing existing ones', 'beepbeep-ai-alt-text-generator'); ?>"
                                         data-bbai-tooltip-position="bottom"
                                         <?php else : ?>
-                                        title="<?php esc_attr_e('Upgrade to unlock more generations', 'opptiai-alt'); ?>"
+                                        title="<?php esc_attr_e('Upgrade to unlock more generations', 'beepbeep-ai-alt-text-generator'); ?>"
                                         <?php endif; ?>
                                     >
                                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M8 2L10 6L14 8L10 10L8 14L6 10L2 8L6 6L8 2Z" />
                                             <circle cx="8" cy="8" r="2" fill="currentColor" />
                                         </svg>
-                                        <span><?php esc_html_e('Re-optimise All', 'opptiai-alt'); ?></span>
+                                        <span><?php esc_html_e('Re-optimise All', 'beepbeep-ai-alt-text-generator'); ?></span>
                                     </button>
                                 </div>
 
                                 <!-- Footer Text -->
                                 <p class="bbai-footer-text">
-                                    <?php esc_html_e('Free plan includes 50 images per month. Growth includes 1,000 images per month.', 'opptiai-alt'); ?>
+                                    <?php esc_html_e('Free plan includes 50 images per month. Growth includes 1,000 images per month.', 'beepbeep-ai-alt-text-generator'); ?>
                                 </p>
                             </div>
                             
@@ -254,7 +266,7 @@ if (file_exists($onboarding_modal_path)) {
                                 <!-- Badge -->
                                 <div class="flex">
                                     <?php
-                                    $badge_text = esc_html__('GROWTH', 'opptiai-alt');
+                                    $badge_text = esc_html__('GROWTH', 'beepbeep-ai-alt-text-generator');
                                     $badge_variant = 'growth';
                                     $badge_class = '';
                                     $badge_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/badge.php';
@@ -265,10 +277,10 @@ if (file_exists($onboarding_modal_path)) {
                                 </div>
 
                                 <!-- Title -->
-                                <h3 class="bbai-card-title"><?php esc_html_e('Upgrade to Growth', 'opptiai-alt'); ?></h3>
+                                <h3 class="bbai-card-title"><?php esc_html_e('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'); ?></h3>
 
                                 <!-- Subtitle -->
-                                <p class="bbai-card-subtitle"><?php esc_html_e('Automate alt text generation and scale image optimisation each month.', 'opptiai-alt'); ?></p>
+                                <p class="bbai-card-subtitle"><?php esc_html_e('Automate alt text generation and scale image optimisation each month.', 'beepbeep-ai-alt-text-generator'); ?></p>
 
                                 <!-- Benefit List -->
                                 <ul class="bbai-benefits-list">
@@ -278,7 +290,7 @@ if (file_exists($onboarding_modal_path)) {
                                                 <path d="M13 4L6 11L3 8" />
                                             </svg>
                                         </div>
-                                        <span class="bbai-benefit-text"><?php esc_html_e('1,000 AI alt texts per month', 'opptiai-alt'); ?></span>
+                                        <span class="bbai-benefit-text"><?php esc_html_e('1,000 AI alt texts per month', 'beepbeep-ai-alt-text-generator'); ?></span>
                                     </li>
                                     <li class="bbai-benefit-item">
                                         <div class="bbai-benefit-icon">
@@ -286,7 +298,7 @@ if (file_exists($onboarding_modal_path)) {
                                                 <path d="M13 4L6 11L3 8" />
                                             </svg>
                                         </div>
-                                        <span class="bbai-benefit-text"><?php esc_html_e('Bulk processing for the media library', 'opptiai-alt'); ?></span>
+                                        <span class="bbai-benefit-text"><?php esc_html_e('Bulk processing for the media library', 'beepbeep-ai-alt-text-generator'); ?></span>
                                     </li>
                                     <li class="bbai-benefit-item">
                                         <div class="bbai-benefit-icon">
@@ -294,7 +306,7 @@ if (file_exists($onboarding_modal_path)) {
                                                 <path d="M13 4L6 11L3 8" />
                                             </svg>
                                         </div>
-                                        <span class="bbai-benefit-text"><?php esc_html_e('Priority queue for faster results', 'opptiai-alt'); ?></span>
+                                        <span class="bbai-benefit-text"><?php esc_html_e('Priority queue for faster results', 'beepbeep-ai-alt-text-generator'); ?></span>
                                     </li>
                                     <li class="bbai-benefit-item">
                                         <div class="bbai-benefit-icon">
@@ -302,7 +314,7 @@ if (file_exists($onboarding_modal_path)) {
                                                 <path d="M13 4L6 11L3 8" />
                                             </svg>
                                         </div>
-                                        <span class="bbai-benefit-text"><?php esc_html_e('Multilingual support for global SEO', 'opptiai-alt'); ?></span>
+                                        <span class="bbai-benefit-text"><?php esc_html_e('Multilingual support for global SEO', 'beepbeep-ai-alt-text-generator'); ?></span>
                                     </li>
                                 </ul>
 
@@ -313,13 +325,13 @@ if (file_exists($onboarding_modal_path)) {
                                         type="button"
                                         class="bbai-cta-primary"
                                         data-action="show-upgrade-modal"
-                                        aria-label="<?php esc_attr_e('Upgrade to Growth', 'opptiai-alt'); ?>"
+                                        aria-label="<?php esc_attr_e('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'); ?>"
                                     >
-                                        <?php esc_html_e('Upgrade to Growth', 'opptiai-alt'); ?>
+                                        <?php esc_html_e('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'); ?>
                                     </button>
 
                                     <!-- Microcopy -->
-                                    <p class="bbai-cta-microcopy"><?php esc_html_e('Includes 1,000 AI alt texts per month. Cancel anytime.', 'opptiai-alt'); ?></p>
+                                    <p class="bbai-cta-microcopy"><?php esc_html_e('Includes 1,000 AI alt texts per month. Cancel anytime.', 'beepbeep-ai-alt-text-generator'); ?></p>
 
                                     <!-- Compare Plans Link -->
                                     <a
@@ -328,7 +340,7 @@ if (file_exists($onboarding_modal_path)) {
                                         data-action="show-upgrade-modal"
                                         onclick="if(typeof alttextaiShowModal==='function'){alttextaiShowModal();}else if(typeof window.alttextaiShowModal==='function'){window.alttextaiShowModal();}return false;"
                                     >
-                                        <?php esc_html_e('Compare plans', 'opptiai-alt'); ?>
+                                        <?php esc_html_e('Compare plans', 'beepbeep-ai-alt-text-generator'); ?>
                                     </a>
                                 </div>
                             </div>
@@ -354,7 +366,7 @@ if (file_exists($onboarding_modal_path)) {
                             </svg>
                             <span>
                                 <?php 
-                                esc_html_e('Monthly quota is shared across all site users. Upgrade to Growth for 1,000 generations per month.', 'opptiai-alt');
+                                esc_html_e('Monthly quota is shared across all site users. Upgrade to Growth for 1,000 generations per month.', 'beepbeep-ai-alt-text-generator');
                                 ?>
                             </span>
                         </div>
@@ -390,7 +402,7 @@ if (file_exists($onboarding_modal_path)) {
                                         if ($remaining_imgs > 0) {
                                             printf(
                                                 /* translators: 1: optimized images count, 2: total images count */
-                                                esc_html__('%1$s of %2$s images optimized', 'opptiai-alt'),
+                                                esc_html__('%1$s of %2$s images optimized', 'beepbeep-ai-alt-text-generator'),
                                                 esc_html(number_format_i18n($optimized)),
                                                 esc_html(number_format_i18n($total_images))
                                             );
@@ -398,12 +410,12 @@ if (file_exists($onboarding_modal_path)) {
                                             // Success chip with checkmark icon is already shown above
                                             printf(
                                                 /* translators: 1: total images count */
-                                                esc_html__('All %1$s images optimized!', 'opptiai-alt'),
+                                                esc_html__('All %1$s images optimized!', 'beepbeep-ai-alt-text-generator'),
                                                 esc_html(number_format_i18n($total_images))
                                             );
                                         }
                                     } else {
-                                        esc_html_e('Ready to optimize images', 'opptiai-alt');
+                                        esc_html_e('Ready to optimize images', 'beepbeep-ai-alt-text-generator');
                                     }
                                     ?>
                                 </h2>
@@ -415,26 +427,30 @@ if (file_exists($onboarding_modal_path)) {
                                         <div class="bbai-optimization-progress-fill" style="width: <?php echo esc_attr($coverage_pct); ?>%; background: <?php echo esc_attr(($remaining_imgs === 0) ? '#10b981' : '#9b5cff'); ?>;"></div>
                                     </div>
                                     <div class="bbai-optimization-stats">
-                                        <div class="bbai-optimization-stat" data-bbai-tooltip="<?php esc_attr_e('Number of images that already have alt text. These images are SEO-ready and accessible.', 'opptiai-alt'); ?>" data-bbai-tooltip-position="top">
-                                            <span class="bbai-optimization-stat-label"><?php esc_html_e('Optimized', 'opptiai-alt'); ?></span>
+                                        <div class="bbai-optimization-stat" data-bbai-tooltip="<?php esc_attr_e('Number of images that already have alt text. These images are SEO-ready and accessible.', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="top">
+                                            <span class="bbai-optimization-stat-label"><?php esc_html_e('Optimized', 'beepbeep-ai-alt-text-generator'); ?></span>
                                             <span class="bbai-optimization-stat-value"><?php echo esc_html(number_format_i18n($optimized)); ?></span>
                                         </div>
-                                        <div class="bbai-optimization-stat" data-bbai-tooltip="<?php esc_attr_e('Images without alt text. These need optimization for better SEO and accessibility compliance.', 'opptiai-alt'); ?>" data-bbai-tooltip-position="top">
-                                            <span class="bbai-optimization-stat-label"><?php esc_html_e('Remaining', 'opptiai-alt'); ?></span>
+                                        <div class="bbai-optimization-stat" data-bbai-tooltip="<?php esc_attr_e('Images without alt text. These need optimization for better SEO and accessibility compliance.', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="top">
+                                            <span class="bbai-optimization-stat-label"><?php esc_html_e('Remaining', 'beepbeep-ai-alt-text-generator'); ?></span>
                                             <span class="bbai-optimization-stat-value"><?php echo esc_html(number_format_i18n($remaining_imgs)); ?></span>
                                         </div>
-                                        <div class="bbai-optimization-stat" data-bbai-tooltip="<?php esc_attr_e('Total number of images in your media library. This includes all image types and sizes.', 'opptiai-alt'); ?>" data-bbai-tooltip-position="top">
-                                            <span class="bbai-optimization-stat-label"><?php esc_html_e('Total', 'opptiai-alt'); ?></span>
+                                        <div class="bbai-optimization-stat" data-bbai-tooltip="<?php esc_attr_e('Total number of images in your media library. This includes all image types and sizes.', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="top">
+                                            <span class="bbai-optimization-stat-label"><?php esc_html_e('Total', 'beepbeep-ai-alt-text-generator'); ?></span>
                                             <span class="bbai-optimization-stat-value"><?php echo esc_html(number_format_i18n($total_images)); ?></span>
                                         </div>
                                     </div>
                                     <div class="bbai-optimization-actions">
-                                        <button type="button" class="bbai-optimization-cta bbai-optimization-cta--primary <?php echo esc_attr((!$can_generate) ? 'bbai-optimization-cta--locked' : ''); ?>" data-action="generate-missing"
-                                            <?php if (!$can_generate) : ?>
+                                        <button type="button" class="bbai-optimization-cta bbai-optimization-cta--primary <?php echo esc_attr((!$can_generate) ? 'bbai-optimization-cta--locked' : ''); ?> <?php echo esc_attr(($remaining_imgs === 0) ? 'bbai-optimization-cta--disabled' : ''); ?>" data-action="generate-missing"
+                                            <?php if (!$can_generate || $remaining_imgs === 0) : ?>
                                                 disabled
-                                                title="<?php esc_attr_e('Unlock 1,000 alt text generations with Growth →', 'opptiai-alt'); ?>"
+                                                <?php if ($remaining_imgs === 0) : ?>
+                                                    title="<?php esc_attr_e('All images already have alt text', 'beepbeep-ai-alt-text-generator'); ?>"
+                                                <?php else : ?>
+                                                    title="<?php esc_attr_e('Unlock 1,000 alt text generations with Growth →', 'beepbeep-ai-alt-text-generator'); ?>"
+                                                <?php endif; ?>
                                             <?php else : ?>
-                                                data-bbai-tooltip="<?php esc_attr_e('Automatically generate alt text for all images that don\'t have any. Processes in the background without slowing down your site.', 'opptiai-alt'); ?>"
+                                                data-bbai-tooltip="<?php esc_attr_e('Automatically generate alt text for all images that don\'t have any. Processes in the background without slowing down your site.', 'beepbeep-ai-alt-text-generator'); ?>"
                                                 data-bbai-tooltip-position="bottom"
                                             <?php endif; ?>
                                         >
@@ -442,21 +458,21 @@ if (file_exists($onboarding_modal_path)) {
                                                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
                                                     <path d="M12 6V4a4 4 0 00-8 0v2M4 6h8l1 8H3L4 6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                                                 </svg>
-                                                <span><?php esc_html_e('Generate Missing', 'opptiai-alt'); ?></span>
+                                                <span><?php esc_html_e('Generate Missing', 'beepbeep-ai-alt-text-generator'); ?></span>
                                             <?php else : ?>
                                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
                                                     <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                                     <path d="M6 6H10M6 10H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                                                 </svg>
-                                                <span><?php esc_html_e('Generate Missing', 'opptiai-alt'); ?></span>
+                                                <span><?php esc_html_e('Generate Missing', 'beepbeep-ai-alt-text-generator'); ?></span>
                                             <?php endif; ?>
                                         </button>
                                         <button type="button" class="bbai-optimization-cta bbai-optimization-cta--secondary bbai-cta-glow-blue <?php echo esc_attr((!$can_generate) ? 'bbai-optimization-cta--locked' : ''); ?>" data-action="regenerate-all"
                                             <?php if (!$can_generate) : ?>
                                                 disabled
-                                                title="<?php esc_attr_e('Unlock 1,000 alt text generations with Growth →', 'opptiai-alt'); ?>"
+                                                title="<?php esc_attr_e('Unlock 1,000 alt text generations with Growth →', 'beepbeep-ai-alt-text-generator'); ?>"
                                             <?php else : ?>
-                                                data-bbai-tooltip="<?php esc_attr_e('Regenerate alt text for ALL images, even those that already have it. Useful after changing your tone/style settings or brand guidelines.', 'opptiai-alt'); ?>"
+                                                data-bbai-tooltip="<?php esc_attr_e('Regenerate alt text for ALL images, even those that already have it. Useful after changing your tone/style settings or brand guidelines.', 'beepbeep-ai-alt-text-generator'); ?>"
                                                 data-bbai-tooltip-position="bottom"
                                             <?php endif; ?>
                                         >
@@ -464,14 +480,14 @@ if (file_exists($onboarding_modal_path)) {
                                                 <path d="M8 2L10 6L14 8L10 10L8 14L6 10L2 8L6 6L8 2Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                                 <circle cx="8" cy="8" r="2" fill="currentColor"/>
                                             </svg>
-                                            <span><?php esc_html_e('Re-optimise All', 'opptiai-alt'); ?></span>
+                                            <span><?php esc_html_e('Re-optimise All', 'beepbeep-ai-alt-text-generator'); ?></span>
                                         </button>
                                     </div>
                                 </div>
                             <?php else : ?>
                                 <div class="bbai-optimization-empty bbai-ready-optimise">
                                     <?php
-                                    $badge_text = esc_html__('GETTING STARTED', 'opptiai-alt');
+                                    $badge_text = esc_html__('GETTING STARTED', 'beepbeep-ai-alt-text-generator');
                                     $badge_variant = 'getting-started';
                                     $badge_class = 'bbai-ready-optimise__badge';
                                     $badge_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/badge.php';
@@ -479,7 +495,7 @@ if (file_exists($onboarding_modal_path)) {
                                         include $badge_partial;
                                     }
                                     ?>
-                                    <h3 class="bbai-ready-optimise__title"><?php esc_html_e("You're ready to optimise your images", 'opptiai-alt'); ?></h3>
+                                    <h3 class="bbai-ready-optimise__title"><?php esc_html_e("You're ready to optimise your images", 'beepbeep-ai-alt-text-generator'); ?></h3>
                                 </div>
                             <?php endif; ?>
                         </div>

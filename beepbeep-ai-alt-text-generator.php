@@ -3,6 +3,7 @@
  * Plugin Name: BeepBeep AI – Alt Text Generator
  * Description: Automatically generates SEO-optimized AI alt text for WordPress.
  * Version: 4.4.1
+ * Requires at least: 6.2
  * Author: beepbeepv2
  * Author URI: https://oppti.dev
  * Plugin URI: https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/
@@ -14,21 +15,6 @@
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
-}
-
-// Suppress PHP 8.1+ deprecation warnings from WordPress core to prevent "headers already sent" errors
-// These warnings come from WordPress core itself, not our plugin code
-if (PHP_VERSION_ID >= 80100 && defined('WP_DEBUG') && WP_DEBUG) {
-	// Set custom error handler to filter deprecation warnings
-	set_error_handler(function($errno, $errstr, $errfile, $errline) {
-		// Suppress deprecation warnings from WordPress core
-		if (($errno === E_DEPRECATED || $errno === E_STRICT) && 
-		    strpos($errfile, 'wp-includes') !== false) {
-			return true; // Suppress the warning
-		}
-		// Let other errors through
-		return false;
-	}, E_DEPRECATED | E_STRICT);
 }
 
 // Define plugin constants
@@ -74,11 +60,12 @@ if ( ! function_exists( 'bbai_enqueue_logged_out_styles' ) ) {
 	 * @param string $hook Current admin page hook.
 	 */
 	function bbai_enqueue_logged_out_styles( $hook ) {
-		$current_page = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : '';
-		$hook         = is_string( $hook ) ? $hook : '';
-		$is_bbai_page = strpos( $hook, 'toplevel_page_bbai' ) === 0
-			|| strpos( $hook, 'bbai_page_bbai' ) === 0
-			|| strpos( $hook, 'bbai_page_beepbeep-ai' ) === 0
+			$page_raw     = isset( $_GET['page'] ) ? wp_unslash( $_GET['page'] ) : '';
+			$current_page = is_string( $page_raw ) ? sanitize_key( $page_raw ) : '';
+			$hook         = is_string( $hook ) ? $hook : '';
+			$is_bbai_page = strpos( $hook, 'toplevel_page_bbai' ) === 0
+				|| strpos( $hook, 'bbai_page_bbai' ) === 0
+				|| strpos( $hook, 'bbai_page_beepbeep-ai' ) === 0
 			|| strpos( $hook, '_page_bbai' ) !== false
 			|| strpos( $hook, '_page_beepbeep-ai' ) !== false
 			|| ( ! empty( $current_page ) && ( strpos( $current_page, 'bbai' ) === 0 || $current_page === 'beepbeep-ai' ) );
@@ -99,24 +86,14 @@ if ( ! function_exists( 'bbai_enqueue_logged_out_styles' ) ) {
 	}
 }
 
-if ( ! function_exists( 'beepbeepai_load_textdomain' ) ) {
-	/**
-	 * Load plugin translations.
-	 */
-	function beepbeepai_load_textdomain() {
-		load_plugin_textdomain(
-			'opptiai-alt',
-			false,
-			dirname( plugin_basename( __FILE__ ) ) . '/languages'
-		);
-	}
-}
-
-add_action( 'plugins_loaded', 'beepbeepai_load_textdomain' );
 add_action( 'admin_enqueue_scripts', 'bbai_enqueue_logged_out_styles', 20 );
 
 // Load helper functions first.
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-json.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-privacy.php';
+if ( class_exists( '\BeepBeepAI\AltTextGenerator\Privacy' ) ) {
+	\BeepBeepAI\AltTextGenerator\Privacy::init();
+}
 
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-input-validator.php';

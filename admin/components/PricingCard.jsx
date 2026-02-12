@@ -156,6 +156,10 @@ const PricingCard = ({ plan, currentPlan = null, onSelect, billingPeriod = 'mont
       <button
         onClick={handleSelectPlan}
         disabled={isDisabled}
+        {...(isDisabled && {
+          'data-bbai-tooltip': 'This is your current plan',
+          'data-bbai-tooltip-position': 'top'
+        })}
         className={`bbai-btn bbai-btn-lg bbai-btn-block bbai-pricing-card__btn ${planButtonClass}`}
         tabIndex={isDisabled ? -1 : 0}
         aria-label={isDisabled ? `Current plan: ${plan.name}` : `Select ${plan.name} plan`}

@@ -9,6 +9,9 @@
 (function($) {
     'use strict';
 
+    const i18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
+    const __ = i18n && typeof i18n.__ === 'function' ? i18n.__ : (text) => text;
+
     /**
      * Contact Modal Class
      */
@@ -42,8 +45,8 @@
                     <div class="bbai-contact-modal-container">
                         <div class="bbai-contact-modal-content">
                             <div class="bbai-contact-modal-header">
-                                <h2 id="bbai-contact-modal-title" class="bbai-contact-modal-title">Contact Us</h2>
-                                <button type="button" class="bbai-contact-modal-close" aria-label="Close modal">
+                                <h2 id="bbai-contact-modal-title" class="bbai-contact-modal-title">${__('Contact Us', 'beepbeep-ai-alt-text-generator')}</h2>
+                                <button type="button" class="bbai-contact-modal-close" aria-label="${__('Close modal', 'beepbeep-ai-alt-text-generator')}">
                                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M18 6L6 18M6 6l12 12"/>
                                     </svg>
@@ -52,7 +55,7 @@
                             <form id="bbai-contact-form" class="bbai-contact-form">
                                 <div class="bbai-contact-form-group">
                                     <label for="bbai-contact-name" class="bbai-contact-form-label">
-                                        Name <span class="bbai-contact-form-required">*</span>
+                                        ${__('Name', 'beepbeep-ai-alt-text-generator')} <span class="bbai-contact-form-required">*</span>
                                     </label>
                                     <input 
                                         type="text" 
@@ -60,12 +63,12 @@
                                         name="name" 
                                         class="bbai-contact-form-input" 
                                         required 
-                                        placeholder="Your name"
+                                        placeholder="${__('Your name', 'beepbeep-ai-alt-text-generator')}"
                                     />
                                 </div>
                                 <div class="bbai-contact-form-group">
                                     <label for="bbai-contact-email" class="bbai-contact-form-label">
-                                        Email <span class="bbai-contact-form-required">*</span>
+                                        ${__('Email', 'beepbeep-ai-alt-text-generator')} <span class="bbai-contact-form-required">*</span>
                                     </label>
                                     <input 
                                         type="email" 
@@ -73,12 +76,12 @@
                                         name="email" 
                                         class="bbai-contact-form-input" 
                                         required 
-                                        placeholder="your@email.com"
+                                        placeholder="${__('your@email.com', 'beepbeep-ai-alt-text-generator')}"
                                     />
                                 </div>
                                 <div class="bbai-contact-form-group">
                                     <label for="bbai-contact-subject" class="bbai-contact-form-label">
-                                        Subject <span class="bbai-contact-form-required">*</span>
+                                        ${__('Subject', 'beepbeep-ai-alt-text-generator')} <span class="bbai-contact-form-required">*</span>
                                     </label>
                                     <input 
                                         type="text" 
@@ -86,12 +89,12 @@
                                         name="subject" 
                                         class="bbai-contact-form-input" 
                                         required 
-                                        placeholder="How can we help?"
+                                        placeholder="${__('How can we help?', 'beepbeep-ai-alt-text-generator')}"
                                     />
                                 </div>
                                 <div class="bbai-contact-form-group">
                                     <label for="bbai-contact-message" class="bbai-contact-form-label">
-                                        Message <span class="bbai-contact-form-required">*</span>
+                                        ${__('Message', 'beepbeep-ai-alt-text-generator')} <span class="bbai-contact-form-required">*</span>
                                     </label>
                                     <textarea 
                                         id="bbai-contact-message" 
@@ -99,22 +102,22 @@
                                         class="bbai-contact-form-textarea" 
                                         required 
                                         rows="5"
-                                        placeholder="Please describe your issue or question..."
+                                        placeholder="${__('Please describe your issue or question...', 'beepbeep-ai-alt-text-generator')}"
                                     ></textarea>
                                 </div>
                                 <div class="bbai-contact-form-info">
                                     <p class="bbai-contact-form-info-text">
-                                        Your system information (WordPress version, Plugin version) will be automatically included.
+                                        ${__('Your system information (WordPress version, Plugin version) will be automatically included.', 'beepbeep-ai-alt-text-generator')}
                                     </p>
                                 </div>
                                 <div id="bbai-contact-form-error" class="bbai-contact-form-error" style="display: none;"></div>
                                 <div id="bbai-contact-form-success" class="bbai-contact-form-success" style="display: none;"></div>
                                 <div class="bbai-contact-form-actions">
                                     <button type="button" class="bbai-btn bbai-btn-secondary" data-action="close-contact-modal">
-                                        Cancel
+                                        ${__('Cancel', 'beepbeep-ai-alt-text-generator')}
                                     </button>
                                     <button type="submit" class="bbai-btn bbai-btn-primary" id="bbai-contact-submit">
-                                        Send Message
+                                        ${__('Send Message', 'beepbeep-ai-alt-text-generator')}
                                     </button>
                                 </div>
                             </form>
@@ -236,17 +239,17 @@
 
             // Client-side validation
             if (!formData.name || !formData.email || !formData.subject || !formData.message) {
-                this.showError('Please fill in all required fields.');
+                this.showError(__('Please fill in all required fields.', 'beepbeep-ai-alt-text-generator'));
                 return;
             }
 
             if (!this.isValidEmail(formData.email)) {
-                this.showError('Please enter a valid email address.');
+                this.showError(__('Please enter a valid email address.', 'beepbeep-ai-alt-text-generator'));
                 return;
             }
 
             // Disable submit button
-            submitButton.prop('disabled', true).text('Sending...');
+            submitButton.prop('disabled', true).text(__('Sending...', 'beepbeep-ai-alt-text-generator'));
             this.hideError();
             this.hideSuccess();
 
@@ -255,8 +258,8 @@
                                (typeof bbai_ajax !== 'undefined' ? bbai_ajax : null);
 
             if (!ajaxConfig || !ajaxConfig.ajaxurl) {
-                this.showError('Configuration error. Please refresh the page and try again.');
-                submitButton.prop('disabled', false).text('Send Message');
+                this.showError(__('Configuration error. Please refresh the page and try again.', 'beepbeep-ai-alt-text-generator'));
+                submitButton.prop('disabled', false).text(__('Send Message', 'beepbeep-ai-alt-text-generator'));
                 return;
             }
 
@@ -281,9 +284,11 @@
                         
                         const successMessage = response.data && response.data.message 
                             ? response.data.message 
-                            : 'Your message has been sent successfully. We\'ll get back to you soon!';
+                            : __("Your message has been sent successfully. We'll get back to you soon!", 'beepbeep-ai-alt-text-generator');
+
+                        const successHeading = __('Success!', 'beepbeep-ai-alt-text-generator');
                         
-                        self.showSuccess('<strong style="font-size: 16px; display: block; margin-bottom: 8px;">✓ Success!</strong>' + successMessage);
+                        self.showSuccess('<strong style="font-size: 16px; display: block; margin-bottom: 8px;">✓ ' + successHeading + '</strong>' + successMessage);
                         
                         // Scroll to top of modal to show success message
                         const modalContent = self.modal.find('.bbai-contact-modal-content');
@@ -304,15 +309,15 @@
                     } else {
                         const errorMessage = response && response.data && response.data.message 
                             ? response.data.message 
-                            : 'Failed to send message. Please try again.';
+                            : __('Failed to send message. Please try again.', 'beepbeep-ai-alt-text-generator');
                         self.showError(errorMessage);
                     }
-                    submitButton.prop('disabled', false).text('Send Message');
+                    submitButton.prop('disabled', false).text(__('Send Message', 'beepbeep-ai-alt-text-generator'));
                 },
                 error: function(xhr, status, error) {
                     console.error('Contact form submission error:', error);
-                    self.showError('Network error. Please check your connection and try again.');
-                    submitButton.prop('disabled', false).text('Send Message');
+                    self.showError(__('Network error. Please check your connection and try again.', 'beepbeep-ai-alt-text-generator'));
+                    submitButton.prop('disabled', false).text(__('Send Message', 'beepbeep-ai-alt-text-generator'));
                 }
             });
         }

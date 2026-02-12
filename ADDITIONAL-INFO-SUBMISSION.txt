@@ -1,7 +1,7 @@
 ADDITIONAL INFORMATION FOR WORDPRESS.ORG SUBMISSION
 
 Plugin: BeepBeep AI – Alt Text Generator
-Version: 4.4.0
+Version: 4.4.1
 Plugin Slug: beepbeep-ai-alt-text-generator
 
 ---
@@ -14,7 +14,9 @@ KEY TECHNICAL NOTES:
 
 1. **External Services:**
    - Connects to our secure backend API (https://alttext-ai-backend.onrender.com) for AI processing
+   - May call the OpenAI API directly for optional QA review scoring
    - Uses Stripe Checkout (buy.stripe.com) for subscription payments
+   - Uses Resend API for contact/support emails
    - All external connections use HTTPS
    - Full privacy disclosure in readme.txt "External Services" section
 
@@ -28,7 +30,9 @@ KEY TECHNICAL NOTES:
 3. **Data Handling:**
    - Images sent to API only when generating alt text (user-initiated)
    - Images processed and immediately deleted from servers (documented in privacy section)
-   - No personal data collected without user consent
+   - Stores account data (email, plan) when a user connects an account
+   - Stores contact form submissions (name, email, message) when submitted
+   - Usage logs stored per WordPress user ID for reporting
    - Free tier: 50 generations/month (no credit card required)
    - Comprehensive uninstall.php removes all plugin data
 

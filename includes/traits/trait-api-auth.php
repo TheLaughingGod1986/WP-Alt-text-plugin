@@ -117,7 +117,7 @@ trait Api_Auth {
      */
     public function get_user_info() {
         if (!$this->is_authenticated()) {
-            return new \WP_Error('not_authenticated', __('Not authenticated', 'opptiai-alt'));
+            return new \WP_Error('not_authenticated', __('Not authenticated', 'beepbeep-ai-alt-text-generator'));
         }
 
         $response = $this->make_request('/auth/me', 'GET');

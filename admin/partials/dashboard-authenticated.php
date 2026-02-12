@@ -69,6 +69,6 @@ $dashboard_auth_content = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-aut
 if (file_exists($dashboard_auth_content)) {
     include $dashboard_auth_content;
 } else {
-    esc_html_e('Dashboard content unavailable.', 'opptiai-alt');
+    esc_html_e('Dashboard content unavailable.', 'beepbeep-ai-alt-text-generator');
 }
 ?>

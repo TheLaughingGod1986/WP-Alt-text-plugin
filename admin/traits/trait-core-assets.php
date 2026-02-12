@@ -67,14 +67,14 @@ trait Core_Assets {
      */
     private function get_common_l10n(): array {
         return [
-            'reviewCue'           => __('Visit the ALT Library to double-check the wording.', 'opptiai-alt'),
+            'reviewCue'           => __('Visit the ALT Library to double-check the wording.', 'beepbeep-ai-alt-text-generator'),
             'statusReady'         => '',
-            'previewAltHeading'   => __('Review generated ALT text', 'opptiai-alt'),
-            'previewAltHint'      => __('Review the generated description before applying it to your media item.', 'opptiai-alt'),
-            'previewAltApply'     => __('Use this ALT', 'opptiai-alt'),
-            'previewAltCancel'    => __('Keep current ALT', 'opptiai-alt'),
-            'previewAltDismissed' => __('Preview dismissed. Existing ALT kept.', 'opptiai-alt'),
-            'previewAltShortcut'  => __('Shift + Enter for newline.', 'opptiai-alt'),
+            'previewAltHeading'   => __('Review generated ALT text', 'beepbeep-ai-alt-text-generator'),
+            'previewAltHint'      => __('Review the generated description before applying it to your media item.', 'beepbeep-ai-alt-text-generator'),
+            'previewAltApply'     => __('Use this ALT', 'beepbeep-ai-alt-text-generator'),
+            'previewAltCancel'    => __('Keep current ALT', 'beepbeep-ai-alt-text-generator'),
+            'previewAltDismissed' => __('Preview dismissed. Existing ALT kept.', 'beepbeep-ai-alt-text-generator'),
+            'previewAltShortcut'  => __('Shift + Enter for newline.', 'beepbeep-ai-alt-text-generator'),
         ];
     }
 
@@ -85,7 +85,8 @@ trait Core_Assets {
      * @return bool
      */
     private function is_bbai_admin_page(string $hook): bool {
-        $current_page = isset($_GET['page']) ? sanitize_key($_GET['page']) : '';
+        $page_raw = isset($_GET['page']) ? wp_unslash($_GET['page']) : '';
+        $current_page = is_string($page_raw) ? sanitize_key($page_raw) : '';
         return strpos($hook, 'toplevel_page_bbai') === 0
             || strpos($hook, 'bbai_page_bbai') === 0
             || strpos($hook, 'media_page_bbai') === 0
@@ -110,7 +111,7 @@ trait Core_Assets {
         $checkout_prices = $this->get_checkout_price_ids();
         $l10n_common = $this->get_common_l10n();
 
-        wp_enqueue_script('bbai-admin', $base_url . $admin_file, ['jquery'], $admin_version, true);
+        wp_enqueue_script('bbai-admin', $base_url . $admin_file, ['jquery', 'wp-i18n'], $admin_version, true);
         wp_localize_script('bbai-admin', 'BBAI', [
             'nonce'     => wp_create_nonce('wp_rest'),
             'rest'      => esc_url_raw(rest_url('bbai/v1/')),
@@ -218,7 +219,7 @@ trait Core_Assets {
         wp_enqueue_script(
             'bbai-modal',
             $base_url . $asset_path($js_base, 'bbai-modal', $use_debug_assets, 'js'),
-            ['jquery', 'bbai-logger'],
+            ['jquery', 'bbai-logger', 'wp-i18n'],
             $asset_version($asset_path($js_base, 'bbai-modal', $use_debug_assets, 'js'), '4.3.0'),
             true
         );
@@ -227,7 +228,7 @@ trait Core_Assets {
         wp_enqueue_script(
             'bbai-tooltips',
             $base_url . $asset_path($js_base, 'bbai-tooltips', $use_debug_assets, 'js'),
-            ['jquery'],
+            ['jquery', 'wp-i18n'],
             $asset_version($asset_path($js_base, 'bbai-tooltips', $use_debug_assets, 'js'), '4.3.0'),
             true
         );
@@ -276,17 +277,17 @@ trait Core_Assets {
         wp_enqueue_script(
             'bbai-error-handler',
             $base_url . $error_path,
-            ['jquery'],
+            ['jquery', 'wp-i18n'],
             $asset_version($error_path, file_exists($base_path . $error_path) ? filemtime($base_path . $error_path) : '1.0.0'),
             true
         );
 
-        // Onboarding JS - Depends on jQuery and modal
+        // Onboarding JS - Load on all pages (including dedicated onboarding page)
         $onboard_path = $asset_path($js_base, 'bbai-onboarding', $use_debug_assets, 'js');
         wp_enqueue_script(
             'bbai-onboarding',
             $base_url . $onboard_path,
-            ['jquery', 'bbai-modal'],
+            ['jquery', 'bbai-modal', 'wp-i18n'],
             $asset_version($onboard_path, file_exists($base_path . $onboard_path) ? filemtime($base_path . $onboard_path) : '1.0.0'),
             true
         );
@@ -326,29 +327,46 @@ trait Core_Assets {
         wp_enqueue_script(
             'bbai-analytics',
             $base_url . $analytics_path,
-            ['jquery'],
+            ['jquery', 'wp-i18n'],
             $asset_version($analytics_path, file_exists($base_path . $analytics_path) ? filemtime($base_path . $analytics_path) : '1.0.0'),
             true
         );
 
         // Copy & Export JS - Depends on jQuery for DOM manipulation
         $copy_path = $asset_path($js_base, 'bbai-copy-export', $use_debug_assets, 'js');
-        wp_enqueue_script(
-            'bbai-copy-export',
-            $base_url . $copy_path,
-            ['jquery'],
-            $asset_version($copy_path, file_exists($base_path . $copy_path) ? filemtime($base_path . $copy_path) : '1.0.0'),
-            true
-        );
+	        wp_enqueue_script(
+	            'bbai-copy-export',
+	            $base_url . $copy_path,
+	            ['jquery', 'wp-i18n'],
+	            $asset_version($copy_path, file_exists($base_path . $copy_path) ? filemtime($base_path . $copy_path) : '1.0.0'),
+	            true
+	        );
 
         // Dashboard JS
         $stats_data = $this->get_media_stats();
         $usage_data = Usage_Tracker::get_stats_display();
 
+        // Monthly reset insight modal — detect if a new billing period started.
+        $reset_modal_data = null;
+        if ( $this->api_client->is_authenticated() && Usage_Tracker::detect_reset() ) {
+            $reset_modal_data = Usage_Tracker::get_reset_modal_data();
+            // Store current usage for next month's comparison.
+            Usage_Tracker::store_previous_month_data(
+                absint( $usage_data['used'] ),
+                absint( $usage_data['limit'] )
+            );
+        } elseif ( $this->api_client->is_authenticated() && absint( $usage_data['used'] ) > 0 ) {
+            // Keep stored usage up to date for next month's reset comparison.
+            Usage_Tracker::store_previous_month_data(
+                absint( $usage_data['used'] ),
+                absint( $usage_data['limit'] )
+            );
+        }
+
         wp_enqueue_script(
             'bbai-dashboard',
             $base_url . $js_file,
-            ['jquery', 'wp-api-fetch'],
+            ['jquery', 'wp-api-fetch', 'wp-i18n'],
             $asset_version($js_file, '3.0.0'),
             true
         );
@@ -366,7 +384,7 @@ trait Core_Assets {
         wp_enqueue_script(
             'bbai-auth',
             $base_url . $auth_js,
-            ['jquery'],
+            ['jquery', 'wp-i18n'],
             $asset_version($auth_js, '4.0.0'),
             true
         );
@@ -418,13 +436,13 @@ trait Core_Assets {
                 'stats' => ['total' => 0, 'warnings' => 0, 'errors' => 0, 'last_event' => null, 'last_api' => null],
             ],
             'strings' => [
-                'noLogs' => __('No logs recorded yet.', 'opptiai-alt'),
-                'contextTitle' => __('Log Context', 'opptiai-alt'),
-                'contextHide' => __('Hide Context', 'opptiai-alt'),
-                'clearConfirm' => __('This will permanently delete all debug logs. Continue?', 'opptiai-alt'),
-                'errorGeneric' => __('Unable to load debug logs. Please try again.', 'opptiai-alt'),
-                'emptyContext' => __('No additional context was provided for this entry.', 'opptiai-alt'),
-                'cleared' => __('Logs cleared successfully.', 'opptiai-alt'),
+                'noLogs' => __('No logs recorded yet.', 'beepbeep-ai-alt-text-generator'),
+                'contextTitle' => __('Log Context', 'beepbeep-ai-alt-text-generator'),
+                'contextHide' => __('Hide Context', 'beepbeep-ai-alt-text-generator'),
+                'clearConfirm' => __('This will permanently delete all debug logs. Continue?', 'beepbeep-ai-alt-text-generator'),
+                'errorGeneric' => __('Unable to load debug logs. Please try again.', 'beepbeep-ai-alt-text-generator'),
+                'emptyContext' => __('No additional context was provided for this entry.', 'beepbeep-ai-alt-text-generator'),
+                'cleared' => __('Logs cleared successfully.', 'beepbeep-ai-alt-text-generator'),
             ],
         ]);
 
@@ -444,6 +462,7 @@ trait Core_Assets {
             'checkoutPrices' => $checkout_prices,
             'stats'       => $stats_data,
             'initialUsage' => $usage_data,
+            'resetModal'  => $reset_modal_data,
         ];
         
         wp_localize_script('bbai-dashboard', 'BBAI_DASH', $bbai_dash_data);
@@ -464,6 +483,7 @@ trait Core_Assets {
             'user_data' => $this->api_client->get_user_data(),
             'can_manage' => $this->user_can_manage(),
             'logout_redirect' => admin_url('admin.php?page=bbai'),
+            'stripe_links' => self::DEFAULT_STRIPE_LINKS,
         ]);
         wp_localize_script('bbai-dashboard', 'bbai_env', [
             'ajax_url'  => admin_url('admin-ajax.php'),
@@ -476,27 +496,27 @@ trait Core_Assets {
         // Dashboard L10n
         wp_localize_script('bbai-dashboard', 'BBAI_DASH_L10N', [
             'l10n' => array_merge([
-                'processing'         => __('Generating ALT text…', 'opptiai-alt'),
+                'processing'         => __('Generating ALT text…', 'beepbeep-ai-alt-text-generator'),
                 /* translators: 1: image ID */
-                'processingMissing'  => __('Generating ALT for #%d…', 'opptiai-alt'),
-                'error'              => __('Something went wrong. Check console for details.', 'opptiai-alt'),
+                'processingMissing'  => __('Generating ALT for #%d…', 'beepbeep-ai-alt-text-generator'),
+                'error'              => __('Something went wrong. Check console for details.', 'beepbeep-ai-alt-text-generator'),
                 /* translators: 1: images generated, 2: error count */
-                'summary'            => __('Generated %1$d images (%2$d errors).', 'opptiai-alt'),
-                'restUnavailable'    => __('REST endpoint unavailable', 'opptiai-alt'),
-                'prepareBatch'       => __('Preparing image list…', 'opptiai-alt'),
-                'coverageCopy'       => __('of images currently include ALT text.', 'opptiai-alt'),
-                'noRequests'         => __('None yet', 'opptiai-alt'),
-                'noAudit'            => __('No usage data recorded yet.', 'opptiai-alt'),
-                'nothingToProcess'   => __('No images to process.', 'opptiai-alt'),
-                'batchStart'         => __('Starting batch…', 'opptiai-alt'),
-                'batchComplete'      => __('Batch complete.', 'opptiai-alt'),
+                'summary'            => __('Generated %1$d images (%2$d errors).', 'beepbeep-ai-alt-text-generator'),
+                'restUnavailable'    => __('REST endpoint unavailable', 'beepbeep-ai-alt-text-generator'),
+                'prepareBatch'       => __('Preparing image list…', 'beepbeep-ai-alt-text-generator'),
+                'coverageCopy'       => __('of images currently include ALT text.', 'beepbeep-ai-alt-text-generator'),
+                'noRequests'         => __('None yet', 'beepbeep-ai-alt-text-generator'),
+                'noAudit'            => __('No usage data recorded yet.', 'beepbeep-ai-alt-text-generator'),
+                'nothingToProcess'   => __('No images to process.', 'beepbeep-ai-alt-text-generator'),
+                'batchStart'         => __('Starting batch…', 'beepbeep-ai-alt-text-generator'),
+                'batchComplete'      => __('Batch complete.', 'beepbeep-ai-alt-text-generator'),
                 /* translators: 1: completion time */
-                'batchCompleteAt'    => __('Batch complete at %s', 'opptiai-alt'),
+                'batchCompleteAt'    => __('Batch complete at %s', 'beepbeep-ai-alt-text-generator'),
                 /* translators: 1: image ID */
-                'completedItem'      => __('Finished #%d', 'opptiai-alt'),
+                'completedItem'      => __('Finished #%d', 'beepbeep-ai-alt-text-generator'),
                 /* translators: 1: image ID */
-                'failedItem'         => __('Failed #%d', 'opptiai-alt'),
-                'loadingButton'      => __('Processing…', 'opptiai-alt'),
+                'failedItem'         => __('Failed #%d', 'beepbeep-ai-alt-text-generator'),
+                'loadingButton'      => __('Processing…', 'beepbeep-ai-alt-text-generator'),
             ], $l10n_common),
         ]);
 
@@ -530,7 +550,8 @@ trait Core_Assets {
         }
 
         // Load dashboard assets on BBAI pages
-        $current_page = isset($_GET['page']) ? sanitize_key($_GET['page']) : '';
+        $page_raw = isset($_GET['page']) ? wp_unslash($_GET['page']) : '';
+        $current_page = is_string($page_raw) ? sanitize_key($page_raw) : '';
         if ($is_bbai_page || (!empty($current_page) && strpos($current_page, 'bbai') === 0)) {
             $this->enqueue_dashboard_assets($base_url, $base_path);
         }

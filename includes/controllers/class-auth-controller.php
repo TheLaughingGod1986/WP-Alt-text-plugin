@@ -45,17 +45,28 @@ class Auth_Controller {
 	 * @return array Response data.
 	 */
 	public function register(): array {
+		$action = 'bbai_register';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ),
+			);
+		}
+
 		// Only admins can register/connect accounts.
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Only administrators can connect accounts.', 'opptiai-alt' ),
+				'message' => __( 'Only administrators can connect accounts.', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
-		$email_raw = isset( $_POST['email'] ) ? wp_unslash( $_POST['email'] ) : '';
+		$email_raw = wp_unslash( $_POST['email'] ?? '' );
 		$email     = is_string( $email_raw ) ? sanitize_email( $email_raw ) : '';
-		$password  = isset( $_POST['password'] ) ? wp_unslash( $_POST['password'] ) : '';
+
+		// Passwords may contain characters that sanitize_text_field() would alter.
+		$password_raw = wp_unslash( $_POST['password'] ?? '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$password     = is_string( $password_raw ) ? $password_raw : '';
 
 		return $this->auth_service->register( $email, $password );
 	}
@@ -68,17 +79,28 @@ class Auth_Controller {
 	 * @return array Response data.
 	 */
 	public function login(): array {
+		$action = 'bbai_login';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ),
+			);
+		}
+
 		// Check permission.
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'opptiai-alt' ),
+				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
-		$email_raw = isset( $_POST['email'] ) ? wp_unslash( $_POST['email'] ) : '';
+		$email_raw = wp_unslash( $_POST['email'] ?? '' );
 		$email     = is_string( $email_raw ) ? sanitize_email( $email_raw ) : '';
-		$password  = isset( $_POST['password'] ) ? wp_unslash( $_POST['password'] ) : '';
+
+		// Passwords may contain characters that sanitize_text_field() would alter.
+		$password_raw = wp_unslash( $_POST['password'] ?? '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$password     = is_string( $password_raw ) ? $password_raw : '';
 
 		return $this->auth_service->login( $email, $password );
 	}
@@ -91,11 +113,19 @@ class Auth_Controller {
 	 * @return array Response data.
 	 */
 	public function logout(): array {
+		$action = 'bbai_logout';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ),
+			);
+		}
+
 		// Check permission.
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'opptiai-alt' ),
+				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -110,11 +140,19 @@ class Auth_Controller {
 	 * @return array Response data.
 	 */
 	public function disconnect_account(): array {
+		$action = 'bbai_disconnect_account';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ),
+			);
+		}
+
 		// Check permission.
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'opptiai-alt' ),
+				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -129,17 +167,27 @@ class Auth_Controller {
 	 * @return array Response data.
 	 */
 	public function admin_login(): array {
+		$action = 'bbai_admin_login';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ),
+			);
+		}
+
 		// Check permission.
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'opptiai-alt' ),
+				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
-		$email_raw    = isset( $_POST['email'] ) ? wp_unslash( $_POST['email'] ) : '';
-		$email        = is_string( $email_raw ) ? sanitize_email( $email_raw ) : '';
-		$password_raw = isset( $_POST['password'] ) ? wp_unslash( $_POST['password'] ) : '';
+		$email_raw = wp_unslash( $_POST['email'] ?? '' );
+		$email     = is_string( $email_raw ) ? sanitize_email( $email_raw ) : '';
+
+		// Passwords may contain characters that sanitize_text_field() would alter.
+		$password_raw = wp_unslash( $_POST['password'] ?? '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$password     = is_string( $password_raw ) ? $password_raw : '';
 
 		return $this->auth_service->admin_login( $email, $password );
@@ -153,11 +201,19 @@ class Auth_Controller {
 	 * @return array Response data.
 	 */
 	public function admin_logout(): array {
+		$action = 'bbai_admin_logout';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ),
+			);
+		}
+
 		// Check permission.
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'opptiai-alt' ),
+				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -172,11 +228,19 @@ class Auth_Controller {
 	 * @return array Response data.
 	 */
 	public function get_user_info(): array {
+		$action = 'bbai_get_user_info';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ),
+			);
+		}
+
 		// Check permission.
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'opptiai-alt' ),
+				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 

@@ -86,6 +86,12 @@ const OptimiseImagesPanel = ({
         <button
           onClick={handleOptimiseNew}
           disabled={!canGenerate || isProcessing}
+          {...((!canGenerate || isProcessing) && {
+            'data-bbai-tooltip': isProcessing
+              ? 'Processing, please wait...'
+              : 'Upgrade to unlock more generations',
+            'data-bbai-tooltip-position': 'top'
+          })}
           className={`
             flex-1 min-w-[160px] px-6 py-3 rounded-lg font-semibold transition-all
             ${canGenerate && !isProcessing
@@ -110,6 +116,12 @@ const OptimiseImagesPanel = ({
         <button
           onClick={handleOptimiseAll}
           disabled={!canGenerate || isProcessing}
+          {...((!canGenerate || isProcessing) && {
+            'data-bbai-tooltip': isProcessing
+              ? 'Processing, please wait...'
+              : 'Upgrade to unlock more generations',
+            'data-bbai-tooltip-position': 'top'
+          })}
           className={`
             flex-1 min-w-[160px] px-6 py-3 rounded-lg font-semibold border-2 transition-all
             ${canGenerate && !isProcessing

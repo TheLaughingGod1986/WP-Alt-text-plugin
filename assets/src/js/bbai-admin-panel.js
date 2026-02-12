@@ -8,6 +8,9 @@
 (function($) {
     'use strict';
 
+    const i18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
+    const __ = i18n && typeof i18n.__ === 'function' ? i18n.__ : (text) => text;
+
     function getAjaxUrl() {
         if (window.bbai_ajax) {
             return window.bbai_ajax.ajax_url || window.bbai_ajax.ajaxurl || '';
@@ -175,19 +178,19 @@
             },
             success: function(response) {
                 if (response.success) {
-                    $status.removeClass('error').addClass('success').text(response.data.message || 'Successfully logged in').show();
+                    $status.removeClass('error').addClass('success').text(response.data.message || __('Successfully logged in', 'beepbeep-ai-alt-text-generator')).show();
                     setTimeout(function() {
                         window.location.href = response.data.redirect || window.location.href;
                     }, 1000);
                 } else {
-                    $status.removeClass('success').addClass('error').text(response.data && response.data.message ? response.data.message : 'Login failed').show();
+                    $status.removeClass('success').addClass('error').text(response.data && response.data.message ? response.data.message : __('Login failed', 'beepbeep-ai-alt-text-generator')).show();
                     $btn.prop('disabled', false);
                     $btnText.show();
                     $btnSpinner.hide();
                 }
             },
             error: function() {
-                $status.removeClass('success').addClass('error').text('Network error. Please try again.').show();
+                $status.removeClass('success').addClass('error').text(__('Network error. Please try again.', 'beepbeep-ai-alt-text-generator')).show();
                 $btn.prop('disabled', false);
                 $btnText.show();
                 $btnSpinner.hide();
@@ -230,7 +233,7 @@
 
         var confirmMessage = window.bbai_ajax && window.bbai_ajax.admin_logout_confirm
             ? window.bbai_ajax.admin_logout_confirm
-            : 'Are you sure you want to log out of the admin panel?';
+            : __('Are you sure you want to log out of the admin panel?', 'beepbeep-ai-alt-text-generator');
 
         if (!confirm(confirmMessage)) {
             return;
@@ -255,13 +258,13 @@
                 if (response.success) {
                     window.location.href = response.data.redirect || window.location.href;
                 } else if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
-                    window.bbaiModal.error((response.data && response.data.message) || 'Logout failed');
+                    window.bbaiModal.error((response.data && response.data.message) || __('Logout failed', 'beepbeep-ai-alt-text-generator'));
                     $btn.prop('disabled', false);
                 }
             },
             error: function() {
                 if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
-                    window.bbaiModal.error('Network error. Please try again.');
+                    window.bbaiModal.error(__('Network error. Please try again.', 'beepbeep-ai-alt-text-generator'));
                 }
                 $btn.prop('disabled', false);
             }

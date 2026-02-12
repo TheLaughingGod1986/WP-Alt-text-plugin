@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import EnterprisePricingModal from './EnterprisePricingModal';
 
+const i18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
+const __ = i18n && typeof i18n.__ === 'function' ? i18n.__ : (text) => text;
+
 /**
  * Pricing Modal Entry Point
  * Renders the pricing modal and handles API integration
@@ -93,32 +96,30 @@ const PricingModalWrapper = ({ onPlanSelect }) => {
       return;
     }
 
-    // Get WordPress context data
-    const siteUrl = window.location.origin || '';
-    const userId = window.bbai_ajax?.user_id || (typeof get_current_user_id === 'function' ? get_current_user_id() : '') || '';
-    const siteId = window.bbai_ajax?.site_id || '';
-    
+    // Use Stripe Payment Links (direct buy links) for reliable checkout.
+    // Map plan IDs to Stripe link keys: "growth" uses "pro" link key.
+    const linkKey = planId === 'growth' ? 'pro' : planId;
+    const stripeLinks = window.bbai_ajax?.stripe_links || {};
+    const stripeLink = stripeLinks[planId] || stripeLinks[linkKey] || '';
+
+    if (stripeLink) {
+      window.open(stripeLink, '_blank', 'noopener,noreferrer');
+      setIsOpen(false);
+      return;
+    }
+
+    // Fallback: try AJAX checkout session if no Payment Link is available
     try {
-      // Use WordPress AJAX handler to create Stripe checkout session
       if (!window.bbai_ajax || !window.bbai_ajax.ajaxurl) {
         throw new Error('WordPress AJAX not available');
       }
 
-      // Prepare request body with all required parameters
       const requestBody = new URLSearchParams({
         action: 'beepbeepai_create_checkout',
         nonce: window.bbai_ajax.nonce || '',
         plan_id: planId,
-        mode: mode, // 'subscription' or 'payment' for one-time
-        site_url: siteUrl,
-        user_id: userId.toString(),
-        wordpress_site_id: siteId,
+        mode: mode,
       });
-
-      // If it's a credits pack, include pack info
-      if (planId.startsWith('pack-')) {
-        requestBody.append('product_type', 'credits');
-      }
 
       const response = await fetch(window.bbai_ajax.ajaxurl, {
         method: 'POST',
@@ -129,17 +130,18 @@ const PricingModalWrapper = ({ onPlanSelect }) => {
       });
 
       const data = await response.json();
-      
+
       if (data.success && data.data && data.data.url) {
-        // Redirect to Stripe checkout (opens in same window)
         window.location.href = data.data.url;
         setIsOpen(false);
       } else {
-        throw new Error(data.data?.message || 'Failed to create checkout session');
+        throw new Error(data.data?.message || __('Failed to create checkout session', 'beepbeep-ai-alt-text-generator'));
       }
     } catch (error) {
       console.error('[AltText AI] Checkout error:', error);
-      window.bbaiModal.error('Unable to start checkout. Please try again or contact support.');
+      if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
+        window.bbaiModal.error(__('Unable to start checkout. Please try again or contact support.', 'beepbeep-ai-alt-text-generator'));
+      }
     }
   };
 

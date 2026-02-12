@@ -6,6 +6,10 @@
 (function() {
     'use strict';
 
+    const i18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
+    const __ = i18n && typeof i18n.__ === 'function' ? i18n.__ : (text) => text;
+    const sprintf = i18n && typeof i18n.sprintf === 'function' ? i18n.sprintf : (format) => format;
+
     const bbaiErrorHandler = {
         retryAttempts: new Map(),
         maxRetries: 3,
@@ -105,7 +109,7 @@
          * Parse error from AJAX response
          */
         parseError: function(xhr, error) {
-            let message = 'An error occurred. Please try again.';
+            let message = __('An error occurred. Please try again.', 'beepbeep-ai-alt-text-generator');
             let code = 'unknown_error';
             let details = null;
 
@@ -127,22 +131,22 @@
 
             // Map HTTP status codes to user-friendly messages
             if (xhr.status === 0) {
-                message = 'Network error. Please check your internet connection.';
+                message = __('Network error. Please check your internet connection.', 'beepbeep-ai-alt-text-generator');
                 code = 'network_error';
             } else if (xhr.status === 401) {
-                message = 'Your session has expired. Please log in again.';
+                message = __('Your session has expired. Please log in again.', 'beepbeep-ai-alt-text-generator');
                 code = 'unauthorized';
             } else if (xhr.status === 403) {
-                message = 'You don\'t have permission to perform this action.';
+                message = __("You don't have permission to perform this action.", 'beepbeep-ai-alt-text-generator');
                 code = 'forbidden';
             } else if (xhr.status === 404) {
-                message = 'The requested resource was not found.';
+                message = __('The requested resource was not found.', 'beepbeep-ai-alt-text-generator');
                 code = 'not_found';
             } else if (xhr.status === 429) {
-                message = 'Too many requests. Please wait a moment and try again.';
+                message = __('Too many requests. Please wait a moment and try again.', 'beepbeep-ai-alt-text-generator');
                 code = 'rate_limited';
             } else if (xhr.status >= 500) {
-                message = 'Server error. Our team has been notified. Please try again later.';
+                message = __('Server error. Our team has been notified. Please try again later.', 'beepbeep-ai-alt-text-generator');
                 code = 'server_error';
             }
 
@@ -159,23 +163,23 @@
          * Parse fetch error
          */
         parseFetchError: function(response) {
-            let message = 'An error occurred. Please try again.';
+            let message = __('An error occurred. Please try again.', 'beepbeep-ai-alt-text-generator');
             let code = 'unknown_error';
 
             if (response.status === 0) {
-                message = 'Network error. Please check your internet connection.';
+                message = __('Network error. Please check your internet connection.', 'beepbeep-ai-alt-text-generator');
                 code = 'network_error';
             } else if (response.status === 401) {
-                message = 'Your session has expired. Please log in again.';
+                message = __('Your session has expired. Please log in again.', 'beepbeep-ai-alt-text-generator');
                 code = 'unauthorized';
             } else if (response.status === 403) {
-                message = 'You don\'t have permission to perform this action.';
+                message = __("You don't have permission to perform this action.", 'beepbeep-ai-alt-text-generator');
                 code = 'forbidden';
             } else if (response.status === 429) {
-                message = 'Too many requests. Please wait a moment and try again.';
+                message = __('Too many requests. Please wait a moment and try again.', 'beepbeep-ai-alt-text-generator');
                 code = 'rate_limited';
             } else if (response.status >= 500) {
-                message = 'Server error. Our team has been notified. Please try again later.';
+                message = __('Server error. Our team has been notified. Please try again later.', 'beepbeep-ai-alt-text-generator');
                 code = 'server_error';
             }
 
@@ -204,7 +208,7 @@
                 
                 window.bbaiPushToast('error', errorData.message, {
                     duration: canRetry ? 10000 : 5000,
-                    actionText: canRetry ? 'Retry' : null,
+                    actionText: canRetry ? __('Retry', 'beepbeep-ai-alt-text-generator') : null,
                     onAction: canRetry ? () => {
                         this.retryAttempts.set(retryKey, attempts + 1);
                         retryCallback();
@@ -213,7 +217,7 @@
                 });
             } else {
                 // Fallback to alert
-                alert(errorData.message + (this.canRetry(errorData.code) ? '\n\nClick OK to retry.' : ''));
+                alert(errorData.message + (this.canRetry(errorData.code) ? '\n\n' + __('Click OK to retry.', 'beepbeep-ai-alt-text-generator') : ''));
                 if (this.canRetry(errorData.code) && attempts < this.maxRetries) {
                     this.retryAttempts.set(retryKey, attempts + 1);
                     setTimeout(() => retryCallback(), 1000);
@@ -228,7 +232,7 @@
             if (window.bbaiPushToast) {
                 let message = errorData.message;
                 if (showHelpLink && errorData.code === 'server_error') {
-                    message += ' Need help? Contact support.';
+                    message += ' ' + __('Need help? Contact support.', 'beepbeep-ai-alt-text-generator');
                 }
                 
                 window.bbaiPushToast('error', message, {
@@ -261,17 +265,21 @@
         /**
          * Check if error should be ignored
          */
-        shouldIgnoreError: function(url, method) {
-            // Ignore certain endpoints
-            const ignoredPatterns = [
-                '/heartbeat',
-                '/wp-json/wp/v2/users/me'
-            ];
-            const env = (window.bbai_env || {});
-            if (env.ajax_url) {
-                const escaped = env.ajax_url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                ignoredPatterns.push(escaped + '.*action=heartbeat');
-            }
+	        shouldIgnoreError: function(url, method) {
+	            // Ignore certain endpoints
+	            const ignoredPatterns = [
+	                '/heartbeat'
+	            ];
+	            const env = (window.bbai_env || {});
+	            const restRoot = env.rest_root || ((window.wpApiSettings && window.wpApiSettings.root) ? window.wpApiSettings.root : '');
+	            if (restRoot) {
+	                const escapedRoot = String(restRoot).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	                ignoredPatterns.push(escapedRoot + 'wp/v2/users/me');
+	            }
+	            if (env.ajax_url) {
+	                const escaped = env.ajax_url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	                ignoredPatterns.push(escaped + '.*action=heartbeat');
+	            }
 
             return ignoredPatterns.some(pattern => {
                 const regex = new RegExp(pattern);
@@ -286,7 +294,7 @@
             // Only show user-friendly errors, not all JavaScript errors
             if (error && typeof error === 'object' && error.userFriendly) {
                 this.showError({
-                    message: error.message || 'An unexpected error occurred.',
+                    message: error.message || __('An unexpected error occurred.', 'beepbeep-ai-alt-text-generator'),
                     code: 'javascript_error'
                 });
             }
@@ -298,7 +306,7 @@
         handlePromiseRejection: function(reason) {
             if (reason && typeof reason === 'object' && reason.userFriendly) {
                 this.showError({
-                    message: reason.message || 'An error occurred while processing your request.',
+                    message: reason.message || __('An error occurred while processing your request.', 'beepbeep-ai-alt-text-generator'),
                     code: 'promise_rejection'
                 });
             }

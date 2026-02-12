@@ -11,7 +11,6 @@ class Debug_Log {
     const TABLE_SLUG = 'bbai_logs';
     const MAX_MESSAGE_LENGTH = 2000;
     const MAX_CONTEXT_LENGTH = 4000;
-    // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- SQL identifiers are controlled by plugin schema; runtime values are prepared.
 
     private static $table_verified = false;
 
@@ -146,52 +145,79 @@ class Debug_Log {
             $like = '%' . $wpdb->esc_like($args['search']) . '%';
         }
 
-        $date_from = !empty($args['date_from']) ? sanitize_text_field($args['date_from']) : '';
-        $date_to = !empty($args['date_to']) ? sanitize_text_field($args['date_to']) : '';
-        $date = '';
-        if (!$date_from && !$date_to && !empty($args['date'])) {
-            $date = sanitize_text_field($args['date']);
+        $date_from = self::normalize_filter_date( isset( $args['date_from'] ) ? sanitize_text_field( $args['date_from'] ) : '' );
+        $date_to   = self::normalize_filter_date( isset( $args['date_to'] ) ? sanitize_text_field( $args['date_to'] ) : '' );
+        $date      = '';
+        if ( ! $date_from && ! $date_to && ! empty( $args['date'] ) ) {
+            $date = self::normalize_filter_date( sanitize_text_field( $args['date'] ) );
         }
-        $has_exact_date = $date !== '' ? 1 : 0;
 
-	        $query_params = [
-	            $level,
-	            '',
-	            $level,
-            $like,
-            '',
-            $like,
-            $like,
-            $has_exact_date,
-            1,
-            $date,
-            $has_exact_date,
-            0,
-            $date_from,
-            '',
-            $date_from,
-            $date_to,
-            '',
-            $date_to,
-	            $per_page,
-	            $offset,
-	        ];
-	        $rows = $wpdb->get_results(
-	            $wpdb->prepare(
-	                'SELECT * FROM `' . self::table() . '` WHERE (%s = %s OR level = %s) AND (%s = %s OR message LIKE %s OR context LIKE %s) AND ((%d = %d AND DATE(created_at) = %s) OR (%d = %d AND (%s = %s OR DATE(created_at) >= %s) AND (%s = %s OR DATE(created_at) <= %s))) ORDER BY created_at DESC LIMIT %d OFFSET %d',
-	                $query_params
-	            ),
-	            ARRAY_A
-	        );
+        $table = self::table();
 
-	        $total_items = intval(
-	            $wpdb->get_var(
-	                $wpdb->prepare(
-	                    'SELECT COUNT(*) FROM `' . self::table() . '` WHERE (%s = %s OR level = %s) AND (%s = %s OR message LIKE %s OR context LIKE %s) AND ((%d = %d AND DATE(created_at) = %s) OR (%d = %d AND (%s = %s OR DATE(created_at) >= %s) AND (%s = %s OR DATE(created_at) <= %s)))',
-	                    array_slice( $query_params, 0, 18 )
-	                )
-	            )
-	        );
+        $exact_date_enabled = '' !== $date ? 1 : 0;
+        $range_date_enabled = '' === $date ? 1 : 0;
+        $exact_date_value   = '' !== $date ? $date : '1000-01-01';
+        $date_from_value    = '' !== $date_from ? $date_from : '1000-01-01';
+        $date_to_value      = '' !== $date_to ? $date_to : '9999-12-31';
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM %i
+                 WHERE ( %s = '' OR level = %s )
+                   AND ( %s = '' OR message LIKE %s OR context LIKE %s )
+                   AND (
+                       ( %d = 1 AND DATE(created_at) = %s )
+                       OR
+                       ( %d = 1 AND ( %s = '' OR DATE(created_at) >= %s ) AND ( %s = '' OR DATE(created_at) <= %s ) )
+                   )
+                 ORDER BY created_at DESC
+                 LIMIT %d OFFSET %d",
+                $table,
+                $level,
+                $level,
+                $like,
+                $like,
+                $like,
+                $exact_date_enabled,
+                $exact_date_value,
+                $range_date_enabled,
+                $date_from_value,
+                $date_from_value,
+                $date_to_value,
+                $date_to_value,
+                $per_page,
+                $offset
+            ),
+            ARRAY_A
+        );
+
+        $total_items = intval(
+            $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT COUNT(*) FROM %i
+                     WHERE ( %s = '' OR level = %s )
+                       AND ( %s = '' OR message LIKE %s OR context LIKE %s )
+                       AND (
+                           ( %d = 1 AND DATE(created_at) = %s )
+                           OR
+                           ( %d = 1 AND ( %s = '' OR DATE(created_at) >= %s ) AND ( %s = '' OR DATE(created_at) <= %s ) )
+                       )",
+                    $table,
+                    $level,
+                    $level,
+                    $like,
+                    $like,
+                    $like,
+                    $exact_date_enabled,
+                    $exact_date_value,
+                    $range_date_enabled,
+                    $date_from_value,
+                    $date_from_value,
+                    $date_to_value,
+                    $date_to_value
+                )
+            )
+        );
         $total_pages = $per_page > 0 ? ceil($total_items / $per_page) : 1;
 
         $logs = array_map([self::class, 'format_log'], $rows);
@@ -222,20 +248,21 @@ class Debug_Log {
             ];
         }
 
-        global $wpdb;
-	        $totals = $wpdb->get_results(
-	            $wpdb->prepare(
-	                'SELECT level, COUNT(*) as total FROM `' . self::table() . '` WHERE %d = %d GROUP BY level',
-	                1,
-	                1
-	            ),
-            OBJECT_K
-        );
+	        global $wpdb;
+		        $table = esc_sql( self::table() );
+		        $totals = $wpdb->get_results(
+		            $wpdb->prepare(
+		                "SELECT level, COUNT(*) as total FROM `{$table}` WHERE %d = %d GROUP BY level",
+		                1,
+		                1
+		            ),
+		            OBJECT_K
+		        );
 
 	        $total_logs = intval(
 	            $wpdb->get_var(
 	                $wpdb->prepare(
-	                    'SELECT COUNT(*) FROM `' . self::table() . '` WHERE %d = %d',
+	                    "SELECT COUNT(*) FROM `{$table}` WHERE %d = %d",
 	                    1,
 	                    1
 	                )
@@ -244,7 +271,7 @@ class Debug_Log {
 
 	        $last_event = $wpdb->get_var(
 	            $wpdb->prepare(
-	                'SELECT created_at FROM `' . self::table() . '` WHERE %d = %d ORDER BY created_at DESC LIMIT 1',
+	                "SELECT created_at FROM `{$table}` WHERE %d = %d ORDER BY created_at DESC LIMIT 1",
 	                1,
 	                1
 	            )
@@ -252,7 +279,7 @@ class Debug_Log {
 
 	        $last_api_call = $wpdb->get_var(
 	            $wpdb->prepare(
-	                'SELECT created_at FROM `' . self::table() . '` WHERE source = %s ORDER BY created_at DESC LIMIT 1',
+	                "SELECT created_at FROM `{$table}` WHERE source = %s ORDER BY created_at DESC LIMIT 1",
 	                'api'
 	            )
 	        );
@@ -272,13 +299,14 @@ class Debug_Log {
         }
 
 	        global $wpdb;
-	        $wpdb->query(
-	            $wpdb->prepare(
-	                'DELETE FROM `' . self::table() . '` WHERE %d = %d',
-	                1,
-	                1
-	            )
-	        );
+		        $table = esc_sql( self::table() );
+		        $wpdb->query(
+		            $wpdb->prepare(
+		                "DELETE FROM `{$table}` WHERE %d = %d",
+		                1,
+		                1
+		            )
+		        );
     }
 
     public static function delete_older_than($days = 30) {
@@ -287,13 +315,14 @@ class Debug_Log {
         }
 
 	        global $wpdb;
-	        $threshold = gmdate('Y-m-d H:i:s', time() - ($days * DAY_IN_SECONDS));
-	        $wpdb->query(
-	            $wpdb->prepare(
-	                'DELETE FROM `' . self::table() . '` WHERE created_at < %s',
-	                $threshold
-	            )
-	        );
+		        $table = esc_sql( self::table() );
+		        $threshold = gmdate('Y-m-d H:i:s', time() - ($days * DAY_IN_SECONDS));
+		        $wpdb->query(
+		            $wpdb->prepare(
+		                "DELETE FROM `{$table}` WHERE created_at < %s",
+		                $threshold
+		            )
+		        );
 	    }
 
     private static function allowed_levels() {
@@ -303,6 +332,26 @@ class Debug_Log {
     private static function normalize_level($level) {
         $level = strtolower($level ?: 'info');
         return in_array($level, self::allowed_levels(), true) ? $level : 'info';
+    }
+
+    /**
+     * Normalize date filter values to YYYY-MM-DD or empty string.
+     *
+     * @param mixed $date Date input.
+     * @return string
+     */
+    private static function normalize_filter_date( $date ) {
+        $date = is_string( $date ) ? trim( $date ) : '';
+        if ( '' === $date ) {
+            return '';
+        }
+
+        $parsed = \DateTime::createFromFormat( 'Y-m-d', $date );
+        if ( ! $parsed || $parsed->format( 'Y-m-d' ) !== $date ) {
+            return '';
+        }
+
+        return $date;
     }
 
     private static function sanitize_context($context) {
@@ -386,5 +435,4 @@ class Debug_Log {
         self::$table_verified = !empty($exists);
         return self::$table_verified;
     }
-    // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter
 }

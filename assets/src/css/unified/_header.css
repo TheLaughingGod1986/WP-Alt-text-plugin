@@ -105,6 +105,60 @@
 }
 
 /* ============================================
+   GUIDE/HELP LINK
+   ============================================ */
+
+.bbai-header-guide-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+    padding: var(--bbai-space-2) var(--bbai-space-3);
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: var(--bbai-radius-full);
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-medium);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    transition: all var(--bbai-transition-fast) var(--bbai-ease-out);
+    margin-left: var(--bbai-space-2);
+    margin-right: var(--bbai-space-4);
+}
+
+.bbai-header-guide-link:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.bbai-header-guide-link:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 2px;
+}
+
+.bbai-header-guide-link svg {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+}
+
+.bbai-header-guide-text {
+    white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+    .bbai-header-guide-link {
+        margin-left: var(--bbai-space-1);
+        margin-right: var(--bbai-space-2);
+        padding: var(--bbai-space-1) var(--bbai-space-2);
+    }
+
+    .bbai-header-guide-text {
+        display: none;
+    }
+}
+
+/* ============================================
    HEADER ACTIONS
    ============================================ */
 

@@ -6,6 +6,8 @@ reset-*.php export-ignore
 analyze-*.php export-ignore
 clear-*.php export-ignore
 mock-backend.js export-ignore
+build-plugin.sh export-ignore
+start-local.sh export-ignore
 *.sh export-ignore
 *.py export-ignore
 docs/ export-ignore
@@ -18,6 +20,9 @@ Dockerfile export-ignore
 node_modules/ export-ignore
 vendor/ export-ignore
 *.zip export-ignore
+dist/ export-ignore
+build/ export-ignore
+build-release/ export-ignore
 *.md export-ignore
 README.md -export-ignore
 .git/ export-ignore
@@ -34,4 +39,4 @@ webpack.config.js export-ignore
 .eslintrc export-ignore
 .prettierrc export-ignore
 .editorconfig export-ignore
-
+.distignore export-ignore

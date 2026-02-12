@@ -101,13 +101,15 @@ class Router {
 	public function init(): void {
 		// Register AJAX handlers.
 		foreach ( $this->ajax_routes as $action => $route ) {
-			// Public AJAX.
-			add_action(
-				"wp_ajax_nopriv_{$action}",
-				function () use ( $action, $route ) {
-					$this->handle_ajax( $action, $route );
-				}
-			);
+			// Public (unauthenticated) AJAX only when explicitly allowed.
+			if ( false === $route['auth'] ) {
+				add_action(
+					"wp_ajax_nopriv_{$action}",
+					function () use ( $action, $route ) {
+						$this->handle_ajax( $action, $route );
+					}
+				);
+			}
 
 			// Authenticated AJAX.
 			add_action(
@@ -131,17 +133,17 @@ class Router {
 	 * @param array  $route  Route configuration.
 	 * @return void
 	 */
-	private function handle_ajax(string $action, array $route): void {
-		try {
-			// Verify nonce.
-			if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), $action ) ) {
-				wp_send_json_error( array( 'message' => 'Invalid nonce.' ), 403 );
-				return;
-			}
+		private function handle_ajax(string $action, array $route): void {
+			try {
+				// Verify nonce.
+				if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+					wp_send_json_error( array( 'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ) ), 403 );
+					return;
+				}
 
 			// Check authentication if required.
 			if ( $route['auth'] && ! is_user_logged_in() ) {
-				wp_send_json_error( array( 'message' => 'Authentication required.' ), 401 );
+				wp_send_json_error( array( 'message' => __( 'Authentication required.', 'beepbeep-ai-alt-text-generator' ) ), 401 );
 				return;
 			}
 
@@ -156,16 +158,17 @@ class Router {
 			$result = $controller->$method();
 
 			wp_send_json_success( $result );
-		} catch ( \Throwable $e ) {
-			wp_send_json_error(
-				array(
-					'message' => $e->getMessage(),
-					'code'    => $e->getCode(),
-				),
-				500
-			);
+			} catch ( \Throwable $e ) {
+				wp_send_json_error(
+					array(
+						'message' => $e->getMessage(),
+						'code'    => $e->getCode(),
+					),
+					500
+				);
+				return;
+			}
 		}
-	}
 
 	/**
 	 * Register REST API routes.

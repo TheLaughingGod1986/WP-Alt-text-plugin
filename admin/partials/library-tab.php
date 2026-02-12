@@ -92,41 +92,34 @@ $offset = ($current_page - 1) * $per_page;
 
 global $wpdb;
 
+$image_mime_like = $wpdb->esc_like('image/') . '%';
+
 // Get total count of all images
 $total_images = (int) $wpdb->get_var($wpdb->prepare(
-    "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status = 'inherit' AND post_mime_type LIKE %s",
-    'attachment', 'image/%'
+    'SELECT COUNT(*) FROM ' . $wpdb->posts . ' WHERE post_type = %s AND post_status = %s AND post_mime_type LIKE %s',
+    'attachment', 'inherit', $image_mime_like
 ));
 
 // Get images with alt text count
 $with_alt_count = (int) $wpdb->get_var($wpdb->prepare(
-    "SELECT COUNT(DISTINCT p.ID)
-     FROM {$wpdb->posts} p
-     INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
-     WHERE p.post_type = %s
-     AND p.post_mime_type LIKE %s
-     AND p.post_status = %s
-     AND pm.meta_key = %s
-     AND TRIM(pm.meta_value) <> ''",
-    'attachment', 'image/%', 'inherit', '_wp_attachment_image_alt'
+    'SELECT COUNT(DISTINCT p.ID) FROM ' . $wpdb->posts . ' p INNER JOIN ' . $wpdb->postmeta . ' pm ON p.ID = pm.post_id WHERE p.post_type = %s AND p.post_mime_type LIKE %s AND p.post_status = %s AND pm.meta_key = %s AND TRIM(pm.meta_value) <> %s',
+    'attachment', $image_mime_like, 'inherit', '_wp_attachment_image_alt', ''
 ));
 
 $missing_count = $total_images - $with_alt_count;
 
 // Get all images with their alt text
-$all_images = $wpdb->get_results($wpdb->prepare("
-    SELECT p.ID, p.post_title, p.post_date, p.post_modified,
-           MAX(COALESCE(pm.meta_value, '')) as alt_text,
-           MAX(CASE WHEN pm.meta_value IS NOT NULL AND TRIM(pm.meta_value) <> '' THEN 1 ELSE 0 END) as has_alt
-    FROM {$wpdb->posts} p
-    LEFT JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id AND pm.meta_key = '_wp_attachment_image_alt'
-    WHERE p.post_type = 'attachment'
-    AND p.post_mime_type LIKE 'image/%'
-    AND p.post_status = 'inherit'
-    GROUP BY p.ID, p.post_title, p.post_date, p.post_modified
-    ORDER BY p.post_date DESC
-    LIMIT %d OFFSET %d
-", $per_page, $offset));
+$all_images = $wpdb->get_results($wpdb->prepare(
+    'SELECT p.ID, p.post_title, p.post_date, p.post_modified, MAX(COALESCE(pm.meta_value, %s)) as alt_text, MAX(CASE WHEN pm.meta_value IS NOT NULL AND TRIM(pm.meta_value) <> %s THEN 1 ELSE 0 END) as has_alt FROM ' . $wpdb->posts . ' p LEFT JOIN ' . $wpdb->postmeta . ' pm ON p.ID = pm.post_id AND pm.meta_key = %s WHERE p.post_type = %s AND p.post_mime_type LIKE %s AND p.post_status = %s GROUP BY p.ID, p.post_title, p.post_date, p.post_modified ORDER BY p.post_date DESC LIMIT %d OFFSET %d',
+    '',
+    '',
+    '_wp_attachment_image_alt',
+    'attachment',
+    $image_mime_like,
+    'inherit',
+    $per_page,
+    $offset
+));
 
 $total_count = $total_images;
 $total_pages = ceil($total_count / $per_page);
@@ -166,8 +159,8 @@ $optimized_percent = $total_images > 0 ? round(($with_alt_count / $total_images)
     <!-- Header -->
     <div class="bbai-page-header bbai-mb-6">
         <div class="bbai-page-header-content">
-            <h1 class="bbai-heading-1"><?php esc_html_e('Image ALT Text Library', 'opptiai-alt'); ?></h1>
-            <p class="bbai-subtitle"><?php esc_html_e('Search, review, and regenerate AI alt text for images on this site.', 'opptiai-alt'); ?></p>
+            <h1 class="bbai-heading-1"><?php esc_html_e('Image ALT Text Library', 'beepbeep-ai-alt-text-generator'); ?></h1>
+            <p class="bbai-subtitle"><?php esc_html_e('Search, review, and regenerate AI alt text for images on this site.', 'beepbeep-ai-alt-text-generator'); ?></p>
         </div>
     </div>
 
@@ -181,31 +174,31 @@ $optimized_percent = $total_images > 0 ? round(($with_alt_count / $total_images)
             <input type="text"
                    id="bbai-library-search"
                    class="bbai-library-search-input"
-                   placeholder="<?php esc_attr_e('Search images or alt text', 'opptiai-alt'); ?>"
+                   placeholder="<?php esc_attr_e('Search images or alt text', 'beepbeep-ai-alt-text-generator'); ?>"
             />
         </div>
         <div class="bbai-library-filters-group">
             <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm" id="bbai-status-filter-btn">
-                <?php esc_html_e('Status: All', 'opptiai-alt'); ?>
+                <?php esc_html_e('Status: All', 'beepbeep-ai-alt-text-generator'); ?>
             </button>
             <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm" id="bbai-date-filter-btn">
-                <?php esc_html_e('Date Range', 'opptiai-alt'); ?>
+                <?php esc_html_e('Date Range', 'beepbeep-ai-alt-text-generator'); ?>
             </button>
             <a href="#" class="bbai-link-btn bbai-link-sm" id="bbai-clear-filters">
-                × <?php esc_html_e('Clear filters', 'opptiai-alt'); ?>
+                × <?php esc_html_e('Clear filters', 'beepbeep-ai-alt-text-generator'); ?>
             </a>
             <!-- Hidden selects for functionality -->
             <select id="bbai-status-filter" class="bbai-library-filter-select" style="display: none;">
-                <option value="all"><?php esc_html_e('Status: All', 'opptiai-alt'); ?></option>
-                <option value="optimized"><?php esc_html_e('Optimized', 'opptiai-alt'); ?></option>
-                <option value="missing"><?php esc_html_e('Missing', 'opptiai-alt'); ?></option>
-                <option value="needs-work"><?php esc_html_e('Needs work', 'opptiai-alt'); ?></option>
+                <option value="all"><?php esc_html_e('Status: All', 'beepbeep-ai-alt-text-generator'); ?></option>
+                <option value="optimized"><?php esc_html_e('Optimized', 'beepbeep-ai-alt-text-generator'); ?></option>
+                <option value="missing"><?php esc_html_e('Missing', 'beepbeep-ai-alt-text-generator'); ?></option>
+                <option value="needs-work"><?php esc_html_e('Needs work', 'beepbeep-ai-alt-text-generator'); ?></option>
             </select>
             <select id="bbai-date-filter" class="bbai-library-filter-select" style="display: none;">
-                <option value="all"><?php esc_html_e('Date Range', 'opptiai-alt'); ?></option>
-                <option value="today"><?php esc_html_e('Today', 'opptiai-alt'); ?></option>
-                <option value="week"><?php esc_html_e('This Week', 'opptiai-alt'); ?></option>
-                <option value="month"><?php esc_html_e('This Month', 'opptiai-alt'); ?></option>
+                <option value="all"><?php esc_html_e('Date Range', 'beepbeep-ai-alt-text-generator'); ?></option>
+                <option value="today"><?php esc_html_e('Today', 'beepbeep-ai-alt-text-generator'); ?></option>
+                <option value="week"><?php esc_html_e('This Week', 'beepbeep-ai-alt-text-generator'); ?></option>
+                <option value="month"><?php esc_html_e('This Month', 'beepbeep-ai-alt-text-generator'); ?></option>
             </select>
         </div>
     </div>
@@ -215,15 +208,15 @@ $optimized_percent = $total_images > 0 ? round(($with_alt_count / $total_images)
         <div class="bbai-library-stats bbai-mb-6">
             <div class="bbai-library-stat-card">
                 <div class="bbai-library-stat-value"><?php echo esc_html(number_format_i18n($with_alt_count)); ?></div>
-                <div class="bbai-library-stat-label"><?php esc_html_e('Optimized', 'opptiai-alt'); ?></div>
+                <div class="bbai-library-stat-label"><?php esc_html_e('Optimized', 'beepbeep-ai-alt-text-generator'); ?></div>
             </div>
             <div class="bbai-library-stat-card">
                 <div class="bbai-library-stat-value"><?php echo esc_html(number_format_i18n($missing_count)); ?></div>
-                <div class="bbai-library-stat-label"><?php esc_html_e('Missing', 'opptiai-alt'); ?></div>
+                <div class="bbai-library-stat-label"><?php esc_html_e('Missing', 'beepbeep-ai-alt-text-generator'); ?></div>
             </div>
             <div class="bbai-library-stat-card">
                 <div class="bbai-library-stat-value"><?php echo esc_html(number_format_i18n($optimized_percent)); ?>%</div>
-                <div class="bbai-library-stat-label"><?php esc_html_e('Complete', 'opptiai-alt'); ?></div>
+                <div class="bbai-library-stat-label"><?php esc_html_e('Complete', 'beepbeep-ai-alt-text-generator'); ?></div>
             </div>
         </div>
         
@@ -238,12 +231,16 @@ $optimized_percent = $total_images > 0 ? round(($with_alt_count / $total_images)
         <div class="bbai-card bbai-mb-6">
             <div class="bbai-optimization-actions bbai-flex bbai-gap-3 bbai-flex-wrap bbai-items-center bbai-justify-between">
                 <div class="bbai-flex bbai-gap-3 bbai-flex-wrap">
-                <button type="button" class="bbai-optimization-cta bbai-optimization-cta--primary <?php echo esc_attr((!$can_generate) ? 'bbai-optimization-cta--locked' : ''); ?>" data-action="generate-missing"
-                    <?php if (!$can_generate) : ?>
+                <button type="button" class="bbai-optimization-cta bbai-optimization-cta--primary <?php echo esc_attr((!$can_generate) ? 'bbai-optimization-cta--locked' : ''); ?> <?php echo esc_attr(($missing_count === 0) ? 'bbai-optimization-cta--disabled' : ''); ?>" data-action="generate-missing"
+                    <?php if (!$can_generate || $missing_count === 0) : ?>
                         disabled
-                        title="<?php esc_attr_e('Unlock 1,000 alt text generations with Growth →', 'opptiai-alt'); ?>"
+                        <?php if ($missing_count === 0) : ?>
+                            title="<?php esc_attr_e('All images already have alt text', 'beepbeep-ai-alt-text-generator'); ?>"
+                        <?php else : ?>
+                            title="<?php esc_attr_e('Unlock 1,000 alt text generations with Growth →', 'beepbeep-ai-alt-text-generator'); ?>"
+                        <?php endif; ?>
                     <?php else : ?>
-                        data-bbai-tooltip="<?php esc_attr_e('Automatically generate alt text for all images that don\'t have any. Processes in the background without slowing down your site.', 'opptiai-alt'); ?>"
+                        data-bbai-tooltip="<?php esc_attr_e('Automatically generate alt text for all images that don\'t have any. Processes in the background without slowing down your site.', 'beepbeep-ai-alt-text-generator'); ?>"
                         data-bbai-tooltip-position="bottom"
                     <?php endif; ?>
                 >
@@ -251,21 +248,21 @@ $optimized_percent = $total_images > 0 ? round(($with_alt_count / $total_images)
                         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
                             <path d="M12 6V4a4 4 0 00-8 0v2M4 6h8l1 8H3L4 6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                        <span><?php esc_html_e('Generate Missing Alt Text', 'opptiai-alt'); ?></span>
+                        <span><?php esc_html_e('Generate Missing Alt Text', 'beepbeep-ai-alt-text-generator'); ?></span>
                     <?php else : ?>
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
                             <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
                             <path d="M6 6H10M6 10H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                         </svg>
-                        <span><?php esc_html_e('Generate Missing Alt Text', 'opptiai-alt'); ?></span>
+                        <span><?php esc_html_e('Generate Missing Alt Text', 'beepbeep-ai-alt-text-generator'); ?></span>
                     <?php endif; ?>
                 </button>
                 <button type="button" class="bbai-optimization-cta bbai-optimization-cta--secondary bbai-cta-glow-blue <?php echo esc_attr((!$can_generate) ? 'bbai-optimization-cta--locked' : ''); ?>" data-action="regenerate-all"
                     <?php if (!$can_generate) : ?>
                         disabled
-                        title="<?php esc_attr_e('Unlock 1,000 alt text generations with Growth →', 'opptiai-alt'); ?>"
+                        title="<?php esc_attr_e('Unlock 1,000 alt text generations with Growth →', 'beepbeep-ai-alt-text-generator'); ?>"
                     <?php else : ?>
-                        data-bbai-tooltip="<?php esc_attr_e('Regenerate alt text for ALL images, even those that already have it. Useful after changing your tone/style settings or brand guidelines.', 'opptiai-alt'); ?>"
+                        data-bbai-tooltip="<?php esc_attr_e('Regenerate alt text for ALL images, even those that already have it. Useful after changing your tone/style settings or brand guidelines.', 'beepbeep-ai-alt-text-generator'); ?>"
                         data-bbai-tooltip-position="bottom"
                     <?php endif; ?>
                 >
@@ -273,21 +270,21 @@ $optimized_percent = $total_images > 0 ? round(($with_alt_count / $total_images)
                         <path d="M8 2L10 6L14 8L10 10L8 14L6 10L2 8L6 6L8 2Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                         <circle cx="8" cy="8" r="2" fill="currentColor"/>
                     </svg>
-                    <span><?php esc_html_e('Re-optimise All Alt Text', 'opptiai-alt'); ?></span>
+                    <span><?php esc_html_e('Re-optimise All Alt Text', 'beepbeep-ai-alt-text-generator'); ?></span>
                 </button>
                 </div>
                 <div class="bbai-flex bbai-gap-2 bbai-flex-wrap">
                     <div class="bbai-dropdown" style="position: relative;">
-                        <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm" data-action="export-alt-text" data-format="csv" data-bbai-tooltip="<?php esc_attr_e('Export alt text data', 'opptiai-alt'); ?>" data-bbai-tooltip-position="top">
+                        <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm" data-action="export-alt-text" data-format="csv" data-bbai-tooltip="<?php esc_attr_e('Export alt text data', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="top">
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
                                 <path d="M14 10V12.6667C14 13.403 13.403 14 12.6667 14H3.33333C2.59695 14 2 13.403 2 12.6667V10M11.3333 5.33333L8 2M8 2L4.66667 5.33333M8 2V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <?php esc_html_e('Export', 'opptiai-alt'); ?>
+                            <?php esc_html_e('Export', 'beepbeep-ai-alt-text-generator'); ?>
                         </button>
                         <div class="bbai-dropdown-menu bbai-hidden" style="position: absolute; top: 100%; right: 0; margin-top: var(--bbai-space-2); background: var(--bbai-bg); border: 1px solid var(--bbai-border); border-radius: var(--bbai-radius); box-shadow: var(--bbai-shadow-lg); z-index: 1000; min-width: 150px;">
-                            <button type="button" class="bbai-dropdown-item" data-action="export-alt-text" data-format="csv"><?php esc_html_e('Export as CSV', 'opptiai-alt'); ?></button>
-                            <button type="button" class="bbai-dropdown-item" data-action="export-alt-text" data-format="json"><?php esc_html_e('Export as JSON', 'opptiai-alt'); ?></button>
-                            <button type="button" class="bbai-dropdown-item" data-action="export-alt-text" data-format="txt"><?php esc_html_e('Export as TXT', 'opptiai-alt'); ?></button>
+                            <button type="button" class="bbai-dropdown-item" data-action="export-alt-text" data-format="csv"><?php esc_html_e('Export as CSV', 'beepbeep-ai-alt-text-generator'); ?></button>
+                            <button type="button" class="bbai-dropdown-item" data-action="export-alt-text" data-format="json"><?php esc_html_e('Export as JSON', 'beepbeep-ai-alt-text-generator'); ?></button>
+                            <button type="button" class="bbai-dropdown-item" data-action="export-alt-text" data-format="txt"><?php esc_html_e('Export as TXT', 'beepbeep-ai-alt-text-generator'); ?></button>
                         </div>
                     </div>
                 </div>
@@ -303,14 +300,14 @@ $optimized_percent = $total_images > 0 ? round(($with_alt_count / $total_images)
                     <thead>
                         <tr>
                             <th style="width: 40px;">
-                                <input type="checkbox" id="bbai-select-all" class="bbai-checkbox" aria-label="<?php esc_attr_e('Select all images', 'opptiai-alt'); ?>" />
+                                <input type="checkbox" id="bbai-select-all" class="bbai-checkbox" aria-label="<?php esc_attr_e('Select all images', 'beepbeep-ai-alt-text-generator'); ?>" />
                             </th>
-                            <th><?php esc_html_e('Image', 'opptiai-alt'); ?></th>
-                            <th><?php esc_html_e('File Name', 'opptiai-alt'); ?></th>
-                            <th><?php esc_html_e('AI Alt Text', 'opptiai-alt'); ?></th>
-                            <th><?php esc_html_e('Status', 'opptiai-alt'); ?></th>
-                            <th><?php esc_html_e('Last Updated', 'opptiai-alt'); ?></th>
-                            <th class="bbai-text-right"><?php esc_html_e('Actions', 'opptiai-alt'); ?></th>
+                            <th><?php esc_html_e('Image', 'beepbeep-ai-alt-text-generator'); ?></th>
+                            <th><?php esc_html_e('File Name', 'beepbeep-ai-alt-text-generator'); ?></th>
+                            <th><?php esc_html_e('AI Alt Text', 'beepbeep-ai-alt-text-generator'); ?></th>
+                            <th><?php esc_html_e('Status', 'beepbeep-ai-alt-text-generator'); ?></th>
+                            <th><?php esc_html_e('Last Updated', 'beepbeep-ai-alt-text-generator'); ?></th>
+                            <th class="bbai-text-right"><?php esc_html_e('Actions', 'beepbeep-ai-alt-text-generator'); ?></th>
                         </tr>
                     </thead>
                     <tbody id="bbai-library-table-body">
@@ -337,7 +334,7 @@ $optimized_percent = $total_images > 0 ? round(($with_alt_count / $total_images)
                             }
 
                             // Truncate filename for display
-                            $display_filename = !empty($filename) && is_string($filename) ? $filename : __('Unknown file', 'opptiai-alt');
+                            $display_filename = !empty($filename) && is_string($filename) ? $filename : __('Unknown file', 'beepbeep-ai-alt-text-generator');
                             if (is_string($display_filename) && strlen($display_filename) > 35) {
                                 $display_filename = substr($display_filename, 0, 32) . '...';
                             }
@@ -358,17 +355,17 @@ $optimized_percent = $total_images > 0 ? round(($with_alt_count / $total_images)
 
                             // Determine status
                             $status = 'missing';
-                            $status_label = __('Missing', 'opptiai-alt');
+                            $status_label = __('Missing', 'beepbeep-ai-alt-text-generator');
                             if ($has_alt) {
                                 $status = 'optimized';
-                                $status_label = __('Optimized', 'opptiai-alt');
+                                $status_label = __('Optimized', 'beepbeep-ai-alt-text-generator');
                             }
                             ?>
                             <tr class="bbai-library-row" data-attachment-id="<?php echo esc_attr($attachment_id); ?>" data-id="<?php echo esc_attr($attachment_id); ?>" data-status="<?php echo esc_attr($status); ?>">
                                 <td>
                                     <input type="checkbox" class="bbai-checkbox bbai-library-row-check bbai-image-checkbox" value="<?php echo esc_attr($attachment_id); ?>" data-attachment-id="<?php echo esc_attr($attachment_id); ?>" aria-label="<?php
                                     /* translators: 1: image title */
-                                    printf(esc_attr__('Select image %s', 'opptiai-alt'), esc_attr($image->post_title));
+                                    printf(esc_attr__('Select image %s', 'beepbeep-ai-alt-text-generator'), esc_attr($image->post_title));
                                     ?>" />
                                 </td>
                                 <td>
@@ -411,20 +408,20 @@ $optimized_percent = $total_images > 0 ? round(($with_alt_count / $total_images)
                                             $word_count = str_word_count($clean_alt);
                                             $quality_score = bbai_calculate_alt_quality_score($clean_alt);
                                             $quality_class = 'good';
-                                            $quality_label = __('Good', 'opptiai-alt');
+                                            $quality_label = __('Good', 'beepbeep-ai-alt-text-generator');
                                             if ($quality_score < 60) {
                                                 $quality_class = 'poor';
-                                                $quality_label = __('Needs improvement', 'opptiai-alt');
+                                                $quality_label = __('Needs improvement', 'beepbeep-ai-alt-text-generator');
                                             } elseif ($quality_score < 80) {
                                                 $quality_class = 'fair';
-                                                $quality_label = __('Fair', 'opptiai-alt');
+                                                $quality_label = __('Fair', 'beepbeep-ai-alt-text-generator');
                                             }
                                             ?>
                                             <div class="bbai-quality-insights">
                                                 <span class="bbai-quality-badge bbai-quality-badge--<?php echo esc_attr($quality_class); ?>" data-bbai-tooltip="<?php
-                                                /* translators: 1: quality score, 2: word count */
                                                 printf(
-                                                    esc_attr__('Quality Score: %1$s/100. Length: %2$s words (optimal: 5-15 words).', 'opptiai-alt'),
+                                                    /* translators: 1: quality score, 2: word count */
+                                                    esc_attr__('Quality Score: %1$s/100. Length: %2$s words (optimal: 5-15 words).', 'beepbeep-ai-alt-text-generator'),
                                                     esc_attr(number_format_i18n($quality_score)),
                                                     esc_attr(number_format_i18n($word_count))
                                                 );
@@ -432,7 +429,7 @@ $optimized_percent = $total_images > 0 ? round(($with_alt_count / $total_images)
                                                     <?php echo esc_html($quality_label); ?>
                                                 </span>
                                                 <?php if ($word_count < 5 || $word_count > 15) : ?>
-                                                    <span class="bbai-quality-hint" data-bbai-tooltip="<?php esc_attr_e('Optimal length is 5-15 words for SEO and accessibility.', 'opptiai-alt'); ?>" data-bbai-tooltip-position="top">
+                                                    <span class="bbai-quality-hint" data-bbai-tooltip="<?php esc_attr_e('Optimal length is 5-15 words for SEO and accessibility.', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="top">
                                                         <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                                                             <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                                             <path d="M8 5V5.01M8 11H8.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -441,7 +438,7 @@ $optimized_percent = $total_images > 0 ? round(($with_alt_count / $total_images)
                                                 <?php endif; ?>
                                             </div>
                                         <?php else : ?>
-                                            <span class="bbai-alt-text-missing"><?php esc_html_e('No alt text', 'opptiai-alt'); ?></span>
+                                            <span class="bbai-alt-text-missing"><?php esc_html_e('No alt text', 'beepbeep-ai-alt-text-generator'); ?></span>
                                         <?php endif; ?>
                                     </div>
                                 </td>
@@ -455,12 +452,12 @@ $optimized_percent = $total_images > 0 ? round(($with_alt_count / $total_images)
                                 </td>
                                 <td class="bbai-text-right">
                                     <div class="bbai-library-actions">
-                                        <a href="<?php echo esc_url($edit_link); ?>" class="bbai-link-sm"><?php esc_html_e('View', 'opptiai-alt'); ?></a>
+                                        <a href="<?php echo esc_url($edit_link); ?>" class="bbai-link-sm"><?php esc_html_e('View', 'beepbeep-ai-alt-text-generator'); ?></a>
                                         <button type="button"
                                                 class="bbai-link-sm"
                                                 data-action="regenerate-single"
                                                 data-attachment-id="<?php echo esc_attr($attachment_id); ?>">
-                                            <?php esc_html_e('Regen', 'opptiai-alt'); ?>
+                                            <?php esc_html_e('Regen', 'beepbeep-ai-alt-text-generator'); ?>
                                         </button>
                                     </div>
                                 </td>
@@ -476,19 +473,19 @@ $optimized_percent = $total_images > 0 ? round(($with_alt_count / $total_images)
             <div class="bbai-card">
                 <div class="bbai-flex bbai-gap-4 bbai-items-center bbai-justify-between bbai-flex-wrap">
                     <div class="bbai-flex bbai-gap-2 bbai-items-center">
-                        <span class="bbai-text-sm bbai-text-muted" id="bbai-selected-count">0 <?php esc_html_e('selected', 'opptiai-alt'); ?></span>
+                        <span class="bbai-text-sm bbai-text-muted" id="bbai-selected-count">0 <?php esc_html_e('selected', 'beepbeep-ai-alt-text-generator'); ?></span>
                     </div>
                     <div class="bbai-flex bbai-gap-2 bbai-flex-wrap">
                         <button type="button" class="bbai-btn-secondary bbai-btn-sm" id="bbai-batch-regenerate"
                             <?php if ($is_free) : ?>
                                 disabled
-                                title="<?php esc_attr_e('Upgrade to Growth to enable bulk regeneration', 'opptiai-alt'); ?>"
+                                title="<?php esc_attr_e('Upgrade to Growth to enable bulk regeneration', 'beepbeep-ai-alt-text-generator'); ?>"
                             <?php endif; ?>
                         >
-                            <?php esc_html_e('Regenerate Selected', 'opptiai-alt'); ?>
+                            <?php esc_html_e('Regenerate Selected', 'beepbeep-ai-alt-text-generator'); ?>
                         </button>
                         <button type="button" class="bbai-btn-ghost bbai-btn-sm" id="bbai-clear-selection">
-                            <?php esc_html_e('Clear Selection', 'opptiai-alt'); ?>
+                            <?php esc_html_e('Clear Selection', 'beepbeep-ai-alt-text-generator'); ?>
                         </button>
                     </div>
                 </div>
@@ -502,9 +499,9 @@ $optimized_percent = $total_images > 0 ? round(($with_alt_count / $total_images)
                     <?php
                     $start = $offset + 1;
                     $end = min($offset + $per_page, $total_count);
-                    /* translators: 1: start number, 2: end number, 3: total count */
                     printf(
-                        esc_html__('Showing %1$s-%2$s of %3$s', 'opptiai-alt'),
+                        /* translators: 1: start number, 2: end number, 3: total count */
+                        esc_html__('Showing %1$s-%2$s of %3$s', 'beepbeep-ai-alt-text-generator'),
                         esc_html(number_format_i18n($start)),
                         esc_html(number_format_i18n($end)),
                         esc_html(number_format_i18n($total_count))
@@ -514,7 +511,7 @@ $optimized_percent = $total_images > 0 ? round(($with_alt_count / $total_images)
                 <div class="bbai-pagination-controls">
                     <?php if ($current_page > 1) : ?>
                         <a href="<?php echo esc_url(add_query_arg('alt_page', $current_page - 1)); ?>" class="bbai-pagination-btn">
-                            <?php esc_html_e('Previous', 'opptiai-alt'); ?>
+                            <?php esc_html_e('Previous', 'beepbeep-ai-alt-text-generator'); ?>
                         </a>
                     <?php endif; ?>
                     <?php
@@ -544,7 +541,7 @@ $optimized_percent = $total_images > 0 ? round(($with_alt_count / $total_images)
                     ?>
                     <?php if ($current_page < $total_pages) : ?>
                         <a href="<?php echo esc_url(add_query_arg('alt_page', $current_page + 1)); ?>" class="bbai-pagination-btn">
-                            <?php esc_html_e('Next', 'opptiai-alt'); ?>
+                            <?php esc_html_e('Next', 'beepbeep-ai-alt-text-generator'); ?>
                         </a>
                     <?php endif; ?>
                 </div>
@@ -555,9 +552,9 @@ $optimized_percent = $total_images > 0 ? round(($with_alt_count / $total_images)
         <div class="bbai-library-empty-state bbai-empty-state">
             <div class="bbai-card bbai-text-center bbai-p-12">
                 <div class="bbai-library-empty-content">
-                    <h3 class="bbai-empty-state-title"><?php esc_html_e('No images yet', 'opptiai-alt'); ?></h3>
+                    <h3 class="bbai-empty-state-title"><?php esc_html_e('No images yet', 'beepbeep-ai-alt-text-generator'); ?></h3>
                     <p class="bbai-empty-state-description">
-                        <?php esc_html_e('Upload images to start automating SEO & accessibility compliance.', 'opptiai-alt'); ?>
+                        <?php esc_html_e('Upload images to start automating SEO & accessibility compliance.', 'beepbeep-ai-alt-text-generator'); ?>
                     </p>
                     <div class="bbai-empty-state-benefits">
                         <div class="bbai-empty-state-benefit">
@@ -565,28 +562,28 @@ $optimized_percent = $total_images > 0 ? round(($with_alt_count / $total_images)
                                 <circle cx="10" cy="10" r="9" stroke="#10B981" stroke-width="2"/>
                                 <path d="M6 10l2.5 2.5L14 7" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <span><?php esc_html_e('WCAG-compliant alt text for accessibility', 'opptiai-alt'); ?></span>
+                            <span><?php esc_html_e('WCAG-compliant alt text for accessibility', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </div>
                         <div class="bbai-empty-state-benefit">
                             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                                 <circle cx="10" cy="10" r="9" stroke="#10B981" stroke-width="2"/>
                                 <path d="M6 10l2.5 2.5L14 7" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <span><?php esc_html_e('Optimized for Google Images & SEO insights', 'opptiai-alt'); ?></span>
+                            <span><?php esc_html_e('Optimized for Google Images & SEO insights', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </div>
                     </div>
                     <a href="#" class="bbai-empty-state-sync-link">
-                        <?php esc_html_e('Or sync from Media Library automatically', 'opptiai-alt'); ?> &gt;
+                        <?php esc_html_e('Or sync from Media Library automatically', 'beepbeep-ai-alt-text-generator'); ?> &gt;
                     </a>
                     <div class="bbai-empty-state-actions">
                         <a href="<?php echo esc_url(admin_url('upload.php')); ?>" class="bbai-btn bbai-btn-primary">
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
                                 <path d="M8 2V14M2 8H14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                             </svg>
-                            <?php esc_html_e('+ Upload Images', 'opptiai-alt'); ?>
+                            <?php esc_html_e('+ Upload Images', 'beepbeep-ai-alt-text-generator'); ?>
                         </a>
                         <a href="#tab-guide" class="bbai-btn bbai-btn-secondary" onclick="document.querySelector('[data-tab=\"guide\"]')?.click(); return false;">
-                            <?php esc_html_e('Learn More', 'opptiai-alt'); ?>
+                            <?php esc_html_e('Learn More', 'beepbeep-ai-alt-text-generator'); ?>
                         </a>
                     </div>
                 </div>

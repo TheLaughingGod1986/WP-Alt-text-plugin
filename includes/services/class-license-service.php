@@ -59,7 +59,7 @@ class License_Service {
 		if ( empty( $license_key ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'License key is required', 'opptiai-alt' ),
+				'message' => __( 'License key is required', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -67,7 +67,7 @@ class License_Service {
 		if ( ! preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $license_key ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Invalid license key format', 'opptiai-alt' ),
+				'message' => __( 'Invalid license key format', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -89,7 +89,7 @@ class License_Service {
 
 		return array(
 			'success'      => true,
-			'message'      => __( 'License activated successfully', 'opptiai-alt' ),
+			'message'      => __( 'License activated successfully', 'beepbeep-ai-alt-text-generator' ),
 			'organization' => $result['organization'] ?? null,
 			'site'         => $result['site'] ?? null,
 		);
@@ -121,7 +121,7 @@ class License_Service {
 
 		return array(
 			'success' => true,
-			'message' => __( 'License deactivated successfully', 'opptiai-alt' ),
+			'message' => __( 'License deactivated successfully', 'beepbeep-ai-alt-text-generator' ),
 		);
 	}
 
@@ -139,7 +139,7 @@ class License_Service {
 		if ( ! $this->api_client->is_authenticated() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Please log in to view license site usage', 'opptiai-alt' ),
+				'message' => __( 'Please log in to view license site usage', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -149,7 +149,7 @@ class License_Service {
 		if ( is_wp_error( $result ) ) {
 			return array(
 				'success' => false,
-				'message' => $result->get_error_message() ?: __( 'Failed to fetch license site usage', 'opptiai-alt' ),
+				'message' => $result->get_error_message() ?: __( 'Failed to fetch license site usage', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -174,7 +174,7 @@ class License_Service {
 		if ( ! $this->api_client->is_authenticated() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Please log in to disconnect license sites', 'opptiai-alt' ),
+				'message' => __( 'Please log in to disconnect license sites', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -182,7 +182,7 @@ class License_Service {
 		if ( empty( $site_id ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Site ID is required', 'opptiai-alt' ),
+				'message' => __( 'Site ID is required', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -192,7 +192,7 @@ class License_Service {
 		if ( is_wp_error( $result ) ) {
 			return array(
 				'success' => false,
-				'message' => $result->get_error_message() ?: __( 'Failed to disconnect site', 'opptiai-alt' ),
+				'message' => $result->get_error_message() ?: __( 'Failed to disconnect site', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -201,7 +201,7 @@ class License_Service {
 
 		return array(
 			'success' => true,
-			'message' => __( 'Site disconnected successfully', 'opptiai-alt' ),
+			'message' => __( 'Site disconnected successfully', 'beepbeep-ai-alt-text-generator' ),
 			'data'    => $result,
 		);
 	}

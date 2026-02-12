@@ -14,7 +14,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Privacy {
 	private const EXPORTER_ID = 'beepbeep-ai-alt-text-generator';
 	private const ERASER_ID   = 'beepbeep-ai-alt-text-generator';
-	// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- SQL identifiers are controlled by plugin schema; runtime values are prepared.
 
 	/**
 	 * Register exporters and erasers.
@@ -32,7 +31,7 @@ class Privacy {
 	 */
 	public static function register_exporter( array $exporters ): array {
 		$exporters[ self::EXPORTER_ID ] = [
-			'exporter_friendly_name' => __( 'BeepBeep AI – Alt Text Generator', 'opptiai-alt' ),
+			'exporter_friendly_name' => __( 'BeepBeep AI – Alt Text Generator', 'beepbeep-ai-alt-text-generator' ),
 			'callback'               => [ __CLASS__, 'exporter' ],
 		];
 
@@ -47,7 +46,7 @@ class Privacy {
 	 */
 	public static function register_eraser( array $erasers ): array {
 		$erasers[ self::ERASER_ID ] = [
-			'eraser_friendly_name' => __( 'BeepBeep AI – Alt Text Generator', 'opptiai-alt' ),
+			'eraser_friendly_name' => __( 'BeepBeep AI – Alt Text Generator', 'beepbeep-ai-alt-text-generator' ),
 			'callback'             => [ __CLASS__, 'eraser' ],
 		];
 
@@ -114,7 +113,7 @@ class Privacy {
 		}
 
 		if ( ! $items_removed && ! $items_retained ) {
-			$messages[] = __( 'No BeepBeep AI data found for this email address.', 'opptiai-alt' );
+			$messages[] = __( 'No BeepBeep AI data found for this email address.', 'beepbeep-ai-alt-text-generator' );
 		}
 
 		return [
@@ -145,23 +144,24 @@ class Privacy {
 		$page_size = 50;
 		$offset = ( max( 1, $page ) - 1 ) * $page_size;
 
-		if ( $email_address === '' && $user_id <= 0 ) {
-			return [];
-		}
+			if ( $email_address === '' && $user_id <= 0 ) {
+				return [];
+			}
+			$submissions_table = esc_sql( Contact_Submissions::table() );
 
-		$rows = $wpdb->get_results(
-			$wpdb->prepare(
-				'SELECT * FROM `' . Contact_Submissions::table() . '` WHERE ((%s <> %s AND email = %s) OR (%d > %d AND user_id = %d)) ORDER BY created_at DESC LIMIT %d OFFSET %d',
-				$email_address,
-				'',
-				$email_address,
-				$user_id,
-				0,
-				$user_id,
-				$page_size,
-				$offset
-			)
-		);
+			$rows = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT * FROM `{$submissions_table}` WHERE ((%s <> %s AND email = %s) OR (%d > %d AND user_id = %d)) ORDER BY created_at DESC LIMIT %d OFFSET %d",
+					$email_address,
+					'',
+					$email_address,
+					$user_id,
+					0,
+					$user_id,
+					$page_size,
+					$offset
+				)
+			);
 		if ( empty( $rows ) ) {
 			return [];
 		}
@@ -174,15 +174,15 @@ class Privacy {
 		foreach ( $rows as $row ) {
 			$items[] = [
 				'group_id'    => 'bbai_contact_submissions',
-				'group_label' => __( 'BeepBeep AI Contact Submissions', 'opptiai-alt' ),
+				'group_label' => __( 'BeepBeep AI Contact Submissions', 'beepbeep-ai-alt-text-generator' ),
 				'item_id'     => 'submission-' . absint( $row->id ),
 				'data'        => [
-					[ 'name' => __( 'Name', 'opptiai-alt' ), 'value' => sanitize_text_field( $row->name ?? '' ) ],
-					[ 'name' => __( 'Email', 'opptiai-alt' ), 'value' => sanitize_email( $row->email ?? '' ) ],
-					[ 'name' => __( 'Subject', 'opptiai-alt' ), 'value' => sanitize_text_field( $row->subject ?? '' ) ],
-					[ 'name' => __( 'Message', 'opptiai-alt' ), 'value' => sanitize_textarea_field( $row->message ?? '' ) ],
-					[ 'name' => __( 'Submitted At', 'opptiai-alt' ), 'value' => sanitize_text_field( $row->created_at ?? '' ) ],
-					[ 'name' => __( 'Site URL', 'opptiai-alt' ), 'value' => esc_url_raw( $row->site_url ?? '' ) ],
+					[ 'name' => __( 'Name', 'beepbeep-ai-alt-text-generator' ), 'value' => sanitize_text_field( $row->name ?? '' ) ],
+					[ 'name' => __( 'Email', 'beepbeep-ai-alt-text-generator' ), 'value' => sanitize_email( $row->email ?? '' ) ],
+					[ 'name' => __( 'Subject', 'beepbeep-ai-alt-text-generator' ), 'value' => sanitize_text_field( $row->subject ?? '' ) ],
+					[ 'name' => __( 'Message', 'beepbeep-ai-alt-text-generator' ), 'value' => sanitize_textarea_field( $row->message ?? '' ) ],
+					[ 'name' => __( 'Submitted At', 'beepbeep-ai-alt-text-generator' ), 'value' => sanitize_text_field( $row->created_at ?? '' ) ],
+					[ 'name' => __( 'Site URL', 'beepbeep-ai-alt-text-generator' ), 'value' => esc_url_raw( $row->site_url ?? '' ) ],
 				],
 			];
 		}
@@ -209,12 +209,12 @@ class Privacy {
 			if ( $stored_email && strcasecmp( $stored_email, $email_address ) === 0 ) {
 				$items[] = [
 					'group_id'    => 'bbai_account_data',
-					'group_label' => __( 'BeepBeep AI Account Data', 'opptiai-alt' ),
+					'group_label' => __( 'BeepBeep AI Account Data', 'beepbeep-ai-alt-text-generator' ),
 					'item_id'     => 'account-data',
 					'data'        => [
-						[ 'name' => __( 'Email', 'opptiai-alt' ), 'value' => $stored_email ],
-						[ 'name' => __( 'Name', 'opptiai-alt' ), 'value' => sanitize_text_field( $user_data['name'] ?? '' ) ],
-						[ 'name' => __( 'Plan', 'opptiai-alt' ), 'value' => sanitize_text_field( $user_data['plan'] ?? '' ) ],
+						[ 'name' => __( 'Email', 'beepbeep-ai-alt-text-generator' ), 'value' => $stored_email ],
+						[ 'name' => __( 'Name', 'beepbeep-ai-alt-text-generator' ), 'value' => sanitize_text_field( $user_data['name'] ?? '' ) ],
+						[ 'name' => __( 'Plan', 'beepbeep-ai-alt-text-generator' ), 'value' => sanitize_text_field( $user_data['plan'] ?? '' ) ],
 					],
 				];
 				break;
@@ -237,27 +237,28 @@ class Privacy {
 		$items = [];
 
 		self::load_class( '\BeepBeepAI\AltTextGenerator\Credit_Usage_Logger', 'includes/class-credit-usage-logger.php' );
-		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Credit_Usage_Logger' ) ) {
-			$exists = $wpdb->get_var(
-				$wpdb->prepare( 'SHOW TABLES LIKE %s', Credit_Usage_Logger::table() )
-			);
-			if ( $exists === Credit_Usage_Logger::table() ) {
-				$summary = $wpdb->get_row(
-					$wpdb->prepare(
-						'SELECT COUNT(*) AS events, SUM(credits_used) AS credits, MAX(generated_at) AS last_event FROM `' . Credit_Usage_Logger::table() . '` WHERE user_id = %d',
-						$user_id
-					),
-					ARRAY_A
+			if ( class_exists( '\BeepBeepAI\AltTextGenerator\Credit_Usage_Logger' ) ) {
+				$exists = $wpdb->get_var(
+					$wpdb->prepare( 'SHOW TABLES LIKE %s', Credit_Usage_Logger::table() )
 				);
+				if ( $exists === Credit_Usage_Logger::table() ) {
+					$credit_usage_table = esc_sql( Credit_Usage_Logger::table() );
+					$summary = $wpdb->get_row(
+						$wpdb->prepare(
+							"SELECT COUNT(*) AS events, SUM(credits_used) AS credits, MAX(generated_at) AS last_event FROM `{$credit_usage_table}` WHERE user_id = %d",
+							$user_id
+						),
+						ARRAY_A
+					);
 				if ( ! empty( $summary ) && (int) $summary['events'] > 0 ) {
 					$items[] = [
 						'group_id'    => 'bbai_credit_usage',
-						'group_label' => __( 'BeepBeep AI Credit Usage', 'opptiai-alt' ),
+						'group_label' => __( 'BeepBeep AI Credit Usage', 'beepbeep-ai-alt-text-generator' ),
 						'item_id'     => 'credit-usage-' . $user_id,
 						'data'        => [
-							[ 'name' => __( 'Events', 'opptiai-alt' ), 'value' => (string) intval( $summary['events'] ) ],
-							[ 'name' => __( 'Credits Used', 'opptiai-alt' ), 'value' => (string) intval( $summary['credits'] ?? 0 ) ],
-							[ 'name' => __( 'Last Activity', 'opptiai-alt' ), 'value' => sanitize_text_field( $summary['last_event'] ?? '' ) ],
+							[ 'name' => __( 'Events', 'beepbeep-ai-alt-text-generator' ), 'value' => (string) intval( $summary['events'] ) ],
+							[ 'name' => __( 'Credits Used', 'beepbeep-ai-alt-text-generator' ), 'value' => (string) intval( $summary['credits'] ?? 0 ) ],
+							[ 'name' => __( 'Last Activity', 'beepbeep-ai-alt-text-generator' ), 'value' => sanitize_text_field( $summary['last_event'] ?? '' ) ],
 						],
 					];
 				}
@@ -265,27 +266,28 @@ class Privacy {
 		}
 
 		self::load_class( '\BeepBeepAI\AltTextGenerator\Usage\Usage_Logs', 'includes/usage/class-usage-logs.php' );
-		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Usage\Usage_Logs' ) ) {
-			$exists = $wpdb->get_var(
-				$wpdb->prepare( 'SHOW TABLES LIKE %s', \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::table() )
-			);
-			if ( $exists === \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::table() ) {
-				$summary = $wpdb->get_row(
-					$wpdb->prepare(
-						'SELECT COUNT(*) AS events, SUM(tokens_used) AS tokens, MAX(created_at) AS last_event FROM `' . \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::table() . '` WHERE user_id = %d',
-						$user_id
-					),
-					ARRAY_A
+			if ( class_exists( '\BeepBeepAI\AltTextGenerator\Usage\Usage_Logs' ) ) {
+				$exists = $wpdb->get_var(
+					$wpdb->prepare( 'SHOW TABLES LIKE %s', \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::table() )
 				);
+				if ( $exists === \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::table() ) {
+					$usage_logs_table = esc_sql( \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::table() );
+					$summary = $wpdb->get_row(
+						$wpdb->prepare(
+							"SELECT COUNT(*) AS events, SUM(tokens_used) AS tokens, MAX(created_at) AS last_event FROM `{$usage_logs_table}` WHERE user_id = %d",
+							$user_id
+						),
+						ARRAY_A
+					);
 				if ( ! empty( $summary ) && (int) $summary['events'] > 0 ) {
 					$items[] = [
 						'group_id'    => 'bbai_usage_logs',
-						'group_label' => __( 'BeepBeep AI Usage Logs', 'opptiai-alt' ),
+						'group_label' => __( 'BeepBeep AI Usage Logs', 'beepbeep-ai-alt-text-generator' ),
 						'item_id'     => 'usage-logs-' . $user_id,
 						'data'        => [
-							[ 'name' => __( 'Events', 'opptiai-alt' ), 'value' => (string) intval( $summary['events'] ) ],
-							[ 'name' => __( 'Tokens Used', 'opptiai-alt' ), 'value' => (string) intval( $summary['tokens'] ?? 0 ) ],
-							[ 'name' => __( 'Last Activity', 'opptiai-alt' ), 'value' => sanitize_text_field( $summary['last_event'] ?? '' ) ],
+							[ 'name' => __( 'Events', 'beepbeep-ai-alt-text-generator' ), 'value' => (string) intval( $summary['events'] ) ],
+							[ 'name' => __( 'Tokens Used', 'beepbeep-ai-alt-text-generator' ), 'value' => (string) intval( $summary['tokens'] ?? 0 ) ],
+							[ 'name' => __( 'Last Activity', 'beepbeep-ai-alt-text-generator' ), 'value' => sanitize_text_field( $summary['last_event'] ?? '' ) ],
 						],
 					];
 				}
@@ -314,22 +316,23 @@ class Privacy {
 
 		$page_size = 50;
 
-		if ( $email_address === '' && $user_id <= 0 ) {
-			return false;
-		}
+			if ( $email_address === '' && $user_id <= 0 ) {
+				return false;
+			}
+			$submissions_table = esc_sql( Contact_Submissions::table() );
 
-		$ids = $wpdb->get_col(
-			$wpdb->prepare(
-				'SELECT id FROM `' . Contact_Submissions::table() . '` WHERE ((%s <> %s AND email = %s) OR (%d > %d AND user_id = %d)) ORDER BY created_at DESC LIMIT %d',
-				$email_address,
-				'',
-				$email_address,
-				$user_id,
-				0,
-				$user_id,
-				$page_size
-			)
-		);
+			$ids = $wpdb->get_col(
+				$wpdb->prepare(
+					"SELECT id FROM `{$submissions_table}` WHERE ((%s <> %s AND email = %s) OR (%d > %d AND user_id = %d)) ORDER BY created_at DESC LIMIT %d",
+					$email_address,
+					'',
+					$email_address,
+					$user_id,
+					0,
+					$user_id,
+					$page_size
+				)
+			);
 		if ( empty( $ids ) ) {
 			return false;
 		}
@@ -446,5 +449,4 @@ class Privacy {
 			}
 		}
 	}
-	// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter
 }

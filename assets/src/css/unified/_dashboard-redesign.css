@@ -150,6 +150,42 @@
     transition: width 0.5s ease-out;
 }
 
+/* ============================================
+   Adaptive Usage Ring Colors
+   ============================================ */
+
+.bbai-usage-ring {
+    transition: stroke 0.6s ease, stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bbai-usage-ring--healthy {
+    stroke: #10B981;
+}
+
+.bbai-usage-ring--warning {
+    stroke: #F59E0B;
+}
+
+.bbai-usage-ring--danger {
+    stroke: #EF4444;
+}
+
+.bbai-usage-ring--critical {
+    stroke: #EF4444;
+    animation: bbai-pulse-ring 1.5s ease-in-out infinite;
+}
+
+@keyframes bbai-pulse-ring {
+    0%, 100% {
+        opacity: 1;
+        filter: drop-shadow(0 0 0 rgba(239, 68, 68, 0));
+    }
+    50% {
+        opacity: 0.85;
+        filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.5));
+    }
+}
+
 /* Reset Date */
 .bbai-usage-card-redesign .bbai-reset-date {
     text-align: center;

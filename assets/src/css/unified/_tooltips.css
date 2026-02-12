@@ -17,6 +17,13 @@ a[data-bbai-tooltip],
     /* Don't override button styling */
 }
 
+/* Ensure disabled buttons with tooltips can still receive pointer events for tooltip display */
+button[data-bbai-tooltip]:disabled,
+button[disabled][data-bbai-tooltip] {
+    pointer-events: auto;
+    cursor: not-allowed;
+}
+
 /* Tooltip Base */
 .bbai-tooltip {
     position: absolute;

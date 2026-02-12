@@ -3,6 +3,11 @@
 (function ($) {
     'use strict';
 
+    var i18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
+    var __ = i18n && typeof i18n.__ === 'function' ? i18n.__ : function (text) { return text; };
+    var _n = i18n && typeof i18n._n === 'function' ? i18n._n : function (single, plural, number) { return number === 1 ? single : plural; };
+    var sprintf = i18n && typeof i18n.sprintf === 'function' ? i18n.sprintf : function (format) { return format; };
+
     function setStatus(el, message, type) {
         if (!el) {
             return;
@@ -65,7 +70,7 @@
 
             scanButton.addEventListener('click', function () {
                 // Immediately disable and update label
-                setLoading(scanButton, true, 'Starting scan...');
+                setLoading(scanButton, true, strings.scanStart || __('Starting scan...', 'beepbeep-ai-alt-text-generator'));
                 setStatus(statusEl, '', '');
 
                 postAction('bbai_start_scan')
@@ -85,15 +90,18 @@
 
                             // Build and show success message
                             if (queued > 0) {
-                                var successMsg =
-                                    'Scan started. We\'ve queued ' +
-                                    queued +
-                                    ' image' +
-                                    (queued === 1 ? '' : 's') +
-                                    ' for alt text generation. You can safely leave this page while we process your library in the background.';
+                                var successMsg = sprintf(
+                                    _n(
+                                        "Scan started. We've queued %d image for alt text generation. You can safely leave this page while we process your library in the background.",
+                                        "Scan started. We've queued %d images for alt text generation. You can safely leave this page while we process your library in the background.",
+                                        queued,
+                                        'beepbeep-ai-alt-text-generator'
+                                    ),
+                                    queued
+                                );
                                 setStatus(statusEl, successMsg, 'success');
                             } else {
-                                setStatus(statusEl, 'No images without alt text were found. You\'re all set.', 'info');
+                                setStatus(statusEl, __("No images without alt text were found. You're all set.", 'beepbeep-ai-alt-text-generator'), 'info');
                             }
 
                             // Conditional redirect based on authentication
@@ -119,12 +127,12 @@
 
                                 var ctaText = document.createElement('p');
                                 ctaText.style.cssText = 'margin: 0 0 12px; color: #4b5563; font-size: 14px;';
-                                ctaText.textContent = 'Sign in to start generating alt text.';
+                                ctaText.textContent = __('Sign in to start generating alt text.', 'beepbeep-ai-alt-text-generator');
 
                                 var ctaButton = document.createElement('button');
                                 ctaButton.type = 'button';
                                 ctaButton.className = 'button button-primary';
-                                ctaButton.textContent = 'Sign in';
+                                ctaButton.textContent = __('Sign in', 'beepbeep-ai-alt-text-generator');
                                 ctaButton.setAttribute('data-action', 'show-auth-modal');
                                 ctaButton.setAttribute('data-auth-tab', 'login');
 
@@ -155,19 +163,19 @@
 
                         // Server error response - restore via helper to avoid inconsistent state
                         setLoading(scanButton, false, scanButtonOriginalLabel);
-                        setStatus(statusEl, 'Couldn\'t start the scan. Please try again.', 'error');
+                        setStatus(statusEl, __("Couldn't start the scan. Please try again.", 'beepbeep-ai-alt-text-generator'), 'error');
                     })
                     .fail(function () {
                         // Network or request error - restore via helper
                         setLoading(scanButton, false, scanButtonOriginalLabel);
-                        setStatus(statusEl, 'Couldn\'t start the scan. Please try again.', 'error');
+                        setStatus(statusEl, __("Couldn't start the scan. Please try again.", 'beepbeep-ai-alt-text-generator'), 'error');
                     });
             });
         }
 
         if (skipButton) {
             skipButton.addEventListener('click', function () {
-                setLoading(skipButton, true, strings.skipLabel || 'Skipping...');
+                setLoading(skipButton, true, strings.skipLabel || __('Skipping...', 'beepbeep-ai-alt-text-generator'));
 
                 postAction('bbai_onboarding_skip')
                     .done(function (response) {
@@ -183,12 +191,12 @@
                             statusEl,
                             response && response.data && response.data.message
                                 ? response.data.message
-                                : (strings.skipFailed || 'Unable to skip onboarding.'),
+                                : (strings.skipFailed || __('Unable to skip onboarding.', 'beepbeep-ai-alt-text-generator')),
                             'error'
                         );
                     })
                     .fail(function () {
-                        setStatus(statusEl, strings.skipFailed || 'Unable to skip onboarding. Please try again.', 'error');
+                        setStatus(statusEl, strings.skipFailed || __('Unable to skip onboarding. Please try again.', 'beepbeep-ai-alt-text-generator'), 'error');
                     })
                     .always(function () {
                         setLoading(skipButton, false);

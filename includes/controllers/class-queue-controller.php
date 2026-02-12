@@ -45,11 +45,19 @@ class Queue_Controller {
 	 * @return array Response data.
 	 */
 	public function retry_job(): array {
+		$action = 'bbai_queue_retry_job';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ),
+			);
+		}
+
 		// Check permission.
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'opptiai-alt' ),
+				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -67,11 +75,19 @@ class Queue_Controller {
 	 * @return array Response data.
 	 */
 	public function retry_failed(): array {
+		$action = 'bbai_queue_retry_failed';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ),
+			);
+		}
+
 		// Check permission.
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'opptiai-alt' ),
+				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -86,11 +102,19 @@ class Queue_Controller {
 	 * @return array Response data.
 	 */
 	public function clear_completed(): array {
+		$action = 'bbai_queue_clear_completed';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ),
+			);
+		}
+
 		// Check permission.
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'opptiai-alt' ),
+				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -105,11 +129,19 @@ class Queue_Controller {
 	 * @return array Response data.
 	 */
 	public function get_stats(): array {
+		$action = 'bbai_queue_stats';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ),
+			);
+		}
+
 		// Check permission.
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'opptiai-alt' ),
+				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 

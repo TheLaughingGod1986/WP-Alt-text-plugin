@@ -11,7 +11,6 @@ if (!defined('ABSPATH')) {
 }
 
 class Credit_Usage_Page {
-	// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- SQL identifiers are controlled by plugin schema; runtime values are prepared.
 
 	/**
 	 * Register admin menu page (deprecated - now integrated as a tab).
@@ -22,8 +21,8 @@ class Credit_Usage_Page {
 		// Keeping method for backward compatibility but not registering menu
 		// add_submenu_page(
 		// 	'upload.php', // Parent: Media menu
-		// 	__('Credit Usage', 'opptiai-alt'),
-		// 	__('Credit Usage', 'opptiai-alt'),
+		// 	__('Credit Usage', 'beepbeep-ai-alt-text-generator'),
+		// 	__('Credit Usage', 'beepbeep-ai-alt-text-generator'),
 		// 	'manage_options',
 		// 	'bbai-credit-usage',
 		// 	[__CLASS__, 'render_page']
@@ -35,7 +34,7 @@ class Credit_Usage_Page {
 	 */
 	public static function render_page_content() {
 	if (!current_user_can('manage_options')) {
-		echo '<div class="notice notice-error"><p>' . esc_html__('You do not have permission to access this page.', 'opptiai-alt') . '</p></div>';
+		echo '<div class="notice notice-error"><p>' . esc_html__('You do not have permission to access this page.', 'beepbeep-ai-alt-text-generator') . '</p></div>';
 		return;
 	}
 
@@ -45,7 +44,7 @@ class Credit_Usage_Page {
 	if ( $bbai_action === 'create_credit_table' ) {
 		check_admin_referer( 'bbai_create_credit_table', 'bbai_create_table_nonce' );
 		Credit_Usage_Logger::create_table();
-		echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Credit usage table created successfully!', 'opptiai-alt' ) . '</p></div>';
+		echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Credit usage table created successfully!', 'beepbeep-ai-alt-text-generator' ) . '</p></div>';
 	}
 
 		// Get filter parameters
@@ -115,51 +114,52 @@ class Credit_Usage_Page {
 		// Silently fail - backend data is optional enhancement
 	}
 	
-	// Diagnostic: Check if table exists and has any data
-	$table_exists = Credit_Usage_Logger::table_exists();
-	$debug_info = [];
-	
-		if ($table_exists) {
-			global $wpdb;
-			
-			// Get total row count
-			$total_rows = $wpdb->get_var(
-				$wpdb->prepare(
-				'SELECT COUNT(*) FROM `' . Credit_Usage_Logger::table() . '` WHERE %d = %d',
-				1,
-				1
-			)
-			);
+		// Diagnostic: Check if table exists and has any data
+		$table_exists = Credit_Usage_Logger::table_exists();
+		$debug_info = [];
+		
+				if ($table_exists) {
+					global $wpdb;
+					$table = esc_sql( Credit_Usage_Logger::table() );
+				
+				// Get total row count
+				$total_rows = $wpdb->get_var(
+					$wpdb->prepare(
+					"SELECT COUNT(*) FROM `{$table}` WHERE %d = %d",
+					1,
+					1
+				)
+				);
 		$debug_info['total_rows'] = absint($total_rows);
 		
 		// Get distinct user count
-			$distinct_users = $wpdb->get_var(
-					$wpdb->prepare(
-						'SELECT COUNT(DISTINCT user_id) FROM `' . Credit_Usage_Logger::table() . '` WHERE %d = %d',
-						1,
-						1
-					)
-			);
+				$distinct_users = $wpdb->get_var(
+						$wpdb->prepare(
+							"SELECT COUNT(DISTINCT user_id) FROM `{$table}` WHERE %d = %d",
+							1,
+							1
+						)
+				);
 		$debug_info['distinct_users'] = absint($distinct_users);
 		
 		// Get sample of actual data (for debugging) - raw query without filters
-		if ($total_rows > 0) {
-				$sample_data = $wpdb->get_results(
-						$wpdb->prepare(
-							'SELECT user_id, attachment_id, credits_used, source, generated_at FROM `' . Credit_Usage_Logger::table() . '` ORDER BY generated_at DESC LIMIT %d',
-							10
-						),
-					ARRAY_A
-				);
+			if ($total_rows > 0) {
+					$sample_data = $wpdb->get_results(
+							$wpdb->prepare(
+								"SELECT user_id, attachment_id, credits_used, source, generated_at FROM `{$table}` ORDER BY generated_at DESC LIMIT %d",
+								10
+							),
+						ARRAY_A
+					);
 			$debug_info['sample_data'] = $sample_data;
 			
 			// Get user breakdown summary
-				$user_breakdown = $wpdb->get_results(
-						$wpdb->prepare(
-							'SELECT user_id, COUNT(*) as count, SUM(credits_used) as total_credits FROM `' . Credit_Usage_Logger::table() . '` WHERE %d = %d GROUP BY user_id ORDER BY total_credits DESC',
-							1,
-							1
-						),
+					$user_breakdown = $wpdb->get_results(
+							$wpdb->prepare(
+								"SELECT user_id, COUNT(*) as count, SUM(credits_used) as total_credits FROM `{$table}` WHERE %d = %d GROUP BY user_id ORDER BY total_credits DESC",
+								1,
+								1
+							),
 				ARRAY_A
 			);
 			$debug_info['user_breakdown'] = $user_breakdown;
@@ -188,9 +188,8 @@ class Credit_Usage_Page {
 	if (file_exists($partial)) {
 		include $partial;
 		} else {
-			esc_html_e('Credit usage content unavailable.', 'opptiai-alt');
+			esc_html_e('Credit usage content unavailable.', 'beepbeep-ai-alt-text-generator');
 		}
 		}
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter
 
 }

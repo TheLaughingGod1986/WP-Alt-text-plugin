@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
         <?php if ($view === 'user_detail' && $user_id > 0) : ?>
             <div style="margin-bottom: 16px;">
                 <a href="<?php echo esc_url(admin_url('admin.php?page=bbai-credit-usage')); ?>" class="bbai-back-btn">
-                    <?php esc_html_e('← Back to Summary', 'opptiai-alt'); ?>
+                    <?php esc_html_e('← Back to Summary', 'beepbeep-ai-alt-text-generator'); ?>
                 </a>
             </div>
         <?php endif; ?>
@@ -26,7 +26,7 @@ if (!defined('ABSPATH')) {
                 <?php echo esc_html(get_admin_page_title()); ?>
             </h1>
             <p class="bbai-page-subtitle">
-                <?php esc_html_e('Track your credit usage, view detailed activity by user, and monitor your monthly quota. Use filters to analyze usage patterns over time.', 'opptiai-alt'); ?>
+                <?php esc_html_e('Track your credit usage, view detailed activity by user, and monitor your monthly quota. Use filters to analyze usage patterns over time.', 'beepbeep-ai-alt-text-generator'); ?>
             </p>
         </div>
     </div>
@@ -36,7 +36,7 @@ if (!defined('ABSPATH')) {
         <div class="bbai-credit-stats-grid">
             <div class="bbai-credit-stat-card">
                 <h3 class="bbai-credit-stat-title">
-                    <?php esc_html_e('Total Credits Allocated', 'opptiai-alt'); ?>
+                    <?php esc_html_e('Total Credits Allocated', 'beepbeep-ai-alt-text-generator'); ?>
                 </h3>
                 <p class="bbai-credit-stat-value">
                     <?php echo esc_html(number_format_i18n($current_usage['limit'])); ?>
@@ -50,7 +50,7 @@ if (!defined('ABSPATH')) {
             </div>
             <div class="bbai-credit-stat-card">
                 <h3 class="bbai-credit-stat-title">
-                    <?php esc_html_e('Total Credits Used', 'opptiai-alt'); ?>
+                    <?php esc_html_e('Total Credits Used', 'beepbeep-ai-alt-text-generator'); ?>
                 </h3>
                 <p class="bbai-credit-stat-value">
                     <?php echo esc_html(number_format_i18n($current_usage['used'])); ?>
@@ -64,7 +64,7 @@ if (!defined('ABSPATH')) {
             </div>
             <div class="bbai-credit-stat-card">
                 <h3 class="bbai-credit-stat-title">
-                    <?php esc_html_e('Credits Remaining', 'opptiai-alt'); ?>
+                    <?php esc_html_e('Credits Remaining', 'beepbeep-ai-alt-text-generator'); ?>
                 </h3>
                 <?php
                 // Determine status class based on remaining percentage
@@ -80,12 +80,12 @@ if (!defined('ABSPATH')) {
                     <?php echo esc_html(number_format_i18n($current_usage['remaining'])); ?>
                 </p>
                 <p class="bbai-credit-stat-desc">
-                    <?php esc_html_e('Image descriptions left this month', 'opptiai-alt'); ?>
+                    <?php esc_html_e('Image descriptions left this month', 'beepbeep-ai-alt-text-generator'); ?>
                 </p>
             </div>
             <div class="bbai-credit-stat-card">
                 <h3 class="bbai-credit-stat-title">
-                    <?php esc_html_e('Usage Percentage', 'opptiai-alt'); ?>
+                    <?php esc_html_e('Usage Percentage', 'beepbeep-ai-alt-text-generator'); ?>
                 </h3>
                 <?php
                 // Status-aware coloring: success <70%, warning 70-90%, danger >90%
@@ -101,7 +101,7 @@ if (!defined('ABSPATH')) {
                     <?php echo esc_html(number_format_i18n($current_usage['percentage'])); ?>%
                 </p>
                 <p class="bbai-credit-stat-desc">
-                    <?php esc_html_e('of monthly credits used', 'opptiai-alt'); ?>
+                    <?php esc_html_e('of monthly credits used', 'beepbeep-ai-alt-text-generator'); ?>
                 </p>
             </div>
         </div>
@@ -113,7 +113,7 @@ if (!defined('ABSPATH')) {
             <input type="hidden" name="page" value="bbai-credit-usage" />
             <div class="bbai-credit-filter-row">
                 <div class="bbai-credit-filter-field">
-                    <label class="bbai-credit-filter-label"><?php esc_html_e('Date From', 'opptiai-alt'); ?></label>
+                    <label class="bbai-credit-filter-label"><?php esc_html_e('Date From', 'beepbeep-ai-alt-text-generator'); ?></label>
                     <div class="bbai-credit-filter-input-wrapper">
                         <input type="date" name="date_from" value="<?php echo esc_attr($date_from); ?>" class="bbai-credit-filter-input" placeholder="mm/dd/yyyy">
                         <svg class="bbai-credit-filter-calendar-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -123,7 +123,7 @@ if (!defined('ABSPATH')) {
                     </div>
                 </div>
                 <div class="bbai-credit-filter-field">
-                    <label class="bbai-credit-filter-label"><?php esc_html_e('Date To', 'opptiai-alt'); ?></label>
+                    <label class="bbai-credit-filter-label"><?php esc_html_e('Date To', 'beepbeep-ai-alt-text-generator'); ?></label>
                     <div class="bbai-credit-filter-input-wrapper">
                         <input type="date" name="date_to" value="<?php echo esc_attr($date_to); ?>" class="bbai-credit-filter-input" placeholder="mm/dd/yyyy">
                         <svg class="bbai-credit-filter-calendar-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -133,18 +133,18 @@ if (!defined('ABSPATH')) {
                     </div>
                 </div>
                 <div class="bbai-credit-filter-field">
-                    <label class="bbai-credit-filter-label"><?php esc_html_e('Source', 'opptiai-alt'); ?></label>
+                    <label class="bbai-credit-filter-label"><?php esc_html_e('Source', 'beepbeep-ai-alt-text-generator'); ?></label>
                     <select name="source" class="bbai-credit-filter-select">
-                        <option value=""><?php esc_html_e('All', 'opptiai-alt'); ?></option>
-                        <option value="api" <?php selected($source, 'api'); ?>><?php esc_html_e('API', 'opptiai-alt'); ?></option>
-                        <option value="upload" <?php selected($source, 'upload'); ?>><?php esc_html_e('Upload', 'opptiai-alt'); ?></option>
-                        <option value="bulk" <?php selected($source, 'bulk'); ?>><?php esc_html_e('Bulk', 'opptiai-alt'); ?></option>
+                        <option value=""><?php esc_html_e('All', 'beepbeep-ai-alt-text-generator'); ?></option>
+                        <option value="api" <?php selected($source, 'api'); ?>><?php esc_html_e('API', 'beepbeep-ai-alt-text-generator'); ?></option>
+                        <option value="upload" <?php selected($source, 'upload'); ?>><?php esc_html_e('Upload', 'beepbeep-ai-alt-text-generator'); ?></option>
+                        <option value="bulk" <?php selected($source, 'bulk'); ?>><?php esc_html_e('Bulk', 'beepbeep-ai-alt-text-generator'); ?></option>
                     </select>
                 </div>
                 <div class="bbai-credit-filter-field">
-                    <label class="bbai-credit-filter-label"><?php esc_html_e('User', 'opptiai-alt'); ?></label>
+                    <label class="bbai-credit-filter-label"><?php esc_html_e('User', 'beepbeep-ai-alt-text-generator'); ?></label>
                     <select name="user_id" class="bbai-credit-filter-select">
-                        <option value="0"><?php esc_html_e('All Users', 'opptiai-alt'); ?></option>
+                        <option value="0"><?php esc_html_e('All Users', 'beepbeep-ai-alt-text-generator'); ?></option>
                         <?php foreach ($all_users as $user) : ?>
                             <option value="<?php echo esc_attr($user->ID); ?>" <?php selected($user_id, $user->ID); ?>>
                                 <?php echo esc_html($user->display_name . ' (' . $user->user_email . ')'); ?>
@@ -154,19 +154,19 @@ if (!defined('ABSPATH')) {
                 </div>
             </div>
             <div class="bbai-credit-filter-actions">
-                <button type="submit" class="bbai-btn bbai-btn-primary"><?php esc_html_e('Filter', 'opptiai-alt'); ?></button>
-                <a href="<?php echo esc_url(admin_url('admin.php?page=bbai-credit-usage')); ?>" class="bbai-clear-filter-link"><?php esc_html_e('Clear', 'opptiai-alt'); ?></a>
+                <button type="submit" class="bbai-btn bbai-btn-primary"><?php esc_html_e('Filter', 'beepbeep-ai-alt-text-generator'); ?></button>
+                <a href="<?php echo esc_url(admin_url('admin.php?page=bbai-credit-usage')); ?>" class="bbai-clear-filter-link"><?php esc_html_e('Clear', 'beepbeep-ai-alt-text-generator'); ?></a>
             </div>
         </form>
     </div>
 
     <?php if ($view === 'user_detail' && $user_details) : ?>
         <div class="bbai-card bbai-user-details-card">
-            <h2 class="bbai-card-title"><?php esc_html_e('User Details', 'opptiai-alt'); ?></h2>
-            <p><strong><?php esc_html_e('Name:', 'opptiai-alt'); ?></strong> <?php echo esc_html($user_details['name'] ?? ''); ?></p>
-            <p><strong><?php esc_html_e('Email:', 'opptiai-alt'); ?></strong> <?php echo esc_html($user_details['email'] ?? ''); ?></p>
-            <p><strong><?php esc_html_e('Total Credits Used:', 'opptiai-alt'); ?></strong> <?php echo esc_html(number_format_i18n($user_details['total_credits'] ?? 0)); ?></p>
-            <p><strong><?php esc_html_e('Images Processed:', 'opptiai-alt'); ?></strong> <?php echo esc_html(number_format_i18n($user_details['images_processed'] ?? 0)); ?></p>
+            <h2 class="bbai-card-title"><?php esc_html_e('User Details', 'beepbeep-ai-alt-text-generator'); ?></h2>
+            <p><strong><?php esc_html_e('Name:', 'beepbeep-ai-alt-text-generator'); ?></strong> <?php echo esc_html($user_details['name'] ?? ''); ?></p>
+            <p><strong><?php esc_html_e('Email:', 'beepbeep-ai-alt-text-generator'); ?></strong> <?php echo esc_html($user_details['email'] ?? ''); ?></p>
+            <p><strong><?php esc_html_e('Total Credits Used:', 'beepbeep-ai-alt-text-generator'); ?></strong> <?php echo esc_html(number_format_i18n($user_details['total_credits'] ?? 0)); ?></p>
+            <p><strong><?php esc_html_e('Images Processed:', 'beepbeep-ai-alt-text-generator'); ?></strong> <?php echo esc_html(number_format_i18n($user_details['images_processed'] ?? 0)); ?></p>
         </div>
     <?php endif; ?>
 
@@ -177,18 +177,18 @@ if (!defined('ABSPATH')) {
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F59E0B" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                <h2 class="bbai-card-title" style="margin: 0;"><?php esc_html_e('SEO Heroes', 'opptiai-alt'); ?></h2>
+                <h2 class="bbai-card-title" style="margin: 0;"><?php esc_html_e('SEO Heroes', 'beepbeep-ai-alt-text-generator'); ?></h2>
             </div>
             <p class="bbai-card-subtitle" style="color: #64748b; margin-bottom: 16px;">
-                <?php esc_html_e('Top contributors improving your site\'s accessibility and SEO this billing period.', 'opptiai-alt'); ?>
+                <?php esc_html_e('Top contributors improving your site\'s accessibility and SEO this billing period.', 'beepbeep-ai-alt-text-generator'); ?>
             </p>
             <table class="widefat fixed striped">
                 <thead>
                     <tr>
-                        <th style="width: 50px;"><?php esc_html_e('Rank', 'opptiai-alt'); ?></th>
-                        <th><?php esc_html_e('User', 'opptiai-alt'); ?></th>
-                        <th><?php esc_html_e('Images Optimized', 'opptiai-alt'); ?></th>
-                        <th><?php esc_html_e('Last Activity', 'opptiai-alt'); ?></th>
+                        <th style="width: 50px;"><?php esc_html_e('Rank', 'beepbeep-ai-alt-text-generator'); ?></th>
+                        <th><?php esc_html_e('User', 'beepbeep-ai-alt-text-generator'); ?></th>
+                        <th><?php esc_html_e('Images Optimized', 'beepbeep-ai-alt-text-generator'); ?></th>
+                        <th><?php esc_html_e('Last Activity', 'beepbeep-ai-alt-text-generator'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -213,7 +213,7 @@ if (!defined('ABSPATH')) {
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <strong><?php echo esc_html($hero['user_email'] ?? __('Unknown User', 'opptiai-alt')); ?></strong>
+                                <strong><?php echo esc_html($hero['user_email'] ?? __('Unknown User', 'beepbeep-ai-alt-text-generator')); ?></strong>
                             </td>
                             <td>
                                 <span style="font-weight: 600; color: #059669;"><?php echo esc_html(number_format_i18n($hero['credits_used'] ?? 0)); ?></span>
@@ -243,7 +243,7 @@ if (!defined('ABSPATH')) {
                     $period_end = strtotime($backend_user_activity['period_end']);
                     printf(
                         /* translators: 1: period start date, 2: period end date */
-                        esc_html__('Billing period: %1$s - %2$s', 'opptiai-alt'),
+                        esc_html__('Billing period: %1$s - %2$s', 'beepbeep-ai-alt-text-generator'),
                         esc_html(date_i18n(get_option('date_format'), $period_start)),
                         esc_html(date_i18n(get_option('date_format'), $period_end))
                     );
@@ -255,7 +255,7 @@ if (!defined('ABSPATH')) {
 
     <!-- Usage Table -->
     <div class="bbai-card bbai-usage-table-card">
-        <h2 class="bbai-card-title" style="margin-bottom: 16px;"><?php esc_html_e('Usage by User', 'opptiai-alt'); ?></h2>
+        <h2 class="bbai-card-title" style="margin-bottom: 16px;"><?php esc_html_e('Usage by User', 'beepbeep-ai-alt-text-generator'); ?></h2>
         
         <?php if (empty($date_from) && empty($date_to)) : ?>
             <div class="bbai-info-notice bbai-mb-4">
@@ -264,8 +264,8 @@ if (!defined('ABSPATH')) {
                     <path d="M10 6V10M10 14H10.01" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round"/>
                 </svg>
                 <span>
-                    <strong><?php esc_html_e('Note:', 'opptiai-alt'); ?></strong>
-                    <?php esc_html_e('The summary cards above show your current accurate usage from the backend. The table below shows historical WordPress user activity, which may include data from previous periods or different filters. Use the filters to view recent usage only.', 'opptiai-alt'); ?>
+                    <strong><?php esc_html_e('Note:', 'beepbeep-ai-alt-text-generator'); ?></strong>
+                    <?php esc_html_e('The summary cards above show your current accurate usage from the backend. The table below shows historical WordPress user activity, which may include data from previous periods or different filters. Use the filters to view recent usage only.', 'beepbeep-ai-alt-text-generator'); ?>
                 </span>
             </div>
         <?php endif; ?>
@@ -274,17 +274,17 @@ if (!defined('ABSPATH')) {
             <table class="widefat fixed striped bbai-mt-4">
                 <thead>
                     <tr>
-                        <th><?php esc_html_e('User', 'opptiai-alt'); ?></th>
-                        <th><?php esc_html_e('Credits Used', 'opptiai-alt'); ?></th>
-                        <th><?php esc_html_e('Last Activity', 'opptiai-alt'); ?></th>
-                        <th><?php esc_html_e('Avg Per Day', 'opptiai-alt'); ?></th>
+                        <th><?php esc_html_e('User', 'beepbeep-ai-alt-text-generator'); ?></th>
+                        <th><?php esc_html_e('Credits Used', 'beepbeep-ai-alt-text-generator'); ?></th>
+                        <th><?php esc_html_e('Last Activity', 'beepbeep-ai-alt-text-generator'); ?></th>
+                        <th><?php esc_html_e('Avg Per Day', 'beepbeep-ai-alt-text-generator'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($usage_by_user['users'] as $user_usage) : ?>
                         <tr>
                             <td>
-                                <?php echo esc_html($user_usage['display_name'] ?? __('Unknown', 'opptiai-alt')); ?>
+                                <?php echo esc_html($user_usage['display_name'] ?? __('Unknown', 'beepbeep-ai-alt-text-generator')); ?>
                                 <div class="bbai-table-subtitle"><?php echo esc_html($user_usage['user_email'] ?? ''); ?></div>
                             </td>
                             <td><?php echo esc_html(number_format_i18n($user_usage['total_credits'] ?? 0)); ?></td>
@@ -311,8 +311,8 @@ if (!defined('ABSPATH')) {
                         $pagination = paginate_links([
                             'base'      => add_query_arg('paged', '%#%'),
                             'format'    => '',
-                            'prev_text' => __('&laquo;', 'opptiai-alt'),
-                            'next_text' => __('&raquo;', 'opptiai-alt'),
+                            'prev_text' => __('&laquo;', 'beepbeep-ai-alt-text-generator'),
+                            'next_text' => __('&raquo;', 'beepbeep-ai-alt-text-generator'),
                             'total'     => ceil($usage_by_user['total'] / 50),
                             'current'   => $page,
                             'type'      => 'array',
@@ -331,7 +331,7 @@ if (!defined('ABSPATH')) {
                 </div>
             <?php endif; ?>
         <?php else : ?>
-            <p class="bbai-empty-table-message"><?php esc_html_e('No usage data found for selected filters.', 'opptiai-alt'); ?></p>
+            <p class="bbai-empty-table-message"><?php esc_html_e('No usage data found for selected filters.', 'beepbeep-ai-alt-text-generator'); ?></p>
         <?php endif; ?>
     </div>
 

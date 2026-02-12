@@ -6,6 +6,11 @@
 bbaiRunWithJQuery(function($) {
     'use strict';
 
+    const i18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
+    const __ = i18n && typeof i18n.__ === 'function' ? i18n.__ : (text) => text;
+    const _n = i18n && typeof i18n._n === 'function' ? i18n._n : (single, plural, number) => (number === 1 ? single : plural);
+    const sprintf = i18n && typeof i18n.sprintf === 'function' ? i18n.sprintf : (format) => format;
+
     const bulkEdit = {
         selectedIds: [],
         lastAction: null,
@@ -31,16 +36,16 @@ bbaiRunWithJQuery(function($) {
             });
 
             // Bulk edit button
-            $(document).on('click', '[data-action="bulk-edit"]', (e) => {
-                e.preventDefault();
-                if (this.selectedIds.length === 0) {
-                    if (window.bbaiPushToast) {
-                        bbaiPushToast('info', 'Please select at least one image to edit.');
+                $(document).on('click', '[data-action="bulk-edit"]', (e) => {
+                    e.preventDefault();
+                    if (this.selectedIds.length === 0) {
+                        if (window.bbaiPushToast) {
+                            bbaiPushToast('info', __('Please select at least one image to edit.', 'beepbeep-ai-alt-text-generator'));
+                        }
+                        return;
                     }
-                    return;
-                }
-                this.showBulkEditModal();
-            });
+                    this.showBulkEditModal();
+                });
 
             // Clear selection
             $(document).on('click', '[data-action="clear-selection"]', (e) => {
@@ -125,30 +130,41 @@ bbaiRunWithJQuery(function($) {
         },
 
         createBulkEditModal: function() {
+            const selectedCount = this.selectedIds.length;
+            const countSpan = `<span class="bbai-bulk-edit-count">${selectedCount}</span>`;
+            const labelText = sprintf(
+                _n(
+                    'New Alt Text (will be applied to all %s selected image)',
+                    'New Alt Text (will be applied to all %s selected images)',
+                    selectedCount,
+                    'beepbeep-ai-alt-text-generator'
+                ),
+                countSpan
+            );
             const modalHtml = `
                 <div class="bbai-bulk-edit-modal">
                     <div class="bbai-bulk-edit-modal__overlay"></div>
                     <div class="bbai-bulk-edit-modal__content">
                         <div class="bbai-bulk-edit-modal__header">
-                            <h2 class="bbai-bulk-edit-modal__title">Bulk Edit Alt Text</h2>
-                            <button type="button" class="bbai-bulk-edit-modal__close" aria-label="Close">×</button>
+                            <h2 class="bbai-bulk-edit-modal__title">${this.escapeHtml(__('Bulk Edit Alt Text', 'beepbeep-ai-alt-text-generator'))}</h2>
+                            <button type="button" class="bbai-bulk-edit-modal__close" aria-label="${this.escapeHtml(__('Close', 'beepbeep-ai-alt-text-generator'))}">×</button>
                         </div>
                         <div class="bbai-bulk-edit-modal__body">
                             <div class="bbai-bulk-edit-form-group">
                                 <label class="bbai-bulk-edit-form-label">
-                                    New Alt Text (will be applied to all <span class="bbai-bulk-edit-count">${this.selectedIds.length}</span> selected images)
+                                    ${labelText}
                                 </label>
                                 <textarea 
                                     class="bbai-bulk-edit-form-textarea" 
                                     id="bbai-bulk-edit-textarea"
-                                    placeholder="Enter alt text to apply to all selected images..."
+                                    placeholder="${this.escapeHtml(__('Enter alt text to apply to all selected images...', 'beepbeep-ai-alt-text-generator'))}"
                                 ></textarea>
                                 <p class="bbai-text-sm bbai-text-muted bbai-mt-2">
-                                    This will replace the alt text for all selected images. You can undo this action if needed.
+                                    ${this.escapeHtml(__('This will replace the alt text for all selected images. You can undo this action if needed.', 'beepbeep-ai-alt-text-generator'))}
                                 </p>
                             </div>
                             <div class="bbai-bulk-edit-preview">
-                                <div class="bbai-bulk-edit-preview-title">Selected Images:</div>
+                                <div class="bbai-bulk-edit-preview-title">${this.escapeHtml(__('Selected Images:', 'beepbeep-ai-alt-text-generator'))}</div>
                                 <div class="bbai-bulk-edit-preview-list" id="bbai-bulk-edit-preview-list">
                                     <!-- Preview items will be loaded here -->
                                 </div>
@@ -156,10 +172,10 @@ bbaiRunWithJQuery(function($) {
                         </div>
                         <div class="bbai-bulk-edit-modal__footer">
                             <button type="button" class="bbai-btn bbai-btn-secondary" data-action="close-bulk-edit-modal">
-                                Cancel
+                                ${this.escapeHtml(__('Cancel', 'beepbeep-ai-alt-text-generator'))}
                             </button>
                             <button type="button" class="bbai-btn bbai-btn-primary" data-action="apply-bulk-edit">
-                                Apply to All Selected
+                                ${this.escapeHtml(__('Apply to All Selected', 'beepbeep-ai-alt-text-generator'))}
                             </button>
                         </div>
                     </div>
@@ -177,13 +193,14 @@ bbaiRunWithJQuery(function($) {
             previewIds.forEach(id => {
                 const $row = $(`tr[data-attachment-id="${id}"]`);
                 if ($row.length) {
-                    const filename = $row.find('td:nth-child(3)').text().trim() || `Image ${id}`;
+                    const filename = $row.find('td:nth-child(3)').text().trim() || sprintf(__('Image %d', 'beepbeep-ai-alt-text-generator'), id);
                     $previewList.append(`<div class="bbai-bulk-edit-preview-item">${this.escapeHtml(filename)}</div>`);
                 }
             });
 
             if (this.selectedIds.length > 5) {
-                $previewList.append(`<div class="bbai-bulk-edit-preview-item bbai-text-muted">...and ${this.selectedIds.length - 5} more</div>`);
+                const moreCount = this.selectedIds.length - 5;
+                $previewList.append(`<div class="bbai-bulk-edit-preview-item bbai-text-muted">${this.escapeHtml(sprintf(_n('...and %d more', '...and %d more', moreCount, 'beepbeep-ai-alt-text-generator'), moreCount))}</div>`);
             }
         },
 
@@ -192,7 +209,7 @@ bbaiRunWithJQuery(function($) {
 
             if (!newAltText) {
                 if (window.bbaiPushToast) {
-                    bbaiPushToast('error', 'Please enter alt text before applying.');
+                    bbaiPushToast('error', __('Please enter alt text before applying.', 'beepbeep-ai-alt-text-generator'));
                 }
                 return;
             }
@@ -203,7 +220,7 @@ bbaiRunWithJQuery(function($) {
             // Show loading state
             const $applyBtn = $('[data-action="apply-bulk-edit"]');
             const originalText = $applyBtn.text();
-            $applyBtn.prop('disabled', true).text('Applying...');
+            $applyBtn.prop('disabled', true).text(__('Applying...', 'beepbeep-ai-alt-text-generator'));
 
             // Apply to all selected images
             let completed = 0;
@@ -218,9 +235,32 @@ bbaiRunWithJQuery(function($) {
 
                     if (window.bbaiPushToast) {
                         if (failed === 0) {
-                            bbaiPushToast('success', `Successfully updated alt text for ${completed} image(s).`);
+                            bbaiPushToast(
+                                'success',
+                                sprintf(
+                                    _n(
+                                        'Successfully updated alt text for %d image.',
+                                        'Successfully updated alt text for %d images.',
+                                        completed,
+                                        'beepbeep-ai-alt-text-generator'
+                                    ),
+                                    completed
+                                )
+                            );
                         } else {
-                            bbaiPushToast('error', `Updated ${completed} image(s), but ${failed} failed.`);
+                            bbaiPushToast(
+                                'error',
+                                sprintf(
+                                    _n(
+                                        'Updated %1$d image, but %2$d failed.',
+                                        'Updated %1$d images, but %2$d failed.',
+                                        completed,
+                                        'beepbeep-ai-alt-text-generator'
+                                    ),
+                                    completed,
+                                    failed
+                                )
+                            );
                         }
                     }
 
@@ -242,11 +282,16 @@ bbaiRunWithJQuery(function($) {
             });
         },
 
-        updateImageAltText: function(imageId, altText) {
-            return new Promise((resolve, reject) => {
-                const config = window.BBAI_DASH || window.BBAI || {};
-                const restUrl = config.rest || '/wp-json/wp/v2';
-                const nonce = config.nonce || '';
+	        updateImageAltText: function(imageId, altText) {
+	            return new Promise((resolve, reject) => {
+	                const config = window.BBAI_DASH || window.BBAI || {};
+	                const restRoot = config.restRoot || ((window.wpApiSettings && window.wpApiSettings.root) ? window.wpApiSettings.root : '');
+	                if (!restRoot) {
+	                    reject(new Error(__('REST root unavailable.', 'beepbeep-ai-alt-text-generator')));
+	                    return;
+	                }
+	                const restUrl = `${String(restRoot).replace(/\/$/, '')}/wp/v2`;
+	                const nonce = config.nonce || '';
 
                 $.ajax({
                     url: `${restUrl}/media/${imageId}`,
@@ -263,7 +308,7 @@ bbaiRunWithJQuery(function($) {
                         const $row = $(`tr[data-attachment-id="${imageId}"]`);
                         if ($row.length) {
                             $row.find('.bbai-alt-text-cell').text(altText);
-                            $row.find('.bbai-status-badge').removeClass('bbai-status-badge--missing').addClass('bbai-status-badge--optimized').text('Optimized');
+                            $row.find('.bbai-status-badge').removeClass('bbai-status-badge--missing').addClass('bbai-status-badge--optimized').text(__('Optimized', 'beepbeep-ai-alt-text-generator'));
                         }
                         resolve(response);
                     },
@@ -296,7 +341,7 @@ bbaiRunWithJQuery(function($) {
         undoLastAction: function() {
             if (!this.lastAction || !this.lastActionData) {
                 if (window.bbaiPushToast) {
-                    bbaiPushToast('info', 'No action to undo.');
+                    bbaiPushToast('info', __('No action to undo.', 'beepbeep-ai-alt-text-generator'));
                 }
                 return;
             }
@@ -312,7 +357,18 @@ bbaiRunWithJQuery(function($) {
                         completed++;
                         if (completed + failed >= ids.length) {
                             if (window.bbaiPushToast) {
-                                bbaiPushToast('success', `Undone: Restored alt text for ${completed} image(s).`);
+                                bbaiPushToast(
+                                    'success',
+                                    sprintf(
+                                        _n(
+                                            'Undone: Restored alt text for %d image.',
+                                            'Undone: Restored alt text for %d images.',
+                                            completed,
+                                            'beepbeep-ai-alt-text-generator'
+                                        ),
+                                        completed
+                                    )
+                                );
                             }
                             this.lastAction = null;
                             this.lastActionData = null;
@@ -322,7 +378,18 @@ bbaiRunWithJQuery(function($) {
                         failed++;
                         if (completed + failed >= ids.length) {
                             if (window.bbaiPushToast) {
-                                bbaiPushToast('error', `Failed to undo changes for ${failed} image(s).`);
+                                bbaiPushToast(
+                                    'error',
+                                    sprintf(
+                                        _n(
+                                            'Failed to undo changes for %d image.',
+                                            'Failed to undo changes for %d images.',
+                                            failed,
+                                            'beepbeep-ai-alt-text-generator'
+                                        ),
+                                        failed
+                                    )
+                                );
                             }
                         }
                     });
@@ -332,9 +399,9 @@ bbaiRunWithJQuery(function($) {
         showUndoNotification: function() {
             const notificationHtml = `
                 <div class="bbai-undo-notification">
-                    <span class="bbai-undo-notification__message">Alt text updated successfully</span>
+                    <span class="bbai-undo-notification__message">${this.escapeHtml(__('Alt text updated successfully', 'beepbeep-ai-alt-text-generator'))}</span>
                     <button type="button" class="bbai-undo-notification__button" data-action="undo-last-action">
-                        Undo
+                        ${this.escapeHtml(__('Undo', 'beepbeep-ai-alt-text-generator'))}
                     </button>
                 </div>
             `;

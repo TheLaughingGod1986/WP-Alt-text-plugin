@@ -151,12 +151,12 @@ class Plan_Helpers {
 
         switch ($plan_slug) {
             case 'agency':
-                return __('AGENCY', 'opptiai-alt');
+                return __('AGENCY', 'beepbeep-ai-alt-text-generator');
             case 'pro':
             case 'growth':
-                return __('PRO', 'opptiai-alt');
+                return __('PRO', 'beepbeep-ai-alt-text-generator');
             default:
-                return __('FREE', 'opptiai-alt');
+                return __('FREE', 'beepbeep-ai-alt-text-generator');
         }
     }
 

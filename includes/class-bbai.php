@@ -56,12 +56,10 @@ class Plugin {
 
 	/**
 	 * Register locale.
-	 * Note: WordPress.org loads plugin translations automatically from the /languages directory.
-	 * No need to call load_plugin_textdomain() manually.
+	 * WordPress.org loads plugin translations automatically from the /languages directory.
 	 */
 	private function set_locale() {
-		// WordPress.org automatically loads translations from /languages directory
-		// No action needed here
+		// Intentionally left empty: translations are auto-loaded from /languages on WordPress.org.
 	}
 
 	/**

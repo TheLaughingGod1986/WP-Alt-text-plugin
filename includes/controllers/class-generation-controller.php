@@ -45,11 +45,19 @@ class Generation_Controller {
 	 * @return array Response data.
 	 */
 	public function regenerate_single(): array {
+		$action = 'bbai_regenerate_single';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ),
+			);
+		}
+
 		// Check permission.
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'opptiai-alt' ),
+				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -58,7 +66,7 @@ class Generation_Controller {
 		if ( $attachment_id <= 0 || ! current_user_can( 'edit_post', $attachment_id ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'opptiai-alt' ),
+				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -73,16 +81,25 @@ class Generation_Controller {
 	 * @return array Response data.
 	 */
 	public function bulk_queue(): array {
+		$action = 'bbai_bulk_queue';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ),
+			);
+		}
+
 		// Check permission.
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'opptiai-alt' ),
+				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
 		$attachment_ids_raw = isset( $_POST['attachment_ids'] ) ? wp_unslash( $_POST['attachment_ids'] ) : '';
-		$attachment_ids     = is_string( $attachment_ids_raw ) ? json_decode( $attachment_ids_raw, true ) : array();
+		$attachment_ids_raw = is_string( $attachment_ids_raw ) ? sanitize_text_field( $attachment_ids_raw ) : '';
+		$attachment_ids     = $attachment_ids_raw ? json_decode( $attachment_ids_raw, true ) : array();
 
 		if ( ! is_array( $attachment_ids ) ) {
 			$attachment_ids = array();
@@ -108,12 +125,11 @@ class Generation_Controller {
 	 * @return array Response data.
 	 */
 	public function inline_generate(): array {
-		$nonce_raw = isset( $_POST['nonce'] ) ? wp_unslash( $_POST['nonce'] ) : '';
-		$nonce     = is_string( $nonce_raw ) ? sanitize_text_field( $nonce_raw ) : '';
-		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'bbai_inline_generate' ) ) {
+		$action = 'bbai_inline_generate';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Invalid nonce.', 'opptiai-alt' ),
+				'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -121,7 +137,7 @@ class Generation_Controller {
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'opptiai-alt' ),
+				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -130,7 +146,7 @@ class Generation_Controller {
 		if ( $attachment_id <= 0 || ! current_user_can( 'edit_post', $attachment_id ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'opptiai-alt' ),
+				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 

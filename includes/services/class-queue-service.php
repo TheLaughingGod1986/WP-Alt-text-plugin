@@ -49,7 +49,7 @@ class Queue_Service {
 		if ( $job_id <= 0 ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Invalid job ID.', 'opptiai-alt' ),
+				'message' => __( 'Invalid job ID.', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -65,13 +65,13 @@ class Queue_Service {
 
 			return array(
 				'success' => true,
-				'message' => __( 'Job re-queued.', 'opptiai-alt' ),
+				'message' => __( 'Job re-queued.', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
 		return array(
 			'success' => false,
-			'message' => __( 'Queue system not available.', 'opptiai-alt' ),
+			'message' => __( 'Queue system not available.', 'beepbeep-ai-alt-text-generator' ),
 		);
 	}
 
@@ -92,13 +92,13 @@ class Queue_Service {
 
 			return array(
 				'success' => true,
-				'message' => __( 'Retry scheduled for failed jobs.', 'opptiai-alt' ),
+				'message' => __( 'Retry scheduled for failed jobs.', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
 		return array(
 			'success' => false,
-			'message' => __( 'Queue system not available.', 'opptiai-alt' ),
+			'message' => __( 'Queue system not available.', 'beepbeep-ai-alt-text-generator' ),
 		);
 	}
 
@@ -118,13 +118,13 @@ class Queue_Service {
 
 			return array(
 				'success' => true,
-				'message' => __( 'Cleared completed jobs.', 'opptiai-alt' ),
+				'message' => __( 'Cleared completed jobs.', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
 		return array(
 			'success' => false,
-			'message' => __( 'Queue system not available.', 'opptiai-alt' ),
+			'message' => __( 'Queue system not available.', 'beepbeep-ai-alt-text-generator' ),
 		);
 	}
 

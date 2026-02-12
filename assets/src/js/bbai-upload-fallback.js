@@ -8,6 +8,9 @@
 (function($) {
     'use strict';
 
+    const i18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
+    const __ = i18n && typeof i18n.__ === 'function' ? i18n.__ : (text) => text;
+
     function getEnv() {
         return window.bbai_env || {};
     }
@@ -54,7 +57,7 @@
 
     function restore(btn) {
         var original = btn.data('original-text');
-        btn.text(original || 'Generate Alt');
+        btn.text(original || __('Generate Alt', 'beepbeep-ai-alt-text-generator'));
         if (btn.is('button, input')) {
             btn.prop('disabled', false);
         }
@@ -96,16 +99,12 @@
             field.attr('value', value);
             field.trigger('input').trigger('change');
         } else {
-            try {
-                var env = getEnv();
-                var restRoot = env.rest_root || ((window.wp && window.wpApiSettings && window.wpApiSettings.root) ? window.wpApiSettings.root : '');
-                if (!restRoot) {
-                    restRoot = '/wp-json/';
-                }
-
-                var nonce = env.nonce || ((window.BBAI && BBAI.nonce) ? BBAI.nonce : (window.wpApiSettings ? wpApiSettings.nonce : ''));
-                if (restRoot && nonce) {
-                    fetch(restRoot + 'wp/v2/media/' + id, {
+	            try {
+	                var env = getEnv();
+	                var restRoot = env.rest_root || ((window.wp && window.wpApiSettings && window.wpApiSettings.root) ? window.wpApiSettings.root : '');
+	                var nonce = env.nonce || ((window.BBAI && BBAI.nonce) ? BBAI.nonce : (window.wpApiSettings ? wpApiSettings.nonce : ''));
+	                if (restRoot && nonce) {
+	                    fetch(restRoot + 'wp/v2/media/' + id, {
                         method: 'POST',
                         headers: { 'X-WP-Nonce': nonce, 'Content-Type': 'application/json' },
                         body: JSON.stringify({ alt_text: value })
@@ -147,7 +146,7 @@
     }
 
     function handleLimitReachedNotice(payload){
-        var message = (payload && payload.message) ? payload.message : 'Monthly limit reached. Please contact a site administrator.';
+        var message = (payload && payload.message) ? payload.message : __('Monthly limit reached. Please contact a site administrator.', 'beepbeep-ai-alt-text-generator');
         pushNotice('warning', message);
 
         if (!canManageAccount()){
@@ -192,14 +191,14 @@
 
         if (!attachment_id || isNaN(attachment_id) || attachment_id <= 0){
             console.error('ERROR: Invalid attachment ID:', attachment_id);
-            return pushNotice('error', 'AI ALT: Invalid attachment ID. Please refresh the page and try again.');
+            return pushNotice('error', __('AI ALT: Invalid attachment ID. Please refresh the page and try again.', 'beepbeep-ai-alt-text-generator'));
         }
 
         if (typeof btn.data('original-text') === 'undefined'){
             btn.data('original-text', btn.text());
         }
 
-        btn.text('Regenerating…').prop('disabled', true);
+        btn.text(__('Regenerating…', 'beepbeep-ai-alt-text-generator')).prop('disabled', true);
 
         var nonce = (window.BBAI && BBAI.nonce) ||
             (window.wpApiSettings && wpApiSettings.nonce) ||
@@ -210,7 +209,7 @@
         var ajaxUrl = getAjaxUrl();
         if (!ajaxUrl){
             restore(btn);
-            return pushNotice('error', 'AJAX endpoint unavailable.');
+            return pushNotice('error', __('AJAX endpoint unavailable.', 'beepbeep-ai-alt-text-generator'));
         }
 
         var ajaxData = {
@@ -255,7 +254,7 @@
                     if (existingModal.length && existingModal.is(':visible')){
                         existingModal.find('#bbai-regenerate-content').html(
                             '<p style="color: #059669; padding: 10px; background: #d1fae5; border-radius: 4px;">' +
-                            'Success! New alt text: ' + altText + '</p>'
+                            __('Success! New alt text:', 'beepbeep-ai-alt-text-generator') + ' ' + altText + '</p>'
                         );
 
                         existingModal.find('.bbai-btn-apply, [data-action="accept"]').off('click').on('click', function(){
@@ -277,26 +276,26 @@
                                 body: JSON.stringify({alt_text: altText})
                             }).then(function(r){ return r.json(); }).then(function(saveData){
                                 if (saveData && saveData.alt_text){
-                                    pushNotice('success', 'Alt text updated successfully.');
+                                    pushNotice('success', __('Alt text updated successfully.', 'beepbeep-ai-alt-text-generator'));
                                     existingModal.hide();
                                     refreshDashboard();
                                 } else {
-                                    pushNotice('error', 'Failed to save alt text. Please try again.');
+                                    pushNotice('error', __('Failed to save alt text. Please try again.', 'beepbeep-ai-alt-text-generator'));
                                 }
                             }).catch(function(){
-                                pushNotice('error', 'Failed to save alt text. Please try again.');
+                                pushNotice('error', __('Failed to save alt text. Please try again.', 'beepbeep-ai-alt-text-generator'));
                             });
                         });
                     } else {
-                        pushNotice('success', 'Alt text regenerated successfully.');
+                        pushNotice('success', __('Alt text regenerated successfully.', 'beepbeep-ai-alt-text-generator'));
                         updateAltField(attachment_id, altText, btn.closest('.attachment-details'));
                         refreshDashboard();
                     }
                 } else {
-                    pushNotice('error', 'Alt text was generated but the response format was invalid.');
+                    pushNotice('error', __('Alt text was generated but the response format was invalid.', 'beepbeep-ai-alt-text-generator'));
                 }
             } else {
-                var errorMsg = (response.data && response.data.message) || 'Failed to regenerate alt text';
+                var errorMsg = (response.data && response.data.message) || __('Failed to regenerate alt text', 'beepbeep-ai-alt-text-generator');
                 pushNotice('error', errorMsg);
 
                 var errorModal = $('#bbai-regenerate-modal');
@@ -313,7 +312,7 @@
             }
         }).fail(function(xhr){
             restore(btn);
-            var errorMsg = 'Request failed. Please try again.';
+            var errorMsg = __('Request failed. Please try again.', 'beepbeep-ai-alt-text-generator');
             if (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message){
                 errorMsg = xhr.responseJSON.data.message;
             }

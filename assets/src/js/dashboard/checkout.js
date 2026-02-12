@@ -6,104 +6,39 @@
  * @since 5.0.0
  */
 
-// Ensure global variables exist (may not be defined if this file loads before main bundle)
-var alttextaiDebug = (typeof alttextaiDebug !== 'undefined') ? alttextaiDebug : ((typeof window !== 'undefined' && typeof window.bbai_ajax !== 'undefined' && window.bbai_ajax.debug) || false);
-
 /**
- * Initiate checkout session
+ * Initiate checkout — opens the Stripe Payment Link directly.
  */
 function initiateCheckout($btn, priceId, plan) {
     var $ = window.jQuery || window.$;
-    if (typeof $ !== 'function') return;
 
-    if (alttextaiDebug) console.log('[AltText AI] Initiating checkout:', plan, priceId);
+    // Resolve Stripe Payment Link from button data or localized config
+    var fallbackUrl = $btn && typeof $btn.attr === 'function' ? $btn.attr('data-fallback-url') : '';
+    var stripeLinks = (window.bbai_ajax && window.bbai_ajax.stripe_links) || {};
+    var resolvedLink = fallbackUrl || stripeLinks[plan] || '';
 
-    if (!window.bbai_ajax || !window.bbai_ajax.ajaxurl) {
-        if (window.bbaiModal) {
-            window.bbaiModal.error('Configuration error. Please refresh the page.');
+    if (!resolvedLink) {
+        // Hardcoded fallback Payment Links
+        if (plan === 'pro' || plan === 'growth') {
+            resolvedLink = 'https://buy.stripe.com/dRm28s4rc5Raf0GbY77ss02';
+        } else if (plan === 'agency') {
+            resolvedLink = 'https://buy.stripe.com/28E14og9U0wQ19Q4vF7ss01';
+        } else if (plan === 'credits') {
+            resolvedLink = 'https://buy.stripe.com/6oU9AUf5Q2EYaKq0fp7ss00';
         }
+    }
+
+    if (resolvedLink) {
+        console.log('[AltText AI] Opening Stripe payment link:', resolvedLink);
+        window.open(resolvedLink, '_blank', 'noopener,noreferrer');
         return;
     }
 
-    // Show loading state on button
-    var originalText = $btn.text();
-    $btn.prop('disabled', true)
-        .addClass('bbai-btn-loading')
-        .html('<span class="bbai-spinner"></span> Processing...');
-
-    $.ajax({
-        url: window.bbai_ajax.ajaxurl,
-        type: 'POST',
-        data: {
-            action: 'beepbeepai_create_checkout',
-            nonce: window.bbai_ajax.nonce,
-            price_id: priceId,
-            plan: plan
-        },
-        timeout: 30000,
-        success: function(response) {
-            if (response.success && response.data && response.data.url) {
-                if (alttextaiDebug) console.log('[AltText AI] Checkout URL received, opening in new window:', response.data.url);
-                // Open Stripe checkout in new window
-                window.open(response.data.url, '_blank', 'noopener,noreferrer');
-            } else {
-                // Restore button state
-                $btn.prop('disabled', false)
-                    .removeClass('bbai-btn-loading')
-                    .text(originalText);
-
-                var errorMsg = response.data?.message || 'Could not initiate checkout. Please try again.';
-                var fallbackUrl = $btn.attr('data-fallback-url');
-
-                // If we have a fallback URL, use it instead of showing error
-                if (fallbackUrl) {
-                    if (alttextaiDebug) console.log('[AltText AI] Checkout API failed, using fallback URL:', fallbackUrl);
-                    window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
-                    return;
-                }
-
-                // Check for authentication error
-                if (response.data?.code === 'not_authenticated' || errorMsg.toLowerCase().includes('log in')) {
-                    // Show auth modal
-                    if (typeof showAuthModal === 'function') {
-                        showAuthModal('login');
-                    }
-                } else if (window.bbaiModal) {
-                    window.bbaiModal.error(errorMsg);
-                }
-            }
-        },
-        error: function(xhr, status, error) {
-            // Restore button state
-            $btn.prop('disabled', false)
-                .removeClass('bbai-btn-loading')
-                .text(originalText);
-
-            if (alttextaiDebug) console.error('[AltText AI] Checkout error:', status, error);
-
-            // Try fallback URL first
-            var fallbackUrl = $btn.attr('data-fallback-url');
-            if (fallbackUrl) {
-                if (alttextaiDebug) console.log('[AltText AI] Checkout AJAX failed, using fallback URL:', fallbackUrl);
-                window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
-                return;
-            }
-
-            var errorMessage = 'Unable to initiate checkout. Please try again.';
-            if (status === 'timeout') {
-                errorMessage = 'Request timed out. Please try again.';
-            } else if (xhr.status === 401 || xhr.status === 403) {
-                errorMessage = 'Please log in to continue with checkout.';
-                if (typeof showAuthModal === 'function') {
-                    showAuthModal('login');
-                }
-            }
-
-            if (window.bbaiModal) {
-                window.bbaiModal.error(errorMessage);
-            }
-        }
-    });
+    // No link available
+    console.error('[AltText AI] No Stripe payment link available for plan:', plan);
+    if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
+        window.bbaiModal.error('Unable to initiate checkout. Please try again or contact support.');
+    }
 }
 
 // Export function

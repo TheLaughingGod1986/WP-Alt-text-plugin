@@ -69,7 +69,7 @@ These hooks keep the WordPress dashboard in sync with your SaaS checkout/portal 
 
 ## Installation
 
-1. Upload the plugin files to `/wp-content/plugins/opptiai-alt/`
+1. Upload the plugin files to `/wp-content/plugins/beepbeep-ai-alt-text-generator/`
 2. Activate the plugin through the 'Plugins' menu in WordPress
 3. Navigate to **Media → AI ALT Text** to configure your OpenAI API key
 4. Start generating accessible ALT text!
@@ -220,15 +220,17 @@ wp ai-alt stats
 
 ## Privacy & Security
 
-- **API Key Storage**: Keys are stored in WordPress options table
-- **Data Transmission**: Only image metadata (filename, title, caption) sent to OpenAI
-- **No Image Upload**: Images themselves are never sent to OpenAI
+- **API Key Storage**: Keys are stored in the WordPress options table (if configured)
+- **Data Transmission**: Image data and prompt/context text may be sent to external APIs for generation or review
+- **Account Data**: Account and license details (e.g., email, plan) are stored locally when connected
+- **Support Requests**: Contact form submissions (name, email, message) are stored locally
+- **Usage Logs**: Per-user usage events are stored and linked to WordPress user IDs
 - **User Permissions**: Only administrators can manage settings by default
-- **Custom Capability**: `manage_ai_alt_text` for granular permission control
+- **Privacy Tools**: Supports WordPress privacy export/erasure tools for stored data
 
 ## Requirements
 
-- **WordPress**: 5.8 or higher
+- **WordPress**: 6.2 or higher
 - **PHP**: 7.4 or higher
 - **OpenAI API Key**: Active account with available credits
 - **Permissions**: Administrator or custom `manage_ai_alt_text` capability
@@ -264,11 +266,11 @@ Generate a WordPress-ready package with the helper script:
 ./build-plugin.sh
 ```
 
-The build outputs `dist/opptiai-alt-text-generator-<version>.zip`, removing local tooling and development artefacts.  
+The build outputs `../plugin-builds/beepbeep-ai-alt-text-generator-<version>.zip`, removing local tooling and development artefacts.  
 Install it via the WordPress admin (**Plugins → Add New → Upload Plugin**) or with WP‑CLI:
 
 ```bash
-wp plugin install dist/opptiai-alt-text-generator-<version>.zip --activate
+wp plugin install ../plugin-builds/beepbeep-ai-alt-text-generator-<version>.zip --activate
 ```
 
 Backend deployment guidance lives in `backend/README.md`; Render configuration is provided in `backend/render-phase2.yaml`.

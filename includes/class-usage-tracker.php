@@ -296,6 +296,114 @@ class Usage_Tracker {
     }
     
     /**
+     * User meta keys for monthly reset tracking.
+     */
+    const META_LAST_RESET_PERIOD = 'bbai_last_reset_period';
+    const META_LAST_MONTH_USAGE  = 'bbai_last_month_usage';
+    const META_LAST_MONTH_LIMIT  = 'bbai_last_month_limit';
+
+    /**
+     * Detect if a monthly quota reset has occurred since the user last saw the modal.
+     *
+     * @param int|null $user_id User ID, defaults to current user.
+     * @return bool True if a new billing period started since the modal was last shown.
+     */
+    public static function detect_reset( $user_id = null ) {
+        if ( ! $user_id ) {
+            $user_id = get_current_user_id();
+        }
+        if ( ! $user_id ) {
+            return false;
+        }
+
+        $current_period = wp_date( 'Y-m' );
+        $last_shown     = get_user_meta( $user_id, self::META_LAST_RESET_PERIOD, true );
+
+        // Already shown for this period.
+        if ( $last_shown === $current_period ) {
+            return false;
+        }
+
+        // First visit ever — seed the period so next month triggers correctly.
+        if ( empty( $last_shown ) ) {
+            update_user_meta( $user_id, self::META_LAST_RESET_PERIOD, sanitize_key( $current_period ) );
+            return false;
+        }
+
+        // A new period has started since last shown.
+        return true;
+    }
+
+    /**
+     * Store previous month's usage data for the reset insight modal.
+     *
+     * @param int      $used    Images generated last month.
+     * @param int      $limit   Monthly limit last month.
+     * @param int|null $user_id User ID, defaults to current user.
+     */
+    public static function store_previous_month_data( $used, $limit, $user_id = null ) {
+        if ( ! $user_id ) {
+            $user_id = get_current_user_id();
+        }
+        if ( ! $user_id ) {
+            return;
+        }
+
+        update_user_meta( $user_id, self::META_LAST_MONTH_USAGE, absint( $used ) );
+        update_user_meta( $user_id, self::META_LAST_MONTH_LIMIT, absint( $limit ) );
+    }
+
+    /**
+     * Get data for the monthly reset insight modal.
+     *
+     * @param int|null $user_id User ID, defaults to current user.
+     * @return array|null Modal data array or null if unavailable.
+     */
+    public static function get_reset_modal_data( $user_id = null ) {
+        if ( ! $user_id ) {
+            $user_id = get_current_user_id();
+        }
+        if ( ! $user_id ) {
+            return null;
+        }
+
+        $last_usage = absint( get_user_meta( $user_id, self::META_LAST_MONTH_USAGE, true ) );
+        $last_limit = absint( get_user_meta( $user_id, self::META_LAST_MONTH_LIMIT, true ) );
+
+        // Only show modal if user actually generated images last month.
+        if ( $last_usage <= 0 ) {
+            return null;
+        }
+
+        $current_stats = self::get_stats_display();
+
+        return [
+            'lastMonthUsed'  => $last_usage,
+            'lastMonthLimit' => $last_limit,
+            'newLimit'       => absint( $current_stats['limit'] ),
+            'plan'           => sanitize_key( $current_stats['plan'] ),
+            'planLabel'      => esc_html( $current_stats['plan_label'] ),
+        ];
+    }
+
+    /**
+     * Mark the reset insight modal as shown for the current billing period.
+     *
+     * @param int|null $user_id User ID, defaults to current user.
+     * @return bool
+     */
+    public static function mark_reset_shown( $user_id = null ) {
+        if ( ! $user_id ) {
+            $user_id = get_current_user_id();
+        }
+        if ( ! $user_id ) {
+            return false;
+        }
+
+        return (bool) update_user_meta( $user_id, self::META_LAST_RESET_PERIOD, sanitize_key( wp_date( 'Y-m' ) ) );
+    }
+
+    /**
      * Refresh usage data from API and update cache
      */
     public static function refresh_from_api($api_client = null) {

@@ -211,7 +211,11 @@ class REST_Controller {
 	 */
 	public function can_edit_media( \WP_REST_Request $request ) {
 		// If license is active, allow any user who can upload files (site-wide licensing)
-		if ( method_exists( $this->core, 'api_client' ) && $this->core->api_client->has_active_license() ) {
+		$api_client = null;
+		if ( method_exists( $this->core, 'get_api_client' ) ) {
+			$api_client = $this->core->get_api_client();
+		}
+		if ( $api_client && $api_client->has_active_license() ) {
 			return is_user_logged_in() && current_user_can( 'upload_files' );
 		}
 		
@@ -435,7 +439,7 @@ class REST_Controller {
 		}
 
 		if ( '' === $alt ) {
-			return new \WP_Error( 'invalid_alt', __( 'ALT text cannot be empty.', 'opptiai-alt' ), [ 'status' => 400 ] );
+			return new \WP_Error( 'invalid_alt', __( 'ALT text cannot be empty.', 'beepbeep-ai-alt-text-generator' ), [ 'status' => 400 ] );
 		}
 
 		$alt_sanitized = wp_strip_all_tags( $alt );
@@ -796,7 +800,7 @@ class REST_Controller {
 		foreach ($users as $user) {
 			$formatted[] = [
 				'user_id' => intval($user['user_id']),
-				'display_name' => $user['display_name'] ?? $user['username'] ?? __('System', 'opptiai-alt'),
+				'display_name' => $user['display_name'] ?? $user['username'] ?? __('System', 'beepbeep-ai-alt-text-generator'),
 				'username' => $user['username'] ?? '',
 				'tokens_used' => intval($user['tokens_used'] ?? 0),
 				'last_used' => $user['last_used'] ?? null,

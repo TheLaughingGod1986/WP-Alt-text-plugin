@@ -45,12 +45,11 @@ class License_Controller {
 	 * @return array Response data.
 	 */
 	public function activate_license(): array {
-		$nonce_raw = isset( $_POST['nonce'] ) ? wp_unslash( $_POST['nonce'] ) : '';
-		$nonce     = is_string( $nonce_raw ) ? sanitize_text_field( $nonce_raw ) : '';
-		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'bbai_activate_license' ) ) {
+		$action = 'bbai_activate_license';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Invalid nonce.', 'opptiai-alt' ),
+				'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -58,7 +57,7 @@ class License_Controller {
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'opptiai-alt' ),
+				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -76,11 +75,19 @@ class License_Controller {
 	 * @return array Response data.
 	 */
 	public function deactivate_license(): array {
+		$action = 'bbai_deactivate_license';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ),
+			);
+		}
+
 		// Check permission.
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'opptiai-alt' ),
+				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -95,11 +102,19 @@ class License_Controller {
 	 * @return array Response data.
 	 */
 	public function get_license_sites(): array {
+		$action = 'bbai_get_license_sites';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ),
+			);
+		}
+
 		// Check permission.
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'opptiai-alt' ),
+				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -114,11 +129,19 @@ class License_Controller {
 	 * @return array Response data.
 	 */
 	public function disconnect_license_site(): array {
+		$action = 'bbai_disconnect_license_site';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ),
+			);
+		}
+
 		// Check permission.
 		if ( ! $this->user_can_manage() ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Unauthorized', 'opptiai-alt' ),
+				'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 

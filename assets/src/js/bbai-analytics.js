@@ -6,6 +6,10 @@
 (function() {
     'use strict';
 
+    const i18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
+    const __ = i18n && typeof i18n.__ === 'function' ? i18n.__ : (text) => text;
+    const sprintf = i18n && typeof i18n.sprintf === 'function' ? i18n.sprintf : (format) => format;
+
     const bbaiAnalytics = {
         chart: null,
 
@@ -274,12 +278,14 @@
 
             if (hasOverflow) {
                 const hiddenCount = activities.length - maxVisible;
+                const showMoreLabel = sprintf(__('Show %d more', 'beepbeep-ai-alt-text-generator'), hiddenCount);
+                const showLessLabel = __('Show less', 'beepbeep-ai-alt-text-generator');
                 const toggle = document.createElement('button');
                 toggle.type = 'button';
                 toggle.className = 'bbai-activity-toggle';
                 toggle.setAttribute('aria-expanded', 'false');
                 toggle.innerHTML = `
-                    <span class="bbai-toggle-label">Show ${hiddenCount} more</span>
+                    <span class="bbai-toggle-label">${showMoreLabel}</span>
                     <span class="bbai-toggle-icon" aria-hidden="true">v</span>
                 `;
 
@@ -296,7 +302,7 @@
                     toggle.classList.toggle('is-expanded', nextExpanded);
                     const label = toggle.querySelector('.bbai-toggle-label');
                     if (label) {
-                        label.textContent = nextExpanded ? 'Show less' : `Show ${hiddenCount} more`;
+                        label.textContent = nextExpanded ? showLessLabel : showMoreLabel;
                     }
                 });
 

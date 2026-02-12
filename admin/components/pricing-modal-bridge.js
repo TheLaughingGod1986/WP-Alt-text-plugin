@@ -7,6 +7,9 @@
 (function(window) {
     'use strict';
 
+    const i18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
+    const __ = i18n && typeof i18n.__ === 'function' ? i18n.__ : (text) => text;
+
     // Global pricing modal state
     const pricingModalState = {
         isOpen: false,
@@ -201,9 +204,9 @@
 
         console.error('[AltText AI] No pricing modal system available. Modal element not found in DOM.');
         if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
-            window.bbaiModal.error('Unable to open upgrade modal. Please refresh the page and try again.');
+            window.bbaiModal.error(__('Unable to open upgrade modal. Please refresh the page and try again.', 'beepbeep-ai-alt-text-generator'));
         } else {
-            alert('Unable to open upgrade modal. Please refresh the page and try again.');
+            alert(__('Unable to open upgrade modal. Please refresh the page and try again.', 'beepbeep-ai-alt-text-generator'));
         }
         return false;
     }

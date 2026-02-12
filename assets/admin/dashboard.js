@@ -1,6 +1,9 @@
 (function () {
     'use strict';
 
+    var i18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
+    var __ = i18n && typeof i18n.__ === 'function' ? i18n.__ : function (text) { return text; };
+
     var dashboard = document.querySelector('.bbai-dashboard');
     if (!dashboard || !window.BBAI_DASHBOARD) {
         return;
@@ -23,7 +26,7 @@
         var close = document.createElement('button');
         close.type = 'button';
         close.className = 'bbai-dashboard-notice__close';
-        close.setAttribute('aria-label', (config.strings && config.strings.close) ? config.strings.close : 'Close');
+        close.setAttribute('aria-label', (config.strings && config.strings.close) ? config.strings.close : __('Close', 'beepbeep-ai-alt-text-generator'));
         close.textContent = 'x';
         close.addEventListener('click', function () {
             notice.remove();
@@ -57,7 +60,7 @@
             button.setAttribute('disabled', 'disabled');
             if (text && !button.dataset.originalText) {
                 button.dataset.originalText = text.textContent;
-                text.textContent = (config.strings && config.strings.working) ? config.strings.working : 'Working...';
+                text.textContent = (config.strings && config.strings.working) ? config.strings.working : __('Working...', 'beepbeep-ai-alt-text-generator');
             }
         } else {
             button.classList.remove('is-loading');
@@ -75,7 +78,7 @@
             return;
         }
 
-        addNotice('info', (config.strings && config.strings.working) ? config.strings.working : 'Request submitted. This may take a moment.');
+        addNotice('info', (config.strings && config.strings.working) ? config.strings.working : __('Request submitted. This may take a moment.', 'beepbeep-ai-alt-text-generator'));
         setLoading(button, true);
 
         var formData = new FormData();
@@ -93,14 +96,14 @@
             .then(function (data) {
                 if (data && data.success) {
                     var successMessage = data.data && data.data.message ? data.data.message : (config.strings && config.strings.success);
-                    addNotice('success', successMessage || 'Success.');
+                    addNotice('success', successMessage || __('Success.', 'beepbeep-ai-alt-text-generator'));
                 } else {
                     var errorMessage = data && data.data && data.data.message ? data.data.message : (config.strings && config.strings.error);
-                    addNotice('error', errorMessage || 'Error.');
+                    addNotice('error', errorMessage || __('Error.', 'beepbeep-ai-alt-text-generator'));
                 }
             })
             .catch(function () {
-                addNotice('error', (config.strings && config.strings.error) ? config.strings.error : 'Error.');
+                addNotice('error', (config.strings && config.strings.error) ? config.strings.error : __('Error.', 'beepbeep-ai-alt-text-generator'));
             })
             .finally(function () {
                 setLoading(button, false);

@@ -62,28 +62,24 @@ trait Core_Media {
 
             global $wpdb;
 
+            $image_mime_like = $wpdb->esc_like('image/') . '%';
+
             $total = (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status = 'inherit' AND post_mime_type LIKE %s",
-                'attachment', 'image/%'
+                'SELECT COUNT(*) FROM ' . $wpdb->posts . ' WHERE post_type = %s AND post_status = %s AND post_mime_type LIKE %s',
+                'attachment', 'inherit', $image_mime_like
             ));
 
             $with_alt = (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(DISTINCT p.ID)
-                 FROM {$wpdb->posts} p
-                 INNER JOIN {$wpdb->postmeta} m ON p.ID = m.post_id
-                 WHERE p.post_type = %s
-                   AND p.post_status = %s
-                   AND p.post_mime_type LIKE %s
-                   AND m.meta_key = %s
-                   AND TRIM(m.meta_value) <> ''",
+                'SELECT COUNT(DISTINCT p.ID) FROM ' . $wpdb->posts . ' p INNER JOIN ' . $wpdb->postmeta . ' m ON p.ID = m.post_id WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s AND m.meta_key = %s AND TRIM(m.meta_value) <> %s',
                 'attachment',
                 'inherit',
-                'image/%',
-                '_wp_attachment_image_alt'
+                $image_mime_like,
+                '_wp_attachment_image_alt',
+                ''
             ));
 
             $generated = (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(DISTINCT post_id) FROM {$wpdb->postmeta} WHERE meta_key = %s",
+                'SELECT COUNT(DISTINCT post_id) FROM ' . $wpdb->postmeta . ' WHERE meta_key = %s',
                 '_bbai_generated_at'
             ));
 
@@ -103,18 +99,17 @@ trait Core_Media {
             }
 
             $latest_generated_raw = $wpdb->get_var($wpdb->prepare(
-                "SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_key = %s ORDER BY meta_value DESC LIMIT 1",
+                'SELECT meta_value FROM ' . $wpdb->postmeta . ' WHERE meta_key = %s ORDER BY meta_value DESC LIMIT 1',
                 '_bbai_generated_at'
             ));
             $latest_generated = $latest_generated_raw ? mysql2date($datetime_format, $latest_generated_raw) : '';
 
             $top_source_row = $wpdb->get_row(
-                "SELECT meta_value AS source, COUNT(*) AS count
-                 FROM {$wpdb->postmeta}
-                 WHERE meta_key = '_bbai_source' AND meta_value <> ''
-                 GROUP BY meta_value
-                 ORDER BY COUNT(*) DESC
-                 LIMIT 1",
+                $wpdb->prepare(
+                    'SELECT meta_value AS source, COUNT(*) AS count FROM ' . $wpdb->postmeta . ' WHERE meta_key = %s AND meta_value <> %s GROUP BY meta_value ORDER BY COUNT(*) DESC LIMIT 1',
+                    '_bbai_source',
+                    ''
+                ),
                 ARRAY_A
             );
             $top_source_key = sanitize_key($top_source_row['source'] ?? '');
@@ -210,21 +205,16 @@ trait Core_Media {
             $limit = 5;
         }
 
-        $sql = $wpdb->prepare(
-            "SELECT p.ID
-             FROM {$wpdb->posts} p
-             LEFT JOIN {$wpdb->postmeta} m
-               ON (p.ID = m.post_id AND m.meta_key = '_wp_attachment_image_alt')
-             WHERE p.post_type = %s
-               AND p.post_status = 'inherit'
-               AND p.post_mime_type LIKE %s
-               AND (m.meta_value IS NULL OR TRIM(m.meta_value) = '')
-             ORDER BY p.ID DESC
-             LIMIT %d",
-            'attachment', 'image/%', $limit
-        );
-
-        return array_map('intval', (array) $wpdb->get_col($sql));
+        $image_mime_like = $wpdb->esc_like('image/') . '%';
+        return array_map('intval', (array) $wpdb->get_col($wpdb->prepare(
+            'SELECT p.ID FROM ' . $wpdb->posts . ' p LEFT JOIN ' . $wpdb->postmeta . ' m ON (p.ID = m.post_id AND m.meta_key = %s) WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s AND (m.meta_value IS NULL OR TRIM(m.meta_value) = %s) ORDER BY p.ID DESC LIMIT %d',
+            '_wp_attachment_image_alt',
+            'attachment',
+            'inherit',
+            $image_mime_like,
+            '',
+            $limit
+        )));
     }
 
     /**
@@ -239,21 +229,16 @@ trait Core_Media {
         $limit = max(1, intval($limit));
         $offset = max(0, intval($offset));
 
-        $sql = $wpdb->prepare(
-            "SELECT p.ID
-             FROM {$wpdb->posts} p
-             LEFT JOIN {$wpdb->postmeta} gen ON gen.post_id = p.ID AND gen.meta_key = '_bbai_generated_at'
-             WHERE p.post_type = %s
-               AND p.post_status = 'inherit'
-               AND p.post_mime_type LIKE %s
-             ORDER BY
-                 CASE WHEN gen.meta_value IS NOT NULL THEN gen.meta_value ELSE p.post_date END DESC,
-                 p.ID DESC
-             LIMIT %d OFFSET %d",
-            'attachment', 'image/%', $limit, $offset
-        );
-
-        $rows = $wpdb->get_col($sql);
+        $image_mime_like = $wpdb->esc_like('image/') . '%';
+        $rows = $wpdb->get_col($wpdb->prepare(
+            'SELECT p.ID FROM ' . $wpdb->posts . ' p LEFT JOIN ' . $wpdb->postmeta . ' gen ON gen.post_id = p.ID AND gen.meta_key = %s WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s ORDER BY CASE WHEN gen.meta_value IS NOT NULL THEN gen.meta_value ELSE p.post_date END DESC, p.ID DESC LIMIT %d OFFSET %d',
+            '_bbai_generated_at',
+            'attachment',
+            'inherit',
+            $image_mime_like,
+            $limit,
+            $offset
+        ));
         return array_map('intval', (array) $rows);
     }
 
@@ -287,44 +272,44 @@ trait Core_Media {
     private function get_source_meta_map() {
         return [
             'auto' => [
-                'label' => __('Auto (Upload)', 'opptiai-alt'),
-                'description' => __('Generated automatically on upload', 'opptiai-alt'),
+                'label' => __('Auto (Upload)', 'beepbeep-ai-alt-text-generator'),
+                'description' => __('Generated automatically on upload', 'beepbeep-ai-alt-text-generator'),
             ],
             'manual' => [
-                'label' => __('Manual', 'opptiai-alt'),
-                'description' => __('Generated via manual trigger', 'opptiai-alt'),
+                'label' => __('Manual', 'beepbeep-ai-alt-text-generator'),
+                'description' => __('Generated via manual trigger', 'beepbeep-ai-alt-text-generator'),
             ],
             'bulk' => [
-                'label' => __('Bulk', 'opptiai-alt'),
-                'description' => __('Generated via bulk action', 'opptiai-alt'),
+                'label' => __('Bulk', 'beepbeep-ai-alt-text-generator'),
+                'description' => __('Generated via bulk action', 'beepbeep-ai-alt-text-generator'),
             ],
             'ajax' => [
-                'label' => __('Dashboard', 'opptiai-alt'),
-                'description' => __('Generated from dashboard', 'opptiai-alt'),
+                'label' => __('Dashboard', 'beepbeep-ai-alt-text-generator'),
+                'description' => __('Generated from dashboard', 'beepbeep-ai-alt-text-generator'),
             ],
             'inline' => [
-                'label' => __('Inline', 'opptiai-alt'),
-                'description' => __('Generated inline from media library', 'opptiai-alt'),
+                'label' => __('Inline', 'beepbeep-ai-alt-text-generator'),
+                'description' => __('Generated inline from media library', 'beepbeep-ai-alt-text-generator'),
             ],
             'rest' => [
-                'label' => __('REST API', 'opptiai-alt'),
-                'description' => __('Generated via REST API', 'opptiai-alt'),
+                'label' => __('REST API', 'beepbeep-ai-alt-text-generator'),
+                'description' => __('Generated via REST API', 'beepbeep-ai-alt-text-generator'),
             ],
             'queue' => [
-                'label' => __('Queue', 'opptiai-alt'),
-                'description' => __('Generated via background queue', 'opptiai-alt'),
+                'label' => __('Queue', 'beepbeep-ai-alt-text-generator'),
+                'description' => __('Generated via background queue', 'beepbeep-ai-alt-text-generator'),
             ],
             'wpcli' => [
-                'label' => __('WP-CLI', 'opptiai-alt'),
-                'description' => __('Generated via WP-CLI command', 'opptiai-alt'),
+                'label' => __('WP-CLI', 'beepbeep-ai-alt-text-generator'),
+                'description' => __('Generated via WP-CLI command', 'beepbeep-ai-alt-text-generator'),
             ],
             'dry-run' => [
-                'label' => __('Dry Run', 'opptiai-alt'),
-                'description' => __('Test run without API call', 'opptiai-alt'),
+                'label' => __('Dry Run', 'beepbeep-ai-alt-text-generator'),
+                'description' => __('Test run without API call', 'beepbeep-ai-alt-text-generator'),
             ],
             'unknown' => [
-                'label' => __('Unknown', 'opptiai-alt'),
-                'description' => __('Source not recorded', 'opptiai-alt'),
+                'label' => __('Unknown', 'beepbeep-ai-alt-text-generator'),
+                'description' => __('Source not recorded', 'beepbeep-ai-alt-text-generator'),
             ],
         ];
     }

@@ -14,8 +14,14 @@
 
     // Wait for DOM to be ready
     function initComponents() {
-        const apiUrl = window.BBAI?.restRoot || '/wp-json/';
-        const nonce = window.BBAI?.nonce || '';
+        const apiRoot = (window.BBAI && window.BBAI.restRoot) || (window.wpApiSettings && window.wpApiSettings.root) || '';
+        if (!apiRoot) {
+            console.warn('[BeepBeep AI] REST API root is not available (missing localized rest root).');
+            return;
+        }
+
+        const apiUrl = apiRoot.endsWith('/') ? apiRoot : (apiRoot + '/');
+        const nonce = (window.BBAI && window.BBAI.nonce) || (window.wpApiSettings && window.wpApiSettings.nonce) || '';
 
         // Initialize MultiUserTokenBar in dashboard
         const tokenBarContainer = document.getElementById('bbai-multiuser-token-bar-root');
@@ -80,4 +86,3 @@
         }
     });
 })();
-

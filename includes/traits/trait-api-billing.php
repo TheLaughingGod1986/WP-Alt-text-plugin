@@ -18,7 +18,7 @@ trait Api_Billing {
      */
     public function get_billing_info() {
         if (!$this->is_authenticated()) {
-            return new \WP_Error('not_authenticated', __('Authentication required', 'opptiai-alt'));
+            return new \WP_Error('not_authenticated', __('Authentication required', 'beepbeep-ai-alt-text-generator'));
         }
 
         $response = $this->make_request('/billing/info', 'GET');
@@ -70,7 +70,7 @@ trait Api_Billing {
      */
     public function create_customer_portal_session($return_url) {
         if (!$this->is_authenticated()) {
-            return new \WP_Error('not_authenticated', __('Authentication required', 'opptiai-alt'));
+            return new \WP_Error('not_authenticated', __('Authentication required', 'beepbeep-ai-alt-text-generator'));
         }
 
         $response = $this->make_request('/billing/portal', 'POST', [
@@ -85,7 +85,7 @@ trait Api_Billing {
      */
     public function get_subscription_info() {
         if (!$this->is_authenticated()) {
-            return new \WP_Error('not_authenticated', __('Authentication required', 'opptiai-alt'));
+            return new \WP_Error('not_authenticated', __('Authentication required', 'beepbeep-ai-alt-text-generator'));
         }
 
         $response = $this->make_request('/billing/subscription', 'GET');

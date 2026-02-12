@@ -146,6 +146,56 @@
     color: #ffffff;
 }
 
+/* Guide/Help Link */
+.bbai-header-guide-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 16px;
+    transition: all 0.2s ease;
+    font-size: 13px;
+    font-weight: 500;
+    margin-left: 8px;
+    margin-right: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.bbai-header-guide-link:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.bbai-header-guide-link:focus {
+    outline: none;
+    color: #ffffff;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.bbai-header-guide-link svg {
+    flex-shrink: 0;
+}
+
+.bbai-header-guide-text {
+    white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+    .bbai-header-guide-link {
+        padding: 5px 10px;
+        margin-left: 4px;
+        margin-right: 8px;
+    }
+
+    .bbai-header-guide-text {
+        display: none;
+    }
+}
+
 /* Account Bar */
 .bbai-header-account-bar {
     display: flex;

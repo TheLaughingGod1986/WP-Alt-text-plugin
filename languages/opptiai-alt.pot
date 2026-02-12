@@ -1,15 +1,4196 @@
+# Copyright (C) 2026 beepbeepv2
+# This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-Project-Id-Version: Alt Text AI - Image SEO Automation
-Report-Msgid-Bugs-To: https://oppti.dev
-POT-Creation-Date: 2025-11-21 23:04:47+0000
-PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE
-Last-Translator: FULL NAME <EMAIL@ADDRESS>
-Language-Team: LANGUAGE <LL@li.org>
-Language: 
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;
-X-Generator: scripts/make-pot.php
+"Project-Id-Version: BeepBeep AI – Alt Text Generator 4.4.1\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/app\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-02-05T13:37:12+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: opptiai-alt\n"
 
+#. Plugin Name of the plugin
+#: beepbeep-ai-alt-text-generator.php
+#: admin/class-bbai-core.php:1334
+#: admin/class-bbai-core.php:1483
+#: admin/class-bbai-core.php:1779
+#: includes/class-privacy.php:34
+#: includes/class-privacy.php:49
+msgid "BeepBeep AI – Alt Text Generator"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: beepbeep-ai-alt-text-generator.php
+msgid "https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/"
+msgstr ""
+
+#. Description of the plugin
+#: beepbeep-ai-alt-text-generator.php
+msgid "Automatically generates SEO-optimized AI alt text for WordPress."
+msgstr ""
+
+#. Author of the plugin
+#: beepbeep-ai-alt-text-generator.php
+msgid "beepbeepv2"
+msgstr ""
+
+#. Author URI of the plugin
+#: beepbeep-ai-alt-text-generator.php
+msgid "https://oppti.dev"
+msgstr ""
+
+#: admin/class-bbai-core.php:304
+#: includes/services/class-usage-service.php:250
+msgid "AI Alt Text token usage alert"
+msgstr ""
+
+#. translators: 1: total tokens, 2: token limit
+#: admin/class-bbai-core.php:307
+#, php-format
+msgid "Cumulative token usage has reached %1$d (threshold %2$d). Consider reviewing your OpenAI usage."
+msgstr ""
+
+#: admin/class-bbai-core.php:425
+msgid "You do not have permission to perform this action."
+msgstr ""
+
+#: admin/class-bbai-core.php:431
+msgid "Security check failed. Please try again from the dashboard."
+msgstr ""
+
+#: admin/class-bbai-core.php:458
+msgid "Unable to start checkout. Please try again."
+msgstr ""
+
+#: admin/class-bbai-core.php:562
+msgid "Unable to start checkout"
+msgstr ""
+
+#. translators: 1: plan name
+#: admin/class-bbai-core.php:567
+#, php-format
+msgid "Plan: %s"
+msgstr ""
+
+#: admin/class-bbai-core.php:571
+msgid "Please check your account connection and try again. If the problem persists, contact support."
+msgstr ""
+
+#: admin/class-bbai-core.php:579
+msgid "Redirecting to secure checkout... Complete your payment to unlock up to 1,000 alt text generations per month with Growth."
+msgstr ""
+
+#: admin/class-bbai-core.php:585
+msgid "Checkout cancelled. Your plan remains unchanged. Upgrade anytime to unlock 1,000 generations per month with Growth."
+msgstr ""
+
+#: admin/class-bbai-core.php:596
+msgid "Password Reset Email Sent"
+msgstr ""
+
+#: admin/class-bbai-core.php:597
+msgid "Check your email inbox (and spam folder) for password reset instructions. The link will expire in 1 hour."
+msgstr ""
+
+#: admin/class-bbai-core.php:603
+msgid "Password Reset Successful"
+msgstr ""
+
+#: admin/class-bbai-core.php:604
+msgid "Your password has been updated. You can now sign in with your new password."
+msgstr ""
+
+#: admin/class-bbai-core.php:614
+msgid "Subscription Updated"
+msgstr ""
+
+#: admin/class-bbai-core.php:615
+msgid "Your subscription information has been refreshed."
+msgstr ""
+
+#: admin/class-bbai-core.php:624
+msgid "Billing Updated"
+msgstr ""
+
+#: admin/class-bbai-core.php:625
+msgid "Your billing information has been updated successfully. Changes may take a few moments to reflect."
+msgstr ""
+
+#. translators: 1: tokens used, 2: token threshold
+#: admin/class-bbai-core.php:641
+#, php-format
+msgid "BeepBeep AI – Alt Text Generator has used %1$s tokens (threshold %2$s). Consider reviewing usage."
+msgstr ""
+
+#: admin/class-bbai-core.php:658
+msgid "1 image queued for background optimisation. The alt text will appear shortly."
+msgstr ""
+
+#. translators: 1: number of images queued
+#: admin/class-bbai-core.php:661
+#, php-format
+msgid "Queued %d images for background optimisation. Alt text will be generated shortly."
+msgstr ""
+
+#: admin/class-bbai-core.php:706
+msgid "External Service Notice"
+msgstr ""
+
+#: admin/class-bbai-core.php:708
+msgid "Close notice"
+msgstr ""
+
+#: admin/class-bbai-core.php:717
+msgid "This plugin connects to an external API service to generate alt text. Image data and site/account identifiers may be transmitted for processing, and account/usage data may be stored locally. See the Privacy Policy for details."
+msgstr ""
+
+#: admin/class-bbai-core.php:722
+msgid "API Endpoint:"
+msgstr ""
+
+#: admin/class-bbai-core.php:729
+msgid "Privacy Policy:"
+msgstr ""
+
+#: admin/class-bbai-core.php:738
+msgid "Terms of Service:"
+msgstr ""
+
+#: admin/class-bbai-core.php:750
+msgid "Got it"
+msgstr ""
+
+#: admin/class-bbai-core.php:948
+#: admin/class-bbai-core.php:949
+msgid "Getting Started"
+msgstr ""
+
+#: admin/class-bbai-core.php:960
+#: admin/class-bbai-core.php:961
+#: admin/class-bbai-core.php:1344
+#: admin/class-bbai-core.php:1493
+#: admin/class-bbai-core.php:1700
+#: admin/partials/dashboard-body.php:23
+#: admin/traits/trait-core-media.php:302
+#: includes/admin/class-bbai-admin-dashboard.php:27
+#: includes/admin/class-bbai-admin-dashboard.php:28
+msgid "Dashboard"
+msgstr ""
+
+#: admin/class-bbai-core.php:968
+#: admin/class-bbai-core.php:969
+#: admin/class-bbai-core.php:1701
+msgid "ALT Library"
+msgstr ""
+
+#: admin/class-bbai-core.php:977
+#: admin/class-bbai-core.php:978
+#: admin/class-bbai-core.php:1703
+msgid "Credit Usage"
+msgstr ""
+
+#: admin/class-bbai-core.php:986
+#: admin/class-bbai-core.php:987
+#: admin/class-bbai-core.php:1702
+#: admin/partials/analytics-tab.php:94
+msgid "Analytics"
+msgstr ""
+
+#: admin/class-bbai-core.php:997
+#: admin/class-bbai-core.php:998
+#: admin/class-bbai-core.php:1709
+#: admin/class-bbai-core.php:2099
+#: admin/class-bbai-core.php:2121
+msgid "Settings"
+msgstr ""
+
+#: admin/class-bbai-core.php:1006
+#: admin/class-bbai-core.php:1007
+#: admin/class-bbai-core.php:1710
+#: admin/class-bbai-core.php:2092
+#: admin/class-bbai-core.php:2106
+#: admin/partials/debug-tab.php:74
+msgid "Debug Logs"
+msgstr ""
+
+#: admin/class-bbai-core.php:1017
+#: admin/class-bbai-core.php:1018
+#: admin/class-bbai-core.php:1704
+msgid "How to"
+msgstr ""
+
+#: admin/class-bbai-core.php:1038
+#: admin/class-bbai-core.php:1292
+#: admin/class-bbai-core.php:1452
+msgid "Unauthorized access."
+msgstr ""
+
+#: admin/class-bbai-core.php:1044
+msgid "Security check failed."
+msgstr ""
+
+#: admin/class-bbai-core.php:1048
+msgid "Please sign in first to upgrade."
+msgstr ""
+
+#: admin/class-bbai-core.php:1054
+msgid "Invalid checkout request."
+msgstr ""
+
+#. translators: 1: error message
+#: admin/class-bbai-core.php:1067
+#, php-format
+msgid "Checkout error: %s"
+msgstr ""
+
+#: admin/class-bbai-core.php:1077
+msgid "Failed to create checkout session."
+msgstr ""
+
+#: admin/class-bbai-core.php:1196
+msgid "AltText AI"
+msgstr ""
+
+#: admin/class-bbai-core.php:1197
+msgid "AI-Powered Alt Text Generator"
+msgstr ""
+
+#: admin/class-bbai-core.php:1200
+#: admin/class-bbai-core.php:1338
+#: admin/class-bbai-core.php:1487
+#: admin/class-bbai-core.php:1783
+msgid "Main navigation"
+msgstr ""
+
+#: admin/class-bbai-core.php:1202
+#: admin/class-bbai-core.php:1348
+#: admin/class-bbai-core.php:1356
+#: admin/class-bbai-core.php:1497
+msgid "Getting started"
+msgstr ""
+
+#: admin/class-bbai-core.php:1210
+msgid "Welcome to AltText AI"
+msgstr ""
+
+#: admin/class-bbai-core.php:1211
+msgid "Generate SEO-ready, accessible alt text for your WordPress media library"
+msgstr ""
+
+#: admin/class-bbai-core.php:1215
+msgid "Step 1 of 3"
+msgstr ""
+
+#: admin/class-bbai-core.php:1216
+msgid "Welcome"
+msgstr ""
+
+#: admin/class-bbai-core.php:1223
+msgid "What AltText AI does for you"
+msgstr ""
+
+#: admin/class-bbai-core.php:1224
+msgid "Our AI analyzes your images and generates descriptive, SEO-friendly alt text automatically."
+msgstr ""
+
+#: admin/class-bbai-core.php:1231
+msgid "Improve Accessibility"
+msgstr ""
+
+#: admin/class-bbai-core.php:1232
+msgid "Help screen readers describe your images to visually impaired visitors."
+msgstr ""
+
+#: admin/class-bbai-core.php:1238
+#: admin/partials/guide-tab.php:141
+msgid "Boost SEO Rankings"
+msgstr ""
+
+#: admin/class-bbai-core.php:1239
+msgid "Search engines use alt text to understand and index your images."
+msgstr ""
+
+#: admin/class-bbai-core.php:1245
+msgid "Save Time"
+msgstr ""
+
+#: admin/class-bbai-core.php:1246
+msgid "Generate alt text for hundreds of images in minutes, not hours."
+msgstr ""
+
+#: admin/class-bbai-core.php:1253
+msgid "Get Started"
+msgstr ""
+
+#: admin/class-bbai-core.php:1265
+msgid "Learn what AltText AI can do"
+msgstr ""
+
+#: admin/class-bbai-core.php:1273
+msgid "Scan and generate alt text"
+msgstr ""
+
+#: admin/class-bbai-core.php:1281
+msgid "Review and start using"
+msgstr ""
+
+#: admin/class-bbai-core.php:1335
+#: admin/class-bbai-core.php:1484
+#: admin/class-bbai-core.php:1780
+msgid "WordPress AI Tools"
+msgstr ""
+
+#: admin/class-bbai-core.php:1357
+msgid "Generate SEO-ready, accessible alt text for your media library"
+msgstr ""
+
+#: admin/class-bbai-core.php:1361
+msgid "Step 2 of 3"
+msgstr ""
+
+#: admin/class-bbai-core.php:1362
+msgid "Optimize your images"
+msgstr ""
+
+#: admin/class-bbai-core.php:1369
+msgid "Generate alt text for your images"
+msgstr ""
+
+#: admin/class-bbai-core.php:1370
+msgid "We'll scan your media library and generate alt text only for images that are missing it."
+msgstr ""
+
+#: admin/class-bbai-core.php:1374
+#: admin/class-bbai-core.php:1408
+#: admin/partials/dashboard-logged-out.php:144
+msgid "Generate alt text"
+msgstr ""
+
+#: admin/class-bbai-core.php:1377
+msgid "Skip for now"
+msgstr ""
+
+#: admin/class-bbai-core.php:1380
+msgid "Only images without alt text are processed. Review everything before publishing."
+msgstr ""
+
+#: admin/class-bbai-core.php:1381
+msgid "Initial scan processes up to 500 images. You can adjust this later."
+msgstr ""
+
+#: admin/class-bbai-core.php:1387
+#: admin/partials/dashboard-logged-out.php:95
+msgid "How it works"
+msgstr ""
+
+#: admin/class-bbai-core.php:1397
+msgid "Scan your library"
+msgstr ""
+
+#: admin/class-bbai-core.php:1398
+msgid "Find images missing alt text in your library."
+msgstr ""
+
+#: admin/class-bbai-core.php:1409
+msgid "Generate clear, SEO-ready alt text."
+msgstr ""
+
+#: admin/class-bbai-core.php:1420
+msgid "Review and publish"
+msgstr ""
+
+#: admin/class-bbai-core.php:1421
+msgid "Review and publish when you are ready."
+msgstr ""
+
+#: admin/class-bbai-core.php:1430
+#: admin/class-bbai-core.php:1589
+msgid "Want faster processing?"
+msgstr ""
+
+#: admin/class-bbai-core.php:1431
+#: admin/class-bbai-core.php:1590
+msgid "Upgrade to Growth for priority queue and bulk optimisation across your full media library."
+msgstr ""
+
+#: admin/class-bbai-core.php:1434
+#: admin/class-bbai-core.php:1528
+#: admin/class-bbai-core.php:1593
+msgid "View plans & pricing"
+msgstr ""
+
+#: admin/class-bbai-core.php:1505
+msgid "You're ready to review"
+msgstr ""
+
+#: admin/class-bbai-core.php:1506
+msgid "Alt text is generating in the background. You can start reviewing immediately."
+msgstr ""
+
+#: admin/class-bbai-core.php:1510
+msgid "Step 3 of 3"
+msgstr ""
+
+#: admin/class-bbai-core.php:1511
+msgid "Setup complete"
+msgstr ""
+
+#: admin/class-bbai-core.php:1520
+#: admin/partials/dashboard-logged-out.php:41
+msgid "Sign in to start generating"
+msgstr ""
+
+#: admin/class-bbai-core.php:1521
+msgid "Sign in to start generating and reviewing alt text."
+msgstr ""
+
+#: admin/class-bbai-core.php:1525
+msgid "Sign in"
+msgstr ""
+
+#: admin/class-bbai-core.php:1537
+msgid "Review your first results"
+msgstr ""
+
+#: admin/class-bbai-core.php:1538
+msgid "Your images are being processed. Check the stats below and start reviewing when ready."
+msgstr ""
+
+#: admin/class-bbai-core.php:1544
+msgid "In queue"
+msgstr ""
+
+#: admin/class-bbai-core.php:1550
+msgid "Processed"
+msgstr ""
+
+#: admin/class-bbai-core.php:1556
+#: admin/partials/debug-tab.php:122
+msgid "Errors"
+msgstr ""
+
+#: admin/class-bbai-core.php:1563
+msgid "Open ALT Library"
+msgstr ""
+
+#: admin/class-bbai-core.php:1566
+#: admin/partials/analytics-tab.php:334
+msgid "Go to Dashboard"
+msgstr ""
+
+#: admin/class-bbai-core.php:1576
+msgid "What happens next"
+msgstr ""
+
+#: admin/class-bbai-core.php:1578
+msgid "We generate drafts for images missing alt text."
+msgstr ""
+
+#: admin/class-bbai-core.php:1579
+msgid "You review and edit anything before publishing."
+msgstr ""
+
+#: admin/class-bbai-core.php:1580
+msgid "You can re-run scans anytime from the Dashboard."
+msgstr ""
+
+#: admin/class-bbai-core.php:1717
+msgid "Admin"
+msgstr ""
+
+#: admin/class-bbai-core.php:1722
+#: admin/partials/agency-overview-tab.php:57
+msgid "Agency Overview"
+msgstr ""
+
+#: admin/class-bbai-core.php:1824
+msgid "Getting started guide"
+msgstr ""
+
+#: admin/class-bbai-core.php:1829
+msgid "Guide"
+msgstr ""
+
+#: admin/class-bbai-core.php:1854
+#: admin/partials/settings-tab.php:250
+#: admin/partials/settings-tab.php:312
+msgid "License Active"
+msgstr ""
+
+#: admin/class-bbai-core.php:1859
+msgid "Connected"
+msgstr ""
+
+#: admin/class-bbai-core.php:1863
+msgid "Upgrade to Growth — 1,000 Generations Monthly"
+msgstr ""
+
+#: admin/class-bbai-core.php:1867
+msgid "Manage"
+msgstr ""
+
+#: admin/class-bbai-core.php:1872
+msgid "Logout"
+msgstr ""
+
+#: admin/class-bbai-core.php:1883
+msgid "Login"
+msgstr ""
+
+#: admin/class-bbai-core.php:1899
+#: admin/partials/dashboard-authenticated.php:72
+#: admin/partials/dashboard-tab.php:37
+msgid "Dashboard content unavailable."
+msgstr ""
+
+#: admin/class-bbai-core.php:1909
+msgid "Library content unavailable."
+msgstr ""
+
+#: admin/class-bbai-core.php:1919
+#: admin/class-bbai-core.php:2113
+msgid "Debug content unavailable."
+msgstr ""
+
+#: admin/class-bbai-core.php:1928
+msgid "Guide content unavailable."
+msgstr ""
+
+#: admin/class-bbai-core.php:1938
+#: admin/class-bbai-credit-usage-page.php:176
+msgid "Credit usage content unavailable."
+msgstr ""
+
+#: admin/class-bbai-core.php:1947
+msgid "Agency overview content unavailable."
+msgstr ""
+
+#: admin/class-bbai-core.php:1960
+msgid "Analytics content unavailable."
+msgstr ""
+
+#: admin/class-bbai-core.php:1970
+#: admin/class-bbai-core.php:2128
+msgid "Settings content unavailable."
+msgstr ""
+
+#: admin/class-bbai-core.php:1980
+msgid "Debug logs content unavailable."
+msgstr ""
+
+#: admin/class-bbai-core.php:2005
+msgid "Admin Access"
+msgstr ""
+
+#: admin/class-bbai-core.php:2010
+msgid "Enter your agency credentials to access Debug Logs and Settings."
+msgstr ""
+
+#: admin/class-bbai-core.php:2012
+msgid "Enter your pro credentials to access Debug Logs and Settings."
+msgstr ""
+
+#: admin/class-bbai-core.php:2023
+#: includes/class-privacy.php:183
+#: includes/class-privacy.php:217
+msgid "Email"
+msgstr ""
+
+#: admin/class-bbai-core.php:2029
+msgid "your-email@example.com"
+msgstr ""
+
+#: admin/class-bbai-core.php:2035
+msgid "Password"
+msgstr ""
+
+#: admin/class-bbai-core.php:2041
+msgid "Enter your password"
+msgstr ""
+
+#: admin/class-bbai-core.php:2046
+#: admin/partials/debug-tab.php:40
+#: admin/partials/settings-tab.php:44
+msgid "Log In"
+msgstr ""
+
+#: admin/class-bbai-core.php:2069
+msgid "Admin Panel"
+msgstr ""
+
+#: admin/class-bbai-core.php:2072
+msgid "Debug Logs and Settings"
+msgstr ""
+
+#: admin/class-bbai-core.php:2081
+msgid "Log Out"
+msgstr ""
+
+#: admin/class-bbai-core.php:2137
+#: admin/class-bbai-core.php:2178
+msgid "BeepBeep AI • WordPress AI Tools"
+msgstr ""
+
+#: admin/class-bbai-core.php:2137
+#: admin/class-bbai-core.php:2178
+msgid "WordPress.org Plugin"
+msgstr ""
+
+#: admin/class-bbai-core.php:2141
+msgid "Tab not found"
+msgstr ""
+
+#. translators: 1: requested tab, 2: available tabs list
+#: admin/class-bbai-core.php:2145
+#, php-format
+msgid "The requested tab \"%1$s\" could not be loaded. Available tabs: %2$s"
+msgstr ""
+
+#: admin/class-bbai-core.php:2150
+msgid "Debug info:"
+msgstr ""
+
+#. translators: 1: tab identifier
+#: admin/class-bbai-core.php:2154
+#, php-format
+msgid "Tab: %s"
+msgstr ""
+
+#. translators: 1: yes/no value
+#: admin/class-bbai-core.php:2158
+#, php-format
+msgid "Is Authenticated: %s"
+msgstr ""
+
+#. translators: 1: yes/no value
+#: admin/class-bbai-core.php:2162
+#, php-format
+msgid "Has License: %s"
+msgstr ""
+
+#. translators: 1: yes/no value
+#: admin/class-bbai-core.php:2166
+#, php-format
+msgid "Has Stored Token: %s"
+msgstr ""
+
+#. translators: 1: yes/no value
+#: admin/class-bbai-core.php:2170
+#, php-format
+msgid "Has Stored License: %s"
+msgstr ""
+
+#: admin/class-bbai-core.php:2529
+#: admin/class-bbai-core.php:2534
+#: admin/partials/library-tab.php:201
+#: admin/partials/library-tab.php:222
+#: admin/partials/library-tab.php:361
+#: admin/traits/trait-core-review.php:117
+#: admin/traits/trait-core-review.php:122
+msgid "Missing"
+msgstr ""
+
+#: admin/class-bbai-core.php:2531
+#: admin/class-bbai-core.php:2536
+#: admin/traits/trait-core-review.php:119
+#: admin/traits/trait-core-review.php:124
+msgid "ALT text is missing."
+msgstr ""
+
+#: admin/class-bbai-core.php:2550
+#: admin/class-bbai-core.php:2555
+#: admin/class-bbai-core.php:2717
+#: admin/traits/trait-core-review.php:138
+#: admin/traits/trait-core-review.php:143
+#: admin/traits/trait-core-review.php:317
+msgid "Critical"
+msgstr ""
+
+#: admin/class-bbai-core.php:2552
+#: admin/class-bbai-core.php:2557
+#: admin/traits/trait-core-review.php:140
+#: admin/traits/trait-core-review.php:145
+msgid "ALT text looks like placeholder content and must be rewritten."
+msgstr ""
+
+#: admin/class-bbai-core.php:2566
+#: admin/traits/trait-core-review.php:154
+msgid "Too short – add a richer description (45+ characters)."
+msgstr ""
+
+#: admin/class-bbai-core.php:2569
+#: admin/traits/trait-core-review.php:157
+msgid "Very long – trim to keep the description concise (under 160 characters)."
+msgstr ""
+
+#: admin/class-bbai-core.php:2574
+msgid "Contains generic filler words like “image” or “photo”."
+msgstr ""
+
+#: admin/class-bbai-core.php:2579
+msgid "Contains placeholder wording such as “test” or “sample”. Replace with a real description."
+msgstr ""
+
+#: admin/class-bbai-core.php:2586
+#: admin/traits/trait-core-review.php:174
+msgid "ALT text is extremely brief – add meaningful descriptive words."
+msgstr ""
+
+#: admin/class-bbai-core.php:2590
+#: admin/traits/trait-core-review.php:178
+msgid "ALT text is too short to convey the subject in detail."
+msgstr ""
+
+#: admin/class-bbai-core.php:2594
+#: admin/traits/trait-core-review.php:182
+msgid "ALT text could use a few more descriptive words."
+msgstr ""
+
+#: admin/class-bbai-core.php:2599
+#: admin/traits/trait-core-review.php:187
+msgid "Expand the description with one or two concrete details."
+msgstr ""
+
+#: admin/class-bbai-core.php:2614
+#: admin/traits/trait-core-review.php:202
+msgid "Matches the attachment title – add more unique detail."
+msgstr ""
+
+#: admin/class-bbai-core.php:2624
+#: admin/traits/trait-core-review.php:212
+msgid "Matches the file name – rewrite it to describe the image."
+msgstr ""
+
+#: admin/class-bbai-core.php:2630
+#: admin/traits/trait-core-review.php:218
+msgid "Lacks descriptive language – include meaningful nouns or adjectives."
+msgstr ""
+
+#: admin/class-bbai-core.php:2643
+#: admin/traits/trait-core-review.php:231
+msgid "Give this ALT another look to ensure it reflects the image details."
+msgstr ""
+
+#: admin/class-bbai-core.php:2645
+#: admin/traits/trait-core-review.php:233
+msgid "ALT text should be rewritten for accessibility."
+msgstr ""
+
+#: admin/class-bbai-core.php:2711
+#: admin/traits/trait-core-review.php:311
+msgid "Excellent"
+msgstr ""
+
+#: admin/class-bbai-core.php:2713
+#: admin/traits/trait-core-review.php:313
+msgid "Strong"
+msgstr ""
+
+#: admin/class-bbai-core.php:2715
+#: admin/traits/trait-core-review.php:315
+msgid "Needs review"
+msgstr ""
+
+#: admin/class-bbai-core.php:2902
+msgid "Auto (upload)"
+msgstr ""
+
+#: admin/class-bbai-core.php:2903
+msgid "Generated automatically when the image was uploaded."
+msgstr ""
+
+#: admin/class-bbai-core.php:2906
+msgid "Media Library (single)"
+msgstr ""
+
+#: admin/class-bbai-core.php:2907
+msgid "Triggered from the Media Library row action or attachment details screen."
+msgstr ""
+
+#: admin/class-bbai-core.php:2910
+msgid "Media Library (bulk)"
+msgstr ""
+
+#: admin/class-bbai-core.php:2911
+msgid "Generated via the Media Library bulk action."
+msgstr ""
+
+#: admin/class-bbai-core.php:2914
+msgid "Dashboard quick actions"
+msgstr ""
+
+#: admin/class-bbai-core.php:2915
+msgid "Generated from the dashboard buttons."
+msgstr ""
+
+#: admin/class-bbai-core.php:2918
+#: admin/traits/trait-core-media.php:318
+msgid "WP-CLI"
+msgstr ""
+
+#: admin/class-bbai-core.php:2919
+msgid "Generated via the wp ai-alt CLI command."
+msgstr ""
+
+#: admin/class-bbai-core.php:2922
+msgid "Manual / custom"
+msgstr ""
+
+#: admin/class-bbai-core.php:2923
+msgid "Generated by custom code or integration."
+msgstr ""
+
+#: admin/class-bbai-core.php:2926
+#: admin/partials/credit-usage-content.php:287
+#: admin/traits/trait-core-media.php:326
+msgid "Unknown"
+msgstr ""
+
+#: admin/class-bbai-core.php:2927
+msgid "Source not recorded for this ALT text."
+msgstr ""
+
+#: admin/class-bbai-core.php:2946
+msgid "You do not have permission to export usage data."
+msgstr ""
+
+#: admin/class-bbai-core.php:2976
+msgid "You do not have permission to export debug logs."
+msgstr ""
+
+#: admin/class-bbai-core.php:2981
+msgid "Debug logging is not available."
+msgstr ""
+
+#: admin/class-bbai-core.php:3112
+#: admin/traits/trait-core-generation.php:86
+msgid "Unable to locate the image file for inline embedding."
+msgstr ""
+
+#: admin/class-bbai-core.php:3117
+#: admin/traits/trait-core-generation.php:91
+msgid "Unable to read the image size for inline embedding."
+msgstr ""
+
+#: admin/class-bbai-core.php:3122
+msgid "Image exceeds the inline embedding size limit."
+msgstr ""
+
+#: admin/class-bbai-core.php:3128
+msgid "Unable to read the image file for inline embedding."
+msgstr ""
+
+#: admin/class-bbai-core.php:3138
+msgid "Failed to encode the image for inline embedding."
+msgstr ""
+
+#: admin/class-bbai-core.php:3156
+msgid "ALT text is empty; skipped review."
+msgstr ""
+
+#: admin/class-bbai-core.php:3162
+msgid "No review model configured."
+msgstr ""
+
+#. translators: 1: media title
+#: admin/class-bbai-core.php:3192
+#, php-format
+msgid "Media title: %s"
+msgstr ""
+
+#. translators: 1: filename
+#: admin/class-bbai-core.php:3196
+#, php-format
+msgid "Filename: %s"
+msgstr ""
+
+#: admin/class-bbai-core.php:3277
+#: admin/traits/trait-core-review.php:400
+msgid "Unable to parse review response."
+msgstr ""
+
+#: admin/class-bbai-core.php:3434
+msgid "Monthly quota exhausted. Upgrade to Growth for 1,000 generations per month, or wait for your quota to reset. You can manage your subscription in Settings."
+msgstr ""
+
+#. translators: 1: reset date
+#: admin/class-bbai-core.php:3443
+#: admin/class-bbai-core.php:5003
+#, php-format
+msgid "Monthly quota exhausted. Your quota will reset on %s. Upgrade to Growth for 1,000 generations per month, or manage your subscription in Settings."
+msgstr ""
+
+#: admin/class-bbai-core.php:3466
+#: admin/class-bbai-core.php:6137
+msgid "Attachment is not an image."
+msgstr ""
+
+#: admin/class-bbai-core.php:3480
+msgid "Dry run enabled. Prompt stored for review; ALT text not updated."
+msgstr ""
+
+#: admin/class-bbai-core.php:3554
+#: includes/class-api-client-v2.php:1721
+msgid "Backend reported quota limit, but credits appear available. Please try again in a moment."
+msgstr ""
+
+#: admin/class-bbai-core.php:3603
+msgid "Backend API returned response but no alt text was generated."
+msgstr ""
+
+#: admin/class-bbai-core.php:3873
+msgid "Generated ALT text matched the existing value."
+msgstr ""
+
+#: admin/class-bbai-core.php:3969
+#: admin/class-bbai-core.php:3999
+msgid "Generate Alt Text (AI)"
+msgstr ""
+
+#: admin/class-bbai-core.php:4000
+msgid "Regenerate Alt Text (AI)"
+msgstr ""
+
+#: admin/class-bbai-core.php:4013
+#: admin/partials/guide-tab.php:109
+msgid "Generate Alt Text"
+msgstr ""
+
+#: admin/class-bbai-core.php:4014
+msgid "Regenerate Alt Text"
+msgstr ""
+
+#: admin/class-bbai-core.php:4017
+msgid "Please log in to generate alt text"
+msgstr ""
+
+#: admin/class-bbai-core.php:4029
+#: admin/partials/library-tab.php:310
+msgid "AI Alt Text"
+msgstr ""
+
+#: admin/class-bbai-core.php:4031
+msgid "Use AI to generate or regenerate alternative text for this image."
+msgstr ""
+
+#: admin/class-bbai-core.php:4088
+#: admin/traits/trait-core-assets.php:70
+msgid "Visit the ALT Library to double-check the wording."
+msgstr ""
+
+#: admin/class-bbai-core.php:4090
+#: admin/traits/trait-core-assets.php:72
+msgid "Review generated ALT text"
+msgstr ""
+
+#: admin/class-bbai-core.php:4091
+#: admin/traits/trait-core-assets.php:73
+msgid "Review the generated description before applying it to your media item."
+msgstr ""
+
+#: admin/class-bbai-core.php:4092
+#: admin/traits/trait-core-assets.php:74
+msgid "Use this ALT"
+msgstr ""
+
+#: admin/class-bbai-core.php:4093
+#: admin/traits/trait-core-assets.php:75
+msgid "Keep current ALT"
+msgstr ""
+
+#: admin/class-bbai-core.php:4094
+#: admin/traits/trait-core-assets.php:76
+msgid "Preview dismissed. Existing ALT kept."
+msgstr ""
+
+#: admin/class-bbai-core.php:4095
+#: admin/traits/trait-core-assets.php:77
+msgid "Shift + Enter for newline."
+msgstr ""
+
+#: admin/class-bbai-core.php:4135
+#: admin/class-bbai-core.php:4522
+msgid "Are you sure you want to log out of the admin panel?"
+msgstr ""
+
+#: admin/class-bbai-core.php:4232
+msgid "Starting your scan..."
+msgstr ""
+
+#: admin/class-bbai-core.php:4233
+msgid "Scan queued."
+msgstr ""
+
+#: admin/class-bbai-core.php:4234
+msgid "Unable to start the scan. Please try again."
+msgstr ""
+
+#: admin/class-bbai-core.php:4235
+msgid "Unable to skip onboarding. Please try again."
+msgstr ""
+
+#: admin/class-bbai-core.php:4236
+msgid "Scanning..."
+msgstr ""
+
+#: admin/class-bbai-core.php:4237
+msgid "Skipping..."
+msgstr ""
+
+#: admin/class-bbai-core.php:4238
+msgid "Loading..."
+msgstr ""
+
+#: admin/class-bbai-core.php:4239
+msgid "Unable to load stats."
+msgstr ""
+
+#: admin/class-bbai-core.php:4481
+#: admin/partials/debug-tab.php:254
+#: admin/traits/trait-core-assets.php:421
+msgid "No logs recorded yet."
+msgstr ""
+
+#: admin/class-bbai-core.php:4482
+#: admin/partials/debug-tab.php:234
+#: admin/traits/trait-core-assets.php:422
+msgid "Log Context"
+msgstr ""
+
+#: admin/class-bbai-core.php:4483
+#: admin/traits/trait-core-assets.php:423
+msgid "Hide Context"
+msgstr ""
+
+#: admin/class-bbai-core.php:4484
+#: admin/traits/trait-core-assets.php:424
+msgid "This will permanently delete all debug logs. Continue?"
+msgstr ""
+
+#: admin/class-bbai-core.php:4485
+#: admin/traits/trait-core-assets.php:425
+msgid "Unable to load debug logs. Please try again."
+msgstr ""
+
+#: admin/class-bbai-core.php:4486
+#: admin/traits/trait-core-assets.php:426
+msgid "No additional context was provided for this entry."
+msgstr ""
+
+#: admin/class-bbai-core.php:4487
+#: admin/traits/trait-core-assets.php:427
+msgid "Logs cleared successfully."
+msgstr ""
+
+#: admin/class-bbai-core.php:4537
+#: admin/traits/trait-core-assets.php:479
+msgid "Generating ALT text…"
+msgstr ""
+
+#. translators: 1: image ID
+#: admin/class-bbai-core.php:4539
+#: admin/traits/trait-core-assets.php:481
+#, php-format
+msgid "Generating ALT for #%d…"
+msgstr ""
+
+#: admin/class-bbai-core.php:4540
+#: admin/traits/trait-core-assets.php:482
+msgid "Something went wrong. Check console for details."
+msgstr ""
+
+#. translators: 1: images generated, 2: error count
+#: admin/class-bbai-core.php:4542
+#: admin/traits/trait-core-assets.php:484
+#, php-format
+msgid "Generated %1$d images (%2$d errors)."
+msgstr ""
+
+#: admin/class-bbai-core.php:4543
+#: admin/traits/trait-core-assets.php:485
+msgid "REST endpoint unavailable"
+msgstr ""
+
+#: admin/class-bbai-core.php:4544
+#: admin/traits/trait-core-assets.php:486
+msgid "Preparing image list…"
+msgstr ""
+
+#: admin/class-bbai-core.php:4545
+#: admin/traits/trait-core-assets.php:487
+msgid "of images currently include ALT text."
+msgstr ""
+
+#: admin/class-bbai-core.php:4546
+#: admin/traits/trait-core-assets.php:488
+msgid "None yet"
+msgstr ""
+
+#: admin/class-bbai-core.php:4547
+#: admin/traits/trait-core-assets.php:489
+msgid "No usage data recorded yet."
+msgstr ""
+
+#: admin/class-bbai-core.php:4548
+#: admin/traits/trait-core-assets.php:490
+msgid "No images to process."
+msgstr ""
+
+#: admin/class-bbai-core.php:4549
+#: admin/traits/trait-core-assets.php:491
+msgid "Starting batch…"
+msgstr ""
+
+#: admin/class-bbai-core.php:4550
+#: admin/traits/trait-core-assets.php:492
+msgid "Batch complete."
+msgstr ""
+
+#. translators: 1: completion time
+#: admin/class-bbai-core.php:4552
+#: admin/traits/trait-core-assets.php:494
+#, php-format
+msgid "Batch complete at %s"
+msgstr ""
+
+#. translators: 1: image ID
+#: admin/class-bbai-core.php:4554
+#: admin/traits/trait-core-assets.php:496
+#, php-format
+msgid "Finished #%d"
+msgstr ""
+
+#. translators: 1: image ID
+#: admin/class-bbai-core.php:4556
+#: admin/traits/trait-core-assets.php:498
+#, php-format
+msgid "Failed #%d"
+msgstr ""
+
+#: admin/class-bbai-core.php:4557
+#: admin/traits/trait-core-assets.php:499
+msgid "Processing…"
+msgstr ""
+
+#: admin/class-bbai-core.php:4607
+#: admin/class-bbai-core.php:4628
+#: admin/class-bbai-core.php:4655
+#: admin/class-bbai-core.php:4681
+#: admin/class-bbai-core.php:4709
+#: admin/class-bbai-core.php:4762
+#: admin/class-bbai-core.php:6598
+msgid "Permission denied."
+msgstr ""
+
+#: admin/class-bbai-core.php:4612
+#: admin/class-bbai-core.php:4633
+#: admin/class-bbai-core.php:4660
+#: admin/class-bbai-core.php:4686
+#: admin/class-bbai-core.php:4714
+#: admin/class-bbai-core.php:4767
+#: admin/class-bbai-core.php:4785
+#: admin/class-bbai-core.php:4800
+#: admin/class-bbai-core.php:4819
+#: admin/class-bbai-core.php:4837
+#: admin/class-bbai-core.php:4850
+#: admin/class-bbai-core.php:4862
+#: admin/class-bbai-core.php:4880
+#: admin/class-bbai-core.php:4903
+#: admin/class-bbai-core.php:4928
+#: admin/class-bbai-core.php:5144
+#: admin/class-bbai-core.php:5399
+#: admin/class-bbai-core.php:5432
+#: admin/class-bbai-core.php:5522
+#: admin/class-bbai-core.php:5557
+#: admin/class-bbai-core.php:5600
+#: admin/class-bbai-core.php:5629
+#: admin/class-bbai-core.php:5660
+#: admin/class-bbai-core.php:5740
+#: admin/class-bbai-core.php:5803
+#: admin/class-bbai-core.php:5823
+#: admin/class-bbai-core.php:5855
+#: admin/class-bbai-core.php:5904
+#: admin/class-bbai-core.php:5977
+#: admin/class-bbai-core.php:6020
+#: admin/class-bbai-core.php:6071
+#: admin/class-bbai-core.php:6110
+#: admin/class-bbai-core.php:6245
+#: admin/class-bbai-core.php:6383
+#: admin/class-bbai-core.php:6496
+#: admin/class-bbai-core.php:6541
+#: admin/class-bbai-core.php:6572
+#: admin/class-bbai-core.php:6603
+#: admin/traits/trait-core-ajax-auth.php:32
+#: admin/traits/trait-core-ajax-auth.php:123
+#: admin/traits/trait-core-ajax-auth.php:156
+#: admin/traits/trait-core-ajax-auth.php:209
+#: admin/traits/trait-core-ajax-auth.php:238
+#: admin/traits/trait-core-ajax-auth.php:270
+#: admin/traits/trait-core-ajax-auth.php:297
+#: admin/traits/trait-core-ajax-billing.php:24
+#: admin/traits/trait-core-ajax-billing.php:67
+#: admin/traits/trait-core-ajax-billing.php:133
+#: admin/traits/trait-core-ajax-license.php:24
+#: admin/traits/trait-core-ajax-license.php:65
+#: admin/traits/trait-core-ajax-license.php:93
+#: admin/traits/trait-core-ajax-license.php:122
+#: admin/traits/trait-core-ajax-license.php:198
+#: admin/traits/trait-core-ajax-license.php:258
+#: admin/traits/trait-core-ajax-queue.php:25
+#: admin/traits/trait-core-ajax-queue.php:42
+#: admin/traits/trait-core-ajax-queue.php:61
+#: admin/traits/trait-core-ajax-queue.php:84
+#: admin/traits/trait-core-ajax-queue.php:101
+#: admin/traits/trait-core-ajax-queue.php:117
+#: admin/traits/trait-core-ajax-queue.php:138
+#: admin/traits/trait-core-ajax-queue.php:164
+#: includes/controllers/class-generation-controller.php:116
+#: includes/controllers/class-license-controller.php:53
+msgid "Invalid nonce."
+msgstr ""
+
+#: admin/class-bbai-core.php:4638
+#: admin/class-bbai-core.php:4665
+msgid "Invalid milestone."
+msgstr ""
+
+#: admin/class-bbai-core.php:4646
+#: admin/class-bbai-core.php:4672
+#: admin/class-bbai-core.php:4700
+msgid "Onboarding class not found."
+msgstr ""
+
+#: admin/class-bbai-core.php:4670
+msgid "Milestone tracked."
+msgstr ""
+
+#: admin/class-bbai-core.php:4691
+msgid "Authentication required."
+msgstr ""
+
+#: admin/class-bbai-core.php:4698
+msgid "Onboarding completed."
+msgstr ""
+
+#: admin/class-bbai-core.php:4726
+msgid "Your media library is already optimized! All images have alt text."
+msgstr ""
+
+#. translators: 1: number of images queued
+#: admin/class-bbai-core.php:4747
+#, php-format
+msgid "%d image queued for processing."
+msgid_plural "%d images queued for processing."
+msgstr[0] ""
+msgstr[1] ""
+
+#: admin/class-bbai-core.php:4777
+msgid "Onboarding skipped."
+msgstr ""
+
+#: admin/class-bbai-core.php:4788
+#: admin/class-bbai-core.php:4822
+#: admin/class-bbai-core.php:4840
+#: admin/class-bbai-core.php:4853
+#: admin/class-bbai-core.php:4865
+#: admin/class-bbai-core.php:4883
+#: admin/class-bbai-core.php:5402
+#: admin/class-bbai-core.php:5435
+#: admin/class-bbai-core.php:5484
+#: admin/class-bbai-core.php:5526
+#: admin/class-bbai-core.php:5561
+#: admin/class-bbai-core.php:5604
+#: admin/class-bbai-core.php:5632
+#: admin/class-bbai-core.php:5663
+#: admin/class-bbai-core.php:5743
+#: admin/class-bbai-core.php:5806
+#: admin/class-bbai-core.php:5826
+#: admin/class-bbai-core.php:5858
+#: admin/class-bbai-core.php:5907
+#: admin/class-bbai-core.php:5980
+#: admin/class-bbai-core.php:6023
+#: admin/class-bbai-core.php:6074
+#: admin/class-bbai-core.php:6113
+#: admin/class-bbai-core.php:6248
+#: admin/class-bbai-core.php:6387
+#: admin/class-bbai-core.php:6500
+#: admin/class-bbai-core.php:6545
+#: admin/class-bbai-core.php:6576
+#: admin/traits/trait-core-ajax-auth.php:126
+#: admin/traits/trait-core-ajax-auth.php:159
+#: admin/traits/trait-core-ajax-auth.php:190
+#: admin/traits/trait-core-ajax-auth.php:213
+#: admin/traits/trait-core-ajax-auth.php:241
+#: admin/traits/trait-core-ajax-billing.php:27
+#: admin/traits/trait-core-ajax-billing.php:70
+#: admin/traits/trait-core-ajax-billing.php:136
+#: admin/traits/trait-core-ajax-license.php:28
+#: admin/traits/trait-core-ajax-license.php:69
+#: admin/traits/trait-core-ajax-license.php:96
+#: admin/traits/trait-core-ajax-license.php:125
+#: admin/traits/trait-core-ajax-license.php:201
+#: admin/traits/trait-core-ajax-license.php:261
+#: admin/traits/trait-core-ajax-queue.php:28
+#: admin/traits/trait-core-ajax-queue.php:64
+#: admin/traits/trait-core-ajax-queue.php:87
+#: admin/traits/trait-core-ajax-queue.php:104
+#: admin/traits/trait-core-ajax-queue.php:120
+#: admin/traits/trait-core-ajax-queue.php:141
+#: includes/controllers/class-auth-controller.php:75
+#: includes/controllers/class-auth-controller.php:98
+#: includes/controllers/class-auth-controller.php:117
+#: includes/controllers/class-auth-controller.php:136
+#: includes/controllers/class-auth-controller.php:160
+#: includes/controllers/class-auth-controller.php:179
+#: includes/controllers/class-generation-controller.php:52
+#: includes/controllers/class-generation-controller.php:61
+#: includes/controllers/class-generation-controller.php:80
+#: includes/controllers/class-generation-controller.php:124
+#: includes/controllers/class-generation-controller.php:133
+#: includes/controllers/class-license-controller.php:61
+#: includes/controllers/class-license-controller.php:83
+#: includes/controllers/class-license-controller.php:102
+#: includes/controllers/class-license-controller.php:121
+#: includes/controllers/class-queue-controller.php:52
+#: includes/controllers/class-queue-controller.php:74
+#: includes/controllers/class-queue-controller.php:93
+#: includes/controllers/class-queue-controller.php:112
+msgid "Unauthorized"
+msgstr ""
+
+#: admin/class-bbai-core.php:4794
+#: admin/traits/trait-core-ajax-queue.php:33
+msgid "Notice dismissed"
+msgstr ""
+
+#: admin/class-bbai-core.php:4827
+#: admin/traits/trait-core-ajax-queue.php:70
+#: includes/services/class-queue-service.php:52
+msgid "Invalid job ID."
+msgstr ""
+
+#: admin/class-bbai-core.php:4831
+#: admin/traits/trait-core-ajax-queue.php:75
+#: includes/services/class-queue-service.php:68
+msgid "Job re-queued."
+msgstr ""
+
+#: admin/class-bbai-core.php:4844
+#: admin/traits/trait-core-ajax-queue.php:92
+#: includes/services/class-queue-service.php:95
+msgid "Retry scheduled for failed jobs."
+msgstr ""
+
+#: admin/class-bbai-core.php:4856
+#: admin/traits/trait-core-ajax-queue.php:108
+#: includes/services/class-queue-service.php:121
+msgid "Cleared completed jobs."
+msgstr ""
+
+#: admin/class-bbai-core.php:4983
+#: includes/services/class-generation-service.php:283
+msgid "The API returned a response but no alt text was generated. This may be a temporary issue. Please try again."
+msgstr ""
+
+#: admin/class-bbai-core.php:4985
+#: includes/services/class-generation-service.php:284
+msgid "The API response was invalid. Please try again in a moment."
+msgstr ""
+
+#: admin/class-bbai-core.php:4987
+#: includes/services/class-generation-service.php:285
+msgid "Credits appear available but the backend reported a limit. Please try again in a moment."
+msgstr ""
+
+#: admin/class-bbai-core.php:4994
+msgid "Monthly quota exhausted. Your quota will reset on the first of next month. Upgrade to Growth for 1,000 generations per month, or manage your subscription in Settings."
+msgstr ""
+
+#: admin/class-bbai-core.php:5012
+#: includes/services/class-generation-service.php:288
+msgid "The request timed out. Please try again."
+msgstr ""
+
+#: admin/class-bbai-core.php:5014
+#: includes/services/class-generation-service.php:289
+msgid "Unable to reach the server. Please check your internet connection and try again."
+msgstr ""
+
+#: admin/class-bbai-core.php:5125
+#: includes/services/class-generation-service.php:138
+msgid "Alt text generated successfully."
+msgstr ""
+
+#. translators: 1: remaining generations
+#: admin/class-bbai-core.php:5201
+#, php-format
+msgid "You only have %d generations remaining. Please upgrade or select fewer images."
+msgstr ""
+
+#. translators: 1: number of images queued
+#: admin/class-bbai-core.php:5231
+#, php-format
+msgid "%d image(s) queued for processing"
+msgstr ""
+
+#: admin/class-bbai-core.php:5243
+msgid "No images queued. Images may already be processing or have alt text. Refresh the page to see current status."
+msgstr ""
+
+#: admin/class-bbai-core.php:5248
+msgid "Failed to queue images. They may already be queued or processing."
+msgstr ""
+
+#: admin/class-bbai-core.php:5255
+msgid "Failed to queue images due to a database error. Please try again."
+msgstr ""
+
+#: admin/class-bbai-core.php:5410
+#: admin/traits/trait-core-ajax-auth.php:45
+#: admin/traits/trait-core-ajax-auth.php:134
+#: includes/services/class-authentication-service.php:63
+#: includes/services/class-authentication-service.php:132
+msgid "Email and password are required"
+msgstr ""
+
+#: admin/class-bbai-core.php:5420
+#: admin/traits/trait-core-ajax-auth.php:144
+#: includes/services/class-authentication-service.php:151
+msgid "Logged in successfully"
+msgstr ""
+
+#: admin/class-bbai-core.php:5455
+#: admin/class-bbai-core.php:5812
+#: admin/traits/trait-core-ajax-auth.php:174
+#: admin/traits/trait-core-ajax-license.php:267
+#: includes/services/class-authentication-service.php:171
+#: includes/services/class-authentication-service.php:293
+msgid "Logged out successfully"
+msgstr ""
+
+#: admin/class-bbai-core.php:5476
+#: admin/traits/trait-core-ajax-auth.php:186
+msgid "Security check failed"
+msgstr ""
+
+#: admin/class-bbai-core.php:5547
+#: admin/traits/trait-core-ajax-auth.php:228
+#: includes/services/class-authentication-service.php:208
+msgid "Account disconnected. Please sign in again to reconnect."
+msgstr ""
+
+#: admin/class-bbai-core.php:5568
+#: admin/traits/trait-core-ajax-license.php:35
+#: includes/services/class-license-service.php:62
+msgid "License key is required"
+msgstr ""
+
+#: admin/class-bbai-core.php:5573
+#: admin/traits/trait-core-ajax-license.php:39
+#: includes/services/class-license-service.php:70
+msgid "Invalid license key format"
+msgstr ""
+
+#: admin/class-bbai-core.php:5588
+#: admin/traits/trait-core-ajax-license.php:53
+#: includes/services/class-license-service.php:92
+msgid "License activated successfully"
+msgstr ""
+
+#: admin/class-bbai-core.php:5619
+#: admin/traits/trait-core-ajax-license.php:83
+#: includes/class-api-client-v2.php:1066
+#: includes/services/class-license-service.php:124
+msgid "License deactivated successfully"
+msgstr ""
+
+#: admin/class-bbai-core.php:5638
+#: admin/traits/trait-core-ajax-license.php:101
+#: includes/services/class-license-service.php:142
+msgid "Please log in to view license site usage"
+msgstr ""
+
+#: admin/class-bbai-core.php:5647
+#: admin/traits/trait-core-ajax-license.php:109
+#: includes/class-api-client-v2.php:1093
+#: includes/services/class-license-service.php:152
+msgid "Failed to fetch license site usage"
+msgstr ""
+
+#: admin/class-bbai-core.php:5669
+#: admin/traits/trait-core-ajax-license.php:130
+#: includes/services/class-license-service.php:177
+msgid "Please log in to disconnect license sites"
+msgstr ""
+
+#: admin/class-bbai-core.php:5677
+#: admin/traits/trait-core-ajax-license.php:138
+#: includes/services/class-license-service.php:185
+msgid "Site ID is required"
+msgstr ""
+
+#: admin/class-bbai-core.php:5686
+#: admin/traits/trait-core-ajax-license.php:146
+#: includes/class-api-client-v2.php:1115
+#: includes/services/class-license-service.php:195
+msgid "Failed to disconnect site"
+msgstr ""
+
+#: admin/class-bbai-core.php:5691
+#: admin/traits/trait-core-ajax-license.php:151
+#: includes/class-api-client-v2.php:1112
+#: includes/services/class-license-service.php:204
+msgid "Site disconnected successfully"
+msgstr ""
+
+#: admin/class-bbai-core.php:5758
+#: admin/traits/trait-core-ajax-license.php:215
+#: includes/services/class-authentication-service.php:235
+msgid "Admin access is only available for agency licenses"
+msgstr ""
+
+#: admin/class-bbai-core.php:5769
+#: admin/class-bbai-core.php:5988
+#: admin/class-bbai-core.php:6035
+#: admin/traits/trait-core-ajax-license.php:226
+#: includes/services/class-authentication-service.php:243
+msgid "Please enter a valid email address"
+msgstr ""
+
+#: admin/class-bbai-core.php:5775
+#: admin/traits/trait-core-ajax-license.php:232
+#: includes/services/class-authentication-service.php:251
+msgid "Please enter your password"
+msgstr ""
+
+#: admin/class-bbai-core.php:5784
+#: admin/traits/trait-core-ajax-license.php:240
+#: includes/services/class-authentication-service.php:261
+msgid "Login failed. Please check your credentials."
+msgstr ""
+
+#: admin/class-bbai-core.php:5792
+#: admin/traits/trait-core-ajax-license.php:247
+#: includes/services/class-authentication-service.php:273
+msgid "Successfully logged in"
+msgstr ""
+
+#: admin/class-bbai-core.php:5831
+#: admin/traits/trait-core-ajax-auth.php:246
+#: includes/services/class-authentication-service.php:309
+#: includes/traits/trait-api-auth.php:120
+msgid "Not authenticated"
+msgstr ""
+
+#: admin/class-bbai-core.php:5867
+#: admin/traits/trait-core-ajax-billing.php:33
+msgid "Price ID is required"
+msgstr ""
+
+#: admin/class-bbai-core.php:5886
+#: admin/traits/trait-core-ajax-billing.php:49
+msgid "Unable to create checkout session. Please try again or contact support."
+msgstr ""
+
+#: admin/class-bbai-core.php:5930
+#: admin/traits/trait-core-ajax-billing.php:90
+msgid "Please log in to manage billing"
+msgstr ""
+
+#: admin/class-bbai-core.php:5957
+#: admin/traits/trait-core-ajax-billing.php:115
+msgid "To manage your subscription, please log in with your account credentials (not just admin access). If you have an agency license, contact support to access billing management."
+msgstr ""
+
+#: admin/class-bbai-core.php:6002
+msgid "Password reset link has been sent to your email. Please check your inbox and spam folder."
+msgstr ""
+
+#: admin/class-bbai-core.php:6008
+msgid "Email service is in development mode. Use this link to reset your password."
+msgstr ""
+
+#: admin/class-bbai-core.php:6041
+msgid "Reset token is required"
+msgstr ""
+
+#: admin/class-bbai-core.php:6047
+msgid "Password must be at least 8 characters long"
+msgstr ""
+
+#: admin/class-bbai-core.php:6060
+msgid "Password reset successfully. You can now sign in with your new password."
+msgstr ""
+
+#: admin/class-bbai-core.php:6079
+#: admin/traits/trait-core-ajax-billing.php:141
+msgid "Please log in to view subscription information"
+msgstr ""
+
+#: admin/class-bbai-core.php:6119
+msgid "No attachment IDs provided."
+msgstr ""
+
+#: admin/class-bbai-core.php:6128
+msgid "Invalid attachment IDs."
+msgstr ""
+
+#. translators: 1: error message
+#: admin/class-bbai-core.php:6171
+#, php-format
+msgid "Unexpected error during generation: %s"
+msgstr ""
+
+#. translators: 1: error message
+#: admin/class-bbai-core.php:6183
+#, php-format
+msgid "Fatal error during generation: %s"
+msgstr ""
+
+#: admin/class-bbai-core.php:6268
+#: admin/class-bbai-rest-controller.php:803
+#: includes/class-credit-usage-logger.php:456
+#: includes/usage/class-usage-logs.php:271
+#: includes/usage/class-usage-logs.php:272
+#: includes/usage/class-usage-logs.php:374
+#: includes/usage/class-usage-logs.php:375
+msgid "System"
+msgstr ""
+
+#: admin/class-bbai-core.php:6278
+msgid "Bulk alt text generation"
+msgstr ""
+
+#. translators: 1: user name
+#: admin/class-bbai-core.php:6281
+#, php-format
+msgid "Processed by %s"
+msgstr ""
+
+#: admin/class-bbai-core.php:6286
+msgid "Alt text regenerated"
+msgstr ""
+
+#. translators: 1: image title
+#: admin/class-bbai-core.php:6292
+#: admin/class-bbai-core.php:6309
+#, php-format
+msgid "Image: %s"
+msgstr ""
+
+#. translators: 1: image ID
+#: admin/class-bbai-core.php:6297
+#: admin/class-bbai-core.php:6314
+#, php-format
+msgid "Image ID: %d"
+msgstr ""
+
+#: admin/class-bbai-core.php:6303
+#: includes/services/class-generation-service.php:267
+msgid "Alt text generated"
+msgstr ""
+
+#: admin/class-bbai-core.php:6339
+#: admin/class-bbai-core.php:6344
+#: admin/class-bbai-core.php:6353
+msgid "Just now"
+msgstr ""
+
+#. translators: 1: number of minutes
+#: admin/class-bbai-core.php:6357
+#, php-format
+msgid "%d minute ago"
+msgid_plural "%d minutes ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: 1: number of hours
+#: admin/class-bbai-core.php:6363
+#, php-format
+msgid "%d hour ago"
+msgid_plural "%d hours ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: 1: number of days
+#: admin/class-bbai-core.php:6369
+#, php-format
+msgid "%d day ago"
+msgid_plural "%d days ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#: admin/class-bbai-core.php:6398
+msgid "Rate limit exceeded. Please wait before submitting another message."
+msgstr ""
+
+#: admin/class-bbai-core.php:6413
+msgid "Please fill in all required fields."
+msgstr ""
+
+#: admin/class-bbai-core.php:6419
+#: includes/services/class-resend-service.php:147
+msgid "Invalid email address format."
+msgstr ""
+
+#: admin/class-bbai-core.php:6443
+msgid "Unable to send message. Please ensure you are logged in and try again."
+msgstr ""
+
+#: admin/class-bbai-core.php:6445
+msgid "Unable to connect to the server. Please check your internet connection and try again."
+msgstr ""
+
+#: admin/class-bbai-core.php:6447
+msgid "Failed to send message. Please try again later."
+msgstr ""
+
+#. translators: 1: error message
+#: admin/class-bbai-core.php:6451
+#, php-format
+msgid "Unable to send message: %s"
+msgstr ""
+
+#: admin/class-bbai-core.php:6452
+#: includes/services/class-resend-service.php:226
+msgid "Unknown error"
+msgstr ""
+
+#: admin/class-bbai-core.php:6486
+#: includes/class-api-client-v2.php:2173
+#: includes/services/class-resend-service.php:255
+msgid "Your message has been sent successfully. We'll get back to you soon!"
+msgstr ""
+
+#: admin/class-bbai-core.php:6525
+msgid "Submission not found"
+msgstr ""
+
+#: admin/class-bbai-core.php:6554
+#: admin/class-bbai-core.php:6584
+msgid "Invalid submission ID"
+msgstr ""
+
+#: admin/class-bbai-core.php:6560
+msgid "Status updated successfully"
+msgstr ""
+
+#: admin/class-bbai-core.php:6562
+msgid "Failed to update status"
+msgstr ""
+
+#: admin/class-bbai-core.php:6590
+msgid "Submission deleted successfully"
+msgstr ""
+
+#: admin/class-bbai-core.php:6592
+msgid "Failed to delete submission"
+msgstr ""
+
+#: admin/class-bbai-credit-usage-page.php:37
+#: includes/admin/class-bbai-admin-dashboard.php:95
+msgid "You do not have permission to access this page."
+msgstr ""
+
+#: admin/class-bbai-credit-usage-page.php:47
+msgid "Credit usage table created successfully!"
+msgstr ""
+
+#: admin/class-bbai-rest-controller.php:442
+msgid "ALT text cannot be empty."
+msgstr ""
+
+#: admin/partials/agency-overview-tab.php:64
+msgid "Export Report"
+msgstr ""
+
+#: admin/partials/agency-overview-tab.php:73
+msgid "AI alt Text"
+msgstr ""
+
+#. translators: 1: site count, 2: plural suffix
+#: admin/partials/agency-overview-tab.php:77
+#, php-format
+msgid "Across %1$s Site%2$s"
+msgstr ""
+
+#: admin/partials/agency-overview-tab.php:85
+#: admin/partials/library-tab.php:208
+msgid "This Month"
+msgstr ""
+
+#: admin/partials/agency-overview-tab.php:89
+msgid "Hours Saved"
+msgstr ""
+
+#: admin/partials/agency-overview-tab.php:98
+msgid "Site"
+msgstr ""
+
+#: admin/partials/agency-overview-tab.php:99
+msgid "AI Alt Text Generated"
+msgstr ""
+
+#: admin/partials/agency-overview-tab.php:100
+msgid "Images Optimised"
+msgstr ""
+
+#: admin/partials/agency-overview-tab.php:102
+#: admin/partials/credit-usage-content.php:191
+#: admin/partials/credit-usage-content.php:279
+#: includes/class-privacy.php:261
+#: includes/class-privacy.php:288
+msgid "Last Activity"
+msgstr ""
+
+#: admin/partials/agency-overview-tab.php:113
+msgid "No sites found."
+msgstr ""
+
+#. translators: 1: site number
+#: admin/partials/agency-overview-tab.php:119
+#, php-format
+msgid "Site %d"
+msgstr ""
+
+#: admin/partials/agency-overview-tab.php:133
+msgid "Never"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:96
+msgid "Track your alt text coverage trends, usage and automation impact."
+msgstr ""
+
+#: admin/partials/analytics-tab.php:112
+msgid "SEO LIFT"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:114
+msgid "Estimated lift in search visibility due to generated alt text."
+msgstr ""
+
+#: admin/partials/analytics-tab.php:128
+#: admin/partials/metric-cards.php:72
+msgid "IMAGES"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:129
+#: admin/partials/metric-cards.php:73
+msgid "OPTIMIZED"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:131
+msgid "Total images with generated or improved alt text."
+msgstr ""
+
+#: admin/partials/analytics-tab.php:144
+#: admin/partials/metric-cards.php:50
+msgid "HRS"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:145
+#: admin/partials/metric-cards.php:51
+msgid "TIME SAVED"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:147
+msgid "Estimated time saved vs manual alt text creation."
+msgstr ""
+
+#: admin/partials/analytics-tab.php:155
+msgid "Coverage Trends"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:158
+msgid "Last 30 Days"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:161
+msgid "Last 90 Days"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:164
+msgid "YTD"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:184
+msgid "No coverage data available yet. Start optimizing images to see trends."
+msgstr ""
+
+#: admin/partials/analytics-tab.php:187
+msgid "Coverage %"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:193
+msgid "Usage Breakdown"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:202
+msgid "Used"
+msgstr ""
+
+#. translators: 1: usage limit
+#: admin/partials/analytics-tab.php:207
+#, php-format
+msgid "of %s"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:219
+#: admin/partials/dashboard-body.php:423
+msgid "Remaining"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:222
+msgid "credits left"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:234
+#: admin/partials/credit-usage-content.php:280
+msgid "Avg Per Day"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:237
+#: includes/admin/class-bbai-admin-dashboard.php:341
+msgid "generations"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:248
+msgid "Images"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:251
+msgid "images"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:266
+msgid "Before & After"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:275
+msgid "Before"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:277
+msgid "images without alt text"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:288
+msgid "After"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:292
+msgid "images optimized"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:295
+msgid "improvement"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:302
+msgid "Elevated Google Rankings"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:311
+msgid "Recent Activity"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:312
+msgid "Refresh activity"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:323
+msgid "Loading activity..."
+msgstr ""
+
+#: admin/partials/analytics-tab.php:331
+msgid "No activity yet"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:332
+msgid "Generate your first alt text to see your activity here."
+msgstr ""
+
+#: admin/partials/analytics-tab.php:340
+#: admin/partials/bottom-upsell-cta.php:108
+#: admin/partials/bottom-upsell-cta.php:178
+#: admin/partials/dashboard-body.php:331
+#: includes/admin/class-bbai-admin-dashboard.php:226
+#: includes/admin/class-bbai-admin-dashboard.php:365
+msgid "Compare plans"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:344
+#: admin/partials/bottom-upsell-cta.php:174
+#: admin/partials/dashboard-body.php:173
+#: includes/admin/class-bbai-admin-dashboard.php:485
+#: templates/upgrade-modal.php:240
+msgid "Upgrade to Agency"
+msgstr ""
+
+#: admin/partials/analytics-tab.php:354
+msgid "Manage subscription"
+msgstr ""
+
+#: admin/partials/bottom-upsell-cta.php:49
+#: admin/partials/dashboard-body.php:257
+msgid "GROWTH"
+msgstr ""
+
+#: admin/partials/bottom-upsell-cta.php:60
+#: admin/partials/bottom-upsell-cta.php:103
+#: admin/partials/bottom-upsell-cta.php:104
+#: admin/partials/dashboard-body.php:268
+#: admin/partials/dashboard-body.php:316
+#: admin/partials/dashboard-body.php:318
+#: admin/partials/guide-tab.php:86
+#: admin/partials/settings-tab.php:208
+#: includes/admin/class-bbai-admin-dashboard.php:206
+#: includes/admin/class-bbai-admin-dashboard.php:217
+#: includes/admin/class-bbai-admin-dashboard.php:358
+#: includes/admin/class-bbai-admin-dashboard.php:373
+#: includes/admin/class-bbai-admin-dashboard.php:473
+#: templates/upgrade-modal.php:171
+msgid "Upgrade to Growth"
+msgstr ""
+
+#: admin/partials/bottom-upsell-cta.php:63
+#: admin/partials/dashboard-body.php:271
+#: includes/admin/class-bbai-admin-dashboard.php:207
+msgid "Automate alt text generation and scale image optimisation each month."
+msgstr ""
+
+#: admin/partials/bottom-upsell-cta.php:73
+#: admin/partials/dashboard-body.php:281
+#: includes/admin/class-bbai-admin-dashboard.php:209
+#: includes/admin/class-bbai-admin-dashboard.php:220
+#: includes/admin/class-bbai-admin-dashboard.php:360
+msgid "1,000 AI alt texts per month"
+msgstr ""
+
+#: admin/partials/bottom-upsell-cta.php:81
+#: admin/partials/dashboard-body.php:289
+#: includes/admin/class-bbai-admin-dashboard.php:210
+#: includes/admin/class-bbai-admin-dashboard.php:221
+#: includes/admin/class-bbai-admin-dashboard.php:361
+msgid "Bulk processing for the media library"
+msgstr ""
+
+#: admin/partials/bottom-upsell-cta.php:89
+#: admin/partials/dashboard-body.php:297
+#: admin/partials/guide-tab.php:69
+#: includes/admin/class-bbai-admin-dashboard.php:211
+#: includes/admin/class-bbai-admin-dashboard.php:222
+#: includes/admin/class-bbai-admin-dashboard.php:362
+msgid "Priority queue for faster results"
+msgstr ""
+
+#: admin/partials/bottom-upsell-cta.php:97
+#: admin/partials/dashboard-body.php:305
+#: includes/admin/class-bbai-admin-dashboard.php:212
+#: includes/admin/class-bbai-admin-dashboard.php:223
+msgid "Multilingual support for global SEO"
+msgstr ""
+
+#: admin/partials/bottom-upsell-cta.php:106
+#: admin/partials/dashboard-body.php:322
+msgid "Includes 1,000 AI alt texts per month. Cancel anytime."
+msgstr ""
+
+#: admin/partials/bottom-upsell-cta.php:119
+#: admin/partials/settings-tab.php:84
+#: includes/admin/class-plan-helpers.php:154
+msgid "AGENCY"
+msgstr ""
+
+#: admin/partials/bottom-upsell-cta.php:130
+msgid "Scale with Agency"
+msgstr ""
+
+#: admin/partials/bottom-upsell-cta.php:133
+msgid "Unlimited potential for agencies and high-volume sites."
+msgstr ""
+
+#: admin/partials/bottom-upsell-cta.php:143
+msgid "5,000 alt texts per month"
+msgstr ""
+
+#: admin/partials/bottom-upsell-cta.php:151
+msgid "Multi-site license for unlimited WordPress sites"
+msgstr ""
+
+#: admin/partials/bottom-upsell-cta.php:159
+msgid "Priority support with dedicated account manager"
+msgstr ""
+
+#: admin/partials/bottom-upsell-cta.php:167
+msgid "Custom brand voice & style guidelines"
+msgstr ""
+
+#: admin/partials/bottom-upsell-cta.php:176
+msgid "Perfect for agencies managing multiple client sites."
+msgstr ""
+
+#: admin/partials/bottom-upsell-cta.php:194
+msgid "Thank you for being an Agency member!"
+msgstr ""
+
+#: admin/partials/bottom-upsell-cta.php:195
+msgid "You have access to all features. We appreciate your support."
+msgstr ""
+
+#: admin/partials/bottom-upsell-cta.php:211
+#: admin/partials/dashboard-body.php:191
+#: admin/partials/settings-tab.php:414
+msgid "Manage Subscription"
+msgstr ""
+
+#: admin/partials/bottom-upsell-cta.php:219
+msgid "Priority Support"
+msgstr ""
+
+#: admin/partials/bottom-upsell-cta.php:226
+msgid "Documentation"
+msgstr ""
+
+#: admin/partials/bottom-upsell-cta.php:237
+msgid "Contact Us"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:20
+msgid "← Back to Summary"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:29
+msgid "Track your credit usage, view detailed activity by user, and monitor your monthly quota. Use filters to analyze usage patterns over time."
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:39
+msgid "Total Credits Allocated"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:53
+msgid "Total Credits Used"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:67
+msgid "Credits Remaining"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:83
+msgid "Image descriptions left this month"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:88
+msgid "Usage Percentage"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:104
+msgid "of monthly credits used"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:116
+msgid "Date From"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:126
+msgid "Date To"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:136
+msgid "Source"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:138
+msgid "All"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:139
+msgid "API"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:140
+msgid "Upload"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:141
+#: admin/traits/trait-core-media.php:298
+msgid "Bulk"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:145
+#: admin/partials/credit-usage-content.php:189
+#: admin/partials/credit-usage-content.php:277
+msgid "User"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:147
+msgid "All Users"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:157
+msgid "Filter"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:158
+msgid "Clear"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:165
+msgid "User Details"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:166
+msgid "Name:"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:167
+msgid "Email:"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:168
+msgid "Total Credits Used:"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:169
+msgid "Images Processed:"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:180
+msgid "SEO Heroes"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:183
+msgid "Top contributors improving your site's accessibility and SEO this billing period."
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:188
+msgid "Rank"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:190
+msgid "Images Optimized"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:216
+#: includes/class-credit-usage-logger.php:448
+#: includes/class-credit-usage-logger.php:551
+msgid "Unknown User"
+msgstr ""
+
+#. translators: 1: period start date, 2: period end date
+#: admin/partials/credit-usage-content.php:246
+#, php-format
+msgid "Billing period: %1$s - %2$s"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:258
+msgid "Usage by User"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:267
+msgid "Note:"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:268
+msgid "The summary cards above show your current accurate usage from the backend. The table below shows historical WordPress user activity, which may include data from previous periods or different filters. Use the filters to view recent usage only."
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:278
+#: includes/class-privacy.php:260
+msgid "Credits Used"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:314
+msgid "&laquo;"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:315
+msgid "&raquo;"
+msgstr ""
+
+#: admin/partials/credit-usage-content.php:334
+msgid "No usage data found for selected filters."
+msgstr ""
+
+#: admin/partials/dashboard-body.php:24
+msgid "Automated, accessible alt text generation for your WordPress media library."
+msgstr ""
+
+#: admin/partials/dashboard-body.php:81
+#: includes/admin/class-bbai-admin-dashboard.php:123
+msgid "Alt Text Progress This Month"
+msgstr ""
+
+#: admin/partials/dashboard-body.php:116
+msgid "IMAGES USED"
+msgstr ""
+
+#. translators: 1: reset date
+#: admin/partials/dashboard-body.php:142
+#: admin/partials/dashboard-body.php:145
+#: admin/partials/settings-tab.php:147
+#: admin/partials/settings-tab.php:185
+#: includes/admin/class-bbai-admin-dashboard.php:178
+#, php-format
+msgid "Resets %s"
+msgstr ""
+
+#: admin/partials/dashboard-body.php:148
+msgid "Resets monthly"
+msgstr ""
+
+#: admin/partials/dashboard-body.php:159
+#: admin/partials/dashboard-body.php:161
+msgid "Upgrade to 1,000 images/month"
+msgstr ""
+
+#: admin/partials/dashboard-body.php:171
+msgid "Upgrade to Agency plan for 5,000 monthly credits"
+msgstr ""
+
+#: admin/partials/dashboard-body.php:208
+#: admin/partials/dashboard-body.php:220
+#: admin/partials/dashboard-body.php:445
+#: admin/partials/dashboard-body.php:451
+#: includes/admin/class-bbai-admin-dashboard.php:185
+msgid "Generate Missing"
+msgstr ""
+
+#: admin/partials/dashboard-body.php:210
+msgid "Generate alt text for images that don't have any"
+msgstr ""
+
+#: admin/partials/dashboard-body.php:213
+#: admin/partials/dashboard-body.php:234
+msgid "Upgrade to unlock more generations"
+msgstr ""
+
+#: admin/partials/dashboard-body.php:229
+#: admin/partials/dashboard-body.php:241
+#: admin/partials/dashboard-body.php:467
+#: includes/admin/class-bbai-admin-dashboard.php:197
+msgid "Re-optimise All"
+msgstr ""
+
+#: admin/partials/dashboard-body.php:231
+msgid "Regenerate alt text for ALL images, replacing existing ones"
+msgstr ""
+
+#: admin/partials/dashboard-body.php:247
+#: includes/admin/class-bbai-admin-dashboard.php:194
+msgid "Free plan includes 50 images per month. Growth includes 1,000 images per month."
+msgstr ""
+
+#: admin/partials/dashboard-body.php:357
+msgid "Monthly quota is shared across all site users. Upgrade to Growth for 1,000 generations per month."
+msgstr ""
+
+#. translators: 1: optimized images count, 2: total images count
+#: admin/partials/dashboard-body.php:393
+#, php-format
+msgid "%1$s of %2$s images optimized"
+msgstr ""
+
+#. translators: 1: total images count
+#: admin/partials/dashboard-body.php:401
+#, php-format
+msgid "All %1$s images optimized!"
+msgstr ""
+
+#: admin/partials/dashboard-body.php:406
+msgid "Ready to optimize images"
+msgstr ""
+
+#: admin/partials/dashboard-body.php:418
+msgid "Number of images that already have alt text. These images are SEO-ready and accessible."
+msgstr ""
+
+#: admin/partials/dashboard-body.php:419
+#: admin/partials/library-tab.php:200
+#: admin/partials/library-tab.php:218
+#: admin/partials/library-tab.php:364
+msgid "Optimized"
+msgstr ""
+
+#: admin/partials/dashboard-body.php:422
+msgid "Images without alt text. These need optimization for better SEO and accessibility compliance."
+msgstr ""
+
+#: admin/partials/dashboard-body.php:426
+msgid "Total number of images in your media library. This includes all image types and sizes."
+msgstr ""
+
+#: admin/partials/dashboard-body.php:427
+msgid "Total"
+msgstr ""
+
+#: admin/partials/dashboard-body.php:435
+#: admin/partials/dashboard-body.php:457
+#: admin/partials/library-tab.php:244
+#: admin/partials/library-tab.php:266
+msgid "Unlock 1,000 alt text generations with Growth →"
+msgstr ""
+
+#: admin/partials/dashboard-body.php:437
+#: admin/partials/library-tab.php:246
+msgid "Automatically generate alt text for all images that don't have any. Processes in the background without slowing down your site."
+msgstr ""
+
+#: admin/partials/dashboard-body.php:459
+#: admin/partials/library-tab.php:268
+msgid "Regenerate alt text for ALL images, even those that already have it. Useful after changing your tone/style settings or brand guidelines."
+msgstr ""
+
+#: admin/partials/dashboard-body.php:474
+msgid "GETTING STARTED"
+msgstr ""
+
+#: admin/partials/dashboard-body.php:482
+msgid "You're ready to optimise your images"
+msgstr ""
+
+#: admin/partials/dashboard-logged-out.php:23
+msgid "Get found in Google Images"
+msgstr ""
+
+#: admin/partials/dashboard-logged-out.php:26
+msgid "with complete alt text"
+msgstr ""
+
+#: admin/partials/dashboard-logged-out.php:30
+msgid "Generate SEO-ready, accessible alt text for your entire media library — directly from WordPress."
+msgstr ""
+
+#: admin/partials/dashboard-logged-out.php:49
+msgid "Create a free account"
+msgstr ""
+
+#: admin/partials/dashboard-logged-out.php:55
+msgid "Benefits"
+msgstr ""
+
+#: admin/partials/dashboard-logged-out.php:64
+msgid "Rank in Google Images"
+msgstr ""
+
+#: admin/partials/dashboard-logged-out.php:65
+msgid "— descriptive alt text helps images appear in search"
+msgstr ""
+
+#: admin/partials/dashboard-logged-out.php:75
+msgid "Meet accessibility standards"
+msgstr ""
+
+#: admin/partials/dashboard-logged-out.php:76
+msgid "— WCAG-compliant descriptions for screen readers"
+msgstr ""
+
+#: admin/partials/dashboard-logged-out.php:86
+msgid "Save hours of writing"
+msgstr ""
+
+#: admin/partials/dashboard-logged-out.php:87
+msgid "— generate alt text in seconds, not minutes per image"
+msgstr ""
+
+#: admin/partials/dashboard-logged-out.php:108
+msgid "Create your free account"
+msgstr ""
+
+#: admin/partials/dashboard-logged-out.php:111
+msgid "No credit card required"
+msgstr ""
+
+#: admin/partials/dashboard-logged-out.php:128
+msgid "Connect your site"
+msgstr ""
+
+#: admin/partials/dashboard-logged-out.php:131
+msgid "One click, fully automatic"
+msgstr ""
+
+#: admin/partials/dashboard-logged-out.php:147
+msgid "Select images or process your entire library"
+msgstr ""
+
+#: admin/partials/dashboard-logged-out.php:154
+msgid "Free plan includes 50 images per month. No credit card required."
+msgstr ""
+
+#: admin/partials/dashboard-logged-out.php:170
+msgid "Works with the WordPress Media Library, WooCommerce, and most themes."
+msgstr ""
+
+#: admin/partials/dashboard-tab.php:45
+msgid "Please sign in to access the dashboard."
+msgstr ""
+
+#: admin/partials/debug-tab.php:29
+#: admin/partials/settings-tab.php:33
+msgid "Authentication Required"
+msgstr ""
+
+#: admin/partials/debug-tab.php:30
+msgid "Debug Logs are available to all authenticated users. Please log in or enter your license key to access this section."
+msgstr ""
+
+#: admin/partials/debug-tab.php:32
+msgid "If you don't have an account, you can create one for free or subscribe to a plan."
+msgstr ""
+
+#: admin/partials/debug-tab.php:49
+msgid "Debug logging is not available on this site. Please reinstall the logging module."
+msgstr ""
+
+#: admin/partials/debug-tab.php:75
+msgid "API calls, queue events, and error logs"
+msgstr ""
+
+#: admin/partials/debug-tab.php:79
+msgid "Export CSV"
+msgstr ""
+
+#: admin/partials/debug-tab.php:82
+msgid "Clear Logs"
+msgstr ""
+
+#: admin/partials/debug-tab.php:97
+msgid "Total Logs"
+msgstr ""
+
+#: admin/partials/debug-tab.php:110
+msgid "Warnings"
+msgstr ""
+
+#: admin/partials/debug-tab.php:134
+msgid "Last Event Timestamp"
+msgstr ""
+
+#: admin/partials/debug-tab.php:140
+#: admin/partials/debug-tab.php:173
+msgid "Level"
+msgstr ""
+
+#: admin/partials/debug-tab.php:142
+msgid "All levels"
+msgstr ""
+
+#: admin/partials/debug-tab.php:143
+msgid "Debug"
+msgstr ""
+
+#: admin/partials/debug-tab.php:144
+msgid "Info"
+msgstr ""
+
+#: admin/partials/debug-tab.php:145
+msgid "Warning"
+msgstr ""
+
+#: admin/partials/debug-tab.php:146
+msgid "Error"
+msgstr ""
+
+#: admin/partials/debug-tab.php:150
+#: admin/partials/library-tab.php:192
+#: admin/partials/library-tab.php:205
+msgid "Date Range"
+msgstr ""
+
+#: admin/partials/debug-tab.php:152
+msgid "Start date"
+msgstr ""
+
+#: admin/partials/debug-tab.php:153
+msgid "End date"
+msgstr ""
+
+#: admin/partials/debug-tab.php:157
+msgid "Search"
+msgstr ""
+
+#: admin/partials/debug-tab.php:158
+msgid "Search logs"
+msgstr ""
+
+#: admin/partials/debug-tab.php:162
+msgid "Reset"
+msgstr ""
+
+#: admin/partials/debug-tab.php:172
+msgid "Timestamp"
+msgstr ""
+
+#: admin/partials/debug-tab.php:174
+#: includes/class-privacy.php:185
+msgid "Message"
+msgstr ""
+
+#: admin/partials/debug-tab.php:175
+msgid "Context"
+msgstr ""
+
+#. translators: 1: current page number, 2: total pages
+#: admin/partials/debug-tab.php:269
+#, php-format
+msgid "Page %1$s of %2$s"
+msgstr ""
+
+#: admin/partials/debug-tab.php:277
+#: admin/partials/library-tab.php:517
+msgid "Previous"
+msgstr ""
+
+#: admin/partials/debug-tab.php:280
+#: admin/partials/library-tab.php:547
+msgid "Next"
+msgstr ""
+
+#: admin/partials/guide-tab.php:41
+msgid "How to Use BeepBeep AI"
+msgstr ""
+
+#: admin/partials/guide-tab.php:42
+msgid "Generate SEO-optimized alt text for your images in minutes, not hours."
+msgstr ""
+
+#: admin/partials/guide-tab.php:49
+#: admin/partials/guide-tab.php:224
+#: admin/partials/guide-tab.php:236
+#: admin/partials/guide-tab.php:248
+#: admin/partials/settings-tab.php:382
+#: includes/admin/class-bbai-admin-dashboard.php:465
+msgid "Growth"
+msgstr ""
+
+#: admin/partials/guide-tab.php:50
+msgid "Unlock Growth Features"
+msgstr ""
+
+#: admin/partials/guide-tab.php:57
+msgid "1,000 alt text generations per month"
+msgstr ""
+
+#: admin/partials/guide-tab.php:63
+msgid "Bulk processing for entire media libraries"
+msgstr ""
+
+#: admin/partials/guide-tab.php:75
+msgid "Smart tone & style tuning"
+msgstr ""
+
+#: admin/partials/guide-tab.php:81
+msgid "Multilingual alt text for global SEO"
+msgstr ""
+
+#: admin/partials/guide-tab.php:97
+msgid "Get Started in 4 Steps"
+msgstr ""
+
+#: admin/partials/guide-tab.php:102
+msgid "Upload Images"
+msgstr ""
+
+#: admin/partials/guide-tab.php:103
+msgid "Add images to your WordPress Media Library as usual."
+msgstr ""
+
+#: admin/partials/guide-tab.php:110
+msgid "Click \"Generate Missing\" on the Dashboard to process images in bulk."
+msgstr ""
+
+#: admin/partials/guide-tab.php:116
+msgid "Review & Edit"
+msgstr ""
+
+#: admin/partials/guide-tab.php:117
+msgid "Fine-tune generated alt text in the ALT Library tab."
+msgstr ""
+
+#: admin/partials/guide-tab.php:123
+msgid "Regenerate Anytime"
+msgstr ""
+
+#: admin/partials/guide-tab.php:124
+msgid "Use \"Re-optimise All\" to refresh alt text after changing settings."
+msgstr ""
+
+#: admin/partials/guide-tab.php:132
+msgid "Why Alt Text Matters"
+msgstr ""
+
+#: admin/partials/guide-tab.php:142
+msgid "Search engines index alt text to understand image content and improve page relevance."
+msgstr ""
+
+#: admin/partials/guide-tab.php:154
+msgid "Google Images Traffic"
+msgstr ""
+
+#: admin/partials/guide-tab.php:155
+msgid "Well-described images rank higher in Google Images and visual search results."
+msgstr ""
+
+#: admin/partials/guide-tab.php:166
+msgid "Accessibility Compliance"
+msgstr ""
+
+#: admin/partials/guide-tab.php:167
+msgid "Meet WCAG guidelines and make your site accessible to screen reader users."
+msgstr ""
+
+#: admin/partials/guide-tab.php:177
+msgid "Tips for Better Alt Text"
+msgstr ""
+
+#: admin/partials/guide-tab.php:183
+msgid "Keep it concise: 80-125 characters is ideal"
+msgstr ""
+
+#: admin/partials/guide-tab.php:189
+msgid "Describe what matters most in the image"
+msgstr ""
+
+#: admin/partials/guide-tab.php:195
+msgid "Avoid keyword stuffing or repeating page text"
+msgstr ""
+
+#: admin/partials/guide-tab.php:201
+msgid "Include context: what, who, where, why"
+msgstr ""
+
+#: admin/partials/guide-tab.php:208
+msgid "Key Features"
+msgstr ""
+
+#: admin/partials/guide-tab.php:214
+msgid "AI-powered alt text generation"
+msgstr ""
+
+#: admin/partials/guide-tab.php:222
+msgid "Bulk processing"
+msgstr ""
+
+#: admin/partials/guide-tab.php:234
+msgid "Tone & style tuning"
+msgstr ""
+
+#: admin/partials/guide-tab.php:246
+msgid "Multilingual support"
+msgstr ""
+
+#: admin/partials/guide-tab.php:256
+msgid "SEO-optimized descriptions"
+msgstr ""
+
+#: admin/partials/guide-tab.php:263
+msgid "WCAG accessibility tools"
+msgstr ""
+
+#: admin/partials/library-tab.php:169
+msgid "Image ALT Text Library"
+msgstr ""
+
+#: admin/partials/library-tab.php:170
+msgid "Search, review, and regenerate AI alt text for images on this site."
+msgstr ""
+
+#: admin/partials/library-tab.php:184
+msgid "Search images or alt text"
+msgstr ""
+
+#: admin/partials/library-tab.php:189
+#: admin/partials/library-tab.php:199
+msgid "Status: All"
+msgstr ""
+
+#: admin/partials/library-tab.php:195
+msgid "Clear filters"
+msgstr ""
+
+#: admin/partials/library-tab.php:202
+msgid "Needs work"
+msgstr ""
+
+#: admin/partials/library-tab.php:206
+msgid "Today"
+msgstr ""
+
+#: admin/partials/library-tab.php:207
+msgid "This Week"
+msgstr ""
+
+#: admin/partials/library-tab.php:226
+#: includes/admin/class-bbai-admin-dashboard.php:159
+#: includes/admin/class-bbai-admin-dashboard.php:168
+msgid "Complete"
+msgstr ""
+
+#: admin/partials/library-tab.php:254
+#: admin/partials/library-tab.php:260
+msgid "Generate Missing Alt Text"
+msgstr ""
+
+#: admin/partials/library-tab.php:276
+msgid "Re-optimise All Alt Text"
+msgstr ""
+
+#: admin/partials/library-tab.php:281
+msgid "Export alt text data"
+msgstr ""
+
+#: admin/partials/library-tab.php:285
+msgid "Export"
+msgstr ""
+
+#: admin/partials/library-tab.php:288
+msgid "Export as CSV"
+msgstr ""
+
+#: admin/partials/library-tab.php:289
+msgid "Export as JSON"
+msgstr ""
+
+#: admin/partials/library-tab.php:290
+msgid "Export as TXT"
+msgstr ""
+
+#: admin/partials/library-tab.php:306
+msgid "Select all images"
+msgstr ""
+
+#: admin/partials/library-tab.php:308
+msgid "Image"
+msgstr ""
+
+#: admin/partials/library-tab.php:309
+msgid "File Name"
+msgstr ""
+
+#: admin/partials/library-tab.php:311
+msgid "Status"
+msgstr ""
+
+#: admin/partials/library-tab.php:312
+msgid "Last Updated"
+msgstr ""
+
+#: admin/partials/library-tab.php:313
+msgid "Actions"
+msgstr ""
+
+#: admin/partials/library-tab.php:340
+msgid "Unknown file"
+msgstr ""
+
+#. translators: 1: image title
+#: admin/partials/library-tab.php:371
+#, php-format
+msgid "Select image %s"
+msgstr ""
+
+#: admin/partials/library-tab.php:414
+msgid "Good"
+msgstr ""
+
+#: admin/partials/library-tab.php:417
+msgid "Needs improvement"
+msgstr ""
+
+#: admin/partials/library-tab.php:420
+msgid "Fair"
+msgstr ""
+
+#. translators: 1: quality score, 2: word count
+#: admin/partials/library-tab.php:427
+#, php-format
+msgid "Quality Score: %1$s/100. Length: %2$s words (optimal: 5-15 words)."
+msgstr ""
+
+#: admin/partials/library-tab.php:435
+msgid "Optimal length is 5-15 words for SEO and accessibility."
+msgstr ""
+
+#: admin/partials/library-tab.php:444
+#: includes/class-seo-quality-checker.php:293
+msgid "No alt text"
+msgstr ""
+
+#: admin/partials/library-tab.php:458
+msgid "View"
+msgstr ""
+
+#: admin/partials/library-tab.php:463
+msgid "Regen"
+msgstr ""
+
+#: admin/partials/library-tab.php:479
+msgid "selected"
+msgstr ""
+
+#: admin/partials/library-tab.php:485
+msgid "Upgrade to Growth to enable bulk regeneration"
+msgstr ""
+
+#: admin/partials/library-tab.php:488
+msgid "Regenerate Selected"
+msgstr ""
+
+#: admin/partials/library-tab.php:491
+msgid "Clear Selection"
+msgstr ""
+
+#. translators: 1: start number, 2: end number, 3: total count
+#: admin/partials/library-tab.php:507
+#, php-format
+msgid "Showing %1$s-%2$s of %3$s"
+msgstr ""
+
+#: admin/partials/library-tab.php:558
+msgid "No images yet"
+msgstr ""
+
+#: admin/partials/library-tab.php:560
+msgid "Upload images to start automating SEO & accessibility compliance."
+msgstr ""
+
+#: admin/partials/library-tab.php:568
+msgid "WCAG-compliant alt text for accessibility"
+msgstr ""
+
+#: admin/partials/library-tab.php:575
+msgid "Optimized for Google Images & SEO insights"
+msgstr ""
+
+#: admin/partials/library-tab.php:579
+msgid "Or sync from Media Library automatically"
+msgstr ""
+
+#: admin/partials/library-tab.php:586
+msgid "+ Upload Images"
+msgstr ""
+
+#: admin/partials/library-tab.php:589
+msgid "Learn More"
+msgstr ""
+
+#: admin/partials/metric-cards.php:55
+msgid "Start optimizing to see your time savings"
+msgstr ""
+
+#: admin/partials/metric-cards.php:57
+#: includes/admin/class-bbai-admin-dashboard.php:256
+msgid "Estimated manual work saved."
+msgstr ""
+
+#: admin/partials/metric-cards.php:77
+msgid "Start optimizing to see your progress"
+msgstr ""
+
+#: admin/partials/metric-cards.php:79
+#: includes/admin/class-bbai-admin-dashboard.php:276
+msgid "Automatically generates alt text for existing images."
+msgstr ""
+
+#: admin/partials/metric-cards.php:98
+msgid "SEO"
+msgstr ""
+
+#: admin/partials/metric-cards.php:99
+msgid "IMPACT"
+msgstr ""
+
+#: admin/partials/metric-cards.php:103
+msgid "Start optimizing to boost your SEO score"
+msgstr ""
+
+#: admin/partials/metric-cards.php:105
+#: includes/admin/class-bbai-admin-dashboard.php:296
+msgid "Estimated improvement in alt text coverage."
+msgstr ""
+
+#: admin/partials/settings-tab.php:34
+msgid "Settings are now available to all users. Log in to save settings to your account."
+msgstr ""
+
+#: admin/partials/settings-tab.php:36
+msgid "If you continue without logging in, your changes may be stored locally for this site only."
+msgstr ""
+
+#: admin/partials/settings-tab.php:47
+msgid "Continue without login"
+msgstr ""
+
+#: admin/partials/settings-tab.php:86
+#: includes/admin/class-plan-helpers.php:157
+msgid "PRO"
+msgstr ""
+
+#: admin/partials/settings-tab.php:88
+#: includes/admin/class-plan-helpers.php:159
+msgid "FREE"
+msgstr ""
+
+#: admin/partials/settings-tab.php:94
+msgid "Settings & Account"
+msgstr ""
+
+#: admin/partials/settings-tab.php:95
+msgid "Configure automatic alt text generation, manage your monthly quota, and track usage. Optimize settings to maximize Google Images rankings."
+msgstr ""
+
+#: admin/partials/settings-tab.php:105
+msgid "Site-Wide Settings"
+msgstr ""
+
+#: admin/partials/settings-tab.php:107
+msgid "These settings apply to all users on this WordPress site."
+msgstr ""
+
+#: admin/partials/settings-tab.php:124
+msgid "image descriptions"
+msgstr ""
+
+#: admin/partials/settings-tab.php:151
+#: admin/partials/settings-tab.php:187
+msgid "Monthly quota"
+msgstr ""
+
+#: admin/partials/settings-tab.php:161
+msgid "Shared across all users"
+msgstr ""
+
+#: admin/partials/settings-tab.php:168
+msgid "Multi-site license"
+msgstr ""
+
+#: admin/partials/settings-tab.php:196
+msgid "1,000 generations per month"
+msgstr ""
+
+#: admin/partials/settings-tab.php:202
+#: includes/admin/class-bbai-admin-dashboard.php:470
+msgid "Priority support"
+msgstr ""
+
+#: admin/partials/settings-tab.php:207
+#: admin/partials/settings-tab.php:371
+msgid "Get 1,000 images/month and advanced features"
+msgstr ""
+
+#: admin/partials/settings-tab.php:234
+msgid "License"
+msgstr ""
+
+#: admin/partials/settings-tab.php:260
+#: admin/partials/settings-tab.php:315
+msgid "License Key:"
+msgstr ""
+
+#: admin/partials/settings-tab.php:268
+#: admin/partials/settings-tab.php:319
+msgid "Remove license from this site"
+msgstr ""
+
+#: admin/partials/settings-tab.php:269
+#: admin/partials/settings-tab.php:320
+msgid "Deactivate"
+msgstr ""
+
+#: admin/partials/settings-tab.php:289
+msgid "Sites Using This License"
+msgstr ""
+
+#: admin/partials/settings-tab.php:295
+msgid "Loading site usage..."
+msgstr ""
+
+#: admin/partials/settings-tab.php:313
+msgid "Your license key is active and ready to use."
+msgstr ""
+
+#: admin/partials/settings-tab.php:327
+msgid "Enter your license key to activate this site. Agency licenses can be used across multiple sites."
+msgstr ""
+
+#: admin/partials/settings-tab.php:332
+msgid "License Key"
+msgstr ""
+
+#: admin/partials/settings-tab.php:343
+msgid "Activate your Growth or Agency license on this site"
+msgstr ""
+
+#: admin/partials/settings-tab.php:344
+msgid "Activate License"
+msgstr ""
+
+#: admin/partials/settings-tab.php:363
+msgid "Account Management"
+msgstr ""
+
+#: admin/partials/settings-tab.php:368
+msgid "You are on the free plan."
+msgstr ""
+
+#: admin/partials/settings-tab.php:372
+msgid "Upgrade Now"
+msgstr ""
+
+#: admin/partials/settings-tab.php:377
+msgid "Current Plan:"
+msgstr ""
+
+#: admin/partials/settings-tab.php:380
+#: includes/admin/class-bbai-admin-dashboard.php:477
+#: templates/upgrade-modal.php:178
+msgid "Agency"
+msgstr ""
+
+#: admin/partials/settings-tab.php:396
+msgid "License-Based Plan"
+msgstr ""
+
+#: admin/partials/settings-tab.php:397
+msgid "Your subscription is managed through your license. To manage billing, invoices, or update your subscription:"
+msgstr ""
+
+#: admin/partials/settings-tab.php:399
+msgid "Contact your license administrator"
+msgstr ""
+
+#: admin/partials/settings-tab.php:400
+msgid "Email support for billing inquiries"
+msgstr ""
+
+#: admin/partials/settings-tab.php:401
+msgid "View license details in the License section above"
+msgstr ""
+
+#: admin/partials/settings-tab.php:409
+msgid "View invoices, update payment method, or modify your subscription"
+msgstr ""
+
+#: admin/partials/settings-tab.php:417
+msgid "In Stripe Customer Portal you can:"
+msgstr ""
+
+#: admin/partials/settings-tab.php:419
+msgid "View and download invoices"
+msgstr ""
+
+#: admin/partials/settings-tab.php:420
+msgid "Update payment method"
+msgstr ""
+
+#: admin/partials/settings-tab.php:421
+msgid "View payment history"
+msgstr ""
+
+#: admin/partials/settings-tab.php:422
+msgid "Cancel or modify subscription"
+msgstr ""
+
+#: admin/partials/settings-tab.php:436
+msgid "Generation Settings"
+msgstr ""
+
+#: admin/partials/settings-tab.php:442
+msgid "Auto-generate on Image Upload"
+msgstr ""
+
+#: admin/partials/settings-tab.php:445
+msgid "Automatically generate alt text when new images are uploaded to your media library."
+msgstr ""
+
+#: admin/partials/settings-tab.php:463
+msgid "Tone & Style"
+msgstr ""
+
+#: admin/partials/settings-tab.php:470
+msgid "professional, accessible"
+msgstr ""
+
+#: admin/partials/settings-tab.php:477
+msgid "Additional Instructions"
+msgstr ""
+
+#: admin/partials/settings-tab.php:483
+msgid "Enter any specific instructions for the AI..."
+msgstr ""
+
+#: admin/partials/settings-tab.php:490
+msgid "Save Settings"
+msgstr ""
+
+#: admin/partials/social-proof-widget.php:36
+#: includes/admin/class-bbai-admin-dashboard.php:385
+msgid "WCAG Compliant"
+msgstr ""
+
+#: admin/partials/social-proof-widget.php:47
+#: includes/admin/class-bbai-admin-dashboard.php:394
+msgid "GDPR Ready"
+msgstr ""
+
+#: admin/partials/social-proof-widget.php:58
+#: includes/admin/class-bbai-admin-dashboard.php:403
+msgid "99.9% Uptime"
+msgstr ""
+
+#. translators: 1: site count
+#: admin/partials/social-proof-widget.php:75
+#, php-format
+msgid "Join %s+ sites"
+msgstr ""
+
+#: admin/partials/social-proof-widget.php:80
+msgid "Using BeepBeep AI"
+msgstr ""
+
+#. translators: 1: star rating
+#: admin/partials/social-proof-widget.php:119
+#, php-format
+msgid "%d out of 5 stars"
+msgstr ""
+
+#: admin/partials/social-proof-widget.php:154
+msgid "Alt text automation for SEO & accessibility teams."
+msgstr ""
+
+#: admin/traits/trait-core-ajax-auth.php:37
+#: includes/controllers/class-auth-controller.php:52
+msgid "Only administrators can connect accounts."
+msgstr ""
+
+#: admin/traits/trait-core-ajax-auth.php:56
+#: includes/services/class-authentication-service.php:75
+msgid "This site is already linked to a free account. Ask an administrator to upgrade to Growth or Agency for higher limits."
+msgstr ""
+
+#. translators: 1: existing account email, if available
+#: admin/traits/trait-core-ajax-auth.php:77
+#, php-format
+msgid "This site is already connected to an account%s. All WordPress users share the same credits. Please log in with the existing account credentials, or disconnect first to use a different account."
+msgstr ""
+
+#: admin/traits/trait-core-ajax-auth.php:87
+#: includes/class-api-client-v2.php:827
+#: includes/class-api-client-v2.php:873
+#: includes/services/class-authentication-service.php:92
+msgid "A free plan has already been used for this site. Upgrade to Growth or Agency to increase your quota."
+msgstr ""
+
+#: admin/traits/trait-core-ajax-auth.php:99
+#: includes/services/class-authentication-service.php:113
+msgid "Account created successfully"
+msgstr ""
+
+#: admin/traits/trait-core-ajax-auth.php:277
+msgid "Email is required"
+msgstr ""
+
+#: admin/traits/trait-core-ajax-auth.php:287
+msgid "If an account exists with this email, you will receive password reset instructions."
+msgstr ""
+
+#: admin/traits/trait-core-ajax-auth.php:305
+msgid "Token and password are required"
+msgstr ""
+
+#: admin/traits/trait-core-ajax-auth.php:315
+msgid "Password reset successfully. You can now log in."
+msgstr ""
+
+#. translators: 1: image size
+#: admin/traits/trait-core-generation.php:98
+#, php-format
+msgid "Image exceeds the 2 MB limit for inline embedding (%s)."
+msgstr ""
+
+#: admin/traits/trait-core-generation.php:105
+msgid "Invalid image MIME type for inline embedding."
+msgstr ""
+
+#: admin/traits/trait-core-generation.php:111
+msgid "Failed to read the image file for inline embedding."
+msgstr ""
+
+#: admin/traits/trait-core-media.php:290
+msgid "Auto (Upload)"
+msgstr ""
+
+#: admin/traits/trait-core-media.php:291
+msgid "Generated automatically on upload"
+msgstr ""
+
+#: admin/traits/trait-core-media.php:294
+msgid "Manual"
+msgstr ""
+
+#: admin/traits/trait-core-media.php:295
+msgid "Generated via manual trigger"
+msgstr ""
+
+#: admin/traits/trait-core-media.php:299
+msgid "Generated via bulk action"
+msgstr ""
+
+#: admin/traits/trait-core-media.php:303
+msgid "Generated from dashboard"
+msgstr ""
+
+#: admin/traits/trait-core-media.php:306
+msgid "Inline"
+msgstr ""
+
+#: admin/traits/trait-core-media.php:307
+msgid "Generated inline from media library"
+msgstr ""
+
+#: admin/traits/trait-core-media.php:310
+msgid "REST API"
+msgstr ""
+
+#: admin/traits/trait-core-media.php:311
+msgid "Generated via REST API"
+msgstr ""
+
+#: admin/traits/trait-core-media.php:314
+msgid "Queue"
+msgstr ""
+
+#: admin/traits/trait-core-media.php:315
+msgid "Generated via background queue"
+msgstr ""
+
+#: admin/traits/trait-core-media.php:319
+msgid "Generated via WP-CLI command"
+msgstr ""
+
+#: admin/traits/trait-core-media.php:322
+msgid "Dry Run"
+msgstr ""
+
+#: admin/traits/trait-core-media.php:323
+msgid "Test run without API call"
+msgstr ""
+
+#: admin/traits/trait-core-media.php:327
+msgid "Source not recorded"
+msgstr ""
+
+#: admin/traits/trait-core-review.php:162
+msgid "Contains generic filler words like \"image\" or \"photo\"."
+msgstr ""
+
+#: admin/traits/trait-core-review.php:167
+msgid "Contains placeholder wording such as \"test\" or \"sample\". Replace with a real description."
+msgstr ""
+
+#: admin/traits/trait-core-review.php:353
+msgid "Invalid attachment ID or alt text."
+msgstr ""
+
+#: admin/traits/trait-core-review.php:381
+msgid "Alt text review is not available. The API client does not support chat completion."
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:80
+msgid "Request submitted. This may take a moment."
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:81
+msgid "Completed."
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:82
+msgid "Something went wrong. Please try again."
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:83
+#: templates/upgrade-modal.php:57
+msgid "Close"
+msgstr ""
+
+#. translators: 1: used images count, 2: plan limit
+#: includes/admin/class-bbai-admin-dashboard.php:129
+#, php-format
+msgid "%1$s of %2$s images used this month"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:139
+msgid "Alt text progress"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:170
+#: includes/admin/class-bbai-admin-dashboard.php:171
+msgid "Progress view"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:172
+msgid "Complements"
+msgstr ""
+
+#. translators: 1: minutes saved
+#: includes/admin/class-bbai-admin-dashboard.php:250
+#, php-format
+msgid "Saved ~%s minutes"
+msgstr ""
+
+#. translators: 1: images optimized
+#: includes/admin/class-bbai-admin-dashboard.php:270
+#, php-format
+msgid "%s Images Optimized"
+msgstr ""
+
+#. translators: 1: coverage percentage
+#: includes/admin/class-bbai-admin-dashboard.php:290
+#, php-format
+msgid "Coverage Up %s%%"
+msgstr ""
+
+#. translators: 1: optimized images count, 2: remaining generations
+#: includes/admin/class-bbai-admin-dashboard.php:306
+#, php-format
+msgid "You have optimized %1$s images so far. You have %2$s generations remaining this month."
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:317
+msgid "Monthly Progress"
+msgstr ""
+
+#. translators: 1: progress used
+#: includes/admin/class-bbai-admin-dashboard.php:333
+#, php-format
+msgid "%s progress used"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:348
+msgid "Upgrade for 1,000 generations every month."
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:412
+msgid "Sean Chen"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:413
+msgid "University Blog"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:416
+msgid "Saves me so much time when I update large galleries."
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:422
+msgid "Michael Rodriguez"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:423
+msgid "Ecommerce Store Owner"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:426
+msgid "Boosted our SEO automatically across every product image."
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:432
+msgid "Emma Thompson"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:433
+msgid "Food Blog, Simply Recipes"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:436
+msgid "Perfect for WooCommerce and client sites."
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:444
+msgid "Close modal"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:447
+#: templates/upgrade-modal.php:66
+msgid "Choose your BeepBeep AI plan"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:448
+#: templates/upgrade-modal.php:67
+msgid "Choose a plan that matches your monthly usage. Cancel anytime."
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:453
+#: templates/upgrade-modal.php:83
+msgid "Free"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:457
+msgid "Core alt text automation"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:458
+msgid "Accessible outputs"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:460
+msgid "Stay on Free"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:464
+#: templates/upgrade-modal.php:115
+msgid "Most Popular"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:469
+msgid "Bulk generation workflows"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:471
+msgid "Advanced analytics"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:481
+msgid "Multi-site management"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:482
+msgid "Dedicated support"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:483
+msgid "Client reporting tools"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:491
+#: templates/upgrade-modal.php:250
+msgid "One-time credits"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:492
+msgid "£9.99 Buy 100 credits"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:494
+msgid "Buy credits"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:498
+msgid "FAQ"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:500
+#: templates/upgrade-modal.php:280
+msgid "Can I downgrade anytime?"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:501
+#: templates/upgrade-modal.php:283
+msgid "Yes. You can downgrade or cancel anytime."
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:504
+#: templates/upgrade-modal.php:291
+msgid "Do credits roll over?"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:505
+#: templates/upgrade-modal.php:294
+msgid "Monthly credits reset each month. One-time credits do not expire."
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:508
+#: templates/upgrade-modal.php:302
+msgid "Will it work with WooCommerce and all themes?"
+msgstr ""
+
+#: includes/admin/class-bbai-admin-dashboard.php:509
+#: templates/upgrade-modal.php:305
+msgid "Yes. It works with WooCommerce, Gutenberg, and most themes."
+msgstr ""
+
+#: includes/class-api-client-v2.php:72
+msgid "Unknown API error"
+msgstr ""
+
+#: includes/class-api-client-v2.php:435
+msgid "Request data must be an array"
+msgstr ""
+
+#. translators: 1: JSON error message
+#: includes/class-api-client-v2.php:453
+#, php-format
+msgid "Failed to encode request data: %s"
+msgstr ""
+
+#: includes/class-api-client-v2.php:464
+msgid "Request body cannot be empty"
+msgstr ""
+
+#: includes/class-api-client-v2.php:479
+msgid "JSON body format is invalid"
+msgstr ""
+
+#: includes/class-api-client-v2.php:524
+msgid "The image generation is taking longer than expected. This may happen with large images or during high server load. Please try again."
+msgstr ""
+
+#: includes/class-api-client-v2.php:526
+msgid "The server is taking too long to respond. Please try again in a few minutes."
+msgstr ""
+
+#: includes/class-api-client-v2.php:528
+msgid "Unable to reach authentication server. Please check your internet connection and try again."
+msgstr ""
+
+#: includes/class-api-client-v2.php:530
+msgid "SSL certificate verification failed. Please contact your hosting provider or try again later."
+msgstr ""
+
+#: includes/class-api-client-v2.php:532
+msgid "Connection to authentication server was refused. The service may be temporarily unavailable. Please try again in a few minutes."
+msgstr ""
+
+#: includes/class-api-client-v2.php:534
+msgid "Network error while connecting to authentication server. Please check your server's outbound connections and try again."
+msgstr ""
+
+#: includes/class-api-client-v2.php:536
+msgid "API request failed"
+msgstr ""
+
+#: includes/class-api-client-v2.php:587
+msgid "License key is required to generate alt text. Please activate your license key in the Settings page."
+msgstr ""
+
+#: includes/class-api-client-v2.php:597
+msgid "Your license key is invalid or expired. Please check your license key in the Settings page."
+msgstr ""
+
+#: includes/class-api-client-v2.php:610
+msgid "Authentication required. Please log in to continue."
+msgstr ""
+
+#: includes/class-api-client-v2.php:632
+msgid "This feature is not yet available. Please contact support for assistance or try again later."
+msgstr ""
+
+#: includes/class-api-client-v2.php:636
+msgid "The contact form endpoint is not yet available on the backend. Please ensure the /api/contact endpoint is configured with Resend."
+msgstr ""
+
+#: includes/class-api-client-v2.php:638
+msgid "Password reset functionality is currently being set up on our backend. Please contact support for assistance or try again later."
+msgstr ""
+
+#: includes/class-api-client-v2.php:640
+msgid "License site usage tracking is currently being set up on our backend. Please contact support for assistance or try again later."
+msgstr ""
+
+#: includes/class-api-client-v2.php:643
+msgid "The alt text generation endpoint is not available. Please check your backend configuration or contact support."
+msgstr ""
+
+#: includes/class-api-client-v2.php:659
+msgid "The requested resource was not found."
+msgstr ""
+
+#: includes/class-api-client-v2.php:714
+msgid "User not found"
+msgstr ""
+
+#: includes/class-api-client-v2.php:730
+#: includes/class-api-client-v2.php:1762
+msgid "Your session has expired or your account is no longer available. Please log in again."
+msgstr ""
+
+#: includes/class-api-client-v2.php:740
+msgid "The server encountered an error processing your request. Please try again in a few minutes."
+msgstr ""
+
+#: includes/class-api-client-v2.php:750
+#: includes/class-api-client-v2.php:1979
+msgid "Unable to create checkout session. This may be a temporary backend issue. Please try again in a moment or contact support if the problem persists."
+msgstr ""
+
+#: includes/class-api-client-v2.php:758
+msgid "The image generation service is temporarily unavailable due to a backend configuration issue. Please contact support."
+msgstr ""
+
+#: includes/class-api-client-v2.php:760
+msgid "The image generation service is temporarily unavailable. Please try again in a few minutes."
+msgstr ""
+
+#: includes/class-api-client-v2.php:763
+#: includes/class-api-client-v2.php:2071
+msgid "The authentication server is temporarily unavailable. Please try again in a few minutes."
+msgstr ""
+
+#: includes/class-api-client-v2.php:862
+#: includes/class-api-client-v2.php:896
+msgid "This site is already connected to an account. Log in with the existing credentials."
+msgstr ""
+
+#: includes/class-api-client-v2.php:905
+msgid "An account with this email already exists. Please log in instead."
+msgstr ""
+
+#: includes/class-api-client-v2.php:913
+#: includes/class-api-client-v2.php:938
+msgid "Registration failed"
+msgstr ""
+
+#: includes/class-api-client-v2.php:988
+msgid "Login failed"
+msgstr ""
+
+#: includes/class-api-client-v2.php:1009
+msgid "Failed to get user info"
+msgstr ""
+
+#: includes/class-api-client-v2.php:1054
+msgid "Failed to activate license"
+msgstr ""
+
+#: includes/class-api-client-v2.php:1080
+msgid "Must be authenticated or have an active license to view license site usage"
+msgstr ""
+
+#: includes/class-api-client-v2.php:1102
+msgid "Must be authenticated to disconnect license sites"
+msgstr ""
+
+#: includes/class-api-client-v2.php:1236
+msgid "Failed to get usage info"
+msgstr ""
+
+#: includes/class-api-client-v2.php:1430
+msgid "Authentication required. Please log in or register to generate alt text."
+msgstr ""
+
+#: includes/class-api-client-v2.php:1460
+msgid "Your session has expired. Please log in again."
+msgstr ""
+
+#: includes/class-api-client-v2.php:1524
+msgid "Image file is too large."
+msgstr ""
+
+#: includes/class-api-client-v2.php:1533
+msgid "Image file is too small or invalid. Please use a valid image file."
+msgstr ""
+
+#: includes/class-api-client-v2.php:1542
+msgid "Image data is missing. Cannot generate alt text."
+msgstr ""
+
+#: includes/class-api-client-v2.php:1733
+#: includes/services/class-generation-service.php:103
+msgid "Monthly limit reached"
+msgstr ""
+
+#: includes/class-api-client-v2.php:1741
+msgid "Failed to generate alt text"
+msgstr ""
+
+#: includes/class-api-client-v2.php:1773
+msgid "Image file is too large. Please compress or resize the image before generating alt text."
+msgstr ""
+
+#: includes/class-api-client-v2.php:1787
+msgid "The backend service is experiencing a configuration issue. This is a temporary backend problem that needs to be fixed on the server side. Please try again in a few minutes or contact support if the issue persists."
+msgstr ""
+
+#: includes/class-api-client-v2.php:1843
+msgid "Failed to review alt text"
+msgstr ""
+
+#: includes/class-api-client-v2.php:1870
+msgid "Failed to get billing info"
+msgstr ""
+
+#: includes/class-api-client-v2.php:1890
+msgid "Failed to fetch pricing plans"
+msgstr ""
+
+#: includes/class-api-client-v2.php:2000
+msgid "Failed to create checkout session"
+msgstr ""
+
+#: includes/class-api-client-v2.php:2028
+msgid "Failed to create customer portal session"
+msgstr ""
+
+#: includes/class-api-client-v2.php:2063
+msgid "Failed to send password reset email"
+msgstr ""
+
+#: includes/class-api-client-v2.php:2067
+msgid "Password reset is currently being set up. This feature is not yet available on our backend. Please contact support for assistance."
+msgstr ""
+
+#: includes/class-api-client-v2.php:2069
+msgid "Too many password reset requests. Please wait 15 minutes before trying again."
+msgstr ""
+
+#: includes/class-api-client-v2.php:2110
+msgid "Failed to reset password"
+msgstr ""
+
+#: includes/class-api-client-v2.php:2130
+msgid "Failed to fetch subscription information"
+msgstr ""
+
+#: includes/class-api-client-v2.php:2167
+msgid "Failed to send contact email"
+msgstr ""
+
+#: includes/class-api-client-v2.php:2205
+msgid "Image file is too small or invalid. Please use a valid image file with at least 100 bytes."
+msgstr ""
+
+#. translators: 1: image width, 2: image height, 3: minimum width, 4: minimum height
+#: includes/class-api-client-v2.php:2216
+#, php-format
+msgid "Image dimensions are too small (%1$dx%2$d pixels). Please use a valid image with at least %3$dx%4$d pixels."
+msgstr ""
+
+#: includes/class-bbai-migrate-usage.php:26
+msgid "Credit usage migration already completed."
+msgstr ""
+
+#. translators: 1: number of usage records
+#: includes/class-bbai-migrate-usage.php:57
+#, php-format
+msgid "Migration completed. Migrated %d usage records."
+msgstr ""
+
+#: includes/class-privacy.php:116
+msgid "No BeepBeep AI data found for this email address."
+msgstr ""
+
+#: includes/class-privacy.php:179
+msgid "BeepBeep AI Contact Submissions"
+msgstr ""
+
+#: includes/class-privacy.php:182
+#: includes/class-privacy.php:218
+msgid "Name"
+msgstr ""
+
+#: includes/class-privacy.php:184
+msgid "Subject"
+msgstr ""
+
+#: includes/class-privacy.php:186
+msgid "Submitted At"
+msgstr ""
+
+#: includes/class-privacy.php:187
+msgid "Site URL"
+msgstr ""
+
+#: includes/class-privacy.php:214
+msgid "BeepBeep AI Account Data"
+msgstr ""
+
+#: includes/class-privacy.php:219
+msgid "Plan"
+msgstr ""
+
+#: includes/class-privacy.php:256
+msgid "BeepBeep AI Credit Usage"
+msgstr ""
+
+#: includes/class-privacy.php:259
+#: includes/class-privacy.php:286
+msgid "Events"
+msgstr ""
+
+#: includes/class-privacy.php:283
+msgid "BeepBeep AI Usage Logs"
+msgstr ""
+
+#: includes/class-privacy.php:287
+msgid "Tokens Used"
+msgstr ""
+
+#: includes/class-schema-markup.php:217
+msgid "Enable Schema.org Markup"
+msgstr ""
+
+#: includes/class-schema-markup.php:218
+msgid "Add ImageObject schema markup to images with alt text for enhanced Google Images SEO. Helps images appear in rich results."
+msgstr ""
+
+#: includes/class-seo-quality-checker.php:128
+msgid "No alt text provided"
+msgstr ""
+
+#. translators: 1: character count
+#: includes/class-seo-quality-checker.php:139
+#, php-format
+msgid "Too long (%d chars). Aim for ≤125 for optimal Google Images SEO"
+msgstr ""
+
+#: includes/class-seo-quality-checker.php:147
+msgid "Starts with \"image of\" or similar. Remove redundant prefix"
+msgstr ""
+
+#: includes/class-seo-quality-checker.php:153
+msgid "Appears to be a filename. Use descriptive text instead"
+msgstr ""
+
+#: includes/class-seo-quality-checker.php:159
+msgid "Too short or lacks descriptive keywords"
+msgstr ""
+
+#. translators: 1: grade, 2: score
+#: includes/class-seo-quality-checker.php:232
+#, php-format
+msgid "SEO Score: %1$s (%2$d/100)"
+msgstr ""
+
+#: includes/class-seo-quality-checker.php:241
+msgid "Optimal length"
+msgstr ""
+
+#: includes/class-seo-quality-checker.php:242
+msgid "Too long"
+msgstr ""
+
+#: includes/class-seo-quality-checker.php:249
+msgid "Remove \"image of\" prefix"
+msgstr ""
+
+#: includes/class-seo-quality-checker.php:250
+msgid "No redundant prefix"
+msgstr ""
+
+#: includes/class-seo-quality-checker.php:257
+msgid "Looks like a filename"
+msgstr ""
+
+#: includes/class-seo-quality-checker.php:258
+msgid "Descriptive text"
+msgstr ""
+
+#: includes/class-seo-quality-checker.php:265
+msgid "Good keyword content"
+msgstr ""
+
+#: includes/class-seo-quality-checker.php:266
+msgid "Needs more detail"
+msgstr ""
+
+#: includes/class-seo-quality-checker.php:272
+msgid "Tip: Regenerate for better SEO"
+msgstr ""
+
+#: includes/class-site-fingerprint.php:107
+msgid "Site fingerprint generated successfully."
+msgstr ""
+
+#: includes/class-site-fingerprint.php:124
+#: includes/class-site-fingerprint.php:143
+msgid "Site fingerprint validated successfully."
+msgstr ""
+
+#. translators: 1: stored fingerprint, 2: current fingerprint
+#: includes/class-site-fingerprint.php:150
+#, php-format
+msgid "Site fingerprint mismatch detected. Site URL, database prefix, or install timestamp may have changed. Stored: %1$s, Current: %2$s"
+msgstr ""
+
+#: includes/class-site-fingerprint.php:191
+msgid "Site fingerprint validation failed. Credit operations are blocked. Please contact support."
+msgstr ""
+
+#: includes/services/class-generation-service.php:85
+#: includes/services/class-generation-service.php:240
+msgid "Invalid attachment ID"
+msgstr ""
+
+#: includes/services/class-generation-service.php:159
+msgid "No attachment IDs provided"
+msgstr ""
+
+#. translators: %d: number of images queued
+#: includes/services/class-generation-service.php:219
+#, php-format
+msgid "%d image queued for processing"
+msgid_plural "%d images queued for processing"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/services/class-generation-service.php:286
+#: includes/services/class-generation-service.php:287
+msgid "Monthly quota exhausted. Please upgrade to continue generating alt text."
+msgstr ""
+
+#: includes/services/class-queue-service.php:74
+#: includes/services/class-queue-service.php:101
+#: includes/services/class-queue-service.php:127
+msgid "Queue system not available."
+msgstr ""
+
+#: includes/services/class-resend-service.php:124
+msgid "Resend API key is not configured. Please set BBAI_RESEND_API_KEY constant, RESEND_API_KEY environment variable, or store it in WordPress options."
+msgstr ""
+
+#. translators: 1: field name
+#: includes/services/class-resend-service.php:136
+#, php-format
+msgid "Required field \"%s\" is missing."
+msgstr ""
+
+#: includes/services/class-resend-service.php:158
+msgid "Contact email is not configured. Please set BBAI_CONTACT_EMAIL constant or configure in Resend."
+msgstr ""
+
+#. translators: 1: error message
+#: includes/services/class-resend-service.php:211
+#, php-format
+msgid "Failed to send email: %s"
+msgstr ""
+
+#. translators: 1: error message
+#: includes/services/class-resend-service.php:238
+#, php-format
+msgid "Email service error: %s"
+msgstr ""
+
+#: includes/services/class-resend-service.php:271
+#: includes/services/class-resend-service.php:272
+msgid "Not provided"
+msgstr ""
+
+#: includes/services/class-usage-service.php:73
+msgid "Failed to fetch usage data"
+msgstr ""
+
+#. translators: 1: total tokens, 2: token limit
+#: includes/services/class-usage-service.php:253
+#, php-format
+msgid "Your site has now used %1$d tokens, reaching the configured limit of %2$d."
+msgstr ""
+
+#: includes/traits/trait-api-billing.php:21
+#: includes/traits/trait-api-billing.php:73
+#: includes/traits/trait-api-billing.php:88
+#: includes/traits/trait-api-license.php:71
+#: includes/traits/trait-api-license.php:88
+msgid "Authentication required"
+msgstr ""
+
+#: includes/traits/trait-api-license.php:51
+msgid "No license key to deactivate"
+msgstr ""
+
+#: templates/upgrade-modal.php:73
+msgid "Cancel anytime"
+msgstr ""
+
+#: templates/upgrade-modal.php:81
+#: templates/upgrade-modal.php:104
+msgid "Current plan"
+msgstr ""
+
+#: templates/upgrade-modal.php:91
+msgid "50 AI alt text per month"
+msgstr ""
+
+#: templates/upgrade-modal.php:98
+msgid "Great for trying BeepBeep AI"
+msgstr ""
+
+#: templates/upgrade-modal.php:108
+msgid "Continue with Free"
+msgstr ""
+
+#: templates/upgrade-modal.php:120
+#: templates/upgrade-modal.php:183
+msgid "/month"
+msgstr ""
+
+#. translators: 1: annual price
+#: templates/upgrade-modal.php:126
+#: templates/upgrade-modal.php:189
+#, php-format
+msgid "or £%s billed annually (2 months free)"
+msgstr ""
+
+#: templates/upgrade-modal.php:130
+msgid "1,000 AI alt text per month"
+msgstr ""
+
+#: templates/upgrade-modal.php:137
+msgid "1,000"
+msgstr ""
+
+#: templates/upgrade-modal.php:137
+msgid "AI alt text per month"
+msgstr ""
+
+#: templates/upgrade-modal.php:143
+msgid "Bulk AI alt text for your full media library"
+msgstr ""
+
+#: templates/upgrade-modal.php:149
+msgid "Priority queue, set tone and style"
+msgstr ""
+
+#: templates/upgrade-modal.php:155
+#: templates/upgrade-modal.php:218
+msgid "Cancel or downgrade anytime"
+msgstr ""
+
+#: templates/upgrade-modal.php:161
+#: templates/upgrade-modal.php:230
+msgid "Manage billing"
+msgstr ""
+
+#: templates/upgrade-modal.php:193
+msgid "10,000+ AI alt text per month"
+msgstr ""
+
+#: templates/upgrade-modal.php:200
+msgid "10,000+"
+msgstr ""
+
+#: templates/upgrade-modal.php:200
+msgid "AI alt text for multiple client"
+msgstr ""
+
+#: templates/upgrade-modal.php:206
+msgid "Bulk AI alt text for mobile sites from one dashboard"
+msgstr ""
+
+#: templates/upgrade-modal.php:212
+msgid "Usage reporting for detailed client billing"
+msgstr ""
+
+#: templates/upgrade-modal.php:224
+msgid "White-label coming soon!"
+msgstr ""
+
+#: templates/upgrade-modal.php:250
+msgid "Pay-as-you-go"
+msgstr ""
+
+#: templates/upgrade-modal.php:251
+msgid "Pay-as-you-go credits (never expire). Ideal for photographers and seasonal use."
+msgstr ""
+
+#: templates/upgrade-modal.php:265
+msgid "Buy 100 credits"
+msgstr ""
+
+#: templates/upgrade-modal.php:273
+msgid "Frequently Asked Questions"
+msgstr ""

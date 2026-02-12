@@ -1022,7 +1022,7 @@
             })
             .done(function(response) {
                 if (!response || !response.ids || response.ids.length === 0) {
-                    window.bbaiModal.info('No images found that need alt text.');
+                    window.bbaiModal.success('All done! Every image in your library already has alt text.', 'No Missing Alt Text');
                     $btn.prop('disabled', false);
                     $btn.text(originalText);
                     return;

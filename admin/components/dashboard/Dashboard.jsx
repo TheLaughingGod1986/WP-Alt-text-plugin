@@ -62,8 +62,10 @@ const FreeUsageCard = ({
   onGenerateMissing,
   onReoptimizeAll,
   isLoading,
-  canGenerate
+  canGenerate,
+  missingImages: missingImagesProp = 0
 }) => {
+  const missingImages = parseInt(missingImagesProp, 10) || 0;
   const percentage = Number.isFinite(usagePercent) ? Math.max(0, Math.min(100, usagePercent)) : 0;
   const radius = 38;
   const circumference = 2 * Math.PI * radius;
@@ -127,8 +129,20 @@ const FreeUsageCard = ({
           type="button"
           data-action="generate-missing"
           onClick={onGenerateMissing}
-          disabled={!canGenerate || isLoading}
-          className="flex-1 rounded-full bg-indigo-500/10 px-4 py-2.5 text-[13px] font-semibold text-indigo-600 transition hover:bg-indigo-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={!canGenerate || isLoading || missingImages <= 0}
+          {...((!canGenerate || isLoading || missingImages <= 0) && {
+            'data-bbai-tooltip': isLoading
+              ? 'Processing, please wait...'
+              : missingImages <= 0
+              ? 'All images already have alt text'
+              : 'Upgrade to unlock more generations',
+            'data-bbai-tooltip-position': 'top'
+          })}
+          className={`flex-1 rounded-full px-4 py-2.5 text-[13px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white ${
+            !canGenerate || isLoading || missingImages <= 0
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
+              : 'bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500/20 focus-visible:ring-indigo-500'
+          }`}
         >
           Generate Missing
         </button>
@@ -137,6 +151,12 @@ const FreeUsageCard = ({
           data-action="regenerate-all"
           onClick={onReoptimizeAll}
           disabled={!canGenerate || isLoading}
+          {...((!canGenerate || isLoading) && {
+            'data-bbai-tooltip': isLoading
+              ? 'Processing, please wait...'
+              : 'Upgrade to unlock more generations',
+            'data-bbai-tooltip-position': 'top'
+          })}
           className="flex-1 rounded-full bg-orange-500/10 px-4 py-2.5 text-[13px] font-semibold text-orange-600 transition hover:bg-orange-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           Re-optimise All
@@ -388,25 +408,25 @@ const BottomGrowthPanel = ({ onUpgradeClick, onComparePlans }) => (
 
 const testimonialsData = [
   {
-    name: 'Sarah Chen',
-    role: 'Content Manager',
+    name: 'Jessica M.',
+    role: 'Marketing Director',
     quote:
-      'BeepBeep AI saved us hours every week. Our images now rank better in Google Images, and we are WCAG compliant.',
+      'I was skeptical at first, but after running it on our blog images the descriptions were actually better than what we were writing manually.',
     rating: 5
   },
   {
-    name: 'Michael Rodriguez',
-    role: 'SEO Specialist',
+    name: 'Ryan K.',
+    role: 'Freelance Developer',
     quote:
-      'The bulk processing feature is a game-changer. We optimized 500+ images in one go. Highly recommend.',
+      'Installed it for a client who needed WCAG compliance fast. Did 300+ images overnight. Client was happy, I looked like a hero.',
     rating: 5
   },
   {
-    name: 'Emma Thompson',
-    role: 'Web Developer',
+    name: 'Maria Santos',
+    role: 'Store Owner',
     quote:
-      'Finally, an alt text tool that understands context. The AI descriptions are spot-on every time.',
-    rating: 5
+      'My WooCommerce shop had zero alt text on products. Now everything is tagged and showing up in Google image searches.',
+    rating: 4
   }
 ];
 
@@ -425,7 +445,7 @@ const Dashboard = ({
   onOpenLibrary = null,
   onManageBilling = null,
   // API endpoints (if needed)
-  apiUrl = '/wp-json/bbai/v1',
+  apiUrl = '',
   nonce = ''
 }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -448,7 +468,12 @@ const Dashboard = ({
   // Image stats
   const totalImages = imageStats.total ?? imageStats.totalImages ?? 0;
   const optimizedImages = imageStats.imagesOptimized ?? imageStats.with_alt ?? imageStats.withAlt ?? 0;
-  const missingImages = imageStats.missing ?? imageStats.missingImages ?? 0;
+  const missingImages = parseInt(imageStats.missing ?? imageStats.missingImages ?? 0, 10);
+  
+  // Debug: Log missing images count (remove in production if needed)
+  if (typeof window !== 'undefined' && window.console && window.console.log) {
+    console.log('[BBAI Dashboard] Missing images:', missingImages, 'Image stats:', imageStats);
+  }
 
   // Calculate alt text coverage
   const computedCoverage = totalImages > 0 ? (optimizedImages / totalImages) * 100 : null;
@@ -599,6 +624,7 @@ const Dashboard = ({
             onReoptimizeAll={handleOptimiseAll}
             isLoading={isLoading}
             canGenerate={canGenerate}
+            missingImages={missingImages}
           />
           <GrowthCard onUpgradeClick={handleUpgradeClick} onComparePlans={handleComparePlans} />
         </section>
