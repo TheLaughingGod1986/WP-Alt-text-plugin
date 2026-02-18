@@ -287,8 +287,20 @@ class API_Client_V2 {
         $should_validate = $last_check === false;
 
         if ($should_validate) {
+            // Prevent concurrent requests from stampeding /auth/me during outages.
+            $validation_lock_key = 'bbai_token_check_lock';
+            if (get_transient($validation_lock_key) !== false) {
+                return true;
+            }
+
+            set_transient($validation_lock_key, time(), 45);
+
             // Try to fetch user info to validate token
-            $user_info = $this->get_user_info();
+            try {
+                $user_info = $this->get_user_info();
+            } finally {
+                delete_transient($validation_lock_key);
+            }
 
             if (is_wp_error($user_info)) {
                 $error_code = $user_info->get_error_code();
@@ -542,6 +554,9 @@ class API_Client_V2 {
             $this->log_api_event('error', 'API request failed', [
                 'endpoint' => $endpoint,
                 'method'   => $method,
+                'api_host' => wp_parse_url($url, PHP_URL_HOST) ?: '',
+                'api_path' => wp_parse_url($url, PHP_URL_PATH) ?: '',
+                'timeout_seconds' => (int) $timeout,
                 'error'    => $error_message,
             ]);
             $error_message_str = is_string($error_message) ? $error_message : '';
@@ -549,8 +564,12 @@ class API_Client_V2 {
                 // Provide more specific message for generation timeouts
                 $endpoint_str = is_string($endpoint) ? $endpoint : '';
                 $is_generate_endpoint = $endpoint_str && ((strpos($endpoint_str, '/generate') !== false) || (strpos($endpoint_str, 'generate') !== false)) && strpos($endpoint_str, '/api/') === false;
+                $is_auth_endpoint = $endpoint_str && strpos($endpoint_str, '/auth/') !== false;
+                
                 if ($is_generate_endpoint) {
                     return new \WP_Error('api_timeout', __('The image generation is taking longer than expected. This may happen with large images or during high server load. Please try again.', 'beepbeep-ai-alt-text-generator'));
+                } elseif ($is_auth_endpoint) {
+                    return new \WP_Error('api_timeout', __('The authentication service is starting up. This may take 30-60 seconds on free tier services. Please wait a moment and try again.', 'beepbeep-ai-alt-text-generator'));
                 }
                 return new \WP_Error('api_timeout', __('The server is taking too long to respond. Please try again in a few minutes.', 'beepbeep-ai-alt-text-generator'));
             } elseif ($error_message_str && strpos($error_message_str, 'could not resolve') !== false) {
@@ -1020,22 +1039,68 @@ class API_Client_V2 {
     
     /**
      * Get current user info
+     * 
+     * Includes retry logic for Render free tier cold starts (services sleep after inactivity)
      */
     public function get_user_info() {
-        $response = $this->make_request('/auth/me');
+        // Increased timeout for Render free tier cold starts (can take 30-60 seconds)
+        $auth_timeout = apply_filters('bbai_auth_me_timeout', 45);
+        $auth_timeout = max(15, (int) $auth_timeout);
+        
+        $max_retries = 2;
+        $retry_delay = 3; // seconds between retries
+        
+        for ($attempt = 0; $attempt <= $max_retries; $attempt++) {
+            if ($attempt > 0) {
+                // Wait before retry (exponential backoff: 3s, 6s)
+                sleep($retry_delay * $attempt);
+            }
+            
+            $response = $this->make_request('/auth/me', 'GET', null, $auth_timeout);
 
-        if (is_wp_error($response)) {
-            return $response;
+            if (is_wp_error($response)) {
+                $error_code = $response->get_error_code();
+                $error_message = $response->get_error_message();
+                
+                // Retry on timeout/unreachable errors (likely cold start)
+                if (($error_code === 'api_timeout' || $error_code === 'api_unreachable') && $attempt < $max_retries) {
+                    $this->log_api_event('info', 'Retrying /auth/me after timeout', [
+                        'attempt' => $attempt + 1,
+                        'max_retries' => $max_retries,
+                        'error_code' => $error_code,
+                    ]);
+                    continue; // Retry
+                }
+                
+                // Return error if not retryable or out of retries
+                return $response;
+            }
+
+            if ($response['success']) {
+                $this->set_user_data($response['data']['user']);
+                return $response['data']['user'];
+            }
+
+            // If response indicates server error, retry
+            if (isset($response['status']) && $response['status'] >= 500 && $attempt < $max_retries) {
+                $this->log_api_event('info', 'Retrying /auth/me after server error', [
+                    'attempt' => $attempt + 1,
+                    'status' => $response['status'],
+                ]);
+                continue; // Retry
+            }
+
+            // Non-retryable error
+            return new \WP_Error(
+                'user_info_failed',
+                $response['data']['error'] ?? __('Failed to get user info', 'beepbeep-ai-alt-text-generator')
+            );
         }
 
-        if ($response['success']) {
-            $this->set_user_data($response['data']['user']);
-            return $response['data']['user'];
-        }
-
+        // All retries exhausted
         return new \WP_Error(
             'user_info_failed',
-            $response['data']['error'] ?? __('Failed to get user info', 'beepbeep-ai-alt-text-generator')
+            __('Unable to connect to authentication server. The service may be starting up. Please try again in a moment.', 'beepbeep-ai-alt-text-generator')
         );
     }
 
