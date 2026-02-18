@@ -30,8 +30,7 @@ trait Core_Ajax_License {
             return;
         }
 
-        $license_key_raw = isset($_POST['license_key']) ? wp_unslash($_POST['license_key']) : '';
-        $license_key = is_string($license_key_raw) ? sanitize_text_field($license_key_raw) : '';
+        $license_key = isset($_POST['license_key']) ? sanitize_text_field(wp_unslash($_POST['license_key'])) : '';
 
         if (empty($license_key)) {
             wp_send_json_error(['message' => __('License key is required', 'beepbeep-ai-alt-text-generator')]);
@@ -146,8 +145,7 @@ trait Core_Ajax_License {
             return;
         }
 
-        $site_id_raw = isset($_POST['site_id']) ? wp_unslash($_POST['site_id']) : '';
-        $site_id = is_string($site_id_raw) ? sanitize_text_field($site_id_raw) : '';
+        $site_id = isset($_POST['site_id']) ? sanitize_text_field(wp_unslash($_POST['site_id'])) : '';
         if (empty($site_id)) {
             wp_send_json_error([
                 'message' => __('Site ID is required', 'beepbeep-ai-alt-text-generator')
@@ -236,10 +234,9 @@ trait Core_Ajax_License {
             return;
         }
 
-        $email_raw = isset($_POST['email']) ? wp_unslash($_POST['email']) : '';
-        $email = is_string($email_raw) ? sanitize_email($email_raw) : '';
-        $password_raw = isset($_POST['password']) ? wp_unslash($_POST['password']) : '';
-        $password = is_string($password_raw) ? $password_raw : '';
+        $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
+        $password_input = isset($_POST['password']) ? wp_unslash($_POST['password']) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords must not be text-sanitized.
+        $password = is_string($password_input) ? $password_input : '';
 
         if (empty($email) || !is_email($email)) {
             wp_send_json_error([

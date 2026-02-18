@@ -11,8 +11,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-$page_raw = isset($_GET['page']) ? wp_unslash($_GET['page']) : 'bbai';
-$current_page = is_string($page_raw) ? sanitize_key($page_raw) : 'bbai';
+$page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : 'bbai';
+$current_page = $page_input ?: 'bbai';
 $fallback_url = admin_url('admin.php?page=' . $current_page);
 ?>
 <div class="bbai-logged-out" role="main" aria-labelledby="bbai-logged-out-title">

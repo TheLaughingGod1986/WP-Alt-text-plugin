@@ -86,8 +86,8 @@ function bbai_calculate_alt_quality_score($alt_text) {
 
 // Pagination setup
 $per_page = 10;
-$alt_page_raw = isset($_GET['alt_page']) ? wp_unslash($_GET['alt_page']) : '';
-$current_page = max(1, absint($alt_page_raw));
+$alt_page_input = isset($_GET['alt_page']) ? absint(wp_unslash($_GET['alt_page'])) : 0;
+$current_page = max(1, $alt_page_input);
 $offset = ($current_page - 1) * $per_page;
 
 global $wpdb;

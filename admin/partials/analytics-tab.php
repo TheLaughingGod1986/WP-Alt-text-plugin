@@ -338,8 +338,8 @@ if (function_exists('wp_add_inline_script')) {
                         <p class="bbai-empty-description">
                             <?php
                             if ($generated > 0) {
-                                /* translators: %d: number of generated alt texts */
                                 printf(
+                                    /* translators: %d: Number of generated alt texts already created on this site. */
                                     esc_html__('You have %d generated alt texts, but recent activity tracking is new. Activity will appear here as you generate more.', 'beepbeep-ai-alt-text-generator'),
                                     absint($generated)
                                 );

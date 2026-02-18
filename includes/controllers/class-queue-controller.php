@@ -61,8 +61,7 @@ class Queue_Controller {
 			);
 		}
 
-		$job_id_raw = isset( $_POST['job_id'] ) ? wp_unslash( $_POST['job_id'] ) : '';
-		$job_id     = absint( $job_id_raw );
+		$job_id     = isset( $_POST['job_id'] ) ? absint( wp_unslash( $_POST['job_id'] ) ) : 0;
 
 		return $this->queue_service->retry_job( $job_id );
 	}
@@ -156,6 +155,6 @@ class Queue_Controller {
 	 * @return bool True if user can manage.
 	 */
 	private function user_can_manage(): bool {
-		return current_user_can( 'manage_options' ) || current_user_can( 'upload_files' );
+		return current_user_can( 'manage_options' );
 	}
 }

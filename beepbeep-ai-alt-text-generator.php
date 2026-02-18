@@ -60,8 +60,8 @@ if ( ! function_exists( 'bbai_enqueue_logged_out_styles' ) ) {
 	 * @param string $hook Current admin page hook.
 	 */
 	function bbai_enqueue_logged_out_styles( $hook ) {
-			$page_raw     = isset( $_GET['page'] ) ? wp_unslash( $_GET['page'] ) : '';
-			$current_page = is_string( $page_raw ) ? sanitize_key( $page_raw ) : '';
+			$page_input     = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+			$current_page = $page_input;
 			$hook         = is_string( $hook ) ? $hook : '';
 			$is_bbai_page = strpos( $hook, 'toplevel_page_bbai' ) === 0
 				|| strpos( $hook, 'bbai_page_bbai' ) === 0

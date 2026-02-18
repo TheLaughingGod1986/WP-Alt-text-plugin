@@ -61,8 +61,7 @@ class License_Controller {
 			);
 		}
 
-		$license_key_raw = isset( $_POST['license_key'] ) ? wp_unslash( $_POST['license_key'] ) : '';
-		$license_key     = is_string( $license_key_raw ) ? sanitize_text_field( $license_key_raw ) : '';
+		$license_key     = isset( $_POST['license_key'] ) ? sanitize_text_field( wp_unslash( $_POST['license_key'] ) ) : '';
 
 		return $this->license_service->activate( $license_key );
 	}
@@ -145,8 +144,7 @@ class License_Controller {
 			);
 		}
 
-		$site_id_raw = isset( $_POST['site_id'] ) ? wp_unslash( $_POST['site_id'] ) : '';
-		$site_id     = is_string( $site_id_raw ) ? sanitize_text_field( $site_id_raw ) : '';
+		$site_id     = isset( $_POST['site_id'] ) ? sanitize_text_field( wp_unslash( $_POST['site_id'] ) ) : '';
 
 		return $this->license_service->disconnect_site( $site_id );
 	}
@@ -159,6 +157,6 @@ class License_Controller {
 	 * @return bool True if user can manage.
 	 */
 	private function user_can_manage(): bool {
-		return current_user_can( 'manage_options' ) || current_user_can( 'upload_files' );
+		return current_user_can( 'manage_options' );
 	}
 }

@@ -50,11 +50,9 @@ trait Core_Ajax_Auth {
 		                return;
 		            }
 
-		            $email_raw = isset($_POST['email']) ? wp_unslash($_POST['email']) : '';
-		            $email = is_string($email_raw) ? sanitize_email($email_raw) : '';
-		            // Passwords may contain characters that sanitize_text_field() would alter.
-		            $password_raw = wp_unslash( $_POST['password'] ?? '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		            $password     = is_string( $password_raw ) ? $password_raw : '';
+		            $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
+		            $password_input = isset($_POST['password']) ? wp_unslash($_POST['password']) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords must not be text-sanitized.
+		            $password = is_string($password_input) ? $password_input : '';
 
 		            if (empty($email) || empty($password)) {
 		                wp_send_json_error(['message' => __('Email and password are required', 'beepbeep-ai-alt-text-generator')]);
@@ -161,11 +159,9 @@ trait Core_Ajax_Auth {
 		            return;
 		        }
 
-		        $email_raw = isset($_POST['email']) ? wp_unslash($_POST['email']) : '';
-		        $email = is_string($email_raw) ? sanitize_email($email_raw) : '';
-		        // Passwords may contain characters that sanitize_text_field() would alter.
-		        $password_raw = wp_unslash( $_POST['password'] ?? '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		        $password     = is_string( $password_raw ) ? $password_raw : '';
+		        $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
+		        $password_input = isset($_POST['password']) ? wp_unslash($_POST['password']) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords must not be text-sanitized.
+		        $password = is_string($password_input) ? $password_input : '';
 
 	        if (empty($email) || empty($password)) {
 	            wp_send_json_error(['message' => __('Email and password are required', 'beepbeep-ai-alt-text-generator')]);
@@ -321,8 +317,7 @@ trait Core_Ajax_Auth {
             return;
         }
 
-        $email_raw = isset($_POST['email']) ? wp_unslash($_POST['email']) : '';
-        $email = is_string($email_raw) ? sanitize_email($email_raw) : '';
+        $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
 
         if (empty($email)) {
             wp_send_json_error(['message' => __('Email is required', 'beepbeep-ai-alt-text-generator')]);
@@ -355,11 +350,9 @@ trait Core_Ajax_Auth {
             return;
         }
 
-		        $token_raw = isset($_POST['token']) ? wp_unslash($_POST['token']) : '';
-		        $token = is_string($token_raw) ? sanitize_text_field($token_raw) : '';
-		        // Passwords may contain characters that sanitize_text_field() would alter.
-		        $password_raw = wp_unslash( $_POST['password'] ?? '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		        $password     = is_string( $password_raw ) ? $password_raw : '';
+		        $token = isset($_POST['token']) ? sanitize_text_field(wp_unslash($_POST['token'])) : '';
+		        $password_input = isset($_POST['password']) ? wp_unslash($_POST['password']) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords must not be text-sanitized.
+		        $password = is_string($password_input) ? $password_input : '';
 
         if (empty($token) || empty($password)) {
             wp_send_json_error(['message' => __('Token and password are required', 'beepbeep-ai-alt-text-generator')]);

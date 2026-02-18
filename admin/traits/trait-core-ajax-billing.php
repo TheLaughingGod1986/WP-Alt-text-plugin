@@ -29,13 +29,15 @@ trait Core_Ajax_Billing {
             return;
         }
 
-        $price_id_raw = isset( $_POST['price_id'] ) ? wp_unslash( $_POST['price_id'] ) : '';
-        $price_id     = is_string( $price_id_raw ) ? sanitize_text_field( $price_id_raw ) : '';
+        $price_id = isset( $_POST['price_id'] ) ? sanitize_text_field( wp_unslash( $_POST['price_id'] ) ) : '';
 
         // Resolve plan_id to a Stripe price ID when price_id is not provided directly.
         if ( empty( $price_id ) ) {
-            $plan_id_raw = isset( $_POST['plan_id'] ) ? wp_unslash( $_POST['plan_id'] ) : '';
-            $plan_id     = is_string( $plan_id_raw ) ? sanitize_key( $plan_id_raw ) : '';
+            $plan_id = isset( $_POST['plan_id'] ) ? sanitize_key( wp_unslash( $_POST['plan_id'] ) ) : '';
+            $valid_plan_ids = array_keys( $this->get_checkout_price_ids() );
+            if ( ! in_array( $plan_id, $valid_plan_ids, true ) ) {
+                $plan_id = '';
+            }
             if ( ! empty( $plan_id ) ) {
                 $price_id = $this->get_checkout_price_id( $plan_id );
             }

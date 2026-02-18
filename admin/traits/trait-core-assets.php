@@ -85,8 +85,8 @@ trait Core_Assets {
      * @return bool
      */
     private function is_bbai_admin_page(string $hook): bool {
-        $page_raw = isset($_GET['page']) ? wp_unslash($_GET['page']) : '';
-        $current_page = is_string($page_raw) ? sanitize_key($page_raw) : '';
+        $page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+        $current_page = $page_input;
         return strpos($hook, 'toplevel_page_bbai') === 0
             || strpos($hook, 'bbai_page_bbai') === 0
             || strpos($hook, 'media_page_bbai') === 0
@@ -550,8 +550,8 @@ trait Core_Assets {
         }
 
         // Load dashboard assets on BBAI pages
-        $page_raw = isset($_GET['page']) ? wp_unslash($_GET['page']) : '';
-        $current_page = is_string($page_raw) ? sanitize_key($page_raw) : '';
+        $page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+        $current_page = $page_input;
         if ($is_bbai_page || (!empty($current_page) && strpos($current_page, 'bbai') === 0)) {
             $this->enqueue_dashboard_assets($base_url, $base_path);
         }

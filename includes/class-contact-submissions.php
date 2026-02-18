@@ -91,6 +91,8 @@ class Contact_Submissions {
 
 		$table_name = esc_sql( self::table() );
 		$user_id = get_current_user_id();
+		$license_key_input = isset( $data['license_key'] ) ? sanitize_text_field( $data['license_key'] ) : '';
+		$license_key_hash  = $license_key_input !== '' ? wp_hash( $license_key_input ) : null;
 
 		$result = $wpdb->insert(
 			$table_name,
@@ -104,7 +106,7 @@ class Contact_Submissions {
 				'plugin_version' => sanitize_text_field($data['plugin_version'] ?? null),
 				'site_url'      => esc_url_raw($data['site_url'] ?? null),
 				'site_hash'     => sanitize_text_field($data['site_hash'] ?? null),
-				'license_key'   => sanitize_text_field($data['license_key'] ?? null),
+				'license_key'   => $license_key_hash,
 				'status'        => 'new',
 				'created_at'    => current_time('mysql'),
 			],
@@ -172,8 +174,8 @@ class Contact_Submissions {
 			'email'      => 'email',
 			'status'     => 'status',
 		];
-		$orderby_raw = ( isset( $args['orderby'] ) && is_string( $args['orderby'] ) ) ? sanitize_key( $args['orderby'] ) : '';
-		$orderby     = isset( $allowed_orderby[ $orderby_raw ] ) ? $allowed_orderby[ $orderby_raw ] : 'created_at';
+		$orderby_input = ( isset( $args['orderby'] ) && is_string( $args['orderby'] ) ) ? sanitize_key( $args['orderby'] ) : '';
+		$orderby     = isset( $allowed_orderby[ $orderby_input ] ) ? $allowed_orderby[ $orderby_input ] : 'created_at';
 
 		$order = ( ! empty( $args['order'] ) && is_string( $args['order'] ) && strtoupper( $args['order'] ) === 'ASC' )
 			? 'ASC'

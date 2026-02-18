@@ -61,12 +61,9 @@ class Auth_Controller {
 			);
 		}
 
-		$email_raw = wp_unslash( $_POST['email'] ?? '' );
-		$email     = is_string( $email_raw ) ? sanitize_email( $email_raw ) : '';
-
-		// Passwords may contain characters that sanitize_text_field() would alter.
-		$password_raw = wp_unslash( $_POST['password'] ?? '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		$password     = is_string( $password_raw ) ? $password_raw : '';
+		$email          = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
+		$password_input = isset( $_POST['password'] ) ? wp_unslash( $_POST['password'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords must not be text-sanitized.
+		$password       = is_string( $password_input ) ? $password_input : '';
 
 		return $this->auth_service->register( $email, $password );
 	}
@@ -95,12 +92,9 @@ class Auth_Controller {
 			);
 		}
 
-		$email_raw = wp_unslash( $_POST['email'] ?? '' );
-		$email     = is_string( $email_raw ) ? sanitize_email( $email_raw ) : '';
-
-		// Passwords may contain characters that sanitize_text_field() would alter.
-		$password_raw = wp_unslash( $_POST['password'] ?? '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		$password     = is_string( $password_raw ) ? $password_raw : '';
+		$email          = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
+		$password_input = isset( $_POST['password'] ) ? wp_unslash( $_POST['password'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords must not be text-sanitized.
+		$password       = is_string( $password_input ) ? $password_input : '';
 
 		return $this->auth_service->login( $email, $password );
 	}
@@ -183,12 +177,9 @@ class Auth_Controller {
 			);
 		}
 
-		$email_raw = wp_unslash( $_POST['email'] ?? '' );
-		$email     = is_string( $email_raw ) ? sanitize_email( $email_raw ) : '';
-
-		// Passwords may contain characters that sanitize_text_field() would alter.
-		$password_raw = wp_unslash( $_POST['password'] ?? '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		$password     = is_string( $password_raw ) ? $password_raw : '';
+		$email          = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
+		$password_input = isset( $_POST['password'] ) ? wp_unslash( $_POST['password'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords must not be text-sanitized.
+		$password       = is_string( $password_input ) ? $password_input : '';
 
 		return $this->auth_service->admin_login( $email, $password );
 	}
@@ -255,6 +246,6 @@ class Auth_Controller {
 	 * @return bool True if user can manage.
 	 */
 	private function user_can_manage(): bool {
-		return current_user_can( 'manage_options' ) || current_user_can( 'upload_files' );
+		return current_user_can( 'manage_options' );
 	}
 }

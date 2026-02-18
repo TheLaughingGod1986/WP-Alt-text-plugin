@@ -12,6 +12,18 @@ class Usage_Tracker {
     
     const CACHE_KEY = 'bbai_usage_cache';
     const CACHE_EXPIRY = 300; // 5 minutes
+
+	/**
+	 * Normalize plan slugs from remote/local payloads.
+	 *
+	 * @param mixed $plan Plan value.
+	 * @return string
+	 */
+	private static function normalize_plan_slug($plan) {
+		$plan_key = is_scalar($plan) ? sanitize_key((string) $plan) : '';
+		$allowed  = ['free', 'pro', 'growth', 'agency', 'enterprise'];
+		return in_array($plan_key, $allowed, true) ? $plan_key : 'free';
+	}
     
     /**
      * Allocate free credits on first generation request.
@@ -57,10 +69,10 @@ class Usage_Tracker {
         if ($remaining < 0) { $remaining = 0; }
 
         $current_ts = time();
-        $reset_raw = $usage_data['resetDate'] ?? '';
+        $reset_input = $usage_data['resetDate'] ?? '';
         $reset_ts = isset($usage_data['resetTimestamp']) ? intval($usage_data['resetTimestamp']) : 0;
-        if ($reset_ts <= 0 && $reset_raw) {
-            $reset_ts = strtotime($reset_raw);
+        if ($reset_ts <= 0 && $reset_input) {
+            $reset_ts = strtotime($reset_input);
         }
         if ($reset_ts <= 0) {
             $reset_ts = strtotime('first day of next month', $current_ts);
@@ -71,7 +83,7 @@ class Usage_Tracker {
             'used'       => $used,
             'limit'      => $limit,
             'remaining'  => $remaining,
-            'plan'       => $usage_data['plan'] ?? 'free',
+            'plan'       => self::normalize_plan_slug($usage_data['plan'] ?? 'free'),
             'resetDate'  => wp_date('Y-m-d', $reset_ts),
             'reset_timestamp' => $reset_ts,
             'seconds_until_reset' => $seconds_until_reset,
@@ -103,7 +115,7 @@ class Usage_Tracker {
                 $current_ts = time();
 
                 // Get plan from organization data (correct location)
-                $plan = isset($org['plan']) ? strtolower($org['plan']) : 'free';
+                $plan = self::normalize_plan_slug($org['plan'] ?? 'free');
 
                 // Get limit from organization data or calculate based on plan
                 $limit = isset($org['tokenLimit']) ? intval($org['tokenLimit']) :

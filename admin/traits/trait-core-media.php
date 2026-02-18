@@ -86,10 +86,10 @@ trait Core_Media {
             $coverage = $total ? round(($with_alt / $total) * 100, 1) : 0;
             $missing = max(0, $total - $with_alt);
 
-            $date_format_raw = get_option('date_format');
-            $time_format_raw = get_option('time_format');
-            $date_format = is_string($date_format_raw) ? $date_format_raw : '';
-            $time_format = is_string($time_format_raw) ? $time_format_raw : '';
+            $date_format_input = get_option('date_format');
+            $time_format_input = get_option('time_format');
+            $date_format = is_string($date_format_input) ? $date_format_input : '';
+            $time_format = is_string($time_format_input) ? $time_format_input : '';
             $datetime_format = (!empty($date_format) && !empty($time_format)) ? $date_format . ' ' . $time_format : 'Y-m-d H:i:s';
 
             $opts = get_option(self::OPTION_KEY, []);
@@ -98,11 +98,11 @@ trait Core_Media {
                 $usage['last_request_formatted'] = mysql2date($datetime_format, $usage['last_request']);
             }
 
-            $latest_generated_raw = $wpdb->get_var($wpdb->prepare(
+            $latest_generated_input = $wpdb->get_var($wpdb->prepare(
                 'SELECT meta_value FROM ' . $wpdb->postmeta . ' WHERE meta_key = %s ORDER BY meta_value DESC LIMIT 1',
                 '_bbai_generated_at'
             ));
-            $latest_generated = $latest_generated_raw ? mysql2date($datetime_format, $latest_generated_raw) : '';
+            $latest_generated = $latest_generated_input ? mysql2date($datetime_format, $latest_generated_input) : '';
 
             $top_source_row = $wpdb->get_row(
                 $wpdb->prepare(
@@ -124,7 +124,7 @@ trait Core_Media {
                 'usage' => $usage,
                 'token_limit' => intval($opts['token_limit'] ?? 0),
                 'latest_generated' => $latest_generated,
-                'latest_generated_raw' => $latest_generated_raw,
+                'latest_generated_raw' => $latest_generated_input,
                 'top_source_key' => $top_source_key,
                 'top_source_count' => $top_source_count,
                 'dry_run_enabled' => !empty($opts['dry_run']),
@@ -163,8 +163,8 @@ trait Core_Media {
         $tokens = intval(get_post_meta($attachment_id, '_bbai_tokens_total', true));
         $prompt = intval(get_post_meta($attachment_id, '_bbai_tokens_prompt', true));
         $completion = intval(get_post_meta($attachment_id, '_bbai_tokens_completion', true));
-        $generated_raw = get_post_meta($attachment_id, '_bbai_generated_at', true);
-        $generated = $generated_raw ? mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $generated_raw) : '';
+        $generated_input = get_post_meta($attachment_id, '_bbai_generated_at', true);
+        $generated = $generated_input ? mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $generated_input) : '';
         $source_key = sanitize_key(get_post_meta($attachment_id, '_bbai_source', true) ?: 'unknown');
         if (!$source_key) {
             $source_key = 'unknown';
@@ -178,7 +178,7 @@ trait Core_Media {
             'tokens' => $tokens,
             'prompt' => $prompt,
             'completion' => $completion,
-            'generated_raw' => $generated_raw,
+            'generated_raw' => $generated_input,
             'generated' => $generated,
             'source_key' => $source_key,
             'source_label' => $this->format_source_label($source_key),

@@ -508,10 +508,11 @@ class Admin_Dashboard {
 						<summary><?php esc_html_e( 'Will it work with WooCommerce and all themes?', 'beepbeep-ai-alt-text-generator' ); ?></summary>
 						<p><?php esc_html_e( 'Yes. It works with WooCommerce, Gutenberg, and most themes.', 'beepbeep-ai-alt-text-generator' ); ?></p>
 					</details>
-				</div>
 			</div>
-		</div>
-	}
+			</div>
+			</div>
+			<?php
+		}
 
 	/**
 	 * Check whether the plugin is authenticated.

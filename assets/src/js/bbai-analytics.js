@@ -157,9 +157,11 @@
             this.showActivityEmpty(false);
 
             const bbaiAjax = (typeof window !== 'undefined' && window.bbai_ajax) ? window.bbai_ajax : (typeof bbai_ajax !== 'undefined' ? bbai_ajax : null);
-            const ajaxUrl = bbaiAjax ? (bbaiAjax.ajax_url || bbaiAjax.ajaxurl) : '';
+            // Fallback to standard WordPress AJAX URL if bbai_ajax not available
+            const ajaxUrl = bbaiAjax ? (bbaiAjax.ajax_url || bbaiAjax.ajaxurl) : (typeof ajaxurl !== 'undefined' ? ajaxurl : (window.bbai_env && window.bbai_env.ajax_url ? window.bbai_env.ajax_url : ''));
 
             if (!ajaxUrl) {
+                console.warn('BBAI Analytics: AJAX URL not found, activity timeline disabled');
                 this.setActivityLoading(false);
                 this.showActivityEmpty(true);
                 return;
@@ -173,7 +175,7 @@
                     type: 'POST',
                     data: {
                         action: 'bbai_get_activity',
-                        nonce: bbaiAjax ? (bbaiAjax.nonce || '') : ''
+                        nonce: bbaiAjax ? (bbaiAjax.nonce || '') : (window.bbai_env && window.bbai_env.nonce ? window.bbai_env.nonce : '')
                     },
                     success: (response) => {
                         this.setRefreshButtonSpinning(false);
@@ -193,7 +195,7 @@
             } else if (typeof fetch !== 'undefined') {
                 const formData = new FormData();
                 formData.append('action', 'bbai_get_activity');
-                formData.append('nonce', bbaiAjax ? (bbaiAjax.nonce || '') : '');
+                formData.append('nonce', bbaiAjax ? (bbaiAjax.nonce || '') : (window.bbai_env && window.bbai_env.nonce ? window.bbai_env.nonce : ''));
 
                 fetch(ajaxUrl, {
                     method: 'POST',

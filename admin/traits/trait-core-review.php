@@ -69,15 +69,15 @@ trait Core_Review {
         }
 
         $status     = sanitize_key(get_post_meta($attachment_id, '_bbai_review_status', true));
-        $grade_raw  = get_post_meta($attachment_id, '_bbai_review_grade', true);
+        $grade_input  = get_post_meta($attachment_id, '_bbai_review_grade', true);
         $summary    = get_post_meta($attachment_id, '_bbai_review_summary', true);
         $model      = get_post_meta($attachment_id, '_bbai_review_model', true);
         $reviewed_at = get_post_meta($attachment_id, '_bbai_reviewed_at', true);
 
-        $issues_raw = get_post_meta($attachment_id, '_bbai_review_issues', true);
+        $issues_input = get_post_meta($attachment_id, '_bbai_review_issues', true);
         $issues = [];
-        if ($issues_raw) {
-            $decoded = json_decode($issues_raw, true);
+        if ($issues_input) {
+            $decoded = json_decode($issues_input, true);
             if (is_array($decoded)) {
                 foreach ($decoded as $issue) {
                     if (is_string($issue)) {
@@ -93,7 +93,7 @@ trait Core_Review {
         return [
             'score'   => max(0, min(100, $score)),
             'status'  => $status ?: null,
-            'grade'   => is_string($grade_raw) ? sanitize_text_field($grade_raw) : null,
+            'grade'   => is_string($grade_input) ? sanitize_text_field($grade_input) : null,
             'summary' => is_string($summary) ? sanitize_text_field($summary) : '',
             'issues'  => $issues,
             'model'   => is_string($model) ? sanitize_text_field($model) : '',

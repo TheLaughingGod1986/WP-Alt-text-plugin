@@ -70,8 +70,7 @@ trait Core_Ajax_Queue {
             return;
         }
 
-        $job_id_raw = isset($_POST['job_id']) ? wp_unslash($_POST['job_id']) : '';
-        $job_id = absint($job_id_raw);
+        $job_id = isset($_POST['job_id']) ? absint(wp_unslash($_POST['job_id'])) : 0;
         if ($job_id <= 0) {
             wp_send_json_error(['message' => __('Invalid job ID.', 'beepbeep-ai-alt-text-generator')]);
             return;
@@ -156,8 +155,9 @@ trait Core_Ajax_Queue {
             return;
         }
 
-        $source_raw = isset($_POST['source']) ? wp_unslash($_POST['source']) : 'dashboard';
-        $source = sanitize_key($source_raw);
+        $source_input = isset($_POST['source']) ? sanitize_key(wp_unslash($_POST['source'])) : 'dashboard';
+        $allowed_sources = [ 'dashboard', 'bulk', 'bulk-regenerate', 'library', 'manual', 'onboarding', 'queue', 'unknown' ];
+        $source = in_array($source_input, $allowed_sources, true) ? $source_input : 'dashboard';
         $event = [
             'source' => $source,
             'user_id' => get_current_user_id(),

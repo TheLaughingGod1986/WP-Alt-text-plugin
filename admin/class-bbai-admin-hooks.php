@@ -168,20 +168,18 @@ class Admin_Hooks {
 	 * Clear usage cache when ?clear_cache=1 is in URL with valid nonce.
 	 */
 	public static function maybe_clear_usage_cache() {
-		$clear_cache_raw = isset( $_GET['clear_cache'] ) ? wp_unslash( $_GET['clear_cache'] ) : '';
-		$clear_cache     = is_string( $clear_cache_raw ) ? sanitize_text_field( $clear_cache_raw ) : '';
-
-		if ( $clear_cache !== '1' ) {
+		if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
 
-			// Verify nonce for cache clearing action.
-			$action = 'bbai_clear_cache';
-			if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_bbai_nonce'] ?? '' ) ), $action ) ) {
-				return;
-			}
+		$clear_cache_input = isset( $_GET['clear_cache'] ) ? sanitize_key( wp_unslash( $_GET['clear_cache'] ) ) : '';
+		if ( ! in_array( $clear_cache_input, [ '1', 'true', 'yes' ], true ) ) {
+			return;
+		}
 
-		if ( ! current_user_can( 'manage_options' ) ) {
+		$nonce  = isset( $_GET['_bbai_nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_bbai_nonce'] ) ) : '';
+		$action = 'bbai_clear_cache';
+		if ( ! wp_verify_nonce( $nonce, $action ) ) {
 			return;
 		}
 

@@ -1,6 +1,33 @@
 # Files/directories to exclude when deploying a WordPress.org-ready build.
 # This is commonly consumed by Git->SVN deploy tooling (e.g., rsync --exclude-from).
 
+# Plugin Check packaging blockers (must never ship)
+beepbeep-ai-alt-text-generator.zip
+*.zip
+*.gz
+*.tgz
+*.bz2
+*.7z
+*.rar
+dist/
+build-plugin.sh
+.gitattributes
+
+# Required WordPress.org package exclusions
+*.zip
+*.gz
+*.tgz
+*.bz2
+*.7z
+*.rar
+.gitattributes
+.gitignore
+.github/
+build-plugin.sh
+*.sh
+scripts/
+tools/
+
 # VCS / metadata (hidden files are not shipped)
 .git
 .git/*
@@ -63,7 +90,9 @@ report/*
 
 # Dependency managers / dev dependencies (never ship in the plugin ZIP)
 node_modules/
+node_modules
 vendor/
+vendor
 composer.json
 composer.lock
 package.json
@@ -80,8 +109,11 @@ build-*.sh
 
 # Nested archives (not allowed in the distributed plugin)
 *.zip
-dist/*.zip
-dist/*/*.zip
+*.gz
+*.tgz
+*.bz2
+*.7z
+*.rar
 
 # WordPress.org listing asset sources and generators (not runtime plugin assets)
 assets/wordpress-org

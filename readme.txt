@@ -1,8 +1,8 @@
-=== Alt Text AI - Image SEO Automation ===
+=== BeepBeep AI – Alt Text Generator ===
 Contributors: beepbeepv2
 Plugin URI: https://oppti.dev/beepbeep-ai-alt-text-generator
 Author URI: https://oppti.dev
-Tags: alt text, image SEO, accessibility, AI alt text generator, automatic alt text, images, automation, ai, wcag, media library, seo, google images, alt tags, bulk alt text, image optimization, accessibility plugin, wcag compliance, alt attribute, image descriptions, automated SEO
+Tags: alt text, accessibility, image seo, media library, ai
 Requires at least: 6.2
 Tested up to: 6.9
 Requires PHP: 7.4
@@ -11,7 +11,7 @@ License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
 
-The fastest way to automatically generate SEO-optimized and WCAG-compliant alt text for every WordPress image. Boost Google Images rankings, improve accessibility, and save 10+ hours monthly.
+Automatically generate SEO-optimized, WCAG-friendly alt text for WordPress images in bulk or on upload using AI.
 
 == Description ==
 

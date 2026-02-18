@@ -42,6 +42,18 @@ class REST_Controller {
 				'methods'             => 'POST',
 				'callback'            => [ $this, 'handle_generate_single' ],
 				'permission_callback' => [ $this, 'can_edit_attachment' ],
+				'args'                => [
+					'id'         => [
+						'required'          => true,
+						'sanitize_callback' => 'absint',
+						'validate_callback' => [ __CLASS__, 'validate_positive_int_arg' ],
+					],
+					'regenerate' => [
+						'required'          => false,
+						'default'           => false,
+						'sanitize_callback' => [ __CLASS__, 'sanitize_bool_arg' ],
+					],
+				],
 			]
 		);
 
@@ -52,6 +64,18 @@ class REST_Controller {
 				'methods'             => 'POST',
 				'callback'            => [ $this, 'handle_save_alt' ],
 				'permission_callback' => [ $this, 'can_edit_attachment' ],
+				'args'                => [
+					'id'  => [
+						'required'          => true,
+						'sanitize_callback' => 'absint',
+						'validate_callback' => [ __CLASS__, 'validate_positive_int_arg' ],
+					],
+					'alt' => [
+						'required'          => true,
+						'sanitize_callback' => [ __CLASS__, 'sanitize_text_arg' ],
+						'validate_callback' => [ __CLASS__, 'validate_non_empty_text_arg' ],
+					],
+				],
 			]
 		);
 
@@ -62,6 +86,18 @@ class REST_Controller {
 				'methods'             => 'GET',
 				'callback'            => [ $this, 'handle_list' ],
 				'permission_callback' => [ $this, 'can_edit_media' ],
+				'args'                => [
+					'scope' => [
+						'required'          => false,
+						'default'           => 'missing',
+						'sanitize_callback' => [ __CLASS__, 'sanitize_scope_arg' ],
+					],
+					'limit' => [
+						'required'          => false,
+						'default'           => 100,
+						'sanitize_callback' => 'absint',
+					],
+				],
 			]
 		);
 
@@ -72,6 +108,13 @@ class REST_Controller {
 				'methods'             => 'GET',
 				'callback'            => [ $this, 'handle_stats' ],
 				'permission_callback' => [ $this, 'can_edit_media' ],
+				'args'                => [
+					'fresh' => [
+						'required'          => false,
+						'default'           => false,
+						'sanitize_callback' => [ __CLASS__, 'sanitize_bool_arg' ],
+					],
+				],
 			]
 		);
 
@@ -122,6 +165,38 @@ class REST_Controller {
 				'methods'             => 'GET',
 				'callback'            => [ $this, 'handle_usage_events' ],
 				'permission_callback' => [ $this, 'can_manage_admin' ],
+				'args'                => [
+					'user_id'     => [
+						'required'          => false,
+						'default'           => 0,
+						'sanitize_callback' => 'absint',
+					],
+					'from'        => [
+						'required'          => false,
+						'default'           => '',
+						'sanitize_callback' => [ __CLASS__, 'sanitize_date_arg' ],
+					],
+					'to'          => [
+						'required'          => false,
+						'default'           => '',
+						'sanitize_callback' => [ __CLASS__, 'sanitize_date_arg' ],
+					],
+					'action_type' => [
+						'required'          => false,
+						'default'           => '',
+						'sanitize_callback' => [ __CLASS__, 'sanitize_action_type_arg' ],
+					],
+					'per_page'    => [
+						'required'          => false,
+						'default'           => 50,
+						'sanitize_callback' => 'absint',
+					],
+					'page'        => [
+						'required'          => false,
+						'default'           => 1,
+						'sanitize_callback' => 'absint',
+					],
+				],
 			]
 		);
 
@@ -142,6 +217,43 @@ class REST_Controller {
 				'methods'             => 'GET',
 				'callback'            => [ $this, 'handle_logs' ],
 				'permission_callback' => [ $this, 'can_manage_admin' ],
+				'args'                => [
+					'level'     => [
+						'required'          => false,
+						'default'           => '',
+						'sanitize_callback' => [ __CLASS__, 'sanitize_log_level_arg' ],
+					],
+					'search'    => [
+						'required'          => false,
+						'default'           => '',
+						'sanitize_callback' => [ __CLASS__, 'sanitize_text_arg' ],
+					],
+					'date'      => [
+						'required'          => false,
+						'default'           => '',
+						'sanitize_callback' => [ __CLASS__, 'sanitize_date_arg' ],
+					],
+					'date_from' => [
+						'required'          => false,
+						'default'           => '',
+						'sanitize_callback' => [ __CLASS__, 'sanitize_date_arg' ],
+					],
+					'date_to'   => [
+						'required'          => false,
+						'default'           => '',
+						'sanitize_callback' => [ __CLASS__, 'sanitize_date_arg' ],
+					],
+					'per_page'  => [
+						'required'          => false,
+						'default'           => 10,
+						'sanitize_callback' => 'absint',
+					],
+					'page'      => [
+						'required'          => false,
+						'default'           => 1,
+						'sanitize_callback' => 'absint',
+					],
+				],
 			]
 		);
 
@@ -152,6 +264,13 @@ class REST_Controller {
 				'methods'             => 'POST',
 				'callback'            => [ $this, 'handle_logs_clear' ],
 				'permission_callback' => [ $this, 'can_manage_admin' ],
+				'args'                => [
+					'older_than' => [
+						'required'          => false,
+						'default'           => 0,
+						'sanitize_callback' => 'absint',
+					],
+				],
 			]
 		);
 
@@ -172,6 +291,38 @@ class REST_Controller {
 				'methods'             => 'GET',
 				'callback'            => [ $this, 'handle_events' ],
 				'permission_callback' => [ $this, 'can_manage_admin' ],
+				'args'                => [
+					'user_id'     => [
+						'required'          => false,
+						'default'           => 0,
+						'sanitize_callback' => 'absint',
+					],
+					'date_from'   => [
+						'required'          => false,
+						'default'           => '',
+						'sanitize_callback' => [ __CLASS__, 'sanitize_date_arg' ],
+					],
+					'date_to'     => [
+						'required'          => false,
+						'default'           => '',
+						'sanitize_callback' => [ __CLASS__, 'sanitize_date_arg' ],
+					],
+					'action_type' => [
+						'required'          => false,
+						'default'           => '',
+						'sanitize_callback' => [ __CLASS__, 'sanitize_action_type_arg' ],
+					],
+					'per_page'    => [
+						'required'          => false,
+						'default'           => 50,
+						'sanitize_callback' => 'absint',
+					],
+					'page'        => [
+						'required'          => false,
+						'default'           => 1,
+						'sanitize_callback' => 'absint',
+					],
+				],
 			]
 		);
 
@@ -181,7 +332,32 @@ class REST_Controller {
 			[
 				'methods'             => 'POST',
 				'callback'            => [ $this, 'handle_log_event' ],
-				'permission_callback' => [ $this, 'can_edit_media' ],
+				'permission_callback' => [ $this, 'can_manage_admin' ],
+				'args'                => [
+					'tokens_used' => [
+						'required'          => false,
+						'default'           => 1,
+						'sanitize_callback' => 'absint',
+						'validate_callback' => [ __CLASS__, 'validate_positive_int_arg' ],
+					],
+					'action_type' => [
+						'required'          => false,
+						'default'           => 'generate',
+						'sanitize_callback' => [ __CLASS__, 'sanitize_action_type_arg' ],
+					],
+					'image_id'    => [
+						'required'          => false,
+						'default'           => 0,
+						'sanitize_callback' => 'absint',
+						'validate_callback' => [ __CLASS__, 'validate_non_negative_int_arg' ],
+					],
+					'post_id'     => [
+						'required'          => false,
+						'default'           => 0,
+						'sanitize_callback' => 'absint',
+						'validate_callback' => [ __CLASS__, 'validate_non_negative_int_arg' ],
+					],
+				],
 			]
 		);
 	}
@@ -238,6 +414,105 @@ class REST_Controller {
 	}
 
 	/**
+	 * Sanitize boolean-like REST values.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return bool
+	 */
+	public static function sanitize_bool_arg( $value ) {
+		return rest_sanitize_boolean( $value );
+	}
+
+	/**
+	 * Sanitize text REST values.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return string
+	 */
+	public static function sanitize_text_arg( $value ) {
+		return is_scalar( $value ) ? sanitize_text_field( (string) $value ) : '';
+	}
+
+	/**
+	 * Validate non-empty text values.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return bool
+	 */
+	public static function validate_non_empty_text_arg( $value ) {
+		return is_string( $value ) && trim( $value ) !== '';
+	}
+
+	/**
+	 * Validate positive integer REST values.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return bool
+	 */
+	public static function validate_positive_int_arg( $value ) {
+		return absint( $value ) > 0;
+	}
+
+	/**
+	 * Validate non-negative integer REST values.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return bool
+	 */
+	public static function validate_non_negative_int_arg( $value ) {
+		return absint( $value ) >= 0;
+	}
+
+	/**
+	 * Sanitize scope values.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return string
+	 */
+	public static function sanitize_scope_arg( $value ) {
+		$scope = is_scalar( $value ) ? sanitize_key( (string) $value ) : '';
+		return in_array( $scope, [ 'missing', 'all' ], true ) ? $scope : 'missing';
+	}
+
+	/**
+	 * Sanitize log level values.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return string
+	 */
+	public static function sanitize_log_level_arg( $value ) {
+		$level = is_scalar( $value ) ? sanitize_key( (string) $value ) : '';
+		return in_array( $level, [ '', 'debug', 'info', 'warning', 'error' ], true ) ? $level : '';
+	}
+
+	/**
+	 * Sanitize usage action type values.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return string
+	 */
+	public static function sanitize_action_type_arg( $value ) {
+		$action_type = is_scalar( $value ) ? sanitize_key( (string) $value ) : '';
+		$allowed     = [ '', 'generate', 'regenerate', 'bulk', 'api', 'upload', 'inline', 'queue', 'manual', 'onboarding' ];
+		return in_array( $action_type, $allowed, true ) ? $action_type : '';
+	}
+
+	/**
+	 * Sanitize YYYY-MM-DD date values.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return string
+	 */
+	public static function sanitize_date_arg( $value ) {
+		if ( ! is_scalar( $value ) ) {
+			return '';
+		}
+
+		$date = sanitize_text_field( (string) $value );
+		return preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) === 1 ? $date : '';
+	}
+
+	/**
 	 * Fetch debug logs via REST.
 	 */
 	public function handle_logs( \WP_REST_Request $request ) {
@@ -260,22 +535,22 @@ class REST_Controller {
 			]);
 		}
 
-		$level_raw = $request->get_param( 'level' );
-		$search_raw = $request->get_param( 'search' );
-		$date_raw = $request->get_param( 'date' );
-		$date_from_raw = $request->get_param( 'date_from' );
-		$date_to_raw = $request->get_param( 'date_to' );
-		$per_page_raw = $request->get_param( 'per_page' );
-		$page_raw = $request->get_param( 'page' );
+		$level_input = $request->get_param( 'level' );
+		$search_input = $request->get_param( 'search' );
+		$date_input = $request->get_param( 'date' );
+		$date_from_input = $request->get_param( 'date_from' );
+		$date_to_input = $request->get_param( 'date_to' );
+		$per_page_input = $request->get_param( 'per_page' );
+		$page_input = $request->get_param( 'page' );
 
 		$args = [
-			'level'    => is_string( $level_raw ) ? sanitize_text_field( $level_raw ) : '',
-			'search'   => is_string( $search_raw ) ? sanitize_text_field( $search_raw ) : '',
-			'date'     => is_string( $date_raw ) ? sanitize_text_field( $date_raw ) : '',
-			'date_from' => is_string( $date_from_raw ) ? sanitize_text_field( $date_from_raw ) : '',
-			'date_to'   => is_string( $date_to_raw ) ? sanitize_text_field( $date_to_raw ) : '',
-			'per_page' => absint( $per_page_raw ?: 10 ),
-			'page'     => absint( $page_raw ?: 1 ),
+			'level'    => is_string( $level_input ) ? sanitize_text_field( $level_input ) : '',
+			'search'   => is_string( $search_input ) ? sanitize_text_field( $search_input ) : '',
+			'date'     => is_string( $date_input ) ? sanitize_text_field( $date_input ) : '',
+			'date_from' => is_string( $date_from_input ) ? sanitize_text_field( $date_from_input ) : '',
+			'date_to'   => is_string( $date_to_input ) ? sanitize_text_field( $date_to_input ) : '',
+			'per_page' => absint( $per_page_input ?: 10 ),
+			'page'     => absint( $page_input ?: 1 ),
 		];
 
 		return rest_ensure_response( Debug_Log::get_logs( $args ) );
@@ -292,8 +567,8 @@ class REST_Controller {
 			]);
 		}
 
-		$older_than_raw = $request->get_param( 'older_than' );
-		$older_than = absint( $older_than_raw );
+		$older_than_input = $request->get_param( 'older_than' );
+		$older_than = absint( $older_than_input );
 		if ( $older_than > 0 ) {
 			Debug_Log::delete_older_than( $older_than );
 		} else {
@@ -320,8 +595,8 @@ class REST_Controller {
 		}
 		
 		try {
-			$id_raw = $request->get_param( 'id' );
-			$id = absint( $id_raw );
+			$id_input = $request->get_param( 'id' );
+			$id = absint( $id_input );
 			
 			if ( $id <= 0 ) {
 				if ( ! $output_started ) {
@@ -429,10 +704,10 @@ class REST_Controller {
 	 * @return array|\WP_Error
 	 */
 	public function handle_save_alt( \WP_REST_Request $request ) {
-		$id_raw = $request->get_param( 'id' );
-		$id = absint( $id_raw );
-		$alt_raw = $request->get_param( 'alt' );
-		$alt = is_string( $alt_raw ) ? sanitize_text_field( trim( $alt_raw ) ) : '';
+		$id_input = $request->get_param( 'id' );
+		$id = absint( $id_input );
+		$alt_input = $request->get_param( 'alt' );
+		$alt = is_string( $alt_input ) ? sanitize_text_field( trim( $alt_input ) ) : '';
 
 		if ( $id <= 0 ) {
 			return new \WP_Error( 'invalid_attachment', 'Invalid attachment ID.', [ 'status' => 400 ] );
@@ -527,10 +802,10 @@ class REST_Controller {
 	 * @return array|\WP_Error
 	 */
 	public function handle_list( \WP_REST_Request $request ) {
-		$scope_raw = $request->get_param( 'scope' );
-		$scope = ( is_string( $scope_raw ) && 'all' === sanitize_key( $scope_raw ) ) ? 'all' : 'missing';
-		$limit_raw = $request->get_param( 'limit' );
-		$limit = max( 1, min( 500, absint( $limit_raw ?: 100 ) ) );
+		$scope_input = $request->get_param( 'scope' );
+		$scope = ( is_string( $scope_input ) && 'all' === sanitize_key( $scope_input ) ) ? 'all' : 'missing';
+		$limit_input = $request->get_param( 'limit' );
+		$limit = max( 1, min( 500, absint( $limit_input ?: 100 ) ) );
 
 		$ids = ( 'missing' === $scope )
 			? $this->core->get_missing_attachment_ids( $limit )
@@ -548,8 +823,8 @@ class REST_Controller {
 	 * @return array|\WP_Error
 	 */
 	public function handle_stats( \WP_REST_Request $request ) {
-		$fresh_raw = $request->get_param( 'fresh' );
-		$fresh = filter_var( $fresh_raw, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
+		$fresh_input = $request->get_param( 'fresh' );
+		$fresh = filter_var( $fresh_input, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
 		if ( $fresh === true ) {
 			$this->core->invalidate_stats_cache();
 		}
@@ -692,16 +967,19 @@ class REST_Controller {
 	public function handle_events( \WP_REST_Request $request ) {
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/usage/class-usage-helpers.php';
 
+		$pagination = Input_Validator::pagination( $request, 50, 100 );
+		$user_id    = Input_Validator::int_param( $request, 'user_id', 0 );
+
 		$filters = [
-			'user_id'     => $request->get_param('user_id'),
-			'date_from'   => $request->get_param('date_from'),
-			'date_to'     => $request->get_param('date_to'),
-			'action_type' => $request->get_param('action_type'),
-			'per_page'    => $request->get_param('per_page') ?: 50,
-			'page'        => $request->get_param('page') ?: 1,
+			'user_id'     => $user_id > 0 ? $user_id : null,
+			'date_from'   => Input_Validator::string_param( $request, 'date_from' ),
+			'date_to'     => Input_Validator::string_param( $request, 'date_to' ),
+			'action_type' => self::sanitize_action_type_arg( $request->get_param( 'action_type' ) ),
+			'per_page'    => $pagination['per_page'],
+			'page'        => $pagination['page'],
 		];
 
-		$result = \BeepBeepAI\AltTextGenerator\Usage\get_usage_events($filters);
+		$result = \BeepBeepAI\AltTextGenerator\Usage\get_usage_events( $filters );
 
 		// Check if current user is admin
 		$is_admin = current_user_can('manage_options');
@@ -819,20 +1097,21 @@ class REST_Controller {
 	public function handle_usage_events( \WP_REST_Request $request ) {
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/usage/class-usage-helpers.php';
 
-		$pagination = Input_Validator::pagination($request, 50, 100);
-		$user_id = Input_Validator::int_param($request, 'user_id', 0);
-		$action_type = Input_Validator::key_param($request, 'action_type');
+		$pagination         = Input_Validator::pagination( $request, 50, 100 );
+		$user_id            = Input_Validator::int_param( $request, 'user_id', 0 );
+		$allowed_actions    = [ 'generate', 'regenerate', 'bulk', 'api', 'upload', 'inline', 'queue', 'manual', 'onboarding' ];
+		$action_type        = Input_Validator::key_param( $request, 'action_type', '', $allowed_actions );
 
 		$filters = [
-			'user_id' => $user_id > 0 ? $user_id : null,
-			'date_from' => Input_Validator::string_param($request, 'from'),
-			'date_to' => Input_Validator::string_param($request, 'to'),
+			'user_id'     => $user_id > 0 ? $user_id : null,
+			'date_from'   => Input_Validator::string_param( $request, 'from' ),
+			'date_to'     => Input_Validator::string_param( $request, 'to' ),
 			'action_type' => $action_type ?: null,
-			'per_page' => $pagination['per_page'],
-			'page' => $pagination['page'],
+			'per_page'    => $pagination['per_page'],
+			'page'        => $pagination['page'],
 		];
 
-		$result = \BeepBeepAI\AltTextGenerator\Usage\get_usage_events($filters);
+		$result = \BeepBeepAI\AltTextGenerator\Usage\get_usage_events( $filters );
 
 		return $result;
 	}

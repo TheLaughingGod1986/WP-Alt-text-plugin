@@ -27,6 +27,11 @@ Thumbs.db
 
 # Build artefacts
 *.zip
+*.gz
+*.tgz
+*.bz2
+*.7z
+*.rar
 
 # Environment variables and secrets
 *.env

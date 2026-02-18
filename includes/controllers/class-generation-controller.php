@@ -61,8 +61,7 @@ class Generation_Controller {
 			);
 		}
 
-		$attachment_id_raw = isset( $_POST['attachment_id'] ) ? wp_unslash( $_POST['attachment_id'] ) : '';
-		$attachment_id     = absint( $attachment_id_raw );
+		$attachment_id     = isset( $_POST['attachment_id'] ) ? absint( wp_unslash( $_POST['attachment_id'] ) ) : 0;
 		if ( $attachment_id <= 0 || ! current_user_can( 'edit_post', $attachment_id ) ) {
 			return array(
 				'success' => false,
@@ -97,9 +96,8 @@ class Generation_Controller {
 			);
 		}
 
-		$attachment_ids_raw = isset( $_POST['attachment_ids'] ) ? wp_unslash( $_POST['attachment_ids'] ) : '';
-		$attachment_ids_raw = is_string( $attachment_ids_raw ) ? sanitize_text_field( $attachment_ids_raw ) : '';
-		$attachment_ids     = $attachment_ids_raw ? json_decode( $attachment_ids_raw, true ) : array();
+		$attachment_ids_input = isset( $_POST['attachment_ids'] ) ? sanitize_text_field( wp_unslash( $_POST['attachment_ids'] ) ) : '';
+		$attachment_ids     = $attachment_ids_input ? json_decode( $attachment_ids_input, true ) : array();
 
 		if ( ! is_array( $attachment_ids ) ) {
 			$attachment_ids = array();
@@ -141,8 +139,7 @@ class Generation_Controller {
 			);
 		}
 
-		$attachment_id_raw = isset( $_POST['attachment_id'] ) ? wp_unslash( $_POST['attachment_id'] ) : '';
-		$attachment_id     = absint( $attachment_id_raw );
+		$attachment_id     = isset( $_POST['attachment_id'] ) ? absint( wp_unslash( $_POST['attachment_id'] ) ) : 0;
 		if ( $attachment_id <= 0 || ! current_user_can( 'edit_post', $attachment_id ) ) {
 			return array(
 				'success' => false,
@@ -161,6 +158,6 @@ class Generation_Controller {
 	 * @return bool True if user can manage.
 	 */
 	private function user_can_manage(): bool {
-		return current_user_can( 'manage_options' ) || current_user_can( 'upload_files' );
+		return current_user_can( 'manage_options' );
 	}
 }

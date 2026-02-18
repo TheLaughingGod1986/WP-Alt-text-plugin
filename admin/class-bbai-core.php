@@ -428,8 +428,8 @@ class Core {
      */
 	    public function maybe_handle_direct_checkout() {
 	        if (!is_admin()) { return; }
-	        $page_raw = isset($_GET['page']) ? wp_unslash($_GET['page']) : '';
-	        $page = is_string($page_raw) ? sanitize_key($page_raw) : '';
+	        $page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+	        $page = $page_input;
 	        if ($page !== 'bbai-checkout') { return; }
 
 	        $action = 'bbai_direct_checkout';
@@ -441,10 +441,10 @@ class Core {
 	            wp_die(esc_html__('You do not have permission to perform this action.', 'beepbeep-ai-alt-text-generator'));
 	        }
 
-        $plan_raw = isset($_GET['plan']) ? wp_unslash($_GET['plan']) : (isset($_GET['type']) ? wp_unslash($_GET['type']) : '');
-        $plan_param = sanitize_key($plan_raw);
-        $price_id_raw = isset($_GET['price_id']) && $_GET['price_id'] !== null ? wp_unslash($_GET['price_id']) : '';
-        $price_id = is_string($price_id_raw) ? sanitize_text_field($price_id_raw) : '';
+        $plan_input = isset($_GET['plan']) ? sanitize_key(wp_unslash($_GET['plan'])) : (isset($_GET['type']) ? sanitize_key(wp_unslash($_GET['type'])) : '');
+        $valid_plan_ids = array_keys($this->get_checkout_price_ids());
+        $plan_param = in_array($plan_input, $valid_plan_ids, true) ? $plan_input : '';
+        $price_id = isset($_GET['price_id']) && $_GET['price_id'] !== null ? sanitize_text_field(wp_unslash($_GET['price_id'])) : '';
         $fallback = Usage_Tracker::get_upgrade_url();
 
         if ($plan_param) {
@@ -556,17 +556,18 @@ class Core {
      * Surface checkout success/error notices in WP Admin
      */
 	    public function maybe_render_checkout_notices() {
-	        $page_raw = isset($_GET['page']) ? wp_unslash($_GET['page']) : '';
-	        $page = is_string($page_raw) ? sanitize_key($page_raw) : '';
+	        $page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+	        $page = $page_input;
 	        if ($page !== 'beepbeep-ai-alt-text-generator') {
 	            return;
 	        }
 
-        $checkout_error = isset($_GET['checkout_error']) ? wp_unslash($_GET['checkout_error']) : '';
+        $checkout_error = isset($_GET['checkout_error']) ? sanitize_text_field(wp_unslash($_GET['checkout_error'])) : '';
         if (!empty($checkout_error)) {
-            $message = is_string($checkout_error) ? sanitize_text_field($checkout_error) : '';
-            $plan_raw = isset($_GET['plan']) ? wp_unslash($_GET['plan']) : '';
-            $plan = is_string($plan_raw) ? sanitize_text_field($plan_raw) : '';
+            $message = $checkout_error;
+            $plan_input = isset($_GET['plan']) ? sanitize_key(wp_unslash($_GET['plan'])) : '';
+            $valid_plan_ids = array_keys($this->get_checkout_price_ids());
+            $plan = in_array($plan_input, $valid_plan_ids, true) ? $plan_input : '';
             ?>
             <div class="notice notice-error">
                 <p>
@@ -660,8 +661,7 @@ class Core {
         if (!isset($_GET['bbai_queued'])) {
             return;
         }
-        $count_raw = isset($_GET['bbai_queued']) ? wp_unslash($_GET['bbai_queued']) : '';
-        $count = absint($count_raw);
+        $count = isset($_GET['bbai_queued']) ? absint(wp_unslash($_GET['bbai_queued'])) : 0;
         if ($count <= 0) {
             return;
         }
@@ -1068,8 +1068,7 @@ class Core {
 	            wp_die(esc_html__('Please sign in first to upgrade.', 'beepbeep-ai-alt-text-generator'));
 	        }
 
-        $price_id_raw = isset($_GET['price_id']) ? wp_unslash($_GET['price_id']) : '';
-        $price_id = is_string($price_id_raw) ? sanitize_text_field($price_id_raw) : '';
+        $price_id = isset($_GET['price_id']) ? sanitize_text_field(wp_unslash($_GET['price_id'])) : '';
         if (empty($price_id)) {
             wp_die(esc_html__('Invalid checkout request.', 'beepbeep-ai-alt-text-generator'));
         }
@@ -1110,8 +1109,8 @@ class Core {
             return;
         }
 
-	        $page_raw = isset($_GET['page']) ? wp_unslash($_GET['page']) : '';
-	        $current_page = is_string($page_raw) ? sanitize_key($page_raw) : '';
+	        $page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+	        $current_page = $page_input;
 	        $current_step = isset($_GET['step']) ? absint(wp_unslash($_GET['step'])) : 0;
 	        $is_onboarding_page = ($current_page === 'bbai-onboarding');
 	        $is_step3 = ($is_onboarding_page && $current_step === 3);
@@ -1152,10 +1151,10 @@ class Core {
                 $model = isset($input['model']) ? (string)$input['model'] : 'gpt-4o-mini';
                 $out['model'] = $model ? sanitize_text_field($model) : 'gpt-4o-mini';
                 $out['max_words']        = max(4, intval($input['max_words'] ?? 16));
-                $lang_input_raw = isset($input['language']) ? (string)$input['language'] : 'en-GB';
-                $lang_input = $lang_input_raw ? sanitize_text_field($lang_input_raw) : 'en-GB';
-                $custom_input_raw = isset($input['language_custom']) ? (string)$input['language_custom'] : '';
-                $custom_input = $custom_input_raw ? sanitize_text_field($custom_input_raw) : '';
+                $lang_input_input = isset($input['language']) ? (string)$input['language'] : 'en-GB';
+                $lang_input = $lang_input_input ? sanitize_text_field($lang_input_input) : 'en-GB';
+                $custom_input_input = isset($input['language_custom']) ? (string)$input['language_custom'] : '';
+                $custom_input = $custom_input_input ? sanitize_text_field($custom_input_input) : '';
                 if ($lang_input === 'custom'){
                     $out['language'] = $custom_input ?: 'en-GB';
                     $out['language_custom'] = $custom_input;
@@ -1178,8 +1177,8 @@ class Core {
                 $out['dry_run'] = !empty($input['dry_run']);
                 $custom_prompt = isset($input['custom_prompt']) ? (string)$input['custom_prompt'] : '';
                 $out['custom_prompt'] = $custom_prompt ? wp_kses_post($custom_prompt) : '';
-                $notify_raw = $input['notify_email'] ?? ($existing['notify_email'] ?? get_option('admin_email'));
-                $notify = is_string($notify_raw) ? sanitize_text_field($notify_raw) : '';
+                $notify_input = $input['notify_email'] ?? ($existing['notify_email'] ?? get_option('admin_email'));
+                $notify = is_string($notify_input) ? sanitize_text_field($notify_input) : '';
                 $out['notify_email'] = $notify && is_email($notify) ? $notify : ($existing['notify_email'] ?? get_option('admin_email'));
                 $out['usage']            = $existing['usage'] ?? $this->default_usage();
 
@@ -1678,8 +1677,8 @@ class Core {
         // Consider user registered if authenticated, has license, or has stored credentials
         // This ensures tabs show even if current auth check fails
         $has_registered_user = $is_authenticated || $has_license || $has_stored_token || $has_stored_license;
-	        $page_raw = isset($_GET['page']) ? wp_unslash($_GET['page']) : '';
-	        $bbai_page_slug = is_string($page_raw) ? sanitize_key($page_raw) : '';
+	        $page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+	        $bbai_page_slug = $page_input;
         
         // Initialize $tabs array (will be populated in if/else blocks below)
         $tabs = [];
@@ -1757,13 +1756,13 @@ class Core {
             ];
             
 	            // Determine current tab from URL
-	            $page_raw = isset($_GET['page']) ? wp_unslash($_GET['page']) : 'bbai';
-	            $current_page = is_string($page_raw) ? sanitize_key($page_raw) : 'bbai';
+	            $page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : 'bbai';
+	            $current_page = $page_input ?: 'bbai';
 	            $tab_from_page = $page_to_tab[$current_page] ?? 'dashboard';
 	            
 	            // Use tab from URL parameter if provided, otherwise use page slug mapping
-	            $tab_raw = isset($_GET['tab']) ? wp_unslash($_GET['tab']) : '';
-	            $tab = (is_string($tab_raw) && $tab_raw !== '') ? sanitize_key($tab_raw) : $tab_from_page;
+	            $tab_input = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : '';
+	            $tab = $tab_input !== '' ? $tab_input : $tab_from_page;
 
             // If trying to access restricted tabs, redirect to dashboard
             if (!isset($tabs) || !is_array($tabs) || !in_array($tab, array_keys($tabs))) {
@@ -2242,17 +2241,17 @@ class Core {
 
     private function build_prompt($attachment_id, $opts, $existing_alt = '', bool $is_retry = false, array $feedback = []){
         $file     = get_attached_file($attachment_id);
-        $title_raw = get_the_title($attachment_id);
-        $filename = $file ? wp_basename($file) : (is_string($title_raw) ? $title_raw : '');
-        $title    = is_string($title_raw) ? $title_raw : '';
+        $title_input = get_the_title($attachment_id);
+        $filename = $file ? wp_basename($file) : (is_string($title_input) ? $title_input : '');
+        $title    = is_string($title_input) ? $title_input : '';
         $caption  = wp_get_attachment_caption($attachment_id);
-        $parent_raw = get_post_field('post_title', wp_get_post_parent_id($attachment_id));
-        $parent   = is_string($parent_raw) ? $parent_raw : '';
-        $lang_raw = $opts['language'] ?? 'en-GB';
-        if ($lang_raw === 'custom' && !empty($opts['language_custom'])){
+        $parent_input = get_post_field('post_title', wp_get_post_parent_id($attachment_id));
+        $parent   = is_string($parent_input) ? $parent_input : '';
+        $lang_input = $opts['language'] ?? 'en-GB';
+        if ($lang_input === 'custom' && !empty($opts['language_custom'])){
             $lang = sanitize_text_field($opts['language_custom']);
         } else {
-            $lang = $lang_raw;
+            $lang = $lang_input;
         }
         $tone     = $opts['tone'] ?? 'professional, accessible';
         $max      = max(4, intval($opts['max_words'] ?? 16));
@@ -2361,10 +2360,10 @@ class Core {
             $missing  = max(0, $total - $with_alt);
 
             // Cache date/time format to avoid duplicate get_option() calls
-            $date_format_raw = get_option('date_format');
-            $time_format_raw = get_option('time_format');
-            $date_format = is_string($date_format_raw) ? $date_format_raw : '';
-            $time_format = is_string($time_format_raw) ? $time_format_raw : '';
+            $date_format_input = get_option('date_format');
+            $time_format_input = get_option('time_format');
+            $date_format = is_string($date_format_input) ? $date_format_input : '';
+            $time_format = is_string($time_format_input) ? $time_format_input : '';
             $datetime_format = (!empty($date_format) && !empty($time_format)) ? $date_format . ' ' . $time_format : 'Y-m-d H:i:s';
 
             $opts = get_option(self::OPTION_KEY, []);
@@ -2373,12 +2372,12 @@ class Core {
 	                $usage['last_request_formatted'] = mysql2date($datetime_format, $usage['last_request']);
 	            }
 	
-	            $latest_generated_raw = $wpdb->get_var($wpdb->prepare(
+	            $latest_generated_input = $wpdb->get_var($wpdb->prepare(
 	                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- Table identifiers come from trusted core $wpdb properties; value placeholders remain prepared.
 	                'SELECT meta_value FROM ' . $wpdb->postmeta . ' WHERE meta_key = %s ORDER BY meta_value DESC LIMIT 1',
 	                '_bbai_generated_at'
 	            ));
-	            $latest_generated = $latest_generated_raw ? mysql2date($datetime_format, $latest_generated_raw) : '';
+	            $latest_generated = $latest_generated_input ? mysql2date($datetime_format, $latest_generated_input) : '';
 	
 	            $top_source_row = $wpdb->get_row(
 	                $wpdb->prepare(
@@ -2401,7 +2400,7 @@ class Core {
                 'usage'     => $usage,
                 'token_limit' => intval($opts['token_limit'] ?? 0),
                 'latest_generated' => $latest_generated,
-                'latest_generated_raw' => $latest_generated_raw,
+                'latest_generated_raw' => $latest_generated_input,
                 'top_source_key' => $top_source_key,
                 'top_source_count' => $top_source_count,
                 'dry_run_enabled' => !empty($opts['dry_run']),
@@ -2437,12 +2436,12 @@ class Core {
         $tokens = intval(get_post_meta($attachment_id, '_bbai_tokens_total', true));
         $prompt = intval(get_post_meta($attachment_id, '_bbai_tokens_prompt', true));
         $completion = intval(get_post_meta($attachment_id, '_bbai_tokens_completion', true));
-        $generated_raw = get_post_meta($attachment_id, '_bbai_generated_at', true);
-        $date_format_raw = get_option('date_format');
-        $time_format_raw = get_option('time_format');
-        $date_format = is_string($date_format_raw) && !empty($date_format_raw) ? $date_format_raw : 'Y-m-d';
-        $time_format = is_string($time_format_raw) && !empty($time_format_raw) ? $time_format_raw : 'H:i:s';
-        $generated = $generated_raw ? mysql2date($date_format . ' ' . $time_format, $generated_raw) : '';
+        $generated_input = get_post_meta($attachment_id, '_bbai_generated_at', true);
+        $date_format_input = get_option('date_format');
+        $time_format_input = get_option('time_format');
+        $date_format = is_string($date_format_input) && !empty($date_format_input) ? $date_format_input : 'Y-m-d';
+        $time_format = is_string($time_format_input) && !empty($time_format_input) ? $time_format_input : 'H:i:s';
+        $generated = $generated_input ? mysql2date($date_format . ' ' . $time_format, $generated_input) : '';
         $source_key = sanitize_key(get_post_meta($attachment_id, '_bbai_source', true) ?: 'unknown');
         if (!$source_key){
             $source_key = 'unknown';
@@ -2456,7 +2455,7 @@ class Core {
             'tokens' => $tokens,
             'prompt' => $prompt,
             'completion' => $completion,
-            'generated_raw' => $generated_raw,
+            'generated_raw' => $generated_input,
             'generated' => $generated,
             'source_key' => $source_key,
             'source_label' => $this->format_source_label($source_key),
@@ -2508,15 +2507,15 @@ class Core {
         }
 
         $status     = sanitize_key(get_post_meta($attachment_id, '_bbai_review_status', true));
-        $grade_raw  = get_post_meta($attachment_id, '_bbai_review_grade', true);
+        $grade_input  = get_post_meta($attachment_id, '_bbai_review_grade', true);
         $summary    = get_post_meta($attachment_id, '_bbai_review_summary', true);
         $model      = get_post_meta($attachment_id, '_bbai_review_model', true);
         $reviewed_at = get_post_meta($attachment_id, '_bbai_reviewed_at', true);
 
-        $issues_raw = get_post_meta($attachment_id, '_bbai_review_issues', true);
+        $issues_input = get_post_meta($attachment_id, '_bbai_review_issues', true);
         $issues = [];
-        if ($issues_raw){
-            $decoded = json_decode($issues_raw, true);
+        if ($issues_input){
+            $decoded = json_decode($issues_input, true);
             if (is_array($decoded)){
                 foreach ($decoded as $issue){
                     if (is_string($issue)){
@@ -2532,7 +2531,7 @@ class Core {
         return [
             'score'   => max(0, min(100, $score)),
             'status'  => $status ?: null,
-            'grade'   => is_string($grade_raw) ? sanitize_text_field($grade_raw) : null,
+            'grade'   => is_string($grade_input) ? sanitize_text_field($grade_input) : null,
             'summary' => is_string($summary) ? sanitize_text_field($summary) : '',
             'issues'  => $issues,
             'model'   => is_string($model) ? sanitize_text_field($model) : '',
@@ -2830,10 +2829,10 @@ class Core {
 	        }
 
         // Cache date format to avoid repeated get_option() calls
-        $date_format_raw = get_option('date_format');
-        $time_format_raw = get_option('time_format');
-        $date_format = is_string($date_format_raw) && !empty($date_format_raw) ? $date_format_raw : 'Y-m-d';
-        $time_format = is_string($time_format_raw) && !empty($time_format_raw) ? $time_format_raw : 'H:i:s';
+        $date_format_input = get_option('date_format');
+        $time_format_input = get_option('time_format');
+        $date_format = is_string($date_format_input) && !empty($date_format_input) ? $date_format_input : 'Y-m-d';
+        $time_format = is_string($time_format_input) && !empty($time_format_input) ? $time_format_input : 'H:i:s';
         $date_time_format = $date_format . ' ' . $time_format;
         $upload_dir = wp_upload_dir();
 
@@ -4295,8 +4294,8 @@ class Core {
 
         // Detect any BeepBeep AI admin screens (top-level or subpages)
         // Check hook name first, then fallback to $_GET['page'] parameter
-	        $page_raw = isset($_GET['page']) ? wp_unslash($_GET['page']) : '';
-	        $current_page = is_string($page_raw) ? sanitize_key($page_raw) : '';
+	        $page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+	        $current_page = $page_input;
         $hook_str = (string)($hook ?? '');
         $is_bbai_page = strpos($hook_str, 'toplevel_page_bbai') === 0
             || strpos($hook_str, 'bbai_page_bbai') === 0
@@ -4836,8 +4835,7 @@ class Core {
             return;
         }
 
-        $milestone_raw = isset($_POST['milestone']) ? wp_unslash($_POST['milestone']) : 0;
-        $milestone = absint($milestone_raw);
+        $milestone = isset($_POST['milestone']) ? absint(wp_unslash($_POST['milestone'])) : 0;
         if ($milestone <= 0) {
             wp_send_json_error(['message' => __('Invalid milestone.', 'beepbeep-ai-alt-text-generator')]);
             return;
@@ -4868,8 +4866,7 @@ class Core {
             return;
         }
 
-        $milestone_raw = isset($_POST['milestone']) ? wp_unslash($_POST['milestone']) : 0;
-        $milestone = absint($milestone_raw);
+        $milestone = isset($_POST['milestone']) ? absint(wp_unslash($_POST['milestone'])) : 0;
         if ($milestone <= 0) {
             wp_send_json_error(['message' => __('Invalid milestone.', 'beepbeep-ai-alt-text-generator')]);
             return;
@@ -5065,8 +5062,7 @@ class Core {
             wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
             return;
         }
-        $job_id_raw = isset($_POST['job_id']) ? wp_unslash($_POST['job_id']) : '';
-        $job_id = absint($job_id_raw);
+        $job_id = isset($_POST['job_id']) ? absint(wp_unslash($_POST['job_id'])) : 0;
         if ($job_id <= 0) {
             wp_send_json_error(['message' => __('Invalid job ID.', 'beepbeep-ai-alt-text-generator')]);
             return;
@@ -5136,8 +5132,9 @@ class Core {
             return;
         }
 
-        $source_raw = isset($_POST['source']) ? wp_unslash($_POST['source']) : 'dashboard';
-        $source = sanitize_key($source_raw);
+        $source_input = isset($_POST['source']) ? sanitize_key(wp_unslash($_POST['source'])) : 'dashboard';
+        $allowed_sources = [ 'dashboard', 'bulk', 'bulk-regenerate', 'library', 'manual', 'onboarding', 'queue', 'unknown' ];
+        $source = in_array($source_input, $allowed_sources, true) ? $source_input : 'dashboard';
         $event  = [
             'source' => $source,
             'user_id' => get_current_user_id(),
@@ -5190,17 +5187,15 @@ class Core {
 	            return;
 	        }
         
-        $attachment_id_raw = isset($_POST['attachment_id']) ? wp_unslash($_POST['attachment_id']) : '';
-	        $attachment_id = absint($attachment_id_raw);
-	        if (!$attachment_id) {
-	            wp_send_json_error(['message' => __('Invalid attachment ID', 'beepbeep-ai-alt-text-generator')]);
-	            return;
-	        }
+        $attachment_id = isset($_POST['attachment_id']) ? absint( wp_unslash( $_POST['attachment_id'] ) ) : 0;
+        if ( 0 === $attachment_id ) {
+            wp_send_json_error(['message' => __('Invalid attachment ID', 'beepbeep-ai-alt-text-generator')]);
+            return;
+        }
         
         // Log the attachment_id being received for debugging
         if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
             \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'Regenerate request received', [
-                'attachment_id_raw' => $attachment_id_raw,
                 'attachment_id' => $attachment_id,
             ], 'generation');
         }
@@ -5410,10 +5405,10 @@ class Core {
 	            return;
 	        }
         
-        $attachment_ids_raw = isset($_POST['attachment_ids']) ? wp_unslash($_POST['attachment_ids']) : [];
-        $attachment_ids = is_array($attachment_ids_raw) ? array_map('absint', $attachment_ids_raw) : [];
-        $source_raw = isset($_POST['source']) ? wp_unslash($_POST['source']) : 'bulk';
-        $source = sanitize_text_field($source_raw);
+        $attachment_ids = isset($_POST['attachment_ids']) && is_array($_POST['attachment_ids']) ? array_map('absint', wp_unslash($_POST['attachment_ids'])) : [];
+        $source_input = isset($_POST['source']) ? sanitize_key(wp_unslash($_POST['source'])) : 'bulk';
+        $allowed_sources = [ 'bulk', 'bulk-regenerate', 'dashboard', 'library', 'manual', 'onboarding', 'queue', 'unknown' ];
+        $source = in_array($source_input, $allowed_sources, true) ? $source_input : 'bulk';
         
 	        if (empty($attachment_ids)) {
 	            wp_send_json_error(['message' => __('Invalid attachment IDs', 'beepbeep-ai-alt-text-generator')]);
@@ -5673,11 +5668,9 @@ class Core {
             return;
         }
 
-	        $email_raw = isset($_POST['email']) ? wp_unslash($_POST['email']) : '';
-	        $email = is_string($email_raw) ? sanitize_email($email_raw) : '';
-	        // Passwords may contain characters that sanitize_text_field() would alter.
-	        $password_raw = wp_unslash( $_POST['password'] ?? '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-	        $password     = is_string( $password_raw ) ? $password_raw : '';
+	        $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
+	        $password_input = isset($_POST['password']) ? wp_unslash($_POST['password']) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords must not be text-sanitized.
+	        $password = is_string($password_input) ? $password_input : '';
 
         if (empty($email) || empty($password)) {
             wp_send_json_error(['message' => __('Email and password are required', 'beepbeep-ai-alt-text-generator')]);
@@ -5841,8 +5834,7 @@ class Core {
             return;
         }
 
-        $license_key_raw = isset($_POST['license_key']) ? wp_unslash($_POST['license_key']) : '';
-        $license_key = is_string($license_key_raw) ? sanitize_text_field($license_key_raw) : '';
+        $license_key = isset($_POST['license_key']) ? sanitize_text_field(wp_unslash($_POST['license_key'])) : '';
 
         if (empty($license_key)) {
             wp_send_json_error(['message' => __('License key is required', 'beepbeep-ai-alt-text-generator')]);
@@ -5963,8 +5955,7 @@ class Core {
             return;
         }
 
-        $site_id_raw = isset($_POST['site_id']) ? wp_unslash($_POST['site_id']) : '';
-        $site_id = is_string($site_id_raw) ? sanitize_text_field($site_id_raw) : '';
+        $site_id = isset($_POST['site_id']) ? sanitize_text_field(wp_unslash($_POST['site_id'])) : '';
         if (empty($site_id)) {
             wp_send_json_error([
                 'message' => __('Site ID is required', 'beepbeep-ai-alt-text-generator')
@@ -6057,11 +6048,9 @@ class Core {
             return;
         }
 
-	        $email_raw = isset($_POST['email']) ? wp_unslash($_POST['email']) : '';
-	        $email = is_string($email_raw) ? sanitize_email($email_raw) : '';
-	        // Passwords may contain characters that sanitize_text_field() would alter.
-	        $password_raw = wp_unslash( $_POST['password'] ?? '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-	        $password     = is_string( $password_raw ) ? $password_raw : '';
+	        $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
+	        $password_input = isset($_POST['password']) ? wp_unslash($_POST['password']) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords must not be text-sanitized.
+	        $password = is_string($password_input) ? $password_input : '';
 
         if (empty($email) || !is_email($email)) {
             wp_send_json_error([
@@ -6171,13 +6160,15 @@ class Core {
         // Allow checkout without authentication - users can create account during checkout
         // Authentication is optional for checkout, backend will handle account creation
 
-        $price_id_raw = isset($_POST['price_id']) ? wp_unslash($_POST['price_id']) : '';
-        $price_id = is_string($price_id_raw) ? sanitize_text_field($price_id_raw) : '';
+        $price_id = isset($_POST['price_id']) ? sanitize_text_field(wp_unslash($_POST['price_id'])) : '';
 
         // Resolve plan_id to a Stripe price ID when price_id is not provided directly.
         if (empty($price_id)) {
-            $plan_id_raw = isset($_POST['plan_id']) ? wp_unslash($_POST['plan_id']) : '';
-            $plan_id = is_string($plan_id_raw) ? sanitize_key($plan_id_raw) : '';
+            $plan_id = isset($_POST['plan_id']) ? sanitize_key(wp_unslash($_POST['plan_id'])) : '';
+            $valid_plan_ids = array_keys($this->get_checkout_price_ids());
+            if (!in_array($plan_id, $valid_plan_ids, true)) {
+                $plan_id = '';
+            }
             if (!empty($plan_id)) {
                 $price_id = $this->get_checkout_price_id($plan_id);
             }
@@ -6307,8 +6298,7 @@ class Core {
             return;
         }
 
-        $email_raw = isset($_POST['email']) ? wp_unslash($_POST['email']) : '';
-        $email = is_string($email_raw) ? sanitize_email($email_raw) : '';
+        $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
         
         if (empty($email) || !is_email($email)) {
             wp_send_json_error([
@@ -6354,13 +6344,10 @@ class Core {
             return;
         }
 
-	        $email_raw = isset($_POST['email']) ? wp_unslash($_POST['email']) : '';
-	        $email = is_string($email_raw) ? sanitize_email($email_raw) : '';
-	        $token_raw = isset($_POST['token']) ? wp_unslash($_POST['token']) : '';
-	        $token = is_string($token_raw) ? sanitize_text_field($token_raw) : '';
-	        // Passwords may contain characters that sanitize_text_field() would alter.
-	        $password_raw = wp_unslash( $_POST['password'] ?? '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-	        $password     = is_string( $password_raw ) ? $password_raw : '';
+	        $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
+	        $token = isset($_POST['token']) ? sanitize_text_field(wp_unslash($_POST['token'])) : '';
+	        $password_input = isset($_POST['password']) ? wp_unslash($_POST['password']) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords must not be text-sanitized.
+	        $password = is_string($password_input) ? $password_input : '';
         
         if (empty($email) || !is_email($email)) {
             wp_send_json_error([
@@ -6455,8 +6442,7 @@ class Core {
             return;
         }
 
-        $attachment_ids_raw = isset($_POST['attachment_ids']) ? wp_unslash($_POST['attachment_ids']) : [];
-        $attachment_ids = is_array($attachment_ids_raw) ? array_map('absint', (array) $attachment_ids_raw) : [];
+        $attachment_ids = isset($_POST['attachment_ids']) && is_array($_POST['attachment_ids']) ? array_map('absint', wp_unslash($_POST['attachment_ids'])) : [];
         if (empty($attachment_ids)) {
             wp_send_json_error(['message' => __('No attachment IDs provided.', 'beepbeep-ai-alt-text-generator')]);
             return;
@@ -6597,11 +6583,11 @@ class Core {
         // Get recent activity from usage logs
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/usage/class-usage-logs.php';
         
-        $limit_raw = isset($_POST['limit']) ? wp_unslash($_POST['limit']) : 10;
-        $limit = absint($limit_raw);
+        $limit = isset($_POST['limit']) ? absint(wp_unslash($_POST['limit'])) : 10;
         $filters = [
             'per_page' => min($limit, 50), // Max 50 items
             'page' => 1,
+            'skip_site_filter' => true, // Skip site_id filter for activity timeline (display only)
         ];
 
         $result = \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::get_usage_events($filters);
@@ -6857,13 +6843,23 @@ class Core {
 
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-contact-submissions.php';
 
+        $status_input = isset($_POST['status']) ? sanitize_key(wp_unslash($_POST['status'])) : '';
+        $allowed_statuses = ['', 'new', 'read', 'replied'];
+        $status = in_array($status_input, $allowed_statuses, true) ? $status_input : '';
+        $orderby_input = isset($_POST['orderby']) ? sanitize_key(wp_unslash($_POST['orderby'])) : 'created_at';
+        $allowed_orderby = ['created_at', 'name', 'email', 'status'];
+        $orderby = in_array($orderby_input, $allowed_orderby, true) ? $orderby_input : 'created_at';
+        $order_input = isset($_POST['order']) ? strtoupper(sanitize_key(wp_unslash($_POST['order']))) : 'DESC';
+        $allowed_order = ['ASC', 'DESC'];
+        $order = in_array($order_input, $allowed_order, true) ? $order_input : 'DESC';
+
         $args = [
             'per_page' => isset($_POST['per_page']) ? absint(wp_unslash($_POST['per_page'])) : 20,
             'page'     => isset($_POST['page']) ? absint(wp_unslash($_POST['page'])) : 1,
-            'status'   => isset($_POST['status']) ? sanitize_text_field(wp_unslash($_POST['status'])) : '',
+            'status'   => $status,
             'search'   => isset($_POST['search']) ? sanitize_text_field(wp_unslash($_POST['search'])) : '',
-            'orderby'  => isset($_POST['orderby']) ? sanitize_text_field(wp_unslash($_POST['orderby'])) : 'created_at',
-            'order'    => isset($_POST['order']) ? sanitize_text_field(wp_unslash($_POST['order'])) : 'DESC',
+            'orderby'  => $orderby,
+            'order'    => $order,
         ];
 
         // If ID is provided, get single submission
@@ -6906,7 +6902,9 @@ class Core {
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-contact-submissions.php';
 
         $id = isset($_POST['id']) ? absint(wp_unslash($_POST['id'])) : 0;
-        $status = isset($_POST['status']) ? sanitize_text_field(wp_unslash($_POST['status'])) : '';
+        $status_input = isset($_POST['status']) ? sanitize_key(wp_unslash($_POST['status'])) : '';
+        $allowed_statuses = ['new', 'read', 'replied'];
+        $status = in_array($status_input, $allowed_statuses, true) ? $status_input : 'new';
 
         if (!$id) {
             wp_send_json_error(['message' => __('Invalid submission ID', 'beepbeep-ai-alt-text-generator')]);
