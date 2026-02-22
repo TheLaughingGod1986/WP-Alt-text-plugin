@@ -1,0 +1,331 @@
+/**
+ * Header Component
+ * Dark header with navigation and account bar
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Base Header */
+.bbai-header {
+    background: #212B36;
+    padding: 16px 32px;
+    margin-bottom: 0;
+    border-bottom: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.bbai-header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1600px;
+    margin: 0 auto;
+    gap: 24px;
+}
+
+.bbai-header-actions {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* Logo */
+.bbai-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.bbai-logo-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.bbai-logo-text {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.2;
+}
+
+.bbai-logo-tagline {
+    display: none;
+}
+
+.bbai-logo-icon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+}
+
+.bbai-logo-icon rect {
+    rx: 8;
+}
+
+/* Navigation */
+.bbai-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.bbai-nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 8px 16px;
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: none;
+    border-radius: 20px;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+}
+
+/* Ensure inactive links are clearly visible */
+.bbai-nav-link:not(.active) {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.bbai-nav-link svg {
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.bbai-nav-link:not(.active) svg {
+    opacity: 0.75;
+}
+
+.bbai-nav-link:hover:not(.active) {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.bbai-nav-link:hover:not(.active) svg {
+    opacity: 1;
+}
+
+.bbai-nav-link:focus {
+    outline: none;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.bbai-nav-link:focus svg {
+    opacity: 1;
+}
+
+.bbai-nav-link:active {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(0.98);
+}
+
+.bbai-nav-link.active {
+    color: #ffffff;
+    background: #374151;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.bbai-nav-link.active svg {
+    opacity: 1;
+}
+
+.bbai-nav-link.active:hover {
+    background: #4B5563;
+    color: #ffffff;
+}
+
+/* Guide/Help Link */
+.bbai-header-guide-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 16px;
+    transition: all 0.2s ease;
+    font-size: 13px;
+    font-weight: 500;
+    margin-left: 8px;
+    margin-right: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.bbai-header-guide-link:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.bbai-header-guide-link:focus {
+    outline: none;
+    color: #ffffff;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.bbai-header-guide-link svg {
+    flex-shrink: 0;
+}
+
+.bbai-header-guide-text {
+    white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+    .bbai-header-guide-link {
+        padding: 5px 10px;
+        margin-left: 4px;
+        margin-right: 8px;
+    }
+
+    .bbai-header-guide-text {
+        display: none;
+    }
+}
+
+/* Account Bar */
+.bbai-header-account-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 6px 6px 14px;
+    background: #374151;
+    border-radius: 24px;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.bbai-header-account-email {
+    color: #ffffff;
+    font-weight: 500;
+    font-size: 13px;
+    margin-right: 2px;
+}
+
+.bbai-header-plan-badge {
+    padding: 3px 8px;
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    line-height: 1.4;
+}
+
+.bbai-header-upgrade-btn,
+.bbai-header-manage-btn {
+    padding: 6px 14px;
+    background: #10B981;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.bbai-header-upgrade-btn:hover {
+    background: #059669;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+.bbai-header-manage-btn {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+}
+
+.bbai-header-manage-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+}
+
+.bbai-header-disconnect-btn,
+.bbai-header-logout-btn {
+    padding: 6px 14px;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.bbai-header-disconnect-btn:hover,
+.bbai-header-logout-btn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.bbai-header-disconnect-btn:active,
+.bbai-header-logout-btn:active {
+    transform: translateY(0);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.bbai-header-disconnect-btn:disabled,
+.bbai-header-logout-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .bbai-header {
+        padding: 12px 16px;
+    }
+
+    .bbai-header-content {
+        gap: 12px;
+    }
+
+    .bbai-nav {
+        gap: 4px;
+    }
+
+    .bbai-nav-link {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 768px) {
+    .bbai-header-account-bar {
+        padding: 4px 4px 4px 10px;
+        gap: 6px;
+    }
+
+    .bbai-header-account-email {
+        font-size: 12px;
+    }
+
+    .bbai-header-upgrade-btn,
+    .bbai-header-manage-btn,
+    .bbai-header-disconnect-btn {
+        padding: 4px 10px;
+        font-size: 11px;
+    }
+}

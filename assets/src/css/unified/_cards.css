@@ -1,0 +1,1129 @@
+/**
+ * Card Components - Premium SaaS Design
+ * Refined shadows, subtle animations, professional polish
+ *
+ * @package BeepBeep_AI
+ * @since 8.0.0
+ */
+
+/* ============================================
+   BASE CARD
+   ============================================ */
+
+.bbai-card {
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: 16px; /* Consistent card radius */
+    padding: 24px; /* Consistent card padding */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: box-shadow var(--bbai-transition-base) var(--bbai-ease-out),
+                border-color var(--bbai-transition-base) var(--bbai-ease-out),
+                transform var(--bbai-transition-base) var(--bbai-ease-out);
+}
+
+.bbai-card:hover {
+    box-shadow: var(--bbai-shadow-card-hover);
+}
+
+.bbai-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--bbai-space-4);
+    margin-bottom: var(--bbai-space-5);
+    padding-bottom: var(--bbai-space-5);
+    border-bottom: 1px solid var(--bbai-border);
+}
+
+.bbai-card-title {
+    font-size: var(--bbai-text-lg);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0;
+    line-height: var(--bbai-leading-tight);
+}
+
+.bbai-card-subtitle {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+    margin: var(--bbai-space-1) 0 0 0;
+}
+
+.bbai-card-body {
+    padding: 0;
+}
+
+.bbai-card-footer {
+    margin-top: var(--bbai-space-5);
+    padding-top: var(--bbai-space-5);
+    border-top: 1px solid var(--bbai-border);
+}
+
+/* ============================================
+   STAT CARDS - Metric Display
+   ============================================ */
+
+.bbai-stat-card {
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: 16px; /* Consistent card radius */
+    padding: 24px; /* Consistent card padding */
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: all var(--bbai-transition-base) var(--bbai-ease-out);
+}
+
+.bbai-stat-card:hover {
+    border-color: var(--bbai-primary);
+    box-shadow: var(--bbai-shadow-card-hover), 0 0 0 3px var(--bbai-primary-soft);
+    transform: translateY(-2px);
+}
+
+.bbai-stat-icon {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto var(--bbai-space-4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--bbai-radius-xl);
+    background: var(--bbai-primary-soft);
+    color: var(--bbai-primary);
+}
+
+.bbai-stat-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.bbai-stat-value {
+    font-size: var(--bbai-text-4xl);
+    font-weight: var(--bbai-font-bold);
+    color: var(--bbai-text);
+    line-height: 1;
+    margin-bottom: var(--bbai-space-2);
+    letter-spacing: -0.02em;
+}
+
+.bbai-stat-label {
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.bbai-stat-change {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-1);
+    margin-top: var(--bbai-space-2);
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-medium);
+}
+
+.bbai-stat-change--positive {
+    color: var(--bbai-success);
+}
+
+.bbai-stat-change--negative {
+    color: var(--bbai-error);
+}
+
+/* ============================================
+   USAGE CARD - Clean White Design
+   ============================================ */
+
+.bbai-usage-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: var(--bbai-radius-xl);
+    padding: var(--bbai-space-6);
+    color: var(--bbai-text);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.bbai-usage-card * {
+    color: var(--bbai-text);
+    position: relative;
+}
+
+/* Ensure buttons maintain their specific colors */
+.bbai-usage-card .bbai-usage-action-btn,
+.bbai-usage-card .bbai-usage-action-btn *,
+.bbai-usage-card .bbai-usage-upgrade-link,
+.bbai-usage-card .bbai-usage-upgrade-link * {
+    color: inherit;
+}
+
+/* Plan Badge */
+.bbai-usage-plan-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: var(--bbai-radius-full);
+    font-size: 11px;
+    font-weight: var(--bbai-font-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--bbai-space-3);
+    width: fit-content;
+    align-self: flex-start;
+}
+
+.bbai-usage-plan-badge--free,
+.bbai-usage-card .bbai-usage-plan-badge--free {
+    background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%) !important;
+    color: #ffffff !important;
+}
+
+.bbai-usage-plan-badge--growth {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    color: #ffffff !important;
+}
+
+.bbai-usage-plan-badge--agency-polished {
+    background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+    color: #ffffff !important;
+}
+
+/* Card Title */
+.bbai-usage-card-title {
+    font-size: 12px;
+    font-weight: var(--bbai-font-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--bbai-text-muted);
+    margin: 0 0 var(--bbai-space-4) 0;
+    text-align: center;
+}
+
+.bbai-usage-card-subtitle {
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-normal);
+    color: var(--bbai-text-muted);
+    margin: 0 0 var(--bbai-space-4) 0;
+    line-height: 1.5;
+}
+
+/* Usage Count Text - "X of Y images used this month" */
+.bbai-usage-count-text {
+    font-size: 15px;
+    font-weight: var(--bbai-font-normal);
+    color: var(--bbai-text);
+    margin: var(--bbai-space-4) 0;
+    text-align: center;
+    line-height: 1.4;
+}
+
+.bbai-usage-count-text strong {
+    font-weight: var(--bbai-font-bold);
+    color: var(--bbai-text);
+}
+
+/* Linear Progress Bar */
+.bbai-usage-linear-progress {
+    width: 100%;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: var(--bbai-space-2) 0 var(--bbai-space-4) 0;
+}
+
+.bbai-usage-linear-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10B981 0%, #059669 100%);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+/* Progress Ring */
+.bbai-usage-ring {
+    position: relative;
+    width: 160px;
+    height: 160px;
+    margin: 0 auto var(--bbai-space-6);
+}
+
+.bbai-usage-ring svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+    filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.3));
+}
+
+.bbai-usage-ring-bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.15);
+    stroke-width: 10;
+}
+
+.bbai-usage-ring-progress {
+    fill: none;
+    stroke: #10B981;
+    stroke-width: 10;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bbai-usage-percent {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.bbai-usage-percent-value {
+    font-size: var(--bbai-text-4xl);
+    font-weight: var(--bbai-font-bold);
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+
+.bbai-usage-percent-label {
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-medium);
+    opacity: 0.8;
+    margin-top: var(--bbai-space-1);
+}
+
+.bbai-usage-count {
+    font-size: var(--bbai-text-base);
+    font-weight: var(--bbai-font-medium);
+    margin-bottom: var(--bbai-space-1);
+}
+
+.bbai-usage-count strong {
+    font-weight: var(--bbai-font-bold);
+}
+
+.bbai-usage-reset {
+    font-size: var(--bbai-text-sm);
+    opacity: 0.7;
+    margin-bottom: var(--bbai-space-6);
+}
+
+/* Plan Badge - Pro/Agency variants for dark backgrounds */
+.bbai-usage-plan-badge--pro {
+    background: rgba(16, 185, 129, 0.3);
+    border: 1px solid rgba(16, 185, 129, 0.5);
+    color: #ffffff !important;
+}
+
+.bbai-usage-plan-badge--agency {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.4) 0%, rgba(147, 51, 234, 0.4) 100%);
+    border: 1px solid rgba(124, 58, 237, 0.5);
+    color: #ffffff !important;
+}
+
+/* Action Links - Enhanced Upgrade Button - PRIMARY CTA */
+.bbai-usage-upgrade-link {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: var(--bbai-space-3);
+    padding: 16px 32px;
+    font-size: var(--bbai-text-base);
+    font-weight: var(--bbai-font-bold);
+    color: white !important;
+    background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%) !important;
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    border-radius: var(--bbai-radius-lg);
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 16px rgba(5, 150, 105, 0.4), 0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+    letter-spacing: 0.01em;
+    text-transform: none;
+    min-height: 48px;
+    white-space: nowrap;
+    text-align: center !important;
+    margin: var(--bbai-space-6) auto 0 !important;
+    width: 100%;
+    max-width: 100%;
+    z-index: 10;
+}
+
+.bbai-usage-upgrade-link > span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    flex-shrink: 0;
+    line-height: 1.5;
+}
+
+.bbai-usage-upgrade-link .bbai-upgrade-arrow {
+    flex-shrink: 0;
+    margin-left: 0;
+    display: inline-block;
+    vertical-align: middle;
+    width: 18px;
+    height: 18px;
+}
+
+/* Shimmer effect on button */
+.bbai-usage-upgrade-link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.bbai-usage-upgrade-link:hover::before {
+    left: 100%;
+}
+
+.bbai-usage-upgrade-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(5, 150, 105, 0.5), 0 3px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    background: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.bbai-usage-upgrade-link:active {
+    transform: translateY(-1px) scale(0.98);
+    box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4), 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.bbai-usage-upgrade-link:focus-visible {
+    outline: 3px solid rgba(255, 255, 255, 0.8);
+    outline-offset: 3px;
+    box-shadow: 0 10px 32px rgba(5, 150, 105, 0.5), 0 6px 16px rgba(0, 0, 0, 0.2), 0 0 0 4px rgba(16, 185, 129, 0.3);
+}
+
+/* Arrow icon animation */
+.bbai-usage-upgrade-link .bbai-upgrade-arrow {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+    margin-left: 4px;
+}
+
+.bbai-usage-upgrade-link:hover .bbai-upgrade-arrow {
+    transform: translateX(4px);
+}
+
+.bbai-usage-upgrade-link:active .bbai-upgrade-arrow {
+    transform: translateX(2px);
+}
+
+/* Urgent state - more prominent */
+.bbai-usage-upgrade-link.bbai-btn--urgent {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+    box-shadow: 0 8px 24px rgba(217, 119, 6, 0.5), 0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    animation: urgent-pulse 2s ease-in-out infinite;
+}
+
+.bbai-usage-upgrade-link.bbai-btn--urgent:hover {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+    box-shadow: 0 12px 32px rgba(217, 119, 6, 0.6), 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes urgent-pulse {
+    0%, 100% {
+        box-shadow: 0 8px 24px rgba(217, 119, 6, 0.5), 0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+    50% {
+        box-shadow: 0 8px 32px rgba(217, 119, 6, 0.7), 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+}
+
+.bbai-usage-milestone {
+    display: inline-block;
+    padding: var(--bbai-space-2) var(--bbai-space-4);
+    margin: var(--bbai-space-3) 0;
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-semibold);
+    color: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: var(--bbai-radius-full);
+    text-align: center;
+    animation: bbai-fade-in 0.5s ease-out;
+}
+
+/* Usage Comparison - Free vs Pro */
+.bbai-usage-comparison {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bbai-space-3);
+    margin: var(--bbai-space-5) 0;
+    padding: var(--bbai-space-4);
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--bbai-radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.bbai-usage-comparison-item {
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-space-3);
+    font-size: var(--bbai-text-sm);
+}
+
+.bbai-usage-comparison-label {
+    min-width: 80px;
+    font-weight: var(--bbai-font-medium);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.bbai-usage-comparison-bar {
+    flex: 1;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: var(--bbai-radius-full);
+    overflow: hidden;
+    position: relative;
+}
+
+.bbai-usage-comparison-bar--free .bbai-usage-comparison-bar-fill {
+    background: rgba(255, 255, 255, 0.3);
+    height: 100%;
+    border-radius: var(--bbai-radius-full);
+}
+
+.bbai-usage-comparison-bar--pro .bbai-usage-comparison-bar-fill {
+    background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+    height: 100%;
+    border-radius: var(--bbai-radius-full);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+}
+
+.bbai-usage-comparison-value {
+    min-width: 90px;
+    text-align: right;
+    font-weight: var(--bbai-font-semibold);
+    color: rgba(255, 255, 255, 0.95);
+    font-size: var(--bbai-text-sm);
+}
+
+/* Focus states for all interactive elements */
+.bbai-usage-action-btn:focus-visible,
+.bbai-upsell-cta:focus-visible {
+    outline: 3px solid var(--bbai-primary);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+}
+
+.bbai-usage-billing-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--bbai-space-2);
+    margin-top: var(--bbai-space-3);
+    padding: 10px 20px;
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-medium);
+    color: rgba(255, 255, 255, 0.9) !important;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--bbai-radius);
+    text-decoration: none;
+    transition: all var(--bbai-transition-base) var(--bbai-ease-out);
+}
+
+.bbai-usage-billing-link:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: white !important;
+}
+
+/* ============================================
+   UPSELL CARD - High Conversion Redesign
+   Premium SaaS upgrade component optimized for CTR
+   ============================================ */
+
+.bbai-upsell-card {
+    background: var(--bbai-upgrade-gradient, linear-gradient(135deg, #4f46e5 0%, #6366f1 40%, #7c3aed 100%));
+    border: none;
+    border-radius: var(--bbai-radius-xl);
+    padding: var(--bbai-space-8);
+    color: var(--bbai-upgrade-text, #ffffff);
+    position: relative;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.bbai-upsell-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2), 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+
+/* Ensure all text is white and positioned above decorations */
+.bbai-upsell-card * {
+    color: var(--bbai-upgrade-text, #ffffff);
+    position: relative;
+    z-index: 1;
+}
+
+/* Layout - Single column, stacked for clarity */
+.bbai-upsell-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bbai-space-6);
+}
+
+.bbai-upsell-card-left {
+    display: flex;
+    flex-direction: column;
+}
+
+.bbai-upsell-card-right {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+/* Badge - Tier Identity */
+.bbai-upsell-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-1);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    padding: 6px 14px;
+    border-radius: var(--bbai-radius-full);
+    font-size: 11px;
+    font-weight: var(--bbai-font-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: var(--bbai-space-5);
+    width: fit-content;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: #1e293b;
+}
+
+/* Headline */
+.bbai-upsell-title {
+    font-size: 26px;
+    font-weight: var(--bbai-font-bold);
+    margin: 0 0 var(--bbai-space-3) 0;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: #ffffff;
+}
+
+/* Subheadline */
+.bbai-upsell-subtitle {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0 0 var(--bbai-space-6) 0;
+    line-height: 1.5;
+    font-weight: var(--bbai-font-normal);
+}
+
+/* Features List */
+.bbai-upsell-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--bbai-space-8) 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--bbai-space-3);
+}
+
+.bbai-upsell-features li {
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-space-3);
+    font-size: 14px;
+    font-weight: var(--bbai-font-normal);
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.bbai-upsell-features li svg {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.bbai-upsell-features li svg path {
+    stroke: currentColor !important;
+    stroke-width: 2.5;
+}
+
+/* Feature text */
+.bbai-upsell-features li span {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+/* CTA Wrapper */
+.bbai-upsell-cta-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--bbai-space-3);
+    margin-top: var(--bbai-space-4);
+    width: 100%;
+}
+
+/* Primary CTA Button - Dark Slate for contrast on gradient */
+.bbai-upsell-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--bbai-space-2);
+    width: 100%;
+    background: #ffffff !important;
+    color: #1e293b !important;
+    padding: 16px 24px;
+    min-height: 48px;
+    border-radius: 10px;
+    font-weight: var(--bbai-font-semibold);
+    font-size: 15px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    margin-top: var(--bbai-space-4);
+}
+
+.bbai-upsell-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background: #f8fafc !important;
+}
+
+.bbai-upsell-cta:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Focus state - WCAG compliant */
+.bbai-upsell-cta:focus-visible {
+    outline: 3px solid rgba(255, 255, 255, 0.8);
+    outline-offset: 2px;
+}
+
+/* Override text color for CTA elements - dark on white */
+.bbai-upsell-card .bbai-upsell-cta,
+.bbai-upsell-card .bbai-upsell-cta span {
+    color: #1e293b !important;
+}
+
+/* Microcopy */
+.bbai-upsell-cta-hint {
+    margin: var(--bbai-space-2) 0 0 0;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: var(--bbai-font-normal);
+    text-align: left;
+    line-height: 1.4;
+}
+
+/* Secondary Link */
+.bbai-upsell-secondary-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: var(--bbai-space-1);
+    font-size: 14px;
+    font-weight: var(--bbai-font-medium);
+    color: rgba(255, 255, 255, 0.85) !important;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: color 0.15s ease;
+    min-height: 44px;
+}
+
+.bbai-upsell-secondary-link:hover {
+    color: rgba(255, 255, 255, 1) !important;
+}
+
+.bbai-upsell-secondary-link:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.8);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* Agency Variant - Purple Gradient */
+.bbai-upsell-card--agency {
+    background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 40%, #a855f7 100%);
+}
+
+.bbai-upsell-card--agency:hover {
+    box-shadow: 0 16px 48px rgba(124, 58, 237, 0.3), 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.bbai-upsell-card--agency .bbai-upsell-cta,
+.bbai-upsell-card--agency .bbai-upsell-cta span {
+    color: #ffffff !important;
+}
+
+/* Responsive - Tablet */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .bbai-upsell-card {
+        padding: 32px 36px;
+    }
+
+    .bbai-upsell-title {
+        font-size: 26px;
+    }
+
+    .bbai-upsell-subtitle {
+        margin-bottom: var(--bbai-space-6);
+    }
+
+    .bbai-upsell-features {
+        margin-bottom: var(--bbai-space-8);
+    }
+}
+
+/* Responsive - Mobile */
+@media (max-width: 767px) {
+    .bbai-upsell-card {
+        padding: 28px 24px;
+    }
+
+    .bbai-upsell-badge {
+        margin-bottom: var(--bbai-space-4);
+    }
+
+    .bbai-upsell-title {
+        font-size: 22px;
+    }
+
+    .bbai-upsell-subtitle {
+        font-size: 15px;
+        margin-bottom: var(--bbai-space-6);
+    }
+
+    .bbai-upsell-features {
+        gap: var(--bbai-space-3);
+        margin-bottom: var(--bbai-space-8);
+    }
+
+    .bbai-upsell-features li {
+        font-size: 14px;
+    }
+
+    .bbai-upsell-features li svg {
+        width: 20px;
+        height: 20px;
+        padding: 3px;
+    }
+
+    .bbai-upsell-cta {
+        padding: 16px 24px;
+        min-height: 52px;
+        font-size: 15px;
+    }
+
+    .bbai-upsell-cta-wrapper {
+        max-width: 100%;
+    }
+}
+
+/* ============================================
+   CARD MODIFIERS
+   ============================================ */
+
+.bbai-card--compact {
+    padding: var(--bbai-space-4);
+}
+
+.bbai-card--large {
+    padding: var(--bbai-space-8);
+}
+
+.bbai-card--featured {
+    border-color: var(--bbai-primary);
+    box-shadow: 0 0 0 3px var(--bbai-primary-soft), var(--bbai-shadow-card);
+}
+
+.bbai-card--clickable {
+    cursor: pointer;
+}
+
+.bbai-card--clickable:hover {
+    border-color: var(--bbai-primary);
+    transform: translateY(-2px);
+}
+
+.bbai-card--success {
+    border-color: var(--bbai-success);
+    background: var(--bbai-success-bg);
+}
+
+.bbai-card--warning {
+    border-color: var(--bbai-warning);
+    background: var(--bbai-warning-bg);
+}
+
+.bbai-card--error {
+    border-color: var(--bbai-error);
+    background: var(--bbai-error-bg);
+}
+
+.bbai-card--info {
+    border-color: var(--bbai-info);
+    background: var(--bbai-info-bg);
+}
+
+/* ============================================
+   METRIC CARDS (Dashboard Grid)
+   ============================================ */
+
+.bbai-metric-card {
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-xl);
+    padding: var(--bbai-space-6);
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--bbai-shadow-card);
+    transition: all var(--bbai-transition-base) var(--bbai-ease-out);
+}
+
+.bbai-metric-card:hover {
+    border-color: var(--bbai-gray-300);
+    box-shadow: var(--bbai-shadow-card-hover);
+}
+
+.bbai-metric-card__icon {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--bbai-radius-lg);
+    background: var(--bbai-primary-soft);
+    color: var(--bbai-primary);
+    margin-bottom: var(--bbai-space-4);
+}
+
+.bbai-metric-card__icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+.bbai-metric-card__value {
+    font-size: var(--bbai-text-3xl);
+    font-weight: var(--bbai-font-bold);
+    color: var(--bbai-text);
+    line-height: 1;
+    margin-bottom: var(--bbai-space-1);
+    letter-spacing: -0.02em;
+}
+
+.bbai-metric-card__label {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+    margin-bottom: var(--bbai-space-3);
+}
+
+.bbai-metric-card__footer {
+    margin-top: auto;
+    padding-top: var(--bbai-space-4);
+    border-top: 1px solid var(--bbai-border);
+}
+
+/* Color variants for icons */
+.bbai-metric-card__icon--success {
+    background: var(--bbai-success-bg);
+    color: var(--bbai-success);
+}
+
+.bbai-metric-card__icon--warning {
+    background: var(--bbai-warning-bg);
+    color: var(--bbai-warning);
+}
+
+.bbai-metric-card__icon--info {
+    background: var(--bbai-info-bg);
+    color: var(--bbai-info);
+}
+
+.bbai-metric-card__icon--purple {
+    background: #ede9fe;
+    color: #7c3aed;
+}
+
+/* ============================================
+   PREMIUM CARD WRAPPER
+   ============================================ */
+
+.bbai-premium-card {
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-lg);
+    overflow: hidden;
+}
+
+/* Remove border when containing gradient cards */
+.bbai-premium-card:has(.bbai-usage-card),
+.bbai-premium-card:has(.bbai-upsell-card) {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+}
+
+.bbai-premium-card > .bbai-usage-card,
+.bbai-premium-card > .bbai-upsell-card {
+    height: 100%;
+}
+
+/* ============================================
+   AGENCY THANK YOU CARD
+   ============================================ */
+
+.bbai-agency-thank-you-card {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0fdfa 100%);
+    border: 1px solid var(--bbai-success-light);
+    border-radius: var(--bbai-radius-xl);
+    padding: var(--bbai-space-8);
+    text-align: center;
+}
+
+.bbai-thank-you-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--bbai-space-4);
+    margin-bottom: var(--bbai-space-6);
+}
+
+.bbai-thank-you-icon {
+    color: var(--bbai-success);
+}
+
+.bbai-thank-you-text {
+    text-align: center;
+}
+
+.bbai-thank-you-text .bbai-card-title {
+    color: var(--bbai-success-dark);
+    margin-bottom: var(--bbai-space-2);
+}
+
+.bbai-thank-you-text .bbai-card-subtitle {
+    color: var(--bbai-text-muted);
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.bbai-agency-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--bbai-space-4);
+}
+
+.bbai-agency-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+    padding: var(--bbai-space-3) var(--bbai-space-5);
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-lg);
+    color: var(--bbai-text);
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-medium);
+    text-decoration: none;
+    transition: all var(--bbai-transition-base);
+}
+
+.bbai-agency-link:hover {
+    background: var(--bbai-gray-50);
+    border-color: var(--bbai-primary);
+    color: var(--bbai-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+}
+
+.bbai-agency-link svg {
+    flex-shrink: 0;
+}
+
+/* Agency upgrade card variant */
+.bbai-upgrade-agency-card {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+}
+
+.bbai-upgrade-agency-card .bbai-card-title,
+.bbai-upgrade-agency-card .bbai-card-subtitle,
+.bbai-upgrade-agency-card .bbai-benefit-text {
+    color: #ffffff;
+}
+
+.bbai-upgrade-agency-card .bbai-benefit-icon {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.bbai-upgrade-agency-card .bbai-cta-microcopy {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.bbai-upgrade-agency-card .bbai-compare-link {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.bbai-upgrade-agency-card .bbai-compare-link:hover {
+    color: #ffffff;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    .bbai-card {
+        padding: var(--bbai-space-5);
+    }
+
+    .bbai-stat-card {
+        padding: var(--bbai-space-5);
+    }
+
+    .bbai-usage-card,
+    .bbai-upsell-card {
+        padding: var(--bbai-space-6);
+    }
+
+    .bbai-upsell-card-content {
+        grid-template-columns: 1fr;
+        gap: var(--bbai-space-6);
+    }
+
+    .bbai-upsell-title {
+        font-size: 28px;
+    }
+
+    .bbai-upsell-cta--prominent {
+        padding: 20px 32px;
+        font-size: var(--bbai-text-lg);
+    }
+
+    .bbai-usage-ring {
+        width: 140px;
+        height: 140px;
+    }
+
+    .bbai-stat-value,
+    .bbai-metric-card__value {
+        font-size: var(--bbai-text-3xl);
+    }
+
+    .bbai-upsell-title {
+        font-size: var(--bbai-text-xl);
+    }
+}

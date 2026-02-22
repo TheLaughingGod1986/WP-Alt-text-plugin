@@ -1,0 +1,876 @@
+/**
+ * Buttons - Premium SaaS Design
+ * Refined interactions, accessible focus states, polished feel
+ *
+ * @package BeepBeep_AI
+ * @since 8.0.0
+ */
+
+/* ============================================
+   BASE BUTTON
+   ============================================ */
+
+.bbai-btn {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px !important; /* Consistent base padding */
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    line-height: 1.5;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-decoration: none !important;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    /* Ensure visibility - explicit defaults */
+    background-color: #f3f4f6;
+    color: #111827;
+}
+
+/* Focus States - Accessible */
+.bbai-btn:focus {
+    outline: none;
+}
+
+.bbai-btn:focus-visible {
+    outline: 2px solid var(--bbai-primary);
+    outline-offset: 2px;
+    box-shadow: var(--bbai-shadow-focus);
+}
+
+/* Disabled State - WCAG AA Compliant (4.5:1 contrast ratio) */
+.bbai-btn:disabled,
+.bbai-btn.is-disabled {
+    background: var(--bbai-gray-200) !important;
+    color: var(--bbai-gray-600) !important;
+    border-color: var(--bbai-gray-300) !important;
+    cursor: not-allowed;
+    pointer-events: none;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.bbai-btn:disabled::before,
+.bbai-btn.is-disabled::before {
+    display: none;
+}
+
+/* ============================================
+   PRIMARY BUTTON - Main CTA
+   ============================================ */
+
+.bbai-btn-primary {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
+    color: white !important;
+    border-color: #10B981 !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4), 0 0 0 1px rgba(16, 185, 129, 0.1);
+    font-weight: var(--bbai-font-bold);
+    position: relative;
+    overflow: hidden;
+}
+
+.bbai-btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.bbai-btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    border-color: #059669 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5), 0 0 0 1px rgba(16, 185, 129, 0.2);
+}
+
+.bbai-btn-primary:hover:not(:disabled)::before {
+    left: 100%;
+}
+
+.bbai-btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+}
+
+.bbai-btn-primary:focus-visible {
+    box-shadow: var(--bbai-shadow-focus), 0 6px 20px rgba(16, 185, 129, 0.5);
+    outline: 2px solid white;
+    outline-offset: 2px;
+}
+
+/* ============================================
+   SECONDARY BUTTON - Outlined
+   ============================================ */
+
+.bbai-btn-secondary {
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid #e5e7eb !important;
+}
+
+.bbai-btn-secondary:hover:not(:disabled) {
+    background: #f9fafb !important;
+    border-color: #d1d5db !important;
+    transform: translateY(-1px);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.bbai-btn-secondary:active:not(:disabled) {
+    transform: translateY(0);
+    background: var(--bbai-bg-tertiary);
+}
+
+/* ============================================
+   TERTIARY / GHOST BUTTON
+   ============================================ */
+
+.bbai-btn-tertiary,
+.bbai-btn-ghost {
+    background: transparent;
+    color: var(--bbai-text-secondary);
+    border-color: transparent;
+    padding: var(--bbai-space-2) var(--bbai-space-3);
+}
+
+.bbai-btn-tertiary:hover:not(:disabled),
+.bbai-btn-ghost:hover:not(:disabled) {
+    color: var(--bbai-primary);
+    background: var(--bbai-primary-soft);
+}
+
+/* ============================================
+   LINK BUTTON
+   ============================================ */
+
+.bbai-link-btn,
+.bbai-link-sm {
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: var(--bbai-primary);
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-medium);
+    cursor: pointer;
+    text-decoration: none;
+    transition: color var(--bbai-transition-fast) var(--bbai-ease-out);
+}
+
+.bbai-link-btn:hover,
+.bbai-link-sm:hover {
+    color: var(--bbai-primary-hover);
+    text-decoration: underline;
+}
+
+.bbai-link-btn:focus-visible,
+.bbai-link-sm:focus-visible {
+    outline: 2px solid var(--bbai-primary);
+    outline-offset: 2px;
+}
+
+/* ============================================
+   SUCCESS BUTTON
+   ============================================ */
+
+.bbai-btn-success {
+    background: var(--bbai-success);
+    color: white !important;
+    border-color: var(--bbai-success);
+    box-shadow: var(--bbai-shadow-button);
+}
+
+.bbai-btn-success:hover:not(:disabled) {
+    background: var(--bbai-success-dark);
+    border-color: var(--bbai-success-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+.bbai-btn-success:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+/* ============================================
+   DANGER BUTTON
+   ============================================ */
+
+.bbai-btn-danger {
+    background: #ef4444 !important;
+    color: white !important;
+    border-color: #ef4444 !important;
+}
+
+.bbai-btn-danger:hover:not(:disabled) {
+    background: #dc2626 !important;
+    border-color: #dc2626 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+}
+
+.bbai-btn-danger:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+/* ============================================
+   INFO BUTTON
+   ============================================ */
+
+.bbai-btn-info {
+    background: var(--bbai-info);
+    color: white !important;
+    border-color: var(--bbai-info);
+}
+
+.bbai-btn-info:hover:not(:disabled) {
+    background: var(--bbai-info-dark);
+    border-color: var(--bbai-info-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+/* ============================================
+   BUTTON SIZES
+   ============================================ */
+
+.bbai-btn-sm {
+    padding: 8px 16px !important; /* Consistent small padding */
+    font-size: 13px !important;
+    border-radius: 6px !important;
+}
+
+.bbai-btn-lg {
+    padding: 14px 28px !important; /* Consistent large padding */
+    font-size: 15px !important;
+    border-radius: 12px !important;
+}
+
+.bbai-btn-xl {
+    padding: 1rem 2rem;
+    font-size: var(--bbai-text-base);
+    font-weight: var(--bbai-font-bold);
+    border-radius: var(--bbai-radius-lg);
+}
+
+/* Full width */
+.bbai-btn-block {
+    width: 100%;
+}
+
+/* ============================================
+   BUTTON ICONS & LOADING
+   ============================================ */
+
+.bbai-btn-icon {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+}
+
+.bbai-btn-lg .bbai-btn-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.bbai-btn-sm .bbai-btn-icon {
+    width: 14px;
+    height: 14px;
+}
+
+/* Icon-only button - 44px minimum touch target for accessibility */
+.bbai-btn-icon-only {
+    padding: var(--bbai-space-2);
+    aspect-ratio: 1;
+    min-width: 44px;
+    min-height: 44px;
+}
+
+.bbai-btn-icon-only.bbai-btn-sm {
+    padding: var(--bbai-space-1-5);
+    min-width: 36px;
+    min-height: 36px;
+}
+
+.bbai-btn-icon-only.bbai-btn-lg {
+    padding: var(--bbai-space-3);
+    min-width: 48px;
+    min-height: 48px;
+}
+
+/* Loading spinner */
+.bbai-btn__spinner {
+    display: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: bbai-spin 0.6s linear infinite;
+}
+
+.bbai-btn.is-loading .bbai-btn__spinner {
+    display: inline-block;
+}
+
+.bbai-btn.is-loading .bbai-btn-icon,
+.bbai-btn.is-loading .bbai-btn__text {
+    opacity: 0;
+}
+
+.bbai-btn.is-loading {
+    pointer-events: none;
+    position: relative;
+}
+
+.bbai-btn.is-loading .bbai-btn__spinner {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+@keyframes bbai-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================
+   REGENERATE BUTTON (Library Table)
+   ============================================ */
+
+.bbai-btn-regenerate {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-1);
+    padding: 8px 16px !important; /* Consistent with small buttons */
+    font-size: 13px !important;
+    font-weight: var(--bbai-font-medium);
+    color: var(--bbai-primary);
+    background: transparent;
+    border: 1px solid var(--bbai-border);
+    border-radius: 6px !important;
+    cursor: pointer;
+    transition: all var(--bbai-transition-fast) var(--bbai-ease-out);
+}
+
+.bbai-btn-regenerate:hover:not(:disabled) {
+    border-color: var(--bbai-primary);
+    background: var(--bbai-primary-soft);
+}
+
+.bbai-btn-regenerate:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.bbai-btn-regenerate svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* ============================================
+   OPTIMIZATION CTA BUTTONS
+   ============================================ */
+
+.bbai-optimization-cta {
+    flex: 1;
+    min-width: 200px;
+    padding: 14px 28px !important; /* Consistent large button padding */
+    border-radius: 12px !important;
+    font-size: 15px !important;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--bbai-transition-base) var(--bbai-ease-out);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--bbai-space-2);
+    border: 2px solid transparent;
+    text-decoration: none;
+    box-sizing: border-box;
+}
+
+.bbai-optimization-cta--primary {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    color: white !important;
+    border-color: transparent;
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.45), 0 0 0 1px rgba(16, 185, 129, 0.1);
+    font-weight: 600;
+    font-size: 15px !important;
+    padding: 14px 28px !important; /* Consistent large button padding */
+    position: relative;
+    overflow: hidden;
+}
+
+.bbai-optimization-cta--primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.bbai-optimization-cta--primary:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.55), 0 0 0 1px rgba(16, 185, 129, 0.2);
+}
+
+.bbai-optimization-cta--primary:hover:not(:disabled)::before {
+    left: 100%;
+}
+
+.bbai-optimization-cta--primary:active:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.45);
+}
+
+.bbai-optimization-cta--primary:focus-visible {
+    outline: 3px solid white;
+    outline-offset: 3px;
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.3), 0 8px 24px rgba(16, 185, 129, 0.55);
+}
+
+.bbai-optimization-cta--secondary {
+    background: var(--bbai-bg);
+    color: var(--bbai-text);
+    border-color: var(--bbai-border);
+}
+
+.bbai-optimization-cta--secondary:hover:not(:disabled) {
+    background: var(--bbai-bg-secondary);
+    border-color: var(--bbai-gray-300);
+    transform: translateY(-1px);
+    box-shadow: var(--bbai-shadow-sm);
+}
+
+.bbai-optimization-cta--secondary:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.bbai-optimization-cta--locked,
+.bbai-optimization-cta--disabled,
+.bbai-optimization-cta:disabled {
+    background: var(--bbai-gray-200) !important;
+    color: var(--bbai-gray-500) !important;
+    border-color: var(--bbai-gray-300) !important;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+    opacity: 0.7;
+}
+
+/* Disabled state for when no missing images */
+.bbai-optimization-cta--disabled {
+    opacity: 0.6;
+    background: var(--bbai-gray-100) !important;
+    color: var(--bbai-gray-400) !important;
+}
+
+/* ============================================
+   BUTTON GROUPS
+   ============================================ */
+
+.bbai-btn-group {
+    display: flex;
+    gap: var(--bbai-space-2);
+    flex-wrap: wrap;
+}
+
+.bbai-btn-group--center {
+    justify-content: center;
+}
+
+.bbai-btn-group--stretch .bbai-btn {
+    flex: 1;
+}
+
+/* Segmented buttons */
+.bbai-btn-group--segmented {
+    gap: 0;
+}
+
+.bbai-btn-group--segmented .bbai-btn {
+    border-radius: 0;
+}
+
+.bbai-btn-group--segmented .bbai-btn:first-child {
+    border-radius: var(--bbai-radius) 0 0 var(--bbai-radius);
+}
+
+.bbai-btn-group--segmented .bbai-btn:last-child {
+    border-radius: 0 var(--bbai-radius) var(--bbai-radius) 0;
+}
+
+.bbai-btn-group--segmented .bbai-btn:not(:last-child) {
+    border-right: none;
+}
+
+/* ============================================
+   SPECIAL VARIANTS
+   ============================================ */
+
+/* Outline primary */
+.bbai-btn-outline-primary {
+    background: transparent;
+    color: var(--bbai-primary);
+    border-color: var(--bbai-primary);
+}
+
+.bbai-btn-outline-primary:hover:not(:disabled) {
+    background: var(--bbai-primary);
+    color: white;
+}
+
+/* Gradient button */
+.bbai-btn-gradient {
+    background: var(--bbai-gradient-primary);
+    color: white !important;
+    border: none;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+
+.bbai-btn-gradient:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+}
+
+/* Dark button */
+.bbai-btn-dark {
+    background: var(--bbai-gray-900);
+    color: white !important;
+    border-color: var(--bbai-gray-900);
+}
+
+.bbai-btn-dark:hover:not(:disabled) {
+    background: var(--bbai-gray-800);
+    border-color: var(--bbai-gray-800);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* ============================================
+   COMPATIBILITY/ALIAS CLASSES
+   Legacy button classes that map to unified system
+   These are kept for backwards compatibility while templates are being migrated.
+   New code should use bbai-btn + bbai-btn-{variant} directly.
+   ============================================ */
+
+/* Action buttons (dashboard) - styles defined in _dashboard-redesign.css */
+/* NOTE: .bbai-action-btn-primary and .bbai-action-btn-secondary are styled
+   specifically within .bbai-usage-card-redesign context in _dashboard-redesign.css
+   to maintain purple/orange gradients. Do not add generic styles here. */
+.bbai-action-btn {
+    /* Base button styles applied via .bbai-btn class */
+}
+
+/* Bulk buttons - map to primary/secondary */
+.bbai-bulk-btn--primary {
+    /* Use bbai-btn bbai-btn-primary instead */
+    background: var(--bbai-primary-gradient);
+    color: white !important;
+    border: none;
+    padding: 10px 20px !important;
+    font-size: 14px !important;
+    border-radius: 8px !important;
+    font-weight: var(--bbai-button-font-weight);
+    box-shadow: var(--bbai-shadow-button);
+}
+
+.bbai-bulk-btn--primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--bbai-shadow-button-hover);
+}
+
+.bbai-bulk-btn--secondary {
+    /* Use bbai-btn bbai-btn-secondary instead */
+    background: var(--bbai-gradient-secondary);
+    color: var(--bbai-text-inverse);
+    border: none;
+    padding: 10px 20px !important;
+    font-size: 14px !important;
+    border-radius: 8px !important;
+    font-weight: var(--bbai-button-font-weight);
+    box-shadow: var(--bbai-shadow-button);
+}
+
+.bbai-bulk-btn--secondary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--bbai-shadow-button-hover);
+}
+
+/* Settings page buttons - use unified variants */
+.bbai-settings-plan-upgrade-btn-large,
+.bbai-settings-license-activate-btn,
+.bbai-settings-account-upgrade-btn,
+.bbai-settings-save-btn {
+    /* Use bbai-btn bbai-btn-primary instead */
+    background: var(--bbai-primary-gradient);
+    color: white !important;
+    border-color: var(--bbai-primary);
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4), 0 0 0 1px rgba(16, 185, 129, 0.1);
+    padding: 10px 20px !important;
+    font-size: 14px !important;
+    border-radius: 8px !important;
+}
+
+.bbai-settings-plan-upgrade-btn-large {
+    padding: 14px 28px !important;
+    font-size: 15px !important;
+    border-radius: 12px !important;
+}
+
+.bbai-settings-license-deactivate-btn {
+    /* Use bbai-btn bbai-btn-danger instead */
+    background: var(--bbai-error);
+    color: white !important;
+    border-color: var(--bbai-error);
+}
+
+.bbai-settings-license-deactivate-btn:hover:not(:disabled) {
+    background: #dc2626;
+    border-color: #dc2626;
+    transform: translateY(-1px);
+}
+
+.bbai-settings-account-action-btn {
+    /* Use bbai-btn bbai-btn-secondary instead */
+    background: var(--bbai-bg);
+    color: var(--bbai-text);
+    border-color: var(--bbai-border);
+}
+
+.bbai-settings-account-action-btn:hover:not(:disabled) {
+    background: var(--bbai-bg-secondary);
+    border-color: var(--bbai-gray-300);
+}
+
+/* Outline button compatibility (legacy) - maps to outline-primary */
+.bbai-btn-outline {
+    background: transparent;
+    color: var(--bbai-primary);
+    border-color: var(--bbai-primary);
+    border-width: 2px;
+}
+
+.bbai-btn-outline:hover:not(:disabled) {
+    background: var(--bbai-primary);
+    color: white;
+}
+
+/* Back button (link style) */
+.bbai-back-btn {
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: var(--bbai-primary);
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-medium);
+    text-decoration: none;
+}
+
+.bbai-back-btn:hover {
+    color: var(--bbai-primary-hover);
+    text-decoration: underline;
+}
+
+/* Upgrade CTA buttons - map to primary */
+.bbai-upgrade-cta-green {
+    /* Use bbai-btn bbai-btn-primary instead */
+    background: var(--bbai-primary-gradient);
+    color: white !important;
+}
+
+/* Pagination buttons - map to secondary */
+.bbai-pagination-btn {
+    /* Use bbai-btn bbai-btn-secondary bbai-btn-sm instead */
+    background: var(--bbai-bg);
+    color: var(--bbai-text);
+    border-color: var(--bbai-border);
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+    border-radius: 6px !important;
+}
+
+.bbai-pagination-btn:hover:not(:disabled) {
+    background: var(--bbai-bg-secondary);
+}
+
+.bbai-pagination-btn--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Agency export button */
+.bbai-agency-export-btn {
+    /* Use bbai-btn bbai-btn-secondary instead */
+    background: var(--bbai-bg);
+    color: var(--bbai-text);
+    border-color: var(--bbai-border);
+}
+
+.bbai-agency-export-btn:hover:not(:disabled) {
+    background: var(--bbai-bg-secondary);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 640px) {
+    .bbai-optimization-cta {
+        min-width: 100%;
+        padding: 14px 28px !important; /* Consistent large padding */
+    }
+
+    .bbai-btn-group:not(.bbai-btn-group--segmented) {
+        flex-direction: column;
+    }
+
+    .bbai-btn-group:not(.bbai-btn-group--segmented) .bbai-btn {
+        width: 100%;
+    }
+}
+
+/* ============================================
+   WORDPRESS ADMIN OVERRIDES
+   High-specificity rules to override WP admin CSS
+   ============================================ */
+
+/* Primary Button - Green Gradient */
+.wrap .bbai-btn.bbai-btn-primary,
+.bbai-dashboard-container .bbai-btn.bbai-btn-primary,
+.bbai-settings-card .bbai-btn.bbai-btn-primary,
+.bbai-card .bbai-btn.bbai-btn-primary,
+button.bbai-btn.bbai-btn-primary,
+a.bbai-btn.bbai-btn-primary {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
+    color: #ffffff !important;
+    border-color: #10B981 !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4) !important;
+}
+
+.wrap .bbai-btn.bbai-btn-primary:hover,
+.bbai-dashboard-container .bbai-btn.bbai-btn-primary:hover,
+.bbai-settings-card .bbai-btn.bbai-btn-primary:hover,
+.bbai-card .bbai-btn.bbai-btn-primary:hover,
+button.bbai-btn.bbai-btn-primary:hover,
+a.bbai-btn.bbai-btn-primary:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5) !important;
+}
+
+/* Secondary Button - White with Border */
+.wrap .bbai-btn.bbai-btn-secondary,
+.bbai-dashboard-container .bbai-btn.bbai-btn-secondary,
+.bbai-settings-card .bbai-btn.bbai-btn-secondary,
+.bbai-card .bbai-btn.bbai-btn-secondary,
+button.bbai-btn.bbai-btn-secondary,
+a.bbai-btn.bbai-btn-secondary {
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.wrap .bbai-btn.bbai-btn-secondary:hover,
+.bbai-dashboard-container .bbai-btn.bbai-btn-secondary:hover,
+.bbai-settings-card .bbai-btn.bbai-btn-secondary:hover,
+.bbai-card .bbai-btn.bbai-btn-secondary:hover,
+button.bbai-btn.bbai-btn-secondary:hover,
+a.bbai-btn.bbai-btn-secondary:hover {
+    background: #f9fafb !important;
+    border-color: #d1d5db !important;
+    transform: translateY(-1px);
+}
+
+/* Danger Button - Red */
+.wrap .bbai-btn.bbai-btn-danger,
+.bbai-dashboard-container .bbai-btn.bbai-btn-danger,
+.bbai-settings-card .bbai-btn.bbai-btn-danger,
+.bbai-card .bbai-btn.bbai-btn-danger,
+button.bbai-btn.bbai-btn-danger,
+a.bbai-btn.bbai-btn-danger {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    border-color: #ef4444 !important;
+}
+
+.wrap .bbai-btn.bbai-btn-danger:hover,
+.bbai-dashboard-container .bbai-btn.bbai-btn-danger:hover,
+.bbai-settings-card .bbai-btn.bbai-btn-danger:hover,
+.bbai-card .bbai-btn.bbai-btn-danger:hover,
+button.bbai-btn.bbai-btn-danger:hover,
+a.bbai-btn.bbai-btn-danger:hover {
+    background: #dc2626 !important;
+    border-color: #dc2626 !important;
+    transform: translateY(-1px);
+}
+
+/* Outline Primary Button */
+.wrap .bbai-btn.bbai-btn-outline-primary,
+.bbai-dashboard-container .bbai-btn.bbai-btn-outline-primary,
+.bbai-settings-card .bbai-btn.bbai-btn-outline-primary,
+.bbai-card .bbai-btn.bbai-btn-outline-primary,
+button.bbai-btn.bbai-btn-outline-primary,
+a.bbai-btn.bbai-btn-outline-primary {
+    background: transparent !important;
+    color: #10B981 !important;
+    border: 1px solid #10B981 !important;
+}
+
+.wrap .bbai-btn.bbai-btn-outline-primary:hover,
+.bbai-dashboard-container .bbai-btn.bbai-btn-outline-primary:hover,
+.bbai-settings-card .bbai-btn.bbai-btn-outline-primary:hover,
+.bbai-card .bbai-btn.bbai-btn-outline-primary:hover,
+button.bbai-btn.bbai-btn-outline-primary:hover,
+a.bbai-btn.bbai-btn-outline-primary:hover {
+    background: rgba(16, 185, 129, 0.08) !important;
+}
+
+/* ============================================
+   CONSISTENT BUTTON SIZING
+   Standard sizes across all variants
+   ============================================ */
+
+/* Base size: 10px 20px (applied to .bbai-btn above) */
+
+/* Small Button Size */
+.bbai-btn.bbai-btn-sm,
+.bbai-btn-sm,
+.wrap .bbai-btn.bbai-btn-sm {
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+    border-radius: 6px !important;
+}
+
+/* Large Button Size */
+.bbai-btn.bbai-btn-lg,
+.bbai-btn-lg,
+.wrap .bbai-btn.bbai-btn-lg {
+    padding: 14px 28px !important;
+    font-size: 15px !important;
+    border-radius: 12px !important;
+}
+
+/* XL Button Size */
+.bbai-btn.bbai-btn-xl,
+.bbai-btn-xl,
+.wrap .bbai-btn.bbai-btn-xl {
+    padding: 16px 32px !important;
+    font-size: 16px !important;
+    border-radius: 14px !important;
+}

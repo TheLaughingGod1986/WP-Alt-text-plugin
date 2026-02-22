@@ -1,0 +1,201 @@
+import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom/client';
+import EnterprisePricingModal from './EnterprisePricingModal';
+
+const i18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
+const __ = i18n && typeof i18n.__ === 'function' ? i18n.__ : (text) => text;
+
+/**
+ * Pricing Modal Entry Point
+ * Renders the pricing modal and handles API integration
+ */
+const PricingModalWrapper = ({ onPlanSelect }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [currentPlan, setCurrentPlan] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch current user plan
+  useEffect(() => {
+    const fetchUserPlan = async () => {
+      try {
+        setIsLoading(true);
+        const restUsageUrl = window.BBAI_DASH?.restUsage || window.BBAI?.restUsage || '';
+        const restNonce = window.BBAI_DASH?.nonce || window.BBAI?.nonce || '';
+        const initialUsage = window.BBAI_DASH?.initialUsage || window.BBAI?.initialUsage || null;
+
+        const extractPlan = (payload) =>
+          payload?.plan || payload?.plan_type || payload?.data?.plan || payload?.data?.plan_type || '';
+
+        const cachedPlan = extractPlan(initialUsage);
+        if (cachedPlan) {
+          setCurrentPlan(cachedPlan);
+          setIsLoading(false);
+          return;
+        }
+
+        if (!restUsageUrl) {
+          setCurrentPlan('free');
+          return;
+        }
+
+        const response = await fetch(restUsageUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-WP-Nonce': restNonce,
+          },
+          credentials: 'same-origin',
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setCurrentPlan(extractPlan(data) || 'free');
+        } else {
+          setCurrentPlan('free');
+        }
+      } catch (error) {
+        console.warn('[AltText AI] Could not fetch user plan:', error);
+        setCurrentPlan('free');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (isOpen) {
+      fetchUserPlan();
+    }
+  }, [isOpen]);
+
+  // Expose open function globally
+  useEffect(() => {
+    window.openPricingModal = (variant = 'enterprise') => {
+      setIsOpen(true);
+    };
+
+    window.closePricingModal = () => {
+      setIsOpen(false);
+    };
+
+    return () => {
+      delete window.openPricingModal;
+      delete window.closePricingModal;
+    };
+  }, []);
+
+  const handlePlanSelect = async (planId, mode = 'subscription') => {
+    if (onPlanSelect && typeof onPlanSelect === 'function') {
+      await onPlanSelect(planId, mode);
+      return;
+    }
+
+    // Enterprise plan: Redirect to Book a Call page
+    if (planId === 'enterprise') {
+      const bookCallUrl = 'https://github.com/beepbeepv2/beepbeep-ai-alt-text-generator';
+      window.location.href = bookCallUrl;
+      setIsOpen(false);
+      return;
+    }
+
+    // Use Stripe Payment Links (direct buy links) for reliable checkout.
+    // Map plan IDs to Stripe link keys: "growth" uses "pro" link key.
+    const linkKey = planId === 'growth' ? 'pro' : planId;
+    const stripeLinks = window.bbai_ajax?.stripe_links || {};
+    const stripeLink = stripeLinks[planId] || stripeLinks[linkKey] || '';
+
+    if (stripeLink) {
+      window.open(stripeLink, '_blank', 'noopener,noreferrer');
+      setIsOpen(false);
+      return;
+    }
+
+    // Fallback: try AJAX checkout session if no Payment Link is available
+    try {
+      if (!window.bbai_ajax || !window.bbai_ajax.ajaxurl) {
+        throw new Error('WordPress AJAX not available');
+      }
+
+      const requestBody = new URLSearchParams({
+        action: 'beepbeepai_create_checkout',
+        nonce: window.bbai_ajax.nonce || '',
+        plan_id: planId,
+        mode: mode,
+      });
+
+      const response = await fetch(window.bbai_ajax.ajaxurl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: requestBody,
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.data && data.data.url) {
+        window.location.href = data.data.url;
+        setIsOpen(false);
+      } else {
+        throw new Error(data.data?.message || __('Failed to create checkout session', 'beepbeep-ai-alt-text-generator'));
+      }
+    } catch (error) {
+      console.error('[AltText AI] Checkout error:', error);
+      if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
+        window.bbaiModal.error(__('Unable to start checkout. Please try again or contact support.', 'beepbeep-ai-alt-text-generator'));
+      }
+    }
+  };
+
+  return (
+    <EnterprisePricingModal
+      isOpen={isOpen}
+      onClose={() => setIsOpen(false)}
+      currentPlan={currentPlan}
+      onPlanSelect={handlePlanSelect}
+      isLoading={isLoading}
+    />
+  );
+};
+
+/**
+ * Initialize the pricing modal
+ * Call this function to mount the React component
+ */
+export const initPricingModal = (containerId = 'bbai-pricing-modal-root', onPlanSelect) => {
+  // Check if React is available
+  if (typeof React === 'undefined' || typeof ReactDOM === 'undefined') {
+    console.error('[AltText AI] React is not loaded. Please include React and ReactDOM.');
+    return;
+  }
+
+  // Create or get container
+  let container = document.getElementById(containerId);
+  if (!container) {
+    container = document.createElement('div');
+    container.id = containerId;
+    document.body.appendChild(container);
+  }
+
+  // Create root and render
+  const root = ReactDOM.createRoot(container);
+  root.render(<PricingModalWrapper onPlanSelect={onPlanSelect} />);
+  
+  return root;
+};
+
+// Auto-initialize if in WordPress environment
+if (typeof window !== 'undefined' && window.document) {
+  // Wait for DOM to be ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.bbai_ajax && typeof React !== 'undefined' && typeof ReactDOM !== 'undefined') {
+        initPricingModal();
+      }
+    });
+  } else {
+    if (window.bbai_ajax && typeof React !== 'undefined' && typeof ReactDOM !== 'undefined') {
+      initPricingModal();
+    }
+  }
+}
+
+export default PricingModalWrapper;

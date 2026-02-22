@@ -1,0 +1,32 @@
+/**
+ * Miscellaneous - Footer, accessibility, print, WP admin fixes
+ */
+
+/* Footer */
+.bbai-footer { text-align: center; padding: 24px 0; margin-top: 48px; border-top: 1px solid var(--bbai-gray-200); color: var(--bbai-gray-500); font-size: 13px; }
+.bbai-footer a { color: var(--bbai-primary); text-decoration: none; }
+.bbai-footer a:hover { text-decoration: underline; }
+
+/* Unauthenticated */
+.bbai-unauth-container { padding: 40px; text-align: center; }
+.bbai-unauth-list { text-align: left; display: inline-block; }
+.bbai-settings-required-note { margin-top: 12px; font-size: var(--bbai-text-sm); color: var(--bbai-gray-500); }
+.bbai-settings-required-actions { margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* Debug */
+.bbai-debug-hint { margin-top: 12px; font-size: var(--bbai-text-sm); color: var(--bbai-gray-500); }
+.bbai-debug-auth-btn { margin-top: 20px; display: inline-block; }
+
+/* License */
+.bbai-settings-license-key { margin-top: var(--bbai-space-2); font-size: var(--bbai-text-xs); color: var(--bbai-gray-500); font-family: var(--bbai-font-mono); word-break: break-all; }
+#license-activation-status { display: none; padding: 12px; border-radius: var(--bbai-radius); margin-bottom: var(--bbai-space-4); font-size: var(--bbai-text-sm); }
+#license-activation-status.is-visible { display: block; }
+
+/* Print */
+@media print { .bbai-modal-backdrop, .bbai-tooltip, .bbai-btn, .bbai-toast-container, .bbai-header { display: none !important; } }
+
+/* Accessibility */
+.bbai-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border-width: 0; }
+.bbai-focus-visible:focus-visible, .bbai-btn:focus-visible, .bbai-input:focus-visible, .bbai-nav-link:focus-visible { outline: 2px solid var(--bbai-primary); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
+@media (prefers-contrast: high) { :root { --bbai-border: var(--bbai-gray-900); --bbai-text: #000000; } }

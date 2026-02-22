@@ -1,0 +1,262 @@
+/**
+ * Alerts & Toasts - Premium SaaS Design
+ * Clear status communication, refined styling
+ *
+ * @package BeepBeep_AI
+ * @since 8.0.0
+ */
+
+/* ============================================
+   ALERTS
+   ============================================ */
+
+.bbai-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--bbai-space-3);
+    padding: var(--bbai-space-4);
+    border-radius: var(--bbai-radius-lg);
+    border-left: 4px solid;
+    margin-bottom: var(--bbai-space-4);
+}
+
+.bbai-alert:last-child {
+    margin-bottom: 0;
+}
+
+.bbai-alert-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+}
+
+.bbai-alert-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.bbai-alert-title {
+    font-weight: var(--bbai-font-semibold);
+    font-size: var(--bbai-text-sm);
+    margin: 0 0 var(--bbai-space-1) 0;
+    line-height: var(--bbai-leading-tight);
+}
+
+.bbai-alert-message {
+    margin: 0;
+    font-size: var(--bbai-text-sm);
+    line-height: 1.5;
+}
+
+/* Alert variants */
+.bbai-alert-success {
+    background: var(--bbai-success-bg);
+    border-left-color: var(--bbai-success);
+}
+
+.bbai-alert-success .bbai-alert-icon {
+    color: var(--bbai-success);
+}
+
+.bbai-alert-warning {
+    background: var(--bbai-warning-bg);
+    border-left-color: var(--bbai-warning);
+}
+
+.bbai-alert-warning .bbai-alert-icon {
+    color: var(--bbai-warning);
+}
+
+.bbai-alert-error {
+    background: var(--bbai-error-bg);
+    border-left-color: var(--bbai-error);
+}
+
+.bbai-alert-error .bbai-alert-icon {
+    color: var(--bbai-error);
+}
+
+.bbai-alert-info {
+    background: var(--bbai-info-bg);
+    border-left-color: var(--bbai-info);
+}
+
+.bbai-alert-info .bbai-alert-icon {
+    color: var(--bbai-info);
+}
+
+/* ============================================
+   TOAST NOTIFICATIONS
+   ============================================ */
+
+.bbai-toast-container {
+    position: fixed;
+    top: var(--bbai-space-6);
+    right: var(--bbai-space-6);
+    z-index: var(--bbai-z-notification);
+    display: flex;
+    flex-direction: column;
+    gap: var(--bbai-space-3);
+    max-width: 400px;
+    pointer-events: none;
+}
+
+.bbai-toast {
+    background: var(--bbai-bg);
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-space-4);
+    box-shadow: var(--bbai-shadow-lg);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--bbai-space-3);
+    border-left: 4px solid;
+    animation: bbai-toast-in 0.3s var(--bbai-ease-spring);
+    pointer-events: auto;
+}
+
+@keyframes bbai-toast-in {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.bbai-toast-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+}
+
+.bbai-toast-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.bbai-toast-title {
+    font-weight: var(--bbai-font-semibold);
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text);
+    margin-bottom: var(--bbai-space-1);
+}
+
+.bbai-toast-message {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+    line-height: 1.4;
+}
+
+.bbai-toast-close {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: var(--bbai-radius);
+    color: var(--bbai-text-muted);
+    cursor: pointer;
+    transition: all var(--bbai-transition-fast);
+    margin: -4px -4px -4px 0;
+}
+
+.bbai-toast-close:hover {
+    background: var(--bbai-bg-secondary);
+    color: var(--bbai-text);
+}
+
+.bbai-toast-close svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Toast variants */
+.bbai-toast-success {
+    border-left-color: var(--bbai-success);
+}
+
+.bbai-toast-success .bbai-toast-icon {
+    color: var(--bbai-success);
+}
+
+.bbai-toast-error {
+    border-left-color: var(--bbai-error);
+}
+
+.bbai-toast-error .bbai-toast-icon {
+    color: var(--bbai-error);
+}
+
+.bbai-toast-warning {
+    border-left-color: var(--bbai-warning);
+}
+
+.bbai-toast-warning .bbai-toast-icon {
+    color: var(--bbai-warning);
+}
+
+.bbai-toast-info {
+    border-left-color: var(--bbai-info);
+}
+
+.bbai-toast-info .bbai-toast-icon {
+    color: var(--bbai-info);
+}
+
+/* ============================================
+   LOGIN STATUS
+   ============================================ */
+
+.bbai-login-status {
+    display: none;
+    padding: var(--bbai-space-3) var(--bbai-space-4);
+    border-radius: var(--bbai-radius);
+    margin-bottom: var(--bbai-space-4);
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-medium);
+}
+
+.bbai-login-status.is-visible {
+    display: block;
+}
+
+.bbai-login-status--success {
+    color: var(--bbai-success-dark);
+    background: var(--bbai-success-bg);
+}
+
+.bbai-login-status--error {
+    color: var(--bbai-error);
+    background: var(--bbai-error-bg);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 640px) {
+    .bbai-toast-container {
+        top: auto;
+        bottom: var(--bbai-space-4);
+        right: var(--bbai-space-4);
+        left: var(--bbai-space-4);
+        max-width: none;
+    }
+
+    @keyframes bbai-toast-in {
+        from {
+            opacity: 0;
+            transform: translateY(100%);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+}

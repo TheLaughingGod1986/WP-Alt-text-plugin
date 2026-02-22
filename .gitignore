@@ -1,0 +1,68 @@
+# Backend directory (separate repository)
+backend/
+backend/db.json
+backend/output.log
+deploy-package/
+dist/
+
+# Local test environment
+local-test/
+
+# WordPress specific
+wp-config.php
+.htaccess
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Build artefacts
+*.zip
+*.gz
+*.tgz
+*.bz2
+*.7z
+*.rar
+
+# Environment variables and secrets
+*.env
+*.env.*
+.env
+.env.local
+.env.production
+.env.development
+render-env-vars.txt
+*-env-vars.txt
+DEPLOYMENT-INSTRUCTIONS.md
+
+# Dependencies
+node_modules/
+
+# Build artifacts
+build/
+build-release/
+dist/
+
+# Documentation (development only)
+AUDIT_*.md
+*_REPORT.md
+*_SUMMARY.md
+*_PLAN.md
+IMPROVEMENT*.md
+REFACTORING*.md
+
+# Phase 5: Testing Infrastructure
+/vendor/
+/coverage/
+/tests/results/
+composer.lock
+.phpunit.result.cache

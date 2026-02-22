@@ -1,0 +1,95 @@
+/**
+ * AltText AI - Unified Stylesheet (Modular)
+ *
+ * A single, optimized CSS file for the entire plugin.
+ * Split into modular components for maintainability.
+ *
+ * @package BeepBeep_AI
+ * @version 6.0.0
+ */
+
+/* 1. Design Tokens (CSS Variables) */
+@import '_tokens.css';
+
+/* 2. Base & Reset Styles */
+@import '_base.css';
+
+/* 3. Layout Components */
+@import '_layout.css';
+
+/* 4. UI Components */
+@import '_cards.css';
+@import '_buttons.css';
+@import '_badges.css';
+
+/* 5. Form Elements */
+@import '_forms.css';
+
+/* 6. Data Display */
+@import '_tables.css';
+
+/* 7. Modals & Overlays */
+@import '_modals.css';
+
+/* 8. Page-Specific Styles */
+@import '_pages.css';
+
+/* 9. Utility Classes */
+@import '_utilities.css';
+
+/* 10. Animations */
+@import '_animations.css';
+
+/* 11. Header & Navigation */
+@import '_header.css';
+
+/* 12. Alerts & Notifications */
+@import '_alerts.css';
+
+/* 13. Auth Modal */
+@import '_auth-modal.css';
+
+/* 14. Upgrade Modal & Pricing */
+@import '_upgrade-modal.css';
+
+/* 15. Bulk Progress Modal */
+@import '_bulk-progress.css';
+
+/* 16. API Notice */
+@import '_api-notice.css';
+
+/* 17. Miscellaneous */
+@import '_misc.css';
+
+/* 18. Guide Tab (How to) */
+@import '_guide.css';
+
+/* 19. Tooltips */
+@import '_tooltips.css';
+
+/* 20. Toast Notifications */
+@import '_toast.css';
+
+/* 21. Onboarding */
+@import '_onboarding.css';
+
+/* 22. Social Proof */
+@import '_social-proof.css';
+
+/* 23. Celebrations */
+@import '_celebrations.css';
+
+/* 24. SEO Analytics */
+@import '_seo-analytics.css';
+
+/* 25. Quality Insights */
+@import '_quality-insights.css';
+
+/* 26. Analytics */
+@import '_analytics.css';
+
+/* 27. Error Handling */
+@import '_errors.css';
+
+/* 28. Accessibility */
+@import '_accessibility.css';

@@ -1,0 +1,143 @@
+# Files/directories to exclude when deploying a WordPress.org-ready build.
+# This is commonly consumed by Git->SVN deploy tooling (e.g., rsync --exclude-from).
+
+# Plugin Check packaging blockers (must never ship)
+beepbeep-ai-alt-text-generator.zip
+*.zip
+*.gz
+*.tgz
+*.bz2
+*.7z
+*.rar
+dist/
+build-plugin.sh
+.gitattributes
+
+# Required WordPress.org package exclusions
+*.zip
+*.gz
+*.tgz
+*.bz2
+*.7z
+*.rar
+.gitattributes
+.gitignore
+.github/
+build-plugin.sh
+*.sh
+scripts/
+tools/
+
+# VCS / metadata (hidden files are not shipped)
+.git
+.git/*
+# Explicitly exclude hidden files flagged by Plugin Check.
+.gitattributes
+.gitignore
+.github
+.github/*
+.distignore
+.claude
+.claude/*
+.vscode
+.vscode/*
+.editorconfig
+.env
+.env.*
+.idea
+.idea/*
+.svn
+.svn/*
+.hg
+.hg/*
+
+# Local tooling / environment
+docker-compose.yml
+# Explicitly exclude application/build scripts flagged by Plugin Check.
+build-plugin.sh
+start-local.sh
+scripts
+scripts/*
+docs
+docs/*
+dist
+dist/*
+build
+build/*
+build-release
+build-release/*
+
+# QA / migration / audit artifacts (never ship)
+*.patch
+plugincheck-*.json
+plugincheck-*.txt
+*textdomain-migration*
+dist-textdomain-modified-files.txt
+dist-opptiai-i18n-calls-before.txt
+dist-opptiai-i18n-calls-after.txt
+dist-*-before.txt
+dist-*-after.txt
+dist-*-modified-files.txt
+*findings*.txt
+plugincheck
+plugincheck/*
+plugin-check
+plugin-check/*
+reports
+reports/*
+report
+report/*
+
+# Dependency managers / dev dependencies (never ship in the plugin ZIP)
+node_modules/
+node_modules
+vendor/
+vendor
+composer.json
+composer.lock
+package.json
+package-lock.json
+
+# Tests (never ship in the plugin ZIP)
+tests/
+
+# Shell/command scripts (not allowed in the distributed plugin)
+*.sh
+build-*.sh
+*.command
+*.log
+
+# Nested archives (not allowed in the distributed plugin)
+*.zip
+*.gz
+*.tgz
+*.bz2
+*.7z
+*.rar
+
+# WordPress.org listing asset sources and generators (not runtime plugin assets)
+assets/wordpress-org
+assets/wordpress-org/*
+# Explicitly block legacy and current generator scripts flagged by Plugin Check.
+assets/wordpress-org/create-assets.sh
+assets/wordpress-org/create-placeholders.sh
+assets/wordpress-org/*.sh
+assets/wordpress-org/*.py
+
+# Dev-only documentation and audits
+*.md
+ADDITIONAL-INFO-SUBMISSION.txt
+CLAUDE_AUDIT.md
+ADDITIONAL_IMPROVEMENTS.md
+
+# React/TypeScript source (not used at runtime; keep only the bridge scripts/CSS)
+admin/components/*.jsx
+admin/components/*.tsx
+admin/components/*.ts
+admin/components/**/*.jsx
+admin/components/**/*.tsx
+admin/components/**/*.ts
+
+# OS / editor junk
+.DS_Store
+Thumbs.db

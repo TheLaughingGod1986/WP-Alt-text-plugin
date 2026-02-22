@@ -1,0 +1,205 @@
+/**
+ * Layout - Container, Grid, Flex utilities
+ */
+
+/* Base Container */
+.bbai-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--bbai-space-6);
+}
+
+/* Page Header */
+.bbai-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--bbai-space-6);
+    flex-wrap: wrap;
+    gap: var(--bbai-space-4);
+}
+.bbai-page-title {
+    font-size: var(--bbai-text-3xl);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0;
+    line-height: 1.25;
+}
+.bbai-page-subtitle {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+    margin: var(--bbai-space-2) 0 0 0;
+    line-height: 1.5;
+}
+
+/* Generic Grid */
+.bbai-grid {
+    display: grid;
+    gap: var(--bbai-space-6);
+}
+.bbai-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+.bbai-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+@media (max-width: 1024px) {
+    .bbai-grid-3 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 768px) {
+    .bbai-grid-2,
+    .bbai-grid-3 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Flex utilities */
+.bbai-flex {
+    display: flex;
+}
+.bbai-flex-col {
+    flex-direction: column;
+}
+.bbai-items-center {
+    align-items: center;
+}
+.bbai-justify-between {
+    justify-content: space-between;
+}
+.bbai-gap-2 {
+    gap: var(--bbai-space-2);
+}
+.bbai-gap-3 {
+    gap: var(--bbai-space-3);
+}
+.bbai-gap-4 {
+    gap: var(--bbai-space-4);
+}
+.bbai-gap-6 {
+    gap: var(--bbai-space-6);
+}
+
+/* ============================================
+   DASHBOARD LAYOUT
+   ============================================ */
+
+/* Dashboard Container */
+.bbai-dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.bbai-dashboard-header-section {
+    margin-bottom: var(--bbai-space-6);
+}
+/* Typography standardized in _utilities.css and _pages.css */
+
+/* Premium Stats Grid - Two Column Hero (Usage + Upsell) */
+.bbai-premium-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--bbai-space-6);
+    margin-bottom: var(--bbai-space-6);
+}
+.bbai-premium-stats-grid > * {
+    min-height: 320px;
+}
+.bbai-premium-stats-grid--single {
+    grid-template-columns: 1fr;
+}
+@media (max-width: 900px) {
+    .bbai-premium-stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Metrics Grid - 3 Equal Cards */
+/* Note: Enhanced styles moved to _dashboard-polish.css */
+.bbai-premium-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--bbai-space-6);
+    margin-bottom: var(--bbai-space-6);
+}
+@media (max-width: 768px) {
+    .bbai-premium-metrics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Premium Card (wrapper for dashboard cards) */
+.bbai-premium-card {
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-md);
+    overflow: hidden;
+}
+/* Remove border when card contains gradient usage card */
+.bbai-premium-card:has(.bbai-usage-card),
+.bbai-premium-stats-grid > .bbai-premium-card:first-child {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+/* Fallback for browsers without :has() support */
+.bbai-premium-stats-grid .bbai-premium-card:first-child {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+.bbai-premium-card > .bbai-usage-card {
+    border: none;
+    border-radius: var(--bbai-radius-lg);
+    height: 100%;
+}
+
+/* ============================================
+   LIBRARY LAYOUT
+   ============================================ */
+
+.bbai-library-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.bbai-library-header {
+    margin-bottom: var(--bbai-space-6);
+}
+.bbai-library-title {
+    font-size: var(--bbai-text-3xl);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0 0 var(--bbai-space-2) 0;
+}
+.bbai-library-subtitle {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+    margin: 0;
+}
+
+/* ============================================
+   CREDIT USAGE LAYOUT
+   ============================================ */
+
+.bbai-credit-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--bbai-space-6);
+    margin-bottom: var(--bbai-space-6);
+}
+@media (max-width: 768px) {
+    .bbai-credit-stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================
+   SECTION SPACING
+   ============================================ */
+
+.bbai-section {
+    margin-bottom: var(--bbai-space-6);
+}
+.bbai-section:last-child {
+    margin-bottom: 0;
+}

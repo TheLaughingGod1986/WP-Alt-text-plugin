@@ -1,0 +1,568 @@
+/**
+ * Dashboard Redesign - Premium SaaS Design System
+ * Matches React + Tailwind component specifications exactly
+ */
+
+/* ============================================
+   DASHBOARD OVERVIEW CONTAINER
+   ============================================ */
+
+.bbai-dashboard-overview {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+@media (min-width: 1024px) {
+    .bbai-dashboard-overview {
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+    }
+}
+
+/* ============================================
+   USAGE CARD (White Card)
+   ============================================ */
+
+.bbai-usage-card-redesign {
+    border-radius: 24px;
+    background: #ffffff;
+    padding: 24px;
+    box-shadow: 0 4px 35px rgba(0, 0, 0, 0.07);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* Badge - FREE badge with purple gradient */
+.bbai-usage-card-redesign .bbai-badge--free,
+.bbai-usage-card-redesign .bbai-badge-free {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%) !important;
+    padding: 6px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #ffffff !important;
+    width: fit-content;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+/* Title */
+.bbai-usage-card-redesign .bbai-card-title {
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #111827;
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .bbai-usage-card-redesign .bbai-card-title {
+        font-size: 22px;
+    }
+}
+
+/* Circular Progress */
+.bbai-usage-card-redesign .bbai-circular-progress-wrapper {
+    display: flex;
+    justify-content: center;
+}
+
+.bbai-usage-card-redesign .bbai-circular-progress-container {
+    position: relative;
+    height: 160px;
+    width: 160px;
+    margin: 0 auto;
+}
+
+.bbai-usage-card-redesign .bbai-circular-progress-svg {
+    height: 100%;
+    width: 100%;
+    transform: rotate(-90deg);
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.bbai-usage-card-redesign .bbai-circular-progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+    z-index: 1;
+}
+
+.bbai-usage-card-redesign .bbai-circular-progress-percent {
+    font-size: 40px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1;
+    margin: 0;
+    text-align: center;
+}
+
+.bbai-usage-card-redesign .bbai-circular-progress-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+    margin-top: 6px;
+    text-align: center;
+}
+
+/* Usage Count */
+.bbai-usage-card-redesign .bbai-usage-count {
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.6;
+    color: #374151;
+    margin: 0;
+}
+
+.bbai-usage-card-redesign .bbai-usage-count strong {
+    font-weight: 600;
+}
+
+/* Linear Progress Bar */
+.bbai-usage-card-redesign .bbai-linear-progress {
+    height: 6px;
+    overflow: hidden;
+    border-radius: 9999px;
+    background: #f3f4f6;
+}
+
+.bbai-usage-card-redesign .bbai-linear-progress-fill {
+    height: 100%;
+    border-radius: 9999px;
+    background: linear-gradient(to right, #3B82F6, #60A5FA);
+    transition: width 0.5s ease-out;
+}
+
+/* ============================================
+   Adaptive Usage Ring Colors
+   ============================================ */
+
+.bbai-usage-ring {
+    transition: stroke 0.6s ease, stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bbai-usage-ring--healthy {
+    stroke: #10B981;
+}
+
+.bbai-usage-ring--warning {
+    stroke: #F59E0B;
+}
+
+.bbai-usage-ring--danger {
+    stroke: #EF4444;
+}
+
+.bbai-usage-ring--critical {
+    stroke: #EF4444;
+    animation: bbai-pulse-ring 1.5s ease-in-out infinite;
+}
+
+@keyframes bbai-pulse-ring {
+    0%, 100% {
+        opacity: 1;
+        filter: drop-shadow(0 0 0 rgba(239, 68, 68, 0));
+    }
+    50% {
+        opacity: 0.85;
+        filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.5));
+    }
+}
+
+/* Reset Date */
+.bbai-usage-card-redesign .bbai-reset-date {
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.6;
+    color: rgba(0, 0, 0, 0.6);
+    margin: 0;
+}
+
+/* Upgrade CTA Button */
+.bbai-usage-card-redesign .bbai-upgrade-cta-green {
+    width: 100%;
+    border-radius: 12px;
+    background: linear-gradient(to right, #079D52, #17C67A);
+    padding: 16px 24px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #ffffff;
+    box-shadow: 0 4px 16px rgba(5, 150, 105, 0.4);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.bbai-usage-card-redesign .bbai-upgrade-cta-green:hover {
+    box-shadow: 0 6px 20px rgba(5, 150, 105, 0.5);
+    transform: translateY(-2px);
+}
+
+.bbai-usage-card-redesign .bbai-upgrade-cta-green:focus {
+    outline: none;
+    box-shadow: 0 4px 16px rgba(5, 150, 105, 0.4), 0 0 0 4px rgba(16, 185, 129, 0.3);
+}
+
+.bbai-usage-card-redesign .bbai-upgrade-cta-green:active {
+    transform: translateY(0);
+}
+
+/* Action Buttons Grid */
+.bbai-usage-card-redesign .bbai-action-buttons-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    border-top: 1px solid #f3f4f6;
+    padding-top: 24px;
+}
+
+.bbai-usage-card-redesign .bbai-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 9999px;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 48px;
+}
+
+.bbai-usage-card-redesign .bbai-action-btn-primary {
+    background: linear-gradient(to right, #6366F1, #8B5CF6) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    border: none !important;
+}
+
+.bbai-usage-card-redesign .bbai-action-btn-primary:hover:not(:disabled) {
+    background: linear-gradient(to right, #4F46E5, #7C3AED) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.5);
+    transform: translateY(-2px);
+}
+
+.bbai-usage-card-redesign .bbai-action-btn-primary:focus {
+    outline: none;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4), 0 0 0 4px rgba(99, 102, 241, 0.3);
+}
+
+.bbai-usage-card-redesign .bbai-action-btn-primary:disabled,
+.bbai-usage-card-redesign .bbai-action-btn-primary.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: var(--bbai-gray-300, #d1d5db) !important;
+    color: var(--bbai-gray-500, #6b7280) !important;
+    box-shadow: none !important;
+}
+
+.bbai-usage-card-redesign .bbai-action-btn-secondary {
+    background: linear-gradient(to right, #F59E0B, #F97316) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+    border: none !important;
+}
+
+.bbai-usage-card-redesign .bbai-action-btn-secondary:hover:not(:disabled) {
+    background: linear-gradient(to right, #D97706, #EA580C) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.5);
+    transform: translateY(-2px);
+}
+
+.bbai-usage-card-redesign .bbai-action-btn-secondary:focus {
+    outline: none;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4), 0 0 0 4px rgba(245, 158, 11, 0.3);
+}
+
+.bbai-usage-card-redesign .bbai-action-btn-secondary:disabled,
+.bbai-usage-card-redesign .bbai-action-btn-secondary.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: var(--bbai-gray-300, #d1d5db) !important;
+    color: var(--bbai-gray-500, #6b7280) !important;
+    box-shadow: none !important;
+}
+
+/* Stats Tiles */
+.bbai-usage-card-redesign .bbai-stats-tiles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding-top: 16px;
+}
+
+.bbai-usage-card-redesign .bbai-stat-tile {
+    border-radius: 8px;
+    border: 1px solid #f3f4f6;
+    background: #f9fafb;
+    padding: 12px;
+    text-align: center;
+}
+
+.bbai-usage-card-redesign .bbai-stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1;
+}
+
+.bbai-usage-card-redesign .bbai-stat-label {
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+}
+
+.bbai-usage-card-redesign .bbai-stat-sublabel {
+    margin-top: 2px;
+    font-size: 10px;
+    color: #9ca3af;
+}
+
+/* Footer Text */
+.bbai-usage-card-redesign .bbai-footer-text {
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.6;
+    color: rgba(0, 0, 0, 0.6);
+    margin: 0;
+}
+
+/* ============================================
+   UPGRADE GROWTH CARD (Blue Gradient)
+   ============================================ */
+
+.bbai-upgrade-growth-card {
+    border-radius: 24px;
+    background: linear-gradient(to bottom right, #3C84FF, #54A8FF, #7CDDFF);
+    padding: 24px;
+    box-shadow: 0 4px 35px rgba(0, 0, 0, 0.07);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    color: #ffffff; /* Default text color for card content */
+}
+
+/* Full width variant for bottom CTA */
+.bbai-bottom-upsell-cta .bbai-upgrade-growth-card {
+    width: 100%;
+    max-width: 100%;
+}
+
+/* Badge - GROWTH badge - white background with dark text for visibility on blue card */
+.bbai-upgrade-growth-card .bbai-badge--growth,
+.bbai-upgrade-growth-card .bbai-badge-growth,
+.bbai-upgrade-growth-card .bbai-badge.bbai-badge--growth,
+.bbai-upgrade-growth-card span.bbai-badge--growth,
+.bbai-upgrade-growth-card .flex .bbai-badge--growth {
+    display: inline-flex !important;
+    align-items: center;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(4px);
+    padding: 6px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #111827 !important;
+    width: fit-content;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Ensure text color is applied with maximum specificity - target all possible nested elements and text nodes */
+.bbai-upgrade-growth-card .bbai-badge--growth,
+.bbai-upgrade-growth-card .bbai-badge-growth,
+.bbai-upgrade-growth-card .bbai-badge.bbai-badge--growth,
+.bbai-upgrade-growth-card span.bbai-badge--growth,
+.bbai-upgrade-growth-card .flex .bbai-badge--growth,
+.bbai-upgrade-growth-card .bbai-badge--growth *,
+.bbai-upgrade-growth-card .bbai-badge-growth *,
+.bbai-upgrade-growth-card .bbai-badge.bbai-badge--growth *,
+.bbai-upgrade-growth-card span.bbai-badge--growth * {
+    color: #111827 !important;
+}
+
+/* Title */
+.bbai-upgrade-growth-card .bbai-card-title {
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #ffffff;
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .bbai-upgrade-growth-card .bbai-card-title {
+        font-size: 22px;
+    }
+}
+
+/* Subtitle */
+.bbai-upgrade-growth-card .bbai-card-subtitle {
+    font-size: 15px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0;
+}
+
+/* Benefit List */
+.bbai-upgrade-growth-card .bbai-benefits-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.bbai-upgrade-growth-card .bbai-benefit-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.bbai-upgrade-growth-card .bbai-benefit-icon {
+    margin-top: 2px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 24px;
+    width: 24px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.bbai-upgrade-growth-card .bbai-benefit-icon svg {
+    height: 14px;
+    width: 14px;
+    color: #ffffff;
+}
+
+.bbai-upgrade-growth-card .bbai-benefit-text {
+    font-size: 15px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* CTA Section */
+.bbai-upgrade-growth-card .bbai-cta-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 8px;
+}
+
+/* Primary CTA Button */
+.bbai-upgrade-growth-card .bbai-cta-primary {
+    width: 100%;
+    border-radius: 9999px;
+    background: #ffffff;
+    padding: 16px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.bbai-upgrade-growth-card .bbai-cta-primary:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px) scale(1.02);
+    background: #f8fafc;
+}
+
+.bbai-upgrade-growth-card .bbai-cta-primary:focus {
+    outline: none;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), 0 0 0 4px rgba(255, 255, 255, 0.5);
+}
+
+.bbai-upgrade-growth-card .bbai-cta-primary:active {
+    transform: translateY(0) scale(1);
+}
+
+/* Microcopy */
+.bbai-upgrade-growth-card .bbai-cta-microcopy {
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+}
+
+/* Compare Plans Link */
+.bbai-upgrade-growth-card .bbai-compare-link {
+    display: block;
+    text-align: center;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: color 0.2s ease;
+    border-radius: 4px;
+}
+
+.bbai-upgrade-growth-card .bbai-compare-link:hover {
+    color: #ffffff;
+}
+
+.bbai-upgrade-growth-card .bbai-compare-link:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1023px) {
+    .bbai-dashboard-overview {
+        gap: 20px;
+    }
+
+    .bbai-usage-card-redesign,
+    .bbai-upgrade-growth-card {
+        padding: 20px;
+        gap: 20px;
+    }
+}
+
+@media (max-width: 640px) {
+    .bbai-usage-card-redesign .bbai-action-buttons-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .bbai-usage-card-redesign .bbai-stats-tiles {
+        grid-template-columns: 1fr;
+    }
+}
