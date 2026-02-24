@@ -12,13 +12,13 @@ if (!defined('ABSPATH')) {
 }
 
 // Load testimonials data
-$testimonials_file = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/data/testimonials.php';
-$testimonials = file_exists($testimonials_file) ? include $testimonials_file : [];
+$bbai_testimonials_file = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/data/testimonials.php';
+$bbai_testimonials = file_exists($bbai_testimonials_file) ? include $bbai_testimonials_file : [];
 
 // Get usage stats for social proof
-$usage_stats = isset($usage_stats) && is_array($usage_stats) ? $usage_stats : [];
-$total_sites = 10000; // This could be dynamic from API
-$plugin_url = defined('BEEPBEEP_AI_PLUGIN_URL') ? BEEPBEEP_AI_PLUGIN_URL : (defined('BBAI_PLUGIN_URL') ? BBAI_PLUGIN_URL : '');
+$bbai_usage_stats = isset($bbai_usage_stats) && is_array($bbai_usage_stats) ? $bbai_usage_stats : [];
+$bbai_total_sites = 10000; // This could be dynamic from API
+$bbai_plugin_url = defined('BEEPBEEP_AI_PLUGIN_URL') ? BEEPBEEP_AI_PLUGIN_URL : (defined('BBAI_PLUGIN_URL') ? BBAI_PLUGIN_URL : '');
 ?>
 
 <div class="bbai-social-proof-widget">
@@ -73,7 +73,7 @@ $plugin_url = defined('BEEPBEEP_AI_PLUGIN_URL') ? BEEPBEEP_AI_PLUGIN_URL : (defi
                     printf(
                         /* translators: 1: site count */
                         esc_html__('Join %s+ sites', 'beepbeep-ai-alt-text-generator'),
-                        esc_html(number_format($total_sites))
+                        esc_html(number_format($bbai_total_sites))
                     );
                     ?>
                 </span>
@@ -83,70 +83,70 @@ $plugin_url = defined('BEEPBEEP_AI_PLUGIN_URL') ? BEEPBEEP_AI_PLUGIN_URL : (defi
     </div>
 
     <!-- Testimonials Carousel -->
-    <?php if (!empty($testimonials)) : ?>
+    <?php if (!empty($bbai_testimonials)) : ?>
     <div class="bbai-testimonials-carousel">
         <div class="bbai-testimonials-viewport" id="bbai-testimonials-viewport">
             <div class="bbai-testimonials-track" id="bbai-testimonials-track">
-                <?php foreach ($testimonials as $index => $testimonial) : ?>
+                <?php foreach ($bbai_testimonials as $bbai_index => $bbai_testimonial) : ?>
                 <?php
-                $author_name = isset($testimonial['name']) ? $testimonial['name'] : '';
-                $author_role = isset($testimonial['role']) ? $testimonial['role'] : '';
-                $author_company = isset($testimonial['company']) ? $testimonial['company'] : '';
-                $author_title = trim($author_role . ($author_company ? ', ' . $author_company : ''));
-                $rating = isset($testimonial['rating']) ? (int) $testimonial['rating'] : 5;
-                $avatar = isset($testimonial['avatar']) ? $testimonial['avatar'] : '';
-                if (!empty($avatar)) {
-                    $avatar_is_relative = strpos($avatar, 'data:') !== 0
-                        && !preg_match('#^(?:https?:)?//#', $avatar)
-                        && $avatar[0] !== '/';
-                    if ($avatar_is_relative) {
-                        $avatar = $plugin_url . ltrim($avatar, '/');
+                $bbai_author_name = isset($bbai_testimonial['name']) ? $bbai_testimonial['name'] : '';
+                $bbai_author_role = isset($bbai_testimonial['role']) ? $bbai_testimonial['role'] : '';
+                $bbai_author_company = isset($bbai_testimonial['company']) ? $bbai_testimonial['company'] : '';
+                $bbai_author_title = trim($bbai_author_role . ($bbai_author_company ? ', ' . $bbai_author_company : ''));
+                $bbai_rating = isset($bbai_testimonial['rating']) ? (int) $bbai_testimonial['rating'] : 5;
+                $bbai_avatar = isset($bbai_testimonial['avatar']) ? $bbai_testimonial['avatar'] : '';
+                if (!empty($bbai_avatar)) {
+                    $bbai_avatar_is_relative = strpos($bbai_avatar, 'data:') !== 0
+                        && !preg_match('#^(?:https?:)?//#', $bbai_avatar)
+                        && $bbai_avatar[0] !== '/';
+                    if ($bbai_avatar_is_relative) {
+                        $bbai_avatar = $bbai_plugin_url . ltrim($bbai_avatar, '/');
                     }
                 }
-                $name_parts = preg_split('/\s+/', trim($author_name));
-                $initials = '';
-                if (!empty($name_parts[0])) {
-                    $initials = strtoupper(substr($name_parts[0], 0, 1));
-                    if (!empty($name_parts[1])) {
-                        $initials .= strtoupper(substr($name_parts[1], 0, 1));
+                $bbai_name_parts = preg_split('/\s+/', trim($bbai_author_name));
+                $bbai_initials = '';
+                if (!empty($bbai_name_parts[0])) {
+                    $bbai_initials = strtoupper(substr($bbai_name_parts[0], 0, 1));
+                    if (!empty($bbai_name_parts[1])) {
+                        $bbai_initials .= strtoupper(substr($bbai_name_parts[1], 0, 1));
                     }
                 }
-                if ($initials === '') {
-                    $initials = 'AI';
+                if ($bbai_initials === '') {
+                    $bbai_initials = 'AI';
                 }
-                $rating_label = sprintf(
+                $bbai_rating_label = sprintf(
                     /* translators: 1: star rating */
                     esc_attr__('%d out of 5 stars', 'beepbeep-ai-alt-text-generator'),
-                    $rating
+                    $bbai_rating
                 );
                 ?>
-                <div class="bbai-testimonial-card <?php echo esc_attr( $index === 0 ? 'active' : '' ); ?>" data-index="<?php echo esc_attr($index); ?>">
+                <div class="bbai-testimonial-card <?php echo esc_attr( $bbai_index === 0 ? 'active' : '' ); ?>" data-index="<?php echo esc_attr($bbai_index); ?>">
                     <article class="bbai-testimonial-shell">
                         <header class="bbai-testimonial-header">
                             <div class="bbai-testimonial-avatar" aria-hidden="true">
-                                <?php if (!empty($avatar)) : ?>
-                                    <img src="<?php echo esc_url($avatar); ?>" alt="" loading="lazy"/>
+                                <?php if (!empty($bbai_avatar)) : ?>
+                                    <img src="<?php echo esc_url($bbai_avatar); ?>" alt="" loading="lazy"/>
                                 <?php else : ?>
                                     <div class="bbai-testimonial-avatar-fallback" aria-hidden="true">
-                                        <?php echo esc_html($initials); ?>
+                                        <?php echo esc_html($bbai_initials); ?>
                                     </div>
                                 <?php endif; ?>
                             </div>
                             <div class="bbai-testimonial-author">
-                                <strong class="bbai-testimonial-author-name"><?php echo esc_html($author_name); ?></strong>
-                                <?php if ($author_title !== '') : ?>
-                                    <span class="bbai-testimonial-author-role"><?php echo esc_html($author_title); ?></span>
+                                <strong class="bbai-testimonial-author-name"><?php echo esc_html($bbai_author_name); ?></strong>
+                                <?php if ($bbai_author_title !== '') : ?>
+                                    <span class="bbai-testimonial-author-role"><?php echo esc_html($bbai_author_title); ?></span>
                                 <?php endif; ?>
                             </div>
                         </header>
                         <blockquote class="bbai-testimonial-quote">
                             <span class="bbai-testimonial-quote-mark" aria-hidden="true">&ldquo;</span>
-                            <p><?php echo esc_html($testimonial['quote']); ?></p>
+                            <p><?php echo esc_html($bbai_testimonial['quote']); ?></p>
                         </blockquote>
                         <div class="bbai-testimonial-meta">
-                            <div class="bbai-testimonial-stars" role="img" aria-label="<?php echo esc_attr($rating_label); ?>">
-                                <?php for ($i = 0; $i < 5; $i++) : ?>
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" class="bbai-testimonial-star <?php echo esc_attr( $i < $rating ? 'is-filled' : 'is-empty' ); ?>" aria-hidden="true">
+                            <div class="bbai-testimonial-stars" role="img" aria-label="<?php echo esc_attr($bbai_rating_label); ?>">
+                                <?php for ($bbai_i = 0; $bbai_i < 5; $bbai_i++) : ?>
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" class="bbai-testimonial-star <?php echo esc_attr( $bbai_i < $bbai_rating ? 'is-filled' : 'is-empty' ); ?>" aria-hidden="true">
                                         <path d="M8 1L10 5L14 6L11 9L11.5 13L8 11L4.5 13L5 9L2 6L6 5L8 1Z"/>
                                     </svg>
                                 <?php endfor; ?>

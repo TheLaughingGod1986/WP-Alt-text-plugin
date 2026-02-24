@@ -2,7 +2,7 @@
 /**
  * Debug Logs tab content partial.
  *
- * Expects $this (core class), $debug_bootstrap, and $usage_stats in scope.
+ * Expects $this (core class), $debug_bootstrap, and $bbai_usage_stats in scope.
  */
 
 if (!defined('ABSPATH')) {
@@ -11,11 +11,11 @@ if (!defined('ABSPATH')) {
 ?>
 <?php
 // Check authentication - accept either JWT token OR active license
-$is_authenticated = $this->api_client->is_authenticated();
-$has_license = $this->api_client->has_active_license();
-$can_access_debug = $is_authenticated || $has_license;
+$bbai_is_authenticated = $this->api_client->is_authenticated();
+$bbai_has_license = $this->api_client->has_active_license();
+$bbai_can_access_debug = $bbai_is_authenticated || $bbai_has_license;
 
-if (!$can_access_debug) : ?>
+if (!$bbai_can_access_debug) : ?>
     <!-- Debug Logs require authentication -->
     <div class="bbai-dashboard-container">
         <div class="bbai-settings-required">
@@ -51,22 +51,22 @@ if (!$can_access_debug) : ?>
     </div>
 <?php else : ?>
     <?php
-        $debug_logs       = $debug_bootstrap['logs'] ?? [];
-        $debug_stats      = $debug_bootstrap['stats'] ?? [];
-        $debug_pagination = $debug_bootstrap['pagination'] ?? [];
-        $debug_page       = max(1, intval($debug_pagination['page'] ?? 1));
-        $debug_pages      = max(1, intval($debug_pagination['total_pages'] ?? 1));
-        $debug_export_url = wp_nonce_url(
+        $bbai_debug_logs       = $debug_bootstrap['logs'] ?? [];
+        $bbai_debug_stats      = $debug_bootstrap['stats'] ?? [];
+        $bbai_debug_pagination = $debug_bootstrap['pagination'] ?? [];
+        $bbai_debug_page       = max(1, intval($bbai_debug_pagination['page'] ?? 1));
+        $bbai_debug_pages      = max(1, intval($bbai_debug_pagination['total_pages'] ?? 1));
+        $bbai_debug_export_url = wp_nonce_url(
             admin_url('admin-post.php?action=bbai_debug_export'),
             'bbai_debug_export'
         );
         
         // Get plan info for upgrade card
-        $plan_slug = isset($usage_stats) && isset($usage_stats['plan']) ? $usage_stats['plan'] : 'free';
-        $is_pro = ($plan_slug === 'pro' || $plan_slug === 'agency');
-        $is_free = ($plan_slug === 'free');
-        $is_growth = ($plan_slug === 'pro' || $plan_slug === 'growth');
-        $is_agency = ($plan_slug === 'agency');
+        $bbai_plan_slug = isset($bbai_usage_stats) && isset($bbai_usage_stats['plan']) ? $bbai_usage_stats['plan'] : 'free';
+        $bbai_is_pro = ($bbai_plan_slug === 'pro' || $bbai_plan_slug === 'agency');
+        $bbai_is_free = ($bbai_plan_slug === 'free');
+        $bbai_is_growth = ($bbai_plan_slug === 'pro' || $bbai_plan_slug === 'growth');
+        $bbai_is_agency = ($bbai_plan_slug === 'agency');
     ?>
     <div class="bbai-dashboard-container" data-bbai-debug-panel>
         <div class="bbai-page-header bbai-mb-6">
@@ -75,7 +75,7 @@ if (!$can_access_debug) : ?>
                 <p class="bbai-page-subtitle"><?php esc_html_e('API calls, queue events, and error logs', 'beepbeep-ai-alt-text-generator'); ?></p>
             </div>
             <div class="bbai-btn-group">
-                <a href="<?php echo esc_url($debug_export_url); ?>" class="bbai-btn bbai-btn-secondary">
+                <a href="<?php echo esc_url($bbai_debug_export_url); ?>" class="bbai-btn bbai-btn-secondary">
                     <?php esc_html_e('Export CSV', 'beepbeep-ai-alt-text-generator'); ?>
                 </a>
                 <button type="button" class="bbai-btn bbai-btn-secondary" data-debug-clear>
@@ -92,7 +92,7 @@ if (!$can_access_debug) : ?>
                     </svg>
                 </div>
                 <div class="bbai-stat-value" data-debug-stat="total">
-                    <?php echo esc_html(number_format_i18n(intval($debug_stats['total'] ?? 0))); ?>
+                    <?php echo esc_html(number_format_i18n(intval($bbai_debug_stats['total'] ?? 0))); ?>
                 </div>
                 <div class="bbai-stat-label"><?php esc_html_e('Total Logs', 'beepbeep-ai-alt-text-generator'); ?></div>
             </div>
@@ -105,7 +105,7 @@ if (!$can_access_debug) : ?>
                     </svg>
                 </div>
                 <div class="bbai-stat-value bbai-text-warning" data-debug-stat="warnings">
-                    <?php echo esc_html(number_format_i18n(intval($debug_stats['warnings'] ?? 0))); ?>
+                    <?php echo esc_html(number_format_i18n(intval($bbai_debug_stats['warnings'] ?? 0))); ?>
                 </div>
                 <div class="bbai-stat-label"><?php esc_html_e('Warnings', 'beepbeep-ai-alt-text-generator'); ?></div>
             </div>
@@ -117,7 +117,7 @@ if (!$can_access_debug) : ?>
                     </svg>
                 </div>
                 <div class="bbai-stat-value bbai-text-error" data-debug-stat="errors">
-                    <?php echo esc_html(number_format_i18n(intval($debug_stats['errors'] ?? 0))); ?>
+                    <?php echo esc_html(number_format_i18n(intval($bbai_debug_stats['errors'] ?? 0))); ?>
                 </div>
                 <div class="bbai-stat-label"><?php esc_html_e('Errors', 'beepbeep-ai-alt-text-generator'); ?></div>
             </div>
@@ -129,7 +129,7 @@ if (!$can_access_debug) : ?>
                     </svg>
                 </div>
                 <div class="bbai-stat-value bbai-text-secondary bbai-text-lg" data-debug-stat="last_api">
-                    <?php echo esc_html($debug_stats['last_event'] ?? $debug_stats['last_api'] ?? '—'); ?>
+                    <?php echo esc_html($bbai_debug_stats['last_event'] ?? $bbai_debug_stats['last_api'] ?? '—'); ?>
                 </div>
                 <div class="bbai-stat-label"><?php esc_html_e('Last Event Timestamp', 'beepbeep-ai-alt-text-generator'); ?></div>
             </div>
@@ -176,60 +176,60 @@ if (!$can_access_debug) : ?>
                         </tr>
                     </thead>
                     <tbody data-debug-rows>
-                        <?php if (!empty($debug_logs)) : ?>
+                        <?php if (!empty($bbai_debug_logs)) : ?>
                             <?php
-                            $row_index = 0;
-                            foreach ($debug_logs as $log) :
-                                $row_index++;
-                                $level = strtolower($log['level'] ?? 'info');
-                                $level_slug = preg_replace('/[^a-z0-9_-]/i', '', $level) ?: 'info';
-                                $context_attr = '';
-                                $context_source = $log['context'] ?? [];
-                                if (!empty($context_source)) {
-                                    if (is_array($context_source)) {
-                                        $json = wp_json_encode($context_source);
-                                        $context_attr = base64_encode($json);
+                            $bbai_row_index = 0;
+                            foreach ($bbai_debug_logs as $bbai_log) :
+                                $bbai_row_index++;
+                                $bbai_level = strtolower($bbai_log['level'] ?? 'info');
+                                $bbai_level_slug = preg_replace('/[^a-z0-9_-]/i', '', $bbai_level) ?: 'info';
+                                $bbai_context_attr = '';
+                                $bbai_context_source = $bbai_log['context'] ?? [];
+                                if (!empty($bbai_context_source)) {
+                                    if (is_array($bbai_context_source)) {
+                                        $bbai_json = wp_json_encode($bbai_context_source);
+                                        $bbai_context_attr = base64_encode($bbai_json);
                                     } else {
-                                        $context_str = (string) $context_source;
+                                        $bbai_context_str = (string) $bbai_context_source;
                                         if ( ! function_exists( 'bbai_json_decode_array' ) && defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) ) {
                                             require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-json.php';
                                         }
-                                        $decoded = function_exists( 'bbai_json_decode_array' ) ? bbai_json_decode_array( $context_str ) : null;
-                                        if (is_array($decoded)) {
-                                            $json = wp_json_encode($decoded);
-                                            $context_attr = base64_encode($json);
+                                        $bbai_decoded = function_exists( 'bbai_json_decode_array' ) ? bbai_json_decode_array( $bbai_context_str ) : null;
+                                        if (is_array($bbai_decoded)) {
+                                            $bbai_json = wp_json_encode($bbai_decoded);
+                                            $bbai_context_attr = base64_encode($bbai_json);
                                         } else {
-                                            $context_attr = base64_encode($context_str);
+                                            $bbai_context_attr = base64_encode($bbai_context_str);
                                         }
                                     }
                                 }
 
-                                $formatted_date = $log['created_at'] ?? '';
-                                $badge_variant = 'info';
-                                if ($level_slug === 'warning') {
-                                    $badge_variant = 'warning';
-                                } elseif ($level_slug === 'error') {
-                                    $badge_variant = 'error';
-                                } elseif ($level_slug === 'debug') {
-                                    $badge_variant = 'pending';
+                                $bbai_formatted_date = $bbai_log['created_at'] ?? '';
+                                $bbai_badge_variant = 'info';
+                                if ($bbai_level_slug === 'warning') {
+                                    $bbai_badge_variant = 'warning';
+                                } elseif ($bbai_level_slug === 'error') {
+                                    $bbai_badge_variant = 'error';
+                                } elseif ($bbai_level_slug === 'debug') {
+                                    $bbai_badge_variant = 'pending';
                                 }
-                                $badge_class = 'bbai-status-badge bbai-status-badge--' . $badge_variant;
+                                $bbai_badge_class = 'bbai-status-badge bbai-status-badge--' . $bbai_badge_variant;
                             ?>
-                            <tr data-row-index="<?php echo esc_attr($row_index); ?>">
-                                <td class="bbai-text-muted"><?php echo esc_html($formatted_date); ?></td>
+                            <tr data-row-index="<?php echo esc_attr($bbai_row_index); ?>">
+                                <td class="bbai-text-muted"><?php echo esc_html($bbai_formatted_date); ?></td>
                                 <td>
-                                    <span class="<?php echo esc_attr($badge_class); ?>">
-                                        <?php echo esc_html(ucfirst($level_slug)); ?>
+                                    <span class="<?php echo esc_attr($bbai_badge_class); ?>">
+                                        <?php echo esc_html(ucfirst($bbai_level_slug)); ?>
                                     </span>
                                 </td>
-                                <td><?php echo esc_html($log['message'] ?? ''); ?></td>
+                                <td><?php echo esc_html($bbai_log['message'] ?? ''); ?></td>
                                 <td>
-                                    <?php if ($context_attr) : ?>
+                                    <?php if ($bbai_context_attr) : ?>
                                         <button type="button"
                                                 class="bbai-btn bbai-btn-secondary bbai-btn-sm"
                                                 data-debug-context
-                                                data-context-data="<?php echo esc_attr($context_attr); ?>"
-                                                data-row-index="<?php echo esc_attr($row_index); ?>"
+                                                data-context-data="<?php echo esc_attr($bbai_context_attr); ?>"
+                                                data-row-index="<?php echo esc_attr($bbai_row_index); ?>"
                                                 aria-expanded="false">
                                             <?php esc_html_e('Log Context', 'beepbeep-ai-alt-text-generator'); ?>
                                         </button>
@@ -238,8 +238,8 @@ if (!$can_access_debug) : ?>
                                     <?php endif; ?>
                                 </td>
                             </tr>
-                            <?php if ($context_attr) : ?>
-                            <tr class="bbai-debug-context-row" data-row-index="<?php echo esc_attr($row_index); ?>">
+                            <?php if ($bbai_context_attr) : ?>
+                            <tr class="bbai-debug-context-row" data-row-index="<?php echo esc_attr($bbai_row_index); ?>">
                                 <td colspan="4" class="bbai-p-2">
                                     <div class="bbai-card bbai-card--compact">
                                         <pre class="bbai-text-sm" style="font-family: var(--bbai-font-mono); white-space: pre-wrap; word-break: break-word; margin: 0;"></pre>
@@ -260,23 +260,23 @@ if (!$can_access_debug) : ?>
             </div>
         </div>
 
-        <?php if ($debug_pages > 1) : ?>
+        <?php if ($bbai_debug_pages > 1) : ?>
         <div class="bbai-pagination bbai-mb-6">
             <span class="bbai-pagination-info" data-debug-page-indicator>
                 <?php
                     printf(
                         /* translators: 1: current page number, 2: total pages */
                         esc_html__('Page %1$s of %2$s', 'beepbeep-ai-alt-text-generator'),
-                        esc_html(number_format_i18n($debug_page)),
-                        esc_html(number_format_i18n($debug_pages))
+                        esc_html(number_format_i18n($bbai_debug_page)),
+                        esc_html(number_format_i18n($bbai_debug_pages))
                     );
                 ?>
             </span>
             <div class="bbai-pagination-controls">
-                <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm bbai-pagination-btn <?php echo esc_attr( $debug_page <= 1 ? 'bbai-pagination-btn--disabled' : '' ); ?>" data-debug-page="prev" <?php disabled($debug_page <= 1); ?>>
+                <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm bbai-pagination-btn <?php echo esc_attr( $bbai_debug_page <= 1 ? 'bbai-pagination-btn--disabled' : '' ); ?>" data-debug-page="prev" <?php disabled($bbai_debug_page <= 1); ?>>
                     <?php esc_html_e('Previous', 'beepbeep-ai-alt-text-generator'); ?>
                 </button>
-                <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm bbai-pagination-btn <?php echo esc_attr( $debug_page >= $debug_pages ? 'bbai-pagination-btn--disabled' : '' ); ?>" data-debug-page="next" <?php disabled($debug_page >= $debug_pages); ?>>
+                <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm bbai-pagination-btn <?php echo esc_attr( $bbai_debug_page >= $bbai_debug_pages ? 'bbai-pagination-btn--disabled' : '' ); ?>" data-debug-page="next" <?php disabled($bbai_debug_page >= $bbai_debug_pages); ?>>
                     <?php esc_html_e('Next', 'beepbeep-ai-alt-text-generator'); ?>
                 </button>
             </div>
@@ -288,9 +288,9 @@ if (!$can_access_debug) : ?>
     
     <!-- Bottom Upsell CTA (reusable component) -->
     <?php
-    $bottom_upsell_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/bottom-upsell-cta.php';
-    if (file_exists($bottom_upsell_partial)) {
-        include $bottom_upsell_partial;
+    $bbai_bottom_upsell_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/bottom-upsell-cta.php';
+    if (file_exists($bbai_bottom_upsell_partial)) {
+        include $bbai_bottom_upsell_partial;
     }
     ?>
     

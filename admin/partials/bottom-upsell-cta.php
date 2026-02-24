@@ -8,50 +8,50 @@
  * - Agency users: Thank you message with support links
  *
  * Required variables (must be set before including):
- * - $is_free (bool): Whether user is on free plan
- * - $is_growth (bool): Whether user is on growth/pro plan
- * - $is_agency (bool): Whether user is on agency plan
+ * - $bbai_is_free (bool): Whether user is on free plan
+ * - $bbai_is_growth (bool): Whether user is on growth/pro plan
+ * - $bbai_is_agency (bool): Whether user is on agency plan
  *
  * Optional variables:
- * - $usage_stats (array): Array with 'used' and 'limit' keys for urgency messaging
+ * - $bbai_usage_stats (array): Array with 'used' and 'limit' keys for urgency messaging
  */
 if (!defined('ABSPATH')) {
     exit;
 }
 
 // Default values if not set
-$is_free = isset($is_free) ? $is_free : true;
-$is_growth = isset($is_growth) ? $is_growth : false;
-$is_agency = isset($is_agency) ? $is_agency : false;
+$bbai_is_free = isset($bbai_is_free) ? $bbai_is_free : true;
+$bbai_is_growth = isset($bbai_is_growth) ? $bbai_is_growth : false;
+$bbai_is_agency = isset($bbai_is_agency) ? $bbai_is_agency : false;
 
 // Get usage stats for urgency messaging
-$usage_stats = isset($usage_stats) && is_array($usage_stats) ? $usage_stats : [];
-$usage_percent = isset($usage_stats['limit']) && $usage_stats['limit'] > 0
-    ? round(($usage_stats['used'] / $usage_stats['limit']) * 100)
+$bbai_usage_stats = isset($bbai_usage_stats) && is_array($bbai_usage_stats) ? $bbai_usage_stats : [];
+$bbai_usage_percent = isset($bbai_usage_stats['limit']) && $bbai_usage_stats['limit'] > 0
+    ? round(($bbai_usage_stats['used'] / $bbai_usage_stats['limit']) * 100)
     : 0;
-$is_urgent = $usage_percent >= 80;
-$is_critical = $usage_percent >= 95;
-$remaining = isset($usage_stats['limit'], $usage_stats['used'])
-    ? max(0, $usage_stats['limit'] - $usage_stats['used'])
+$bbai_is_urgent = $bbai_usage_percent >= 80;
+$bbai_is_critical = $bbai_usage_percent >= 95;
+$bbai_remaining = isset($bbai_usage_stats['limit'], $bbai_usage_stats['used'])
+    ? max(0, $bbai_usage_stats['limit'] - $bbai_usage_stats['used'])
     : 0;
 
 // Determine what to show
-$show_upsell = !$is_agency;
+$bbai_show_upsell = !$bbai_is_agency;
 ?>
 
 <article class="bbai-bottom-upsell-cta bbai-mt-8" role="region" aria-labelledby="upgrade-headline">
-    <?php if ($is_free) : ?>
+    <?php if ($bbai_is_free) : ?>
         <!-- FREE USERS: Upgrade to Growth -->
         <div class="bbai-upgrade-growth-card" style="width: 100%; max-width: 100%;">
             <!-- Badge -->
             <div class="flex">
                 <?php
-                $badge_text = esc_html__('GROWTH', 'beepbeep-ai-alt-text-generator');
-                $badge_variant = 'growth';
-                $badge_class = '';
-                $badge_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/badge.php';
-                if (file_exists($badge_partial)) {
-                    include $badge_partial;
+                $bbai_badge_text = esc_html__('GROWTH', 'beepbeep-ai-alt-text-generator');
+                $bbai_badge_variant = 'growth';
+                $bbai_badge_class = '';
+                $bbai_badge_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/badge.php';
+                if (file_exists($bbai_badge_partial)) {
+                    include $bbai_badge_partial;
                 }
                 ?>
             </div>
@@ -110,18 +110,18 @@ $show_upsell = !$is_agency;
             </div>
         </div>
 
-    <?php elseif ($is_growth) : ?>
+    <?php elseif ($bbai_is_growth) : ?>
         <!-- GROWTH/PRO USERS: Upgrade to Agency -->
         <div class="bbai-upgrade-growth-card bbai-upgrade-agency-card" style="width: 100%; max-width: 100%;">
             <!-- Badge -->
             <div class="flex">
                 <?php
-                $badge_text = esc_html__('AGENCY', 'beepbeep-ai-alt-text-generator');
-                $badge_variant = 'agency';
-                $badge_class = '';
-                $badge_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/badge.php';
-                if (file_exists($badge_partial)) {
-                    include $badge_partial;
+                $bbai_badge_text = esc_html__('AGENCY', 'beepbeep-ai-alt-text-generator');
+                $bbai_badge_variant = 'agency';
+                $bbai_badge_class = '';
+                $bbai_badge_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/badge.php';
+                if (file_exists($bbai_badge_partial)) {
+                    include $bbai_badge_partial;
                 }
                 ?>
             </div>
@@ -180,7 +180,7 @@ $show_upsell = !$is_agency;
             </div>
         </div>
 
-    <?php elseif ($is_agency) : ?>
+    <?php elseif ($bbai_is_agency) : ?>
         <!-- AGENCY USERS: Thank you + support links -->
         <div class="bbai-agency-thank-you-card" style="width: 100%; max-width: 100%;">
             <div class="bbai-thank-you-content">
@@ -197,13 +197,13 @@ $show_upsell = !$is_agency;
             </div>
             <div class="bbai-agency-links">
                 <?php
-                $billing_portal_url = '';
+                $bbai_billing_portal_url = '';
                 if (class_exists('BeepBeepAI\AltTextGenerator\Usage_Tracker')) {
-                    $billing_portal_url = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_billing_portal_url();
+                    $bbai_billing_portal_url = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_billing_portal_url();
                 }
                 ?>
-                <?php if (!empty($billing_portal_url)) : ?>
-                <a href="<?php echo esc_url($billing_portal_url); ?>" class="bbai-agency-link" target="_blank" rel="noopener">
+                <?php if (!empty($bbai_billing_portal_url)) : ?>
+                <a href="<?php echo esc_url($bbai_billing_portal_url); ?>" class="bbai-agency-link" target="_blank" rel="noopener">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
                         <rect x="2" y="3" width="12" height="10" rx="2"/>
                         <path d="M2 6h12"/>
@@ -231,7 +231,7 @@ $show_upsell = !$is_agency;
 </article>
 
 <!-- Contact Us Link (shown for non-agency users) -->
-<?php if (!$is_agency) : ?>
+<?php if (!$bbai_is_agency) : ?>
 <div class="bbai-footer-contact" style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center;">
     <a href="#" class="bbai-contact-link" data-action="open-contact-modal" style="color: #6b7280; text-decoration: none; font-size: 14px; transition: color 0.2s;">
         <?php esc_html_e('Contact Us', 'beepbeep-ai-alt-text-generator'); ?>

@@ -64,11 +64,13 @@ trait Core_Media {
 
             $image_mime_like = $wpdb->esc_like('image/') . '%';
 
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $total = (int) $wpdb->get_var($wpdb->prepare(
                 'SELECT COUNT(*) FROM ' . $wpdb->posts . ' WHERE post_type = %s AND post_status = %s AND post_mime_type LIKE %s',
                 'attachment', 'inherit', $image_mime_like
             ));
 
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $with_alt = (int) $wpdb->get_var($wpdb->prepare(
                 'SELECT COUNT(DISTINCT p.ID) FROM ' . $wpdb->posts . ' p INNER JOIN ' . $wpdb->postmeta . ' m ON p.ID = m.post_id WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s AND m.meta_key = %s AND TRIM(m.meta_value) <> %s',
                 'attachment',
@@ -78,6 +80,7 @@ trait Core_Media {
                 ''
             ));
 
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $generated = (int) $wpdb->get_var($wpdb->prepare(
                 'SELECT COUNT(DISTINCT post_id) FROM ' . $wpdb->postmeta . ' WHERE meta_key = %s',
                 '_bbai_generated_at'
@@ -98,12 +101,14 @@ trait Core_Media {
                 $usage['last_request_formatted'] = mysql2date($datetime_format, $usage['last_request']);
             }
 
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $latest_generated_input = $wpdb->get_var($wpdb->prepare(
                 'SELECT meta_value FROM ' . $wpdb->postmeta . ' WHERE meta_key = %s ORDER BY meta_value DESC LIMIT 1',
                 '_bbai_generated_at'
             ));
             $latest_generated = $latest_generated_input ? mysql2date($datetime_format, $latest_generated_input) : '';
 
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $top_source_row = $wpdb->get_row(
                 $wpdb->prepare(
                     'SELECT meta_value AS source, COUNT(*) AS count FROM ' . $wpdb->postmeta . ' WHERE meta_key = %s AND meta_value <> %s GROUP BY meta_value ORDER BY COUNT(*) DESC LIMIT 1',
@@ -206,6 +211,7 @@ trait Core_Media {
         }
 
         $image_mime_like = $wpdb->esc_like('image/') . '%';
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         return array_map('intval', (array) $wpdb->get_col($wpdb->prepare(
             'SELECT p.ID FROM ' . $wpdb->posts . ' p LEFT JOIN ' . $wpdb->postmeta . ' m ON (p.ID = m.post_id AND m.meta_key = %s) WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s AND (m.meta_value IS NULL OR TRIM(m.meta_value) = %s) ORDER BY p.ID DESC LIMIT %d',
             '_wp_attachment_image_alt',
@@ -230,6 +236,7 @@ trait Core_Media {
         $offset = max(0, intval($offset));
 
         $image_mime_like = $wpdb->esc_like('image/') . '%';
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $rows = $wpdb->get_col($wpdb->prepare(
             'SELECT p.ID FROM ' . $wpdb->posts . ' p LEFT JOIN ' . $wpdb->postmeta . ' gen ON gen.post_id = p.ID AND gen.meta_key = %s WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s ORDER BY CASE WHEN gen.meta_value IS NOT NULL THEN gen.meta_value ELSE p.post_date END DESC, p.ID DESC LIMIT %d OFFSET %d',
             '_bbai_generated_at',

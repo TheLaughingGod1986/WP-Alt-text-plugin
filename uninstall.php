@@ -30,8 +30,8 @@ $beepbeepai_options = [
 	'beepbeepai_last_upgrade_click',
 ];
 
-foreach ( $beepbeepai_options as $option ) {
-	delete_option( $option );
+foreach ( $beepbeepai_options as $bbai_option ) {
+	delete_option( $bbai_option );
 }
 
 // Delete all bbai_ options (legacy and current)
@@ -45,14 +45,22 @@ $bbai_options = [
 	'bbai_remote_price_ids',
 	'bbai_api_notice_dismissed',
 	'wp_alt_text_api_notice_dismissed',
+	'bbai_db_version',
+	'bbai_cache_gen_logs',
+	'bbai_cache_gen_queue',
+	'bbai_cache_gen_credit_usage',
+	'bbai_cache_gen_usage_logs',
+	'bbai_cache_gen_contact',
+	'bbai_cache_gen_library',
+	'bbai_cache_gen_stats',
 ];
 
-foreach ( $bbai_options as $option ) {
-	delete_option( $option );
+foreach ( $bbai_options as $bbai_option ) {
+	delete_option( $bbai_option );
 }
 
 // Delete all legacy options
-$legacy_options = [
+$bbai_legacy_options = [
 	'beepbeepai_jwt_token',
 	'beepbeepai_user_data',
 	'beepbeepai_site_id',
@@ -62,8 +70,8 @@ $legacy_options = [
 	'opptibbai_site_id',
 ];
 
-foreach ( $legacy_options as $option ) {
-	delete_option( $option );
+foreach ( $bbai_legacy_options as $bbai_option ) {
+	delete_option( $bbai_option );
 }
 
 // Delete all beepbeepai_ transients
@@ -76,8 +84,8 @@ $beepbeepai_transients = [
 	'beepbeepai_usage_refresh_lock',
 ];
 
-foreach ( $beepbeepai_transients as $transient ) {
-	delete_transient( $transient );
+foreach ( $beepbeepai_transients as $bbai_transient ) {
+	delete_transient( $bbai_transient );
 }
 
 // Delete all bbai_ transients
@@ -87,22 +95,23 @@ $bbai_transients = [
 	'bbai_usage_cache',
 	'bbai_remote_price_ids',
 	'bbai_usage_refresh_lock',
+	'bbai_stats_v3',
 ];
 
-foreach ( $bbai_transients as $transient ) {
-	delete_transient( $transient );
+foreach ( $bbai_transients as $bbai_transient ) {
+	delete_transient( $bbai_transient );
 }
 
 // Delete all legacy transients
-$legacy_transients = [
+$bbai_legacy_transients = [
 	'beepbeepai_limit_notice',
 	'beepbeepai_token_last_check',
 	'opptibbai_usage_cache',
 	'opptibbai_token_last_check',
 ];
 
-foreach ( $legacy_transients as $transient ) {
-	delete_transient( $transient );
+foreach ( $bbai_legacy_transients as $bbai_transient ) {
+	delete_transient( $bbai_transient );
 }
 
 // Clear scheduled cron hooks
@@ -111,16 +120,16 @@ wp_clear_scheduled_hook( 'beepbeepai_process_queue' );
 wp_clear_scheduled_hook( \BeepBeepAI\AltTextGenerator\Queue::CRON_HOOK );
 
 // Remove custom capability from administrator role
-$role = get_role( 'administrator' );
-if ( $role && $role->has_cap( 'manage_bbai_alt_text' ) ) {
-	$role->remove_cap( 'manage_bbai_alt_text' );
+$bbai_role = get_role( 'administrator' );
+if ( $bbai_role && $bbai_role->has_cap( 'manage_bbai_alt_text' ) ) {
+	$bbai_role->remove_cap( 'manage_bbai_alt_text' );
 }
-if ( $role && $role->has_cap( 'manage_bbbbai_text' ) ) {
-	$role->remove_cap( 'manage_bbbbai_text' );
+if ( $bbai_role && $bbai_role->has_cap( 'manage_bbbbai_text' ) ) {
+	$bbai_role->remove_cap( 'manage_bbbbai_text' );
 }
 
 // Delete all post meta with beepbeepai_ or ai_alt_ prefix
-$meta_keys_to_delete = [
+$bbai_meta_keys_to_delete = [
 	'_beepbeepai_source',
 	'_beepbeepai_model',
 	'_beepbeepai_generated_at',
@@ -163,22 +172,30 @@ $meta_keys_to_delete = [
 ];
 
 // Delete post meta using prepared statements for security.
-foreach ( $meta_keys_to_delete as $meta_key ) {
+foreach ( $bbai_meta_keys_to_delete as $bbai_meta_key ) {
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	$wpdb->query(
 		$wpdb->prepare(
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			"DELETE FROM {$wpdb->postmeta} WHERE meta_key = %s",
-			$meta_key
+			$bbai_meta_key
 		)
 	);
 }
 
 // Drop custom tables.
-$queue_table_safe        = esc_sql( $wpdb->prefix . 'bbai_queue' );
-$logs_table_safe         = esc_sql( $wpdb->prefix . 'bbai_logs' );
-$legacy_queue_table_safe = esc_sql( $wpdb->prefix . 'beepbeepai_queue' );
-$legacy_logs_table_safe  = esc_sql( $wpdb->prefix . 'beepbeepai_logs' );
+$bbai_queue_table_safe              = esc_sql( $wpdb->prefix . 'bbai_queue' );
+$bbai_logs_table_safe               = esc_sql( $wpdb->prefix . 'bbai_logs' );
+$bbai_credit_usage_table_safe       = esc_sql( $wpdb->prefix . 'bbai_credit_usage' );
+$bbai_usage_logs_table_safe         = esc_sql( $wpdb->prefix . 'bbai_usage_logs' );
+$bbai_contact_submissions_table_safe = esc_sql( $wpdb->prefix . 'bbai_contact_submissions' );
+$bbai_legacy_queue_table_safe       = esc_sql( $wpdb->prefix . 'beepbeepai_queue' );
+$bbai_legacy_logs_table_safe        = esc_sql( $wpdb->prefix . 'beepbeepai_logs' );
 
-$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS `' . $queue_table_safe . '` /* %d */', 1 ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table name is schema-controlled and escaped with esc_sql().
-$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS `' . $logs_table_safe . '` /* %d */', 1 ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table name is schema-controlled and escaped with esc_sql().
-$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS `' . $legacy_queue_table_safe . '` /* %d */', 1 ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table name is schema-controlled and escaped with esc_sql().
-$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS `' . $legacy_logs_table_safe . '` /* %d */', 1 ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table name is schema-controlled and escaped with esc_sql().
+$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS `' . $bbai_queue_table_safe . '` /* %d */', 1 ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared -- Table name is schema-controlled and escaped with esc_sql().
+$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS `' . $bbai_logs_table_safe . '` /* %d */', 1 ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared -- Table name is schema-controlled and escaped with esc_sql().
+$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS `' . $bbai_credit_usage_table_safe . '` /* %d */', 1 ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared -- Table name is schema-controlled and escaped with esc_sql().
+$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS `' . $bbai_usage_logs_table_safe . '` /* %d */', 1 ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared -- Table name is schema-controlled and escaped with esc_sql().
+$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS `' . $bbai_contact_submissions_table_safe . '` /* %d */', 1 ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared -- Table name is schema-controlled and escaped with esc_sql().
+$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS `' . $bbai_legacy_queue_table_safe . '` /* %d */', 1 ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared -- Table name is schema-controlled and escaped with esc_sql().
+$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS `' . $bbai_legacy_logs_table_safe . '` /* %d */', 1 ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared -- Table name is schema-controlled and escaped with esc_sql().

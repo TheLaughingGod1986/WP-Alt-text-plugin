@@ -30,6 +30,7 @@ class Debug_Log {
         $table = esc_sql( self::table() );
         $charset_collate = $wpdb->get_charset_collate();
 
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $sql = "CREATE TABLE `{$table}` (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             level VARCHAR(20) NOT NULL DEFAULT 'info',
@@ -46,6 +47,7 @@ class Debug_Log {
         ) {$charset_collate};";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange
         dbDelta($sql);
         self::$table_verified = true;
     }
@@ -83,6 +85,7 @@ class Debug_Log {
 
         global $wpdb;
         $table = esc_sql( self::table() );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $wpdb->insert(
             $table,
             [
@@ -96,6 +99,8 @@ class Debug_Log {
             ],
             ['%s', '%s', '%s', '%s', '%s', '%d', '%s']
         );
+
+        BBAI_Cache::bump( 'logs' );
     }
 
     /**
@@ -135,6 +140,13 @@ class Debug_Log {
         $page = max(1, intval($args['page']));
         $offset = ($page - 1) * $per_page;
 
+        // Check cache for this specific filter combination.
+        $cache_suffix = md5( wp_json_encode( $args ) );
+        $cached = BBAI_Cache::get( 'logs', $cache_suffix );
+        if ( false !== $cached && is_array( $cached ) ) {
+            return $cached;
+        }
+
         $level = '';
         if (!empty($args['level']) && in_array($args['level'], self::allowed_levels(), true)) {
             $level = $args['level'];
@@ -160,6 +172,7 @@ class Debug_Log {
         $date_from_value    = '' !== $date_from ? $date_from : '1000-01-01';
         $date_to_value      = '' !== $date_to ? $date_to : '9999-12-31';
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $rows = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT * FROM %i
@@ -192,6 +205,7 @@ class Debug_Log {
         );
 
         $total_items = intval(
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $wpdb->get_var(
                 $wpdb->prepare(
                     "SELECT COUNT(*) FROM %i
@@ -222,7 +236,7 @@ class Debug_Log {
 
         $logs = array_map([self::class, 'format_log'], $rows);
 
-        return [
+        $result = [
             'logs' => $logs,
             'pagination' => [
                 'page'        => $page,
@@ -232,6 +246,9 @@ class Debug_Log {
             ],
             'stats' => self::get_stats(),
         ];
+
+        BBAI_Cache::set( 'logs', $cache_suffix, $result, BBAI_Cache::DEFAULT_TTL );
+        return $result;
     }
 
     /**
@@ -248,10 +265,17 @@ class Debug_Log {
             ];
         }
 
+        $cached = BBAI_Cache::get( 'logs', 'stats' );
+        if ( false !== $cached && is_array( $cached ) ) {
+            return $cached;
+        }
+
 	        global $wpdb;
 		        $table = esc_sql( self::table() );
+		        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		        $totals = $wpdb->get_results(
 		            $wpdb->prepare(
+		                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		                "SELECT level, COUNT(*) as total FROM `{$table}` WHERE %d = %d GROUP BY level",
 		                1,
 		                1
@@ -259,9 +283,12 @@ class Debug_Log {
 		            OBJECT_K
 		        );
 
+	        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	        $total_logs = intval(
+	            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	            $wpdb->get_var(
 	                $wpdb->prepare(
+	                    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	                    "SELECT COUNT(*) FROM `{$table}` WHERE %d = %d",
 	                    1,
 	                    1
@@ -269,28 +296,35 @@ class Debug_Log {
 	            )
         );
 
+	        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	        $last_event = $wpdb->get_var(
 	            $wpdb->prepare(
+	                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 	                "SELECT created_at FROM `{$table}` WHERE %d = %d ORDER BY created_at DESC LIMIT 1",
 	                1,
 	                1
 	            )
 	        );
 
+	        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	        $last_api_call = $wpdb->get_var(
 	            $wpdb->prepare(
+	                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	                "SELECT created_at FROM `{$table}` WHERE source = %s ORDER BY created_at DESC LIMIT 1",
 	                'api'
 	            )
 	        );
 
-        return [
+        $result = [
             'total'    => $total_logs,
             'warnings' => isset($totals['warning']) ? intval($totals['warning']->total) : 0,
             'errors'   => isset($totals['error']) ? intval($totals['error']->total) : 0,
             'last_event' => $last_event ? mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $last_event) : null,
             'last_api' => $last_api_call ? mysql2date('g:i A', $last_api_call) : null,
         ];
+
+        BBAI_Cache::set( 'logs', 'stats', $result, BBAI_Cache::DEFAULT_TTL );
+        return $result;
     }
 
     public static function clear_logs() {
@@ -300,13 +334,17 @@ class Debug_Log {
 
 	        global $wpdb;
 		        $table = esc_sql( self::table() );
+		        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		        $wpdb->query(
 		            $wpdb->prepare(
+		                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		                "DELETE FROM `{$table}` WHERE %d = %d",
 		                1,
 		                1
 		            )
 		        );
+
+        BBAI_Cache::bump( 'logs' );
     }
 
     public static function delete_older_than($days = 30) {
@@ -317,12 +355,16 @@ class Debug_Log {
 	        global $wpdb;
 		        $table = esc_sql( self::table() );
 		        $threshold = gmdate('Y-m-d H:i:s', time() - ($days * DAY_IN_SECONDS));
+		        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		        $wpdb->query(
 		            $wpdb->prepare(
+		                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		                "DELETE FROM `{$table}` WHERE created_at < %s",
 		                $threshold
 		            )
 		        );
+
+        BBAI_Cache::bump( 'logs' );
 	    }
 
     private static function allowed_levels() {
@@ -429,6 +471,7 @@ class Debug_Log {
         }
 
         global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $exists = $wpdb->get_var(
             $wpdb->prepare( 'SHOW TABLES LIKE %s', self::table() )
         );

@@ -79,8 +79,10 @@ class Migrate_Usage {
 		$alt_text_like = '%' . $wpdb->esc_like('alt text') . '%';
 		$alt_text_like_cap = '%' . $wpdb->esc_like('Alt text') . '%';
 		$attachment_id_like = '%' . $wpdb->esc_like('attachment_id') . '%';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$logs = $wpdb->get_results(
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				"SELECT id, message, context, source, user_id, created_at FROM `{$logs_table}` WHERE (source = %s OR message LIKE %s OR message LIKE %s) AND context LIKE %s ORDER BY created_at ASC LIMIT %d",
 				'generation',
 				$alt_text_like,
@@ -110,8 +112,10 @@ class Migrate_Usage {
 			}
 
 			// Check if already migrated.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$exists = $wpdb->get_var(
 				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					"SELECT COUNT(*) FROM `{$credit_table}` WHERE attachment_id = %d AND generated_at = %s",
 					$attachment_id,
 					$log['created_at']
@@ -184,6 +188,7 @@ class Migrate_Usage {
 
 			// Update generated_at to match log timestamp
 			if ($logged && !empty($log['created_at'])) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$wpdb->update(
 					$credit_table,
 					['generated_at' => $log['created_at']],
@@ -214,8 +219,10 @@ class Migrate_Usage {
 
 		// Find attachments with AI-generated alt text metadata (check both old and new keys)
 		$image_mime_like = $wpdb->esc_like('image/') . '%';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$attachments = $wpdb->get_results(
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				"SELECT post_id, meta_value, post_author, post_date FROM `{$posts_table}` p INNER JOIN `{$postmeta_table}` pm ON p.ID = pm.post_id WHERE p.post_type = %s AND p.post_mime_type LIKE %s AND (pm.meta_key = %s OR pm.meta_key = %s) AND pm.meta_value IS NOT NULL AND pm.meta_value != %s LIMIT %d",
 				'attachment',
 				$image_mime_like,
@@ -240,8 +247,10 @@ class Migrate_Usage {
 			}
 
 			// Check if already migrated.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$exists = $wpdb->get_var(
 				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					"SELECT COUNT(*) FROM `{$credit_table}` WHERE attachment_id = %d",
 					$attachment_id
 				)
@@ -308,6 +317,7 @@ class Migrate_Usage {
 
 			// Update generated_at to match meta timestamp
 			if ($logged && !empty($generated_at)) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$wpdb->update(
 					$credit_table,
 					['generated_at' => $generated_at],

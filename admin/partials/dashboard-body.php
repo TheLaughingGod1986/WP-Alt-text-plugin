@@ -8,9 +8,9 @@ use BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers;
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/class-plan-helpers.php';
 
 // Include onboarding modal
-$onboarding_modal_path = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/onboarding-modal.php';
-if (file_exists($onboarding_modal_path)) {
-    include $onboarding_modal_path;
+$bbai_onboarding_modal_path = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/onboarding-modal.php';
+if (file_exists($bbai_onboarding_modal_path)) {
+    include $bbai_onboarding_modal_path;
 }
 ?>
 <!-- Tab Content: Dashboard -->
@@ -26,20 +26,20 @@ if (file_exists($onboarding_modal_path)) {
                         </div>
 
                         <?php
-                        $is_authenticated = $this->api_client->is_authenticated();
-                        $has_license = $this->api_client->has_active_license();
+                        $bbai_is_authenticated = $this->api_client->is_authenticated();
+                        $bbai_has_license = $this->api_client->has_active_license();
                         // Treat stored registration/license as access for dashboard content
-                        $has_registered_user = $has_registered_user ?? false;
-                        if ($is_authenticated || $has_license || $has_registered_user) :
+                        $bbai_has_registered_user = $bbai_has_registered_user ?? false;
+                        if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
                             // Get plan data from centralized helper
-                            $plan_data = Plan_Helpers::get_plan_data();
-                            $plan_slug = $plan_data['plan_slug'];
-                            $is_free = $plan_data['is_free'];
-                            $is_growth = $plan_data['is_growth'];
-                            $is_agency = $plan_data['is_agency'];
-                            $is_pro = $plan_data['is_pro'];
-                            $plan_badge_text = Plan_Helpers::get_plan_badge_text();
-                            $plan_badge_variant = Plan_Helpers::get_plan_badge_variant();
+                            $bbai_plan_data = Plan_Helpers::get_plan_data();
+                            $bbai_plan_slug = $bbai_plan_data['plan_slug'];
+                            $bbai_is_free = $bbai_plan_data['is_free'];
+                            $bbai_is_growth = $bbai_plan_data['is_growth'];
+                            $bbai_is_agency = $bbai_plan_data['is_agency'];
+                            $bbai_is_pro = $bbai_plan_data['is_pro'];
+                            $bbai_plan_badge_text = Plan_Helpers::get_plan_badge_text();
+                            $bbai_plan_badge_variant = Plan_Helpers::get_plan_badge_variant();
                         ?>
                         
                         <!-- Multi-User Token Bar Container -->
@@ -48,10 +48,10 @@ if (file_exists($onboarding_modal_path)) {
                         <!-- Premium Stats Grid -->
                         <?php
                         // Check if user has quota remaining (for free users) or is on pro/agency plan
-                        $plan = $usage_stats['plan'] ?? 'free';
-                        $has_quota = ($usage_stats['remaining'] ?? 0) > 0;
-                        $is_premium = in_array($plan, ['pro', 'agency'], true);
-                        $can_generate = $has_quota || $is_premium;
+                        $bbai_plan = $bbai_usage_stats['plan'] ?? 'free';
+                        $bbai_has_quota = ($bbai_usage_stats['remaining'] ?? 0) > 0;
+                        $bbai_is_premium = in_array($bbai_plan, ['pro', 'agency'], true);
+                        $bbai_can_generate = $bbai_has_quota || $bbai_is_premium;
                         ?>
                         <div class="bbai-dashboard-overview">
                             <!-- Usage Card with Circular Progress -->
@@ -59,35 +59,35 @@ if (file_exists($onboarding_modal_path)) {
                                 <!-- Badge -->
                                 <div class="flex">
                                     <?php
-                                    $badge_text = $plan_badge_text;
-                                    $badge_variant = $plan_badge_variant;
-                                    $badge_class = '';
-                                    $badge_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/badge.php';
-                                    if (file_exists($badge_partial)) {
-                                        include $badge_partial;
+                                    $bbai_badge_text = $bbai_plan_badge_text;
+                                    $bbai_badge_variant = $bbai_plan_badge_variant;
+                                    $bbai_badge_class = '';
+                                    $bbai_badge_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/badge.php';
+                                    if (file_exists($bbai_badge_partial)) {
+                                        include $bbai_badge_partial;
                                     }
                                     ?>
                                 </div>
                                 <?php
-                                $percentage = min(100, max(0, $usage_stats['percentage'] ?? 0));
-                                $percentage_display = $usage_stats['percentage_display'] ?? Usage_Tracker::format_percentage_label($percentage);
-                                $radius = 48;
-                                $circumference = 2 * M_PI * $radius;
-                                $stroke_dashoffset = $circumference * (1 - ($percentage / 100));
+                                $bbai_percentage = min(100, max(0, $bbai_usage_stats['percentage'] ?? 0));
+                                $bbai_percentage_display = $bbai_usage_stats['percentage_display'] ?? Usage_Tracker::format_percentage_label($bbai_percentage);
+                                $bbai_radius = 48;
+                                $bbai_circumference = 2 * M_PI * $bbai_radius;
+                                $bbai_stroke_dashoffset = $bbai_circumference * (1 - ($bbai_percentage / 100));
 
                                 // Adaptive circle color based on usage percentage
-                                if ($percentage >= 100) {
-                                    $circle_stroke = '#EF4444';
-                                    $ring_color_class = 'bbai-usage-ring--critical';
-                                } elseif ($percentage >= 86) {
-                                    $circle_stroke = '#EF4444';
-                                    $ring_color_class = 'bbai-usage-ring--danger';
-                                } elseif ($percentage >= 61) {
-                                    $circle_stroke = '#F59E0B';
-                                    $ring_color_class = 'bbai-usage-ring--warning';
+                                if ($bbai_percentage >= 100) {
+                                    $bbai_circle_stroke = '#EF4444';
+                                    $bbai_ring_color_class = 'bbai-usage-ring--critical';
+                                } elseif ($bbai_percentage >= 86) {
+                                    $bbai_circle_stroke = '#EF4444';
+                                    $bbai_ring_color_class = 'bbai-usage-ring--danger';
+                                } elseif ($bbai_percentage >= 61) {
+                                    $bbai_circle_stroke = '#F59E0B';
+                                    $bbai_ring_color_class = 'bbai-usage-ring--warning';
                                 } else {
-                                    $circle_stroke = '#10B981';
-                                    $ring_color_class = 'bbai-usage-ring--healthy';
+                                    $bbai_circle_stroke = '#10B981';
+                                    $bbai_ring_color_class = 'bbai-usage-ring--healthy';
                                 }
                                 ?>
                                 <!-- Title -->
@@ -108,21 +108,21 @@ if (file_exists($onboarding_modal_path)) {
                                             <!-- Progress circle -->
                                             <circle
                                                 id="bbai-usage-progress-ring"
-                                                class="bbai-circular-progress-bar bbai-usage-ring <?php echo esc_attr($ring_color_class); ?>"
+                                                class="bbai-circular-progress-bar bbai-usage-ring <?php echo esc_attr($bbai_ring_color_class); ?>"
                                                 cx="60"
                                                 cy="60"
                                                 r="48"
                                                 fill="none"
-                                                stroke="<?php echo esc_attr($circle_stroke); ?>"
+                                                stroke="<?php echo esc_attr($bbai_circle_stroke); ?>"
                                                 stroke-width="12"
                                                 stroke-linecap="round"
-                                                stroke-dasharray="<?php echo esc_attr($circumference); ?>"
-                                                stroke-dashoffset="<?php echo esc_attr($stroke_dashoffset); ?>"
-                                                data-circumference="<?php echo esc_attr($circumference); ?>"
-                                                data-percentage="<?php echo esc_attr($percentage); ?>" />
+                                                stroke-dasharray="<?php echo esc_attr($bbai_circumference); ?>"
+                                                stroke-dashoffset="<?php echo esc_attr($bbai_stroke_dashoffset); ?>"
+                                                data-circumference="<?php echo esc_attr($bbai_circumference); ?>"
+                                                data-percentage="<?php echo esc_attr($bbai_percentage); ?>" />
                                         </svg>
                                         <div class="bbai-circular-progress-text">
-                                            <div class="bbai-circular-progress-percent"><?php echo esc_html($percentage_display); ?>%</div>
+                                            <div class="bbai-circular-progress-percent"><?php echo esc_html($bbai_percentage_display); ?>%</div>
                                             <div class="bbai-circular-progress-label"><?php esc_html_e('IMAGES USED', 'beepbeep-ai-alt-text-generator'); ?></div>
                                         </div>
                                     </div>
@@ -131,28 +131,28 @@ if (file_exists($onboarding_modal_path)) {
                                 <!-- Usage Count -->
                                 <div class="text-center">
                                     <p class="bbai-usage-count">
-                                        <strong><?php echo esc_html(number_format_i18n($usage_stats['used'] ?? 0)); ?></strong> of <strong><?php echo esc_html(number_format_i18n($usage_stats['limit'] ?? 0)); ?></strong> images used this month
+                                        <strong><?php echo esc_html(number_format_i18n($bbai_usage_stats['used'] ?? 0)); ?></strong> of <strong><?php echo esc_html(number_format_i18n($bbai_usage_stats['limit'] ?? 0)); ?></strong> images used this month
                                     </p>
                                 </div>
 
                                 <!-- Linear Progress Bar -->
                                 <div class="bbai-linear-progress">
-                                    <div class="bbai-linear-progress-fill" style="width: <?php echo esc_attr($percentage); ?>%; background: <?php echo esc_attr($circle_stroke); ?>;"></div>
+                                    <div class="bbai-linear-progress-fill" style="width: <?php echo esc_attr($bbai_percentage); ?>%; background: <?php echo esc_attr($bbai_circle_stroke); ?>;"></div>
                                 </div>
 
                                 <!-- Reset Date -->
                                 <p class="bbai-reset-date">
                                     <?php 
-                                    $reset_date = $usage_stats['reset_date'] ?? '';
-                                    if (!empty($reset_date)) {
-                                        $reset_timestamp = strtotime($reset_date);
-                                        if ($reset_timestamp !== false) {
-                                            $formatted_date = date_i18n('F j, Y', $reset_timestamp);
+                                    $bbai_reset_date = $bbai_usage_stats['reset_date'] ?? '';
+                                    if (!empty($bbai_reset_date)) {
+                                        $bbai_reset_timestamp = strtotime($bbai_reset_date);
+                                        if ($bbai_reset_timestamp !== false) {
+                                            $bbai_formatted_date = date_i18n('F j, Y', $bbai_reset_timestamp);
                                             /* translators: 1: reset date */
-                                            printf(esc_html__('Resets %s', 'beepbeep-ai-alt-text-generator'), esc_html($formatted_date));
+                                            printf(esc_html__('Resets %s', 'beepbeep-ai-alt-text-generator'), esc_html($bbai_formatted_date));
                                         } else {
                                             /* translators: 1: reset date */
-                                            printf(esc_html__('Resets %s', 'beepbeep-ai-alt-text-generator'), esc_html($reset_date));
+                                            printf(esc_html__('Resets %s', 'beepbeep-ai-alt-text-generator'), esc_html($bbai_reset_date));
                                         }
                                     } else {
                                         esc_html_e('Resets monthly', 'beepbeep-ai-alt-text-generator');
@@ -161,7 +161,7 @@ if (file_exists($onboarding_modal_path)) {
                                 </p>
 
                                 <!-- Plan-Aware CTA -->
-                                <?php if ($is_free) : ?>
+                                <?php if ($bbai_is_free) : ?>
                                     <button
                                         type="button"
                                         class="bbai-btn bbai-btn-primary bbai-upgrade-cta-green"
@@ -173,7 +173,7 @@ if (file_exists($onboarding_modal_path)) {
                                             <path d="M6 12L10 8L6 4" stroke-linecap="round" stroke-linejoin="round" />
                                         </svg>
                                     </button>
-                                <?php elseif ($is_growth) : ?>
+                                <?php elseif ($bbai_is_growth) : ?>
                                     <button
                                         type="button"
                                         class="bbai-btn bbai-btn-primary bbai-upgrade-cta-green"
@@ -185,15 +185,15 @@ if (file_exists($onboarding_modal_path)) {
                                             <path d="M6 12L10 8L6 4" stroke-linecap="round" stroke-linejoin="round" />
                                         </svg>
                                     </button>
-                                <?php elseif ($is_agency) : ?>
+                                <?php elseif ($bbai_is_agency) : ?>
                                     <?php
-                                    $billing_portal_url = '';
+                                    $bbai_billing_portal_url = '';
                                     if (class_exists('BeepBeepAI\AltTextGenerator\Usage_Tracker')) {
-                                        $billing_portal_url = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_billing_portal_url();
+                                        $bbai_billing_portal_url = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_billing_portal_url();
                                     }
-                                    if (!empty($billing_portal_url)) : ?>
+                                    if (!empty($bbai_billing_portal_url)) : ?>
                                         <a
-                                            href="<?php echo esc_url($billing_portal_url); ?>"
+                                            href="<?php echo esc_url($bbai_billing_portal_url); ?>"
                                             class="bbai-btn bbai-btn-secondary"
                                             target="_blank"
                                             rel="noopener"
@@ -210,16 +210,16 @@ if (file_exists($onboarding_modal_path)) {
                                 <div class="bbai-action-buttons-grid">
                                 <button
                                     type="button"
-                                    class="bbai-btn bbai-action-btn bbai-action-btn-primary <?php echo esc_attr((!$can_generate || $remaining_imgs === 0) ? 'disabled' : ''); ?>"
+                                    class="bbai-btn bbai-action-btn bbai-action-btn-primary <?php echo esc_attr((!$bbai_can_generate || $bbai_remaining_imgs === 0) ? 'disabled' : ''); ?>"
                                     data-action="generate-missing"
-                                    <?php if (!$can_generate || $remaining_imgs === 0) : ?>
+                                    <?php if (!$bbai_can_generate || $bbai_remaining_imgs === 0) : ?>
                                         disabled
                                     <?php endif; ?>
                                     aria-label="<?php esc_attr_e('Generate Missing', 'beepbeep-ai-alt-text-generator'); ?>"
-                                    <?php if ($can_generate && $remaining_imgs > 0) : ?>
+                                    <?php if ($bbai_can_generate && $bbai_remaining_imgs > 0) : ?>
                                     data-bbai-tooltip="<?php esc_attr_e('Generate alt text for images that don\'t have any', 'beepbeep-ai-alt-text-generator'); ?>"
                                     data-bbai-tooltip-position="bottom"
-                                    <?php elseif ($remaining_imgs === 0) : ?>
+                                    <?php elseif ($bbai_remaining_imgs === 0) : ?>
                                     title="<?php esc_attr_e('All images already have alt text', 'beepbeep-ai-alt-text-generator'); ?>"
                                     <?php else : ?>
                                     title="<?php esc_attr_e('Upgrade to unlock more generations', 'beepbeep-ai-alt-text-generator'); ?>"
@@ -233,13 +233,13 @@ if (file_exists($onboarding_modal_path)) {
                                     </button>
                                     <button
                                         type="button"
-                                        class="bbai-btn bbai-action-btn bbai-action-btn-secondary <?php echo esc_attr((!$can_generate) ? 'disabled' : ''); ?>"
+                                        class="bbai-btn bbai-action-btn bbai-action-btn-secondary <?php echo esc_attr((!$bbai_can_generate) ? 'disabled' : ''); ?>"
                                         data-action="regenerate-all"
-                                        <?php if (!$can_generate) : ?>
+                                        <?php if (!$bbai_can_generate) : ?>
                                             disabled
                                         <?php endif; ?>
                                         aria-label="<?php esc_attr_e('Re-optimise All', 'beepbeep-ai-alt-text-generator'); ?>"
-                                        <?php if ($can_generate) : ?>
+                                        <?php if ($bbai_can_generate) : ?>
                                         data-bbai-tooltip="<?php esc_attr_e('Regenerate alt text for ALL images, replacing existing ones', 'beepbeep-ai-alt-text-generator'); ?>"
                                         data-bbai-tooltip-position="bottom"
                                         <?php else : ?>
@@ -261,17 +261,17 @@ if (file_exists($onboarding_modal_path)) {
                             </div>
                             
                             <!-- Upgrade Growth Card -->
-                            <?php if (!$is_agency) : ?>
+                            <?php if (!$bbai_is_agency) : ?>
                             <div class="bbai-upgrade-growth-card">
                                 <!-- Badge -->
                                 <div class="flex">
                                     <?php
-                                    $badge_text = esc_html__('GROWTH', 'beepbeep-ai-alt-text-generator');
-                                    $badge_variant = 'growth';
-                                    $badge_class = '';
-                                    $badge_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/badge.php';
-                                    if (file_exists($badge_partial)) {
-                                        include $badge_partial;
+                                    $bbai_badge_text = esc_html__('GROWTH', 'beepbeep-ai-alt-text-generator');
+                                    $bbai_badge_variant = 'growth';
+                                    $bbai_badge_class = '';
+                                    $bbai_badge_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/badge.php';
+                                    if (file_exists($bbai_badge_partial)) {
+                                        include $bbai_badge_partial;
                                     }
                                     ?>
                                 </div>
@@ -350,11 +350,11 @@ if (file_exists($onboarding_modal_path)) {
                         <!-- Stats Cards Row -->
                         <?php
                         // Prepare data for reusable metric cards component
-                        $alt_texts_generated = $usage_stats['used'] ?? 0;
-                        $description_mode = ($alt_texts_generated > 0 || ($stats['with_alt'] ?? 0) > 0) ? 'active' : 'empty';
-                        $metric_cards_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/metric-cards.php';
-                        if (file_exists($metric_cards_partial)) {
-                            include $metric_cards_partial;
+                        $bbai_alt_texts_generated = $bbai_usage_stats['used'] ?? 0;
+                        $bbai_description_mode = ($bbai_alt_texts_generated > 0 || ($bbai_stats['with_alt'] ?? 0) > 0) ? 'active' : 'empty';
+                        $bbai_metric_cards_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/metric-cards.php';
+                        if (file_exists($bbai_metric_cards_partial)) {
+                            include $bbai_metric_cards_partial;
                         }
                         ?>
                         
@@ -373,23 +373,23 @@ if (file_exists($onboarding_modal_path)) {
 
                         <!-- Image Optimization Card (Full Width Pill) -->
                         <?php
-                        $total_images = $stats['total'] ?? 0;
-                        $optimized = $stats['with_alt'] ?? 0;
-                        $remaining_imgs = $stats['missing'] ?? 0;
-                        $coverage_pct = $total_images > 0 ? round(($optimized / $total_images) * 100) : 0;
+                        $bbai_total_images = $bbai_stats['total'] ?? 0;
+                        $bbai_optimized = $bbai_stats['with_alt'] ?? 0;
+                        $bbai_remaining_imgs = $bbai_stats['missing'] ?? 0;
+                        $bbai_coverage_pct = $bbai_total_images > 0 ? round(($bbai_optimized / $bbai_total_images) * 100) : 0;
 
                         // Check if user has quota remaining (for free users) or is on pro/agency plan
-                        $plan = $usage_stats['plan'] ?? 'free';
-                        $has_quota = ($usage_stats['remaining'] ?? 0) > 0;
-                        $is_premium = in_array($plan, ['pro', 'agency'], true);
-                        $can_generate = $has_quota || $is_premium;
+                        $bbai_plan = $bbai_usage_stats['plan'] ?? 'free';
+                        $bbai_has_quota = ($bbai_usage_stats['remaining'] ?? 0) > 0;
+                        $bbai_is_premium = in_array($bbai_plan, ['pro', 'agency'], true);
+                        $bbai_can_generate = $bbai_has_quota || $bbai_is_premium;
                         ?>
-                        <div class="bbai-premium-card bbai-optimization-card <?php echo esc_attr(($total_images > 0 && $remaining_imgs === 0) ? 'bbai-optimization-card--complete' : ''); ?>">
-                            <?php if ($total_images > 0 && $remaining_imgs === 0) : ?>
+                        <div class="bbai-premium-card bbai-optimization-card <?php echo esc_attr(($bbai_total_images > 0 && $bbai_remaining_imgs === 0) ? 'bbai-optimization-card--complete' : ''); ?>">
+                            <?php if ($bbai_total_images > 0 && $bbai_remaining_imgs === 0) : ?>
                                 <div class="bbai-optimization-accent-bar"></div>
                             <?php endif; ?>
                             <div class="bbai-optimization-header">
-                                <?php if ($total_images > 0 && $remaining_imgs === 0) : ?>
+                                <?php if ($bbai_total_images > 0 && $bbai_remaining_imgs === 0) : ?>
                                     <div class="bbai-optimization-success-chip">
                                         <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                                             <path d="M13 4L6 11L3 8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -398,20 +398,20 @@ if (file_exists($onboarding_modal_path)) {
                                 <?php endif; ?>
                                 <h2 class="bbai-optimization-title">
                                     <?php 
-                                    if ($total_images > 0) {
-                                        if ($remaining_imgs > 0) {
+                                    if ($bbai_total_images > 0) {
+                                        if ($bbai_remaining_imgs > 0) {
                                             printf(
                                                 /* translators: 1: optimized images count, 2: total images count */
                                                 esc_html__('%1$s of %2$s images optimized', 'beepbeep-ai-alt-text-generator'),
-                                                esc_html(number_format_i18n($optimized)),
-                                                esc_html(number_format_i18n($total_images))
+                                                esc_html(number_format_i18n($bbai_optimized)),
+                                                esc_html(number_format_i18n($bbai_total_images))
                                             );
                                         } else {
                                             // Success chip with checkmark icon is already shown above
                                             printf(
                                                 /* translators: 1: total images count */
                                                 esc_html__('All %1$s images optimized!', 'beepbeep-ai-alt-text-generator'),
-                                                esc_html(number_format_i18n($total_images))
+                                                esc_html(number_format_i18n($bbai_total_images))
                                             );
                                         }
                                     } else {
@@ -421,30 +421,30 @@ if (file_exists($onboarding_modal_path)) {
                                 </h2>
                             </div>
                             
-                            <?php if ($total_images > 0) : ?>
+                            <?php if ($bbai_total_images > 0) : ?>
                                 <div class="bbai-optimization-progress">
                                     <div class="bbai-optimization-progress-bar">
-                                        <div class="bbai-optimization-progress-fill" style="width: <?php echo esc_attr($coverage_pct); ?>%; background: <?php echo esc_attr(($remaining_imgs === 0) ? '#10b981' : '#9b5cff'); ?>;"></div>
+                                        <div class="bbai-optimization-progress-fill" style="width: <?php echo esc_attr($bbai_coverage_pct); ?>%; background: <?php echo esc_attr(($bbai_remaining_imgs === 0) ? '#10b981' : '#9b5cff'); ?>;"></div>
                                     </div>
                                     <div class="bbai-optimization-stats">
                                         <div class="bbai-optimization-stat" data-bbai-tooltip="<?php esc_attr_e('Number of images that already have alt text. These images are SEO-ready and accessible.', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="top">
                                             <span class="bbai-optimization-stat-label"><?php esc_html_e('Optimized', 'beepbeep-ai-alt-text-generator'); ?></span>
-                                            <span class="bbai-optimization-stat-value"><?php echo esc_html(number_format_i18n($optimized)); ?></span>
+                                            <span class="bbai-optimization-stat-value"><?php echo esc_html(number_format_i18n($bbai_optimized)); ?></span>
                                         </div>
                                         <div class="bbai-optimization-stat" data-bbai-tooltip="<?php esc_attr_e('Images without alt text. These need optimization for better SEO and accessibility compliance.', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="top">
                                             <span class="bbai-optimization-stat-label"><?php esc_html_e('Remaining', 'beepbeep-ai-alt-text-generator'); ?></span>
-                                            <span class="bbai-optimization-stat-value"><?php echo esc_html(number_format_i18n($remaining_imgs)); ?></span>
+                                            <span class="bbai-optimization-stat-value"><?php echo esc_html(number_format_i18n($bbai_remaining_imgs)); ?></span>
                                         </div>
                                         <div class="bbai-optimization-stat" data-bbai-tooltip="<?php esc_attr_e('Total number of images in your media library. This includes all image types and sizes.', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="top">
                                             <span class="bbai-optimization-stat-label"><?php esc_html_e('Total', 'beepbeep-ai-alt-text-generator'); ?></span>
-                                            <span class="bbai-optimization-stat-value"><?php echo esc_html(number_format_i18n($total_images)); ?></span>
+                                            <span class="bbai-optimization-stat-value"><?php echo esc_html(number_format_i18n($bbai_total_images)); ?></span>
                                         </div>
                                     </div>
                                     <div class="bbai-optimization-actions">
-                                        <button type="button" class="bbai-optimization-cta bbai-optimization-cta--primary <?php echo esc_attr((!$can_generate) ? 'bbai-optimization-cta--locked' : ''); ?> <?php echo esc_attr(($remaining_imgs === 0) ? 'bbai-optimization-cta--disabled' : ''); ?>" data-action="generate-missing"
-                                            <?php if (!$can_generate || $remaining_imgs === 0) : ?>
+                                        <button type="button" class="bbai-optimization-cta bbai-optimization-cta--primary <?php echo esc_attr((!$bbai_can_generate) ? 'bbai-optimization-cta--locked' : ''); ?> <?php echo esc_attr(($bbai_remaining_imgs === 0) ? 'bbai-optimization-cta--disabled' : ''); ?>" data-action="generate-missing"
+                                            <?php if (!$bbai_can_generate || $bbai_remaining_imgs === 0) : ?>
                                                 disabled
-                                                <?php if ($remaining_imgs === 0) : ?>
+                                                <?php if ($bbai_remaining_imgs === 0) : ?>
                                                     title="<?php esc_attr_e('All images already have alt text', 'beepbeep-ai-alt-text-generator'); ?>"
                                                 <?php else : ?>
                                                     title="<?php esc_attr_e('Unlock 1,000 alt text generations with Growth →', 'beepbeep-ai-alt-text-generator'); ?>"
@@ -454,7 +454,7 @@ if (file_exists($onboarding_modal_path)) {
                                                 data-bbai-tooltip-position="bottom"
                                             <?php endif; ?>
                                         >
-                                            <?php if (!$can_generate) : ?>
+                                            <?php if (!$bbai_can_generate) : ?>
                                                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
                                                     <path d="M12 6V4a4 4 0 00-8 0v2M4 6h8l1 8H3L4 6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                                                 </svg>
@@ -467,8 +467,8 @@ if (file_exists($onboarding_modal_path)) {
                                                 <span><?php esc_html_e('Generate Missing', 'beepbeep-ai-alt-text-generator'); ?></span>
                                             <?php endif; ?>
                                         </button>
-                                        <button type="button" class="bbai-optimization-cta bbai-optimization-cta--secondary bbai-cta-glow-blue <?php echo esc_attr((!$can_generate) ? 'bbai-optimization-cta--locked' : ''); ?>" data-action="regenerate-all"
-                                            <?php if (!$can_generate) : ?>
+                                        <button type="button" class="bbai-optimization-cta bbai-optimization-cta--secondary bbai-cta-glow-blue <?php echo esc_attr((!$bbai_can_generate) ? 'bbai-optimization-cta--locked' : ''); ?>" data-action="regenerate-all"
+                                            <?php if (!$bbai_can_generate) : ?>
                                                 disabled
                                                 title="<?php esc_attr_e('Unlock 1,000 alt text generations with Growth →', 'beepbeep-ai-alt-text-generator'); ?>"
                                             <?php else : ?>
@@ -487,12 +487,12 @@ if (file_exists($onboarding_modal_path)) {
                             <?php else : ?>
                                 <div class="bbai-optimization-empty bbai-ready-optimise">
                                     <?php
-                                    $badge_text = esc_html__('GETTING STARTED', 'beepbeep-ai-alt-text-generator');
-                                    $badge_variant = 'getting-started';
-                                    $badge_class = 'bbai-ready-optimise__badge';
-                                    $badge_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/badge.php';
-                                    if (file_exists($badge_partial)) {
-                                        include $badge_partial;
+                                    $bbai_badge_text = esc_html__('GETTING STARTED', 'beepbeep-ai-alt-text-generator');
+                                    $bbai_badge_variant = 'getting-started';
+                                    $bbai_badge_class = 'bbai-ready-optimise__badge';
+                                    $bbai_badge_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/badge.php';
+                                    if (file_exists($bbai_badge_partial)) {
+                                        include $bbai_badge_partial;
                                     }
                                     ?>
                                     <h3 class="bbai-ready-optimise__title"><?php esc_html_e("You're ready to optimise your images", 'beepbeep-ai-alt-text-generator'); ?></h3>
@@ -503,17 +503,17 @@ if (file_exists($onboarding_modal_path)) {
 
     <!-- Social Proof Widget -->
     <?php
-    $social_proof_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/social-proof-widget.php';
-    if (file_exists($social_proof_partial)) {
-        include $social_proof_partial;
+    $bbai_social_proof_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/social-proof-widget.php';
+    if (file_exists($bbai_social_proof_partial)) {
+        include $bbai_social_proof_partial;
     }
     ?>
 
     <!-- Bottom Upsell CTA (reusable component) -->
     <?php
     // Plan variables are already set from Plan_Helpers above
-    $bottom_upsell_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/bottom-upsell-cta.php';
-    if (file_exists($bottom_upsell_partial)) {
-        include $bottom_upsell_partial;
+    $bbai_bottom_upsell_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/bottom-upsell-cta.php';
+    if (file_exists($bbai_bottom_upsell_partial)) {
+        include $bbai_bottom_upsell_partial;
     }
     ?>

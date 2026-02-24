@@ -9,39 +9,39 @@ if (!defined('ABSPATH')) {
 }
 
 // Get license sites data
-$license_sites_data = $this->api_client->get_license_sites();
-$sites = [];
-$total_alt_text = 0;
-$total_images_optimized = 0;
-$total_hours_saved = 0;
-$this_month_alt_text = 0;
+$bbai_license_sites_data = $this->api_client->get_license_sites();
+$bbai_sites = [];
+$bbai_total_alt_text = 0;
+$bbai_total_images_optimized = 0;
+$bbai_total_hours_saved = 0;
+$bbai_this_month_alt_text = 0;
 
-if (!is_wp_error($license_sites_data) && isset($license_sites_data['sites'])) {
-    $sites = $license_sites_data['sites'];
+if (!is_wp_error($bbai_license_sites_data) && isset($bbai_license_sites_data['sites'])) {
+    $bbai_sites = $bbai_license_sites_data['sites'];
     
     // Calculate totals
-    foreach ($sites as $site) {
-        $alt_text_count = intval($site['altTextCount'] ?? 0);
-        $images_optimized = intval($site['imagesOptimized'] ?? 0);
-        $total_alt_text += $alt_text_count;
-        $total_images_optimized += $images_optimized;
+    foreach ($bbai_sites as $bbai_site) {
+        $bbai_alt_text_count = intval($bbai_site['altTextCount'] ?? 0);
+        $bbai_images_optimized = intval($bbai_site['imagesOptimized'] ?? 0);
+        $bbai_total_alt_text += $bbai_alt_text_count;
+        $bbai_total_images_optimized += $bbai_images_optimized;
         
         // Calculate hours saved (2.5 minutes per alt text)
-        $hours_saved = round(($alt_text_count * 2.5) / 60, 1);
-        $total_hours_saved += $hours_saved;
+        $bbai_hours_saved = round(($bbai_alt_text_count * 2.5) / 60, 1);
+        $bbai_total_hours_saved += $bbai_hours_saved;
         
         // This month calculation (would need API to provide monthly breakdown)
         // For now, using a simple estimate
-        $this_month_alt_text += $alt_text_count; // Placeholder - would need monthly data from API
+        $bbai_this_month_alt_text += $bbai_alt_text_count; // Placeholder - would need monthly data from API
     }
 }
 
-$site_count = count($sites);
-$minutes_per_alt_text = 2.5;
-$total_hours_saved = round(($total_alt_text * $minutes_per_alt_text) / 60, 1);
+$bbai_site_count = count($bbai_sites);
+$bbai_minutes_per_alt_text = 2.5;
+$bbai_total_hours_saved = round(($bbai_total_alt_text * $bbai_minutes_per_alt_text) / 60, 1);
 
 // Export URL
-$export_url = wp_nonce_url(admin_url('admin-post.php?action=bbai_usage_export'), 'bbai_usage_export');
+$bbai_export_url = wp_nonce_url(admin_url('admin-post.php?action=bbai_usage_export'), 'bbai_usage_export');
 ?>
 
 <!-- Tab Content: Agency Overview -->
@@ -57,7 +57,7 @@ $export_url = wp_nonce_url(admin_url('admin-post.php?action=bbai_usage_export'),
                 <h1 class="bbai-agency-overview-title"><?php esc_html_e('Agency Overview', 'beepbeep-ai-alt-text-generator'); ?></h1>
             </div>
             <div class="bbai-agency-overview-header-right">
-                <a href="<?php echo esc_url($export_url); ?>" class="bbai-btn bbai-btn-secondary bbai-agency-export-btn">
+                <a href="<?php echo esc_url($bbai_export_url); ?>" class="bbai-btn bbai-btn-secondary bbai-agency-export-btn">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="bbai-export-icon">
                         <path d="M17.5 12.5V16.25C17.5 16.913 17.2366 17.5489 16.7678 18.0178C16.2989 18.4866 15.663 18.75 15 18.75H5C4.33696 18.75 3.70107 18.4866 3.23223 18.0178C2.76339 17.5489 2.5 16.913 2.5 16.25V12.5M14.1667 8.33333L10 12.5M10 12.5L5.83333 8.33333M10 12.5V2.5" stroke="currentColor" stroke-width="1.67" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
@@ -69,23 +69,23 @@ $export_url = wp_nonce_url(admin_url('admin-post.php?action=bbai_usage_export'),
         <!-- Metrics Cards -->
         <div class="bbai-agency-metrics-grid">
             <div class="bbai-agency-metric-card">
-                <div class="bbai-agency-metric-value"><?php echo esc_html(number_format_i18n($total_alt_text)); ?></div>
+                <div class="bbai-agency-metric-value"><?php echo esc_html(number_format_i18n($bbai_total_alt_text)); ?></div>
                 <div class="bbai-agency-metric-label"><?php esc_html_e('AI alt Text', 'beepbeep-ai-alt-text-generator'); ?></div>
                 <div class="bbai-agency-metric-sublabel"><?php
                 printf(
                     /* translators: 1: site count, 2: plural suffix */
                     esc_html__('Across %1$s Site%2$s', 'beepbeep-ai-alt-text-generator'),
-                    esc_html(number_format_i18n($site_count)),
-                    esc_html($site_count !== 1 ? 's' : '')
+                    esc_html(number_format_i18n($bbai_site_count)),
+                    esc_html($bbai_site_count !== 1 ? 's' : '')
                 );
                 ?></div>
             </div>
             <div class="bbai-agency-metric-card">
-                <div class="bbai-agency-metric-value"><?php echo esc_html(number_format_i18n($this_month_alt_text)); ?></div>
+                <div class="bbai-agency-metric-value"><?php echo esc_html(number_format_i18n($bbai_this_month_alt_text)); ?></div>
                 <div class="bbai-agency-metric-label"><?php esc_html_e('This Month', 'beepbeep-ai-alt-text-generator'); ?></div>
             </div>
             <div class="bbai-agency-metric-card">
-                <div class="bbai-agency-metric-value"><?php echo esc_html(number_format_i18n($total_hours_saved)); ?></div>
+                <div class="bbai-agency-metric-value"><?php echo esc_html(number_format_i18n($bbai_total_hours_saved)); ?></div>
                 <div class="bbai-agency-metric-label"><?php esc_html_e('Hours Saved', 'beepbeep-ai-alt-text-generator'); ?></div>
             </div>
         </div>
@@ -107,50 +107,50 @@ $export_url = wp_nonce_url(admin_url('admin-post.php?action=bbai_usage_export'),
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if (empty($sites)) : ?>
+                    <?php if (empty($bbai_sites)) : ?>
                         <tr>
                             <td colspan="4" class="bbai-agency-empty-state">
                                 <?php esc_html_e('No sites found.', 'beepbeep-ai-alt-text-generator'); ?>
                             </td>
                         </tr>
                     <?php else : ?>
-                        <?php foreach ($sites as $index => $site) : 
+                        <?php foreach ($bbai_sites as $bbai_index => $bbai_site) : 
                             /* translators: 1: site number */
-                            $site_name = esc_html($site['siteName'] ?? sprintf(__('Site %d', 'beepbeep-ai-alt-text-generator'), $index + 1));
-                            $alt_text_count = intval($site['altTextCount'] ?? 0);
-                            $images_optimized = intval($site['imagesOptimized'] ?? 0);
-                            $last_activity = $site['lastActivity'] ?? '';
+                            $bbai_site_name = esc_html($bbai_site['siteName'] ?? sprintf(__('Site %d', 'beepbeep-ai-alt-text-generator'), $bbai_index + 1));
+                            $bbai_alt_text_count = intval($bbai_site['altTextCount'] ?? 0);
+                            $bbai_images_optimized = intval($bbai_site['imagesOptimized'] ?? 0);
+                            $bbai_last_activity = $bbai_site['lastActivity'] ?? '';
                             
                             // Format last activity date
-                            $last_activity_formatted = '';
-                            if (!empty($last_activity)) {
-                                $timestamp = strtotime($last_activity);
-                                if ($timestamp !== false) {
-                                    $last_activity_formatted = date_i18n('j M Y', $timestamp);
+                            $bbai_last_activity_formatted = '';
+                            if (!empty($bbai_last_activity)) {
+                                $bbai_timestamp = strtotime($bbai_last_activity);
+                                if ($bbai_timestamp !== false) {
+                                    $bbai_last_activity_formatted = date_i18n('j M Y', $bbai_timestamp);
                                 }
                             }
-                            if (empty($last_activity_formatted)) {
-                                $last_activity_formatted = __('Never', 'beepbeep-ai-alt-text-generator');
+                            if (empty($bbai_last_activity_formatted)) {
+                                $bbai_last_activity_formatted = __('Never', 'beepbeep-ai-alt-text-generator');
                             }
                         ?>
                             <tr>
                                 <td>
                                     <div class="bbai-site-cell">
-                                        <div class="bbai-site-number"><?php echo esc_html($index + 1); ?></div>
-                                        <span class="bbai-site-name"><?php echo esc_html( $site_name ); ?></span>
+                                        <div class="bbai-site-number"><?php echo esc_html($bbai_index + 1); ?></div>
+                                        <span class="bbai-site-name"><?php echo esc_html( $bbai_site_name ); ?></span>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="bbai-alt-text-cell">
-                                        <?php echo esc_html(number_format_i18n($alt_text_count)); ?>
+                                        <?php echo esc_html(number_format_i18n($bbai_alt_text_count)); ?>
                                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" class="bbai-eye-icon">
                                             <path d="M8 3C4.66667 3 2.07333 5.07333 1 8C2.07333 10.9267 4.66667 13 8 13C11.3333 13 13.9267 10.9267 15 8C13.9267 5.07333 11.3333 3 8 3Z" stroke="currentColor" stroke-width="1.33" stroke-linecap="round" stroke-linejoin="round"/>
                                             <path d="M8 10C9.10457 10 10 9.10457 10 8C10 6.89543 9.10457 6 8 6C6.89543 6 6 6.89543 6 8C6 9.10457 6.89543 10 8 10Z" stroke="currentColor" stroke-width="1.33" stroke-linecap="round" stroke-linejoin="round"/>
                                         </svg>
                                     </div>
                                 </td>
-                                <td><?php echo esc_html(number_format_i18n($images_optimized)); ?></td>
-                                <td><?php echo esc_html($last_activity_formatted); ?></td>
+                                <td><?php echo esc_html(number_format_i18n($bbai_images_optimized)); ?></td>
+                                <td><?php echo esc_html($bbai_last_activity_formatted); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -162,16 +162,16 @@ $export_url = wp_nonce_url(admin_url('admin-post.php?action=bbai_usage_export'),
 
 <?php
 // Set plan variables for bottom upsell CTA (only show for non-agency users)
-$plan_slug = isset($usage_stats['plan']) ? strtolower($usage_stats['plan']) : 'agency';
-$is_free = false;
-$is_growth = ($plan_slug === 'pro' || $plan_slug === 'growth');
-$is_agency = ($plan_slug === 'agency');
+$bbai_plan_slug = isset($bbai_usage_stats['plan']) ? strtolower($bbai_usage_stats['plan']) : 'agency';
+$bbai_is_free = false;
+$bbai_is_growth = ($bbai_plan_slug === 'pro' || $bbai_plan_slug === 'growth');
+$bbai_is_agency = ($bbai_plan_slug === 'agency');
 
 // Only show upsell if not agency (though this tab is agency-only, keeping for consistency)
-if (!$is_agency) {
-    $bottom_upsell_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/bottom-upsell-cta.php';
-    if (file_exists($bottom_upsell_partial)) {
-        include $bottom_upsell_partial;
+if (!$bbai_is_agency) {
+    $bbai_bottom_upsell_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/bottom-upsell-cta.php';
+    if (file_exists($bbai_bottom_upsell_partial)) {
+        include $bbai_bottom_upsell_partial;
     }
 }
 ?>

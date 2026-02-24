@@ -6,6 +6,8 @@
 
 namespace BeepBeepAI\AltTextGenerator\Usage;
 
+use BeepBeepAI\AltTextGenerator\BBAI_Cache;
+
 if (!defined('ABSPATH')) {
 	exit;
 }
@@ -38,6 +40,7 @@ class Usage_Logs {
 		$table_name_safe = esc_sql( self::table() );
 		$charset_collate = $wpdb->get_charset_collate();
 
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$sql = "CREATE TABLE IF NOT EXISTS `{$table_name_safe}` (
 			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 			user_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
@@ -57,6 +60,7 @@ class Usage_Logs {
 		) {$charset_collate};";
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange
 		dbDelta($sql);
 		
 		// Ensure all columns exist (dbDelta doesn't always add missing columns)
@@ -75,45 +79,57 @@ class Usage_Logs {
 
 			global $wpdb;
 			$table_name = esc_sql( self::table() );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$columns = $wpdb->get_col(
 				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					"SHOW COLUMNS FROM `{$table_name}` LIKE %s",
 					'site_id'
 				)
 			);
 
 			if (empty($columns)) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
 				$wpdb->query(
 					$wpdb->prepare(
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
 						"ALTER TABLE `{$table_name}` ADD COLUMN `site_id` VARCHAR(64) NOT NULL DEFAULT %s AFTER `user_id`",
 						''
 					)
 				);
 
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$indexes = $wpdb->get_col(
 					$wpdb->prepare(
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 						"SHOW INDEXES FROM `{$table_name}` WHERE Key_name = %s",
 						'site_id'
 					)
 				);
 				if (empty($indexes)) {
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
 					$wpdb->query(
 						$wpdb->prepare(
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
 							"ALTER TABLE `{$table_name}` ADD INDEX `site_id` (`site_id`) /* %d */",
 							1
 						)
 					);
 				}
 
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$composite_indexes = $wpdb->get_col(
 					$wpdb->prepare(
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 						"SHOW INDEXES FROM `{$table_name}` WHERE Key_name = %s",
 						'site_created'
 					)
 				);
 				if (empty($composite_indexes)) {
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
 					$wpdb->query(
 						$wpdb->prepare(
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
 							"ALTER TABLE `{$table_name}` ADD INDEX `site_created` (`site_id`, `created_at`) /* %d */",
 							1
 						)
@@ -129,6 +145,7 @@ class Usage_Logs {
 	 */
 	public static function table_exists() {
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$exists = $wpdb->get_var(
 			$wpdb->prepare( 'SHOW TABLES LIKE %s', self::table() )
 		);
@@ -145,11 +162,9 @@ class Usage_Logs {
 	 * @return int|false The ID of the inserted record, or false on failure.
 	 */
 	public static function record_usage_event($user_id, $tokens_used, $action_type = 'generate', $context = []) {
+		// Table and columns are created by DB_Schema on activation/upgrade.
 		if (!self::table_exists()) {
-			self::create_table();
-		} else {
-			// Ensure columns exist even if table was already created
-			self::ensure_columns_exist();
+			return false;
 		}
 
 		global $wpdb;
@@ -161,7 +176,7 @@ class Usage_Logs {
 		$action_type = sanitize_key($action_type);
 		$image_id = isset($context['image_id']) ? absint($context['image_id']) : null;
 		$post_id = isset($context['post_id']) ? absint($context['post_id']) : null;
-		
+
 		// Get site identifier
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
 		$site_id = \BeepBeepAI\AltTextGenerator\get_site_identifier();
@@ -173,26 +188,17 @@ class Usage_Logs {
 			$action_type = 'generate';
 		}
 
-			$columns = $wpdb->get_col(
-				$wpdb->prepare(
-					"SHOW COLUMNS FROM `{$table_name}` LIKE %s",
-					'site_id'
-				)
-			);
-		$has_site_id = !empty($columns);
-		
 	// Prepare insert data with matching format per column.
 	// wpdb::insert matches format to data by array order, so keep them aligned.
+	// site_id column is guaranteed to exist after DB_Schema upgrade.
 	$insert_data   = [];
 	$insert_format = [];
 
 	$insert_data['user_id']     = $user_id;
 	$insert_format[]            = '%d';
 
-	if ($has_site_id) {
-		$insert_data['site_id'] = $site_id;
-		$insert_format[]        = '%s';
-	}
+	$insert_data['site_id'] = $site_id;
+	$insert_format[]        = '%s';
 
 	$insert_data['tokens_used'] = $tokens_used;
 	$insert_format[]            = '%d';
@@ -209,11 +215,14 @@ class Usage_Logs {
 	$insert_data['created_at']  = current_time( 'mysql' );
 	$insert_format[]            = '%s';
 
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	$inserted = $wpdb->insert(
 		$table_name,
 		$insert_data,
 		$insert_format
 	);
+
+		BBAI_Cache::bump( 'usage_logs' );
 
 		if ($inserted) {
 			return $wpdb->insert_id;
@@ -239,11 +248,19 @@ class Usage_Logs {
 		$site_id = \BeepBeepAI\AltTextGenerator\get_site_identifier();
 		$site_id = sanitize_text_field(substr($site_id, 0, 64));
 
+		$cache_suffix = 'monthly_total_' . sanitize_key( $site_id );
+		$cached = BBAI_Cache::get( 'usage_logs', $cache_suffix );
+		if ( false !== $cached ) {
+			return $cached;
+		}
+
 		$current_month_start = wp_date('Y-m-01 00:00:00');
 		$current_month_end = wp_date('Y-m-t 23:59:59');
 
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$total = $wpdb->get_var(
 				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					"SELECT SUM(tokens_used) FROM `{$table_name}` WHERE site_id = %s AND created_at >= %s AND created_at <= %s",
 					$site_id,
 					$current_month_start,
@@ -251,7 +268,9 @@ class Usage_Logs {
 			)
 		);
 
-		return absint($total ?: 0);
+		$result = absint($total ?: 0);
+		BBAI_Cache::set( 'usage_logs', $cache_suffix, $result, BBAI_Cache::DEFAULT_TTL );
+		return $result;
 	}
 
 	/**
@@ -271,11 +290,19 @@ class Usage_Logs {
 		$site_id = \BeepBeepAI\AltTextGenerator\get_site_identifier();
 		$site_id = sanitize_text_field(substr($site_id, 0, 64));
 
+		$cache_suffix = 'monthly_users_' . sanitize_key( $site_id );
+		$cached = BBAI_Cache::get( 'usage_logs', $cache_suffix );
+		if ( false !== $cached ) {
+			return $cached;
+		}
+
 		$current_month_start = wp_date('Y-m-01 00:00:00');
 		$current_month_end = wp_date('Y-m-t 23:59:59');
 
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$results = $wpdb->get_results(
 				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					"SELECT user_id, SUM(tokens_used) as tokens_used, MAX(created_at) as last_used FROM `{$table_name}` WHERE site_id = %s AND created_at >= %s AND created_at <= %s GROUP BY user_id ORDER BY tokens_used DESC",
 					$site_id,
 					$current_month_start,
@@ -319,6 +346,7 @@ class Usage_Logs {
 			];
 		}
 
+		BBAI_Cache::set( 'usage_logs', $cache_suffix, $enriched, BBAI_Cache::DEFAULT_TTL );
 		return $enriched;
 	}
 
@@ -351,6 +379,12 @@ class Usage_Logs {
 		];
 		$filters = wp_parse_args($filters, $defaults);
 
+		$cache_suffix = 'events_' . md5( wp_json_encode( $filters ) );
+		$cached = BBAI_Cache::get( 'usage_logs', $cache_suffix );
+		if ( false !== $cached ) {
+			return $cached;
+		}
+
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
 		$site_id = \BeepBeepAI\AltTextGenerator\get_site_identifier();
 		$site_id = sanitize_text_field(substr($site_id, 0, 64));
@@ -364,8 +398,11 @@ class Usage_Logs {
 
 		// Build WHERE clause conditionally
 		if ($skip_site_filter) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$total = $wpdb->get_var(
+				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 					"SELECT COUNT(*) FROM `{$table_name}` WHERE (%d = %d OR user_id = %d) AND (%s = %s OR created_at >= %s) AND (%s = %s OR created_at <= %s) AND (%s = %s OR action_type = %s)",
 					$has_user_filter,
 					0,
@@ -382,8 +419,11 @@ class Usage_Logs {
 				)
 			);
 		} else {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$total = $wpdb->get_var(
+				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 					"SELECT COUNT(*) FROM `{$table_name}` WHERE site_id = %s AND (%d = %d OR user_id = %d) AND (%s = %s OR created_at >= %s) AND (%s = %s OR created_at <= %s) AND (%s = %s OR action_type = %s)",
 					$site_id,
 					$has_user_filter,
@@ -411,8 +451,11 @@ class Usage_Logs {
 
 		// Get events
 		if ($skip_site_filter) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$events = $wpdb->get_results(
+				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 					"SELECT * FROM `{$table_name}` WHERE (%d = %d OR user_id = %d) AND (%s = %s OR created_at >= %s) AND (%s = %s OR created_at <= %s) AND (%s = %s OR action_type = %s) ORDER BY created_at DESC LIMIT %d OFFSET %d",
 					$has_user_filter,
 					0,
@@ -432,8 +475,11 @@ class Usage_Logs {
 				ARRAY_A
 			);
 		} else {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$events = $wpdb->get_results(
+				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 					"SELECT * FROM `{$table_name}` WHERE site_id = %s AND (%d = %d OR user_id = %d) AND (%s = %s OR created_at >= %s) AND (%s = %s OR created_at <= %s) AND (%s = %s OR action_type = %s) ORDER BY created_at DESC LIMIT %d OFFSET %d",
 					$site_id,
 					$has_user_filter,
@@ -495,11 +541,13 @@ class Usage_Logs {
 			];
 		}
 
-		return [
+		$result = [
 			'events' => $enriched,
 			'total'  => $total,
 			'pages'  => $pages,
 			'page'   => $page,
 		];
+		BBAI_Cache::set( 'usage_logs', $cache_suffix, $result, BBAI_Cache::DEFAULT_TTL );
+		return $result;
 	}
 }

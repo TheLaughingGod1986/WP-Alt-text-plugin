@@ -43,8 +43,8 @@ if (!defined('ABSPATH')) {
                 </p>
                 <p class="bbai-credit-stat-desc">
                     <?php
-                    $plan = isset($current_usage['plan']) && !empty($current_usage['plan']) ? $current_usage['plan'] : 'free';
-                    echo esc_html(ucfirst($plan) . ' Plan');
+                    $bbai_plan = isset($current_usage['plan']) && !empty($current_usage['plan']) ? $current_usage['plan'] : 'free';
+                    echo esc_html(ucfirst($bbai_plan) . ' Plan');
                     ?>
                 </p>
             </div>
@@ -57,8 +57,8 @@ if (!defined('ABSPATH')) {
                 </p>
                 <p class="bbai-credit-stat-desc">
                     <?php
-                    $plan = isset($current_usage['plan']) && !empty($current_usage['plan']) ? $current_usage['plan'] : 'free';
-                    echo esc_html(ucfirst($plan) . ' Plan');
+                    $bbai_plan = isset($current_usage['plan']) && !empty($current_usage['plan']) ? $current_usage['plan'] : 'free';
+                    echo esc_html(ucfirst($bbai_plan) . ' Plan');
                     ?>
                 </p>
             </div>
@@ -68,15 +68,15 @@ if (!defined('ABSPATH')) {
                 </h3>
                 <?php
                 // Determine status class based on remaining percentage
-                $remaining_pct = $current_usage['limit'] > 0 ? ($current_usage['remaining'] / $current_usage['limit']) * 100 : 100;
-                $remaining_class = 'bbai-credit-stat-value--success';
-                if ($remaining_pct <= 10) {
-                    $remaining_class = 'bbai-credit-stat-value--danger';
-                } elseif ($remaining_pct <= 30) {
-                    $remaining_class = 'bbai-credit-stat-value--warning';
+                $bbai_remaining_pct = $current_usage['limit'] > 0 ? ($current_usage['remaining'] / $current_usage['limit']) * 100 : 100;
+                $bbai_remaining_class = 'bbai-credit-stat-value--success';
+                if ($bbai_remaining_pct <= 10) {
+                    $bbai_remaining_class = 'bbai-credit-stat-value--danger';
+                } elseif ($bbai_remaining_pct <= 30) {
+                    $bbai_remaining_class = 'bbai-credit-stat-value--warning';
                 }
                 ?>
-                <p class="bbai-credit-stat-value <?php echo esc_attr($remaining_class); ?>">
+                <p class="bbai-credit-stat-value <?php echo esc_attr($bbai_remaining_class); ?>">
                     <?php echo esc_html(number_format_i18n($current_usage['remaining'])); ?>
                 </p>
                 <p class="bbai-credit-stat-desc">
@@ -89,15 +89,15 @@ if (!defined('ABSPATH')) {
                 </h3>
                 <?php
                 // Status-aware coloring: success <70%, warning 70-90%, danger >90%
-                $usage_pct = $current_usage['percentage'];
-                $usage_class = 'bbai-credit-stat-value--success';
-                if ($usage_pct >= 90) {
-                    $usage_class = 'bbai-credit-stat-value--danger';
-                } elseif ($usage_pct >= 70) {
-                    $usage_class = 'bbai-credit-stat-value--warning';
+                $bbai_usage_pct = $current_usage['percentage'];
+                $bbai_usage_class = 'bbai-credit-stat-value--success';
+                if ($bbai_usage_pct >= 90) {
+                    $bbai_usage_class = 'bbai-credit-stat-value--danger';
+                } elseif ($bbai_usage_pct >= 70) {
+                    $bbai_usage_class = 'bbai-credit-stat-value--warning';
                 }
                 ?>
-                <p class="bbai-credit-stat-value <?php echo esc_attr($usage_class); ?>">
+                <p class="bbai-credit-stat-value <?php echo esc_attr($bbai_usage_class); ?>">
                     <?php echo esc_html(number_format_i18n($current_usage['percentage'])); ?>%
                 </p>
                 <p class="bbai-credit-stat-desc">
@@ -145,9 +145,9 @@ if (!defined('ABSPATH')) {
                     <label class="bbai-credit-filter-label"><?php esc_html_e('User', 'beepbeep-ai-alt-text-generator'); ?></label>
                     <select name="user_id" class="bbai-credit-filter-select">
                         <option value="0"><?php esc_html_e('All Users', 'beepbeep-ai-alt-text-generator'); ?></option>
-                        <?php foreach ($all_users as $user) : ?>
-                            <option value="<?php echo esc_attr($user->ID); ?>" <?php selected($user_id, $user->ID); ?>>
-                                <?php echo esc_html($user->display_name . ' (' . $user->user_email . ')'); ?>
+                        <?php foreach ($all_users as $bbai_user) : ?>
+                            <option value="<?php echo esc_attr($bbai_user->ID); ?>" <?php selected($user_id, $bbai_user->ID); ?>>
+                                <?php echo esc_html($bbai_user->display_name . ' (' . $bbai_user->user_email . ')'); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -193,44 +193,44 @@ if (!defined('ABSPATH')) {
                 </thead>
                 <tbody>
                     <?php
-                    $rank = 1;
-                    foreach ($backend_user_activity['users'] as $hero) :
-                        $rank_icon = '';
-                        if ($rank === 1) {
-                            $rank_icon = '<span style="color: #F59E0B; font-size: 18px;">🥇</span>';
-                        } elseif ($rank === 2) {
-                            $rank_icon = '<span style="color: #94A3B8; font-size: 18px;">🥈</span>';
-                        } elseif ($rank === 3) {
-                            $rank_icon = '<span style="color: #CD7F32; font-size: 18px;">🥉</span>';
+                    $bbai_rank = 1;
+                    foreach ($backend_user_activity['users'] as $bbai_hero) :
+                        $bbai_rank_icon = '';
+                        if ($bbai_rank === 1) {
+                            $bbai_rank_icon = '<span style="color: #F59E0B; font-size: 18px;">🥇</span>';
+                        } elseif ($bbai_rank === 2) {
+                            $bbai_rank_icon = '<span style="color: #94A3B8; font-size: 18px;">🥈</span>';
+                        } elseif ($bbai_rank === 3) {
+                            $bbai_rank_icon = '<span style="color: #CD7F32; font-size: 18px;">🥉</span>';
                         }
                     ?>
                         <tr>
                             <td style="text-align: center;">
-                                <?php if ($rank_icon) : ?>
-                                    <?php echo wp_kses_post($rank_icon); ?>
+                                <?php if ($bbai_rank_icon) : ?>
+                                    <?php echo wp_kses_post($bbai_rank_icon); ?>
                                 <?php else : ?>
-                                    <?php echo esc_html($rank); ?>
+                                    <?php echo esc_html($bbai_rank); ?>
                                 <?php endif; ?>
                             </td>
                             <td>
                                 <?php
-                                $hero_name = $hero['display_name'] ?? $hero['user_name'] ?? $hero['name'] ?? $hero['user_email'] ?? $hero['email'] ?? __('Unknown User', 'beepbeep-ai-alt-text-generator');
-                                $hero_email = $hero['user_email'] ?? $hero['email'] ?? '';
+                                $bbai_hero_name = $bbai_hero['display_name'] ?? $bbai_hero['user_name'] ?? $bbai_hero['name'] ?? $bbai_hero['user_email'] ?? $bbai_hero['email'] ?? __('Unknown User', 'beepbeep-ai-alt-text-generator');
+                                $bbai_hero_email = $bbai_hero['user_email'] ?? $bbai_hero['email'] ?? '';
                                 ?>
-                                <strong><?php echo esc_html($hero_name); ?></strong>
-                                <?php if (!empty($hero_email) && $hero_email !== $hero_name) : ?>
-                                    <div class="bbai-table-subtitle"><?php echo esc_html($hero_email); ?></div>
+                                <strong><?php echo esc_html($bbai_hero_name); ?></strong>
+                                <?php if (!empty($bbai_hero_email) && $bbai_hero_email !== $bbai_hero_name) : ?>
+                                    <div class="bbai-table-subtitle"><?php echo esc_html($bbai_hero_email); ?></div>
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <span style="font-weight: 600; color: #059669;"><?php echo esc_html(number_format_i18n($hero['credits_used'] ?? 0)); ?></span>
+                                <span style="font-weight: 600; color: #059669;"><?php echo esc_html(number_format_i18n($bbai_hero['credits_used'] ?? 0)); ?></span>
                             </td>
                             <td>
                                 <?php
-                                $last_activity = $hero['last_activity'] ?? null;
-                                if ($last_activity) {
-                                    $timestamp = strtotime($last_activity);
-                                    echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $timestamp));
+                                $bbai_last_activity = $bbai_hero['last_activity'] ?? null;
+                                if ($bbai_last_activity) {
+                                    $bbai_timestamp = strtotime($bbai_last_activity);
+                                    echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $bbai_timestamp));
                                 } else {
                                     echo '—';
                                 }
@@ -238,7 +238,7 @@ if (!defined('ABSPATH')) {
                             </td>
                         </tr>
                     <?php
-                    $rank++;
+                    $bbai_rank++;
                     endforeach;
                     ?>
                 </tbody>
@@ -246,13 +246,13 @@ if (!defined('ABSPATH')) {
             <?php if (!empty($backend_user_activity['period_start']) && !empty($backend_user_activity['period_end'])) : ?>
                 <p style="margin-top: 12px; font-size: 12px; color: #94A3B8;">
                     <?php
-                    $period_start = strtotime($backend_user_activity['period_start']);
-                    $period_end = strtotime($backend_user_activity['period_end']);
+                    $bbai_period_start = strtotime($backend_user_activity['period_start']);
+                    $bbai_period_end = strtotime($backend_user_activity['period_end']);
                     printf(
                         /* translators: 1: period start date, 2: period end date */
                         esc_html__('Billing period: %1$s - %2$s', 'beepbeep-ai-alt-text-generator'),
-                        esc_html(date_i18n(get_option('date_format'), $period_start)),
-                        esc_html(date_i18n(get_option('date_format'), $period_end))
+                        esc_html(date_i18n(get_option('date_format'), $bbai_period_start)),
+                        esc_html(date_i18n(get_option('date_format'), $bbai_period_end))
                     );
                     ?>
                 </p>
@@ -263,17 +263,17 @@ if (!defined('ABSPATH')) {
     <!-- Bottom Upsell CTA (reusable component) -->
     <?php
     // Set plan variables for bottom upsell CTA
-    $plan_slug = isset($current_usage['plan']) && !empty($current_usage['plan']) 
+    $bbai_plan_slug = isset($current_usage['plan']) && !empty($current_usage['plan']) 
         ? strtolower($current_usage['plan']) 
         : 'free';
-    $is_free = ($plan_slug === 'free');
-    $is_growth = ($plan_slug === 'pro' || $plan_slug === 'growth');
-    $is_agency = ($plan_slug === 'agency');
-    $usage_stats = $current_usage; // Map current_usage to usage_stats for the component
+    $bbai_is_free = ($bbai_plan_slug === 'free');
+    $bbai_is_growth = ($bbai_plan_slug === 'pro' || $bbai_plan_slug === 'growth');
+    $bbai_is_agency = ($bbai_plan_slug === 'agency');
+    $bbai_usage_stats = $current_usage; // Map current_usage to usage_stats for the component
     
-    $bottom_upsell_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/bottom-upsell-cta.php';
-    if (file_exists($bottom_upsell_partial)) {
-        include $bottom_upsell_partial;
+    $bbai_bottom_upsell_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/bottom-upsell-cta.php';
+    if (file_exists($bbai_bottom_upsell_partial)) {
+        include $bbai_bottom_upsell_partial;
     }
     ?>
 </div>

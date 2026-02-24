@@ -40,16 +40,16 @@ if (!defined('BBAI_PLUGIN_URL')) {
 }
 
 if (!defined('BBAI_PLUGIN_BASENAME')) {
-    $plugin_basename = (defined('BEEPBEEP_AI_PLUGIN_BASENAME') && is_string(BEEPBEEP_AI_PLUGIN_BASENAME) && BEEPBEEP_AI_PLUGIN_BASENAME !== '')
+    $bbai_plugin_basename = (defined('BEEPBEEP_AI_PLUGIN_BASENAME') && is_string(BEEPBEEP_AI_PLUGIN_BASENAME) && BEEPBEEP_AI_PLUGIN_BASENAME !== '')
         ? BEEPBEEP_AI_PLUGIN_BASENAME
         : '';
-    if ($plugin_basename === '') {
-        $plugin_basename = plugin_basename($bbai_plugin_file);
+    if ($bbai_plugin_basename === '') {
+        $bbai_plugin_basename = plugin_basename($bbai_plugin_file);
     }
-    if ($plugin_basename === '' || !is_string($plugin_basename)) {
-        $plugin_basename = 'beepbeep-ai-alt-text-generator/beepbeep-ai-alt-text-generator.php';
+    if ($bbai_plugin_basename === '' || !is_string($bbai_plugin_basename)) {
+        $bbai_plugin_basename = 'beepbeep-ai-alt-text-generator/beepbeep-ai-alt-text-generator.php';
     }
-    define('BBAI_PLUGIN_BASENAME', $plugin_basename);
+    define('BBAI_PLUGIN_BASENAME', $bbai_plugin_basename);
 }
 
 if (!defined('BBAI_VERSION')) {
@@ -145,15 +145,12 @@ class Core {
         }
 
         if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-            // Ensure table exists
-            Debug_Log::create_table();
-            
-            // Log initialization
+            // Log initialization (table is created by DB_Schema on activation/upgrade).
             Debug_Log::log('info', 'AI Alt Text plugin initialized', [
                 'version' => BBAI_VERSION,
                 'authenticated' => $this->api_client->is_authenticated() ? 'yes' : 'no',
             ], 'core');
-            
+
             update_option('bbai_logs_ready', true, false);
         }
 
@@ -428,12 +425,12 @@ class Core {
      */
 	    public function maybe_handle_direct_checkout() {
 	        if (!is_admin()) { return; }
-	        $page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
-	        $page = $page_input;
+	        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
+	        $bbai_page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+	        $page = $bbai_page_input;
 	        if ($page !== 'bbai-checkout') { return; }
 
-	        $action = 'bbai_direct_checkout';
-	        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_bbai_nonce'] ?? '' ) ), $action ) ) {
+	        $action = 'bbai_direct_checkout';	        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_bbai_nonce'] ?? '' ) ), $action ) ) {
 	            wp_die(esc_html__('Security check failed. Please try again from the dashboard.', 'beepbeep-ai-alt-text-generator'));
 	        }
 
@@ -441,9 +438,11 @@ class Core {
 	            wp_die(esc_html__('You do not have permission to perform this action.', 'beepbeep-ai-alt-text-generator'));
 	        }
 
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
         $plan_input = isset($_GET['plan']) ? sanitize_key(wp_unslash($_GET['plan'])) : (isset($_GET['type']) ? sanitize_key(wp_unslash($_GET['type'])) : '');
         $valid_plan_ids = array_keys($this->get_checkout_price_ids());
         $plan_param = in_array($plan_input, $valid_plan_ids, true) ? $plan_input : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
         $price_id = isset($_GET['price_id']) && $_GET['price_id'] !== null ? sanitize_text_field(wp_unslash($_GET['price_id'])) : '';
         $fallback = Usage_Tracker::get_upgrade_url();
 
@@ -498,12 +497,12 @@ class Core {
             $plans = $this->api_client->get_plans();
             if (!is_wp_error($plans) && !empty($plans)) {
                 $remote = [];
-                foreach ($plans as $plan) {
-                    if (!is_array($plan)) {
+                foreach ($plans as $bbai_plan) {
+                    if (!is_array($bbai_plan)) {
                         continue;
                     }
-                    $plan_id = isset($plan['id']) && is_string($plan['id']) ? sanitize_key($plan['id']) : '';
-                    $price_id = !empty($plan['priceId']) && is_string($plan['priceId']) ? sanitize_text_field($plan['priceId']) : '';
+                    $plan_id = isset($bbai_plan['id']) && is_string($bbai_plan['id']) ? sanitize_key($bbai_plan['id']) : '';
+                    $price_id = !empty($bbai_plan['priceId']) && is_string($bbai_plan['priceId']) ? sanitize_text_field($bbai_plan['priceId']) : '';
                     if ($plan_id && $price_id) {
                         $remote[$plan_id] = $price_id;
                     }
@@ -545,38 +544,41 @@ class Core {
     /**
      * Helper to grab a single price ID
      */
-    public function get_checkout_price_id($plan) {
+    public function get_checkout_price_id($bbai_plan) {
         $prices = $this->get_checkout_price_ids();
-        $plan = is_string($plan) ? sanitize_key($plan) : '';
-        $price_id = $prices[$plan] ?? '';
-        return apply_filters('bbai_checkout_price_id', $price_id, $plan, $prices);
+        $bbai_plan = is_string($bbai_plan) ? sanitize_key($bbai_plan) : '';
+        $price_id = $prices[$bbai_plan] ?? '';
+        return apply_filters('bbai_checkout_price_id', $price_id, $bbai_plan, $prices);
     }
 
     /**
      * Surface checkout success/error notices in WP Admin
      */
 	    public function maybe_render_checkout_notices() {
-	        $page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
-	        $page = $page_input;
+	        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
+	        $bbai_page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+	        $page = $bbai_page_input;
 	        if ($page !== 'beepbeep-ai-alt-text-generator') {
 	            return;
 	        }
 
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
         $checkout_error = isset($_GET['checkout_error']) ? sanitize_text_field(wp_unslash($_GET['checkout_error'])) : '';
         if (!empty($checkout_error)) {
             $message = $checkout_error;
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
             $plan_input = isset($_GET['plan']) ? sanitize_key(wp_unslash($_GET['plan'])) : '';
             $valid_plan_ids = array_keys($this->get_checkout_price_ids());
-            $plan = in_array($plan_input, $valid_plan_ids, true) ? $plan_input : '';
+            $bbai_plan = in_array($plan_input, $valid_plan_ids, true) ? $plan_input : '';
             ?>
             <div class="notice notice-error">
                 <p>
                     <strong><?php esc_html_e('Unable to start checkout', 'beepbeep-ai-alt-text-generator'); ?>:</strong>
                     <?php echo esc_html($message); ?>
-                    <?php if ($plan) : ?>
+                    <?php if ($bbai_plan) : ?>
                         (<?php
                         /* translators: 1: plan name */
-                        echo esc_html(sprintf(__('Plan: %s', 'beepbeep-ai-alt-text-generator'), $plan));
+                        echo esc_html(sprintf(__('Plan: %s', 'beepbeep-ai-alt-text-generator'), $bbai_plan));
                         ?>)
                     <?php endif; ?>
                 </p>
@@ -584,6 +586,7 @@ class Core {
             </div>
             <?php
         } else {
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
             $checkout = isset($_GET['checkout']) ? sanitize_key(wp_unslash($_GET['checkout'])) : '';
             if ($checkout === 'success') {
                 ?>
@@ -601,6 +604,7 @@ class Core {
         }
 
         // Password reset notices
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
         $password_reset = isset($_GET['password_reset']) ? sanitize_key(wp_unslash($_GET['password_reset'])) : '';
         if ($password_reset === 'requested') {
             ?>
@@ -619,6 +623,7 @@ class Core {
         }
 
         // Subscription update notices
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
         $subscription_updated = isset($_GET['subscription_updated']) ? sanitize_key(wp_unslash($_GET['subscription_updated'])) : '';
         if (!empty($subscription_updated)) {
             ?>
@@ -629,6 +634,7 @@ class Core {
             <?php
         }
 
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
         $portal_return = isset($_GET['portal_return']) ? sanitize_key(wp_unslash($_GET['portal_return'])) : '';
         if ($portal_return === 'success') {
             ?>
@@ -658,9 +664,11 @@ class Core {
     }
 
     public function maybe_render_queue_notice(){
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
         if (!isset($_GET['bbai_queued'])) {
             return;
         }
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
         $count = isset($_GET['bbai_queued']) ? absint(wp_unslash($_GET['bbai_queued'])) : 0;
         if ($count <= 0) {
             return;
@@ -790,19 +798,16 @@ class Core {
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-contact-submissions.php';
         \BeepBeepAI\AltTextGenerator\Contact_Submissions::create_table();
         
-        // Migrate existing usage logs table to include site_id if needed
-        $this->migrate_usage_logs_table();
+        // Schema migrations and indexes are handled by DB_Schema::install()
+        // which runs on activation and admin_init upgrade check.
 
         // Generate site fingerprint (one-time per site)
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-site-fingerprint.php';
         \BeepBeepAI\AltTextGenerator\Site_Fingerprint::generate();
-        
+
         // Ensure site identifier exists
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
         \BeepBeepAI\AltTextGenerator\get_site_identifier();
-        
-        // Create database indexes for performance
-        $this->create_performance_indexes();
 
         $defaults = [
             'api_url'          => 'https://alttext-ai-backend.onrender.com',
@@ -839,119 +844,43 @@ class Core {
         }
     }
     
-		    private function create_performance_indexes() {
-		        global $wpdb;
-		        $postmeta_table = esc_sql( $wpdb->postmeta );
-		        $posts_table = esc_sql( $wpdb->posts );
-		        
-		        // Index for _bbai_generated_at (used in sorting and stats)
-		        $wpdb->query(
-			            $wpdb->prepare(
-			                "CREATE INDEX idx_bbai_generated_at ON `{$postmeta_table}` (meta_key(50), meta_value(50)) /* %d */",
-			                1
-			            )
-			        );
-	        
-		        // Index for _bbai_source (used in stats aggregation)
-		        $wpdb->query(
-			            $wpdb->prepare(
-			                "CREATE INDEX idx_bbai_source ON `{$postmeta_table}` (meta_key(50), meta_value(50)) /* %d */",
-			                1
-			            )
-			        );
-	        
-		        // Index for _wp_attachment_image_alt (used in coverage stats)
-		        $wpdb->query(
-			            $wpdb->prepare(
-			                "CREATE INDEX idx_wp_attachment_alt ON `{$postmeta_table}` (meta_key(50), meta_value(100)) /* %d */",
-			                1
-			            )
-			        );
-	        
-		        // Composite index for attachment queries
-		        $wpdb->query(
-				            $wpdb->prepare(
-				                "CREATE INDEX idx_posts_attachment_image ON `{$posts_table}` (post_type(20), post_mime_type(20), post_status(20)) /* %d */",
-				                1
-				            )
-				        );
-		    }
-
-    /**
-     * Migrate usage logs table to include site_id column (backwards compatibility)
-     */
-    private function migrate_usage_logs_table() {
-        global $wpdb;
-        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/usage/class-usage-logs.php';
-        
-				        $table_name = esc_sql( \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::table() );
-		        
-				        // Check if site_id column exists
-				        $column_exists = $wpdb->get_results(
-					            $wpdb->prepare(
-					                "SHOW COLUMNS FROM `{$table_name}` LIKE %s",
-					                'site_id'
-				            )
-				        );
-        
-        if (empty($column_exists)) {
-            // Add site_id column
-            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
-            $site_id = \BeepBeepAI\AltTextGenerator\get_site_identifier();
-            
-		            $wpdb->query(
-			                $wpdb->prepare(
-			                    "ALTER TABLE `{$table_name}` ADD COLUMN site_id VARCHAR(64) NOT NULL DEFAULT %s AFTER user_id, ADD KEY site_id (site_id), ADD KEY site_created (site_id, created_at) /* %d */",
-			                    '',
-			                    1
-			                )
-		            );
-            
-            // Update existing rows with current site_id
-		            $wpdb->query(
-				                $wpdb->prepare(
-				                    "UPDATE `{$table_name}` SET site_id = %s WHERE site_id = %s",
-				                    $site_id,
-				                    ''
-				                )
-		            );
-	        }
-	    }
+    // create_performance_indexes() and migrate_usage_logs_table() have been
+    // consolidated into DB_Schema::install() — see includes/class-bbai-db.php.
 
     public function add_settings_page() {
         $cap = current_user_can(self::CAPABILITY) ? self::CAPABILITY : 'manage_options';
         
         // Check authentication status (same logic as render_settings_page)
         try {
-            $is_authenticated = $this->api_client->is_authenticated();
-            $has_license = $this->api_client->has_active_license();
+            $bbai_is_authenticated = $this->api_client->is_authenticated();
+            $bbai_has_license = $this->api_client->has_active_license();
         } catch (Exception $e) {
-            $is_authenticated = false;
-            $has_license = false;
+            $bbai_is_authenticated = false;
+            $bbai_has_license = false;
         } catch (Error $e) {
-            $is_authenticated = false;
-            $has_license = false;
+            $bbai_is_authenticated = false;
+            $bbai_has_license = false;
         }
         
         // Also check stored credentials
-        $stored_token = get_option('beepbeepai_jwt_token', '');
-        $has_stored_token = !empty($stored_token);
+        $bbai_stored_token = get_option('beepbeepai_jwt_token', '');
+        $bbai_has_stored_token = !empty($bbai_stored_token);
         
-        $stored_license = '';
+        $bbai_stored_license = '';
         try {
-            $stored_license = $this->api_client->get_license_key();
+            $bbai_stored_license = $this->api_client->get_license_key();
         } catch (Exception $e) {
-            $stored_license = '';
+            $bbai_stored_license = '';
         } catch (Error $e) {
-            $stored_license = '';
+            $bbai_stored_license = '';
         }
-        $has_stored_license = !empty($stored_license);
+        $bbai_has_stored_license = !empty($bbai_stored_license);
         
         // Determine if user is registered (authenticated/licensed)
-        $has_registered_user = $is_authenticated || $has_license || $has_stored_token || $has_stored_license;
+        $bbai_has_registered_user = $bbai_is_authenticated || $bbai_has_license || $bbai_has_stored_token || $bbai_has_stored_license;
         
         // Only show menu items if user is registered
-        if ($has_registered_user) {
+        if ($bbai_has_registered_user) {
             // Top-level menu uses the brand name; the first submenu is "Dashboard".
             add_menu_page(
                 __('BeepBeep AI', 'beepbeep-ai-alt-text-generator'),
@@ -1011,7 +940,7 @@ class Core {
             );
 
             // Settings and Debug only for authenticated/licensed users
-            if ($is_authenticated || $has_license || $has_stored_token || $has_stored_license) {
+            if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_stored_token || $bbai_has_stored_license) {
                 add_submenu_page(
                     'bbai',
                     __('Settings', 'beepbeep-ai-alt-text-generator'),
@@ -1055,8 +984,7 @@ class Core {
 
 	    public function handle_checkout_redirect() {
 	        // Verify nonce for CSRF protection (first).
-	        $action = 'bbai_checkout_redirect';
-	        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ?? '' ) ), $action ) ) {
+	        $action = 'bbai_checkout_redirect';	        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ?? '' ) ), $action ) ) {
 	            wp_die(esc_html__('Security check failed.', 'beepbeep-ai-alt-text-generator'));
 	        }
 
@@ -1068,6 +996,7 @@ class Core {
 	            wp_die(esc_html__('Please sign in first to upgrade.', 'beepbeep-ai-alt-text-generator'));
 	        }
 
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
         $price_id = isset($_GET['price_id']) ? sanitize_text_field(wp_unslash($_GET['price_id'])) : '';
         if (empty($price_id)) {
             wp_die(esc_html__('Invalid checkout request.', 'beepbeep-ai-alt-text-generator'));
@@ -1109,18 +1038,20 @@ class Core {
             return;
         }
 
-	        $page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
-	        $current_page = $page_input;
+	        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
+	        $bbai_page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+	        $bbai_current_page = $bbai_page_input;
+	        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 	        $current_step = isset($_GET['step']) ? absint(wp_unslash($_GET['step'])) : 0;
-	        $is_onboarding_page = ($current_page === 'bbai-onboarding');
+	        $is_onboarding_page = ($bbai_current_page === 'bbai-onboarding');
 	        $is_step3 = ($is_onboarding_page && $current_step === 3);
 
         if (!class_exists('\BeepBeepAI\AltTextGenerator\Auth_State') || !class_exists('\BeepBeepAI\AltTextGenerator\Onboarding')) {
             return;
         }
 
-        $auth = \BeepBeepAI\AltTextGenerator\Auth_State::resolve($this->api_client);
-        if (empty($auth['has_registered_user'])) {
+        $bbai_auth = \BeepBeepAI\AltTextGenerator\Auth_State::resolve($this->api_client);
+        if (empty($bbai_auth['has_registered_user'])) {
             return;
         }
 
@@ -1313,6 +1244,7 @@ class Core {
         }
 
 	        // Route based on step query param (default to step 1)
+	        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 	        $step = isset($_GET['step']) ? absint(wp_unslash($_GET['step'])) : 1;
 
         if ($step === 1) {
@@ -1459,7 +1391,7 @@ class Core {
         </div>
         <?php
         // Include upgrade modal for "View plans & pricing" button
-        $checkout_prices = $this->get_checkout_price_ids();
+        $bbai_checkout_prices = $this->get_checkout_price_ids();
         include BBAI_PLUGIN_DIR . 'templates/upgrade-modal.php';
     }
 
@@ -1479,7 +1411,7 @@ class Core {
         $dashboard_url = admin_url('admin.php?page=bbai');
         // TODO: Update this if ALT Library slug changes
         $library_url = admin_url('admin.php?page=bbai-library');
-        $is_authenticated = bbai_is_authenticated();
+        $bbai_is_authenticated = bbai_is_authenticated();
         ?>
         <div class="wrap bbai-wrap bbai-modern bbai-onboarding bbai-onboarding-step3">
             <div class="bbai-header">
@@ -1533,7 +1465,7 @@ class Core {
                     </div>
                 </div>
 
-                <?php if (!$is_authenticated) : ?>
+                <?php if (!$bbai_is_authenticated) : ?>
                 <!-- Unauthenticated state: Show sign-in CTA -->
                 <div class="bbai-card bbai-card--large bbai-onboarding-hero bbai-mb-6">
                     <div class="bbai-card-body">
@@ -1618,7 +1550,7 @@ class Core {
         </div>
         <?php
         // Include upgrade modal for "View plans & pricing" button
-        $checkout_prices = $this->get_checkout_price_ids();
+        $bbai_checkout_prices = $this->get_checkout_price_ids();
         include BBAI_PLUGIN_DIR . 'templates/upgrade-modal.php';
     }
 
@@ -1629,95 +1561,96 @@ class Core {
         Usage_Tracker::allocate_free_credits_if_needed();
 
         $opts  = get_option(self::OPTION_KEY, []);
-        $stats = $this->get_media_stats();
+        $bbai_stats = $this->get_media_stats();
         $nonce = wp_create_nonce(self::NONCE_KEY);
         
         // Check if there's a registered user (authenticated or has active license)
         // Use try-catch to prevent errors from breaking the page
 	        try {
-	            $is_authenticated = $this->api_client->is_authenticated();
-	            $has_license = $this->api_client->has_active_license();
+	            $bbai_is_authenticated = $this->api_client->is_authenticated();
+	            $bbai_has_license = $this->api_client->has_active_license();
 		        } catch (Exception $e) {
 		            // If authentication check fails, default to showing limited tabs
 		            if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-		                error_log('[BBAI] Authentication check failed: ' . $e->getMessage()); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log
+		                error_log('[BBAI] Authentication check failed: ' . $e->getMessage()); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		            }
-		            $is_authenticated = false;
-		            $has_license = false;
+		            $bbai_is_authenticated = false;
+		            $bbai_has_license = false;
 		        } catch (Error $e) {
 		            // Catch fatal errors too
 		            if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-		                error_log('[BBAI] Authentication check fatal error: ' . $e->getMessage()); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log
+		                error_log('[BBAI] Authentication check fatal error: ' . $e->getMessage()); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		            }
-		            $is_authenticated = false;
-		            $has_license = false;
+		            $bbai_is_authenticated = false;
+		            $bbai_has_license = false;
 		        }
         
         // Also check if user has a token stored in options (indicates they've logged in before)
         // Token is stored in beepbeepai_jwt_token option (not in beepbeepai_settings)
-        $stored_token = get_option('beepbeepai_jwt_token', '');
-        $has_stored_token = !empty($stored_token);
+        $bbai_stored_token = get_option('beepbeepai_jwt_token', '');
+        $bbai_has_stored_token = !empty($bbai_stored_token);
         
         // Check for license key using the API client method (handles both new and legacy storage)
-        $stored_license = '';
+        $bbai_stored_license = '';
         try {
-            $stored_license = $this->api_client->get_license_key();
+            $bbai_stored_license = $this->api_client->get_license_key();
         } catch (Exception $e) {
-            $stored_license = '';
+            $bbai_stored_license = '';
         } catch (Error $e) {
-            $stored_license = '';
+            $bbai_stored_license = '';
         }
-        $has_stored_license = !empty($stored_license);
+        $bbai_has_stored_license = !empty($bbai_stored_license);
         
         // Update authentication flags to include stored credentials
         // This ensures tabs show even if current API validation fails
-        $is_authenticated = $is_authenticated || $has_stored_token;
-        $has_license = $has_license || $has_stored_license;
+        $bbai_is_authenticated = $bbai_is_authenticated || $bbai_has_stored_token;
+        $bbai_has_license = $bbai_has_license || $bbai_has_stored_license;
         
         // Consider user registered if authenticated, has license, or has stored credentials
         // This ensures tabs show even if current auth check fails
-        $has_registered_user = $is_authenticated || $has_license || $has_stored_token || $has_stored_license;
-	        $page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
-	        $bbai_page_slug = $page_input;
+        $bbai_has_registered_user = $bbai_is_authenticated || $bbai_has_license || $bbai_has_stored_token || $bbai_has_stored_license;
+	        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
+	        $bbai_page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+	        $bbai_page_slug = $bbai_page_input;
         
-        // Initialize $tabs array (will be populated in if/else blocks below)
-        $tabs = [];
+        // Initialize $bbai_tabs array (will be populated in if/else blocks below)
+        $bbai_tabs = [];
         
         // No tabs for non-registered users - show onboarding page only
-        if (!$has_registered_user) {
-            $tabs = [];
-            $tab = 'dashboard'; // Default to dashboard/onboarding view
-            $is_pro_for_admin = false;
-            $is_agency_for_admin = false;
+        if (!$bbai_has_registered_user) {
+            $bbai_tabs = [];
+            $bbai_tab = 'dashboard'; // Default to dashboard/onboarding view
+            $bbai_is_pro_for_admin = false;
+            $bbai_is_agency_for_admin = false;
         } else {
             // Determine if agency license
             // Check API first, then include stored credentials
-            $has_license_api = $this->api_client->has_active_license();
-            $has_license = $has_license_api || $has_stored_license;
-            $license_data = $this->api_client->get_license_data();
-            $plan_slug = 'free'; // Default to free
+            $bbai_has_license_api = $this->api_client->has_active_license();
+            $bbai_has_license = $bbai_has_license_api || $bbai_has_stored_license;
+            $bbai_license_data = $this->api_client->get_license_data();
+            $bbai_plan_slug = 'free'; // Default to free
             
             // If using license, check license plan
-            if ($has_license && $license_data && isset($license_data['organization'])) {
-                $license_plan = strtolower($license_data['organization']['plan'] ?? 'free');
-                if ($license_plan !== 'free') {
-                    $plan_slug = $license_plan;
+            if ($bbai_has_license && $bbai_license_data && isset($bbai_license_data['organization'])) {
+                $bbai_license_plan = strtolower($bbai_license_data['organization']['plan'] ?? 'free');
+                if ($bbai_license_plan !== 'free') {
+                    $bbai_plan_slug = $bbai_license_plan;
                 }
-            } elseif ($is_authenticated) {
+            } elseif ($bbai_is_authenticated) {
                 // For authenticated users without license, try to get plan from usage stats
                 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
-                $usage_stats = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_stats_display(false);
-                if (isset($usage_stats['plan']) && $usage_stats['plan'] !== 'free') {
-                    $plan_slug = $usage_stats['plan'];
+                $bbai_usage_stats = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_stats_display(false);
+                if (isset($bbai_usage_stats['plan']) && $bbai_usage_stats['plan'] !== 'free') {
+                    $bbai_plan_slug = $bbai_usage_stats['plan'];
                 }
             }
             
-            $is_agency = ($plan_slug === 'agency');
-            $is_pro = ($plan_slug === 'pro' || $plan_slug === 'agency');
+            $bbai_is_agency = ($bbai_plan_slug === 'agency');
+            $bbai_is_pro = ($bbai_plan_slug === 'pro' || $bbai_plan_slug === 'agency');
             
             // Build tabs array for registered users
             // Core tabs always available
-            $tabs = [
+            $bbai_tabs = [
                 'dashboard'    => __('Dashboard', 'beepbeep-ai-alt-text-generator'),
                 'library'      => __('ALT Library', 'beepbeep-ai-alt-text-generator'),
                 'analytics'    => __('Analytics', 'beepbeep-ai-alt-text-generator'),
@@ -1726,25 +1659,25 @@ class Core {
             ];
             
             // Additional tabs for authenticated/licensed users
-            if ($is_authenticated || $has_license) {
-                $tabs['settings'] = __('Settings', 'beepbeep-ai-alt-text-generator');
-                $tabs['debug'] = __('Debug Logs', 'beepbeep-ai-alt-text-generator');
+            if ($bbai_is_authenticated || $bbai_has_license) {
+                $bbai_tabs['settings'] = __('Settings', 'beepbeep-ai-alt-text-generator');
+                $bbai_tabs['debug'] = __('Debug Logs', 'beepbeep-ai-alt-text-generator');
             }
             
             // Admin tab for Pro/Agency plans (replaces Debug Logs and Settings)
-            if ($is_pro) {
+            if ($bbai_is_pro) {
                 // Remove individual debug/settings tabs and add admin tab
-                unset($tabs['debug'], $tabs['settings']);
-                $tabs['admin'] = __('Admin', 'beepbeep-ai-alt-text-generator');
+                unset($bbai_tabs['debug'], $bbai_tabs['settings']);
+                $bbai_tabs['admin'] = __('Admin', 'beepbeep-ai-alt-text-generator');
             }
             
             // Agency Overview tab for Agency plans only
-            if ($is_agency) {
-                $tabs['agency-overview'] = __('Agency Overview', 'beepbeep-ai-alt-text-generator');
+            if ($bbai_is_agency) {
+                $bbai_tabs['agency-overview'] = __('Agency Overview', 'beepbeep-ai-alt-text-generator');
             }
             
             // Map page slugs to tab slugs (for determining current tab from URL)
-            $page_to_tab = [
+            $bbai_page_to_tab = [
                 'bbai' => 'dashboard',
                 'bbai-library' => 'library',
                 'bbai-analytics' => 'analytics',
@@ -1756,26 +1689,28 @@ class Core {
             ];
             
 	            // Determine current tab from URL
-	            $page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : 'bbai';
-	            $current_page = $page_input ?: 'bbai';
-	            $tab_from_page = $page_to_tab[$current_page] ?? 'dashboard';
+	            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
+	            $bbai_page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : 'bbai';
+	            $bbai_current_page = $bbai_page_input ?: 'bbai';
+	            $tab_from_page = $bbai_page_to_tab[$bbai_current_page] ?? 'dashboard';
 	            
 	            // Use tab from URL parameter if provided, otherwise use page slug mapping
-	            $tab_input = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : '';
-	            $tab = $tab_input !== '' ? $tab_input : $tab_from_page;
+	            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
+	            $bbai_tab_input = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : '';
+	            $bbai_tab = $bbai_tab_input !== '' ? $bbai_tab_input : $tab_from_page;
 
             // If trying to access restricted tabs, redirect to dashboard
-            if (!isset($tabs) || !is_array($tabs) || !in_array($tab, array_keys($tabs))) {
-                $tab = 'dashboard';
+            if (!isset($bbai_tabs) || !is_array($bbai_tabs) || !in_array($bbai_tab, array_keys($bbai_tabs))) {
+                $bbai_tab = 'dashboard';
             }
             
             // Set variables for Admin tab access (used later in template)
-            $is_pro_for_admin = $is_pro;
-            $is_agency_for_admin = $is_agency;
+            $bbai_is_pro_for_admin = $bbai_is_pro;
+            $bbai_is_agency_for_admin = $bbai_is_agency;
         }
-        $export_url = wp_nonce_url(admin_url('admin-post.php?action=bbai_usage_export'), 'bbai_usage_export');
-        $audit_rows = $stats['audit'] ?? [];
-        $debug_bootstrap = $this->get_debug_bootstrap();
+        $bbai_export_url = wp_nonce_url(admin_url('admin-post.php?action=bbai_usage_export'), 'bbai_usage_export');
+        $bbai_audit_rows = $bbai_stats['audit'] ?? [];
+        $bbai_debug_bootstrap = $this->get_debug_bootstrap();
         ?>
         <div class="wrap bbai-wrap bbai-modern">
             <!-- Dark Header -->
@@ -1805,13 +1740,13 @@ class Core {
                     </div>
                     <nav class="bbai-nav" role="navigation" aria-label="<?php esc_attr_e('Main navigation', 'beepbeep-ai-alt-text-generator'); ?>">
                         <?php
-                        // Ensure $tabs is defined (empty array is valid for non-registered users)
-                        if (!isset($tabs) || !is_array($tabs)) {
-                            $tabs = [];
+                        // Ensure $bbai_tabs is defined (empty array is valid for non-registered users)
+                        if (!isset($bbai_tabs) || !is_array($bbai_tabs)) {
+                            $bbai_tabs = [];
                         }
 
                         // Map tab slugs to page slugs for proper URL generation
-                        $tab_to_page = [
+                        $bbai_tab_to_page = [
                             'dashboard' => 'bbai',
                             'library' => 'bbai-library',
                             'analytics' => 'bbai-analytics',
@@ -1823,9 +1758,9 @@ class Core {
                             'agency-overview' => 'bbai', // Agency Overview uses dashboard page with tab parameter
                         ];
                         
-                        foreach ($tabs as $slug => $label) :
+                        foreach ($bbai_tabs as $slug => $label) :
                             // Generate proper URL using page slug if available, otherwise use tab parameter
-                            $page_slug = $tab_to_page[$slug] ?? 'bbai';
+                            $page_slug = $bbai_tab_to_page[$slug] ?? 'bbai';
                             if ($slug === 'dashboard' || $slug === 'admin' || $slug === 'agency-overview') {
                                 // These tabs use the main page with tab parameter
                                 $url = admin_url('admin.php?page=' . $page_slug . ($slug !== 'dashboard' ? '&tab=' . $slug : ''));
@@ -1834,7 +1769,7 @@ class Core {
                                 $url = admin_url('admin.php?page=' . $page_slug);
                             }
                             
-                            $active = (isset($tab) && $tab === $slug) ? ' active' : '';
+                            $active = (isset($bbai_tab) && $bbai_tab === $slug) ? ' active' : '';
                             $aria_current = $active ? ' aria-current="page"' : '';
                         ?>
                             <a href="<?php echo esc_url($url); ?>"
@@ -1857,40 +1792,40 @@ class Core {
                         <?php
                         // Use stored credentials check (same as tab rendering logic)
                         // This ensures header shows correct state even if API validation fails
-                        $has_license_api = $this->api_client->has_active_license();
+                        $bbai_has_license_api = $this->api_client->has_active_license();
                         $is_authenticated_api = $this->api_client->is_authenticated();
-                        $has_license = $has_license_api || $has_stored_license;
-                        $is_authenticated = $is_authenticated_api || $has_stored_token;
+                        $bbai_has_license = $bbai_has_license_api || $bbai_has_stored_license;
+                        $bbai_is_authenticated = $is_authenticated_api || $bbai_has_stored_token;
 
-                        if ($is_authenticated || $has_license) :
-                            $usage_stats = Usage_Tracker::get_stats_display();
-                            $account_summary = $is_authenticated ? $this->get_account_summary($usage_stats) : null;
-                            $plan_slug  = $usage_stats['plan'] ?? 'free';
-                            $plan_label = isset($usage_stats['plan_label']) ? (string)$usage_stats['plan_label'] : ucfirst($plan_slug);
-                            $connected_email = isset($account_summary['email']) ? (string)$account_summary['email'] : '';
+                        if ($bbai_is_authenticated || $bbai_has_license) :
+                            $bbai_usage_stats = Usage_Tracker::get_stats_display();
+                            $bbai_account_summary = $bbai_is_authenticated ? $this->get_account_summary($bbai_usage_stats) : null;
+                            $bbai_plan_slug  = $bbai_usage_stats['plan'] ?? 'free';
+                            $plan_label = isset($bbai_usage_stats['plan_label']) ? (string)$bbai_usage_stats['plan_label'] : ucfirst($bbai_plan_slug);
+                            $connected_email = isset($bbai_account_summary['email']) ? (string)$bbai_account_summary['email'] : '';
                             $billing_portal = Usage_Tracker::get_billing_portal_url();
 
                             // If license-only mode (no personal login), show license info
-                            if ($has_license && !$is_authenticated) {
-                                $license_data = $this->api_client->get_license_data();
-                                $org_name = isset($license_data['organization']['name']) ? (string)$license_data['organization']['name'] : '';
+                            if ($bbai_has_license && !$bbai_is_authenticated) {
+                                $bbai_license_data = $this->api_client->get_license_data();
+                                $org_name = isset($bbai_license_data['organization']['name']) ? (string)$bbai_license_data['organization']['name'] : '';
                                 $connected_email = $org_name ?: __('License Active', 'beepbeep-ai-alt-text-generator');
                             }
                         ?>
                             <!-- Compact Account Bar in Header -->
                             <div class="bbai-header-account-bar">
                                 <span class="bbai-header-account-email"><?php echo esc_html(is_string($connected_email) ? $connected_email : __('Connected', 'beepbeep-ai-alt-text-generator')); ?></span>
-                                <span class="bbai-header-plan-badge"><?php echo esc_html(is_string($plan_label) ? $plan_label : ucfirst($plan_slug ?? 'free')); ?></span>
-                                <?php if ($plan_slug === 'free' && !$has_license) : ?>
+                                <span class="bbai-header-plan-badge"><?php echo esc_html(is_string($plan_label) ? $plan_label : ucfirst($bbai_plan_slug ?? 'free')); ?></span>
+                                <?php if ($bbai_plan_slug === 'free' && !$bbai_has_license) : ?>
                                     <button type="button" class="bbai-header-upgrade-btn" data-action="show-upgrade-modal">
                                         <?php esc_html_e('Upgrade to Growth — 1,000 Generations Monthly', 'beepbeep-ai-alt-text-generator'); ?>
                                     </button>
-                                <?php elseif (!empty($billing_portal) && $is_authenticated) : ?>
+                                <?php elseif (!empty($billing_portal) && $bbai_is_authenticated) : ?>
                                     <button type="button" class="bbai-header-manage-btn" data-action="open-billing-portal">
                                         <?php esc_html_e('Manage', 'beepbeep-ai-alt-text-generator'); ?>
                                     </button>
                                 <?php endif; ?>
-                                <?php if ($is_authenticated || $has_license) : ?>
+                                <?php if ($bbai_is_authenticated || $bbai_has_license) : ?>
                                 <button type="button" class="bbai-header-logout-btn" data-action="logout">
                                     <?php esc_html_e('Logout', 'beepbeep-ai-alt-text-generator'); ?>
                                 </button>
@@ -1913,98 +1848,98 @@ class Core {
             <!-- Main Content Container -->
             <div class="bbai-container">
 
-            <?php if ($tab === 'dashboard') : ?>
+            <?php if ($bbai_tab === 'dashboard') : ?>
     <?php
-    $dashboard_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-tab.php';
-    if (file_exists($dashboard_partial)) {
-        include $dashboard_partial;
+    $bbai_dashboard_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-tab.php';
+    if (file_exists($bbai_dashboard_partial)) {
+        include $bbai_dashboard_partial;
     } else {
         esc_html_e('Dashboard content unavailable.', 'beepbeep-ai-alt-text-generator');
     }
     ?>
 
-<?php elseif ($tab === 'library' && ($is_authenticated || $has_license)) : ?>
+<?php elseif ($bbai_tab === 'library' && ($bbai_is_authenticated || $bbai_has_license)) : ?>
     <?php
-    $library_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/library-tab.php';
-    if (file_exists($library_partial)) {
-        include $library_partial;
+    $bbai_library_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/library-tab.php';
+    if (file_exists($bbai_library_partial)) {
+        include $bbai_library_partial;
     } else {
         esc_html_e('Library content unavailable.', 'beepbeep-ai-alt-text-generator');
     }
     ?>
 
-<?php elseif ($tab === 'debug') : ?>
+<?php elseif ($bbai_tab === 'debug') : ?>
     <?php
-    $debug_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/debug-tab.php';
-    if (file_exists($debug_partial)) {
-        include $debug_partial;
+    $bbai_debug_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/debug-tab.php';
+    if (file_exists($bbai_debug_partial)) {
+        include $bbai_debug_partial;
     } else {
         esc_html_e('Debug content unavailable.', 'beepbeep-ai-alt-text-generator');
     }
     ?>
-<?php elseif ($tab === 'guide' || $bbai_page_slug === 'bbai-guide') : ?>
+<?php elseif ($bbai_tab === 'guide' || $bbai_page_slug === 'bbai-guide') : ?>
             <?php
-            $guide_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/guide-tab.php';
-            if (file_exists($guide_partial)) {
-                include $guide_partial;
+            $bbai_guide_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/guide-tab.php';
+            if (file_exists($bbai_guide_partial)) {
+                include $bbai_guide_partial;
             } else {
                 esc_html_e('Guide content unavailable.', 'beepbeep-ai-alt-text-generator');
             }
             ?>
 
-<?php elseif ($tab === 'credit-usage' && ($is_authenticated || $has_license)) : ?>
+<?php elseif ($bbai_tab === 'credit-usage' && ($bbai_is_authenticated || $bbai_has_license)) : ?>
     <?php
-    $credit_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/credit-usage-tab.php';
-    if (file_exists($credit_partial)) {
-        include $credit_partial;
+    $bbai_credit_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/credit-usage-tab.php';
+    if (file_exists($bbai_credit_partial)) {
+        include $bbai_credit_partial;
     } else {
         esc_html_e('Credit usage content unavailable.', 'beepbeep-ai-alt-text-generator');
     }
     ?>
-<?php elseif ($tab === 'agency-overview' && $is_agency) : ?>
+<?php elseif ($bbai_tab === 'agency-overview' && $bbai_is_agency) : ?>
     <?php
-    $agency_overview_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/agency-overview-tab.php';
-    if (file_exists($agency_overview_partial)) {
-        include $agency_overview_partial;
+    $bbai_agency_overview_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/agency-overview-tab.php';
+    if (file_exists($bbai_agency_overview_partial)) {
+        include $bbai_agency_overview_partial;
     } else {
         esc_html_e('Agency overview content unavailable.', 'beepbeep-ai-alt-text-generator');
     }
     ?>
-<?php elseif ($tab === 'analytics' && ($is_authenticated || $has_license)) : ?>
+<?php elseif ($bbai_tab === 'analytics' && ($bbai_is_authenticated || $bbai_has_license)) : ?>
     <?php
     // Ensure usage_stats is available for analytics tab
-    if (!isset($usage_stats)) {
-        $usage_stats = Usage_Tracker::get_stats_display();
+    if (!isset($bbai_usage_stats)) {
+        $bbai_usage_stats = Usage_Tracker::get_stats_display();
     }
-    $analytics_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/analytics-tab.php';
-    if (file_exists($analytics_partial)) {
-        include $analytics_partial;
+    $bbai_analytics_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/analytics-tab.php';
+    if (file_exists($bbai_analytics_partial)) {
+        include $bbai_analytics_partial;
     } else {
         esc_html_e('Analytics content unavailable.', 'beepbeep-ai-alt-text-generator');
     }
     ?>
 
-<?php elseif ($tab === 'settings') : ?>
+<?php elseif ($bbai_tab === 'settings') : ?>
             <?php
-            $settings_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/settings-tab.php';
-            if (file_exists($settings_partial)) {
-                include $settings_partial;
+            $bbai_settings_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/settings-tab.php';
+            if (file_exists($bbai_settings_partial)) {
+                include $bbai_settings_partial;
             } else {
                 esc_html_e('Settings content unavailable.', 'beepbeep-ai-alt-text-generator');
             }
             ?>
             
-<?php elseif ($tab === 'debug' && ($is_authenticated || $has_license)) : ?>
+<?php elseif ($bbai_tab === 'debug' && ($bbai_is_authenticated || $bbai_has_license)) : ?>
             <?php
-            $debug_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/debug-tab.php';
-            if (file_exists($debug_partial)) {
-                include $debug_partial;
+            $bbai_debug_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/debug-tab.php';
+            if (file_exists($bbai_debug_partial)) {
+                include $bbai_debug_partial;
             } else {
                 esc_html_e('Debug logs content unavailable.', 'beepbeep-ai-alt-text-generator');
             }
             ?>
 
-            <?php elseif ($tab === 'admin' && $is_pro_for_admin) : ?>
+            <?php elseif ($bbai_tab === 'admin' && $bbai_is_pro_for_admin) : ?>
             <!-- Admin Tab - Debug Logs and Settings for Pro and Agency -->
             <?php
             // Check if user is authenticated via API (JWT token or license) OR has admin session
@@ -2029,7 +1964,7 @@ class Core {
                             </h2>
                             <p class="bbai-admin-login-subtitle">
                                 <?php 
-                                if ($is_agency_for_admin) {
+                                if ($bbai_is_agency_for_admin) {
                                     esc_html_e('Enter your agency credentials to access Debug Logs and Settings.', 'beepbeep-ai-alt-text-generator');
                                 } else {
                                     esc_html_e('Enter your pro credentials to access Debug Logs and Settings.', 'beepbeep-ai-alt-text-generator');
@@ -2129,9 +2064,9 @@ class Core {
                             <h3 class="bbai-admin-section-title"><?php esc_html_e('Debug Logs', 'beepbeep-ai-alt-text-generator'); ?></h3>
                         </div>
                         <?php
-                        $debug_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/debug-tab.php';
-                        if (file_exists($debug_partial)) {
-                            include $debug_partial;
+                        $bbai_debug_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/debug-tab.php';
+                        if (file_exists($bbai_debug_partial)) {
+                            include $bbai_debug_partial;
                         } else {
                             esc_html_e('Debug content unavailable.', 'beepbeep-ai-alt-text-generator');
                         }
@@ -2144,9 +2079,9 @@ class Core {
                             <h3 class="bbai-admin-section-title"><?php esc_html_e('Settings', 'beepbeep-ai-alt-text-generator'); ?></h3>
                         </div>
                         <?php
-                        $settings_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/settings-tab.php';
-                        if (file_exists($settings_partial)) {
-                            include $settings_partial;
+                        $bbai_settings_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/settings-tab.php';
+                        if (file_exists($bbai_settings_partial)) {
+                            include $bbai_settings_partial;
                         } else {
                             esc_html_e('Settings content unavailable.', 'beepbeep-ai-alt-text-generator');
                         }
@@ -2166,31 +2101,31 @@ class Core {
                     printf(
                         /* translators: 1: requested tab, 2: available tabs list */
                         esc_html__('The requested tab "%1$s" could not be loaded. Available tabs: %2$s', 'beepbeep-ai-alt-text-generator'),
-                        esc_html($tab),
-                        esc_html(implode(', ', array_keys($tabs ?? [])))
+                        esc_html($bbai_tab),
+                        esc_html(implode(', ', array_keys($bbai_tabs ?? [])))
                     );
                     ?></p>
                     <p><strong><?php esc_html_e('Debug info:', 'beepbeep-ai-alt-text-generator'); ?></strong></p>
                     <ul class="bbai-unauth-list">
                         <li><?php
                         /* translators: 1: tab identifier */
-                        printf(esc_html__('Tab: %s', 'beepbeep-ai-alt-text-generator'), esc_html($tab));
+                        printf(esc_html__('Tab: %s', 'beepbeep-ai-alt-text-generator'), esc_html($bbai_tab));
                         ?></li>
                         <li><?php
                         /* translators: 1: yes/no value */
-                        printf(esc_html__('Is Authenticated: %s', 'beepbeep-ai-alt-text-generator'), esc_html($is_authenticated ? 'Yes' : 'No'));
+                        printf(esc_html__('Is Authenticated: %s', 'beepbeep-ai-alt-text-generator'), esc_html($bbai_is_authenticated ? 'Yes' : 'No'));
                         ?></li>
                         <li><?php
                         /* translators: 1: yes/no value */
-                        printf(esc_html__('Has License: %s', 'beepbeep-ai-alt-text-generator'), esc_html($has_license ? 'Yes' : 'No'));
+                        printf(esc_html__('Has License: %s', 'beepbeep-ai-alt-text-generator'), esc_html($bbai_has_license ? 'Yes' : 'No'));
                         ?></li>
                         <li><?php
                         /* translators: 1: yes/no value */
-                        printf(esc_html__('Has Stored Token: %s', 'beepbeep-ai-alt-text-generator'), esc_html($has_stored_token ? 'Yes' : 'No'));
+                        printf(esc_html__('Has Stored Token: %s', 'beepbeep-ai-alt-text-generator'), esc_html($bbai_has_stored_token ? 'Yes' : 'No'));
                         ?></li>
                         <li><?php
                         /* translators: 1: yes/no value */
-                        printf(esc_html__('Has Stored License: %s', 'beepbeep-ai-alt-text-generator'), esc_html($has_stored_license ? 'Yes' : 'No'));
+                        printf(esc_html__('Has Stored License: %s', 'beepbeep-ai-alt-text-generator'), esc_html($bbai_has_stored_license ? 'Yes' : 'No'));
                         ?></li>
                     </ul>
                 </div>
@@ -2207,10 +2142,10 @@ class Core {
         // Include upgrade modal OUTSIDE of tab conditionals so it's always available
         // Set up currency for upgrade modal - Always use GBP (£) with Stripe prices
         // GBP prices: Growth £12.99, Agency £49.99, Credits £9.99 (matching Stripe payment links)
-        $currency = ['symbol' => '£', 'code' => 'GBP', 'free' => 0, 'growth' => 12.99, 'pro' => 12.99, 'agency' => 49.99, 'credits' => 9.99];
+        $bbai_currency = ['symbol' => '£', 'code' => 'GBP', 'free' => 0, 'growth' => 12.99, 'pro' => 12.99, 'agency' => 49.99, 'credits' => 9.99];
         
         // Include upgrade modal - always available for all tabs
-        $checkout_prices = $this->get_checkout_price_ids();
+        $bbai_checkout_prices = $this->get_checkout_price_ids();
         include BBAI_PLUGIN_DIR . 'templates/upgrade-modal.php';
     }
 
@@ -2302,6 +2237,8 @@ class Core {
         wp_cache_delete('bbai_stats', 'bbai');
         delete_transient('bbai_stats_v3');
         $this->stats_cache = null;
+        BBAI_Cache::bump( 'library' );
+        BBAI_Cache::bump( 'stats' );
     }
 
     public function get_media_stats(){
@@ -2334,12 +2271,14 @@ class Core {
 		
 		            $image_mime_like = $wpdb->esc_like('image/') . '%';
 		
+	            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	            $total = (int) $wpdb->get_var($wpdb->prepare(
 		                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- Table identifiers come from trusted core $wpdb properties; value placeholders remain prepared.
 		                'SELECT COUNT(*) FROM ' . $wpdb->posts . ' WHERE post_type = %s AND post_status = %s AND post_mime_type LIKE %s',
 		                'attachment', 'inherit', $image_mime_like
 	            ));
 
+	            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	            $with_alt = (int) $wpdb->get_var($wpdb->prepare(
 	                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- Table identifiers come from trusted core $wpdb properties; value placeholders remain prepared.
 	                'SELECT COUNT(DISTINCT p.ID) FROM ' . $wpdb->posts . ' p INNER JOIN ' . $wpdb->postmeta . ' m ON p.ID = m.post_id WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s AND m.meta_key = %s AND TRIM(m.meta_value) <> %s',
@@ -2350,6 +2289,7 @@ class Core {
 	                ''
 	            ));
 	
+	            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	            $generated = (int) $wpdb->get_var($wpdb->prepare(
 	                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- Table identifiers come from trusted core $wpdb properties; value placeholders remain prepared.
 	                'SELECT COUNT(DISTINCT post_id) FROM ' . $wpdb->postmeta . ' WHERE meta_key = %s',
@@ -2357,7 +2297,7 @@ class Core {
 	            ));
 
             $coverage = $total ? round(($with_alt / $total) * 100, 1) : 0;
-            $missing  = max(0, $total - $with_alt);
+            $bbai_missing  = max(0, $total - $with_alt);
 
             // Cache date/time format to avoid duplicate get_option() calls
             $date_format_input = get_option('date_format');
@@ -2372,6 +2312,7 @@ class Core {
 	                $usage['last_request_formatted'] = mysql2date($datetime_format, $usage['last_request']);
 	            }
 	
+	            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	            $latest_generated_input = $wpdb->get_var($wpdb->prepare(
 	                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- Table identifiers come from trusted core $wpdb properties; value placeholders remain prepared.
 	                'SELECT meta_value FROM ' . $wpdb->postmeta . ' WHERE meta_key = %s ORDER BY meta_value DESC LIMIT 1',
@@ -2379,6 +2320,7 @@ class Core {
 	            ));
 	            $latest_generated = $latest_generated_input ? mysql2date($datetime_format, $latest_generated_input) : '';
 	
+	            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	            $top_source_row = $wpdb->get_row(
 	                $wpdb->prepare(
 	                    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- Table identifiers come from trusted core $wpdb properties; value placeholders remain prepared.
@@ -2394,7 +2336,7 @@ class Core {
             $this->stats_cache = [
                 'total'     => $total,
                 'with_alt'  => $with_alt,
-                'missing'   => $missing,
+                'missing'   => $bbai_missing,
                 'generated' => $generated,
                 'coverage'  => $coverage,
                 'usage'     => $usage,
@@ -2754,6 +2696,7 @@ class Core {
 	        $limit = intval($limit);
 	        if ($limit <= 0){ $limit = 5; }
 	        $image_mime_like = $wpdb->esc_like('image/') . '%';
+	        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	        return array_map('intval', (array) $wpdb->get_col($wpdb->prepare(
 	            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- Table identifiers come from trusted core $wpdb properties; value placeholders remain prepared.
 	            'SELECT p.ID FROM ' . $wpdb->posts . ' p LEFT JOIN ' . $wpdb->postmeta . ' m ON (p.ID = m.post_id AND m.meta_key = %s) WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s AND (m.meta_value IS NULL OR TRIM(m.meta_value) = %s) ORDER BY p.ID DESC LIMIT %d',
@@ -2766,6 +2709,7 @@ class Core {
 	        $limit  = max(1, intval($limit));
 	        $offset = max(0, intval($offset));
 	        $image_mime_like = $wpdb->esc_like('image/') . '%';
+	        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	        $rows = $wpdb->get_col($wpdb->prepare(
 	            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- Table identifiers come from trusted core $wpdb properties; value placeholders remain prepared.
 	            'SELECT p.ID FROM ' . $wpdb->posts . ' p LEFT JOIN ' . $wpdb->postmeta . ' gen ON gen.post_id = p.ID AND gen.meta_key = %s WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s ORDER BY CASE WHEN gen.meta_value IS NOT NULL THEN gen.meta_value ELSE p.post_date END DESC, p.ID DESC LIMIT %d OFFSET %d',
@@ -2803,7 +2747,9 @@ class Core {
 	        if (!$include_all){
 	            $query_params   = $prepare_params;
 	            $query_params[] = $limit;
+	            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	            $rows = $wpdb->get_results(
+	                // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 	                $wpdb->prepare(
 	                    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- Table identifiers come from trusted core $wpdb properties; value placeholders remain prepared.
 	                    'SELECT p.ID, p.post_title, p.guid, tokens.meta_value AS tokens_total, prompt.meta_value AS tokens_prompt, completion.meta_value AS tokens_completion, alt.meta_value AS alt_text, src.meta_value AS source, model.meta_value AS model, gen.meta_value AS generated_at, thumb.meta_value AS thumbnail_metadata FROM ' . $wpdb->posts . ' p INNER JOIN ' . $wpdb->postmeta . ' tokens ON tokens.post_id = p.ID AND tokens.meta_key = %s LEFT JOIN ' . $wpdb->postmeta . ' prompt ON prompt.post_id = p.ID AND prompt.meta_key = %s LEFT JOIN ' . $wpdb->postmeta . ' completion ON completion.post_id = p.ID AND completion.meta_key = %s LEFT JOIN ' . $wpdb->postmeta . ' alt ON alt.post_id = p.ID AND alt.meta_key = %s LEFT JOIN ' . $wpdb->postmeta . ' src ON src.post_id = p.ID AND src.meta_key = %s LEFT JOIN ' . $wpdb->postmeta . ' model ON model.post_id = p.ID AND model.meta_key = %s LEFT JOIN ' . $wpdb->postmeta . ' gen ON gen.post_id = p.ID AND gen.meta_key = %s LEFT JOIN ' . $wpdb->postmeta . ' thumb ON thumb.post_id = p.ID AND thumb.meta_key = %s WHERE p.post_type = %s AND p.post_mime_type LIKE %s ORDER BY CASE WHEN gen.meta_value IS NOT NULL THEN gen.meta_value ELSE p.post_date END DESC, CAST(tokens.meta_value AS UNSIGNED) DESC LIMIT %d',
@@ -2812,7 +2758,9 @@ class Core {
 	                ARRAY_A
 	            );
 	        } else {
+	            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	            $rows = $wpdb->get_results(
+	                // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 	                $wpdb->prepare(
 	                    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- Table identifiers come from trusted core $wpdb properties; value placeholders remain prepared.
 	                    'SELECT p.ID, p.post_title, p.guid, tokens.meta_value AS tokens_total, prompt.meta_value AS tokens_prompt, completion.meta_value AS tokens_completion, alt.meta_value AS alt_text, src.meta_value AS source, model.meta_value AS model, gen.meta_value AS generated_at, thumb.meta_value AS thumbnail_metadata FROM ' . $wpdb->posts . ' p INNER JOIN ' . $wpdb->postmeta . ' tokens ON tokens.post_id = p.ID AND tokens.meta_key = %s LEFT JOIN ' . $wpdb->postmeta . ' prompt ON prompt.post_id = p.ID AND prompt.meta_key = %s LEFT JOIN ' . $wpdb->postmeta . ' completion ON completion.post_id = p.ID AND completion.meta_key = %s LEFT JOIN ' . $wpdb->postmeta . ' alt ON alt.post_id = p.ID AND alt.meta_key = %s LEFT JOIN ' . $wpdb->postmeta . ' src ON src.post_id = p.ID AND src.meta_key = %s LEFT JOIN ' . $wpdb->postmeta . ' model ON model.post_id = p.ID AND model.meta_key = %s LEFT JOIN ' . $wpdb->postmeta . ' gen ON gen.post_id = p.ID AND gen.meta_key = %s LEFT JOIN ' . $wpdb->postmeta . ' thumb ON thumb.post_id = p.ID AND thumb.meta_key = %s WHERE p.post_type = %s AND p.post_mime_type LIKE %s ORDER BY CASE WHEN gen.meta_value IS NOT NULL THEN gen.meta_value ELSE p.post_date END DESC, CAST(tokens.meta_value AS UNSIGNED) DESC',
@@ -3088,8 +3036,11 @@ class Core {
 
 				        global $wpdb;
 				        $table = esc_sql( Debug_Log::table() );
+				        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				        $rows = $wpdb->get_results(
+				            // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 				            $wpdb->prepare(
+				                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 				                "SELECT * FROM `{$table}` WHERE %d = %d ORDER BY created_at DESC",
 				                1,
 				                1
@@ -3336,7 +3287,7 @@ class Core {
             $user_content[] = $image_payload;
         }
 
-        $body = [
+        $bbai_body = [
             'model' => $review_model,
             'messages' => [
                 [
@@ -3358,7 +3309,7 @@ class Core {
                 'Content-Type'  => 'application/json',
             ],
             'timeout' => 45,
-            'body'    => wp_json_encode($body),
+            'body'    => wp_json_encode($bbai_body),
         ]);
 
         if (is_wp_error($response)){
@@ -3521,8 +3472,8 @@ class Core {
         }
 
         // Skip authentication check in local development mode
-        $has_license = $this->api_client->has_active_license();
-        if (!$has_license && (!defined('WP_LOCAL_DEV') || !WP_LOCAL_DEV)) {
+        $bbai_has_license = $this->api_client->has_active_license();
+        if (!$bbai_has_license && (!defined('WP_LOCAL_DEV') || !WP_LOCAL_DEV)) {
             // Check site-wide quota before generation
             // Wrap in try-catch to prevent PHP errors from breaking REST responses
             // Use has_reached_limit() instead of Token_Quota_Service for consistency
@@ -3538,18 +3489,18 @@ class Core {
                         $usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
                     }
                     
-                    $reset_date = isset($usage['resetDate']) ? $usage['resetDate'] : null;
+                    $bbai_reset_date = isset($usage['resetDate']) ? $usage['resetDate'] : null;
                     $reset_message = __('Monthly quota exhausted. Upgrade to Growth for 1,000 generations per month, or wait for your quota to reset. You can manage your subscription in Settings.', 'beepbeep-ai-alt-text-generator');
                     
-                    if ($reset_date) {
+                    if ($bbai_reset_date) {
                         try {
-                            $reset_ts = strtotime($reset_date);
+                            $reset_ts = strtotime($bbai_reset_date);
                             if ($reset_ts !== false) {
-                                $formatted_date = date_i18n('F j, Y', $reset_ts);
+                                $bbai_formatted_date = date_i18n('F j, Y', $reset_ts);
                                 $reset_message = sprintf(
                                     /* translators: 1: reset date */
                                     __('Monthly quota exhausted. Your quota will reset on %s. Upgrade to Growth for 1,000 generations per month, or manage your subscription in Settings.', 'beepbeep-ai-alt-text-generator'),
-                                    $formatted_date
+                                    $bbai_formatted_date
                                 );
                             }
                         } catch (\Exception $e) {
@@ -3735,7 +3686,7 @@ class Core {
         $api_response['alt_text'] = $alt_text;
 
         // Refresh license usage data when backend returns updated organization details
-        if ($has_license && !empty($api_response['organization'])) {
+        if ($bbai_has_license && !empty($api_response['organization'])) {
             $existing_license = $this->api_client->get_license_data() ?? [];
             $updated_license  = $existing_license;
             $updated_license['organization'] = array_merge(
@@ -3758,43 +3709,43 @@ class Core {
         // Backend returns credits_used and credits_remaining at root level, not nested in 'usage'
         // The 'usage' key contains token information (prompt_tokens, completion_tokens, etc.)
         // Build usage data from both root-level credits and nested usage token info
-        $usage_data = [];
+        $bbai_usage_data = [];
         
         // Get credits from root level (primary source)
         if (isset($api_response['credits_used'])) {
-            $usage_data['used'] = intval($api_response['credits_used']);
+            $bbai_usage_data['used'] = intval($api_response['credits_used']);
         }
         if (isset($api_response['credits_remaining'])) {
-            $usage_data['remaining'] = intval($api_response['credits_remaining']);
+            $bbai_usage_data['remaining'] = intval($api_response['credits_remaining']);
         }
         // Get limit from root level if provided (check both 'total_limit' and 'limit' for compatibility)
         if (isset($api_response['total_limit'])) {
-            $usage_data['limit'] = intval($api_response['total_limit']);
+            $bbai_usage_data['limit'] = intval($api_response['total_limit']);
         } elseif (isset($api_response['limit'])) {
-            $usage_data['limit'] = intval($api_response['limit']);
-        } elseif (isset($usage_data['used']) && isset($usage_data['remaining'])) {
-            $usage_data['limit'] = $usage_data['used'] + $usage_data['remaining'];
+            $bbai_usage_data['limit'] = intval($api_response['limit']);
+        } elseif (isset($bbai_usage_data['used']) && isset($bbai_usage_data['remaining'])) {
+            $bbai_usage_data['limit'] = $bbai_usage_data['used'] + $bbai_usage_data['remaining'];
         }
         
         // Get token info from nested usage object if available
         if (!empty($api_response['usage']) && is_array($api_response['usage'])) {
             if (isset($api_response['usage']['prompt_tokens'])) {
-                $usage_data['prompt_tokens'] = intval($api_response['usage']['prompt_tokens']);
+                $bbai_usage_data['prompt_tokens'] = intval($api_response['usage']['prompt_tokens']);
             }
             if (isset($api_response['usage']['completion_tokens'])) {
-                $usage_data['completion_tokens'] = intval($api_response['usage']['completion_tokens']);
+                $bbai_usage_data['completion_tokens'] = intval($api_response['usage']['completion_tokens']);
             }
             if (isset($api_response['usage']['total_tokens'])) {
-                $usage_data['total_tokens'] = intval($api_response['usage']['total_tokens']);
+                $bbai_usage_data['total_tokens'] = intval($api_response['usage']['total_tokens']);
             }
         }
         
         // Log token usage prominently for each generation
-        if (!empty($usage_data) && (isset($usage_data['prompt_tokens']) || isset($usage_data['completion_tokens']) || isset($usage_data['total_tokens']))) {
+        if (!empty($bbai_usage_data) && (isset($bbai_usage_data['prompt_tokens']) || isset($bbai_usage_data['completion_tokens']) || isset($bbai_usage_data['total_tokens']))) {
             if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-                $prompt_tokens = isset($usage_data['prompt_tokens']) ? intval($usage_data['prompt_tokens']) : 0;
-                $completion_tokens = isset($usage_data['completion_tokens']) ? intval($usage_data['completion_tokens']) : 0;
-                $total_tokens = isset($usage_data['total_tokens']) ? intval($usage_data['total_tokens']) : 0;
+                $prompt_tokens = isset($bbai_usage_data['prompt_tokens']) ? intval($bbai_usage_data['prompt_tokens']) : 0;
+                $completion_tokens = isset($bbai_usage_data['completion_tokens']) ? intval($bbai_usage_data['completion_tokens']) : 0;
+                $total_tokens = isset($bbai_usage_data['total_tokens']) ? intval($bbai_usage_data['total_tokens']) : 0;
                 
                 $token_summary = sprintf(
                     'Token Usage: %s prompt + %s completion = %s total tokens',
@@ -3805,9 +3756,9 @@ class Core {
                 
                 Debug_Log::log('info', $token_summary, [
                     'attachment_id' => $attachment_id,
-                    'prompt_tokens' => $usage_data['prompt_tokens'] ?? 0,
-                    'completion_tokens' => $usage_data['completion_tokens'] ?? 0,
-                    'total_tokens' => $usage_data['total_tokens'] ?? 0,
+                    'prompt_tokens' => $bbai_usage_data['prompt_tokens'] ?? 0,
+                    'completion_tokens' => $bbai_usage_data['completion_tokens'] ?? 0,
+                    'total_tokens' => $bbai_usage_data['total_tokens'] ?? 0,
                     'alt_text_length' => strlen($alt_text ?? ''),
                     'model' => (isset($api_response['meta']) && is_array($api_response['meta'])) ? ($api_response['meta']['modelUsed'] ?? 'unknown') : 'unknown',
                     'generation_time_ms' => (isset($api_response['meta']) && is_array($api_response['meta'])) ? ($api_response['meta']['generation_time_ms'] ?? null) : null,
@@ -3816,14 +3767,14 @@ class Core {
         }
         
         // Update usage if we have credits information from generation response
-        if (!empty($usage_data) && (isset($usage_data['used']) || isset($usage_data['remaining']))) {
+        if (!empty($bbai_usage_data) && (isset($bbai_usage_data['used']) || isset($bbai_usage_data['remaining']))) {
             // Log what we're updating for debugging
             if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
                 Debug_Log::log('info', 'Updating usage cache after generation', [
-                    'usage_data' => $usage_data,
-                    'has_used' => isset($usage_data['used']),
-                    'has_remaining' => isset($usage_data['remaining']),
-                    'has_limit' => isset($usage_data['limit']),
+                    'usage_data' => $bbai_usage_data,
+                    'has_used' => isset($bbai_usage_data['used']),
+                    'has_remaining' => isset($bbai_usage_data['remaining']),
+                    'has_limit' => isset($bbai_usage_data['limit']),
                     'api_response_keys' => array_keys($api_response),
                     'credits_used_in_response' => $api_response['credits_used'] ?? 'not set',
                     'credits_remaining_in_response' => $api_response['credits_remaining'] ?? 'not set',
@@ -3832,7 +3783,7 @@ class Core {
                 ], 'generation');
             }
 
-            Usage_Tracker::update_usage($usage_data);
+            Usage_Tracker::update_usage($bbai_usage_data);
         } else {
             // Generation response didn't include credits info - fetch fresh usage from API
             // This ensures the dashboard shows accurate counts even if the backend doesn't
@@ -3850,7 +3801,7 @@ class Core {
             $fresh_usage = $this->api_client->get_usage();
             if (!is_wp_error($fresh_usage) && is_array($fresh_usage)) {
                 Usage_Tracker::update_usage($fresh_usage);
-                $usage_data = $fresh_usage;
+                $bbai_usage_data = $fresh_usage;
 
                 if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
                     Debug_Log::log('info', 'Fresh usage fetched and cached after generation', [
@@ -3874,30 +3825,30 @@ class Core {
         }
 
         // Update license data if user has a license
-        if ($has_license && !empty($usage_data)) {
+        if ($bbai_has_license && !empty($bbai_usage_data)) {
             $existing_license = $this->api_client->get_license_data() ?? [];
             $updated_license  = $existing_license ?: [];
             $organization     = $updated_license['organization'] ?? [];
 
             // Update limit first
-            if (isset($usage_data['limit'])) {
-                $organization['tokenLimit'] = intval($usage_data['limit']);
-            } elseif (isset($usage_data['used']) && isset($usage_data['remaining'])) {
+            if (isset($bbai_usage_data['limit'])) {
+                $organization['tokenLimit'] = intval($bbai_usage_data['limit']);
+            } elseif (isset($bbai_usage_data['used']) && isset($bbai_usage_data['remaining'])) {
                 // Calculate limit from used + remaining if not provided
-                $organization['tokenLimit'] = intval($usage_data['used']) + intval($usage_data['remaining']);
+                $organization['tokenLimit'] = intval($bbai_usage_data['used']) + intval($bbai_usage_data['remaining']);
             }
 
             // Update remaining credits (this is the critical value for display)
-            if (isset($usage_data['remaining'])) {
-                $organization['tokensRemaining'] = max(0, intval($usage_data['remaining']));
-            } elseif (isset($usage_data['used']) && isset($organization['tokenLimit'])) {
+            if (isset($bbai_usage_data['remaining'])) {
+                $organization['tokensRemaining'] = max(0, intval($bbai_usage_data['remaining']));
+            } elseif (isset($bbai_usage_data['used']) && isset($organization['tokenLimit'])) {
                 // Calculate remaining from limit and used
-                $organization['tokensRemaining'] = max(0, intval($organization['tokenLimit']) - intval($usage_data['used']));
-            } elseif (isset($usage_data['limit']) && isset($usage_data['used'])) {
+                $organization['tokensRemaining'] = max(0, intval($organization['tokenLimit']) - intval($bbai_usage_data['used']));
+            } elseif (isset($bbai_usage_data['limit']) && isset($bbai_usage_data['used'])) {
                 // Calculate remaining from limit and used if remaining not provided
-                $organization['tokensRemaining'] = max(0, intval($usage_data['limit']) - intval($usage_data['used']));
+                $organization['tokensRemaining'] = max(0, intval($bbai_usage_data['limit']) - intval($bbai_usage_data['used']));
                 if (!isset($organization['tokenLimit'])) {
-                    $organization['tokenLimit'] = intval($usage_data['limit']);
+                    $organization['tokenLimit'] = intval($bbai_usage_data['limit']);
                 }
             }
 
@@ -3906,7 +3857,7 @@ class Core {
                 Debug_Log::log('info', 'Updating license organization data with usage', [
                     'tokensRemaining' => $organization['tokensRemaining'] ?? 'not set',
                     'tokenLimit' => $organization['tokenLimit'] ?? 'not set',
-                    'usage_data' => $usage_data,
+                    'usage_data' => $bbai_usage_data,
                 ], 'generation');
             }
 
@@ -4040,7 +3991,7 @@ class Core {
         // 3. Calling record_local_usage() with token counts would double-count and treat tokens as credits
         // 4. The backend API response already contains the accurate credits_used value
         
-        if ($has_license) {
+        if ($bbai_has_license) {
             $this->refresh_license_usage_snapshot();
         }
 
@@ -4123,8 +4074,8 @@ class Core {
         $label_generate   = __('Generate Alt Text', 'beepbeep-ai-alt-text-generator');
         $label_regenerate = __('Regenerate Alt Text', 'beepbeep-ai-alt-text-generator');
         $current_label    = $has_alt ? $label_regenerate : $label_generate;
-        $is_authenticated = $this->api_client->is_authenticated();
-        $disabled_attr    = !$is_authenticated ? ' disabled title="' . esc_attr__('Please log in to generate alt text', 'beepbeep-ai-alt-text-generator') . '"' : '';
+        $bbai_is_authenticated = $this->api_client->is_authenticated();
+        $disabled_attr    = !$bbai_is_authenticated ? ' disabled title="' . esc_attr__('Please log in to generate alt text', 'beepbeep-ai-alt-text-generator') . '"' : '';
         
         // Use unified button classes and correct data attributes for JavaScript handler
         $button = sprintf(
@@ -4279,7 +4230,7 @@ class Core {
         $admin_file    = $asset_path($js_base, 'bbai-admin', $use_debug_assets, 'js');
         $admin_version = $asset_version($admin_file, '3.0.0');
         
-        $checkout_prices = $this->get_checkout_price_ids();
+        $bbai_checkout_prices = $this->get_checkout_price_ids();
 
         $l10n_common = [
             'reviewCue'           => __('Visit the ALT Library to double-check the wording.', 'beepbeep-ai-alt-text-generator'),
@@ -4293,15 +4244,17 @@ class Core {
         ];
 
         // Detect any BeepBeep AI admin screens (top-level or subpages)
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
         // Check hook name first, then fallback to $_GET['page'] parameter
-	        $page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
-	        $current_page = $page_input;
+	        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
+	        $bbai_page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+	        $bbai_current_page = $bbai_page_input;
         $hook_str = (string)($hook ?? '');
         $is_bbai_page = strpos($hook_str, 'toplevel_page_bbai') === 0
             || strpos($hook_str, 'bbai_page_bbai') === 0
             || strpos($hook_str, 'media_page_bbai') === 0
             || strpos($hook_str, '_page_bbai') !== false
-            || (!empty($current_page) && strpos($current_page, 'bbai') === 0);
+            || (!empty($bbai_current_page) && strpos($bbai_current_page, 'bbai') === 0);
 
         // Load on Media Library, attachment edit, and any BeepBeep AI admin screen
         if (in_array($hook, ['upload.php', 'post.php', 'post-new.php'], true) || $is_bbai_page){
@@ -4320,7 +4273,7 @@ class Core {
                 'l10n'      => $l10n_common,
                 'upgradeUrl'=> esc_url( Usage_Tracker::get_upgrade_url() ),
                 'billingPortalUrl' => esc_url( Usage_Tracker::get_billing_portal_url() ),
-                'checkoutPrices' => $checkout_prices,
+                'checkoutPrices' => $bbai_checkout_prices,
                 'canManage' => $this->user_can_manage(),
                 'inlineBatchSize' => defined('BBAI_INLINE_BATCH') ? max(1, intval(BBAI_INLINE_BATCH)) : 1,
             ]);
@@ -4355,7 +4308,7 @@ class Core {
         }
 
         // Always load dashboard CSS/JS if on a bbai page (double-check with $_GET)
-        if ($is_bbai_page || (!empty($current_page) && strpos($current_page, 'bbai') === 0)){
+        if ($is_bbai_page || (!empty($bbai_current_page) && strpos($bbai_current_page, 'bbai') === 0)){
             $css_file    = $asset_path($css_base, 'bbai-dashboard', $use_debug_assets, 'css');
             $js_file     = $asset_path($js_base, 'bbai-dashboard', $use_debug_assets, 'js');
             $usage_bridge = $asset_path($js_base, 'usage-components-bridge', $use_debug_assets, 'js');
@@ -4385,7 +4338,7 @@ class Core {
                 $asset_version('assets/css/modern.bundle.min.css', '5.0.0')
             );
 
-            if ($current_page === 'bbai-onboarding') {
+            if ($bbai_current_page === 'bbai-onboarding') {
                 $onboarding_css = 'assets/css/onboarding.css';
                 $onboarding_js  = 'assets/js/onboarding.js';
 
@@ -4519,7 +4472,7 @@ class Core {
 
 
             $stats_data = $this->get_media_stats();
-            $usage_data = Usage_Tracker::get_stats_display();
+            $bbai_usage_data = Usage_Tracker::get_stats_display();
             
             wp_enqueue_script(
                 'bbai-dashboard',
@@ -4696,9 +4649,9 @@ class Core {
                 'restPlans'   => esc_url_raw( rest_url('bbai/v1/plans') ),
                 'upgradeUrl'  => esc_url( Usage_Tracker::get_upgrade_url() ),
                 'billingPortalUrl'=> esc_url( Usage_Tracker::get_billing_portal_url() ),
-                'checkoutPrices' => $checkout_prices,
+                'checkoutPrices' => $bbai_checkout_prices,
                 'stats'       => $stats_data,
-                'initialUsage'=> $usage_data,
+                'initialUsage'=> $bbai_usage_data,
             ]);
             
             // Add AJAX variables for regenerate functionality and auth
@@ -4760,10 +4713,10 @@ class Core {
             wp_localize_script('bbai-upgrade', 'BBAI_UPGRADE', [
                 'nonce' => wp_create_nonce('beepbeepai_nonce'),
                 'ajaxurl' => admin_url('admin-ajax.php'),
-                'usage' => $usage_data,
+                'usage' => $bbai_usage_data,
                 'upgradeUrl' => esc_url( Usage_Tracker::get_upgrade_url() ),
                 'billingPortalUrl' => esc_url( Usage_Tracker::get_billing_portal_url() ),
-                'priceIds' => $checkout_prices,
+                'priceIds' => $bbai_checkout_prices,
                 'restPlans' => esc_url_raw( rest_url('bbai/v1/plans') ),
                 'canManage' => $this->user_can_manage(),
             ]);
@@ -5112,11 +5065,11 @@ class Core {
             return;
         }
         
-        $stats = Queue::get_stats();
+        $bbai_stats = Queue::get_stats();
         $failures = Queue::get_failures();
         
         wp_send_json_success([
-            'stats' => $stats,
+            'stats' => $bbai_stats,
             'failures' => $failures
         ]);
     }
@@ -5164,8 +5117,8 @@ class Core {
         $usage = $this->api_client->get_usage();
         
 	        if ($usage) {
-	            $stats = Usage_Tracker::get_stats_display();
-	            wp_send_json_success($stats);
+	            $bbai_stats = Usage_Tracker::get_stats_display();
+	            wp_send_json_success($bbai_stats);
 	        } else {
 	            wp_send_json_error(['message' => __('Failed to fetch usage data', 'beepbeep-ai-alt-text-generator')]);
 	            return;
@@ -5200,11 +5153,11 @@ class Core {
             ], 'generation');
         }
         
-        $has_license = $this->api_client->has_active_license();
+        $bbai_has_license = $this->api_client->has_active_license();
 
         // Check if user has reached their limit (skip in local dev mode and for license accounts)
         // Use has_reached_limit() which includes cached usage fallback for better reliability
-        if (!$has_license && (!defined('WP_LOCAL_DEV') || !WP_LOCAL_DEV)) {
+        if (!$bbai_has_license && (!defined('WP_LOCAL_DEV') || !WP_LOCAL_DEV)) {
             if ($this->api_client->has_reached_limit()) {
                 // Get usage data for the error response (prefer cached if API failed)
                 $usage = $this->api_client->get_usage();
@@ -5241,22 +5194,22 @@ class Core {
             } elseif ($error_code === 'quota_check_mismatch') {
                 $user_message = __('Credits appear available but the backend reported a limit. Please try again in a moment.', 'beepbeep-ai-alt-text-generator');
             } elseif ($error_code === 'limit_reached' || $error_code === 'quota_exhausted') {
-                $reset_date = null;
+                $bbai_reset_date = null;
                 if (is_array($error_data) && isset($error_data['usage']) && is_array($error_data['usage'])) {
-                    $reset_date = $error_data['usage']['resetDate'] ?? null;
+                    $bbai_reset_date = $error_data['usage']['resetDate'] ?? null;
                 }
                 
                 $user_message = __('Monthly quota exhausted. Your quota will reset on the first of next month. Upgrade to Growth for 1,000 generations per month, or manage your subscription in Settings.', 'beepbeep-ai-alt-text-generator');
                 
-                if ($reset_date) {
+                if ($bbai_reset_date) {
                     try {
-                        $reset_ts = strtotime($reset_date);
+                        $reset_ts = strtotime($bbai_reset_date);
                         if ($reset_ts !== false) {
-                            $formatted_date = date_i18n('F j, Y', $reset_ts);
+                            $bbai_formatted_date = date_i18n('F j, Y', $reset_ts);
                             $user_message = sprintf(
                                 /* translators: 1: reset date */
                                 __('Monthly quota exhausted. Your quota will reset on %s. Upgrade to Growth for 1,000 generations per month, or manage your subscription in Settings.', 'beepbeep-ai-alt-text-generator'),
-                                $formatted_date
+                                $bbai_formatted_date
                             );
                         }
                     } catch (\Exception $e) {
@@ -5286,18 +5239,18 @@ class Core {
         
         // For license users, read directly from license data
         if ($this->api_client->has_active_license()) {
-            $license_data = $this->api_client->get_license_data();
-            if ($license_data && isset($license_data['organization'])) {
-                $org = $license_data['organization'];
-                $plan = isset($org['plan']) ? strtolower($org['plan']) : 'free';
-                $limit = isset($org['tokenLimit']) ? intval($org['tokenLimit']) : 
-                         ($plan === 'free' ? 50 : ($plan === 'pro' ? 1000 : 10000));
-                $tokens_remaining = isset($org['tokensRemaining']) ? max(0, intval($org['tokensRemaining'])) : $limit;
+            $bbai_license_data = $this->api_client->get_license_data();
+            if ($bbai_license_data && isset($bbai_license_data['organization'])) {
+                $bbai_org = $bbai_license_data['organization'];
+                $bbai_plan = isset($bbai_org['plan']) ? strtolower($bbai_org['plan']) : 'free';
+                $limit = isset($bbai_org['tokenLimit']) ? intval($bbai_org['tokenLimit']) : 
+                         ($bbai_plan === 'free' ? 50 : ($bbai_plan === 'pro' ? 1000 : 10000));
+                $tokens_remaining = isset($bbai_org['tokensRemaining']) ? max(0, intval($bbai_org['tokensRemaining'])) : $limit;
                 $used = max(0, $limit - $tokens_remaining);
                 
                 $reset_ts = strtotime('first day of next month');
-                if (!empty($org['resetDate'])) {
-                    $parsed = strtotime($org['resetDate']);
+                if (!empty($bbai_org['resetDate'])) {
+                    $parsed = strtotime($bbai_org['resetDate']);
                     if ($parsed > 0) {
                         $reset_ts = $parsed;
                     }
@@ -5307,7 +5260,7 @@ class Core {
                     'used' => $used,
                     'limit' => $limit,
                     'remaining' => $tokens_remaining,
-                    'plan' => $plan,
+                    'plan' => $bbai_plan,
                     'resetDate' => wp_date('Y-m-d', $reset_ts),
                     'reset_timestamp' => $reset_ts,
                     'seconds_until_reset' => max(0, $reset_ts - time()),
@@ -5426,10 +5379,10 @@ class Core {
 	            return;
 	        }
         
-        $has_license = $this->api_client->has_active_license();
+        $bbai_has_license = $this->api_client->has_active_license();
 
         // Check if user has remaining usage (skip in local dev mode or when license active)
-        if (!$has_license && (!defined('WP_LOCAL_DEV') || !WP_LOCAL_DEV)) {
+        if (!$bbai_has_license && (!defined('WP_LOCAL_DEV') || !WP_LOCAL_DEV)) {
             $usage = $this->api_client->get_usage();
             
             // If usage check fails due to authentication, allow queueing but warn user
@@ -5566,8 +5519,8 @@ class Core {
 
         Usage_Tracker::clear_cache();
         $this->invalidate_stats_cache();
-        $stats = Queue::get_stats();
-        if (!empty($stats['pending'])) {
+        $bbai_stats = Queue::get_stats();
+        if (!empty($bbai_stats['pending'])) {
             Queue::schedule_processing(apply_filters('bbai_queue_next_delay', 45));
         }
 
@@ -5614,7 +5567,7 @@ class Core {
         }
     }
 
-    private function get_account_summary(?array $usage_stats = null) {
+    private function get_account_summary(?array $bbai_usage_stats = null) {
         if ($this->account_summary !== null) {
             return $this->account_summary;
         }
@@ -5622,8 +5575,8 @@ class Core {
         $summary = [
             'email'      => '',
             'name'       => '',
-            'plan'       => $usage_stats['plan'] ?? '',
-            'plan_label' => $usage_stats['plan_label'] ?? '',
+            'plan'       => $bbai_usage_stats['plan'] ?? '',
+            'plan_label' => $bbai_usage_stats['plan_label'] ?? '',
         ];
 
         if (!$this->api_client->is_authenticated()) {
@@ -5733,14 +5686,14 @@ class Core {
 		    public function handle_logout() {
 		        // Log for debugging (only in debug mode)
 		        if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-		            error_log('BeepBeep AI: handle_logout called'); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log
+		            error_log('BeepBeep AI: handle_logout called'); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		        }
 
 	        // Verify nonce
 	        $action = 'bbai_logout_action';
 		        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['bbai_logout_nonce'] ?? '' ) ), $action ) ) {
 			            if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-			                error_log('BeepBeep AI: Nonce verification failed'); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log
+			                error_log('BeepBeep AI: Nonce verification failed'); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			            }
 			            wp_die(esc_html__('Security check failed', 'beepbeep-ai-alt-text-generator'));
 			        }
@@ -5748,20 +5701,20 @@ class Core {
 	        // Check permissions
 		        if (!$this->user_can_manage()) {
 		            if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-		                error_log('BeepBeep AI: Permission check failed'); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log
+		                error_log('BeepBeep AI: Permission check failed'); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		            }
 		            wp_die(esc_html__('Unauthorized', 'beepbeep-ai-alt-text-generator'));
 		        }
 
 	        // Clear token and user data
 		        if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-		            error_log('BeepBeep AI: Clearing token'); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log
+		            error_log('BeepBeep AI: Clearing token'); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		        }
 	        $this->api_client->clear_token();
 
 	        // ALSO clear license key (otherwise user stays authenticated via license)
 		        if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-		            error_log('BeepBeep AI: Clearing license key'); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log
+		            error_log('BeepBeep AI: Clearing license key'); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		        }
 	        $this->api_client->clear_license_key();
 
@@ -5773,13 +5726,13 @@ class Core {
 		        if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
 		            $remaining_token = get_option('beepbeepai_jwt_token', '');
 		            $remaining_license = get_option('beepbeepai_license_key', '');
-		            error_log('BeepBeep AI: JWT Token after clear: ' . ($remaining_token ? 'STILL EXISTS!' : 'cleared')); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log
-		            error_log('BeepBeep AI: License key after clear: ' . ($remaining_license ? 'STILL EXISTS!' : 'cleared')); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log
+		            error_log('BeepBeep AI: JWT Token after clear: ' . ($remaining_token ? 'STILL EXISTS!' : 'cleared')); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		            error_log('BeepBeep AI: License key after clear: ' . ($remaining_license ? 'STILL EXISTS!' : 'cleared')); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		        }
 
 	        // Redirect to dashboard with cache buster
 		        if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-		            error_log('BeepBeep AI: Redirecting to dashboard'); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log
+		            error_log('BeepBeep AI: Redirecting to dashboard'); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		        }
 	        wp_safe_redirect(add_query_arg('nocache', time(), admin_url('admin.php?page=bbai')));
 	        exit;
@@ -5834,20 +5787,20 @@ class Core {
             return;
         }
 
-        $license_key = isset($_POST['license_key']) ? sanitize_text_field(wp_unslash($_POST['license_key'])) : '';
+        $bbai_license_key = isset($_POST['license_key']) ? sanitize_text_field(wp_unslash($_POST['license_key'])) : '';
 
-        if (empty($license_key)) {
+        if (empty($bbai_license_key)) {
             wp_send_json_error(['message' => __('License key is required', 'beepbeep-ai-alt-text-generator')]);
             return;
         }
 
         // Validate UUID format
-        if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $license_key)) {
+        if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $bbai_license_key)) {
             wp_send_json_error(['message' => __('Invalid license key format', 'beepbeep-ai-alt-text-generator')]);
             return;
         }
 
-        $result = $this->api_client->activate_license($license_key);
+        $result = $this->api_client->activate_license($bbai_license_key);
 
         if (is_wp_error($result)) {
             wp_send_json_error(['message' => $result->get_error_message()]);
@@ -6032,16 +5985,16 @@ class Core {
         }
 
         // Verify agency license
-        $has_license = $this->api_client->has_active_license();
-        $license_data = $this->api_client->get_license_data();
-        $is_agency = false;
+        $bbai_has_license = $this->api_client->has_active_license();
+        $bbai_license_data = $this->api_client->get_license_data();
+        $bbai_is_agency = false;
         
-        if ($has_license && $license_data && isset($license_data['organization'])) {
-            $license_plan = strtolower($license_data['organization']['plan'] ?? 'free');
-            $is_agency = ($license_plan === 'agency');
+        if ($bbai_has_license && $bbai_license_data && isset($bbai_license_data['organization'])) {
+            $bbai_license_plan = strtolower($bbai_license_data['organization']['plan'] ?? 'free');
+            $bbai_is_agency = ($bbai_license_plan === 'agency');
         }
         
-        if (!$is_agency) {
+        if (!$bbai_is_agency) {
             wp_send_json_error([
                 'message' => __('Admin access is only available for agency licenses', 'beepbeep-ai-alt-text-generator')
             ]);
@@ -6223,24 +6176,24 @@ class Core {
         }
 
         // Check if user is authenticated via JWT token OR admin session with agency license
-        $is_authenticated = $this->api_client->is_authenticated();
+        $bbai_is_authenticated = $this->api_client->is_authenticated();
         $is_admin_authenticated = $this->is_admin_authenticated();
         $has_agency_license = false;
         
-        if ($is_admin_authenticated || !$is_authenticated) {
+        if ($is_admin_authenticated || !$bbai_is_authenticated) {
             // Check if there's an agency license active
-            $has_license = $this->api_client->has_active_license();
-            if ($has_license) {
-                $license_data = $this->api_client->get_license_data();
-                if ($license_data && isset($license_data['organization'])) {
-                    $license_plan = strtolower($license_data['organization']['plan'] ?? 'free');
-                    $has_agency_license = ($license_plan === 'agency' || $license_plan === 'pro');
+            $bbai_has_license = $this->api_client->has_active_license();
+            if ($bbai_has_license) {
+                $bbai_license_data = $this->api_client->get_license_data();
+                if ($bbai_license_data && isset($bbai_license_data['organization'])) {
+                    $bbai_license_plan = strtolower($bbai_license_data['organization']['plan'] ?? 'free');
+                    $has_agency_license = ($bbai_license_plan === 'agency' || $bbai_license_plan === 'pro');
                 }
             }
         }
 
         // Allow if authenticated via JWT OR admin-authenticated with agency/pro license
-        if (!$is_authenticated && !($is_admin_authenticated && $has_agency_license)) {
+        if (!$bbai_is_authenticated && !($is_admin_authenticated && $has_agency_license)) {
             wp_send_json_error([
                 'message' => __('Please log in to manage billing', 'beepbeep-ai-alt-text-generator'),
                 'code' => 'not_authenticated'
@@ -6249,7 +6202,7 @@ class Core {
         }
 
         // For admin-authenticated users with license, try using stored portal URL first
-        if ($is_admin_authenticated && $has_agency_license && !$is_authenticated) {
+        if ($is_admin_authenticated && $has_agency_license && !$bbai_is_authenticated) {
             $stored_portal_url = Usage_Tracker::get_billing_portal_url();
             if (!empty($stored_portal_url)) {
                 wp_send_json_success([
@@ -6805,11 +6758,11 @@ class Core {
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
         
         $site_hash = \BeepBeepAI\AltTextGenerator\get_site_identifier();
-        $license_key = $this->api_client->get_license_key();
+        $bbai_license_key = $this->api_client->get_license_key();
         
         $contact_data['site_url'] = get_site_url();
         $contact_data['site_hash'] = $site_hash;
-        $contact_data['license_key'] = $license_key ?: null;
+        $contact_data['license_key'] = $bbai_license_key ?: null;
         
         \BeepBeepAI\AltTextGenerator\Contact_Submissions::save_submission($contact_data);
 
@@ -6971,23 +6924,37 @@ class Core {
 		        $postmeta_table = esc_sql( $wpdb->postmeta );
 		        $image_mime_like = $wpdb->esc_like('image/') . '%';
 
-		        // Get stats
-		        $total_images = (int) $wpdb->get_var($wpdb->prepare(
-		            "SELECT COUNT(*) FROM `{$posts_table}` WHERE post_type = %s AND post_status = %s AND post_mime_type LIKE %s",
-		            'attachment', 'inherit', $image_mime_like
-		        ));
+		        // Get stats (reuse library cache from BBAI_Cache).
+		        $bbai_total_images = BBAI_Cache::get( 'library', 'total' );
+		        if ( false === $bbai_total_images ) {
+		            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		            $bbai_total_images = (int) $wpdb->get_var($wpdb->prepare(
+		                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		                "SELECT COUNT(*) FROM `{$posts_table}` WHERE post_type = %s AND post_status = %s AND post_mime_type LIKE %s",
+		                'attachment', 'inherit', $image_mime_like
+		            ));
+		            BBAI_Cache::set( 'library', 'total', $bbai_total_images, BBAI_Cache::DEFAULT_TTL );
+		        }
+		        $bbai_total_images = (int) $bbai_total_images;
 
-		        $with_alt_count = (int) $wpdb->get_var($wpdb->prepare(
-		            "SELECT COUNT(DISTINCT p.ID) FROM `{$posts_table}` p INNER JOIN `{$postmeta_table}` pm ON p.ID = pm.post_id WHERE p.post_type = %s AND p.post_mime_type LIKE %s AND p.post_status = %s AND pm.meta_key = %s AND TRIM(pm.meta_value) <> %s",
-		            'attachment', $image_mime_like, 'inherit', '_wp_attachment_image_alt', ''
-		        ));
+		        $with_alt_count = BBAI_Cache::get( 'library', 'with_alt' );
+		        if ( false === $with_alt_count ) {
+		            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		            $with_alt_count = (int) $wpdb->get_var($wpdb->prepare(
+		                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		                "SELECT COUNT(DISTINCT p.ID) FROM `{$posts_table}` p INNER JOIN `{$postmeta_table}` pm ON p.ID = pm.post_id WHERE p.post_type = %s AND p.post_mime_type LIKE %s AND p.post_status = %s AND pm.meta_key = %s AND TRIM(pm.meta_value) <> %s",
+		                'attachment', $image_mime_like, 'inherit', '_wp_attachment_image_alt', ''
+		            ));
+		            BBAI_Cache::set( 'library', 'with_alt', $with_alt_count, BBAI_Cache::DEFAULT_TTL );
+		        }
+		        $with_alt_count = (int) $with_alt_count;
 
-	        $missing_count = $total_images - $with_alt_count;
-        $coverage_percent = $total_images > 0 ? round(($with_alt_count / $total_images) * 100) : 0;
+	        $missing_count = $bbai_total_images - $with_alt_count;
+        $bbai_coverage_percent = $bbai_total_images > 0 ? round(($with_alt_count / $bbai_total_images) * 100) : 0;
 
         // Get usage stats
-        $usage_stats = $this->api_client->get_usage_stats();
-	        $alt_texts_generated = isset($usage_stats['used']) ? (int) $usage_stats['used'] : 0;
+        $bbai_usage_stats = $this->api_client->get_usage_stats();
+	        $bbai_alt_texts_generated = isset($bbai_usage_stats['used']) ? (int) $bbai_usage_stats['used'] : 0;
 	
 	        // Generate CSV
 	        $filename = 'beepbeep-ai-analytics-' . wp_date('Y-m-d') . '.csv';
@@ -7002,11 +6969,11 @@ class Core {
 
 	        // Rows
 	        $this->bbai_output_contents($this->bbai_csv_row(['Metric', 'Value']));
-	        $this->bbai_output_contents($this->bbai_csv_row(['Total Images', $this->bbai_csv_safe_cell($total_images)]));
+	        $this->bbai_output_contents($this->bbai_csv_row(['Total Images', $this->bbai_csv_safe_cell($bbai_total_images)]));
 	        $this->bbai_output_contents($this->bbai_csv_row(['Images with Alt Text', $this->bbai_csv_safe_cell($with_alt_count)]));
 	        $this->bbai_output_contents($this->bbai_csv_row(['Images Missing Alt Text', $this->bbai_csv_safe_cell($missing_count)]));
-	        $this->bbai_output_contents($this->bbai_csv_row(['Coverage Percentage', $this->bbai_csv_safe_cell($coverage_percent . '%')]));
-	        $this->bbai_output_contents($this->bbai_csv_row(['Alt Texts Generated', $this->bbai_csv_safe_cell($alt_texts_generated)]));
+	        $this->bbai_output_contents($this->bbai_csv_row(['Coverage Percentage', $this->bbai_csv_safe_cell($bbai_coverage_percent . '%')]));
+	        $this->bbai_output_contents($this->bbai_csv_row(['Alt Texts Generated', $this->bbai_csv_safe_cell($bbai_alt_texts_generated)]));
 	        $this->bbai_output_contents($this->bbai_csv_row(['Export Date', $this->bbai_csv_safe_cell(current_time('Y-m-d H:i:s'))]));
 	        exit;
 	    }

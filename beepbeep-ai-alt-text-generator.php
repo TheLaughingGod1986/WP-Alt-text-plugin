@@ -17,24 +17,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Suppress PHP 8.1+ deprecation warnings from WordPress core files.
-// Core has known issues (e.g., admin-header.php strip_tags null) that surface
-// when plugins register hidden submenu pages. Only core-file deprecations are
-// suppressed; the plugin's own deprecations still surface normally.
-if ( PHP_VERSION_ID >= 80100 ) {
-	set_error_handler( function( $errno, $errstr, $errfile ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter
-		if ( $errno === E_DEPRECATED || $errno === E_USER_DEPRECATED ) {
-			if ( strpos( $errfile, 'wp-admin' ) !== false || strpos( $errfile, 'wp-includes' ) !== false ) {
-				return true;
-			}
-		}
-		return false;
-	}, E_DEPRECATED | E_USER_DEPRECATED );
-}
-
 // Define plugin constants
 define( 'BEEPBEEP_AI_VERSION', '4.4.1' );
 define( 'BBAI_VERSION', '4.4.1' ); // Legacy alias for compatibility
+define( 'BEEPBEEP_AI_DB_VERSION', '1.0.0' );
 define( 'BEEPBEEP_AI_PLUGIN_FILE', __FILE__ );
 define( 'BBAI_PLUGIN_FILE', __FILE__ ); // Legacy alias
 define( 'BEEPBEEP_AI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
@@ -75,6 +61,7 @@ if ( ! function_exists( 'bbai_enqueue_logged_out_styles' ) ) {
 	 * @param string $hook Current admin page hook.
 	 */
 	function bbai_enqueue_logged_out_styles( $hook ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 			$page_input     = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
 			$current_page = $page_input;
 			$hook         = is_string( $hook ) ? $hook : '';
@@ -102,6 +89,10 @@ if ( ! function_exists( 'bbai_enqueue_logged_out_styles' ) ) {
 }
 
 add_action( 'admin_enqueue_scripts', 'bbai_enqueue_logged_out_styles', 20 );
+
+// Load cache and DB schema helpers.
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-cache.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-db.php';
 
 // Load helper functions first.
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-json.php';
@@ -142,6 +133,7 @@ require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/bootstrap-v5.php';
 function beepbeepai_activate() {
 	require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-activator.php';
 	\BeepBeepAI\AltTextGenerator\Activator::activate();
+	\BeepBeepAI\AltTextGenerator\DB_Schema::install();
 }
 
 /**
@@ -166,3 +158,6 @@ function beepbeepai_run() {
 }
 
 beepbeepai_run();
+
+// Check for DB schema upgrades on admin pages (handles plugin updates without reactivation).
+add_action( 'admin_init', [ '\BeepBeepAI\AltTextGenerator\DB_Schema', 'maybe_upgrade' ] );

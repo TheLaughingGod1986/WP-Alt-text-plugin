@@ -36,6 +36,7 @@ class Credit_Usage_Logger {
 		$table_name_safe = esc_sql( self::table() );
 		$charset_collate = $wpdb->get_charset_collate();
 
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$sql = "CREATE TABLE IF NOT EXISTS `{$table_name_safe}` (
 			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 			user_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
@@ -60,6 +61,7 @@ class Credit_Usage_Logger {
 		) {$charset_collate};";
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange
 		dbDelta($sql);
 		self::$table_verified = true;
 	}
@@ -71,6 +73,7 @@ class Credit_Usage_Logger {
 	 */
 	public static function table_exists() {
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$exists = $wpdb->get_var(
 			$wpdb->prepare( 'SHOW TABLES LIKE %s', self::table() )
 		);
@@ -114,6 +117,7 @@ class Credit_Usage_Logger {
 		$user_agent      = isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '';
 		$user_agent_hash = ! empty( $user_agent ) ? hash( 'sha256', $user_agent ) : null;
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$result = $wpdb->insert(
 			$table_name_safe,
 			[
@@ -129,6 +133,10 @@ class Credit_Usage_Logger {
 			],
 			['%d', '%d', '%d', '%f', '%s', '%s', '%s', '%s', '%s']
 		);
+
+		if ( $result ) {
+			BBAI_Cache::bump( 'credit_usage' );
+		}
 
 		return $result ? $wpdb->insert_id : false;
 	}
@@ -311,6 +319,12 @@ class Credit_Usage_Logger {
 		];
 			$args = wp_parse_args($args, $defaults);
 
+			$cache_suffix = 'user_usage_' . md5( wp_json_encode( array_merge( [ 'user_id' => absint( $user_id ) ], $args ) ) );
+			$cached = BBAI_Cache::get( 'credit_usage', $cache_suffix );
+			if ( false !== $cached ) {
+				return $cached;
+			}
+
 			$table = esc_sql( self::table() );
 			$filter_state = self::build_usage_filter_state($args);
 			$query_params = array_merge(
@@ -318,8 +332,11 @@ class Credit_Usage_Logger {
 				self::get_usage_filter_params($filter_state)
 			);
 
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$result = $wpdb->get_row(
+				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					"SELECT SUM(credits_used) as total_credits, COUNT(DISTINCT attachment_id) as total_images, SUM(token_cost) as total_cost, MAX(generated_at) as last_activity FROM `{$table}` WHERE user_id = %d AND (%d = %d OR generated_at >= %s) AND (%d = %d OR generated_at <= %s) AND (%d = %d OR source = %s)",
 					$query_params
 				),
@@ -335,12 +352,15 @@ class Credit_Usage_Logger {
 			];
 		}
 
-		return [
+		$user_usage = [
 			'total_credits' => intval($result['total_credits'] ?? 0),
 			'total_images'  => intval($result['total_images'] ?? 0),
 			'total_cost'    => floatval($result['total_cost'] ?? 0.0),
 			'last_activity' => $result['last_activity'] ?? null,
 		];
+
+		BBAI_Cache::set( 'credit_usage', $cache_suffix, $user_usage, BBAI_Cache::DEFAULT_TTL );
+		return $user_usage;
 	}
 
 	/**
@@ -368,12 +388,21 @@ class Credit_Usage_Logger {
 		];
 			$args = wp_parse_args($args, $defaults);
 
+			$cache_suffix = 'site_usage_' . md5( wp_json_encode( $args ) );
+			$cached = BBAI_Cache::get( 'credit_usage', $cache_suffix );
+			if ( false !== $cached ) {
+				return $cached;
+			}
+
 			$table = esc_sql( self::table() );
 			$filter_state = self::build_usage_filter_state($args);
 			$filter_params = self::get_usage_filter_params($filter_state);
 
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$result = $wpdb->get_row(
+				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					"SELECT SUM(credits_used) as total_credits, COUNT(DISTINCT attachment_id) as total_images, SUM(token_cost) as total_cost, COUNT(DISTINCT user_id) as user_count FROM `{$table}` WHERE 1 = 1 AND (%d = %d OR generated_at >= %s) AND (%d = %d OR generated_at <= %s) AND (%d = %d OR source = %s)",
 					$filter_params
 				),
@@ -389,12 +418,15 @@ class Credit_Usage_Logger {
 			];
 		}
 
-		return [
+		$site_usage = [
 			'total_credits' => intval($result['total_credits'] ?? 0),
 			'total_images'  => intval($result['total_images'] ?? 0),
 			'total_cost'    => floatval($result['total_cost'] ?? 0.0),
 			'user_count'    => intval($result['user_count'] ?? 0),
 		];
+
+		BBAI_Cache::set( 'credit_usage', $cache_suffix, $site_usage, BBAI_Cache::DEFAULT_TTL );
+		return $site_usage;
 	}
 
 	/**
@@ -426,6 +458,12 @@ class Credit_Usage_Logger {
 		];
 		$args = wp_parse_args($args, $defaults);
 
+			$cache_suffix = 'by_user_' . md5( wp_json_encode( $args ) );
+			$cached = BBAI_Cache::get( 'credit_usage', $cache_suffix );
+			if ( false !== $cached ) {
+				return $cached;
+			}
+
 			$user_filter = ($args['user_id'] !== null && $args['user_id'] !== '') ? absint($args['user_id']) : 0;
 			$has_user_filter = $user_filter > 0 ? 1 : 0;
 			$order_is_asc = strtoupper($args['order']) === 'ASC';
@@ -443,16 +481,22 @@ class Credit_Usage_Logger {
 
 			if ($orderby_input === 'total_images') {
 				if ($order_is_asc) {
-					$all_results = $wpdb->get_results(
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$all_results = $wpdb->get_results(
+						// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 						$wpdb->prepare(
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 							"SELECT user_id, SUM(credits_used) as total_credits, COUNT(DISTINCT attachment_id) as total_images, COUNT(DISTINCT attachment_id) as images_processed, SUM(token_cost) as total_cost, MAX(generated_at) as last_activity FROM `{$table}` WHERE (%d = %d OR user_id = %d) AND (%d = %d OR generated_at >= %s) AND (%d = %d OR generated_at <= %s) AND (%d = %d OR source = %s) GROUP BY user_id ORDER BY total_images ASC",
 							$query_params
 						),
 						ARRAY_A
 					);
 				} else {
-					$all_results = $wpdb->get_results(
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$all_results = $wpdb->get_results(
+						// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 						$wpdb->prepare(
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 							"SELECT user_id, SUM(credits_used) as total_credits, COUNT(DISTINCT attachment_id) as total_images, COUNT(DISTINCT attachment_id) as images_processed, SUM(token_cost) as total_cost, MAX(generated_at) as last_activity FROM `{$table}` WHERE (%d = %d OR user_id = %d) AND (%d = %d OR generated_at >= %s) AND (%d = %d OR generated_at <= %s) AND (%d = %d OR source = %s) GROUP BY user_id ORDER BY total_images DESC",
 							$query_params
 						),
@@ -461,16 +505,22 @@ class Credit_Usage_Logger {
 				}
 			} elseif ($orderby_input === 'last_activity') {
 				if ($order_is_asc) {
-					$all_results = $wpdb->get_results(
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$all_results = $wpdb->get_results(
+						// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 						$wpdb->prepare(
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 							"SELECT user_id, SUM(credits_used) as total_credits, COUNT(DISTINCT attachment_id) as total_images, COUNT(DISTINCT attachment_id) as images_processed, SUM(token_cost) as total_cost, MAX(generated_at) as last_activity FROM `{$table}` WHERE (%d = %d OR user_id = %d) AND (%d = %d OR generated_at >= %s) AND (%d = %d OR generated_at <= %s) AND (%d = %d OR source = %s) GROUP BY user_id ORDER BY last_activity ASC",
 							$query_params
 						),
 						ARRAY_A
 					);
 				} else {
-					$all_results = $wpdb->get_results(
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$all_results = $wpdb->get_results(
+						// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 						$wpdb->prepare(
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 							"SELECT user_id, SUM(credits_used) as total_credits, COUNT(DISTINCT attachment_id) as total_images, COUNT(DISTINCT attachment_id) as images_processed, SUM(token_cost) as total_cost, MAX(generated_at) as last_activity FROM `{$table}` WHERE (%d = %d OR user_id = %d) AND (%d = %d OR generated_at >= %s) AND (%d = %d OR generated_at <= %s) AND (%d = %d OR source = %s) GROUP BY user_id ORDER BY last_activity DESC",
 							$query_params
 						),
@@ -479,16 +529,22 @@ class Credit_Usage_Logger {
 				}
 			} else {
 				if ($order_is_asc) {
-					$all_results = $wpdb->get_results(
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$all_results = $wpdb->get_results(
+						// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 						$wpdb->prepare(
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 							"SELECT user_id, SUM(credits_used) as total_credits, COUNT(DISTINCT attachment_id) as total_images, COUNT(DISTINCT attachment_id) as images_processed, SUM(token_cost) as total_cost, MAX(generated_at) as last_activity FROM `{$table}` WHERE (%d = %d OR user_id = %d) AND (%d = %d OR generated_at >= %s) AND (%d = %d OR generated_at <= %s) AND (%d = %d OR source = %s) GROUP BY user_id ORDER BY total_credits ASC",
 							$query_params
 						),
 						ARRAY_A
 					);
 				} else {
-					$all_results = $wpdb->get_results(
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$all_results = $wpdb->get_results(
+						// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 						$wpdb->prepare(
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 							"SELECT user_id, SUM(credits_used) as total_credits, COUNT(DISTINCT attachment_id) as total_images, COUNT(DISTINCT attachment_id) as images_processed, SUM(token_cost) as total_cost, MAX(generated_at) as last_activity FROM `{$table}` WHERE (%d = %d OR user_id = %d) AND (%d = %d OR generated_at >= %s) AND (%d = %d OR generated_at <= %s) AND (%d = %d OR source = %s) GROUP BY user_id ORDER BY total_credits DESC",
 							$query_params
 						),
@@ -541,8 +597,10 @@ class Credit_Usage_Logger {
 					$user_data['user_email'] = $wp_user->user_email;
 				} else {
 						// User was deleted - check if we have original ID
+						// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 						$original_id = $wpdb->get_var(
 							$wpdb->prepare(
+								// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 								"SELECT deleted_user_original_id FROM `{$table}` WHERE user_id = %d LIMIT 1",
 								$user_id
 							)
@@ -562,13 +620,16 @@ class Credit_Usage_Logger {
 			}
 		}
 
-		return [
+		$by_user_result = [
 			'users' => $users,
 			'total' => $total,
 			'pages' => $pages,
 			'page'  => $page,
 			'per_page' => $per_page,
 		];
+
+		BBAI_Cache::set( 'credit_usage', $cache_suffix, $by_user_result, BBAI_Cache::DEFAULT_TTL );
+		return $by_user_result;
 	}
 
 	/**
@@ -598,6 +659,12 @@ class Credit_Usage_Logger {
 		];
 			$args = wp_parse_args($args, $defaults);
 
+			$cache_suffix = 'user_details_' . md5( wp_json_encode( array_merge( [ 'user_id' => absint( $user_id ) ], $args ) ) );
+			$cached = BBAI_Cache::get( 'credit_usage', $cache_suffix );
+			if ( false !== $cached ) {
+				return $cached;
+			}
+
 			$table = esc_sql( self::table() );
 			$filter_state = self::build_usage_filter_state($args);
 			$where_params = array_merge(
@@ -605,17 +672,24 @@ class Credit_Usage_Logger {
 				self::get_usage_filter_params($filter_state)
 			);
 
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$summary = $wpdb->get_row(
+				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					"SELECT SUM(credits_used) as total_credits, COUNT(DISTINCT attachment_id) as total_images, COUNT(DISTINCT attachment_id) as images_processed, SUM(token_cost) as total_cost FROM `{$table}` WHERE user_id = %d AND (%d = %d OR generated_at >= %s) AND (%d = %d OR generated_at <= %s) AND (%d = %d OR source = %s)",
 					$where_params
 				),
 				ARRAY_A
 			);
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$total = intval(
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$wpdb->get_var(
+					// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 					$wpdb->prepare(
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 						"SELECT COUNT(*) FROM `{$table}` WHERE user_id = %d AND (%d = %d OR generated_at >= %s) AND (%d = %d OR generated_at <= %s) AND (%d = %d OR source = %s)",
 						$where_params
 					)
@@ -627,8 +701,11 @@ class Credit_Usage_Logger {
 		$offset = ($page - 1) * $per_page;
 		$pages = ceil($total / $per_page);
 
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$items = $wpdb->get_results(
+				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					"SELECT id, user_id, attachment_id, credits_used, token_cost, model, source, generated_at, ip_address, deleted_user_original_id FROM `{$table}` WHERE user_id = %d AND (%d = %d OR generated_at >= %s) AND (%d = %d OR generated_at <= %s) AND (%d = %d OR source = %s) ORDER BY generated_at DESC LIMIT %d OFFSET %d",
 					array_merge($where_params, [$per_page, $offset])
 				),
@@ -661,7 +738,7 @@ class Credit_Usage_Logger {
 			}
 		}
 
-		return [
+		$user_details_result = [
 			'name' => $user_name,
 			'email' => $user_email,
 			'total_credits' => isset($summary['total_credits']) ? intval($summary['total_credits']) : 0,
@@ -673,6 +750,9 @@ class Credit_Usage_Logger {
 			'page'  => $page,
 			'per_page' => $per_page,
 		];
+
+		BBAI_Cache::set( 'credit_usage', $cache_suffix, $user_details_result, BBAI_Cache::DEFAULT_TTL );
+		return $user_details_result;
 	}
 
     /**
@@ -691,6 +771,7 @@ class Credit_Usage_Logger {
 		$table = esc_sql( self::table() );
 
 		// Update all records for this user to user_id = 0 and store original ID
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$wpdb->update(
 			$table,
 			[
@@ -701,6 +782,8 @@ class Credit_Usage_Logger {
 			['%d', '%d'],
 			['%d']
 		);
+
+		BBAI_Cache::bump( 'credit_usage' );
 	}
 
 	/**
@@ -718,13 +801,16 @@ class Credit_Usage_Logger {
 			$threshold = gmdate('Y-m-d H:i:s', strtotime("-{$days} days"));
 			$table = esc_sql( self::table() );
 
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$deleted = $wpdb->query(
 				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					"DELETE FROM `{$table}` WHERE generated_at < %s",
 					$threshold
 				)
 			);
 
+		BBAI_Cache::bump( 'credit_usage' );
 		return intval($deleted);
 	}
 

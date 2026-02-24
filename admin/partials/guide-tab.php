@@ -3,7 +3,7 @@
  * Guide (How to) tab content - Premium SaaS Design.
  * Uses consistent card structure and unified CSS system.
  *
- * Expects $this (core class) and $usage_stats in scope.
+ * Expects $this (core class) and $bbai_usage_stats in scope.
  */
 
 if (!defined('ABSPATH')) {
@@ -11,28 +11,28 @@ if (!defined('ABSPATH')) {
 }
 
 // Plan detection
-$has_license = false;
-$license_data = null;
+$bbai_has_license = false;
+$bbai_license_data = null;
 try {
-    $has_license  = $this->api_client->has_active_license();
-    $license_data = $this->api_client->get_license_data();
+    $bbai_has_license  = $this->api_client->has_active_license();
+    $bbai_license_data = $this->api_client->get_license_data();
 } catch (Exception $e) {
-    $has_license  = false;
-    $license_data = null;
+    $bbai_has_license  = false;
+    $bbai_license_data = null;
 }
 
-$plan_slug = isset($usage_stats['plan']) ? $usage_stats['plan'] : 'free';
-if ($has_license && $license_data && isset($license_data['organization'])) {
-    $license_plan = strtolower($license_data['organization']['plan'] ?? 'free');
-    if ($license_plan !== 'free') {
-        $plan_slug = $license_plan;
+$bbai_plan_slug = isset($bbai_usage_stats['plan']) ? $bbai_usage_stats['plan'] : 'free';
+if ($bbai_has_license && $bbai_license_data && isset($bbai_license_data['organization'])) {
+    $bbai_license_plan = strtolower($bbai_license_data['organization']['plan'] ?? 'free');
+    if ($bbai_license_plan !== 'free') {
+        $bbai_plan_slug = $bbai_license_plan;
     }
 }
 
-$is_free   = ($plan_slug === 'free');
-$is_growth = ($plan_slug === 'pro' || $plan_slug === 'growth');
-$is_agency = ($plan_slug === 'agency');
-$is_pro    = ($is_growth || $is_agency);
+$bbai_is_free   = ($bbai_plan_slug === 'free');
+$bbai_is_growth = ($bbai_plan_slug === 'pro' || $bbai_plan_slug === 'growth');
+$bbai_is_agency = ($bbai_plan_slug === 'agency');
+$bbai_is_pro    = ($bbai_is_growth || $bbai_is_agency);
 ?>
 
 <div class="bbai-dashboard-container">
@@ -43,7 +43,7 @@ $is_pro    = ($is_growth || $is_agency);
     </div>
 
     <!-- Growth Features Block (Free users only) -->
-    <?php if (!$is_pro) : ?>
+    <?php if (!$bbai_is_pro) : ?>
     <div class="bbai-card bbai-guide-pro-card">
         <div class="bbai-guide-pro-header">
             <span class="bbai-badge bbai-badge--growth"><?php esc_html_e('Growth', 'beepbeep-ai-alt-text-generator'); ?></span>
@@ -220,7 +220,7 @@ $is_pro    = ($is_growth || $is_agency);
                     </svg>
                     <span>
                         <?php esc_html_e('Bulk processing', 'beepbeep-ai-alt-text-generator'); ?>
-                        <?php if (!$is_pro) : ?>
+                        <?php if (!$bbai_is_pro) : ?>
                             <span class="bbai-badge bbai-badge--pro-sm"><?php esc_html_e('Growth', 'beepbeep-ai-alt-text-generator'); ?></span>
                         <?php endif; ?>
                     </span>
@@ -232,7 +232,7 @@ $is_pro    = ($is_growth || $is_agency);
                     </svg>
                     <span>
                         <?php esc_html_e('Tone & style tuning', 'beepbeep-ai-alt-text-generator'); ?>
-                        <?php if (!$is_pro) : ?>
+                        <?php if (!$bbai_is_pro) : ?>
                             <span class="bbai-badge bbai-badge--pro-sm"><?php esc_html_e('Growth', 'beepbeep-ai-alt-text-generator'); ?></span>
                         <?php endif; ?>
                     </span>
@@ -244,7 +244,7 @@ $is_pro    = ($is_growth || $is_agency);
                     </svg>
                     <span>
                         <?php esc_html_e('Multilingual support', 'beepbeep-ai-alt-text-generator'); ?>
-                        <?php if (!$is_pro) : ?>
+                        <?php if (!$bbai_is_pro) : ?>
                             <span class="bbai-badge bbai-badge--pro-sm"><?php esc_html_e('Growth', 'beepbeep-ai-alt-text-generator'); ?></span>
                         <?php endif; ?>
                     </span>
@@ -268,9 +268,9 @@ $is_pro    = ($is_growth || $is_agency);
 
     <!-- Bottom Upsell CTA (reusable component) -->
     <?php
-    $bottom_upsell_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/bottom-upsell-cta.php';
-    if (file_exists($bottom_upsell_partial)) {
-        include $bottom_upsell_partial;
+    $bbai_bottom_upsell_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/bottom-upsell-cta.php';
+    if (file_exists($bbai_bottom_upsell_partial)) {
+        include $bbai_bottom_upsell_partial;
     }
     ?>
 </div>

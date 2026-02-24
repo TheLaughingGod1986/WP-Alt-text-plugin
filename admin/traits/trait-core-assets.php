@@ -85,6 +85,7 @@ trait Core_Assets {
      * @return bool
      */
     private function is_bbai_admin_page(string $hook): bool {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
         $page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
         $current_page = $page_input;
         return strpos($hook, 'toplevel_page_bbai') === 0
@@ -550,6 +551,7 @@ trait Core_Assets {
         }
 
         // Load dashboard assets on BBAI pages
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
         $page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
         $current_page = $page_input;
         if ($is_bbai_page || (!empty($current_page) && strpos($current_page, 'bbai') === 0)) {

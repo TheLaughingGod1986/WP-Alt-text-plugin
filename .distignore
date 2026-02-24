@@ -31,6 +31,9 @@ tools/
 # VCS / metadata (hidden files are not shipped)
 .git
 .git/*
+# Root and nested hidden housekeeping files/dirs flagged by Plugin Check warnings.
+.*
+*/.*
 # Explicitly exclude hidden files flagged by Plugin Check.
 .gitattributes
 .gitignore
@@ -56,12 +59,22 @@ docker-compose.yml
 # Explicitly exclude application/build scripts flagged by Plugin Check.
 build-plugin.sh
 start-local.sh
+release-pass-check.sh
+zip-smoke-test.sh
+fix-and-smoke-test.sh
+fix-mount-and-recreate.sh
 scripts
 scripts/*
+tools
+tools/*
 docs
 docs/*
 dist
 dist/*
+release
+release/*
+staging
+staging/*
 build
 build/*
 build-release
@@ -91,6 +104,8 @@ report/*
 # Dependency managers / dev dependencies (never ship in the plugin ZIP)
 node_modules/
 node_modules
+vendor-bin/
+vendor-bin
 vendor/
 vendor
 composer.json
@@ -103,9 +118,11 @@ tests/
 
 # Shell/command scripts (not allowed in the distributed plugin)
 *.sh
+**/*.sh
 build-*.sh
 *.command
 *.log
+**/*.log
 
 # Nested archives (not allowed in the distributed plugin)
 *.zip
@@ -126,9 +143,10 @@ assets/wordpress-org/*.py
 
 # Dev-only documentation and audits
 *.md
-ADDITIONAL-INFO-SUBMISSION.txt
-CLAUDE_AUDIT.md
+RELEASE.md
 ADDITIONAL_IMPROVEMENTS.md
+CLAUDE_AUDIT.md
+ADDITIONAL-INFO-SUBMISSION.txt
 
 # React/TypeScript source (not used at runtime; keep only the bridge scripts/CSS)
 admin/components/*.jsx

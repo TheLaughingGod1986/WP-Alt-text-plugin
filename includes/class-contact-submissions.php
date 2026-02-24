@@ -39,6 +39,7 @@ class Contact_Submissions {
 		$table_name_safe = esc_sql( self::table() );
 		$charset_collate = $wpdb->get_charset_collate();
 
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$sql = "CREATE TABLE IF NOT EXISTS `{$table_name_safe}` (
 			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 			user_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
@@ -64,6 +65,7 @@ class Contact_Submissions {
 		) {$charset_collate};";
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange
 		dbDelta($sql);
 		self::$table_verified = true;
 	}
@@ -94,6 +96,7 @@ class Contact_Submissions {
 		$license_key_input = isset( $data['license_key'] ) ? sanitize_text_field( $data['license_key'] ) : '';
 		$license_key_hash  = $license_key_input !== '' ? wp_hash( $license_key_input ) : null;
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$result = $wpdb->insert(
 			$table_name,
 			[
@@ -112,6 +115,10 @@ class Contact_Submissions {
 			],
 			['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s']
 		);
+
+		if ( $result ) {
+			BBAI_Cache::bump( 'contact' );
+		}
 
 		return $result ? $wpdb->insert_id : false;
 	}
@@ -148,6 +155,12 @@ class Contact_Submissions {
 		];
 
 		$args     = wp_parse_args( $args, $defaults );
+
+		$cache_suffix = 'list_' . md5( wp_json_encode( $args ) );
+		$cached       = BBAI_Cache::get( 'contact', $cache_suffix );
+		if ( false !== $cached ) {
+			return $cached;
+		}
 		$per_page = absint( $args['per_page'] );
 		if ( $per_page <= 0 ) {
 			$per_page = 20;
@@ -183,8 +196,11 @@ class Contact_Submissions {
 
 			$table = esc_sql( self::table() );
 
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$total = (int) $wpdb->get_var(
+				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 					"SELECT COUNT(*) FROM `{$table}` WHERE (%s = %s OR status = %s) AND (%s = %s OR name LIKE %s OR email LIKE %s OR subject LIKE %s OR message LIKE %s)",
 					$status,
 					'',
@@ -199,8 +215,11 @@ class Contact_Submissions {
 			);
 
 			if ( 'ASC' === $order ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$items = $wpdb->get_results(
+					// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 					$wpdb->prepare(
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 						"SELECT * FROM `{$table}` WHERE (%s = %s OR status = %s) AND (%s = %s OR name LIKE %s OR email LIKE %s OR subject LIKE %s OR message LIKE %s) ORDER BY CASE WHEN %s = 'created_at' THEN created_at END ASC, CASE WHEN %s = 'name' THEN name END ASC, CASE WHEN %s = 'email' THEN email END ASC, CASE WHEN %s = 'status' THEN status END ASC LIMIT %d OFFSET %d",
 						$status,
 						'',
@@ -221,8 +240,11 @@ class Contact_Submissions {
 					OBJECT
 				);
 			} else {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$items = $wpdb->get_results(
+					// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 					$wpdb->prepare(
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 						"SELECT * FROM `{$table}` WHERE (%s = %s OR status = %s) AND (%s = %s OR name LIKE %s OR email LIKE %s OR subject LIKE %s OR message LIKE %s) ORDER BY CASE WHEN %s = 'created_at' THEN created_at END DESC, CASE WHEN %s = 'name' THEN name END DESC, CASE WHEN %s = 'email' THEN email END DESC, CASE WHEN %s = 'status' THEN status END DESC LIMIT %d OFFSET %d",
 						$status,
 						'',
@@ -246,11 +268,15 @@ class Contact_Submissions {
 
 		$pages = $total > 0 ? ceil( $total / $per_page ) : 0;
 
-		return [
+		$result = [
 			'items' => $items ?: [],
 			'total' => $total,
 			'pages' => $pages,
 		];
+
+		BBAI_Cache::set( 'contact', $cache_suffix, $result, BBAI_Cache::DEFAULT_TTL );
+
+		return $result;
 	}
 
 	/**
@@ -264,8 +290,10 @@ class Contact_Submissions {
 			$id = absint($id);
 			$table = esc_sql( self::table() );
 
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$submission = $wpdb->get_row(
 				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					"SELECT * FROM `{$table}` WHERE id = %d",
 					$id
 				),
@@ -297,8 +325,10 @@ class Contact_Submissions {
 				} elseif ($status === 'replied') {
 					$update_data['replied_at'] = current_time('mysql');
 					$table = esc_sql( self::table() );
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 					$read_at = $wpdb->get_var(
 						$wpdb->prepare(
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 							"SELECT read_at FROM `{$table}` WHERE id = %d",
 							$id
 						)
@@ -308,6 +338,7 @@ class Contact_Submissions {
 			}
 		}
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$result = $wpdb->update(
 			$table_name,
 			$update_data,
@@ -315,6 +346,10 @@ class Contact_Submissions {
 			['%s', '%s'],
 			['%d']
 		);
+
+		if ( false !== $result ) {
+			BBAI_Cache::bump( 'contact' );
+		}
 
 		return $result !== false;
 	}
@@ -331,11 +366,16 @@ class Contact_Submissions {
 		$table_name = self::table();
 		$id = absint($id);
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$result = $wpdb->delete(
 			$table_name,
 			['id' => $id],
 			['%d']
 		);
+
+		if ( false !== $result ) {
+			BBAI_Cache::bump( 'contact' );
+		}
 
 		return $result !== false;
 	}
@@ -346,15 +386,26 @@ class Contact_Submissions {
 	 * @return int Number of unread submissions.
 	 */
 	public static function get_unread_count() {
+		$cached = BBAI_Cache::get( 'contact', 'unread' );
+		if ( false !== $cached ) {
+			return $cached;
+		}
+
 		global $wpdb;
 			$table = esc_sql( self::table() );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$count = $wpdb->get_var(
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				"SELECT COUNT(*) FROM `{$table}` WHERE status = %s",
 				'new'
 			)
 		);
 
-		return (int) $count;
+		$result = (int) $count;
+
+		BBAI_Cache::set( 'contact', 'unread', $result, BBAI_Cache::DEFAULT_TTL );
+
+		return $result;
 	}
 	}

@@ -172,11 +172,13 @@ class Admin_Hooks {
 			return;
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 		$clear_cache_input = isset( $_GET['clear_cache'] ) ? sanitize_key( wp_unslash( $_GET['clear_cache'] ) ) : '';
 		if ( ! in_array( $clear_cache_input, [ '1', 'true', 'yes' ], true ) ) {
 			return;
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 		$nonce  = isset( $_GET['_bbai_nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_bbai_nonce'] ) ) : '';
 		$action = 'bbai_clear_cache';
 		if ( ! wp_verify_nonce( $nonce, $action ) ) {

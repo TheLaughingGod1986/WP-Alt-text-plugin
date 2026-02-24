@@ -48,15 +48,21 @@ class Credit_Usage_Page {
 	}
 
 		// Get filter parameters
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 		$date_from = isset($_GET['date_from']) ? sanitize_text_field(wp_unslash($_GET['date_from'])) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 		$date_to = isset($_GET['date_to']) ? sanitize_text_field(wp_unslash($_GET['date_to'])) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 		$user_id_input = isset($_GET['user_id']) ? absint(wp_unslash($_GET['user_id'])) : 0;
 		$user_id     = $user_id_input;
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 		$source_input  = isset($_GET['source']) ? sanitize_key(wp_unslash($_GET['source'])) : '';
 		$allowed_sources = [ '', 'ajax', 'dashboard', 'bulk', 'bulk-regenerate', 'upload', 'metadata', 'update', 'save', 'queue', 'onboarding', 'library', 'manual', 'unknown' ];
 		$source      = in_array($source_input, $allowed_sources, true) ? $source_input : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 		$page_input    = isset($_GET['paged']) ? absint(wp_unslash($_GET['paged'])) : 1;
 		$page        = max(1, $page_input);
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 		$view_input    = isset($_GET['view']) ? sanitize_key(wp_unslash($_GET['view'])) : 'summary';
 		$allowed_views = [ 'summary', 'user_detail' ];
 		$view        = in_array($view_input, $allowed_views, true) ? $view_input : 'summary'; // 'summary' or 'user_detail'
@@ -94,11 +100,7 @@ class Credit_Usage_Page {
 		];
 	}
 
-	// Ensure credit usage table exists - create if missing
-	if (!Credit_Usage_Logger::table_exists()) {
-		Credit_Usage_Logger::create_table();
-	}
-	
+	// Table is created by DB_Schema on activation/upgrade.
 	// Get usage by user (local WordPress data)
 	$usage_by_user = Credit_Usage_Logger::get_usage_by_user($query_args);
 
@@ -119,14 +121,20 @@ class Credit_Usage_Page {
 		// Diagnostic: Check if table exists and has any data
 		$table_exists = Credit_Usage_Logger::table_exists();
 		$debug_info = [];
-		
+
 				if ($table_exists) {
+					$cached_diag = BBAI_Cache::get( 'credit_usage', 'diag' );
+					if ( false !== $cached_diag && is_array( $cached_diag ) ) {
+						$debug_info = $cached_diag;
+					} else {
 					global $wpdb;
 					$table = esc_sql( Credit_Usage_Logger::table() );
 				
 				// Get total row count
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$total_rows = $wpdb->get_var(
 					$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					"SELECT COUNT(*) FROM `{$table}` WHERE %d = %d",
 					1,
 					1
@@ -135,8 +143,10 @@ class Credit_Usage_Page {
 		$debug_info['total_rows'] = absint($total_rows);
 		
 		// Get distinct user count
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$distinct_users = $wpdb->get_var(
 						$wpdb->prepare(
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 							"SELECT COUNT(DISTINCT user_id) FROM `{$table}` WHERE %d = %d",
 							1,
 							1
@@ -146,8 +156,10 @@ class Credit_Usage_Page {
 		
 		// Get sample of actual data (for debugging) - raw query without filters
 			if ($total_rows > 0) {
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 					$sample_data = $wpdb->get_results(
 							$wpdb->prepare(
+								// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 								"SELECT user_id, attachment_id, credits_used, source, generated_at FROM `{$table}` ORDER BY generated_at DESC LIMIT %d",
 								10
 							),
@@ -156,8 +168,10 @@ class Credit_Usage_Page {
 			$debug_info['sample_data'] = $sample_data;
 			
 			// Get user breakdown summary
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 					$user_breakdown = $wpdb->get_results(
 							$wpdb->prepare(
+								// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 								"SELECT user_id, COUNT(*) as count, SUM(credits_used) as total_credits FROM `{$table}` WHERE %d = %d GROUP BY user_id ORDER BY total_credits DESC",
 								1,
 								1
@@ -169,6 +183,9 @@ class Credit_Usage_Page {
 				$debug_info['sample_data'] = [];
 				$debug_info['user_breakdown'] = [];
 			}
+
+					BBAI_Cache::set( 'credit_usage', 'diag', $debug_info, BBAI_Cache::DEFAULT_TTL );
+				}
 	} else {
 		$debug_info['table_exists'] = false;
 	}
@@ -231,8 +248,10 @@ class Credit_Usage_Page {
 			}
 			if ($potential_user_id && $potential_user_id > 0) {
 				global $wpdb;
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- fallback user lookup
 				$db_user = $wpdb->get_row(
 					$wpdb->prepare(
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 						"SELECT ID, user_login, display_name, user_email FROM {$wpdb->users} WHERE ID = %d LIMIT 1",
 						$potential_user_id
 					)
@@ -292,8 +311,10 @@ class Credit_Usage_Page {
 						} else {
 							// Method 3: Query database directly (in case get_user_by fails due to caching)
 							global $wpdb;
+							// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- fallback user lookup
 							$db_user = $wpdb->get_row(
 								$wpdb->prepare(
+									// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 									"SELECT ID, user_login, display_name, user_email FROM {$wpdb->users} WHERE ID = %d LIMIT 1",
 									$user_id
 								)
@@ -307,7 +328,9 @@ class Credit_Usage_Page {
 								// Method 4: Backend user_id doesn't match WordPress - try to find WordPress user by matching activity
 								// Find WordPress user with most activity (likely corresponds to this backend user)
 								$table_name = \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::table();
+								// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- one-time user matching, table from static method
 								$matching_wp_user_id = $wpdb->get_var(
+									// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 									"SELECT user_id FROM `{$table_name}` WHERE user_id > 0 GROUP BY user_id ORDER BY COUNT(*) DESC LIMIT 1"
 								);
 								if ($matching_wp_user_id && absint($matching_wp_user_id) > 0) {
@@ -321,8 +344,10 @@ class Credit_Usage_Page {
 										$hero['wp_user_id'] = absint($matching_user->ID);
 									} else {
 										// Query database directly for this user_id
+										// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- fallback user lookup
 										$db_user_direct = $wpdb->get_row(
 											$wpdb->prepare(
+												// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 												"SELECT ID, user_login, display_name, user_email FROM {$wpdb->users} WHERE ID = %d LIMIT 1",
 												absint($matching_wp_user_id)
 											)
@@ -427,8 +452,10 @@ class Credit_Usage_Page {
 			
 			// Try to find WordPress user_id by looking at recent activity
 			// Get the most active WordPress user_id from usage logs (they likely correspond to backend users)
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- one-time user matching, table from static method
 			$wp_user_id = $wpdb->get_var(
 				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					"SELECT user_id FROM `{$table_name}` WHERE user_id > 0 ORDER BY created_at DESC LIMIT 1"
 				)
 			);

@@ -17,76 +17,76 @@ use BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers;
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/class-plan-helpers.php';
 
 // Get stats and usage data
-$stats = isset($stats) && is_array($stats) ? $stats : [];
-$usage_stats = isset($usage_stats) && is_array($usage_stats) ? $usage_stats : [];
+$bbai_stats = isset($bbai_stats) && is_array($bbai_stats) ? $bbai_stats : [];
+$bbai_usage_stats = isset($bbai_usage_stats) && is_array($bbai_usage_stats) ? $bbai_usage_stats : [];
 
 // Calculate metrics
-$total_images = $stats['total'] ?? 0;
-$optimized = $stats['with_alt'] ?? 0;
-$missing = $stats['missing'] ?? 0;
-$coverage_percent = $total_images > 0 ? round(($optimized / $total_images) * 100) : 0;
+$bbai_total_images = $bbai_stats['total'] ?? 0;
+$bbai_optimized = $bbai_stats['with_alt'] ?? 0;
+$bbai_missing = $bbai_stats['missing'] ?? 0;
+$bbai_coverage_percent = $bbai_total_images > 0 ? round(($bbai_optimized / $bbai_total_images) * 100) : 0;
 
 // Simplified coverage history (placeholder when real history is unavailable)
-$historical_coverage = [
-    ['date' => 'Week 1', 'coverage' => max(0, $coverage_percent - 24)],
-    ['date' => 'Week 2', 'coverage' => max(0, $coverage_percent - 20)],
-    ['date' => 'Week 3', 'coverage' => max(0, $coverage_percent - 16)],
-    ['date' => 'Week 4', 'coverage' => max(0, $coverage_percent - 12)],
-    ['date' => 'Week 5', 'coverage' => max(0, $coverage_percent - 8)],
-    ['date' => 'Current', 'coverage' => max(0, $coverage_percent - 4)],
-    ['date' => 'Week 6', 'coverage' => max(0, $coverage_percent)],
+$bbai_historical_coverage = [
+    ['date' => 'Week 1', 'coverage' => max(0, $bbai_coverage_percent - 24)],
+    ['date' => 'Week 2', 'coverage' => max(0, $bbai_coverage_percent - 20)],
+    ['date' => 'Week 3', 'coverage' => max(0, $bbai_coverage_percent - 16)],
+    ['date' => 'Week 4', 'coverage' => max(0, $bbai_coverage_percent - 12)],
+    ['date' => 'Week 5', 'coverage' => max(0, $bbai_coverage_percent - 8)],
+    ['date' => 'Current', 'coverage' => max(0, $bbai_coverage_percent - 4)],
+    ['date' => 'Week 6', 'coverage' => max(0, $bbai_coverage_percent)],
 ];
 
-$usage_used = max(0, intval($usage_stats['used'] ?? 0));
-$usage_limit = max(1, intval($usage_stats['limit'] ?? 50));
-$usage_remaining = max(0, intval($usage_stats['remaining'] ?? ($usage_limit - $usage_used)));
-$days_in_month = (int) wp_date('t');
-$avg_per_day = $days_in_month > 0 ? round($usage_used / $days_in_month, 1) : 0;
-$minutes_per_alt = 2.5;
-$computed_time_saved = round(($usage_used * $minutes_per_alt) / 60, 1);
-$time_saved_hours = $usage_stats['timeSavedHours'] ?? $usage_stats['time_saved_hours'] ?? $stats['timeSavedHours'] ?? $stats['time_saved_hours'] ?? $computed_time_saved;
-$time_saved_hours = max(0, floatval($time_saved_hours));
-$seo_lift_percent = $stats['seoImpactScore'] ?? $stats['seo_impact_score'] ?? $stats['coverage'] ?? $coverage_percent ?? 0;
-$seo_lift_percent = max(0, round($seo_lift_percent));
-$total_images_optimized = $stats['imagesOptimized'] ?? $stats['with_alt'] ?? $optimized ?? 0;
-$total_images_optimized = max(0, intval($total_images_optimized));
-$images_processed = $stats['generated'] ?? $total_images_optimized;
-$images_processed = max(0, intval($images_processed));
-$images_delta_percent = $usage_stats['imagesDeltaPercent'] ?? $usage_stats['images_delta_percent'] ?? 0;
-$images_delta_percent = max(0, floatval($images_delta_percent));
-$generated = max(0, intval($stats['generated'] ?? 0));
-$coverage_improvement = max(0, round($coverage_percent));
+$bbai_usage_used = max(0, intval($bbai_usage_stats['used'] ?? 0));
+$bbai_usage_limit = max(1, intval($bbai_usage_stats['limit'] ?? 50));
+$bbai_usage_remaining = max(0, intval($bbai_usage_stats['remaining'] ?? ($bbai_usage_limit - $bbai_usage_used)));
+$bbai_days_in_month = (int) wp_date('t');
+$bbai_avg_per_day = $bbai_days_in_month > 0 ? round($bbai_usage_used / $bbai_days_in_month, 1) : 0;
+$bbai_minutes_per_alt = 2.5;
+$bbai_computed_time_saved = round(($bbai_usage_used * $bbai_minutes_per_alt) / 60, 1);
+$bbai_time_saved_hours = $bbai_usage_stats['timeSavedHours'] ?? $bbai_usage_stats['time_saved_hours'] ?? $bbai_stats['timeSavedHours'] ?? $bbai_stats['time_saved_hours'] ?? $bbai_computed_time_saved;
+$bbai_time_saved_hours = max(0, floatval($bbai_time_saved_hours));
+$bbai_seo_lift_percent = $bbai_stats['seoImpactScore'] ?? $bbai_stats['seo_impact_score'] ?? $bbai_stats['coverage'] ?? $bbai_coverage_percent ?? 0;
+$bbai_seo_lift_percent = max(0, round($bbai_seo_lift_percent));
+$bbai_total_images_optimized = $bbai_stats['imagesOptimized'] ?? $bbai_stats['with_alt'] ?? $bbai_optimized ?? 0;
+$bbai_total_images_optimized = max(0, intval($bbai_total_images_optimized));
+$bbai_images_processed = $bbai_stats['generated'] ?? $bbai_total_images_optimized;
+$bbai_images_processed = max(0, intval($bbai_images_processed));
+$bbai_images_delta_percent = $bbai_usage_stats['imagesDeltaPercent'] ?? $bbai_usage_stats['images_delta_percent'] ?? 0;
+$bbai_images_delta_percent = max(0, floatval($bbai_images_delta_percent));
+$bbai_generated = max(0, intval($bbai_stats['generated'] ?? 0));
+$bbai_coverage_improvement = max(0, round($bbai_coverage_percent));
 
 // "Before" = how many images lacked alt text before the plugin helped.
 // If all images are now covered, show the number the plugin generated (those WERE missing).
 // If some are still missing, show missing + generated as the original "before" count.
-$before_count = $missing + $generated;
+$bbai_before_count = $bbai_missing + $bbai_generated;
 
 // Get plan data from centralized helper
-$plan_data = Plan_Helpers::get_plan_data();
-$plan_slug = $plan_data['plan_slug'];
-$is_free = $plan_data['is_free'];
-$is_growth = $plan_data['is_growth'];
-$is_agency = $plan_data['is_agency'];
+$bbai_plan_data = Plan_Helpers::get_plan_data();
+$bbai_plan_slug = $bbai_plan_data['plan_slug'];
+$bbai_is_free = $bbai_plan_data['is_free'];
+$bbai_is_growth = $bbai_plan_data['is_growth'];
+$bbai_is_agency = $bbai_plan_data['is_agency'];
 
-$has_trend_data = false;
-foreach ($historical_coverage as $point) {
-    if (($point['coverage'] ?? 0) > 0) {
-        $has_trend_data = true;
+$bbai_has_trend_data = false;
+foreach ($bbai_historical_coverage as $bbai_point) {
+    if (($bbai_point['coverage'] ?? 0) > 0) {
+        $bbai_has_trend_data = true;
         break;
     }
 }
 
-$seo_lift_display = $seo_lift_percent > 0 ? '+' . $seo_lift_percent . '%' : $seo_lift_percent . '%';
+$bbai_seo_lift_display = $bbai_seo_lift_percent > 0 ? '+' . $bbai_seo_lift_percent . '%' : $bbai_seo_lift_percent . '%';
 
-$analytics_payload = [
-    'coverage' => $historical_coverage,
-    'usage' => $usage_stats,
+$bbai_analytics_payload = [
+    'coverage' => $bbai_historical_coverage,
+    'usage' => $bbai_usage_stats,
 ];
 if (function_exists('wp_add_inline_script')) {
     wp_add_inline_script(
         'bbai-analytics',
-        'window.bbaiAnalyticsData = ' . wp_json_encode($analytics_payload) . ';',
+        'window.bbaiAnalyticsData = ' . wp_json_encode($bbai_analytics_payload) . ';',
         'before'
     );
 }
@@ -114,7 +114,7 @@ if (function_exists('wp_add_inline_script')) {
                         <path d="M9 5H19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                     </svg>
                 </div>
-                <div class="bbai-metric-value" style="color: #10B981;"><?php echo esc_html($seo_lift_display); ?></div>
+                <div class="bbai-metric-value" style="color: #10B981;"><?php echo esc_html($bbai_seo_lift_display); ?></div>
                 <div class="bbai-metric-sublabel"><?php esc_html_e('SEO LIFT', 'beepbeep-ai-alt-text-generator'); ?></div>
                 <div class="bbai-metric-description">
                     <?php esc_html_e('Estimated lift in search visibility due to generated alt text.', 'beepbeep-ai-alt-text-generator'); ?>
@@ -130,7 +130,7 @@ if (function_exists('wp_add_inline_script')) {
                         <path d="M4.5 16l5-5 4 4 3-3 3 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
                     </svg>
                 </div>
-                <div class="bbai-metric-value"><?php echo esc_html(number_format_i18n($total_images_optimized)); ?></div>
+                <div class="bbai-metric-value"><?php echo esc_html(number_format_i18n($bbai_total_images_optimized)); ?></div>
                 <div class="bbai-metric-label"><?php esc_html_e('IMAGES', 'beepbeep-ai-alt-text-generator'); ?></div>
                 <div class="bbai-metric-sublabel"><?php esc_html_e('OPTIMIZED', 'beepbeep-ai-alt-text-generator'); ?></div>
                 <div class="bbai-metric-description">
@@ -146,7 +146,7 @@ if (function_exists('wp_add_inline_script')) {
                         <path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
                     </svg>
                 </div>
-                <div class="bbai-metric-value"><?php echo esc_html(number_format_i18n($time_saved_hours, 1)); ?></div>
+                <div class="bbai-metric-value"><?php echo esc_html(number_format_i18n($bbai_time_saved_hours, 1)); ?></div>
                 <div class="bbai-metric-label"><?php esc_html_e('HRS', 'beepbeep-ai-alt-text-generator'); ?></div>
                 <div class="bbai-metric-sublabel"><?php esc_html_e('TIME SAVED', 'beepbeep-ai-alt-text-generator'); ?></div>
                 <div class="bbai-metric-description">
@@ -175,7 +175,7 @@ if (function_exists('wp_add_inline_script')) {
                 </div>
             </div>
             <div class="bbai-card-body">
-                <?php if ($has_trend_data) : ?>
+                <?php if ($bbai_has_trend_data) : ?>
                     <div class="bbai-chart-container">
                         <canvas id="bbai-coverage-chart"></canvas>
                     </div>
@@ -207,10 +207,10 @@ if (function_exists('wp_add_inline_script')) {
                     </div>
                     <div class="bbai-usage-breakdown-label"><?php esc_html_e('Used', 'beepbeep-ai-alt-text-generator'); ?></div>
                     <div class="bbai-usage-breakdown-value">
-                        <?php echo esc_html(number_format_i18n($usage_used)); ?>
+                        <?php echo esc_html(number_format_i18n($bbai_usage_used)); ?>
                         <span class="bbai-usage-breakdown-total"><?php
                         /* translators: 1: usage limit */
-                        printf(esc_html__('of %s', 'beepbeep-ai-alt-text-generator'), esc_html(number_format_i18n($usage_limit)));
+                        printf(esc_html__('of %s', 'beepbeep-ai-alt-text-generator'), esc_html(number_format_i18n($bbai_usage_limit)));
                         ?></span>
                     </div>
                 </div>
@@ -224,7 +224,7 @@ if (function_exists('wp_add_inline_script')) {
                     </div>
                     <div class="bbai-usage-breakdown-label"><?php esc_html_e('Remaining', 'beepbeep-ai-alt-text-generator'); ?></div>
                     <div class="bbai-usage-breakdown-value">
-                        <?php echo esc_html(number_format_i18n($usage_remaining)); ?>
+                        <?php echo esc_html(number_format_i18n($bbai_usage_remaining)); ?>
                         <span class="bbai-usage-breakdown-total"><?php esc_html_e('credits left', 'beepbeep-ai-alt-text-generator'); ?></span>
                     </div>
                 </div>
@@ -239,7 +239,7 @@ if (function_exists('wp_add_inline_script')) {
                     </div>
                     <div class="bbai-usage-breakdown-label"><?php esc_html_e('Avg Per Day', 'beepbeep-ai-alt-text-generator'); ?></div>
                     <div class="bbai-usage-breakdown-value">
-                        <?php echo esc_html(number_format_i18n($avg_per_day, 1)); ?>
+                        <?php echo esc_html(number_format_i18n($bbai_avg_per_day, 1)); ?>
                         <span class="bbai-usage-breakdown-total"><?php esc_html_e('generations', 'beepbeep-ai-alt-text-generator'); ?></span>
                     </div>
                 </div>
@@ -253,12 +253,12 @@ if (function_exists('wp_add_inline_script')) {
                     </div>
                     <div class="bbai-usage-breakdown-label"><?php esc_html_e('Images', 'beepbeep-ai-alt-text-generator'); ?></div>
                     <div class="bbai-usage-breakdown-value">
-                        <?php echo esc_html(number_format_i18n($images_processed)); ?>
+                        <?php echo esc_html(number_format_i18n($bbai_images_processed)); ?>
                         <span class="bbai-usage-breakdown-total"><?php esc_html_e('images', 'beepbeep-ai-alt-text-generator'); ?></span>
                     </div>
-                    <?php if ($images_delta_percent > 0) : ?>
+                    <?php if ($bbai_images_delta_percent > 0) : ?>
                         <div class="bbai-text-xs" style="color: #10B981; margin-top: 4px;">
-                            +<?php echo esc_html(number_format_i18n($images_delta_percent)); ?>%
+                            +<?php echo esc_html(number_format_i18n($bbai_images_delta_percent)); ?>%
                         </div>
                     <?php endif; ?>
                 </div>
@@ -279,7 +279,7 @@ if (function_exists('wp_add_inline_script')) {
                             </svg>
                         </div>
                         <div class="bbai-comparison-label"><?php esc_html_e('Before', 'beepbeep-ai-alt-text-generator'); ?></div>
-                        <div class="bbai-comparison-value"><?php echo esc_html(number_format_i18n($before_count)); ?></div>
+                        <div class="bbai-comparison-value"><?php echo esc_html(number_format_i18n($bbai_before_count)); ?></div>
                         <div class="bbai-comparison-description"><?php esc_html_e('images without alt text', 'beepbeep-ai-alt-text-generator'); ?></div>
                     </div>
 
@@ -294,11 +294,11 @@ if (function_exists('wp_add_inline_script')) {
                             <?php esc_html_e('After', 'beepbeep-ai-alt-text-generator'); ?>
                             <span style="font-weight: normal; font-size: 11px; color: #6B7280;">BeepBeep AI</span>
                         </div>
-                        <div class="bbai-comparison-value"><?php echo esc_html(number_format_i18n($optimized)); ?></div>
+                        <div class="bbai-comparison-value"><?php echo esc_html(number_format_i18n($bbai_optimized)); ?></div>
                         <div class="bbai-comparison-description"><?php esc_html_e('images optimized', 'beepbeep-ai-alt-text-generator'); ?></div>
-                        <?php if ($coverage_improvement > 0) : ?>
+                        <?php if ($bbai_coverage_improvement > 0) : ?>
                             <div style="margin-top: 8px; font-size: 12px; font-weight: 600; color: #10B981;">
-                                ↑ <?php echo esc_html(number_format_i18n($coverage_improvement)); ?>% <?php esc_html_e('improvement', 'beepbeep-ai-alt-text-generator'); ?>
+                                ↑ <?php echo esc_html(number_format_i18n($bbai_coverage_improvement)); ?>% <?php esc_html_e('improvement', 'beepbeep-ai-alt-text-generator'); ?>
                             </div>
                         <?php endif; ?>
                         <div style="display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 11px; color: #6B7280;">
@@ -337,11 +337,11 @@ if (function_exists('wp_add_inline_script')) {
                         <p class="bbai-empty-title"><?php esc_html_e('No activity yet', 'beepbeep-ai-alt-text-generator'); ?></p>
                         <p class="bbai-empty-description">
                             <?php
-                            if ($generated > 0) {
+                            if ($bbai_generated > 0) {
                                 printf(
                                     /* translators: %d: Number of generated alt texts already created on this site. */
                                     esc_html__('You have %d generated alt texts, but recent activity tracking is new. Activity will appear here as you generate more.', 'beepbeep-ai-alt-text-generator'),
-                                    absint($generated)
+                                    absint($bbai_generated)
                                 );
                             } else {
                                 esc_html_e('Generate your first alt text to see your activity here.', 'beepbeep-ai-alt-text-generator');
@@ -353,22 +353,22 @@ if (function_exists('wp_add_inline_script')) {
                         </a>
                     </div>
                 </div>
-                <?php if ($is_free) : ?>
+                <?php if ($bbai_is_free) : ?>
                     <button type="button" class="bbai-link-btn bbai-link-sm bbai-mt-4" data-action="show-upgrade-modal">
                         <?php esc_html_e('Compare plans', 'beepbeep-ai-alt-text-generator'); ?> ›
                     </button>
-                <?php elseif ($is_growth) : ?>
+                <?php elseif ($bbai_is_growth) : ?>
                     <button type="button" class="bbai-link-btn bbai-link-sm bbai-mt-4" data-action="show-upgrade-modal">
                         <?php esc_html_e('Upgrade to Agency', 'beepbeep-ai-alt-text-generator'); ?> ›
                     </button>
-                <?php elseif ($is_agency) : ?>
+                <?php elseif ($bbai_is_agency) : ?>
                     <?php
-                    $billing_portal_url = '';
+                    $bbai_billing_portal_url = '';
                     if (class_exists('BeepBeepAI\AltTextGenerator\Usage_Tracker')) {
-                        $billing_portal_url = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_billing_portal_url();
+                        $bbai_billing_portal_url = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_billing_portal_url();
                     }
-                    if (!empty($billing_portal_url)) : ?>
-                        <a href="<?php echo esc_url($billing_portal_url); ?>" class="bbai-link-btn bbai-link-sm bbai-mt-4" target="_blank" rel="noopener">
+                    if (!empty($bbai_billing_portal_url)) : ?>
+                        <a href="<?php echo esc_url($bbai_billing_portal_url); ?>" class="bbai-link-btn bbai-link-sm bbai-mt-4" target="_blank" rel="noopener">
                             <?php esc_html_e('Manage subscription', 'beepbeep-ai-alt-text-generator'); ?> ›
                         </a>
                     <?php endif; ?>
@@ -378,9 +378,9 @@ if (function_exists('wp_add_inline_script')) {
 
         <!-- Bottom Upsell CTA -->
         <?php
-        $bottom_upsell_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/bottom-upsell-cta.php';
-        if (file_exists($bottom_upsell_partial)) {
-            include $bottom_upsell_partial;
+        $bbai_bottom_upsell_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/bottom-upsell-cta.php';
+        if (file_exists($bbai_bottom_upsell_partial)) {
+            include $bbai_bottom_upsell_partial;
         }
         ?>
     </div>

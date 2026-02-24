@@ -11,9 +11,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-$page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : 'bbai';
-$current_page = $page_input ?: 'bbai';
-$fallback_url = admin_url('admin.php?page=' . $current_page);
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
+$bbai_page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : 'bbai';
+$bbai_current_page = $bbai_page_input ?: 'bbai';
+$bbai_fallback_url = admin_url('admin.php?page=' . $bbai_current_page);
 ?>
 <div class="bbai-logged-out" role="main" aria-labelledby="bbai-logged-out-title">
     <div class="bbai-logged-out__container">
@@ -35,7 +36,7 @@ $fallback_url = admin_url('admin.php?page=' . $current_page);
             <div class="bbai-logged-out__actions">
                 <a
                     class="bbai-logged-out__btn-primary"
-                    href="<?php echo esc_url($fallback_url); ?>"
+                    href="<?php echo esc_url($bbai_fallback_url); ?>"
                     data-action="show-auth-modal"
                     data-auth-tab="login"
                 >
@@ -43,7 +44,7 @@ $fallback_url = admin_url('admin.php?page=' . $current_page);
                 </a>
                 <a
                     class="bbai-logged-out__link-secondary"
-                    href="<?php echo esc_url($fallback_url); ?>"
+                    href="<?php echo esc_url($bbai_fallback_url); ?>"
                     data-action="show-auth-modal"
                     data-auth-tab="register"
                 >

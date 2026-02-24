@@ -7,49 +7,49 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 // Get current plan from API client
-$current_plan = 'free';
+$bbai_current_plan = 'free';
 try {
     if (isset($this->api_client) && is_object($this->api_client) && method_exists($this->api_client, 'get_usage')) {
-        $usage_data = $this->api_client->get_usage();
-        if (!is_wp_error($usage_data) && is_array($usage_data) && isset($usage_data['plan'])) {
-            $current_plan = strtolower($usage_data['plan']);
+        $bbai_usage_data = $this->api_client->get_usage();
+        if (!is_wp_error($bbai_usage_data) && is_array($bbai_usage_data) && isset($bbai_usage_data['plan'])) {
+            $bbai_current_plan = strtolower($bbai_usage_data['plan']);
         }
     }
 } catch (Exception $e) {
     // Silently fail, use default free plan
 }
 // Map 'pro' to 'growth' for consistency
-if ($current_plan === 'pro') {
-    $current_plan = 'growth';
+if ($bbai_current_plan === 'pro') {
+    $bbai_current_plan = 'growth';
 }
 
 // Get price IDs from backend API
-$pro_price_id = $checkout_prices['pro'] ?? '';
-$agency_price_id = $checkout_prices['agency'] ?? '';
-$credits_price_id = $checkout_prices['credits'] ?? '';
+$bbai_pro_price_id = $checkout_prices['pro'] ?? '';
+$bbai_agency_price_id = $checkout_prices['agency'] ?? '';
+$bbai_credits_price_id = $checkout_prices['credits'] ?? '';
 
 // Fallback to hardcoded Stripe links if API price IDs not available
-$stripe_links = [
+$bbai_stripe_links = [
     'pro' => 'https://buy.stripe.com/dRm28s4rc5Raf0GbY77ss02',
     'agency' => 'https://buy.stripe.com/28E14og9U0wQ19Q4vF7ss01',
     'credits' => 'https://buy.stripe.com/6oU9AUf5Q2EYaKq0fp7ss00'
 ];
 
 // Currency - Default to GBP, but support detection
-$currency = $currency ?? ['symbol' => '£', 'code' => 'GBP', 'free' => 0, 'growth' => 12.99, 'pro' => 12.99, 'agency' => 49.99, 'credits' => 19.99];
+$bbai_currency = $bbai_currency ?? ['symbol' => '£', 'code' => 'GBP', 'free' => 0, 'growth' => 12.99, 'pro' => 12.99, 'agency' => 49.99, 'credits' => 19.99];
 
 // Calculate annual prices (2 months free = 10 months of monthly price)
-$growth_monthly = $currency['growth'] ?? 12.99;
-$growth_annual = round($growth_monthly * 10, 2);
-$agency_monthly = $currency['agency'] ?? 49.99;
-$agency_annual = round($agency_monthly * 10, 2);
+$bbai_growth_monthly = $bbai_currency['growth'] ?? 12.99;
+$bbai_growth_annual = round($bbai_growth_monthly * 10, 2);
+$bbai_agency_monthly = $bbai_currency['agency'] ?? 49.99;
+$bbai_agency_annual = round($bbai_agency_monthly * 10, 2);
 
 // Calculate annual savings (20% = 2 months free)
-$growth_annual_savings = round(($growth_monthly * 12) - $growth_annual, 2);
-$agency_annual_savings = round(($agency_monthly * 12) - $agency_annual, 2);
+$bbai_growth_annual_savings = round(($bbai_growth_monthly * 12) - $bbai_growth_annual, 2);
+$bbai_agency_annual_savings = round(($bbai_agency_monthly * 12) - $bbai_agency_annual, 2);
 
 // Billing portal URL for current plan management
-$billing_url = admin_url('admin.php?page=bbai-billing');
+$bbai_billing_url = admin_url('admin.php?page=bbai-billing');
 ?>
 
 <div id="bbai-upgrade-modal" class="bbai-modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="bbai-upgrade-modal-title">
@@ -77,14 +77,14 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
             <div class="bbai-pricing-grid">
                 <!-- FREE Plan -->
                 <div class="bbai-pricing-card">
-                    <?php if ($current_plan === 'free') : ?>
+                    <?php if ($bbai_current_plan === 'free') : ?>
                         <span class="bbai-pricing-card__badge bbai-pricing-card__badge--current"><?php esc_html_e('Current plan', 'beepbeep-ai-alt-text-generator'); ?></span>
                     <?php else : ?>
                         <span class="bbai-pricing-card__badge bbai-pricing-card__badge--free"><?php esc_html_e('Free', 'beepbeep-ai-alt-text-generator'); ?></span>
                     <?php endif; ?>
                     
                     <div class="bbai-pricing-card__price">
-                        <span class="bbai-pricing-card__currency"><?php echo esc_html($currency['symbol']); ?></span>
+                        <span class="bbai-pricing-card__currency"><?php echo esc_html($bbai_currency['symbol']); ?></span>
                         <span class="bbai-pricing-card__amount">0</span>
                     </div>
                     
@@ -99,7 +99,7 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
                         </li>
                     </ul>
                     
-                    <?php if ($current_plan === 'free') : ?>
+                    <?php if ($bbai_current_plan === 'free') : ?>
                         <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-lg bbai-btn-block bbai-pricing-card__btn bbai-pricing-card__btn--free" disabled>
                             <?php esc_html_e('Current plan', 'beepbeep-ai-alt-text-generator'); ?>
                         </button>
@@ -115,15 +115,15 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
                     <span class="bbai-pricing-card__badge bbai-pricing-card__badge--growth"><?php esc_html_e('Most Popular', 'beepbeep-ai-alt-text-generator'); ?></span>
                     
                     <div class="bbai-pricing-card__price">
-                        <span class="bbai-pricing-card__currency"><?php echo esc_html($currency['symbol']); ?></span>
-                        <span class="bbai-pricing-card__amount"><?php echo esc_html(number_format($growth_monthly, 2)); ?></span>
+                        <span class="bbai-pricing-card__currency"><?php echo esc_html($bbai_currency['symbol']); ?></span>
+                        <span class="bbai-pricing-card__amount"><?php echo esc_html(number_format($bbai_growth_monthly, 2)); ?></span>
                         <span class="bbai-pricing-card__period"><?php esc_html_e('/month', 'beepbeep-ai-alt-text-generator'); ?></span>
                     </div>
                     
                     <p class="bbai-pricing-card__billing">
                         <?php
                         /* translators: 1: annual price */
-                        echo esc_html(sprintf(__('or £%s billed annually (2 months free)', 'beepbeep-ai-alt-text-generator'), number_format($growth_annual, 2)));
+                        echo esc_html(sprintf(__('or £%s billed annually (2 months free)', 'beepbeep-ai-alt-text-generator'), number_format($bbai_growth_annual, 2)));
                         ?>
                     </p>
                     
@@ -156,8 +156,8 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
                         </li>
                     </ul>
                     
-                    <?php if ($current_plan === 'growth') : ?>
-                        <a href="<?php echo esc_url($billing_url); ?>" class="bbai-btn bbai-btn-primary bbai-btn-lg bbai-btn-block bbai-pricing-card__btn bbai-pricing-card__btn--growth">
+                    <?php if ($bbai_current_plan === 'growth') : ?>
+                        <a href="<?php echo esc_url($bbai_billing_url); ?>" class="bbai-btn bbai-btn-primary bbai-btn-lg bbai-btn-block bbai-pricing-card__btn bbai-pricing-card__btn--growth">
                             <?php esc_html_e('Manage billing', 'beepbeep-ai-alt-text-generator'); ?>
                         </a>
                     <?php else : ?>
@@ -165,8 +165,8 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
                                 class="bbai-btn bbai-btn-primary bbai-btn-lg bbai-btn-block bbai-pricing-card__btn bbai-pricing-card__btn--growth"
                                 data-action="checkout-plan"
                                 data-plan="pro"
-                                data-price-id="<?php echo esc_attr($pro_price_id); ?>"
-                                data-fallback-url="<?php echo esc_url($stripe_links['pro']); ?>">
+                                data-price-id="<?php echo esc_attr($bbai_pro_price_id); ?>"
+                                data-fallback-url="<?php echo esc_url($bbai_stripe_links['pro']); ?>">
                             <?php esc_html_e('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'); ?>
                         </button>
                     <?php endif; ?>
@@ -177,15 +177,15 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
                     <span class="bbai-pricing-card__badge bbai-pricing-card__badge--agency"><?php esc_html_e('Agency', 'beepbeep-ai-alt-text-generator'); ?></span>
                     
                     <div class="bbai-pricing-card__price">
-                        <span class="bbai-pricing-card__currency"><?php echo esc_html($currency['symbol']); ?></span>
-                        <span class="bbai-pricing-card__amount"><?php echo esc_html(number_format($agency_monthly, 2)); ?></span>
+                        <span class="bbai-pricing-card__currency"><?php echo esc_html($bbai_currency['symbol']); ?></span>
+                        <span class="bbai-pricing-card__amount"><?php echo esc_html(number_format($bbai_agency_monthly, 2)); ?></span>
                         <span class="bbai-pricing-card__period"><?php esc_html_e('/month', 'beepbeep-ai-alt-text-generator'); ?></span>
                     </div>
                     
                     <p class="bbai-pricing-card__billing">
                         <?php
                         /* translators: 1: annual price */
-                        echo esc_html(sprintf(__('or £%s billed annually (2 months free)', 'beepbeep-ai-alt-text-generator'), number_format($agency_annual, 2)));
+                        echo esc_html(sprintf(__('or £%s billed annually (2 months free)', 'beepbeep-ai-alt-text-generator'), number_format($bbai_agency_annual, 2)));
                         ?>
                     </p>
                     
@@ -224,8 +224,8 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
                         </li>
                     </ul>
                     
-                    <?php if ($current_plan === 'agency') : ?>
-                        <a href="<?php echo esc_url($billing_url); ?>" class="bbai-btn bbai-btn-lg bbai-btn-block bbai-pricing-card__btn bbai-pricing-card__btn--agency">
+                    <?php if ($bbai_current_plan === 'agency') : ?>
+                        <a href="<?php echo esc_url($bbai_billing_url); ?>" class="bbai-btn bbai-btn-lg bbai-btn-block bbai-pricing-card__btn bbai-pricing-card__btn--agency">
                             <?php esc_html_e('Manage billing', 'beepbeep-ai-alt-text-generator'); ?>
                         </a>
                     <?php else : ?>
@@ -233,8 +233,8 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
                                 class="bbai-btn bbai-btn-lg bbai-btn-block bbai-pricing-card__btn bbai-pricing-card__btn--agency"
                                 data-action="checkout-plan"
                                 data-plan="agency"
-                                data-price-id="<?php echo esc_attr($agency_price_id); ?>"
-                                data-fallback-url="<?php echo esc_url($stripe_links['agency']); ?>">
+                                data-price-id="<?php echo esc_attr($bbai_agency_price_id); ?>"
+                                data-fallback-url="<?php echo esc_url($bbai_stripe_links['agency']); ?>">
                             <?php esc_html_e('Upgrade to Agency', 'beepbeep-ai-alt-text-generator'); ?>
                         </button>
                     <?php endif; ?>
@@ -250,15 +250,15 @@ $billing_url = admin_url('admin.php?page=bbai-billing');
                     </div>
                     <div class="bbai-topup-section__price-action">
                         <div class="bbai-topup-section__price">
-                            <span class="bbai-pricing-card__currency"><?php echo esc_html($currency['symbol']); ?></span>
-                            <span class="bbai-pricing-card__amount"><?php echo esc_html(number_format($currency['credits'] ?? 19.99, 2)); ?></span>
+                            <span class="bbai-pricing-card__currency"><?php echo esc_html($bbai_currency['symbol']); ?></span>
+                            <span class="bbai-pricing-card__amount"><?php echo esc_html(number_format($bbai_currency['credits'] ?? 19.99, 2)); ?></span>
                         </div>
                         <button type="button"
                                 class="bbai-btn bbai-btn-dark bbai-btn-lg bbai-topup-section__btn"
                                 data-action="checkout-plan"
                                 data-plan="credits"
-                                data-price-id="<?php echo esc_attr($credits_price_id); ?>"
-                                data-fallback-url="<?php echo esc_url($stripe_links['credits']); ?>">
+                                data-price-id="<?php echo esc_attr($bbai_credits_price_id); ?>"
+                                data-fallback-url="<?php echo esc_url($bbai_stripe_links['credits']); ?>">
                             <?php esc_html_e('Buy 100 credits', 'beepbeep-ai-alt-text-generator'); ?>
                         </button>
                     </div>

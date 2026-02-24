@@ -134,6 +134,7 @@ class Privacy {
 		if ( ! class_exists( '\BeepBeepAI\AltTextGenerator\Contact_Submissions' ) ) {
 			return [];
 		}
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$exists = $wpdb->get_var(
 			$wpdb->prepare( 'SHOW TABLES LIKE %s', Contact_Submissions::table() )
 		);
@@ -149,8 +150,10 @@ class Privacy {
 			}
 			$submissions_table = esc_sql( Contact_Submissions::table() );
 
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$rows = $wpdb->get_results(
 				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					"SELECT * FROM `{$submissions_table}` WHERE ((%s <> %s AND email = %s) OR (%d > %d AND user_id = %d)) ORDER BY created_at DESC LIMIT %d OFFSET %d",
 					$email_address,
 					'',
@@ -238,13 +241,16 @@ class Privacy {
 
 		self::load_class( '\BeepBeepAI\AltTextGenerator\Credit_Usage_Logger', 'includes/class-credit-usage-logger.php' );
 			if ( class_exists( '\BeepBeepAI\AltTextGenerator\Credit_Usage_Logger' ) ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$exists = $wpdb->get_var(
 					$wpdb->prepare( 'SHOW TABLES LIKE %s', Credit_Usage_Logger::table() )
 				);
 				if ( $exists === Credit_Usage_Logger::table() ) {
 					$credit_usage_table = esc_sql( Credit_Usage_Logger::table() );
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 					$summary = $wpdb->get_row(
 						$wpdb->prepare(
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 							"SELECT COUNT(*) AS events, SUM(credits_used) AS credits, MAX(generated_at) AS last_event FROM `{$credit_usage_table}` WHERE user_id = %d",
 							$user_id
 						),
@@ -267,13 +273,16 @@ class Privacy {
 
 		self::load_class( '\BeepBeepAI\AltTextGenerator\Usage\Usage_Logs', 'includes/usage/class-usage-logs.php' );
 			if ( class_exists( '\BeepBeepAI\AltTextGenerator\Usage\Usage_Logs' ) ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$exists = $wpdb->get_var(
 					$wpdb->prepare( 'SHOW TABLES LIKE %s', \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::table() )
 				);
 				if ( $exists === \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::table() ) {
 					$usage_logs_table = esc_sql( \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::table() );
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 					$summary = $wpdb->get_row(
 						$wpdb->prepare(
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 							"SELECT COUNT(*) AS events, SUM(tokens_used) AS tokens, MAX(created_at) AS last_event FROM `{$usage_logs_table}` WHERE user_id = %d",
 							$user_id
 						),
@@ -307,6 +316,7 @@ class Privacy {
 		if ( ! class_exists( '\BeepBeepAI\AltTextGenerator\Contact_Submissions' ) ) {
 			return false;
 		}
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$exists = $wpdb->get_var(
 			$wpdb->prepare( 'SHOW TABLES LIKE %s', Contact_Submissions::table() )
 		);
@@ -321,8 +331,10 @@ class Privacy {
 			}
 			$submissions_table = esc_sql( Contact_Submissions::table() );
 
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$ids = $wpdb->get_col(
 				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					"SELECT id FROM `{$submissions_table}` WHERE ((%s <> %s AND email = %s) OR (%d > %d AND user_id = %d)) ORDER BY created_at DESC LIMIT %d",
 					$email_address,
 					'',
@@ -342,6 +354,7 @@ class Privacy {
 		}
 
 		foreach ( $ids as $id ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->delete(
 				Contact_Submissions::table(),
 				[ 'id' => absint( $id ) ],
@@ -363,10 +376,12 @@ class Privacy {
 		self::load_class( '\BeepBeepAI\AltTextGenerator\Credit_Usage_Logger', 'includes/class-credit-usage-logger.php' );
 		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Credit_Usage_Logger' ) ) {
 			$table = esc_sql( Credit_Usage_Logger::table() );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$exists = $wpdb->get_var(
 				$wpdb->prepare( 'SHOW TABLES LIKE %s', $table )
 			);
 			if ( $exists === $table ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$rows = $wpdb->update(
 					$table,
 					[
@@ -386,10 +401,12 @@ class Privacy {
 		self::load_class( '\BeepBeepAI\AltTextGenerator\Usage\Usage_Logs', 'includes/usage/class-usage-logs.php' );
 		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Usage\Usage_Logs' ) ) {
 			$table = esc_sql( \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::table() );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$exists = $wpdb->get_var(
 				$wpdb->prepare( 'SHOW TABLES LIKE %s', $table )
 			);
 			if ( $exists === $table ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$rows = $wpdb->update(
 					$table,
 					[ 'user_id' => 0 ],
