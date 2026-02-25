@@ -54,7 +54,16 @@ trait Core_Assets {
 
         if (!$debug && !file_exists($base_path . $path)) {
             $source_base = str_replace('assets/dist/', 'assets/src/', $base);
-            return $source_base . $name . ".$type";
+            $source_path = $source_base . $name . ".$type";
+            if (file_exists($base_path . $source_path)) {
+                return $source_path;
+            }
+            // Final fallback: assets/js/ or assets/css/ (ZIP build moves src into these)
+            $flat_path = "assets/$type/" . $name . ".$type";
+            if (file_exists($base_path . $flat_path)) {
+                return $flat_path;
+            }
+            return $source_path;
         }
 
         return $path;

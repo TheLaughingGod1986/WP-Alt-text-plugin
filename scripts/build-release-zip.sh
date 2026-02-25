@@ -26,6 +26,25 @@ need_cmd() {
   command -v "$1" >/dev/null 2>&1 || fail "Missing required command: $1"
 }
 
+delete_repo_root_zips() {
+  local deleted=0
+  while IFS= read -r zip_file; do
+    [[ -n "${zip_file}" ]] || continue
+    if [[ "${deleted}" -eq 0 ]]; then
+      printf '%s\n' "Deleting stray ZIP(s) from repo root:"
+    fi
+    deleted=1
+    printf '%s\n' " - ${zip_file}"
+    rm -f "${zip_file}"
+  done < <(find "${ROOT_DIR}" -maxdepth 1 -type f -name '*.zip' -print)
+}
+
+assert_no_repo_root_zips() {
+  local root_zip
+  root_zip="$(find "${ROOT_DIR}" -maxdepth 1 -type f -name '*.zip' -print -quit)"
+  [[ -z "${root_zip}" ]] || fail "Repo root must not contain ZIP files (found: ${root_zip})"
+}
+
 rsync_into_stage_dir() {
   local rel="$1"
   local src="${ROOT_DIR}/${rel}/"
@@ -85,16 +104,16 @@ prune_stage() {
 
 scan_dist_forbidden_paths() {
   local list_file="${TMP_STAGE_BASE}/dist-file-list.txt"
-  local forbidden_re='(^|/)\.[^/]+(/|$)|(^|/)scripts(/|$)|(^|/)tools(/|$)|(^|/)\.claude(/|$)|(^|/)\.git[^/]*(/|$)|(^|/)\.DS_Store$|(^|/)Thumbs\.db$|\.md$|\.(zip|tar|tgz|gz|bz2|xz|7z|rar|phar)$'
+  local forbidden_re='(^|/)\.[^/]+(/|$)|(^|/)(scripts|dist|tools|tests)(/|$)|(^|/)\.git[^/]*(/|$)|(^|/)\.github(/|$)|(^|/)\.claude(/|$)|(^|/)\.DS_Store$|(^|/)Thumbs\.db$|\.md$|\.log$|\.sh$|\.(zip|tar|tgz|gz|bz2|xz|7z|rar|phar)$'
 
   (
     cd "${DIST_DIR}"
     find "${PLUGIN_SLUG}" -print | LC_ALL=C sort > "${list_file}"
   )
 
-  if grep -E "${forbidden_re}" "${list_file}" >/dev/null; then
+  if grep -Ei "${forbidden_re}" "${list_file}" >/dev/null; then
     printf '%s\n' "Forbidden paths found in dist stage:" >&2
-    grep -E "${forbidden_re}" "${list_file}" >&2 || true
+    grep -Ei "${forbidden_re}" "${list_file}" >&2 || true
     fail "Forbidden files found in dist stage."
   fi
 }
@@ -112,6 +131,8 @@ need_cmd grep
 [[ -f "${DISTIGNORE_FILE}" ]] || fail "Missing ${DISTIGNORE_FILE}"
 
 mkdir -p "${OUT_DIR}" "${DIST_DIR}"
+delete_repo_root_zips
+assert_no_repo_root_zips
 
 local_out_abs="$(cd "${OUT_DIR}" && pwd)"
 local_root_abs="${ROOT_DIR}"
@@ -169,9 +190,11 @@ TOP_COUNT="$(printf '%s\n' "${TOP_DIRS}" | awk 'NF { c++ } END { print c + 0 }')
 [[ "${TOP_COUNT}" -eq 1 ]] || fail "ZIP must contain exactly one top-level folder."
 [[ "${TOP_DIRS}" == "${PLUGIN_SLUG}" ]] || fail "ZIP top-level folder must be ${PLUGIN_SLUG}/"
 
-if printf '%s\n' "${ZIP_ENTRIES}" | grep -E '(^|/)\.[^/]+(/|$)|(^|/)scripts(/|$)|(^|/)tools(/|$)|(^|/)\.claude(/|$)|(^|/)\.git[^/]*(/|$)|\.gitignore$|\.distignore$|\.md$|(^|/)\.DS_Store$|(^|/)Thumbs\.db$|\.(zip|tar|tgz|gz|bz2|xz|7z|rar|phar)$' >/dev/null; then
+if printf '%s\n' "${ZIP_ENTRIES}" | grep -Ei '(^|/)\.[^/]+(/|$)|(^|/)(scripts|dist|tools|tests)(/|$)|(^|/)\.git[^/]*(/|$)|(^|/)\.github(/|$)|(^|/)\.claude(/|$)|\.gitignore$|\.distignore$|\.md$|\.log$|\.sh$|(^|/)\.DS_Store$|(^|/)Thumbs\.db$|\.(zip|tar|tgz|gz|bz2|xz|7z|rar|phar)$' >/dev/null; then
   fail "Forbidden files found in release ZIP."
 fi
+
+assert_no_repo_root_zips
 
 ZIP_SIZE="$(du -h "${ZIP_PATH}" | awk '{ print $1 }')"
 

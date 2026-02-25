@@ -854,111 +854,109 @@ class Core {
         try {
             $bbai_is_authenticated = $this->api_client->is_authenticated();
             $bbai_has_license = $this->api_client->has_active_license();
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $bbai_is_authenticated = false;
             $bbai_has_license = false;
-        } catch (Error $e) {
+        } catch (\Error $e) {
             $bbai_is_authenticated = false;
             $bbai_has_license = false;
         }
-        
+
         // Also check stored credentials
         $bbai_stored_token = get_option('beepbeepai_jwt_token', '');
         $bbai_has_stored_token = !empty($bbai_stored_token);
-        
+
         $bbai_stored_license = '';
         try {
             $bbai_stored_license = $this->api_client->get_license_key();
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $bbai_stored_license = '';
-        } catch (Error $e) {
+        } catch (\Error $e) {
             $bbai_stored_license = '';
         }
         $bbai_has_stored_license = !empty($bbai_stored_license);
         
-        // Determine if user is registered (authenticated/licensed)
+        // Determine if user is registered (authenticated/licensed).
+        // We still show the top-level menu for non-authenticated users so they can access onboarding/login.
         $bbai_has_registered_user = $bbai_is_authenticated || $bbai_has_license || $bbai_has_stored_token || $bbai_has_stored_license;
-        
-        // Only show menu items if user is registered
+
+        // Top-level menu uses the brand name; the first submenu is "Dashboard".
+        add_menu_page(
+            __('BeepBeep AI', 'beepbeep-ai-alt-text-generator'),
+            __('BeepBeep AI', 'beepbeep-ai-alt-text-generator'),
+            $cap,
+            'bbai',
+            [$this, 'render_settings_page'],
+            'dashicons-format-image',
+            30
+        );
+
+        // Explicit first submenu replaces the auto-generated duplicate.
+        // Order matches the top header nav.
+        add_submenu_page(
+            'bbai',
+            __('Dashboard', 'beepbeep-ai-alt-text-generator'),
+            __('Dashboard', 'beepbeep-ai-alt-text-generator'),
+            $cap,
+            'bbai',
+            [$this, 'render_settings_page']
+        );
+
+        add_submenu_page(
+            'bbai',
+            __('ALT Library', 'beepbeep-ai-alt-text-generator'),
+            __('ALT Library', 'beepbeep-ai-alt-text-generator'),
+            $cap,
+            'bbai-library',
+            [$this, 'render_settings_page']
+        );
+
+        add_submenu_page(
+            'bbai',
+            __('Analytics', 'beepbeep-ai-alt-text-generator'),
+            __('Analytics', 'beepbeep-ai-alt-text-generator'),
+            $cap,
+            'bbai-analytics',
+            [$this, 'render_settings_page']
+        );
+
+        add_submenu_page(
+            'bbai',
+            __('Credit Usage', 'beepbeep-ai-alt-text-generator'),
+            __('Credit Usage', 'beepbeep-ai-alt-text-generator'),
+            $cap,
+            'bbai-credit-usage',
+            [$this, 'render_settings_page']
+        );
+
+        add_submenu_page(
+            'bbai',
+            __('How to', 'beepbeep-ai-alt-text-generator'),
+            __('How to', 'beepbeep-ai-alt-text-generator'),
+            $cap,
+            'bbai-guide',
+            [$this, 'render_settings_page']
+        );
+
+        // Settings and Debug only for authenticated/licensed users.
         if ($bbai_has_registered_user) {
-            // Top-level menu uses the brand name; the first submenu is "Dashboard".
-            add_menu_page(
-                __('BeepBeep AI', 'beepbeep-ai-alt-text-generator'),
-                __('BeepBeep AI', 'beepbeep-ai-alt-text-generator'),
-                $cap,
-                'bbai',
-                [$this, 'render_settings_page'],
-                'dashicons-format-image',
-                30
-            );
-
-            // Explicit first submenu replaces the auto-generated duplicate.
-            // Order matches the top header nav.
             add_submenu_page(
                 'bbai',
-                __('Dashboard', 'beepbeep-ai-alt-text-generator'),
-                __('Dashboard', 'beepbeep-ai-alt-text-generator'),
+                __('Settings', 'beepbeep-ai-alt-text-generator'),
+                __('Settings', 'beepbeep-ai-alt-text-generator'),
                 $cap,
-                'bbai',
+                'bbai-settings',
                 [$this, 'render_settings_page']
             );
 
             add_submenu_page(
                 'bbai',
-                __('ALT Library', 'beepbeep-ai-alt-text-generator'),
-                __('ALT Library', 'beepbeep-ai-alt-text-generator'),
+                __('Debug Logs', 'beepbeep-ai-alt-text-generator'),
+                __('Debug Logs', 'beepbeep-ai-alt-text-generator'),
                 $cap,
-                'bbai-library',
+                'bbai-debug',
                 [$this, 'render_settings_page']
             );
-
-            add_submenu_page(
-                'bbai',
-                __('Analytics', 'beepbeep-ai-alt-text-generator'),
-                __('Analytics', 'beepbeep-ai-alt-text-generator'),
-                $cap,
-                'bbai-analytics',
-                [$this, 'render_settings_page']
-            );
-
-            add_submenu_page(
-                'bbai',
-                __('Credit Usage', 'beepbeep-ai-alt-text-generator'),
-                __('Credit Usage', 'beepbeep-ai-alt-text-generator'),
-                $cap,
-                'bbai-credit-usage',
-                [$this, 'render_settings_page']
-            );
-
-            add_submenu_page(
-                'bbai',
-                __('How to', 'beepbeep-ai-alt-text-generator'),
-                __('How to', 'beepbeep-ai-alt-text-generator'),
-                $cap,
-                'bbai-guide',
-                [$this, 'render_settings_page']
-            );
-
-            // Settings and Debug only for authenticated/licensed users
-            if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_stored_token || $bbai_has_stored_license) {
-                add_submenu_page(
-                    'bbai',
-                    __('Settings', 'beepbeep-ai-alt-text-generator'),
-                    __('Settings', 'beepbeep-ai-alt-text-generator'),
-                    $cap,
-                    'bbai-settings',
-                    [$this, 'render_settings_page']
-                );
-
-                add_submenu_page(
-                    'bbai',
-                    __('Debug Logs', 'beepbeep-ai-alt-text-generator'),
-                    __('Debug Logs', 'beepbeep-ai-alt-text-generator'),
-                    $cap,
-                    'bbai-debug',
-                    [$this, 'render_settings_page']
-                );
-            }
         }
 
 	        // Hidden checkout redirect page
@@ -1569,14 +1567,14 @@ class Core {
 	        try {
 	            $bbai_is_authenticated = $this->api_client->is_authenticated();
 	            $bbai_has_license = $this->api_client->has_active_license();
-		        } catch (Exception $e) {
+		        } catch (\Exception $e) {
 		            // If authentication check fails, default to showing limited tabs
 		            if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
 		                error_log('[BBAI] Authentication check failed: ' . $e->getMessage()); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		            }
 		            $bbai_is_authenticated = false;
 		            $bbai_has_license = false;
-		        } catch (Error $e) {
+		        } catch (\Error $e) {
 		            // Catch fatal errors too
 		            if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
 		                error_log('[BBAI] Authentication check fatal error: ' . $e->getMessage()); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
@@ -1594,9 +1592,9 @@ class Core {
         $bbai_stored_license = '';
         try {
             $bbai_stored_license = $this->api_client->get_license_key();
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $bbai_stored_license = '';
-        } catch (Error $e) {
+        } catch (\Error $e) {
             $bbai_stored_license = '';
         }
         $bbai_has_stored_license = !empty($bbai_stored_license);
@@ -4221,7 +4219,16 @@ class Core {
             // If minified file doesn't exist, fall back to source file
             if (!$debug && !file_exists($base_path . $path)) {
                 $source_base = str_replace('assets/dist/', 'assets/src/', $base);
-                return $source_base . $name . ".$type";
+                $source_path = $source_base . $name . ".$type";
+                if (file_exists($base_path . $source_path)) {
+                    return $source_path;
+                }
+                // Final fallback: assets/js/ or assets/css/ (ZIP build moves src into these)
+                $flat_path = "assets/$type/" . $name . ".$type";
+                if (file_exists($base_path . $flat_path)) {
+                    return $flat_path;
+                }
+                return $source_path;
             }
 
             return $path;

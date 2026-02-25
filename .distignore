@@ -170,6 +170,7 @@ assets/wordpress-org/*.py
 
 # Dev-only documentation and audits
 *.md
+**/*.md
 RELEASE.md
 ADDITIONAL_IMPROVEMENTS.md
 CLAUDE_AUDIT.md

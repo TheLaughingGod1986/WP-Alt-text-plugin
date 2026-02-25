@@ -1,0 +1,99 @@
+# WordPress.org production ZIP excludes (used by scripts/build-release-zip.sh)
+
+# Hidden files / hidden directories / AI instruction dirs
+.*
+*/.*
+
+# Dev/build tooling and CI
+scripts/
+tools/
+docs/
+tests/
+test/
+__tests__/
+cypress/
+playwright/
+tmp/
+logs/
+coverage/
+.git/
+.github/
+.vscode/
+.idea/
+.claude/
+
+# Build output / staging / local artifacts
+release/
+release-staging/
+staging/
+plugin-builds/
+dist/
+build/
+build-release/
+compressed_files/
+
+# Dependencies / developer-only tooling
+node_modules/
+vendor-bin/
+vendor/
+
+# Local config / lockfiles not required at runtime
+docker-compose.yml
+Makefile
+makefile
+GNUmakefile
+composer.json
+composer.lock
+package.json
+package-lock.json
+.gitignore
+.distignore
+.gitattributes
+
+# Non-runtime docs and internal markdown
+*.md
+*.patch
+ADDITIONAL-INFO-SUBMISSION.txt
+plugincheck-*.json
+plugincheck*.json
+plugincheck-*.txt
+plugincheck*.txt
+*textdomain-migration*
+*findings*.txt
+plugincheck/
+plugin-check/
+report/
+reports/
+
+# Shell scripts / commands / logs
+*.sh
+*.command
+*.log
+
+# Archives / binaries
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.gz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.phar
+
+# OS/editor junk
+.DS_Store
+Thumbs.db
+
+# Dev source assets not shipped directly
+assets/src/
+assets/wordpress-org/
+
+# Frontend source not required in production ZIP
+admin/components/*.jsx
+admin/components/*.tsx
+admin/components/*.ts
+admin/components/**/*.jsx
+admin/components/**/*.tsx
+admin/components/**/*.ts
