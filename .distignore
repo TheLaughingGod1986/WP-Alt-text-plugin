@@ -47,6 +47,7 @@ tools/
 .editorconfig
 .env
 .env.*
+.env*
 .idea
 .idea/*
 .svn
@@ -56,6 +57,9 @@ tools/
 
 # Local tooling / environment
 docker-compose.yml
+Makefile
+makefile
+GNUmakefile
 # Explicitly exclude application/build scripts flagged by Plugin Check.
 build-plugin.sh
 start-local.sh
@@ -67,6 +71,10 @@ scripts
 scripts/*
 tools
 tools/*
+bin
+bin/*
+tmp
+tmp/*
 docs
 docs/*
 dist
@@ -82,8 +90,12 @@ build-release/*
 
 # QA / migration / audit artifacts (never ship)
 *.patch
+ADDITIONAL-INFO-SUBMISSION.txt
 plugincheck-*.json
+plugincheck*.json
 plugincheck-*.txt
+plugincheck*.txt
+*.txt
 *textdomain-migration*
 dist-textdomain-modified-files.txt
 dist-opptiai-i18n-calls-before.txt
@@ -100,12 +112,18 @@ reports
 reports/*
 report
 report/*
+plugincheck-*.png
+plugincheck*.png
+report-*.png
+*report*.png
 
 # Dependency managers / dev dependencies (never ship in the plugin ZIP)
 node_modules/
 node_modules
 vendor-bin/
 vendor-bin
+vendor/bin/
+vendor/bin
 vendor/
 vendor
 composer.json
@@ -115,6 +133,12 @@ package-lock.json
 
 # Tests (never ship in the plugin ZIP)
 tests/
+test/
+__tests__/
+cypress/
+playwright/
+coverage/
+compressed_files/
 
 # Shell/command scripts (not allowed in the distributed plugin)
 *.sh
@@ -126,11 +150,14 @@ build-*.sh
 
 # Nested archives (not allowed in the distributed plugin)
 *.zip
+*.tar
+*.tar.gz
 *.gz
 *.tgz
 *.bz2
 *.7z
 *.rar
+*.phar
 
 # WordPress.org listing asset sources and generators (not runtime plugin assets)
 assets/wordpress-org

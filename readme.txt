@@ -198,21 +198,25 @@ This plugin connects to external APIs to generate image alt text and provide acc
 
 Service: AltText AI Backend API (https://alttext-ai-backend.onrender.com)
 Purpose: Generate alt text descriptions, perform alt text review checks, and handle authentication, license, usage, billing, and contact requests.
+When: When you generate/review alt text, authenticate, view usage/account data, manage billing, or submit a support/contact request.
 Data sent: Image metadata and image content (image URL or base64), image context (title, caption, filename, optional parent post title), site URL/hash/fingerprint, and authenticated user/site identifiers.
 Privacy policy: https://oppti.dev/privacy
 
 Service: OpenAI API (used by the backend service)
 Purpose: Generate and review alt text descriptions.
+When: During alt text generation or review requests processed by the backend service.
 Data sent: Image metadata and image content, plus context text needed for generation/review.
 Privacy policy: https://openai.com/privacy
 
 Service: Stripe Checkout
 Purpose: Process plan upgrades and credit purchases.
+When: When you choose a paid plan/upgrade or purchase credits.
 Data sent: Selected plan/price and checkout context. Payment details are handled by Stripe.
 Privacy policy: https://stripe.com/privacy
 
 Service: Resend Email API (used by backend contact delivery)
 Purpose: Deliver contact/support form messages.
+When: When you submit a contact/support form in the plugin.
 Data sent: Name, email, subject, message, site URL, WordPress version, and plugin version.
 Privacy policy: https://resend.com/legal/privacy
 

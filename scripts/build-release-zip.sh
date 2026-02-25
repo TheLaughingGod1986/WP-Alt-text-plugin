@@ -1,11 +1,21 @@
-#!/bin/sh
-set -eu
+#!/usr/bin/env bash
+set -euo pipefail
 
 PLUGIN_SLUG="beepbeep-ai-alt-text-generator"
-SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-REPO_ROOT=$(CDPATH= cd -- "${SCRIPT_DIR}/.." && pwd)
-OUT_DIR=${OUT_DIR:-"${REPO_ROOT}/../plugin-builds"}
-ZIP_NAME="${PLUGIN_SLUG}.zip"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+DIST_DIR="${ROOT_DIR}/dist"
+PLUGIN_STAGE="${DIST_DIR}/${PLUGIN_SLUG}"
+DISTIGNORE_FILE="${ROOT_DIR}/.distignore"
+OUT_DIR="${OUT_DIR:-${ROOT_DIR}/../plugin-builds}"
+ZIP_PATH="${OUT_DIR}/${PLUGIN_SLUG}.zip"
+TMP_STAGE_BASE="$(mktemp -d "${TMPDIR:-/tmp}/bbai-release-staging.XXXXXX")"
+TMP_PLUGIN_STAGE="${TMP_STAGE_BASE}/${PLUGIN_SLUG}"
+
+cleanup() {
+  rm -rf "${TMP_STAGE_BASE}"
+}
+trap cleanup EXIT
 
 fail() {
   printf '%s\n' "ERROR: $*" >&2
@@ -16,143 +26,160 @@ need_cmd() {
   command -v "$1" >/dev/null 2>&1 || fail "Missing required command: $1"
 }
 
-copy_path() {
-  src=$1
-  dest=$2
-  [ -e "$src" ] || fail "Missing required path: $src"
-  mkdir -p "$dest"
+rsync_into_stage_dir() {
+  local rel="$1"
+  local src="${ROOT_DIR}/${rel}/"
+  local dest="${TMP_PLUGIN_STAGE}/${rel}/"
 
-  if command -v rsync >/dev/null 2>&1; then
-    rsync -a "$src" "$dest"/
-  else
-    base=$(dirname "$src")
-    name=$(basename "$src")
-    (
-      cd "$base" &&
-      tar -cf - "$name"
-    ) | (
-      cd "$dest" &&
-      tar -xf -
-    )
+  [[ -d "${src}" ]] || return 0
+  mkdir -p "${dest}"
+
+  rsync -a --delete --exclude-from="${DISTIGNORE_FILE}" "${src}" "${dest}"
+}
+
+copy_root_file_if_exists() {
+  local rel="$1"
+  local src="${ROOT_DIR}/${rel}"
+  [[ -f "${src}" ]] || return 0
+  cp -p "${src}" "${TMP_PLUGIN_STAGE}/"
+}
+
+prune_stage() {
+  # Defense in depth: if .distignore changes, keep release ZIP clean.
+  rm -rf \
+    "${TMP_PLUGIN_STAGE}/scripts" \
+    "${TMP_PLUGIN_STAGE}/tools" \
+    "${TMP_PLUGIN_STAGE}/bin" \
+    "${TMP_PLUGIN_STAGE}/tests" \
+    "${TMP_PLUGIN_STAGE}/test" \
+    "${TMP_PLUGIN_STAGE}/__tests__" \
+    "${TMP_PLUGIN_STAGE}/cypress" \
+    "${TMP_PLUGIN_STAGE}/playwright" \
+    "${TMP_PLUGIN_STAGE}/docs" \
+    "${TMP_PLUGIN_STAGE}/coverage" \
+    "${TMP_PLUGIN_STAGE}/node_modules" \
+    "${TMP_PLUGIN_STAGE}/vendor" \
+    "${TMP_PLUGIN_STAGE}/vendor-bin" \
+    "${TMP_PLUGIN_STAGE}/build" \
+    "${TMP_PLUGIN_STAGE}/dist" \
+    "${TMP_PLUGIN_STAGE}/release" \
+    "${TMP_PLUGIN_STAGE}/release-staging" \
+    "${TMP_PLUGIN_STAGE}/compressed_files" \
+    "${TMP_PLUGIN_STAGE}/assets/wordpress-org" \
+    "${TMP_PLUGIN_STAGE}/assets/src"
+
+  find "${TMP_PLUGIN_STAGE}" -mindepth 1 -name '.*' -prune -exec rm -rf {} + 2>/dev/null || true
+  find "${TMP_PLUGIN_STAGE}" -type f \( \
+    -name '*.md' -o \
+    -name '*.zip' -o -name '*.tar' -o -name '*.tar.gz' -o -name '*.tgz' -o \
+    -name '*.gz' -o -name '*.bz2' -o -name '*.xz' -o -name '*.7z' -o -name '*.rar' -o -name '*.phar' -o \
+    -name '*.sh' -o -name '*.command' -o -name '*.log' -o \
+    -name '.gitignore' -o -name '.distignore' -o -name '.DS_Store' -o -name 'Thumbs.db' -o \
+    -name '*.map' -o -name '*.py' -o -name '*.ps1' -o \
+    -name '*.ts' -o -name '*.tsx' -o -name '*.jsx' -o \
+    -name 'Makefile' -o -name 'makefile' -o -name 'GNUmakefile' -o \
+    -name 'phpunit.xml' -o -name 'phpunit.xml.dist' -o -name 'phpstan*' -o -name 'psalm*' -o -name 'rector*' -o -name 'infection*' \
+  \) -delete
+  find "${TMP_PLUGIN_STAGE}" -depth -type d -empty -exec rmdir {} \; 2>/dev/null || true
+}
+
+scan_dist_forbidden_paths() {
+  local list_file="${TMP_STAGE_BASE}/dist-file-list.txt"
+  local forbidden_re='(^|/)\.[^/]+(/|$)|(^|/)scripts(/|$)|(^|/)tools(/|$)|(^|/)\.claude(/|$)|(^|/)\.git[^/]*(/|$)|(^|/)\.DS_Store$|(^|/)Thumbs\.db$|\.md$|\.(zip|tar|tgz|gz|bz2|xz|7z|rar|phar)$'
+
+  (
+    cd "${DIST_DIR}"
+    find "${PLUGIN_SLUG}" -print | LC_ALL=C sort > "${list_file}"
+  )
+
+  if grep -E "${forbidden_re}" "${list_file}" >/dev/null; then
+    printf '%s\n' "Forbidden paths found in dist stage:" >&2
+    grep -E "${forbidden_re}" "${list_file}" >&2 || true
+    fail "Forbidden files found in dist stage."
   fi
 }
 
+need_cmd rsync
 need_cmd zip
 need_cmd unzip
 need_cmd find
 need_cmd awk
 need_cmd sort
-need_cmd wc
+need_cmd du
 need_cmd grep
 
-mkdir -p "$OUT_DIR"
-OUT_DIR_ABS=$(CDPATH= cd -- "$OUT_DIR" && pwd)
-REPO_ROOT_ABS=$(CDPATH= cd -- "$REPO_ROOT" && pwd)
+[[ -f "${ROOT_DIR}/${PLUGIN_SLUG}.php" ]] || fail "Main plugin file not found at ${ROOT_DIR}/${PLUGIN_SLUG}.php"
+[[ -f "${DISTIGNORE_FILE}" ]] || fail "Missing ${DISTIGNORE_FILE}"
 
-case "${OUT_DIR_ABS}/" in
-  "${REPO_ROOT_ABS}/"*)
-    fail "Output directory must be outside plugin root. Use ../plugin-builds (default) or another external path."
-    ;;
+mkdir -p "${OUT_DIR}" "${DIST_DIR}"
+
+local_out_abs="$(cd "${OUT_DIR}" && pwd)"
+local_root_abs="${ROOT_DIR}"
+case "${local_out_abs}/" in
+  "${local_root_abs}/"*) fail "OUT_DIR must be outside plugin root (current: ${local_out_abs})" ;;
 esac
 
-STAGE_BASE=$(mktemp -d "${TMPDIR:-/tmp}/bbai-release.XXXXXX")
-STAGE_PLUGIN="${STAGE_BASE}/${PLUGIN_SLUG}"
-ZIP_PATH="${OUT_DIR_ABS}/${ZIP_NAME}"
+rm -rf "${TMP_PLUGIN_STAGE}"
+mkdir -p "${TMP_PLUGIN_STAGE}"
 
-cleanup() {
-  rm -rf "$STAGE_BASE"
-}
-trap cleanup EXIT HUP INT TERM
+# Whitelist runtime directories.
+for dir in admin assets includes templates languages; do
+  rsync_into_stage_dir "${dir}"
+done
 
-mkdir -p "$STAGE_PLUGIN"
+# Whitelist runtime root files.
+copy_root_file_if_exists "${PLUGIN_SLUG}.php"
+copy_root_file_if_exists "readme.txt"
+copy_root_file_if_exists "license.txt"
+copy_root_file_if_exists "LICENSE"
+copy_root_file_if_exists "uninstall.php"
 
-# Stage only production/runtime plugin files (whitelist).
-copy_path "${REPO_ROOT_ABS}/${PLUGIN_SLUG}.php" "$STAGE_PLUGIN"
-copy_path "${REPO_ROOT_ABS}/readme.txt" "$STAGE_PLUGIN"
-copy_path "${REPO_ROOT_ABS}/uninstall.php" "$STAGE_PLUGIN"
-copy_path "${REPO_ROOT_ABS}/admin" "$STAGE_PLUGIN"
-copy_path "${REPO_ROOT_ABS}/includes" "$STAGE_PLUGIN"
-copy_path "${REPO_ROOT_ABS}/templates" "$STAGE_PLUGIN"
-copy_path "${REPO_ROOT_ABS}/languages" "$STAGE_PLUGIN"
-copy_path "${REPO_ROOT_ABS}/assets" "$STAGE_PLUGIN"
-
-# Optional runtime asset overlay (if JS/CSS are generated from src but runtime expects assets/js + assets/css).
-if [ -d "${REPO_ROOT_ABS}/assets/src/js" ]; then
-  mkdir -p "${STAGE_PLUGIN}/assets"
-  copy_path "${REPO_ROOT_ABS}/assets/src/js" "${STAGE_PLUGIN}/assets"
+# Preserve runtime fallback assets by copying assets/src into shipped assets/js + assets/css when present.
+if [[ -d "${ROOT_DIR}/assets/src/js" ]]; then
+  mkdir -p "${TMP_PLUGIN_STAGE}/assets"
+  rsync -a --delete --exclude-from="${DISTIGNORE_FILE}" "${ROOT_DIR}/assets/src/js/" "${TMP_PLUGIN_STAGE}/assets/js/"
 fi
-if [ -d "${REPO_ROOT_ABS}/assets/src/css" ]; then
-  mkdir -p "${STAGE_PLUGIN}/assets"
-  copy_path "${REPO_ROOT_ABS}/assets/src/css" "${STAGE_PLUGIN}/assets"
+if [[ -d "${ROOT_DIR}/assets/src/css" ]]; then
+  mkdir -p "${TMP_PLUGIN_STAGE}/assets"
+  rsync -a --delete --exclude-from="${DISTIGNORE_FILE}" "${ROOT_DIR}/assets/src/css/" "${TMP_PLUGIN_STAGE}/assets/css/"
 fi
 
-# Explicitly remove files/dirs Plugin Check flags or that should never ship.
-rm -rf \
-  "${STAGE_PLUGIN}/assets/src" \
-  "${STAGE_PLUGIN}/assets/wordpress-org" \
-  "${STAGE_PLUGIN}/tools" \
-  "${STAGE_PLUGIN}/scripts" \
-  "${STAGE_PLUGIN}/release" \
-  "${STAGE_PLUGIN}/plugin-builds" \
-  "${STAGE_PLUGIN}/docs" \
-  "${STAGE_PLUGIN}/tests" \
-  "${STAGE_PLUGIN}/node_modules"
+prune_stage
 
-# Remove all dotfiles and dot-directories in staging (e.g. .gitignore, .distignore, .claude, hidden junk).
-find "${STAGE_PLUGIN}" -mindepth 1 -name '.*' -prune -exec rm -rf {} +
+[[ -f "${TMP_PLUGIN_STAGE}/${PLUGIN_SLUG}.php" ]] || fail "Missing staged main plugin file."
+[[ -f "${TMP_PLUGIN_STAGE}/readme.txt" ]] || fail "Missing staged readme.txt."
+[[ -f "${TMP_PLUGIN_STAGE}/uninstall.php" ]] || fail "Missing staged uninstall.php."
 
-# Remove internal docs, dev scripts, logs, archives and source/build artifacts from staged package.
-find "${STAGE_PLUGIN}" -type f \( \
-  -name '*.sh' -o \
-  -name '*.zip' -o \
-  -name '*.log' -o \
-  -name '*.md' -o \
-  -name 'Thumbs.db' -o \
-  -name '.DS_Store' -o \
-  -name '*.py' -o \
-  -name '*.ps1' -o \
-  -name '*.map' -o \
-  -name '*.ts' -o \
-  -name '*.tsx' -o \
-  -name '*.jsx' \
-\) -exec rm -f {} +
+rm -rf "${PLUGIN_STAGE}"
+mkdir -p "${PLUGIN_STAGE}"
+rsync -a --delete "${TMP_PLUGIN_STAGE}/" "${PLUGIN_STAGE}/"
 
-# Clean empty directories left by pruning.
-find "${STAGE_PLUGIN}" -depth -type d -empty -exec rmdir {} \; 2>/dev/null || true
+scan_dist_forbidden_paths
 
-[ -f "${STAGE_PLUGIN}/${PLUGIN_SLUG}.php" ] || fail "Main plugin file missing from staging"
-[ -f "${STAGE_PLUGIN}/readme.txt" ] || fail "readme.txt missing from staging"
-[ -f "${STAGE_PLUGIN}/uninstall.php" ] || fail "uninstall.php missing from staging"
-
-rm -f "$ZIP_PATH"
+rm -f "${ZIP_PATH}"
 (
-  cd "$STAGE_BASE" &&
-  zip -qr "$ZIP_PATH" "$PLUGIN_SLUG"
+  cd "${DIST_DIR}"
+  find "${PLUGIN_SLUG}" -print | LC_ALL=C sort | zip -X -q "${ZIP_PATH}" -@
 )
 
-ZIP_LIST=$(unzip -Z1 "$ZIP_PATH")
-TOP_DIRS=$(printf '%s\n' "$ZIP_LIST" | awk -F/ 'NF { print $1 }' | sort -u)
-TOP_COUNT=$(printf '%s\n' "$TOP_DIRS" | awk 'NF { n++ } END { print n + 0 }')
+# Verify ZIP shape and forbidden content.
+ZIP_ENTRIES="$(unzip -Z1 "${ZIP_PATH}")"
+TOP_DIRS="$(printf '%s\n' "${ZIP_ENTRIES}" | awk -F/ 'NF { print $1 }' | sort -u)"
+TOP_COUNT="$(printf '%s\n' "${TOP_DIRS}" | awk 'NF { c++ } END { print c + 0 }')"
+[[ "${TOP_COUNT}" -eq 1 ]] || fail "ZIP must contain exactly one top-level folder."
+[[ "${TOP_DIRS}" == "${PLUGIN_SLUG}" ]] || fail "ZIP top-level folder must be ${PLUGIN_SLUG}/"
 
-[ "$TOP_COUNT" -eq 1 ] || fail "ZIP must contain exactly one top-level folder"
-[ "$TOP_DIRS" = "$PLUGIN_SLUG" ] || fail "ZIP top-level folder must be ${PLUGIN_SLUG}/"
+if printf '%s\n' "${ZIP_ENTRIES}" | grep -E '(^|/)\.[^/]+(/|$)|(^|/)scripts(/|$)|(^|/)tools(/|$)|(^|/)\.claude(/|$)|(^|/)\.git[^/]*(/|$)|\.gitignore$|\.distignore$|\.md$|(^|/)\.DS_Store$|(^|/)Thumbs\.db$|\.(zip|tar|tgz|gz|bz2|xz|7z|rar|phar)$' >/dev/null; then
+  fail "Forbidden files found in release ZIP."
+fi
 
-printf '%s\n' "$ZIP_LIST" | grep -E '(^|/)\.gitignore$|(^|/)\.distignore$|(^|/)\.claude(/|$)|(^|/)RELEASE\.md$|(^|/)ADDITIONAL_IMPROVEMENTS\.md$|(^|/)CLAUDE_AUDIT\.md$' >/dev/null 2>&1 && \
-  fail "ZIP still contains hidden/internal repo files"
-printf '%s\n' "$ZIP_LIST" | grep -Ei '(^|/)\.DS_Store$|\.sh$|(^|/)(tools|scripts)/|\.(zip|tar|tgz|gz|bz2|xz|7z|rar)$' >/dev/null 2>&1 && \
-  fail "ZIP still contains disallowed packaging files"
+ZIP_SIZE="$(du -h "${ZIP_PATH}" | awk '{ print $1 }')"
 
-ZIP_BYTES=$(wc -c < "$ZIP_PATH" | awk '{ print $1 }')
-ZIP_SIZE=$(du -h "$ZIP_PATH" | awk '{ print $1 }')
-
-printf '%s\n' "Built ZIP: ${ZIP_PATH}"
-printf '%s\n' "Size: ${ZIP_SIZE} (${ZIP_BYTES} bytes)"
+printf '%s\n' "Dist stage: ${PLUGIN_STAGE}"
+printf '%s\n' "Built: ${ZIP_PATH}"
+printf '%s\n' "Size: ${ZIP_SIZE}"
 printf '%s\n' "Top-level folder: ${PLUGIN_SLUG}/"
-printf '%s\n' ""
-printf '%s\n' "Quick verification:"
-printf '%s\n' "  unzip -l '${ZIP_PATH}' | grep -E '\\.sh$|^.*tools/|^.*scripts/' || true"
-printf '%s\n' "  unzip -l '${ZIP_PATH}' | grep -E '\\.gitignore$|\\.distignore$|\\.claude/|RELEASE\\.md$|ADDITIONAL_IMPROVEMENTS\\.md$|CLAUDE_AUDIT\\.md$' || true"
-printf '%s\n' ""
-printf '%s\n' "Plugin Check (example):"
-printf '%s\n' "  WP_PATH=/absolute/path/to/wp"
-printf '%s\n' "  wp --path=\"\$WP_PATH\" plugin check '${ZIP_PATH}' --format=table"
+printf '%s\n' "Top-level entries:"
+printf '%s\n' "${ZIP_ENTRIES}" | awk -F/ -v slug="${PLUGIN_SLUG}" '$1 == slug && NF >= 2 && $2 != "" { print $2 }' | sort -u
+printf '%s\n' "Release ZIP is clean."
+printf '%s\n' "No forbidden files in ZIP"

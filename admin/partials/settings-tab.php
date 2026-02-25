@@ -93,6 +93,12 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                 <div class="bbai-dashboard-header-section">
                     <h1 class="bbai-dashboard-title"><?php esc_html_e('Settings & Account', 'beepbeep-ai-alt-text-generator'); ?></h1>
                     <p class="bbai-dashboard-subtitle"><?php esc_html_e('Configure automatic alt text generation, manage your monthly quota, and track usage. Optimize settings to maximize Google Images rankings.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                    <p class="bbai-dashboard-subtitle bbai-settings-disclosure">
+                        <?php esc_html_e('Alt text generation and review send image data and related context to external AI services over HTTPS. The free plan includes 50 generations per month; paid plans increase your monthly limits.', 'beepbeep-ai-alt-text-generator'); ?>
+                        <a href="<?php echo esc_url('https://oppti.dev/privacy'); ?>" target="_blank" rel="noopener">
+                            <?php esc_html_e('Privacy Policy', 'beepbeep-ai-alt-text-generator'); ?>
+                        </a>
+                    </p>
                 </div>
                 
                 <!-- Site-Wide Settings Banner -->
