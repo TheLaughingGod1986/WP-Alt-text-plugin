@@ -959,6 +959,14 @@ class Core {
             );
         }
 
+	        // Prevent PHP 8.1+ strip_tags() null deprecation on hidden pages.
+	        add_action('current_screen', static function () {
+	            global $title;
+	            if ( ! isset( $title ) || $title === null ) {
+	                $title = '';
+	            }
+	        });
+
 	        // Hidden checkout redirect page
 	        add_submenu_page(
 	            '', // No parent = hidden from menu (avoid PHP 8.1+ deprecations in plugin_basename()).

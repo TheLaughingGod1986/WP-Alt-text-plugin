@@ -475,9 +475,13 @@ $bbai_optimized_percent = $bbai_total_images > 0 ? round(($bbai_with_alt_count /
                                     <div class="bbai-library-actions">
                                         <a href="<?php echo esc_url($bbai_edit_link); ?>" class="bbai-link-sm"><?php esc_html_e('View', 'beepbeep-ai-alt-text-generator'); ?></a>
                                         <button type="button"
-                                                class="bbai-link-sm"
+                                                class="bbai-link-sm<?php echo ! $bbai_can_generate ? ' bbai-link-sm--disabled' : ''; ?>"
                                                 data-action="regenerate-single"
-                                                data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>">
+                                                data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>"
+                                                <?php if ( ! $bbai_can_generate ) : ?>
+                                                    disabled
+                                                    title="<?php esc_attr_e( 'Monthly quota reached — upgrade to continue generating.', 'beepbeep-ai-alt-text-generator' ); ?>"
+                                                <?php endif; ?>>
                                             <?php esc_html_e('Regen', 'beepbeep-ai-alt-text-generator'); ?>
                                         </button>
                                     </div>

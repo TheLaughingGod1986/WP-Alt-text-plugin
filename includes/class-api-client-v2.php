@@ -451,12 +451,18 @@ class API_Client_V2 {
         $url = trailingslashit($this->api_url) . ltrim($endpoint, '/');
         $headers = $this->get_auth_headers($include_user_id, $extra_headers);
         
-        // Use longer timeout for generation requests (OpenAI can take time)
+        // Use longer timeout for generation requests (OpenAI can take time) and for cold-start-sensitive endpoints (Render free tier)
         if ($timeout === null) {
-            // Check for generate endpoint (with or without leading slash)
             $endpoint_str = is_string($endpoint) ? $endpoint : '';
             $is_generate_endpoint = $endpoint_str && ((strpos($endpoint_str, '/generate') !== false) || (strpos($endpoint_str, 'generate') !== false)) && strpos($endpoint_str, '/api/') === false;
-            $timeout = $is_generate_endpoint ? 90 : 30;
+            $is_cold_start_endpoint = $endpoint_str && (strpos($endpoint_str, '/auth/') !== false || strpos($endpoint_str, '/billing/') !== false);
+            if ($is_generate_endpoint) {
+                $timeout = 90;
+            } elseif ($is_cold_start_endpoint) {
+                $timeout = 45; // Render free tier cold start can take 30-60s
+            } else {
+                $timeout = 30;
+            }
         }
         
         $args = [
@@ -565,11 +571,12 @@ class API_Client_V2 {
                 $endpoint_str = is_string($endpoint) ? $endpoint : '';
                 $is_generate_endpoint = $endpoint_str && ((strpos($endpoint_str, '/generate') !== false) || (strpos($endpoint_str, 'generate') !== false)) && strpos($endpoint_str, '/api/') === false;
                 $is_auth_endpoint = $endpoint_str && strpos($endpoint_str, '/auth/') !== false;
+                $is_billing_endpoint = $endpoint_str && strpos($endpoint_str, '/billing/') !== false;
                 
                 if ($is_generate_endpoint) {
                     return new \WP_Error('api_timeout', __('The image generation is taking longer than expected. This may happen with large images or during high server load. Please try again.', 'beepbeep-ai-alt-text-generator'));
-                } elseif ($is_auth_endpoint) {
-                    return new \WP_Error('api_timeout', __('The authentication service is starting up. This may take 30-60 seconds on free tier services. Please wait a moment and try again.', 'beepbeep-ai-alt-text-generator'));
+                } elseif ($is_auth_endpoint || $is_billing_endpoint) {
+                    return new \WP_Error('api_timeout', __('The service is starting up. This may take 30-60 seconds on free tier. Please wait a moment and try again.', 'beepbeep-ai-alt-text-generator'));
                 }
                 return new \WP_Error('api_timeout', __('The server is taking too long to respond. Please try again in a few minutes.', 'beepbeep-ai-alt-text-generator'));
             } elseif ($error_message_str && strpos($error_message_str, 'could not resolve') !== false) {
@@ -1967,21 +1974,55 @@ class API_Client_V2 {
 
     /**
      * Retrieve available plans (includes Stripe price IDs)
+     * Includes retry logic for Render free tier cold starts.
      */
     public function get_plans() {
-        $response = $this->make_request('/billing/plans');
+        $plans_timeout = apply_filters('bbai_plans_timeout', 45);
+        $plans_timeout = max(15, (int) $plans_timeout);
+        $max_retries = 2;
+        $retry_delay = 3;
 
-        if (is_wp_error($response)) {
-            return $response;
-        }
+        for ($attempt = 0; $attempt <= $max_retries; $attempt++) {
+            if ($attempt > 0) {
+                sleep($retry_delay * $attempt);
+            }
 
-        if ($response['success']) {
-            return $response['data']['plans'] ?? [];
+            $response = $this->make_request('/billing/plans', 'GET', null, $plans_timeout);
+
+            if (is_wp_error($response)) {
+                $error_code = $response->get_error_code();
+                if (($error_code === 'api_timeout' || $error_code === 'api_unreachable') && $attempt < $max_retries) {
+                    $this->log_api_event('info', 'Retrying /billing/plans after timeout', [
+                        'attempt' => $attempt + 1,
+                        'max_retries' => $max_retries,
+                        'error_code' => $error_code,
+                    ]);
+                    continue;
+                }
+                return $response;
+            }
+
+            if ($response['success']) {
+                return $response['data']['plans'] ?? [];
+            }
+
+            if (isset($response['status']) && $response['status'] >= 500 && $attempt < $max_retries) {
+                $this->log_api_event('info', 'Retrying /billing/plans after server error', [
+                    'attempt' => $attempt + 1,
+                    'status' => $response['status'],
+                ]);
+                continue;
+            }
+
+            return new \WP_Error(
+                'plans_failed',
+                $response['data']['error'] ?? __('Failed to fetch pricing plans', 'beepbeep-ai-alt-text-generator')
+            );
         }
 
         return new \WP_Error(
             'plans_failed',
-            $response['data']['error'] ?? __('Failed to fetch pricing plans', 'beepbeep-ai-alt-text-generator')
+            __('Unable to reach the billing service. The service may be starting up. Please try again in a moment.', 'beepbeep-ai-alt-text-generator')
         );
     }
     

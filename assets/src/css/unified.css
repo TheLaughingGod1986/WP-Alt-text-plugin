@@ -2998,6 +2998,16 @@ body.media_page_bbai #wpbody-content {
     text-decoration: underline;
 }
 
+.bbai-link-sm--disabled,
+.bbai-link-sm--disabled:hover,
+.bbai-link-sm:disabled,
+.bbai-link-sm:disabled:hover {
+    color: #9ca3af;
+    cursor: not-allowed;
+    text-decoration: none;
+    opacity: 0.6;
+}
+
 /* Button Small */
 .bbai-btn-sm {
     padding: var(--bbai-space-2) var(--bbai-space-3);

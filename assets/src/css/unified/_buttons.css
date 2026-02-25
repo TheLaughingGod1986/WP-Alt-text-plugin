@@ -177,6 +177,16 @@
     outline-offset: 2px;
 }
 
+.bbai-link-sm--disabled,
+.bbai-link-sm--disabled:hover,
+.bbai-link-sm:disabled,
+.bbai-link-sm:disabled:hover {
+    color: #9ca3af;
+    cursor: not-allowed;
+    text-decoration: none;
+    opacity: 0.6;
+}
+
 /* ============================================
    SUCCESS BUTTON
    ============================================ */

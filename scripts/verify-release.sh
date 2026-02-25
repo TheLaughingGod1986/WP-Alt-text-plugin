@@ -13,6 +13,9 @@ PLUGIN_DIR="${WP_ROOT}/wp-content/plugins/${PLUGIN_SLUG}"
 DEBUG_LOG_PATH="${WP_ROOT}/wp-content/debug.log"
 ZIP_IN_CONTAINER="/tmp/${PLUGIN_SLUG}.zip"
 WPCLI_PHAR="/tmp/wp-cli.phar"
+WPCLI_PHAR_VERSION="${WPCLI_PHAR_VERSION:-2.12.0}"
+WPCLI_PHAR_URL="${WPCLI_PHAR_URL:-https://github.com/wp-cli/wp-cli/releases/download/v${WPCLI_PHAR_VERSION}/wp-cli-${WPCLI_PHAR_VERSION}.phar}"
+WPCLI_PHAR_SHA256_EXPECTED="${WPCLI_PHAR_SHA256_EXPECTED:-}"
 
 TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/bbai-verify-release.XXXXXX")"
 ZIP_LISTING_FILE="${TMP_DIR}/zip-listing.txt"
@@ -138,7 +141,7 @@ scan_zip_contents() {
   unzip -l "${ZIP_PATH}" > "${ZIP_LISTING_FILE}" || fail "Unable to list ZIP contents: ${ZIP_PATH}"
   unzip -Z1 "${ZIP_PATH}" > "${ZIP_ENTRIES_FILE}" || fail "Unable to read ZIP entries: ${ZIP_PATH}"
 
-  grep -Ei "${forbidden_re}" "${ZIP_LISTING_FILE}" > "${FORBIDDEN_FILE}" || true
+  grep -Ei "${forbidden_re}" "${ZIP_ENTRIES_FILE}" > "${FORBIDDEN_FILE}" || true
 
   if [[ -s "${FORBIDDEN_FILE}" ]]; then
     FORBIDDEN_FILES_STATUS="FOUND"
@@ -189,6 +192,24 @@ fi
   else
     PLUGIN_DIR_MOUNT_STATUS="NOT_MOUNTED"
   fi
+}
+
+check_plugins_mount_contamination() {
+  local suspect_mounts
+  suspect_mounts="$(docker_exec_sh "
+if [ -r /proc/self/mountinfo ]; then
+  grep -E ' ${WP_ROOT}/wp-content/plugins(/| )' /proc/self/mountinfo | grep -E '(/Users/|/home/|/mnt/|/host_mnt/|/run/desktop/mnt/host/)' || true
+else
+  mount 2>/dev/null | grep -E ' on ${WP_ROOT}/wp-content/plugins(/| |$)' | grep -E '(/Users/|/home/|/mnt/|/host_mnt/|/run/desktop/mnt/host/)' || true
+fi
+" | tr -d '\r')"
+
+  if [[ -n "${suspect_mounts}" ]]; then
+    PLUGIN_DIR_MOUNT_STATUS="MOUNTED"
+    return 0
+  fi
+
+  return 1
 }
 
 parse_helper_summary_line() {
@@ -259,18 +280,40 @@ ensure_wp_cli() {
 
   docker_exec_sh "
 set -e
+verify_wp_cli_phar_sha() {
+  expected_sha='${WPCLI_PHAR_SHA256_EXPECTED}'
+  [ -n \"\$expected_sha\" ] || {
+    echo 'WPCLI_PHAR_SHA256_EXPECTED is required to verify the downloaded WP-CLI phar.' >&2
+    exit 1
+  }
+
+  actual_sha=\$(BBAI_WPCLI_PHAR='${WPCLI_PHAR}' php -r \"echo hash_file('sha256', getenv('BBAI_WPCLI_PHAR'));\" 2>/dev/null || true)
+  [ -n \"\$actual_sha\" ] || {
+    echo 'Unable to compute SHA256 for WP-CLI phar.' >&2
+    exit 1
+  }
+
+  if [ \"\$actual_sha\" != \"\$expected_sha\" ]; then
+    echo \"WP-CLI phar SHA256 mismatch: expected \$expected_sha got \$actual_sha\" >&2
+    rm -f '${WPCLI_PHAR}' >/dev/null 2>&1 || true
+    exit 1
+  fi
+}
+
 if [ -f '${WPCLI_PHAR}' ]; then
+  verify_wp_cli_phar_sha
   php '${WPCLI_PHAR}' --info >/dev/null 2>&1 && exit 0
   rm -f '${WPCLI_PHAR}'
 fi
 if command -v curl >/dev/null 2>&1; then
-  curl -fsSL -o '${WPCLI_PHAR}' 'https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar'
+  curl -fsSL -o '${WPCLI_PHAR}' '${WPCLI_PHAR_URL}'
 elif command -v wget >/dev/null 2>&1; then
-  wget -q -O '${WPCLI_PHAR}' 'https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar'
+  wget -q -O '${WPCLI_PHAR}' '${WPCLI_PHAR_URL}'
 else
   echo 'Neither curl nor wget is available in the container.' >&2
   exit 1
 fi
+verify_wp_cli_phar_sha
 php '${WPCLI_PHAR}' --info >/dev/null
 " >/dev/null
 
@@ -280,8 +323,16 @@ php '${WPCLI_PHAR}' --info >/dev/null
 prepare_debug_log() {
   docker_exec_sh "
 mkdir -p '${WP_ROOT}/wp-content'
-rm -f '${DEBUG_LOG_PATH}' || true
-touch '${DEBUG_LOG_PATH}' 2>/dev/null || true
+if [ -e '${DEBUG_LOG_PATH}' ] && [ ! -w '${DEBUG_LOG_PATH}' ]; then
+  echo 'WARNING: debug.log is not writable before reset; continuing.' >&2
+fi
+if ! : > '${DEBUG_LOG_PATH}' 2>/dev/null; then
+  rm -f '${DEBUG_LOG_PATH}' >/dev/null 2>&1 || true
+  touch '${DEBUG_LOG_PATH}' 2>/dev/null || true
+fi
+if [ -e '${DEBUG_LOG_PATH}' ] && [ ! -w '${DEBUG_LOG_PATH}' ]; then
+  echo 'WARNING: debug.log is not writable after reset attempt; continuing.' >&2
+fi
 "
 }
 
@@ -292,6 +343,10 @@ hard_reinstall_plugin_from_zip() {
   set -e
 
   docker_exec_sh "rm -rf '${PLUGIN_DIR}'"
+
+  # Reused containers may contain uninstall-time warnings/fatals from the previously
+  # installed plugin version; reset before validating the ZIP under test.
+  prepare_debug_log
 
   docker cp "${ZIP_PATH}" "${CID}:${ZIP_IN_CONTAINER}"
 
@@ -339,7 +394,7 @@ check_debug_log() {
 
   docker_exec_sh "tail -n 200 '${DEBUG_LOG_PATH}' 2>/dev/null || true" > "${DEBUG_LOG_TAIL}" || true
 
-  if grep -Eiq 'Fatal error|Uncaught Error|Warning' "${DEBUG_LOG_TAIL}"; then
+  if grep -Eiq 'Fatal error|Uncaught Error|Parse error|Allowed memory size|Call to undefined|TypeError' "${DEBUG_LOG_TAIL}"; then
     DEBUG_LOG_STATUS="ISSUES"
     fail "debug.log contains fatal/uncaught/warning entries."
   fi
@@ -362,6 +417,14 @@ scan_zip_contents
 validate_zip_structure
 find_wp_container
 check_plugin_mount_status
+if check_plugins_mount_contamination; then
+  if [[ "${VERIFY_DISPOSABLE_ON_MOUNT}" == "1" ]]; then
+    run_disposable_helper_fallback
+    print_summary
+    exit 0
+  fi
+  fail "Plugins path appears to be host-mounted; plugin-check will scan repo files not ZIP."
+fi
 if [[ "${PLUGIN_DIR_MOUNT_STATUS}" == "MOUNTED" ]]; then
   if [[ "${VERIFY_DISPOSABLE_ON_MOUNT}" == "1" ]]; then
     run_disposable_helper_fallback

@@ -117,7 +117,6 @@ foreach ( $bbai_legacy_transients as $bbai_transient ) {
 // Clear scheduled cron hooks
 wp_clear_scheduled_hook( 'bbai_process_queue' );
 wp_clear_scheduled_hook( 'beepbeepai_process_queue' );
-wp_clear_scheduled_hook( \BeepBeepAI\AltTextGenerator\Queue::CRON_HOOK );
 
 // Remove custom capability from administrator role
 $bbai_role = get_role( 'administrator' );
