@@ -134,7 +134,7 @@ def main():
         ('screenshots/screenshot-2.png', 'ALT Library', 'Image library with alt text and quality scores'),
         ('screenshots/screenshot-3.png', 'Settings', 'Plugin settings and configuration options'),
         ('screenshots/screenshot-4.png', 'Media Library', 'WordPress media library integration'),
-        ('screenshots/screenshot-5.png', 'Notifications', 'Toast notifications and user feedback'),
+        ('screenshots/screenshot-5.png', 'Credit Usage', 'Track credit usage, quotas, and activity'),
         ('screenshots/screenshot-6.png', 'Upgrade Modal', 'Pro upgrade prompt and pricing')
     ]
     
