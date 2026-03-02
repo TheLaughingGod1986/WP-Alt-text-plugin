@@ -20,7 +20,7 @@ class BbAIAuthModal {
         }
 
         // No fallback for production - fail explicitly
-        console.error('[AltText AI] API URL not configured');
+        window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] API URL not configured');
         return null;
     }
 
@@ -501,7 +501,7 @@ class BbAIAuthModal {
 
         // Validate AJAX config exists
         if (!window.bbai_ajax?.ajaxurl) {
-            console.error('[AltText AI] AJAX configuration not loaded');
+            window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] AJAX configuration not loaded');
             this.showError('Configuration error. Please refresh the page and try again.');
             this.setLoading(form, false);
             return;
@@ -557,7 +557,7 @@ class BbAIAuthModal {
                 localStorage.removeItem('alttextai_open_portal_after_login');
             }
         } catch (error) {
-            console.error('Login error:', error);
+            window.BBAI_LOG && window.BBAI_LOG.error('Login error:', error);
             if (error.name === 'TypeError' && error.message.includes('fetch')) {
                 this.showError('Unable to connect to authentication server. The service may be temporarily unavailable. Please try again in a few minutes.');
             } else {
@@ -586,7 +586,7 @@ class BbAIAuthModal {
 
         // Validate AJAX config exists
         if (!window.bbai_ajax?.ajaxurl) {
-            console.error('[AltText AI] AJAX configuration not loaded');
+            window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] AJAX configuration not loaded');
             this.showError('Configuration error. Please refresh the page and try again.');
             this.setLoading(form, false);
             return;
@@ -626,7 +626,7 @@ class BbAIAuthModal {
                 localStorage.removeItem('alttextai_open_portal_after_login');
             }
         } catch (error) {
-            console.error('Registration error:', error);
+            window.BBAI_LOG && window.BBAI_LOG.error('Registration error:', error);
             // Provide more specific error messages
             let errorMessage = 'Network error. Please try again.';
             if (error.name === 'TypeError' && error.message.includes('fetch')) {
@@ -653,7 +653,7 @@ class BbAIAuthModal {
 
         // Validate AJAX config exists
         if (!window.bbai_ajax?.ajaxurl) {
-            console.error('[AltText AI] AJAX configuration not loaded');
+            window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] AJAX configuration not loaded');
             this.showError('Configuration error. Please refresh the page and try again.');
             this.setLoading(form, false);
             return;
@@ -735,7 +735,7 @@ class BbAIAuthModal {
                 this.showError(userMessage);
             }
         } catch (error) {
-            console.error('Forgot password error:', error);
+            window.BBAI_LOG && window.BBAI_LOG.error('Forgot password error:', error);
             let errorMessage = 'Network error. Please try again.';
             
             if (error.name === 'TypeError' && error.message.includes('fetch')) {
@@ -771,7 +771,7 @@ class BbAIAuthModal {
 
         // Validate AJAX config exists
         if (!window.bbai_ajax?.ajaxurl) {
-            console.error('[AltText AI] AJAX configuration not loaded');
+            window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] AJAX configuration not loaded');
             this.showError('Configuration error. Please refresh the page and try again.');
             this.setLoading(form, false);
             return;
@@ -850,7 +850,7 @@ class BbAIAuthModal {
                 this.showError(userMessage);
             }
         } catch (error) {
-            console.error('Reset password error:', error);
+            window.BBAI_LOG && window.BBAI_LOG.error('Reset password error:', error);
             let errorMessage = 'Network error. Please try again.';
             
             if (error.name === 'TypeError' && error.message.includes('fetch')) {

@@ -97,7 +97,7 @@ const MultiUserUsageTab = ({ apiUrl, nonce }) => {
         users: Array.isArray(users) ? users : [],
       });
     } catch (err) {
-      console.error('Error fetching usage data:', err);
+      window.BBAI_LOG && window.BBAI_LOG.error('Error fetching usage data:', err);
     }
   };
 
@@ -127,7 +127,7 @@ const MultiUserUsageTab = ({ apiUrl, nonce }) => {
       setError(null);
     } catch (err) {
       setError(err.message);
-      console.error('Error fetching events:', err);
+      window.BBAI_LOG && window.BBAI_LOG.error('Error fetching events:', err);
     } finally {
       setLoading(false);
     }

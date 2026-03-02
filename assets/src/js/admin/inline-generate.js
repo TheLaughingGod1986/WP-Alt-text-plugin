@@ -211,10 +211,10 @@
                         return;
                     }
 
-                    console.error('[AI Alt Text] Unexpected response structure:', response);
+                    window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Unexpected response structure:', response);
                     reject({ message: 'Unexpected response from server.' });
                 } catch (e) {
-                    console.error('[AI Alt Text] Error parsing response:', e, response);
+                    window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Error parsing response:', e, response);
                     reject({ message: 'Error parsing server response: ' + (e.message || 'Unknown error') });
                 }
             })
@@ -243,7 +243,7 @@
                     message = 'Request failed with status ' + xhr.status;
                 }
 
-                console.error('[AI Alt Text] Inline generate request failed:', {
+                window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Inline generate request failed:', {
                     status: xhr ? xhr.status : 'unknown',
                     message: message
                 });

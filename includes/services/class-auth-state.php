@@ -26,15 +26,21 @@ class Auth_State {
             $is_authenticated = $api_client->is_authenticated();
             $has_license = $api_client->has_active_license();
 		} catch (\Exception $e) {
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
-				error_log( '[BBAI] Auth_State auth check failed: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			}
+			\bbai_debug_log(
+				'Auth_State authentication check failed',
+				[
+					'error' => $e->getMessage(),
+				]
+			);
             $is_authenticated = false;
             $has_license = false;
 		} catch (\Error $e) {
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
-				error_log( '[BBAI] Auth_State auth check fatal error: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			}
+			\bbai_debug_log(
+				'Auth_State authentication fatal error',
+				[
+					'error' => $e->getMessage(),
+				]
+			);
             $is_authenticated = false;
             $has_license = false;
         }

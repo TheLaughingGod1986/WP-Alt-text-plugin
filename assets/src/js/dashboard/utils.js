@@ -18,7 +18,7 @@ var bbaiRunWithJQuery = (function() {
         var jq = window.jQuery || window.$;
         if (typeof jq !== 'function') {
             if (!warned) {
-                console.warn('[AltText AI] jQuery not found; dashboard scripts not run.');
+                window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] jQuery not found; dashboard scripts not run.');
                 warned = true;
             }
             return;

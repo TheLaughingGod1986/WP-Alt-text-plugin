@@ -33,18 +33,14 @@ trait Core_Ajax_Auth {
 	        });
 	
 			        try {
-			            if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-			                error_log('[BBAI] ajax_register started'); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			            }
+			            \bbai_debug_log( 'ajax_register started' );
 			            $action = 'beepbeepai_nonce';
 			            if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
 			                restore_error_handler();
 			                wp_send_json_error(["message" => __("Invalid nonce.", "beepbeep-ai-alt-text-generator")], 403);
 			                return;
 			            }
-			            if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-			                error_log('[BBAI] nonce verified'); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			            }
+			            \bbai_debug_log( 'ajax_register nonce verified' );
 
 		            if (!current_user_can('manage_options')) {
 		                wp_send_json_error(['message' => __('Only administrators can connect accounts.', 'beepbeep-ai-alt-text-generator')]);
@@ -60,17 +56,16 @@ trait Core_Ajax_Auth {
 		                return;
 		            }
 
-		            if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-		                error_log('[BBAI] Getting existing token'); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		            }
+		            \bbai_debug_log( 'ajax_register checking existing token' );
 		            $existing_token = $this->api_client->get_token();
-		            if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-		                error_log('[BBAI] Existing token: ' . ($existing_token ? 'yes' : 'no')); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		            }
+		            \bbai_debug_log(
+		                'ajax_register existing token state',
+		                [
+		                    'has_existing_token' => ! empty( $existing_token ),
+		                ]
+		            );
 	            if (!empty($existing_token)) {
-		                if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-		                    error_log('[BBAI] Checking usage'); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		                }
+		                \bbai_debug_log( 'ajax_register checking usage for existing token' );
 	                $usage = $this->api_client->get_usage();
 		                if (!is_wp_error($usage) && isset($usage['plan']) && $usage['plan'] === 'free') {
 		                    wp_send_json_error([
@@ -81,13 +76,14 @@ trait Core_Ajax_Auth {
 		                }
 		            }
 
-		            if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-		                error_log('[BBAI] Calling api_client->register'); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		            }
+		            \bbai_debug_log( 'ajax_register calling API register' );
 		            $result = $this->api_client->register($email, $password);
-		            if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-		                error_log('[BBAI] Register result: ' . (is_wp_error($result) ? 'error' : 'success')); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		            }
+		            \bbai_debug_log(
+		                'ajax_register API result',
+		                [
+		                    'is_error' => is_wp_error( $result ),
+		                ]
+		            );
 
 	            if (is_wp_error($result)) {
 	                $error_code = $result->get_error_code();
@@ -129,9 +125,14 @@ trait Core_Ajax_Auth {
 	                'user' => $result['user'] ?? null
 	            ]);
 		        } catch (\Throwable $e) {
-		            if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-		                error_log('[BBAI] Registration exception: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine()); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		            }
+		            \bbai_debug_log(
+		                'ajax_register exception',
+		                [
+		                    'error' => $e->getMessage(),
+		                    'file'  => basename( $e->getFile() ),
+		                    'line'  => (int) $e->getLine(),
+		                ]
+		            );
 	            $error_message = sanitize_text_field($e->getMessage());
 	            $error_file = sanitize_text_field(basename($e->getFile()));
 	            $error_line = (int) $e->getLine();

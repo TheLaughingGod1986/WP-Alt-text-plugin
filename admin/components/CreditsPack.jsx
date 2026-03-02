@@ -58,7 +58,7 @@ const CreditsPack = ({ onPurchase }) => {
     if (onPurchase && typeof onPurchase === 'function') {
       await onPurchase(packId, 'payment'); // 'payment' mode for one-time
     } else {
-      console.error('[AltText AI] No purchase handler available');
+      window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] No purchase handler available');
     }
   };
 

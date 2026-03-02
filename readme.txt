@@ -5,9 +5,9 @@ Plugin URI: https://oppti.dev/beepbeep-ai-alt-text-generator
 Author URI: https://oppti.dev
 Tags: accessibility, AI, Alt Text, image seo, WooCommerce
 Requires at least: 6.2
-Tested up to: 6.9
+Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 4.4.1
+Stable tag: 4.4.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
@@ -177,27 +177,18 @@ Privacy policy: https://resend.com/legal/privacy
 
 == Changelog ==
 
-= 4.4.1 =
-* WordPress.org compliance fixes across AJAX, REST permissions, nonces, and admin asset loading.
-
-= 4.4.0 =
-* Fixed credit usage display accuracy after generation.
-* Improved backend response handling and fresh usage fetch behavior.
-* Security hardening for escaped output in admin UI.
-* Production cleanup for WordPress.org release quality.
-
-= 4.3.0 =
-* Added SEO character counter and quality checker guidance.
-* Added schema-focused metadata support for image SEO workflows.
-* Improved tooltip, modal UX, and accessibility behavior in admin UI.
-
-= 4.2.x and earlier =
-* Major UI modernization, license/account improvements, tracking fixes, and performance/security enhancements.
-* Initial public release introduced AI alt text generation, media library integration, and free monthly usage tier.
-
+= 4.4.4 =
+* Maintenance release with bug fixes and stability improvements.
+* Improved WooCommerce, Image SEO, and Accessibility workflows.
+* Internal performance and reliability optimizations.= 4.4.3 =
+* Maintenance release with bug fixes and stability improvements.
+* Improved WooCommerce, Image SEO, and Accessibility workflows.
+* Internal performance and reliability optimizations.* Internal performance and reliability optimizations.
 == Upgrade Notice ==
 
-= 4.4.1 =
+= 4.4.4 =
+Recommended maintenance update with WooCommerce, Image SEO, and Accessibility reliability improvements.= 4.4.3 =
+Recommended maintenance update with WooCommerce, Image SEO, and Accessibility reliability improvements.= 4.4.1 =
 Recommended update with WordPress.org compliance, security hardening, and usage-tracking improvements.
 
 = 4.3.0 =

@@ -63,7 +63,7 @@
                         this.trackCopy(attachmentId);
                     })
                     .catch(err => {
-                        console.error('Failed to copy:', err);
+                        window.BBAI_LOG && window.BBAI_LOG.error('Failed to copy:', err);
                         this.fallbackCopy(text, attachmentId);
                     });
             } else {
@@ -92,7 +92,7 @@
                     this.showToast(__('Failed to copy. Please select and copy manually.', 'beepbeep-ai-alt-text-generator'), 'error');
                 }
             } catch (err) {
-                console.error('Fallback copy failed:', err);
+                window.BBAI_LOG && window.BBAI_LOG.error('Fallback copy failed:', err);
                 this.showToast(__('Failed to copy. Please select and copy manually.', 'beepbeep-ai-alt-text-generator'), 'error');
             }
             

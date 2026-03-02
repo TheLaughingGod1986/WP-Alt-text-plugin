@@ -63,7 +63,7 @@
                 pricingModalState.currentPlan = 'free';
             }
         } catch (error) {
-            console.warn('[AltText AI] Could not fetch user plan:', error);
+            window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Could not fetch user plan:', error);
             pricingModalState.currentPlan = 'free';
         } finally {
             pricingModalState.isLoading = false;
@@ -77,7 +77,7 @@
         if (pricingModalState.onPlanSelect && typeof pricingModalState.onPlanSelect === 'function') {
             pricingModalState.onPlanSelect(planId);
         } else {
-            console.log('[AltText AI] Plan selected:', planId);
+            window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Plan selected:', planId);
             // Default behavior: Stripe checkout integration via callback system
         }
         closePricingModal();
@@ -134,10 +134,10 @@
     }
 
     function openFallbackModal() {
-        console.log('[AltText AI] Trying fallback modal systems...');
+        window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Trying fallback modal systems...');
 
         if (typeof window.showUpgradeModal === 'function') {
-            console.log('[AltText AI] Using window.showUpgradeModal');
+            window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Using window.showUpgradeModal');
             window.showUpgradeModal();
             if (isUpgradeModalVisible()) {
                 return true;
@@ -145,7 +145,7 @@
         }
 
         if (typeof window.alttextaiShowModal === 'function') {
-            console.log('[AltText AI] Using window.alttextaiShowModal');
+            window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Using window.alttextaiShowModal');
             window.alttextaiShowModal();
             if (isUpgradeModalVisible()) {
                 return true;
@@ -153,7 +153,7 @@
         }
 
         if (typeof alttextaiShowModal === 'function') {
-            console.log('[AltText AI] Using alttextaiShowModal');
+            window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Using alttextaiShowModal');
             alttextaiShowModal();
             if (isUpgradeModalVisible()) {
                 return true;
@@ -161,20 +161,20 @@
         }
 
         if (typeof bbaiApp !== 'undefined' && typeof bbaiApp.showModal === 'function') {
-            console.log('[AltText AI] Using bbaiApp.showModal');
+            window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Using bbaiApp.showModal');
             bbaiApp.showModal();
             if (isUpgradeModalVisible()) {
                 return true;
             }
         }
 
-        console.log('[AltText AI] Trying direct PHP modal manipulation...');
+        window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Trying direct PHP modal manipulation...');
         let phpModal = document.getElementById('bbai-upgrade-modal');
         if (!phpModal) {
             phpModal = document.querySelector('.bbai-modal-backdrop');
         }
         if (phpModal) {
-            console.log('[AltText AI] Found PHP modal, showing it');
+            window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Found PHP modal, showing it');
             phpModal.style.display = 'flex';
             phpModal.style.visibility = 'visible';
             phpModal.style.opacity = '1';
@@ -202,7 +202,7 @@
             return true;
         }
 
-        console.error('[AltText AI] No pricing modal system available. Modal element not found in DOM.');
+        window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] No pricing modal system available. Modal element not found in DOM.');
         if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
             window.bbaiModal.error(__('Unable to open upgrade modal. Please refresh the page and try again.', 'beepbeep-ai-alt-text-generator'));
         } else {
@@ -220,7 +220,7 @@
     }
 
     function openPricingModal(variant = 'enterprise') {
-        console.log('[AltText AI] openPricingModal called with variant:', variant);
+        window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] openPricingModal called with variant:', variant);
         pricingModalState.isOpen = true;
         
         // Fetch user plan when opening (don't wait for it)
@@ -229,7 +229,7 @@
         // Prefer any existing React-driven modal opener if present
         const externalOpenPricingModal = getExternalOpenPricingModal();
         if (externalOpenPricingModal) {
-            console.log('[AltText AI] Using existing React modal opener');
+            window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Using existing React modal opener');
             externalOpenPricingModal(variant);
             ensureFallbackAfterDelay();
             return;
@@ -238,7 +238,7 @@
         // Check if React component is available
         if (typeof window.initPricingModal === 'function' || 
             (typeof React !== 'undefined' && typeof ReactDOM !== 'undefined')) {
-            console.log('[AltText AI] React available, trying React modal');
+            window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] React available, trying React modal');
             // Use React component if available
             if (!document.getElementById('bbai-pricing-modal-root')) {
                 // Load React component dynamically if needed
@@ -249,7 +249,7 @@
             // Trigger React component to open if it registered its own handler
             const externalAfterInit = getExternalOpenPricingModal();
             if (externalAfterInit) {
-                console.log('[AltText AI] Using React component handler');
+                window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Using React component handler');
                 externalAfterInit(variant);
                 ensureFallbackAfterDelay();
                 return;
@@ -297,7 +297,7 @@
     // Replace existing upgrade modal triggers
     if (typeof document !== 'undefined') {
         const ready = function() {
-            console.log('[AltText AI] Pricing modal bridge ready, attaching event handlers...');
+            window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Pricing modal bridge ready, attaching event handlers...');
             if (document.__bbaiPricingModalBound) {
                 return;
             }
@@ -309,7 +309,7 @@
                     return;
                 }
 
-                console.log('[AltText AI] Upgrade button clicked (capture handler)');
+                window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Upgrade button clicked (capture handler)');
                 e.preventDefault();
                 e.stopPropagation();
                 openPricingModal('enterprise');

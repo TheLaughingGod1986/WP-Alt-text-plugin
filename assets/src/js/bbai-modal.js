@@ -123,7 +123,7 @@
          */
         show(options) {
             if (!options || !options.message) {
-                console.error('BBaiModal: message is required');
+                window.BBAI_LOG && window.BBAI_LOG.error('BBaiModal: message is required');
                 return;
             }
 

@@ -12,8 +12,8 @@
     // Initialize on document ready
     $(document).ready(function() {
         if (window.BBAI_DEBUG) {
-            console.log('[AI Alt Text] Admin JavaScript loaded');
-            console.log('[AI Alt Text] Config:', window.bbaiAdminConfig);
+            window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Admin JavaScript loaded');
+            window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Config:', window.bbaiAdminConfig);
         }
 
         // Handle generate missing button
@@ -23,7 +23,7 @@
             } else if (typeof handleGenerateMissing === 'function') {
                 handleGenerateMissing.call(this, e);
             } else {
-                console.error('[AI Alt Text] handleGenerateMissing function not found');
+                window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] handleGenerateMissing function not found');
             }
         });
 
@@ -34,7 +34,7 @@
             } else if (typeof handleRegenerateAll === 'function') {
                 handleRegenerateAll.call(this, e);
             } else {
-                console.error('[AI Alt Text] handleRegenerateAll function not found');
+                window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] handleRegenerateAll function not found');
             }
         });
 
@@ -45,7 +45,7 @@
             } else if (typeof handleRegenerateSingle === 'function') {
                 handleRegenerateSingle.call(this, e);
             } else {
-                console.error('[AI Alt Text] handleRegenerateSingle function not found');
+                window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] handleRegenerateSingle function not found');
             }
         });
 

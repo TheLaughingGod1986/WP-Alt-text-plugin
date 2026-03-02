@@ -16,7 +16,7 @@
     window.bbaiHasBulkConfig = !!(window.bbaiAdminConfig.rest && window.bbaiAdminConfig.nonce);
 
     if (!window.bbaiHasBulkConfig) {
-        console.warn('[AI Alt Text] REST configuration missing. Bulk operations disabled, but single regenerate will still work.');
+        window.BBAI_LOG && window.BBAI_LOG.warn('[AI Alt Text] REST configuration missing. Bulk operations disabled, but single regenerate will still work.');
     }
 
     /**

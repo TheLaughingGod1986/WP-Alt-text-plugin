@@ -270,7 +270,7 @@ function cacheSubscriptionInfo(data) {
         };
         localStorage.setItem('bbai_subscription_cache', JSON.stringify(cacheData));
     } catch (e) {
-        console.warn('[AltText AI] Could not cache subscription info:', e);
+        window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Could not cache subscription info:', e);
     }
 }
 
@@ -292,7 +292,7 @@ function getCachedSubscriptionInfo() {
             return null;
         }
     } catch (e) {
-        console.warn('[AltText AI] Could not read subscription cache:', e);
+        window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Could not read subscription cache:', e);
         return null;
     }
 }

@@ -34,7 +34,7 @@ const PricingCard = ({ plan, currentPlan = null, onSelect, billingPeriod = 'mont
       // Pass plan ID and subscription mode, billing period can be handled separately if needed
       onSelect(plan.id, 'subscription');
     } else {
-      console.log('Selected plan:', plan.id, billingPeriod);
+      window.BBAI_LOG && window.BBAI_LOG.log('Selected plan:', plan.id, billingPeriod);
     }
     
     // Ripple effect

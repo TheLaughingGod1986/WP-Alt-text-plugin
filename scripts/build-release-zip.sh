@@ -9,6 +9,8 @@ PLUGIN_STAGE="${DIST_DIR}/${PLUGIN_SLUG}"
 DISTIGNORE_FILE="${ROOT_DIR}/.distignore"
 OUT_DIR="${OUT_DIR:-${ROOT_DIR}/../plugin-builds}"
 ZIP_PATH="${OUT_DIR}/${PLUGIN_SLUG}.zip"
+METADATA_SCRIPT="${ROOT_DIR}/scripts/update-release-metadata.sh"
+AUTO_UPDATE_RELEASE_METADATA="${AUTO_UPDATE_RELEASE_METADATA:-1}"
 TMP_STAGE_BASE="$(mktemp -d "${TMPDIR:-/tmp}/bbai-release-staging.XXXXXX")"
 TMP_PLUGIN_STAGE="${TMP_STAGE_BASE}/${PLUGIN_SLUG}"
 
@@ -117,6 +119,18 @@ need_cmd grep
 [[ -f "${ROOT_DIR}/${PLUGIN_SLUG}.php" ]] || fail "Main plugin file not found at ${ROOT_DIR}/${PLUGIN_SLUG}.php"
 [[ -f "${DISTIGNORE_FILE}" ]] || fail "Missing ${DISTIGNORE_FILE}"
 
+if [[ "${AUTO_UPDATE_RELEASE_METADATA}" == "1" ]]; then
+  [[ -x "${METADATA_SCRIPT}" ]] || fail "Release metadata script not found/executable: ${METADATA_SCRIPT}"
+  printf '%s\n' "Auto-updating release metadata before ZIP build"
+  AUTO_BUMP_PATCH="${AUTO_BUMP_PATCH:-1}" \
+  RELEASE_VERSION="${RELEASE_VERSION:-}" \
+  RELEASE_NOTES="${RELEASE_NOTES:-}" \
+  RELEASE_NOTES_FILE="${RELEASE_NOTES_FILE:-}" \
+  RELEASE_UPGRADE_NOTE="${RELEASE_UPGRADE_NOTE:-}" \
+  DRY_RUN="${DRY_RUN:-0}" \
+  "${METADATA_SCRIPT}"
+fi
+
 mkdir -p "${OUT_DIR}" "${DIST_DIR}"
 assert_no_repo_root_zips
 
@@ -144,11 +158,13 @@ copy_root_file_if_exists "uninstall.php"
 # Preserve runtime fallback assets by copying assets/src into shipped assets/js + assets/css when present.
 if [[ -d "${ROOT_DIR}/assets/src/js" ]]; then
   mkdir -p "${TMP_PLUGIN_STAGE}/assets"
-  rsync -a --delete --exclude-from="${DISTIGNORE_FILE}" "${ROOT_DIR}/assets/src/js/" "${TMP_PLUGIN_STAGE}/assets/js/"
+  # Add source JS as fallback without removing compiled/runtime files.
+  rsync -a --ignore-existing --exclude-from="${DISTIGNORE_FILE}" "${ROOT_DIR}/assets/src/js/" "${TMP_PLUGIN_STAGE}/assets/js/"
 fi
 if [[ -d "${ROOT_DIR}/assets/src/css" ]]; then
   mkdir -p "${TMP_PLUGIN_STAGE}/assets"
-  rsync -a --delete --exclude-from="${DISTIGNORE_FILE}" "${ROOT_DIR}/assets/src/css/" "${TMP_PLUGIN_STAGE}/assets/css/"
+  # Add source CSS as fallback without removing compiled/runtime files.
+  rsync -a --ignore-existing --exclude-from="${DISTIGNORE_FILE}" "${ROOT_DIR}/assets/src/css/" "${TMP_PLUGIN_STAGE}/assets/css/"
 fi
 
 prune_stage

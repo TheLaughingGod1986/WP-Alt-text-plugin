@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BeepBeep AI – Alt Text Generator
  * Description: Automatically generates SEO-optimized AI alt text for WordPress.
- * Version: 4.4.1
+ * Version: 4.4.4
  * Requires at least: 6.2
  * Author: beepbeepv2
  * Author URI: https://oppti.dev
@@ -18,8 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants
-define( 'BEEPBEEP_AI_VERSION', '4.4.1' );
-define( 'BBAI_VERSION', '4.4.1' ); // Legacy alias for compatibility
+define( 'BEEPBEEP_AI_VERSION', '4.4.4' );
+define( 'BBAI_VERSION', '4.4.4' ); // Legacy alias for compatibility
 define( 'BEEPBEEP_AI_DB_VERSION', '1.0.0' );
 define( 'BEEPBEEP_AI_PLUGIN_FILE', __FILE__ );
 define( 'BBAI_PLUGIN_FILE', __FILE__ ); // Legacy alias
@@ -96,6 +96,7 @@ require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-db.php';
 
 // Load helper functions first.
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-json.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-debug.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-privacy.php';
 if ( class_exists( '\BeepBeepAI\AltTextGenerator\Privacy' ) ) {
 	\BeepBeepAI\AltTextGenerator\Privacy::init();

@@ -183,14 +183,14 @@
         }
 
         if (!attachment_id) {
-            console.warn('WARNING: Could not read attachment_id from HTML attribute, using jQuery fallback');
+            window.BBAI_LOG && window.BBAI_LOG.warn('WARNING: Could not read attachment_id from HTML attribute, using jQuery fallback');
             attachment_id = btn.attr('data-attachment-id') || btn.data('attachment-id');
         }
 
         attachment_id = parseInt(attachment_id, 10);
 
         if (!attachment_id || isNaN(attachment_id) || attachment_id <= 0){
-            console.error('ERROR: Invalid attachment ID:', attachment_id);
+            window.BBAI_LOG && window.BBAI_LOG.error('ERROR: Invalid attachment ID:', attachment_id);
             return pushNotice('error', __('AI ALT: Invalid attachment ID. Please refresh the page and try again.', 'beepbeep-ai-alt-text-generator'));
         }
 

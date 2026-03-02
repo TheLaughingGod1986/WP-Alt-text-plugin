@@ -123,6 +123,7 @@ class Admin_Hooks {
 			'beepbeepai_disconnect_license_site' => 'ajax_disconnect_license_site',
 			'beepbeepai_admin_login'            => 'ajax_admin_login',
 			'beepbeepai_admin_logout'           => 'ajax_admin_logout',
+			'beepbeepai_logout'                 => 'ajax_logout',
 			'beepbeepai_dismiss_api_notice'   => 'ajax_dismiss_api_notice',
 			'bbai_check_onboarding'            => 'ajax_check_onboarding',
 			'bbai_complete_onboarding'         => 'ajax_complete_onboarding',

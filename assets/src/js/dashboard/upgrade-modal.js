@@ -29,11 +29,11 @@ var FALLBACK_UPGRADE_SELECTOR = [
  * Show upgrade modal
  */
 function alttextaiShowModal() {
-    if (alttextaiDebug) console.log('[AltText AI] alttextaiShowModal() called');
+    if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] alttextaiShowModal() called');
     var modal = document.getElementById('bbai-upgrade-modal');
 
     if (!modal) {
-        console.error('[AltText AI] Upgrade modal element not found in DOM!');
+        window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] Upgrade modal element not found in DOM!');
         // Try to find it by class
         var byClass = document.querySelector('.bbai-modal-backdrop');
         if (byClass) {
@@ -73,7 +73,7 @@ function alttextaiShowModal() {
         }
     }, 150);
 
-    if (alttextaiDebug) console.log('[AltText AI] Modal should now be visible');
+    if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Modal should now be visible');
     return true;
 }
 
@@ -117,7 +117,7 @@ function handleUpgradeTrigger(event, triggerElement) {
             }
         }
     } catch (err) {
-        if (alttextaiDebug) console.error('[AltText AI] Error in handleUpgradeTrigger:', err);
+        if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] Error in handleUpgradeTrigger:', err);
     }
 }
 
@@ -216,9 +216,9 @@ function observeFutureUpgradeTriggers() {
 function checkModalExists() {
     var modal = document.getElementById('bbai-upgrade-modal');
     if (!modal) {
-        console.warn('[AltText AI] Upgrade modal not found in DOM. Make sure upgrade-modal.php is included.');
+        window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Upgrade modal not found in DOM. Make sure upgrade-modal.php is included.');
     } else {
-        if (alttextaiDebug) console.log('[AltText AI] Upgrade modal found in DOM');
+        if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Upgrade modal found in DOM');
     }
 }
 
@@ -236,13 +236,13 @@ bbaiApp.closeModal = alttextaiCloseModal;
 
 // Test function
 window.testUpgradeModal = function() {
-    console.log('=== Testing Upgrade Modal ===');
+    window.BBAI_LOG && window.BBAI_LOG.log('=== Testing Upgrade Modal ===');
     var modal = document.getElementById('bbai-upgrade-modal');
-    console.log('Modal element:', modal);
+    window.BBAI_LOG && window.BBAI_LOG.log('Modal element:', modal);
     if (modal) {
-        console.log('Modal HTML:', modal.outerHTML.substring(0, 200));
+        window.BBAI_LOG && window.BBAI_LOG.log('Modal HTML:', modal.outerHTML.substring(0, 200));
         alttextaiShowModal();
     } else {
-        console.error('Modal not found!');
+        window.BBAI_LOG && window.BBAI_LOG.error('Modal not found!');
     }
 };

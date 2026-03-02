@@ -107,7 +107,7 @@ router.post('/api/contact', async (req, res) => {
       message: 'Your message has been sent successfully. We\'ll get back to you soon!'
     });
   } catch (error) {
-    console.error('Contact form error:', error);
+    window.BBAI_LOG && window.BBAI_LOG.error('Contact form error:', error);
     return res.status(500).json({
       error: 'SEND_FAILED',
       message: 'Failed to send message. Please try again later.'

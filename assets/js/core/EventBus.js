@@ -71,7 +71,7 @@ export class EventBus {
 			try {
 				callback(data);
 			} catch (error) {
-				console.error(`Error in event listener for ${event}:`, error);
+				window.BBAI_LOG && window.BBAI_LOG.error(`Error in event listener for ${event}:`, error);
 			}
 		});
 	}

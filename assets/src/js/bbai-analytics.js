@@ -161,7 +161,7 @@
             const ajaxUrl = bbaiAjax ? (bbaiAjax.ajax_url || bbaiAjax.ajaxurl) : (typeof ajaxurl !== 'undefined' ? ajaxurl : (window.bbai_env && window.bbai_env.ajax_url ? window.bbai_env.ajax_url : ''));
 
             if (!ajaxUrl) {
-                console.warn('BBAI Analytics: AJAX URL not found, activity timeline disabled');
+                window.BBAI_LOG && window.BBAI_LOG.warn('BBAI Analytics: AJAX URL not found, activity timeline disabled');
                 this.setActivityLoading(false);
                 this.showActivityEmpty(true);
                 return;

@@ -165,7 +165,7 @@
                 });
             })
             .fail(function(xhr, status, error) {
-                console.error('[AI Alt Text] Failed to get missing images:', error, xhr);
+                window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Failed to get missing images:', error, xhr);
                 $btn.prop('disabled', false);
                 $btn.text(originalText);
                 logBulkProgressError('Failed to load images. Please try again.');
@@ -250,7 +250,7 @@
             });
         })
         .fail(function(xhr, status, error) {
-            console.error('[AI Alt Text] Failed to get all images:', error, xhr);
+            window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Failed to get all images:', error, xhr);
             $btn.prop('disabled', false);
             $btn.text(originalText);
             logBulkProgressError('Failed to load images. Please try again.');
@@ -280,7 +280,7 @@
         }
 
         if (error && error.code) {
-            console.error('[AI Alt Text] Error:', error.code, error.message || 'Unknown error');
+            window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Error:', error.code, error.message || 'Unknown error');
         }
 
         // Handle partial credits

@@ -18,7 +18,7 @@
     var hasBulkConfig = config.rest && config.nonce;
     
     if (!hasBulkConfig) {
-        console.warn('[AI Alt Text] REST configuration missing. Bulk operations disabled, but single regenerate will still work.');
+        window.BBAI_LOG && window.BBAI_LOG.warn('[AI Alt Text] REST configuration missing. Bulk operations disabled, but single regenerate will still work.');
     }
 
     function canManageAccount() {
@@ -339,7 +339,7 @@
 
                     // Error logging (keep minimal for production)
                     if (error && error.code) {
-                        console.error('[AI Alt Text] Error:', error.code, error.message || 'Unknown error');
+                        window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Error:', error.code, error.message || 'Unknown error');
                     }
 
                     // Check for insufficient credits with remaining > 0 - offer partial generation
@@ -435,9 +435,9 @@
                     }
 
                     if (error && error.message) {
-                        console.error('[AI Alt Text] Error details:', error);
+                        window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Error details:', error);
                     } else {
-                        console.error('[AI Alt Text] Queue failed for generate missing - no error details');
+                        window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Queue failed for generate missing - no error details');
                     }
 
                     // Keep modal open to show error - user can close manually
@@ -445,7 +445,7 @@
             });
             })
             .fail(function(xhr, status, error) {
-                console.error('[AI Alt Text] Failed to get missing images:', error, xhr);
+                window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Failed to get missing images:', error, xhr);
                 $btn.prop('disabled', false);
                 $btn.text(originalText);
 
@@ -601,7 +601,7 @@
 
                     // Error logging (keep minimal for production)
                     if (error && error.code) {
-                        console.error('[AI Alt Text] Error:', error.code, error.message || 'Unknown error');
+                        window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Error:', error.code, error.message || 'Unknown error');
                     }
 
                     // Check for insufficient credits with remaining > 0 - offer partial regeneration
@@ -697,9 +697,9 @@
 	                    }
 
                     if (error && error.message) {
-                        console.error('[AI Alt Text] Error details:', error);
+                        window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Error details:', error);
                     } else {
-                        console.error('[AI Alt Text] Queue failed for regenerate all - no error details');
+                        window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Queue failed for regenerate all - no error details');
                     }
 
                     // Keep modal open to show error - user can close manually
@@ -707,7 +707,7 @@
             });
         })
         .fail(function(xhr, status, error) {
-            console.error('[AI Alt Text] Failed to get all images:', error, xhr);
+            window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Failed to get all images:', error, xhr);
             $btn.prop('disabled', false);
             $btn.text(originalText);
 
@@ -723,7 +723,7 @@
         e.preventDefault();
         e.stopPropagation();
 
-        console.log('[AI Alt Text] Regenerate button clicked');
+        window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Regenerate button clicked');
         var $btn = $(this);
         
         // Try multiple ways to get attachment ID (jQuery data() converts kebab-case)
@@ -732,19 +732,19 @@
                           $btn.attr('data-attachment-id') ||
                           null;
 
-        console.log('[AI Alt Text] Attachment ID:', attachmentId);
-        console.log('[AI Alt Text] Button element:', this);
-        console.log('[AI Alt Text] Button disabled?', $btn.prop('disabled'));
-        console.log('[AI Alt Text] All data attributes:', $btn.data());
+        window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Attachment ID:', attachmentId);
+        window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Button element:', this);
+        window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Button disabled?', $btn.prop('disabled'));
+        window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] All data attributes:', $btn.data());
 
         if (!attachmentId) {
-            console.error('[AI Alt Text] Cannot regenerate - missing attachment ID');
+            window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Cannot regenerate - missing attachment ID');
             alert(__('Error: Unable to find attachment ID. Please refresh the page and try again.', 'beepbeep-ai-alt-text-generator'));
             return false;
         }
 
         if ($btn.prop('disabled')) {
-            console.warn('[AI Alt Text] Cannot regenerate - button is disabled');
+            window.BBAI_LOG && window.BBAI_LOG.warn('[AI Alt Text] Cannot regenerate - button is disabled');
             return false;
         }
 
@@ -825,7 +825,7 @@
         $modal.addClass('active');
         $('body').css('overflow', 'hidden');
 
-        console.log('[AI Alt Text] Starting AJAX request...');
+        window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Starting AJAX request...');
 
         // Use AJAX endpoint for single regeneration
         var ajaxUrl = (window.bbai_ajax && (window.bbai_ajax.ajaxurl || window.bbai_ajax.ajax_url)) || '';
@@ -833,7 +833,7 @@
                        (window.BBAI && window.BBAI.nonce) ||
                        '';
         if (!ajaxUrl) {
-            console.error('[AI Alt Text] AJAX endpoint unavailable.');
+            window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] AJAX endpoint unavailable.');
             showModalError($modal, __('AJAX endpoint unavailable.', 'beepbeep-ai-alt-text-generator'));
             reenableButton($btn, originalBtnText);
             return;
@@ -849,9 +849,9 @@
             }
         })
         .done(function(response) {
-            console.log('[AI Alt Text] Regenerate response:', response);
-            console.log('[AI Alt Text] Response type:', typeof response);
-            console.log('[AI Alt Text] Response.data:', response.data);
+            window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Regenerate response:', response);
+            window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Response type:', typeof response);
+            window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Response.data:', response.data);
 
             // Hide loading state
             $modal.find('.bbai-regenerate-modal__loading').removeClass('active');
@@ -859,9 +859,9 @@
             if (response && response.success) {
                 // Backend returns altText (camelCase), support both for compatibility
                 var newAltText = (response.data && response.data.altText) || (response.data && response.data.alt_text) || response.altText || response.alt_text || '';
-                console.log('[AI Alt Text] New alt text:', newAltText);
-                console.log('[AI Alt Text] Alt text length:', newAltText.length);
-                console.log('[AI Alt Text] Full response:', response);
+                window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] New alt text:', newAltText);
+                window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Alt text length:', newAltText.length);
+                window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Full response:', response);
 
                 if (newAltText) {
                     // Show result
@@ -871,7 +871,7 @@
                     // Update usage from response if available (avoids extra API call)
                     var usageInResponse = (response.data && response.data.usage) || response.usage;
                     if (usageInResponse && typeof usageInResponse === 'object') {
-                        console.log('[AI Alt Text] Updating usage from response:', usageInResponse);
+                        window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Updating usage from response:', usageInResponse);
                         if (window.BBAI_DASH) {
                             window.BBAI_DASH.usage = usageInResponse;
                             window.BBAI_DASH.initialUsage = usageInResponse;
@@ -889,7 +889,7 @@
                         }
                     } else {
                         // Fallback: Refresh usage stats from API
-                        console.log('[AI Alt Text] No usage in response, fetching from API');
+                        window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] No usage in response, fetching from API');
                         if (typeof refreshUsageStats === 'function') {
                             refreshUsageStats();
                         } else if (typeof window.alttextai_refresh_usage === 'function') {
@@ -953,7 +953,7 @@
             }
         })
         .fail(function(xhr, status, error) {
-            console.error('[AI Alt Text] Failed to regenerate:', error, xhr);
+            window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Failed to regenerate:', error, xhr);
 
             // Hide loading state
             $modal.find('.bbai-regenerate-modal__loading').removeClass('active');
@@ -1119,7 +1119,7 @@
      * Accept regenerated alt text and update the UI
      */
     function acceptRegeneratedAltText(attachmentId, newAltText, $btn, originalBtnText, $modal) {
-        console.log('[AI Alt Text] Accepting new alt text');
+        window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Accepting new alt text');
 
         // Update the alt text in the table
         var $row = $btn.closest('tr');
@@ -1254,7 +1254,7 @@
                 if (queued > 0) {
                     callback(true, queued, null, ids.slice(0));
                 } else {
-                    console.warn('[AI Alt Text] No images were queued. Response:', response);
+                    window.BBAI_LOG && window.BBAI_LOG.warn('[AI Alt Text] No images were queued. Response:', response);
                     // Still might be success if 0 queued but they were already in queue
                     callback(true, queued, null, ids.slice(0));
                 }
@@ -1280,7 +1280,7 @@
                     }
                 }
                 
-                console.error('[AI Alt Text] Queue failed:', errorMessage, errorCode ? '(Code: ' + errorCode + ')' : '');
+                window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Queue failed:', errorMessage, errorCode ? '(Code: ' + errorCode + ')' : '');
                 
                 // Pass error message to callback
                 callback(false, 0, {
@@ -1291,7 +1291,7 @@
             }
         })
         .fail(function(xhr, status, error) {
-            console.error('[AI Alt Text] AJAX request failed:', {
+            window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] AJAX request failed:', {
                 status: status,
                 error: error,
                 xhr: xhr,
@@ -1316,7 +1316,7 @@
             
             // Check if it's a nonce error
             if (xhr.status === 403) {
-                console.error('[AI Alt Text] Authentication error - check nonce');
+                window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Authentication error - check nonce');
                 callback(false, 0, errorData || { message: 'Authentication error. Please refresh the page and try again.' });
                 return;
             }
@@ -1386,7 +1386,7 @@
                 }
             })
             .fail(function() {
-                console.error('[AI Alt Text] Fallback batch failed');
+                window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Fallback batch failed');
                 // Continue processing even if batch fails
                 if (endIndex < total) {
                     setTimeout(function() {
@@ -1628,10 +1628,10 @@
                     }
                     
                     // Unexpected response structure
-                    console.error('[AI Alt Text] Unexpected response structure:', response);
+                    window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Unexpected response structure:', response);
                     reject({ message: __('Unexpected response from server. Response structure does not match expected format.', 'beepbeep-ai-alt-text-generator') });
                 } catch (e) {
-                    console.error('[AI Alt Text] Error parsing response:', e, response);
+                    window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Error parsing response:', e, response);
                     reject({ message: sprintf(__('Error parsing server response: %s', 'beepbeep-ai-alt-text-generator'), (e && e.message) ? e.message : __('Unknown error', 'beepbeep-ai-alt-text-generator')) });
                 }
             })
@@ -1665,7 +1665,7 @@
                 }
                 
                 // Log detailed error for debugging
-                console.error('[AI Alt Text] Inline generate request failed:', {
+                window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Inline generate request failed:', {
                     status: xhr ? xhr.status : 'unknown',
                     statusText: xhr ? xhr.statusText : 'unknown',
                     response: xhr ? xhr.responseJSON : 'no response',
@@ -2202,14 +2202,14 @@
 
     // Initialize on document ready
     $(document).ready(function() {
-        console.log('[AI Alt Text] Admin JavaScript loaded');
-        console.log('[AI Alt Text] Config:', config);
-        console.log('[AI Alt Text] Has bulk config:', hasBulkConfig);
-        console.log('[AI Alt Text] bbai_ajax:', window.bbai_ajax);
+        window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Admin JavaScript loaded');
+        window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Config:', config);
+        window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Has bulk config:', hasBulkConfig);
+        window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] bbai_ajax:', window.bbai_ajax);
 
         // Count regenerate buttons
         var regenButtons = $('[data-action="regenerate-single"]');
-        console.log('[AI Alt Text] Found ' + regenButtons.length + ' regenerate buttons');
+        window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Found ' + regenButtons.length + ' regenerate buttons');
 
         // Handle generate missing button
         $(document).on('click', '[data-action="generate-missing"]', handleGenerateMissing);
@@ -2219,16 +2219,16 @@
 
         // Handle individual regenerate buttons - use event delegation for dynamically added buttons
         $(document).on('click', '[data-action="regenerate-single"]', function(e) {
-            console.log('[AI Alt Text] Regenerate button click event fired!');
-            console.log('[AI Alt Text] Button element:', this);
-            console.log('[AI Alt Text] jQuery object:', $(this));
-            console.log('[AI Alt Text] Attachment ID from data:', $(this).data('attachment-id'));
+            window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Regenerate button click event fired!');
+            window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Button element:', this);
+            window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] jQuery object:', $(this));
+            window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Attachment ID from data:', $(this).data('attachment-id'));
             handleRegenerateSingle.call(this, e);
         });
         
         // Also try direct binding for buttons that exist on page load (Edit Media page)
         $('[data-action="regenerate-single"]').on('click', function(e) {
-            console.log('[AI Alt Text] Direct binding - Regenerate button clicked');
+            window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Direct binding - Regenerate button clicked');
             handleRegenerateSingle.call(this, e);
         });
 
@@ -2238,7 +2238,7 @@
         $('#license-activation-form').on('submit', handleLicenseActivation);
         $(document).on('click', '[data-action="deactivate-license"]', handleLicenseDeactivation);
 
-        console.log('[AI Alt Text] License management handlers registered');
+        window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] License management handlers registered');
         
         // Safety check: Ensure scrolling is enabled on page load
         // This fixes cases where a previous modal operation left scrolling disabled
@@ -2256,7 +2256,7 @@
         setTimeout(function() {
             var hasActiveModals = $(MODAL_ACTIVE_SELECTOR).length;
             if (!hasActiveModals && (document.body.style.overflow === 'hidden' || document.documentElement.style.overflow === 'hidden')) {
-                console.log('[AI Alt Text] Restoring page scroll - no active modals but overflow is hidden');
+                window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Restoring page scroll - no active modals but overflow is hidden');
                 if (window.restorePageScroll) {
                     window.restorePageScroll();
                 }
@@ -2268,7 +2268,7 @@
         setInterval(function() {
             var hasActiveModals = $(MODAL_ACTIVE_SELECTOR).length;
             if (!hasActiveModals && (document.body.style.overflow === 'hidden' || document.documentElement.style.overflow === 'hidden')) {
-                console.log('[AI Alt Text] Auto-restoring page scroll - detected stuck scrolling');
+                window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Auto-restoring page scroll - detected stuck scrolling');
                 if (window.restorePageScroll) {
                     window.restorePageScroll();
                 }
@@ -2285,7 +2285,7 @@
     window.alttextai_refresh_usage = function(usageData) {
         // If usage data is provided directly, use it without API call
         if (usageData && typeof usageData === 'object') {
-            console.log('[AltText AI] Using provided usage data:', usageData);
+            window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Using provided usage data:', usageData);
             updateUsageDisplayGlobally(usageData);
             return;
         }
@@ -2295,11 +2295,11 @@
         var nonce = config.nonce || '';
         
         if (!usageUrl) {
-            console.warn('[AltText AI] Cannot refresh usage: REST endpoint not available', config);
+            window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Cannot refresh usage: REST endpoint not available', config);
             return;
         }
         
-        console.log('[AltText AI] Refreshing usage from:', usageUrl);
+        window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Refreshing usage from:', usageUrl);
         
         $.ajax({
             url: usageUrl,
@@ -2308,16 +2308,16 @@
                 'X-WP-Nonce': nonce
             },
             success: function(response) {
-                console.log('[AltText AI] Usage API response:', response);
+                window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Usage API response:', response);
                 
                 if (response && typeof response === 'object') {
                     updateUsageDisplayGlobally(response);
                 } else {
-                    console.warn('[AltText AI] Invalid usage response format:', response);
+                    window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Invalid usage response format:', response);
                 }
             },
             error: function(xhr, status, error) {
-                console.error('[AltText AI] Failed to refresh usage:', {
+                window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] Failed to refresh usage:', {
                     status: xhr.status,
                     statusText: xhr.statusText,
                     error: error,
@@ -2333,7 +2333,7 @@
      */
     function updateUsageDisplayGlobally(response) {
         if (!response || typeof response !== 'object') {
-            console.warn('[AltText AI] Invalid usage data for display:', response);
+            window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Invalid usage data for display:', response);
             return;
         }
         
@@ -2351,7 +2351,7 @@
         var limit = response.limit !== undefined ? response.limit : 50;
         var remaining = response.remaining !== undefined ? response.remaining : (limit - used);
         
-        console.log('[AltText AI] Updating usage display:', { used: used, limit: limit, remaining: remaining });
+        window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Updating usage display:', { used: used, limit: limit, remaining: remaining });
         
         // Find all usage stat value elements and update them
         $('.bbai-usage-stat-item').each(function() {
@@ -2379,7 +2379,7 @@
                             $(this).fadeIn(100);
                         });
                     }
-                    console.log('[AltText AI] Updated', label, 'from', oldValue, 'to', newValue);
+                    window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Updated', label, 'from', oldValue, 'to', newValue);
                 }
             }
         });
@@ -2407,7 +2407,7 @@
                     $el.fadeOut(100, function() {
                         $(this).fadeIn(100);
                     });
-                    console.log('[AltText AI] Updated number element from', oldValue, 'to', newValue);
+                    window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Updated number element from', oldValue, 'to', newValue);
                 }
             }
         });
@@ -2430,7 +2430,7 @@
                     $usedEl.fadeOut(100, function() {
                         $(this).fadeIn(100);
                     });
-                    console.log('[AltText AI] Updated usage-text used from', oldUsed, 'to', usedValue);
+                    window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Updated usage-text used from', oldUsed, 'to', usedValue);
                 }
                 
                 if ($limitEl.text().trim() !== limitValue) {
@@ -2440,7 +2440,7 @@
                     $limitEl.fadeOut(100, function() {
                         $(this).fadeIn(100);
                     });
-                    console.log('[AltText AI] Updated usage-text limit from', oldLimit, 'to', limitValue);
+                    window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Updated usage-text limit from', oldLimit, 'to', limitValue);
                 }
             }
         });
@@ -2459,19 +2459,19 @@
                     if (numValue !== used) {
                         $el.removeData('bbai-animated');
                         $el.text(used);
-                        console.log('[AltText AI] Updated card used from', numValue, 'to', used);
+                        window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Updated card used from', numValue, 'to', used);
                     }
                 } else if (parentText.includes('limit') || parentText.includes('monthly')) {
                     if (numValue !== limit) {
                         $el.removeData('bbai-animated');
                         $el.text(limit);
-                        console.log('[AltText AI] Updated card limit from', numValue, 'to', limit);
+                        window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Updated card limit from', numValue, 'to', limit);
                     }
                 } else if (parentText.includes('remaining')) {
                     if (numValue !== remaining) {
                         $el.removeData('bbai-animated');
                         $el.text(remaining);
-                        console.log('[AltText AI] Updated card remaining from', numValue, 'to', remaining);
+                        window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Updated card remaining from', numValue, 'to', remaining);
                     }
                 }
             }
@@ -2492,7 +2492,7 @@
                     $el.fadeOut(100, function() {
                         $(this).fadeIn(100);
                     });
-                    console.log('[AltText AI] Updated circular progress percent from', oldPercent, 'to', percentageDisplay);
+                    window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Updated circular progress percent from', oldPercent, 'to', percentageDisplay);
                 }
             });
             
@@ -2512,7 +2512,7 @@
                     if ($ring[0].style) {
                         $ring[0].style.strokeDashoffset = offset;
                     }
-                    console.log('[AltText AI] Updated circular progress bar offset from', currentOffset, 'to', offset);
+                    window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Updated circular progress bar offset from', currentOffset, 'to', offset);
                 }
 
                 // Adaptive stroke color based on usage percentage
@@ -2549,7 +2549,7 @@
             });
         }
         
-        console.log('[AltText AI] Usage display update complete');
+        window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Usage display update complete');
     }
     
     // Also create a global refreshUsageStats function for compatibility

@@ -315,7 +315,7 @@
                     submitButton.prop('disabled', false).text(__('Send Message', 'beepbeep-ai-alt-text-generator'));
                 },
                 error: function(xhr, status, error) {
-                    console.error('Contact form submission error:', error);
+                    window.BBAI_LOG && window.BBAI_LOG.error('Contact form submission error:', error);
                     self.showError(__('Network error. Please check your connection and try again.', 'beepbeep-ai-alt-text-generator'));
                     submitButton.prop('disabled', false).text(__('Send Message', 'beepbeep-ai-alt-text-generator'));
                 }

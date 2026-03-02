@@ -269,7 +269,7 @@
         var nonce = config.nonce || '';
 
         if (!usageUrl) {
-            console.warn('[AltText AI] Cannot refresh usage: REST endpoint not available', config);
+            window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Cannot refresh usage: REST endpoint not available', config);
             return;
         }
 
@@ -283,11 +283,11 @@
                 if (response && typeof response === 'object') {
                     updateUsageDisplay(response);
                 } else {
-                    console.warn('[AltText AI] Invalid usage response format:', response);
+                    window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Invalid usage response format:', response);
                 }
             },
             error: function(xhr, status, error) {
-                console.error('[AltText AI] Failed to refresh usage:', {
+                window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] Failed to refresh usage:', {
                     status: xhr.status,
                     statusText: xhr.statusText,
                     error: error,
@@ -299,7 +299,7 @@
 
     function updateUsageDisplay(response) {
         if (!response || typeof response !== 'object') {
-            console.warn('[AltText AI] Invalid usage data for display:', response);
+            window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Invalid usage data for display:', response);
             return;
         }
 

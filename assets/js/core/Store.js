@@ -71,7 +71,7 @@ export class Store {
 			try {
 				listener(finalState, prevState);
 			} catch (error) {
-				console.error('Error in state listener:', error);
+				window.BBAI_LOG && window.BBAI_LOG.error('Error in state listener:', error);
 			}
 		});
 	}

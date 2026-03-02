@@ -54,7 +54,7 @@ const PricingModalWrapper = ({ onPlanSelect }) => {
           setCurrentPlan('free');
         }
       } catch (error) {
-        console.warn('[AltText AI] Could not fetch user plan:', error);
+        window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Could not fetch user plan:', error);
         setCurrentPlan('free');
       } finally {
         setIsLoading(false);
@@ -138,7 +138,7 @@ const PricingModalWrapper = ({ onPlanSelect }) => {
         throw new Error(data.data?.message || __('Failed to create checkout session', 'beepbeep-ai-alt-text-generator'));
       }
     } catch (error) {
-      console.error('[AltText AI] Checkout error:', error);
+      window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] Checkout error:', error);
       if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
         window.bbaiModal.error(__('Unable to start checkout. Please try again or contact support.', 'beepbeep-ai-alt-text-generator'));
       }
@@ -163,7 +163,7 @@ const PricingModalWrapper = ({ onPlanSelect }) => {
 export const initPricingModal = (containerId = 'bbai-pricing-modal-root', onPlanSelect) => {
   // Check if React is available
   if (typeof React === 'undefined' || typeof ReactDOM === 'undefined') {
-    console.error('[AltText AI] React is not loaded. Please include React and ReactDOM.');
+    window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] React is not loaded. Please include React and ReactDOM.');
     return;
   }
 

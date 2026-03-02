@@ -21,7 +21,7 @@
 
             if (!this.getRestNonce() || !this.getRestUrl()) {
                 if (window.console) {
-                    console.warn('[AI Alt Text] Queue monitor skipped – REST details missing.');
+                    window.BBAI_LOG && window.BBAI_LOG.warn('[AI Alt Text] Queue monitor skipped – REST details missing.');
                 }
                 return;
             }
@@ -119,7 +119,7 @@
             })
             .fail(function(xhr) {
                 if (window.console) {
-                    console.error('[AI Alt Text] Queue status request failed', xhr);
+                    window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Queue status request failed', xhr);
                 }
 
                 if (options.userInitiated) {
@@ -281,7 +281,7 @@
             })
             .fail(function(xhr) {
                 if (window.console) {
-                    console.error('[AI Alt Text] Queue action failed', xhr);
+                    window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Queue action failed', xhr);
                 }
                 self.showNotification('Queue action failed. Please try again.', 'error');
             });

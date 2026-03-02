@@ -472,7 +472,7 @@ const Dashboard = ({
   
   // Debug: Log missing images count (remove in production if needed)
   if (typeof window !== 'undefined' && window.console && window.console.log) {
-    console.log('[BBAI Dashboard] Missing images:', missingImages, 'Image stats:', imageStats);
+    window.BBAI_LOG && window.BBAI_LOG.log('[BBAI Dashboard] Missing images:', missingImages, 'Image stats:', imageStats);
   }
 
   // Calculate alt text coverage

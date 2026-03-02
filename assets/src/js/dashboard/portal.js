@@ -16,7 +16,7 @@ function openCustomerPortal() {
     var $ = window.jQuery || window.$;
     if (typeof $ !== 'function') return;
 
-    if (alttextaiDebug) console.log('[AltText AI] Opening customer portal');
+    if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Opening customer portal');
 
     if (!window.bbai_ajax || !window.bbai_ajax.ajaxurl) {
         if (window.bbaiModal) {
@@ -41,7 +41,7 @@ function openCustomerPortal() {
             $overlay.remove();
 
             if (response.success && response.data && response.data.url) {
-                if (alttextaiDebug) console.log('[AltText AI] Portal URL received, redirecting');
+                if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Portal URL received, redirecting');
                 window.location.href = response.data.url;
             } else {
                 var errorMsg = response.data?.message || 'Could not open billing portal. Please try again.';
@@ -53,7 +53,7 @@ function openCustomerPortal() {
         error: function(xhr, status, error) {
             $overlay.remove();
 
-            if (alttextaiDebug) console.error('[AltText AI] Portal error:', status, error);
+            if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] Portal error:', status, error);
 
             var errorMessage = 'Unable to open billing portal. Please try again.';
             if (status === 'timeout') {
@@ -76,7 +76,7 @@ function checkPortalAfterLogin() {
     var shouldOpenPortal = localStorage.getItem('bbai_open_portal_after_login');
 
     if (shouldOpenPortal === 'true') {
-        if (alttextaiDebug) console.log('[AltText AI] Portal flag found, checking authentication...');
+        if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Portal flag found, checking authentication...');
 
         var checkCount = 0;
         var maxChecks = 10;
@@ -99,7 +99,7 @@ function checkPortalAfterLogin() {
             } else if (checkCount >= maxChecks) {
                 clearInterval(checkInterval);
                 localStorage.removeItem('bbai_open_portal_after_login');
-                console.warn('[AltText AI] User not authenticated after multiple checks');
+                window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] User not authenticated after multiple checks');
             }
         }, 200);
     }
@@ -109,7 +109,7 @@ function checkPortalAfterLogin() {
  * Open Stripe payment link
  */
 function openStripeLink(url) {
-    if (alttextaiDebug) console.log('[AltText AI] Opening Stripe link:', url);
+    if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Opening Stripe link:', url);
     window.open(url, '_blank');
 }
 

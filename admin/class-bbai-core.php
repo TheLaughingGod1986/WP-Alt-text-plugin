@@ -53,7 +53,7 @@ if (!defined('BBAI_PLUGIN_BASENAME')) {
 }
 
 if (!defined('BBAI_VERSION')) {
-    define('BBAI_VERSION', defined('BEEPBEEP_AI_VERSION') ? BEEPBEEP_AI_VERSION : '4.4.1');
+    define('BBAI_VERSION', defined('BEEPBEEP_AI_VERSION') ? BEEPBEEP_AI_VERSION : '4.4.4');
 }
 
 // Load API clients, usage tracker, and queue infrastructure
@@ -143,6 +143,7 @@ class Core {
                 }
             }
         }
+        $this->ensure_upload_generation_default();
 
         if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
             // Log initialization (table is created by DB_Schema on activation/upgrade).
@@ -206,6 +207,24 @@ class Core {
             'requests'    => 0,
             'last_request'=> null,
         ];
+    }
+
+    private function is_upload_generation_enabled(?array $opts = null): bool {
+        $opts = is_array($opts) ? $opts : get_option(self::OPTION_KEY, []);
+        if (!is_array($opts) || !array_key_exists('enable_on_upload', $opts)) {
+            return true;
+        }
+        return !empty($opts['enable_on_upload']);
+    }
+
+    private function ensure_upload_generation_default(): void {
+        $opts = get_option(self::OPTION_KEY, []);
+        if (!is_array($opts) || array_key_exists('enable_on_upload', $opts)) {
+            return;
+        }
+
+        $opts['enable_on_upload'] = true;
+        update_option(self::OPTION_KEY, $opts, false);
     }
 
     /**
@@ -1576,17 +1595,23 @@ class Core {
 	            $bbai_is_authenticated = $this->api_client->is_authenticated();
 	            $bbai_has_license = $this->api_client->has_active_license();
 		        } catch (\Exception $e) {
-		            // If authentication check fails, default to showing limited tabs
-		            if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-		                error_log('[BBAI] Authentication check failed: ' . $e->getMessage()); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		            }
+		            // If authentication check fails, default to showing limited tabs.
+		            \bbai_debug_log(
+		                'Authentication check failed in render_settings_page',
+		                [
+		                    'error' => $e->getMessage(),
+		                ]
+		            );
 		            $bbai_is_authenticated = false;
 		            $bbai_has_license = false;
 		        } catch (\Error $e) {
-		            // Catch fatal errors too
-		            if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-		                error_log('[BBAI] Authentication check fatal error: ' . $e->getMessage()); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		            }
+		            // Catch fatal errors too.
+		            \bbai_debug_log(
+		                'Authentication fatal error in render_settings_page',
+		                [
+		                    'error' => $e->getMessage(),
+		                ]
+		            );
 		            $bbai_is_authenticated = false;
 		            $bbai_has_license = false;
 		        }
@@ -3436,8 +3461,7 @@ class Core {
 
     public function maybe_generate_on_upload($attachment_id){
         $opts = get_option(self::OPTION_KEY, []);
-        // Default to enabled if option not explicitly disabled
-        if (array_key_exists('enable_on_upload', $opts) && empty($opts['enable_on_upload'])) return;
+        if (!$this->is_upload_generation_enabled($opts)) return;
         if (!$this->is_image($attachment_id)) return;
         $this->invalidate_stats_cache();
         $existing = get_post_meta($attachment_id, '_wp_attachment_image_alt', true);
@@ -4022,14 +4046,21 @@ class Core {
             return false;
         }
 
+        $source_key = $source ? sanitize_key((string) $source) : 'auto';
         $opts = get_option(self::OPTION_KEY, []);
+        if (
+            in_array($source_key, ['auto', 'upload', 'metadata', 'update', 'save'], true) &&
+            !$this->is_upload_generation_enabled($opts)
+        ) {
+            return false;
+        }
 
         $existing = get_post_meta($attachment_id, '_wp_attachment_image_alt', true);
         if ($existing && empty($opts['force_overwrite'])) {
             return false;
         }
 
-        return Queue::enqueue($attachment_id, $source ? sanitize_key($source) : 'auto');
+        return Queue::enqueue($attachment_id, $source_key);
     }
 
     public function register_bulk_action($bulk_actions){
@@ -5550,34 +5581,33 @@ class Core {
             return;
         }
 
-        $opts = get_option(self::OPTION_KEY, []);
-        if (empty($opts['enable_on_upload'])) {
-            return;
+        if ($this->queue_attachment($attachment_id, 'upload')) {
+            Queue::schedule_processing(15);
         }
-
-        $this->queue_attachment($attachment_id, 'upload');
-        Queue::schedule_processing(15);
     }
 
     public function handle_media_metadata_update($data, $post_id) {
         $this->invalidate_stats_cache();
-        $this->queue_attachment($post_id, 'metadata');
-        Queue::schedule_processing(20);
+        if ($this->queue_attachment($post_id, 'metadata')) {
+            Queue::schedule_processing(20);
+        }
         return $data;
     }
 
     public function handle_attachment_updated($post_id, $post_after, $post_before) {
         $this->invalidate_stats_cache();
-        $this->queue_attachment($post_id, 'update');
-        Queue::schedule_processing(20);
+        if ($this->queue_attachment($post_id, 'update')) {
+            Queue::schedule_processing(20);
+        }
     }
 
     public function handle_post_save($post_ID, $post, $update) {
         if ($post instanceof \WP_Post && $post->post_type === 'attachment') {
             $this->invalidate_stats_cache();
             if ($update) {
-                $this->queue_attachment($post_ID, 'save');
-                Queue::schedule_processing(20);
+                if ($this->queue_attachment($post_ID, 'save')) {
+                    Queue::schedule_processing(20);
+                }
             }
         }
     }
@@ -5699,56 +5729,46 @@ class Core {
      * Handle logout via form submission (admin-post handler)
      */
 		    public function handle_logout() {
-		        // Log for debugging (only in debug mode)
-		        if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-		            error_log('BeepBeep AI: handle_logout called'); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		        }
+		        \bbai_debug_log( 'handle_logout called' );
 
 	        // Verify nonce
 	        $action = 'bbai_logout_action';
 		        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['bbai_logout_nonce'] ?? '' ) ), $action ) ) {
-			            if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-			                error_log('BeepBeep AI: Nonce verification failed'); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			            }
+			            \bbai_debug_log( 'handle_logout nonce verification failed' );
 			            wp_die(esc_html__('Security check failed', 'beepbeep-ai-alt-text-generator'));
 			        }
 
 	        // Check permissions
 		        if (!$this->user_can_manage()) {
-		            if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-		                error_log('BeepBeep AI: Permission check failed'); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		            }
+		            \bbai_debug_log( 'handle_logout permission check failed' );
 		            wp_die(esc_html__('Unauthorized', 'beepbeep-ai-alt-text-generator'));
 		        }
 
 	        // Clear token and user data
-		        if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-		            error_log('BeepBeep AI: Clearing token'); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		        }
+		        \bbai_debug_log( 'handle_logout clearing token' );
 	        $this->api_client->clear_token();
 
 	        // ALSO clear license key (otherwise user stays authenticated via license)
-		        if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-		            error_log('BeepBeep AI: Clearing license key'); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		        }
+		        \bbai_debug_log( 'handle_logout clearing license key' );
 	        $this->api_client->clear_license_key();
 
         // Also clear any usage cache
         delete_transient('bbai_usage_cache');
 	        delete_transient('opptibbai_usage_cache');
 
-	        // Verify everything was cleared (only in debug mode)
-		        if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-		            $remaining_token = get_option('beepbeepai_jwt_token', '');
-		            $remaining_license = get_option('beepbeepai_license_key', '');
-		            error_log('BeepBeep AI: JWT Token after clear: ' . ($remaining_token ? 'STILL EXISTS!' : 'cleared')); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		            error_log('BeepBeep AI: License key after clear: ' . ($remaining_license ? 'STILL EXISTS!' : 'cleared')); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		        }
+	        // Verify everything was cleared (debug mode only).
+		        $remaining_token   = get_option('beepbeepai_jwt_token', '');
+		        $remaining_license = get_option('beepbeepai_license_key', '');
+		        \bbai_debug_log(
+		            'handle_logout post-clear status',
+		            [
+		                'token_cleared'   => empty( $remaining_token ),
+		                'license_cleared' => empty( $remaining_license ),
+		            ]
+		        );
 
-	        // Redirect to dashboard with cache buster
-		        if ( defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG ) {
-		            error_log('BeepBeep AI: Redirecting to dashboard'); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		        }
+	        // Redirect to dashboard with cache buster.
+		        \bbai_debug_log( 'handle_logout redirecting to dashboard' );
 	        wp_safe_redirect(add_query_arg('nocache', time(), admin_url('admin.php?page=bbai')));
 	        exit;
 	    }

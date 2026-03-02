@@ -15,14 +15,14 @@ var alttextaiDebug = (typeof alttextaiDebug !== 'undefined') ? alttextaiDebug : 
 function initCountdownTimer() {
     var countdownElement = document.querySelector('.bbai-countdown[data-countdown]');
     if (!countdownElement) {
-        if (alttextaiDebug) console.log('[AltText AI] Countdown element not found');
+        if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Countdown element not found');
         return;
     }
 
     var totalSeconds = parseInt(countdownElement.getAttribute('data-countdown'), 10) || 0;
 
     if (totalSeconds <= 0) {
-        if (alttextaiDebug) console.log('[AltText AI] Countdown has zero or invalid seconds:', totalSeconds);
+        if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Countdown has zero or invalid seconds:', totalSeconds);
         return;
     }
 
@@ -31,7 +31,7 @@ function initCountdownTimer() {
     var minutesEl = countdownElement.querySelector('[data-minutes]');
 
     if (!daysEl || !hoursEl || !minutesEl) {
-        if (alttextaiDebug) console.warn('[AltText AI] Countdown elements not found');
+        if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Countdown elements not found');
         return;
     }
 
@@ -40,7 +40,7 @@ function initCountdownTimer() {
     countdownElement.setAttribute('data-start-time', (Date.now() / 1000).toString());
 
     if (alttextaiDebug) {
-        console.log('[AltText AI] Countdown initialized:', {
+        window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Countdown initialized:', {
             totalSeconds: totalSeconds,
             days: Math.floor(totalSeconds / 86400),
             hours: Math.floor((totalSeconds % 86400) / 3600),

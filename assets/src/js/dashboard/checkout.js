@@ -29,13 +29,13 @@ function initiateCheckout($btn, priceId, plan) {
     }
 
     if (resolvedLink) {
-        console.log('[AltText AI] Opening Stripe payment link:', resolvedLink);
+        window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Opening Stripe payment link:', resolvedLink);
         window.open(resolvedLink, '_blank', 'noopener,noreferrer');
         return;
     }
 
     // No link available
-    console.error('[AltText AI] No Stripe payment link available for plan:', plan);
+    window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] No Stripe payment link available for plan:', plan);
     if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
         window.bbaiModal.error('Unable to initiate checkout. Please try again or contact support.');
     }

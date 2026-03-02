@@ -13,7 +13,7 @@ var alttextaiDebug = (typeof alttextaiDebug !== 'undefined') ? alttextaiDebug : 
  * Show auth banner
  */
 function showAuthBanner() {
-    if (alttextaiDebug) console.log('[AltText AI] Showing auth banner');
+    if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Showing auth banner');
 
     if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
         window.authModal.show();
@@ -33,7 +33,7 @@ function showAuthBanner() {
  * Show auth login modal
  */
 function showAuthLogin() {
-    if (alttextaiDebug) console.log('[AltText AI] Showing auth login');
+    if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Showing auth login');
 
     // Try multiple methods to show auth modal
     if (window.bbaiApp && window.bbaiApp.authModal && typeof window.bbaiApp.authModal.show === 'function') {
@@ -56,7 +56,7 @@ function showAuthLogin() {
  * Show auth modal with specific tab
  */
 function showAuthModal(tab) {
-    if (alttextaiDebug) console.log('[AltText AI] Showing auth modal, tab:', tab);
+    if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Showing auth modal, tab:', tab);
 
     if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
         window.authModal.show();
@@ -76,10 +76,10 @@ function showAuthModal(tab) {
  * Handle logout
  */
 function handleLogout() {
-    if (window.alttextaiDebug) console.log('[AltText AI] Handling logout');
+    if (window.alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Handling logout');
 
     if (typeof window.bbai_ajax === 'undefined') {
-        if (window.alttextaiDebug) console.warn('[AltText AI] bbai_ajax object not found');
+        if (window.alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] bbai_ajax object not found');
         if (typeof localStorage !== 'undefined') {
             localStorage.removeItem('alttextai_token');
         }
@@ -91,7 +91,7 @@ function handleLogout() {
     var nonce = window.bbai_ajax.nonce || '';
 
     if (!ajaxUrl) {
-        if (window.alttextaiDebug) console.warn('[AltText AI] AJAX URL not found');
+        if (window.alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] AJAX URL not found');
         window.location.reload();
         return;
     }
@@ -106,7 +106,7 @@ function handleLogout() {
                 nonce: nonce
             },
             success: function(response) {
-                if (window.alttextaiDebug) console.log('[AltText AI] Logout successful', response);
+                if (window.alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Logout successful', response);
                 if (typeof localStorage !== 'undefined') {
                     localStorage.removeItem('alttextai_token');
                 }
@@ -114,7 +114,7 @@ function handleLogout() {
                 window.location.href = redirect;
             },
             error: function(xhr, status, error) {
-                if (window.alttextaiDebug) console.warn('[AltText AI] Logout failed:', error);
+                if (window.alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Logout failed:', error);
                 if (typeof localStorage !== 'undefined') {
                     localStorage.removeItem('alttextai_token');
                 }

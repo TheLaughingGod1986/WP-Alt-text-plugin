@@ -33,7 +33,7 @@ var bbaiRunWithJQuery = (function() {
         var jq = window.jQuery || window.$;
         if (typeof jq !== 'function') {
             if (!warned) {
-                console.warn('[AltText AI] jQuery not found; dashboard scripts not run.');
+                window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] jQuery not found; dashboard scripts not run.');
                 warned = true;
             }
             return;
@@ -108,11 +108,11 @@ var FALLBACK_UPGRADE_SELECTOR = [
  * Show upgrade modal
  */
 function alttextaiShowModal() {
-    if (alttextaiDebug) console.log('[AltText AI] alttextaiShowModal() called');
+    if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] alttextaiShowModal() called');
     var modal = document.getElementById('bbai-upgrade-modal');
 
     if (!modal) {
-        console.error('[AltText AI] Upgrade modal element not found in DOM!');
+        window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] Upgrade modal element not found in DOM!');
         // Try to find it by class
         var byClass = document.querySelector('.bbai-modal-backdrop');
         if (byClass) {
@@ -152,7 +152,7 @@ function alttextaiShowModal() {
         }
     }, 150);
 
-    if (alttextaiDebug) console.log('[AltText AI] Modal should now be visible');
+    if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Modal should now be visible');
     return true;
 }
 
@@ -196,7 +196,7 @@ function handleUpgradeTrigger(event, triggerElement) {
             }
         }
     } catch (err) {
-        if (alttextaiDebug) console.error('[AltText AI] Error in handleUpgradeTrigger:', err);
+        if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] Error in handleUpgradeTrigger:', err);
     }
 }
 
@@ -295,9 +295,9 @@ function observeFutureUpgradeTriggers() {
 function checkModalExists() {
     var modal = document.getElementById('bbai-upgrade-modal');
     if (!modal) {
-        console.warn('[AltText AI] Upgrade modal not found in DOM. Make sure upgrade-modal.php is included.');
+        window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Upgrade modal not found in DOM. Make sure upgrade-modal.php is included.');
     } else {
-        if (alttextaiDebug) console.log('[AltText AI] Upgrade modal found in DOM');
+        if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Upgrade modal found in DOM');
     }
 }
 
@@ -315,14 +315,14 @@ bbaiApp.closeModal = alttextaiCloseModal;
 
 // Test function
 window.testUpgradeModal = function() {
-    console.log('=== Testing Upgrade Modal ===');
+    window.BBAI_LOG && window.BBAI_LOG.log('=== Testing Upgrade Modal ===');
     var modal = document.getElementById('bbai-upgrade-modal');
-    console.log('Modal element:', modal);
+    window.BBAI_LOG && window.BBAI_LOG.log('Modal element:', modal);
     if (modal) {
-        console.log('Modal HTML:', modal.outerHTML.substring(0, 200));
+        window.BBAI_LOG && window.BBAI_LOG.log('Modal HTML:', modal.outerHTML.substring(0, 200));
         alttextaiShowModal();
     } else {
-        console.error('Modal not found!');
+        window.BBAI_LOG && window.BBAI_LOG.error('Modal not found!');
     }
 };
 
@@ -603,7 +603,7 @@ function cacheSubscriptionInfo(data) {
         };
         localStorage.setItem('bbai_subscription_cache', JSON.stringify(cacheData));
     } catch (e) {
-        console.warn('[AltText AI] Could not cache subscription info:', e);
+        window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Could not cache subscription info:', e);
     }
 }
 
@@ -625,7 +625,7 @@ function getCachedSubscriptionInfo() {
             return null;
         }
     } catch (e) {
-        console.warn('[AltText AI] Could not read subscription cache:', e);
+        window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Could not read subscription cache:', e);
         return null;
     }
 }
@@ -656,7 +656,7 @@ var alttextaiDebug = (typeof alttextaiDebug !== 'undefined') ? alttextaiDebug : 
  * Show auth banner
  */
 function showAuthBanner() {
-    if (alttextaiDebug) console.log('[AltText AI] Showing auth banner');
+    if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Showing auth banner');
 
     if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
         window.authModal.show();
@@ -676,7 +676,7 @@ function showAuthBanner() {
  * Show auth login modal
  */
 function showAuthLogin() {
-    if (alttextaiDebug) console.log('[AltText AI] Showing auth login');
+    if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Showing auth login');
 
     // Try multiple methods to show auth modal
     if (window.bbaiApp && window.bbaiApp.authModal && typeof window.bbaiApp.authModal.show === 'function') {
@@ -699,7 +699,7 @@ function showAuthLogin() {
  * Show auth modal with specific tab
  */
 function showAuthModal(tab) {
-    if (alttextaiDebug) console.log('[AltText AI] Showing auth modal, tab:', tab);
+    if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Showing auth modal, tab:', tab);
 
     if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
         window.authModal.show();
@@ -719,10 +719,10 @@ function showAuthModal(tab) {
  * Handle logout
  */
 function handleLogout() {
-    if (window.alttextaiDebug) console.log('[AltText AI] Handling logout');
+    if (window.alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Handling logout');
 
     if (typeof window.bbai_ajax === 'undefined') {
-        if (window.alttextaiDebug) console.warn('[AltText AI] bbai_ajax object not found');
+        if (window.alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] bbai_ajax object not found');
         if (typeof localStorage !== 'undefined') {
             localStorage.removeItem('alttextai_token');
         }
@@ -734,7 +734,7 @@ function handleLogout() {
     var nonce = window.bbai_ajax.nonce || '';
 
     if (!ajaxUrl) {
-        if (window.alttextaiDebug) console.warn('[AltText AI] AJAX URL not found');
+        if (window.alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] AJAX URL not found');
         window.location.reload();
         return;
     }
@@ -749,7 +749,7 @@ function handleLogout() {
                 nonce: nonce
             },
             success: function(response) {
-                if (window.alttextaiDebug) console.log('[AltText AI] Logout successful', response);
+                if (window.alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Logout successful', response);
                 if (typeof localStorage !== 'undefined') {
                     localStorage.removeItem('alttextai_token');
                 }
@@ -757,7 +757,7 @@ function handleLogout() {
                 window.location.href = redirect;
             },
             error: function(xhr, status, error) {
-                if (window.alttextaiDebug) console.warn('[AltText AI] Logout failed:', error);
+                if (window.alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Logout failed:', error);
                 if (typeof localStorage !== 'undefined') {
                     localStorage.removeItem('alttextai_token');
                 }
@@ -895,7 +895,7 @@ function openCustomerPortal() {
     var $ = window.jQuery || window.$;
     if (typeof $ !== 'function') return;
 
-    if (alttextaiDebug) console.log('[AltText AI] Opening customer portal');
+    if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Opening customer portal');
 
     if (!window.bbai_ajax || !window.bbai_ajax.ajaxurl) {
         if (window.bbaiModal) {
@@ -920,7 +920,7 @@ function openCustomerPortal() {
             $overlay.remove();
 
             if (response.success && response.data && response.data.url) {
-                if (alttextaiDebug) console.log('[AltText AI] Portal URL received, redirecting');
+                if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Portal URL received, redirecting');
                 window.location.href = response.data.url;
             } else {
                 var errorMsg = response.data?.message || 'Could not open billing portal. Please try again.';
@@ -932,7 +932,7 @@ function openCustomerPortal() {
         error: function(xhr, status, error) {
             $overlay.remove();
 
-            if (alttextaiDebug) console.error('[AltText AI] Portal error:', status, error);
+            if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] Portal error:', status, error);
 
             var errorMessage = 'Unable to open billing portal. Please try again.';
             if (status === 'timeout') {
@@ -955,7 +955,7 @@ function checkPortalAfterLogin() {
     var shouldOpenPortal = localStorage.getItem('bbai_open_portal_after_login');
 
     if (shouldOpenPortal === 'true') {
-        if (alttextaiDebug) console.log('[AltText AI] Portal flag found, checking authentication...');
+        if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Portal flag found, checking authentication...');
 
         var checkCount = 0;
         var maxChecks = 10;
@@ -978,7 +978,7 @@ function checkPortalAfterLogin() {
             } else if (checkCount >= maxChecks) {
                 clearInterval(checkInterval);
                 localStorage.removeItem('bbai_open_portal_after_login');
-                console.warn('[AltText AI] User not authenticated after multiple checks');
+                window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] User not authenticated after multiple checks');
             }
         }, 200);
     }
@@ -988,7 +988,7 @@ function checkPortalAfterLogin() {
  * Open Stripe payment link
  */
 function openStripeLink(url) {
-    if (alttextaiDebug) console.log('[AltText AI] Opening Stripe link:', url);
+    if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Opening Stripe link:', url);
     window.open(url, '_blank');
 }
 
@@ -1020,7 +1020,7 @@ function initiateCheckout($btn, priceId, plan) {
     var $ = window.jQuery || window.$;
     if (typeof $ !== 'function') return;
 
-    if (alttextaiDebug) console.log('[AltText AI] Initiating checkout:', plan, priceId);
+    if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Initiating checkout:', plan, priceId);
 
     if (!window.bbai_ajax || !window.bbai_ajax.ajaxurl) {
         if (window.bbaiModal) {
@@ -1047,7 +1047,7 @@ function initiateCheckout($btn, priceId, plan) {
         timeout: 30000,
         success: function(response) {
             if (response.success && response.data && response.data.url) {
-                if (alttextaiDebug) console.log('[AltText AI] Checkout URL received, opening in new window:', response.data.url);
+                if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Checkout URL received, opening in new window:', response.data.url);
                 // Open Stripe checkout in new window
                 window.open(response.data.url, '_blank', 'noopener,noreferrer');
             } else {
@@ -1061,7 +1061,7 @@ function initiateCheckout($btn, priceId, plan) {
 
                 // If we have a fallback URL, use it instead of showing error
                 if (fallbackUrl) {
-                    if (alttextaiDebug) console.log('[AltText AI] Checkout API failed, using fallback URL:', fallbackUrl);
+                    if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Checkout API failed, using fallback URL:', fallbackUrl);
                     window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
                     return;
                 }
@@ -1083,12 +1083,12 @@ function initiateCheckout($btn, priceId, plan) {
                 .removeClass('bbai-btn-loading')
                 .text(originalText);
 
-            if (alttextaiDebug) console.error('[AltText AI] Checkout error:', status, error);
+            if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] Checkout error:', status, error);
 
             // Try fallback URL first
             var fallbackUrl = $btn.attr('data-fallback-url');
             if (fallbackUrl) {
-                if (alttextaiDebug) console.log('[AltText AI] Checkout AJAX failed, using fallback URL:', fallbackUrl);
+                if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Checkout AJAX failed, using fallback URL:', fallbackUrl);
                 window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
                 return;
             }
@@ -1135,14 +1135,14 @@ var alttextaiDebug = (typeof alttextaiDebug !== 'undefined') ? alttextaiDebug : 
 function initCountdownTimer() {
     var countdownElement = document.querySelector('.bbai-countdown[data-countdown]');
     if (!countdownElement) {
-        if (alttextaiDebug) console.log('[AltText AI] Countdown element not found');
+        if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Countdown element not found');
         return;
     }
 
     var totalSeconds = parseInt(countdownElement.getAttribute('data-countdown'), 10) || 0;
 
     if (totalSeconds <= 0) {
-        if (alttextaiDebug) console.log('[AltText AI] Countdown has zero or invalid seconds:', totalSeconds);
+        if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Countdown has zero or invalid seconds:', totalSeconds);
         return;
     }
 
@@ -1151,7 +1151,7 @@ function initCountdownTimer() {
     var minutesEl = countdownElement.querySelector('[data-minutes]');
 
     if (!daysEl || !hoursEl || !minutesEl) {
-        if (alttextaiDebug) console.warn('[AltText AI] Countdown elements not found');
+        if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Countdown elements not found');
         return;
     }
 
@@ -1160,7 +1160,7 @@ function initCountdownTimer() {
     countdownElement.setAttribute('data-start-time', (Date.now() / 1000).toString());
 
     if (alttextaiDebug) {
-        console.log('[AltText AI] Countdown initialized:', {
+        window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Countdown initialized:', {
             totalSeconds: totalSeconds,
             days: Math.floor(totalSeconds / 86400),
             hours: Math.floor((totalSeconds % 86400) / 3600),
@@ -1316,7 +1316,7 @@ bbaiRunWithJQuery(function($) {
             });
 
             if (visibleCount === 0 && $('.bbai-library-table tbody tr').length > 1) {
-                console.log('[AltText AI] No matching rows found');
+                window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] No matching rows found');
             }
         }
     });
@@ -1624,23 +1624,23 @@ bbaiRunWithJQuery(function($) {
      * Show upgrade modal directly
      */
     function showUpgradeModal() {
-        console.log('[AltText AI] showUpgradeModal() called');
+        window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] showUpgradeModal() called');
         var modal = document.getElementById('bbai-upgrade-modal');
         
         if (!modal) {
-            console.error('[AltText AI] Modal element #bbai-upgrade-modal not found in DOM');
+            window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] Modal element #bbai-upgrade-modal not found in DOM');
             // Try finding by class as fallback
             modal = document.querySelector('.bbai-modal-backdrop');
             if (modal) {
-                console.log('[AltText AI] Found modal by class, setting ID');
+                window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Found modal by class, setting ID');
                 modal.id = 'bbai-upgrade-modal';
             } else {
-                console.error('[AltText AI] No modal element found at all');
+                window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] No modal element found at all');
                 return false;
             }
         }
         
-        console.log('[AltText AI] Modal found, showing it');
+        window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Modal found, showing it');
         
         // Remove any inline display:none
         modal.style.display = '';
@@ -1676,7 +1676,7 @@ bbaiRunWithJQuery(function($) {
             }
         }, 100);
         
-        console.log('[AltText AI] Modal should now be visible');
+        window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Modal should now be visible');
         return true;
     }
 
@@ -1692,7 +1692,7 @@ bbaiRunWithJQuery(function($) {
             e.preventDefault();
             e.stopPropagation();
 
-            if (alttextaiDebug) console.log('[AltText AI] Fallback upgrade trigger clicked');
+            if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Fallback upgrade trigger clicked');
 
             if (!showUpgradeModal()) {
                 if (typeof window.openPricingModal === 'function') {
@@ -1769,7 +1769,7 @@ bbaiRunWithJQuery(function($) {
                 e.preventDefault();
                 e.stopPropagation();
 
-                if (alttextaiDebug) console.log('[AltText AI] Direct upgrade handler fired for:', selector);
+                if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Direct upgrade handler fired for:', selector);
 
                 if (!showUpgradeModal()) {
                     if (typeof window.openPricingModal === 'function') {
@@ -1921,7 +1921,7 @@ bbaiRunWithJQuery(function($) {
 
     // Initialize when DOM is ready
     $(document).ready(function() {
-        if (alttextaiDebug) console.log('[AltText AI] Dashboard initializing');
+        if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Dashboard initializing');
 
         // Load license site usage if on agency license
         setTimeout(function() {
@@ -1949,23 +1949,23 @@ bbaiRunWithJQuery(function($) {
             e.preventDefault();
             e.stopPropagation();
 
-            console.log('[AltText AI] Upgrade button clicked in dashboard init');
+            window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Upgrade button clicked in dashboard init');
 
             // Try direct modal opening first (most reliable)
             if (showUpgradeModal()) {
-                console.log('[AltText AI] Modal opened via showUpgradeModal()');
+                window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Modal opened via showUpgradeModal()');
                 return false;
             }
 
             // Try alttextaiShowModal (from dashboard bundle)
             if (typeof window.alttextaiShowModal === 'function') {
-                console.log('[AltText AI] Trying window.alttextaiShowModal()');
+                window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Trying window.alttextaiShowModal()');
                 if (window.alttextaiShowModal()) {
                     return false;
                 }
             }
             if (typeof alttextaiShowModal === 'function') {
-                console.log('[AltText AI] Trying alttextaiShowModal()');
+                window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Trying alttextaiShowModal()');
                 if (alttextaiShowModal()) {
                     return false;
                 }
@@ -1973,20 +1973,20 @@ bbaiRunWithJQuery(function($) {
 
             // Try pricing modal bridge
             if (typeof window.openPricingModal === 'function') {
-                console.log('[AltText AI] Trying window.openPricingModal()');
+                window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Trying window.openPricingModal()');
                 window.openPricingModal('enterprise');
                 return false;
             }
 
             // Try legacy methods
             if (typeof bbaiApp !== 'undefined' && typeof bbaiApp.showModal === 'function') {
-                console.log('[AltText AI] Trying bbaiApp.showModal()');
+                window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Trying bbaiApp.showModal()');
                 bbaiApp.showModal();
                 return false;
             }
 
             // Last resort: error message
-            console.error('[AltText AI] All modal opening methods failed');
+            window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] All modal opening methods failed');
             if (typeof window.bbaiModal !== 'undefined') {
                 window.bbaiModal.warning('Upgrade modal not found. Please refresh the page.');
             } else {
@@ -2088,7 +2088,7 @@ bbaiRunWithJQuery(function($) {
             handleLogoutAction($(this));
         });
 
-        if (alttextaiDebug) console.log('[AltText AI] Dashboard initialized');
+        if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Dashboard initialized');
     });
 });
 

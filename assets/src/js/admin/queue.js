@@ -47,7 +47,7 @@
                 if (queued > 0) {
                     callback(true, queued, null, ids.slice(0));
                 } else {
-                    console.warn('[AI Alt Text] No images were queued. Response:', response);
+                    window.BBAI_LOG && window.BBAI_LOG.warn('[AI Alt Text] No images were queued. Response:', response);
                     callback(true, queued, null, ids.slice(0));
                 }
             } else {
@@ -69,7 +69,7 @@
                     }
                 }
 
-                console.error('[AI Alt Text] Queue failed:', errorMessage, errorCode ? '(Code: ' + errorCode + ')' : '');
+                window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Queue failed:', errorMessage, errorCode ? '(Code: ' + errorCode + ')' : '');
 
                 callback(false, 0, {
                     message: errorMessage,
@@ -79,7 +79,7 @@
             }
         })
         .fail(function(xhr, status, error) {
-            console.error('[AI Alt Text] AJAX request failed:', {
+            window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] AJAX request failed:', {
                 status: status,
                 error: error,
                 xhr: xhr,
@@ -102,7 +102,7 @@
             }
 
             if (xhr.status === 403) {
-                console.error('[AI Alt Text] Authentication error - check nonce');
+                window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Authentication error - check nonce');
                 callback(false, 0, errorData || { message: 'Authentication error. Please refresh the page and try again.' });
                 return;
             }
@@ -171,7 +171,7 @@
                 }
             })
             .fail(function() {
-                console.error('[AI Alt Text] Fallback batch failed');
+                window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Fallback batch failed');
                 if (endIndex < total) {
                     setTimeout(function() {
                         processBatch(endIndex);

@@ -1,0 +1,3 @@
+Compatibility testing for WordPress 7.0 core.
+Optimization of the Bulk AI engine for large WooCommerce catalogs.
+UI refinements for the current WordPress Admin layout.

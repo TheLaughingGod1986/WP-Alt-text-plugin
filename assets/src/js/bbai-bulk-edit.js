@@ -313,7 +313,7 @@ bbaiRunWithJQuery(function($) {
                         resolve(response);
                     },
                     error: function(xhr, status, error) {
-                        console.error('Failed to update image alt text:', error);
+                        window.BBAI_LOG && window.BBAI_LOG.error('Failed to update image alt text:', error);
                         reject(error);
                     }
                 });

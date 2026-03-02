@@ -74,7 +74,7 @@ bbaiRunWithJQuery(function($) {
             });
 
             if (visibleCount === 0 && $('.bbai-library-table tbody tr').length > 1) {
-                console.log('[AltText AI] No matching rows found');
+                window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] No matching rows found');
             }
         }
     });

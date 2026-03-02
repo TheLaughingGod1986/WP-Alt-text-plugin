@@ -74,7 +74,7 @@ closePricingModal();
 
 // Set callback for plan selection
 setPricingModalCallback(function(planId) {
-    console.log('Plan selected:', planId);
+    window.BBAI_LOG && window.BBAI_LOG.log('Plan selected:', planId);
     // Integrate with Stripe checkout or other payment flow
 });
 ```

@@ -31,7 +31,7 @@ const UserUsageBreakdown = ({ apiUrl, nonce }) => {
       setError(null);
     } catch (err) {
       setError(err.message);
-      console.error('Error fetching user usage data:', err);
+      window.BBAI_LOG && window.BBAI_LOG.error('Error fetching user usage data:', err);
     } finally {
       setLoading(false);
     }
