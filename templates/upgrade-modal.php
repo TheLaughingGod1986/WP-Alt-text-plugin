@@ -97,6 +97,12 @@ $bbai_billing_url = admin_url('admin.php?page=bbai-billing');
                             </svg>
                             <?php esc_html_e('Great for trying BeepBeep AI', 'beepbeep-ai-alt-text-generator'); ?>
                         </li>
+                        <li>
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <?php esc_html_e('Bulk generation tools (up to 50/month)', 'beepbeep-ai-alt-text-generator'); ?>
+                        </li>
                     </ul>
                     
                     <?php if ($bbai_current_plan === 'free') : ?>

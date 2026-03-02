@@ -121,7 +121,7 @@ const EnterprisePricingModal = ({ isOpen, onClose, currentPlan = null, onPlanSel
       useCase: 'For testing and trying out the tool',
       monthlyQuota: '50 AI-generations per month',
       features: [
-        'Optimise full libraries in seconds',
+        'Bulk generation tools (up to 50/month)',
         'Auto-generate on upload',
         'Review and edit every description',
         'Track usage in real-time dashboard',

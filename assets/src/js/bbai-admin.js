@@ -25,7 +25,98 @@
         return !!(window.BBAI && window.BBAI.canManage);
     }
 
+    function openUpgradeModal(usage) {
+        if (typeof alttextaiShowModal === 'function') {
+            alttextaiShowModal();
+            return;
+        }
+        if (typeof window.alttextaiShowModal === 'function') {
+            window.alttextaiShowModal();
+            return;
+        }
+        if (typeof showUpgradeModal === 'function') {
+            showUpgradeModal(usage);
+            return;
+        }
+        if (typeof window.beepbeepai_show_upgrade_modal === 'function') {
+            window.beepbeepai_show_upgrade_modal(usage);
+            return;
+        }
+
+        var upgradeBtn = document.querySelector('[data-action="show-upgrade-modal"]');
+        if (upgradeBtn) {
+            upgradeBtn.click();
+            return;
+        }
+
+        $(document).trigger('alttextai:show-upgrade-modal', [usage]);
+    }
+
+    function openAuthSignupModal() {
+        if (typeof showAuthModal === 'function') {
+            showAuthModal('register');
+            return;
+        }
+        if (typeof window.showAuthModal === 'function') {
+            window.showAuthModal('register');
+            return;
+        }
+        if (window.authModal && typeof window.authModal.show === 'function') {
+            window.authModal.show();
+            if (typeof window.authModal.showRegisterForm === 'function') {
+                window.authModal.showRegisterForm();
+            }
+            return;
+        }
+
+        var authTrigger = document.querySelector('[data-action="show-auth-modal"][data-auth-tab="register"]');
+        if (authTrigger) {
+            authTrigger.click();
+            return;
+        }
+
+        openUpgradeModal(null);
+    }
+
+    function handleTrialExhausted(errorData) {
+        // Ensure the error code is set so handleLimitReached routes to the trial branch
+        if (!errorData) errorData = {};
+        errorData.code = 'bbai_trial_exhausted';
+        handleLimitReached(errorData);
+    }
+
     function handleLimitReached(errorData) {
+        var errorCode = (errorData && errorData.code) ? String(errorData.code) : '';
+        var usage = errorData && errorData.usage ? errorData.usage : null;
+        var isTrialExhausted = errorCode === 'bbai_trial_exhausted';
+
+        if (isTrialExhausted && canManageAccount() && window.bbaiModal && typeof window.bbaiModal.show === 'function') {
+            window.bbaiModal.show({
+                type: 'warning',
+                title: __("You've used your 10 free generations", 'beepbeep-ai-alt-text-generator'),
+                message: __('Create a free account to unlock 50 more credits per month', 'beepbeep-ai-alt-text-generator'),
+                buttons: [
+                    {
+                        text: __('Create free account', 'beepbeep-ai-alt-text-generator'),
+                        primary: true,
+                        action: function() {
+                            window.bbaiModal.close();
+                            openAuthSignupModal();
+                        }
+                    },
+                    {
+                        text: __('View plans', 'beepbeep-ai-alt-text-generator'),
+                        primary: false,
+                        action: function() {
+                            window.bbaiModal.close();
+                            openUpgradeModal(usage);
+                        }
+                    }
+                ]
+            });
+            return;
+        }
+
         var message = (errorData && errorData.message) || __('Monthly quota exhausted. Upgrade to Growth for 1,000 generations per month, or wait for your quota to reset.', 'beepbeep-ai-alt-text-generator');
         
         // Enhance message with reset date if available
@@ -49,26 +140,7 @@
             return;
         }
 
-        var usage = errorData && errorData.usage ? errorData.usage : null;
-
-        // Try multiple methods to show the upgrade modal
-        if (typeof alttextaiShowModal === 'function') {
-            alttextaiShowModal();
-        } else if (typeof window.alttextaiShowModal === 'function') {
-            window.alttextaiShowModal();
-        } else if (typeof showUpgradeModal === 'function') {
-            showUpgradeModal(usage);
-        } else if (typeof window.beepbeepai_show_upgrade_modal === 'function') {
-            window.beepbeepai_show_upgrade_modal(usage);
-        } else {
-            // Fallback: trigger event or click upgrade button
-            var upgradeBtn = document.querySelector('[data-action="show-upgrade-modal"]');
-            if (upgradeBtn) {
-                upgradeBtn.click();
-            } else {
-                $(document).trigger('alttextai:show-upgrade-modal', [usage]);
-            }
-        }
+        openUpgradeModal(usage);
 
         // Show notification with subscription management info
         var notificationMessage = message;
@@ -97,6 +169,16 @@
         // Check if we have necessary configuration
         if (!hasBulkConfig) {
             window.bbaiModal.error(__('Configuration error. Please refresh the page and try again.', 'beepbeep-ai-alt-text-generator'));
+            return false;
+        }
+
+        // Check trial exhaustion first
+        var trialData = window.BBAI_DASH && window.BBAI_DASH.trial;
+        if (trialData && trialData.is_trial && trialData.exhausted) {
+            handleTrialExhausted({
+                message: __('You\'ve used your free trial generations. Create a free account to continue.', 'beepbeep-ai-alt-text-generator'),
+                code: 'bbai_trial_exhausted'
+            });
             return false;
         }
 
@@ -317,7 +399,7 @@
                     // Don't hide modal - let user close it manually
                 } else {
                     // Check for limit_reached FIRST - show upgrade modal immediately
-                    if (error && error.code === 'limit_reached') {
+                    if (error && (error.code === 'limit_reached' || error.code === 'bbai_trial_exhausted')) {
                         hideBulkProgress();
                         handleLimitReached(error);
                         return; // Exit early - don't show bulk progress modal
@@ -579,7 +661,7 @@
                     // Don't hide modal - let user close it manually
                 } else {
                     // Check for limit_reached FIRST - show upgrade modal immediately
-                    if (error && error.code === 'limit_reached') {
+                    if (error && (error.code === 'limit_reached' || error.code === 'bbai_trial_exhausted')) {
                         hideBulkProgress();
                         handleLimitReached(error);
                         return; // Exit early - don't show bulk progress modal
@@ -727,17 +809,18 @@
         var $btn = $(this);
         
         // Try multiple ways to get attachment ID (jQuery data() converts kebab-case)
-        var attachmentId = $btn.data('attachment-id') || 
-                          $btn.data('attachmentId') || 
-                          $btn.attr('data-attachment-id') ||
-                          null;
+        var attachmentIdRaw = $btn.data('attachment-id') ||
+                              $btn.data('attachmentId') ||
+                              $btn.attr('data-attachment-id') ||
+                              '';
+        var attachmentId = parseInt(attachmentIdRaw, 10);
 
         window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Attachment ID:', attachmentId);
         window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Button element:', this);
         window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Button disabled?', $btn.prop('disabled'));
         window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] All data attributes:', $btn.data());
 
-        if (!attachmentId) {
+        if (!attachmentId || attachmentId <= 0) {
             window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Cannot regenerate - missing attachment ID');
             alert(__('Error: Unable to find attachment ID. Please refresh the page and try again.', 'beepbeep-ai-alt-text-generator'));
             return false;
@@ -825,6 +908,10 @@
         $modal.addClass('active');
         $('body').css('overflow', 'hidden');
 
+        // Prevent stale AJAX responses from older regenerate requests from mutating the active modal state.
+        var requestKey = 'regen-' + attachmentId + '-' + Date.now();
+        $modal.data('bbai-request-key', requestKey);
+
         window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Starting AJAX request...');
 
         // Use AJAX endpoint for single regeneration
@@ -845,10 +932,19 @@
             data: {
                 action: 'beepbeepai_regenerate_single',
                 attachment_id: attachmentId,
+                request_key: requestKey,
                 nonce: nonceValue
             }
         })
         .done(function(response) {
+            if ($modal.data('bbai-request-key') !== requestKey) {
+                window.BBAI_LOG && window.BBAI_LOG.warn('[AI Alt Text] Ignoring stale regenerate response', {
+                    expectedRequestKey: $modal.data('bbai-request-key'),
+                    responseRequestKey: requestKey
+                });
+                return;
+            }
+
             window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Regenerate response:', response);
             window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Response type:', typeof response);
             window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Response.data:', response.data);
@@ -897,6 +993,11 @@
                         }
                     }
 
+                    // Update trial usage client-side
+                    if (typeof window.bbaiUpdateTrialUsage === 'function') {
+                        window.bbaiUpdateTrialUsage();
+                    }
+
                     // Enable accept button
                     $modal.find('.bbai-regenerate-modal__btn--accept')
                         .prop('disabled', false)
@@ -909,9 +1010,13 @@
                     reenableButton($btn, originalBtnText);
                 }
             } else {
-                // Check for limit_reached error
+                // Check for trial exhausted or limit_reached error
                 var errorData = response && response.data ? response.data : {};
-                if (errorData.code === 'limit_reached') {
+                if (errorData.code === 'bbai_trial_exhausted') {
+                    closeRegenerateModal($modal);
+                    reenableButton($btn, originalBtnText);
+                    handleTrialExhausted(errorData);
+                } else if (errorData.code === 'limit_reached') {
                     closeRegenerateModal($modal);
                     reenableButton($btn, originalBtnText);
                     handleLimitReached(errorData);
@@ -953,14 +1058,26 @@
             }
         })
         .fail(function(xhr, status, error) {
+            if ($modal.data('bbai-request-key') !== requestKey) {
+                window.BBAI_LOG && window.BBAI_LOG.warn('[AI Alt Text] Ignoring stale regenerate failure response', {
+                    expectedRequestKey: $modal.data('bbai-request-key'),
+                    responseRequestKey: requestKey
+                });
+                return;
+            }
+
             window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Failed to regenerate:', error, xhr);
 
             // Hide loading state
             $modal.find('.bbai-regenerate-modal__loading').removeClass('active');
 
-            // Check for limit_reached error in response
+            // Check for trial exhausted or limit_reached error in response
             var errorData = xhr.responseJSON && xhr.responseJSON.data ? xhr.responseJSON.data : {};
-            if (errorData.code === 'limit_reached') {
+            if (errorData.code === 'bbai_trial_exhausted') {
+                closeRegenerateModal($modal);
+                reenableButton($btn, originalBtnText);
+                handleTrialExhausted(errorData);
+            } else if (errorData.code === 'limit_reached') {
                 closeRegenerateModal($modal);
                 reenableButton($btn, originalBtnText);
                 handleLimitReached(errorData);
@@ -991,6 +1108,7 @@
         $modal.find('.bbai-regenerate-modal__btn--cancel')
             .off('click')
             .on('click', function() {
+                $modal.removeData('bbai-request-key');
                 closeRegenerateModal($modal);
                 reenableButton($btn, originalBtnText);
             });
@@ -1046,6 +1164,7 @@
      * Close regenerate modal
      */
     function closeRegenerateModal($modal) {
+        $modal.removeData('bbai-request-key');
         $modal.removeClass('active');
         // Restore body scroll - use both jQuery and vanilla JS to ensure it works
         $('body').css('overflow', '');
@@ -1470,8 +1589,14 @@
         var successes = 0;
         var failures = 0;
         var active = 0;
+        var blockedByQuota = false;
 
         function processNext() {
+            if (blockedByQuota && active === 0) {
+                hideBulkProgress();
+                return;
+            }
+
             if (!queue.length && active === 0) {
                 finalizeInlineGeneration(successes, failures);
                 return;
@@ -1488,12 +1613,24 @@
                 .then(function(result) {
                     successes++;
                     processed++;
+                    // Update trial usage client-side
+                    if (typeof window.bbaiUpdateTrialUsage === 'function') {
+                        window.bbaiUpdateTrialUsage();
+                    }
                     var title = result && result.title
                         ? result.title
                         : sprintf(__('Generated alt text for image #%d', 'beepbeep-ai-alt-text-generator'), id);
                     updateBulkProgress(processed, total, title);
                 })
                 .catch(function(error) {
+                    var errorCode = error && error.code ? String(error.code) : '';
+                    if (errorCode === 'limit_reached' || errorCode === 'bbai_trial_exhausted') {
+                        blockedByQuota = true;
+                        queue = [];
+                        handleLimitReached(error || { code: errorCode });
+                        return;
+                    }
+
                     failures++;
                     processed++;
                     var fallbackError = __('Failed to generate alt text.', 'beepbeep-ai-alt-text-generator');
@@ -1504,6 +1641,12 @@
                 })
                 .finally(function() {
                     active--;
+                    if (blockedByQuota) {
+                        if (active === 0) {
+                            hideBulkProgress();
+                        }
+                        return;
+                    }
                     setTimeout(processNext, 250);
                 });
 

@@ -306,7 +306,13 @@
                     );
                 }
 
-                if (response.data && response.data.code === 'limit_reached'){
+                if (response.data && response.data.code === 'bbai_trial_exhausted'){
+                    if (typeof window.bbaiHandleTrialExhausted === 'function') {
+                        window.bbaiHandleTrialExhausted(response.data);
+                    } else {
+                        handleLimitReachedNotice(response.data);
+                    }
+                } else if (response.data && response.data.code === 'limit_reached'){
                     handleLimitReachedNotice(response.data);
                 }
             }

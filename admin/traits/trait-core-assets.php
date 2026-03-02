@@ -114,6 +114,8 @@ trait Core_Assets {
     private function enqueue_media_library_assets(string $hook, string $base_url, string $base_path): void {
         $use_debug_assets = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG;
         $js_base  = $use_debug_assets ? 'assets/src/js/' : 'assets/dist/js/';
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+        $trial_status = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_status();
 
         $admin_file = $this->get_asset_path($js_base, 'bbai-admin', $use_debug_assets, 'js', $base_path);
         $admin_version = $this->get_asset_version($admin_file, '3.0.0', $base_path);
@@ -137,6 +139,7 @@ trait Core_Assets {
             'upgradeUrl' => esc_url(Usage_Tracker::get_upgrade_url()),
             'billingPortalUrl' => esc_url(Usage_Tracker::get_billing_portal_url()),
             'checkoutPrices' => $checkout_prices,
+            'trial' => $trial_status,
             'canManage' => $this->user_can_manage(),
             'inlineBatchSize' => defined('BBAI_INLINE_BATCH') ? max(1, intval(BBAI_INLINE_BATCH)) : 1,
         ]);
@@ -144,6 +147,7 @@ trait Core_Assets {
             'ajaxurl' => admin_url('admin-ajax.php'),
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce'   => wp_create_nonce('beepbeepai_nonce'),
+            'trial' => $trial_status,
             'can_manage' => $this->user_can_manage(),
             'logout_redirect' => admin_url('admin.php?page=bbai'),
         ]);
@@ -475,8 +479,13 @@ trait Core_Assets {
             'resetModal'  => $reset_modal_data,
         ];
         
+        // Include trial quota status for the frontend.
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+        $bbai_trial_status = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_status();
+        $bbai_dash_data['trial'] = $bbai_trial_status;
+
         wp_localize_script('bbai-dashboard', 'BBAI_DASH', $bbai_dash_data);
-        
+
         // Also localize for bbai-admin (it depends on bbai-dashboard, but this ensures it's available)
         wp_localize_script('bbai-admin', 'BBAI_DASH', $bbai_dash_data);
 
@@ -491,6 +500,7 @@ trait Core_Assets {
             'api_url' => $api_url,
             'is_authenticated' => $this->api_client->is_authenticated(),
             'user_data' => $this->api_client->get_user_data(),
+            'trial' => $bbai_trial_status,
             'can_manage' => $this->user_can_manage(),
             'logout_redirect' => admin_url('admin.php?page=bbai'),
             'stripe_links' => self::DEFAULT_STRIPE_LINKS,
@@ -554,17 +564,13 @@ trait Core_Assets {
 
         $is_bbai_page = $this->is_bbai_admin_page($hook);
 
-        // Load on Media Library, attachment edit, and BeepBeep AI screens
-        if (in_array($hook, ['upload.php', 'post.php', 'post-new.php'], true) || $is_bbai_page) {
-            $this->enqueue_media_library_assets($hook, $base_url, $base_path);
+        // Restrict plugin assets to BeepBeep AI admin pages.
+        if (!$is_bbai_page) {
+            return;
         }
 
-        // Load dashboard assets on BBAI pages
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
-        $page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
-        $current_page = $page_input;
-        if ($is_bbai_page || (!empty($current_page) && strpos($current_page, 'bbai') === 0)) {
-            $this->enqueue_dashboard_assets($base_url, $base_path);
-        }
+        $this->enqueue_media_library_assets($hook, $base_url, $base_path);
+
+        $this->enqueue_dashboard_assets($base_url, $base_path);
     }
 }

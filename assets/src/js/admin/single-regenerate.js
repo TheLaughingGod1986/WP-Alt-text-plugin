@@ -17,11 +17,12 @@
 
         window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Regenerate button clicked');
         var $btn = $(this);
-        var attachmentId = $btn.data('attachment-id');
+        var attachmentIdRaw = $btn.data('attachment-id') || $btn.data('attachmentId') || $btn.attr('data-attachment-id') || '';
+        var attachmentId = parseInt(attachmentIdRaw, 10);
 
         window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Attachment ID:', attachmentId);
 
-        if (!attachmentId || $btn.prop('disabled')) {
+        if (!attachmentId || attachmentId <= 0 || $btn.prop('disabled')) {
             window.BBAI_LOG && window.BBAI_LOG.warn('[AI Alt Text] Cannot regenerate - missing ID or button disabled');
             return false;
         }
@@ -69,6 +70,10 @@
         $modal.addClass('active');
         $('body').css('overflow', 'hidden');
 
+        // Prevent stale responses from previous regenerate requests from mutating the active modal.
+        var requestKey = 'regen-' + attachmentId + '-' + Date.now();
+        $modal.data('bbai-request-key', requestKey);
+
         var ajaxUrl = (window.bbai_ajax && window.bbai_ajax.ajaxurl) || '';
         var nonceValue = (window.bbai_ajax && window.bbai_ajax.nonce) ||
                        (window.BBAI && window.BBAI.nonce) ||
@@ -85,10 +90,16 @@
             data: {
                 action: 'beepbeepai_regenerate_single',
                 attachment_id: attachmentId,
+                request_key: requestKey,
                 nonce: nonceValue
             }
         })
         .done(function(response) {
+            if ($modal.data('bbai-request-key') !== requestKey) {
+                window.BBAI_LOG && window.BBAI_LOG.warn('[AI Alt Text] Ignoring stale regenerate response');
+                return;
+            }
+
             $modal.find('.bbai-regenerate-modal__loading').removeClass('active');
 
             if (response && response.success) {
@@ -105,7 +116,11 @@
                             acceptRegeneratedAltText(attachmentId, newAltText, $btn, originalBtnText, $modal);
                         });
                 } else {
-                    showModalError($modal, 'No alt text was generated. Please try again.');
+                    showModalError($modal, 'No alt text was generated. Please try again.', function() {
+                        closeRegenerateModal($modal);
+                        reenableButton($btn, originalBtnText);
+                        $btn.trigger('click');
+                    });
                     reenableButton($btn, originalBtnText);
                 }
             } else {
@@ -113,13 +128,26 @@
                 var errorMessage = errorData.message || errorData.error || 'Failed to regenerate alt text';
                 var errorMessageLower = errorMessage.toLowerCase();
                 
+                // Check for trial exhausted first
+                var isTrialExhausted = (typeof window.bbaiIsTrialExhausted === 'function' && window.bbaiIsTrialExhausted(errorData)) ||
+                                       errorData.code === 'bbai_trial_exhausted';
+
+                if (isTrialExhausted) {
+                    closeRegenerateModal($modal);
+                    reenableButton($btn, originalBtnText);
+                    if (typeof window.bbaiHandleTrialExhausted === 'function') {
+                        window.bbaiHandleTrialExhausted(errorData);
+                    }
+                    return;
+                }
+
                 // Check for quota exceeded errors (limit_reached or quota-related messages)
-                var isQuotaError = errorData.code === 'limit_reached' || 
+                var isQuotaError = errorData.code === 'limit_reached' ||
                                   errorMessageLower.includes('quota exceeded') ||
                                   errorMessageLower.includes('quota exhausted') ||
                                   errorMessageLower.includes('limit reached') ||
                                   errorMessageLower.includes('monthly limit');
-                
+
                 if (isQuotaError) {
                     // Show error message in modal first
                     var quotaMessage = errorMessage || 'Your monthly quota has been exceeded. Upgrade to continue generating alt text.';
@@ -292,12 +320,28 @@
                         showModalError($modal, 'Please log in to regenerate alt text.');
                     }
                 } else {
-                    showModalError($modal, errorMessage);
+                    var retryAfter = parseInt(errorData.retry_after || (errorData.data && errorData.data.retry_after), 10);
+                    var canRetry = !!errorData.retryable || isRetryableError(errorData.code);
+                    showModalError(
+                        $modal,
+                        errorMessage,
+                        canRetry ? function() {
+                            closeRegenerateModal($modal);
+                            reenableButton($btn, originalBtnText);
+                            $btn.trigger('click');
+                        } : null,
+                        isNaN(retryAfter) ? 0 : retryAfter
+                    );
                     reenableButton($btn, originalBtnText);
                 }
             }
         })
         .fail(function(xhr, status, error) {
+            if ($modal.data('bbai-request-key') !== requestKey) {
+                window.BBAI_LOG && window.BBAI_LOG.warn('[AI Alt Text] Ignoring stale regenerate failure response');
+                return;
+            }
+
             window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Failed to regenerate:', error, xhr);
 
             $modal.find('.bbai-regenerate-modal__loading').removeClass('active');
@@ -306,30 +350,39 @@
             var errorMessage = errorData.message || errorData.error || 'Failed to regenerate alt text. Please try again.';
             var errorMessageLower = errorMessage.toLowerCase();
             
+            // Check for trial exhausted first
+            var isTrialExhaustedFail = (typeof window.bbaiIsTrialExhausted === 'function' && window.bbaiIsTrialExhausted(errorData)) ||
+                                       errorData.code === 'bbai_trial_exhausted';
+
+            if (isTrialExhaustedFail) {
+                closeRegenerateModal($modal);
+                reenableButton($btn, originalBtnText);
+                if (typeof window.bbaiHandleTrialExhausted === 'function') {
+                    window.bbaiHandleTrialExhausted(errorData);
+                }
+            } else
             // Check for quota exceeded errors
-            var isQuotaError = errorData.code === 'limit_reached' || 
+            if (errorData.code === 'limit_reached' ||
                               errorMessageLower.includes('quota exceeded') ||
                               errorMessageLower.includes('quota exhausted') ||
                               errorMessageLower.includes('limit reached') ||
-                              errorMessageLower.includes('monthly limit');
-            
-            if (isQuotaError) {
+                              errorMessageLower.includes('monthly limit')) {
                 // Show error message in modal first
                 var quotaMessage = errorMessage || 'Your monthly quota has been exceeded. Upgrade to continue generating alt text.';
                 showModalError($modal, quotaMessage);
-                
+
                 // Disable accept button since quota is exceeded
                 $modal.find('.bbai-regenerate-modal__btn--accept').prop('disabled', true);
-                
+
                 // Wait 2.5 seconds for user to read the message, then close modal and show upgrade popup
                 setTimeout(function() {
                     closeRegenerateModal($modal);
                     reenableButton($btn, originalBtnText);
-                    
+
                     // Small delay to ensure regenerate modal is fully closed before showing upgrade modal
                     setTimeout(function() {
                         window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Showing upgrade modal after quota exceeded (fail handler)');
-                        
+
                         // Function to show modal with retry logic (same as success handler)
                         function tryShowUpgradeModalFail(retries) {
                             retries = retries || 0;
@@ -484,7 +537,18 @@
                     showAuthModal('login');
                 }
             } else {
-                showModalError($modal, errorMessage);
+                var failRetryAfter = parseInt(errorData.retry_after || (errorData.data && errorData.data.retry_after), 10);
+                var failCanRetry = !!errorData.retryable || isRetryableError(errorData.code);
+                showModalError(
+                    $modal,
+                    errorMessage,
+                    failCanRetry ? function() {
+                        closeRegenerateModal($modal);
+                        reenableButton($btn, originalBtnText);
+                        $btn.trigger('click');
+                    } : null,
+                    isNaN(failRetryAfter) ? 0 : failRetryAfter
+                );
                 reenableButton($btn, originalBtnText);
             }
         });
@@ -492,6 +556,7 @@
         $modal.find('.bbai-regenerate-modal__btn--cancel')
             .off('click')
             .on('click', function() {
+                $modal.removeData('bbai-request-key');
                 closeRegenerateModal($modal);
                 reenableButton($btn, originalBtnText);
             });
@@ -539,8 +604,9 @@
     /**
      * Show error in modal
      */
-    function showModalError($modal, message) {
+    function showModalError($modal, message, retryCallback, retryAfterSeconds) {
         var $errorDiv = $modal.find('.bbai-regenerate-modal__error');
+        var hasRetry = typeof retryCallback === 'function';
         var isQuotaError = message.toLowerCase().includes('quota') || 
                           message.toLowerCase().includes('limit reached') ||
                           message.toLowerCase().includes('limit exceeded');
@@ -552,9 +618,35 @@
             '<path d="M10 6V10M10 14H10.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' +
             '</svg>' +
             '<span style="flex: 1;">' + $('<div>').text(message).html() + '</span>' +
+            (hasRetry ? '<button type="button" class="bbai-regenerate-modal__btn bbai-regenerate-modal__btn--retry" data-action="retry-regenerate">Retry</button>' : '') +
             '</div>';
         
         $errorDiv.html(errorHtml).addClass('active');
+
+        if (hasRetry) {
+            var $retryButton = $errorDiv.find('[data-action="retry-regenerate"]');
+            var retryDelay = Math.max(0, parseInt(retryAfterSeconds, 10) || 0);
+
+            if (retryDelay > 0) {
+                $retryButton.prop('disabled', true).text('Retry in ' + retryDelay + 's');
+                var retryTimer = window.setInterval(function() {
+                    retryDelay -= 1;
+                    if (retryDelay <= 0) {
+                        window.clearInterval(retryTimer);
+                        $retryButton.prop('disabled', false).text('Retry');
+                        return;
+                    }
+                    $retryButton.text('Retry in ' + retryDelay + 's');
+                }, 1000);
+            }
+
+            $retryButton.off('click').on('click', function() {
+                if ($retryButton.prop('disabled')) {
+                    return;
+                }
+                retryCallback();
+            });
+        }
         
         // Add special class for quota errors for enhanced styling
         if (isQuotaError) {
@@ -568,10 +660,24 @@
         $modal.find('.bbai-regenerate-modal__result').removeClass('active');
     }
 
+    function isRetryableError(errorCode) {
+        var retryableErrors = [
+            'api_timeout',
+            'api_unreachable',
+            'network_error',
+            'server_error',
+            'quota_check_mismatch',
+            'missing_alt_text',
+            'api_response_invalid'
+        ];
+        return retryableErrors.indexOf(errorCode) !== -1;
+    }
+
     /**
      * Close regenerate modal
      */
     function closeRegenerateModal($modal) {
+        $modal.removeData('bbai-request-key');
         $modal.removeClass('active');
         $('body').css('overflow', '');
     }

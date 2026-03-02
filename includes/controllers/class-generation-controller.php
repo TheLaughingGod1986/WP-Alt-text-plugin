@@ -69,6 +69,16 @@ class Generation_Controller {
 			);
 		}
 
+		$request_key = isset( $_POST['request_key'] ) ? sanitize_text_field( wp_unslash( $_POST['request_key'] ) ) : '';
+		$this->maybe_log_regenerate_debug(
+			'V5 regenerate request accepted',
+			array(
+				'request_key'    => $request_key,
+				'attachment_id'  => $attachment_id,
+				'attachment_url' => wp_get_attachment_url( $attachment_id ),
+			)
+		);
+
 		return $this->generation_service->regenerate_single( $attachment_id );
 	}
 
@@ -159,5 +169,24 @@ class Generation_Controller {
 	 */
 	private function user_can_manage(): bool {
 		return current_user_can( 'manage_options' );
+	}
+
+	/**
+	 * Log regenerate flow debug details when enabled.
+	 *
+	 * @since 5.0.0
+	 *
+	 * @param string $message Log message.
+	 * @param array  $context Optional context payload.
+	 * @return void
+	 */
+	private function maybe_log_regenerate_debug( string $message, array $context = array() ): void {
+		if ( ! defined( 'BBAI_DEBUG_REGENERATE_FLOW' ) || ! BBAI_DEBUG_REGENERATE_FLOW ) {
+			return;
+		}
+
+		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+			\BeepBeepAI\AltTextGenerator\Debug_Log::log( 'info', $message, $context, 'generation' );
+		}
 	}
 }

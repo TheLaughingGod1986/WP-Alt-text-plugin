@@ -134,7 +134,7 @@
                 message = __('Network error. Please check your internet connection.', 'beepbeep-ai-alt-text-generator');
                 code = 'network_error';
             } else if (xhr.status === 401) {
-                message = __('Your session has expired. Please log in again.', 'beepbeep-ai-alt-text-generator');
+                message = __('Your BeepBeep AI account session has expired. Please sign in again.', 'beepbeep-ai-alt-text-generator');
                 code = 'unauthorized';
             } else if (xhr.status === 403) {
                 message = __("You don't have permission to perform this action.", 'beepbeep-ai-alt-text-generator');
@@ -170,7 +170,7 @@
                 message = __('Network error. Please check your internet connection.', 'beepbeep-ai-alt-text-generator');
                 code = 'network_error';
             } else if (response.status === 401) {
-                message = __('Your session has expired. Please log in again.', 'beepbeep-ai-alt-text-generator');
+                message = __('Your BeepBeep AI account session has expired. Please sign in again.', 'beepbeep-ai-alt-text-generator');
                 code = 'unauthorized';
             } else if (response.status === 403) {
                 message = __("You don't have permission to perform this action.", 'beepbeep-ai-alt-text-generator');
@@ -248,7 +248,15 @@
          * Check if error can be retried
          */
         canRetry: function(errorCode) {
-            const retryableErrors = ['network_error', 'server_error', 'rate_limited', 'unknown_error'];
+            const retryableErrors = [
+                'network_error',
+                'server_error',
+                'rate_limited',
+                'unknown_error',
+                'api_timeout',
+                'api_unreachable',
+                'quota_check_mismatch'
+            ];
             return retryableErrors.includes(errorCode);
         },
 

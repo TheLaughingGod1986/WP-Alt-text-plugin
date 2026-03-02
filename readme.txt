@@ -1,5 +1,5 @@
-=== BeepBeep AI – Alt Text Generator for Image SEO & WooCommerce ===
-Plugin Name: BeepBeep AI – Alt Text Generator for Image SEO & WooCommerce
+=== BeepBeep AI – Alt Text Generator ===
+Plugin Name: BeepBeep AI – Alt Text Generator
 Contributors: beepbeepv2
 Plugin URI: https://oppti.dev/beepbeep-ai-alt-text-generator
 Author URI: https://oppti.dev
@@ -7,12 +7,12 @@ Tags: accessibility, AI, Alt Text, image seo, WooCommerce
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 4.4.4
+Stable tag: 4.4.11
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
 
-Stop losing traffic: generate SEO-ready, WCAG-friendly alt text in <60 seconds for WordPress and WooCommerce images.
+Generate image alt text for WordPress to improve accessibility and image search.
 
 == Description ==
 
@@ -70,10 +70,15 @@ Every generated description can be reviewed and edited before saving.
 * Agencies managing multiple WordPress sites
 * Marketing teams focused on image SEO and accessibility
 
+= Try Before You Sign Up =
+
+Get started immediately with **10 free trial generations** — no account or email required. When you're ready, create a free account to unlock 50 credits per month.
+
 = Free Plan Features =
 
-* 50 AI-generated alt texts monthly
-* Bulk generation tools
+* 10 instant trial generations (no account needed)
+* 50 AI-generated alt texts monthly with a free account
+* Bulk generation tools (within monthly credits)
 * Auto-generation on upload
 * Editable descriptions before save
 * Usage dashboard and quota tracking
@@ -90,7 +95,7 @@ Every generated description can be reviewed and edited before saving.
 1. Go to WordPress Admin -> Plugins -> Add New.
 2. Search for "BeepBeep AI Alt Text Generator".
 3. Click Install Now, then Activate.
-4. Open Media -> AI Alt Text to generate your first descriptions.
+4. Open BeepBeep AI -> Dashboard (or ALT Library) to generate your first descriptions.
 5. Optional: enable auto-generation in Settings to process new uploads automatically.
 6. For WooCommerce stores, run bulk generation to fix existing product images and galleries.
 
@@ -138,14 +143,17 @@ Images and metadata are sent securely over HTTPS for processing. See External Se
 
 = Is there a free version? =
 
-Yes. The free plan includes 50 AI-generated alt texts per month.
+Yes. You get 10 free trial generations immediately — no account or email needed. Create a free account to unlock 50 AI-generated alt texts per month.
 
 == Screenshots ==
 
-1. image_1.png: Screenshot showing a friendly digital robot character actively pointing a digital scanning beam at a stylized image placeholder with a prominent 'ALT' text tag. The robot mascot (image_1.png) makes the plugin feel trustworthy and professional.
-2. Dashboard view with usage stats, generation controls, and quick actions for image SEO workflows.
-3. WooCommerce-focused bulk workflow for fixing missing alt tags across large product catalogs.
-4. Settings page for auto-generation, account controls, and optimization preferences.
+Place screenshot files in `/assets` using these exact names: `screenshot-1.png`, `screenshot-2.png`, `screenshot-3.png`, `screenshot-4.png`, `screenshot-5.png`.
+
+1. Bulk alt text generation in the Media Library.
+2. Trial remaining counter and quick-start workflow for first-time setup.
+3. WooCommerce product image workflow for catalog optimization.
+4. SEO quality insights and analytics performance view.
+5. Upgrade/signup modal shown when the 10 free trial generations are exhausted.
 
 == External Services ==
 
@@ -177,18 +185,77 @@ Privacy policy: https://resend.com/legal/privacy
 
 == Changelog ==
 
-= 4.4.4 =
+= 4.4.11 =
 * Maintenance release with bug fixes and stability improvements.
 * Improved WooCommerce, Image SEO, and Accessibility workflows.
-* Internal performance and reliability optimizations.= 4.4.3 =
+* Internal performance and reliability optimizations.= 4.4.10 =
 * Maintenance release with bug fixes and stability improvements.
 * Improved WooCommerce, Image SEO, and Accessibility workflows.
-* Internal performance and reliability optimizations.* Internal performance and reliability optimizations.
-== Upgrade Notice ==
+* Internal performance and reliability optimizations.
+
+= 4.4.9 =
+* Maintenance release with bug fixes and stability improvements.
+* Improved WooCommerce, Image SEO, and Accessibility workflows.
+* Internal performance and reliability optimizations.
+
+= 4.4.8 =
+* Maintenance release with bug fixes and stability improvements.
+* Improved WooCommerce, Image SEO, and Accessibility workflows.
+* Internal performance and reliability optimizations.
+
+= 4.4.7 =
+* Maintenance release with bug fixes and stability improvements.
+* Improved WooCommerce, Image SEO, and Accessibility workflows.
+* Internal performance and reliability optimizations.
+
+= 4.4.6 =
+* Maintenance release with bug fixes and stability improvements.
+* Improved WooCommerce, Image SEO, and Accessibility workflows.
+* Internal performance and reliability optimizations.
+
+= 4.4.5 =
+* Maintenance release with bug fixes and stability improvements.
+* Improved WooCommerce, Image SEO, and Accessibility workflows.
+* Internal performance and reliability optimizations.
 
 = 4.4.4 =
-Recommended maintenance update with WooCommerce, Image SEO, and Accessibility reliability improvements.= 4.4.3 =
-Recommended maintenance update with WooCommerce, Image SEO, and Accessibility reliability improvements.= 4.4.1 =
+* Maintenance release with bug fixes and stability improvements.
+* Improved WooCommerce, Image SEO, and Accessibility workflows.
+* Internal performance and reliability optimizations.
+
+= 4.4.3 =
+* Maintenance release with bug fixes and stability improvements.
+* Improved WooCommerce, Image SEO, and Accessibility workflows.
+* Internal performance and reliability optimizations.
+
+== Upgrade Notice ==
+
+= 4.4.11 =
+Recommended maintenance update with WooCommerce, Image SEO, and Accessibility reliability improvements.= 4.4.10 =
+Recommended maintenance update with WooCommerce, Image SEO, and Accessibility reliability improvements.
+
+= 4.4.9 =
+Recommended maintenance update with WooCommerce, Image SEO, and Accessibility reliability improvements.
+
+= 4.4.8 =
+Recommended maintenance update that improves alt text generation reliability and overall stability.
+
+= 4.4.7 =
+Recommended maintenance update with WooCommerce, Image SEO, and Accessibility reliability improvements.
+
+= 4.4.6 =
+Recommended maintenance update with WooCommerce, Image SEO, and Accessibility reliability improvements.
+
+= 4.4.5 =
+Recommended maintenance update with WooCommerce, Image SEO, and Accessibility reliability improvements.
+
+= 4.4.4 =
+Recommended maintenance update with WooCommerce, Image SEO, and Accessibility reliability improvements.
+
+= 4.4.3 =
+Recommended maintenance update with WooCommerce, Image SEO, and Accessibility reliability improvements.
+
+= 4.4.1 =
 Recommended update with WordPress.org compliance, security hardening, and usage-tracking improvements.
 
 = 4.3.0 =
@@ -203,6 +270,8 @@ https://profiles.wordpress.org/beepbeepv2/
 
 This plugin:
 * Stores usage data locally in your WordPress database
+* Stores trial usage count locally in `wp_options` using an anonymous site identifier key (`bbai_trial_usage_{site_hash}`)
+* Does not require an email address during the initial 10-generation trial stage
 * Stores account and license details if you connect an account (e.g., email, plan)
 * Stores contact form submissions if you submit support requests (name, email, message)
 * Stores per-user usage logs linked to WordPress user IDs

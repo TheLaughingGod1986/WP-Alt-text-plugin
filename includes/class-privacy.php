@@ -71,6 +71,7 @@ class Privacy {
 		if ( $page <= 1 ) {
 			$data = array_merge( $data, self::export_account_data( $email_address ) );
 			$data = array_merge( $data, self::export_usage_summary( $user_id ) );
+			$data = array_merge( $data, self::export_trial_usage_summary() );
 		}
 
 		return [
@@ -191,6 +192,47 @@ class Privacy {
 		}
 
 		return $items;
+	}
+
+	/**
+	 * Export local trial usage disclosure data.
+	 *
+	 * @return array
+	 */
+	private static function export_trial_usage_summary(): array {
+		if ( ! function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_trial_site_hash' ) ) {
+			$helper_path = defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) ? BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-trial-quota.php' : '';
+			if ( $helper_path && file_exists( $helper_path ) ) {
+				require_once $helper_path;
+			}
+		}
+
+		if ( ! function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_trial_site_hash' ) ) {
+			return [];
+		}
+
+		$site_hash = sanitize_key( bbai_get_trial_site_hash() );
+		$limit     = absint( bbai_get_trial_limit() );
+		$remaining = absint( bbai_get_trial_remaining( $site_hash ) );
+		$used      = max( 0, $limit - $remaining );
+		$option_key = function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_trial_option_key' )
+			? bbai_get_trial_option_key( $site_hash )
+			: 'bbai_trial_usage_' . $site_hash;
+
+		return [
+			[
+				'group_id'    => 'bbai_trial_usage',
+				'group_label' => __( 'BeepBeep AI Trial Usage', 'beepbeep-ai-alt-text-generator' ),
+				'item_id'     => 'trial-usage-local',
+				'data'        => [
+					[ 'name' => __( 'Trial Limit', 'beepbeep-ai-alt-text-generator' ), 'value' => (string) $limit ],
+					[ 'name' => __( 'Trial Used', 'beepbeep-ai-alt-text-generator' ), 'value' => (string) $used ],
+					[ 'name' => __( 'Trial Remaining', 'beepbeep-ai-alt-text-generator' ), 'value' => (string) $remaining ],
+					[ 'name' => __( 'Storage Key', 'beepbeep-ai-alt-text-generator' ), 'value' => sanitize_text_field( $option_key ) ],
+					[ 'name' => __( 'Disclosure', 'beepbeep-ai-alt-text-generator' ), 'value' => __( 'Trial usage count is stored locally in wp_options using an anonymous site identifier. No email is required for trial usage.', 'beepbeep-ai-alt-text-generator' ) ],
+				],
+			],
+		];
 	}
 
 	/**

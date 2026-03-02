@@ -10001,7 +10001,8 @@ h4.bbai-heading {
     justify-content: space-between;
     max-width: var(--bbai-dashboard-max-width);
     margin: 0 auto;
-    gap: var(--bbai-space-6);
+    gap: var(--bbai-space-4);
+    overflow: hidden;
 }
 
 /* ============================================
@@ -10013,6 +10014,7 @@ h4.bbai-heading {
     align-items: center;
     gap: var(--bbai-space-3);
     text-decoration: none;
+    flex-shrink: 0;
 }
 
 .bbai-logo-icon {
@@ -10036,6 +10038,15 @@ h4.bbai-heading {
     display: flex;
     align-items: center;
     gap: var(--bbai-space-1);
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.bbai-nav::-webkit-scrollbar {
+    display: none;
 }
 
 .bbai-nav-link {
@@ -10091,6 +10102,7 @@ h4.bbai-heading {
     display: flex;
     align-items: center;
     gap: var(--bbai-space-3);
+    flex-shrink: 0;
 }
 
 /* Auth Badge */

@@ -78,11 +78,31 @@ class Generation_Service {
 	 * @return array{success: bool, message: string, alt_text?: string, code?: string, data?: array, usage?: array} Generation result.
 	 */
 	public function regenerate_single( int $attachment_id ): array {
+		$this->maybe_log_regenerate_debug(
+			'Generation service regenerate request',
+			array(
+				'attachment_id'  => $attachment_id,
+				'attachment_url' => wp_get_attachment_url( $attachment_id ),
+			)
+		);
+
 		// Validate attachment.
 		if ( ! $attachment_id ) {
 			return array(
 				'success' => false,
 				'message' => __( 'Invalid attachment ID', 'beepbeep-ai-alt-text-generator' ),
+			);
+		}
+
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+		if ( \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_exhausted() ) {
+			$trial_status = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_status();
+			return array(
+				'success'   => false,
+				'message'   => __( "You've used your 10 free generations. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator' ),
+				'code'      => 'bbai_trial_exhausted',
+				'remaining' => 0,
+				'limit'     => intval( $trial_status['limit'] ?? 10 ),
 			);
 		}
 
@@ -157,6 +177,18 @@ class Generation_Service {
 			return array(
 				'success' => false,
 				'message' => __( 'No attachment IDs provided', 'beepbeep-ai-alt-text-generator' ),
+			);
+		}
+
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+		if ( \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_exhausted() ) {
+			$trial_status = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_status();
+			return array(
+				'success'   => false,
+				'message'   => __( "You've used your 10 free generations. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator' ),
+				'code'      => 'bbai_trial_exhausted',
+				'remaining' => 0,
+				'limit'     => intval( $trial_status['limit'] ?? 10 ),
 			);
 		}
 
@@ -241,6 +273,18 @@ class Generation_Service {
 			);
 		}
 
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+		if ( \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_exhausted() ) {
+			$trial_status = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_status();
+			return array(
+				'success'   => false,
+				'message'   => __( "You've used your 10 free generations. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator' ),
+				'code'      => 'bbai_trial_exhausted',
+				'remaining' => 0,
+				'limit'     => intval( $trial_status['limit'] ?? 10 ),
+			);
+		}
+
 		// Generate inline (delegate to core).
 		$result = $this->core->generate_and_save( $attachment_id, 'inline', 0, array(), false );
 
@@ -287,8 +331,31 @@ class Generation_Service {
 			'quota_exhausted'       => __( 'Monthly quota exhausted. Please upgrade to continue generating alt text.', 'beepbeep-ai-alt-text-generator' ),
 			'api_timeout'           => __( 'The request timed out. Please try again.', 'beepbeep-ai-alt-text-generator' ),
 			'api_unreachable'       => __( 'Unable to reach the server. Please check your internet connection and try again.', 'beepbeep-ai-alt-text-generator' ),
+			'network_error'         => __( 'Unable to reach the server. Please check your internet connection and try again.', 'beepbeep-ai-alt-text-generator' ),
+			'rate_limited'          => __( 'Too many requests were sent at once. Please wait a moment and retry.', 'beepbeep-ai-alt-text-generator' ),
+			'server_error'          => __( 'The service is temporarily unavailable. Please retry in a moment.', 'beepbeep-ai-alt-text-generator' ),
+			'auth_required'         => __( 'Your BeepBeep AI account session has expired. Please sign in again.', 'beepbeep-ai-alt-text-generator' ),
 		);
 
 		return $messages[ $error_code ] ?? $error_message;
+	}
+
+	/**
+	 * Log regenerate flow debug details when enabled.
+	 *
+	 * @since 5.0.0
+	 *
+	 * @param string $message Log message.
+	 * @param array  $context Optional context payload.
+	 * @return void
+	 */
+	private function maybe_log_regenerate_debug( string $message, array $context = array() ): void {
+		if ( ! defined( 'BBAI_DEBUG_REGENERATE_FLOW' ) || ! BBAI_DEBUG_REGENERATE_FLOW ) {
+			return;
+		}
+
+		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+			\BeepBeepAI\AltTextGenerator\Debug_Log::log( 'info', $message, $context, 'generation' );
+		}
 	}
 }

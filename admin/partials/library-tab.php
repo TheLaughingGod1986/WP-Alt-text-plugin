@@ -597,8 +597,8 @@ $bbai_optimized_percent = $bbai_total_images > 0 ? round(($bbai_with_alt_count /
                             <span><?php esc_html_e('Optimized for Google Images & SEO insights', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </div>
                     </div>
-                    <a href="#" class="bbai-empty-state-sync-link">
-                        <?php esc_html_e('Or sync from Media Library automatically', 'beepbeep-ai-alt-text-generator'); ?> &gt;
+                    <a href="<?php echo esc_url(admin_url('upload.php')); ?>" class="bbai-empty-state-sync-link">
+                        <?php esc_html_e('Add images in Media Library', 'beepbeep-ai-alt-text-generator'); ?> &gt;
                     </a>
                     <div class="bbai-empty-state-actions">
                         <a href="<?php echo esc_url(admin_url('upload.php')); ?>" class="bbai-btn bbai-btn-primary">

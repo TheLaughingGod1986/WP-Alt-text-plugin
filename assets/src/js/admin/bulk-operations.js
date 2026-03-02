@@ -67,6 +67,16 @@
             return false;
         }
 
+        // Check trial exhaustion first
+        var trialData = window.BBAI_DASH && window.BBAI_DASH.trial;
+        if (trialData && trialData.is_trial && trialData.exhausted) {
+            window.bbaiHandleTrialExhausted({
+                message: 'You\'ve used your free trial generations. Create a free account to continue.',
+                code: 'bbai_trial_exhausted'
+            });
+            return false;
+        }
+
         // If out of credits and not premium, show upgrade modal
         if (!usage.isPremium && usage.isOutOfCredits) {
             window.bbaiHandleLimitReached({
@@ -197,6 +207,16 @@
 
         var usage = checkUsageBeforeOperation();
 
+        // Check trial exhaustion first
+        var trialDataRegen = window.BBAI_DASH && window.BBAI_DASH.trial;
+        if (trialDataRegen && trialDataRegen.is_trial && trialDataRegen.exhausted) {
+            window.bbaiHandleTrialExhausted({
+                message: 'You\'ve used your free trial generations. Create a free account to continue.',
+                code: 'bbai_trial_exhausted'
+            });
+            return false;
+        }
+
         if (!usage.isPremium && usage.isOutOfCredits) {
             window.bbaiHandleLimitReached({
                 message: 'Monthly limit reached. Upgrade to continue regenerating alt text.',
@@ -261,6 +281,12 @@
      * Handle bulk operation errors
      */
     function handleBulkError(error, ids, count, $btn, originalText, source) {
+        if (error && window.bbaiIsTrialExhausted && window.bbaiIsTrialExhausted(error)) {
+            hideBulkProgress();
+            window.bbaiHandleTrialExhausted(error);
+            return;
+        }
+
         if (error && error.code === 'limit_reached') {
             hideBulkProgress();
             window.bbaiHandleLimitReached(error);

@@ -1,0 +1,31 @@
+{
+  "name": "wp-alt-text-plugin",
+  "version": "1.0.0",
+  "description": "Professional WordPress plugin for generating accessible ALT text using OpenAI's GPT models. Features progress tracking, achievement system, and comprehensive analytics to improve accessibility and SEO.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "npm run test:e2e",
+    "test:e2e": "playwright test",
+    "test:php": "phpunit -c phpunit.xml.dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TheLaughingGod1986/WP-Alt-text-plugin.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/TheLaughingGod1986/WP-Alt-text-plugin/issues"
+  },
+  "homepage": "https://github.com/TheLaughingGod1986/WP-Alt-text-plugin#readme",
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "@playwright/test": "^1.58.2",
+    "playwright": "^1.58.2"
+  }
+}

@@ -53,7 +53,7 @@ if (!defined('BBAI_PLUGIN_BASENAME')) {
 }
 
 if (!defined('BBAI_VERSION')) {
-    define('BBAI_VERSION', defined('BEEPBEEP_AI_VERSION') ? BEEPBEEP_AI_VERSION : '4.4.4');
+    define('BBAI_VERSION', defined('BEEPBEEP_AI_VERSION') ? BEEPBEEP_AI_VERSION : '4.4.11');
 }
 
 // Load API clients, usage tracker, and queue infrastructure
@@ -100,6 +100,9 @@ class Core {
     const OPTION_KEY = 'bbai_settings';
     const NONCE_KEY  = 'bbai_nonce';
     const CAPABILITY = 'manage_bbbbai_text';
+    private const MENU_SLUG_DASHBOARD = 'bbai';
+    private const MENU_SLUG_LIBRARY   = 'bbai-library';
+    private const MENU_SLUG_ONBOARDING = 'bbai-onboarding';
 
     private const DEFAULT_CHECKOUT_PRICE_IDS = [
         'pro'     => 'price_1SMrxaJl9Rm418cMM4iikjlJ',
@@ -124,6 +127,31 @@ class Core {
     private $checkout_price_cache = null;
     private $debug_bootstrap = null;
     private $account_summary = null;
+
+    /**
+     * Whether regenerate flow debug logging is enabled.
+     *
+     * Define `BBAI_DEBUG_REGENERATE_FLOW` as true in wp-config.php to enable.
+     */
+    private function is_regenerate_debug_enabled(): bool {
+        return defined('BBAI_DEBUG_REGENERATE_FLOW') && (bool) BBAI_DEBUG_REGENERATE_FLOW;
+    }
+
+    /**
+     * Log regenerate flow details when debug flag is enabled.
+     *
+     * @param string $message Log message.
+     * @param array  $context Optional structured context.
+     */
+    private function maybe_log_regenerate_debug(string $message, array $context = []): void {
+        if (!$this->is_regenerate_debug_enabled()) {
+            return;
+        }
+
+        if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+            Debug_Log::log('info', $message, $context, 'generation');
+        }
+    }
 
     public function user_can_manage(){
         return current_user_can(self::CAPABILITY) || current_user_can('manage_options');
@@ -197,6 +225,104 @@ class Core {
      */
     public function get_api_client() {
         return $this->api_client;
+    }
+
+    /**
+     * Check whether this site is already connected to an account/license.
+     *
+     * @return bool
+     */
+    private function has_connected_account_for_trial(): bool {
+        if (function_exists('bbai_is_authenticated') && \bbai_is_authenticated()) {
+            return true;
+        }
+
+        try {
+            if ($this->api_client->is_authenticated() || $this->api_client->has_active_license()) {
+                return true;
+            }
+        } catch (\Exception $e) {
+            // Fall through to stored-credential checks.
+        } catch (\Error $e) {
+            // Fall through to stored-credential checks.
+        }
+
+        $stored_token = get_option('beepbeepai_jwt_token', '');
+        $legacy_token = get_option('opptibbai_jwt_token', '');
+        if (!empty($stored_token) || !empty($legacy_token)) {
+            return true;
+        }
+
+        try {
+            $stored_license = $this->api_client->get_license_key();
+            if (!empty($stored_license)) {
+                return true;
+            }
+        } catch (\Exception $e) {
+            // Ignore and continue.
+        } catch (\Error $e) {
+            // Ignore and continue.
+        }
+
+        return false;
+    }
+
+    /**
+     * Get local trial status for current site.
+     *
+     * @return array{site_hash:string,limit:int,used:int,remaining:int,should_gate:bool}
+     */
+    private function get_trial_status(): array {
+        if (!function_exists('\BeepBeepAI\AltTextGenerator\bbai_get_trial_site_hash')) {
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-trial-quota.php';
+        }
+
+        $site_hash = \BeepBeepAI\AltTextGenerator\bbai_get_trial_site_hash();
+        $limit = \BeepBeepAI\AltTextGenerator\bbai_get_trial_limit();
+        $remaining = \BeepBeepAI\AltTextGenerator\bbai_get_trial_remaining($site_hash);
+        $used = max(0, $limit - $remaining);
+        $should_gate = !$this->has_connected_account_for_trial();
+
+        return [
+            'site_hash' => $site_hash,
+            'limit' => $limit,
+            'used' => $used,
+            'remaining' => $remaining,
+            'should_gate' => $should_gate,
+        ];
+    }
+
+    /**
+     * Build common trial exhausted payload for JSON responses.
+     *
+     * @return array
+     */
+    private function get_trial_exhausted_payload(): array {
+        $trial = $this->get_trial_status();
+
+        return [
+            'message' => __("You've used your 10 free generations. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator'),
+            'code' => 'bbai_trial_exhausted',
+            'remaining' => 0,
+            'limit' => $trial['limit'],
+            'used' => $trial['limit'],
+            'site_hash' => $trial['site_hash'],
+        ];
+    }
+
+    /**
+     * Build trial exhausted WP_Error.
+     *
+     * @return \WP_Error
+     */
+    private function get_trial_exhausted_error(): \WP_Error {
+        $payload = $this->get_trial_exhausted_payload();
+
+        return new \WP_Error(
+            'bbai_trial_exhausted',
+            $payload['message'],
+            $payload
+        );
     }
 
     public function default_usage(){
@@ -904,61 +1030,61 @@ class Core {
             __('BeepBeep AI', 'beepbeep-ai-alt-text-generator'),
             __('BeepBeep AI', 'beepbeep-ai-alt-text-generator'),
             $cap,
-            'bbai',
+            self::MENU_SLUG_DASHBOARD,
             [$this, 'render_settings_page'],
             'dashicons-format-image',
             30
         );
 
-        // Explicit first submenu replaces the auto-generated duplicate.
-        // Order matches the top header nav.
-        add_submenu_page(
-            'bbai',
-            __('Dashboard', 'beepbeep-ai-alt-text-generator'),
-            __('Dashboard', 'beepbeep-ai-alt-text-generator'),
-            $cap,
-            'bbai',
-            [$this, 'render_settings_page']
-        );
-
-        add_submenu_page(
-            'bbai',
-            __('ALT Library', 'beepbeep-ai-alt-text-generator'),
-            __('ALT Library', 'beepbeep-ai-alt-text-generator'),
-            $cap,
-            'bbai-library',
-            [$this, 'render_settings_page']
-        );
-
-        add_submenu_page(
-            'bbai',
-            __('Analytics', 'beepbeep-ai-alt-text-generator'),
-            __('Analytics', 'beepbeep-ai-alt-text-generator'),
-            $cap,
-            'bbai-analytics',
-            [$this, 'render_settings_page']
-        );
-
-        add_submenu_page(
-            'bbai',
-            __('Credit Usage', 'beepbeep-ai-alt-text-generator'),
-            __('Credit Usage', 'beepbeep-ai-alt-text-generator'),
-            $cap,
-            'bbai-credit-usage',
-            [$this, 'render_settings_page']
-        );
-
-        add_submenu_page(
-            'bbai',
-            __('How to', 'beepbeep-ai-alt-text-generator'),
-            __('How to', 'beepbeep-ai-alt-text-generator'),
-            $cap,
-            'bbai-guide',
-            [$this, 'render_settings_page']
-        );
-
-        // Settings and Debug only for authenticated/licensed users.
+        // Sidebar submenus are visible only for authenticated/licensed users.
         if ($bbai_has_registered_user) {
+            // Explicit first submenu replaces the auto-generated duplicate.
+            // Order matches the top header nav.
+            add_submenu_page(
+                self::MENU_SLUG_DASHBOARD,
+                __('Dashboard', 'beepbeep-ai-alt-text-generator'),
+                __('Dashboard', 'beepbeep-ai-alt-text-generator'),
+                $cap,
+                self::MENU_SLUG_DASHBOARD,
+                [$this, 'render_settings_page']
+            );
+
+            add_submenu_page(
+                self::MENU_SLUG_DASHBOARD,
+                __('ALT Library', 'beepbeep-ai-alt-text-generator'),
+                __('ALT Library', 'beepbeep-ai-alt-text-generator'),
+                $cap,
+                self::MENU_SLUG_LIBRARY,
+                [$this, 'render_settings_page']
+            );
+
+            add_submenu_page(
+                'bbai',
+                __('Analytics', 'beepbeep-ai-alt-text-generator'),
+                __('Analytics', 'beepbeep-ai-alt-text-generator'),
+                $cap,
+                'bbai-analytics',
+                [$this, 'render_settings_page']
+            );
+
+            add_submenu_page(
+                'bbai',
+                __('Credit Usage', 'beepbeep-ai-alt-text-generator'),
+                __('Credit Usage', 'beepbeep-ai-alt-text-generator'),
+                $cap,
+                'bbai-credit-usage',
+                [$this, 'render_settings_page']
+            );
+
+            add_submenu_page(
+                'bbai',
+                __('How to', 'beepbeep-ai-alt-text-generator'),
+                __('How to', 'beepbeep-ai-alt-text-generator'),
+                $cap,
+                'bbai-guide',
+                [$this, 'render_settings_page']
+            );
+
             add_submenu_page(
                 'bbai',
                 __('Settings', 'beepbeep-ai-alt-text-generator'),
@@ -976,6 +1102,19 @@ class Core {
                 'bbai-debug',
                 [$this, 'render_settings_page']
             );
+        } else {
+            // Keep trial link destinations routable without exposing sidebar navigation.
+            add_submenu_page(
+                '',
+                __('ALT Library', 'beepbeep-ai-alt-text-generator'),
+                __('ALT Library', 'beepbeep-ai-alt-text-generator'),
+                $cap,
+                self::MENU_SLUG_LIBRARY,
+                [$this, 'render_settings_page']
+            );
+
+            // Remove the auto-generated duplicate submenu under the top-level menu.
+            remove_submenu_page(self::MENU_SLUG_DASHBOARD, self::MENU_SLUG_DASHBOARD);
         }
 
 	        // Prevent PHP 8.1+ strip_tags() null deprecation on hidden pages.
@@ -999,12 +1138,12 @@ class Core {
 	        // Hidden onboarding/guide page (accessible but not shown in menu)
 	        add_submenu_page(
 	            '', // No parent = hidden from menu
-	            __('Getting Started', 'beepbeep-ai-alt-text-generator'),
-	            __('Getting Started', 'beepbeep-ai-alt-text-generator'),
-	            $cap,
-	            'bbai-onboarding',
-	            [$this, 'render_bbai_onboarding_step2']
-	        );
+                __('Getting Started', 'beepbeep-ai-alt-text-generator'),
+                __('Getting Started', 'beepbeep-ai-alt-text-generator'),
+                $cap,
+                self::MENU_SLUG_ONBOARDING,
+                [$this, 'render_bbai_onboarding_step2']
+        );
 	    }
 
 	    public function handle_checkout_redirect() {
@@ -1434,8 +1573,7 @@ class Core {
         // The JS calls bbai_complete_onboarding when stats show queue is empty.
 
         $dashboard_url = admin_url('admin.php?page=bbai');
-        // TODO: Update this if ALT Library slug changes
-        $library_url = admin_url('admin.php?page=bbai-library');
+        $library_url = admin_url('admin.php?page=' . self::MENU_SLUG_LIBRARY);
         $bbai_is_authenticated = bbai_is_authenticated();
         ?>
         <div class="wrap bbai-wrap bbai-modern bbai-onboarding bbai-onboarding-step3">
@@ -1647,10 +1785,11 @@ class Core {
         // Initialize $bbai_tabs array (will be populated in if/else blocks below)
         $bbai_tabs = [];
         
-        // No tabs for non-registered users - show onboarding page only
+        // Non-registered users: show logged-out dashboard only (no header nav tabs).
         if (!$bbai_has_registered_user) {
             $bbai_tabs = [];
-            $bbai_tab = 'dashboard'; // Default to dashboard/onboarding view
+            $bbai_tab = 'dashboard';
+
             $bbai_is_pro_for_admin = false;
             $bbai_is_agency_for_admin = false;
         } else {
@@ -1769,6 +1908,7 @@ class Core {
                             <span class="bbai-logo-tagline"><?php esc_html_e('WordPress AI Tools', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </div>
                     </div>
+                    <?php if ($bbai_has_registered_user) : ?>
                     <nav class="bbai-nav" role="navigation" aria-label="<?php esc_attr_e('Main navigation', 'beepbeep-ai-alt-text-generator'); ?>">
                         <?php
                         // Ensure $bbai_tabs is defined (empty array is valid for non-registered users)
@@ -1818,6 +1958,7 @@ class Core {
                             <?php esc_html_e('Guide', 'beepbeep-ai-alt-text-generator'); ?>
                         </a>
                     </nav>
+                    <?php endif; ?>
                     <!-- Auth & Subscription Actions -->
                     <div class="bbai-header-actions">
                         <?php
@@ -1849,7 +1990,7 @@ class Core {
                                 <span class="bbai-header-plan-badge"><?php echo esc_html(is_string($plan_label) ? $plan_label : ucfirst($bbai_plan_slug ?? 'free')); ?></span>
                                 <?php if ($bbai_plan_slug === 'free' && !$bbai_has_license) : ?>
                                     <button type="button" class="bbai-header-upgrade-btn" data-action="show-upgrade-modal">
-                                        <?php esc_html_e('Upgrade to Growth — 1,000 Generations Monthly', 'beepbeep-ai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Upgrade', 'beepbeep-ai-alt-text-generator'); ?>
                                     </button>
                                 <?php elseif (!empty($billing_portal) && $bbai_is_authenticated) : ?>
                                     <button type="button" class="bbai-header-manage-btn" data-action="open-billing-portal">
@@ -1889,7 +2030,7 @@ class Core {
     }
     ?>
 
-<?php elseif ($bbai_tab === 'library' && ($bbai_is_authenticated || $bbai_has_license)) : ?>
+<?php elseif ($bbai_tab === 'library' && ($bbai_is_authenticated || $bbai_has_license || !$bbai_has_registered_user)) : ?>
     <?php
     $bbai_library_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/library-tab.php';
     if (file_exists($bbai_library_partial)) {
@@ -2722,16 +2863,17 @@ class Core {
         return $first_weight >= $second_weight ? $first : $second;
     }
 
-	    public function get_missing_attachment_ids($limit = 5){
+	    public function get_missing_attachment_ids($limit = 5, $offset = 0){
 	        global $wpdb;
 	        $limit = intval($limit);
+	        $offset = max(0, intval($offset));
 	        if ($limit <= 0){ $limit = 5; }
 	        $image_mime_like = $wpdb->esc_like('image/') . '%';
 	        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	        return array_map('intval', (array) $wpdb->get_col($wpdb->prepare(
 	            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- Table identifiers come from trusted core $wpdb properties; value placeholders remain prepared.
-	            'SELECT p.ID FROM ' . $wpdb->posts . ' p LEFT JOIN ' . $wpdb->postmeta . ' m ON (p.ID = m.post_id AND m.meta_key = %s) WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s AND (m.meta_value IS NULL OR TRIM(m.meta_value) = %s) ORDER BY p.ID DESC LIMIT %d',
-	            '_wp_attachment_image_alt', 'attachment', 'inherit', $image_mime_like, '', $limit
+	            'SELECT p.ID FROM ' . $wpdb->posts . ' p LEFT JOIN ' . $wpdb->postmeta . ' m ON (p.ID = m.post_id AND m.meta_key = %s) WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s AND (m.meta_value IS NULL OR TRIM(m.meta_value) = %s) ORDER BY p.ID DESC LIMIT %d OFFSET %d',
+	            '_wp_attachment_image_alt', 'attachment', 'inherit', $image_mime_like, '', $limit, $offset
 	        )));
 	    }
 
@@ -3477,6 +3619,13 @@ class Core {
     public function generate_and_save($attachment_id, $source='manual', int $retry_count = 0, array $feedback = [], $regenerate = false){
         $opts = get_option(self::OPTION_KEY, []);
 
+        // Trial quota gate: block unauthenticated users who have exhausted their free trial.
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+        $bbai_trial_check = \BeepBeepAI\AltTextGenerator\Trial_Quota::check();
+        if ( is_wp_error( $bbai_trial_check ) ) {
+            return $bbai_trial_check;
+        }
+
         // Allocate free credits on first generation request (one-time per site)
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
         \BeepBeepAI\AltTextGenerator\Usage_Tracker::allocate_free_credits_if_needed();
@@ -4037,12 +4186,22 @@ class Core {
             ], 'generation');
         }
 
+        // Increment trial usage counter only after the generation has fully succeeded.
+        if ( \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() ) {
+            \BeepBeepAI\AltTextGenerator\Trial_Quota::increment();
+        }
+
         return $alt;
     }
 
     private function queue_attachment($attachment_id, $source = 'auto'){
         $attachment_id = intval($attachment_id);
         if ($attachment_id <= 0 || !$this->is_image($attachment_id)) {
+            return false;
+        }
+
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+        if ( \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_exhausted() ) {
             return false;
         }
 
@@ -4064,71 +4223,31 @@ class Core {
     }
 
     public function register_bulk_action($bulk_actions){
-        $bulk_actions['bbai_generate'] = __('Generate Alt Text (AI)', 'beepbeep-ai-alt-text-generator');
+        // Media Library bulk action is intentionally disabled.
+        if (isset($bulk_actions['bbai_generate'])) {
+            unset($bulk_actions['bbai_generate']);
+        }
         return $bulk_actions;
     }
 
     public function handle_bulk_action($redirect_to, $doaction, $post_ids){
-        if ($doaction !== 'bbai_generate') return $redirect_to;
-        if (!$this->user_can_manage()) return $redirect_to;
-        $queued = 0;
-        foreach ($post_ids as $id){
-            if ($this->queue_attachment($id, 'bulk')) {
-                $queued++;
-            }
-        }
-        if ($queued > 0) {
-            Queue::schedule_processing(10);
-            
-            // Log bulk operation
-            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-                Debug_Log::log('info', 'Bulk alt text generation queued', [
-                    'count' => $queued,
-                    'total_selected' => count($post_ids),
-                ], 'bulk');
-            }
-        }
-        return add_query_arg(['bbai_queued' => $queued], $redirect_to);
+        // Media Library bulk action is intentionally disabled.
+        return $redirect_to;
     }
 
     public function row_action_link($actions, $post){
-        if ($post->post_type === 'attachment' && $this->is_image($post->ID)){
-            $has_alt = (bool) get_post_meta($post->ID, '_wp_attachment_image_alt', true);
-            $generate_label   = __('Generate Alt Text (AI)', 'beepbeep-ai-alt-text-generator');
-            $regenerate_label = __('Regenerate Alt Text (AI)', 'beepbeep-ai-alt-text-generator');
-            $text = $has_alt ? $regenerate_label : $generate_label;
-            $actions['bbai_generate_single'] = '<a href="#" class="bbai-generate" data-id="' . intval($post->ID) . '" data-has-alt="' . ($has_alt ? '1' : '0') . '" data-label-generate="' . esc_attr($generate_label) . '" data-label-regenerate="' . esc_attr($regenerate_label) . '">' . esc_html($text) . '</a>';
+        // Media Library row action is intentionally disabled.
+        if (isset($actions['bbai_generate_single'])) {
+            unset($actions['bbai_generate_single']);
         }
         return $actions;
     }
 
     public function attachment_fields_to_edit($fields, $post){
-        if (!$this->is_image($post->ID)){
-            return $fields;
+        // Media Library attachment panel button is intentionally disabled.
+        if (isset($fields['bbai_regenerate'])) {
+            unset($fields['bbai_regenerate']);
         }
-
-        $has_alt = (bool) get_post_meta($post->ID, '_wp_attachment_image_alt', true);
-        $label_generate   = __('Generate Alt Text', 'beepbeep-ai-alt-text-generator');
-        $label_regenerate = __('Regenerate Alt Text', 'beepbeep-ai-alt-text-generator');
-        $current_label    = $has_alt ? $label_regenerate : $label_generate;
-        $bbai_is_authenticated = $this->api_client->is_authenticated();
-        $disabled_attr    = !$bbai_is_authenticated ? ' disabled title="' . esc_attr__('Please log in to generate alt text', 'beepbeep-ai-alt-text-generator') . '"' : '';
-        
-        // Use unified button classes and correct data attributes for JavaScript handler
-        $button = sprintf(
-            '<button type="button" class="button button-secondary bbai-btn bbai-btn-secondary" data-action="regenerate-single" data-attachment-id="%1$d"%2$s>%3$s</button>',
-            intval($post->ID),
-            $disabled_attr,
-            esc_html($current_label)
-        );
-
-        // Always show the regenerate button on attachment edit screen
-        $fields['bbai_regenerate'] = [
-            'label' => __('AI Alt Text', 'beepbeep-ai-alt-text-generator'),
-            'input' => 'html',
-            'html'  => $button . '<p class="description">' . esc_html__('Use AI to generate or regenerate alternative text for this image.', 'beepbeep-ai-alt-text-generator') . '</p>',
-        ];
-
         return $fields;
     }
 
@@ -4302,8 +4421,18 @@ class Core {
             || strpos($hook_str, '_page_bbai') !== false
             || (!empty($bbai_current_page) && strpos($bbai_current_page, 'bbai') === 0);
 
-        // Load on Media Library, attachment edit, and any BeepBeep AI admin screen
-        if (in_array($hook, ['upload.php', 'post.php', 'post-new.php'], true) || $is_bbai_page){
+        // Restrict plugin assets/scripts to BeepBeep AI admin pages only.
+        if (!$is_bbai_page) {
+            return;
+        }
+
+        // "Session expired" comes from WordPress auth-check UI and can be misleading on plugin screens
+        // when the BeepBeep API session (not WordPress auth) is what actually expired.
+        wp_dequeue_script('wp-auth-check');
+        wp_deregister_script('wp-auth-check');
+        remove_action('admin_print_footer_scripts', 'wp_auth_check_html', 5);
+
+        if ($is_bbai_page){
             wp_enqueue_script('bbai-admin', $base_url . $admin_file, ['jquery', 'wp-i18n'], $admin_version, true);
             wp_localize_script('bbai-admin', 'BBAI', [
                 'nonce'     => wp_create_nonce('wp_rest'),
@@ -4340,21 +4469,9 @@ class Core {
                 'rest_root' => esc_url_raw(rest_url()),
                 'nonce'     => wp_create_nonce('bbai_ajax_nonce'),
             ]);
-
-            if (in_array($hook, ['upload.php', 'post.php', 'post-new.php'], true)) {
-                $upload_fallback = $asset_path($js_base, 'bbai-upload-fallback', $use_debug_assets, 'js');
-                wp_enqueue_script(
-                    'bbai-upload-fallback',
-                    $base_url . $upload_fallback,
-                    ['jquery', 'bbai-admin'],
-                    $asset_version($upload_fallback, '1.0.0'),
-                    true
-                );
-            }
         }
 
-        // Always load dashboard CSS/JS if on a bbai page (double-check with $_GET)
-        if ($is_bbai_page || (!empty($bbai_current_page) && strpos($bbai_current_page, 'bbai') === 0)){
+        if ($is_bbai_page){
             $css_file    = $asset_path($css_base, 'bbai-dashboard', $use_debug_assets, 'css');
             $js_file     = $asset_path($js_base, 'bbai-dashboard', $use_debug_assets, 'js');
             $usage_bridge = $asset_path($js_base, 'usage-components-bridge', $use_debug_assets, 'js');
@@ -4421,7 +4538,7 @@ class Core {
                     'nonce'                 => wp_create_nonce('bbai_onboarding'),
                     'queueStatsNonce'       => wp_create_nonce('beepbeepai_nonce'),
                     'dashboardUrl'          => admin_url('admin.php?page=bbai'),
-                    'libraryUrl'            => admin_url('admin.php?page=bbai-library'),
+                    'libraryUrl'            => admin_url('admin.php?page=' . self::MENU_SLUG_LIBRARY),
                     'step3Url'              => admin_url('admin.php?page=bbai-onboarding&step=3'),
                     'isAuthenticated'       => bbai_is_authenticated(),
                     'isOnboardingCompleted' => $is_onboarding_completed,
@@ -4613,22 +4730,16 @@ class Core {
                 );
             }
 
-            // Enqueue usage components bridge (requires React/ReactDOM to be loaded separately)
-            // This is optional and should not block other functionality if missing
-            // Only load if React is detected (check via wp_script_is or similar)
-            // For now, we'll comment this out to prevent blocking core functionality
-            // TODO: Re-enable when React components are properly built
-            /*
+            // Usage bridge is optional; it mounts React-driven widgets only when runtime/component globals exist.
             if (file_exists($base_path . $usage_bridge)) {
                 wp_enqueue_script(
                     'bbai-usage-bridge',
                     $base_url . $usage_bridge,
-                    ['bbai-dashboard'],
+                    ['bbai-dashboard', 'wp-element'],
                     $asset_version($usage_bridge, '1.0.0'),
                     true
                 );
             }
-            */
             wp_enqueue_script(
                 'bbai-debug',
                 $base_url . $asset_path($js_base, 'bbai-debug', $use_debug_assets, 'js'),
@@ -5191,13 +5302,22 @@ class Core {
             wp_send_json_error(['message' => __('Invalid attachment ID', 'beepbeep-ai-alt-text-generator')]);
             return;
         }
-        
-        // Log the attachment_id being received for debugging
-        if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-            \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'Regenerate request received', [
-                'attachment_id' => $attachment_id,
-            ], 'generation');
+        $request_key = isset($_POST['request_key']) ? sanitize_text_field(wp_unslash($_POST['request_key'])) : '';
+
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+        if ( \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_exhausted() ) {
+            wp_send_json_error( $this->get_trial_exhausted_payload() );
+            return;
         }
+
+        $this->maybe_log_regenerate_debug(
+            'Regenerate request received',
+            [
+                'request_key'    => $request_key,
+                'attachment_id'  => $attachment_id,
+                'attachment_url' => wp_get_attachment_url($attachment_id),
+            ]
+        );
         
         $bbai_has_license = $this->api_client->has_active_license();
 
@@ -5239,6 +5359,8 @@ class Core {
                 $user_message = __('The API response was invalid. Please try again in a moment.', 'beepbeep-ai-alt-text-generator');
             } elseif ($error_code === 'quota_check_mismatch') {
                 $user_message = __('Credits appear available but the backend reported a limit. Please try again in a moment.', 'beepbeep-ai-alt-text-generator');
+            } elseif ($error_code === 'bbai_trial_exhausted') {
+                $user_message = __("You've used your 10 free generations. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator');
             } elseif ($error_code === 'limit_reached' || $error_code === 'quota_exhausted') {
                 $bbai_reset_date = null;
                 if (is_array($error_data) && isset($error_data['usage']) && is_array($error_data['usage'])) {
@@ -5267,10 +5389,31 @@ class Core {
             } elseif ($error_code === 'api_unreachable') {
                 $user_message = __('Unable to reach the server. Please check your internet connection and try again.', 'beepbeep-ai-alt-text-generator');
             }
+
+            $retryable_codes = [
+                'missing_alt_text',
+                'api_response_invalid',
+                'quota_check_mismatch',
+                'api_timeout',
+                'api_unreachable',
+                'network_error',
+                'server_error',
+            ];
+            $is_retryable = in_array($error_code, $retryable_codes, true);
+            $retry_after = 0;
+            if (is_array($error_data) && isset($error_data['retry_after'])) {
+                $retry_after = absint($error_data['retry_after']);
+            } elseif ($error_code === 'quota_check_mismatch') {
+                $retry_after = 3;
+            }
             
             wp_send_json_error([
                 'message' => $user_message,
                 'code'    => $error_code,
+                'remaining' => is_array($error_data) && isset($error_data['remaining']) ? max(0, intval($error_data['remaining'])) : null,
+                'request_key' => $request_key,
+                'retryable' => $is_retryable,
+                'retry_after' => $retry_after > 0 ? $retry_after : null,
                 'data'    => $error_data,
             ]);
             return;
@@ -5372,6 +5515,8 @@ class Core {
                 'has_used' => isset($updated_usage['used']),
                 'has_remaining' => isset($updated_usage['remaining']),
                 'has_limit' => isset($updated_usage['limit']),
+                'request_key' => $request_key,
+                'attachment_id' => $attachment_id,
             ], 'generation');
         }
 
@@ -5380,10 +5525,12 @@ class Core {
             'alt_text'       => $result,
             'altText'        => $result, // Also include camelCase for compatibility
             'attachment_id'  => $attachment_id,
+            'request_key'    => $request_key,
             'usage'          => $updated_usage ?: null, // Include updated usage in response
             'data'           => [
                 'alt_text' => $result,
                 'altText'  => $result,
+                'request_key' => $request_key,
                 'usage'    => $updated_usage ?: null,
             ],
         ]);
@@ -5420,11 +5567,17 @@ class Core {
             return $id > 0 && $this->is_image($id);
         });
         
-	        if (empty($ids)) {
-	            wp_send_json_error(['message' => __('No valid images found', 'beepbeep-ai-alt-text-generator')]);
-	            return;
-	        }
-        
+        if (empty($ids)) {
+            wp_send_json_error(['message' => __('No valid images found', 'beepbeep-ai-alt-text-generator')]);
+            return;
+        }
+
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+        if ( \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_exhausted() ) {
+            wp_send_json_error( $this->get_trial_exhausted_payload() );
+            return;
+        }
+
         $bbai_has_license = $this->api_client->has_active_license();
 
         // Check if user has remaining usage (skip in local dev mode or when license active)
@@ -5524,6 +5677,8 @@ class Core {
     public function process_queue() {
         $batch_size = apply_filters('bbai_queue_batch_size', 3);
         $max_attempts = apply_filters('bbai_queue_max_attempts', 3);
+        $bbai_trial_blocked = false;
+        $bbai_trial_message = __("You've used your 10 free generations. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator');
 
         Queue::reset_stale(apply_filters('bbai_queue_stale_timeout', 10 * MINUTE_IN_SECONDS));
 
@@ -5552,6 +5707,12 @@ class Core {
                     break;
                 }
 
+                if ($code === 'bbai_trial_exhausted') {
+                    Queue::mark_failed($job->id, $message ?: $bbai_trial_message);
+                    $bbai_trial_blocked = true;
+                    break;
+                }
+
                 if (intval($job->attempts) >= $max_attempts) {
                     Queue::mark_failed($job->id, $message);
                 } else {
@@ -5563,10 +5724,27 @@ class Core {
             Queue::mark_complete($job->id);
         }
 
+        // If trial was exhausted mid-batch, fail any remaining pending jobs now to avoid a stuck queue.
+        if ($bbai_trial_blocked) {
+            $bbai_safety_loops = 0;
+            while ($bbai_safety_loops < 20) {
+                $pending_jobs = Queue::claim_batch(50);
+                if (empty($pending_jobs)) {
+                    break;
+                }
+
+                foreach ($pending_jobs as $pending_job) {
+                    Queue::mark_failed($pending_job->id, $bbai_trial_message);
+                }
+
+                $bbai_safety_loops++;
+            }
+        }
+
         Usage_Tracker::clear_cache();
         $this->invalidate_stats_cache();
         $bbai_stats = Queue::get_stats();
-        if (!empty($bbai_stats['pending'])) {
+        if (!empty($bbai_stats['pending']) && !$bbai_trial_blocked) {
             Queue::schedule_processing(apply_filters('bbai_queue_next_delay', 45));
         }
 
@@ -6446,6 +6624,12 @@ class Core {
             return;
         }
 
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+        if ( \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_exhausted() ) {
+            wp_send_json_error( $this->get_trial_exhausted_payload() );
+            return;
+        }
+
         $results = [];
         foreach ($ids as $id) {
             if (!$this->is_image($id)) {
@@ -6552,8 +6736,131 @@ class Core {
     }
 
     /**
-     * Export analytics report
+     * AJAX handler: Get missing image IDs for trial generation.
+     * Returns up to N image IDs that have no alt text, where N = trial remaining.
      */
+    public function ajax_trial_get_missing() {
+        $action = 'beepbeepai_nonce';
+        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+            wp_send_json_error( [ 'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ) ], 403 );
+            return;
+        }
+        if ( ! $this->user_can_manage() ) {
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ) ] );
+            return;
+        }
+
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+        $remaining = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_remaining();
+        $is_trial  = \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user();
+
+        if ( ! $is_trial ) {
+            // Authenticated users should use the normal dashboard, not trial flow.
+            wp_send_json_error( [ 'message' => __( 'Not a trial user.', 'beepbeep-ai-alt-text-generator' ), 'code' => 'not_trial' ] );
+            return;
+        }
+
+        if ( $remaining <= 0 ) {
+            wp_send_json_error( $this->get_trial_exhausted_payload() );
+            return;
+        }
+
+        $limit = min( $remaining, 10 ); // Cap at 10 (trial limit)
+        $ids   = $this->get_missing_attachment_ids( $limit );
+
+        // Get thumbnail URLs for the modal preview
+        $images = [];
+        foreach ( $ids as $id ) {
+            $thumb = wp_get_attachment_image_url( $id, 'thumbnail' );
+            $title = get_the_title( $id );
+            $images[] = [
+                'id'    => $id,
+                'thumb' => $thumb ? $thumb : '',
+                'title' => $title ? $title : sprintf( 'Image #%d', $id ),
+            ];
+        }
+
+        wp_send_json_success( [
+            'images'    => $images,
+            'count'     => count( $images ),
+            'remaining' => $remaining,
+            'limit'     => \BeepBeepAI\AltTextGenerator\Trial_Quota::get_limit(),
+            'used'      => \BeepBeepAI\AltTextGenerator\Trial_Quota::get_used(),
+        ] );
+    }
+
+    /**
+     * AJAX handler: Generate alt text for a single image (trial-safe).
+     * Lightweight wrapper around generate_and_save for trial modal one-at-a-time generation.
+     */
+    public function ajax_trial_generate_single() {
+        if ( ob_get_level() === 0 ) {
+            ob_start();
+        } else {
+            ob_clean();
+        }
+
+        $action = 'beepbeepai_nonce';
+        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+            wp_send_json_error( [ 'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ) ], 403 );
+            return;
+        }
+        if ( ! $this->user_can_manage() ) {
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ) ] );
+            return;
+        }
+
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+        if ( \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_exhausted() ) {
+            wp_send_json_error( $this->get_trial_exhausted_payload() );
+            return;
+        }
+
+        $attachment_id = isset( $_POST['attachment_id'] ) ? absint( wp_unslash( $_POST['attachment_id'] ) ) : 0;
+        if ( 0 === $attachment_id || ! $this->is_image( $attachment_id ) ) {
+            wp_send_json_error( [ 'message' => __( 'Invalid image.', 'beepbeep-ai-alt-text-generator' ) ] );
+            return;
+        }
+
+        try {
+            $result = $this->generate_and_save( $attachment_id, 'trial', 1, [], false );
+
+            if ( is_wp_error( $result ) ) {
+                $code = $result->get_error_code();
+                $data = [
+                    'message' => $result->get_error_message(),
+                    'code'    => $code,
+                ];
+                // Pass through trial exhausted data.
+                if ( 'bbai_trial_exhausted' === $code ) {
+                    $data = array_merge( $data, $result->get_error_data() ?: [] );
+                }
+                if ( ob_get_level() > 0 ) { ob_clean(); }
+                wp_send_json_error( $data );
+                return;
+            }
+
+            // Success — get updated trial status.
+            $trial_remaining = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_remaining();
+            $trial_used      = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_used();
+
+            if ( ob_get_level() > 0 ) { ob_clean(); }
+            wp_send_json_success( [
+                'attachment_id' => $attachment_id,
+                'alt_text'      => $result,
+                'title'         => get_the_title( $attachment_id ),
+                'remaining'     => $trial_remaining,
+                'used'          => $trial_used,
+            ] );
+        } catch ( \Exception $e ) {
+            if ( ob_get_level() > 0 ) { ob_clean(); }
+            wp_send_json_error( [ 'message' => $e->getMessage(), 'code' => 'generation_exception' ] );
+        } catch ( \Error $e ) {
+            if ( ob_get_level() > 0 ) { ob_clean(); }
+            wp_send_json_error( [ 'message' => $e->getMessage(), 'code' => 'generation_fatal' ] );
+        }
+    }
+
     /**
      * AJAX handler: Get recent activity for timeline
      */

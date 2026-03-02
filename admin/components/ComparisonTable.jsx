@@ -63,7 +63,7 @@ const ComparisonTable = ({ plans, isLoading = false }) => {
     },
     {
       name: 'Bulk optimisation',
-      free: false,
+      free: true,
       growth: true,
       agency: true,
     },

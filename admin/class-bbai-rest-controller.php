@@ -97,6 +97,16 @@ class REST_Controller {
 						'default'           => 100,
 						'sanitize_callback' => 'absint',
 					],
+					'per_page' => [
+						'required'          => false,
+						'default'           => 100,
+						'sanitize_callback' => 'absint',
+					],
+					'page' => [
+						'required'          => false,
+						'default'           => 1,
+						'sanitize_callback' => 'absint',
+					],
 				],
 			]
 		);
@@ -358,6 +368,16 @@ class REST_Controller {
 						'validate_callback' => [ __CLASS__, 'validate_non_negative_int_arg' ],
 					],
 				],
+			]
+		);
+
+		register_rest_route(
+			'bbai/v1',
+			'/trial-status',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ $this, 'handle_trial_status' ],
+				'permission_callback' => [ $this, 'can_edit_media' ],
 			]
 		);
 	}
@@ -636,19 +656,28 @@ class REST_Controller {
 				
 				// Convert WP_Error to REST error response
 				$status = 500;
-				if ( $error_code === 'limit_reached' ) {
+				if ( $error_code === 'limit_reached' || $error_code === 'bbai_trial_exhausted' ) {
 					$status = 403;
 				} elseif ( $error_code === 'auth_required' || $error_code === 'user_not_found' ) {
 					$status = 401;
 				} elseif ( $error_code === 'not_image' || $error_code === 'invalid_attachment' ) {
 					$status = 400;
 				}
-				
+
+				$error_response_data = [ 'status' => $status ];
+				// Include trial exhaustion metadata so the UI can show the signup CTA.
+				if ( $error_code === 'bbai_trial_exhausted' ) {
+					$trial_data = $alt->get_error_data();
+					if ( is_array( $trial_data ) ) {
+						$error_response_data = array_merge( $error_response_data, $trial_data );
+					}
+				}
+
 				if ( ! $output_started ) {
 					ob_end_clean();
 				}
-				
-				return new \WP_Error( $error_code, $error_message, [ 'status' => $status ] );
+
+				return new \WP_Error( $error_code, $error_message, $error_response_data );
 			}
 
 			// Try to get meta and stats, but don't fail if they error
@@ -804,15 +833,31 @@ class REST_Controller {
 	public function handle_list( \WP_REST_Request $request ) {
 		$scope_input = $request->get_param( 'scope' );
 		$scope = ( is_string( $scope_input ) && 'all' === sanitize_key( $scope_input ) ) ? 'all' : 'missing';
-		$limit_input = $request->get_param( 'limit' );
-		$limit = max( 1, min( 500, absint( $limit_input ?: 100 ) ) );
+		$legacy_limit_input = $request->get_param( 'limit' );
+		$per_page_input     = $request->get_param( 'per_page' );
+		$page_input         = $request->get_param( 'page' );
+		$has_per_page       = method_exists( $request, 'has_param' ) ? $request->has_param( 'per_page' ) : null !== $request->get_param( 'per_page' );
+
+		$per_page = $has_per_page
+			? absint( $per_page_input )
+			: absint( $legacy_limit_input );
+		if ( $per_page <= 0 ) {
+			$per_page = 100;
+		}
+		$per_page = max( 1, min( 500, $per_page ) );
+		$page     = max( 1, absint( $page_input ?: 1 ) );
+		$offset   = ( $page - 1 ) * $per_page;
 
 		$ids = ( 'missing' === $scope )
-			? $this->core->get_missing_attachment_ids( $limit )
-			: $this->core->get_all_attachment_ids( $limit, 0 );
+			? $this->core->get_missing_attachment_ids( $per_page, $offset )
+			: $this->core->get_all_attachment_ids( $per_page, $offset );
 
 		return [
 			'ids' => array_map( 'intval', $ids ),
+			'pagination' => [
+				'per_page' => $per_page,
+				'page'     => $page,
+			],
 		];
 	}
 
@@ -1032,6 +1077,17 @@ class REST_Controller {
 			'success' => true,
 			'id'      => $result,
 		];
+	}
+
+	/**
+	 * Get trial quota status.
+	 *
+	 * @param \WP_REST_Request $request REST request instance.
+	 * @return array
+	 */
+	public function handle_trial_status( \WP_REST_Request $request ) {
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+		return rest_ensure_response( \BeepBeepAI\AltTextGenerator\Trial_Quota::get_status() );
 	}
 
 	/**

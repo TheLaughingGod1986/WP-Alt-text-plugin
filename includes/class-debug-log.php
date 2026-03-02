@@ -416,6 +416,9 @@ class Debug_Log {
 
             if ($is_sensitive) {
                 $clean[$key] = '[REDACTED]';
+            } elseif ($key_lower === 'error' && $value === null) {
+                // Omit error: null - backend often returns this on success, which gets misdisplayed as an error
+                continue;
             } elseif (is_scalar($value)) {
                 $clean[$key] = is_bool($value) ? $value : sanitize_text_field((string) $value);
             } elseif (is_array($value)) {

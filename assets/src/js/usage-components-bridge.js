@@ -6,8 +6,11 @@
 (function() {
     'use strict';
 
-    // Check if React and ReactDOM are available
-    if (typeof React === 'undefined' || typeof ReactDOM === 'undefined') {
+    const reactRuntime = window.React || (window.wp && window.wp.element ? window.wp.element : null);
+    const reactDomRuntime = window.ReactDOM || (window.wp && window.wp.element && typeof window.wp.element.createRoot === 'function' ? window.wp.element : null);
+
+    // Check if React runtime is available
+    if (!reactRuntime || !reactDomRuntime || typeof reactDomRuntime.createRoot !== 'function') {
         window.BBAI_LOG && window.BBAI_LOG.warn('[BeepBeep AI] React is not loaded. Usage components require React and ReactDOM.');
         return;
     }
@@ -37,8 +40,8 @@
                 if (window.bbaiUsageComponents) {
                     const { MultiUserTokenBar } = window.bbaiUsageComponents;
                     if (MultiUserTokenBar) {
-                        const root = ReactDOM.createRoot(tokenBarContainer);
-                        root.render(React.createElement(MultiUserTokenBar, {
+                        const root = reactDomRuntime.createRoot(tokenBarContainer);
+                        root.render(reactRuntime.createElement(MultiUserTokenBar, {
                             apiUrl: apiUrl,
                             nonce: nonce
                         }));
@@ -58,8 +61,8 @@
                 if (window.bbaiUsageComponents) {
                     const { MultiUserUsageTab } = window.bbaiUsageComponents;
                     if (MultiUserUsageTab) {
-                        const root = ReactDOM.createRoot(usageTabContainer);
-                        root.render(React.createElement(MultiUserUsageTab, {
+                        const root = reactDomRuntime.createRoot(usageTabContainer);
+                        root.render(reactRuntime.createElement(MultiUserUsageTab, {
                             apiUrl: apiUrl,
                             nonce: nonce
                         }));

@@ -16,4 +16,13 @@ echo "=== 2. Capture screenshots ==="
 node scripts/capture-screenshots.js
 
 echo ""
-echo "Done. Screenshots saved to assets/wordpress-org/screenshots/"
+echo "=== 3. Create demo video (interaction flow: Generate, Regenerate, etc.) ==="
+if command -v ffmpeg >/dev/null 2>&1; then
+  node scripts/capture-demo-frames.js
+else
+  echo "Skipping video (install ffmpeg: brew install ffmpeg)"
+fi
+
+echo ""
+echo "Done. Screenshots: assets/wordpress-org/screenshots/"
+echo "      Demo video: assets/wordpress-org/demo-video.mp4"

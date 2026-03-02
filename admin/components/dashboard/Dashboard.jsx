@@ -71,6 +71,16 @@ const FreeUsageCard = ({
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (percentage / 100) * circumference;
   const resetLabel = resetDate ? `Resets ${resetDate}` : 'Resets soon';
+  const generateDisabled = !canGenerate || isLoading || missingImages <= 0;
+  const generateDisabledReason = isLoading
+    ? 'Processing, please wait...'
+    : missingImages <= 0
+    ? 'All images already have alt text'
+    : 'Upgrade to unlock more generations';
+  const regenerateDisabled = !canGenerate || isLoading;
+  const regenerateDisabledReason = isLoading
+    ? 'Processing, please wait...'
+    : 'Upgrade to unlock more generations';
 
   return (
     <section className="rounded-3xl bg-white shadow-xl px-6 py-6 md:px-7 md:py-7 flex flex-col gap-4">
@@ -129,17 +139,15 @@ const FreeUsageCard = ({
           type="button"
           data-action="generate-missing"
           onClick={onGenerateMissing}
-          disabled={!canGenerate || isLoading || missingImages <= 0}
-          {...((!canGenerate || isLoading || missingImages <= 0) && {
-            'data-bbai-tooltip': isLoading
-              ? 'Processing, please wait...'
-              : missingImages <= 0
-              ? 'All images already have alt text'
-              : 'Upgrade to unlock more generations',
+          disabled={generateDisabled}
+          title={generateDisabled ? generateDisabledReason : undefined}
+          aria-label={generateDisabled ? `Generate Missing (disabled: ${generateDisabledReason})` : 'Generate Missing'}
+          {...(generateDisabled && {
+            'data-bbai-tooltip': generateDisabledReason,
             'data-bbai-tooltip-position': 'top'
           })}
           className={`flex-1 rounded-full px-4 py-2.5 text-[13px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white ${
-            !canGenerate || isLoading || missingImages <= 0
+            generateDisabled
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
               : 'bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500/20 focus-visible:ring-indigo-500'
           }`}
@@ -150,11 +158,11 @@ const FreeUsageCard = ({
           type="button"
           data-action="regenerate-all"
           onClick={onReoptimizeAll}
-          disabled={!canGenerate || isLoading}
-          {...((!canGenerate || isLoading) && {
-            'data-bbai-tooltip': isLoading
-              ? 'Processing, please wait...'
-              : 'Upgrade to unlock more generations',
+          disabled={regenerateDisabled}
+          title={regenerateDisabled ? regenerateDisabledReason : undefined}
+          aria-label={regenerateDisabled ? `Re-optimise All (disabled: ${regenerateDisabledReason})` : 'Re-optimise All'}
+          {...(regenerateDisabled && {
+            'data-bbai-tooltip': regenerateDisabledReason,
             'data-bbai-tooltip-position': 'top'
           })}
           className="flex-1 rounded-full bg-orange-500/10 px-4 py-2.5 text-[13px] font-semibold text-orange-600 transition hover:bg-orange-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50"

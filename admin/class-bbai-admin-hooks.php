@@ -50,10 +50,8 @@ class Admin_Hooks {
 		add_action( 'save_post', [ $this->core, 'handle_post_save' ], 5, 3 );
 
 		add_filter( 'wp_update_attachment_metadata', [ $this->core, 'handle_media_metadata_update' ], 5, 2 );
-		add_filter( 'bulk_actions-upload', [ $this->core, 'register_bulk_action' ] );
-		add_filter( 'handle_bulk_actions-upload', [ $this->core, 'handle_bulk_action' ], 10, 3 );
-		add_filter( 'media_row_actions', [ $this->core, 'row_action_link' ], 10, 2 );
-		add_filter( 'attachment_fields_to_edit', [ $this->core, 'attachment_fields_to_edit' ], 15, 2 );
+		// Keep manual generation flows inside plugin navigation screens (Dashboard/ALT Library),
+		// not in WordPress Media Library row actions, bulk dropdowns, or attachment edit fields.
 
 		add_action( 'rest_api_init', [ $this->rest_controller, 'register_routes' ] );
 		add_action( 'admin_enqueue_scripts', [ $this->core, 'enqueue_admin' ] );
@@ -138,6 +136,8 @@ class Admin_Hooks {
 			'bbai_update_contact_submission_status' => 'ajax_update_contact_submission_status',
 			'bbai_delete_contact_submission'   => 'ajax_delete_contact_submission',
 			'bbai_dismiss_reset_modal'        => 'ajax_dismiss_reset_modal',
+			'bbai_trial_get_missing'          => 'ajax_trial_get_missing',
+			'bbai_trial_generate_single'      => 'ajax_trial_generate_single',
 		];
 
 		foreach ( $ajax_actions as $action => $callback ) {

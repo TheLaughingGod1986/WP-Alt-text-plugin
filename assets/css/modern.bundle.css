@@ -944,6 +944,10 @@ body.media_page_bbai #wpwrap {
     font-weight: 500;
     font-size: 13px;
     margin-right: 2px;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .bbai-header-plan-badge {

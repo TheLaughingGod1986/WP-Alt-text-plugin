@@ -634,6 +634,21 @@ class API_Client_V2 {
             );
             
             if ($is_license_error) {
+                // Check if this is a trial user — don't show license error, show trial-specific message.
+                require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+                if ( \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() && ! \BeepBeepAI\AltTextGenerator\Trial_Quota::is_exhausted() ) {
+                    // Trial user with remaining quota — backend needs to accept X-Trial-Mode header.
+                    return new \WP_Error(
+                        'trial_backend_auth',
+                        __( 'Free trial generation requires a server update. Create a free account to start generating immediately.', 'beepbeep-ai-alt-text-generator' ),
+                        [
+                            'status_code' => $status_code,
+                            'trial_mode'  => true,
+                            'code'        => 'trial_backend_auth',
+                        ]
+                    );
+                }
+
                 // License key is required or invalid
                 $license_key = $this->get_license_key();
                 if (empty($license_key)) {
@@ -1523,14 +1538,29 @@ class API_Client_V2 {
         // The backend will handle authentication errors properly
         $has_license = $this->has_active_license();
         $has_token = !empty($this->get_token());
+        $has_connected_account = function_exists( 'bbai_is_authenticated' ) ? \bbai_is_authenticated() : false;
         
-        if (!$has_license && !$has_token) {
-            // No license and no token - definitely not authenticated
-            return new \WP_Error(
-                'auth_required',
-                __('Authentication required. Please log in or register to generate alt text.', 'beepbeep-ai-alt-text-generator'),
-                ['requires_auth' => true]
-            );
+        if (!$has_license && !$has_token && !$has_connected_account) {
+            // Guest trial mode: allow generation until the local trial quota is exhausted.
+            if ( ! function_exists( '\BeepBeepAI\AltTextGenerator\bbai_is_trial_exhausted' ) ) {
+                require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-trial-quota.php';
+            }
+
+            $site_hash = \BeepBeepAI\AltTextGenerator\bbai_get_trial_site_hash();
+            if ( \BeepBeepAI\AltTextGenerator\bbai_is_trial_exhausted( $site_hash ) ) {
+                $limit = \BeepBeepAI\AltTextGenerator\bbai_get_trial_limit();
+                return new \WP_Error(
+                    'bbai_trial_exhausted',
+                    __( "You've used your 10 free generations. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator' ),
+                    [
+                        'code'      => 'bbai_trial_exhausted',
+                        'remaining' => 0,
+                        'limit'     => $limit,
+                        'used'      => $limit,
+                        'site_hash' => $site_hash,
+                    ]
+                );
+            }
         }
         
         // Validate authentication before making request
@@ -1597,6 +1627,15 @@ class API_Client_V2 {
         $title     = get_the_title($image_id);
         $caption   = wp_get_attachment_caption($image_id);
         $filename  = $image_url ? wp_basename(wp_parse_url($image_url, PHP_URL_PATH)) : '';
+
+        if ($this->is_regenerate_debug_enabled()) {
+            \BeepBeepAI\AltTextGenerator\Debug_Log::log('info', 'API client generation request context', [
+                'image_id' => $image_id,
+                'image_url' => $image_url,
+                'filename' => $filename,
+                'regenerate' => (bool) $regenerate,
+            ], 'api');
+        }
 
         // Debug: Log image details when regenerating to ensure correct image is being processed
         if ($regenerate && class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
@@ -1769,6 +1808,19 @@ class API_Client_V2 {
         // Backend caches by MD5 hash of base64 for 7 days, so regenerate needs to bypass cache
         if ($regenerate) {
             $extra_headers['X-Bypass-Cache'] = 'true';
+        }
+
+        // Trial mode: add trial headers so the backend can identify anonymous trial requests.
+        if (!$has_license && !$has_token && !$has_connected_account) {
+            if ( ! function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_trial_site_hash' ) ) {
+                require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-trial-quota.php';
+            }
+            $trial_hash = \BeepBeepAI\AltTextGenerator\bbai_get_trial_site_hash();
+            $extra_headers['X-Trial-Mode']      = 'true';
+            $extra_headers['X-Trial-Site-Hash']  = $trial_hash;
+            $extra_headers['X-Trial-Remaining']  = (string) \BeepBeepAI\AltTextGenerator\bbai_get_trial_remaining( $trial_hash );
+            $body['trial_mode'] = true;
+            $body['trial_site_hash'] = $trial_hash;
         }
 
         $response = $this->request_with_retry($endpoint, 'POST', $body, 3, true, $extra_headers);
@@ -2504,6 +2556,15 @@ class API_Client_V2 {
     }
 
     /**
+     * Whether regenerate-flow debug logging is enabled.
+     *
+     * @return bool
+     */
+    private function is_regenerate_debug_enabled() {
+        return defined('BBAI_DEBUG_REGENERATE_FLOW') && (bool) BBAI_DEBUG_REGENERATE_FLOW && class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log');
+    }
+
+    /**
      * Sanitize context data before logging to prevent exposing sensitive information
      */
     /**
@@ -2587,6 +2648,10 @@ class API_Client_V2 {
             // Sanitize endpoint - remove query parameters
             elseif ($key === 'endpoint' && is_string($value)) {
                 $sanitized[$key] = strtok($value, '?');
+            }
+            // Omit error key when null - backend often returns error: null on success, which gets misdisplayed as an error
+            elseif ($key === 'error' && $value === null) {
+                continue;
             }
             // Sanitize error messages - remove potential sensitive data
             elseif ($key === 'error' && is_string($value)) {

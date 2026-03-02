@@ -16,58 +16,71 @@ const LibraryIcon = ({ className = '' }) => (
   </svg>
 );
 
-const EmptyStateCard = ({ onUploadImages, onSyncLibrary }) => (
-  <section className="rounded-3xl bg-white shadow-xl px-6 py-8 md:px-10 md:py-10 flex flex-col items-center text-center gap-5">
-    <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-sky-50 via-white to-indigo-100 text-sky-500 shadow-inner">
-      <LibraryIcon className="h-10 w-10" />
-    </div>
+const EmptyStateCard = ({ onUploadImages, onSyncLibrary }) => {
+  const mediaLibraryUrl =
+    typeof window !== 'undefined' && window.bbai_env && window.bbai_env.upload_url
+      ? window.bbai_env.upload_url
+      : '/wp-admin/upload.php';
 
-    <div className="space-y-2">
-      <h2 className="text-xl font-semibold text-slate-900">No images yet</h2>
-      <p className="text-sm text-slate-600">
-        Upload images to start automating SEO &amp; accessibility compliance.
-      </p>
-    </div>
+  return (
+    <section className="rounded-3xl bg-white shadow-xl px-6 py-8 md:px-10 md:py-10 flex flex-col items-center text-center gap-5">
+      <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-sky-50 via-white to-indigo-100 text-sky-500 shadow-inner">
+        <LibraryIcon className="h-10 w-10" />
+      </div>
 
-    <ul className="mt-2 space-y-1 text-sm text-slate-700">
-      <li className="flex items-center justify-center gap-2">
-        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 text-[11px] text-emerald-600">
-          &#10003;
-        </span>
-        <span>WCAG-compliant alt text for accessibility</span>
-      </li>
-      <li className="flex items-center justify-center gap-2">
-        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 text-[11px] text-emerald-600">
-          &#10003;
-        </span>
-        <span>Optimised for Google Images &amp; SEO insights</span>
-      </li>
-      <li className="flex items-center justify-center gap-2">
-        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 text-[11px] text-emerald-600">
-          &#10003;
-        </span>
-        <span>Bulk processing &amp; AI-powered automation</span>
-      </li>
-    </ul>
+      <div className="space-y-2">
+        <h2 className="text-xl font-semibold text-slate-900">No images yet</h2>
+        <p className="text-sm text-slate-600">
+          Upload images to start automating SEO &amp; accessibility compliance.
+        </p>
+      </div>
 
-    <div className="flex flex-col items-center">
-      <button
-        type="button"
-        onClick={onUploadImages}
-        className="mt-5 inline-flex items-center justify-center rounded-full bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-      >
-        + Upload Images
-      </button>
-      <button
-        type="button"
-        onClick={onSyncLibrary}
-        className="mt-2 text-xs font-medium text-sky-600 hover:text-sky-700"
-      >
-        Or sync from Media Library automatically &rsaquo;
-      </button>
-    </div>
-  </section>
-);
+      <ul className="mt-2 space-y-1 text-sm text-slate-700">
+        <li className="flex items-center justify-center gap-2">
+          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 text-[11px] text-emerald-600">
+            &#10003;
+          </span>
+          <span>WCAG-compliant alt text for accessibility</span>
+        </li>
+        <li className="flex items-center justify-center gap-2">
+          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 text-[11px] text-emerald-600">
+            &#10003;
+          </span>
+          <span>Optimised for Google Images &amp; SEO insights</span>
+        </li>
+        <li className="flex items-center justify-center gap-2">
+          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 text-[11px] text-emerald-600">
+            &#10003;
+          </span>
+          <span>Bulk processing &amp; AI-powered automation</span>
+        </li>
+      </ul>
+
+      <div className="flex flex-col items-center">
+        <button
+          type="button"
+          onClick={onUploadImages}
+          className="mt-5 inline-flex items-center justify-center rounded-full bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+        >
+          + Upload Images
+        </button>
+        <button
+          type="button"
+          onClick={onSyncLibrary}
+          className="mt-2 text-xs font-medium text-sky-600 hover:text-sky-700"
+        >
+          Or sync from Media Library automatically &rsaquo;
+        </button>
+        <a
+          href={mediaLibraryUrl}
+          className="mt-2 text-xs font-medium text-slate-500 hover:text-slate-700"
+        >
+          Add images in Media Library &rsaquo;
+        </a>
+      </div>
+    </section>
+  );
+};
 
 const ImageAltTextLibrary = ({
   images = [],
