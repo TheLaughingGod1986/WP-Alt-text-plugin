@@ -7406,6 +7406,34 @@ class Core {
             }
         }
 
+        // Some models return a quoted string literal (e.g. "\"A red car on a street.\"").
+        // Decode/unwrap once so quotes are not persisted into the final alt text.
+        if (strlen($value) >= 2) {
+            $first = $value[0];
+            $last  = $value[strlen($value) - 1];
+            if (($first === '"' && $last === '"') || ($first === "'" && $last === "'")) {
+                if ($first === '"') {
+                    $decoded_string = json_decode($value, true);
+                    if (is_string($decoded_string) && trim($decoded_string) !== '') {
+                        $value = trim($decoded_string);
+                        $source = 'json-string:' . ($source ?? 'text');
+                    }
+                }
+
+                if (strlen($value) >= 2) {
+                    $first = $value[0];
+                    $last  = $value[strlen($value) - 1];
+                    if (($first === '"' && $last === '"') || ($first === "'" && $last === "'")) {
+                        $unwrapped = trim(substr($value, 1, -1));
+                        if ($unwrapped !== '') {
+                            $value = $unwrapped;
+                            $source = 'quoted:' . ($source ?? 'text');
+                        }
+                    }
+                }
+            }
+        }
+
         return $value;
     }
 }
