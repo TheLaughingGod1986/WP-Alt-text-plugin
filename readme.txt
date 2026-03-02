@@ -7,7 +7,7 @@ Tags: accessibility, AI, Alt Text, image seo, WooCommerce
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 4.4.11
+Stable tag: 4.4.12
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
@@ -23,6 +23,10 @@ Missing alt text hurts rankings, accessibility, and conversions. When product im
 **BeepBeep AI solves this automatically.**
 
 BeepBeep AI generates clear, SEO-ready, WCAG-friendly alt text for your WordPress media library and WooCommerce catalog. You can bulk-fix legacy images, auto-generate on upload, and review every suggestion before saving.
+
+= Demo Video =
+
+https://www.youtube.com/watch?v=XK9snigPH2c
 
 = Built for WooCommerce at Scale =
 
@@ -105,55 +109,22 @@ Non-minified source files are included in this plugin package in `assets/src/` a
 
 == Frequently Asked Questions ==
 
-= How fast will I see results? =
+= What are the SEO benefits of AI alt text? =
 
-Most installs can generate their first AI alt text results in under 60 seconds after setup.
+AI-generated alt text gives search engines clearer context for every image, improving relevance signals for Google Images and product-focused search queries. BeepBeep AI Alt Text Generator helps you scale consistent, descriptive metadata across your library, which strengthens image SEO and supports better discoverability.
 
-= Does this plugin help with image SEO? =
+= Is this plugin compatible with WooCommerce product images? =
 
-Yes. Alt text helps search engines understand image content. Better image context can improve visibility in image search and product discovery.
+Yes. BeepBeep AI Alt Text Generator supports WooCommerce featured images, gallery images, and standard WordPress media attachments used on product pages. You can apply WooCommerce image optimization workflows in bulk without changing your catalog structure or theme templates.
 
-= Is the generated alt text WCAG compliant? =
+= How do monthly free credits work? =
 
-Generated output is designed to align with WCAG 2.1 AA best practices for descriptive alt text. You can review and edit every result before saving.
-
-= Does this work with WooCommerce product images? =
-
-Yes. BeepBeep AI works with WooCommerce featured images, product galleries, and standard WordPress media items.
-
-= Can I bulk-fix 1,000+ product images? =
-
-Yes. The bulk workflow is built for large media libraries and high-volume WooCommerce catalogs.
-
-= Can I edit generated descriptions? =
-
-Yes. Every generated description is editable before save.
-
-= Will this slow down my website? =
-
-No. Generation is processed through secure external APIs and does not block normal frontend page rendering.
-
-= What happens to existing alt text? =
-
-Existing alt text is preserved by default. You control when to regenerate.
-
-= Is my image data secure? =
-
-Images and metadata are sent securely over HTTPS for processing. See External Services and Privacy & Security sections below.
-
-= Is there a free version? =
-
-Yes. You get 10 free trial generations immediately — no account or email needed. Create a free account to unlock 50 AI-generated alt texts per month.
+You get 10 free trial generations immediately with no account required. After signup, the free plan includes 50 monthly credits, with one credit used per generated alt text, and Bulk edit tools help you apply those credits efficiently across larger media libraries.
 
 == Screenshots ==
-
-Place screenshot files in `/assets` using these exact names: `screenshot-1.png`, `screenshot-2.png`, `screenshot-3.png`, `screenshot-4.png`, `screenshot-5.png`.
-
-1. Bulk alt text generation in the Media Library.
-2. Trial remaining counter and quick-start workflow for first-time setup.
-3. WooCommerce product image workflow for catalog optimization.
-4. SEO quality insights and analytics performance view.
-5. Upgrade/signup modal shown when the 10 free trial generations are exhausted.
+1. Dashboard view of the AI Alt Text Generator showing one-click generation, live credit tracking, and editable suggestions so teams can review accessibility text before saving.
+2. Bulk edit workflow in the WordPress Media Library where multiple images are selected and processed together, making large-scale alt text cleanup faster and more consistent.
+3. WooCommerce product screen demonstrating WooCommerce image optimization for featured and gallery images, with AI-generated alt text improving accessibility and image SEO for product discovery.
 
 == External Services ==
 
@@ -185,10 +156,17 @@ Privacy policy: https://resend.com/legal/privacy
 
 == Changelog ==
 
+= 4.4.12 =
+* Added full compatibility for WordPress 7.0.
+* Updated FAQ and Screenshot metadata for better accessibility and SEO.
+* Refined WooCommerce image optimization descriptions.
+
 = 4.4.11 =
 * Maintenance release with bug fixes and stability improvements.
 * Improved WooCommerce, Image SEO, and Accessibility workflows.
-* Internal performance and reliability optimizations.= 4.4.10 =
+* Internal performance and reliability optimizations.
+
+= 4.4.10 =
 * Maintenance release with bug fixes and stability improvements.
 * Improved WooCommerce, Image SEO, and Accessibility workflows.
 * Internal performance and reliability optimizations.
@@ -218,11 +196,6 @@ Privacy policy: https://resend.com/legal/privacy
 * Improved WooCommerce, Image SEO, and Accessibility workflows.
 * Internal performance and reliability optimizations.
 
-= 4.4.4 =
-* Maintenance release with bug fixes and stability improvements.
-* Improved WooCommerce, Image SEO, and Accessibility workflows.
-* Internal performance and reliability optimizations.
-
 = 4.4.3 =
 * Maintenance release with bug fixes and stability improvements.
 * Improved WooCommerce, Image SEO, and Accessibility workflows.
@@ -231,7 +204,9 @@ Privacy policy: https://resend.com/legal/privacy
 == Upgrade Notice ==
 
 = 4.4.11 =
-Recommended maintenance update with WooCommerce, Image SEO, and Accessibility reliability improvements.= 4.4.10 =
+Recommended maintenance update with WooCommerce, Image SEO, and Accessibility reliability improvements.
+
+= 4.4.10 =
 Recommended maintenance update with WooCommerce, Image SEO, and Accessibility reliability improvements.
 
 = 4.4.9 =
