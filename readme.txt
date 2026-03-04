@@ -7,12 +7,12 @@ Tags: accessibility, AI, Alt Text, image seo, WooCommerce
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 4.4.12
+Stable tag: 4.5.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
 
-Generate image alt text for WordPress to improve accessibility and image search.
+Generate alt text for images to improve accessibility and search engine optimization.
 
 == Description ==
 
@@ -156,6 +156,16 @@ Privacy policy: https://resend.com/legal/privacy
 
 == Changelog ==
 
+= 4.5.2 =
+* Fixed onboarding flow so users can exit normally and no longer get stuck in redirect loops.
+* Prevented duplicate regenerate click handling that could trigger multiple generation requests.
+* Improved generation flow safety to avoid duplicate queue + inline processing for the same images.
+
+= 4.5.1 =
+* Maintenance release with bug fixes and stability improvements.
+* Improved WooCommerce, Image SEO, and Accessibility workflows.
+* Internal performance and reliability optimizations.
+
 = 4.4.12 =
 * Added full compatibility for WordPress 7.0.
 * Updated FAQ and Screenshot metadata for better accessibility and SEO.
@@ -202,6 +212,12 @@ Privacy policy: https://resend.com/legal/privacy
 * Internal performance and reliability optimizations.
 
 == Upgrade Notice ==
+
+= 4.5.2 =
+Fixes onboarding lockups and duplicate generation triggers. Recommended for all users.
+
+= 4.5.1 =
+Recommended maintenance update with WooCommerce, Image SEO, and Accessibility reliability improvements.
 
 = 4.4.11 =
 Recommended maintenance update with WooCommerce, Image SEO, and Accessibility reliability improvements.

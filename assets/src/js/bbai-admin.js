@@ -2354,24 +2354,23 @@
         var regenButtons = $('[data-action="regenerate-single"]');
         window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Found ' + regenButtons.length + ' regenerate buttons');
 
-        // Handle generate missing button
-        $(document).on('click', '[data-action="generate-missing"]', handleGenerateMissing);
+        // Bind once with namespaces so repeated initialisation can't duplicate requests.
+        $(document)
+            .off('click.bbaiGenerateMissing', '[data-action="generate-missing"]')
+            .on('click.bbaiGenerateMissing', '[data-action="generate-missing"]', handleGenerateMissing);
 
-        // Handle regenerate all button
-        $(document).on('click', '[data-action="regenerate-all"]', handleRegenerateAll);
+        $(document)
+            .off('click.bbaiRegenerateAll', '[data-action="regenerate-all"]')
+            .on('click.bbaiRegenerateAll', '[data-action="regenerate-all"]', handleRegenerateAll);
 
-        // Handle individual regenerate buttons - use event delegation for dynamically added buttons
-        $(document).on('click', '[data-action="regenerate-single"]', function(e) {
+        // Handle individual regenerate buttons using delegated binding only.
+        $(document)
+            .off('click.bbaiRegenerateSingle', '[data-action="regenerate-single"]')
+            .on('click.bbaiRegenerateSingle', '[data-action="regenerate-single"]', function(e) {
             window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Regenerate button click event fired!');
             window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Button element:', this);
             window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] jQuery object:', $(this));
             window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Attachment ID from data:', $(this).data('attachment-id'));
-            handleRegenerateSingle.call(this, e);
-        });
-        
-        // Also try direct binding for buttons that exist on page load (Edit Media page)
-        $('[data-action="regenerate-single"]').on('click', function(e) {
-            window.BBAI_LOG && window.BBAI_LOG.log('[AI Alt Text] Direct binding - Regenerate button clicked');
             handleRegenerateSingle.call(this, e);
         });
 

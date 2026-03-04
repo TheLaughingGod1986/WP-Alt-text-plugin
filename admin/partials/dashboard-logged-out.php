@@ -81,7 +81,7 @@ $bbai_fallback_url = admin_url('admin.php?page=' . $bbai_current_page);
                             _n(
                                 'image missing alt text',
                                 'images missing alt text',
-                                (int) $bbai_missing_alt_count,
+                                absint( $bbai_missing_alt_count ),
                                 'beepbeep-ai-alt-text-generator'
                             )
                         );
@@ -111,14 +111,16 @@ $bbai_fallback_url = admin_url('admin.php?page=' . $bbai_current_page);
                 >
                     <?php
                     if ( $bbai_missing_alt_count > 0 ) {
-                        printf(
+                        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- All args are esc_html()-wrapped.
+                        echo sprintf(
                             /* translators: 1: number of images to fix, 2: remaining free generations. */
                             esc_html__( 'Fix %1$s images free — %2$s left', 'beepbeep-ai-alt-text-generator' ),
                             esc_html( $bbai_images_to_fix_display ),
                             esc_html( number_format_i18n( (int) $bbai_trial_remaining ) )
                         );
                     } else {
-                        printf(
+                        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- All args are esc_html()-wrapped.
+                        echo sprintf(
                             /* translators: %s: remaining free trial generations. */
                             esc_html__( 'Generate alt text free — %s left', 'beepbeep-ai-alt-text-generator' ),
                             esc_html( number_format_i18n( (int) $bbai_trial_remaining ) )

@@ -53,7 +53,7 @@ if (!defined('BBAI_PLUGIN_BASENAME')) {
 }
 
 if (!defined('BBAI_VERSION')) {
-    define('BBAI_VERSION', defined('BEEPBEEP_AI_VERSION') ? BEEPBEEP_AI_VERSION : '4.4.11');
+    define('BBAI_VERSION', defined('BEEPBEEP_AI_VERSION') ? BEEPBEEP_AI_VERSION : '4.5.1');
 }
 
 // Load API clients, usage tracker, and queue infrastructure
@@ -1205,10 +1205,13 @@ class Core {
 	        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 	        $bbai_page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
 	        $bbai_current_page = $bbai_page_input;
-	        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
-	        $current_step = isset($_GET['step']) ? absint(wp_unslash($_GET['step'])) : 0;
 	        $is_onboarding_page = ($bbai_current_page === 'bbai-onboarding');
-	        $is_step3 = ($is_onboarding_page && $current_step === 3);
+        $is_plugin_page = (!empty($bbai_current_page) && strpos($bbai_current_page, 'bbai') === 0);
+
+        // Never hijack unrelated wp-admin pages. Keep onboarding redirect scoped to plugin screens.
+        if (!$is_plugin_page) {
+            return;
+        }
 
         if (!class_exists('\BeepBeepAI\AltTextGenerator\Auth_State') || !class_exists('\BeepBeepAI\AltTextGenerator\Onboarding')) {
             return;
@@ -1223,11 +1226,12 @@ class Core {
 
         if ($completed) {
             // Allow onboarding pages to be viewed even if completed (user may want to revisit the guide)
-            // Only redirect away from non-plugin pages
+            // and don't force redirects once setup is done.
             return;
         }
 
-        if (!$is_onboarding_page) {
+        // Redirect only from the dashboard entrypoint, not every wp-admin page.
+        if (!$is_onboarding_page && $bbai_current_page === self::MENU_SLUG_DASHBOARD) {
             wp_safe_redirect(admin_url('admin.php?page=bbai-onboarding'));
             exit;
         }
@@ -1575,6 +1579,12 @@ class Core {
         $dashboard_url = admin_url('admin.php?page=bbai');
         $library_url = admin_url('admin.php?page=' . self::MENU_SLUG_LIBRARY);
         $bbai_is_authenticated = bbai_is_authenticated();
+
+        // Mark onboarding complete as soon as Step 3 is reached to prevent redirect loops.
+        if ($bbai_is_authenticated && class_exists('\BeepBeepAI\AltTextGenerator\Onboarding')) {
+            \BeepBeepAI\AltTextGenerator\Onboarding::mark_completed();
+            \BeepBeepAI\AltTextGenerator\Onboarding::update_last_seen();
+        }
         ?>
         <div class="wrap bbai-wrap bbai-modern bbai-onboarding bbai-onboarding-step3">
             <div class="bbai-header">
@@ -6629,6 +6639,10 @@ class Core {
             wp_send_json_error( $this->get_trial_exhausted_payload() );
             return;
         }
+
+        // Avoid duplicate processing: these IDs were usually queued just before inline generation.
+        // Clearing queue entries here ensures each image is generated once per action.
+        Queue::clear_for_attachments($ids);
 
         $results = [];
         foreach ($ids as $id) {
