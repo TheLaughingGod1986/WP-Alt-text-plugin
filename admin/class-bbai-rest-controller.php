@@ -102,14 +102,24 @@ class REST_Controller {
 						'default'           => 100,
 						'sanitize_callback' => 'absint',
 					],
-					'page' => [
-						'required'          => false,
-						'default'           => 1,
-						'sanitize_callback' => 'absint',
+						'page' => [
+							'required'          => false,
+							'default'           => 1,
+							'sanitize_callback' => 'absint',
+						],
+						'include_preview' => [
+							'required'          => false,
+							'default'           => false,
+							'sanitize_callback' => [ __CLASS__, 'sanitize_bool_arg' ],
+						],
+						'preview_limit' => [
+							'required'          => false,
+							'default'           => 5,
+							'sanitize_callback' => 'absint',
+						],
 					],
-				],
-			]
-		);
+				]
+			);
 
 		register_rest_route(
 			'bbai/v1',
@@ -847,17 +857,93 @@ class REST_Controller {
 		$per_page = max( 1, min( 500, $per_page ) );
 		$page     = max( 1, absint( $page_input ?: 1 ) );
 		$offset   = ( $page - 1 ) * $per_page;
+		$include_preview_raw = $request->get_param( 'include_preview' );
+		$include_preview = filter_var( $include_preview_raw, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
+		$preview_limit = max( 1, min( 5, absint( $request->get_param( 'preview_limit' ) ?: 5 ) ) );
 
 		$ids = ( 'missing' === $scope )
 			? $this->core->get_missing_attachment_ids( $per_page, $offset )
 			: $this->core->get_all_attachment_ids( $per_page, $offset );
 
-		return [
+		$response = [
 			'ids' => array_map( 'intval', $ids ),
 			'pagination' => [
 				'per_page' => $per_page,
 				'page'     => $page,
 			],
+		];
+
+		if ( true === $include_preview && 'missing' === $scope ) {
+			$stats = $this->core->get_media_stats();
+			$missing_count = 0;
+			if ( is_array( $stats ) ) {
+				if ( isset( $stats['missing'] ) ) {
+					$missing_count = max( 0, intval( $stats['missing'] ) );
+				} elseif ( isset( $stats['missing_alt'] ) ) {
+					$missing_count = max( 0, intval( $stats['missing_alt'] ) );
+				}
+			}
+
+			$response['missing_count']  = $missing_count;
+			$response['missing_images'] = $this->get_missing_images_preview( $preview_limit );
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Build and cache small missing-image preview data for dashboard limit-state UI.
+	 *
+	 * @param int $limit Maximum number of preview records.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function get_missing_images_preview( int $limit ): array {
+		$limit = max( 1, min( 5, $limit ) );
+		$cache_key = sprintf( 'bbai_missing_preview_%d_%d', get_current_blog_id(), $limit );
+		$cached = get_transient( $cache_key );
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
+
+		$ids = $this->core->get_missing_attachment_ids( $limit, 0 );
+		$preview = [];
+		foreach ( $ids as $id ) {
+			$id = absint( $id );
+			if ( $id <= 0 ) {
+				continue;
+			}
+			$preview[] = $this->build_attachment_preview_item( $id );
+		}
+
+		set_transient( $cache_key, $preview, 60 );
+		return $preview;
+	}
+
+	/**
+	 * Build a compact attachment preview row for dashboard UI.
+	 *
+	 * @param int $attachment_id Attachment post ID.
+	 * @return array<string, mixed>
+	 */
+	private function build_attachment_preview_item( int $attachment_id ): array {
+		$filename = '';
+		$attached_file = get_attached_file( $attachment_id );
+		if ( is_string( $attached_file ) && $attached_file !== '' ) {
+			$filename = wp_basename( $attached_file );
+		}
+		if ( '' === $filename ) {
+			$filename = get_the_title( $attachment_id );
+		}
+
+		$thumb_url = wp_get_attachment_image_url( $attachment_id, 'thumbnail' );
+		if ( ! is_string( $thumb_url ) || '' === $thumb_url ) {
+			$thumb_url = '';
+		}
+
+		return [
+			'id'       => $attachment_id,
+			'filename' => sanitize_text_field( (string) $filename ),
+			'thumb_url' => $thumb_url ? esc_url_raw( $thumb_url ) : null,
 		];
 	}
 

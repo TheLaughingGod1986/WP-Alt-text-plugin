@@ -5253,7 +5253,19 @@ class Core {
         }
 
         $source_input = isset($_POST['source']) ? sanitize_key(wp_unslash($_POST['source'])) : 'dashboard';
-        $allowed_sources = [ 'dashboard', 'bulk', 'bulk-regenerate', 'library', 'manual', 'onboarding', 'queue', 'unknown' ];
+        $allowed_sources = [
+            'dashboard',
+            'bulk',
+            'bulk-regenerate',
+            'library',
+            'manual',
+            'onboarding',
+            'queue',
+            'unknown',
+            'bbai_upgrade_modal_opened',
+            'bbai_locked_cta_clicked',
+            'bbai_limit_state_viewed',
+        ];
         $source = in_array($source_input, $allowed_sources, true) ? $source_input : 'dashboard';
         $event  = [
             'source' => $source,

@@ -8192,6 +8192,7 @@ h1.bbai-heading {
     background: var(--bbai-gray-300, #d1d5db) !important;
     color: var(--bbai-gray-500, #6b7280) !important;
     box-shadow: none !important;
+    pointer-events: none !important;
 }
 
 .bbai-usage-card-redesign .bbai-action-btn-secondary {
@@ -8220,6 +8221,7 @@ h1.bbai-heading {
     background: var(--bbai-gray-300, #d1d5db) !important;
     color: var(--bbai-gray-500, #6b7280) !important;
     box-shadow: none !important;
+    pointer-events: none !important;
 }
 
 /* Stats Tiles */
@@ -15080,4 +15082,138 @@ button.bbai-logged-out__btn-primary:focus-visible {
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
 @media (prefers-contrast: high) { :root { --bbai-border: var(--bbai-gray-900); --bbai-text: #000000; } }
 
+/* Hard block locked/out-of-credit bulk actions */
+.bbai-action-btn:disabled,
+.bbai-action-btn.disabled,
+.bbai-optimization-cta:disabled,
+.bbai-optimization-cta--disabled,
+.bbai-optimization-cta--locked,
+.bbai-usage-card-redesign .bbai-action-btn-primary:disabled,
+.bbai-usage-card-redesign .bbai-action-btn-primary.disabled,
+.bbai-usage-card-redesign .bbai-action-btn-secondary:disabled,
+.bbai-usage-card-redesign .bbai-action-btn-secondary.disabled {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+}
 
+.bbai-optimization-actions .bbai-optimization-cta:disabled,
+.bbai-optimization-actions .bbai-optimization-cta--disabled,
+.bbai-optimization-actions .bbai-optimization-cta--locked,
+.bbai-usage-card-redesign .bbai-action-btn:disabled,
+.bbai-usage-card-redesign .bbai-action-btn.disabled {
+    background: var(--bbai-gray-300, #d1d5db) !important;
+    color: var(--bbai-gray-500, #6b7280) !important;
+    border-color: var(--bbai-gray-300, #d1d5db) !important;
+    box-shadow: none !important;
+    transform: none !important;
+    opacity: 0.6 !important;
+}
+
+/* Limit reached dashboard state */
+.bbai-limit-state-root {
+    margin: 0 0 24px;
+}
+
+.bbai-limit-state-root[hidden] {
+    display: none !important;
+}
+
+.bbai-limit-state-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px;
+    border-radius: 16px;
+    border: 1px solid #dbe3ee;
+    background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.bbai-limit-state-title {
+    margin: 0;
+    color: #0f172a;
+    font-size: 22px;
+    line-height: 1.25;
+    font-weight: 700;
+}
+
+.bbai-limit-state-subtitle {
+    margin: 0;
+    color: #475569;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.bbai-limit-state-next {
+    margin-top: 14px;
+    padding: 14px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.bbai-limit-state-next-title {
+    margin: 0 0 10px;
+    color: #1e293b;
+    font-size: 14px;
+    line-height: 1.4;
+    font-weight: 600;
+}
+
+.bbai-limit-state-loading,
+.bbai-limit-state-empty {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.bbai-limit-state-preview-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bbai-limit-state-preview-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 32px;
+}
+
+.bbai-limit-state-preview-thumb {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid #dbe3ee;
+    flex-shrink: 0;
+}
+
+.bbai-limit-state-preview-name {
+    color: #334155;
+    font-size: 13px;
+    line-height: 1.35;
+    font-weight: 500;
+    word-break: break-word;
+}
+
+.bbai-upgrade-required-action {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    opacity: 1 !important;
+    background: #e2e8f0 !important;
+    color: #334155 !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.bbai-upgrade-required-action:hover,
+.bbai-upgrade-required-action:focus-visible {
+    background: #cfd8e3 !important;
+    color: #1e293b !important;
+    border-color: #b9c5d4 !important;
+}
