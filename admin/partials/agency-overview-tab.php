@@ -41,7 +41,7 @@ $bbai_minutes_per_alt_text = 2.5;
 $bbai_total_hours_saved = round(($bbai_total_alt_text * $bbai_minutes_per_alt_text) / 60, 1);
 
 // Export URL
-$bbai_export_url = wp_nonce_url(admin_url('admin-post.php?action=bbai_usage_export'), 'bbai_usage_export');
+$bbai_export_url = wp_nonce_url(admin_url('admin-post.php?action=beepbeepai_usage_export'), 'bbai_usage_export');
 ?>
 
 <!-- Tab Content: Agency Overview -->

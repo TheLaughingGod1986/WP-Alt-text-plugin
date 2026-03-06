@@ -251,7 +251,10 @@ const Analytics = ({ analytics = {}, onStartGrowthTrial = null, onComparePlans =
     resolvedAnalytics.remainingCredits ?? usage.remaining ?? Math.max(creditsTotal - creditsUsed, 0)
   );
   const avgPerDay = normalizeNumber(resolvedAnalytics.avgPerDay ?? usage.avgPerDay ?? 0);
-  const imagesThisPeriod = normalizeNumber(resolvedAnalytics.imagesThisPeriod ?? usage.images ?? 0);
+  // Align usage "Images" with the optimized-image metric when no explicit usage value is provided.
+  const imagesThisPeriod = normalizeNumber(
+    resolvedAnalytics.imagesThisPeriod ?? usage.images ?? totalImagesOptimized
+  );
   const imagesDeltaPercent = normalizeNumber(resolvedAnalytics.imagesDeltaPercent ?? usage.imagesDeltaPercent ?? 0);
 
   const beforeImagesWithoutAlt = normalizeNumber(

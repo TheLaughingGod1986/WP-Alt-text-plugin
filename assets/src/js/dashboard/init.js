@@ -27,24 +27,34 @@ bbaiRunWithJQuery(function($) {
         '[data-upgrade-trigger="true"]'
     ].join(', ');
 
+    function getUpgradeModalElement() {
+        var modalById = document.getElementById('bbai-upgrade-modal');
+        if (modalById && modalById.querySelector('.bbai-upgrade-modal__content')) {
+            return modalById;
+        }
+
+        var modalByData = document.querySelector('[data-bbai-upgrade-modal="1"]');
+        if (modalByData && modalByData.querySelector('.bbai-upgrade-modal__content')) {
+            if (modalByData.id !== 'bbai-upgrade-modal') {
+                modalByData.id = 'bbai-upgrade-modal';
+            }
+            return modalByData;
+        }
+
+        return null;
+    }
+
     /**
      * Show upgrade modal directly
      */
     function showUpgradeModal() {
         window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] showUpgradeModal() called');
-        var modal = document.getElementById('bbai-upgrade-modal');
+        var modal = getUpgradeModalElement();
         
         if (!modal) {
             window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] Modal element #bbai-upgrade-modal not found in DOM');
-            // Try finding by class as fallback
-            modal = document.querySelector('.bbai-modal-backdrop');
-            if (modal) {
-                window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Found modal by class, setting ID');
-                modal.id = 'bbai-upgrade-modal';
-            } else {
-                window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] No modal element found at all');
-                return false;
-            }
+            window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] No upgrade modal element found');
+            return false;
         }
         
         window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Modal found, showing it');

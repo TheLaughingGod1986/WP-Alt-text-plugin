@@ -108,57 +108,66 @@ if (!defined('ABSPATH')) {
     </div>
 
     <!-- Filters -->
-    <div class="bbai-card bbai-credit-filters-card">
-        <form method="get" class="bbai-credit-filter-form">
-            <input type="hidden" name="page" value="bbai-credit-usage" />
-            <div class="bbai-credit-filter-row">
-                <div class="bbai-credit-filter-field">
-                    <label class="bbai-credit-filter-label"><?php esc_html_e('Date From', 'beepbeep-ai-alt-text-generator'); ?></label>
-                    <div class="bbai-credit-filter-input-wrapper">
-                        <input type="date" name="date_from" value="<?php echo esc_attr($date_from); ?>" class="bbai-credit-filter-input" placeholder="mm/dd/yyyy">
-                        <svg class="bbai-credit-filter-calendar-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <rect x="2" y="3" width="12" height="11" rx="1" stroke="currentColor" stroke-width="1.5"/>
-                            <path d="M5 1V4M11 1V4M2 7H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                        </svg>
+    <?php
+    $bbai_has_active_usage_filters = !empty($date_from) || !empty($date_to) || !empty($source) || $user_id > 0;
+    ?>
+    <details class="bbai-card bbai-credit-filters-card" <?php echo $bbai_has_active_usage_filters ? 'open' : ''; ?>>
+        <summary style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--bbai-text); list-style: none;">
+            <span><?php esc_html_e('Advanced Usage Analytics', 'beepbeep-ai-alt-text-generator'); ?></span>
+            <span class="dashicons dashicons-arrow-down-alt2" aria-hidden="true"></span>
+        </summary>
+        <div style="padding-top: 16px;">
+            <form method="get" class="bbai-credit-filter-form">
+                <input type="hidden" name="page" value="bbai-credit-usage" />
+                <div class="bbai-credit-filter-row">
+                    <div class="bbai-credit-filter-field">
+                        <label class="bbai-credit-filter-label"><?php esc_html_e('Date From', 'beepbeep-ai-alt-text-generator'); ?></label>
+                        <div class="bbai-credit-filter-input-wrapper">
+                            <input type="date" name="date_from" value="<?php echo esc_attr($date_from); ?>" class="bbai-credit-filter-input" placeholder="mm/dd/yyyy">
+                            <svg class="bbai-credit-filter-calendar-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <rect x="2" y="3" width="12" height="11" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                                <path d="M5 1V4M11 1V4M2 7H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="bbai-credit-filter-field">
+                        <label class="bbai-credit-filter-label"><?php esc_html_e('Date To', 'beepbeep-ai-alt-text-generator'); ?></label>
+                        <div class="bbai-credit-filter-input-wrapper">
+                            <input type="date" name="date_to" value="<?php echo esc_attr($date_to); ?>" class="bbai-credit-filter-input" placeholder="mm/dd/yyyy">
+                            <svg class="bbai-credit-filter-calendar-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <rect x="2" y="3" width="12" height="11" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                                <path d="M5 1V4M11 1V4M2 7H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="bbai-credit-filter-field">
+                        <label class="bbai-credit-filter-label"><?php esc_html_e('Source', 'beepbeep-ai-alt-text-generator'); ?></label>
+                        <select name="source" class="bbai-credit-filter-select">
+                            <option value=""><?php esc_html_e('All', 'beepbeep-ai-alt-text-generator'); ?></option>
+                            <option value="api" <?php selected($source, 'api'); ?>><?php esc_html_e('API', 'beepbeep-ai-alt-text-generator'); ?></option>
+                            <option value="upload" <?php selected($source, 'upload'); ?>><?php esc_html_e('Upload', 'beepbeep-ai-alt-text-generator'); ?></option>
+                            <option value="bulk" <?php selected($source, 'bulk'); ?>><?php esc_html_e('Bulk', 'beepbeep-ai-alt-text-generator'); ?></option>
+                        </select>
+                    </div>
+                    <div class="bbai-credit-filter-field">
+                        <label class="bbai-credit-filter-label"><?php esc_html_e('User', 'beepbeep-ai-alt-text-generator'); ?></label>
+                        <select name="user_id" class="bbai-credit-filter-select">
+                            <option value="0"><?php esc_html_e('All Users', 'beepbeep-ai-alt-text-generator'); ?></option>
+                            <?php foreach ($all_users as $bbai_user) : ?>
+                                <option value="<?php echo esc_attr($bbai_user->ID); ?>" <?php selected($user_id, $bbai_user->ID); ?>>
+                                    <?php echo esc_html($bbai_user->display_name . ' (' . $bbai_user->user_email . ')'); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                 </div>
-                <div class="bbai-credit-filter-field">
-                    <label class="bbai-credit-filter-label"><?php esc_html_e('Date To', 'beepbeep-ai-alt-text-generator'); ?></label>
-                    <div class="bbai-credit-filter-input-wrapper">
-                        <input type="date" name="date_to" value="<?php echo esc_attr($date_to); ?>" class="bbai-credit-filter-input" placeholder="mm/dd/yyyy">
-                        <svg class="bbai-credit-filter-calendar-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <rect x="2" y="3" width="12" height="11" rx="1" stroke="currentColor" stroke-width="1.5"/>
-                            <path d="M5 1V4M11 1V4M2 7H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                        </svg>
-                    </div>
+                <div class="bbai-credit-filter-actions">
+                    <button type="submit" class="bbai-btn bbai-btn-primary"><?php esc_html_e('Filter', 'beepbeep-ai-alt-text-generator'); ?></button>
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=bbai-credit-usage')); ?>" class="bbai-clear-filter-link"><?php esc_html_e('Clear', 'beepbeep-ai-alt-text-generator'); ?></a>
                 </div>
-                <div class="bbai-credit-filter-field">
-                    <label class="bbai-credit-filter-label"><?php esc_html_e('Source', 'beepbeep-ai-alt-text-generator'); ?></label>
-                    <select name="source" class="bbai-credit-filter-select">
-                        <option value=""><?php esc_html_e('All', 'beepbeep-ai-alt-text-generator'); ?></option>
-                        <option value="api" <?php selected($source, 'api'); ?>><?php esc_html_e('API', 'beepbeep-ai-alt-text-generator'); ?></option>
-                        <option value="upload" <?php selected($source, 'upload'); ?>><?php esc_html_e('Upload', 'beepbeep-ai-alt-text-generator'); ?></option>
-                        <option value="bulk" <?php selected($source, 'bulk'); ?>><?php esc_html_e('Bulk', 'beepbeep-ai-alt-text-generator'); ?></option>
-                    </select>
-                </div>
-                <div class="bbai-credit-filter-field">
-                    <label class="bbai-credit-filter-label"><?php esc_html_e('User', 'beepbeep-ai-alt-text-generator'); ?></label>
-                    <select name="user_id" class="bbai-credit-filter-select">
-                        <option value="0"><?php esc_html_e('All Users', 'beepbeep-ai-alt-text-generator'); ?></option>
-                        <?php foreach ($all_users as $bbai_user) : ?>
-                            <option value="<?php echo esc_attr($bbai_user->ID); ?>" <?php selected($user_id, $bbai_user->ID); ?>>
-                                <?php echo esc_html($bbai_user->display_name . ' (' . $bbai_user->user_email . ')'); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            </div>
-            <div class="bbai-credit-filter-actions">
-                <button type="submit" class="bbai-btn bbai-btn-primary"><?php esc_html_e('Filter', 'beepbeep-ai-alt-text-generator'); ?></button>
-                <a href="<?php echo esc_url(admin_url('admin.php?page=bbai-credit-usage')); ?>" class="bbai-clear-filter-link"><?php esc_html_e('Clear', 'beepbeep-ai-alt-text-generator'); ?></a>
-            </div>
-        </form>
-    </div>
+            </form>
+        </div>
+    </details>
 
     <?php if ($view === 'user_detail' && $user_details) : ?>
         <div class="bbai-card bbai-user-details-card">
@@ -270,6 +279,14 @@ if (!defined('ABSPATH')) {
     $bbai_is_growth = ($bbai_plan_slug === 'pro' || $bbai_plan_slug === 'growth');
     $bbai_is_agency = ($bbai_plan_slug === 'agency');
     $bbai_usage_stats = $current_usage; // Map current_usage to usage_stats for the component
+    $bbai_bottom_upsell_headline = __('Upgrade to finish optimizing your media library', 'beepbeep-ai-alt-text-generator');
+
+    if (!isset($bbai_stats) || !is_array($bbai_stats)) {
+        $bbai_stats = [];
+    }
+    if (!isset($bbai_stats['missing']) && isset($bbai_missing_images)) {
+        $bbai_stats['missing'] = max(0, intval($bbai_missing_images));
+    }
     
     $bbai_bottom_upsell_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/bottom-upsell-cta.php';
     if (file_exists($bbai_bottom_upsell_partial)) {

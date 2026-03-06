@@ -86,17 +86,12 @@ const OptimiseImagesPanel = ({
         <button
           onClick={handleOptimiseNew}
           disabled={!canGenerate || isProcessing}
-          {...((!canGenerate || isProcessing) && {
-            'data-bbai-tooltip': isProcessing
-              ? 'Processing, please wait...'
-              : 'Upgrade to unlock more generations',
-            'data-bbai-tooltip-position': 'top'
-          })}
+          title={!canGenerate && !isProcessing ? 'Out of credits this month. Upgrade now or wait for reset.' : undefined}
           className={`
             flex-1 min-w-[160px] px-6 py-3 rounded-lg font-semibold transition-all
             ${canGenerate && !isProcessing
               ? 'bg-gradient-to-r from-teal-600 to-blue-600 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5'
-              : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+              : 'bg-slate-200 text-slate-400 cursor-not-allowed pointer-events-none'
             }
           `}
         >
@@ -116,17 +111,12 @@ const OptimiseImagesPanel = ({
         <button
           onClick={handleOptimiseAll}
           disabled={!canGenerate || isProcessing}
-          {...((!canGenerate || isProcessing) && {
-            'data-bbai-tooltip': isProcessing
-              ? 'Processing, please wait...'
-              : 'Upgrade to unlock more generations',
-            'data-bbai-tooltip-position': 'top'
-          })}
+          title={!canGenerate && !isProcessing ? 'Out of credits this month. Upgrade now or wait for reset.' : undefined}
           className={`
             flex-1 min-w-[160px] px-6 py-3 rounded-lg font-semibold border-2 transition-all
             ${canGenerate && !isProcessing
               ? 'border-slate-300 text-slate-700 hover:border-slate-400 hover:bg-slate-50'
-              : 'border-slate-200 text-slate-400 cursor-not-allowed'
+              : 'border-slate-200 text-slate-400 cursor-not-allowed pointer-events-none'
             }
           `}
         >
@@ -149,7 +139,7 @@ const OptimiseImagesPanel = ({
           <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
-          You've reached your quota limit. Upgrade to continue optimising.
+          You are out of credits for this month. Upgrade now, or wait for your monthly reset.
         </p>
       )}
     </div>

@@ -13,6 +13,34 @@ class Usage_Tracker {
     const CACHE_KEY = 'bbai_usage_cache';
     const CACHE_EXPIRY = 300; // 5 minutes
 
+    /**
+     * Convert remaining seconds to a user-facing day countdown.
+     * Uses ceil so partial days are surfaced as a full day.
+     *
+     * @param int $seconds_until_reset Remaining seconds.
+     * @return int
+     */
+    public static function seconds_to_days_until_reset(int $seconds_until_reset): int {
+        if ($seconds_until_reset <= 0) {
+            return 0;
+        }
+
+        return (int) ceil($seconds_until_reset / DAY_IN_SECONDS);
+    }
+
+    /**
+     * Calculate days until reset from timestamps.
+     *
+     * @param int      $reset_timestamp   Reset timestamp (seconds).
+     * @param int|null $current_timestamp Current timestamp (seconds).
+     * @return int
+     */
+    public static function calculate_days_until_reset(int $reset_timestamp, ?int $current_timestamp = null): int {
+        $now = $current_timestamp !== null ? (int) $current_timestamp : (int) current_time('timestamp');
+        $seconds_until_reset = max(0, $reset_timestamp - $now);
+        return self::seconds_to_days_until_reset($seconds_until_reset);
+    }
+
 	/**
 	 * Normalize plan slugs from remote/local payloads.
 	 *
@@ -68,7 +96,7 @@ class Usage_Tracker {
         $remaining = isset($usage_data['remaining']) ? intval($usage_data['remaining']) : ($limit - $used);
         if ($remaining < 0) { $remaining = 0; }
 
-        $current_ts = time();
+        $current_ts = (int) current_time('timestamp');
         $reset_input = $usage_data['resetDate'] ?? '';
         $reset_ts = isset($usage_data['resetTimestamp']) ? intval($usage_data['resetTimestamp']) : 0;
         if ($reset_ts <= 0 && $reset_input) {
@@ -97,7 +125,7 @@ class Usage_Tracker {
     public static function get_cached_usage($force_refresh = false) {
         // PRIORITY 1: Check for active license first - license overrides personal account
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
-        $api_client = new API_Client_V2();
+        $api_client = API_Client_V2::get_instance();
 
         if ($api_client->has_active_license()) {
             $license_data = $api_client->get_license_data();
@@ -112,7 +140,7 @@ class Usage_Tracker {
                         $reset_ts = $parsed;
                     }
                 }
-                $current_ts = time();
+                $current_ts = (int) current_time('timestamp');
 
                 // Get plan from organization data (correct location)
                 $plan = self::normalize_plan_slug($org['plan'] ?? 'free');
@@ -155,6 +183,7 @@ class Usage_Tracker {
             // Only show free credits if they've been allocated (first generation request)
             // This prevents showing 50 credits before first use
             if ($free_credits_allocated) {
+                $current_ts = (int) current_time('timestamp');
                 return [
                     'used' => 0,
                     'limit' => 50,
@@ -162,10 +191,11 @@ class Usage_Tracker {
                     'plan' => 'free',
                     'resetDate' => wp_date('Y-m-01', $reset_ts),
                     'reset_timestamp' => $reset_ts,
-                    'seconds_until_reset' => max(0, $reset_ts - time()),
+                    'seconds_until_reset' => max(0, $reset_ts - $current_ts),
                 ];
             } else {
                 // Free credits not yet allocated - show as unavailable
+                $current_ts = (int) current_time('timestamp');
                 return [
                     'used' => 0,
                     'limit' => 0,
@@ -173,7 +203,7 @@ class Usage_Tracker {
                     'plan' => 'free',
                     'resetDate' => wp_date('Y-m-01', $reset_ts),
                     'reset_timestamp' => $reset_ts,
-                    'seconds_until_reset' => max(0, $reset_ts - time()),
+                    'seconds_until_reset' => max(0, $reset_ts - $current_ts),
                 ];
             }
         }
@@ -221,7 +251,7 @@ class Usage_Tracker {
         
         // Calculate days until reset
         $reset_timestamp = isset($usage['reset_timestamp']) ? intval($usage['reset_timestamp']) : 0;
-        $current_timestamp = time();
+        $current_timestamp = (int) current_time('timestamp');
 
         if ($reset_timestamp <= 0 && !empty($usage['resetDate'])) {
             // Try parsing the reset date - handle both Y-m-d and other formats
@@ -247,7 +277,7 @@ class Usage_Tracker {
         $reset_timestamp = strtotime(wp_date('Y-m-d 00:00:00', $reset_timestamp));
 
         $seconds_until_reset = max(0, $reset_timestamp - $current_timestamp);
-        $days_until_reset = (int) floor($seconds_until_reset / DAY_IN_SECONDS);
+        $days_until_reset = self::seconds_to_days_until_reset($seconds_until_reset);
 
         // Get plan with fallback
         $plan = isset($usage['plan']) && !empty($usage['plan']) ? $usage['plan'] : 'free';

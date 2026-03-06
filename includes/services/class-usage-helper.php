@@ -94,6 +94,14 @@ class Usage_Helper {
             }
         }
 
+        if (isset($usage_stats['reset_timestamp']) && is_numeric($usage_stats['reset_timestamp'])) {
+            $reset_timestamp = max(0, (int) $usage_stats['reset_timestamp']);
+            $now = (int) current_time('timestamp');
+            $seconds_until_reset = max(0, $reset_timestamp - $now);
+            $usage_stats['seconds_until_reset'] = $seconds_until_reset;
+            $usage_stats['days_until_reset'] = Usage_Tracker::seconds_to_days_until_reset($seconds_until_reset);
+        }
+
         return $usage_stats;
     }
 }

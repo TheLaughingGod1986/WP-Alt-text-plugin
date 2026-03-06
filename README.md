@@ -136,6 +136,30 @@ The plugin includes a contact form accessible via the "Contact Us" link in the f
 
 ## Usage
 
+### Multisite Verification
+
+Use the built-in script to verify network activation behavior and subsite bootstrap:
+
+```bash
+./scripts/test-multisite.sh
+```
+
+What it validates:
+- Plugin is network-active after reactivation
+- Main site has required plugin tables, options, and cron hook
+- Newly created subsite is auto-initialized with required plugin tables, options, and cron hook
+
+Optional flags:
+- `CID=<container_id>` to target a specific WordPress container
+- `WP_ROOT=/var/www/html` to override container WordPress path
+- `KEEP_TEST_SITE=1` to keep the generated test site for inspection
+
+If multisite is not enabled yet, convert your local WordPress instance first:
+
+```bash
+php /tmp/wp-cli.phar --allow-root --path=/var/www/html core multisite-convert --title="BBAI Test Network"
+```
+
 ### Dashboard Quick Actions
 
 Access the dashboard at **Media → AI ALT Text**:

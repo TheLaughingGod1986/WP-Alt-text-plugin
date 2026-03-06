@@ -5,14 +5,14 @@
  *
  * Run: BBAI_E2E_BASE_URL=http://localhost:8080 BBAI_E2E_WP_USER=admin BBAI_E2E_WP_PASS=xxx npx playwright test tests/e2e/plugin-integration.spec.js
  *
- * Or with defaults (admin/Plymouth.09): BBAI_E2E_BASE_URL=http://localhost:8080 npx playwright test tests/e2e/plugin-integration.spec.js
+ * Or with defaults (admin/admin123): BBAI_E2E_BASE_URL=http://localhost:8080 npx playwright test tests/e2e/plugin-integration.spec.js
  */
 
 const { test, expect } = require('@playwright/test');
 
 const BASE_URL = process.env.BBAI_E2E_BASE_URL || 'http://127.0.0.1:8889';
 const WP_USER = process.env.BBAI_E2E_WP_USER || 'admin';
-const WP_PASS = process.env.BBAI_E2E_WP_PASS || 'Plymouth.09';
+const WP_PASS = process.env.BBAI_E2E_WP_PASS || 'admin123';
 const DASHBOARD_PATH = process.env.BBAI_E2E_DASHBOARD_PATH || '/wp-admin/admin.php?page=bbai';
 const MEDIA_ALT_PATH = '/wp-admin/upload.php?page=bbai';
 const HAS_BASE_URL = Boolean(process.env.BBAI_E2E_BASE_URL);
@@ -82,5 +82,29 @@ test.describe('BeepBeep AI Plugin Integration', () => {
     } else {
       test.skip(true, 'No login button visible (may already be logged in)');
     }
+  });
+
+  test('upgrade modal opens when clicking upgrade button', async ({ page }) => {
+    await page.goto(`${BASE_URL}/wp-login.php`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+    await page.fill('#user_login', WP_USER);
+    await page.fill('#user_pass', WP_PASS);
+    await page.click('#wp-submit');
+    await page.waitForURL(/wp-admin/, { timeout: 15000 });
+
+    await page.goto(`${BASE_URL}${DASHBOARD_PATH}`, { waitUntil: 'networkidle', timeout: 20000 });
+
+    const upgradeBtn = page.locator(
+      '[data-action="show-upgrade-modal"], button:has-text("Upgrade to Growth"), button:has-text("Upgrade to continue"), a:has-text("Upgrade to Growth"), .bbai-upgrade-cta-card button'
+    ).first();
+    await expect(upgradeBtn).toBeVisible({ timeout: 5000 });
+    await upgradeBtn.click();
+    await page.waitForTimeout(800);
+
+    const upgradeModal = page.locator('#bbai-upgrade-modal, .bbai-upgrade-modal, [data-bbai-upgrade-modal]').first();
+    await expect(upgradeModal).toBeVisible({ timeout: 5000 });
+
+    // Modal should show plan/pricing content
+    const modalContent = page.locator('.bbai-upgrade-modal__content, .bbai-modal__content, [role="dialog"]');
+    await expect(modalContent.first()).toBeVisible({ timeout: 3000 });
   });
 });

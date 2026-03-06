@@ -75,17 +75,48 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                     }
                 }
                 
-                $bbai_is_pro = $bbai_plan === 'pro';
+                $bbai_is_pro = ($bbai_plan === 'pro' || $bbai_plan === 'growth');
                 $bbai_is_agency = $bbai_plan === 'agency';
-                $bbai_usage_percent = $bbai_usage_box['limit'] > 0 ? ($bbai_usage_box['used'] / $bbai_usage_box['limit'] * 100) : 0;
+                $bbai_is_growth_plan = ($bbai_is_pro || $bbai_is_agency);
 
-                // Determine plan badge text
-                if ($bbai_is_agency) {
-                    $bbai_plan_badge_text = esc_html__('AGENCY', 'beepbeep-ai-alt-text-generator');
-                } elseif ($bbai_is_pro) {
-                    $bbai_plan_badge_text = esc_html__('PRO', 'beepbeep-ai-alt-text-generator');
+                $bbai_plan_label = $bbai_is_growth_plan
+                    ? esc_html__('Growth', 'beepbeep-ai-alt-text-generator')
+                    : esc_html__('Free', 'beepbeep-ai-alt-text-generator');
+
+                $bbai_used_credits = intval($bbai_usage_box['used'] ?? 0);
+                $bbai_total_credits = intval($bbai_usage_box['limit'] ?? 0);
+
+                $bbai_reset_label = esc_html__('Monthly', 'beepbeep-ai-alt-text-generator');
+                $bbai_reset_raw = $bbai_usage_box['reset_date'] ?? '';
+                $bbai_reset_timestamp = isset($bbai_usage_box['reset_timestamp']) ? intval($bbai_usage_box['reset_timestamp']) : strtotime((string) $bbai_reset_raw);
+                if ($bbai_reset_timestamp !== false && $bbai_reset_timestamp > 0) {
+                    $bbai_reset_label = date_i18n('F j', $bbai_reset_timestamp);
+                } elseif (!empty($bbai_reset_raw) && strtolower((string) $bbai_reset_raw) !== 'monthly') {
+                    $bbai_reset_label = (string) $bbai_reset_raw;
+                }
+
+                $bbai_stored_license_key = $this->api_client->get_license_key();
+                $bbai_show_debug_license_key = defined('WP_DEBUG') && WP_DEBUG && !empty($bbai_stored_license_key);
+
+                $bbai_tone_options = [
+                    'Professional',
+                    'SEO Optimized',
+                    'Accessibility Focused',
+                    'E-commerce',
+                ];
+                $bbai_tone_saved = (string) ($bbai_o['tone'] ?? '');
+                $bbai_tone_value = 'Professional';
+                if (in_array($bbai_tone_saved, $bbai_tone_options, true)) {
+                    $bbai_tone_value = $bbai_tone_saved;
                 } else {
-                    $bbai_plan_badge_text = esc_html__('FREE', 'beepbeep-ai-alt-text-generator');
+                    $bbai_tone_hint = strtolower($bbai_tone_saved);
+                    if (strpos($bbai_tone_hint, 'seo') !== false) {
+                        $bbai_tone_value = 'SEO Optimized';
+                    } elseif (strpos($bbai_tone_hint, 'access') !== false || strpos($bbai_tone_hint, 'screen') !== false) {
+                        $bbai_tone_value = 'Accessibility Focused';
+                    } elseif (strpos($bbai_tone_hint, 'commerce') !== false || strpos($bbai_tone_hint, 'product') !== false || strpos($bbai_tone_hint, 'shop') !== false) {
+                        $bbai_tone_value = 'E-commerce';
+                    }
                 }
                 ?>
 
@@ -115,247 +146,38 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                     </div>
                 </div>
 
-                <!-- Plan Summary Card -->
+                <!-- Account Status Card -->
                 <div class="bbai-settings-plan-summary-card">
-                    <div class="bbai-settings-plan-badge-top">
-                        <span class="bbai-settings-plan-badge-text"><?php echo esc_html($bbai_plan_badge_text); ?></span>
-                    </div>
-                    <div class="bbai-settings-plan-quota">
-                        <div class="bbai-settings-plan-quota-meter">
-                            <span class="bbai-settings-plan-quota-used"><?php echo esc_html($bbai_usage_box['used']); ?></span>
-                            <span class="bbai-settings-plan-quota-divider">/</span>
-                            <span class="bbai-settings-plan-quota-limit"><?php echo esc_html($bbai_usage_box['limit']); ?></span>
-                        </div>
-                        <div class="bbai-settings-plan-quota-label">
-                            <?php esc_html_e('image descriptions', 'beepbeep-ai-alt-text-generator'); ?>
-                    </div>
-                    </div>
+                    <h3 class="bbai-settings-card-title"><?php esc_html_e('Account Status', 'beepbeep-ai-alt-text-generator'); ?></h3>
+
                     <div class="bbai-settings-plan-info">
-                        <?php if (!$bbai_is_pro && !$bbai_is_agency) : ?>
-                            <div class="bbai-settings-plan-info-item">
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                    <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                                    <path d="M8 4V8L10 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                                </svg>
-                                <span>
-                                    <?php
-                                    if (isset($bbai_usage_box['reset_date']) && !empty($bbai_usage_box['reset_date'])) {
-                                        // Ensure consistent date format - parse and reformat if needed
-                                        $bbai_reset_date = $bbai_usage_box['reset_date'];
-                                        $bbai_reset_timestamp = isset($bbai_usage_box['reset_timestamp']) ? $bbai_usage_box['reset_timestamp'] : strtotime($bbai_reset_date);
-                                        if ($bbai_reset_timestamp !== false && $bbai_reset_timestamp > 0) {
-                                            $bbai_formatted_date = date_i18n('F j, Y', $bbai_reset_timestamp);
-                                        } else {
-                                            $bbai_formatted_date = $bbai_reset_date; // Fallback to original if parsing fails
-                                        }
-                                        printf(
-                                            /* translators: 1: reset date */
-                                            esc_html__('Resets %s', 'beepbeep-ai-alt-text-generator'),
-                                            '<strong>' . esc_html($bbai_formatted_date) . '</strong>'
-                                        );
-                                    } else {
-                                        esc_html_e('Monthly quota', 'beepbeep-ai-alt-text-generator');
-                                    }
-                                    ?>
-                                </span>
-                            </div>
-                            <div class="bbai-settings-plan-info-item">
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                    <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                                    <circle cx="8" cy="8" r="2" fill="currentColor"/>
-                                </svg>
-                                <span><?php esc_html_e('Shared across all users', 'beepbeep-ai-alt-text-generator'); ?></span>
-                            </div>
-                        <?php elseif ($bbai_is_agency) : ?>
-                            <div class="bbai-settings-plan-info-item">
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                    <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                                <span><?php esc_html_e('Multi-site license', 'beepbeep-ai-alt-text-generator'); ?></span>
-                            </div>
-                            <div class="bbai-settings-plan-info-item">
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                    <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                                <span><?php 
-                                    $bbai_reset_date = $bbai_usage_box['reset_date'] ?? '';
-                                    if (!empty($bbai_reset_date) && $bbai_reset_date !== 'Monthly') {
-                                        // Ensure consistent date format - parse and reformat if needed
-                                        $bbai_reset_timestamp = isset($bbai_usage_box['reset_timestamp']) ? $bbai_usage_box['reset_timestamp'] : strtotime($bbai_reset_date);
-                                        if ($bbai_reset_timestamp !== false && $bbai_reset_timestamp > 0) {
-                                            $bbai_formatted_date = date_i18n('F j, Y', $bbai_reset_timestamp);
-                                        } else {
-                                            $bbai_formatted_date = $bbai_reset_date; // Fallback to original if parsing fails
-                                        }
-                                        /* translators: 1: reset date */
-                                        echo sprintf(esc_html__('Resets %s', 'beepbeep-ai-alt-text-generator'), '<strong>' . esc_html($bbai_formatted_date) . '</strong>');
-                                    } else {
-                                        esc_html_e('Monthly quota', 'beepbeep-ai-alt-text-generator');
-                                    }
-                                ?></span>
-                            </div>
-                        <?php else : ?>
-                            <div class="bbai-settings-plan-info-item">
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                    <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                                <span><?php esc_html_e('1,000 generations per month', 'beepbeep-ai-alt-text-generator'); ?></span>
-                            </div>
-                            <div class="bbai-settings-plan-info-item">
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                    <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                                <span><?php esc_html_e('Priority support', 'beepbeep-ai-alt-text-generator'); ?></span>
-                            </div>
+                        <div class="bbai-settings-plan-info-item">
+                            <span class="bbai-settings-account-status-label"><?php esc_html_e('Plan:', 'beepbeep-ai-alt-text-generator'); ?></span>
+                            <span class="bbai-settings-account-status-value"><?php echo esc_html($bbai_plan_label); ?></span>
+                        </div>
+                        <div class="bbai-settings-plan-info-item">
+                            <span class="bbai-settings-account-status-label"><?php esc_html_e('Credits used:', 'beepbeep-ai-alt-text-generator'); ?></span>
+                            <span class="bbai-settings-account-status-value">
+                                <?php echo esc_html(number_format_i18n($bbai_used_credits) . ' / ' . number_format_i18n($bbai_total_credits)); ?>
+                            </span>
+                        </div>
+                        <div class="bbai-settings-plan-info-item">
+                            <span class="bbai-settings-account-status-label"><?php esc_html_e('Next reset:', 'beepbeep-ai-alt-text-generator'); ?></span>
+                            <span class="bbai-settings-account-status-value"><?php echo esc_html($bbai_reset_label); ?></span>
+                        </div>
+                        <?php if ($bbai_show_debug_license_key) : ?>
+                        <div class="bbai-settings-plan-info-item">
+                            <span class="bbai-settings-account-status-label"><?php esc_html_e('License key:', 'beepbeep-ai-alt-text-generator'); ?></span>
+                            <span class="bbai-settings-account-status-value"><?php echo esc_html($bbai_stored_license_key); ?></span>
+                        </div>
                         <?php endif; ?>
                     </div>
-                    <?php if (!$bbai_is_pro && !$bbai_is_agency) : ?>
+                    <?php if (!$bbai_is_growth_plan) : ?>
                     <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-lg" data-action="show-upgrade-modal" data-bbai-tooltip="<?php esc_attr_e('Get 1,000 images/month and advanced features', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="bottom">
                         <?php esc_html_e('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'); ?>
                     </button>
                     <?php endif; ?>
                 </div>
-
-                <!-- License Management Card -->
-                <?php
-                // Reuse license variables if already set above
-                if (!isset($bbai_has_license)) {
-                    $bbai_has_license = $this->api_client->has_active_license();
-                    $bbai_license_data = $this->api_client->get_license_data();
-                }
-                
-                // Also check if license key exists (even if data not fully loaded)
-                $bbai_stored_license_key = $this->api_client->get_license_key();
-                $bbai_has_stored_license_key = !empty($bbai_stored_license_key);
-                ?>
-
-                <div class="bbai-settings-card">
-                    <div class="bbai-settings-card-header">
-                        <div class="bbai-settings-card-header-icon">
-                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                                <circle cx="7" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/>
-                                <path d="M10 10L18 18M18 18V14M18 18H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </div>
-                        <h3 class="bbai-settings-card-title"><?php esc_html_e('License', 'beepbeep-ai-alt-text-generator'); ?></h3>
-                    </div>
-
-                    <?php if ($bbai_has_license && $bbai_license_data) : ?>
-                        <?php
-                        $bbai_org = $bbai_license_data['organization'] ?? null;
-                        if ($bbai_org) :
-                        ?>
-                        <!-- Active License Display -->
-                        <div class="bbai-settings-license-active">
-                            <div class="bbai-settings-license-status">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                    <circle cx="10" cy="10" r="8" fill="#10b981" opacity="0.1"/>
-                                    <path d="M6 10L9 13L14 7" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                                <div>
-                                    <div class="bbai-settings-license-title"><?php esc_html_e('License Active', 'beepbeep-ai-alt-text-generator'); ?></div>
-                                    <div class="bbai-settings-license-subtitle"><?php echo esc_html($bbai_org['name'] ?? ''); ?></div>
-                                    <?php 
-                                    // Display license key for Growth and Agency users
-                                    $bbai_license_key = $this->api_client->get_license_key();
-                                    if (!empty($bbai_license_key)) :
-                                        $bbai_license_plan = strtolower($bbai_org['plan'] ?? 'free');
-                                        if ($bbai_license_plan === 'pro' || $bbai_license_plan === 'agency') :
-                                    ?>
-                                    <div class="bbai-settings-license-key bbai-license-key-display">
-                                        <strong><?php esc_html_e('License Key:', 'beepbeep-ai-alt-text-generator'); ?></strong> <?php echo esc_html($bbai_license_key); ?>
-                                    </div>
-                                    <?php
-                                        endif;
-                                    endif;
-                                    ?>
-                                </div>
-                            </div>
-                            <button type="button" class="bbai-btn bbai-btn-danger" data-action="deactivate-license" data-bbai-tooltip="<?php esc_attr_e('Remove license from this site', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="top">
-                                <?php esc_html_e('Deactivate', 'beepbeep-ai-alt-text-generator'); ?>
-                            </button>
-                        </div>
-
-                        <?php
-                        // Show site usage for agency licenses (can use license key or JWT auth)
-                        $bbai_is_authenticated = $this->api_client->is_authenticated();
-                        $bbai_is_agency_license = isset($bbai_license_data['organization']['plan']) && $bbai_license_data['organization']['plan'] === 'agency';
-
-                        // Show for agency licenses with either JWT auth or license key
-                        if ($bbai_is_agency_license && ($bbai_is_authenticated || $bbai_has_license)) :
-                        ?>
-                        <!-- License Site Usage Section -->
-                        <div class="bbai-settings-license-sites" id="bbai-license-sites">
-                            <div class="bbai-settings-license-sites-header">
-                                <h3 class="bbai-settings-license-sites-title">
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="bbai-mr-2">
-                                        <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                                        <circle cx="8" cy="8" r="2" fill="currentColor"/>
-                                    </svg>
-                                    <?php esc_html_e('Sites Using This License', 'beepbeep-ai-alt-text-generator'); ?>
-                                </h3>
-                            </div>
-                            <div class="bbai-settings-license-sites-content" id="bbai-license-sites-content">
-                                <div class="bbai-settings-license-sites-loading">
-                                    <span class="bbai-spinner"></span>
-                                    <?php esc_html_e('Loading site usage...', 'beepbeep-ai-alt-text-generator'); ?>
-                                </div>
-                            </div>
-                        </div>
-                        <?php endif; ?>
-                        
-                        <?php endif; ?>
-                        
-                    <?php elseif ($bbai_has_stored_license_key) : ?>
-                        <!-- License Key Exists But Data Not Loaded -->
-                        <div class="bbai-settings-license-active">
-                            <div class="bbai-settings-license-status">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                    <circle cx="10" cy="10" r="8" fill="#10b981" opacity="0.1"/>
-                                    <path d="M6 10L9 13L14 7" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                                <div>
-                                    <div class="bbai-settings-license-title"><?php esc_html_e('License Active', 'beepbeep-ai-alt-text-generator'); ?></div>
-                                    <div class="bbai-settings-license-subtitle"><?php esc_html_e('Your license key is active and ready to use.', 'beepbeep-ai-alt-text-generator'); ?></div>
-                                    <div class="bbai-settings-license-key bbai-license-key-display">
-                                        <strong><?php esc_html_e('License Key:', 'beepbeep-ai-alt-text-generator'); ?></strong> <?php echo esc_html($bbai_stored_license_key); ?>
-                                    </div>
-                                </div>
-                            </div>
-                            <button type="button" class="bbai-btn bbai-btn-danger" data-action="deactivate-license" data-bbai-tooltip="<?php esc_attr_e('Remove license from this site', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="top">
-                                <?php esc_html_e('Deactivate', 'beepbeep-ai-alt-text-generator'); ?>
-                            </button>
-                        </div>
-                    <?php else : ?>
-                        <!-- License Activation Form -->
-                        <div class="bbai-settings-license-form">
-                            <p class="bbai-settings-license-description">
-                                <?php esc_html_e('Enter your license key to activate this site. Agency licenses can be used across multiple sites.', 'beepbeep-ai-alt-text-generator'); ?>
-                            </p>
-                            <form id="license-activation-form">
-                                <div class="bbai-settings-license-input-group">
-                                    <label for="license-key-input" class="bbai-settings-license-label">
-                                        <?php esc_html_e('License Key', 'beepbeep-ai-alt-text-generator'); ?>
-                                    </label>
-                                    <input type="text"
-                                           id="license-key-input"
-                                           name="license_key"
-                                           class="bbai-settings-license-input"
-                                           placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                                           pattern="[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
-                                           required>
-                                </div>
-                                <div id="license-activation-status" class="bbai-hidden bbai-alert"></div>
-                                <button type="submit" id="activate-license-btn" class="bbai-btn bbai-btn-primary" data-bbai-tooltip="<?php esc_attr_e('Activate your Growth or Agency license on this site', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="right">
-                                    <?php esc_html_e('Activate License', 'beepbeep-ai-alt-text-generator'); ?>
-                                </button>
-                            </form>
-                        </div>
-                    <?php endif; ?>
-                </div>
-
-                <!-- Hidden nonce for AJAX requests -->
-                <input type="hidden" id="license-nonce" value="<?php echo esc_attr(wp_create_nonce('beepbeepai_nonce')); ?>">
 
                 <!-- Account Management Card -->
                 <div class="bbai-settings-card">
@@ -371,24 +193,9 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                     
                     <?php if (!$bbai_is_pro && !$bbai_is_agency) : ?>
                     <div class="bbai-settings-account-info-banner">
-                        <span><?php esc_html_e('You are on the free plan.', 'beepbeep-ai-alt-text-generator'); ?></span>
-                    </div>
-                    <div class="bbai-settings-account-upgrade-link">
-                        <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-lg" data-action="show-upgrade-modal" data-bbai-tooltip="<?php esc_attr_e('Get 1,000 images/month and advanced features', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="bottom">
-                            <?php esc_html_e('Upgrade Now', 'beepbeep-ai-alt-text-generator'); ?>
-                        </button>
+                        <span><?php esc_html_e('Subscription tools appear here after upgrading to Growth.', 'beepbeep-ai-alt-text-generator'); ?></span>
                     </div>
                     <?php else : ?>
-                    <div class="bbai-settings-account-status">
-                        <span class="bbai-settings-account-status-label"><?php esc_html_e('Current Plan:', 'beepbeep-ai-alt-text-generator'); ?></span>
-                        <span class="bbai-settings-account-status-value"><?php 
-                            if ($bbai_is_agency) {
-                                esc_html_e('Agency', 'beepbeep-ai-alt-text-generator');
-                            } else {
-                                esc_html_e('Growth', 'beepbeep-ai-alt-text-generator');
-                            }
-                        ?></span>
-                    </div>
                     <?php 
                     // Check if using license vs authenticated account
                     $bbai_is_authenticated_for_account = $this->api_client->is_authenticated();
@@ -404,7 +211,7 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                             <ul>
                                 <li><?php esc_html_e('Contact your license administrator', 'beepbeep-ai-alt-text-generator'); ?></li>
                                 <li><?php esc_html_e('Email support for billing inquiries', 'beepbeep-ai-alt-text-generator'); ?></li>
-                                <li><?php esc_html_e('View license details in the License section above', 'beepbeep-ai-alt-text-generator'); ?></li>
+                                <li><?php esc_html_e('Contact support with your site URL for license assistance', 'beepbeep-ai-alt-text-generator'); ?></li>
                             </ul>
                         </div>
                     </div>
@@ -445,10 +252,10 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                             <div class="bbai-settings-form-field bbai-settings-form-field--toggle">
                                 <div class="bbai-settings-form-field-content">
                                     <label for="bbai-enable-on-upload" class="bbai-settings-form-label" data-bbai-tooltip="When enabled, alt text is automatically generated for every image you upload. Saves time and ensures no image is left without alt text." data-bbai-tooltip-position="right">
-                                        <?php esc_html_e('Auto-generate on Image Upload', 'beepbeep-ai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Auto-generate alt text on image upload', 'beepbeep-ai-alt-text-generator'); ?>
                                     </label>
                                     <p class="bbai-settings-form-description">
-                                        <?php esc_html_e('Automatically generate alt text when new images are uploaded to your media library.', 'beepbeep-ai-alt-text-generator'); ?>
+                                        <?php esc_html_e('Automatically generate alt text whenever new images are uploaded to the WordPress media library.', 'beepbeep-ai-alt-text-generator'); ?>
                                     </p>
                                 </div>
                                 <label class="bbai-settings-toggle">
@@ -465,23 +272,36 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                         </div>
 
                         <div class="bbai-settings-form-group">
-                            <label for="bbai-tone" class="bbai-settings-form-label" data-bbai-tooltip="Customize how the AI writes alt text. Examples: 'casual and friendly', 'technical and detailed', 'simple and concise'. Affects all generated descriptions." data-bbai-tooltip-position="right">
-                                <?php esc_html_e('Tone & Style', 'beepbeep-ai-alt-text-generator'); ?>
+                            <label for="bbai-tone" class="bbai-settings-form-label" data-bbai-tooltip="Choose a style profile for generated alt text. This applies to all new AI descriptions." data-bbai-tooltip-position="right">
+                                <?php esc_html_e('AI Description Style', 'beepbeep-ai-alt-text-generator'); ?>
                             </label>
-                            <input
-                                type="text"
+                            <select
                                 id="bbai-tone"
                                 name="<?php echo esc_attr(self::OPTION_KEY); ?>[tone]"
-                                value="<?php echo esc_attr($bbai_o['tone'] ?? 'professional, accessible'); ?>"
-                                placeholder="<?php esc_attr_e('professional, accessible', 'beepbeep-ai-alt-text-generator'); ?>"
-                                class="bbai-settings-form-input"
-                            />
+                                class="bbai-settings-form-input bbai-select"
+                            >
+                                <option value="Professional" <?php selected($bbai_tone_value, 'Professional'); ?>>
+                                    <?php esc_html_e('Professional', 'beepbeep-ai-alt-text-generator'); ?>
+                                </option>
+                                <option value="SEO Optimized" <?php selected($bbai_tone_value, 'SEO Optimized'); ?>>
+                                    <?php esc_html_e('SEO Optimized', 'beepbeep-ai-alt-text-generator'); ?>
+                                </option>
+                                <option value="Accessibility Focused" <?php selected($bbai_tone_value, 'Accessibility Focused'); ?>>
+                                    <?php esc_html_e('Accessibility Focused', 'beepbeep-ai-alt-text-generator'); ?>
+                                </option>
+                                <option value="E-commerce" <?php selected($bbai_tone_value, 'E-commerce'); ?>>
+                                    <?php esc_html_e('E-commerce', 'beepbeep-ai-alt-text-generator'); ?>
+                                </option>
+                            </select>
                         </div>
 
                         <div class="bbai-settings-form-group">
                             <label for="bbai-custom-prompt" class="bbai-settings-form-label" data-bbai-tooltip="Add specific instructions for the AI. Example: 'Always mention brand colors', 'Focus on product features', 'Include emotional context'. These instructions apply to every image." data-bbai-tooltip-position="right">
                                 <?php esc_html_e('Additional Instructions', 'beepbeep-ai-alt-text-generator'); ?>
                             </label>
+                            <p class="bbai-settings-form-description">
+                                <?php esc_html_e('Example: "Focus on accessibility and clarity for screen readers."', 'beepbeep-ai-alt-text-generator'); ?>
+                            </p>
                             <textarea
                                 id="bbai-custom-prompt"
                                 name="<?php echo esc_attr(self::OPTION_KEY); ?>[custom_prompt]"

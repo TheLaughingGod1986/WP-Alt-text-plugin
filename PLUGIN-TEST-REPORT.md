@@ -91,3 +91,35 @@
 | Security       | ✅ Nonces/caps in place (from prior audit) |
 
 **Overall:** The plugin works well for its main use cases. The main follow-ups are aligning documentation and feature messaging, fixing the installation path in the readme, and adding basic automated tests.
+
+---
+
+## Multisite Verification (March 4, 2026)
+
+### Command used
+
+```bash
+./scripts/test-multisite.sh
+```
+
+### Environment
+
+- Docker WordPress container (`wordpress:latest`)
+- Multisite enabled via `wp core multisite-convert`
+- Plugin network-activated
+
+### Result
+
+- ✅ Pass on main site table/options/cron checks
+- ✅ Pass on newly created subsite bootstrap checks
+- ✅ New subsite auto-initialized with:
+  - `bbai_queue`
+  - `bbai_logs`
+  - `bbai_credit_usage`
+  - `bbai_usage_logs`
+  - `bbai_contact_submissions`
+
+### Notes
+
+- The script supports both `wp` binary and `php /tmp/wp-cli.phar` fallback in container environments.
+- The generated test site is removed automatically unless `KEEP_TEST_SITE=1` is set.

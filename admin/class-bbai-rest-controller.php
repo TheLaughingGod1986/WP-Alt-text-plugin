@@ -236,7 +236,7 @@ class REST_Controller {
 			[
 				'methods'             => 'GET',
 				'callback'            => [ $this, 'handle_logs' ],
-				'permission_callback' => [ $this, 'can_manage_admin' ],
+				'permission_callback' => [ $this, 'can_edit_media' ],
 				'args'                => [
 					'level'     => [
 						'required'          => false,
@@ -444,6 +444,15 @@ class REST_Controller {
 	}
 
 	/**
+	 * Debug Logs visibility policy for support tooling.
+	 *
+	 * @return bool
+	 */
+	private function can_view_debug_logs() {
+		return ( defined( 'WP_DEBUG' ) && WP_DEBUG ) || current_user_can( 'manage_options' );
+	}
+
+	/**
 	 * Sanitize boolean-like REST values.
 	 *
 	 * @param mixed $value Raw value.
@@ -511,8 +520,26 @@ class REST_Controller {
 	 * @return string
 	 */
 	public static function sanitize_log_level_arg( $value ) {
-		$level = is_scalar( $value ) ? sanitize_key( (string) $value ) : '';
-		return in_array( $level, [ '', 'debug', 'info', 'warning', 'error' ], true ) ? $level : '';
+		if ( ! is_scalar( $value ) ) {
+			return '';
+		}
+
+		$level = sanitize_key( (string) $value );
+		if ( '' === $level || 'all' === $level ) {
+			return '';
+		}
+
+		$aliases = [
+			'warn'    => 'warning',
+			'warning' => 'warning',
+			'err'     => 'error',
+			'fatal'   => 'error',
+		];
+		if ( isset( $aliases[ $level ] ) ) {
+			$level = $aliases[ $level ];
+		}
+
+		return in_array( $level, [ 'debug', 'info', 'warning', 'error' ], true ) ? $level : '';
 	}
 
 	/**
@@ -546,23 +573,12 @@ class REST_Controller {
 	 * Fetch debug logs via REST.
 	 */
 	public function handle_logs( \WP_REST_Request $request ) {
-		if ( ! class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
-			return rest_ensure_response([
-				'logs' => [],
-				'pagination' => [
-					'page' => 1,
-					'per_page' => 10,
-					'total_pages' => 1,
-					'total_items' => 0,
-				],
-				'stats' => [
-					'total' => 0,
-					'warnings' => 0,
-					'errors' => 0,
-					'last_event' => null,
-					'last_api' => null,
-				],
-			]);
+		if ( ! $this->can_view_debug_logs() ) {
+			return new \WP_Error(
+				'debug_logs_forbidden',
+				__( 'Debug logs are not available for this account.', 'beepbeep-ai-alt-text-generator' ),
+				[ 'status' => 403 ]
+			);
 		}
 
 		$level_input = $request->get_param( 'level' );
@@ -574,7 +590,7 @@ class REST_Controller {
 		$page_input = $request->get_param( 'page' );
 
 		$args = [
-			'level'    => is_string( $level_input ) ? sanitize_text_field( $level_input ) : '',
+			'level'    => self::sanitize_log_level_arg( $level_input ),
 			'search'   => is_string( $search_input ) ? sanitize_text_field( $search_input ) : '',
 			'date'     => is_string( $date_input ) ? sanitize_text_field( $date_input ) : '',
 			'date_from' => is_string( $date_from_input ) ? sanitize_text_field( $date_from_input ) : '',
@@ -583,13 +599,21 @@ class REST_Controller {
 			'page'     => absint( $page_input ?: 1 ),
 		];
 
-		return rest_ensure_response( Debug_Log::get_logs( $args ) );
+		return rest_ensure_response( $this->core->get_debug_payload( $args ) );
 	}
 
 	/**
 	 * Clear logs via REST.
 	 */
 	public function handle_logs_clear( \WP_REST_Request $request ) {
+		if ( ! $this->can_view_debug_logs() ) {
+			return new \WP_Error(
+				'debug_logs_forbidden',
+				__( 'Debug logs are not available for this account.', 'beepbeep-ai-alt-text-generator' ),
+				[ 'status' => 403 ]
+			);
+		}
+
 		if ( ! class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
 			return rest_ensure_response([
 				'cleared' => false,

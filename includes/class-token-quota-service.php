@@ -32,7 +32,7 @@ class Token_Quota_Service {
 		
 		// Get from API client
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
-		$api_client = new API_Client_V2();
+		$api_client = API_Client_V2::get_instance();
 		
 		$usage = $api_client->get_usage();
 		

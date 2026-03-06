@@ -53,7 +53,7 @@ class Authentication_Service {
 	 *
 	 * @param string $email    User email.
 	 * @param string $password User password.
-	 * @return array{success: bool, message: string, user?: array, code?: string} Registration result.
+	 * @return array{success: bool, message: string, user?: array, code?: string, existing_email?: string} Registration result.
 	 */
 	public function register( string $email, string $password ): array {
 		// Validate inputs.
@@ -64,26 +64,32 @@ class Authentication_Service {
 			);
 		}
 
-		// Check if site already has an account.
-		$existing_token = $this->api_client->get_token();
-		if ( ! empty( $existing_token ) ) {
-			// Check if it's a free plan.
-			$usage = $this->api_client->get_usage();
-			if ( ! is_wp_error( $usage ) && isset( $usage['plan'] ) && 'free' === $usage['plan'] ) {
-				return array(
-					'success' => false,
-					'message' => __( 'This site is already linked to a free account. Ask an administrator to upgrade to Growth or Agency for higher limits.', 'beepbeep-ai-alt-text-generator' ),
-					'code'    => 'free_plan_exists',
-				);
-			}
-		}
-
 		// Attempt registration via API.
 		$result = $this->api_client->register( $email, $password );
 
 		if ( is_wp_error( $result ) ) {
 			$error_code    = $result->get_error_code();
 			$error_message = $result->get_error_message();
+			$error_data    = $result->get_error_data();
+
+			// Handle site already connected error.
+			if ( 'site_has_license' === $error_code || 'SITE_HAS_LICENSE' === $error_code ) {
+				$existing_email = '';
+				if ( is_array( $error_data ) && isset( $error_data['existing_email'] ) ) {
+					$existing_email = sanitize_email( (string) $error_data['existing_email'] );
+				}
+
+				return array(
+					'success'        => false,
+					'message'        => sprintf(
+						/* translators: 1: existing account email, if available */
+						__( 'This site is already connected to an account%s. Multiple emails can use this site, but all WordPress users share the same quota.', 'beepbeep-ai-alt-text-generator' ),
+						$existing_email ? ' (' . $existing_email . ')' : ''
+					),
+					'code'           => 'site_has_license',
+					'existing_email' => $existing_email,
+				);
+			}
 
 			// Handle free plan already used error.
 			if ( 'free_plan_exists' === $error_code || ( is_string( $error_message ) && false !== strpos( strtolower( $error_message ), 'free plan' ) ) ) {
@@ -94,9 +100,24 @@ class Authentication_Service {
 				);
 			}
 
+			if ( 'invite_required' === $error_code ) {
+				$invite_url = '';
+				if ( is_array( $error_data ) && isset( $error_data['invite_url'] ) ) {
+					$invite_url = esc_url_raw( (string) $error_data['invite_url'] );
+				}
+
+				return array(
+					'success'    => false,
+					'message'    => $error_message,
+					'code'       => 'invite_required',
+					'invite_url' => $invite_url,
+				);
+			}
+
 			return array(
 				'success' => false,
 				'message' => $error_message,
+				'code'    => is_string( $error_code ) ? strtolower( $error_code ) : '',
 			);
 		}
 
@@ -122,7 +143,7 @@ class Authentication_Service {
 	 *
 	 * @param string $email    User email.
 	 * @param string $password User password.
-	 * @return array{success: bool, message: string, user?: array} Login result.
+	 * @return array{success: bool, message: string, user?: array, code?: string, existing_email?: string} Login result.
 	 */
 	public function login( string $email, string $password ): array {
 		// Validate inputs.
@@ -137,9 +158,40 @@ class Authentication_Service {
 		$result = $this->api_client->login( $email, $password );
 
 		if ( is_wp_error( $result ) ) {
+			$error_code = $result->get_error_code();
+			$error_data = $result->get_error_data();
+			if ( 'site_has_license' === $error_code || 'SITE_HAS_LICENSE' === $error_code ) {
+				$existing_email = '';
+				if ( is_array( $error_data ) && isset( $error_data['existing_email'] ) ) {
+					$existing_email = sanitize_email( (string) $error_data['existing_email'] );
+				}
+
+				return array(
+					'success' => false,
+					'message' => $result->get_error_message(),
+					'code'    => 'site_has_license',
+					'existing_email' => $existing_email,
+				);
+			}
+
+			if ( 'invite_required' === $error_code ) {
+				$invite_url = '';
+				if ( is_array( $error_data ) && isset( $error_data['invite_url'] ) ) {
+					$invite_url = esc_url_raw( (string) $error_data['invite_url'] );
+				}
+
+				return array(
+					'success'    => false,
+					'message'    => $result->get_error_message(),
+					'code'       => 'invite_required',
+					'invite_url' => $invite_url,
+				);
+			}
+
 			return array(
 				'success' => false,
 				'message' => $result->get_error_message(),
+				'code'    => is_string( $error_code ) ? strtolower( $error_code ) : '',
 			);
 		}
 

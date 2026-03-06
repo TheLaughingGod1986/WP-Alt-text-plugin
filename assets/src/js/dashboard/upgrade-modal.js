@@ -25,21 +25,32 @@ var FALLBACK_UPGRADE_SELECTOR = [
     '[data-upgrade-trigger="true"]'
 ].join(', ');
 
+function getUpgradeModalElement() {
+    var modalById = document.getElementById('bbai-upgrade-modal');
+    if (modalById && modalById.querySelector('.bbai-upgrade-modal__content')) {
+        return modalById;
+    }
+
+    var modalByData = document.querySelector('[data-bbai-upgrade-modal="1"]');
+    if (modalByData && modalByData.querySelector('.bbai-upgrade-modal__content')) {
+        if (modalByData.id !== 'bbai-upgrade-modal') {
+            modalByData.id = 'bbai-upgrade-modal';
+        }
+        return modalByData;
+    }
+
+    return null;
+}
+
 /**
  * Show upgrade modal
  */
 function alttextaiShowModal() {
     if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] alttextaiShowModal() called');
-    var modal = document.getElementById('bbai-upgrade-modal');
+    var modal = getUpgradeModalElement();
 
     if (!modal) {
         window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] Upgrade modal element not found in DOM!');
-        // Try to find it by class
-        var byClass = document.querySelector('.bbai-modal-backdrop');
-        if (byClass) {
-            byClass.id = 'bbai-upgrade-modal';
-            return alttextaiShowModal(); // Retry
-        }
         if (window.bbaiModal) {
             window.bbaiModal.warning('Upgrade modal not found. Please refresh the page.');
         }
@@ -81,10 +92,11 @@ function alttextaiShowModal() {
  * Close upgrade modal
  */
 function alttextaiCloseModal() {
-    var modal = document.getElementById('bbai-upgrade-modal');
+    var modal = getUpgradeModalElement();
     if (modal) {
         // Remove active class to trigger CSS transition
         modal.classList.remove('active');
+        modal.classList.remove('is-visible');
         
         // Wait for animation to complete before hiding
         setTimeout(function() {
@@ -93,6 +105,9 @@ function alttextaiCloseModal() {
         }, 300); // Match animation duration
         
         document.body.style.overflow = '';
+        if (document.documentElement) {
+            document.documentElement.style.overflow = '';
+        }
     }
 }
 
@@ -109,11 +124,16 @@ function handleUpgradeTrigger(event, triggerElement) {
         if (typeof alttextaiShowModal === 'function') {
             alttextaiShowModal();
         } else {
-            var modal = document.getElementById('bbai-upgrade-modal');
+            var modal = getUpgradeModalElement();
             if (modal) {
                 modal.style.display = 'flex';
+                modal.classList.add('active');
+                modal.classList.add('is-visible');
                 modal.setAttribute('aria-hidden', 'false');
                 document.body.style.overflow = 'hidden';
+                if (document.documentElement) {
+                    document.documentElement.style.overflow = 'hidden';
+                }
             }
         }
     } catch (err) {

@@ -156,6 +156,13 @@ else
     my $chg = $ENV{REL_CHANGELOG_BLOCK};
     my $upg = $ENV{REL_UPGRADE_BLOCK};
 
+    $chg = "" unless defined $chg;
+    $upg = "" unless defined $upg;
+    $chg =~ s/\s+\z//;
+    $upg =~ s/\s+\z//;
+    $chg .= "\n\n";
+    $upg .= "\n\n";
+
     s/^Stable tag:\s*.*/Stable tag: $v/m;
 
     s{(== Changelog ==\n\n)(.*?)(\n== [^\n]+ ==\n)}{

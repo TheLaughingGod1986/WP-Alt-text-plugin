@@ -133,11 +133,8 @@ const UsageCard: React.FC<UsageCardProps> = ({
         <button
           onClick={onGenerateMissing}
           disabled={!canGenerate}
-          {...(!canGenerate && {
-            'data-bbai-tooltip': 'Upgrade to unlock more generations',
-            'data-bbai-tooltip-position': 'top'
-          })}
-          className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 px-4 py-3 text-[14px] font-semibold text-white shadow-[0_4px_12px_rgba(99,102,241,0.4)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(99,102,241,0.5)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-[0_4px_12px_rgba(99,102,241,0.4)] active:translate-y-0"
+          title={!canGenerate ? 'Out of credits this month. Upgrade now or wait for reset.' : undefined}
+          className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 px-4 py-3 text-[14px] font-semibold text-white shadow-[0_4px_12px_rgba(99,102,241,0.4)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(99,102,241,0.5)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none disabled:hover:translate-y-0 disabled:hover:shadow-[0_4px_12px_rgba(99,102,241,0.4)] active:translate-y-0"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="2">
             <rect x="2" y="2" width="12" height="12" rx="2" />
@@ -145,22 +142,37 @@ const UsageCard: React.FC<UsageCardProps> = ({
           </svg>
           Generate Missing
         </button>
-        <button
-          onClick={onReoptimizeAll}
-          disabled={!canGenerate}
-          {...(!canGenerate && {
-            'data-bbai-tooltip': 'Upgrade to unlock more generations',
-            'data-bbai-tooltip-position': 'top'
-          })}
-          className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-3 text-[14px] font-semibold text-white shadow-[0_4px_12px_rgba(245,158,11,0.4)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(245,158,11,0.5)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-[0_4px_12px_rgba(245,158,11,0.4)] active:translate-y-0"
-        >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="2">
-            <path d="M8 2L10 6L14 8L10 10L8 14L6 10L2 8L6 6L8 2Z" />
-            <circle cx="8" cy="8" r="2" fill="currentColor" />
-          </svg>
-          Re-optimize All
-        </button>
+        {canGenerate ? (
+          <button
+            onClick={onReoptimizeAll}
+            className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-3 text-[14px] font-semibold text-white shadow-[0_4px_12px_rgba(245,158,11,0.4)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(245,158,11,0.5)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-[0_4px_12px_rgba(245,158,11,0.4)] active:translate-y-0"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="2">
+              <path d="M8 2L10 6L14 8L10 10L8 14L6 10L2 8L6 6L8 2Z" />
+              <circle cx="8" cy="8" r="2" fill="currentColor" />
+            </svg>
+            Re-optimize All
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled
+            title="Out of credits this month. Upgrade now or wait for reset."
+            className="flex items-center justify-center gap-2 rounded-full bg-gray-200 px-4 py-3 text-[14px] font-semibold text-gray-400 shadow-none transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:pointer-events-none"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="2">
+              <path d="M8 2L10 6L14 8L10 10L8 14L6 10L2 8L6 6L8 2Z" />
+              <circle cx="8" cy="8" r="2" fill="currentColor" />
+            </svg>
+            Re-optimize All
+          </button>
+        )}
       </div>
+      {!canGenerate && (
+        <p className="text-center text-[12px] text-amber-700">
+          You are out of credits for this month. Upgrade to continue now, or wait until your monthly reset date.
+        </p>
+      )}
 
       {/* Stats Tiles */}
       <div className="grid grid-cols-3 gap-3 pt-4">

@@ -162,7 +162,6 @@
             });
 
             // Show modal
-            this.overlay.fadeIn(200);
             this.activeModal = options;
 
             // Focus first button
@@ -172,6 +171,17 @@
 
             // Store onClose callback
             this.onCloseCallback = options.onClose;
+
+            // Ensure the modal is visible even when theme CSS expects an "is-visible" class.
+            // Avoid jQuery fadeIn/fadeOut here because they force inline display:block, which breaks flex centering.
+            this.overlay.stop(true, true);
+            this.overlay.css('display', 'flex');
+            if (this.overlay[0]) {
+                // Trigger reflow so class-based opacity transitions apply consistently.
+                // eslint-disable-next-line no-unused-expressions
+                this.overlay[0].offsetHeight;
+            }
+            this.overlay.addClass('is-visible');
         }
 
         /**
@@ -179,8 +189,11 @@
          */
         close() {
             if (!this.activeModal) return;
+            this.overlay.stop(true, true);
+            this.overlay.removeClass('is-visible');
 
-            this.overlay.fadeOut(200, () => {
+            setTimeout(() => {
+                this.overlay.css('display', 'none');
                 this.activeModal = null;
 
                 // Restore focus
@@ -193,7 +206,7 @@
                     this.onCloseCallback();
                     this.onCloseCallback = null;
                 }
-            });
+            }, 220);
         }
 
         /**

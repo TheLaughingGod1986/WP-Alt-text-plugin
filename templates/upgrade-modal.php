@@ -52,7 +52,7 @@ $bbai_agency_annual_savings = round(($bbai_agency_monthly * 12) - $bbai_agency_a
 $bbai_billing_url = admin_url('admin.php?page=bbai-billing');
 ?>
 
-<div id="bbai-upgrade-modal" class="bbai-modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="bbai-upgrade-modal-title">
+<div id="bbai-upgrade-modal" class="bbai-modal-backdrop" data-bbai-upgrade-modal="1" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="bbai-upgrade-modal-title">
     <div class="bbai-upgrade-modal__content">
         <button type="button" class="bbai-btn bbai-btn-icon-only bbai-upgrade-modal__close" onclick="if(typeof alttextaiCloseModal==='function'){alttextaiCloseModal();}else if(typeof bbaiCloseModal==='function'){bbaiCloseModal();}" aria-label="<?php esc_attr_e('Close', 'beepbeep-ai-alt-text-generator'); ?>">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -125,6 +125,8 @@ $bbai_billing_url = admin_url('admin.php?page=bbai-billing');
                         <span class="bbai-pricing-card__amount"><?php echo esc_html(number_format($bbai_growth_monthly, 2)); ?></span>
                         <span class="bbai-pricing-card__period"><?php esc_html_e('/month', 'beepbeep-ai-alt-text-generator'); ?></span>
                     </div>
+
+                    <p class="bbai-pricing-card__billing"><?php esc_html_e('Recommended for websites with 200+ images.', 'beepbeep-ai-alt-text-generator'); ?></p>
                     
                     <p class="bbai-pricing-card__billing">
                         <?php
@@ -173,7 +175,7 @@ $bbai_billing_url = admin_url('admin.php?page=bbai-billing');
                                 data-plan="pro"
                                 data-price-id="<?php echo esc_attr($bbai_pro_price_id); ?>"
                                 data-fallback-url="<?php echo esc_url($bbai_stripe_links['pro']); ?>">
-                            <?php esc_html_e('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'); ?>
+                            <?php esc_html_e('Start Growth Plan', 'beepbeep-ai-alt-text-generator'); ?>
                         </button>
                     <?php endif; ?>
                 </div>
@@ -251,14 +253,15 @@ $bbai_billing_url = admin_url('admin.php?page=bbai-billing');
             <div class="bbai-topup-section">
                 <div class="bbai-topup-section__content">
                     <div class="bbai-topup-section__text">
-                        <p class="bbai-topup-section__title"><?php esc_html_e('One-time credits', 'beepbeep-ai-alt-text-generator'); ?> <span class="bbai-topup-section__subtitle-inline"><?php esc_html_e('Pay-as-you-go', 'beepbeep-ai-alt-text-generator'); ?></span></p>
-                        <p class="bbai-topup-section__desc"><?php esc_html_e('Pay-as-you-go credits (never expire). Ideal for photographers and seasonal use.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                        <p class="bbai-topup-section__title"><?php esc_html_e('One-time credits', 'beepbeep-ai-alt-text-generator'); ?></p>
+                        <p class="bbai-topup-section__desc"><?php esc_html_e('Perfect for occasional use or small sites.', 'beepbeep-ai-alt-text-generator'); ?></p>
                     </div>
                     <div class="bbai-topup-section__price-action">
                         <div class="bbai-topup-section__price">
-                            <span class="bbai-pricing-card__currency"><?php echo esc_html($bbai_currency['symbol']); ?></span>
-                            <span class="bbai-pricing-card__amount"><?php echo esc_html(number_format($bbai_currency['credits'] ?? 19.99, 2)); ?></span>
+                            <span class="bbai-pricing-card__currency">£</span>
+                            <span class="bbai-pricing-card__amount">9.99</span>
                         </div>
+                        <p class="bbai-pricing-card__billing"><?php esc_html_e('for 100 alt texts', 'beepbeep-ai-alt-text-generator'); ?></p>
                         <button type="button"
                                 class="bbai-btn bbai-btn-dark bbai-btn-lg bbai-topup-section__btn"
                                 data-action="checkout-plan"
@@ -267,6 +270,30 @@ $bbai_billing_url = admin_url('admin.php?page=bbai-billing');
                                 data-fallback-url="<?php echo esc_url($bbai_stripe_links['credits']); ?>">
                             <?php esc_html_e('Buy 100 credits', 'beepbeep-ai-alt-text-generator'); ?>
                         </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Optional usage calculator -->
+            <div class="bbai-topup-section" data-bbai-upgrade-calculator>
+                <div class="bbai-topup-section__content">
+                    <div class="bbai-topup-section__text">
+                        <p class="bbai-topup-section__title"><?php esc_html_e('Usage calculator', 'beepbeep-ai-alt-text-generator'); ?> <span class="bbai-topup-section__subtitle-inline"><?php esc_html_e('Optional', 'beepbeep-ai-alt-text-generator'); ?></span></p>
+                        <p class="bbai-topup-section__desc"><?php esc_html_e('Estimated number of images on site', 'beepbeep-ai-alt-text-generator'); ?></p>
+                        <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            aria-label="<?php esc_attr_e('Estimated number of images on site', 'beepbeep-ai-alt-text-generator'); ?>"
+                            class="bbai-input"
+                            data-bbai-upgrade-input
+                            placeholder="<?php esc_attr_e('e.g. 120', 'beepbeep-ai-alt-text-generator'); ?>"
+                        />
+                    </div>
+                    <div class="bbai-topup-section__price-action">
+                        <p class="bbai-pricing-card__billing"><?php esc_html_e('Free plan covers 50', 'beepbeep-ai-alt-text-generator'); ?></p>
+                        <p class="bbai-pricing-card__billing"><?php esc_html_e('Growth plan covers 1000', 'beepbeep-ai-alt-text-generator'); ?></p>
+                        <p class="bbai-pricing-card__billing" data-bbai-upgrade-recommendation><?php esc_html_e('Enter an estimate to get a recommendation.', 'beepbeep-ai-alt-text-generator'); ?></p>
                     </div>
                 </div>
             </div>

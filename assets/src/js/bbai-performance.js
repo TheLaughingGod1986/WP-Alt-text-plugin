@@ -83,7 +83,7 @@
          */
         initDebounceHelpers: function() {
             // Debounce search input
-            const searchInputs = document.querySelectorAll('.bbai-search-input, input[type="search"]');
+            const searchInputs = document.querySelectorAll('.bbai-search-input, .bbai-library-search-input, input[type="search"]');
             searchInputs.forEach(input => {
                 const debouncedSearch = this.debounce((e) => {
                     // Trigger search event

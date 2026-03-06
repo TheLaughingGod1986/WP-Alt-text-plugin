@@ -430,6 +430,51 @@ class Credit_Usage_Logger {
 	}
 
 	/**
+	 * Get total generation events across the site.
+	 *
+	 * @param array $args Optional. Query arguments (date_from, date_to, source).
+	 * @return int Generation event count.
+	 */
+	public static function get_site_generation_count($args = []) {
+		if (!self::table_exists()) {
+			return 0;
+		}
+
+		global $wpdb;
+
+		$defaults = [
+			'date_from' => null,
+			'date_to'   => null,
+			'source'    => null,
+		];
+		$args = wp_parse_args($args, $defaults);
+
+		$cache_suffix = 'site_generation_count_' . md5( wp_json_encode( $args ) );
+		$cached = BBAI_Cache::get( 'credit_usage', $cache_suffix );
+		if ( false !== $cached ) {
+			return absint( $cached );
+		}
+
+		$table = esc_sql( self::table() );
+		$filter_state = self::build_usage_filter_state($args);
+		$filter_params = self::get_usage_filter_params($filter_state);
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$total_events = $wpdb->get_var(
+			// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
+			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT COUNT(*) FROM `{$table}` WHERE 1 = 1 AND (%d = %d OR generated_at >= %s) AND (%d = %d OR generated_at <= %s) AND (%d = %d OR source = %s)",
+				$filter_params
+			)
+		);
+
+		$result = absint($total_events ?: 0);
+		BBAI_Cache::set( 'credit_usage', $cache_suffix, $result, BBAI_Cache::DEFAULT_TTL );
+		return $result;
+	}
+
+	/**
 	 * Get usage breakdown by user.
 	 *
 	 * @param array $args Optional. Query arguments (date_from, date_to, source, per_page, page).

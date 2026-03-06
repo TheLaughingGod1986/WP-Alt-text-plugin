@@ -53,6 +53,8 @@ $bbai_options = [
 	'bbai_cache_gen_contact',
 	'bbai_cache_gen_library',
 	'bbai_cache_gen_stats',
+	'bbai_legacy_cache_cleaned',
+	'bbai_legacy_settings_cleaned',
 ];
 
 foreach ( $bbai_options as $bbai_option ) {

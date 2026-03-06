@@ -95,7 +95,8 @@ plugincheck-*.json
 plugincheck*.json
 plugincheck-*.txt
 plugincheck*.txt
-*.txt
+# Do NOT use *.txt — it would exclude readme.txt (required for WordPress.org).
+# Exclude only specific audit/QA artifacts:
 *textdomain-migration*
 dist-textdomain-modified-files.txt
 dist-opptiai-i18n-calls-before.txt

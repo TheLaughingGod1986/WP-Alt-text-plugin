@@ -378,7 +378,7 @@
         });
 
         if (response.limit && response.limit > 0) {
-            var percentage = Math.min(100, (response.used / response.limit) * 100);
+            var percentage = Math.min(100, Math.round((response.used / response.limit) * 100));
             var circumference = 2 * Math.PI * 45;
             var offset = circumference - (percentage / 100) * circumference;
 
@@ -393,7 +393,36 @@
                     }, 50);
                 }
             });
+
+            $('.bbai-circular-progress-percent').text(percentage + '%');
+
+            var circumference46 = 2 * Math.PI * 46;
+            var offset46 = circumference46 - (percentage / 100) * circumference46;
+            $('.bbai-progress-ring__value').each(function() {
+                var ring = this;
+                if (ring.style) {
+                    ring.style.strokeDashoffset = offset46;
+                }
+                $(ring).attr('data-progress', percentage);
+            });
+            $('.bbai-progress-ring__value-text').text(percentage + '%');
+            $('.bbai-progress-ring[role="progressbar"]').attr('aria-valuenow', percentage);
+            $('.bbai-progress-bar__fill').css('width', percentage + '%');
+            $('.bbai-progress-meta__complete').each(function() {
+                var $el = $(this);
+                var text = $el.text();
+                if (text.indexOf('%') !== -1) {
+                    $el.text(percentage + '% ' + text.replace(/^\d+%\s*/i, '').trim());
+                }
+            });
         }
+
+        var usedNum = parseInt(used, 10) || 0;
+        var limitNum = parseInt(limit, 10) || 0;
+        $('.bbai-usage-count-main').text(usedNum.toLocaleString() + ' / ' + limitNum.toLocaleString() + ' images used');
+        $('.bbai-progress-card .bbai-card__subtitle').text(
+            usedNum.toLocaleString() + ' of ' + limitNum.toLocaleString() + ' images used this month'
+        );
 
         var currentTab = window.location.hash.replace('#', '') || 'dashboard';
         if (currentTab !== 'dashboard' && currentTab !== '') {

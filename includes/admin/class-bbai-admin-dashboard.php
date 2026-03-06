@@ -58,10 +58,27 @@ class Admin_Dashboard {
 		);
 
 		if ( $is_authenticated ) {
+			$dashboard_data = $this->get_dashboard_data();
+			$scripts_path = BEEPBEEP_AI_PLUGIN_DIR . 'assets/src/js/bbai-dashboard-scripts.js';
+			$dashboard_scripts_deps = [ 'jquery', 'wp-i18n' ];
+			if ( file_exists( $scripts_path ) ) {
+				wp_enqueue_script(
+					'bbai-dashboard-scripts',
+					BEEPBEEP_AI_PLUGIN_URL . 'assets/src/js/bbai-dashboard-scripts.js',
+					[ 'jquery' ],
+					filemtime( $scripts_path ),
+					true
+				);
+				wp_localize_script( 'bbai-dashboard-scripts', 'BBAI_DASH', [
+					'restUsage' => esc_url_raw( rest_url( 'bbai/v1/usage' ) ),
+					'nonce'     => wp_create_nonce( 'wp_rest' ),
+				] );
+				$dashboard_scripts_deps[] = 'bbai-dashboard-scripts';
+			}
 			wp_enqueue_script(
 				'bbai-admin-dashboard',
 				BEEPBEEP_AI_PLUGIN_URL . $js_rel,
-				[ 'jquery', 'wp-i18n' ],
+				$dashboard_scripts_deps,
 				file_exists( $js_path ) ? filemtime( $js_path ) : BEEPBEEP_AI_VERSION,
 				true
 			);
@@ -72,6 +89,17 @@ class Admin_Dashboard {
 				[
 					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 					'nonce'   => wp_create_nonce( 'bbai_dashboard_actions' ),
+					'bulkNonce' => wp_create_nonce( 'beepbeepai_nonce' ),
+					'restNonce' => wp_create_nonce( 'wp_rest' ),
+					'restListMissing' => esc_url_raw( add_query_arg( [ 'scope' => 'missing', 'per_page' => 500 ], rest_url( 'bbai/v1/list' ) ) ),
+					'restListAll' => esc_url_raw( add_query_arg( [ 'scope' => 'all', 'per_page' => 500 ], rest_url( 'bbai/v1/list' ) ) ),
+					'bulkQueueAction' => 'beepbeepai_bulk_queue',
+					'usage' => [
+						'remaining' => isset( $dashboard_data['generations_remaining'] ) ? (int) $dashboard_data['generations_remaining'] : 0,
+						'used'      => isset( $dashboard_data['used'] ) ? (int) $dashboard_data['used'] : 0,
+						'limit'     => isset( $dashboard_data['limit'] ) ? (int) $dashboard_data['limit'] : 0,
+						'plan'      => 'free',
+					],
 					'actions' => [
 						'generate_missing' => 'bbai_generate_missing',
 						'reoptimize_all'   => 'bbai_reoptimize_all',
@@ -80,6 +108,8 @@ class Admin_Dashboard {
 						'working' => __( 'Request submitted. This may take a moment.', 'beepbeep-ai-alt-text-generator' ),
 						'success' => __( 'Completed.', 'beepbeep-ai-alt-text-generator' ),
 						'error'   => __( 'Something went wrong. Please try again.', 'beepbeep-ai-alt-text-generator' ),
+						'confirmReoptimize' => __( 'This will regenerate alt text for ALL images, replacing existing alt text. Are you sure?', 'beepbeep-ai-alt-text-generator' ),
+						'nothingToProcess'  => __( 'No images found for this action.', 'beepbeep-ai-alt-text-generator' ),
 						'close'   => __( 'Close', 'beepbeep-ai-alt-text-generator' ),
 					],
 				]
@@ -108,6 +138,7 @@ class Admin_Dashboard {
 		$used       = (int) $data['used'];
 		$limit      = (int) $data['limit'];
 		$remaining  = (int) $data['generations_remaining'];
+		$can_generate = ( $remaining > 0 ) && ( $limit <= 0 || $used < $limit );
 		$percent    = min( 100, max( 0, (int) $data['percent'] ) );
 		$reset_date = $data['reset_date'];
 
@@ -160,12 +191,12 @@ class Admin_Dashboard {
 							</div>
 						</div>
 
-						<div class="bbai-progress-meta">
-							<div class="bbai-progress-bar" role="presentation">
-								<span class="bbai-progress-bar__fill" style="width: <?php echo esc_attr( $percent ); ?>%"></span>
-							</div>
-							<div class="bbai-progress-meta__row">
-								<span class="bbai-progress-meta__complete"><?php echo esc_html( $percent ); ?>% <?php esc_html_e( 'Complete', 'beepbeep-ai-alt-text-generator' ); ?></span>
+							<div class="bbai-progress-meta">
+								<div class="bbai-progress-bar" role="presentation">
+									<span class="bbai-progress-bar__fill" style="width: <?php echo esc_attr( $percent ); ?>%"></span>
+								</div>
+								<div class="bbai-progress-meta__row">
+									<span class="bbai-progress-meta__complete"><?php echo esc_html( $percent ); ?>% <?php esc_html_e( 'Complete', 'beepbeep-ai-alt-text-generator' ); ?></span>
 								<label class="bbai-progress-meta__select">
 									<span class="screen-reader-text"><?php esc_html_e( 'Progress view', 'beepbeep-ai-alt-text-generator' ); ?></span>
 									<select class="bbai-progress-meta__select-input" aria-label="<?php esc_attr_e( 'Progress view', 'beepbeep-ai-alt-text-generator' ); ?>">
@@ -180,6 +211,7 @@ class Admin_Dashboard {
 							) ); ?></p>
 						</div>
 
+						<?php if ( $can_generate ) : ?>
 						<div class="bbai-progress-actions bbai-progress-actions--primary">
 							<button type="button" class="button bbai-dashboard-btn bbai-dashboard-btn--primary bbai-dashboard-btn--full" data-bbai-action="generate_missing">
 								<span class="bbai-dashboard-btn__text"><?php esc_html_e( 'Generate Missing', 'beepbeep-ai-alt-text-generator' ); ?></span>
@@ -191,13 +223,17 @@ class Admin_Dashboard {
 								<span class="bbai-dashboard-btn__spinner" aria-hidden="true"></span>
 							</button>
 						</div>
+						<?php endif; ?>
 						<p class="bbai-progress-card__note"><?php esc_html_e( 'Free plan includes 50 images per month. Growth includes 1,000 images per month.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+						<?php if ( $can_generate ) : ?>
 						<div class="bbai-progress-actions bbai-progress-actions--secondary">
 							<button type="button" class="button bbai-dashboard-btn bbai-dashboard-btn--secondary bbai-dashboard-btn--pill" data-bbai-action="reoptimize_all">
 								<span class="bbai-dashboard-btn__text"><?php esc_html_e( 'Re-optimise All', 'beepbeep-ai-alt-text-generator' ); ?></span>
 								<span class="bbai-dashboard-btn__spinner" aria-hidden="true"></span>
 							</button>
 						</div>
+						<?php endif; ?>
+						<?php // Out-of-credits message handled by optimization card in dashboard-body.php ?>
 					</div>
 				</section>
 
@@ -212,6 +248,57 @@ class Admin_Dashboard {
 							<li><?php esc_html_e( 'Multilingual support for global SEO', 'beepbeep-ai-alt-text-generator' ); ?></li>
 						</ul>
 					</div>
+					<?php
+					// Use real usage data from Usage_Tracker (stub $can_generate uses hardcoded defaults).
+					$bbai_sidebar_real_stats = class_exists( __NAMESPACE__ . '\Usage_Tracker' ) ? Usage_Tracker::get_stats_display() : array();
+					$bbai_sidebar_real_remaining = intval( $bbai_sidebar_real_stats['remaining'] ?? $remaining );
+					$bbai_sidebar_real_used      = intval( $bbai_sidebar_real_stats['used'] ?? $used );
+					$bbai_sidebar_real_limit     = intval( $bbai_sidebar_real_stats['limit'] ?? $limit );
+					$bbai_sidebar_real_plan      = $bbai_sidebar_real_stats['plan'] ?? 'free';
+					$bbai_sidebar_is_premium     = ! in_array( $bbai_sidebar_real_plan, array( 'free', '' ), true );
+					$bbai_sidebar_out_of_credits = ! $bbai_sidebar_is_premium && $bbai_sidebar_real_remaining <= 0;
+					$bbai_sidebar_reset_raw      = $bbai_sidebar_real_stats['reset_date'] ?? $reset_date;
+					$bbai_sidebar_reset_ts       = ! empty( $bbai_sidebar_reset_raw ) ? strtotime( $bbai_sidebar_reset_raw ) : 0;
+					$bbai_sidebar_days_left      = isset( $bbai_sidebar_real_stats['days_until_reset'] ) && is_numeric( $bbai_sidebar_real_stats['days_until_reset'] )
+						? max( 0, (int) $bbai_sidebar_real_stats['days_until_reset'] )
+						: ( $bbai_sidebar_reset_ts > 0 ? max( 0, (int) floor( ( $bbai_sidebar_reset_ts - time() ) / DAY_IN_SECONDS ) ) : 0 );
+
+					if ( $bbai_sidebar_out_of_credits ) :
+					?>
+					<div style="background: rgba(0,0,0,0.12); border-radius: 10px; padding: 16px; margin: 0 20px 16px;">
+						<?php if ( $bbai_sidebar_days_left > 0 ) : ?>
+						<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+							<div style="background: rgba(255,255,255,0.2); border-radius: 8px; padding: 8px 12px; text-align: center; min-width: 48px;">
+								<div style="font-size: 20px; font-weight: 700; color: #fff; line-height: 1;"><?php echo esc_html( $bbai_sidebar_days_left ); ?></div>
+								<div style="font-size: 9px; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;"><?php echo esc_html( _n( 'day', 'days', $bbai_sidebar_days_left, 'beepbeep-ai-alt-text-generator' ) ); ?></div>
+							</div>
+							<div style="flex: 1;">
+								<p style="margin: 0; font-size: 13px; color: #fff; font-weight: 500;">
+									<?php
+									$bbai_sidebar_reset_message = sprintf(
+										/* translators: %d: number of days until free credits reset */
+										_n( '%d day until free credits reset', '%d days until free credits reset', $bbai_sidebar_days_left, 'beepbeep-ai-alt-text-generator' ),
+										number_format_i18n( $bbai_sidebar_days_left )
+									);
+									echo esc_html( $bbai_sidebar_reset_message );
+									?>
+								</p>
+								<p style="margin: 3px 0 0; font-size: 11px; color: rgba(255,255,255,0.7);"><?php esc_html_e( 'Upgrade to keep generating now', 'beepbeep-ai-alt-text-generator' ); ?></p>
+							</div>
+						</div>
+						<?php endif; ?>
+						<div style="display: flex; gap: 6px;">
+							<div style="flex: 1; background: rgba(255,255,255,0.15); border-radius: 6px; padding: 8px; text-align: center;">
+								<div style="font-size: 16px; font-weight: 700; color: #fff;"><?php echo esc_html( number_format_i18n( $bbai_sidebar_real_used ) ); ?>/<?php echo esc_html( number_format_i18n( $bbai_sidebar_real_limit ) ); ?></div>
+								<div style="font-size: 10px; color: rgba(255,255,255,0.7);"><?php esc_html_e( 'credits used', 'beepbeep-ai-alt-text-generator' ); ?></div>
+							</div>
+							<div style="flex: 1; background: rgba(255,255,255,0.15); border-radius: 6px; padding: 8px; text-align: center;">
+								<div style="font-size: 16px; font-weight: 700; color: #fff;">1,000</div>
+								<div style="font-size: 10px; color: rgba(255,255,255,0.7);"><?php esc_html_e( 'with Growth', 'beepbeep-ai-alt-text-generator' ); ?></div>
+							</div>
+						</div>
+					</div>
+					<?php endif; ?>
 					<div class="bbai-upgrade-card__body">
 						<button type="button" class="button bbai-dashboard-btn bbai-dashboard-btn--primary bbai-dashboard-btn--full" data-action="show-upgrade-modal" data-bbai-modal-open>
 							<?php esc_html_e( 'Upgrade to Growth', 'beepbeep-ai-alt-text-generator' ); ?>
@@ -230,6 +317,11 @@ class Admin_Dashboard {
 								</svg>
 							</span>
 						</button>
+						<?php if ( $bbai_sidebar_out_of_credits ) : ?>
+						<p class="bbai-upgrade-card__note" style="margin-top: 10px; font-size: 13px; color: rgba(255,255,255,0.85);">
+							<?php esc_html_e( 'You are out of credits for this month. Upgrade to continue now, or wait until your monthly reset date.', 'beepbeep-ai-alt-text-generator' ); ?>
+						</p>
+						<?php endif; ?>
 					</div>
 				</aside>
 			</div>

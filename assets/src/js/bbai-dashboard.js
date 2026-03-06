@@ -18,6 +18,177 @@ const bbaiRunWithJQuery = (function() {
     };
 })();
 
+function bbaiString(value) {
+    return value === undefined || value === null ? '' : String(value);
+}
+
+function bbaiGetUsageObject() {
+    return (window.BBAI_DASH && (window.BBAI_DASH.initialUsage || window.BBAI_DASH.usage)) ||
+        (window.BBAI_DASHBOARD && window.BBAI_DASHBOARD.usage) ||
+        (window.BBAI && window.BBAI.usage) ||
+        (window.BBAI_UPGRADE && window.BBAI_UPGRADE.usage) ||
+        null;
+}
+
+function bbaiGetUsageFromDom() {
+    var selectors = [
+        '.bbai-usage-count',
+        '.bbai-usage-count-text',
+        '.bbai-card__subtitle'
+    ];
+
+    for (var i = 0; i < selectors.length; i++) {
+        var node = document.querySelector(selectors[i]);
+        if (!node || !node.textContent) {
+            continue;
+        }
+
+        var match = node.textContent.match(/([0-9][0-9,]*)\s*of\s*([0-9][0-9,]*)/i);
+        if (!match) {
+            continue;
+        }
+
+        var used = parseInt(String(match[1]).replace(/,/g, ''), 10);
+        var limit = parseInt(String(match[2]).replace(/,/g, ''), 10);
+        if (!isNaN(used) && !isNaN(limit) && limit > 0) {
+            return { used: used, limit: limit };
+        }
+    }
+
+    return null;
+}
+
+function bbaiIsUsageExhausted() {
+    var usage = bbaiGetUsageObject();
+    if (usage && typeof usage === 'object') {
+        var remaining = NaN;
+        if (usage.remaining !== undefined && usage.remaining !== null) {
+            remaining = parseInt(usage.remaining, 10);
+        } else if (usage.generations_remaining !== undefined && usage.generations_remaining !== null) {
+            remaining = parseInt(usage.generations_remaining, 10);
+        } else if (usage.limit !== undefined && usage.used !== undefined) {
+            remaining = parseInt(usage.limit, 10) - parseInt(usage.used, 10);
+        }
+
+        if (!isNaN(remaining) && remaining <= 0) {
+            return true;
+        }
+
+        var used = parseInt(usage.used, 10);
+        var limit = parseInt(usage.limit, 10);
+        if (!isNaN(used) && !isNaN(limit) && limit > 0 && used >= limit) {
+            return true;
+        }
+    }
+
+    var domUsage = bbaiGetUsageFromDom();
+    return !!(domUsage && domUsage.limit > 0 && domUsage.used >= domUsage.limit);
+}
+
+function bbaiHasQuotaLockHint(value) {
+    var text = bbaiString(value).toLowerCase();
+    if (!text) {
+        return false;
+    }
+
+    return text.indexOf('out of credits') !== -1 ||
+        text.indexOf('unlock more generations') !== -1 ||
+        text.indexOf('monthly quota') !== -1 ||
+        text.indexOf('monthly limit') !== -1 ||
+        text.indexOf('quota reached') !== -1;
+}
+
+function bbaiIsGenerationActionControl(element) {
+    if (!element) {
+        return false;
+    }
+
+    var action = bbaiString(element.getAttribute && element.getAttribute('data-action')).toLowerCase();
+    var bbaiAction = bbaiString(element.getAttribute && element.getAttribute('data-bbai-action')).toLowerCase();
+    var id = bbaiString(element.id).toLowerCase();
+    var className = bbaiString(element.className).toLowerCase();
+
+    if (action === 'generate-missing' || action === 'regenerate-all' || action === 'regenerate-single') {
+        return true;
+    }
+
+    if (bbaiAction === 'generate_missing' || bbaiAction === 'reoptimize_all') {
+        return true;
+    }
+
+    if (id.indexOf('batch-regenerate') !== -1) {
+        return true;
+    }
+
+    if (className.indexOf('bbai-optimization-cta') !== -1 ||
+        className.indexOf('bbai-action-btn-primary') !== -1 ||
+        className.indexOf('bbai-action-btn-secondary') !== -1 ||
+        className.indexOf('bbai-dashboard-btn--primary') !== -1 ||
+        className.indexOf('bbai-dashboard-btn--secondary') !== -1) {
+        return true;
+    }
+
+    var labelText = (bbaiString(element.getAttribute && element.getAttribute('aria-label')) + ' ' + bbaiString(element.textContent)).toLowerCase();
+    return labelText.indexOf('generate missing') !== -1 ||
+        labelText.indexOf('regenerate') !== -1 ||
+        labelText.indexOf('re-optim') !== -1 ||
+        labelText.indexOf('reoptimiz') !== -1 ||
+        labelText.indexOf('optimise all') !== -1 ||
+        labelText.indexOf('optimize all') !== -1;
+}
+
+function bbaiIsLockedActionControl(element) {
+    if (!element) {
+        return false;
+    }
+
+    var target = element;
+    if (target.closest) {
+        var closestTarget = target.closest('[data-bbai-lock-control], [data-action], [data-bbai-action], .bbai-optimization-cta, .bbai-action-btn, .bbai-dashboard-btn, button, a');
+        if (closestTarget) {
+            target = closestTarget;
+        }
+    }
+
+    var className = bbaiString(target.className).toLowerCase();
+
+    if ((target.hasAttribute && (target.hasAttribute('disabled') || target.hasAttribute('data-bbai-lock-control'))) ||
+        target.disabled ||
+        (target.getAttribute && target.getAttribute('aria-disabled') === 'true')) {
+        return true;
+    }
+
+    if (className.indexOf('bbai-optimization-cta--disabled') !== -1 ||
+        className.indexOf('bbai-optimization-cta--locked') !== -1 ||
+        className.indexOf('bbai-action-btn--disabled') !== -1 ||
+        className.indexOf(' disabled') !== -1 ||
+        className.indexOf('disabled ') === 0 ||
+        className === 'disabled') {
+        return true;
+    }
+
+    var hintText = bbaiString(target.getAttribute && target.getAttribute('title')) + ' ' + bbaiString(target.getAttribute && target.getAttribute('data-bbai-tooltip'));
+    if (bbaiHasQuotaLockHint(hintText)) {
+        return true;
+    }
+
+    if (target.querySelector) {
+        var hintNode = target.querySelector('[title], [data-bbai-tooltip], [data-bbai-lock-control]');
+        if (hintNode) {
+            if ((hintNode.hasAttribute && hintNode.hasAttribute('data-bbai-lock-control')) ||
+                bbaiHasQuotaLockHint(bbaiString(hintNode.getAttribute && hintNode.getAttribute('title')) + ' ' + bbaiString(hintNode.getAttribute && hintNode.getAttribute('data-bbai-tooltip')))) {
+                return true;
+            }
+        }
+    }
+
+    if (bbaiIsGenerationActionControl(target) && bbaiIsUsageExhausted()) {
+        return true;
+    }
+
+    return false;
+}
+
 bbaiRunWithJQuery(function($) {
     'use strict';
 
@@ -285,8 +456,12 @@ bbaiRunWithJQuery(function($) {
                 modal.removeAttribute('style');
                 modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important;';
                 modal.classList.add('active'); // Required for content to become visible (opacity: 1)
+                modal.classList.add('is-visible');
                 modal.setAttribute('aria-hidden', 'false');
                 document.body.style.overflow = 'hidden';
+                if (document.documentElement) {
+                    document.documentElement.style.overflow = 'hidden';
+                }
 
                 // Also ensure modal content is visible
                 const modalContent = modal.querySelector('.bbai-upgrade-modal__content');
@@ -696,11 +871,16 @@ bbaiRunWithJQuery(function($) {
                 alttextaiShowModal();
             } else {
                 // Fallback: try to show modal directly
-                const modal = document.getElementById('bbai-upgrade-modal');
+                const modal = findUpgradeModalElement();
                 if (modal) {
                     modal.style.display = 'flex';
+                    modal.classList.add('active');
+                    modal.classList.add('is-visible');
                     modal.setAttribute('aria-hidden', 'false');
                     document.body.style.overflow = 'hidden';
+                    if (document.documentElement) {
+                        document.documentElement.style.overflow = 'hidden';
+                    }
                 } else {
                     if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] Upgrade modal not found in DOM');
                     // Last resort: check if user is authenticated and show auth modal
@@ -717,11 +897,16 @@ bbaiRunWithJQuery(function($) {
             if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] Error in handleUpgradeTrigger:', err);
             // Fallback: try to show modal directly
             try {
-                const modal = document.getElementById('bbai-upgrade-modal');
+                const modal = findUpgradeModalElement();
                 if (modal) {
                     modal.style.display = 'flex';
+                    modal.classList.add('active');
+                    modal.classList.add('is-visible');
                     modal.setAttribute('aria-hidden', 'false');
                     document.body.style.overflow = 'hidden';
+                    if (document.documentElement) {
+                        document.documentElement.style.overflow = 'hidden';
+                    }
                 }
             } catch (e) {
                 if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] Failed to show modal:', e);
@@ -1777,11 +1962,28 @@ bbaiRunWithJQuery(function($) {
 // Debug mode check (define early so it can be used in functions)
 var alttextaiDebug = (typeof window.bbai_ajax !== 'undefined' && window.bbai_ajax.debug) || false;
 
+function findUpgradeModalElement() {
+    var modalById = document.getElementById('bbai-upgrade-modal');
+    if (modalById && modalById.querySelector('.bbai-upgrade-modal__content')) {
+        return modalById;
+    }
+
+    var modalByData = document.querySelector('[data-bbai-upgrade-modal="1"]');
+    if (modalByData && modalByData.querySelector('.bbai-upgrade-modal__content')) {
+        if (modalByData.id !== 'bbai-upgrade-modal') {
+            modalByData.id = 'bbai-upgrade-modal';
+        }
+        return modalByData;
+    }
+
+    return null;
+}
+
 // Check if modal exists when script loads
 (function() {
     'use strict';
     function checkModalExists() {
-        const modal = document.getElementById('bbai-upgrade-modal');
+        const modal = findUpgradeModalElement();
         if (!modal) {
             window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Upgrade modal not found in DOM. Make sure upgrade-modal.php is included.');
         } else {
@@ -1803,19 +2005,13 @@ var bbaiApp = bbaiApp || {};
 // Global functions for modal - make it very robust (legacy support)
 function alttextaiShowModal() {
     window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] alttextaiShowModal() called');
-    const modal = document.getElementById('bbai-upgrade-modal');
+    const modal = findUpgradeModalElement();
     
     if (!modal) {
         window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] Upgrade modal element not found in DOM!');
-        window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] Searching for modal...');
-        // Try to find it by class
-        const byClass = document.querySelector('.bbai-modal-backdrop');
-        if (byClass) {
-            window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Found modal by class:', byClass);
-            byClass.id = 'bbai-upgrade-modal';
-            return alttextaiShowModal(); // Retry
+        if (window.bbaiModal && typeof window.bbaiModal.warning === 'function') {
+            window.bbaiModal.warning(__('Upgrade modal not found. Please refresh the page.', 'beepbeep-ai-alt-text-generator'));
         }
-        window.bbaiModal.warning(__('Upgrade modal not found. Please refresh the page.', 'beepbeep-ai-alt-text-generator'));
         return false;
     }
     
@@ -1834,8 +2030,12 @@ function alttextaiShowModal() {
     
     // Now add active class to trigger smooth animation
     modal.classList.add('active');
+    modal.classList.add('is-visible');
     modal.removeAttribute('aria-hidden');
     document.body.style.overflow = 'hidden';
+    if (document.documentElement) {
+        document.documentElement.style.overflow = 'hidden';
+    }
     
     // Focus the close button after animation starts
     setTimeout(function() {
@@ -1863,10 +2063,7 @@ window.showUpgradeModal = function() {
     }
     
     // Direct DOM manipulation as ultimate fallback
-    var modal = document.getElementById('bbai-upgrade-modal');
-    if (!modal) {
-        modal = document.querySelector('.bbai-modal-backdrop');
-    }
+    var modal = findUpgradeModalElement();
     
     if (modal) {
         window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Found modal, showing directly');
@@ -1875,8 +2072,12 @@ window.showUpgradeModal = function() {
         modal.style.opacity = '1';
         modal.style.zIndex = '999999';
         modal.classList.add('active');
+        modal.classList.add('is-visible');
         modal.removeAttribute('aria-hidden');
         document.body.style.overflow = 'hidden';
+        if (document.documentElement) {
+            document.documentElement.style.overflow = 'hidden';
+        }
         return true;
     }
     
@@ -1894,7 +2095,7 @@ bbaiApp.showModal = alttextaiShowModal;
 // Also create a simple test function
 window.testUpgradeModal = function() {
     window.BBAI_LOG && window.BBAI_LOG.log('=== Testing Upgrade Modal ===');
-    const modal = document.getElementById('bbai-upgrade-modal');
+    const modal = findUpgradeModalElement();
     window.BBAI_LOG && window.BBAI_LOG.log('Modal element:', modal);
     if (modal) {
         window.BBAI_LOG && window.BBAI_LOG.log('Modal HTML:', modal.outerHTML.substring(0, 200));
@@ -1907,10 +2108,11 @@ window.testUpgradeModal = function() {
 };
 
 function alttextaiCloseModal() {
-    const modal = document.getElementById('bbai-upgrade-modal');
+    const modal = findUpgradeModalElement();
     if (modal) {
         // Remove active class to trigger CSS transition
         modal.classList.remove('active');
+        modal.classList.remove('is-visible');
         
         // Wait for animation to complete before hiding
         setTimeout(function() {
@@ -1920,6 +2122,9 @@ function alttextaiCloseModal() {
         
         // Restore body scroll
         document.body.style.overflow = '';
+        if (document.documentElement) {
+            document.documentElement.style.overflow = '';
+        }
     }
 }
 
@@ -1936,7 +2141,7 @@ window.alttextaiCloseModal = alttextaiCloseModal;
     
     // Function to show modal directly with aggressive approach
     function showModalDirectly() {
-        const modal = document.getElementById('bbai-upgrade-modal');
+        const modal = findUpgradeModalElement();
         if (!modal) {
             window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Upgrade modal not found in DOM');
             return false;
@@ -1945,8 +2150,13 @@ window.alttextaiCloseModal = alttextaiCloseModal;
         // Remove inline style completely, then set with !important
         modal.removeAttribute('style');
         modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0, 0, 0, 0.6) !important;';
+        modal.classList.add('active');
+        modal.classList.add('is-visible');
         modal.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
+        if (document.documentElement) {
+            document.documentElement.style.overflow = 'hidden';
+        }
         
         window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Modal shown via direct method');
         return true;
@@ -1954,9 +2164,27 @@ window.alttextaiCloseModal = alttextaiCloseModal;
     
     // Use event delegation on document to catch all clicks (capture phase for early handling)
     document.addEventListener('click', function(e) {
+        if (e.defaultPrevented) {
+            return;
+        }
+
         // Check if clicked element or its parent has data-action="show-upgrade-modal"
         const trigger = e.target.closest('[data-action="show-upgrade-modal"]');
         if (trigger) {
+            if (bbaiIsGenerationActionControl(trigger) && bbaiIsLockedActionControl(trigger)) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (typeof e.stopImmediatePropagation === 'function') {
+                    e.stopImmediatePropagation();
+                }
+                if (typeof window.bbaiOpenLockedUpgradeModal === 'function') {
+                    window.bbaiOpenLockedUpgradeModal('upgrade_required', { source: 'dashboard', trigger: trigger });
+                } else {
+                    showUpgradeModalFallback();
+                }
+                return false;
+            }
+
             window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Global vanilla JS handler: Upgrade CTA clicked', trigger);
             
             // Prevent default immediately
@@ -1981,18 +2209,21 @@ window.alttextaiCloseModal = alttextaiCloseModal;
             if (typeof alttextaiCloseModal === 'function') {
                 alttextaiCloseModal();
             } else {
-                const modal = document.getElementById('bbai-upgrade-modal');
+                const modal = findUpgradeModalElement();
                 if (modal) {
                     modal.style.display = 'none';
                     modal.setAttribute('aria-hidden', 'true');
                     document.body.style.overflow = '';
+                    if (document.documentElement) {
+                        document.documentElement.style.overflow = '';
+                    }
                 }
             }
             return false;
         }
         
         // Handle backdrop clicks (click outside modal content to close)
-        const modal = document.getElementById('bbai-upgrade-modal');
+        const modal = findUpgradeModalElement();
         if (modal && modal.style.display === 'flex' && e.target === modal) {
             e.preventDefault();
             e.stopPropagation();
@@ -2002,6 +2233,9 @@ window.alttextaiCloseModal = alttextaiCloseModal;
                 modal.style.display = 'none';
                 modal.setAttribute('aria-hidden', 'true');
                 document.body.style.overflow = '';
+                if (document.documentElement) {
+                    document.documentElement.style.overflow = '';
+                }
             }
             return false;
         }
@@ -2010,7 +2244,7 @@ window.alttextaiCloseModal = alttextaiCloseModal;
     // Handle ESC key globally to close modal
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' || e.keyCode === 27) {
-            const modal = document.getElementById('bbai-upgrade-modal');
+            const modal = findUpgradeModalElement();
             if (modal && modal.style.display === 'flex') {
                 e.preventDefault();
                 if (typeof alttextaiCloseModal === 'function') {
@@ -2019,6 +2253,9 @@ window.alttextaiCloseModal = alttextaiCloseModal;
                     modal.style.display = 'none';
                     modal.setAttribute('aria-hidden', 'true');
                     document.body.style.overflow = '';
+                    if (document.documentElement) {
+                        document.documentElement.style.overflow = '';
+                    }
                 }
             }
         }
@@ -2365,10 +2602,15 @@ bbaiRunWithJQuery(function($) {
     'use strict';
 
     $(document).ready(function() {
-        // Search functionality
+        // Search functionality (debounced to avoid excessive filtering while typing)
+        var searchDebounceTimer;
         $('#bbai-library-search').on('input', function() {
-            const searchTerm = $(this).val().toLowerCase();
-            filterLibraryRows(searchTerm, getActiveFilter());
+            var $input = $(this);
+            if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(function() {
+                var searchTerm = $input.val().toLowerCase();
+                filterLibraryRows(searchTerm, getActiveFilter());
+            }, 300);
         });
 
         // Filter buttons
@@ -2756,12 +2998,21 @@ bbaiRunWithJQuery(function($) {
             return window.alttextaiShowModal();
         }
 
-        var modal = document.getElementById('bbai-upgrade-modal');
+        var modal = findUpgradeModalElement();
         if (modal) {
             modal.removeAttribute('style');
             modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important;';
+            modal.classList.add('active');
+            modal.classList.add('is-visible');
             modal.setAttribute('aria-hidden', 'false');
             document.body.style.overflow = 'hidden';
+            if (document.documentElement) {
+                document.documentElement.style.overflow = 'hidden';
+            }
+            var modalContent = modal.querySelector('.bbai-upgrade-modal__content');
+            if (modalContent) {
+                modalContent.style.cssText = 'opacity: 1 !important; visibility: visible !important; transform: translateY(0) scale(1) !important;';
+            }
             return true;
         }
 
@@ -2773,15 +3024,68 @@ bbaiRunWithJQuery(function($) {
             return;
         }
 
-        var trigger = e.target.closest('[data-action="show-upgrade-modal"], [data-action="generate-missing"], [data-action="regenerate-all"]');
+        var trigger = e.target.closest('[data-action="show-upgrade-modal"], [data-action="generate-missing"], [data-action="regenerate-all"], [data-action="regenerate-single"], [data-bbai-action="generate_missing"], [data-bbai-action="reoptimize_all"]');
         if (!trigger) {
             return;
+        }
+
+        if (bbaiIsGenerationActionControl(trigger) && bbaiIsLockedActionControl(trigger)) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof e.stopImmediatePropagation === 'function') {
+                e.stopImmediatePropagation();
+            }
+            if (typeof window.bbaiOpenLockedUpgradeModal === 'function') {
+                window.bbaiOpenLockedUpgradeModal('upgrade_required', { source: 'dashboard', trigger: trigger });
+            } else {
+                showUpgradeModalFallback();
+            }
+            return;
+        }
+
+        var isBulkAction = trigger.matches('[data-action="generate-missing"], [data-action="regenerate-all"], [data-action="regenerate-single"], [data-bbai-action="generate_missing"], [data-bbai-action="reoptimize_all"]');
+        if (isBulkAction) {
+            var isLockedTrigger = !!(
+                trigger.disabled ||
+                trigger.getAttribute('aria-disabled') === 'true' ||
+                trigger.getAttribute('data-bbai-lock-control') === '1' ||
+                trigger.getAttribute('data-bbai-locked-cta') === '1' ||
+                trigger.classList.contains('disabled') ||
+                trigger.classList.contains('bbai-is-locked') ||
+                trigger.classList.contains('bbai-optimization-cta--disabled') ||
+                trigger.classList.contains('bbai-optimization-cta--locked') ||
+                trigger.classList.contains('bbai-action-btn--disabled') ||
+                String(trigger.getAttribute('title') || '').toLowerCase().indexOf('out of credits') !== -1 ||
+                String(trigger.getAttribute('data-bbai-tooltip') || '').toLowerCase().indexOf('unlock more generations') !== -1
+            );
+
+            if (isLockedTrigger) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (typeof e.stopImmediatePropagation === 'function') {
+                    e.stopImmediatePropagation();
+                }
+                if (typeof window.bbaiOpenLockedUpgradeModal === 'function') {
+                    window.bbaiOpenLockedUpgradeModal('upgrade_required', { source: 'dashboard', trigger: trigger });
+                } else {
+                    showUpgradeModalFallback();
+                }
+                return;
+            }
         }
 
         if (trigger.matches('[data-action="show-upgrade-modal"]')) {
             e.preventDefault();
             showUpgradeModalFallback();
             return;
+        }
+
+        // Upgrade links (anchors with real href): let browser navigate, don't intercept
+        if (trigger.tagName === 'A') {
+            var href = trigger.getAttribute && trigger.getAttribute('href');
+            if (href && href !== '#' && href.indexOf('javascript:') !== 0) {
+                return;
+            }
         }
 
         if (window.bbaiBulkHandlersReady) {
@@ -2816,10 +3120,14 @@ bbaiRunWithJQuery(function($) {
         
         $buttons.each(function() {
             var $btn = $(this);
-            var isLocked = $btn.hasClass('bbai-optimization-cta--locked') || $btn.hasClass('disabled');
+            var isLocked = $btn.hasClass('bbai-optimization-cta--locked') ||
+                $btn.hasClass('bbai-is-locked') ||
+                $btn.hasClass('disabled') ||
+                $btn.attr('data-bbai-locked-cta') === '1' ||
+                $btn.attr('aria-disabled') === 'true';
             
-            // Don't update if button is locked (no credits) - keep it disabled
-            if (isLocked && missingCount > 0) {
+            // Locked controls are handled by dedicated upgrade-modal flow.
+            if (isLocked) {
                 return;
             }
             

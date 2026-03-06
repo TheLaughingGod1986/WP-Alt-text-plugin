@@ -184,7 +184,11 @@ class Usage_Service {
 		if ( class_exists( '\BbAI_Usage_Tracker' ) ) {
 			\BbAI_Usage_Tracker::clear_cache();
 		}
+		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Token_Quota_Service' ) ) {
+			\BeepBeepAI\AltTextGenerator\Token_Quota_Service::clear_cache();
+		}
 		delete_transient( 'bbai_usage_cache' );
+		delete_transient( 'bbai_quota_cache' );
 		delete_transient( 'opptibbai_usage_cache' );
 	}
 

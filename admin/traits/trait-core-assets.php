@@ -12,7 +12,6 @@ namespace BeepBeepAI\AltTextGenerator\Traits;
 if (!defined('ABSPATH')) { exit; }
 
 use BeepBeepAI\AltTextGenerator\Usage_Tracker;
-use BeepBeepAI\AltTextGenerator\Debug_Log;
 
 trait Core_Assets {
 
@@ -102,6 +101,30 @@ trait Core_Assets {
             || strpos($hook, 'media_page_bbai') === 0
             || strpos($hook, '_page_bbai') !== false
             || (!empty($current_page) && strpos($current_page, 'bbai') === 0);
+    }
+
+    /**
+     * Check if current tab is the dashboard (for lazy-loading dashboard scripts).
+     *
+     * @return bool
+     */
+    private function is_dashboard_tab(): bool {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
+        $page = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : 'bbai';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
+        $tab = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : '';
+        $page_to_tab = [
+            'bbai' => 'dashboard',
+            'bbai-library' => 'library',
+            'bbai-analytics' => 'analytics',
+            'bbai-credit-usage' => 'credit-usage',
+            'bbai-guide' => 'guide',
+            'bbai-settings' => 'settings',
+            'bbai-debug' => 'debug',
+            'bbai-agency-overview' => 'agency-overview',
+        ];
+        $resolved_tab = $tab !== '' ? $tab : ($page_to_tab[ $page ] ?? 'dashboard');
+        return $resolved_tab === 'dashboard';
     }
 
     /**
@@ -356,34 +379,55 @@ trait Core_Assets {
 	            true
 	        );
 
-        // Dashboard JS
-        $stats_data = $this->get_media_stats();
-        $usage_data = Usage_Tracker::get_stats_display();
+        // Dashboard JS (lazy-loaded: only when on dashboard tab for faster initial load on other tabs)
+        if ( $this->is_dashboard_tab() ) {
+            $stats_data = $this->get_media_stats();
+            $usage_data = Usage_Tracker::get_stats_display();
 
-        // Monthly reset insight modal — detect if a new billing period started.
-        $reset_modal_data = null;
-        if ( $this->api_client->is_authenticated() && Usage_Tracker::detect_reset() ) {
-            $reset_modal_data = Usage_Tracker::get_reset_modal_data();
-            // Store current usage for next month's comparison.
-            Usage_Tracker::store_previous_month_data(
-                absint( $usage_data['used'] ),
-                absint( $usage_data['limit'] )
+            // Monthly reset insight modal — detect if a new billing period started.
+            $reset_modal_data = null;
+            if ( $this->api_client->is_authenticated() && Usage_Tracker::detect_reset() ) {
+                $reset_modal_data = Usage_Tracker::get_reset_modal_data();
+                // Store current usage for next month's comparison.
+                Usage_Tracker::store_previous_month_data(
+                    absint( $usage_data['used'] ),
+                    absint( $usage_data['limit'] )
+                );
+            } elseif ( $this->api_client->is_authenticated() && absint( $usage_data['used'] ) > 0 ) {
+                // Keep stored usage up to date for next month's reset comparison.
+                Usage_Tracker::store_previous_month_data(
+                    absint( $usage_data['used'] ),
+                    absint( $usage_data['limit'] )
+                );
+            }
+
+            wp_enqueue_script(
+                'bbai-dashboard',
+                $base_url . $js_file,
+                ['jquery', 'wp-api-fetch', 'wp-i18n'],
+                $asset_version($js_file, '3.0.0'),
+                true
             );
-        } elseif ( $this->api_client->is_authenticated() && absint( $usage_data['used'] ) > 0 ) {
-            // Keep stored usage up to date for next month's reset comparison.
-            Usage_Tracker::store_previous_month_data(
-                absint( $usage_data['used'] ),
-                absint( $usage_data['limit'] )
+
+            // Admin JS (for Generate Missing and Re-optimize All buttons)
+            $admin_file = $asset_path($js_base, 'bbai-admin', $use_debug_assets, 'js');
+            $admin_version = $asset_version($admin_file, '3.0.0');
+            wp_enqueue_script(
+                'bbai-admin',
+                $base_url . $admin_file,
+                ['jquery', 'bbai-dashboard'],
+                $admin_version,
+                true
             );
+
+            // Localize scripts (BBAI_DASH is shared by both bbai-dashboard and bbai-admin)
+            $this->localize_dashboard_scripts($stats_data, $usage_data, $checkout_prices, $l10n_common, $reset_modal_data);
+        } else {
+            // Non-dashboard tabs: bbai-admin from enqueue_media_library_assets; localize for library/toolbar
+            $stats_data = $this->get_media_stats();
+            $usage_data = Usage_Tracker::get_stats_display();
+            $this->localize_dashboard_scripts($stats_data, $usage_data, $checkout_prices, $l10n_common, null);
         }
-
-        wp_enqueue_script(
-            'bbai-dashboard',
-            $base_url . $js_file,
-            ['jquery', 'wp-api-fetch', 'wp-i18n'],
-            $asset_version($js_file, '3.0.0'),
-            true
-        );
 
         // Upgrade modal JS
         wp_enqueue_script(
@@ -411,52 +455,43 @@ trait Core_Assets {
             $asset_version($asset_path($js_base, 'bbai-debug', $use_debug_assets, 'js'), '1.0.0'),
             true
         );
-
-        // Admin JS (for Generate Missing and Re-optimize All buttons)
-        $admin_file = $asset_path($js_base, 'bbai-admin', $use_debug_assets, 'js');
-        $admin_version = $asset_version($admin_file, '3.0.0');
-        wp_enqueue_script(
-            'bbai-admin',
-            $base_url . $admin_file,
-            ['jquery', 'bbai-dashboard'],
-            $admin_version,
-            true
-        );
-
-        // Localize scripts (BBAI_DASH is shared by both bbai-dashboard and bbai-admin)
-        $this->localize_dashboard_scripts($stats_data, $usage_data, $checkout_prices, $l10n_common);
     }
 
     /**
      * Localize dashboard scripts with data
      *
-     * @param array $stats_data     Media stats
-     * @param array $usage_data     Usage stats
-     * @param array $checkout_prices Checkout prices
-     * @param array $l10n_common    Common L10n strings
+     * @param array      $stats_data       Media stats
+     * @param array      $usage_data       Usage stats
+     * @param array      $checkout_prices  Checkout prices
+     * @param array      $l10n_common      Common L10n strings
+     * @param array|null $reset_modal_data Monthly reset modal data (null when not on dashboard)
      */
-    private function localize_dashboard_scripts(array $stats_data, array $usage_data, array $checkout_prices, array $l10n_common): void {
+    private function localize_dashboard_scripts(array $stats_data, array $usage_data, array $checkout_prices, array $l10n_common, ?array $reset_modal_data = null): void {
         // Debug script
         wp_localize_script('bbai-debug', 'BBAI_DEBUG', [
-            'restLogs' => esc_url_raw(rest_url('bbai/v1/logs')),
-            'restClear' => esc_url_raw(rest_url('bbai/v1/logs/clear')),
+            'restLogs' => esc_url_raw(add_query_arg('action', 'bbai_debug_logs', admin_url('admin-ajax.php'))),
+            'restClear' => esc_url_raw(add_query_arg('action', 'bbai_debug_logs_clear', admin_url('admin-ajax.php'))),
             'nonce' => wp_create_nonce('wp_rest'),
-            'initial' => class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log') ? Debug_Log::get_logs([
+            'initial' => $this->get_debug_payload([
                 'per_page' => 10,
                 'page' => 1,
-            ]) : [
-                'logs' => [],
-                'pagination' => ['page' => 1, 'per_page' => 10, 'total_pages' => 1, 'total_items' => 0],
-                'stats' => ['total' => 0, 'warnings' => 0, 'errors' => 0, 'last_event' => null, 'last_api' => null],
-            ],
+            ]),
             'strings' => [
                 'noLogs' => __('No logs recorded yet.', 'beepbeep-ai-alt-text-generator'),
-                'contextTitle' => __('Log Context', 'beepbeep-ai-alt-text-generator'),
-                'contextHide' => __('Hide Context', 'beepbeep-ai-alt-text-generator'),
+                'contextTitle' => __('View Details', 'beepbeep-ai-alt-text-generator'),
                 'clearConfirm' => __('This will permanently delete all debug logs. Continue?', 'beepbeep-ai-alt-text-generator'),
                 'errorGeneric' => __('Unable to load debug logs. Please try again.', 'beepbeep-ai-alt-text-generator'),
                 'emptyContext' => __('No additional context was provided for this entry.', 'beepbeep-ai-alt-text-generator'),
+                'emptyPayload' => __('No request payload was captured for this entry.', 'beepbeep-ai-alt-text-generator'),
+                'emptyResponse' => __('No response payload was captured for this entry.', 'beepbeep-ai-alt-text-generator'),
+                'emptyStack' => __('No stack trace was captured for this entry.', 'beepbeep-ai-alt-text-generator'),
+                'modalTitle' => __('Log Context Details', 'beepbeep-ai-alt-text-generator'),
                 'cleared' => __('Logs cleared successfully.', 'beepbeep-ai-alt-text-generator'),
+                'copied' => __('Debug info copied to clipboard.', 'beepbeep-ai-alt-text-generator'),
+                'copyFailed' => __('Unable to copy debug info. Please copy it manually.', 'beepbeep-ai-alt-text-generator'),
+                'connected' => __('Connected', 'beepbeep-ai-alt-text-generator'),
+                'failed' => __('Failed', 'beepbeep-ai-alt-text-generator'),
+                'noWarnings' => __('No warnings or errors recorded yet.', 'beepbeep-ai-alt-text-generator'),
             ],
         ]);
 
@@ -476,7 +511,8 @@ trait Core_Assets {
             'checkoutPrices' => $checkout_prices,
             'stats'       => $stats_data,
             'initialUsage' => $usage_data,
-            'resetModal'  => $reset_modal_data,
+            'usage'       => $usage_data,
+            'resetModal'  => $reset_modal_data ?? null,
         ];
         
         // Include trial quota status for the frontend.
@@ -488,6 +524,36 @@ trait Core_Assets {
 
         // Also localize for bbai-admin (it depends on bbai-dashboard, but this ensures it's available)
         wp_localize_script('bbai-admin', 'BBAI_DASH', $bbai_dash_data);
+
+        $bbai_reset_timestamp = isset($usage_data['reset_timestamp']) ? intval($usage_data['reset_timestamp']) : 0;
+        if ($bbai_reset_timestamp <= 0 && !empty($usage_data['reset_date'])) {
+            $bbai_reset_timestamp = strtotime((string) $usage_data['reset_date']);
+        }
+        $bbai_reset_iso = '';
+        if ($bbai_reset_timestamp > 0) {
+            $bbai_reset_iso = gmdate('c', $bbai_reset_timestamp);
+        }
+        $bbai_days_left = isset($usage_data['days_until_reset']) ? max(0, intval($usage_data['days_until_reset'])) : 0;
+        $bbai_used_credits = isset($usage_data['used']) ? max(0, intval($usage_data['used'])) : 0;
+        $bbai_limit_credits = isset($usage_data['limit']) ? max(0, intval($usage_data['limit'])) : 0;
+        $bbai_missing_count = isset($stats_data['missing']) ? max(0, intval($stats_data['missing'])) : 0;
+        $bbai_admin_data = [
+            'credits' => [
+                'used' => $bbai_used_credits,
+                'limit' => $bbai_limit_credits,
+                'resetDate' => $bbai_reset_iso,
+                'daysLeft' => $bbai_days_left,
+            ],
+            'counts' => [
+                'missing' => $bbai_missing_count,
+            ],
+            'urls' => [
+                'upgrade' => esc_url(Usage_Tracker::get_upgrade_url()),
+            ],
+            'isLocked' => ($bbai_limit_credits > 0 && $bbai_used_credits >= $bbai_limit_credits),
+        ];
+        wp_localize_script('bbai-dashboard', 'bbai_admin', $bbai_admin_data);
+        wp_localize_script('bbai-admin', 'bbai_admin', $bbai_admin_data);
 
         // AJAX vars
         $options = get_option(self::OPTION_KEY, []);

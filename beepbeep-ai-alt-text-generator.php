@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BeepBeep AI – Alt Text Generator
  * Description: Automatically generates SEO-optimized AI alt text for WordPress.
- * Version: 4.5.2
+ * Version: 4.5.14
  * Requires at least: 6.2
  * Author: beepbeepv2
  * Author URI: https://oppti.dev
@@ -18,8 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants
-define( 'BEEPBEEP_AI_VERSION', '4.5.2' );
-define( 'BBAI_VERSION', '4.5.2' ); // Legacy alias for compatibility
+define( 'BEEPBEEP_AI_VERSION', '4.5.14' );
+define( 'BBAI_VERSION', '4.5.14' ); // Legacy alias for compatibility
 define( 'BEEPBEEP_AI_DB_VERSION', '1.0.0' );
 define( 'BEEPBEEP_AI_PLUGIN_FILE', __FILE__ );
 define( 'BBAI_PLUGIN_FILE', __FILE__ ); // Legacy alias
@@ -90,6 +90,69 @@ if ( ! function_exists( 'bbai_enqueue_logged_out_styles' ) ) {
 
 add_action( 'admin_enqueue_scripts', 'bbai_enqueue_logged_out_styles', 20 );
 
+if ( ! function_exists( 'bbai_enable_wp_json_fallback_route' ) ) {
+	/**
+	 * Support /wp-json/* REST paths in environments where rewrite rules are unavailable.
+	 *
+	 * When pretty REST routes return 404 (common in some local stacks), map the request
+	 * path into the equivalent ?rest_route=... query var before core REST dispatch runs.
+	 *
+	 * @param \WP $wp WordPress environment instance.
+	 * @return void
+	 */
+	function bbai_enable_wp_json_fallback_route( $wp ) {
+		if ( ! ( $wp instanceof \WP ) ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only routing check for rest_route query param.
+		if ( ! empty( $wp->query_vars['rest_route'] ) || isset( $_GET['rest_route'] ) ) {
+			return;
+		}
+
+		$request_uri_raw = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+		if ( '' === $request_uri_raw ) {
+			return;
+		}
+
+		$request_uri = $request_uri_raw;
+		$request_path = wp_parse_url( $request_uri, PHP_URL_PATH );
+		if ( ! is_string( $request_path ) || '' === $request_path ) {
+			return;
+		}
+
+		$request_path = '/' . ltrim( $request_path, '/' );
+
+		$home_path = wp_parse_url( home_url( '/' ), PHP_URL_PATH );
+		if ( is_string( $home_path ) && '' !== $home_path && '/' !== $home_path ) {
+			$home_path = '/' . trim( $home_path, '/' );
+			if ( strpos( $request_path, $home_path . '/' ) === 0 ) {
+				$request_path = substr( $request_path, strlen( $home_path ) );
+				$request_path = '/' . ltrim( (string) $request_path, '/' );
+			}
+		}
+
+		if ( '/wp-json' === $request_path || '/wp-json/' === $request_path ) {
+			$wp->query_vars['rest_route'] = '/';
+			return;
+		}
+
+		$prefix = '/wp-json/';
+		if ( strpos( $request_path, $prefix ) !== 0 ) {
+			return;
+		}
+
+		$route = '/' . ltrim( substr( $request_path, strlen( $prefix ) ), '/' );
+		if ( '/' === $route || '' === $route ) {
+			$route = '/';
+		}
+
+		$wp->query_vars['rest_route'] = $route;
+	}
+}
+
+add_action( 'parse_request', 'bbai_enable_wp_json_fallback_route', 5 );
+
 // Load cache and DB schema helpers.
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-cache.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-db.php';
@@ -129,25 +192,143 @@ require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/controllers/class-generation-con
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/controllers/class-queue-controller.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/bootstrap-v5.php';
 
+if ( ! function_exists( 'beepbeepai_handle_usage_export_admin_post' ) ) {
+	/**
+	 * Fallback admin-post handler for usage CSV export.
+	 *
+	 * @return void
+	 */
+	function beepbeepai_handle_usage_export_admin_post() {
+		if ( ! class_exists( '\BeepBeepAI\AltTextGenerator\Core' ) ) {
+			wp_die( esc_html__( 'Export handler unavailable.', 'beepbeep-ai-alt-text-generator' ) );
+		}
+
+		$core = new \BeepBeepAI\AltTextGenerator\Core();
+		$core->handle_usage_export();
+		exit;
+	}
+}
+
+if ( ! function_exists( 'beepbeepai_handle_debug_export_admin_post' ) ) {
+	/**
+	 * Fallback admin-post handler for debug log CSV export.
+	 *
+	 * @return void
+	 */
+	function beepbeepai_handle_debug_export_admin_post() {
+		if ( ! class_exists( '\BeepBeepAI\AltTextGenerator\Core' ) ) {
+			wp_die( esc_html__( 'Export handler unavailable.', 'beepbeep-ai-alt-text-generator' ) );
+		}
+
+		$core = new \BeepBeepAI\AltTextGenerator\Core();
+		$core->handle_debug_log_export();
+		exit;
+	}
+}
+
+// Register export handlers at bootstrap for resilience across legacy/new action slugs.
+add_action( 'admin_post_beepbeepai_usage_export', 'beepbeepai_handle_usage_export_admin_post', 0 );
+add_action( 'admin_post_bbai_usage_export', 'beepbeepai_handle_usage_export_admin_post', 0 );
+add_action( 'admin_post_beepbeepai_debug_export', 'beepbeepai_handle_debug_export_admin_post', 0 );
+add_action( 'admin_post_bbai_debug_export', 'beepbeepai_handle_debug_export_admin_post', 0 );
+
 /**
  * Register the activation hook.
  */
-function beepbeepai_activate() {
+function beepbeepai_activate_current_site() {
 	require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-activator.php';
 	\BeepBeepAI\AltTextGenerator\Activator::activate();
 	\BeepBeepAI\AltTextGenerator\DB_Schema::install();
 }
 
 /**
+ * Register the activation hook.
+ *
+ * @param bool $network_wide Whether the plugin was network-activated.
+ */
+function beepbeepai_activate( $network_wide = false ) {
+	if ( is_multisite() && $network_wide ) {
+		$current_blog_id = get_current_blog_id();
+		$site_ids        = get_sites(
+			[
+				'fields' => 'ids',
+				'number' => 0,
+			]
+		);
+
+		foreach ( $site_ids as $site_id ) {
+			switch_to_blog( (int) $site_id );
+			beepbeepai_activate_current_site();
+		}
+
+		switch_to_blog( $current_blog_id );
+		return;
+	}
+
+	beepbeepai_activate_current_site();
+}
+
+/**
  * Register the deactivation hook.
  */
-function beepbeepai_deactivate() {
+function beepbeepai_deactivate_current_site() {
 	require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-deactivator.php';
 	\BeepBeepAI\AltTextGenerator\Deactivator::deactivate();
 }
 
+/**
+ * Register the deactivation hook.
+ *
+ * @param bool $network_wide Whether the plugin was network-deactivated.
+ */
+function beepbeepai_deactivate( $network_wide = false ) {
+	if ( is_multisite() && $network_wide ) {
+		$current_blog_id = get_current_blog_id();
+		$site_ids        = get_sites(
+			[
+				'fields' => 'ids',
+				'number' => 0,
+			]
+		);
+
+		foreach ( $site_ids as $site_id ) {
+			switch_to_blog( (int) $site_id );
+			beepbeepai_deactivate_current_site();
+		}
+
+		switch_to_blog( $current_blog_id );
+		return;
+	}
+
+	beepbeepai_deactivate_current_site();
+}
+
+/**
+ * Initialize plugin data for sites created after a network activation.
+ *
+ * @param \WP_Site $new_site New site object.
+ */
+function beepbeepai_initialize_new_site( $new_site ) {
+	if ( ! is_multisite() || ! ( $new_site instanceof \WP_Site ) ) {
+		return;
+	}
+
+	if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+	}
+
+	if ( ! function_exists( 'is_plugin_active_for_network' ) || ! is_plugin_active_for_network( BEEPBEEP_AI_PLUGIN_BASENAME ) ) {
+		return;
+	}
+
+	switch_to_blog( (int) $new_site->blog_id );
+	beepbeepai_activate_current_site();
+	restore_current_blog();
+}
+
 register_activation_hook( __FILE__, 'beepbeepai_activate' );
 register_deactivation_hook( __FILE__, 'beepbeepai_deactivate' );
+add_action( 'wp_initialize_site', 'beepbeepai_initialize_new_site', 20 );
 
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai.php';
 

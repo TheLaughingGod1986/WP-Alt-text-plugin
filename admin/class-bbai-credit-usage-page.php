@@ -83,10 +83,11 @@ class Credit_Usage_Page {
 	// Get current usage stats - use Token Quota Service for accurate site-wide quota
 	require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-token-quota-service.php';
 	$quota = \BeepBeepAI\AltTextGenerator\Token_Quota_Service::get_site_quota();
+	require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+	$display_usage = Usage_Tracker::get_stats_display();
 	if (is_wp_error($quota)) {
 		// Fallback to usage tracker
-		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
-		$current_usage = Usage_Tracker::get_stats_display();
+		$current_usage = $display_usage;
 	} else {
 		$used = max(0, intval($quota['used'] ?? 0));
 		$limit = max(1, intval($quota['limit'] ?? 50));
@@ -97,8 +98,15 @@ class Credit_Usage_Page {
 			'limit' => $limit,
 			'remaining' => $remaining,
 			'percentage' => $limit > 0 ? round(($used / $limit) * 100) : 0,
+			'plan' => $display_usage['plan'] ?? ( $quota['plan_type'] ?? 'free' ),
+			'plan_label' => $display_usage['plan_label'] ?? ucfirst($display_usage['plan'] ?? 'free'),
+			'reset_date' => $display_usage['reset_date'] ?? '',
+			'reset_timestamp' => $display_usage['reset_timestamp'] ?? 0,
+			'days_until_reset' => $display_usage['days_until_reset'] ?? 0,
 		];
 	}
+
+	$bbai_missing_images = self::get_missing_images_count();
 
 	// Table is created by DB_Schema on activation/upgrade.
 	// Get usage by user (local WordPress data)
@@ -209,6 +217,38 @@ class Credit_Usage_Page {
 	} else {
 		esc_html_e('Credit usage content unavailable.', 'beepbeep-ai-alt-text-generator');
 	}
+	}
+
+	/**
+	 * Count attachments that are still missing alt text.
+	 *
+	 * @return int
+	 */
+	private static function get_missing_images_count() {
+		global $wpdb;
+
+		$image_mime_like = $wpdb->esc_like('image/') . '%';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- lightweight count for credit usage banner/context
+		$missing = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- trusted core table names, values are prepared
+				"SELECT COUNT(DISTINCT p.ID)
+				FROM {$wpdb->posts} p
+				LEFT JOIN {$wpdb->postmeta} m ON p.ID = m.post_id AND m.meta_key = %s
+				WHERE p.post_type = %s
+					AND p.post_status = %s
+					AND p.post_mime_type LIKE %s
+					AND (m.meta_id IS NULL OR TRIM(m.meta_value) = %s)",
+				'_wp_attachment_image_alt',
+				'attachment',
+				'inherit',
+				$image_mime_like,
+				''
+			)
+		);
+
+		return max(0, $missing);
 	}
 
 	/**

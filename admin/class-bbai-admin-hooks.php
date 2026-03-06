@@ -60,6 +60,9 @@ class Admin_Hooks {
 		add_action( 'admin_notices', [ $this->core, 'maybe_render_checkout_notices' ] );
 		add_action( 'admin_post_beepbeepai_usage_export', [ $this->core, 'handle_usage_export' ] );
 		add_action( 'admin_post_beepbeepai_debug_export', [ $this->core, 'handle_debug_log_export' ] );
+		// Backward compatibility for legacy export action slugs.
+		add_action( 'admin_post_bbai_usage_export', [ $this->core, 'handle_usage_export' ] );
+		add_action( 'admin_post_bbai_debug_export', [ $this->core, 'handle_debug_log_export' ] );
 		add_action( 'admin_post_bbai_logout', [ $this->core, 'handle_logout' ] );
 		add_action( 'init', [ $this->core, 'ensure_capability' ] );
 		add_action( 'admin_notices', [ $this->core, 'maybe_render_queue_notice' ] );
@@ -115,6 +118,7 @@ class Admin_Hooks {
 			'beepbeepai_reset_password'         => 'ajax_reset_password',
 			'beepbeepai_get_subscription_info'  => 'ajax_get_subscription_info',
 			'beepbeepai_inline_generate'        => 'ajax_inline_generate',
+			'beepbeepai_get_attachment_ids'     => 'ajax_get_attachment_ids',
 			'beepbeepai_activate_license'       => 'ajax_activate_license',
 			'beepbeepai_deactivate_license'     => 'ajax_deactivate_license',
 			'beepbeepai_get_license_sites'      => 'ajax_get_license_sites',
@@ -136,8 +140,17 @@ class Admin_Hooks {
 			'bbai_update_contact_submission_status' => 'ajax_update_contact_submission_status',
 			'bbai_delete_contact_submission'   => 'ajax_delete_contact_submission',
 			'bbai_dismiss_reset_modal'        => 'ajax_dismiss_reset_modal',
+			'bbai_debug_logs'                 => 'ajax_debug_logs',
+			'bbai_debug_logs_clear'           => 'ajax_debug_logs_clear',
 			'bbai_trial_get_missing'          => 'ajax_trial_get_missing',
 			'bbai_trial_generate_single'      => 'ajax_trial_generate_single',
+			'bbai_trial_demo_generate_batch'  => 'ajax_trial_demo_generate_batch',
+			'bbai_scan_missing_alt'           => 'ajax_scan_missing_alt',
+			'bbai_rescan_alt_coverage'       => 'ajax_rescan_alt_coverage',
+			'bbai_generate_preview_alt'       => 'ajax_generate_preview_alt',
+			'bbai_apply_alt_batch'            => 'ajax_apply_alt_batch',
+			'bbai_complete_setup_wizard'      => 'ajax_complete_setup_wizard',
+			'bbai_set_woocommerce_context'    => 'ajax_set_woocommerce_context',
 		];
 
 		foreach ( $ajax_actions as $action => $callback ) {
@@ -186,10 +199,17 @@ class Admin_Hooks {
 			return;
 		}
 
+		delete_option( 'beepbeepai_free_credits_allocated' );
 		delete_transient( 'bbai_usage_cache' );
+		delete_transient( 'bbai_quota_cache' );
 		delete_transient( 'bbai_token_last_check' );
-		// Also clear any usage tracker cache.
 		delete_option( 'bbai_usage_stats_cache' );
 		delete_option( 'beepbeep_ai_usage_cache' );
+		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Usage_Tracker' ) ) {
+			\BeepBeepAI\AltTextGenerator\Usage_Tracker::clear_cache();
+		}
+		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Token_Quota_Service' ) ) {
+			\BeepBeepAI\AltTextGenerator\Token_Quota_Service::clear_cache();
+		}
 	}
 }

@@ -60,7 +60,7 @@ class Plan_Helpers {
         // Check for license-based plan
         if (class_exists('BeepBeepAI\\AltTextGenerator\\API_Client_V2')) {
             try {
-                $api_client = new \BeepBeepAI\AltTextGenerator\API_Client_V2();
+                $api_client = \BeepBeepAI\AltTextGenerator\API_Client_V2::get_instance();
                 $license_key = $api_client->get_license_key();
                 $has_license = !empty($license_key);
 

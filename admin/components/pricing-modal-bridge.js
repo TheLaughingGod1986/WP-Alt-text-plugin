@@ -7,6 +7,59 @@
 (function(window) {
     'use strict';
 
+    function bbaiString(value) {
+        return value === undefined || value === null ? '' : String(value);
+    }
+
+    function isGenerationActionControl(element) {
+        if (!element) {
+            return false;
+        }
+
+        const action = bbaiString(element.getAttribute && element.getAttribute('data-action')).toLowerCase();
+        const bbaiAction = bbaiString(element.getAttribute && element.getAttribute('data-bbai-action')).toLowerCase();
+        const className = bbaiString(element.className).toLowerCase();
+        const label = (bbaiString(element.getAttribute && element.getAttribute('aria-label')) + ' ' + bbaiString(element.textContent)).toLowerCase();
+
+        if (action === 'generate-missing' || action === 'regenerate-all' || action === 'regenerate-single') {
+            return true;
+        }
+        if (bbaiAction === 'generate_missing' || bbaiAction === 'reoptimize_all') {
+            return true;
+        }
+        if (className.indexOf('bbai-optimization-cta') !== -1 ||
+            className.indexOf('bbai-action-btn-primary') !== -1 ||
+            className.indexOf('bbai-action-btn-secondary') !== -1 ||
+            className.indexOf('bbai-dashboard-btn--primary') !== -1 ||
+            className.indexOf('bbai-dashboard-btn--secondary') !== -1) {
+            return true;
+        }
+        return label.indexOf('generate missing') !== -1 ||
+            label.indexOf('regenerate') !== -1 ||
+            label.indexOf('re-optim') !== -1 ||
+            label.indexOf('reoptimiz') !== -1;
+    }
+
+    function isLockedActionControl(element) {
+        if (!element) {
+            return false;
+        }
+
+        const className = bbaiString(element.className).toLowerCase();
+        const hint = (bbaiString(element.getAttribute && element.getAttribute('title')) + ' ' + bbaiString(element.getAttribute && element.getAttribute('data-bbai-tooltip'))).toLowerCase();
+
+        return !!(
+            element.disabled ||
+            (element.getAttribute && (element.getAttribute('aria-disabled') === 'true' || element.getAttribute('data-bbai-lock-control') === '1')) ||
+            className.indexOf('disabled') !== -1 ||
+            className.indexOf('bbai-optimization-cta--disabled') !== -1 ||
+            className.indexOf('bbai-optimization-cta--locked') !== -1 ||
+            hint.indexOf('out of credits') !== -1 ||
+            hint.indexOf('unlock more generations') !== -1 ||
+            hint.indexOf('monthly quota') !== -1
+        );
+    }
+
     const i18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
     const __ = i18n && typeof i18n.__ === 'function' ? i18n.__ : (text) => text;
 
@@ -102,12 +155,29 @@
         return reactRoot.childElementCount > 0;
     }
 
+    function getUpgradeModalElement() {
+        const modalById = document.getElementById('bbai-upgrade-modal');
+        if (modalById && modalById.querySelector('.bbai-upgrade-modal__content')) {
+            return modalById;
+        }
+
+        const modalByData = document.querySelector('[data-bbai-upgrade-modal="1"]');
+        if (modalByData && modalByData.querySelector('.bbai-upgrade-modal__content')) {
+            if (modalByData.id !== 'bbai-upgrade-modal') {
+                modalByData.id = 'bbai-upgrade-modal';
+            }
+            return modalByData;
+        }
+
+        return null;
+    }
+
     function isUpgradeModalVisible() {
         if (isReactModalVisible()) {
             return true;
         }
 
-        const modal = document.getElementById('bbai-upgrade-modal');
+        const modal = getUpgradeModalElement();
         if (!modal) {
             return false;
         }
@@ -169,10 +239,7 @@
         }
 
         window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Trying direct PHP modal manipulation...');
-        let phpModal = document.getElementById('bbai-upgrade-modal');
-        if (!phpModal) {
-            phpModal = document.querySelector('.bbai-modal-backdrop');
-        }
+        let phpModal = getUpgradeModalElement();
         if (phpModal) {
             window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Found PHP modal, showing it');
             phpModal.style.display = 'flex';
@@ -306,6 +373,15 @@
             document.addEventListener('click', function(e) {
                 const trigger = e.target.closest('[data-action="show-upgrade-modal"]');
                 if (!trigger) {
+                    return;
+                }
+
+                if (isGenerationActionControl(trigger) && isLockedActionControl(trigger)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof e.stopImmediatePropagation === 'function') {
+                        e.stopImmediatePropagation();
+                    }
                     return;
                 }
 

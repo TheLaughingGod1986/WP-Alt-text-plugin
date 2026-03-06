@@ -15,7 +15,13 @@
      * Queue multiple images for processing
      * Uses AJAX endpoint to queue images without generating immediately
      */
-    window.bbaiQueueImages = function(ids, source, callback) {
+    window.bbaiQueueImages = function(ids, source, options, callback) {
+        if (typeof options === 'function') {
+            callback = options;
+            options = {};
+        }
+        options = options || {};
+
         if (!ids || ids.length === 0) {
             callback(false, 0);
             return;
@@ -35,6 +41,7 @@
                 action: 'beepbeepai_bulk_queue',
                 attachment_ids: ids,
                 source: source || 'bulk',
+                skip_schedule: options.skipSchedule ? '1' : '0',
                 nonce: nonceValue
             },
             dataType: 'json'

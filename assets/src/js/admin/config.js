@@ -9,6 +9,13 @@
 (function($) {
     'use strict';
 
+    var i18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
+    var __ = i18n && typeof i18n.__ === 'function' ? i18n.__ : function(text) { return text; };
+    var _n = i18n && typeof i18n._n === 'function' ? i18n._n : function(single, plural, number) {
+        return number === 1 ? single : plural;
+    };
+    var sprintf = i18n && typeof i18n.sprintf === 'function' ? i18n.sprintf : function(format) { return format; };
+
     // Ensure BBAI_DASH exists (from dashboard) or use BBAI
     window.bbaiAdminConfig = window.BBAI_DASH || window.BBAI || {};
 
@@ -24,6 +31,42 @@
      */
     window.bbaiCanManageAccount = function() {
         return !!(window.BBAI && window.BBAI.canManage);
+    };
+
+    /**
+     * Open upgrade modal with graceful fallbacks.
+     *
+     * @param {Object|null} usage Optional usage payload.
+     * @returns {boolean} Whether a modal open path was triggered.
+     */
+    window.bbaiOpenUpgradeModal = function(usage) {
+        if (typeof alttextaiShowModal === 'function') {
+            if (alttextaiShowModal() !== false) {
+                return true;
+            }
+        }
+        if (typeof window.alttextaiShowModal === 'function') {
+            if (window.alttextaiShowModal() !== false) {
+                return true;
+            }
+        }
+        if (typeof showUpgradeModal === 'function') {
+            showUpgradeModal(usage);
+            return true;
+        }
+        if (typeof window.beepbeepai_show_upgrade_modal === 'function') {
+            window.beepbeepai_show_upgrade_modal(usage);
+            return true;
+        }
+
+        var upgradeBtn = document.querySelector('[data-action="show-upgrade-modal"]');
+        if (upgradeBtn) {
+            upgradeBtn.click();
+            return true;
+        }
+
+        $(document).trigger('alttextai:show-upgrade-modal', [usage]);
+        return false;
     };
 
     /**
@@ -71,41 +114,172 @@
     };
 
     /**
+     * Get current usage snapshot from available globals.
+     *
+     * @param {Object|null} errorUsage Usage from error payload.
+     * @returns {Object|null}
+     */
+    window.bbaiGetUsageSnapshot = function(errorUsage) {
+        return errorUsage ||
+            (window.BBAI_DASH && window.BBAI_DASH.initialUsage) ||
+            (window.BBAI_DASH && window.BBAI_DASH.usage) ||
+            (window.BBAI && window.BBAI.usage) ||
+            null;
+    };
+
+    /**
+     * Derive reset metadata from usage payload.
+     *
+     * @param {Object|null} usage Usage payload.
+     * @returns {{daysUntilReset:number|null, formattedResetDate:string}}
+     */
+    window.bbaiGetQuotaResetMeta = function(usage) {
+        var meta = {
+            daysUntilReset: null,
+            formattedResetDate: ''
+        };
+
+        if (!usage || typeof usage !== 'object') {
+            return meta;
+        }
+
+        var resetTsRaw = usage.reset_timestamp || usage.resetTimestamp || usage.reset_ts || 0;
+        var resetTs = parseInt(resetTsRaw, 10);
+        if (!isNaN(resetTs) && resetTs > 0 && resetTs < 1000000000000) {
+            resetTs = resetTs * 1000;
+        }
+
+        if ((!resetTs || isNaN(resetTs)) && usage.resetDate) {
+            resetTs = Date.parse(String(usage.resetDate));
+        }
+        if ((!resetTs || isNaN(resetTs)) && usage.reset_date) {
+            resetTs = Date.parse(String(usage.reset_date));
+        }
+
+        var providedDays = parseInt(usage.days_until_reset, 10);
+        if (!isNaN(providedDays)) {
+            meta.daysUntilReset = Math.max(0, providedDays);
+        } else if (resetTs && !isNaN(resetTs)) {
+            var msUntilReset = resetTs - Date.now();
+            meta.daysUntilReset = Math.max(0, Math.ceil(msUntilReset / (24 * 60 * 60 * 1000)));
+        }
+
+        if (resetTs && !isNaN(resetTs)) {
+            try {
+                meta.formattedResetDate = new Date(resetTs).toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            } catch (e) {
+                meta.formattedResetDate = '';
+            }
+        }
+
+        if (!meta.formattedResetDate && usage.resetDate) {
+            meta.formattedResetDate = String(usage.resetDate);
+        } else if (!meta.formattedResetDate && usage.reset_date) {
+            meta.formattedResetDate = String(usage.reset_date);
+        }
+
+        return meta;
+    };
+
+    /**
      * Handle limit reached - show upgrade modal
      */
     window.bbaiHandleLimitReached = function(errorData) {
-        var message = (errorData && errorData.message) || 'Monthly limit reached. Please contact a site administrator.';
-        if (!window.bbaiCanManageAccount()) {
-            if (typeof showNotification === 'function') {
-                showNotification(message, 'warning');
+        var usage = window.bbaiGetUsageSnapshot(errorData && errorData.usage ? errorData.usage : null);
+        var baseMessage = (errorData && errorData.message) || __('You have used all available free credits for this month.', 'beepbeep-ai-alt-text-generator');
+        var resetMeta = window.bbaiGetQuotaResetMeta(usage);
+        var canManage = window.bbaiCanManageAccount();
+        var resetMessage = __('Your next 50 free credits will be available at the next monthly reset.', 'beepbeep-ai-alt-text-generator');
+
+        if (resetMeta.daysUntilReset !== null) {
+            if (resetMeta.daysUntilReset <= 0) {
+                resetMessage = __('Your next 50 free credits should be available today.', 'beepbeep-ai-alt-text-generator');
+            } else {
+                resetMessage = sprintf(
+                    _n(
+                        'Your next 50 free credits will be available in %d day.',
+                        'Your next 50 free credits will be available in %d days.',
+                        resetMeta.daysUntilReset,
+                        'beepbeep-ai-alt-text-generator'
+                    ),
+                    resetMeta.daysUntilReset
+                );
+            }
+        }
+
+        if (resetMeta.formattedResetDate) {
+            resetMessage += ' ' + sprintf(
+                __('Reset date: %s.', 'beepbeep-ai-alt-text-generator'),
+                resetMeta.formattedResetDate
+            );
+        }
+
+        var fullMessage = baseMessage + '\n\n' + resetMessage;
+
+        if (window.bbaiModal && typeof window.bbaiModal.show === 'function') {
+            if (canManage) {
+                window.bbaiModal.show({
+                    type: 'warning',
+                    title: __('Monthly quota reached', 'beepbeep-ai-alt-text-generator'),
+                    message: fullMessage + '\n\n' + __('Upgrade now to keep generating alt text immediately.', 'beepbeep-ai-alt-text-generator'),
+                    buttons: [
+                        {
+                            text: __('Upgrade now', 'beepbeep-ai-alt-text-generator'),
+                            primary: true,
+                            action: function() {
+                                window.bbaiModal.close();
+                                var opened = window.bbaiOpenUpgradeModal(usage);
+                                if (!opened && typeof showNotification === 'function') {
+                                    showNotification(__('Unable to open the upgrade modal. Please refresh and try again.', 'beepbeep-ai-alt-text-generator'), 'warning');
+                                }
+                            }
+                        },
+                        {
+                            text: __('Maybe later', 'beepbeep-ai-alt-text-generator'),
+                            primary: false,
+                            action: function() {
+                                window.bbaiModal.close();
+                            }
+                        }
+                    ]
+                });
+            } else {
+                window.bbaiModal.show({
+                    type: 'warning',
+                    title: __('Monthly quota reached', 'beepbeep-ai-alt-text-generator'),
+                    message: fullMessage + '\n\n' + __('You do not have permission to upgrade this account. Please contact the account owner.', 'beepbeep-ai-alt-text-generator'),
+                    buttons: [
+                        {
+                            text: __('OK', 'beepbeep-ai-alt-text-generator'),
+                            primary: true,
+                            action: function() {
+                                window.bbaiModal.close();
+                            }
+                        }
+                    ]
+                });
             }
             return;
         }
 
-        var usage = errorData && errorData.usage ? errorData.usage : null;
-
-        // Try multiple methods to show the upgrade modal
-        if (typeof alttextaiShowModal === 'function') {
-            alttextaiShowModal();
-        } else if (typeof window.alttextaiShowModal === 'function') {
-            window.alttextaiShowModal();
-        } else if (typeof showUpgradeModal === 'function') {
-            showUpgradeModal(usage);
-        } else if (typeof window.beepbeepai_show_upgrade_modal === 'function') {
-            window.beepbeepai_show_upgrade_modal(usage);
-        } else {
-            // Fallback: trigger event or click upgrade button
-            var upgradeBtn = document.querySelector('[data-action="show-upgrade-modal"]');
-            if (upgradeBtn) {
-                upgradeBtn.click();
-            } else {
-                $(document).trigger('alttextai:show-upgrade-modal', [usage]);
+        if (!canManage) {
+            if (typeof showNotification === 'function') {
+                showNotification(fullMessage + ' ' + __('Please contact the account owner to upgrade.', 'beepbeep-ai-alt-text-generator'), 'warning');
             }
+            return;
         }
 
-        // Show notification
+        var modalOpened = window.bbaiOpenUpgradeModal(usage);
         if (typeof showNotification === 'function') {
-            showNotification(message, 'error');
+            var fallbackMessage = fullMessage;
+            if (!modalOpened) {
+                fallbackMessage += ' ' + __('Unable to open the upgrade modal automatically.', 'beepbeep-ai-alt-text-generator');
+            }
+            showNotification(fallbackMessage, 'warning');
         }
     };
 

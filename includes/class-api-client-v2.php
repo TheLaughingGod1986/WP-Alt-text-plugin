@@ -883,33 +883,25 @@ class API_Client_V2 {
     
     /**
      * Register new user
-     * Includes site_id to prevent multiple free accounts per site
+     * Includes site_id so backend can link this account to the current site context
      */
     public function register($email, $password) {
-        // Check if site already has an account
-        $existing_token = $this->get_token();
-        if (!empty($existing_token)) {
-            // Site already has an account - check if it's a free plan
-            $usage = $this->get_usage();
-            if (!is_wp_error($usage) && isset($usage['plan']) && $usage['plan'] === 'free') {
-                return new \WP_Error(
-                    'free_plan_exists',
-                    __('A free plan has already been used for this site. Upgrade to Growth or Agency to increase your quota.', 'beepbeep-ai-alt-text-generator'),
-                    ['code' => 'free_plan_already_used']
-                );
-            }
-        }
-        
         // Get site identifier
         $site_id = $this->get_site_id();
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
         $site_id = \BeepBeepAI\AltTextGenerator\get_site_identifier();
+        $blog_id = function_exists('get_current_blog_id') ? absint(get_current_blog_id()) : 0;
+        $network_id = function_exists('get_current_network_id') ? absint(get_current_network_id()) : 0;
+        $is_multisite = function_exists('is_multisite') ? (bool) is_multisite() : false;
         
         $response = $this->make_request('/auth/register', 'POST', [
             'email' => $email,
             'password' => $password,
             'site_id' => $site_id,
             'site_url' => get_site_url(),
+            'blog_id' => $blog_id,
+            'network_id' => $network_id,
+            'is_multisite' => $is_multisite,
             'plugin_version' => defined('BBAI_VERSION') ? BBAI_VERSION : '1.0.0',
             'wordpress_version' => get_bloginfo('version'),
         ]);
@@ -929,7 +921,7 @@ class API_Client_V2 {
                 }
                 return new \WP_Error(
                     'site_has_license',
-                    $raw_msg ?: __('This site is already connected to an account. Log in with the existing credentials.', 'beepbeep-ai-alt-text-generator'),
+                    $raw_msg ?: __('This site is already connected to an account. Multiple emails can use this site, but all WordPress users share the same quota.', 'beepbeep-ai-alt-text-generator'),
                     ['existing_email' => $existing_email]
                 );
             }
@@ -955,24 +947,78 @@ class API_Client_V2 {
 
         // Handle 4xx errors (like 409 Conflict for site already has license)
         if (!$response['success'] && $status_code >= 400 && $status_code < 500) {
-            $error_code = $backend_data['error'] ?? $backend_data['code'] ?? '';
-            $error_message = $backend_data['message'] ?? '';
-            $existing_email = $backend_data['existing_email'] ?? '';
+            $error_code = '';
+            if (isset($backend_data['code']) && is_string($backend_data['code'])) {
+                $error_code = $backend_data['code'];
+            } elseif (isset($backend_data['error']) && is_string($backend_data['error'])) {
+                $error_code = $backend_data['error'];
+            } elseif (isset($backend_data['error']) && is_array($backend_data['error']) && isset($backend_data['error']['code'])) {
+                $error_code = is_string($backend_data['error']['code']) ? $backend_data['error']['code'] : '';
+            }
 
-            // Check for site already has license error (409)
-            if ($error_code === 'SITE_HAS_LICENSE' || $error_code === 'site_has_license' || $status_code === 409) {
+            $error_message = '';
+            if (isset($backend_data['message']) && is_string($backend_data['message'])) {
+                $error_message = $backend_data['message'];
+            } elseif (isset($backend_data['error']) && is_array($backend_data['error']) && isset($backend_data['error']['message']) && is_string($backend_data['error']['message'])) {
+                $error_message = $backend_data['error']['message'];
+            }
+
+            $existing_email = '';
+            if (isset($backend_data['existing_email']) && is_string($backend_data['existing_email'])) {
+                $existing_email = sanitize_email($backend_data['existing_email']);
+            } elseif (isset($backend_data['data']) && is_array($backend_data['data']) && isset($backend_data['data']['existing_email']) && is_string($backend_data['data']['existing_email'])) {
+                $existing_email = sanitize_email($backend_data['data']['existing_email']);
+            }
+
+            $invite_url = '';
+            if (isset($backend_data['invite_url']) && is_string($backend_data['invite_url'])) {
+                $invite_url = esc_url_raw($backend_data['invite_url']);
+            } elseif (isset($backend_data['data']) && is_array($backend_data['data']) && isset($backend_data['data']['invite_url']) && is_string($backend_data['data']['invite_url'])) {
+                $invite_url = esc_url_raw($backend_data['data']['invite_url']);
+            }
+
+            $normalized_code = strtolower((string) $error_code);
+            $error_message_lower = strtolower((string) $error_message);
+
+            if (in_array($normalized_code, ['user_exists', 'email_exists'], true)) {
+                return new \WP_Error(
+                    'user_exists',
+                    $error_message ?: __('An account with this email already exists. Please log in instead.', 'beepbeep-ai-alt-text-generator'),
+                    ['status_code' => $status_code]
+                );
+            }
+
+            if (in_array($normalized_code, ['invite_required', 'member_invite_required', 'team_invite_required'], true)) {
+                return new \WP_Error(
+                    'invite_required',
+                    $error_message ?: __('This site is connected to an existing account. Ask the site owner to invite your email to the team.', 'beepbeep-ai-alt-text-generator'),
+                    ['status_code' => $status_code, 'invite_url' => $invite_url]
+                );
+            }
+
+            $is_site_conflict = in_array($normalized_code, ['site_has_license', 'site_already_connected', 'site_already_linked'], true)
+                || (
+                    (int) $status_code === 409
+                    && (
+                        strpos($error_message_lower, 'already connected') !== false
+                        || strpos($error_message_lower, 'site has license') !== false
+                        || strpos($error_message_lower, 'site already linked') !== false
+                    )
+                );
+
+            if ($is_site_conflict) {
                 return new \WP_Error(
                     'site_has_license',
-                    $error_message ?: __('This site is already connected to an account. Log in with the existing credentials.', 'beepbeep-ai-alt-text-generator'),
+                    $error_message ?: __('This site is already connected to an account. Multiple emails can use this site, but all WordPress users share the same quota.', 'beepbeep-ai-alt-text-generator'),
                     ['existing_email' => $existing_email, 'status_code' => $status_code]
                 );
             }
 
-            // Check for user already exists (409)
-            if ($error_code === 'USER_EXISTS') {
+            if (in_array($normalized_code, ['free_plan_exists', 'free_plan_already_used'], true)
+                || strpos($error_message_lower, 'free plan') !== false) {
                 return new \WP_Error(
-                    'user_exists',
-                    $error_message ?: __('An account with this email already exists. Please log in instead.', 'beepbeep-ai-alt-text-generator'),
+                    'free_plan_exists',
+                    __('A free plan has already been used for this site. Upgrade to Growth or Agency to increase your quota.', 'beepbeep-ai-alt-text-generator'),
                     ['status_code' => $status_code]
                 );
             }
@@ -981,7 +1027,7 @@ class API_Client_V2 {
             return new \WP_Error(
                 'registration_failed',
                 $error_message ?: __('Registration failed', 'beepbeep-ai-alt-text-generator'),
-                ['status_code' => $status_code, 'error_code' => $error_code]
+                ['status_code' => $status_code, 'error_code' => $normalized_code ?: $error_code]
             );
         }
 
@@ -1017,12 +1063,18 @@ class API_Client_V2 {
         // Get site identifier
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
         $site_id = \BeepBeepAI\AltTextGenerator\get_site_identifier();
+        $blog_id = function_exists('get_current_blog_id') ? absint(get_current_blog_id()) : 0;
+        $network_id = function_exists('get_current_network_id') ? absint(get_current_network_id()) : 0;
+        $is_multisite = function_exists('is_multisite') ? (bool) is_multisite() : false;
         
         $response = $this->make_request('/auth/login', 'POST', [
             'email' => $email,
             'password' => $password,
             'site_id' => $site_id,
             'site_url' => get_site_url(),
+            'blog_id' => $blog_id,
+            'network_id' => $network_id,
+            'is_multisite' => $is_multisite,
         ]);
         
         if (is_wp_error($response)) {
@@ -1032,6 +1084,75 @@ class API_Client_V2 {
         // make_request wraps response: ['status_code' => ..., 'data' => <backend_response>, 'success' => ...]
         // Backend returns: {'success': true, 'data': {'token': ..., 'user': ...}, 'token': ..., 'user': ...}
         $backend_data = $response['data'] ?? [];
+        $status_code = $response['status_code'] ?? 0;
+
+        if (!$response['success'] && $status_code >= 400 && $status_code < 500) {
+            $error_code = '';
+            if (isset($backend_data['code']) && is_string($backend_data['code'])) {
+                $error_code = $backend_data['code'];
+            } elseif (isset($backend_data['error']) && is_string($backend_data['error'])) {
+                $error_code = $backend_data['error'];
+            } elseif (isset($backend_data['error']) && is_array($backend_data['error']) && isset($backend_data['error']['code'])) {
+                $error_code = is_string($backend_data['error']['code']) ? $backend_data['error']['code'] : '';
+            }
+
+            $error_message = '';
+            if (isset($backend_data['message']) && is_string($backend_data['message'])) {
+                $error_message = $backend_data['message'];
+            } elseif (isset($backend_data['error']) && is_array($backend_data['error']) && isset($backend_data['error']['message']) && is_string($backend_data['error']['message'])) {
+                $error_message = $backend_data['error']['message'];
+            }
+
+            $existing_email = '';
+            if (isset($backend_data['existing_email']) && is_string($backend_data['existing_email'])) {
+                $existing_email = sanitize_email($backend_data['existing_email']);
+            } elseif (isset($backend_data['data']) && is_array($backend_data['data']) && isset($backend_data['data']['existing_email']) && is_string($backend_data['data']['existing_email'])) {
+                $existing_email = sanitize_email($backend_data['data']['existing_email']);
+            }
+
+            $invite_url = '';
+            if (isset($backend_data['invite_url']) && is_string($backend_data['invite_url'])) {
+                $invite_url = esc_url_raw($backend_data['invite_url']);
+            } elseif (isset($backend_data['data']) && is_array($backend_data['data']) && isset($backend_data['data']['invite_url']) && is_string($backend_data['data']['invite_url'])) {
+                $invite_url = esc_url_raw($backend_data['data']['invite_url']);
+            }
+
+            $normalized_code = strtolower((string) $error_code);
+            $error_message_lower = strtolower((string) $error_message);
+
+            if (in_array($normalized_code, ['site_has_license', 'site_already_connected', 'site_already_linked'], true)
+                || strpos($error_message_lower, 'already connected') !== false
+                || strpos($error_message_lower, 'site has license') !== false) {
+                return new \WP_Error(
+                    'site_has_license',
+                    $error_message ?: __('This site is already connected to an account. Multiple emails can use this site, but all WordPress users share the same quota.', 'beepbeep-ai-alt-text-generator'),
+                    ['existing_email' => $existing_email, 'status_code' => $status_code]
+                );
+            }
+
+            if (in_array($normalized_code, ['invite_required', 'member_invite_required', 'team_invite_required'], true)) {
+                return new \WP_Error(
+                    'invite_required',
+                    $error_message ?: __('This email is not yet invited for this site. Ask the site owner to send an invite.', 'beepbeep-ai-alt-text-generator'),
+                    ['status_code' => $status_code, 'invite_url' => $invite_url]
+                );
+            }
+
+            if (in_array($normalized_code, ['invalid_credentials', 'invalid_password', 'auth_failed', 'unauthorized'], true)) {
+                return new \WP_Error(
+                    'invalid_credentials',
+                    $error_message ?: __('Invalid email or password.', 'beepbeep-ai-alt-text-generator'),
+                    ['status_code' => $status_code]
+                );
+            }
+
+            return new \WP_Error(
+                'login_failed',
+                $error_message ?: __('Login failed', 'beepbeep-ai-alt-text-generator'),
+                ['status_code' => $status_code, 'error_code' => $normalized_code ?: $error_code]
+            );
+        }
+
         $token = $backend_data['data']['token'] ?? $backend_data['token'] ?? null;
         $user = $backend_data['data']['user'] ?? $backend_data['user'] ?? null;
 
@@ -1798,7 +1919,8 @@ class API_Client_V2 {
             'regenerate' => $regenerate ? true : false, // Explicitly cast to boolean
         ];
 
-        // Include user ID and explicit image identifiers in headers for traceability
+        // Include explicit image identifiers for traceability.
+        // Do not include WordPress user ID: quota must be shared site-wide.
         $extra_headers = [
             'X-Image-ID' => (string) $image_id,
             'X-Attachment-ID' => (string) $image_id,
@@ -1823,7 +1945,7 @@ class API_Client_V2 {
             $body['trial_site_hash'] = $trial_hash;
         }
 
-        $response = $this->request_with_retry($endpoint, 'POST', $body, 3, true, $extra_headers);
+        $response = $this->request_with_retry($endpoint, 'POST', $body, 3, false, $extra_headers);
 
         if (is_wp_error($response)) {
             return $response;
@@ -1839,8 +1961,24 @@ class API_Client_V2 {
             ], 'api');
         }
 
-        // Handle rate limit
-        if ($response['status_code'] === 429) {
+        // Handle quota/rate-limit responses.
+        // Backend may signal exhausted quota as HTTP 429 or HTTP 402 + QUOTA_EXCEEDED.
+        $quota_status_code = isset($response['status_code']) ? intval($response['status_code']) : 0;
+        $quota_error_data  = isset($response['data']) && is_array($response['data']) ? $response['data'] : [];
+        $quota_error_code  = isset($quota_error_data['code']) ? strtoupper((string) $quota_error_data['code']) : '';
+        $quota_error_text  = strtolower(trim((string) ($quota_error_data['error'] ?? $quota_error_data['message'] ?? '')));
+        $is_quota_response = (
+            $quota_status_code === 429 ||
+            $quota_status_code === 402 ||
+            $quota_error_code === 'QUOTA_EXCEEDED' ||
+            strpos($quota_error_text, 'quota exceeded') !== false ||
+            strpos($quota_error_text, 'quota exhausted') !== false ||
+            strpos($quota_error_text, 'monthly quota') !== false ||
+            strpos($quota_error_text, 'monthly limit') !== false ||
+            strpos($quota_error_text, 'limit reached') !== false
+        );
+
+        if ($is_quota_response) {
             // DO NOT update usage from error responses - credits should only be deducted on success
             // The backend may have consumed credits during the failed attempt, but we shouldn't record it
             // Usage will be refreshed on successful generation
@@ -1861,10 +1999,12 @@ class API_Client_V2 {
                     \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($fresh_usage);
                     
                     if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-                        \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Backend returned 429 but cache and fresh API check show credits available', [
+                        \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Backend returned quota response but cache and fresh API check show credits available', [
+                            'status_code' => $quota_status_code,
+                            'backend_code' => $quota_error_data['code'] ?? null,
                             'cached_remaining' => $cached_usage['remaining'],
                             'api_remaining' => $fresh_usage['remaining'],
-                            'backend_error' => $response['data']['error'] ?? 'Monthly limit reached',
+                            'backend_error' => $quota_error_data['error'] ?? $quota_error_data['message'] ?? 'Monthly limit reached',
                         ], 'api');
                     }
                     
@@ -1883,8 +2023,13 @@ class API_Client_V2 {
             // Cached usage confirms no credits OR fresh check also shows exhausted
             return new \WP_Error(
                 'limit_reached',
-                $response['data']['error'] ?? __('Monthly limit reached', 'beepbeep-ai-alt-text-generator'),
-                ['usage' => $response['data']['usage'] ?? null]
+                $quota_error_data['error'] ?? $quota_error_data['message'] ?? __('Monthly limit reached', 'beepbeep-ai-alt-text-generator'),
+                [
+                    'usage' => $quota_error_data['usage'] ?? null,
+                    'status_code' => $quota_status_code,
+                    'code' => 'quota_exhausted',
+                    'backend_code' => $quota_error_data['code'] ?? null,
+                ]
             );
         }
 

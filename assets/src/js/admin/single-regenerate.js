@@ -149,6 +149,16 @@
                                   errorMessageLower.includes('monthly limit');
 
                 if (isQuotaError) {
+                    // Reuse shared quota flow when available.
+                    if (typeof window.bbaiHandleLimitReached === 'function') {
+                        closeRegenerateModal($modal);
+                        reenableButton($btn, originalBtnText);
+                        setTimeout(function() {
+                            window.bbaiHandleLimitReached(errorData);
+                        }, 120);
+                        return;
+                    }
+
                     // Show error message in modal first
                     var quotaMessage = errorMessage || 'Your monthly quota has been exceeded. Upgrade to continue generating alt text.';
                     showModalError($modal, quotaMessage);
@@ -290,11 +300,33 @@
                                     if (stillNoModal) {
                                         window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Could not show upgrade modal - no method worked');
                                         // Try redirecting to settings page with upgrade section
-                                        if (confirm('Your monthly quota has been exceeded. Would you like to go to the Settings page to upgrade?')) {
+                                        if (window.bbaiModal && typeof window.bbaiModal.show === 'function') {
+                                            window.bbaiModal.show({
+                                                type: 'warning',
+                                                title: 'Monthly quota exceeded',
+                                                message: 'Your monthly quota has been exceeded. Upgrade to continue generating alt text.',
+                                                buttons: [
+                                                    {
+                                                        text: 'Upgrade now',
+                                                        primary: true,
+                                                        action: function() {
+                                                            window.bbaiModal.close();
+                                                            var settingsUrl = window.location.href.split('?')[0] + '?page=bbai&tab=settings';
+                                                            window.location.href = settingsUrl;
+                                                        }
+                                                    },
+                                                    {
+                                                        text: 'Maybe later',
+                                                        primary: false,
+                                                        action: function() {
+                                                            window.bbaiModal.close();
+                                                        }
+                                                    }
+                                                ]
+                                            });
+                                        } else {
                                             var settingsUrl = window.location.href.split('?')[0] + '?page=bbai&tab=settings';
                                             window.location.href = settingsUrl;
-                                        } else {
-                                            alert('Your monthly quota has been exceeded. Please upgrade to continue generating alt text. You can upgrade from the Settings page.');
                                         }
                                     }
                                 }, 1000);
@@ -367,6 +399,16 @@
                               errorMessageLower.includes('quota exhausted') ||
                               errorMessageLower.includes('limit reached') ||
                               errorMessageLower.includes('monthly limit')) {
+                // Reuse shared quota flow when available.
+                if (typeof window.bbaiHandleLimitReached === 'function') {
+                    closeRegenerateModal($modal);
+                    reenableButton($btn, originalBtnText);
+                    setTimeout(function() {
+                        window.bbaiHandleLimitReached(errorData);
+                    }, 120);
+                    return;
+                }
+
                 // Show error message in modal first
                 var quotaMessage = errorMessage || 'Your monthly quota has been exceeded. Upgrade to continue generating alt text.';
                 showModalError($modal, quotaMessage);
@@ -514,11 +556,33 @@
                                 if (stillNoModal) {
                                     window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Could not show upgrade modal - no method worked');
                                     // Try redirecting to settings page with upgrade section
-                                    if (confirm('Your monthly quota has been exceeded. Would you like to go to the Settings page to upgrade?')) {
+                                    if (window.bbaiModal && typeof window.bbaiModal.show === 'function') {
+                                        window.bbaiModal.show({
+                                            type: 'warning',
+                                            title: 'Monthly quota exceeded',
+                                            message: 'Your monthly quota has been exceeded. Upgrade to continue generating alt text.',
+                                            buttons: [
+                                                {
+                                                    text: 'Upgrade now',
+                                                    primary: true,
+                                                    action: function() {
+                                                        window.bbaiModal.close();
+                                                        var settingsUrl = window.location.href.split('?')[0] + '?page=bbai&tab=settings';
+                                                        window.location.href = settingsUrl;
+                                                    }
+                                                },
+                                                {
+                                                    text: 'Maybe later',
+                                                    primary: false,
+                                                    action: function() {
+                                                        window.bbaiModal.close();
+                                                    }
+                                                }
+                                            ]
+                                        });
+                                    } else {
                                         var settingsUrl = window.location.href.split('?')[0] + '?page=bbai&tab=settings';
                                         window.location.href = settingsUrl;
-                                    } else {
-                                        alert('Your monthly quota has been exceeded. Please upgrade to continue generating alt text. You can upgrade from the Settings page.');
                                     }
                                 }
                             }, 1000);

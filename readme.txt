@@ -3,89 +3,80 @@ Plugin Name: BeepBeep AI – Alt Text Generator
 Contributors: beepbeepv2
 Plugin URI: https://oppti.dev/beepbeep-ai-alt-text-generator
 Author URI: https://oppti.dev
-Tags: accessibility, AI, Alt Text, image seo, WooCommerce
+Tags: accessibility, bulk alt text, Alt Text, image seo, WooCommerce
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 4.5.2
+Stable tag: 4.5.14
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
 
-Generate alt text for images to improve accessibility and search engine optimization.
+Automatically generate ALT text for WordPress images in bulk to improve accessibility and Image SEO.
 
 == Description ==
 
-**Stop losing traffic from Google Images and product search. Fix missing alt text automatically in <60 seconds.**
+Automatically generate ALT text for WordPress images in bulk to improve accessibility and Image SEO.
+Scan your media library, detect missing alt text, and generate AI descriptions you can review before publishing.
 
-Missing alt text hurts rankings, accessibility, and conversions. When product images have blank alt tags, search engines lose context and shoppers using assistive tech lose critical information.
+Free plan includes 50 AI ALT text generations per month.
 
-**BeepBeep AI solves this automatically.**
+= Does your site have missing ALT text? =
 
-BeepBeep AI generates clear, SEO-ready, WCAG-friendly alt text for your WordPress media library and WooCommerce catalog. You can bulk-fix legacy images, auto-generate on upload, and review every suggestion before saving.
+Missing ALT text:
+
+* hurts accessibility
+* reduces Google Images visibility
+* creates SEO gaps
+
+BeepBeep AI scans your library and helps you fix missing ALT text fast.
+
+= How it works =
+
+1. Scan your media library
+2. Detect images missing alt text
+3. Generate AI descriptions
+4. Review and publish
+
+= Who this plugin is for =
+
+* WooCommerce stores with large product catalogs
+* Content sites with large media libraries
+* SEO teams improving image search visibility
+* Accessibility audits fixing missing alt text
+
+= Bulk ALT Text Generator for WordPress =
+
+Generate missing ALT text across large image libraries without writing descriptions one by one. Review and edit suggestions before publishing.
+
+= WooCommerce Product Image ALT Text =
+
+Generate ALT text for WooCommerce featured and gallery images so product pages stay accessible and easier for search engines to understand.
+
+= Improve Google Images SEO =
+
+Better ALT text gives search engines clearer image context. BeepBeep AI helps apply consistent, descriptive metadata across your WordPress and WooCommerce images.
+
+= Manual vs BeepBeep AI =
+
+Manual: 1-2 minutes per image. 500 images can take 8-16 hours.
+BeepBeep: Scan -> generate -> review. Hundreds of images in minutes.
+
+= Features =
+
+* Bulk generation for existing media libraries
+* Automatic generation for new uploads
+* Editable AI ALT text suggestions before publish
+* Credit and usage tracking in the dashboard
+* Works with WordPress media and WooCommerce product images
 
 = Demo Video =
 
 https://www.youtube.com/watch?v=XK9snigPH2c
 
-= Built for WooCommerce at Scale =
+= Free plan and paid options =
 
-Running a large store? BeepBeep AI is optimized for WooCommerce bulk generation workflows:
-
-* Detect and fix blank alt tags across your product image library
-* Bulk-generate alt text for 1,000+ product images in one workflow
-* Improve discoverability for product, category, and Google Images traffic
-* Keep descriptions consistent across featured and gallery images
-
-= Time-to-Value in Minutes =
-
-After activation, most sites see their first AI-generated alt text results in **<60 seconds**:
-
-* Generate from Media Library in one click
-* Apply bulk actions to existing images
-* Enable automatic generation for all future uploads
-
-= Why Teams Choose BeepBeep AI =
-
-= Fix Missing Alt Text in Bulk =
-
-Process hundreds or thousands of images without manual writing. BeepBeep AI is designed for real-world media libraries, including high-volume WooCommerce stores.
-
-= Improve Image SEO =
-
-AI-generated alt text helps search engines better understand your images, improving relevance for image search and product discovery.
-
-= Meet Accessibility Standards =
-
-Generate descriptive alt text aligned with WCAG 2.1 AA expectations for screen reader users and accessibility-focused teams.
-
-= Save Hours Every Month =
-
-Manual alt text can take 1-2 minutes per image. BeepBeep AI handles repetitive work so your team can focus on content and merchandising.
-
-= Stay in Control =
-
-Every generated description can be reviewed and edited before saving.
-
-= Perfect For =
-
-* WooCommerce stores with large product catalogs
-* Blogs and publishers with growing media libraries
-* Agencies managing multiple WordPress sites
-* Marketing teams focused on image SEO and accessibility
-
-= Try Before You Sign Up =
-
-Get started immediately with **10 free trial generations** — no account or email required. When you're ready, create a free account to unlock 50 credits per month.
-
-= Free Plan Features =
-
-* 10 instant trial generations (no account needed)
-* 50 AI-generated alt texts monthly with a free account
-* Bulk generation tools (within monthly credits)
-* Auto-generation on upload
-* Editable descriptions before save
-* Usage dashboard and quota tracking
+You can start with 10 trial generations without an account. The free account plan includes 50 AI ALT text generations per month. Paid plans add higher monthly limits and additional account features.
 
 **Paid plans unlock:**
 
@@ -122,9 +113,12 @@ Yes. BeepBeep AI Alt Text Generator supports WooCommerce featured images, galler
 You get 10 free trial generations immediately with no account required. After signup, the free plan includes 50 monthly credits, with one credit used per generated alt text, and Bulk edit tools help you apply those credits efficiently across larger media libraries.
 
 == Screenshots ==
-1. Dashboard view of the AI Alt Text Generator showing one-click generation, live credit tracking, and editable suggestions so teams can review accessibility text before saving.
-2. Bulk edit workflow in the WordPress Media Library where multiple images are selected and processed together, making large-scale alt text cleanup faster and more consistent.
-3. WooCommerce product screen demonstrating WooCommerce image optimization for featured and gallery images, with AI-generated alt text improving accessibility and image SEO for product discovery.
+1. Bulk ALT text generator dashboard for WordPress Media Library with monthly credit tracking.
+2. Scan results in the Image ALT Library showing images missing ALT text and one-click generation actions.
+3. Settings and account view showing free plan quota with 50 AI ALT text generations per month.
+4. WordPress Media Library bulk selection view used before running bulk ALT text generation.
+5. Credit usage analytics for image SEO workflows across WordPress and WooCommerce image libraries.
+6. Review BeepBeep AI plans when scaling bulk ALT text generation for larger media libraries.
 
 == External Services ==
 
@@ -155,6 +149,67 @@ Data sent: Name, email, subject, message, site URL, WordPress version, and plugi
 Privacy policy: https://resend.com/legal/privacy
 
 == Changelog ==
+
+= 4.5.14 =
+* Refined exhausted-credit panel layout to improve hierarchy and reduce empty space.
+* Added reusable inline quota-exhausted callout with reset-date/usage context and upgrade CTA.
+* Updated dashboard and library action sections to render cleaner locked-state layouts.
+
+= 4.5.13 =
+* Fixed credit-exhausted bulk actions by removing generate/regenerate buttons when quota is exhausted.
+* Added clear out-of-credits messaging directing users to upgrade or wait for monthly reset.
+* Hardened quota lock behavior to prevent UI freeze on locked actions.
+
+= 4.5.12 =
+* Fixed exhausted-credit UI lockups in dashboard and library generation controls.
+* Improved quota messaging and upgrade prompts when monthly limits are reached.
+* Reliability update for locked control handling during bulk actions.
+
+= 4.5.11 =
+* Fixed Debug Logs filter requests in environments where `/wp-json` routes return 404.
+* Improved debug log level filtering reliability for Error/Warning selections.
+* Added resilient debug logs fetch/clear routing to prevent filter fallbacks from failing.
+
+= 4.5.10 =
+* Maintenance release with bug fixes and stability improvements.
+* Improved WooCommerce, Image SEO, and Accessibility workflows.
+* Internal performance and reliability optimizations.
+
+= 4.5.9 =
+* Maintenance release with bug fixes and stability improvements.
+* Improved WooCommerce, Image SEO, and Accessibility workflows.
+* Internal performance and reliability optimizations.
+
+= 4.5.8 =
+* Improved Re-optimise All reliability and handler compatibility across dashboard flows.
+* Refined dashboard, library, analytics, and auth admin UX/stability updates.
+* Maintenance updates for multisite/release workflows and overall plugin reliability.
+
+= 4.5.7 =
+* Improved Re-optimise All reliability and handler compatibility across dashboard flows.
+* Refined dashboard, library, analytics, and auth admin UX/stability updates.
+* Maintenance updates for multisite/release workflows and overall plugin reliability.
+
+= 4.5.6 =
+* Improved monthly quota handling with clearer reset timing and upgrade guidance across admin flows.
+* Unified upgrade modal fallbacks to prevent dead-end quota dialogs.
+* Prevented duplicate queue scheduling during bulk operations by honoring a skip-schedule flag.
+* Routed single-image regenerate quota errors through the shared limit handler for consistent behavior.
+
+= 4.5.5 =
+* Added backend-driven member auth flow support so personal credentials can be used on connected sites.
+* Removed local registration hard-blocks so team/member eligibility is enforced by backend rules.
+* Kept shared site quota behavior while improving invite-related auth error handling in the modal and AJAX flow.
+
+= 4.5.4 =
+* Registration no longer hard-blocks when a site is already connected; backend team/member rules now decide access.
+* Added explicit auth error handling for invite-required member flows while keeping site-wide shared quota behavior.
+* Improved login/register modal handling for member onboarding and backend invite messaging.
+
+= 4.5.3 =
+* Enforced site-wide account linking: new registration is blocked when this site is already connected.
+* Improved auth modal flow to redirect users to login when a site-connected account already exists.
+* Ensured generation requests use shared site quota context across all WordPress users.
 
 = 4.5.2 =
 * Fixed onboarding flow so users can exit normally and no longer get stuck in redirect loops.
@@ -187,7 +242,7 @@ Privacy policy: https://resend.com/legal/privacy
 * Internal performance and reliability optimizations.
 
 = 4.4.8 =
-* Maintenance release with bug fixes and stability improvements.
+* Maintenance release that improves alt text generation reliability and overall stability.
 * Improved WooCommerce, Image SEO, and Accessibility workflows.
 * Internal performance and reliability optimizations.
 
@@ -206,12 +261,60 @@ Privacy policy: https://resend.com/legal/privacy
 * Improved WooCommerce, Image SEO, and Accessibility workflows.
 * Internal performance and reliability optimizations.
 
+= 4.4.4 =
+* Maintenance release with bug fixes and stability improvements.
+* Improved WooCommerce, Image SEO, and Accessibility workflows.
+* Internal performance and reliability optimizations.
+
 = 4.4.3 =
 * Maintenance release with bug fixes and stability improvements.
 * Improved WooCommerce, Image SEO, and Accessibility workflows.
 * Internal performance and reliability optimizations.
 
+= 4.4.1 =
+* Recommended update with WordPress.org compliance, security hardening, and usage-tracking improvements.
+
+= 4.3.0 =
+* Feature update with SEO workflow improvements and accessibility-focused UI enhancements.
+
+
 == Upgrade Notice ==
+
+= 4.5.14 =
+Improves out-of-credit dashboard and library layout with a clearer quota-exhausted callout.
+
+= 4.5.13 =
+Fixes exhausted-credit UI lockups and improves quota messaging on dashboard and library actions.
+
+= 4.5.12 =
+Fixes exhausted-credit UI lockups and improves quota messaging on dashboard and library actions.
+
+= 4.5.11 =
+Recommended update for Debug Logs filter reliability and routing compatibility.
+
+= 4.5.10 =
+Recommended maintenance update with WooCommerce, Image SEO, and Accessibility reliability improvements.
+
+= 4.5.9 =
+Recommended maintenance update with WooCommerce, Image SEO, and Accessibility reliability improvements.
+
+= 4.5.8 =
+Recommended maintenance update for more reliable bulk regeneration and improved admin workflow stability.
+
+= 4.5.7 =
+Recommended maintenance update for more reliable bulk regeneration and improved admin workflow stability.
+
+= 4.5.6 =
+Improves quota-limit handling and upgrade prompts for bulk + single generation workflows.
+
+= 4.5.5 =
+Supports personal credentials on connected sites while preserving shared site quota behavior.
+
+= 4.5.4 =
+Adds backend-driven member auth flow support so personal credentials can be used while credits remain shared site-wide.
+
+= 4.5.3 =
+Enforces site-wide account sharing and guides users to log in with the connected account. Includes quota-sharing fixes across WordPress users.
 
 = 4.5.2 =
 Fixes onboarding lockups and duplicate generation triggers. Recommended for all users.

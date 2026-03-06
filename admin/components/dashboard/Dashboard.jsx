@@ -76,11 +76,15 @@ const FreeUsageCard = ({
     ? 'Processing, please wait...'
     : missingImages <= 0
     ? 'All images already have alt text'
-    : 'Upgrade to unlock more generations';
-  const regenerateDisabled = !canGenerate || isLoading;
+    : 'Out of credits this month. Upgrade now or wait for reset.';
+  const regenerateLocked = !canGenerate;
+  const regenerateDisabled = isLoading;
   const regenerateDisabledReason = isLoading
     ? 'Processing, please wait...'
-    : 'Upgrade to unlock more generations';
+    : regenerateLocked
+    ? 'Out of credits this month. Upgrade now or wait for reset.'
+    : '';
+  const outOfCreditsMessage = 'You are out of credits for this month. Upgrade to continue now, or wait until your monthly reset date.';
 
   return (
     <section className="rounded-3xl bg-white shadow-xl px-6 py-6 md:px-7 md:py-7 flex flex-col gap-4">
@@ -134,42 +138,53 @@ const FreeUsageCard = ({
         Upgrade to 1,000 images/month
       </button>
 
-      <div className="flex flex-wrap gap-3">
-        <button
-          type="button"
-          data-action="generate-missing"
-          onClick={onGenerateMissing}
-          disabled={generateDisabled}
-          title={generateDisabled ? generateDisabledReason : undefined}
-          aria-label={generateDisabled ? `Generate Missing (disabled: ${generateDisabledReason})` : 'Generate Missing'}
-          {...(generateDisabled && {
-            'data-bbai-tooltip': generateDisabledReason,
-            'data-bbai-tooltip-position': 'top'
-          })}
-          className={`flex-1 rounded-full px-4 py-2.5 text-[13px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white ${
-            generateDisabled
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
-              : 'bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500/20 focus-visible:ring-indigo-500'
-          }`}
-        >
-          Generate Missing
-        </button>
-        <button
-          type="button"
-          data-action="regenerate-all"
-          onClick={onReoptimizeAll}
-          disabled={regenerateDisabled}
-          title={regenerateDisabled ? regenerateDisabledReason : undefined}
-          aria-label={regenerateDisabled ? `Re-optimise All (disabled: ${regenerateDisabledReason})` : 'Re-optimise All'}
-          {...(regenerateDisabled && {
-            'data-bbai-tooltip': regenerateDisabledReason,
-            'data-bbai-tooltip-position': 'top'
-          })}
-          className="flex-1 rounded-full bg-orange-500/10 px-4 py-2.5 text-[13px] font-semibold text-orange-600 transition hover:bg-orange-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Re-optimise All
-        </button>
-      </div>
+      {canGenerate && (
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            data-action={generateDisabled ? undefined : 'generate-missing'}
+            onClick={onGenerateMissing}
+            disabled={generateDisabled}
+            title={generateDisabled ? generateDisabledReason : undefined}
+            aria-label={generateDisabled ? `Generate Missing (disabled: ${generateDisabledReason})` : 'Generate Missing'}
+            className={`flex-1 rounded-full px-4 py-2.5 text-[13px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white ${
+              generateDisabled
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50 pointer-events-none'
+                : 'bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500/20 focus-visible:ring-indigo-500'
+            }`}
+          >
+            Generate Missing
+          </button>
+          {regenerateLocked ? (
+            <button
+              type="button"
+              disabled
+              title={regenerateDisabledReason || undefined}
+              aria-label="Re-optimise All (disabled: out of credits)"
+              className="flex-1 rounded-full bg-gray-100 px-4 py-2.5 text-[13px] font-semibold text-gray-400 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50 pointer-events-none text-center inline-flex items-center justify-center"
+            >
+              Re-optimise All
+            </button>
+          ) : (
+            <button
+              type="button"
+              data-action={regenerateDisabled ? undefined : 'regenerate-all'}
+              onClick={onReoptimizeAll}
+              disabled={regenerateDisabled}
+              title={regenerateDisabledReason || undefined}
+              aria-label={regenerateDisabled ? `Re-optimise All (disabled: ${regenerateDisabledReason})` : 'Re-optimise All'}
+              className="flex-1 rounded-full bg-orange-500/10 px-4 py-2.5 text-[13px] font-semibold text-orange-600 transition hover:bg-orange-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-none"
+            >
+              Re-optimise All
+            </button>
+          )}
+        </div>
+      )}
+      {!canGenerate && (
+        <p className="text-[12px] text-amber-700">
+          {outOfCreditsMessage}
+        </p>
+      )}
 
       <p className="text-[12px] text-slate-500">
         Free plan includes 50 images per month. Growth includes 1,000 images per month.

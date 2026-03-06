@@ -18,18 +18,18 @@
 }
 
 .bbai-quality-badge--good {
-    background: var(--bbai-success-light);
-    color: var(--bbai-success);
+    background: #e6f7ee;
+    color: #1b8a5a;
 }
 
 .bbai-quality-badge--fair {
-    background: #fffbeb;
-    color: #f59e0b;
+    background: #fff5d6;
+    color: #a26d00;
 }
 
 .bbai-quality-badge--poor {
-    background: #fef2f2;
-    color: var(--bbai-error);
+    background: #fdeaea;
+    color: #c02b2b;
 }
 
 /* Quality Hints */
@@ -95,18 +95,18 @@
 
 [data-theme="dark"] .bbai-quality-badge--good,
 .bbai-dark-mode .bbai-quality-badge--good {
-    background: rgba(16, 185, 129, 0.2);
-    color: var(--bbai-success);
+    background: rgba(27, 138, 90, 0.22);
+    color: #9de7c3;
 }
 
 [data-theme="dark"] .bbai-quality-badge--fair,
 .bbai-dark-mode .bbai-quality-badge--fair {
-    background: rgba(245, 158, 11, 0.2);
-    color: #f59e0b;
+    background: rgba(162, 109, 0, 0.26);
+    color: #ffd782;
 }
 
 [data-theme="dark"] .bbai-quality-badge--poor,
 .bbai-dark-mode .bbai-quality-badge--poor {
-    background: rgba(239, 68, 68, 0.2);
-    color: var(--bbai-error);
+    background: rgba(192, 43, 43, 0.25);
+    color: #ff9a9a;
 }

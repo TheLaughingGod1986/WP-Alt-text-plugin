@@ -56,26 +56,6 @@ trait Core_Ajax_Auth {
 		                return;
 		            }
 
-		            \bbai_debug_log( 'ajax_register checking existing token' );
-		            $existing_token = $this->api_client->get_token();
-		            \bbai_debug_log(
-		                'ajax_register existing token state',
-		                [
-		                    'has_existing_token' => ! empty( $existing_token ),
-		                ]
-		            );
-	            if (!empty($existing_token)) {
-		                \bbai_debug_log( 'ajax_register checking usage for existing token' );
-	                $usage = $this->api_client->get_usage();
-		                if (!is_wp_error($usage) && isset($usage['plan']) && $usage['plan'] === 'free') {
-		                    wp_send_json_error([
-		                        'message' => __('This site is already linked to a free account. Ask an administrator to upgrade to Growth or Agency for higher limits.', 'beepbeep-ai-alt-text-generator'),
-	                        'code' => 'free_plan_exists'
-	                    ]);
-		                    return;
-		                }
-		            }
-
 		            \bbai_debug_log( 'ajax_register calling API register' );
 		            $result = $this->api_client->register($email, $password);
 		            \bbai_debug_log(
@@ -96,7 +76,7 @@ trait Core_Ajax_Auth {
 	                    wp_send_json_error([
 	                        'message' => sprintf(
                             /* translators: 1: existing account email, if available */
-                            __('This site is already connected to an account%s. All WordPress users share the same credits. Please log in with the existing account credentials, or disconnect first to use a different account.', 'beepbeep-ai-alt-text-generator'),
+                            __('This site is already connected to an account%s. Multiple emails can use this site, but all WordPress users share the same quota.', 'beepbeep-ai-alt-text-generator'),
                             $existing_email ? ' (' . $existing_email . ')' : ''
                         ),
 	                        'code' => 'site_has_license',
@@ -113,7 +93,23 @@ trait Core_Ajax_Auth {
 	                    return;
 	                }
 
-	                wp_send_json_error(['message' => $error_message]);
+	                if ($error_code === 'invite_required') {
+	                    $invite_url = '';
+	                    if (is_array($error_data) && isset($error_data['invite_url'])) {
+	                        $invite_url = esc_url_raw((string) $error_data['invite_url']);
+	                    }
+	                    wp_send_json_error([
+	                        'message' => $error_message,
+	                        'code' => 'invite_required',
+	                        'invite_url' => $invite_url,
+	                    ]);
+	                    return;
+	                }
+
+	                wp_send_json_error([
+	                    'message' => $error_message,
+	                    'code' => is_string($error_code) ? strtolower($error_code) : '',
+	                ]);
 	                return;
 	            }
 
@@ -173,7 +169,39 @@ trait Core_Ajax_Auth {
         $result = $this->api_client->login($email, $password);
 
 	        if (is_wp_error($result)) {
-	            wp_send_json_error(['message' => $result->get_error_message()]);
+	            $error_code = $result->get_error_code();
+	            $error_data = $result->get_error_data();
+	            if ($error_code === 'site_has_license' || $error_code === 'SITE_HAS_LICENSE') {
+	                $existing_email = '';
+	                if (is_array($error_data) && isset($error_data['existing_email'])) {
+	                    $existing_email = sanitize_email((string) $error_data['existing_email']);
+	                }
+	                wp_send_json_error([
+	                    'message' => $result->get_error_message(),
+	                    'code' => 'site_has_license',
+	                    'existing_email' => $existing_email,
+	                ]);
+	                return;
+	            }
+
+	            if ($error_code === 'invite_required') {
+	                $invite_url = '';
+	                if (is_array($error_data) && isset($error_data['invite_url'])) {
+	                    $invite_url = esc_url_raw((string) $error_data['invite_url']);
+	                }
+
+	                wp_send_json_error([
+	                    'message' => $result->get_error_message(),
+	                    'code' => 'invite_required',
+	                    'invite_url' => $invite_url,
+	                ]);
+	                return;
+	            }
+
+	            wp_send_json_error([
+	                'message' => $result->get_error_message(),
+	                'code' => is_string($error_code) ? strtolower($error_code) : '',
+	            ]);
 	            return;
 	        }
 

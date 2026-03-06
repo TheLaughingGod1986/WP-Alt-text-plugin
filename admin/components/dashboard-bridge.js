@@ -78,14 +78,25 @@
                     plan = 'growth';
                 }
 
+                const usage = {
+                    used: usageStats.used || 0,
+                    limit: usageStats.limit || (plan === 'free' ? 50 : plan === 'growth' ? 1000 : 10000),
+                    remaining: usageStats.remaining || 0,
+                    resetDate: usageStats.reset_date || usageStats.resetDate || '',
+                    plan: usageStats.plan || plan
+                };
+                // Ensure handleRegenerateAll / handleGenerateMissing can read usage when out of credits
+                if (typeof window !== 'undefined') {
+                    window.BBAI_DASH = window.BBAI_DASH || {};
+                    window.BBAI_DASH.usage = usage;
+                    window.BBAI_DASH.initialUsage = usage;
+                    if (window.BBAI) {
+                        window.BBAI.usage = usage;
+                    }
+                }
                 return {
                     plan,
-                    usageStats: {
-                        used: usageStats.used || 0,
-                        limit: usageStats.limit || (plan === 'free' ? 50 : plan === 'growth' ? 1000 : 10000),
-                        remaining: usageStats.remaining || 0,
-                        resetDate: usageStats.reset_date || usageStats.resetDate || ''
-                    },
+                    usageStats: usage,
                     stats: {
                         total: stats.total || 0,
                         with_alt: stats.with_alt || stats.withAlt || 0,
@@ -121,6 +132,12 @@
             }
             if (typeof window.bbaiApp !== 'undefined' && typeof window.bbaiApp.showModal === 'function') {
                 window.bbaiApp.showModal();
+                return;
+            }
+            // Fallback: trigger upgrade modal via DOM
+            const upgradeBtn = document.querySelector('[data-action="show-upgrade-modal"]');
+            if (upgradeBtn) {
+                upgradeBtn.click();
             }
         }
 

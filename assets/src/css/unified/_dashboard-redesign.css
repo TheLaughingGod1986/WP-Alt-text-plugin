@@ -11,7 +11,7 @@
     display: grid;
     grid-template-columns: 1fr;
     gap: 24px;
-    margin-bottom: 24px;
+    margin-bottom: 18px;
 }
 
 @media (min-width: 1024px) {
@@ -22,17 +22,84 @@
 }
 
 /* ============================================
+   STATUS SUMMARY (TOP)
+   ============================================ */
+
+.bbai-dashboard-status-summary {
+    display: block;
+    padding: 26px 28px 22px;
+    margin: 0 0 18px;
+    border-radius: 20px;
+    border: 1px solid #dbe3ef;
+    background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.06);
+}
+
+.bbai-dashboard-status-summary__title {
+    margin: 0 0 10px;
+    color: #0f172a;
+    font-size: 50px;
+    line-height: 1.18;
+    font-weight: 700;
+}
+
+.bbai-dashboard-status-summary__subtitle {
+    margin: 0;
+    color: #334155;
+    font-size: 20px;
+    line-height: 1.5;
+}
+
+.bbai-dashboard-status-summary__divider {
+    margin: 16px 0 14px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.bbai-dashboard-status-summary__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.bbai-dashboard-status-summary__credits {
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #475569;
+    font-size: 17px;
+    line-height: 1.45;
+    font-weight: 500;
+}
+
+.bbai-dashboard-status-summary__button {
+    min-width: 230px;
+    min-height: 52px;
+    border-radius: 18px !important;
+    font-size: 34px;
+    font-weight: 700 !important;
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.28);
+}
+
+.bbai-dashboard-status-summary__button--upgrade {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important;
+    border-color: #0284c7 !important;
+}
+
+/* ============================================
    USAGE CARD (White Card)
    ============================================ */
 
 .bbai-usage-card-redesign {
-    border-radius: 24px;
+    border-radius: 20px;
     background: #ffffff;
     padding: 24px;
-    box-shadow: 0 4px 35px rgba(0, 0, 0, 0.07);
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 8px 30px rgba(15, 23, 42, 0.05);
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 18px;
 }
 
 /* Badge - FREE badge with purple gradient */
@@ -75,8 +142,8 @@
 
 .bbai-usage-card-redesign .bbai-circular-progress-container {
     position: relative;
-    height: 160px;
-    width: 160px;
+    height: 224px;
+    width: 224px;
     margin: 0 auto;
 }
 
@@ -104,7 +171,7 @@
 }
 
 .bbai-usage-card-redesign .bbai-circular-progress-percent {
-    font-size: 40px;
+    font-size: 50px;
     font-weight: 700;
     color: #111827;
     line-height: 1;
@@ -129,25 +196,21 @@
     line-height: 1.6;
     color: #374151;
     margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
 }
 
-.bbai-usage-card-redesign .bbai-usage-count strong {
+.bbai-usage-card-redesign .bbai-usage-count-main {
     font-weight: 600;
 }
 
-/* Linear Progress Bar */
-.bbai-usage-card-redesign .bbai-linear-progress {
-    height: 6px;
-    overflow: hidden;
-    border-radius: 9999px;
-    background: #f3f4f6;
-}
-
-.bbai-usage-card-redesign .bbai-linear-progress-fill {
-    height: 100%;
-    border-radius: 9999px;
-    background: linear-gradient(to right, #3B82F6, #60A5FA);
-    transition: width 0.5s ease-out;
+.bbai-usage-card-redesign .bbai-usage-count-sub {
+    font-size: 13px;
+    line-height: 1.4;
+    color: #6b7280;
+    font-weight: 500;
 }
 
 /* ============================================
@@ -195,6 +258,14 @@
     margin: 0;
 }
 
+.bbai-usage-card-redesign .bbai-usage-social-proof {
+    text-align: center;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #6b7280;
+    margin: 0;
+}
+
 /* Upgrade CTA Button */
 .bbai-usage-card-redesign .bbai-upgrade-cta-green {
     width: 100%;
@@ -237,12 +308,23 @@
     padding-top: 24px;
 }
 
+.bbai-usage-card-redesign .bbai-action-item {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+}
+
+.bbai-usage-card-redesign .bbai-action-item .bbai-action-btn {
+    width: 100%;
+}
+
 .bbai-usage-card-redesign .bbai-action-btn {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    border-radius: 9999px;
+    border-radius: 999px;
     padding: 12px 16px;
     font-size: 14px;
     font-weight: 600;
@@ -310,6 +392,26 @@
     pointer-events: none !important;
 }
 
+.bbai-usage-card-redesign .bbai-action-btn-tertiary {
+    background: #f8fafc;
+    color: #334155;
+    border: 1px solid #d6dde8;
+    box-shadow: none;
+    text-decoration: none;
+}
+
+.bbai-usage-card-redesign .bbai-action-btn-tertiary:hover {
+    background: #f1f5f9;
+    border-color: #c8d3e2;
+    color: #1e293b;
+    transform: translateY(-1px);
+}
+
+.bbai-usage-card-redesign .bbai-action-btn-tertiary:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+}
+
 /* Stats Tiles */
 .bbai-usage-card-redesign .bbai-stats-tiles {
     display: grid;
@@ -362,7 +464,7 @@
    ============================================ */
 
 .bbai-upgrade-growth-card {
-    border-radius: 24px;
+    border-radius: 20px;
     background: linear-gradient(to bottom right, #3C84FF, #54A8FF, #7CDDFF);
     padding: 24px;
     box-shadow: 0 4px 35px rgba(0, 0, 0, 0.07);
@@ -435,6 +537,19 @@
     margin: 0;
 }
 
+.bbai-upgrade-growth-card .bbai-upgrade-usage-context,
+.bbai-upgrade-growth-card .bbai-upgrade-unlock-context {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.bbai-upgrade-growth-card .bbai-upgrade-unlock-context {
+    font-weight: 600;
+    color: #ffffff;
+}
+
 /* Benefit List */
 .bbai-upgrade-growth-card .bbai-benefits-list {
     list-style: none;
@@ -481,6 +596,64 @@
     flex-direction: column;
     gap: 12px;
     padding-top: 8px;
+    margin-top: auto;
+}
+
+.bbai-upgrade-growth-card .bbai-upgrade-recommend-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    align-self: flex-start;
+    margin: 0 0 2px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: #ffffff;
+    font-size: 12px;
+    line-height: 1.3;
+    font-weight: 600;
+}
+
+.bbai-dashboard-kpi-row {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* Out-of-credits CTAs are intentionally non-interactive and clearly locked. */
+.bbai-usage-card-redesign .bbai-action-btn.is-locked,
+.bbai-usage-card-redesign .bbai-action-btn.is-locked[aria-disabled="true"] {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+    opacity: 0.75 !important;
+    filter: saturate(0.12);
+}
+
+.bbai-usage-card-redesign .bbai-action-btn.is-locked.is-locked--hard {
+    background: #e5e7eb !important;
+    color: #6b7280 !important;
+    border-color: #d1d5db !important;
+    box-shadow: none !important;
+}
+
+.bbai-usage-card-redesign .bbai-action-btn.is-locked.is-locked--soft {
+    background: #e5e7eb !important;
+    color: #6b7280 !important;
+    border-color: #d1d5db !important;
+    box-shadow: none !important;
+}
+
+.bbai-usage-card-redesign .bbai-action-btn.is-locked:hover,
+.bbai-usage-card-redesign .bbai-action-btn.is-locked:focus-visible {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* True no-op disabled state for \"nothing to generate\" (not lock-upgrade). */
+.bbai-usage-card-redesign .bbai-action-btn.disabled[aria-disabled="true"] {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
 }
 
 /* Primary CTA Button */
@@ -522,6 +695,87 @@
     margin: 0;
 }
 
+.bbai-upgrade-growth-card .bbai-cta-subtext {
+    margin: -4px 0 0;
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.bbai-upgrade-growth-card .bbai-cta-microcopy-line {
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.22);
+    margin: 2px auto 0;
+    width: 72%;
+}
+
+/* KPI row matching screenshot split layout */
+.bbai-dashboard-kpi-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+    margin-top: 18px;
+}
+
+.bbai-dashboard-kpi-card {
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    padding: 18px;
+}
+
+.bbai-dashboard-kpi-split {
+    display: grid;
+    grid-template-columns: 1fr 1px 1fr;
+    gap: 14px;
+    align-items: stretch;
+}
+
+.bbai-dashboard-kpi-divider {
+    background: #e2e8f0;
+}
+
+.bbai-dashboard-kpi-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 188px;
+    text-align: center;
+    gap: 8px;
+}
+
+.bbai-dashboard-kpi-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: #eef2f9;
+    color: #3b82f6;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bbai-dashboard-kpi-value {
+    font-size: 54px;
+    line-height: 1.05;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.bbai-dashboard-kpi-value span {
+    font-size: 24px;
+    font-weight: 500;
+}
+
+.bbai-dashboard-kpi-label {
+    font-size: 15px;
+    color: #475569;
+}
+
 /* Compare Plans Link */
 .bbai-upgrade-growth-card .bbai-compare-link {
     display: block;
@@ -544,6 +798,199 @@
 }
 
 /* ============================================
+   DASHBOARD STATE LAYOUT (DEDUPED)
+   ============================================ */
+
+.bbai-dashboard-shell #bbai-dashboard-main {
+    display: grid;
+    gap: 16px;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-action-bar {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid #dbe3ef;
+    background: #f8fbff;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-action-bar__metrics {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+    flex: 1;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-action-bar__headline {
+    margin: 0;
+    color: #0f172a;
+    font-size: 14px;
+    line-height: 1.35;
+    font-weight: 700;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-action-bar__meta {
+    margin: 0;
+    color: #334155;
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-action-bar__meta strong {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-action-bar__cta {
+    min-width: 230px;
+    min-height: 42px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.25;
+    padding: 10px 14px;
+    border-radius: 10px;
+    overflow-wrap: anywhere;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-action-bar__cta--upgrade {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    border-color: #0284c7;
+}
+
+.bbai-dashboard-shell .bbai-main-content-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: 16px;
+}
+
+.bbai-dashboard-shell .bbai-main-content-grid__work {
+    display: grid;
+    gap: 14px;
+    align-content: start;
+}
+
+.bbai-dashboard-shell .bbai-status-card,
+.bbai-dashboard-shell .bbai-actions-card {
+    gap: 14px;
+}
+
+.bbai-dashboard-shell .bbai-actions-card .bbai-action-buttons-grid {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.bbai-dashboard-shell .bbai-actions-card .bbai-action-btn {
+    white-space: normal;
+    line-height: 1.25;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+.bbai-dashboard-shell .bbai-actions-card .bbai-actions-card-helper {
+    margin: -2px 0 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #64748b;
+}
+
+.bbai-dashboard-shell .bbai-actions-card .bbai-action-btn.disabled[aria-disabled="true"] {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+}
+
+.bbai-dashboard-shell .bbai-status-card .bbai-usage-count {
+    font-size: 14px;
+}
+
+.bbai-dashboard-shell .bbai-status-card .bbai-circular-progress-label {
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.bbai-dashboard-shell .bbai-upgrade-growth-card {
+    gap: 16px;
+}
+
+.bbai-dashboard-shell .bbai-upgrade-growth-card .bbai-cta-primary {
+    white-space: normal;
+    line-height: 1.25;
+    min-height: 46px;
+    padding: 12px 16px;
+    overflow-wrap: anywhere;
+}
+
+.bbai-dashboard-shell .bbai-upgrade-compare-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    padding: 10px 0 2px;
+}
+
+.bbai-dashboard-shell .bbai-upgrade-compare-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    align-items: center;
+    text-align: center;
+}
+
+.bbai-dashboard-shell .bbai-upgrade-compare-item span {
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 11px;
+    line-height: 1.2;
+}
+
+.bbai-dashboard-shell .bbai-upgrade-compare-item strong {
+    color: #ffffff;
+    font-size: 13px;
+    line-height: 1.2;
+    font-weight: 700;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-stat-card {
+    border: 1px solid var(--bbai-border);
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: var(--bbai-shadow-xs);
+    padding: 18px 16px;
+    text-align: center;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-stat-card__value {
+    margin: 0 0 6px;
+    color: #0f172a;
+    font-size: 34px;
+    line-height: 1.1;
+    font-weight: 700;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-stat-card__value span {
+    font-size: 22px;
+    font-weight: 500;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-stat-card__value--activity {
+    font-size: 28px;
+    line-height: 1.2;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-stat-card__title {
+    margin: 0;
+    color: #475569;
+    font-size: 14px;
+    line-height: 1.3;
+}
+
+/* ============================================
    RESPONSIVE
    ============================================ */
 
@@ -557,14 +1004,86 @@
         padding: 20px;
         gap: 20px;
     }
+
+    .bbai-dashboard-status-summary {
+        padding: 18px;
+    }
+
+    .bbai-dashboard-status-summary__title {
+        font-size: 38px;
+    }
+
+    .bbai-dashboard-status-summary__subtitle {
+        font-size: 17px;
+    }
+
+    .bbai-dashboard-status-summary__meta {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .bbai-dashboard-status-summary__button {
+        width: 100%;
+        min-width: 0;
+        font-size: 20px;
+    }
+
+    .bbai-dashboard-kpi-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .bbai-dashboard-shell .bbai-main-content-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .bbai-dashboard-shell .bbai-dashboard-stats-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 640px) {
+    .bbai-usage-card-redesign .bbai-circular-progress-container {
+        height: 196px;
+        width: 196px;
+    }
+
     .bbai-usage-card-redesign .bbai-action-buttons-grid {
         grid-template-columns: 1fr;
     }
 
     .bbai-usage-card-redesign .bbai-stats-tiles {
+        grid-template-columns: 1fr;
+    }
+
+    .bbai-dashboard-kpi-split {
+        grid-template-columns: 1fr;
+    }
+
+    .bbai-dashboard-kpi-divider {
+        height: 1px;
+    }
+
+    .bbai-dashboard-kpi-item {
+        min-height: 150px;
+    }
+
+    .bbai-dashboard-shell .bbai-dashboard-action-bar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .bbai-dashboard-shell .bbai-dashboard-action-bar__metrics {
+        width: 100%;
+        gap: 4px;
+    }
+
+    .bbai-dashboard-shell .bbai-dashboard-action-bar__cta {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .bbai-dashboard-shell .bbai-upgrade-compare-row,
+    .bbai-dashboard-shell .bbai-dashboard-stats-row {
         grid-template-columns: 1fr;
     }
 }
@@ -679,4 +1198,10 @@
     background: #cfd8e3 !important;
     color: #1e293b !important;
     border-color: #b9c5d4 !important;
+}
+
+/* Shared usage banner removed globally */
+.bbai-shared-usage-banner,
+[data-bbai-shared-banner="1"] {
+    display: none !important;
 }

@@ -970,23 +970,6 @@ body.media_page_bbai #wpbody-content { overflow-x: hidden; }
     color: var(--bbai-text);
 }
 
-/* Linear Progress Bar */
-.bbai-usage-linear-progress {
-    width: 100%;
-    height: 8px;
-    background: #e5e7eb;
-    border-radius: 4px;
-    overflow: hidden;
-    margin: var(--bbai-space-2) 0 var(--bbai-space-4) 0;
-}
-
-.bbai-usage-linear-progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #10B981 0%, #059669 100%);
-    border-radius: 4px;
-    transition: width 0.5s ease;
-}
-
 /* Progress Ring */
 .bbai-usage-ring {
     position: relative;
@@ -8085,21 +8068,6 @@ h1.bbai-heading {
     font-weight: 600;
 }
 
-/* Linear Progress Bar */
-.bbai-usage-card-redesign .bbai-linear-progress {
-    height: 6px;
-    overflow: hidden;
-    border-radius: 9999px;
-    background: #f3f4f6;
-}
-
-.bbai-usage-card-redesign .bbai-linear-progress-fill {
-    height: 100%;
-    border-radius: 9999px;
-    background: linear-gradient(to right, #3B82F6, #60A5FA);
-    transition: width 0.5s ease-out;
-}
-
 /* Reset Date */
 .bbai-usage-card-redesign .bbai-reset-date {
     text-align: center;
@@ -15109,111 +15077,215 @@ button.bbai-logged-out__btn-primary:focus-visible {
     opacity: 0.6 !important;
 }
 
-/* Limit reached dashboard state */
-.bbai-limit-state-root {
-    margin: 0 0 24px;
-}
+/* 8h. Dashboard hierarchy refinement (March 2026) */
+.bbai-dashboard-overview{margin-bottom:18px}
+.bbai-dashboard-status-summary{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 20px;margin:0 0 18px;border-radius:16px;border:1px solid #dbeafe;background:linear-gradient(180deg,#f5f9ff 0%,#eef6ff 100%)}
+.bbai-dashboard-status-summary__content{min-width:0}
+.bbai-dashboard-status-summary__title{margin:0 0 6px;color:#0f172a;font-size:30px;line-height:1.18;font-weight:700}
+.bbai-dashboard-status-summary__subtitle{margin:0 0 4px;color:#334155;font-size:15px;line-height:1.5}
+.bbai-dashboard-status-summary__credits{margin:0;display:inline-flex;align-items:center;gap:8px;color:#475569;font-size:13px;line-height:1.45;font-weight:500}
+.bbai-dashboard-status-summary__button{min-width:220px;min-height:44px}
+.bbai-dashboard-status-summary__button--upgrade{background:linear-gradient(135deg,#0ea5e9 0%,#0284c7 100%) !important;border-color:#0284c7 !important}
+.bbai-usage-card-redesign .bbai-circular-progress-container{height:188px;width:188px}
+.bbai-usage-card-redesign .bbai-circular-progress-percent{font-size:44px}
+.bbai-upgrade-growth-card .bbai-cta-section{margin-top:auto}
+.bbai-dashboard-kpi-row{margin-top:0;margin-bottom:0}
+.bbai-usage-card-redesign .bbai-action-btn.is-locked,.bbai-usage-card-redesign .bbai-action-btn.is-locked[aria-disabled="true"]{pointer-events:auto !important;cursor:pointer !important;opacity:.72 !important;filter:saturate(.15)}
+.bbai-usage-card-redesign .bbai-action-btn.is-locked:hover,.bbai-usage-card-redesign .bbai-action-btn.is-locked:focus-visible{transform:none !important;box-shadow:none !important}
+.bbai-usage-card-redesign .bbai-action-btn.disabled[aria-disabled="true"]{pointer-events:none !important;cursor:not-allowed !important}
+@media (max-width:1023px){.bbai-dashboard-status-summary{flex-direction:column;align-items:flex-start}.bbai-dashboard-status-summary__button{width:100%;min-width:0}}
 
-.bbai-limit-state-root[hidden] {
-    display: none !important;
-}
+/* 8i. Dashboard visual alignment (March 2026) */
+.bbai-dashboard-overview{margin-bottom:18px}
+.bbai-dashboard-status-summary{display:block;padding:26px 28px 22px;margin:0 0 18px;border-radius:20px;border:1px solid #dbe3ef;background:linear-gradient(180deg,#ffffff 0%,#f8faff 100%);box-shadow:0 8px 32px rgba(15,23,42,.06)}
+.bbai-dashboard-status-summary__title{margin:0 0 10px;color:#0f172a;font-size:50px;line-height:1.18;font-weight:700}
+.bbai-dashboard-status-summary__subtitle{margin:0;color:#334155;font-size:20px;line-height:1.5}
+.bbai-dashboard-status-summary__divider{margin:16px 0 14px;border-top:1px solid #e2e8f0}
+.bbai-dashboard-status-summary__meta{display:flex;align-items:center;justify-content:space-between;gap:18px}
+.bbai-dashboard-status-summary__credits{margin:0;display:inline-flex;align-items:center;gap:8px;color:#475569;font-size:17px;line-height:1.45;font-weight:500}
+.bbai-dashboard-status-summary__button{min-width:230px;min-height:52px;border-radius:18px !important;font-size:34px;font-weight:700 !important;box-shadow:0 8px 24px rgba(37,99,235,.28)}
+.bbai-dashboard-status-summary__button--upgrade{background:linear-gradient(135deg,#0ea5e9 0%,#0284c7 100%) !important;border-color:#0284c7 !important}
+.bbai-usage-card-redesign{border-radius:20px;background:#fff;padding:24px;border:1px solid #e2e8f0;box-shadow:0 8px 30px rgba(15,23,42,.05);gap:18px}
+.bbai-usage-card-redesign .bbai-circular-progress-container{height:170px;width:170px}
+.bbai-usage-card-redesign .bbai-circular-progress-percent{font-size:54px}
+.bbai-usage-card-redesign .bbai-action-btn{border-radius:999px}
+.bbai-upgrade-growth-card{border-radius:20px}
+.bbai-upgrade-growth-card .bbai-cta-microcopy-line{height:6px;border-radius:999px;background:rgba(255,255,255,.22);margin:2px auto 0;width:72%}
+.bbai-usage-card-redesign .bbai-action-btn.is-locked,.bbai-usage-card-redesign .bbai-action-btn.is-locked[aria-disabled="true"]{pointer-events:auto !important;cursor:pointer !important}
+.bbai-usage-card-redesign .bbai-action-btn.is-locked.is-locked--hard{opacity:1 !important;background:#e5e7eb !important;color:#6b7280 !important;border-color:#d1d5db !important;box-shadow:none !important}
+.bbai-usage-card-redesign .bbai-action-btn.is-locked.is-locked--soft{opacity:1 !important;filter:none;box-shadow:0 4px 12px rgba(245,158,11,.35) !important}
+.bbai-usage-card-redesign .bbai-action-btn.is-locked:hover,.bbai-usage-card-redesign .bbai-action-btn.is-locked:focus-visible{transform:none !important}
+.bbai-usage-card-redesign .bbai-action-btn.disabled[aria-disabled="true"]{pointer-events:none !important;cursor:not-allowed !important}
+.bbai-dashboard-kpi-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-top:18px}
+.bbai-dashboard-kpi-card{border-radius:16px;border:1px solid #e2e8f0;background:#fff;box-shadow:0 8px 24px rgba(15,23,42,.04);padding:18px}
+.bbai-dashboard-kpi-split{display:grid;grid-template-columns:1fr 1px 1fr;gap:14px;align-items:stretch}
+.bbai-dashboard-kpi-divider{background:#e2e8f0}
+.bbai-dashboard-kpi-item{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:188px;text-align:center;gap:8px}
+.bbai-dashboard-kpi-icon{width:56px;height:56px;border-radius:14px;background:#eef2f9;color:#3b82f6;display:inline-flex;align-items:center;justify-content:center}
+.bbai-dashboard-kpi-value{font-size:54px;line-height:1.05;font-weight:700;color:#0f172a}
+.bbai-dashboard-kpi-value span{font-size:24px;font-weight:500}
+.bbai-dashboard-kpi-label{font-size:15px;color:#475569}
+@media (max-width:1023px){.bbai-dashboard-status-summary{padding:18px}.bbai-dashboard-status-summary__title{font-size:38px}.bbai-dashboard-status-summary__subtitle{font-size:17px}.bbai-dashboard-status-summary__meta{flex-direction:column;align-items:flex-start}.bbai-dashboard-status-summary__button{width:100%;min-width:0;font-size:20px}.bbai-dashboard-kpi-grid{grid-template-columns:1fr}}
+@media (max-width:640px){.bbai-dashboard-kpi-split{grid-template-columns:1fr}.bbai-dashboard-kpi-divider{height:1px}.bbai-dashboard-kpi-item{min-height:150px}}
 
-.bbai-limit-state-card {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 20px;
-    border-radius: 16px;
-    border: 1px solid #dbe3ee;
-    background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
-}
+/* 8j. Upgrade card conversion context (March 2026) */
+.bbai-upgrade-growth-card .bbai-upgrade-usage-context,.bbai-upgrade-growth-card .bbai-upgrade-unlock-context{margin:0;font-size:14px;line-height:1.45;color:rgba(255,255,255,.95)}
+.bbai-upgrade-growth-card .bbai-upgrade-unlock-context{font-weight:600;color:#fff}
+.bbai-upgrade-growth-card .bbai-upgrade-recommend-badge{display:inline-flex;align-items:center;justify-content:center;width:fit-content;align-self:flex-start;margin:0 0 2px;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);color:#fff;font-size:12px;line-height:1.3;font-weight:600}
 
-.bbai-limit-state-title {
-    margin: 0;
-    color: #0f172a;
-    font-size: 22px;
-    line-height: 1.25;
-    font-weight: 700;
-}
+/* 8k. Dashboard state-layout dedupe + overflow fixes (March 2026) */
+.bbai-dashboard-shell #bbai-dashboard-main{display:grid;gap:16px}
+.bbai-dashboard-shell .bbai-quota-banner{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;border-radius:12px;border:1px solid #dbe3ef;background:#f8fbff}
+.bbai-dashboard-shell .bbai-quota-banner__content{min-width:0}
+.bbai-dashboard-shell .bbai-quota-banner__title{margin:0;color:#0f172a;font-size:14px;line-height:1.35;font-weight:700}
+.bbai-dashboard-shell .bbai-quota-banner__meta{margin:2px 0 0;display:inline-flex;align-items:center;gap:8px;color:#475569;font-size:12px;line-height:1.4}
+.bbai-dashboard-shell .bbai-quota-banner__actions{display:inline-flex;align-items:center;gap:10px;flex-shrink:0}
+.bbai-dashboard-shell .bbai-quota-banner__dismiss{border:0;background:transparent;color:#64748b;font-size:20px;line-height:1;cursor:pointer;padding:0 2px}
+.bbai-dashboard-shell .bbai-quota-banner__upgrade{min-height:34px;padding:8px 12px;font-size:12px;border-radius:10px}
+.bbai-dashboard-shell .bbai-primary-action-card{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px;border:1px solid var(--bbai-border);border-radius:14px;background:#fff;box-shadow:var(--bbai-shadow-xs)}
+.bbai-dashboard-shell .bbai-primary-action-card__text{min-width:0}
+.bbai-dashboard-shell .bbai-primary-action-card__title{margin:0;color:#0f172a;font-size:22px;line-height:1.3;font-weight:700}
+.bbai-dashboard-shell .bbai-primary-action-card__subtitle{margin:6px 0 0;color:#475569;font-size:14px;line-height:1.45}
+.bbai-dashboard-shell .bbai-primary-action-card__button{min-width:230px;min-height:44px;white-space:normal;text-align:center;line-height:1.25;padding:10px 14px;border-radius:12px;overflow-wrap:anywhere}
+.bbai-dashboard-shell .bbai-primary-action-card__button.is-locked{opacity:.8;cursor:pointer}
+.bbai-dashboard-shell .bbai-progress-upgrade-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.bbai-dashboard-shell .bbai-progress-card{gap:16px}
+.bbai-dashboard-shell .bbai-progress-card .bbai-upgrade-cta-green{white-space:normal;text-align:center;line-height:1.2;min-height:46px;padding:12px 14px}
+.bbai-dashboard-shell .bbai-upgrade-growth-card{gap:16px}
+.bbai-dashboard-shell .bbai-upgrade-growth-card .bbai-cta-primary{white-space:normal;line-height:1.25;min-height:46px;padding:12px 16px;overflow-wrap:anywhere}
+.bbai-dashboard-shell .bbai-upgrade-compare-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px 0 2px}
+.bbai-dashboard-shell .bbai-upgrade-compare-item{display:flex;flex-direction:column;gap:3px;align-items:center;text-align:center}
+.bbai-dashboard-shell .bbai-upgrade-compare-item span{color:rgba(255,255,255,.75);font-size:11px;line-height:1.2}
+.bbai-dashboard-shell .bbai-upgrade-compare-item strong{color:#fff;font-size:13px;line-height:1.2;font-weight:700}
+.bbai-dashboard-shell .bbai-dashboard-stats-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.bbai-dashboard-shell .bbai-dashboard-stat-card{border:1px solid var(--bbai-border);border-radius:14px;background:#fff;box-shadow:var(--bbai-shadow-xs);padding:18px 16px;text-align:center}
+.bbai-dashboard-shell .bbai-dashboard-stat-card__value{margin:0 0 6px;color:#0f172a;font-size:34px;line-height:1.1;font-weight:700}
+.bbai-dashboard-shell .bbai-dashboard-stat-card__value span{font-size:22px;font-weight:500}
+.bbai-dashboard-shell .bbai-dashboard-stat-card__value--activity{font-size:28px;line-height:1.2}
+.bbai-dashboard-shell .bbai-dashboard-stat-card__title{margin:0;color:#475569;font-size:14px;line-height:1.3}
+@media (max-width:1023px){.bbai-dashboard-shell .bbai-progress-upgrade-grid{grid-template-columns:1fr}.bbai-dashboard-shell .bbai-dashboard-stats-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){.bbai-dashboard-shell .bbai-quota-banner{flex-direction:column;align-items:flex-start}.bbai-dashboard-shell .bbai-quota-banner__actions{width:100%;justify-content:space-between}.bbai-dashboard-shell .bbai-primary-action-card{flex-direction:column;align-items:stretch}.bbai-dashboard-shell .bbai-primary-action-card__button{width:100%;min-width:0}.bbai-dashboard-shell .bbai-upgrade-compare-row,.bbai-dashboard-shell .bbai-dashboard-stats-row{grid-template-columns:1fr}}
 
-.bbai-limit-state-subtitle {
-    margin: 0;
-    color: #475569;
-    font-size: 15px;
-    line-height: 1.5;
-}
+/* Dashboard Simplified Layout (2026-03-05) */
+.bbai-dashboard-shell .bbai-dashboard-action-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 16px;border-radius:12px;border:1px solid #dbe3ef;background:#f8fbff}
+.bbai-dashboard-shell .bbai-dashboard-action-bar__metrics{display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px;min-width:0}
+.bbai-dashboard-shell .bbai-dashboard-action-bar__metric{margin:0;display:inline-flex;align-items:center;gap:6px;color:#334155;font-size:13px;line-height:1.35}
+.bbai-dashboard-shell .bbai-dashboard-action-bar__metric strong{color:#0f172a;font-weight:700}
+.bbai-dashboard-shell .bbai-dashboard-action-bar__cta{min-width:230px;min-height:42px;white-space:normal;text-align:center;line-height:1.25;padding:10px 14px;border-radius:10px;overflow-wrap:anywhere}
+.bbai-dashboard-shell .bbai-dashboard-action-bar__cta--upgrade{background:linear-gradient(135deg,#0ea5e9 0%,#0284c7 100%);border-color:#0284c7}
+.bbai-dashboard-shell .bbai-main-content-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:16px}
+.bbai-dashboard-shell .bbai-main-content-grid__work{display:grid;gap:14px;align-content:start}
+.bbai-dashboard-shell .bbai-status-card,.bbai-dashboard-shell .bbai-actions-card{gap:14px}
+.bbai-dashboard-shell .bbai-actions-card .bbai-action-buttons-grid{border-top:0;padding-top:0}
+.bbai-dashboard-shell .bbai-actions-card .bbai-action-btn{white-space:normal;line-height:1.25;text-align:center;overflow-wrap:anywhere}
+.bbai-dashboard-shell .bbai-actions-card .bbai-action-btn.disabled[aria-disabled="true"]{pointer-events:none !important;cursor:not-allowed !important}
+.bbai-dashboard-shell .bbai-status-card .bbai-usage-count{font-size:14px}
+.bbai-dashboard-shell .bbai-status-card .bbai-circular-progress-label{text-transform:none;letter-spacing:0}
+@media (max-width:1023px){.bbai-dashboard-shell .bbai-main-content-grid{grid-template-columns:1fr}}
+@media (max-width:640px){.bbai-dashboard-shell .bbai-dashboard-action-bar{flex-direction:column;align-items:flex-start}.bbai-dashboard-shell .bbai-dashboard-action-bar__metrics{width:100%;gap:8px}.bbai-dashboard-shell .bbai-dashboard-action-bar__cta{width:100%;min-width:0}}
 
-.bbai-limit-state-next {
-    margin-top: 14px;
-    padding: 14px 16px;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    background: #ffffff;
-}
+/* Donut size tweak (2026-03-05) */
+.bbai-usage-card-redesign .bbai-circular-progress-container{height:210px;width:210px}
+@media (max-width:640px){.bbai-usage-card-redesign .bbai-circular-progress-container{height:186px;width:186px}}
 
-.bbai-limit-state-next-title {
-    margin: 0 0 10px;
-    color: #1e293b;
-    font-size: 14px;
-    line-height: 1.4;
-    font-weight: 600;
-}
+/* Locked upgrade modal overlay fix (2026-03-05) */
+.bbai-locked-upgrade-modal{position:fixed;inset:0;z-index:100000;display:none;align-items:center;justify-content:center;padding:var(--bbai-space-4)}
+.bbai-locked-upgrade-modal.is-visible{display:flex}
+.bbai-locked-upgrade-modal__backdrop{position:absolute;inset:0;background:rgba(15,23,42,.56);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+.bbai-locked-upgrade-modal__panel{position:relative;z-index:1;width:min(560px,92vw);border-radius:var(--bbai-radius-xl);border:1px solid var(--bbai-border);background:var(--bbai-bg);box-shadow:var(--bbai-shadow-modal);padding:var(--bbai-space-6)}
+.bbai-locked-upgrade-modal__title{margin:0 0 var(--bbai-space-2);color:var(--bbai-text);font-size:var(--bbai-text-2xl);line-height:1.25}
+.bbai-locked-upgrade-modal__body{margin:0 0 var(--bbai-space-3);color:var(--bbai-text-muted);font-size:var(--bbai-text-base);line-height:1.5}
+.bbai-locked-upgrade-modal__actions{display:flex;gap:var(--bbai-space-3);margin-top:var(--bbai-space-4)}
+.bbai-locked-upgrade-modal__actions .bbai-btn{flex:1;justify-content:center}
+.bbai-locked-upgrade-modal__link{margin-top:var(--bbai-space-3);padding:0;border:0;background:transparent;color:var(--bbai-info-dark);text-decoration:underline;cursor:pointer;font-size:var(--bbai-text-sm)}
+.bbai-locked-upgrade-modal__close{position:absolute;top:var(--bbai-space-3);right:var(--bbai-space-3);width:34px;height:34px;border:0;border-radius:var(--bbai-radius-full);background:transparent;color:var(--bbai-text-muted);cursor:pointer;font-size:22px;line-height:1}
+.bbai-locked-upgrade-modal__close:hover,.bbai-locked-upgrade-modal__close:focus-visible{background:var(--bbai-bg-secondary);color:var(--bbai-text)}
+@media (max-width:640px){.bbai-locked-upgrade-modal{align-items:flex-end;padding:var(--bbai-space-3)}.bbai-locked-upgrade-modal__panel{width:100%;border-radius:var(--bbai-radius-xl) var(--bbai-radius-xl) 0 0;padding:var(--bbai-space-5)}.bbai-locked-upgrade-modal__actions{flex-direction:column}}
 
-.bbai-limit-state-loading,
-.bbai-limit-state-empty {
-    margin: 0;
-    color: #64748b;
-    font-size: 13px;
-}
+/* Donut padding tweak (2026-03-05 v2) */
+.bbai-usage-card-redesign .bbai-circular-progress-container{height:224px;width:224px}
+.bbai-usage-card-redesign .bbai-circular-progress-percent{font-size:50px}
+@media (max-width:640px){.bbai-usage-card-redesign .bbai-circular-progress-container{height:196px;width:196px}}
 
-.bbai-limit-state-preview-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
+/* Final clarity polish (2026-03-05) */
+.bbai-usage-card-redesign .bbai-usage-count{display:flex;flex-direction:column;align-items:center;gap:2px}
+.bbai-usage-card-redesign .bbai-usage-count-main{font-weight:600}
+.bbai-usage-card-redesign .bbai-usage-count-sub{font-size:13px;line-height:1.4;color:#6b7280;font-weight:500}
+.bbai-usage-card-redesign .bbai-action-item{display:flex;flex-direction:column;align-items:stretch;gap:6px}
+.bbai-usage-card-redesign .bbai-action-item .bbai-action-btn{width:100%}
+.bbai-usage-card-redesign .bbai-usage-social-proof{margin:0;text-align:center;font-size:13px;line-height:1.6;color:#6b7280}
 
-.bbai-limit-state-preview-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-height: 32px;
-}
+/* Final polish overrides (2026-03-05) */
+.bbai-usage-card-redesign .bbai-action-btn.is-locked,
+.bbai-usage-card-redesign .bbai-action-btn.is-locked[aria-disabled="true"]{pointer-events:none !important;cursor:not-allowed !important;opacity:.75 !important;filter:saturate(.12) !important}
+.bbai-usage-card-redesign .bbai-action-btn.is-locked.is-locked--hard,
+.bbai-usage-card-redesign .bbai-action-btn.is-locked.is-locked--soft{background:#e5e7eb !important;color:#6b7280 !important;border-color:#d1d5db !important;box-shadow:none !important}
+.bbai-usage-card-redesign .bbai-action-btn.is-locked:hover,
+.bbai-usage-card-redesign .bbai-action-btn.is-locked:focus-visible{transform:none !important;box-shadow:none !important}
 
-.bbai-limit-state-preview-thumb {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    object-fit: cover;
-    border: 1px solid #dbe3ee;
-    flex-shrink: 0;
-}
+/* Dashboard banner copy/progress polish (2026-03-05) */
+.bbai-dashboard-shell .bbai-dashboard-action-bar{align-items:stretch}
+.bbai-dashboard-shell .bbai-dashboard-action-bar__metrics{display:grid;gap:4px;min-width:0;flex:1}
+.bbai-dashboard-shell .bbai-dashboard-action-bar__headline{margin:0;color:#0f172a;font-size:14px;line-height:1.35;font-weight:700}
+.bbai-dashboard-shell .bbai-dashboard-action-bar__meta{margin:0;color:#334155;font-size:13px;line-height:1.35}
+.bbai-dashboard-shell .bbai-dashboard-action-bar__meta strong{color:#0f172a;font-weight:600}
+@media (max-width:640px){.bbai-dashboard-shell .bbai-dashboard-action-bar__metrics{width:100%;gap:4px}}
 
-.bbai-limit-state-preview-name {
-    color: #334155;
-    font-size: 13px;
-    line-height: 1.35;
-    font-weight: 500;
-    word-break: break-word;
-}
+/* Dashboard copy polish (2026-03-05 v2) */
+.bbai-dashboard-shell .bbai-actions-card .bbai-actions-card-helper{margin:-2px 0 0;font-size:13px;line-height:1.45;color:#64748b}
+.bbai-usage-card-redesign .bbai-action-btn-tertiary{background:#f8fafc;color:#334155;border:1px solid #d6dde8;box-shadow:none;text-decoration:none}
+.bbai-usage-card-redesign .bbai-action-btn-tertiary:hover{background:#f1f5f9;border-color:#c8d3e2;color:#1e293b;transform:translateY(-1px)}
+.bbai-usage-card-redesign .bbai-action-btn-tertiary:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(14,165,233,.2)}
+.bbai-upgrade-growth-card .bbai-cta-subtext{margin:-4px 0 0;text-align:center;font-size:12px;line-height:1.45;color:rgba(255,255,255,.82)}
 
-.bbai-upgrade-required-action {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-    opacity: 1 !important;
-    background: #e2e8f0 !important;
-    color: #334155 !important;
-    border-color: #cbd5e1 !important;
-    box-shadow: none !important;
-    transform: none !important;
-}
+/* ALT Library UX polish (2026-03-06) */
+.bbai-quality-badge--good{background:#e6f7ee;color:#1b8a5a}
+.bbai-quality-badge--fair{background:#fff5d6;color:#a26d00}
+.bbai-quality-badge--poor{background:#fdeaea;color:#c02b2b}
+[data-theme="dark"] .bbai-quality-badge--good,.bbai-dark-mode .bbai-quality-badge--good{background:rgba(27,138,90,.22);color:#9de7c3}
+[data-theme="dark"] .bbai-quality-badge--fair,.bbai-dark-mode .bbai-quality-badge--fair{background:rgba(162,109,0,.26);color:#ffd782}
+[data-theme="dark"] .bbai-quality-badge--poor,.bbai-dark-mode .bbai-quality-badge--poor{background:rgba(192,43,43,.25);color:#ff9a9a}
+.bbai-library-row:hover{background:#f7f9fc;box-shadow:inset 2px 0 0 rgba(59,130,246,.35)}
+.bbai-library-thumbnail-button{display:inline-flex;align-items:center;justify-content:center;padding:0;border:0;background:transparent;cursor:pointer}
+.bbai-library-thumbnail-button:focus-visible{outline:2px solid var(--bbai-primary);outline-offset:2px;border-radius:var(--bbai-radius)}
+.bbai-library-actions .bbai-link-sm{opacity:.82;transition:opacity var(--bbai-transition-fast) var(--bbai-ease-out)}
+.bbai-library-row:hover .bbai-library-actions .bbai-link-sm,.bbai-library-actions .bbai-link-sm:focus-visible{opacity:1}
+.bbai-library-cell--alt-text.bbai-library-cell--editing{min-width:320px}
+.bbai-library-inline-edit{display:flex;flex-direction:column;gap:var(--bbai-space-2)}
+.bbai-library-inline-edit__textarea{width:100%;min-height:92px;border:1px solid var(--bbai-border);border-radius:var(--bbai-radius);padding:var(--bbai-space-3);font-family:inherit;font-size:var(--bbai-text-sm);line-height:1.45;color:var(--bbai-text);resize:vertical}
+.bbai-library-inline-edit__textarea:focus{outline:none;border-color:var(--bbai-primary);box-shadow:var(--bbai-shadow-focus)}
+.bbai-library-inline-edit__actions{display:flex;align-items:center;gap:var(--bbai-space-2)}
+.bbai-library-inline-edit__error{min-height:16px;margin:0;font-size:var(--bbai-text-xs);color:var(--bbai-error)}
+.bbai-library-batch-actions{border:1px solid var(--bbai-border);border-radius:var(--bbai-radius-lg);background:var(--bbai-bg-secondary);padding:var(--bbai-space-3) var(--bbai-space-4)}
+.bbai-library-batch-actions__label{font-size:var(--bbai-text-sm);font-weight:var(--bbai-font-semibold);color:var(--bbai-text)}
+.bbai-library-batch-actions #bbai-batch-regenerate:disabled{opacity:.6}
+.bbai-library-preview-modal{position:fixed;inset:0;z-index:var(--bbai-z-modal);display:none}
+.bbai-library-preview-modal.is-visible{display:flex;align-items:center;justify-content:center;padding:var(--bbai-space-4)}
+.bbai-library-preview-modal__backdrop{position:absolute;inset:0;background:rgba(2,6,23,.52)}
+.bbai-library-preview-modal__dialog{position:relative;width:min(700px,100%);max-height:92vh;overflow-y:auto;border-radius:18px;background:var(--bbai-bg);box-shadow:var(--bbai-shadow-modal);padding:var(--bbai-space-5);display:flex;flex-direction:column;gap:var(--bbai-space-4)}
+.bbai-library-preview-modal__close{position:absolute;top:var(--bbai-space-3);right:var(--bbai-space-3);border:0;background:transparent;font-size:28px;line-height:1;color:var(--bbai-text-muted);cursor:pointer}
+.bbai-library-preview-modal__close:hover{color:var(--bbai-text)}
+.bbai-library-preview-modal__title{margin:0;font-size:var(--bbai-text-xl);font-weight:var(--bbai-font-semibold);color:var(--bbai-text)}
+.bbai-library-preview-modal__image{width:100%;max-height:min(52vh,460px);object-fit:contain;border-radius:12px;border:1px solid var(--bbai-border);background:var(--bbai-bg-secondary)}
+.bbai-library-preview-modal__meta-label{margin:0 0 var(--bbai-space-1) 0;font-size:var(--bbai-text-xs);font-weight:var(--bbai-font-semibold);letter-spacing:.04em;text-transform:uppercase;color:var(--bbai-text-muted)}
+.bbai-library-preview-modal__alt{margin:0;font-size:var(--bbai-text-sm);color:var(--bbai-text);line-height:1.6}
+.bbai-library-preview-modal__quality{margin:var(--bbai-space-2) 0 0 0;font-size:var(--bbai-text-sm);color:var(--bbai-text-muted)}
+.bbai-library-preview-modal__quality-value{color:var(--bbai-text);font-weight:var(--bbai-font-semibold)}
+.bbai-library-preview-modal__actions{display:flex;align-items:center;gap:var(--bbai-space-2);justify-content:flex-end;flex-wrap:wrap}
+@media (max-width:768px){.bbai-library-cell--alt-text.bbai-library-cell--editing{min-width:0}.bbai-library-preview-modal__dialog{width:100%;padding:var(--bbai-space-4)}.bbai-library-preview-modal__actions{justify-content:stretch}.bbai-library-preview-modal__actions .bbai-btn{width:100%}}
 
-.bbai-upgrade-required-action:hover,
-.bbai-upgrade-required-action:focus-visible {
-    background: #cfd8e3 !important;
-    color: #1e293b !important;
-    border-color: #b9c5d4 !important;
-}
+/* Shared top usage banner (Dashboard + all main tabs) */
+.bbai-shared-usage-banner{display:grid;gap:10px;padding:20px 24px;border-radius:16px;border:1px solid #93c5fd;background:linear-gradient(135deg,#eff6ff 0%,#e0f2fe 100%)}
+.bbai-shared-usage-banner .bbai-shared-usage-banner__top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.bbai-shared-usage-banner .bbai-dashboard-action-bar__metrics{display:grid;gap:4px;min-width:0;flex:1}
+.bbai-shared-usage-banner .bbai-dashboard-action-bar__headline{margin:0;font-size:17px;line-height:1.35;font-weight:700;color:#1e3a8a}
+.bbai-shared-usage-banner .bbai-dashboard-action-bar__meta{margin:0;font-size:14px;line-height:1.4;color:#1e40af}
+.bbai-shared-usage-banner .bbai-dashboard-action-bar__meta strong{font-weight:700;color:#1e3a8a}
+.bbai-shared-usage-banner .bbai-dashboard-action-bar__cta{min-width:320px;min-height:44px;border:0;border-radius:14px;background:linear-gradient(135deg,#10b981 0%,#059669 100%);box-shadow:0 8px 18px rgba(5,150,105,.28);color:#fff;white-space:normal;line-height:1.25;display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;text-decoration:none}
+@media (max-width:900px){.bbai-shared-usage-banner .bbai-shared-usage-banner__top{flex-direction:column;align-items:flex-start}.bbai-shared-usage-banner .bbai-dashboard-action-bar__cta{width:100%;min-width:0}}
+
+/* ALT Library action/helper polish */
+.bbai-optimization-actions-helper{margin:0 0 var(--bbai-space-3);font-size:13px;line-height:1.45;color:#64748b}
+.bbai-library-preview-modal__filename{margin:-6px 0 0 0;font-size:13px;line-height:1.4;color:var(--bbai-text-muted)}
+
+.bbai-shared-usage-banner,[data-bbai-shared-banner="1"],.bbai-quota-exhausted-banner{display:none!important}

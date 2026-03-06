@@ -147,10 +147,7 @@ class Debug_Log {
             return $cached;
         }
 
-        $level = '';
-        if (!empty($args['level']) && in_array($args['level'], self::allowed_levels(), true)) {
-            $level = $args['level'];
-        }
+        $level = self::normalize_filter_level( $args['level'] ?? '' );
 
         $like = '';
         if (!empty($args['search'])) {
@@ -327,6 +324,227 @@ class Debug_Log {
         return $result;
     }
 
+    /**
+     * Return the most recent warning/error entries for support triage.
+     *
+     * @param int $limit Maximum number of rows.
+     * @return array<int, array<string, mixed>>
+     */
+    public static function get_recent_errors($limit = 5) {
+        if (!self::table_exists()) {
+            return [];
+        }
+
+        $limit = max(1, min(20, absint($limit)));
+        $cache_suffix = 'recent_errors_' . $limit;
+        $cached = BBAI_Cache::get('logs', $cache_suffix);
+        if (false !== $cached && is_array($cached)) {
+            return $cached;
+        }
+
+        global $wpdb;
+        $table = esc_sql(self::table());
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                "SELECT * FROM `{$table}` WHERE level IN (%s, %s) ORDER BY created_at DESC LIMIT %d",
+                'error',
+                'warning',
+                $limit
+            ),
+            ARRAY_A
+        );
+
+        $result = array_map([self::class, 'format_log'], is_array($rows) ? $rows : []);
+        BBAI_Cache::set('logs', $cache_suffix, $result, BBAI_Cache::DEFAULT_TTL);
+        return $result;
+    }
+
+    /**
+     * Return high-level API connection signals for the Debug page status card.
+     *
+     * @return array<string, mixed>
+     */
+    public static function get_api_service_status() {
+        if (!self::table_exists()) {
+            return self::default_api_service_status();
+        }
+
+        $cache_suffix = 'api_service_status';
+        $cached = BBAI_Cache::get('logs', $cache_suffix);
+        if (false !== $cached && is_array($cached)) {
+            return $cached;
+        }
+
+        global $wpdb;
+        $table = esc_sql(self::table());
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $latest_api = $wpdb->get_row(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                "SELECT level, message, created_at FROM `{$table}` WHERE source = %s ORDER BY created_at DESC LIMIT 1",
+                'api'
+            ),
+            ARRAY_A
+        );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $latest_api_error = $wpdb->get_row(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                "SELECT message, created_at FROM `{$table}` WHERE source = %s AND level = %s ORDER BY created_at DESC LIMIT 1",
+                'api',
+                'error'
+            ),
+            ARRAY_A
+        );
+
+        $connection_status = 'failed';
+        if (is_array($latest_api) && !empty($latest_api)) {
+            $level = strtolower((string) ($latest_api['level'] ?? ''));
+            $message = strtolower((string) ($latest_api['message'] ?? ''));
+            $looks_failed = $level === 'error'
+                || preg_match('/failed|error|timeout|unreachable|refused|invalid|not found|denied|cannot/i', $message);
+            $connection_status = $looks_failed ? 'failed' : 'connected';
+        }
+
+        $last_request_ts = is_array($latest_api) && !empty($latest_api['created_at']) ? (string) $latest_api['created_at'] : null;
+        $last_error_ts = is_array($latest_api_error) && !empty($latest_api_error['created_at']) ? (string) $latest_api_error['created_at'] : null;
+        $average_response_time = self::resolve_average_response_time_ms(100);
+
+        $result = [
+            'connection_status' => $connection_status,
+            'last_api_request' => $last_request_ts ? mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $last_request_ts) : null,
+            'last_api_request_timestamp' => $last_request_ts ? sanitize_text_field($last_request_ts) : null,
+            'average_response_time_ms' => $average_response_time,
+            'last_api_error' => $last_error_ts ? mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $last_error_ts) : null,
+            'last_api_error_timestamp' => $last_error_ts ? sanitize_text_field($last_error_ts) : null,
+            'last_api_error_message' => is_array($latest_api_error) && !empty($latest_api_error['message'])
+                ? sanitize_text_field((string) $latest_api_error['message'])
+                : null,
+        ];
+
+        BBAI_Cache::set('logs', $cache_suffix, $result, BBAI_Cache::DEFAULT_TTL);
+        return $result;
+    }
+
+    /**
+     * Fallback API status payload for sites with no logs table/data.
+     *
+     * @return array<string, mixed>
+     */
+    private static function default_api_service_status() {
+        return [
+            'connection_status' => 'failed',
+            'last_api_request' => null,
+            'last_api_request_timestamp' => null,
+            'average_response_time_ms' => null,
+            'last_api_error' => null,
+            'last_api_error_timestamp' => null,
+            'last_api_error_message' => null,
+        ];
+    }
+
+    /**
+     * Calculate average request time in milliseconds using recent log context payloads.
+     *
+     * @param int $sample_size Number of recent rows to inspect.
+     * @return int|null
+     */
+    private static function resolve_average_response_time_ms($sample_size = 100) {
+        if (!self::table_exists()) {
+            return null;
+        }
+
+        $sample_size = max(10, min(200, absint($sample_size)));
+        global $wpdb;
+        $table = esc_sql(self::table());
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                "SELECT context FROM `{$table}` WHERE context IS NOT NULL AND context <> '' ORDER BY created_at DESC LIMIT %d",
+                $sample_size
+            ),
+            ARRAY_A
+        );
+
+        if (!is_array($rows) || empty($rows)) {
+            return null;
+        }
+
+        $timings = [];
+        foreach ($rows as $row) {
+            $context = self::decode_context_data($row['context'] ?? '');
+            if (!is_array($context) || empty($context)) {
+                continue;
+            }
+
+            $timing = self::extract_context_timing_ms($context);
+            if ($timing !== null) {
+                $timings[] = $timing;
+            }
+        }
+
+        if (empty($timings)) {
+            return null;
+        }
+
+        return (int) round(array_sum($timings) / count($timings));
+    }
+
+    /**
+     * Extract one timing candidate (in milliseconds) from a context payload.
+     *
+     * @param array<string, mixed> $context Context payload.
+     * @return float|null
+     */
+    private static function extract_context_timing_ms($context) {
+        $candidates = [];
+        $timing_keys = [
+            'generation_time_ms',
+            'response_time_ms',
+            'duration_ms',
+            'latency_ms',
+            'elapsed_ms',
+            'response_time',
+            'duration',
+        ];
+
+        foreach ($timing_keys as $key) {
+            if (isset($context[$key]) && is_numeric($context[$key])) {
+                $candidates[] = (float) $context[$key];
+            }
+        }
+
+        if (isset($context['meta']) && is_array($context['meta'])) {
+            foreach ($timing_keys as $key) {
+                if (isset($context['meta'][$key]) && is_numeric($context['meta'][$key])) {
+                    $candidates[] = (float) $context['meta'][$key];
+                }
+            }
+        }
+
+        if (isset($context['timing']) && is_array($context['timing'])) {
+            foreach (['ms', 'duration_ms', 'response_time_ms', 'elapsed_ms'] as $key) {
+                if (isset($context['timing'][$key]) && is_numeric($context['timing'][$key])) {
+                    $candidates[] = (float) $context['timing'][$key];
+                }
+            }
+        }
+
+        foreach ($candidates as $value) {
+            if ($value > 0 && $value < 600000) {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
     public static function clear_logs() {
         if (!self::table_exists()) {
             return;
@@ -374,6 +592,31 @@ class Debug_Log {
     private static function normalize_level($level) {
         $level = strtolower($level ?: 'info');
         return in_array($level, self::allowed_levels(), true) ? $level : 'info';
+    }
+
+    /**
+     * Normalize level filter values to allowed DB values or empty string.
+     *
+     * @param mixed $level Level filter input.
+     * @return string
+     */
+    private static function normalize_filter_level( $level ) {
+        if ( ! is_scalar( $level ) ) {
+            return '';
+        }
+
+        $normalized = sanitize_key( (string) $level );
+        if ( '' === $normalized || 'all' === $normalized ) {
+            return '';
+        }
+
+        if ( 'warn' === $normalized ) {
+            $normalized = 'warning';
+        } elseif ( 'err' === $normalized || 'fatal' === $normalized ) {
+            $normalized = 'error';
+        }
+
+        return in_array( $normalized, self::allowed_levels(), true ) ? $normalized : '';
     }
 
     /**
@@ -445,14 +688,7 @@ class Debug_Log {
         }
         
         // Safely decode context JSON with sanitization.
-        $context = [];
-        if ( ! empty( $row['context'] ) ) {
-            if ( ! function_exists( 'bbai_json_decode_array' ) && defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) ) {
-                require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-json.php';
-            }
-            $decoded_context = function_exists( 'bbai_json_decode_array' ) ? bbai_json_decode_array( $row['context'] ) : null;
-            $context = is_array( $decoded_context ) ? $decoded_context : [];
-        }
+        $context = self::decode_context_data($row['context'] ?? '');
 
         return [
             'id'        => intval($row['id']),
@@ -466,6 +702,25 @@ class Debug_Log {
             'timestamp' => sanitize_text_field( $row['created_at'] ),
             'context'   => $context,
         ];
+    }
+
+    /**
+     * Decode stored JSON context into an array.
+     *
+     * @param mixed $context_value Raw DB context value.
+     * @return array<string, mixed>
+     */
+    private static function decode_context_data($context_value) {
+        if (!is_string($context_value) || $context_value === '') {
+            return [];
+        }
+
+        if (!function_exists('bbai_json_decode_array') && defined('BEEPBEEP_AI_PLUGIN_DIR')) {
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-json.php';
+        }
+
+        $decoded_context = function_exists('bbai_json_decode_array') ? bbai_json_decode_array($context_value) : null;
+        return is_array($decoded_context) ? $decoded_context : [];
     }
 
     public static function table_exists() {

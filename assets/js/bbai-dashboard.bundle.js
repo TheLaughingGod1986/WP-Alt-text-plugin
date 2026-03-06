@@ -1252,10 +1252,15 @@ bbaiRunWithJQuery(function($) {
     'use strict';
 
     $(document).ready(function() {
-        // Search functionality
+        // Search functionality (debounced to avoid excessive filtering while typing)
+        var searchDebounceTimer;
         $('#bbai-library-search').on('input', function() {
-            var searchTerm = $(this).val().toLowerCase();
-            filterLibraryRows(searchTerm, getActiveFilter());
+            var $input = $(this);
+            if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(function() {
+                var searchTerm = $input.val().toLowerCase();
+                filterLibraryRows(searchTerm, getActiveFilter());
+            }, 300);
         });
 
         // Filter buttons

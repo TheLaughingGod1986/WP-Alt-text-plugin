@@ -19,299 +19,223 @@ $bbai_trial_exhausted = \BeepBeepAI\AltTextGenerator\Trial_Quota::is_exhausted()
 
 // Count images missing alt text.
 $bbai_missing_alt_count = (int) $GLOBALS['wpdb']->get_var(
-	"SELECT COUNT(*) FROM {$GLOBALS['wpdb']->posts} p
-	 LEFT JOIN {$GLOBALS['wpdb']->postmeta} pm ON p.ID = pm.post_id AND pm.meta_key = '_wp_attachment_image_alt'
-	 WHERE p.post_type = 'attachment'
-	 AND p.post_mime_type LIKE 'image/%'
-	 AND p.post_status = 'inherit'
-	 AND (pm.meta_value IS NULL OR pm.meta_value = '')"
+    "SELECT COUNT(*) FROM {$GLOBALS['wpdb']->posts} p
+     LEFT JOIN {$GLOBALS['wpdb']->postmeta} pm ON p.ID = pm.post_id AND pm.meta_key = '_wp_attachment_image_alt'
+     WHERE p.post_type = 'attachment'
+     AND p.post_mime_type LIKE 'image/%'
+     AND p.post_status = 'inherit'
+     AND (pm.meta_value IS NULL OR pm.meta_value = '')"
 ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time count for UI display.
-$bbai_missing_alt_count_display = number_format_i18n( (int) $bbai_missing_alt_count );
-$bbai_images_to_fix             = (int) min( $bbai_missing_alt_count, $bbai_trial_remaining );
-$bbai_images_to_fix_display     = number_format_i18n( $bbai_images_to_fix );
+
+$bbai_missing_alt_count_display = number_format_i18n(absint($bbai_missing_alt_count));
+$bbai_missing_alt_message = sprintf(
+    /* translators: %s: count of images missing alt text. */
+    _n(
+        'You have %s image missing alt text',
+        'You have %s images missing alt text',
+        absint($bbai_missing_alt_count),
+        'beepbeep-ai-alt-text-generator'
+    ),
+    $bbai_missing_alt_count_display
+);
+$bbai_remaining_without_alt_message = sprintf(
+    /* translators: %s: count of images still missing alt text. */
+    _n(
+        'You still have %s image without alt text.',
+        'You still have %s images without alt text.',
+        absint($bbai_missing_alt_count),
+        'beepbeep-ai-alt-text-generator'
+    ),
+    $bbai_missing_alt_count_display
+);
 
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 $bbai_page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : 'bbai';
 $bbai_current_page = $bbai_page_input ?: 'bbai';
 $bbai_fallback_url = admin_url('admin.php?page=' . $bbai_current_page);
+$bbai_library_url  = admin_url('admin.php?page=' . $bbai_current_page . '&tab=library');
 ?>
+
 <div class="bbai-logged-out" role="main" aria-labelledby="bbai-logged-out-title">
     <div class="bbai-logged-out__container">
-        <div class="bbai-logged-out__card">
+        <div class="bbai-logged-out__card bbai-ftue-card">
             <?php if ( ! $bbai_trial_exhausted ) : ?>
-            <!-- Trial banner: show remaining free generations -->
-            <div class="bbai-trial-banner" role="status" aria-live="polite">
-                <span class="bbai-trial-banner__icon" aria-hidden="true">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2L12.09 7.26L18 8.27L14 12.14L14.18 18.02L10 15.77L5.82 18.02L6 12.14L2 8.27L7.91 7.26L10 2Z" fill="currentColor"/></svg>
-                </span>
-                <span class="bbai-trial-banner__text">
-                    <?php
-                    printf(
-                        /* translators: 1: remaining count, 2: total limit */
-                        esc_html__( 'Trial: %1$d of %2$d free generations remaining', 'beepbeep-ai-alt-text-generator' ),
-                        (int) $bbai_trial_remaining,
-                        (int) $bbai_trial_limit
-                    );
-                    ?>
-                </span>
-            </div>
+                <div class="bbai-trial-banner" role="status" aria-live="polite">
+                    <span class="bbai-trial-banner__icon" aria-hidden="true">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2L12.09 7.26L18 8.27L14 12.14L14.18 18.02L10 15.77L5.82 18.02L6 12.14L2 8.27L7.91 7.26L10 2Z" fill="currentColor"/></svg>
+                    </span>
+                    <span class="bbai-trial-banner__text" id="bbai-trial-banner-text">
+                        <?php
+                        printf(
+                            /* translators: 1: remaining count, 2: total limit */
+                            esc_html__( 'Trial: %1$d of %2$d free generations remaining', 'beepbeep-ai-alt-text-generator' ),
+                            (int) $bbai_trial_remaining,
+                            (int) $bbai_trial_limit
+                        );
+                        ?>
+                    </span>
+                </div>
             <?php endif; ?>
 
             <header class="bbai-logged-out__header">
                 <h1 id="bbai-logged-out-title" class="bbai-logged-out__title">
                     <?php if ( $bbai_trial_exhausted ) : ?>
-                    <span class="bbai-logged-out__title-line">
-                        <?php esc_html_e( "You've used your free trial", 'beepbeep-ai-alt-text-generator' ); ?>
-                    </span>
+                        <?php esc_html_e('Free trial complete 🎉', 'beepbeep-ai-alt-text-generator'); ?>
                     <?php else : ?>
-                    <span class="bbai-logged-out__title-line">
-                        <?php esc_html_e('Get found in Google Images', 'beepbeep-ai-alt-text-generator'); ?>
-                    </span>
-                    <span class="bbai-logged-out__title-line">
-                        <?php esc_html_e('with complete alt text', 'beepbeep-ai-alt-text-generator'); ?>
-                    </span>
+                        <?php esc_html_e('Automatically generate alt text for your WordPress and WooCommerce images', 'beepbeep-ai-alt-text-generator'); ?>
                     <?php endif; ?>
                 </h1>
-                <?php if ( ! $bbai_trial_exhausted && $bbai_missing_alt_count > 0 ) : ?>
-                <div class="bbai-logged-out__missing-alert" role="status">
-                    <span class="bbai-logged-out__missing-badge" id="bbai-missing-badge"><?php echo esc_html( $bbai_missing_alt_count_display ); ?></span>
-                    <span class="bbai-logged-out__missing-text" id="bbai-missing-text">
-                        <?php
-                        echo esc_html(
-                            _n(
-                                'image missing alt text',
-                                'images missing alt text',
-                                absint( $bbai_missing_alt_count ),
-                                'beepbeep-ai-alt-text-generator'
-                            )
-                        );
-                        ?>
-                    </span>
-                </div>
-                <p class="bbai-logged-out__subtitle">
-                    <?php esc_html_e('Generate SEO-ready descriptions directly from WordPress.', 'beepbeep-ai-alt-text-generator'); ?>
-                </p>
+
+                <?php if ( $bbai_trial_exhausted ) : ?>
+                    <p class="bbai-logged-out__subtitle">
+                        <?php esc_html_e('You\'ve generated alt text for 10 images.', 'beepbeep-ai-alt-text-generator'); ?>
+                    </p>
+                    <p class="bbai-ftue-missing-count">
+                        <?php echo esc_html($bbai_remaining_without_alt_message); ?>
+                    </p>
                 <?php else : ?>
-                <p class="bbai-logged-out__subtitle">
-                    <?php if ( $bbai_trial_exhausted ) : ?>
-                        <?php esc_html_e('Create a free account to unlock 50 more credits per month.', 'beepbeep-ai-alt-text-generator'); ?>
-                    <?php else : ?>
-                        <?php esc_html_e('Generate SEO-ready, accessible alt text for your entire media library — directly from WordPress.', 'beepbeep-ai-alt-text-generator'); ?>
-                    <?php endif; ?>
-                </p>
+                    <p class="bbai-logged-out__subtitle">
+                        <?php esc_html_e('Optimized for WooCommerce product images and WordPress media libraries.', 'beepbeep-ai-alt-text-generator'); ?>
+                    </p>
+                    <p class="bbai-ftue-scan-status" id="bbai-scan-status" role="status" aria-live="polite">
+                        <?php esc_html_e('Scanning your media library for images missing alt text...', 'beepbeep-ai-alt-text-generator'); ?>
+                    </p>
+                    <p class="bbai-ftue-missing-count" id="bbai-missing-summary" role="status" aria-live="polite">
+                        <?php echo esc_html($bbai_missing_alt_message); ?>
+                    </p>
                 <?php endif; ?>
             </header>
 
-            <div class="bbai-logged-out__actions">
-                <?php if ( ! $bbai_trial_exhausted ) : ?>
-                <button
-                    type="button"
-                    class="bbai-logged-out__btn-primary"
-                    id="bbai-trial-generate-btn"
-                >
-                    <?php
-                    if ( $bbai_missing_alt_count > 0 ) {
-                        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- All args are esc_html()-wrapped.
-                        echo sprintf(
-                            /* translators: 1: number of images to fix, 2: remaining free generations. */
-                            esc_html__( 'Fix %1$s images free — %2$s left', 'beepbeep-ai-alt-text-generator' ),
-                            esc_html( $bbai_images_to_fix_display ),
-                            esc_html( number_format_i18n( (int) $bbai_trial_remaining ) )
-                        );
-                    } else {
-                        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- All args are esc_html()-wrapped.
-                        echo sprintf(
-                            /* translators: %s: remaining free trial generations. */
-                            esc_html__( 'Generate alt text free — %s left', 'beepbeep-ai-alt-text-generator' ),
-                            esc_html( number_format_i18n( (int) $bbai_trial_remaining ) )
-                        );
-                    }
-                    ?>
-                </button>
-                <a
-                    class="bbai-logged-out__link-secondary"
-                    href="<?php echo esc_url($bbai_fallback_url); ?>"
-                    data-action="show-auth-modal"
-                    data-auth-tab="register"
-                >
-                    <?php esc_html_e('Create free account', 'beepbeep-ai-alt-text-generator'); ?>
-                </a>
-                <?php else : ?>
-                <a
-                    class="bbai-logged-out__btn-primary"
-                    href="<?php echo esc_url($bbai_fallback_url); ?>"
-                    data-action="show-auth-modal"
-                    data-auth-tab="register"
-                >
-                    <?php esc_html_e('Create free account', 'beepbeep-ai-alt-text-generator'); ?>
-                </a>
-                <a
-                    class="bbai-logged-out__link-secondary"
-                    href="<?php echo esc_url($bbai_fallback_url); ?>"
-                    data-action="show-upgrade-modal"
-                >
-                    <?php esc_html_e('View plans', 'beepbeep-ai-alt-text-generator'); ?>
-                </a>
-                <?php endif; ?>
-            </div>
+            <?php if ( ! $bbai_trial_exhausted ) : ?>
+                <div class="bbai-ftue-actions">
+                    <button type="button" class="button button-primary button-large" id="bbai-trial-generate-btn">
+                        <?php esc_html_e('Generate alt text for 3 images (free)', 'beepbeep-ai-alt-text-generator'); ?>
+                    </button>
+                    <p class="description bbai-ftue-action-note" id="bbai-ftue-action-note">
+                        <?php esc_html_e('No account needed. Takes ~10 seconds.', 'beepbeep-ai-alt-text-generator'); ?>
+                    </p>
+                    <a
+                        class="button button-secondary"
+                        id="bbai-secondary-action"
+                        href="<?php echo esc_url($bbai_fallback_url); ?>"
+                        data-action="show-auth-modal"
+                        data-auth-tab="register"
+                    >
+                        <?php esc_html_e('Unlock 50/month (free)', 'beepbeep-ai-alt-text-generator'); ?>
+                    </a>
+                    <a
+                        id="bbai-signup-trigger"
+                        class="bbai-ftue-hidden-signup"
+                        href="<?php echo esc_url($bbai_fallback_url); ?>"
+                        data-action="show-auth-modal"
+                        data-auth-tab="register"
+                        aria-hidden="true"
+                        tabindex="-1"
+                    >
+                        <?php esc_html_e('Sign up', 'beepbeep-ai-alt-text-generator'); ?>
+                    </a>
+                </div>
+
+                <section class="bbai-ftue-progress" id="bbai-ftue-progress" hidden aria-live="polite">
+                    <div class="bbai-ftue-progress__row">
+                        <strong id="bbai-progress-label"><?php esc_html_e('Generating alt text...', 'beepbeep-ai-alt-text-generator'); ?></strong>
+                        <span id="bbai-progress-count">0 / 0</span>
+                    </div>
+                    <div class="bbai-ftue-progress__bar" aria-hidden="true">
+                        <span class="bbai-ftue-progress__fill" id="bbai-progress-fill"></span>
+                    </div>
+                    <p class="description bbai-ftue-progress__message" id="bbai-progress-message"></p>
+                </section>
+
+                <section class="bbai-ftue-instant-win" id="bbai-instant-win" hidden aria-live="polite">
+                    <h2 class="bbai-logged-out__section-title" id="bbai-instant-win-title">
+                        <?php esc_html_e('✅ Generated alt text for 3 images', 'beepbeep-ai-alt-text-generator'); ?>
+                    </h2>
+                    <ul class="bbai-ftue-instant-win__list" id="bbai-instant-win-list"></ul>
+                    <div class="bbai-ftue-instant-win__actions">
+                        <button type="button" class="button button-secondary" id="bbai-demo-generate-more-btn">
+                            <?php esc_html_e('Generate 7 more (free trial)', 'beepbeep-ai-alt-text-generator'); ?>
+                        </button>
+                        <a
+                            class="button button-primary"
+                            id="bbai-demo-unlock-btn"
+                            href="<?php echo esc_url($bbai_fallback_url); ?>"
+                            data-action="show-auth-modal"
+                            data-auth-tab="register"
+                        >
+                            <?php esc_html_e('Unlock 50/month (free)', 'beepbeep-ai-alt-text-generator'); ?>
+                        </a>
+                    </div>
+                </section>
+
+                <p class="bbai-ftue-empty-message" id="bbai-ftue-empty-message" hidden></p>
+
+                <section class="bbai-ftue-preview" aria-labelledby="bbai-preview-title">
+                    <h2 id="bbai-preview-title" class="bbai-logged-out__section-title">
+                        <?php esc_html_e('Preview', 'beepbeep-ai-alt-text-generator'); ?>
+                    </h2>
+                    <p class="bbai-ftue-preview__line">
+                        <strong><?php esc_html_e('Before:', 'beepbeep-ai-alt-text-generator'); ?></strong>
+                        <span id="bbai-preview-before"><?php esc_html_e('Scanning your media library...', 'beepbeep-ai-alt-text-generator'); ?></span>
+                    </p>
+                    <p class="bbai-ftue-preview__line">
+                        <strong><?php esc_html_e('After (generated):', 'beepbeep-ai-alt-text-generator'); ?></strong>
+                        <span id="bbai-preview-after">&quot;Red running shoes with white sole and breathable mesh upper&quot;</span>
+                    </p>
+                </section>
+            <?php else : ?>
+                <div class="bbai-ftue-actions">
+                    <a
+                        class="button button-primary button-large"
+                        href="<?php echo esc_url($bbai_fallback_url); ?>"
+                        data-action="show-auth-modal"
+                        data-auth-tab="register"
+                    >
+                        <?php esc_html_e('Unlock 50/month (free)', 'beepbeep-ai-alt-text-generator'); ?>
+                    </a>
+                    <a
+                        class="bbai-ftue-secondary-link"
+                        href="<?php echo esc_url($bbai_library_url); ?>"
+                    >
+                        <?php esc_html_e('View optimized images', 'beepbeep-ai-alt-text-generator'); ?>
+                    </a>
+                </div>
+
+                <section class="bbai-ftue-benefits" aria-label="<?php esc_attr_e('Benefits', 'beepbeep-ai-alt-text-generator'); ?>">
+                    <ul class="bbai-ftue-benefits__list">
+                        <li><?php esc_html_e('Keep product and catalog images optimized for SEO.', 'beepbeep-ai-alt-text-generator'); ?></li>
+                        <li><?php esc_html_e('Maintain accessibility coverage across your media library.', 'beepbeep-ai-alt-text-generator'); ?></li>
+                        <li><?php esc_html_e('Scale alt text updates quickly with bulk generation.', 'beepbeep-ai-alt-text-generator'); ?></li>
+                    </ul>
+                </section>
+            <?php endif; ?>
 
             <div class="bbai-logged-out__divider" aria-hidden="true"></div>
 
-            <section class="bbai-logged-out__benefits" aria-label="<?php esc_attr_e('Benefits', 'beepbeep-ai-alt-text-generator'); ?>">
-                <ul class="bbai-logged-out__benefits-list">
-                    <li class="bbai-logged-out__benefit">
-                        <span class="bbai-logged-out__benefit-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                        </span>
-                        <span class="bbai-logged-out__benefit-text">
-                            <strong><?php esc_html_e('Rank in Google Images', 'beepbeep-ai-alt-text-generator'); ?></strong>
-                            <?php esc_html_e('— descriptive alt text helps images appear in search', 'beepbeep-ai-alt-text-generator'); ?>
-                        </span>
-                    </li>
-                    <li class="bbai-logged-out__benefit">
-                        <span class="bbai-logged-out__benefit-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                        </span>
-                        <span class="bbai-logged-out__benefit-text">
-                            <strong><?php esc_html_e('Meet accessibility standards', 'beepbeep-ai-alt-text-generator'); ?></strong>
-                            <?php esc_html_e('— WCAG-compliant descriptions for screen readers', 'beepbeep-ai-alt-text-generator'); ?>
-                        </span>
-                    </li>
-                    <li class="bbai-logged-out__benefit">
-                        <span class="bbai-logged-out__benefit-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                        </span>
-                        <span class="bbai-logged-out__benefit-text">
-                            <strong><?php esc_html_e('Save hours of writing', 'beepbeep-ai-alt-text-generator'); ?></strong>
-                            <?php esc_html_e('— generate alt text in seconds, not minutes per image', 'beepbeep-ai-alt-text-generator'); ?>
-                        </span>
-                    </li>
-                </ul>
-            </section>
-
-            <?php if ( ! $bbai_trial_exhausted ) : ?>
             <section class="bbai-logged-out__how-it-works" aria-labelledby="bbai-how-it-works-title">
                 <h2 id="bbai-how-it-works-title" class="bbai-logged-out__section-title">
                     <?php esc_html_e('How it works', 'beepbeep-ai-alt-text-generator'); ?>
                 </h2>
 
-                <div class="bbai-logged-out__steps">
-                    <div class="bbai-logged-out__step">
-                        <div class="bbai-logged-out__step-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                                <rect x="4" y="5" width="16" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.6" />
-                                <path d="M8 13l2.5 3 3.5-4 4 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-                                <circle cx="9" cy="9" r="1.5" fill="currentColor" />
-                            </svg>
-                        </div>
-                        <p class="bbai-logged-out__step-title">
-                            <?php esc_html_e('Click generate', 'beepbeep-ai-alt-text-generator'); ?>
-                        </p>
-                        <p class="bbai-logged-out__step-desc">
-                            <?php esc_html_e('No account needed for your first 10', 'beepbeep-ai-alt-text-generator'); ?>
-                        </p>
-                    </div>
-
-                    <div class="bbai-logged-out__step">
-                        <div class="bbai-logged-out__step-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                                <path d="M12 2L15 8.5L22 9.5L17 14L18.5 21L12 17.5L5.5 21L7 14L2 9.5L9 8.5L12 2Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
-                            </svg>
-                        </div>
-                        <p class="bbai-logged-out__step-title">
-                            <?php esc_html_e('AI generates alt text', 'beepbeep-ai-alt-text-generator'); ?>
-                        </p>
-                        <p class="bbai-logged-out__step-desc">
-                            <?php esc_html_e('Watch as each image gets described', 'beepbeep-ai-alt-text-generator'); ?>
-                        </p>
-                    </div>
-
-                    <div class="bbai-logged-out__step">
-                        <div class="bbai-logged-out__step-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                                <rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.6" />
-                                <path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-                                <circle cx="12" cy="15" r="1.5" fill="currentColor" />
-                            </svg>
-                        </div>
-                        <p class="bbai-logged-out__step-title">
-                            <?php esc_html_e('Create account for more', 'beepbeep-ai-alt-text-generator'); ?>
-                        </p>
-                        <p class="bbai-logged-out__step-desc">
-                            <?php esc_html_e('Unlock 50/month free, including bulk generation tools', 'beepbeep-ai-alt-text-generator'); ?>
-                        </p>
-                    </div>
-                </div>
+                <ol class="bbai-ftue-steps">
+                    <li class="bbai-ftue-step">
+                        <span class="bbai-ftue-step__label"><?php esc_html_e('Step 1', 'beepbeep-ai-alt-text-generator'); ?></span>
+                        <p class="bbai-ftue-step__text"><?php esc_html_e('Scan your media library', 'beepbeep-ai-alt-text-generator'); ?></p>
+                    </li>
+                    <li class="bbai-ftue-step">
+                        <span class="bbai-ftue-step__label"><?php esc_html_e('Step 2', 'beepbeep-ai-alt-text-generator'); ?></span>
+                        <p class="bbai-ftue-step__text"><?php esc_html_e('AI generates alt text for images', 'beepbeep-ai-alt-text-generator'); ?></p>
+                    </li>
+                    <li class="bbai-ftue-step">
+                        <span class="bbai-ftue-step__label"><?php esc_html_e('Step 3', 'beepbeep-ai-alt-text-generator'); ?></span>
+                        <p class="bbai-ftue-step__text"><?php esc_html_e('Apply the alt text automatically', 'beepbeep-ai-alt-text-generator'); ?></p>
+                    </li>
+                    <li class="bbai-ftue-step">
+                        <span class="bbai-ftue-step__label"><?php esc_html_e('Step 4', 'beepbeep-ai-alt-text-generator'); ?></span>
+                        <p class="bbai-ftue-step__text"><?php esc_html_e('Create an account for bulk generation', 'beepbeep-ai-alt-text-generator'); ?></p>
+                    </li>
+                </ol>
             </section>
-            <?php else : ?>
-            <section class="bbai-logged-out__how-it-works" aria-labelledby="bbai-how-it-works-title">
-                <h2 id="bbai-how-it-works-title" class="bbai-logged-out__section-title">
-                    <?php esc_html_e('How it works', 'beepbeep-ai-alt-text-generator'); ?>
-                </h2>
-
-                <div class="bbai-logged-out__steps">
-                    <div class="bbai-logged-out__step">
-                        <div class="bbai-logged-out__step-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                                <rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.6" />
-                                <path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-                                <circle cx="12" cy="15" r="1.5" fill="currentColor" />
-                            </svg>
-                        </div>
-                        <p class="bbai-logged-out__step-title">
-                            <?php esc_html_e('Create your free account', 'beepbeep-ai-alt-text-generator'); ?>
-                        </p>
-                        <p class="bbai-logged-out__step-desc">
-                            <?php esc_html_e('No credit card required', 'beepbeep-ai-alt-text-generator'); ?>
-                        </p>
-                    </div>
-
-                    <div class="bbai-logged-out__step">
-                        <div class="bbai-logged-out__step-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                                <rect x="4" y="5" width="16" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.6" />
-                                <path d="M8 13l2.5 3 3.5-4 4 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-                                <circle cx="9" cy="9" r="1.5" fill="currentColor" />
-                            </svg>
-                        </div>
-                        <p class="bbai-logged-out__step-title">
-                            <?php esc_html_e('Generate alt text', 'beepbeep-ai-alt-text-generator'); ?>
-                        </p>
-                        <p class="bbai-logged-out__step-desc">
-                            <?php esc_html_e('Select images or process your entire library', 'beepbeep-ai-alt-text-generator'); ?>
-                        </p>
-                    </div>
-
-                    <div class="bbai-logged-out__step">
-                        <div class="bbai-logged-out__step-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                                <polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                        </div>
-                        <p class="bbai-logged-out__step-title">
-                            <?php esc_html_e('Improve SEO instantly', 'beepbeep-ai-alt-text-generator'); ?>
-                        </p>
-                        <p class="bbai-logged-out__step-desc">
-                            <?php esc_html_e('Alt text is saved directly to your images', 'beepbeep-ai-alt-text-generator'); ?>
-                        </p>
-                    </div>
-                </div>
-            </section>
-            <?php endif; ?>
-
-            <p class="bbai-logged-out__supporting-line">
-                <?php if ( $bbai_trial_exhausted ) : ?>
-                    <?php esc_html_e('Free plan includes 50 images per month with bulk generation tools. Growth includes 1,000.', 'beepbeep-ai-alt-text-generator'); ?>
-                <?php else : ?>
-                    <?php esc_html_e('Try 10 generations now, no account needed; sign up for 50/month.', 'beepbeep-ai-alt-text-generator'); ?>
-                <?php endif; ?>
-            </p>
 
             <div class="bbai-logged-out__pill" role="note">
                 <span class="bbai-logged-out__pill-icon" aria-hidden="true">
@@ -333,440 +257,680 @@ $bbai_fallback_url = admin_url('admin.php?page=' . $bbai_current_page);
     </div>
 </div>
 
-<!-- Trial Generation Modal -->
-<div id="bbai-trial-modal" class="bbai-trial-modal" role="dialog" aria-modal="true" aria-labelledby="bbai-trial-modal-title" style="display:none;">
-    <div class="bbai-trial-modal__backdrop"></div>
-    <div class="bbai-trial-modal__dialog">
-        <button type="button" class="bbai-trial-modal__close" aria-label="<?php esc_attr_e('Close', 'beepbeep-ai-alt-text-generator'); ?>">&times;</button>
-
-        <!-- Phase: Loading -->
-        <div class="bbai-trial-modal__phase" id="bbai-trial-phase-loading">
-            <div class="bbai-trial-modal__spinner"></div>
-            <p class="bbai-trial-modal__status"><?php esc_html_e('Finding images without alt text...', 'beepbeep-ai-alt-text-generator'); ?></p>
-        </div>
-
-        <!-- Phase: No images found -->
-        <div class="bbai-trial-modal__phase" id="bbai-trial-phase-empty" style="display:none;">
-            <div class="bbai-trial-modal__icon bbai-trial-modal__icon--success">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            </div>
-            <h2 class="bbai-trial-modal__title"><?php esc_html_e('All images have alt text!', 'beepbeep-ai-alt-text-generator'); ?></h2>
-            <p class="bbai-trial-modal__desc"><?php esc_html_e('Your media library is already optimized. Upload new images and we\'ll generate alt text automatically.', 'beepbeep-ai-alt-text-generator'); ?></p>
-            <button type="button" class="bbai-trial-modal__btn-primary bbai-trial-modal__close-btn"><?php esc_html_e('Got it', 'beepbeep-ai-alt-text-generator'); ?></button>
-        </div>
-
-        <!-- Phase: Generating -->
-        <div class="bbai-trial-modal__phase" id="bbai-trial-phase-generating" style="display:none;">
-            <h2 id="bbai-trial-modal-title" class="bbai-trial-modal__title"><?php esc_html_e('Generating alt text...', 'beepbeep-ai-alt-text-generator'); ?></h2>
-            <p class="bbai-trial-modal__counter"><span id="bbai-trial-done">0</span> / <span id="bbai-trial-total">0</span></p>
-            <div class="bbai-trial-modal__progress-bar">
-                <div class="bbai-trial-modal__progress-fill" id="bbai-trial-progress" style="width:0%"></div>
-            </div>
-            <div class="bbai-trial-modal__current" id="bbai-trial-current-wrap" style="display:none;">
-                <img id="bbai-trial-current-thumb" src="" alt="" class="bbai-trial-modal__thumb" />
-                <div class="bbai-trial-modal__current-info">
-                    <span class="bbai-trial-modal__current-title" id="bbai-trial-current-title"></span>
-                    <span class="bbai-trial-modal__current-status" id="bbai-trial-current-status"><?php esc_html_e('Generating...', 'beepbeep-ai-alt-text-generator'); ?></span>
-                </div>
-            </div>
-            <div class="bbai-trial-modal__results" id="bbai-trial-results"></div>
-        </div>
-
-        <!-- Phase: Complete -->
-        <div class="bbai-trial-modal__phase" id="bbai-trial-phase-complete" style="display:none;">
-            <div class="bbai-trial-modal__icon bbai-trial-modal__icon--success">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            </div>
-            <h2 class="bbai-trial-modal__title" id="bbai-trial-complete-title"></h2>
-            <p class="bbai-trial-modal__desc" id="bbai-trial-complete-desc"></p>
-            <div class="bbai-trial-modal__complete-actions">
-                <a class="bbai-trial-modal__btn-primary" href="<?php echo esc_url($bbai_fallback_url); ?>" data-action="show-auth-modal" data-auth-tab="register" id="bbai-trial-complete-signup">
-                    <?php esc_html_e('Create free account — 50/month', 'beepbeep-ai-alt-text-generator'); ?>
-                </a>
-                <button type="button" class="bbai-trial-modal__btn-secondary bbai-trial-modal__close-btn"><?php esc_html_e('Close', 'beepbeep-ai-alt-text-generator'); ?></button>
-            </div>
-        </div>
-
-        <!-- Phase: Error -->
-        <div class="bbai-trial-modal__phase" id="bbai-trial-phase-error" style="display:none;">
-            <div class="bbai-trial-modal__icon bbai-trial-modal__icon--error">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
-            </div>
-            <h2 class="bbai-trial-modal__title"><?php esc_html_e('Something went wrong', 'beepbeep-ai-alt-text-generator'); ?></h2>
-            <p class="bbai-trial-modal__desc" id="bbai-trial-error-msg"></p>
-            <button type="button" class="bbai-trial-modal__btn-primary bbai-trial-modal__close-btn"><?php esc_html_e('Close', 'beepbeep-ai-alt-text-generator'); ?></button>
-        </div>
-    </div>
-</div>
-
 <style>
-/* Missing alt text alert */
-.bbai-logged-out__missing-alert {
-    display: inline-flex;
+.bbai-ftue-card {
+    max-width: 980px;
+    margin: 24px auto;
+    padding: 32px;
+}
+
+.bbai-ftue-scan-status {
+    margin: 14px 0 6px;
+    font-size: 13px;
+    color: #646970;
+}
+
+.bbai-ftue-scan-status.is-error {
+    color: #b32d2e;
+}
+
+.bbai-ftue-missing-count {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.bbai-ftue-actions {
+    display: flex;
+    flex-direction: column;
     align-items: center;
     gap: 10px;
-    background: #fef3c7;
-    border: 1px solid #f59e0b;
-    border-radius: 24px;
-    padding: 8px 18px 8px 10px;
-    margin: 0 auto 12px;
-    font-size: 15px;
-    color: #92400e;
-    font-weight: 500;
-}
-.bbai-logged-out__missing-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 32px;
-    height: 32px;
-    padding: 0 8px;
-    background: #f59e0b;
-    color: #fff;
-    font-weight: 700;
-    font-size: 16px;
-    border-radius: 16px;
-    line-height: 1;
-}
-.bbai-logged-out__missing-text {
-    line-height: 1.3;
+    margin: 22px 0;
 }
 
-/* Trial Generation Modal */
-.bbai-trial-modal { position: fixed; inset: 0; z-index: 100100; display: flex; align-items: center; justify-content: center; }
-.bbai-trial-modal__backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.6); }
-.bbai-trial-modal__dialog { position: relative; background: #fff; border-radius: 12px; padding: 32px; max-width: 480px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
-.bbai-trial-modal__close { position: absolute; top: 12px; right: 12px; background: none; border: none; font-size: 24px; color: #94a3b8; cursor: pointer; padding: 4px 8px; line-height: 1; border-radius: 4px; }
-.bbai-trial-modal__close:hover { color: #1e293b; background: #f1f5f9; }
-.bbai-trial-modal__phase { text-align: center; }
-.bbai-trial-modal__title { font-size: 20px; font-weight: 700; color: #0f172a; margin: 0 0 8px; }
-.bbai-trial-modal__desc { font-size: 14px; color: #64748b; margin: 0 0 20px; line-height: 1.5; }
-.bbai-trial-modal__counter { font-size: 32px; font-weight: 700; color: #10b981; margin: 8px 0 16px; }
-.bbai-trial-modal__progress-bar { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-bottom: 20px; }
-.bbai-trial-modal__progress-fill { height: 100%; background: linear-gradient(90deg, #10b981, #14b8a6); border-radius: 4px; transition: width 0.4s ease; }
-.bbai-trial-modal__current { display: flex; align-items: center; gap: 12px; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 16px; text-align: left; }
-.bbai-trial-modal__thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 6px; flex-shrink: 0; border: 1px solid #e2e8f0; }
-.bbai-trial-modal__current-info { flex: 1; min-width: 0; }
-.bbai-trial-modal__current-title { display: block; font-size: 13px; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bbai-trial-modal__current-status { display: block; font-size: 12px; color: #10b981; margin-top: 2px; }
-.bbai-trial-modal__results { max-height: 200px; overflow-y: auto; }
-.bbai-trial-modal__result { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; text-align: left; }
-.bbai-trial-modal__result:last-child { border-bottom: none; }
-.bbai-trial-modal__result-thumb { width: 36px; height: 36px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
-.bbai-trial-modal__result-info { flex: 1; min-width: 0; }
-.bbai-trial-modal__result-alt { font-size: 12px; color: #475569; line-height: 1.4; margin-top: 2px; }
-.bbai-trial-modal__result-title { font-size: 12px; font-weight: 600; color: #1e293b; }
-.bbai-trial-modal__result-icon { flex-shrink: 0; width: 18px; height: 18px; margin-top: 2px; }
-.bbai-trial-modal__result-icon--ok { color: #10b981; }
-.bbai-trial-modal__result-icon--fail { color: #ef4444; }
-.bbai-trial-modal__icon { margin: 0 auto 16px; width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-.bbai-trial-modal__icon--success { background: #ecfdf5; color: #10b981; }
-.bbai-trial-modal__icon--error { background: #fef2f2; color: #ef4444; }
-.bbai-trial-modal__spinner { width: 40px; height: 40px; border: 3px solid #e2e8f0; border-top-color: #10b981; border-radius: 50%; animation: bbai-spin 0.8s linear infinite; margin: 0 auto 16px; }
-.bbai-trial-modal__status { font-size: 14px; color: #64748b; }
-@keyframes bbai-spin { to { transform: rotate(360deg); } }
-.bbai-trial-modal__btn-primary { display: inline-block; padding: 12px 24px; background: #10b981; color: #fff !important; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; transition: background 0.2s; }
-.bbai-trial-modal__btn-primary:hover { background: #059669; color: #fff !important; }
-.bbai-trial-modal__btn-secondary { display: inline-block; padding: 10px 20px; background: transparent; color: #64748b; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none; }
-.bbai-trial-modal__btn-secondary:hover { background: #f8fafc; color: #1e293b; }
-.bbai-trial-modal__complete-actions { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.bbai-ftue-actions .button {
+    min-width: 280px;
+    justify-content: center;
+}
+
+.bbai-ftue-action-note {
+    margin: 0;
+}
+
+.bbai-ftue-secondary-link {
+    font-size: 13px;
+}
+
+.bbai-ftue-hidden-signup {
+    display: none !important;
+}
+
+.bbai-ftue-progress {
+    max-width: 700px;
+    margin: 0 auto 20px;
+    padding: 12px 14px;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    background: #f6f7f7;
+}
+
+.bbai-ftue-progress__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+
+.bbai-ftue-progress__bar {
+    width: 100%;
+    height: 8px;
+    border-radius: 999px;
+    background: #dcdcde;
+    overflow: hidden;
+}
+
+.bbai-ftue-progress__fill {
+    display: block;
+    width: 0;
+    height: 100%;
+    background: #2271b1;
+    transition: width 0.2s ease;
+}
+
+.bbai-ftue-progress__message {
+    margin: 8px 0 0;
+}
+
+.bbai-ftue-instant-win {
+    max-width: 700px;
+    margin: 0 auto 20px;
+    padding: 14px;
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    background: #f0f9ff;
+}
+
+.bbai-ftue-instant-win__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bbai-ftue-instant-win__item {
+    padding: 10px 12px;
+    border: 1px solid #dbeafe;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.bbai-ftue-instant-win__filename {
+    margin: 0 0 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.bbai-ftue-instant-win__pair {
+    margin: 0;
+    font-size: 13px;
+    color: #1d2327;
+}
+
+.bbai-ftue-instant-win__pair + .bbai-ftue-instant-win__pair {
+    margin-top: 4px;
+}
+
+.bbai-ftue-instant-win__label {
+    font-weight: 600;
+}
+
+.bbai-ftue-instant-win__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.bbai-ftue-empty-message {
+    max-width: 700px;
+    margin: 0 auto 20px;
+    padding: 10px 12px;
+    border-left: 4px solid #2563eb;
+    background: #eff6ff;
+}
+
+.bbai-ftue-preview {
+    max-width: 700px;
+    margin: 0 auto 24px;
+    padding: 14px;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    background: #fff;
+}
+
+.bbai-ftue-preview__line {
+    margin: 8px 0;
+    font-size: 14px;
+    color: #1d2327;
+}
+
+.bbai-ftue-preview__generated {
+    font-style: italic;
+}
+
+.bbai-ftue-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.bbai-ftue-step {
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    background: #f6f7f7;
+    padding: 12px;
+}
+
+.bbai-ftue-step__label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #646970;
+}
+
+.bbai-ftue-step__text {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.bbai-ftue-benefits {
+    max-width: 700px;
+    margin: 0 auto 20px;
+    padding: 12px 14px;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    background: #f6f7f7;
+}
+
+.bbai-ftue-benefits__list {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.bbai-ftue-benefits__list li {
+    margin: 0 0 6px;
+    color: #1d2327;
+}
+
+.bbai-ftue-benefits__list li:last-child {
+    margin-bottom: 0;
+}
+
+@media (max-width: 782px) {
+    .bbai-ftue-card {
+        padding: 22px 16px;
+    }
+
+    .bbai-ftue-actions .button {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .bbai-ftue-steps {
+        grid-template-columns: 1fr;
+    }
+}
 </style>
 
 <script>
 (function() {
     'use strict';
 
-    var ajaxUrl = <?php echo wp_json_encode( admin_url( 'admin-ajax.php' ) ); ?>;
-    var nonce   = <?php echo wp_json_encode( wp_create_nonce( 'beepbeepai_nonce' ) ); ?>;
-    var trialRemaining  = <?php echo (int) $bbai_trial_remaining; ?>;
-    var trialLimit      = <?php echo (int) $bbai_trial_limit; ?>;
+    var i18n = <?php echo wp_json_encode([
+        'missingSingle' => __('You have %s image missing alt text', 'beepbeep-ai-alt-text-generator'),
+        'missingPlural' => __('You have %s images missing alt text', 'beepbeep-ai-alt-text-generator'),
+        'scanReady' => __('Scan complete.', 'beepbeep-ai-alt-text-generator'),
+        'scanNoMissing' => __('Scan complete. All images already have alt text.', 'beepbeep-ai-alt-text-generator'),
+        'remainingSingle' => __('You still have %s image without alt text.', 'beepbeep-ai-alt-text-generator'),
+        'remainingPlural' => __('You still have %s images without alt text.', 'beepbeep-ai-alt-text-generator'),
+        'trialCompleteHeadline' => __('Free trial complete 🎉', 'beepbeep-ai-alt-text-generator'),
+        'trialCompleteSuccess' => __('You\'ve generated alt text for 10 images.', 'beepbeep-ai-alt-text-generator'),
+        'buttonGenerate' => __('Generate alt text for 3 images (free)', 'beepbeep-ai-alt-text-generator'),
+        'buttonGenerating' => __('Generating alt text…', 'beepbeep-ai-alt-text-generator'),
+        'buttonExhausted' => __('Unlock 50/month (free)', 'beepbeep-ai-alt-text-generator'),
+        'secondaryExhausted' => __('View optimized images', 'beepbeep-ai-alt-text-generator'),
+        'bannerFormat' => __('Trial: %1$d of %2$d free generations remaining', 'beepbeep-ai-alt-text-generator'),
+        'bannerExhausted' => __('Free trial exhausted - create a free account to continue', 'beepbeep-ai-alt-text-generator'),
+        'progressStarting' => __('Starting generation…', 'beepbeep-ai-alt-text-generator'),
+        'progressDone' => __('Generation complete', 'beepbeep-ai-alt-text-generator'),
+        'instantTitleDefault' => __('✅ Generated alt text for 3 images', 'beepbeep-ai-alt-text-generator'),
+        'instantTitleFormat' => __('✅ Generated alt text for %d images', 'beepbeep-ai-alt-text-generator'),
+        'instantBefore' => __('Before', 'beepbeep-ai-alt-text-generator'),
+        'instantAfter' => __('After', 'beepbeep-ai-alt-text-generator'),
+        'beforeEmpty' => __('No alt text', 'beepbeep-ai-alt-text-generator'),
+        'moreSeven' => __('Generate 7 more (free trial)', 'beepbeep-ai-alt-text-generator'),
+        'moreDynamic' => __('Generate %d more (free trial)', 'beepbeep-ai-alt-text-generator'),
+        'unlockCta' => __('Unlock 50/month (free)', 'beepbeep-ai-alt-text-generator'),
+        'friendlyEmpty' => __('No images are currently missing alt text. Upload an image to try the demo.', 'beepbeep-ai-alt-text-generator'),
+        'friendlyUpload' => __('Upload an image', 'beepbeep-ai-alt-text-generator'),
+        'networkError' => __('Network error. Please try again.', 'beepbeep-ai-alt-text-generator'),
+    ]); ?>;
+
+    var ajaxUrl = <?php echo wp_json_encode(admin_url('admin-ajax.php')); ?>;
+    var nonce = <?php echo wp_json_encode(wp_create_nonce('beepbeepai_nonce')); ?>;
+    var signupUrl = <?php echo wp_json_encode($bbai_fallback_url); ?>;
+    var libraryUrl = <?php echo wp_json_encode($bbai_library_url); ?>;
+    var uploadUrl = <?php echo wp_json_encode(admin_url('media-new.php')); ?>;
+    var trialRemaining = <?php echo (int) $bbai_trial_remaining; ?>;
+    var trialLimit = <?php echo (int) $bbai_trial_limit; ?>;
     var missingAltCount = <?php echo (int) $bbai_missing_alt_count; ?>;
-    var lastSucceeded   = 0;
 
-    var modal       = document.getElementById('bbai-trial-modal');
-    var btn         = document.getElementById('bbai-trial-generate-btn');
-    var backdrop    = modal ? modal.querySelector('.bbai-trial-modal__backdrop') : null;
-    var closeBtn    = modal ? modal.querySelector('.bbai-trial-modal__close') : null;
-    var closeBtns   = modal ? modal.querySelectorAll('.bbai-trial-modal__close-btn') : [];
+    var btn = document.getElementById('bbai-trial-generate-btn');
+    if (!btn) {
+        return;
+    }
 
-    if (!btn || !modal) return;
+    var titleEl = document.getElementById('bbai-logged-out-title');
+    var subtitleEl = document.querySelector('.bbai-logged-out__subtitle');
+    var scanStatusEl = document.getElementById('bbai-scan-status');
+    var missingSummaryEl = document.getElementById('bbai-missing-summary');
+    var previewBeforeEl = document.getElementById('bbai-preview-before');
+    var previewAfterEl = document.getElementById('bbai-preview-after');
+    var bannerTextEl = document.getElementById('bbai-trial-banner-text');
+    var actionNoteEl = document.getElementById('bbai-ftue-action-note');
+    var secondaryActionEl = document.getElementById('bbai-secondary-action');
 
-    function showPhase(id) {
-        var phases = modal.querySelectorAll('.bbai-trial-modal__phase');
-        for (var i = 0; i < phases.length; i++) {
-            phases[i].style.display = 'none';
+    var progressEl = document.getElementById('bbai-ftue-progress');
+    var progressLabelEl = document.getElementById('bbai-progress-label');
+    var progressCountEl = document.getElementById('bbai-progress-count');
+    var progressFillEl = document.getElementById('bbai-progress-fill');
+    var progressMessageEl = document.getElementById('bbai-progress-message');
+
+    var instantWinEl = document.getElementById('bbai-instant-win');
+    var instantTitleEl = document.getElementById('bbai-instant-win-title');
+    var instantListEl = document.getElementById('bbai-instant-win-list');
+    var generateMoreBtn = document.getElementById('bbai-demo-generate-more-btn');
+    var unlockBtn = document.getElementById('bbai-demo-unlock-btn');
+    var emptyMessageEl = document.getElementById('bbai-ftue-empty-message');
+
+    var requestInFlight = false;
+    var trialComplete = false;
+
+    function formatNumber(value) {
+        var parsed = parseInt(value, 10);
+        return isNaN(parsed) || parsed < 0 ? '0' : parsed.toLocaleString();
+    }
+
+    function simpleSprintf(format) {
+        var args = Array.prototype.slice.call(arguments, 1);
+        var i = 0;
+        return String(format).replace(/%[0-9]*\$?[sd]/g, function() {
+            return typeof args[i] === 'undefined' ? '' : String(args[i++]);
+        });
+    }
+
+    function clampText(text, maxLength) {
+        var value = String(text || '').trim();
+        if (value.length <= maxLength) {
+            return value;
         }
-        var target = document.getElementById(id);
-        if (target) target.style.display = 'block';
+        return value.slice(0, maxLength - 1) + '…';
     }
 
-    function openModal() {
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        showPhase('bbai-trial-phase-loading');
-        fetchMissing();
-    }
-
-    function closeModal() {
-        modal.style.display = 'none';
-        document.body.style.overflow = '';
-    }
-
-    btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        openModal();
-    });
-
-    if (backdrop) backdrop.addEventListener('click', closeModal);
-    if (closeBtn) closeBtn.addEventListener('click', closeModal);
-    for (var i = 0; i < closeBtns.length; i++) {
-        closeBtns[i].addEventListener('click', closeModal);
-    }
-
-    // Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && modal.style.display !== 'none') {
-            closeModal();
-        }
-    });
-
-    function fetchMissing() {
-        var formData = new FormData();
-        formData.append('action', 'bbai_trial_get_missing');
-        formData.append('nonce', nonce);
-
-        fetch(ajaxUrl, { method: 'POST', body: formData, credentials: 'same-origin' })
-            .then(function(r) { return r.json(); })
-            .then(function(resp) {
-                if (!resp.success) {
-                    if (resp.data && resp.data.code === 'bbai_trial_exhausted') {
-                        showExhausted();
-                    } else {
-                        showError(resp.data && resp.data.message ? resp.data.message : 'Failed to find images.');
-                    }
-                    return;
-                }
-                var images = resp.data.images || [];
-                if (images.length === 0) {
-                    showPhase('bbai-trial-phase-empty');
-                    return;
-                }
-                startGenerating(images, resp.data.remaining);
-            })
-            .catch(function(err) {
-                showError(err.message || 'Network error.');
-            });
-    }
-
-    function startGenerating(images, remaining) {
-        showPhase('bbai-trial-phase-generating');
-
-        var total = images.length;
-        var done = 0;
-        var succeeded = 0;
-        var failed = 0;
-
-        document.getElementById('bbai-trial-total').textContent = total;
-        document.getElementById('bbai-trial-done').textContent = '0';
-        document.getElementById('bbai-trial-progress').style.width = '0%';
-        document.getElementById('bbai-trial-results').innerHTML = '';
-
-        function processNext(index) {
-            if (index >= total) {
-                showComplete(succeeded, failed, total);
-                return;
-            }
-
-            var img = images[index];
-            var wrap = document.getElementById('bbai-trial-current-wrap');
-            var thumb = document.getElementById('bbai-trial-current-thumb');
-            var title = document.getElementById('bbai-trial-current-title');
-            var status = document.getElementById('bbai-trial-current-status');
-
-            wrap.style.display = 'flex';
-            if (img.thumb) {
-                thumb.src = img.thumb;
-                thumb.style.display = 'block';
-            } else {
-                thumb.style.display = 'none';
-            }
-            title.textContent = img.title || ('Image #' + img.id);
-            status.textContent = 'Generating...';
-            status.style.color = '#10b981';
-
-            var formData = new FormData();
-            formData.append('action', 'bbai_trial_generate_single');
-            formData.append('nonce', nonce);
-            formData.append('attachment_id', img.id);
-
-            fetch(ajaxUrl, { method: 'POST', body: formData, credentials: 'same-origin' })
-                .then(function(r) { return r.json(); })
-                .then(function(resp) {
-                    done++;
-                    var pct = Math.round((done / total) * 100);
-                    document.getElementById('bbai-trial-done').textContent = done;
-                    document.getElementById('bbai-trial-progress').style.width = pct + '%';
-
-                    if (resp.success) {
-                        succeeded++;
-                        addResult(img, resp.data.alt_text, true);
-                        trialRemaining = resp.data.remaining;
-                        updateBanner(resp.data.remaining);
-                    } else {
-                        failed++;
-                        var isExhausted = resp.data && resp.data.code === 'bbai_trial_exhausted';
-                        addResult(img, resp.data && resp.data.message ? resp.data.message : 'Failed', false);
-                        if (isExhausted) {
-                            // Trial exhausted mid-generation — show complete with what we have.
-                            showComplete(succeeded, failed, done);
-                            return;
-                        }
-                    }
-
-                    processNext(index + 1);
-                })
-                .catch(function(err) {
-                    done++;
-                    failed++;
-                    addResult(img, err.message || 'Network error', false);
-                    document.getElementById('bbai-trial-done').textContent = done;
-                    document.getElementById('bbai-trial-progress').style.width = Math.round((done / total) * 100) + '%';
-                    processNext(index + 1);
-                });
-        }
-
-        processNext(0);
-    }
-
-    function addResult(img, text, success) {
-        var container = document.getElementById('bbai-trial-results');
+    function escapeHtml(text) {
         var div = document.createElement('div');
-        div.className = 'bbai-trial-modal__result';
-
-        var thumbHtml = img.thumb
-            ? '<img class="bbai-trial-modal__result-thumb" src="' + escHtml(img.thumb) + '" alt="" />'
-            : '';
-
-        var iconClass = success ? 'bbai-trial-modal__result-icon--ok' : 'bbai-trial-modal__result-icon--fail';
-        var iconSvg = success
-            ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>'
-            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line></svg>';
-
-        div.innerHTML = '<span class="bbai-trial-modal__result-icon ' + iconClass + '">' + iconSvg + '</span>'
-            + thumbHtml
-            + '<div class="bbai-trial-modal__result-info">'
-            + '<span class="bbai-trial-modal__result-title">' + escHtml(img.title || ('Image #' + img.id)) + '</span>'
-            + '<span class="bbai-trial-modal__result-alt">' + escHtml(text) + '</span>'
-            + '</div>';
-
-        container.insertBefore(div, container.firstChild);
-    }
-
-    function showComplete(succeeded, failed, total) {
-        lastSucceeded = succeeded;
-        showPhase('bbai-trial-phase-complete');
-        var titleEl = document.getElementById('bbai-trial-complete-title');
-        var descEl  = document.getElementById('bbai-trial-complete-desc');
-
-        if (succeeded > 0) {
-            titleEl.textContent = succeeded + ' image' + (succeeded !== 1 ? 's' : '') + ' updated!';
-        } else {
-            titleEl.textContent = 'Generation complete';
-        }
-
-        if (trialRemaining <= 0) {
-            descEl.textContent = "You've used all " + trialLimit + " free generations. Create a free account to unlock 50 more per month.";
-        } else {
-            descEl.textContent = succeeded + ' of ' + total + ' images processed. ' + trialRemaining + ' free generation' + (trialRemaining !== 1 ? 's' : '') + ' remaining.';
-        }
-
-        // Update the main page button and banner.
-        updateButtonState();
-    }
-
-    function showExhausted() {
-        showPhase('bbai-trial-phase-complete');
-        var titleEl = document.getElementById('bbai-trial-complete-title');
-        var descEl  = document.getElementById('bbai-trial-complete-desc');
-        titleEl.textContent = "You've used your free trial";
-        descEl.textContent = 'Create a free account to unlock 50 more credits per month.';
-        updateButtonState();
-    }
-
-    function showError(msg) {
-        showPhase('bbai-trial-phase-error');
-        document.getElementById('bbai-trial-error-msg').textContent = msg;
-    }
-
-    function updateBanner(remaining) {
-        var bannerText = document.querySelector('.bbai-trial-banner__text');
-        if (bannerText) {
-            bannerText.textContent = 'Trial: ' + remaining + ' of ' + trialLimit + ' free generations remaining';
-        }
-    }
-
-    function updateButtonState() {
-        if (trialRemaining <= 0 && btn) {
-            btn.textContent = <?php echo wp_json_encode( __( "You've used your free trial", 'beepbeep-ai-alt-text-generator' ) ); ?>;
-            btn.disabled = true;
-            btn.style.opacity = '0.6';
-            btn.style.cursor = 'not-allowed';
-
-            // Update banner to exhausted state.
-            var banner = document.querySelector('.bbai-trial-banner');
-            if (banner) {
-                banner.classList.add('bbai-trial-banner--exhausted');
-                var bannerText = banner.querySelector('.bbai-trial-banner__text');
-                if (bannerText) {
-                    bannerText.textContent = 'Free trial exhausted \u2014 create a free account to continue';
-                }
-            }
-
-            // Update the page title and subtitle.
-            var titleEl = document.getElementById('bbai-logged-out-title');
-            if (titleEl) {
-                titleEl.innerHTML = '<span class="bbai-logged-out__title-line">' + escHtml(<?php echo wp_json_encode( __( "You've used your free trial", 'beepbeep-ai-alt-text-generator' ) ); ?>) + '</span>';
-            }
-            var subtitleEl = document.querySelector('.bbai-logged-out__subtitle');
-            if (subtitleEl) {
-                subtitleEl.textContent = <?php echo wp_json_encode( __( 'Create a free account to unlock 50 more credits per month.', 'beepbeep-ai-alt-text-generator' ) ); ?>;
-            }
-            // Hide the missing alert when trial exhausted.
-            var alertEl = document.querySelector('.bbai-logged-out__missing-alert');
-            if (alertEl) alertEl.style.display = 'none';
-        } else if (btn) {
-            // Update missing count after generations.
-            missingAltCount = Math.max(0, missingAltCount - lastSucceeded);
-
-            // Update the alert badge.
-            var badge = document.getElementById('bbai-missing-badge');
-            var badgeText = document.getElementById('bbai-missing-text');
-            var alertEl2 = document.querySelector('.bbai-logged-out__missing-alert');
-            if (missingAltCount > 0) {
-                if (badge) badge.textContent = missingAltCount;
-                if (badgeText) badgeText.textContent = missingAltCount === 1 ? 'image missing alt text' : 'images missing alt text';
-            } else if (alertEl2) {
-                alertEl2.style.display = 'none';
-            }
-
-            // Update button text.
-            if (missingAltCount > 0) {
-                var fixCount = Math.min(missingAltCount, trialRemaining);
-                btn.textContent = 'Fix ' + fixCount + ' image' + (fixCount !== 1 ? 's' : '') + ' free \u2014 ' + trialRemaining + ' left';
-            } else {
-                btn.textContent = <?php echo wp_json_encode(
-                    /* translators: placeholder replaced by JS */
-                    __( 'Generate alt text free', 'beepbeep-ai-alt-text-generator' )
-                ); ?> + ' \u2014 ' + trialRemaining + ' left';
-            }
-        }
-    }
-
-    function escHtml(str) {
-        var div = document.createElement('div');
-        div.textContent = str;
+        div.textContent = String(text || '');
         return div.innerHTML;
     }
 
+    function postAction(action, extraData) {
+        var formData = new FormData();
+        formData.append('action', action);
+        formData.append('nonce', nonce);
+
+        if (extraData && typeof extraData === 'object') {
+            Object.keys(extraData).forEach(function(key) {
+                formData.append(key, extraData[key]);
+            });
+        }
+
+        return fetch(ajaxUrl, {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin'
+        }).then(function(response) {
+            return response.json();
+        });
+    }
+
+    function triggerSignupFlow() {
+        var authTrigger = document.getElementById('bbai-signup-trigger') || document.querySelector('[data-action="show-auth-modal"][data-auth-tab="register"]');
+        if (authTrigger) {
+            authTrigger.click();
+            return;
+        }
+
+        if (typeof CustomEvent === 'function') {
+            document.dispatchEvent(new CustomEvent('bbai:show-auth-modal', {
+                detail: { tab: 'register' }
+            }));
+        }
+
+        window.setTimeout(function() {
+            window.location.href = signupUrl;
+        }, 60);
+    }
+
+    function updateMissingSummary() {
+        if (!missingSummaryEl) {
+            return;
+        }
+
+        var template = trialComplete
+            ? (missingAltCount === 1 ? i18n.remainingSingle : i18n.remainingPlural)
+            : (missingAltCount === 1 ? i18n.missingSingle : i18n.missingPlural);
+
+        missingSummaryEl.textContent = simpleSprintf(template, formatNumber(missingAltCount));
+        window.missingAltCount = missingAltCount;
+    }
+
+    function updateScanStatus(message, isError) {
+        if (!scanStatusEl) {
+            return;
+        }
+        scanStatusEl.textContent = message;
+        scanStatusEl.classList.toggle('is-error', !!isError);
+    }
+
+    function updateBanner() {
+        if (!bannerTextEl) {
+            return;
+        }
+
+        if (trialRemaining <= 0) {
+            bannerTextEl.textContent = i18n.bannerExhausted;
+            return;
+        }
+
+        bannerTextEl.textContent = simpleSprintf(i18n.bannerFormat, formatNumber(trialRemaining), formatNumber(trialLimit));
+    }
+
+    function showProgress(current, total, message) {
+        if (!progressEl) {
+            return;
+        }
+
+        var safeTotal = Math.max(1, parseInt(total, 10) || 1);
+        var safeCurrent = Math.max(0, parseInt(current, 10) || 0);
+        var width = Math.min(100, Math.round((safeCurrent / safeTotal) * 100));
+
+        progressEl.hidden = false;
+        if (progressLabelEl) {
+            progressLabelEl.textContent = requestInFlight ? i18n.buttonGenerating : i18n.progressDone;
+        }
+        if (progressCountEl) {
+            progressCountEl.textContent = safeCurrent + ' / ' + safeTotal;
+        }
+        if (progressFillEl) {
+            progressFillEl.style.width = width + '%';
+        }
+        if (progressMessageEl && typeof message === 'string') {
+            progressMessageEl.textContent = message;
+        }
+    }
+
+    function hideEmptyMessage() {
+        if (!emptyMessageEl) {
+            return;
+        }
+        emptyMessageEl.hidden = true;
+        emptyMessageEl.textContent = '';
+    }
+
+    function showEmptyMessage(message, linkHref, linkText) {
+        if (!emptyMessageEl) {
+            return;
+        }
+
+        if (linkHref && linkText) {
+            emptyMessageEl.innerHTML = escapeHtml(message) + ' <a href="' + escapeHtml(linkHref) + '">' + escapeHtml(linkText) + '</a>';
+        } else {
+            emptyMessageEl.textContent = message;
+        }
+        emptyMessageEl.hidden = false;
+    }
+
+    function applyTrialCompleteState() {
+        trialComplete = true;
+        trialRemaining = 0;
+
+        if (titleEl) {
+            titleEl.textContent = i18n.trialCompleteHeadline;
+        }
+        if (subtitleEl) {
+            subtitleEl.textContent = i18n.trialCompleteSuccess;
+        }
+        if (scanStatusEl) {
+            scanStatusEl.textContent = '';
+            scanStatusEl.style.display = 'none';
+        }
+        if (actionNoteEl) {
+            actionNoteEl.style.display = 'none';
+        }
+        if (secondaryActionEl) {
+            secondaryActionEl.textContent = i18n.secondaryExhausted;
+            secondaryActionEl.href = libraryUrl;
+            secondaryActionEl.removeAttribute('data-action');
+            secondaryActionEl.removeAttribute('data-auth-tab');
+        }
+    }
+
+    function updateMoreButtonLabel() {
+        if (!generateMoreBtn) {
+            return;
+        }
+
+        if (trialRemaining <= 0) {
+            generateMoreBtn.disabled = true;
+            generateMoreBtn.textContent = i18n.moreSeven;
+            return;
+        }
+
+        var nextCount = Math.min(7, trialRemaining);
+        generateMoreBtn.textContent = nextCount === 7
+            ? i18n.moreSeven
+            : simpleSprintf(i18n.moreDynamic, nextCount);
+        generateMoreBtn.disabled = requestInFlight;
+    }
+
+    function setPrimaryButtonState() {
+        if (requestInFlight) {
+            btn.disabled = true;
+            btn.textContent = i18n.buttonGenerating;
+            return;
+        }
+
+        if (trialRemaining <= 0) {
+            applyTrialCompleteState();
+            btn.disabled = false;
+            btn.textContent = i18n.buttonExhausted;
+            return;
+        }
+
+        btn.disabled = false;
+        btn.textContent = i18n.buttonGenerate;
+    }
+
+    function renderInstantWin(summary) {
+        if (!instantWinEl || !instantListEl || !instantTitleEl) {
+            return;
+        }
+
+        var items = Array.isArray(summary) ? summary : [];
+        var generatedCount = items.length;
+        instantTitleEl.textContent = generatedCount === 3
+            ? i18n.instantTitleDefault
+            : simpleSprintf(i18n.instantTitleFormat, generatedCount);
+
+        instantListEl.innerHTML = items.map(function(item) {
+            var filename = item && item.filename ? item.filename : ('Image #' + (item && item.attachment_id ? item.attachment_id : ''));
+            var beforeText = item && item.previous_alt ? item.previous_alt : i18n.beforeEmpty;
+            var afterText = item && item.new_alt ? item.new_alt : '';
+
+            return '' +
+                '<li class="bbai-ftue-instant-win__item">' +
+                '<p class="bbai-ftue-instant-win__filename">' + escapeHtml(clampText(filename, 90)) + '</p>' +
+                '<p class="bbai-ftue-instant-win__pair"><span class="bbai-ftue-instant-win__label">' + escapeHtml(i18n.instantBefore) + ':</span> ' + escapeHtml(clampText(beforeText, 90)) + '</p>' +
+                '<p class="bbai-ftue-instant-win__pair"><span class="bbai-ftue-instant-win__label">' + escapeHtml(i18n.instantAfter) + ':</span> ' + escapeHtml(clampText(afterText, 90)) + '</p>' +
+                '</li>';
+        }).join('');
+
+        instantWinEl.hidden = generatedCount <= 0;
+    }
+
+    function updatePreviewFromSummary(summary) {
+        if (!Array.isArray(summary) || !summary.length) {
+            return;
+        }
+
+        var first = summary[0];
+        if (previewBeforeEl) {
+            previewBeforeEl.textContent = first.filename || ('Image #' + first.attachment_id);
+        }
+        if (previewAfterEl && first.new_alt) {
+            previewAfterEl.textContent = '"' + first.new_alt + '"';
+            previewAfterEl.classList.add('bbai-ftue-preview__generated');
+        }
+    }
+
+    function runDemoBatch(limit) {
+        if (requestInFlight) {
+            return;
+        }
+
+        if (trialRemaining <= 0) {
+            triggerSignupFlow();
+            return;
+        }
+
+        hideEmptyMessage();
+        requestInFlight = true;
+        setPrimaryButtonState();
+        updateMoreButtonLabel();
+        showProgress(0, Math.max(1, limit), i18n.progressStarting);
+
+        postAction('bbai_trial_demo_generate_batch', { limit: limit }).then(function(resp) {
+            if (!resp || !resp.success) {
+                var errorData = resp && resp.data ? resp.data : {};
+                var errorCode = String(errorData.code || '').toLowerCase();
+
+                if (errorCode === 'bbai_trial_exhausted') {
+                    applyTrialCompleteState();
+                    showEmptyMessage(errorData.message || i18n.bannerExhausted);
+                    showProgress(0, 1, errorData.message || i18n.bannerExhausted);
+                    updateScanStatus(errorData.message || i18n.bannerExhausted, false);
+                    return;
+                }
+
+                showEmptyMessage(errorData.message || i18n.networkError);
+                showProgress(0, 1, errorData.message || i18n.networkError);
+                updateScanStatus(errorData.message || i18n.networkError, true);
+                return;
+            }
+
+            var data = resp.data || {};
+            trialRemaining = Math.max(0, parseInt(data.remaining, 10) || trialRemaining);
+            trialLimit = Math.max(0, parseInt(data.limit, 10) || trialLimit);
+            missingAltCount = Math.max(0, parseInt(data.missing_alt_count, 10) || 0);
+
+            var summary = Array.isArray(data.summary) ? data.summary : [];
+            var generatedCount = parseInt(data.generated_count, 10) || summary.length;
+
+            showProgress(generatedCount, Math.max(1, parseInt(data.attempted, 10) || limit), data.message || i18n.progressDone);
+
+            if (generatedCount > 0) {
+                renderInstantWin(summary);
+                updatePreviewFromSummary(summary);
+                updateScanStatus(i18n.scanReady, false);
+            } else {
+                var emptyMessage = data.message || i18n.friendlyEmpty;
+                showEmptyMessage(emptyMessage, data.upload_url || uploadUrl, i18n.friendlyUpload);
+            }
+
+            if (data.no_missing_images) {
+                showEmptyMessage(i18n.friendlyEmpty, data.upload_url || uploadUrl, i18n.friendlyUpload);
+                updateScanStatus(i18n.scanNoMissing, false);
+            }
+
+            if (trialRemaining <= 0 || data.trial_exhausted) {
+                applyTrialCompleteState();
+            }
+
+            updateBanner();
+            updateMissingSummary();
+        }).catch(function() {
+            showEmptyMessage(i18n.networkError);
+            showProgress(0, 1, i18n.networkError);
+            updateScanStatus(i18n.networkError, true);
+        }).finally(function() {
+            requestInFlight = false;
+            setPrimaryButtonState();
+            updateMoreButtonLabel();
+            updateBanner();
+        });
+    }
+
+    btn.addEventListener('click', function(event) {
+        event.preventDefault();
+        if (trialRemaining <= 0) {
+            triggerSignupFlow();
+            return;
+        }
+        runDemoBatch(Math.min(3, trialRemaining));
+    });
+
+    if (generateMoreBtn) {
+        generateMoreBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            if (trialRemaining <= 0) {
+                triggerSignupFlow();
+                return;
+            }
+            runDemoBatch(Math.min(7, trialRemaining));
+        });
+    }
+
+    if (unlockBtn) {
+        unlockBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            triggerSignupFlow();
+        });
+    }
+
+    if (missingAltCount <= 0) {
+        showEmptyMessage(i18n.friendlyEmpty, uploadUrl, i18n.friendlyUpload);
+        updateScanStatus(i18n.scanNoMissing, false);
+    } else {
+        updateScanStatus(i18n.scanReady, false);
+    }
+
+    updateMissingSummary();
+    updateBanner();
+    setPrimaryButtonState();
+    updateMoreButtonLabel();
 })();
 </script>

@@ -18,9 +18,11 @@
      * Check usage stats and determine if user can proceed
      */
     function checkUsageBeforeOperation() {
-        var usageStats = (window.BBAI_DASH && window.BBAI_DASH.initialUsage) ||
-                         (window.BBAI_DASH && window.BBAI_DASH.usage) ||
-                         (window.BBAI && window.BBAI.usage) || null;
+        var usageStats = typeof window.bbaiGetUsageSnapshot === 'function'
+            ? window.bbaiGetUsageSnapshot(null)
+            : ((window.BBAI_DASH && window.BBAI_DASH.initialUsage) ||
+               (window.BBAI_DASH && window.BBAI_DASH.usage) ||
+               (window.BBAI && window.BBAI.usage) || null);
 
         var remaining = usageStats && (usageStats.remaining !== undefined) ? parseInt(usageStats.remaining, 10) : null;
         var plan = usageStats && usageStats.plan ? usageStats.plan.toLowerCase() : 'free';
@@ -157,7 +159,7 @@
 
                 showBulkProgress('Preparing bulk run...', count, 0);
 
-                bbaiQueueImages(ids, 'bulk', function(success, queued, error, processedIds) {
+                bbaiQueueImages(ids, 'bulk', { skipSchedule: true }, function(success, queued, error, processedIds) {
                     $btn.prop('disabled', false);
                     $btn.text(originalText);
 
@@ -252,7 +254,7 @@
 
             showBulkProgress('Preparing bulk regeneration...', count, 0);
 
-            bbaiQueueImages(ids, 'bulk-regenerate', function(success, queued, error, processedIds) {
+            bbaiQueueImages(ids, 'bulk-regenerate', { skipSchedule: true }, function(success, queued, error, processedIds) {
                 $btn.prop('disabled', false);
                 $btn.text(originalText);
 
@@ -287,7 +289,7 @@
             return;
         }
 
-        if (error && error.code === 'limit_reached') {
+        if (error && (error.code === 'limit_reached' || error.code === 'quota_exhausted')) {
             hideBulkProgress();
             window.bbaiHandleLimitReached(error);
             return;
@@ -313,53 +315,71 @@
         if (error && error.code === 'insufficient_credits' && error.remaining !== null && error.remaining > 0) {
             hideBulkProgress();
             var remainingCount = error.remaining;
-            var errorMsg = error.message || 'You only have ' + remainingCount + ' generations remaining.';
+            var errorMsg = error.message || 'You only have ' + remainingCount + ' generation' + (remainingCount !== 1 ? 's' : '') + ' remaining.';
+            var modalMessage = errorMsg + '\n\nYou can generate ' + remainingCount + ' image' + (remainingCount !== 1 ? 's' : '') + ' now using your remaining credit' + (remainingCount !== 1 ? 's' : '') + ', or upgrade for more.';
 
-            var generateWithRemaining = confirm(
-                errorMsg + '\n\n' +
-                'Would you like to generate ' + remainingCount + ' image' + (remainingCount !== 1 ? 's' : '') +
-                ' now using your remaining ' + remainingCount + ' credit' + (remainingCount !== 1 ? 's' : '') + '?\n\n' +
-                '(Click "OK" to generate now, or "Cancel" to upgrade)'
-            );
+            if (window.bbaiModal && typeof window.bbaiModal.show === 'function') {
+                window.bbaiModal.show({
+                    type: 'warning',
+                    title: 'Not enough credits',
+                    message: modalMessage,
+                    buttons: [
+                        {
+                            text: 'Use ' + remainingCount + ' remaining credit' + (remainingCount !== 1 ? 's' : ''),
+                            primary: true,
+                            action: function() {
+                                window.bbaiModal.close();
+                                var limitedIds = ids.slice(0, remainingCount);
+                                $btn.prop('disabled', true);
+                                $btn.text('Loading...');
+                                showBulkProgress('Queueing ' + remainingCount + ' image' + (remainingCount !== 1 ? 's' : '') + '...', remainingCount, 0);
 
-            if (generateWithRemaining) {
-                var limitedIds = ids.slice(0, remainingCount);
-                $btn.prop('disabled', true);
-                $btn.text('Loading...');
-                showBulkProgress('Queueing ' + remainingCount + ' image' + (remainingCount !== 1 ? 's' : '') + '...', remainingCount, 0);
+                                bbaiQueueImages(limitedIds, source, { skipSchedule: true }, function(success, queued, queueError, processedLimited) {
+                                    $btn.prop('disabled', false);
+                                    $btn.text(originalText);
 
-                bbaiQueueImages(limitedIds, source, function(success, queued, queueError, processedLimited) {
-                    $btn.prop('disabled', false);
-                    $btn.text(originalText);
-
-                    if (success && queued > 0) {
-                        updateBulkProgressTitle('Successfully Queued!');
-                        logBulkProgressSuccess('Queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' using remaining credits');
-                        startInlineGeneration(processedLimited || limitedIds, source);
-                    } else {
-                        var msg = 'Failed to queue images.';
-                        if (queueError && queueError.message) {
-                            msg = queueError.message;
+                                    if (success && queued > 0) {
+                                        updateBulkProgressTitle('Successfully Queued!');
+                                        logBulkProgressSuccess('Queued ' + queued + ' image' + (queued !== 1 ? 's' : '') + ' using remaining credits');
+                                        startInlineGeneration(processedLimited || limitedIds, source);
+                                    } else {
+                                        var msg = 'Failed to queue images.';
+                                        if (queueError && queueError.message) {
+                                            msg = queueError.message;
+                                        }
+                                        logBulkProgressError(msg);
+                                    }
+                                });
+                            }
+                        },
+                        {
+                            text: 'Upgrade now',
+                            primary: false,
+                            action: function() {
+                                window.bbaiModal.close();
+                                if (typeof window.bbaiOpenUpgradeModal === 'function') {
+                                    window.bbaiOpenUpgradeModal(error && error.usage ? error.usage : null);
+                                } else if (typeof alttextaiShowModal === 'function') {
+                                    alttextaiShowModal();
+                                } else {
+                                    var upgradeBtn = document.querySelector('[data-action="show-upgrade-modal"]');
+                                    if (upgradeBtn) {
+                                        upgradeBtn.click();
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            text: 'Cancel',
+                            primary: false,
+                            action: function() {
+                                window.bbaiModal.close();
+                            }
                         }
-                        logBulkProgressError(msg);
-                    }
+                    ]
                 });
-            } else {
-                var confirmUpgrade = confirm(
-                    'Would you like to upgrade to get more credits and generate all ' + count +
-                    ' image' + (count !== 1 ? 's' : '') + '?'
-                );
-
-                if (confirmUpgrade) {
-                    if (typeof alttextaiShowModal === 'function') {
-                        alttextaiShowModal();
-                    } else {
-                        var upgradeBtn = document.querySelector('[data-action="show-upgrade-modal"]');
-                        if (upgradeBtn) {
-                            upgradeBtn.click();
-                        }
-                    }
-                }
+            } else if (typeof window.bbaiHandleLimitReached === 'function') {
+                window.bbaiHandleLimitReached(error);
             }
         }
     }

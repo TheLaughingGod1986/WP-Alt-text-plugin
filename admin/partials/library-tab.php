@@ -243,71 +243,102 @@ $bbai_optimized_percent = $bbai_total_images > 0 ? round(($bbai_with_alt_count /
         
         <!-- Bulk Actions Row -->
         <?php
-        // Check if user can generate (same logic as dashboard)
+        // Check if user can generate (same logic as dashboard).
         $bbai_plan = isset($bbai_usage_stats) && is_array($bbai_usage_stats) && !empty($bbai_usage_stats['plan']) ? $bbai_usage_stats['plan'] : 'free';
-        $bbai_has_quota = isset($bbai_usage_stats) && is_array($bbai_usage_stats) && !empty($bbai_usage_stats['remaining']) ? ($bbai_usage_stats['remaining'] > 0) : false;
+        $bbai_has_quota = isset($bbai_usage_stats) && is_array($bbai_usage_stats) && isset($bbai_usage_stats['remaining']) ? (intval($bbai_usage_stats['remaining']) > 0) : false;
         $bbai_is_premium = in_array($bbai_plan, ['pro', 'growth', 'agency'], true);
         $bbai_can_generate = $bbai_has_quota || $bbai_is_premium;
+        $bbai_remaining_credits = isset($bbai_usage_stats) && is_array($bbai_usage_stats) ? intval($bbai_usage_stats['remaining'] ?? 0) : 0;
+        $bbai_used_credits = isset($bbai_usage_stats) && is_array($bbai_usage_stats) ? intval($bbai_usage_stats['used'] ?? 0) : 0;
+        $bbai_limit_credits = isset($bbai_usage_stats) && is_array($bbai_usage_stats) ? intval($bbai_usage_stats['limit'] ?? 0) : 0;
+        $bbai_usage_limit_hit = ($bbai_limit_credits > 0 && $bbai_used_credits >= $bbai_limit_credits);
+        $bbai_out_of_credits = ($bbai_remaining_credits <= 0 || $bbai_usage_limit_hit);
+        $bbai_limit_reached_state = !$bbai_is_premium && $bbai_out_of_credits;
+        $bbai_generate_missing_disabled = $bbai_limit_reached_state || !$bbai_can_generate || $bbai_missing_count <= 0;
+        $bbai_reoptimize_disabled = $bbai_limit_reached_state || !$bbai_can_generate;
         ?>
-        <div class="bbai-card bbai-mb-6">
-            <div class="bbai-optimization-actions bbai-flex bbai-gap-3 bbai-flex-wrap bbai-items-center bbai-justify-between">
-                <div class="bbai-flex bbai-gap-3 bbai-flex-wrap">
-                <button type="button" class="bbai-optimization-cta bbai-optimization-cta--primary <?php echo esc_attr((!$bbai_can_generate) ? 'bbai-optimization-cta--locked' : ''); ?> <?php echo esc_attr(($bbai_missing_count === 0) ? 'bbai-optimization-cta--disabled' : ''); ?>" data-action="generate-missing"
-                    <?php if (!$bbai_can_generate || $bbai_missing_count === 0) : ?>
-                        disabled
-                        <?php if ($bbai_missing_count === 0) : ?>
-                            title="<?php esc_attr_e('All images already have alt text', 'beepbeep-ai-alt-text-generator'); ?>"
-                        <?php else : ?>
-                            title="<?php esc_attr_e('Unlock 1,000 alt text generations with Growth →', 'beepbeep-ai-alt-text-generator'); ?>"
+        <div class="bbai-card bbai-library-actions-card bbai-mb-5">
+            <?php if ($bbai_limit_reached_state) : ?>
+                <p class="bbai-optimization-actions-helper">
+                    <?php esc_html_e('Upgrade required. You can still review existing alt text below.', 'beepbeep-ai-alt-text-generator'); ?>
+                </p>
+            <?php endif; ?>
+            <div class="bbai-optimization-actions bbai-flex bbai-gap-3 bbai-flex-wrap bbai-items-center">
+                <div class="bbai-flex bbai-gap-3 bbai-flex-wrap bbai-items-center">
+                    <button type="button" class="bbai-optimization-cta bbai-optimization-cta--primary <?php echo esc_attr($bbai_limit_reached_state ? 'bbai-is-locked bbai-optimization-cta--locked' : ''); ?> <?php echo esc_attr(($bbai_missing_count === 0 && ! $bbai_limit_reached_state) ? 'bbai-optimization-cta--disabled' : ''); ?>"
+                        <?php if ($bbai_limit_reached_state) : ?>
+                            data-action="generate-missing"
+                            data-bbai-lock-control="1"
+                            aria-disabled="true"
+                            disabled
+                            tabindex="-1"
+                            title="<?php esc_attr_e('Monthly credits used up. Upgrade to continue.', 'beepbeep-ai-alt-text-generator'); ?>"
+                        <?php elseif (!$bbai_generate_missing_disabled) : ?>
+                            data-action="generate-missing"
                         <?php endif; ?>
-                    <?php else : ?>
-                        data-bbai-tooltip="<?php esc_attr_e('Automatically generate alt text for all images that don\'t have any. Processes in the background without slowing down your site.', 'beepbeep-ai-alt-text-generator'); ?>"
-                        data-bbai-tooltip-position="bottom"
-                    <?php endif; ?>
-                >
-                    <?php if (!$bbai_can_generate) : ?>
-                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
-                            <path d="M12 6V4a4 4 0 00-8 0v2M4 6h8l1 8H3L4 6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <span><?php esc_html_e('Generate Missing Alt Text', 'beepbeep-ai-alt-text-generator'); ?></span>
-                    <?php else : ?>
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
-                            <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                            <path d="M6 6H10M6 10H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                        </svg>
-                        <span><?php esc_html_e('Generate Missing Alt Text', 'beepbeep-ai-alt-text-generator'); ?></span>
-                    <?php endif; ?>
-                </button>
-                <button type="button" class="bbai-optimization-cta bbai-optimization-cta--secondary bbai-cta-glow-blue <?php echo esc_attr((!$bbai_can_generate) ? 'bbai-optimization-cta--locked' : ''); ?>" data-action="regenerate-all"
-                    <?php if (!$bbai_can_generate) : ?>
-                        disabled
-                        title="<?php esc_attr_e('Unlock 1,000 alt text generations with Growth →', 'beepbeep-ai-alt-text-generator'); ?>"
-                    <?php else : ?>
-                        data-bbai-tooltip="<?php esc_attr_e('Regenerate alt text for ALL images, even those that already have it. Useful after changing your tone/style settings or brand guidelines.', 'beepbeep-ai-alt-text-generator'); ?>"
-                        data-bbai-tooltip-position="bottom"
-                    <?php endif; ?>
-                >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
-                        <path d="M8 2L10 6L14 8L10 10L8 14L6 10L2 8L6 6L8 2Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                        <circle cx="8" cy="8" r="2" fill="currentColor"/>
-                    </svg>
-                    <span><?php esc_html_e('Re-optimise All Alt Text', 'beepbeep-ai-alt-text-generator'); ?></span>
-                </button>
-                </div>
-                <div class="bbai-flex bbai-gap-2 bbai-flex-wrap">
-                    <div class="bbai-dropdown" style="position: relative;">
-                        <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm" data-action="export-alt-text" data-format="csv" data-bbai-tooltip="<?php esc_attr_e('Export alt text data', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="top">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
-                                <path d="M14 10V12.6667C14 13.403 13.403 14 12.6667 14H3.33333C2.59695 14 2 13.403 2 12.6667V10M11.3333 5.33333L8 2M8 2L4.66667 5.33333M8 2V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <?php if (!$bbai_limit_reached_state && $bbai_generate_missing_disabled) : ?>
+                            disabled
+                            data-bbai-lock-control="1"
+                            aria-disabled="true"
+                            tabindex="-1"
+                            <?php if ($bbai_missing_count === 0) : ?>
+                                title="<?php esc_attr_e('All images already have alt text', 'beepbeep-ai-alt-text-generator'); ?>"
+                            <?php else : ?>
+                                title="<?php esc_attr_e('Out of credits this month. Upgrade now or wait for reset.', 'beepbeep-ai-alt-text-generator'); ?>"
+                            <?php endif; ?>
+                        <?php else : ?>
+                            data-bbai-tooltip="<?php esc_attr_e('Automatically generate alt text for all images that don\'t have any. Processes in the background without slowing down your site.', 'beepbeep-ai-alt-text-generator'); ?>"
+                            data-bbai-tooltip-position="bottom"
+                        <?php endif; ?>
+                    >
+                        <?php if ($bbai_limit_reached_state) : ?>
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
+                                <path d="M12 6V4a4 4 0 00-8 0v2M4 6h8l1 8H3L4 6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <?php esc_html_e('Export', 'beepbeep-ai-alt-text-generator'); ?>
-                        </button>
-                        <div class="bbai-dropdown-menu bbai-hidden" style="position: absolute; top: 100%; right: 0; margin-top: var(--bbai-space-2); background: var(--bbai-bg); border: 1px solid var(--bbai-border); border-radius: var(--bbai-radius); box-shadow: var(--bbai-shadow-lg); z-index: 1000; min-width: 150px;">
-                            <button type="button" class="bbai-dropdown-item" data-action="export-alt-text" data-format="csv"><?php esc_html_e('Export as CSV', 'beepbeep-ai-alt-text-generator'); ?></button>
-                            <button type="button" class="bbai-dropdown-item" data-action="export-alt-text" data-format="json"><?php esc_html_e('Export as JSON', 'beepbeep-ai-alt-text-generator'); ?></button>
-                            <button type="button" class="bbai-dropdown-item" data-action="export-alt-text" data-format="txt"><?php esc_html_e('Export as TXT', 'beepbeep-ai-alt-text-generator'); ?></button>
-                        </div>
-                    </div>
+                            <span><?php esc_html_e('Generate Missing Alt Text', 'beepbeep-ai-alt-text-generator'); ?></span>
+                        <?php elseif ($bbai_generate_missing_disabled) : ?>
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
+                                <path d="M12 6V4a4 4 0 00-8 0v2M4 6h8l1 8H3L4 6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <span><?php esc_html_e('Generate Missing Alt Text', 'beepbeep-ai-alt-text-generator'); ?></span>
+                        <?php else : ?>
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
+                                <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                                <path d="M6 6H10M6 10H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                            <span><?php esc_html_e('Generate Missing Alt Text', 'beepbeep-ai-alt-text-generator'); ?></span>
+                        <?php endif; ?>
+                    </button>
+                    <button type="button" class="bbai-optimization-cta bbai-optimization-cta--secondary bbai-cta-glow-blue <?php echo esc_attr($bbai_limit_reached_state ? 'bbai-is-locked bbai-optimization-cta--locked' : ''); ?>"
+                        <?php if ($bbai_limit_reached_state) : ?>
+                            data-action="regenerate-all"
+                            data-bbai-lock-control="1"
+                            aria-disabled="true"
+                            disabled
+                            tabindex="-1"
+                            title="<?php esc_attr_e('Monthly credits used up. Upgrade to continue.', 'beepbeep-ai-alt-text-generator'); ?>"
+                        <?php elseif (!$bbai_reoptimize_disabled) : ?>
+                            data-action="regenerate-all"
+                            data-bbai-tooltip="<?php esc_attr_e('Regenerate alt text for ALL images, even those that already have it. Useful after changing your tone/style settings or brand guidelines.', 'beepbeep-ai-alt-text-generator'); ?>"
+                            data-bbai-tooltip-position="bottom"
+                        <?php else : ?>
+                            disabled
+                            data-bbai-lock-control="1"
+                            aria-disabled="true"
+                            tabindex="-1"
+                            title="<?php esc_attr_e('Out of credits this month. Upgrade now or wait for reset.', 'beepbeep-ai-alt-text-generator'); ?>"
+                        <?php endif; ?>
+                    >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
+                            <path d="M8 2L10 6L14 8L10 10L8 14L6 10L2 8L6 6L8 2Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                            <circle cx="8" cy="8" r="2" fill="currentColor"/>
+                        </svg>
+                        <span>
+                            <?php
+                            esc_html_e('Re-optimise All Alt Text', 'beepbeep-ai-alt-text-generator');
+                            ?>
+                        </span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -316,19 +347,36 @@ $bbai_optimized_percent = $bbai_total_images > 0 ? round(($bbai_with_alt_count /
     <!-- Table -->
     <?php if (!empty($bbai_all_images)) : ?>
         <div class="bbai-card bbai-mb-6">
+            <div class="bbai-library-batch-actions bbai-mb-4" id="bbai-batch-actions" aria-live="polite">
+                <div class="bbai-flex bbai-gap-3 bbai-items-center bbai-flex-wrap bbai-library-batch-actions__inner">
+                    <span class="bbai-library-batch-actions__label" id="bbai-selected-count">0 <?php esc_html_e('selected', 'beepbeep-ai-alt-text-generator'); ?></span>
+                    <button type="button" class="bbai-btn-secondary bbai-btn-sm <?php echo esc_attr($bbai_limit_reached_state ? 'bbai-is-locked' : ''); ?>" id="bbai-batch-regenerate" data-action="regenerate-selected"
+                        <?php if ($bbai_limit_reached_state) : ?>
+                            data-bbai-action="open-upgrade"
+                            data-bbai-locked-cta="1"
+                            data-bbai-lock-reason="reoptimize_all"
+                            data-bbai-locked-source="library-batch-regenerate"
+                            aria-disabled="true"
+                            title="<?php esc_attr_e('Upgrade to continue bulk regeneration', 'beepbeep-ai-alt-text-generator'); ?>"
+                        <?php endif; ?>
+                    >
+                        <?php esc_html_e('Regenerate Selected', 'beepbeep-ai-alt-text-generator'); ?>
+                    </button>
+                </div>
+            </div>
             <div class="bbai-table-wrap">
-                <table class="bbai-table">
+                <table class="bbai-table bbai-library-table">
                     <thead>
                         <tr>
-                            <th style="width: 40px;">
+                            <th class="bbai-library-col-select" style="width: 40px;">
                                 <input type="checkbox" id="bbai-select-all" class="bbai-checkbox" aria-label="<?php esc_attr_e('Select all images', 'beepbeep-ai-alt-text-generator'); ?>" />
                             </th>
-                            <th><?php esc_html_e('Image', 'beepbeep-ai-alt-text-generator'); ?></th>
-                            <th><?php esc_html_e('File Name', 'beepbeep-ai-alt-text-generator'); ?></th>
-                            <th><?php esc_html_e('AI Alt Text', 'beepbeep-ai-alt-text-generator'); ?></th>
-                            <th><?php esc_html_e('Status', 'beepbeep-ai-alt-text-generator'); ?></th>
-                            <th><?php esc_html_e('Last Updated', 'beepbeep-ai-alt-text-generator'); ?></th>
-                            <th class="bbai-text-right"><?php esc_html_e('Actions', 'beepbeep-ai-alt-text-generator'); ?></th>
+                            <th class="bbai-library-col-image"><?php esc_html_e('Image', 'beepbeep-ai-alt-text-generator'); ?></th>
+                            <th class="bbai-library-col-file"><?php esc_html_e('File Name', 'beepbeep-ai-alt-text-generator'); ?></th>
+                            <th class="bbai-library-col-alt"><?php esc_html_e('AI Alt Text', 'beepbeep-ai-alt-text-generator'); ?></th>
+                            <th class="bbai-library-col-status"><?php esc_html_e('Status', 'beepbeep-ai-alt-text-generator'); ?></th>
+                            <th class="bbai-library-col-updated"><?php esc_html_e('Last Updated', 'beepbeep-ai-alt-text-generator'); ?></th>
+                            <th class="bbai-text-right bbai-library-actions-header"><?php esc_html_e('Actions', 'beepbeep-ai-alt-text-generator'); ?></th>
                         </tr>
                     </thead>
                     <tbody id="bbai-library-table-body">
@@ -342,56 +390,114 @@ $bbai_optimized_percent = $bbai_total_images > 0 ? round(($bbai_with_alt_count /
                             $bbai_thumb_url = wp_get_attachment_image_src($bbai_attachment_id, 'thumbnail');
                             $bbai_attached_file = get_attached_file($bbai_attachment_id);
                             $bbai_filename = $bbai_attached_file ? basename($bbai_attached_file) : '';
-                            $bbai_edit_link = get_edit_post_link($bbai_attachment_id, '');
-
                             // Format date
                             $bbai_modified_date = date_i18n('j M Y', strtotime($bbai_image->post_modified));
 
-                            // Truncate alt text for preview (2 lines)
-                            $bbai_display_alt = $bbai_clean_alt;
+                            // Keep full alt text in DOM and clamp with CSS for readable ellipsis.
                             $bbai_alt_preview = $bbai_clean_alt ?: '';
-                            if (!empty($bbai_alt_preview) && is_string($bbai_alt_preview) && strlen($bbai_alt_preview) > 120) {
-                                $bbai_alt_preview = substr($bbai_alt_preview, 0, 117) . '...';
-                            }
 
-                            // Truncate filename for display
+                            // Truncate filename for display.
                             $bbai_display_filename = !empty($bbai_filename) && is_string($bbai_filename) ? $bbai_filename : __('Unknown file', 'beepbeep-ai-alt-text-generator');
                             if (is_string($bbai_display_filename) && strlen($bbai_display_filename) > 35) {
-                                $bbai_display_filename = substr($bbai_display_filename, 0, 32) . '...';
+                                $bbai_display_filename = wp_html_excerpt($bbai_display_filename, 32, '...');
                             }
                             
-                            // Get file extension and size safely
+                            // Get file extension, dimensions, and size safely.
                             $bbai_file_extension = '';
+                            $bbai_file_dimensions = '';
                             $bbai_file_size = '';
                             if ($bbai_attached_file && is_string($bbai_attached_file) && file_exists($bbai_attached_file)) {
                                 if (!empty($bbai_filename) && is_string($bbai_filename)) {
                                     $bbai_path_info = pathinfo($bbai_filename);
                                     $bbai_file_extension = !empty($bbai_path_info['extension']) && is_string($bbai_path_info['extension']) ? strtoupper($bbai_path_info['extension']) : '';
                                 }
+
+                                $bbai_attachment_meta = wp_get_attachment_metadata($bbai_attachment_id);
+                                if (is_array($bbai_attachment_meta)) {
+                                    $bbai_width = isset($bbai_attachment_meta['width']) ? absint($bbai_attachment_meta['width']) : 0;
+                                    $bbai_height = isset($bbai_attachment_meta['height']) ? absint($bbai_attachment_meta['height']) : 0;
+                                    if ($bbai_width > 0 && $bbai_height > 0) {
+                                        $bbai_file_dimensions = $bbai_width . '×' . $bbai_height;
+                                    }
+                                }
+
                                 $bbai_file_size_bytes = filesize($bbai_attached_file);
                                 if ($bbai_file_size_bytes !== false && is_numeric($bbai_file_size_bytes)) {
                                     $bbai_file_size = size_format($bbai_file_size_bytes);
                                 }
                             }
 
+                            $bbai_file_meta_parts = [];
+                            if ($bbai_file_extension) {
+                                $bbai_file_meta_parts[] = $bbai_file_extension;
+                            }
+                            if ($bbai_file_dimensions) {
+                                $bbai_file_meta_parts[] = $bbai_file_dimensions;
+                            }
+                            if ($bbai_file_size) {
+                                $bbai_file_meta_parts[] = $bbai_file_size;
+                            }
+                            $bbai_file_meta = implode(' • ', $bbai_file_meta_parts);
+
                             // Determine status
                             $status = 'missing';
                             $bbai_status_label = __('Missing', 'beepbeep-ai-alt-text-generator');
+                            $bbai_quality_class = 'poor';
+                            $bbai_quality_label = __('Poor', 'beepbeep-ai-alt-text-generator');
+                            $bbai_quality_score = 0;
+                            $bbai_word_count = 0;
+
                             if ($bbai_has_alt) {
                                 $status = 'optimized';
                                 $bbai_status_label = __('Optimized', 'beepbeep-ai-alt-text-generator');
+                                $bbai_word_count = str_word_count($bbai_clean_alt);
+                                $bbai_quality_score = bbai_calculate_alt_quality_score($bbai_clean_alt);
+                                $bbai_quality_class = 'good';
+                                $bbai_quality_label = __('Good', 'beepbeep-ai-alt-text-generator');
+                                if ($bbai_quality_score < 60) {
+                                    $bbai_quality_class = 'poor';
+                                    $bbai_quality_label = __('Poor', 'beepbeep-ai-alt-text-generator');
+                                } elseif ($bbai_quality_score < 80) {
+                                    $bbai_quality_class = 'fair';
+                                    $bbai_quality_label = __('Fair', 'beepbeep-ai-alt-text-generator');
+                                }
+                            }
+                            $bbai_preview_image_url = $bbai_thumb_url && isset($bbai_thumb_url[0]) ? $bbai_thumb_url[0] : '';
+                            $bbai_modal_image_url = wp_get_attachment_image_url($bbai_attachment_id, 'large');
+                            if (empty($bbai_modal_image_url)) {
+                                $bbai_modal_image_url = wp_get_attachment_image_url($bbai_attachment_id, 'full');
+                            }
+                            if (empty($bbai_modal_image_url)) {
+                                $bbai_modal_image_url = $bbai_preview_image_url;
                             }
                             ?>
-                            <tr class="bbai-library-row" data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>" data-id="<?php echo esc_attr($bbai_attachment_id); ?>" data-status="<?php echo esc_attr($status); ?>">
-                                <td>
+                            <tr class="bbai-library-row"
+                                data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>"
+                                data-id="<?php echo esc_attr($bbai_attachment_id); ?>"
+                                data-status="<?php echo esc_attr($status); ?>"
+                                data-alt-full="<?php echo esc_attr($bbai_clean_alt); ?>"
+                                data-image-title="<?php echo esc_attr($bbai_image->post_title); ?>"
+                                data-image-url="<?php echo esc_url($bbai_modal_image_url); ?>"
+                                data-file-name="<?php echo esc_attr(!empty($bbai_filename) ? $bbai_filename : $bbai_display_filename); ?>"
+                                data-file-meta="<?php echo esc_attr($bbai_file_meta); ?>"
+                                data-last-updated="<?php echo esc_attr($bbai_modified_date); ?>"
+                                data-quality-label="<?php echo esc_attr($bbai_quality_label); ?>"
+                                data-quality-class="<?php echo esc_attr($bbai_quality_class); ?>">
+                                <td class="bbai-library-cell--select">
                                     <input type="checkbox" class="bbai-checkbox bbai-library-row-check bbai-image-checkbox" value="<?php echo esc_attr($bbai_attachment_id); ?>" data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>" aria-label="<?php
                                     /* translators: 1: image title */
                                     printf(esc_attr__('Select image %s', 'beepbeep-ai-alt-text-generator'), esc_attr($bbai_image->post_title));
                                     ?>" />
                                 </td>
-                                <td>
+                                <td class="bbai-library-cell--image">
                                     <?php if ($bbai_thumb_url) : ?>
-                                        <img src="<?php echo esc_url($bbai_thumb_url[0]); ?>" alt="" class="bbai-library-thumbnail" loading="lazy" decoding="async" />
+                                        <button type="button"
+                                                class="bbai-library-thumbnail-button"
+                                                data-action="preview-image"
+                                                data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>"
+                                                aria-label="<?php esc_attr_e('Preview image', 'beepbeep-ai-alt-text-generator'); ?>">
+                                            <img src="<?php echo esc_url($bbai_thumb_url[0]); ?>" alt="" class="bbai-library-thumbnail" loading="lazy" decoding="async" />
+                                        </button>
                                     <?php else : ?>
                                         <div class="bbai-library-thumbnail-placeholder">
                                             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -401,43 +507,20 @@ $bbai_optimized_percent = $bbai_total_images > 0 ? round(($bbai_with_alt_count /
                                         </div>
                                     <?php endif; ?>
                                 </td>
-                                <td>
+                                <td class="bbai-library-cell--file">
                                     <div class="bbai-library-filename-cell">
                                         <span class="bbai-library-filename" title="<?php echo esc_attr($bbai_filename); ?>"><?php echo esc_html($bbai_display_filename); ?></span>
-                                        <?php if ($bbai_file_extension || $bbai_file_size) : ?>
+                                        <?php if (!empty($bbai_file_meta)) : ?>
                                             <span class="bbai-library-filename-meta">
-                                                <?php if ($bbai_file_extension) : ?>
-                                                    <?php echo esc_html($bbai_file_extension); ?>
-                                                <?php endif; ?>
-                                                <?php if ($bbai_file_extension && $bbai_file_size) : ?>
-                                                    • 
-                                                <?php endif; ?>
-                                                <?php if ($bbai_file_size) : ?>
-                                                    <?php echo esc_html($bbai_file_size); ?>
-                                                <?php endif; ?>
+                                                <?php echo esc_html($bbai_file_meta); ?>
                                             </span>
                                         <?php endif; ?>
                                     </div>
                                 </td>
-                                <td>
+                                <td class="bbai-library-cell--alt-text">
                                     <div class="bbai-alt-text-content">
                                         <?php if ($bbai_has_alt) : ?>
                                             <div class="bbai-alt-text-preview" title="<?php echo esc_attr($bbai_clean_alt); ?>"><?php echo esc_html($bbai_alt_preview); ?></div>
-                                            <?php
-                                            // Quality insights
-                                            $bbai_alt_length = strlen($bbai_clean_alt);
-                                            $bbai_word_count = str_word_count($bbai_clean_alt);
-                                            $bbai_quality_score = bbai_calculate_alt_quality_score($bbai_clean_alt);
-                                            $bbai_quality_class = 'good';
-                                            $bbai_quality_label = __('Good', 'beepbeep-ai-alt-text-generator');
-                                            if ($bbai_quality_score < 60) {
-                                                $bbai_quality_class = 'poor';
-                                                $bbai_quality_label = __('Needs improvement', 'beepbeep-ai-alt-text-generator');
-                                            } elseif ($bbai_quality_score < 80) {
-                                                $bbai_quality_class = 'fair';
-                                                $bbai_quality_label = __('Fair', 'beepbeep-ai-alt-text-generator');
-                                            }
-                                            ?>
                                             <div class="bbai-quality-insights">
                                                 <span class="bbai-quality-badge bbai-quality-badge--<?php echo esc_attr($bbai_quality_class); ?>" data-bbai-tooltip="<?php
                                                 printf(
@@ -463,26 +546,44 @@ $bbai_optimized_percent = $bbai_total_images > 0 ? round(($bbai_with_alt_count /
                                         <?php endif; ?>
                                     </div>
                                 </td>
-                                <td>
+                                <td class="bbai-library-cell--status">
                                     <span class="bbai-status-badge bbai-status-badge--<?php echo esc_attr($status); ?>">
                                         <?php echo esc_html($bbai_status_label); ?>
                                     </span>
                                 </td>
-                                <td>
+                                <td class="bbai-library-cell--updated">
                                     <span class="bbai-text-muted bbai-text-sm"><?php echo esc_html($bbai_modified_date); ?></span>
                                 </td>
-                                <td class="bbai-text-right">
+                                <td class="bbai-text-right bbai-library-cell--actions">
                                     <div class="bbai-library-actions">
-                                        <a href="<?php echo esc_url($bbai_edit_link); ?>" class="bbai-link-sm"><?php esc_html_e('View', 'beepbeep-ai-alt-text-generator'); ?></a>
                                         <button type="button"
-                                                class="bbai-link-sm<?php echo ! $bbai_can_generate ? ' bbai-link-sm--disabled' : ''; ?>"
+                                                class="bbai-link-sm"
+                                                data-action="preview-image"
+                                                data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>">
+                                            <?php esc_html_e('View', 'beepbeep-ai-alt-text-generator'); ?>
+                                        </button>
+                                        <button type="button"
+                                                class="bbai-link-sm"
+                                                data-action="edit-alt-inline"
+                                                data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>">
+                                            <?php esc_html_e('Edit', 'beepbeep-ai-alt-text-generator'); ?>
+                                        </button>
+                                        <button type="button"
+                                                class="bbai-link-sm<?php echo ! $bbai_can_generate ? ' bbai-link-sm--disabled bbai-is-locked' : ''; ?>"
                                                 data-action="regenerate-single"
                                                 data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>"
                                                 <?php if ( ! $bbai_can_generate ) : ?>
-                                                    disabled
+                                                    data-bbai-action="open-upgrade"
+                                                    data-bbai-locked-cta="1"
+                                                    data-bbai-lock-reason="regenerate_single"
+                                                    data-bbai-locked-source="library-row-regenerate"
+                                                    aria-disabled="true"
                                                     title="<?php esc_attr_e( 'Monthly quota reached — upgrade to continue generating.', 'beepbeep-ai-alt-text-generator' ); ?>"
                                                 <?php endif; ?>>
                                             <?php esc_html_e('Regen', 'beepbeep-ai-alt-text-generator'); ?>
+                                            <?php if ( ! $bbai_can_generate ) : ?>
+                                                <span class="bbai-library-action-lock" aria-hidden="true">[Locked]</span>
+                                            <?php endif; ?>
                                         </button>
                                     </div>
                                 </td>
@@ -490,30 +591,6 @@ $bbai_optimized_percent = $bbai_total_images > 0 ? round(($bbai_with_alt_count /
                         <?php endforeach; ?>
                     </tbody>
                 </table>
-            </div>
-        </div>
-
-        <!-- Batch Actions Footer (appears when items selected) -->
-        <div class="bbai-library-batch-actions bbai-hidden bbai-mb-6" id="bbai-batch-actions">
-            <div class="bbai-card">
-                <div class="bbai-flex bbai-gap-4 bbai-items-center bbai-justify-between bbai-flex-wrap">
-                    <div class="bbai-flex bbai-gap-2 bbai-items-center">
-                        <span class="bbai-text-sm bbai-text-muted" id="bbai-selected-count">0 <?php esc_html_e('selected', 'beepbeep-ai-alt-text-generator'); ?></span>
-                    </div>
-                    <div class="bbai-flex bbai-gap-2 bbai-flex-wrap">
-                        <button type="button" class="bbai-btn-secondary bbai-btn-sm" id="bbai-batch-regenerate"
-                            <?php if ($bbai_is_free) : ?>
-                                disabled
-                                title="<?php esc_attr_e('Upgrade to Growth to enable bulk regeneration', 'beepbeep-ai-alt-text-generator'); ?>"
-                            <?php endif; ?>
-                        >
-                            <?php esc_html_e('Regenerate Selected', 'beepbeep-ai-alt-text-generator'); ?>
-                        </button>
-                        <button type="button" class="bbai-btn-ghost bbai-btn-sm" id="bbai-clear-selection">
-                            <?php esc_html_e('Clear Selection', 'beepbeep-ai-alt-text-generator'); ?>
-                        </button>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -573,52 +650,43 @@ $bbai_optimized_percent = $bbai_total_images > 0 ? round(($bbai_with_alt_count /
             </div>
         <?php endif; ?>
     <?php else : ?>
+        <?php
+        $bbai_empty_missing_count = isset($bbai_missing_count) ? max(0, (int) $bbai_missing_count) : 0;
+        $bbai_empty_can_generate = isset($bbai_can_generate) ? (bool) $bbai_can_generate : false;
+        $bbai_empty_show_generate = $bbai_empty_can_generate && $bbai_empty_missing_count > 0;
+        ?>
         <!-- Empty State -->
         <div class="bbai-library-empty-state bbai-empty-state">
             <div class="bbai-card bbai-text-center bbai-p-12">
                 <div class="bbai-library-empty-content">
-                    <h3 class="bbai-empty-state-title"><?php esc_html_e('No images yet', 'beepbeep-ai-alt-text-generator'); ?></h3>
-                    <p class="bbai-empty-state-description">
-                        <?php esc_html_e('Upload images to start automating SEO & accessibility compliance.', 'beepbeep-ai-alt-text-generator'); ?>
-                    </p>
-                    <div class="bbai-empty-state-benefits">
-                        <div class="bbai-empty-state-benefit">
-                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                <circle cx="10" cy="10" r="9" stroke="#10B981" stroke-width="2"/>
-                                <path d="M6 10l2.5 2.5L14 7" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                            <span><?php esc_html_e('WCAG-compliant alt text for accessibility', 'beepbeep-ai-alt-text-generator'); ?></span>
-                        </div>
-                        <div class="bbai-empty-state-benefit">
-                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                <circle cx="10" cy="10" r="9" stroke="#10B981" stroke-width="2"/>
-                                <path d="M6 10l2.5 2.5L14 7" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                            <span><?php esc_html_e('Optimized for Google Images & SEO insights', 'beepbeep-ai-alt-text-generator'); ?></span>
-                        </div>
+                    <div class="bbai-library-empty-icon" aria-hidden="true">
+                        <svg width="56" height="56" viewBox="0 0 24 24" fill="none">
+                            <path d="M4 5.5A1.5 1.5 0 015.5 4h13A1.5 1.5 0 0120 5.5v13a1.5 1.5 0 01-1.5 1.5h-13A1.5 1.5 0 014 18.5v-13z" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M8 15l2.5-2.5L13 15l3-3 2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="9" cy="9" r="1.2" fill="currentColor"/>
+                        </svg>
                     </div>
-                    <a href="<?php echo esc_url(admin_url('upload.php')); ?>" class="bbai-empty-state-sync-link">
-                        <?php esc_html_e('Add images in Media Library', 'beepbeep-ai-alt-text-generator'); ?> &gt;
-                    </a>
-                    <div class="bbai-empty-state-actions">
-                        <a href="<?php echo esc_url(admin_url('upload.php')); ?>" class="bbai-btn bbai-btn-primary">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="bbai-btn-icon">
-                                <path d="M8 2V14M2 8H14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                            <?php esc_html_e('+ Upload Images', 'beepbeep-ai-alt-text-generator'); ?>
+                    <h3 class="bbai-empty-state-title"><?php esc_html_e('No images analyzed yet', 'beepbeep-ai-alt-text-generator'); ?></h3>
+                    <p class="bbai-empty-state-description">
+                        <?php esc_html_e('Upload images to your media library and BeepBeep will generate alt text here.', 'beepbeep-ai-alt-text-generator'); ?>
+                    </p>
+                    <div class="bbai-library-empty-actions bbai-flex bbai-gap-3 bbai-items-center bbai-justify-center bbai-flex-wrap">
+                        <a href="<?php echo esc_url(admin_url('upload.php')); ?>" class="bbai-btn bbai-btn-primary bbai-btn-sm">
+                            <?php esc_html_e('Go to Media Library', 'beepbeep-ai-alt-text-generator'); ?>
                         </a>
-                        <a href="#tab-guide" class="bbai-btn bbai-btn-secondary" onclick="document.querySelector('[data-tab=\"guide\"]')?.click(); return false;">
-                            <?php esc_html_e('Learn More', 'beepbeep-ai-alt-text-generator'); ?>
-                        </a>
+                        <?php if ($bbai_empty_show_generate) : ?>
+                            <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm" data-action="generate-missing">
+                                <?php esc_html_e('Generate Missing Alt Text', 'beepbeep-ai-alt-text-generator'); ?>
+                            </button>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
         </div>
-        </div>
-        
+
         <!-- Summary Statistics (always show) -->
         <?php
-        // Prepare data for reusable metric cards component
+        // Prepare data for reusable metric cards component.
         $bbai_alt_texts_generated = isset($bbai_usage_stats) && is_array($bbai_usage_stats) ? ($bbai_usage_stats['used'] ?? 0) : 0;
         $bbai_description_mode = ($bbai_alt_texts_generated > 0 || $bbai_with_alt_count > 0) ? 'active' : 'empty';
         $bbai_wrapper_class = 'bbai-premium-metrics-grid bbai-mt-6';

@@ -37,6 +37,9 @@ $bbai_remaining = isset($bbai_usage_stats['limit'], $bbai_usage_stats['used'])
 
 // Determine what to show
 $bbai_show_upsell = !$bbai_is_agency;
+$bbai_headline_override = isset($bbai_bottom_upsell_headline) && is_string($bbai_bottom_upsell_headline) && $bbai_bottom_upsell_headline !== ''
+    ? $bbai_bottom_upsell_headline
+    : '';
 ?>
 
 <article class="bbai-bottom-upsell-cta bbai-mt-8" role="region" aria-labelledby="upgrade-headline">
@@ -57,7 +60,9 @@ $bbai_show_upsell = !$bbai_is_agency;
             </div>
 
             <!-- Title -->
-            <h3 id="upgrade-headline" class="bbai-card-title"><?php esc_html_e('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'); ?></h3>
+            <h3 id="upgrade-headline" class="bbai-card-title">
+                <?php echo esc_html($bbai_headline_override !== '' ? $bbai_headline_override : __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator')); ?>
+            </h3>
 
             <!-- Subtitle -->
             <p class="bbai-card-subtitle"><?php esc_html_e('Automate alt text generation and scale image optimisation each month.', 'beepbeep-ai-alt-text-generator'); ?></p>
@@ -98,12 +103,54 @@ $bbai_show_upsell = !$bbai_is_agency;
                 </li>
             </ul>
 
+            <?php
+            $bbai_upsell_reset_date = $bbai_usage_stats['reset_date'] ?? $bbai_usage_stats['resetDate'] ?? '';
+            $bbai_upsell_reset_ts = ! empty($bbai_upsell_reset_date) ? strtotime((string) $bbai_upsell_reset_date) : 0;
+            $bbai_upsell_days_left = isset($bbai_usage_stats['days_until_reset']) && is_numeric($bbai_usage_stats['days_until_reset'])
+                ? max(0, (int) $bbai_usage_stats['days_until_reset'])
+                : ($bbai_upsell_reset_ts > 0 ? max(0, (int) floor(($bbai_upsell_reset_ts - time()) / DAY_IN_SECONDS)) : 0);
+            $bbai_growth_capacity = 1000;
+            $bbai_current_used = max(0, intval($bbai_usage_stats['used'] ?? 0));
+            $bbai_current_limit = max(1, intval($bbai_usage_stats['limit'] ?? 50));
+            $bbai_unlock_more_images = max(0, $bbai_growth_capacity - $bbai_current_used);
+            $bbai_days_to_reset_label = $bbai_upsell_days_left <= 0
+                ? __('Today', 'beepbeep-ai-alt-text-generator')
+                : sprintf(
+                    /* translators: %s: days until reset */
+                    _n('%s day', '%s days', $bbai_upsell_days_left, 'beepbeep-ai-alt-text-generator'),
+                    number_format_i18n($bbai_upsell_days_left)
+                );
+            ?>
+
             <!-- CTA Section -->
             <div class="bbai-cta-section">
+                <p class="bbai-upgrade-unlock-context">
+                    <?php
+                    printf(
+                        /* translators: %s: additional monthly images unlocked on Growth */
+                        esc_html__( 'Unlock %s more images this month', 'beepbeep-ai-alt-text-generator' ),
+                        esc_html(number_format_i18n($bbai_unlock_more_images))
+                    );
+                    ?>
+                </p>
+                <div class="bbai-upgrade-compare-row">
+                    <div class="bbai-upgrade-compare-item">
+                        <span><?php esc_html_e('Current', 'beepbeep-ai-alt-text-generator'); ?></span>
+                        <strong><?php echo esc_html(number_format_i18n($bbai_current_used) . ' / ' . number_format_i18n($bbai_current_limit)); ?></strong>
+                    </div>
+                    <div class="bbai-upgrade-compare-item">
+                        <span><?php esc_html_e('With Growth', 'beepbeep-ai-alt-text-generator'); ?></span>
+                        <strong><?php echo esc_html(number_format_i18n($bbai_growth_capacity) . ' / month'); ?></strong>
+                    </div>
+                    <div class="bbai-upgrade-compare-item">
+                        <span><?php esc_html_e('Reset', 'beepbeep-ai-alt-text-generator'); ?></span>
+                        <strong><?php echo esc_html($bbai_days_to_reset_label); ?></strong>
+                    </div>
+                </div>
                 <button type="button" class="bbai-cta-primary" data-action="show-upgrade-modal" aria-label="<?php esc_attr_e('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'); ?>">
                     <?php esc_html_e('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'); ?>
                 </button>
-                <p class="bbai-cta-microcopy"><?php esc_html_e('Includes 1,000 AI alt texts per month. Cancel anytime.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                <p class="bbai-cta-microcopy"><?php esc_html_e('£12.99/month • Cancel anytime.', 'beepbeep-ai-alt-text-generator'); ?></p>
                 <a href="#" class="bbai-compare-link" data-action="show-upgrade-modal">
                     <?php esc_html_e('Compare plans', 'beepbeep-ai-alt-text-generator'); ?>
                 </a>
@@ -127,7 +174,9 @@ $bbai_show_upsell = !$bbai_is_agency;
             </div>
 
             <!-- Title -->
-            <h3 id="upgrade-headline" class="bbai-card-title"><?php esc_html_e('Scale with Agency', 'beepbeep-ai-alt-text-generator'); ?></h3>
+            <h3 id="upgrade-headline" class="bbai-card-title">
+                <?php echo esc_html($bbai_headline_override !== '' ? $bbai_headline_override : __('Scale with Agency', 'beepbeep-ai-alt-text-generator')); ?>
+            </h3>
 
             <!-- Subtitle -->
             <p class="bbai-card-subtitle"><?php esc_html_e('Unlimited potential for agencies and high-volume sites.', 'beepbeep-ai-alt-text-generator'); ?></p>

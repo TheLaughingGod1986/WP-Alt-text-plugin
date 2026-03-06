@@ -50,7 +50,8 @@ $bbai_seo_lift_percent = $bbai_stats['seoImpactScore'] ?? $bbai_stats['seo_impac
 $bbai_seo_lift_percent = max(0, round($bbai_seo_lift_percent));
 $bbai_total_images_optimized = $bbai_stats['imagesOptimized'] ?? $bbai_stats['with_alt'] ?? $bbai_optimized ?? 0;
 $bbai_total_images_optimized = max(0, intval($bbai_total_images_optimized));
-$bbai_images_processed = $bbai_stats['generated'] ?? $bbai_total_images_optimized;
+// Keep the "Usage Breakdown -> Images" metric aligned with "Before & After -> After".
+$bbai_images_processed = $bbai_stats['imagesProcessed'] ?? $bbai_stats['images_processed'] ?? $bbai_total_images_optimized;
 $bbai_images_processed = max(0, intval($bbai_images_processed));
 $bbai_images_delta_percent = $bbai_usage_stats['imagesDeltaPercent'] ?? $bbai_usage_stats['images_delta_percent'] ?? 0;
 $bbai_images_delta_percent = max(0, floatval($bbai_images_delta_percent));

@@ -122,7 +122,7 @@ class Trial_Quota {
 		}
 
 		if ( class_exists( __NAMESPACE__ . '\API_Client_V2' ) ) {
-			$api = new API_Client_V2();
+			$api = API_Client_V2::get_instance();
 			// User has a license → not a trial user.
 			if ( $api->has_active_license() ) {
 				return false;

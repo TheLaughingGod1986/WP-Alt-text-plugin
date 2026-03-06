@@ -552,7 +552,24 @@ class BbAIAuthModal {
             } else {
                 // WordPress AJAX error response - message is in data.data.message
                 const errorMessage = data.data?.message || data.message || 'Login failed';
-                this.showError(errorMessage);
+                const rawErrorCode = data.data?.code || data.code || '';
+                const errorCode = String(rawErrorCode || '').toLowerCase();
+                const existingEmail = data.data?.existing_email || '';
+                const inviteUrl = data.data?.invite_url || data.invite_url || '';
+
+                // Site is locked to one connected account: prefill expected email.
+                if (errorCode === 'site_has_license' && existingEmail) {
+                    const loginEmailInput = document.getElementById('login-email');
+                    if (loginEmailInput) {
+                        loginEmailInput.value = existingEmail;
+                    }
+                }
+
+                if (errorCode === 'invite_required' && inviteUrl) {
+                    this.showError(`${errorMessage} ${inviteUrl}`);
+                } else {
+                    this.showError(errorMessage);
+                }
                 // Clear portal flag on login failure
                 localStorage.removeItem('alttextai_open_portal_after_login');
             }
@@ -621,7 +638,30 @@ class BbAIAuthModal {
             } else {
                 // WordPress AJAX error response - message is in data.data.message
                 const errorMessage = data.data?.message || data.message || 'Registration failed';
-                this.showError(errorMessage);
+                const rawErrorCode = data.data?.code || data.code || '';
+                const errorCode = String(rawErrorCode || '').toLowerCase();
+                const existingEmail = data.data?.existing_email || data.data?.existingEmail || '';
+                const inviteUrl = data.data?.invite_url || data.invite_url || '';
+
+                // Existing account paths should guide user to login.
+                if (errorCode === 'site_has_license' || errorCode === 'free_plan_exists' || errorCode === 'user_exists') {
+                    this.showLoginForm();
+                    const loginEmailInput = document.getElementById('login-email');
+                    const loginPasswordInput = document.getElementById('login-password');
+
+                    if (loginEmailInput) {
+                        loginEmailInput.value = existingEmail || String(email || '');
+                    }
+                    if (loginPasswordInput) {
+                        loginPasswordInput.focus();
+                    }
+                }
+
+                if (errorCode === 'invite_required' && inviteUrl) {
+                    this.showError(`${errorMessage} ${inviteUrl}`);
+                } else {
+                    this.showError(errorMessage);
+                }
                 // Clear portal flag on registration failure
                 localStorage.removeItem('alttextai_open_portal_after_login');
             }
