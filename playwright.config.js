@@ -18,4 +18,5 @@ module.exports = defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
+  // Env vars for E2E: BBAI_E2E_BASE_URL, BBAI_E2E_WP_USER, BBAI_E2E_WP_PASS, BBAI_E2E_API_URL
 });

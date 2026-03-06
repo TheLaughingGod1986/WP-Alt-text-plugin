@@ -9,6 +9,8 @@
   "scripts": {
     "test": "npm run test:e2e",
     "test:e2e": "playwright test",
+    "test:e2e:api": "BBAI_E2E_API_URL=https://alttext-ai-backend.onrender.com playwright test tests/e2e/api-contract.spec.js",
+    "test:e2e:plugin": "playwright test tests/e2e/plugin-integration.spec.js tests/e2e/dashboard-accessibility.spec.js",
     "test:php": "phpunit -c phpunit.xml.dist"
   },
   "repository": {
