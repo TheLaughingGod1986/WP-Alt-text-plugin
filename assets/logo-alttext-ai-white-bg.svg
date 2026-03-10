@@ -1,0 +1,32 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background white -->
+  <rect width="512" height="512" rx="128" fill="white"/>
+  
+  <!-- Background with gradient -->
+  <rect width="512" height="512" rx="128" fill="url(#logo-gradient)"/>
+  
+  <!-- Main AI Sparkle Icon (centered) -->
+  <g transform="translate(256, 256)">
+    <!-- Central sparkle -->
+    <circle cx="0" cy="0" r="48" fill="white" opacity="0.15"/>
+    <path d="M0 -64L12.8 -38.4L38.4 -32L12.8 -25.6L0 0L-12.8 -25.6L-38.4 -32L-12.8 -38.4L0 -64Z" fill="white"/>
+    
+    <!-- Smaller sparkles -->
+    <path d="M96 -32L100.8 -19.2L115.2 -16L100.8 -12.8L96 0L91.2 -12.8L76.8 -16L91.2 -19.2L96 -32Z" fill="white" opacity="0.8"/>
+    <path d="M-96 32L-91.2 44.8L-76.8 48L-91.2 51.2L-96 64L-100.8 51.2L-115.2 48L-100.8 44.8L-96 32Z" fill="white" opacity="0.8"/>
+    <path d="M64 96L67.2 105.6L76.8 108.8L67.2 112L64 122L60.8 112L51.2 108.8L60.8 105.6L64 96Z" fill="white" opacity="0.6"/>
+    <path d="M-64 -96L-60.8 -86.4L-51.2 -83.2L-60.8 -80L-64 -70L-67.2 -80L-76.8 -83.2L-67.2 -86.4L-64 -96Z" fill="white" opacity="0.6"/>
+    
+    <!-- Image frame representing alt text/image optimization -->
+    <rect x="-48" y="-24" width="96" height="64" rx="8" stroke="white" stroke-width="4" fill="none" opacity="0.9"/>
+    <rect x="-40" y="-16" width="80" height="48" rx="4" fill="white" opacity="0.1"/>
+  </g>
+  
+  <defs>
+    <linearGradient id="logo-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#14b8a6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#10b981;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+</svg>
+

@@ -1,0 +1,288 @@
+/**
+ * BeepBeep AI - Custom Modal Styles
+ * Modern, accessible modal system to replace native alerts
+ *
+ * @package BeepBeep_AI_Alt_Text_Generator
+ * @since 4.3.0
+ */
+
+/* ==========================================
+   Modal Overlay & Backdrop
+   ========================================== */
+
+.bbai-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.bbai-modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    animation: bbai-modal-fade-in 0.2s ease;
+}
+
+/* ==========================================
+   Modal Container
+   ========================================== */
+
+.bbai-modal-container {
+    position: relative;
+    z-index: 1;
+    max-width: 480px;
+    width: 100%;
+    animation: bbai-modal-slide-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.bbai-modal-content {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    padding: 32px;
+    text-align: center;
+}
+
+/* ==========================================
+   Modal Icon
+   ========================================== */
+
+.bbai-modal-icon {
+    margin: 0 auto 20px;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bbai-modal-icon svg {
+    width: 48px;
+    height: 48px;
+}
+
+/* Icon colors by type */
+.bbai-modal--error .bbai-modal-icon {
+    color: #EF4444;
+}
+
+.bbai-modal--warning .bbai-modal-icon {
+    color: #F59E0B;
+}
+
+.bbai-modal--info .bbai-modal-icon {
+    color: #3B82F6;
+}
+
+.bbai-modal--success .bbai-modal-icon {
+    color: #10B981;
+}
+
+/* ==========================================
+   Modal Title
+   ========================================== */
+
+.bbai-modal-title {
+    margin: 0 0 12px;
+    font-size: 20px;
+    font-weight: 600;
+    color: #1F2937;
+    line-height: 1.3;
+}
+
+/* ==========================================
+   Modal Message
+   ========================================== */
+
+.bbai-modal-message {
+    margin: 0 0 24px;
+    font-size: 15px;
+    line-height: 1.6;
+    color: #4B5563;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.bbai-modal-message:last-child {
+    margin-bottom: 0;
+}
+
+/* ==========================================
+   Modal Buttons
+   ========================================== */
+
+.bbai-modal-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.bbai-modal-button {
+    min-width: 100px;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.bbai-modal-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* Primary button */
+.bbai-modal-button--primary {
+    background: #3B82F6;
+    color: #ffffff;
+}
+
+.bbai-modal-button--primary:hover {
+    background: #2563EB;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.bbai-modal-button--primary:active {
+    transform: translateY(0);
+}
+
+/* Error type primary button */
+.bbai-modal--error .bbai-modal-button--primary {
+    background: #EF4444;
+}
+
+.bbai-modal--error .bbai-modal-button--primary:hover {
+    background: #DC2626;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Warning type primary button */
+.bbai-modal--warning .bbai-modal-button--primary {
+    background: #F59E0B;
+}
+
+.bbai-modal--warning .bbai-modal-button--primary:hover {
+    background: #D97706;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+/* Success type primary button */
+.bbai-modal--success .bbai-modal-button--primary {
+    background: #10B981;
+}
+
+.bbai-modal--success .bbai-modal-button--primary:hover {
+    background: #059669;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* Secondary button */
+.bbai-modal-button--secondary {
+    background: #F3F4F6;
+    color: #374151;
+}
+
+.bbai-modal-button--secondary:hover {
+    background: #E5E7EB;
+    transform: translateY(-1px);
+}
+
+.bbai-modal-button--secondary:active {
+    transform: translateY(0);
+}
+
+/* ==========================================
+   Animations
+   ========================================== */
+
+@keyframes bbai-modal-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes bbai-modal-slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ==========================================
+   Responsive
+   ========================================== */
+
+@media (max-width: 640px) {
+    .bbai-modal-overlay {
+        padding: 16px;
+    }
+
+    .bbai-modal-content {
+        padding: 24px;
+    }
+
+    .bbai-modal-title {
+        font-size: 18px;
+    }
+
+    .bbai-modal-message {
+        font-size: 14px;
+    }
+
+    .bbai-modal-buttons {
+        flex-direction: column;
+    }
+
+    .bbai-modal-button {
+        width: 100%;
+    }
+}
+
+/* ==========================================
+   Accessibility
+   ========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    .bbai-modal-backdrop,
+    .bbai-modal-container {
+        animation: none;
+    }
+
+    .bbai-modal-button {
+        transition: none;
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .bbai-modal-content {
+        border: 2px solid #000000;
+    }
+
+    .bbai-modal-button {
+        border: 2px solid currentColor;
+    }
+}

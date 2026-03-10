@@ -1,0 +1,1529 @@
+#bbai-dashboard-main,
+.bbai-dashboard#bbai-dashboard-main,
+.bbai-dashboard-shell #bbai-dashboard-main {
+    width: 100%;
+    max-width: 1328px;
+    margin: 0 auto;
+    padding: 0 28px 40px;
+    box-sizing: border-box;
+    background: transparent !important;
+    color: #111827 !important;
+    min-height: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    font-weight: 400 !important;
+    transition: none !important;
+}
+
+.bbai-container.bbai-content-shell.bbai-dashboard-shell {
+    width: 100%;
+    max-width: 1560px !important;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero,
+#bbai-dashboard-main .bbai-dashboard-header,
+#bbai-dashboard-main .bbai-dashboard-container {
+    width: 100%;
+    max-width: none;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero {
+    margin-bottom: 32px;
+    padding: 28px 32px;
+    border: 1px solid #eef1f5;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+}
+
+#bbai-dashboard-main .bbai-dashboard-header {
+    margin: 0 0 32px;
+}
+
+#bbai-dashboard-main .bbai-dashboard-header__title {
+    margin: 0 0 8px;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    color: #111827;
+}
+
+#bbai-dashboard-main .bbai-dashboard-header__subtitle {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #6b7280;
+}
+
+#bbai-dashboard-main .bbai-dashboard-container {
+    gap: 32px;
+}
+
+#bbai-dashboard-main .bbai-dashboard-row {
+    gap: 24px;
+    align-items: stretch;
+    margin-bottom: 0;
+}
+
+#bbai-dashboard-main .bbai-dashboard-row--1,
+#bbai-dashboard-main .bbai-dashboard-row--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+#bbai-dashboard-main .bbai-dashboard-row--1 {
+    align-items: stretch;
+}
+
+#bbai-dashboard-main .bbai-dashboard-row--3,
+#bbai-dashboard-main .bbai-dashboard-row--4 {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    margin-top: 0;
+}
+
+@supports (content-visibility: auto) {
+    #bbai-dashboard-main .bbai-dashboard-section--lazy-render {
+        content-visibility: auto;
+        contain-intrinsic-size: 760px;
+    }
+
+    #bbai-dashboard-main .bbai-dashboard-row--3.bbai-dashboard-section--lazy-render {
+        contain-intrinsic-size: 420px;
+    }
+}
+
+#bbai-dashboard-main .bbai-dashboard-card,
+#bbai-dashboard-main .bbai-stat-card {
+    align-self: stretch;
+    height: 100%;
+    padding: 24px;
+    border: 1px solid #eef1f5;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+#bbai-dashboard-main .bbai-dashboard-card:hover,
+#bbai-dashboard-main .bbai-stat-card:hover {
+    border-color: #e2e8f0;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    transform: translateY(-2px);
+}
+
+#bbai-dashboard-main .bbai-dashboard-card .bbai-card__header {
+    margin-bottom: 16px;
+}
+
+#bbai-dashboard-main .bbai-dashboard-card .bbai-card__title,
+#bbai-dashboard-main .bbai-dashboard-card .bbai-opportunity-scanner__title {
+    margin: 0 0 8px;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: #1f2937;
+}
+
+#bbai-dashboard-main .bbai-dashboard-card .bbai-card__copy,
+#bbai-dashboard-main .bbai-dashboard-card .bbai-card__body p,
+#bbai-dashboard-main .bbai-dashboard-card p {
+    max-width: none !important;
+}
+
+#bbai-dashboard-main .bbai-dashboard-card .bbai-card__copy {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.55;
+    color: #6b7280;
+}
+
+#bbai-dashboard-main .bbai-dashboard-card .bbai-card__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+#bbai-dashboard-main .bbai-dashboard-card .bbai-card__footer {
+    margin-top: auto;
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+        "copy actions"
+        "progress progress";
+    align-items: start;
+    column-gap: 24px;
+    row-gap: 14px;
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero-copy {
+    grid-area: copy;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    width: 100%;
+    max-width: none;
+    justify-self: stretch;
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero__headline,
+#bbai-dashboard-main .bbai-dashboard-hero-heading {
+    margin: 0 0 8px;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: #111827;
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero__subtext,
+#bbai-dashboard-main .bbai-dashboard-hero-subtext {
+    margin: 0 0 10px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: #6b7280;
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero__usage,
+#bbai-dashboard-main .bbai-dashboard-hero-usage {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: #374151;
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero__usage .bbai-banner-usage-used,
+#bbai-dashboard-main .bbai-dashboard-hero__usage .bbai-banner-usage-limit {
+    font-weight: 600;
+    color: #111827;
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero-progress {
+    grid-area: progress;
+    display: block;
+    width: 100%;
+    min-width: 0;
+    margin-top: 0;
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero-progress-track {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    height: 10px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    overflow: hidden;
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero-progress-fill {
+    display: block;
+    height: 100%;
+    width: var(--progress-percent, 100%);
+    border-radius: 999px;
+    background: linear-gradient(90deg, #7c3aed, #8b5cf6);
+    transition: width 0.4s ease;
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero-actions {
+    grid-area: actions;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+    justify-self: end;
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero__cta {
+    min-height: 44px;
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero__cta--primary,
+#bbai-dashboard-main .bbai-dashboard-hero__cta--tertiary,
+#bbai-dashboard-main .bbai-dashboard-hero-actions .bbai-btn-primary {
+    border: none;
+    background: linear-gradient(90deg, #4f46e5, #2563eb) !important;
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.16);
+    color: #ffffff !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero__cta--primary:hover,
+#bbai-dashboard-main .bbai-dashboard-hero__cta--tertiary:hover,
+#bbai-dashboard-main .bbai-dashboard-hero-actions .bbai-btn-primary:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 14px 32px rgba(37, 99, 235, 0.25) !important;
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero__cta--secondary {
+    min-height: auto;
+    padding-left: 0;
+    padding-right: 0;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #2563eb !important;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.3;
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero__cta--secondary:hover {
+    text-decoration: underline;
+    transform: none !important;
+}
+
+#bbai-dashboard-main .bbai-status-card {
+    text-align: center;
+}
+
+#bbai-dashboard-main .bbai-status-card .bbai-card__header {
+    margin-bottom: 18px;
+}
+
+#bbai-dashboard-main .bbai-status-card .bbai-card__title {
+    font-size: 18px;
+    line-height: 1.2;
+}
+
+#bbai-dashboard-main .bbai-status-card .bbai-progress-donut-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 0 0 10px;
+}
+
+#bbai-dashboard-main .bbai-status-card .bbai-progress-donut {
+    width: 188px;
+    height: 188px;
+    max-width: 188px;
+}
+
+#bbai-dashboard-main .bbai-status-card .bbai-progress-donut-center,
+#bbai-dashboard-main .bbai-status-card .bbai-donut-center {
+    inset: 18%;
+    width: 64%;
+    height: 64%;
+    margin: 0;
+    background: transparent;
+}
+
+#bbai-dashboard-main .bbai-status-card .bbai-progress-donut-value,
+#bbai-dashboard-main .bbai-status-card .bbai-donut-value {
+    display: inline-flex;
+    align-items: flex-start;
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 0.92;
+    letter-spacing: -0.05em;
+    color: #111827;
+}
+
+#bbai-dashboard-main .bbai-status-card .bbai-progress-donut-percent,
+#bbai-dashboard-main .bbai-status-card .bbai-donut-percent {
+    margin-left: 3px;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1;
+    color: #111827;
+    opacity: 1;
+}
+
+#bbai-dashboard-main .bbai-status-card .bbai-progress-donut-label,
+#bbai-dashboard-main .bbai-status-card .bbai-donut-label {
+    max-width: 118px;
+    margin-top: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0;
+    text-transform: none;
+    color: #7a8498;
+}
+
+#bbai-dashboard-main .bbai-status-summary {
+    width: 100%;
+    margin: 0 auto 14px !important;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: #1f2937;
+    text-align: center !important;
+}
+
+#bbai-dashboard-main .bbai-status-summary__line {
+    margin: 0;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+#bbai-dashboard-main .bbai-status-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto 16px;
+    padding: 0;
+}
+
+#bbai-dashboard-main .bbai-status-metrics::before {
+    display: none;
+}
+
+#bbai-dashboard-main .bbai-status-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    min-height: 92px;
+    padding: 18px 16px;
+    border: 1px solid #eef1f5;
+    border-radius: 12px;
+    background: #f8fafc;
+    text-align: center;
+}
+
+#bbai-dashboard-main .bbai-status-metric__value,
+#bbai-dashboard-main .bbai-status-stat-number {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: #111827;
+}
+
+#bbai-dashboard-main .bbai-status-metric__label,
+#bbai-dashboard-main .bbai-status-stat-label {
+    margin: 6px 0 0;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.3;
+    color: #6b7280;
+}
+
+#bbai-dashboard-main .bbai-status-metric--optimized {
+    border-color: #eef1f5;
+}
+
+#bbai-dashboard-main .bbai-status-metric--weak {
+    border-color: #fde7cf;
+}
+
+#bbai-dashboard-main .bbai-status-metric--weak .bbai-status-metric__value {
+    color: #c2410c;
+}
+
+#bbai-dashboard-main .bbai-status-metric--missing {
+    border-color: #f6d6d6;
+}
+
+#bbai-dashboard-main .bbai-status-card .bbai-status-insight {
+    width: 100%;
+    max-width: none !important;
+    margin: 0 auto 14px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+#bbai-dashboard-main .bbai-status-insight__header {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+#bbai-dashboard-main .bbai-status-insight__title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: inherit;
+}
+
+#bbai-dashboard-main .bbai-status-insight__message {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+#bbai-dashboard-main .bbai-status-insight__icon {
+    flex: 0 0 auto;
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+#bbai-dashboard-main .bbai-status-insight__text {
+    text-align: center;
+}
+
+#bbai-dashboard-main .bbai-status-insight__action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #2563eb;
+    background: transparent;
+    border: none;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+#bbai-dashboard-main .bbai-status-insight__action--button {
+    min-height: auto;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    border-color: transparent;
+    color: inherit;
+    box-shadow: none;
+}
+
+#bbai-dashboard-main .bbai-status-insight__action:hover {
+    text-decoration: underline;
+}
+
+#bbai-dashboard-main .bbai-status-insight__action--button:hover {
+    transform: none;
+    text-decoration: underline;
+    box-shadow: none;
+}
+
+#bbai-dashboard-main .bbai-status-insight--warning,
+#bbai-dashboard-main .bbai-status-insight--danger,
+#bbai-dashboard-main .bbai-warning-card,
+#bbai-dashboard-main .bbai-status-warning,
+#bbai-dashboard-main .bbai-accessibility-warning {
+    border: 1px solid rgba(249, 115, 22, 0.26);
+    background: rgba(249, 115, 22, 0.05) !important;
+    color: #b45309;
+    border-radius: 10px;
+}
+
+#bbai-dashboard-main .bbai-status-insight--warning .bbai-status-insight__message,
+#bbai-dashboard-main .bbai-status-insight--danger .bbai-status-insight__message {
+    color: #b45309;
+}
+
+#bbai-dashboard-main .bbai-status-insight--warning .bbai-status-insight__icon,
+#bbai-dashboard-main .bbai-status-insight--danger .bbai-status-insight__icon,
+#bbai-dashboard-main .bbai-warning-icon {
+    color: rgba(249, 115, 22, 0.75);
+}
+
+#bbai-dashboard-main .bbai-status-insight--success {
+    border: 1px solid #bbf7d0;
+    background: #f0fdf4 !important;
+    color: #166534;
+}
+
+#bbai-dashboard-main .bbai-status-insight--success .bbai-status-insight__message {
+    color: #166534;
+}
+
+#bbai-dashboard-main .bbai-plan-usage-divider {
+    margin: 0 0 16px;
+    border-top: 1px solid #eef1f5;
+}
+
+#bbai-dashboard-main .bbai-plan-usage {
+    width: 100%;
+    max-width: none;
+    margin: 0 auto;
+    padding: 14px 16px;
+    border: 1px solid #eef1f5;
+    border-radius: 12px;
+    background: #f9fafb;
+    box-shadow: none;
+    text-align: center;
+}
+
+#bbai-dashboard-main .bbai-plan-usage__title {
+    margin: 0 0 12px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.25;
+    color: #1f2937;
+}
+
+#bbai-dashboard-main .bbai-plan-usage__progress {
+    height: 6px;
+    margin: 0 0 12px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    overflow: hidden;
+}
+
+#bbai-dashboard-main .bbai-plan-usage__progress-fill {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #7c3aed, #8b5cf6);
+    transition: width 0.6s ease;
+}
+
+#bbai-dashboard-main .bbai-plan-usage__line,
+#bbai-dashboard-main .bbai-plan-usage__reset,
+#bbai-dashboard-main .bbai-plan-usage__remaining {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #4b5563;
+}
+
+#bbai-dashboard-main .bbai-plan-usage__remaining {
+    margin-top: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #2563eb;
+}
+
+#bbai-dashboard-main .bbai-plan-usage__remaining--exhausted {
+    color: #1f2937;
+}
+
+#bbai-dashboard-main .bbai-plan-usage__upgrade-copy {
+    margin: 4px 0 0;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.5;
+    color: #2563eb;
+}
+
+#bbai-dashboard-main .bbai-upgrade-card {
+    align-self: stretch;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 28px 28px 16px !important;
+    background: linear-gradient(180deg, #ffffff, #f8fafc) !important;
+    border-color: #e0e7ff !important;
+    box-shadow: 0 10px 24px rgba(79, 70, 229, 0.08) !important;
+}
+
+#bbai-dashboard-main .bbai-upgrade-top {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+#bbai-dashboard-main .bbai-upgrade-card .bbai-card__header {
+    position: static;
+    margin-bottom: 18px;
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+#bbai-dashboard-main .bbai-upgrade-card__badge,
+#bbai-dashboard-main .bbai-plan-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: static;
+    left: auto;
+    bottom: auto;
+    transform: none;
+    align-self: flex-start;
+    margin: 8px 0 0;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #ede9fe;
+    box-shadow: none;
+    color: #6d28d9;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: nowrap;
+}
+
+#bbai-dashboard-main .bbai-upgrade-card .bbai-card__title {
+    margin: 0 0 10px;
+    font-size: 20px;
+    line-height: 1.2;
+    color: #1f2937;
+}
+
+#bbai-dashboard-main .bbai-upgrade-card .bbai-card__copy {
+    font-size: 15px;
+    line-height: 1.5;
+    color: #6b7280;
+}
+
+#bbai-dashboard-main .bbai-upgrade-subtitle {
+    margin-bottom: 16px;
+}
+
+#bbai-dashboard-main .bbai-upgrade-card__trust {
+    margin: 6px 0 0;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.45;
+    color: #6b7280;
+}
+
+#bbai-dashboard-main .bbai-upgrade-card .bbai-card__body {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-height: auto;
+    justify-content: flex-start;
+}
+
+#bbai-dashboard-main .bbai-upgrade-card .bbai-feature-list,
+#bbai-dashboard-main .bbai-upgrade-features {
+    display: grid;
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+#bbai-dashboard-main .bbai-upgrade-card .bbai-feature-list li {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 0;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: #374151;
+}
+
+#bbai-dashboard-main .bbai-upgrade-card .bbai-feature-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    flex: 0 0 20px;
+    color: #22c55e;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+#bbai-dashboard-main .bbai-upgrade-card__divider,
+#bbai-dashboard-main .bbai-upgrade-card__footer-divider {
+    border-top: 1px solid #eef1f5;
+}
+
+#bbai-dashboard-main .bbai-upgrade-card__divider {
+    margin: 24px 0 18px;
+}
+
+#bbai-dashboard-main .bbai-upgrade-card .bbai-card__footer.bbai-upgrade-bottom {
+    flex: 0 0 auto;
+    margin-top: auto;
+    padding-top: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    align-items: stretch;
+    border-top: 0;
+}
+
+#bbai-dashboard-main .bbai-upgrade-card__footer-divider {
+    margin: 0 0 8px;
+}
+
+#bbai-dashboard-main .bbai-upgrade-context {
+    position: static;
+    margin: 18px 0 0;
+    padding: 10px 14px;
+    animation: bbai-fade-in 0.5s ease-out;
+    border-radius: 10px;
+    background: #f3f4f6;
+    box-shadow: none;
+    color: #374151;
+    font-size: 13px;
+    line-height: 1.45;
+    text-align: center;
+}
+
+#bbai-dashboard-main .bbai-upgrade-meters {
+    margin-top: 18px;
+    margin-bottom: 22px;
+    padding-top: 16px;
+    border-top: 1px solid #eef0f3;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+#bbai-dashboard-main .bbai-meter {
+    display: flex;
+    flex-direction: column;
+    animation: bbai-slide-up 0.4s ease-out both;
+}
+#bbai-dashboard-main .bbai-meter-growth {
+    animation-delay: 0.08s;
+}
+
+#bbai-dashboard-main .bbai-meter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: #374151;
+    margin-bottom: 8px;
+}
+
+#bbai-dashboard-main .bbai-meter-value {
+    font-weight: 700;
+    color: #111827;
+}
+
+#bbai-dashboard-main .bbai-meter-bar {
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+#bbai-dashboard-main .bbai-meter-fill {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.6s ease;
+}
+
+#bbai-dashboard-main .bbai-meter-free .bbai-meter-bar {
+    background: #ece8ff;
+}
+
+#bbai-dashboard-main .bbai-meter-free .bbai-meter-fill {
+    background: linear-gradient(90deg, #7c3aed, #6366f1);
+}
+
+#bbai-dashboard-main .bbai-meter-growth .bbai-meter-bar {
+    box-sizing: border-box;
+    height: 12px;
+    padding: 1px;
+    background: linear-gradient(90deg, #ecfdf5, #f0fdf4);
+    border: 1px solid #dcfce7;
+    box-shadow: inset 0 1px 2px rgba(34, 197, 94, 0.08);
+}
+
+#bbai-dashboard-main .bbai-meter-growth .bbai-meter-fill {
+    background: linear-gradient(90deg, #22c55e, #4ade80);
+}
+
+#bbai-dashboard-main .bbai-meter-caption {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+#bbai-dashboard-main .bbai-meter-growth .bbai-meter-caption {
+    color: #15803d;
+}
+
+#bbai-dashboard-main .bbai-upgrade-card .bbai-upgrade-cta.bbai-btn.bbai-btn-primary,
+#bbai-dashboard-main .bbai-upgrade-card button.bbai-upgrade-cta.bbai-btn.bbai-btn-primary {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 56px !important;
+    margin: 0;
+    padding: 14px 20px !important;
+    border: none !important;
+    border-radius: 10px !important;
+    background: linear-gradient(135deg, #4f46e5, #3b82f6) !important;
+    box-shadow: 0 10px 24px rgba(59, 130, 246, 0.18) !important;
+    color: #ffffff !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    line-height: 1.2;
+    transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+#bbai-dashboard-main .bbai-upgrade-card .bbai-upgrade-cta.bbai-btn.bbai-btn-primary:hover:not(:disabled),
+#bbai-dashboard-main .bbai-upgrade-card button.bbai-upgrade-cta.bbai-btn.bbai-btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 32px rgba(59, 130, 246, 0.25) !important;
+}
+
+#bbai-dashboard-main .bbai-upgrade-trust {
+    margin-top: 10px;
+    padding-left: 0;
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #6b7280;
+}
+
+#bbai-dashboard-main .bbai-upgrade-value {
+    margin-top: 6px;
+    padding-left: 0;
+    text-align: center;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #4f46e5;
+}
+
+#bbai-dashboard-main .bbai-upgrade-card .bbai-link-secondary,
+#bbai-dashboard-main .bbai-upgrade-card .bbai-upgrade-compare-link,
+#bbai-dashboard-main .bbai-compare-plans {
+    display: block;
+    margin-top: 6px;
+    padding-left: 0;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: #6b7280;
+    text-decoration: none;
+}
+
+#bbai-dashboard-main .bbai-upgrade-card .bbai-link-secondary:hover,
+#bbai-dashboard-main .bbai-upgrade-card .bbai-upgrade-compare-link:hover {
+    text-decoration: underline;
+}
+
+#bbai-dashboard-main .bbai-workflow-card .bbai-card__body {
+    justify-content: flex-start;
+}
+
+#bbai-dashboard-main .bbai-workflow-card .bbai-card__title {
+    margin-bottom: 8px;
+    color: #1f2937;
+}
+
+#bbai-dashboard-main .bbai-workflow-card__desc {
+    max-width: 560px;
+    color: #6b7280;
+}
+
+#bbai-dashboard-main .bbai-workflow-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+#bbai-dashboard-main .bbai-workflow-step {
+    display: flex;
+    gap: 24px;
+    margin: 0;
+    padding: 20px 0;
+    border-top: 1px solid #f1f5f9;
+}
+
+#bbai-dashboard-main .bbai-workflow-step:first-child {
+    padding-top: 0;
+    border-top: none;
+}
+
+#bbai-dashboard-main .bbai-workflow-step--last {
+    padding-bottom: 0;
+}
+
+#bbai-dashboard-main .bbai-workflow-step__icon {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: #f3f4f6;
+    color: #475569;
+    font-size: 18px;
+}
+
+#bbai-dashboard-main .bbai-workflow-step__content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#bbai-dashboard-main .bbai-workflow-step__title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: #1f2937;
+}
+
+#bbai-dashboard-main .bbai-workflow-step__desc {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #6b7280;
+}
+
+#bbai-dashboard-main .bbai-workflow-step__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+    margin-top: auto;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+#bbai-dashboard-main .bbai-workflow-step__btn--primary {
+    border: none;
+    background: linear-gradient(90deg, #4f46e5, #2563eb);
+    color: #ffffff;
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.14);
+}
+
+#bbai-dashboard-main .bbai-workflow-step__btn--primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 32px rgba(37, 99, 235, 0.25);
+}
+
+#bbai-dashboard-main .bbai-workflow-step__btn--secondary,
+#bbai-dashboard-main .bbai-workflow-step__btn--locked {
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    color: #1f2937;
+}
+
+#bbai-dashboard-main .bbai-workflow-card__help-cta {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #f1f5f9;
+}
+
+#bbai-dashboard-main .bbai-workflow-card__help-cta a {
+    color: #2563eb;
+    text-decoration: none;
+}
+
+#bbai-dashboard-main .bbai-workflow-card__help-cta a:hover {
+    text-decoration: underline;
+}
+
+#bbai-dashboard-main .bbai-opportunity-scanner__card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+#bbai-dashboard-main .bbai-opportunity-scanner .bbai-card__body {
+    justify-content: space-between;
+    gap: 16px;
+}
+
+#bbai-dashboard-main .bbai-opportunity-scanner__prompt-block,
+#bbai-dashboard-main .bbai-opportunity-scanner__results {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+}
+
+#bbai-dashboard-main .bbai-opportunity-scanner__prompt {
+    margin: 0 0 12px;
+}
+
+#bbai-dashboard-main .bbai-opportunity-scanner__title {
+    color: #1f2937;
+}
+
+#bbai-dashboard-main .bbai-opportunity-scanner__desc {
+    color: #6b7280;
+}
+
+#bbai-dashboard-main .bbai-opportunity-scanner__grid--2x2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+#bbai-dashboard-main .bbai-opportunity-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 90px;
+    padding: 14px;
+    border: 1px solid #eef1f5;
+    border-radius: 10px;
+    background: #ffffff;
+    text-align: center;
+    box-shadow: none;
+}
+
+#bbai-dashboard-main .bbai-opportunity-stat__value {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: #111827;
+}
+
+#bbai-dashboard-main .bbai-opportunity-stat__label {
+    font-size: 12px;
+    line-height: 1.35;
+    color: #6b7280;
+}
+
+#bbai-dashboard-main .bbai-opportunity-stat--missing,
+#bbai-dashboard-main .bbai-seo-card-missing {
+    border-color: rgba(239, 68, 68, 0.32);
+    background: rgba(239, 68, 68, 0.04);
+}
+
+#bbai-dashboard-main .bbai-opportunity-stat--missing .bbai-opportunity-stat__value {
+    color: #dc2626;
+}
+
+#bbai-dashboard-main .bbai-opportunity-stat--weak,
+#bbai-dashboard-main .bbai-seo-card-weak {
+    border-color: rgba(249, 115, 22, 0.32);
+    background: rgba(249, 115, 22, 0.04);
+}
+
+#bbai-dashboard-main .bbai-opportunity-stat--weak .bbai-opportunity-stat__value {
+    color: #ea580c;
+}
+
+#bbai-dashboard-main .bbai-opportunity-stat--filename,
+#bbai-dashboard-main .bbai-seo-card-filename {
+    border-color: rgba(234, 179, 8, 0.32);
+    background: rgba(234, 179, 8, 0.04);
+}
+
+#bbai-dashboard-main .bbai-opportunity-stat--filename .bbai-opportunity-stat__value {
+    color: #ca8a04;
+}
+
+#bbai-dashboard-main .bbai-opportunity-stat--duplicate,
+#bbai-dashboard-main .bbai-seo-card-duplicate {
+    border-color: #e5e7eb;
+    background: #ffffff;
+}
+
+#bbai-dashboard-main .bbai-opportunity-stat--duplicate .bbai-opportunity-stat__value {
+    color: #475569;
+}
+
+#bbai-dashboard-main .bbai-opportunity-scanner__helper {
+    margin: 16px 0 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #6b7280;
+}
+
+#bbai-dashboard-main .bbai-opportunity-scanner__actions {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: auto;
+    padding-top: 16px;
+}
+
+#bbai-dashboard-main .bbai-opportunity-scanner__cta.bbai-btn.bbai-btn-primary,
+#bbai-dashboard-main .bbai-opportunity-scanner__scan-btn.bbai-btn.bbai-btn-primary {
+    min-width: 160px;
+    min-height: 44px !important;
+    padding: 12px 18px !important;
+    border: none !important;
+    border-radius: 10px !important;
+    background: linear-gradient(90deg, #4f46e5, #2563eb) !important;
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.14) !important;
+    color: #ffffff !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+#bbai-dashboard-main .bbai-opportunity-scanner__cta.bbai-btn.bbai-btn-primary:hover,
+#bbai-dashboard-main .bbai-opportunity-scanner__scan-btn.bbai-btn.bbai-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 32px rgba(37, 99, 235, 0.25) !important;
+}
+
+#bbai-dashboard-main .bbai-dashboard-stats-wrap {
+    width: 100%;
+    margin-top: 34px;
+}
+
+#bbai-dashboard-main .bbai-dashboard-footer-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+    margin-top: 0;
+}
+
+#bbai-dashboard-main .bbai-review-prompt-card,
+#bbai-dashboard-main .bbai-review-strip {
+    width: 100%;
+}
+
+#bbai-dashboard-main .bbai-review-prompt-card__body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px 20px;
+    padding: 14px 18px;
+    border: 1px solid #eef0f3;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+#bbai-dashboard-main .bbai-review-prompt-card__summary {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+#bbai-dashboard-main .bbai-review-prompt-card__content {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+#bbai-dashboard-main .bbai-review-prompt-card__content {
+    min-width: 0;
+}
+
+#bbai-dashboard-main .bbai-review-prompt-card__meta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+}
+
+#bbai-dashboard-main .bbai-review-prompt-card__title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: #1f2937;
+}
+
+#bbai-dashboard-main .bbai-review-prompt-card__copy {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #6b7280;
+}
+
+#bbai-dashboard-main .bbai-review-prompt-card__stars,
+#bbai-dashboard-main .bbai-review-stars {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1;
+    letter-spacing: 0.08em;
+    color: #f59e0b;
+    opacity: 0.9;
+}
+
+#bbai-dashboard-main .bbai-review-prompt-card__note {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #6b7280;
+}
+
+#bbai-dashboard-main .bbai-review-prompt-card__cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 10px 15px;
+    border: 1px solid #dbeafe;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #2563eb;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+#bbai-dashboard-main .bbai-review-prompt-card__cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(37, 99, 235, 0.12);
+}
+
+#bbai-dashboard-main .bbai-dashboard-section-kicker,
+#bbai-dashboard-main .bbai-performance-title {
+    margin: 0 0 16px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: 0.01em;
+    color: #374151;
+}
+
+#bbai-dashboard-main .bbai-dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+
+#bbai-dashboard-main .bbai-stat-card,
+#bbai-dashboard-main .bbai-metric-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 112px;
+    padding: 18px 20px;
+    border-radius: 12px;
+    border: 1px solid #eef0f3;
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+    text-align: center;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+#bbai-dashboard-main .bbai-stat-card:hover,
+#bbai-dashboard-main .bbai-metric-card:hover {
+    transform: translateY(-1px);
+    border-color: #e2e8f0;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+}
+
+#bbai-dashboard-main .bbai-btn:focus-visible,
+#bbai-dashboard-main .bbai-workflow-step__btn:focus-visible,
+#bbai-dashboard-main .bbai-review-prompt-card__cta:focus-visible,
+#bbai-dashboard-main .bbai-status-insight__action:focus-visible,
+#bbai-dashboard-main .bbai-upgrade-compare-link:focus-visible,
+#bbai-dashboard-main .bbai-workflow-card__help-cta a:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+#bbai-dashboard-main .bbai-stat-card__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 0 2px;
+    color: #94a3b8;
+}
+
+#bbai-dashboard-main .bbai-stat-card__icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+#bbai-dashboard-main .bbai-stat-card__value,
+#bbai-dashboard-main .bbai-metric-value {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: #111827;
+}
+
+#bbai-dashboard-main .bbai-stat-card__value span + span,
+#bbai-dashboard-main .bbai-stat-card .bbai-percent {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+#bbai-dashboard-main .bbai-stat-card__label,
+#bbai-dashboard-main .bbai-metric-label {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.35;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #6b7280;
+}
+
+@media (max-width: 1024px) {
+    #bbai-dashboard-main .bbai-dashboard-hero-inner {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+            "copy"
+            "actions"
+            "progress";
+    }
+
+    #bbai-dashboard-main .bbai-dashboard-row--1,
+    #bbai-dashboard-main .bbai-dashboard-row--2,
+    #bbai-dashboard-main .bbai-dashboard-row--3,
+    #bbai-dashboard-main .bbai-dashboard-row--4 {
+        grid-template-columns: 1fr !important;
+    }
+
+    #bbai-dashboard-main .bbai-dashboard-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    #bbai-dashboard-main .bbai-dashboard-hero-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+        width: 100%;
+        align-items: center;
+        justify-self: stretch;
+    }
+}
+
+@media (max-width: 782px) {
+    #bbai-dashboard-main {
+        padding: 0 20px 32px;
+    }
+
+    #bbai-dashboard-main .bbai-dashboard-hero,
+    #bbai-dashboard-main .bbai-dashboard-card,
+    #bbai-dashboard-main .bbai-stat-card {
+        padding: 20px;
+    }
+
+    #bbai-dashboard-main .bbai-dashboard-header__title {
+        font-size: 24px;
+    }
+
+    #bbai-dashboard-main .bbai-dashboard-hero__headline {
+        font-size: 20px;
+    }
+
+    #bbai-dashboard-main .bbai-status-card .bbai-progress-donut {
+        width: 192px;
+        height: 192px;
+        max-width: 192px;
+    }
+
+    #bbai-dashboard-main .bbai-status-card .bbai-progress-donut-value,
+    #bbai-dashboard-main .bbai-status-card .bbai-donut-value {
+        font-size: 42px;
+    }
+
+    #bbai-dashboard-main .bbai-status-metrics,
+    #bbai-dashboard-main .bbai-opportunity-scanner__grid--2x2 {
+        gap: 12px;
+    }
+}
+
+@media (max-width: 640px) {
+    #bbai-dashboard-main .bbai-dashboard-hero-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #bbai-dashboard-main .bbai-review-prompt-card__body {
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+    }
+
+    #bbai-dashboard-main .bbai-review-prompt-card__summary {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    #bbai-dashboard-main .bbai-dashboard-hero__cta {
+        width: 100%;
+        justify-content: center;
+    }
+
+    #bbai-dashboard-main .bbai-dashboard-hero__cta--secondary {
+        width: auto;
+        justify-content: flex-start;
+    }
+
+    #bbai-dashboard-main .bbai-dashboard-stats {
+        grid-template-columns: 1fr;
+    }
+
+    #bbai-dashboard-main .bbai-status-metrics {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 540px) {
+    #bbai-dashboard-main {
+        padding: 0 16px 28px;
+    }
+
+    #bbai-dashboard-main .bbai-dashboard-hero,
+    #bbai-dashboard-main .bbai-dashboard-card,
+    #bbai-dashboard-main .bbai-stat-card {
+        padding: 18px;
+    }
+
+    #bbai-dashboard-main .bbai-dashboard-header__title {
+        font-size: 22px;
+    }
+
+    #bbai-dashboard-main .bbai-dashboard-hero__headline {
+        font-size: 18px;
+    }
+
+    #bbai-dashboard-main .bbai-status-card .bbai-card__title,
+    #bbai-dashboard-main .bbai-upgrade-card .bbai-card__title {
+        font-size: 17px;
+    }
+
+    #bbai-dashboard-main .bbai-status-summary,
+    #bbai-dashboard-main .bbai-status-insight__message,
+    #bbai-dashboard-main .bbai-plan-usage__line,
+    #bbai-dashboard-main .bbai-plan-usage__reset,
+    #bbai-dashboard-main .bbai-plan-usage__remaining,
+    #bbai-dashboard-main .bbai-plan-usage__upgrade-copy,
+    #bbai-dashboard-main .bbai-opportunity-scanner__helper,
+    #bbai-dashboard-main .bbai-review-prompt-card__copy,
+    #bbai-dashboard-main .bbai-review-prompt-card__note {
+        font-size: 13px;
+    }
+
+    #bbai-dashboard-main .bbai-status-card .bbai-progress-donut {
+        width: 180px;
+        height: 180px;
+        max-width: 180px;
+    }
+
+    #bbai-dashboard-main .bbai-status-card .bbai-progress-donut-value,
+    #bbai-dashboard-main .bbai-status-card .bbai-donut-value {
+        font-size: 38px;
+    }
+
+    #bbai-dashboard-main .bbai-status-metric,
+    #bbai-dashboard-main .bbai-opportunity-stat {
+        padding: 14px;
+    }
+
+    #bbai-dashboard-main .bbai-status-insight__action,
+    #bbai-dashboard-main .bbai-workflow-step__btn {
+        font-size: 12px;
+    }
+}

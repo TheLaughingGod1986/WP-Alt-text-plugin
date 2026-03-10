@@ -1,0 +1,14 @@
+/**
+ * API Notice Modal
+ */
+.bbai-api-notice-modal-content { max-width: 600px; }
+.bbai-api-notice-body { padding: 24px; }
+.bbai-api-notice-text { margin: 0 0 20px 0; color: var(--bbai-gray-700); line-height: 1.6; font-size: var(--bbai-text-sm); }
+.bbai-api-notice-box { background: var(--bbai-gray-50); border: 1px solid var(--bbai-gray-200); border-radius: var(--bbai-radius); padding: var(--bbai-space-4); }
+.bbai-api-notice-label { margin: 0 0 12px 0; font-weight: var(--bbai-font-semibold); color: var(--bbai-gray-900); font-size: var(--bbai-text-sm); }
+.bbai-api-notice-value { margin: 0 0 16px 0; color: var(--bbai-gray-500); font-size: 13px; font-family: var(--bbai-font-mono); word-break: break-all; line-height: 1.5; }
+.bbai-api-notice-value:last-child { margin-bottom: 0; }
+.bbai-api-notice-link { color: var(--bbai-info); text-decoration: underline; font-size: 13px; }
+.bbai-api-notice-link:hover { color: var(--bbai-primary); }
+.bbai-api-notice-footer { padding: 20px 24px; border-top: 1px solid var(--bbai-gray-200); text-align: right; background: var(--bbai-bg); }
+.bbai-api-notice-footer .button { min-width: 100px; }

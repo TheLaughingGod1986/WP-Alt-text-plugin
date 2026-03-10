@@ -1,0 +1,814 @@
+/**
+ * Upgrade Modal - Professional SaaS Pricing
+ * High conversion, accessible design
+ */
+
+/* ========================================
+   MODAL BACKDROP & CONTAINER
+   ======================================== */
+.bbai-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: var(--bbai-z-modal);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: var(--bbai-space-4);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease-out, visibility 0.25s ease-out;
+}
+
+.bbai-modal-backdrop.active {
+    display: flex;
+    opacity: 1;
+    visibility: visible;
+}
+
+.bbai-upgrade-modal__content {
+    background: var(--bbai-bg);
+    border-radius: var(--bbai-radius-xl);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    max-width: 1400px;
+    width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    transform: translateY(30px) scale(0.95);
+    opacity: 0;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease-out;
+    will-change: transform, opacity;
+}
+
+.bbai-modal-backdrop.active .bbai-upgrade-modal__content {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+
+.bbai-upgrade-modal__body {
+    padding: var(--bbai-space-10);
+}
+
+/* Close Button - Extends .bbai-btn-icon-only */
+.bbai-upgrade-modal__close {
+    position: absolute;
+    top: var(--bbai-space-4);
+    right: var(--bbai-space-4);
+    z-index: 10;
+    background: var(--bbai-bg-secondary);
+    border: 1px solid var(--bbai-border);
+    color: var(--bbai-text-muted);
+}
+
+.bbai-upgrade-modal__close:hover {
+    color: var(--bbai-text);
+    background: var(--bbai-bg-secondary);
+}
+
+.bbai-upgrade-modal__close svg {
+    width: 20px;
+    height: 20px;
+}
+
+.bbai-upgrade-modal__header .bbai-subtitle {
+    margin-bottom: 0;
+}
+
+/* ========================================
+   PRICING GRID
+   ======================================== */
+.bbai-pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--bbai-space-6);
+    margin-bottom: var(--bbai-space-8);
+    align-items: stretch;
+}
+
+@media (max-width: 900px) {
+    .bbai-pricing-grid {
+        grid-template-columns: 1fr;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+/* ========================================
+   PRICING CARD
+   ======================================== */
+.bbai-pricing-card {
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-xl);
+    padding: var(--bbai-space-6);
+    display: flex;
+    flex-direction: column;
+    transition: all var(--bbai-transition-base) var(--bbai-ease-out);
+    position: relative;
+    box-shadow: var(--bbai-shadow-sm);
+}
+
+.bbai-pricing-card:hover {
+    border-color: var(--bbai-border-secondary);
+    box-shadow: var(--bbai-shadow-md);
+    transform: translateY(-2px);
+}
+
+/* Growth Plan - Featured */
+.bbai-pricing-card--growth {
+    border-color: var(--bbai-primary);
+    box-shadow: 0 0 0 3px var(--bbai-primary-soft), var(--bbai-shadow-sm);
+    position: relative;
+}
+
+.bbai-pricing-card--growth::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    height: 4px;
+    background: var(--bbai-primary-gradient);
+    border-radius: var(--bbai-radius-xl) var(--bbai-radius-xl) 0 0;
+}
+
+.bbai-pricing-card--growth:hover {
+    box-shadow: 0 0 0 3px var(--bbai-primary-soft), var(--bbai-shadow-lg);
+    transform: translateY(-4px);
+}
+
+/* Agency Plan - Premium */
+.bbai-pricing-card--agency {
+    border-color: #7C3AED;
+    box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2), var(--bbai-shadow-sm);
+    position: relative;
+}
+
+.bbai-pricing-card--agency::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    height: 4px;
+    background: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%);
+    border-radius: var(--bbai-radius-xl) var(--bbai-radius-xl) 0 0;
+}
+
+.bbai-pricing-card--agency:hover {
+    box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.3), var(--bbai-shadow-lg);
+    transform: translateY(-4px);
+}
+
+/* Badge */
+.bbai-pricing-card__badge {
+    display: inline-block;
+    padding: var(--bbai-space-2) var(--bbai-space-4);
+    border-radius: var(--bbai-radius-full);
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--bbai-space-5);
+    width: fit-content;
+    transition: all var(--bbai-transition-base) var(--bbai-ease-out);
+}
+.bbai-pricing-card__badge--free {
+    background: var(--bbai-bg-secondary);
+    color: var(--bbai-text-muted);
+    border: 1px solid var(--bbai-border);
+}
+.bbai-pricing-card__badge--growth {
+    background: var(--bbai-primary-soft);
+    color: var(--bbai-primary);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+.bbai-pricing-card__badge--agency {
+    background: rgba(124, 58, 237, 0.1);
+    color: #7C3AED;
+    border: 1px solid rgba(124, 58, 237, 0.2);
+}
+
+/* Price */
+.bbai-pricing-card__price {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+    margin-bottom: var(--bbai-space-2);
+}
+.bbai-pricing-card__currency {
+    font-size: var(--bbai-text-2xl);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+}
+.bbai-pricing-card__amount {
+    font-size: var(--bbai-text-5xl);
+    font-weight: var(--bbai-font-bold);
+    color: var(--bbai-text);
+    line-height: var(--bbai-leading-none);
+    letter-spacing: var(--bbai-tracking-tighter);
+}
+.bbai-pricing-card__period {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+    margin-left: var(--bbai-space-1);
+}
+
+/* Billing info */
+.bbai-pricing-card__billing {
+    font-size: var(--bbai-text-xs);
+    color: var(--bbai-text-muted);
+    margin: 0 0 var(--bbai-space-5) 0;
+    line-height: var(--bbai-leading-relaxed);
+}
+
+.bbai-pricing-card__billing em {
+    font-style: italic;
+    color: var(--bbai-primary);
+    font-weight: var(--bbai-font-semibold);
+}
+
+/* Limit text */
+.bbai-pricing-card__limit {
+    font-size: var(--bbai-text-base);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin-bottom: var(--bbai-space-5);
+    padding-bottom: var(--bbai-space-5);
+    border-bottom: 1px solid var(--bbai-border);
+    line-height: var(--bbai-leading-snug);
+}
+
+/* Features */
+.bbai-pricing-card__features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--bbai-space-6) 0;
+    flex: 1;
+}
+.bbai-pricing-card__features li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--bbai-space-3);
+    padding: var(--bbai-space-2) 0;
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-secondary);
+    line-height: var(--bbai-leading-relaxed);
+    transition: color var(--bbai-transition-fast) var(--bbai-ease-out);
+}
+
+.bbai-pricing-card__features li:hover {
+    color: var(--bbai-text);
+}
+.bbai-pricing-card__features li svg {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    color: var(--bbai-success);
+    transition: transform var(--bbai-transition-fast) var(--bbai-ease-out);
+}
+
+.bbai-pricing-card__features li:hover svg {
+    transform: scale(1.1);
+}
+
+.bbai-pricing-card__features li svg path {
+    stroke: currentColor;
+    stroke-width: 2.5;
+}
+.bbai-pricing-card__features li strong {
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+}
+
+/* Buttons - Extend base button classes */
+.bbai-pricing-card__btn {
+    /* Base button styles are inherited from .bbai-btn */
+    margin-top: auto;
+    position: relative;
+    overflow: hidden;
+    /* Ensure background is not transparent */
+    background: initial !important;
+}
+
+.bbai-pricing-card__btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 95%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.bbai-pricing-card__btn:hover::before {
+    left: 100%;
+}
+
+.bbai-pricing-card__btn:focus-visible {
+    outline: 2px solid var(--bbai-primary);
+    outline-offset: 2px;
+}
+
+/* Free button - High specificity to override base button styles */
+.bbai-pricing-card__btn.bbai-pricing-card__btn--free,
+.bbai-btn-secondary.bbai-pricing-card__btn--free,
+.bbai-pricing-card__btn--free.bbai-btn-secondary {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%) !important;
+    color: white !important;
+    border-color: #6b7280 !important;
+    box-shadow: 0 4px 14px rgba(107, 114, 128, 0.4), 0 0 0 1px rgba(107, 114, 128, 0.1) !important;
+}
+
+.bbai-pricing-card__btn.bbai-pricing-card__btn--free:hover:not(:disabled),
+.bbai-btn-secondary.bbai-pricing-card__btn--free:hover:not(:disabled),
+.bbai-pricing-card__btn--free.bbai-btn-secondary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #4b5563 0%, #374151 100%) !important;
+    border-color: #4b5563 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(107, 114, 128, 0.5), 0 0 0 1px rgba(107, 114, 128, 0.2) !important;
+}
+
+.bbai-pricing-card__btn.bbai-pricing-card__btn--free:disabled,
+.bbai-btn-secondary.bbai-pricing-card__btn--free:disabled,
+.bbai-pricing-card__btn--free.bbai-btn-secondary:disabled {
+    background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%) !important;
+    color: white !important;
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Growth button - High specificity to override base button styles */
+.bbai-pricing-card__btn.bbai-pricing-card__btn--growth,
+.bbai-btn-primary.bbai-pricing-card__btn--growth,
+.bbai-pricing-card__btn--growth.bbai-btn-primary,
+.bbai-pricing-card__btn--growth.bbai-btn,
+.bbai-btn.bbai-pricing-card__btn--growth,
+button.bbai-pricing-card__btn--growth,
+button.bbai-btn-primary.bbai-pricing-card__btn--growth,
+a.bbai-pricing-card__btn--growth,
+a.bbai-btn-primary.bbai-pricing-card__btn--growth {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
+    background-image: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
+    background-color: #10B981 !important;
+    color: white !important;
+    border: none !important;
+    border-color: #10B981 !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.5), 0 0 0 1px rgba(16, 185, 129, 0.15) !important;
+    font-weight: var(--bbai-font-bold) !important;
+}
+
+.bbai-pricing-card__btn.bbai-pricing-card__btn--growth:hover,
+.bbai-btn-primary.bbai-pricing-card__btn--growth:hover,
+.bbai-pricing-card__btn--growth.bbai-btn-primary:hover,
+.bbai-pricing-card__btn--growth.bbai-btn:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    border-color: #059669 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6), 0 0 0 1px rgba(16, 185, 129, 0.25) !important;
+}
+
+.bbai-pricing-card__btn.bbai-pricing-card__btn--growth:active,
+.bbai-btn-primary.bbai-pricing-card__btn--growth:active,
+.bbai-pricing-card__btn--growth.bbai-btn-primary:active,
+.bbai-pricing-card__btn--growth.bbai-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.5) !important;
+}
+
+/* Agency button - High specificity to override base button styles */
+.bbai-pricing-card__btn.bbai-pricing-card__btn--agency,
+.bbai-pricing-card__btn--agency.bbai-btn,
+.bbai-btn-primary.bbai-pricing-card__btn--agency,
+.bbai-pricing-card__btn--agency.bbai-btn-primary,
+.bbai-btn.bbai-pricing-card__btn--agency,
+button.bbai-pricing-card__btn--agency,
+button.bbai-btn.bbai-pricing-card__btn--agency,
+button.bbai-btn-primary.bbai-pricing-card__btn--agency,
+a.bbai-pricing-card__btn--agency,
+a.bbai-btn.bbai-pricing-card__btn--agency {
+    background: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%) !important;
+    background-image: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%) !important;
+    background-color: #7C3AED !important;
+    color: white !important;
+    border: none !important;
+    border-color: #7C3AED !important;
+    box-shadow: 0 4px 14px rgba(124, 58, 237, 0.5), 0 0 0 1px rgba(124, 58, 237, 0.15) !important;
+    font-weight: var(--bbai-font-bold) !important;
+}
+
+.bbai-pricing-card__btn.bbai-pricing-card__btn--agency:hover,
+.bbai-pricing-card__btn--agency.bbai-btn:hover,
+.bbai-btn-primary.bbai-pricing-card__btn--agency:hover,
+.bbai-pricing-card__btn--agency.bbai-btn-primary:hover {
+    background: linear-gradient(135deg, #6D28D9 0%, #7C3AED 100%) !important;
+    border-color: #6D28D9 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(124, 58, 237, 0.6), 0 0 0 1px rgba(124, 58, 237, 0.25) !important;
+}
+
+.bbai-pricing-card__btn.bbai-pricing-card__btn--agency:active,
+.bbai-pricing-card__btn--agency.bbai-btn:active,
+.bbai-btn-primary.bbai-pricing-card__btn--agency:active,
+.bbai-pricing-card__btn--agency.bbai-btn-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 14px rgba(124, 58, 237, 0.5) !important;
+}
+
+/* ========================================
+   TOP-UP SECTION
+   ======================================== */
+.bbai-topup-section {
+    background: var(--bbai-bg-secondary);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-xl);
+    padding: var(--bbai-space-6);
+    margin-top: var(--bbai-space-6);
+    transition: all var(--bbai-transition-base) var(--bbai-ease-out);
+}
+
+.bbai-topup-section:hover {
+    box-shadow: var(--bbai-shadow-sm);
+    border-color: var(--bbai-border-secondary);
+}
+.bbai-topup-section__content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--bbai-space-6);
+    flex-wrap: wrap;
+}
+
+.bbai-topup-section__text {
+    flex: 1;
+    min-width: 200px;
+}
+
+.bbai-topup-section__title {
+    font-size: var(--bbai-text-base);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0 0 var(--bbai-space-2) 0;
+}
+
+.bbai-topup-section__desc {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-secondary);
+    margin: 0;
+    line-height: var(--bbai-leading-relaxed);
+}
+/* Topup button extends .bbai-btn-dark */
+.bbai-topup-section__btn,
+.bbai-btn-dark.bbai-topup-section__btn,
+.bbai-btn.bbai-topup-section__btn,
+.bbai-btn-lg.bbai-topup-section__btn,
+button.bbai-topup-section__btn,
+button.bbai-btn-dark.bbai-topup-section__btn,
+button.bbai-btn.bbai-topup-section__btn {
+    /* Base button styles are inherited from .bbai-btn and .bbai-btn-dark */
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%) !important;
+    background-image: linear-gradient(135deg, #1f2937 0%, #111827 100%) !important;
+    background-color: #1f2937 !important;
+    color: white !important;
+    border: none !important;
+    border-color: #1f2937 !important;
+    box-shadow: 0 4px 14px rgba(31, 41, 55, 0.5), 0 0 0 1px rgba(31, 41, 55, 0.15) !important;
+    font-weight: var(--bbai-font-bold) !important;
+    white-space: nowrap;
+    min-width: 160px;
+}
+
+.bbai-topup-section__btn:hover:not(:disabled),
+.bbai-btn-dark.bbai-topup-section__btn:hover:not(:disabled),
+.bbai-btn.bbai-topup-section__btn:hover:not(:disabled),
+.bbai-btn-lg.bbai-topup-section__btn:hover:not(:disabled),
+button.bbai-topup-section__btn:hover:not(:disabled),
+button.bbai-btn-dark.bbai-topup-section__btn:hover:not(:disabled),
+button.bbai-btn.bbai-topup-section__btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #111827 0%, #030712 100%) !important;
+    background-image: linear-gradient(135deg, #111827 0%, #030712 100%) !important;
+    background-color: #111827 !important;
+    border: none !important;
+    border-color: #111827 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(31, 41, 55, 0.6), 0 0 0 1px rgba(31, 41, 55, 0.25) !important;
+}
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+@keyframes bbai-fade-in {
+    from { 
+        opacity: 0; 
+    }
+    to { 
+        opacity: 1; 
+    }
+}
+
+/* ========================================
+   BILLING TOGGLE
+   ======================================== */
+.bbai-billing-toggle-wrapper {
+    display: flex;
+    justify-content: center;
+    margin: var(--bbai-space-6) 0 var(--bbai-space-4);
+}
+
+.bbai-billing-toggle {
+    display: inline-flex;
+    background: var(--bbai-bg-secondary);
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-space-1);
+    gap: var(--bbai-space-1);
+    border: 1px solid var(--bbai-border);
+}
+
+.bbai-billing-toggle__option {
+    padding: var(--bbai-space-2) var(--bbai-space-5);
+    border-radius: var(--bbai-radius-md);
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-medium);
+    color: var(--bbai-text-secondary);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all var(--bbai-transition-base) var(--bbai-ease-out);
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+}
+
+.bbai-billing-toggle__option:hover {
+    color: var(--bbai-text);
+}
+
+.bbai-billing-toggle__option--active {
+    background: var(--bbai-bg);
+    color: var(--bbai-text);
+    box-shadow: var(--bbai-shadow-sm);
+    font-weight: var(--bbai-font-semibold);
+}
+
+.bbai-billing-savings {
+    font-size: var(--bbai-text-xs);
+    background: var(--bbai-success);
+    color: white;
+    padding: 2px var(--bbai-space-2);
+    border-radius: var(--bbai-radius-full);
+    font-weight: var(--bbai-font-semibold);
+    white-space: nowrap;
+}
+
+.bbai-billing-toggle__option:focus-visible {
+    outline: 2px solid var(--bbai-primary);
+    outline-offset: 2px;
+}
+
+/* ========================================
+   TRUST BADGES
+   ======================================== */
+.bbai-trust-badges {
+    text-align: center;
+    margin: var(--bbai-space-4) 0 var(--bbai-space-6);
+}
+
+.bbai-trust-badges--modal {
+    padding: var(--bbai-space-3) 0;
+}
+
+.bbai-trust-badges__text {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+    margin: 0;
+    line-height: var(--bbai-leading-relaxed);
+}
+
+/* ========================================
+   PRICING CARD BADGE - CURRENT PLAN
+   ======================================== */
+.bbai-pricing-card__badge--current {
+    background: var(--bbai-gray-700);
+    color: var(--bbai-gray-100);
+    border: 1px solid var(--bbai-gray-600);
+}
+
+/* ========================================
+   PRICING CARD - FEATURE COMING SOON
+   ======================================== */
+.bbai-feature-coming-soon {
+    color: var(--bbai-text-muted);
+    font-style: italic;
+}
+
+.bbai-pricing-card__features li:has(.bbai-feature-coming-soon) svg {
+    color: var(--bbai-text-muted);
+}
+
+/* ========================================
+   TOPUP SECTION - UPDATED
+   ======================================== */
+.bbai-topup-section__price-action {
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-space-4);
+    flex-wrap: wrap;
+}
+
+.bbai-topup-section__price {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+}
+
+.bbai-topup-section__price .bbai-pricing-card__currency {
+    font-size: var(--bbai-text-xl);
+    font-weight: var(--bbai-font-semibold);
+}
+
+.bbai-topup-section__price .bbai-pricing-card__amount {
+    font-size: var(--bbai-text-3xl);
+    font-weight: var(--bbai-font-bold);
+    line-height: var(--bbai-leading-none);
+}
+
+.bbai-topup-section__subtitle-inline {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+    font-weight: var(--bbai-font-normal);
+}
+
+/* ========================================
+   FAQ SECTION
+   ======================================== */
+.bbai-pricing-faq {
+    margin-top: var(--bbai-space-8);
+    padding-top: var(--bbai-space-8);
+    border-top: 1px solid var(--bbai-border);
+}
+
+.bbai-pricing-faq__title {
+    font-size: var(--bbai-text-xl);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0 0 var(--bbai-space-6) 0;
+    text-align: center;
+}
+
+.bbai-pricing-faq__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bbai-space-4);
+    width: 100%;
+    margin: 0;
+}
+
+.bbai-pricing-faq__item {
+    background: var(--bbai-bg-secondary);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-space-4);
+    transition: all var(--bbai-transition-base) var(--bbai-ease-out);
+}
+
+.bbai-pricing-faq__item:hover {
+    border-color: var(--bbai-border-secondary);
+    box-shadow: var(--bbai-shadow-sm);
+}
+
+.bbai-pricing-faq__question {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--bbai-space-3);
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0 0 var(--bbai-space-2) 0;
+}
+
+.bbai-pricing-faq__question svg {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    color: var(--bbai-success);
+}
+
+.bbai-pricing-faq__answer {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-secondary);
+    line-height: var(--bbai-leading-relaxed);
+    margin-left: calc(var(--bbai-space-3) + 16px);
+}
+
+/* ========================================
+   SCREEN READER ONLY
+   ======================================== */
+.bbai-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 640px) {
+    .bbai-upgrade-modal__body {
+        padding: var(--bbai-space-6);
+    }
+    .bbai-pricing-card__amount {
+        font-size: 36px;
+    }
+    .bbai-topup-section__content {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--bbai-space-4);
+    }
+    .bbai-topup-section__text {
+        width: 95%;
+    }
+    .bbai-topup-section__price-action {
+        flex-direction: column;
+        width: 95%;
+        align-items: stretch;
+    }
+    .bbai-topup-section__price {
+        justify-content: center;
+    }
+    .bbai-topup-section__btn {
+        width: 95%;
+    }
+    .bbai-billing-toggle {
+        width: 95%;
+        max-width: 300px;
+    }
+    .bbai-billing-toggle__option {
+        flex: 1;
+        justify-content: center;
+    }
+    .bbai-pricing-faq__list {
+        max-width: 95%;
+    }
+}
+
+/* ========================================
+   DARK MODE
+   ======================================== */
+[data-theme="dark"] .bbai-upgrade-modal__content,
+.bbai-dark-mode .bbai-upgrade-modal__content {
+    background: var(--bbai-bg);
+}
+[data-theme="dark"] .bbai-pricing-card,
+.bbai-dark-mode .bbai-pricing-card {
+    background: var(--bbai-bg-secondary);
+    border-color: var(--bbai-border);
+}
+[data-theme="dark"] .bbai-pricing-card__badge--free,
+.bbai-dark-mode .bbai-pricing-card__badge--free {
+    background: var(--bbai-gray-700);
+    color: var(--bbai-gray-300);
+}
+[data-theme="dark"] .bbai-pricing-card__badge--current,
+.bbai-dark-mode .bbai-pricing-card__badge--current {
+    background: var(--bbai-gray-600);
+    color: var(--bbai-gray-200);
+    border-color: var(--bbai-gray-500);
+}
+[data-theme="dark"] .bbai-topup-section,
+.bbai-dark-mode .bbai-topup-section {
+    background: var(--bbai-bg-secondary);
+    border-color: var(--bbai-border);
+}
+[data-theme="dark"] .bbai-billing-toggle,
+.bbai-dark-mode .bbai-billing-toggle {
+    background: var(--bbai-gray-800);
+    border-color: var(--bbai-gray-700);
+}
+[data-theme="dark"] .bbai-billing-toggle__option--active,
+.bbai-dark-mode .bbai-billing-toggle__option--active {
+    background: var(--bbai-gray-700);
+    color: var(--bbai-gray-100);
+}
+[data-theme="dark"] .bbai-pricing-faq__item,
+.bbai-dark-mode .bbai-pricing-faq__item {
+    background: var(--bbai-gray-800);
+    border-color: var(--bbai-gray-700);
+}
+[data-theme="dark"] .bbai-trust-badges__text,
+.bbai-dark-mode .bbai-trust-badges__text {
+    color: var(--bbai-gray-400);
+}

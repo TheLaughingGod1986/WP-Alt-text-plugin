@@ -1,0 +1,178 @@
+/**
+ * Dashboard Cards
+ * Microcards, action cards, and stat displays
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Dashboard Layout */
+.bbai-dashboard {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--bbai-spacing-md);
+}
+
+.bbai-dashboard__intro {
+    background: linear-gradient(135deg, #f6f9fc 0%, #ffffff 100%);
+    padding: var(--bbai-spacing-xl);
+    border-radius: var(--bbai-radius-xl);
+    margin-bottom: var(--bbai-spacing-xl);
+    border-left: 4px solid var(--bbai-purple);
+    box-shadow: var(--bbai-shadow-sm);
+}
+
+.bbai-dashboard__intro h2 {
+    color: var(--bbai-dark);
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0 0 var(--bbai-spacing-sm) 0;
+}
+
+.bbai-dashboard__intro p {
+    color: var(--bbai-gray);
+    font-size: 1rem;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Microcards Grid */
+.bbai-dashboard__microcards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--bbai-spacing-lg);
+    margin-bottom: var(--bbai-spacing-xl);
+}
+
+.bbai-microcard {
+    background: white;
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-spacing-lg);
+    box-shadow: var(--bbai-shadow-md);
+    transition: var(--bbai-transition-bounce);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    border: 2px solid transparent;
+}
+
+.bbai-microcard::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    transition: var(--bbai-transition);
+}
+
+.bbai-microcard.gradient-purple::before { background: var(--bbai-gradient-1); }
+.bbai-microcard.gradient-pink::before { background: var(--bbai-gradient-2); }
+.bbai-microcard.gradient-blue::before { background: var(--bbai-gradient-3); }
+.bbai-microcard.gradient-green::before { background: var(--bbai-gradient-4); }
+
+.bbai-microcard:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--bbai-shadow-xl);
+    border-color: var(--bbai-light-gray);
+}
+
+.bbai-microcard:hover::before {
+    height: 100%;
+    opacity: 0.05;
+}
+
+.bbai-microcard__icon {
+    font-size: 2.5rem;
+    margin-bottom: var(--bbai-spacing-md);
+    display: inline-block;
+    animation: bbai-float 3s ease-in-out infinite;
+}
+
+@keyframes bbai-float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.bbai-microcard__value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--bbai-dark);
+    line-height: 1;
+    margin-bottom: var(--bbai-spacing-xs);
+}
+
+.bbai-microcard__label {
+    font-size: 0.875rem;
+    color: var(--bbai-gray);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Action Cards Grid */
+.bbai-action-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--bbai-spacing-lg);
+    margin-bottom: var(--bbai-spacing-xl);
+}
+
+.bbai-action-card {
+    background: white;
+    border-radius: var(--bbai-radius-xl);
+    padding: var(--bbai-spacing-xl);
+    box-shadow: var(--bbai-shadow-lg);
+    transition: var(--bbai-transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.bbai-action-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 0;
+    transition: var(--bbai-transition);
+    pointer-events: none;
+}
+
+.bbai-action-card.card-purple::before { background: var(--bbai-gradient-1); }
+.bbai-action-card.card-green::before { background: var(--bbai-gradient-4); }
+.bbai-action-card.card-blue::before { background: var(--bbai-gradient-3); }
+
+.bbai-action-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--bbai-shadow-xl);
+}
+
+.bbai-action-card:hover::before {
+    opacity: 0.08;
+}
+
+.bbai-action-card__icon {
+    font-size: 3rem;
+    margin-bottom: var(--bbai-spacing-md);
+    display: inline-block;
+}
+
+.bbai-action-card__title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--bbai-dark);
+    margin-bottom: var(--bbai-spacing-sm);
+}
+
+.bbai-action-card__description {
+    font-size: 0.9375rem;
+    color: var(--bbai-gray);
+    line-height: 1.6;
+    margin-bottom: var(--bbai-spacing-lg);
+}
+
+.bbai-action-card__button {
+    width: 100%;
+}

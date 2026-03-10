@@ -1,0 +1,371 @@
+/**
+ * ALT Coverage Card & Smart Review Filters
+ * Modern SaaS dashboard style (Stripe, Linear, Vercel)
+ *
+ * @package BeepBeep_AI
+ * @since 8.0.0
+ */
+
+/* ============================================
+   ALT COVERAGE SECTION (never hide)
+   ============================================ */
+
+.bbai-library-coverage-section {
+    display: block !important;
+    visibility: visible !important;
+}
+
+/* ============================================
+   ALT COVERAGE CARD
+   ============================================ */
+
+.bbai-alt-coverage-card {
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+}
+
+.bbai-alt-coverage-card__title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--bbai-text);
+    margin: 0 0 16px;
+    letter-spacing: -0.01em;
+}
+
+.bbai-alt-coverage-card__stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.bbai-alt-coverage-card__stat {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.bbai-alt-coverage-card__stat-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--bbai-text-muted);
+}
+
+.bbai-alt-coverage-card__stat-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--bbai-text);
+    letter-spacing: -0.02em;
+}
+
+.bbai-alt-coverage-card__progress {
+    margin-top: 12px;
+}
+
+.bbai-alt-coverage-card__progress-bar {
+    display: flex;
+    height: 8px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--bbai-gray-100);
+}
+
+.bbai-alt-coverage-card__progress-segment {
+    min-width: 0;
+    transition: width 0.2s ease;
+}
+
+.bbai-alt-coverage-card__progress-segment--optimized {
+    background: #3b82f6;
+}
+
+.bbai-alt-coverage-card__progress-segment--needs-review {
+    background: #f59e0b;
+}
+
+.bbai-alt-coverage-card__progress-segment--missing {
+    background: #ef4444;
+}
+
+.bbai-alt-coverage-card__progress-labels {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--bbai-text-muted);
+}
+
+.bbai-alt-coverage-card__progress-label--optimized { color: #3b82f6; }
+.bbai-alt-coverage-card__progress-label--needs-review { color: #f59e0b; }
+.bbai-alt-coverage-card__progress-label--missing { color: #ef4444; }
+
+@media (max-width: 640px) {
+    .bbai-alt-coverage-card__stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ============================================
+   SMART REVIEW FILTERS
+   ============================================ */
+
+.bbai-alt-review-filters {
+    margin-bottom: 16px;
+    margin-top: 4px;
+}
+
+.bbai-alt-review-filters__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.bbai-alt-review-filters__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--bbai-text-muted);
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.bbai-alt-review-filters__btn:hover {
+    color: var(--bbai-text);
+    background: var(--bbai-gray-50);
+    border-color: var(--bbai-gray-300);
+}
+
+.bbai-alt-review-filters__btn:focus-visible {
+    outline: 2px solid var(--bbai-primary);
+    outline-offset: 2px;
+}
+
+.bbai-alt-review-filters__btn--active {
+    color: #fff;
+    background: var(--bbai-primary);
+    border-color: var(--bbai-primary);
+}
+
+.bbai-alt-review-filters__btn--active:hover {
+    color: #fff;
+    background: var(--bbai-primary-hover);
+    border-color: var(--bbai-primary-hover);
+}
+
+.bbai-alt-review-filters__count {
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+.bbai-alt-review-filters__btn--active .bbai-alt-review-filters__count {
+    opacity: 1;
+}
+
+/* ============================================
+   FILTER EMPTY STATE
+   ============================================ */
+
+.bbai-library-row--hidden {
+    display: none !important;
+}
+
+.bbai-library-filter-empty {
+    background: var(--bbai-bg);
+}
+
+.bbai-library-filter-empty--hidden {
+    display: none !important;
+}
+
+.bbai-library-filter-empty__cell {
+    padding: 32px 16px !important;
+    text-align: center;
+    font-size: 14px;
+    color: var(--bbai-text-muted);
+}
+
+/* ============================================
+   QUALITY BADGES (EXCELLENT / GOOD / NEEDS REVIEW)
+   ============================================ */
+
+.bbai-quality-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.bbai-quality-pill--excellent {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.bbai-quality-pill--good {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.bbai-quality-pill--needs-review,
+.bbai-quality-pill--fair,
+.bbai-quality-pill--poor {
+    background: #fff7ed;
+    color: #ea580c;
+}
+
+.bbai-quality-pill--missing {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* ============================================
+   BULK ACTIONS TOOLBAR (show when rows selected)
+   ============================================ */
+
+.bbai-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 16px;
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    border-radius: 10px;
+    margin-bottom: 16px;
+}
+
+.bbai-toolbar__bulk-actions {
+    display: none;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.bbai-toolbar.bbai-has-selection .bbai-toolbar__bulk-actions {
+    display: flex;
+}
+
+.bbai-toolbar__bulk-count {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--bbai-text);
+}
+
+.bbai-toolbar__bulk-btns {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.bbai-toolbar__right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
+}
+
+.bbai-toolbar__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 8px;
+    border: 1px solid #E5E7EB;
+    background: #fff;
+    color: var(--bbai-text);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.bbai-toolbar__btn:hover:not(:disabled) {
+    background: #f9fafb;
+    border-color: #d1d5db;
+}
+
+.bbai-toolbar__btn--primary {
+    background: var(--bbai-primary);
+    border-color: var(--bbai-primary);
+    color: #fff;
+}
+
+.bbai-toolbar__btn--primary:hover:not(:disabled):not(.bbai-is-locked) {
+    background: var(--bbai-primary-hover);
+    border-color: var(--bbai-primary-hover);
+    color: #fff;
+}
+
+.bbai-toolbar__btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.bbai-toolbar__search {
+    display: flex;
+    align-items: center;
+    position: relative;
+    min-width: 200px;
+}
+
+.bbai-toolbar__search svg {
+    position: absolute;
+    left: 12px;
+    color: var(--bbai-text-muted);
+    pointer-events: none;
+}
+
+.bbai-toolbar__search-input {
+    padding: 8px 12px 8px 36px;
+    font-size: 13px;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    width: 100%;
+    min-width: 180px;
+}
+
+.bbai-toolbar__search-input:focus {
+    outline: none;
+    border-color: var(--bbai-primary);
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
+}
+
+.bbai-toolbar__filters {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.bbai-toolbar__icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    background: #fff;
+    color: var(--bbai-text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.bbai-toolbar__icon-btn:hover {
+    background: #f9fafb;
+    color: var(--bbai-text);
+    border-color: #d1d5db;
+}

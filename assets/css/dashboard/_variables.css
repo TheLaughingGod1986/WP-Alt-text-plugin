@@ -1,0 +1,35 @@
+/**
+ * Dashboard CSS Variables
+ * Legacy aliases mapping to unified design system
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+:root {
+    /* Legacy gradient aliases */
+    --bbai-gradient-danger: var(--bbai-gradient-secondary, linear-gradient(135deg, #ef4444 0%, #dc2626 100%));
+    --bbai-gradient-info: var(--bbai-gradient-primary);
+    --bbai-gradient-achievement: var(--bbai-gradient-warning, linear-gradient(135deg, #f59e0b 0%, #d97706 100%));
+
+    /* Legacy color aliases */
+    --bbai-purple: var(--bbai-primary);
+    --bbai-pink: var(--bbai-error);
+    --bbai-blue: var(--bbai-info);
+    --bbai-green: var(--bbai-success);
+    --bbai-orange: var(--bbai-warning);
+    --bbai-gold: var(--bbai-warning);
+    --bbai-dark: var(--bbai-gray-800, #1f2937);
+    --bbai-light-gray: var(--bbai-gray-200, #e5e7eb);
+
+    /* Legacy spacing aliases */
+    --bbai-spacing-xs: var(--bbai-space-1);
+    --bbai-spacing-sm: var(--bbai-space-2);
+    --bbai-spacing-md: var(--bbai-space-4);
+    --bbai-spacing-lg: var(--bbai-space-6);
+    --bbai-spacing-xl: var(--bbai-space-8);
+    --bbai-spacing-2xl: var(--bbai-space-12);
+
+    /* Transition with bounce effect */
+    --bbai-transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}

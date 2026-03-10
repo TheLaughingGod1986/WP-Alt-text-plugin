@@ -1,0 +1,192 @@
+/**
+ * Toggle Component
+ * Toggle switch for on/off states
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   BASE TOGGLE
+   ================================================== */
+
+.bbai-settings-toggle {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 24px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.bbai-settings-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* ==================================================
+   TOGGLE SLIDER
+   ================================================== */
+
+.bbai-settings-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #d1d5db;
+    transition: 0.3s;
+    border-radius: 24px;
+}
+
+.bbai-settings-toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* ==================================================
+   TOGGLE STATES
+   ================================================== */
+
+/* Green when ON (primary variant) */
+.bbai-settings-toggle input:checked + .bbai-settings-toggle-slider {
+    background-color: #22C55E;
+}
+
+.bbai-settings-toggle input:checked + .bbai-settings-toggle-slider:before {
+    transform: translateX(24px);
+}
+
+.bbai-settings-toggle input:focus + .bbai-settings-toggle-slider {
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+/* ==================================================
+   TOGGLE VARIANTS
+   ================================================== */
+
+/* Teal variant */
+.bbai-settings-toggle--teal input:checked + .bbai-settings-toggle-slider {
+    background-color: #14b8a6;
+}
+
+.bbai-settings-toggle--teal input:focus + .bbai-settings-toggle-slider {
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.2);
+}
+
+/* Blue variant */
+.bbai-settings-toggle--blue input:checked + .bbai-settings-toggle-slider {
+    background-color: #3b82f6;
+}
+
+.bbai-settings-toggle--blue input:focus + .bbai-settings-toggle-slider {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+/* ==================================================
+   DISABLED STATE
+   ================================================== */
+
+.bbai-settings-toggle input:disabled + .bbai-settings-toggle-slider {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.bbai-settings-toggle input:disabled + .bbai-settings-toggle-slider:before {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* ==================================================
+   DEBUG CONTEXT TOGGLE
+   ================================================== */
+
+.bbai-debug-context-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.bbai-debug-context-toggle:hover {
+    background: #e5e7eb;
+    border-color: #d1d5db;
+}
+
+.bbai-debug-context-toggle.is-expanded {
+    background: #dbeafe;
+    border-color: #3b82f6;
+    color: #1e40af;
+}
+
+/* ==================================================
+   TOGGLE SIZES
+   ================================================== */
+
+/* Small toggle */
+.bbai-settings-toggle--small {
+    width: 36px;
+    height: 20px;
+}
+
+.bbai-settings-toggle--small .bbai-settings-toggle-slider:before {
+    height: 14px;
+    width: 14px;
+}
+
+.bbai-settings-toggle--small input:checked + .bbai-settings-toggle-slider:before {
+    transform: translateX(16px);
+}
+
+/* Large toggle */
+.bbai-settings-toggle--large {
+    width: 56px;
+    height: 28px;
+}
+
+.bbai-settings-toggle--large .bbai-settings-toggle-slider:before {
+    height: 22px;
+    width: 22px;
+}
+
+.bbai-settings-toggle--large input:checked + .bbai-settings-toggle-slider:before {
+    transform: translateX(28px);
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 768px) {
+    .bbai-settings-toggle {
+        /* Slightly larger for easier mobile tapping */
+        width: 52px;
+        height: 26px;
+    }
+
+    .bbai-settings-toggle-slider:before {
+        height: 20px;
+        width: 20px;
+    }
+
+    .bbai-settings-toggle input:checked + .bbai-settings-toggle-slider:before {
+        transform: translateX(26px);
+    }
+}
