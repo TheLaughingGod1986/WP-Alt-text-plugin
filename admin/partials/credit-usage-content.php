@@ -22,7 +22,7 @@ $bbai_days_reset = isset($current_usage['days_until_reset']) && is_numeric($curr
 $bbai_reset_date = $current_usage['reset_date'] ?? '';
 $bbai_plan = isset($current_usage['plan']) && !empty($current_usage['plan']) ? $current_usage['plan'] : 'free';
 ?>
-<div class="bbai-dashboard-container bbai-credit-usage-page">
+<div class="bbai-dashboard-container bbai-credit-usage-page bbai-page-inner">
     <!-- 1. Page header -->
     <div class="bbai-credit-usage-header-section">
         <?php if ($view === 'user_detail' && $user_id > 0) : ?>

@@ -169,7 +169,7 @@ $bbai_is_agency = ($bbai_plan_slug === 'agency');
 
 // Only show upsell if not agency (though this tab is agency-only, keeping for consistency)
 if (!$bbai_is_agency) {
-    $bbai_bottom_upsell_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/bottom-upsell-cta.php';
+    $bbai_bottom_upsell_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/bottom-upsell-cta.php';
     if (file_exists($bbai_bottom_upsell_partial)) {
         include $bbai_bottom_upsell_partial;
     }

@@ -61,16 +61,14 @@ if ( ! function_exists( 'bbai_enqueue_logged_out_styles' ) ) {
 	 * @param string $hook Current admin page hook.
 	 */
 	function bbai_enqueue_logged_out_styles( $hook ) {
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
-			$page_input     = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
-			$current_page = $page_input;
-			$hook         = is_string( $hook ) ? $hook : '';
-			$is_bbai_page = strpos( $hook, 'toplevel_page_bbai' ) === 0
-				|| strpos( $hook, 'bbai_page_bbai' ) === 0
-				|| strpos( $hook, 'bbai_page_beepbeep-ai' ) === 0
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
+		$page_input   = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+		$current_page = $page_input;
+		$hook         = is_string( $hook ) ? $hook : '';
+		$is_bbai_page = strpos( $hook, 'toplevel_page_bbai' ) === 0
+			|| strpos( $hook, 'bbai_page_bbai' ) === 0
 			|| strpos( $hook, '_page_bbai' ) !== false
-			|| strpos( $hook, '_page_beepbeep-ai' ) !== false
-			|| ( ! empty( $current_page ) && ( strpos( $current_page, 'bbai' ) === 0 || $current_page === 'beepbeep-ai' ) );
+			|| ( ! empty( $current_page ) && strpos( $current_page, 'bbai' ) === 0 );
 
 		if ( ! $is_bbai_page || bbai_is_authenticated() ) {
 			return;

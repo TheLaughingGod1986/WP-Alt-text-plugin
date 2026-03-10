@@ -21,7 +21,7 @@ $bbai_has_license = $this->api_client->has_active_license();
 if (!$bbai_is_authenticated && !$bbai_has_license) :
 ?>
                 <!-- Settings require authentication -->
-                <div class="bbai-dashboard-container">
+                <div class="bbai-dashboard-container bbai-page-inner">
                     <div class="bbai-settings-required">
                     <div class="bbai-settings-required-content">
                         <div class="bbai-settings-required-icon">
@@ -52,7 +52,7 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
             </div>
             <?php else : ?>
             <!-- Settings Page -->
-            <div class="bbai-dashboard-container bbai-settings-page">
+            <div class="bbai-dashboard-container bbai-settings-page bbai-page-inner">
                 <?php
                     // Pull fresh usage from backend to avoid stale cache in Settings
                     if (isset($this->api_client)) {

@@ -477,7 +477,7 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
     $bbai_is_free = !$bbai_is_premium;
     ?>
 
-    <div id="bbai-dashboard-main" class="bbai-dashboard" data-bbai-dashboard-container>
+    <div id="bbai-dashboard-main" class="bbai-dashboard bbai-page-inner" data-bbai-dashboard-container>
         <div id="bbai-limit-state-root" class="bbai-limit-state-root" hidden></div>
 
         <?php

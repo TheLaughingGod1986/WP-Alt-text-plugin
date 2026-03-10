@@ -1,14 +1,29 @@
+.bbai-container.bbai-content-shell.bbai-page,
+.bbai-container.bbai-content-shell.bbai-dashboard-shell {
+    width: 100%;
+    max-width: 1560px !important;
+    margin: 0 auto;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.bbai-page-inner,
 #bbai-dashboard-main,
 .bbai-dashboard#bbai-dashboard-main,
 .bbai-dashboard-shell #bbai-dashboard-main {
     width: 100%;
     max-width: 1328px;
     margin: 0 auto;
-    padding: 0 28px 40px;
+    padding: 32px 32px 40px;
     box-sizing: border-box;
     background: transparent !important;
-    color: #111827 !important;
     min-height: 0 !important;
+}
+
+#bbai-dashboard-main,
+.bbai-dashboard#bbai-dashboard-main,
+.bbai-dashboard-shell #bbai-dashboard-main {
+    color: #111827 !important;
     border: 0 !important;
     border-radius: 0 !important;
     box-shadow: none !important;
@@ -16,11 +31,13 @@
     transition: none !important;
 }
 
-.bbai-container.bbai-content-shell.bbai-dashboard-shell {
-    width: 100%;
-    max-width: 1560px !important;
-    margin: 0 auto;
-    box-sizing: border-box;
+@media (max-width: 782px) {
+    .bbai-page-inner,
+    #bbai-dashboard-main,
+    .bbai-dashboard#bbai-dashboard-main,
+    .bbai-dashboard-shell #bbai-dashboard-main {
+        padding: 24px 24px 32px;
+    }
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero,

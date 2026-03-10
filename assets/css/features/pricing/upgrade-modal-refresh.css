@@ -1,162 +1,293 @@
+body.modal-open,
+body.modal-open #wpwrap,
+body.modal-open #wpbody,
+body.modal-open #wpbody-content {
+    overflow: hidden;
+}
+
+#bbai-upgrade-modal {
+    padding-block: 24px;
+}
+
 #bbai-upgrade-modal .bbai-upgrade-modal__content {
-    max-width: 960px;
-    width: min(100%, 960px);
-    border-radius: 20px;
+    max-width: 1080px;
+    width: min(calc(100vw - 48px), 1080px);
+    max-height: calc(100vh - 48px);
+    border-radius: 18px;
     background: #ffffff;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.16);
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
 }
 
 #bbai-upgrade-modal .bbai-upgrade-modal__body {
-    padding: 28px 32px 24px;
+    display: grid;
+    gap: 30px;
+    padding: 28px 24px 24px;
 }
 
 #bbai-upgrade-modal .bbai-upgrade-modal__close {
-    top: 18px;
-    right: 18px;
-    width: 40px;
-    height: 40px;
-    border-radius: 999px;
+    top: 14px;
+    right: 14px;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: #ffffff;
+    border: 1px solid #dbe4ee;
+    color: #64748b;
+    box-shadow: none;
+}
+
+#bbai-upgrade-modal .bbai-upgrade-modal__close:hover {
     background: #f8fafc;
-    border-color: #e5e7eb;
-    color: #6b7280;
+    border-color: #cbd5e1;
+    color: #0f172a;
 }
 
 #bbai-upgrade-modal .bbai-upgrade-modal__header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
+    display: grid;
+    gap: 16px;
+    justify-items: center;
     text-align: center;
+    padding: 4px 48px 0;
 }
 
 #bbai-upgrade-modal .bbai-upgrade-modal__header h2 {
     margin: 0;
-    max-width: 720px;
-    font-size: 32px;
+    max-width: 760px;
+    font-size: 30px;
     font-weight: 700;
-    line-height: 1.2;
-    color: #111827;
+    line-height: 1.15;
     letter-spacing: -0.03em;
+    color: #0f172a;
 }
 
 #bbai-upgrade-modal .bbai-upgrade-modal__subtitle {
     margin: 0;
+    max-width: 640px;
     font-size: 15px;
-    line-height: 1.6;
-    color: #6b7280;
+    line-height: 1.55;
+    color: #64748b;
 }
 
-#bbai-upgrade-modal .bbai-upgrade-modal__trust-line {
-    display: inline-flex;
+#bbai-upgrade-modal .bbai-upgrade-modal__status {
+    display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 8px 16px;
+    gap: 6px 16px;
     margin: 0;
     font-size: 13px;
     line-height: 1.5;
-    color: #6b7280;
+    color: #64748b;
 }
 
-#bbai-upgrade-modal .bbai-upgrade-modal__trust-line span {
+#bbai-upgrade-modal .bbai-upgrade-modal__status-item {
     position: relative;
 }
 
-#bbai-upgrade-modal .bbai-upgrade-modal__trust-line span + span::before {
+#bbai-upgrade-modal .bbai-upgrade-modal__status-item + .bbai-upgrade-modal__status-item::before {
     content: "";
     position: absolute;
-    left: -9px;
     top: 50%;
-    width: 3px;
-    height: 3px;
+    left: -10px;
+    width: 4px;
+    height: 4px;
     border-radius: 999px;
     background: #cbd5e1;
     transform: translateY(-50%);
 }
 
-#bbai-upgrade-modal .bbai-upgrade-modal__problem {
-    max-width: 640px;
-    margin-top: 8px;
-    padding: 14px 16px;
+#bbai-upgrade-modal .bbai-upgrade-modal__decision {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 20px 22px;
+    border-radius: 16px;
     border: 1px solid #dbeafe;
-    border-radius: 14px;
-    background: linear-gradient(180deg, #ffffff, #f8fbff);
-    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.06);
+    background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
 }
 
-#bbai-upgrade-modal .bbai-upgrade-modal__problem-title,
-#bbai-upgrade-modal .bbai-upgrade-modal__problem-copy {
+#bbai-upgrade-modal .bbai-upgrade-modal__decision-copy {
+    flex: 1 1 360px;
+}
+
+#bbai-upgrade-modal .bbai-upgrade-modal__decision-eyebrow,
+#bbai-upgrade-modal .bbai-upgrade-modal__decision-title,
+#bbai-upgrade-modal .bbai-upgrade-modal__decision-desc,
+#bbai-upgrade-modal .bbai-upgrade-modal__decision-note {
     margin: 0;
 }
 
-#bbai-upgrade-modal .bbai-upgrade-modal__problem-title {
-    font-size: 14px;
-    font-weight: 600;
-    line-height: 1.5;
-    color: #1f2937;
+#bbai-upgrade-modal .bbai-upgrade-modal__decision-eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #2563eb;
 }
 
-#bbai-upgrade-modal .bbai-upgrade-modal__problem-copy {
-    margin-top: 4px;
-    font-size: 13px;
+#bbai-upgrade-modal .bbai-upgrade-modal__decision-title {
+    margin-top: 6px;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: #0f172a;
+}
+
+#bbai-upgrade-modal .bbai-upgrade-modal__decision-desc {
+    margin-top: 8px;
+    font-size: 14px;
     line-height: 1.5;
-    color: #2563eb;
+    color: #475569;
+}
+
+#bbai-upgrade-modal .bbai-upgrade-modal__decision-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+    flex: 0 1 auto;
+}
+
+#bbai-upgrade-modal .bbai-upgrade-modal__credit-copy {
+    display: grid;
+    gap: 4px;
+    max-width: 260px;
+    text-align: right;
+}
+
+#bbai-upgrade-modal .bbai-upgrade-modal__credit-title,
+#bbai-upgrade-modal .bbai-upgrade-modal__credit-price {
+    margin: 0;
+}
+
+#bbai-upgrade-modal .bbai-upgrade-modal__credit-title {
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.35;
+    color: #111827;
+}
+
+#bbai-upgrade-modal .bbai-upgrade-modal__credit-price {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: #374151;
+}
+
+#bbai-upgrade-modal .bbai-upgrade-modal__decision-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+#bbai-upgrade-modal .bbai-upgrade-modal__primary-action,
+#bbai-upgrade-modal .bbai-upgrade-modal__secondary-action {
+    min-height: 44px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+#bbai-upgrade-modal .bbai-upgrade-modal__primary-action {
+    background: linear-gradient(135deg, #5b5ce6, #3b82f6) !important;
+    background-image: linear-gradient(135deg, #5b5ce6, #3b82f6) !important;
+    border: none !important;
+    color: #ffffff !important;
+    box-shadow: 0 10px 22px rgba(91, 92, 230, 0.22) !important;
+}
+
+#bbai-upgrade-modal .bbai-upgrade-modal__primary-action:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(91, 92, 230, 0.28) !important;
+}
+
+#bbai-upgrade-modal .bbai-upgrade-modal__secondary-action {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+}
+
+#bbai-upgrade-modal .bbai-upgrade-modal__secondary-action:hover {
+    background: #f8fbff !important;
+    border-color: #93c5fd !important;
+    color: #1d4ed8 !important;
+    transform: translateY(-1px);
+}
+
+#bbai-upgrade-modal .bbai-upgrade-modal__decision-note {
+    font-size: 12px;
+    line-height: 1.4;
+    color: #64748b;
 }
 
 #bbai-upgrade-modal .bbai-pricing-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 20px;
+    gap: 16px;
     align-items: stretch;
-    margin-top: 24px;
-    margin-bottom: 0;
+    margin: 0;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card {
     display: flex;
     flex-direction: column;
     min-height: 100%;
-    padding: 24px;
+    padding: 22px 22px 20px;
     border-radius: 16px;
     border: 1px solid #e5e7eb;
     background: #ffffff;
-    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
     border-color: #dbe4ee;
+    box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
+}
+
+#bbai-upgrade-modal .bbai-pricing-card--free::before,
+#bbai-upgrade-modal .bbai-pricing-card--agency::before {
+    content: none;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card--free {
-    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    background: #fafafa;
+    border-color: #e5e7eb;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
 }
 
 #bbai-upgrade-modal .bbai-pricing-card--growth {
-    transform: scale(1.03);
-    z-index: 2;
-    border: 1px solid #c7d2fe;
-    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
+    border: 2px solid #e8e8ff;
+    background: linear-gradient(180deg, #fbfbff 0%, #ffffff 100%);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+#bbai-upgrade-modal .bbai-pricing-card--growth::before {
+    height: 3px;
+    background: linear-gradient(135deg, #5b5ce6, #3b82f6);
 }
 
 #bbai-upgrade-modal .bbai-pricing-card--growth:hover {
-    transform: scale(1.03) translateY(-2px);
-    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.1);
+    border-color: #dcdcff;
+    box-shadow: 0 18px 36px rgba(39, 48, 114, 0.14);
 }
 
 #bbai-upgrade-modal .bbai-pricing-card--agency {
-    border-color: #e0e7ff;
-    background: linear-gradient(180deg, #ffffff, #faf8ff);
+    border-color: #dbe4ee;
+    background: linear-gradient(180deg, #fcfdff 0%, #ffffff 100%);
 }
 
 #bbai-upgrade-modal .bbai-pricing-card__badges {
     display: flex;
     align-items: center;
-    gap: 8px;
     flex-wrap: wrap;
-    margin-bottom: 16px;
+    gap: 8px;
+    margin-bottom: 14px;
+    min-height: 28px;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card__badge,
@@ -174,29 +305,29 @@
 
 #bbai-upgrade-modal .bbai-pricing-card__badge--free {
     background: #f3f4f6;
-    color: #6b7280;
+    color: #64748b;
     border: 1px solid #e5e7eb;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card__badge--growth {
-    color: #6d28d9;
-    background: #ede9fe;
-    border: none;
+    background: rgba(91, 92, 230, 0.1);
+    color: #4c51d7;
+    border: 1px solid rgba(91, 92, 230, 0.18);
 }
 
 #bbai-upgrade-modal .bbai-pricing-card__badge--agency {
-    background: #eef2ff;
-    color: #4338ca;
-    border: 1px solid #c7d2fe;
+    background: #eff6ff;
+    color: #475569;
+    border: 1px solid #dbeafe;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card__status {
-    background: #111827;
+    background: #0f172a;
     color: #ffffff;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card__intro {
-    margin-bottom: 16px;
+    margin-bottom: 14px;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card__title {
@@ -204,124 +335,87 @@
     font-size: 20px;
     font-weight: 700;
     line-height: 1.2;
-    color: #111827;
-}
-
-#bbai-upgrade-modal .bbai-pricing-card__descriptor,
-#bbai-upgrade-modal .bbai-pricing-card__proof {
-    margin: 6px 0 0;
-    line-height: 1.5;
+    color: #0f172a;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card__descriptor {
+    margin: 6px 0 0;
     font-size: 14px;
-    color: #374151;
-}
-
-#bbai-upgrade-modal .bbai-pricing-card__proof {
-    font-size: 12px;
-    color: #6b7280;
+    line-height: 1.5;
+    color: #475569;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card__price {
     display: flex;
     align-items: flex-end;
     gap: 4px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card__currency {
     font-size: 24px;
     font-weight: 700;
-    color: #111827;
     line-height: 1;
+    color: #0f172a;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card__amount {
-    font-size: 42px;
+    font-size: 40px;
     font-weight: 700;
-    color: #111827;
-    line-height: 1;
+    line-height: 0.95;
     letter-spacing: -0.04em;
+    color: #0f172a;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card__period {
-    margin-left: 4px;
+    margin-left: 2px;
     font-size: 14px;
-    color: #6b7280;
+    line-height: 1.4;
+    color: #64748b;
+}
+
+#bbai-upgrade-modal .bbai-pricing-card__price-context {
+    margin: 0 0 10px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #64748b;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card__limit {
-    margin: 0 0 12px;
-    padding: 0;
+    margin: 0 0 10px;
+    padding: 0 0 10px;
     border: 0;
+    border-bottom: 1px solid #eef2f7;
     font-size: 15px;
-    font-weight: 600;
-    line-height: 1.5;
-    color: #111827;
+    font-weight: 700;
+    line-height: 1.45;
+    color: #0f172a;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card__billing {
-    margin: 0 0 16px;
+    margin: 0 0 14px;
     font-size: 12px;
-    line-height: 1.5;
-    color: #6b7280;
+    line-height: 1.45;
+    color: #64748b;
 }
 
-#bbai-upgrade-modal .bbai-pricing-card__outcomes {
-    margin-bottom: 18px;
-    padding: 14px 14px 12px;
-    border-radius: 12px;
-    border: 1px solid #dbeafe;
-    background: #f8fbff;
-}
-
-#bbai-upgrade-modal .bbai-pricing-card__outcomes-title {
-    margin: 0 0 10px;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: #2563eb;
-}
-
-#bbai-upgrade-modal .bbai-pricing-card__outcomes-list,
 #bbai-upgrade-modal .bbai-pricing-card__features {
+    display: grid;
+    gap: 10px;
     list-style: none;
     padding: 0;
-    margin: 0;
-}
-
-#bbai-upgrade-modal .bbai-pricing-card__outcomes-list {
-    display: grid;
-    gap: 8px;
-}
-
-#bbai-upgrade-modal .bbai-pricing-card__outcomes-list li {
-    font-size: 13px;
-    line-height: 1.4;
-    color: #374151;
-}
-
-#bbai-upgrade-modal .bbai-pricing-card__features {
-    display: grid;
-    gap: 12px;
+    margin: 0 0 18px;
     flex: 1;
-    margin-bottom: 20px;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card__features li {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
+    gap: 10px;
     padding: 0;
-    font-size: 14px;
-    line-height: 1.4;
-    color: #374151;
-}
-
-#bbai-upgrade-modal .bbai-pricing-card__features li:hover {
-    color: #111827;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #334155;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card__features li svg {
@@ -329,37 +423,38 @@
     height: 15px;
     margin-top: 2px;
     color: #22c55e;
+    flex-shrink: 0;
 }
 
 #bbai-upgrade-modal .bbai-feature-coming-soon {
-    color: #6b7280;
-    font-style: normal;
+    color: #64748b;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card__btn {
     width: 100%;
-    min-height: 46px;
+    min-height: 44px;
     margin-top: auto;
     border-radius: 10px;
     font-size: 14px;
     font-weight: 600;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card__btn.bbai-pricing-card__btn--free,
 #bbai-upgrade-modal .bbai-pricing-card__btn--free.bbai-btn-secondary {
-    background: #e5e7eb !important;
+    background: #f8fafc !important;
     background-image: none !important;
-    color: #6b7280 !important;
+    color: #64748b !important;
     border: 1px solid #d1d5db !important;
     box-shadow: none !important;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card__btn.bbai-pricing-card__btn--free:hover:not(:disabled),
 #bbai-upgrade-modal .bbai-pricing-card__btn--free.bbai-btn-secondary:hover:not(:disabled) {
-    background: #dbe1e8 !important;
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #475569 !important;
     transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(148, 163, 184, 0.16) !important;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card__btn.bbai-pricing-card__btn--free:disabled,
@@ -371,169 +466,165 @@
 #bbai-upgrade-modal .bbai-pricing-card__btn.bbai-pricing-card__btn--growth,
 #bbai-upgrade-modal .bbai-pricing-card__btn--growth.bbai-btn-primary,
 #bbai-upgrade-modal a.bbai-pricing-card__btn--growth {
-    background: linear-gradient(90deg, #10b981, #059669) !important;
-    background-image: linear-gradient(90deg, #10b981, #059669) !important;
+    background: linear-gradient(135deg, #5b5ce6, #3b82f6) !important;
+    background-image: linear-gradient(135deg, #5b5ce6, #3b82f6) !important;
     color: #ffffff !important;
     border: none !important;
-    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.25) !important;
+    box-shadow: 0 10px 22px rgba(91, 92, 230, 0.24) !important;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card__btn.bbai-pricing-card__btn--growth:hover,
 #bbai-upgrade-modal .bbai-pricing-card__btn--growth.bbai-btn-primary:hover,
 #bbai-upgrade-modal a.bbai-pricing-card__btn--growth:hover {
     transform: translateY(-1px);
-    box-shadow: 0 10px 22px rgba(16, 185, 129, 0.32) !important;
+    box-shadow: 0 14px 28px rgba(91, 92, 230, 0.3) !important;
+}
+
+#bbai-upgrade-modal .bbai-pricing-card__trust {
+    margin: 6px 0 0;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #6b7280;
+    text-align: center;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card__btn.bbai-pricing-card__btn--agency,
 #bbai-upgrade-modal .bbai-pricing-card__btn--agency.bbai-btn,
 #bbai-upgrade-modal a.bbai-pricing-card__btn--agency {
-    background: linear-gradient(90deg, #4f46e5, #2563eb) !important;
-    background-image: linear-gradient(90deg, #4f46e5, #2563eb) !important;
-    color: #ffffff !important;
-    border: none !important;
-    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.24) !important;
+    background: #ffffff !important;
+    background-image: none !important;
+    color: #1e293b !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card__btn.bbai-pricing-card__btn--agency:hover,
 #bbai-upgrade-modal .bbai-pricing-card__btn--agency.bbai-btn:hover,
 #bbai-upgrade-modal a.bbai-pricing-card__btn--agency:hover {
+    background: #f8fbff !important;
+    border-color: #93c5fd !important;
+    color: #1d4ed8 !important;
     transform: translateY(-1px);
-    box-shadow: 0 10px 22px rgba(79, 70, 229, 0.3) !important;
+    box-shadow: 0 10px 20px rgba(148, 163, 184, 0.12) !important;
 }
 
-#bbai-upgrade-modal .bbai-topup-section {
-    margin-top: 24px;
-    padding: 16px 18px;
-    border-radius: 14px;
-    border: 1px solid #eef1f5;
-    background: #f8fafc;
-}
+@media (max-width: 1100px) {
+    #bbai-upgrade-modal .bbai-pricing-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 
-#bbai-upgrade-modal .bbai-topup-section__content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    flex-wrap: wrap;
-}
+    #bbai-upgrade-modal .bbai-pricing-card--growth {
+        grid-column: 1 / -1;
+        grid-row: 1;
+    }
 
-#bbai-upgrade-modal .bbai-topup-section__text {
-    flex: 1;
-    min-width: 220px;
-}
+    #bbai-upgrade-modal .bbai-pricing-card--free {
+        grid-column: 1;
+        grid-row: 2;
+    }
 
-#bbai-upgrade-modal .bbai-topup-section__eyebrow,
-#bbai-upgrade-modal .bbai-topup-section__title,
-#bbai-upgrade-modal .bbai-topup-section__desc {
-    margin: 0;
-}
-
-#bbai-upgrade-modal .bbai-topup-section__eyebrow {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: #475569;
-}
-
-#bbai-upgrade-modal .bbai-topup-section__title {
-    margin-top: 4px;
-    font-size: 18px;
-    font-weight: 700;
-    line-height: 1.3;
-    color: #111827;
-}
-
-#bbai-upgrade-modal .bbai-topup-section__desc {
-    margin-top: 4px;
-    font-size: 13px;
-    line-height: 1.5;
-    color: #6b7280;
-}
-
-#bbai-upgrade-modal .bbai-topup-section__btn,
-#bbai-upgrade-modal .bbai-btn-dark.bbai-topup-section__btn {
-    min-width: 136px;
-    min-height: 44px;
-    border-radius: 10px;
-    background: #111827 !important;
-    background-image: none !important;
-    color: #ffffff !important;
-    border: none !important;
-    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18) !important;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-#bbai-upgrade-modal .bbai-topup-section__btn:hover:not(:disabled),
-#bbai-upgrade-modal .bbai-btn-dark.bbai-topup-section__btn:hover:not(:disabled) {
-    transform: translateY(-1px) !important;
-    box-shadow: 0 10px 18px rgba(15, 23, 42, 0.24) !important;
-}
-
-#bbai-upgrade-modal .bbai-upgrade-modal__footer-links {
-    display: flex;
-    justify-content: center;
-    gap: 18px;
-    flex-wrap: wrap;
-    margin-top: 16px;
-}
-
-#bbai-upgrade-modal .bbai-upgrade-modal__footer-link {
-    font-size: 13px;
-    font-weight: 500;
-    color: #2563eb;
-    text-decoration: none;
-}
-
-#bbai-upgrade-modal .bbai-upgrade-modal__footer-link:hover {
-    text-decoration: underline;
+    #bbai-upgrade-modal .bbai-pricing-card--agency {
+        grid-column: 2;
+        grid-row: 2;
+    }
 }
 
 @media (max-width: 900px) {
+    #bbai-upgrade-modal .bbai-upgrade-modal__content {
+        width: min(calc(100vw - 28px), 760px);
+    }
+
+    #bbai-upgrade-modal .bbai-upgrade-modal__header {
+        padding-right: 40px;
+        padding-left: 40px;
+    }
+
+    #bbai-upgrade-modal .bbai-upgrade-modal__decision {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #bbai-upgrade-modal .bbai-upgrade-modal__decision-actions {
+        align-items: stretch;
+    }
+
+    #bbai-upgrade-modal .bbai-upgrade-modal__credit-copy {
+        max-width: none;
+        text-align: left;
+    }
+
+    #bbai-upgrade-modal .bbai-upgrade-modal__decision-buttons {
+        justify-content: stretch;
+    }
+
+    #bbai-upgrade-modal .bbai-upgrade-modal__primary-action,
+    #bbai-upgrade-modal .bbai-upgrade-modal__secondary-action {
+        width: 100%;
+        white-space: normal;
+    }
+
     #bbai-upgrade-modal .bbai-pricing-grid {
         grid-template-columns: 1fr;
     }
 
     #bbai-upgrade-modal .bbai-pricing-card--growth,
-    #bbai-upgrade-modal .bbai-pricing-card--growth:hover {
-        transform: none;
+    #bbai-upgrade-modal .bbai-pricing-card--free,
+    #bbai-upgrade-modal .bbai-pricing-card--agency {
+        grid-column: auto;
+        grid-row: auto;
     }
 }
 
 @media (max-width: 640px) {
+    #bbai-upgrade-modal {
+        padding-block: 12px;
+    }
+
     #bbai-upgrade-modal .bbai-upgrade-modal__content {
         width: calc(100% - 24px);
-        border-radius: 18px;
+        border-radius: 16px;
+        max-height: calc(100vh - 24px);
     }
 
     #bbai-upgrade-modal .bbai-upgrade-modal__body {
-        padding: 24px 20px 20px;
+        gap: 24px;
+        padding: 22px 18px 18px;
+    }
+
+    #bbai-upgrade-modal .bbai-upgrade-modal__header {
+        padding: 2px 32px 0;
     }
 
     #bbai-upgrade-modal .bbai-upgrade-modal__header h2 {
-        font-size: 28px;
+        font-size: 26px;
+    }
+
+    #bbai-upgrade-modal .bbai-upgrade-modal__subtitle {
+        font-size: 14px;
+    }
+
+    #bbai-upgrade-modal .bbai-upgrade-modal__status {
+        font-size: 12px;
+        gap: 6px 12px;
+    }
+
+    #bbai-upgrade-modal .bbai-upgrade-modal__status-item + .bbai-upgrade-modal__status-item::before {
+        left: -8px;
+    }
+
+    #bbai-upgrade-modal .bbai-upgrade-modal__decision {
+        padding: 16px;
+    }
+
+    #bbai-upgrade-modal .bbai-upgrade-modal__decision-title {
+        font-size: 17px;
     }
 
     #bbai-upgrade-modal .bbai-pricing-card {
-        padding: 20px;
+        padding: 20px 18px 18px;
     }
 
     #bbai-upgrade-modal .bbai-pricing-card__amount {
-        font-size: 38px;
-    }
-
-    #bbai-upgrade-modal .bbai-topup-section__content {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    #bbai-upgrade-modal .bbai-topup-section__btn,
-    #bbai-upgrade-modal .bbai-btn-dark.bbai-topup-section__btn {
-        width: 100%;
-    }
-
-    #bbai-upgrade-modal .bbai-upgrade-modal__trust-line {
-        gap: 6px 12px;
+        font-size: 36px;
     }
 }

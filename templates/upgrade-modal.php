@@ -51,7 +51,6 @@ $bbai_agency_annual_savings = round(($bbai_agency_monthly * 12) - $bbai_agency_a
 
 // Billing portal URL for current plan management
 $bbai_billing_url = admin_url('admin.php?page=bbai-billing');
-$bbai_docs_url = 'https://beepbeepai.com/docs';
 
 $bbai_usage_limit = isset($bbai_usage_data['limit']) && is_numeric($bbai_usage_data['limit']) ? max(1, (int) $bbai_usage_data['limit']) : 50;
 $bbai_usage_used = isset($bbai_usage_data['used']) && is_numeric($bbai_usage_data['used']) ? max(0, (int) $bbai_usage_data['used']) : 0;
@@ -96,11 +95,94 @@ $bbai_modal_title = $bbai_is_usage_triggered
 $bbai_modal_subtitle = $bbai_is_usage_triggered
     ? __('Upgrade to continue optimizing images', 'beepbeep-ai-alt-text-generator')
     : __('Pick the plan that matches your media library size and monthly AI usage.', 'beepbeep-ai-alt-text-generator');
+
+$bbai_usage_status = sprintf(
+    /* translators: 1: used generations, 2: monthly limit */
+    __('%1$s/%2$s used', 'beepbeep-ai-alt-text-generator'),
+    number_format_i18n($bbai_usage_used),
+    number_format_i18n($bbai_usage_limit)
+);
+
+$bbai_problem_status = '';
+if ($bbai_problem_images > 0) {
+    $bbai_problem_status = $bbai_is_usage_triggered
+        ? sprintf(
+            /* translators: %s: number of blocked images */
+            _n('%s image blocked', '%s images blocked', $bbai_problem_images, 'beepbeep-ai-alt-text-generator'),
+            number_format_i18n($bbai_problem_images)
+        )
+        : sprintf(
+            /* translators: %s: number of images that still need ALT text */
+            _n('%s image needs ALT text', '%s images need ALT text', $bbai_problem_images, 'beepbeep-ai-alt-text-generator'),
+            number_format_i18n($bbai_problem_images)
+        );
+}
+
+$bbai_credit_pack_price = number_format((float) ($bbai_currency['credits'] ?? 9.99), 2);
+$bbai_credit_pack_cta = sprintf(
+    /* translators: 1: currency symbol, 2: credit pack price */
+    __('Buy 100 credits for %1$s%2$s', 'beepbeep-ai-alt-text-generator'),
+    $bbai_currency['symbol'],
+    $bbai_credit_pack_price
+);
+$bbai_credit_pack_title = __('Just need a few more images?', 'beepbeep-ai-alt-text-generator');
+$bbai_credit_pack_summary = sprintf(
+    /* translators: 1: currency symbol, 2: credit pack price */
+    __('100 ALT texts – %1$s%2$s', 'beepbeep-ai-alt-text-generator'),
+    $bbai_currency['symbol'],
+    $bbai_credit_pack_price
+);
+
+$bbai_decision_eyebrow = ('free' === $bbai_current_plan)
+    ? __('Recommended', 'beepbeep-ai-alt-text-generator')
+    : __('Account', 'beepbeep-ai-alt-text-generator');
+
+$bbai_decision_title = ('free' === $bbai_current_plan)
+    ? __('Growth is the best next step for most sites', 'beepbeep-ai-alt-text-generator')
+    : __('Manage your plan or add one-time credits', 'beepbeep-ai-alt-text-generator');
+
+$bbai_decision_copy = ('free' === $bbai_current_plan)
+    ? __('1,000 ALT texts per month with bulk optimization and priority processing.', 'beepbeep-ai-alt-text-generator')
+    : __('Open billing for plan changes, or buy credits for smaller batches that do not expire.', 'beepbeep-ai-alt-text-generator');
+
+$bbai_default_decision_note = __('One-time credits for smaller batches. They do not expire.', 'beepbeep-ai-alt-text-generator');
+$bbai_locked_modal_title = sprintf(
+    /* translators: %s: number of free AI generations */
+    __('You\'ve used all %s free AI generations', 'beepbeep-ai-alt-text-generator'),
+    number_format_i18n($bbai_usage_limit)
+);
+$bbai_locked_modal_subtitle = __('Upgrade to continue optimizing images', 'beepbeep-ai-alt-text-generator');
+$bbai_locked_decision_eyebrow = __('Monthly limit reached', 'beepbeep-ai-alt-text-generator');
+$bbai_locked_decision_title = __('Upgrade to keep generating ALT text today', 'beepbeep-ai-alt-text-generator');
+$bbai_locked_decision_copy = __('Unlock 1,000 ALT texts per month, bulk optimization, and priority processing.', 'beepbeep-ai-alt-text-generator');
+$bbai_locked_decision_note = __('One-time credits for smaller batches. They do not expire.', 'beepbeep-ai-alt-text-generator');
 ?>
 
-<div id="bbai-upgrade-modal" class="bbai-modal-backdrop" data-bbai-upgrade-modal="1" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="bbai-upgrade-modal-title">
+<div
+    id="bbai-upgrade-modal"
+    class="bbai-modal-backdrop"
+    data-bbai-upgrade-modal="1"
+    data-bbai-upgrade-context="default"
+    data-bbai-upgrade-default-title="<?php echo esc_attr($bbai_modal_title); ?>"
+    data-bbai-upgrade-default-subtitle="<?php echo esc_attr($bbai_modal_subtitle); ?>"
+    data-bbai-upgrade-default-eyebrow="<?php echo esc_attr($bbai_decision_eyebrow); ?>"
+    data-bbai-upgrade-default-decision-title="<?php echo esc_attr($bbai_decision_title); ?>"
+    data-bbai-upgrade-default-decision-desc="<?php echo esc_attr($bbai_decision_copy); ?>"
+    data-bbai-upgrade-default-note="<?php echo esc_attr($bbai_default_decision_note); ?>"
+    data-bbai-upgrade-locked-title="<?php echo esc_attr($bbai_locked_modal_title); ?>"
+    data-bbai-upgrade-locked-subtitle="<?php echo esc_attr($bbai_locked_modal_subtitle); ?>"
+    data-bbai-upgrade-locked-eyebrow="<?php echo esc_attr($bbai_locked_decision_eyebrow); ?>"
+    data-bbai-upgrade-locked-decision-title="<?php echo esc_attr($bbai_locked_decision_title); ?>"
+    data-bbai-upgrade-locked-decision-desc="<?php echo esc_attr($bbai_locked_decision_copy); ?>"
+    data-bbai-upgrade-locked-note="<?php echo esc_attr($bbai_locked_decision_note); ?>"
+    style="display: none;"
+    role="dialog"
+    aria-modal="true"
+    aria-hidden="true"
+    aria-labelledby="bbai-upgrade-modal-title"
+>
     <div class="bbai-upgrade-modal__content">
-        <button type="button" class="bbai-btn bbai-btn-icon-only bbai-upgrade-modal__close" onclick="if(typeof alttextaiCloseModal==='function'){alttextaiCloseModal();}else if(typeof bbaiCloseModal==='function'){bbaiCloseModal();}" aria-label="<?php esc_attr_e('Close', 'beepbeep-ai-alt-text-generator'); ?>">
+        <button type="button" class="bbai-btn bbai-btn-icon-only bbai-upgrade-modal__close" onclick="if(typeof bbaiCloseUpgradeModal==='function'){bbaiCloseUpgradeModal();}else if(typeof alttextaiCloseModal==='function'){alttextaiCloseModal();}else if(typeof bbaiCloseModal==='function'){bbaiCloseModal();}" aria-label="<?php esc_attr_e('Close', 'beepbeep-ai-alt-text-generator'); ?>">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 6L6 18M6 6l12 12"/>
             </svg>
@@ -108,36 +190,60 @@ $bbai_modal_subtitle = $bbai_is_usage_triggered
 
         <div class="bbai-upgrade-modal__body">
             <div class="bbai-upgrade-modal__header">
-                <h2 id="bbai-upgrade-modal-title"><?php echo esc_html($bbai_modal_title); ?></h2>
-                <p class="bbai-upgrade-modal__subtitle"><?php echo esc_html($bbai_modal_subtitle); ?></p>
-                <p class="bbai-upgrade-modal__trust-line" aria-label="<?php esc_attr_e('Cancel anytime, no lock-in, secure checkout', 'beepbeep-ai-alt-text-generator'); ?>">
-                    <span><?php esc_html_e('Cancel anytime', 'beepbeep-ai-alt-text-generator'); ?></span>
-                    <span><?php esc_html_e('No lock-in', 'beepbeep-ai-alt-text-generator'); ?></span>
-                    <span><?php esc_html_e('Secure checkout', 'beepbeep-ai-alt-text-generator'); ?></span>
-                </p>
-                <?php if ($bbai_problem_images > 0) : ?>
-                    <div class="bbai-upgrade-modal__problem">
-                        <p class="bbai-upgrade-modal__problem-title">
-                            <?php
-                            printf(
-                                /* translators: %s: number of images still needing ALT text improvements */
-                                esc_html__('Your site still has %s images needing ALT text improvements.', 'beepbeep-ai-alt-text-generator'),
-                                esc_html(number_format_i18n($bbai_problem_images))
-                            );
-                            ?>
-                        </p>
-                        <p class="bbai-upgrade-modal__problem-copy"><?php esc_html_e('Growth can help you fix them in minutes.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                <h2 id="bbai-upgrade-modal-title" data-bbai-upgrade-title><?php echo esc_html($bbai_modal_title); ?></h2>
+                <p class="bbai-upgrade-modal__subtitle" data-bbai-upgrade-subtitle><?php echo esc_html($bbai_modal_subtitle); ?></p>
+                <div class="bbai-upgrade-modal__status" aria-label="<?php esc_attr_e('Usage summary', 'beepbeep-ai-alt-text-generator'); ?>">
+                    <span class="bbai-upgrade-modal__status-item"><?php echo esc_html($bbai_usage_status); ?></span>
+                    <?php if ('' !== $bbai_problem_status) : ?>
+                        <span class="bbai-upgrade-modal__status-item"><?php echo esc_html($bbai_problem_status); ?></span>
+                    <?php endif; ?>
+                    <span class="bbai-upgrade-modal__status-item"><?php esc_html_e('Cancel anytime', 'beepbeep-ai-alt-text-generator'); ?></span>
+                </div>
+            </div>
+
+            <div class="bbai-upgrade-modal__decision">
+                <div class="bbai-upgrade-modal__decision-copy">
+                    <p class="bbai-upgrade-modal__decision-eyebrow" data-bbai-upgrade-eyebrow><?php echo esc_html($bbai_decision_eyebrow); ?></p>
+                    <p class="bbai-upgrade-modal__decision-title" data-bbai-upgrade-decision-title><?php echo esc_html($bbai_decision_title); ?></p>
+                    <p class="bbai-upgrade-modal__decision-desc" data-bbai-upgrade-decision-desc><?php echo esc_html($bbai_decision_copy); ?></p>
+                </div>
+                <div class="bbai-upgrade-modal__decision-actions">
+                    <div class="bbai-upgrade-modal__credit-copy">
+                        <p class="bbai-upgrade-modal__credit-title"><?php echo esc_html($bbai_credit_pack_title); ?></p>
+                        <p class="bbai-upgrade-modal__credit-price"><?php echo esc_html($bbai_credit_pack_summary); ?></p>
+                        <p class="bbai-upgrade-modal__decision-note" data-bbai-upgrade-note><?php echo esc_html($bbai_default_decision_note); ?></p>
                     </div>
-                <?php endif; ?>
+                    <div class="bbai-upgrade-modal__decision-buttons">
+                        <?php if ('free' === $bbai_current_plan) : ?>
+                            <button type="button"
+                                    class="bbai-btn bbai-btn-primary bbai-btn-lg bbai-upgrade-modal__primary-action"
+                                    data-action="checkout-plan"
+                                    data-plan="pro"
+                                    data-price-id="<?php echo esc_attr($bbai_pro_price_id); ?>"
+                                    data-fallback-url="<?php echo esc_url($bbai_stripe_links['pro']); ?>">
+                                <?php esc_html_e('Start Growth Plan', 'beepbeep-ai-alt-text-generator'); ?>
+                            </button>
+                        <?php else : ?>
+                            <a href="<?php echo esc_url($bbai_billing_url); ?>" class="bbai-btn bbai-btn-primary bbai-btn-lg bbai-upgrade-modal__primary-action">
+                                <?php esc_html_e('Manage billing', 'beepbeep-ai-alt-text-generator'); ?>
+                            </a>
+                        <?php endif; ?>
+                        <button type="button"
+                                class="bbai-btn bbai-btn-secondary bbai-btn-lg bbai-upgrade-modal__secondary-action"
+                                data-action="checkout-plan"
+                                data-plan="credits"
+                                data-price-id="<?php echo esc_attr($bbai_credits_price_id); ?>"
+                                data-fallback-url="<?php echo esc_url($bbai_stripe_links['credits']); ?>">
+                            <?php echo esc_html($bbai_credit_pack_cta); ?>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div class="bbai-pricing-grid">
                 <div class="bbai-pricing-card bbai-pricing-card--free">
                     <div class="bbai-pricing-card__badges">
                         <span class="bbai-pricing-card__badge bbai-pricing-card__badge--free"><?php esc_html_e('Free', 'beepbeep-ai-alt-text-generator'); ?></span>
-                        <?php if ($bbai_current_plan === 'free') : ?>
-                            <span class="bbai-pricing-card__status"><?php esc_html_e('Current plan', 'beepbeep-ai-alt-text-generator'); ?></span>
-                        <?php endif; ?>
                     </div>
                     <div class="bbai-pricing-card__intro">
                         <h3 class="bbai-pricing-card__title"><?php esc_html_e('Free', 'beepbeep-ai-alt-text-generator'); ?></h3>
@@ -151,12 +257,6 @@ $bbai_modal_subtitle = $bbai_is_usage_triggered
                     <div class="bbai-pricing-card__limit"><?php esc_html_e('50 AI alt texts per month', 'beepbeep-ai-alt-text-generator'); ?></div>
 
                     <ul class="bbai-pricing-card__features">
-                        <li>
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                            <?php esc_html_e('50 AI alt texts per month', 'beepbeep-ai-alt-text-generator'); ?>
-                        </li>
                         <li>
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -192,13 +292,13 @@ $bbai_modal_subtitle = $bbai_is_usage_triggered
                     <div class="bbai-pricing-card__intro">
                         <h3 class="bbai-pricing-card__title"><?php esc_html_e('Growth', 'beepbeep-ai-alt-text-generator'); ?></h3>
                         <p class="bbai-pricing-card__descriptor"><?php esc_html_e('Perfect for most WordPress sites', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        <p class="bbai-pricing-card__proof"><?php esc_html_e('Most WordPress sites choose this plan', 'beepbeep-ai-alt-text-generator'); ?></p>
                     </div>
                     <div class="bbai-pricing-card__price">
                         <span class="bbai-pricing-card__currency"><?php echo esc_html($bbai_currency['symbol']); ?></span>
                         <span class="bbai-pricing-card__amount"><?php echo esc_html(number_format($bbai_growth_monthly, 2)); ?></span>
                         <span class="bbai-pricing-card__period"><?php esc_html_e('/month', 'beepbeep-ai-alt-text-generator'); ?></span>
                     </div>
+                    <p class="bbai-pricing-card__price-context"><?php esc_html_e('≈ 1.3p per ALT text', 'beepbeep-ai-alt-text-generator'); ?></p>
 
                     <div class="bbai-pricing-card__limit"><?php esc_html_e('1,000 AI alt texts per month', 'beepbeep-ai-alt-text-generator'); ?></div>
 
@@ -209,27 +309,18 @@ $bbai_modal_subtitle = $bbai_is_usage_triggered
                         ?>
                     </p>
 
-                    <div class="bbai-pricing-card__outcomes">
-                        <p class="bbai-pricing-card__outcomes-title"><?php esc_html_e('What this unlocks', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        <ul class="bbai-pricing-card__outcomes-list">
-                            <li><?php esc_html_e('Optimize entire media libraries', 'beepbeep-ai-alt-text-generator'); ?></li>
-                            <li><?php esc_html_e('Fix accessibility issues faster', 'beepbeep-ai-alt-text-generator'); ?></li>
-                            <li><?php esc_html_e('Improve image SEO at scale', 'beepbeep-ai-alt-text-generator'); ?></li>
-                        </ul>
-                    </div>
-
                     <ul class="bbai-pricing-card__features">
                         <li>
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <?php esc_html_e('1,000 AI alt texts per month', 'beepbeep-ai-alt-text-generator'); ?>
+                            <?php esc_html_e('Bulk media library optimization', 'beepbeep-ai-alt-text-generator'); ?>
                         </li>
                         <li>
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                            <?php esc_html_e('Bulk media library optimization', 'beepbeep-ai-alt-text-generator'); ?>
+                            <?php esc_html_e('Fix accessibility issues faster', 'beepbeep-ai-alt-text-generator'); ?>
                         </li>
                         <li>
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -242,12 +333,6 @@ $bbai_modal_subtitle = $bbai_is_usage_triggered
                                 <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                             <?php esc_html_e('Multilingual SEO support', 'beepbeep-ai-alt-text-generator'); ?>
-                        </li>
-                        <li>
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                            <?php esc_html_e('Cancel or downgrade anytime', 'beepbeep-ai-alt-text-generator'); ?>
                         </li>
                     </ul>
 
@@ -264,6 +349,7 @@ $bbai_modal_subtitle = $bbai_is_usage_triggered
                                 data-fallback-url="<?php echo esc_url($bbai_stripe_links['pro']); ?>">
                             <?php esc_html_e('Start Growth Plan', 'beepbeep-ai-alt-text-generator'); ?>
                         </button>
+                        <p class="bbai-pricing-card__trust"><?php esc_html_e('Cancel anytime • Secure checkout', 'beepbeep-ai-alt-text-generator'); ?></p>
                     <?php endif; ?>
                 </div>
 
@@ -294,12 +380,6 @@ $bbai_modal_subtitle = $bbai_is_usage_triggered
                     <div class="bbai-pricing-card__limit"><?php esc_html_e('10,000+ AI alt texts per month', 'beepbeep-ai-alt-text-generator'); ?></div>
 
                     <ul class="bbai-pricing-card__features">
-                        <li>
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                            <?php esc_html_e('10,000+ AI alt texts per month', 'beepbeep-ai-alt-text-generator'); ?>
-                        </li>
                         <li>
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -341,40 +421,6 @@ $bbai_modal_subtitle = $bbai_is_usage_triggered
                         </button>
                     <?php endif; ?>
                 </div>
-            </div>
-
-            <div class="bbai-topup-section">
-                <div class="bbai-topup-section__content">
-                    <div class="bbai-topup-section__text">
-                        <p class="bbai-topup-section__eyebrow"><?php esc_html_e('Need a few more credits?', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        <p class="bbai-topup-section__title">
-                            <?php
-                            printf(
-                                /* translators: 1: currency symbol, 2: credit pack price */
-                                esc_html__('100 ALT texts - %1$s%2$s', 'beepbeep-ai-alt-text-generator'),
-                                esc_html($bbai_currency['symbol']),
-                                esc_html(number_format((float) ($bbai_currency['credits'] ?? 9.99), 2))
-                            );
-                            ?>
-                        </p>
-                        <p class="bbai-topup-section__desc"><?php esc_html_e('One-time credits for smaller batches. They do not expire.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                    </div>
-                    <button type="button"
-                            class="bbai-btn bbai-btn-dark bbai-btn-lg bbai-topup-section__btn"
-                            data-action="checkout-plan"
-                            data-plan="credits"
-                            data-price-id="<?php echo esc_attr($bbai_credits_price_id); ?>"
-                            data-fallback-url="<?php echo esc_url($bbai_stripe_links['credits']); ?>">
-                        <?php esc_html_e('Buy credits', 'beepbeep-ai-alt-text-generator'); ?>
-                    </button>
-                </div>
-            </div>
-
-            <div class="bbai-upgrade-modal__footer-links">
-                <?php if ($bbai_current_plan !== 'free') : ?>
-                    <a href="<?php echo esc_url($bbai_billing_url); ?>" class="bbai-upgrade-modal__footer-link"><?php esc_html_e('Manage billing', 'beepbeep-ai-alt-text-generator'); ?></a>
-                <?php endif; ?>
-                <a href="<?php echo esc_url($bbai_docs_url); ?>" class="bbai-upgrade-modal__footer-link" target="_blank" rel="noopener noreferrer"><?php esc_html_e('See docs', 'beepbeep-ai-alt-text-generator'); ?></a>
             </div>
         </div>
     </div>

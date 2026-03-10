@@ -902,7 +902,7 @@ class API_Client_V2 {
             'blog_id' => $blog_id,
             'network_id' => $network_id,
             'is_multisite' => $is_multisite,
-            'plugin_version' => defined('BBAI_VERSION') ? BBAI_VERSION : '1.0.0',
+            'plugin_version' => defined('BEEPBEEP_AI_VERSION') ? BEEPBEEP_AI_VERSION : '1.0.0',
             'wordpress_version' => get_bloginfo('version'),
         ]);
         
@@ -1258,7 +1258,7 @@ class API_Client_V2 {
             'siteHash' => $site_id,
             'siteUrl' => get_site_url(),
             'installId' => $site_id,
-            'pluginVersion' => defined('BBAI_VERSION') ? BBAI_VERSION : '1.0.0',
+            'pluginVersion' => defined('BEEPBEEP_AI_VERSION') ? BEEPBEEP_AI_VERSION : '1.0.0',
             'wordpressVersion' => get_bloginfo('version'),
             'phpVersion' => PHP_VERSION,
             'isMultisite' => is_multisite()

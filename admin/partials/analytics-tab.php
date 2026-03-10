@@ -93,8 +93,7 @@ if (function_exists('wp_add_inline_script')) {
 }
 ?>
 
-<div class="bbai-premium-dashboard">
-    <div class="bbai-analytics-container">
+<div class="bbai-analytics-container bbai-page-inner bbai-analytics-page">
         <!-- Header -->
         <div class="bbai-dashboard-header-section">
             <div class="bbai-page-header-content">
@@ -365,5 +364,4 @@ if (function_exists('wp_add_inline_script')) {
             </div>
         </div>
 
-    </div>
 </div>

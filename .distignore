@@ -1,0 +1,10 @@
+.git
+.gitignore
+.gitattributes
+.distignore
+.vscode
+build
+scripts
+.DS_Store
+**/.DS_Store
+assets/img/screenshots

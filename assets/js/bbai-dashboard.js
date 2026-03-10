@@ -454,14 +454,11 @@ bbaiRunWithJQuery(function($) {
             if (modal) {
                 window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Found modal, showing directly');
                 modal.removeAttribute('style');
-                modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important;';
+                modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important; overflow-y: auto !important;';
                 modal.classList.add('active'); // Required for content to become visible (opacity: 1)
                 modal.classList.add('is-visible');
                 modal.setAttribute('aria-hidden', 'false');
-                document.body.style.overflow = 'hidden';
-                if (document.documentElement) {
-                    document.documentElement.style.overflow = 'hidden';
-                }
+                bbaiSetUpgradeModalScrollLock(true);
 
                 // Also ensure modal content is visible
                 const modalContent = modal.querySelector('.bbai-upgrade-modal__content');
@@ -471,8 +468,10 @@ bbaiRunWithJQuery(function($) {
                 return false;
             }
 
-            // Fallback: Use new pricing modal if available
-            if (typeof window.openPricingModal === 'function') {
+            // Prefer the server-rendered modal before optional bridge wrappers.
+            if (typeof window.bbaiOpenUpgradeModal === 'function') {
+                window.bbaiOpenUpgradeModal();
+            } else if (typeof window.openPricingModal === 'function') {
                 window.openPricingModal('enterprise');
             } else if (typeof bbaiApp !== 'undefined' && typeof bbaiApp.showModal === 'function') {
                 // Fallback to old modal
@@ -1965,6 +1964,9 @@ var alttextaiDebug = (typeof window.bbai_ajax !== 'undefined' && window.bbai_aja
 function findUpgradeModalElement() {
     var modalById = document.getElementById('bbai-upgrade-modal');
     if (modalById && modalById.querySelector('.bbai-upgrade-modal__content')) {
+        if (document.body && modalById.parentNode !== document.body) {
+            document.body.appendChild(modalById);
+        }
         return modalById;
     }
 
@@ -1972,6 +1974,9 @@ function findUpgradeModalElement() {
     if (modalByData && modalByData.querySelector('.bbai-upgrade-modal__content')) {
         if (modalByData.id !== 'bbai-upgrade-modal') {
             modalByData.id = 'bbai-upgrade-modal';
+        }
+        if (document.body && modalByData.parentNode !== document.body) {
+            document.body.appendChild(modalByData);
         }
         return modalByData;
     }
@@ -2001,6 +2006,21 @@ function findUpgradeModalElement() {
 
 // Global app object to avoid collisions
 var bbaiApp = bbaiApp || {};
+
+function bbaiSetUpgradeModalScrollLock(isLocked) {
+    if (document.body && document.body.classList) {
+        document.body.classList.toggle('modal-open', !!isLocked);
+        document.body.classList.toggle('bbai-modal-open', !!isLocked);
+    }
+
+    if (document.body) {
+        document.body.style.overflow = isLocked ? 'hidden' : '';
+    }
+
+    if (document.documentElement) {
+        document.documentElement.style.overflow = isLocked ? 'hidden' : '';
+    }
+}
 
 // Global functions for modal - make it very robust (legacy support)
 function alttextaiShowModal() {
@@ -2032,10 +2052,7 @@ function alttextaiShowModal() {
     modal.classList.add('active');
     modal.classList.add('is-visible');
     modal.removeAttribute('aria-hidden');
-    document.body.style.overflow = 'hidden';
-    if (document.documentElement) {
-        document.documentElement.style.overflow = 'hidden';
-    }
+    bbaiSetUpgradeModalScrollLock(true);
     
     // Focus the close button after animation starts
     setTimeout(function() {
@@ -2074,10 +2091,7 @@ window.showUpgradeModal = function() {
         modal.classList.add('active');
         modal.classList.add('is-visible');
         modal.removeAttribute('aria-hidden');
-        document.body.style.overflow = 'hidden';
-        if (document.documentElement) {
-            document.documentElement.style.overflow = 'hidden';
-        }
+        bbaiSetUpgradeModalScrollLock(true);
         return true;
     }
     
@@ -2121,9 +2135,9 @@ function alttextaiCloseModal() {
         }, 300); // Match animation duration
         
         // Restore body scroll
-        document.body.style.overflow = '';
-        if (document.documentElement) {
-            document.documentElement.style.overflow = '';
+        bbaiSetUpgradeModalScrollLock(false);
+        if (typeof window.bbaiResetUpgradeModalContext === 'function') {
+            window.bbaiResetUpgradeModalContext();
         }
     }
 }
@@ -2149,14 +2163,11 @@ window.alttextaiCloseModal = alttextaiCloseModal;
         
         // Remove inline style completely, then set with !important
         modal.removeAttribute('style');
-        modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0, 0, 0, 0.6) !important;';
+        modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0, 0, 0, 0.6) !important; align-items: center !important; justify-content: center !important; overflow-y: auto !important;';
         modal.classList.add('active');
         modal.classList.add('is-visible');
         modal.setAttribute('aria-hidden', 'false');
-        document.body.style.overflow = 'hidden';
-        if (document.documentElement) {
-            document.documentElement.style.overflow = 'hidden';
-        }
+        bbaiSetUpgradeModalScrollLock(true);
         
         window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Modal shown via direct method');
         return true;
@@ -2190,6 +2201,9 @@ window.alttextaiCloseModal = alttextaiCloseModal;
             // Prevent default immediately
             e.preventDefault();
             e.stopPropagation();
+            if (typeof e.stopImmediatePropagation === 'function') {
+                e.stopImmediatePropagation();
+            }
             
             // Show modal directly - don't wait for anything
             if (typeof alttextaiShowModal === 'function') {
@@ -2213,10 +2227,7 @@ window.alttextaiCloseModal = alttextaiCloseModal;
                 if (modal) {
                     modal.style.display = 'none';
                     modal.setAttribute('aria-hidden', 'true');
-                    document.body.style.overflow = '';
-                    if (document.documentElement) {
-                        document.documentElement.style.overflow = '';
-                    }
+                    bbaiSetUpgradeModalScrollLock(false);
                 }
             }
             return false;
@@ -2232,10 +2243,7 @@ window.alttextaiCloseModal = alttextaiCloseModal;
             } else {
                 modal.style.display = 'none';
                 modal.setAttribute('aria-hidden', 'true');
-                document.body.style.overflow = '';
-                if (document.documentElement) {
-                    document.documentElement.style.overflow = '';
-                }
+                bbaiSetUpgradeModalScrollLock(false);
             }
             return false;
         }
@@ -2252,10 +2260,7 @@ window.alttextaiCloseModal = alttextaiCloseModal;
                 } else {
                     modal.style.display = 'none';
                     modal.setAttribute('aria-hidden', 'true');
-                    document.body.style.overflow = '';
-                    if (document.documentElement) {
-                        document.documentElement.style.overflow = '';
-                    }
+                    bbaiSetUpgradeModalScrollLock(false);
                 }
             }
         }
@@ -3001,6 +3006,10 @@ bbaiRunWithJQuery(function($) {
     'use strict';
 
     function showUpgradeModalFallback() {
+        if (typeof window.bbaiOpenUpgradeModal === 'function') {
+            return window.bbaiOpenUpgradeModal();
+        }
+
         if (typeof window.openPricingModal === 'function') {
             window.openPricingModal('enterprise');
             return true;
@@ -3013,14 +3022,11 @@ bbaiRunWithJQuery(function($) {
         var modal = findUpgradeModalElement();
         if (modal) {
             modal.removeAttribute('style');
-            modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important;';
+            modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important; overflow-y: auto !important;';
             modal.classList.add('active');
             modal.classList.add('is-visible');
             modal.setAttribute('aria-hidden', 'false');
-            document.body.style.overflow = 'hidden';
-            if (document.documentElement) {
-                document.documentElement.style.overflow = 'hidden';
-            }
+            bbaiSetUpgradeModalScrollLock(true);
             var modalContent = modal.querySelector('.bbai-upgrade-modal__content');
             if (modalContent) {
                 modalContent.style.cssText = 'opacity: 1 !important; visibility: visible !important; transform: translateY(0) scale(1) !important;';
@@ -3036,7 +3042,7 @@ bbaiRunWithJQuery(function($) {
             return;
         }
 
-        var trigger = e.target.closest('[data-action="show-upgrade-modal"], [data-action="generate-missing"], [data-action="regenerate-all"], [data-action="regenerate-single"], [data-bbai-action="generate_missing"], [data-bbai-action="reoptimize_all"]');
+        var trigger = e.target.closest('[data-action="show-upgrade-modal"], [data-action="generate-missing"], [data-action="regenerate-all"], [data-action="regenerate-single"], [data-action="regenerate-selected"], [data-bbai-action="generate_missing"], [data-bbai-action="reoptimize_all"], [data-bbai-action="open-upgrade"]');
         if (!trigger) {
             return;
         }
@@ -3055,7 +3061,7 @@ bbaiRunWithJQuery(function($) {
             return;
         }
 
-        var isBulkAction = trigger.matches('[data-action="generate-missing"], [data-action="regenerate-all"], [data-action="regenerate-single"], [data-bbai-action="generate_missing"], [data-bbai-action="reoptimize_all"]');
+        var isBulkAction = trigger.matches('[data-action="generate-missing"], [data-action="regenerate-all"], [data-action="regenerate-single"], [data-action="regenerate-selected"], [data-bbai-action="generate_missing"], [data-bbai-action="reoptimize_all"], [data-bbai-action="open-upgrade"]');
         if (isBulkAction) {
             var isLockedTrigger = !!(
                 trigger.disabled ||
@@ -3088,6 +3094,10 @@ bbaiRunWithJQuery(function($) {
 
         if (trigger.matches('[data-action="show-upgrade-modal"]')) {
             e.preventDefault();
+            e.stopPropagation();
+            if (typeof e.stopImmediatePropagation === 'function') {
+                e.stopImmediatePropagation();
+            }
             showUpgradeModalFallback();
             return;
         }
@@ -3120,7 +3130,7 @@ bbaiRunWithJQuery(function($) {
         if (e.key !== 'Enter' && e.key !== ' ') {
             return;
         }
-        var trigger = e.target.closest('[data-action="show-upgrade-modal"], [data-action="generate-missing"], [data-action="regenerate-all"], [data-action="regenerate-single"], [data-bbai-action="generate_missing"], [data-bbai-action="reoptimize_all"]');
+        var trigger = e.target.closest('[data-action="show-upgrade-modal"], [data-action="generate-missing"], [data-action="regenerate-all"], [data-action="regenerate-single"], [data-action="regenerate-selected"], [data-bbai-action="generate_missing"], [data-bbai-action="reoptimize_all"], [data-bbai-action="open-upgrade"]');
         if (!trigger || trigger.getAttribute('role') !== 'button') {
             return;
         }

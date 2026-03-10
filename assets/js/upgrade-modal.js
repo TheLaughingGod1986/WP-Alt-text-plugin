@@ -65,6 +65,9 @@
     function resolveUpgradeModalElement() {
         var modalById = document.getElementById('bbai-upgrade-modal');
         if (modalById && modalById.querySelector('.bbai-upgrade-modal__content')) {
+            if (document.body && modalById.parentNode !== document.body) {
+                document.body.appendChild(modalById);
+            }
             return modalById;
         }
 
@@ -73,10 +76,122 @@
             if (modalByData.id !== 'bbai-upgrade-modal') {
                 modalByData.id = 'bbai-upgrade-modal';
             }
+            if (document.body && modalByData.parentNode !== document.body) {
+                document.body.appendChild(modalByData);
+            }
             return modalByData;
         }
 
         return null;
+    }
+
+    function setUpgradeModalScrollLock(isLocked) {
+        if (!document.body || !document.body.classList) {
+            return;
+        }
+
+        document.body.classList.toggle('modal-open', !!isLocked);
+        document.body.classList.toggle('bbai-modal-open', !!isLocked);
+    }
+
+    function setModalNodeText(node, value) {
+        if (!node || value === undefined || value === null) {
+            return;
+        }
+
+        node.textContent = String(value);
+    }
+
+    function getUpgradeModalCopy(modal) {
+        if (!modal) {
+            return null;
+        }
+
+        if (!modal.__bbaiUpgradeCopy) {
+            var titleNode = modal.querySelector('[data-bbai-upgrade-title]');
+            var subtitleNode = modal.querySelector('[data-bbai-upgrade-subtitle]');
+            var eyebrowNode = modal.querySelector('[data-bbai-upgrade-eyebrow]');
+            var decisionTitleNode = modal.querySelector('[data-bbai-upgrade-decision-title]');
+            var decisionDescNode = modal.querySelector('[data-bbai-upgrade-decision-desc]');
+            var noteNode = modal.querySelector('[data-bbai-upgrade-note]');
+
+            modal.__bbaiUpgradeCopy = {
+                nodes: {
+                    title: titleNode,
+                    subtitle: subtitleNode,
+                    eyebrow: eyebrowNode,
+                    decisionTitle: decisionTitleNode,
+                    decisionDesc: decisionDescNode,
+                    note: noteNode
+                },
+                defaults: {
+                    title: modal.getAttribute('data-bbai-upgrade-default-title') || (titleNode ? titleNode.textContent : ''),
+                    subtitle: modal.getAttribute('data-bbai-upgrade-default-subtitle') || (subtitleNode ? subtitleNode.textContent : ''),
+                    eyebrow: modal.getAttribute('data-bbai-upgrade-default-eyebrow') || (eyebrowNode ? eyebrowNode.textContent : ''),
+                    decisionTitle: modal.getAttribute('data-bbai-upgrade-default-decision-title') || (decisionTitleNode ? decisionTitleNode.textContent : ''),
+                    decisionDesc: modal.getAttribute('data-bbai-upgrade-default-decision-desc') || (decisionDescNode ? decisionDescNode.textContent : ''),
+                    note: modal.getAttribute('data-bbai-upgrade-default-note') || (noteNode ? noteNode.textContent : '')
+                },
+                locked: {
+                    title: modal.getAttribute('data-bbai-upgrade-locked-title') || '',
+                    subtitle: modal.getAttribute('data-bbai-upgrade-locked-subtitle') || '',
+                    eyebrow: modal.getAttribute('data-bbai-upgrade-locked-eyebrow') || '',
+                    decisionTitle: modal.getAttribute('data-bbai-upgrade-locked-decision-title') || '',
+                    decisionDesc: modal.getAttribute('data-bbai-upgrade-locked-decision-desc') || '',
+                    note: modal.getAttribute('data-bbai-upgrade-locked-note') || ''
+                }
+            };
+        }
+
+        return modal.__bbaiUpgradeCopy;
+    }
+
+    function applyUpgradeModalContext(modal, reason, context) {
+        var copy = getUpgradeModalCopy(modal);
+        if (!copy) {
+            return;
+        }
+
+        var isLockedContext = typeof reason === 'string' && reason !== '' && reason !== 'default';
+        var variant = isLockedContext ? copy.locked : copy.defaults;
+        var decisionDesc = variant.decisionDesc;
+
+        if (isLockedContext && context && context.message) {
+            decisionDesc = String(context.message);
+        }
+
+        modal.setAttribute('data-bbai-upgrade-context', isLockedContext ? 'locked' : 'default');
+        setModalNodeText(copy.nodes.title, variant.title);
+        setModalNodeText(copy.nodes.subtitle, variant.subtitle);
+        setModalNodeText(copy.nodes.eyebrow, variant.eyebrow);
+        setModalNodeText(copy.nodes.decisionTitle, variant.decisionTitle);
+        setModalNodeText(copy.nodes.decisionDesc, decisionDesc);
+        setModalNodeText(copy.nodes.note, variant.note);
+    }
+
+    function resetUpgradeModalContext(modal) {
+        applyUpgradeModalContext(modal, 'default', null);
+    }
+
+    function normalizeUpgradeOpenRequest(reasonOrContext, maybeContext) {
+        if (typeof reasonOrContext === 'string') {
+            return {
+                reason: reasonOrContext || 'default',
+                context: maybeContext && typeof maybeContext === 'object' ? maybeContext : {}
+            };
+        }
+
+        if (reasonOrContext && typeof reasonOrContext === 'object') {
+            return {
+                reason: reasonOrContext.reason || (reasonOrContext.locked ? 'upgrade_required' : 'default'),
+                context: reasonOrContext
+            };
+        }
+
+        return {
+            reason: 'default',
+            context: {}
+        };
     }
 
     function initUpgradeUsageCalculator() {
@@ -128,21 +243,21 @@
      * Open the upgrade modal
      * @returns {boolean} True if modal was opened successfully
      */
-    window.bbaiOpenUpgradeModal = function() {
+    window.bbaiOpenUpgradeModal = function(reasonOrContext, maybeContext) {
         var modal = resolveUpgradeModalElement();
         if (!modal) {
             return false;
         }
 
+        var request = normalizeUpgradeOpenRequest(reasonOrContext, maybeContext);
+        applyUpgradeModalContext(modal, request.reason, request.context);
+
         modal.removeAttribute('style');
-        modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important;';
+        modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important; overflow-y: auto !important;';
         modal.classList.add('active');
         modal.classList.add('is-visible');
         modal.setAttribute('aria-hidden', 'false');
-        document.body.style.overflow = 'hidden';
-        if (document.documentElement) {
-            document.documentElement.style.overflow = 'hidden';
-        }
+        setUpgradeModalScrollLock(true);
 
         var content = modal.querySelector('.bbai-upgrade-modal__content');
         if (content) {
@@ -152,20 +267,31 @@
         return true;
     };
 
+    window.bbaiOpenLockedUpgradeModal = function(reason, context) {
+        return window.bbaiOpenUpgradeModal(reason || 'upgrade_required', context || {});
+    };
+
+    window.bbaiResetUpgradeModalContext = function() {
+        var modal = resolveUpgradeModalElement();
+        if (!modal) {
+            return;
+        }
+
+        resetUpgradeModalContext(modal);
+    };
+
     /**
      * Close the upgrade modal
      */
     window.bbaiCloseUpgradeModal = function() {
         var modal = resolveUpgradeModalElement();
         if (modal) {
+            resetUpgradeModalContext(modal);
             modal.style.display = 'none';
             modal.classList.remove('active');
             modal.classList.remove('is-visible');
             modal.setAttribute('aria-hidden', 'true');
-            document.body.style.overflow = '';
-            if (document.documentElement) {
-                document.documentElement.style.overflow = '';
-            }
+            setUpgradeModalScrollLock(false);
         }
     };
 
@@ -177,17 +303,16 @@
         document.addEventListener('click', function(e) {
             var target = e.target.closest('[data-action="show-upgrade-modal"]');
             if (target) {
-                if (isGenerationActionControl(target) && isLockedActionControl(target)) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (typeof e.stopImmediatePropagation === 'function') {
-                        e.stopImmediatePropagation();
-                    }
-                    return;
-                }
                 e.preventDefault();
                 e.stopPropagation();
-                window.bbaiOpenUpgradeModal();
+                if (typeof e.stopImmediatePropagation === 'function') {
+                    e.stopImmediatePropagation();
+                }
+                if (isGenerationActionControl(target) && isLockedActionControl(target)) {
+                    window.bbaiOpenUpgradeModal('upgrade_required', { source: 'upgrade-modal', trigger: target });
+                } else {
+                    window.bbaiOpenUpgradeModal();
+                }
             }
         }, true);
 

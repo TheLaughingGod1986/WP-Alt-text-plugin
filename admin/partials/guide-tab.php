@@ -40,7 +40,7 @@ $bbai_library_url = add_query_arg(['page' => 'bbai', 'tab' => 'library'], admin_
 $bbai_library_missing_url = add_query_arg(['page' => 'bbai', 'tab' => 'library', 'status' => 'missing'], admin_url('admin.php'));
 $bbai_settings_url = add_query_arg(['page' => 'bbai', 'tab' => 'settings'], admin_url('admin.php'));
 ?>
-<div class="bbai-dashboard-container bbai-guide-page">
+<div class="bbai-dashboard-container bbai-guide-page bbai-page-inner">
     <!-- Header Section -->
     <div class="bbai-guide-header bbai-page-section">
         <h1 class="bbai-page-title"><?php esc_html_e('Getting Started with BeepBeep AI', 'beepbeep-ai-alt-text-generator'); ?></h1>
@@ -310,7 +310,6 @@ $bbai_settings_url = add_query_arg(['page' => 'bbai', 'tab' => 'settings'], admi
 </div>
 
 </div>
-
 
 
 

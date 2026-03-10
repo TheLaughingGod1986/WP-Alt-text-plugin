@@ -113,13 +113,13 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
 }
 ?>
 
-<div class="bbai-library-container" data-bbai-empty-filter="<?php echo esc_attr__('No images match this filter.', 'beepbeep-ai-alt-text-generator'); ?>">
+<div class="bbai-library-container bbai-page-inner" data-bbai-empty-filter="<?php echo esc_attr__('No images match this filter.', 'beepbeep-ai-alt-text-generator'); ?>">
     <style id="bbai-library-polish">
     /* Visibility + polish for ALT Library */
     #bbai-alt-coverage-card,
     #bbai-review-filter-tabs { display: block !important; visibility: visible !important; opacity: 1 !important; }
     #bbai-review-filter-tabs { margin-top: 12px; margin-bottom: 20px; display: flex !important; gap: 8px; flex-wrap: wrap; }
-    .bbai-toolbar.bbai-library-batch-actions { margin-bottom: 20px; }
+    .bbai-toolbar.bbai-library-toolbar { margin-bottom: 20px; }
     .bbai-saas-table .bbai-library-col-alt,
     .bbai-saas-table th.bbai-library-col-alt,
     .bbai-library-table .bbai-library-col-alt,
@@ -143,7 +143,8 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
     .bbai-library-table thead th { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em; color: #374151; }
     /* Table body */
     .bbai-library-table tbody td { border-bottom: 1px solid #f1f5f9; }
-    .bbai-library-table tbody tr:hover { background: #f9fafb; }
+    .bbai-library-table tbody tr:hover,
+    .bbai-library-table tbody tr:hover > td { background: #fafafa !important; }
     /* ALT text preview */
     .bbai-alt-text-preview { font-size: 13px; line-height: 1.45; color: #374151; max-width: 340px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .bbai-alt-text-missing { font-size: 12px; color: #ef4444; font-style: italic; }
@@ -153,14 +154,39 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
     .bbai-library-col-image { width: 72px !important; }
     .bbai-library-col-info { width: 220px !important; }
     .bbai-library-col-alt { width: 340px !important; }
-    .bbai-library-col-status { width: 120px !important; }
+    .bbai-library-col-status { width: 132px !important; }
     .bbai-library-col-updated { width: 120px !important; }
-    .bbai-library-col-actions { width: 120px !important; }
+    .bbai-library-col-actions { width: 180px !important; }
     .bbai-alt-success { font-size: 13px; color: #16a34a; margin-top: 6px; }
+    .bbai-library-batch-cta { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 18px; margin-bottom: 18px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 1px solid #e5e7eb; border-radius: 14px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05); }
+    .bbai-library-batch-cta__content { display: flex; flex-direction: column; gap: 6px; }
+    .bbai-library-batch-cta__title { font-size: 14px; font-weight: 700; color: #0f172a; margin: 0; }
+    .bbai-library-batch-cta__hint { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #b45309; }
+    .bbai-library-batch-cta__hint svg { width: 14px; height: 14px; flex: 0 0 auto; }
+    .bbai-library-selection-bar[hidden] { display: none !important; }
+    .bbai-library-selection-bar { position: sticky; top: 24px; z-index: 6; display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; max-width: 100%; box-sizing: border-box; padding: 14px 16px; margin: 0 0 14px; background: rgba(255,255,255,0.96); border: 1px solid #dbeafe; border-radius: 14px; box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12); backdrop-filter: blur(10px); }
+    .bbai-library-selection-bar__summary { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto; }
+    .bbai-library-selection-bar__count { font-size: 14px; font-weight: 700; color: #0f172a; }
+    .bbai-library-selection-bar__actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; flex: 0 1 auto; margin-left: auto; }
+    .bbai-library-selection-bar .bbai-toolbar__btn { box-shadow: 0 1px 2px rgba(15,23,42,0.08); }
+    .bbai-library-selection-bar .bbai-toolbar__btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .bbai-quality-pill { display: inline-flex; align-items: center; justify-content: center; font-size: 12px; line-height: 1.2; font-weight: 700; padding: 4px 10px; border-radius: 999px; cursor: help; }
+    .bbai-library-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .bbai-row-action-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; border: 1px solid #d1d5db; background: #ffffff; color: #374151; font-size: 12px; font-weight: 600; line-height: 1; cursor: pointer; transition: all .15s ease; }
+    .bbai-row-action-btn:hover:not(:disabled) { border-color: #9ca3af; background: #f8fafc; }
+    .bbai-row-action-btn svg { flex: 0 0 auto; }
+    .bbai-row-improve-btn { background: #fff7ed; border-color: #fdba74; color: #9a3412; }
+    .bbai-row-improve-btn:hover:not(:disabled) { background: #ffedd5; border-color: #fb923c; }
+    .bbai-row-improve-btn.bbai-is-locked { background: #f8fafc; border-color: #cbd5e1; color: #475569; }
     /* Image preview modal polish */
     .bbai-library-preview-modal__dialog { border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); padding: 24px; }
     @media (max-width: 640px) {
         .bbai-alt-coverage-stats { flex-wrap: wrap; gap: 16px; }
+        .bbai-library-batch-cta,
+        .bbai-library-selection-bar { flex-direction: column; align-items: stretch; }
+        .bbai-library-selection-bar__actions { width: 100%; }
+        .bbai-library-selection-bar__actions .bbai-toolbar__btn,
+        .bbai-library-batch-cta .bbai-btn { flex: 1 1 auto; justify-content: center; }
     }
     </style>
     <!-- Header -->
@@ -280,34 +306,47 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
         ?>
     <?php endif; ?>
 
-    <!-- Toolbar: bulk actions (when selected) + search + filters -->
-    <div class="bbai-toolbar bbai-library-batch-actions" id="bbai-batch-actions" aria-live="polite">
-        <div class="bbai-toolbar__bulk-actions" id="bbai-bulk-actions-bar">
-            <span class="bbai-toolbar__bulk-count" id="bbai-selected-count">0 <?php esc_html_e('images selected', 'beepbeep-ai-alt-text-generator'); ?></span>
-            <div class="bbai-toolbar__bulk-btns">
-                <button type="button" class="bbai-toolbar__btn bbai-toolbar__btn--primary <?php echo esc_attr(isset($bbai_limit_reached_state) && $bbai_limit_reached_state ? 'bbai-is-locked' : ''); ?>" id="bbai-batch-regenerate" data-action="regenerate-selected"
-                    <?php if (isset($bbai_limit_reached_state) && $bbai_limit_reached_state) : ?>
+    <?php if ($bbai_missing_count > 0) : ?>
+        <div class="bbai-library-batch-cta">
+            <div class="bbai-library-batch-cta__content">
+                <p class="bbai-library-batch-cta__title">
+                    <?php
+                    printf(
+                        /* translators: %s: number of missing images */
+                        esc_html__('Generate ALT text for %s images', 'beepbeep-ai-alt-text-generator'),
+                        esc_html(number_format_i18n($bbai_missing_count))
+                    );
+                    ?>
+                </p>
+                <?php if ($bbai_is_free) : ?>
+                    <span class="bbai-library-batch-cta__hint">
+                        <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                            <rect x="3.5" y="7" width="9" height="6" rx="2" stroke="currentColor" stroke-width="1.4"/>
+                            <path d="M5.5 7V5.5a2.5 2.5 0 115 0V7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                        </svg>
+                        <?php esc_html_e('Upgrade to automate this', 'beepbeep-ai-alt-text-generator'); ?>
+                    </span>
+                <?php endif; ?>
+            </div>
+            <button type="button"
+                    class="bbai-btn bbai-btn-primary bbai-btn-sm <?php echo esc_attr($bbai_limit_reached_state ? 'bbai-is-locked' : ''); ?>"
+                    data-action="generate-missing"
+                    data-bbai-lock-preserve-label="1"
+                    <?php if ($bbai_limit_reached_state) : ?>
                         data-bbai-action="open-upgrade"
                         data-bbai-locked-cta="1"
-                        data-bbai-lock-reason="reoptimize_all"
-                        data-bbai-locked-source="library-batch-regenerate"
+                        data-bbai-lock-reason="generate_missing"
+                        data-bbai-locked-source="library-batch-cta"
                         aria-disabled="true"
-                        title="<?php esc_attr_e('Upgrade to let AI finish the remaining images', 'beepbeep-ai-alt-text-generator'); ?>"
-                    <?php endif; ?>
-                    aria-label="<?php esc_attr_e('Re-optimise selected images', 'beepbeep-ai-alt-text-generator'); ?>">
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8a6 6 0 0110.3-4.2M14 8a6 6 0 01-10.3 4.2" stroke-linecap="round"/><path d="M12 1v3.5h-3.5M4 15v-3.5h3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <?php esc_html_e('Re-optimise selected', 'beepbeep-ai-alt-text-generator'); ?>
-                </button>
-                <button type="button" class="bbai-toolbar__btn" id="bbai-batch-reviewed" data-action="mark-reviewed" aria-label="<?php esc_attr_e('Mark selected as reviewed', 'beepbeep-ai-alt-text-generator'); ?>">
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8l3 3 5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <?php esc_html_e('Mark reviewed', 'beepbeep-ai-alt-text-generator'); ?>
-                </button>
-                <button type="button" class="bbai-toolbar__btn" id="bbai-batch-export" data-action="export-alt-text" aria-label="<?php esc_attr_e('Export ALT text for selected', 'beepbeep-ai-alt-text-generator'); ?>">
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 10v3h10v-3M8 2v8M5 5l3-3 3 3"/></svg>
-                    <?php esc_html_e('Export ALT text', 'beepbeep-ai-alt-text-generator'); ?>
-                </button>
-            </div>
+                        title="<?php esc_attr_e('Upgrade to generate ALT text for the remaining images', 'beepbeep-ai-alt-text-generator'); ?>"
+                    <?php endif; ?>>
+                <?php esc_html_e('Generate ALT', 'beepbeep-ai-alt-text-generator'); ?>
+            </button>
         </div>
+    <?php endif; ?>
+
+    <!-- Toolbar: search + filters -->
+    <div class="bbai-toolbar bbai-library-toolbar" id="bbai-library-toolbar" aria-live="polite">
         <div class="bbai-toolbar__right">
             <div class="bbai-toolbar__search">
                 <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
@@ -355,6 +394,50 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
 
     <!-- Table + Upgrade sidebar -->
     <?php if (!empty($bbai_all_images)) : ?>
+        <div class="bbai-library-selection-bar" id="bbai-library-selection-bar" aria-live="polite" aria-hidden="true" hidden>
+            <div class="bbai-library-selection-bar__summary">
+                <span class="bbai-library-selection-bar__count" id="bbai-selected-count" data-bbai-selected-count>0 <?php esc_html_e('images selected', 'beepbeep-ai-alt-text-generator'); ?></span>
+            </div>
+            <div class="bbai-library-selection-bar__actions">
+                <button type="button"
+                        class="bbai-toolbar__btn bbai-toolbar__btn--primary <?php echo esc_attr($bbai_limit_reached_state ? 'bbai-is-locked' : ''); ?>"
+                        id="bbai-batch-generate"
+                        data-action="generate-selected"
+                        data-bbai-lock-preserve-label="1"
+                        <?php if ($bbai_limit_reached_state) : ?>
+                            data-bbai-action="open-upgrade"
+                            data-bbai-locked-cta="1"
+                            data-bbai-lock-reason="generate_missing"
+                            data-bbai-locked-source="library-batch-generate"
+                            aria-disabled="true"
+                            title="<?php esc_attr_e('Upgrade to generate ALT text for selected images', 'beepbeep-ai-alt-text-generator'); ?>"
+                        <?php endif; ?>>
+                    <?php esc_html_e('Generate ALT', 'beepbeep-ai-alt-text-generator'); ?>
+                </button>
+                <button type="button"
+                        class="bbai-toolbar__btn <?php echo esc_attr($bbai_limit_reached_state ? 'bbai-is-locked' : ''); ?>"
+                        id="bbai-batch-regenerate"
+                        data-action="regenerate-selected"
+                        data-bbai-lock-preserve-label="1"
+                        <?php if ($bbai_limit_reached_state) : ?>
+                            data-bbai-action="open-upgrade"
+                            data-bbai-locked-cta="1"
+                            data-bbai-lock-reason="reoptimize_all"
+                            data-bbai-locked-source="library-batch-regenerate"
+                            aria-disabled="true"
+                            title="<?php esc_attr_e('Upgrade to improve ALT text for selected images', 'beepbeep-ai-alt-text-generator'); ?>"
+                        <?php endif; ?>>
+                    <?php esc_html_e('Improve ALT', 'beepbeep-ai-alt-text-generator'); ?>
+                </button>
+                <button type="button" class="bbai-toolbar__btn" id="bbai-batch-export" data-action="export-alt-text" aria-label="<?php esc_attr_e('Export ALT text for selected', 'beepbeep-ai-alt-text-generator'); ?>">
+                    <?php esc_html_e('Export', 'beepbeep-ai-alt-text-generator'); ?>
+                </button>
+                <button type="button" class="bbai-toolbar__btn" id="bbai-batch-clear" data-action="clear-selection" aria-label="<?php esc_attr_e('Clear image selection', 'beepbeep-ai-alt-text-generator'); ?>">
+                    <?php esc_html_e('Clear selection', 'beepbeep-ai-alt-text-generator'); ?>
+                </button>
+            </div>
+        </div>
+
         <div class="bbai-library-table-area bbai-library-table-wrapper">
         <div class="bbai-library-table-column">
         <div class="bbai-table-card">
@@ -507,6 +590,18 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
                             }
                             $bbai_ai_source_raw = isset($bbai_image->ai_source) ? strtolower(trim((string) $bbai_image->ai_source)) : '';
                             $bbai_ai_source = in_array($bbai_ai_source_raw, ['ai', 'openai'], true) ? 'ai' : '';
+                            $bbai_quality_tooltip = __('No ALT text detected', 'beepbeep-ai-alt-text-generator');
+                            if ($bbai_has_alt) {
+                                if ($bbai_quality_class === 'excellent') {
+                                    $bbai_quality_tooltip = __('ALT text is descriptive and SEO-friendly', 'beepbeep-ai-alt-text-generator');
+                                } elseif ($bbai_quality_class === 'good') {
+                                    $bbai_quality_tooltip = __('ALT text is clear and descriptive', 'beepbeep-ai-alt-text-generator');
+                                } elseif ($bbai_quality_class === 'needs-review') {
+                                    $bbai_quality_tooltip = __('ALT text could use more descriptive detail', 'beepbeep-ai-alt-text-generator');
+                                } else {
+                                    $bbai_quality_tooltip = __('ALT text is too short or lacks descriptive detail', 'beepbeep-ai-alt-text-generator');
+                                }
+                            }
                             ?>
                             <tr class="bbai-library-row"
                                 data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>"
@@ -522,7 +617,8 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
                                 data-file-meta="<?php echo esc_attr($bbai_file_meta); ?>"
                                 data-last-updated="<?php echo esc_attr($bbai_modified_date); ?>"
                                 data-quality-label="<?php echo esc_attr($bbai_quality_label); ?>"
-                                data-quality-class="<?php echo esc_attr($bbai_quality_class); ?>">
+                                data-quality-class="<?php echo esc_attr($bbai_quality_class); ?>"
+                                data-quality-tooltip="<?php echo esc_attr($bbai_quality_tooltip); ?>">
                                 <td class="bbai-library-cell--select">
                                     <input type="checkbox" class="bbai-checkbox bbai-library-row-check bbai-image-checkbox" value="<?php echo esc_attr($bbai_attachment_id); ?>" data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>" aria-label="<?php
                                     /* translators: 1: image title */
@@ -566,11 +662,17 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
                                 </td>
                                 <td class="bbai-library-cell--status">
                                     <?php if ($bbai_has_alt) : ?>
-                                        <span class="bbai-quality-pill bbai-quality-pill--<?php echo esc_attr($bbai_quality_class); ?>">
+                                        <span class="bbai-quality-pill bbai-quality-pill--<?php echo esc_attr($bbai_quality_class); ?>"
+                                              data-bbai-tooltip="<?php echo esc_attr($bbai_quality_tooltip); ?>"
+                                              data-bbai-tooltip-position="top"
+                                              tabindex="0">
                                             <?php echo esc_html(strtoupper($bbai_quality_label)); ?>
                                         </span>
                                     <?php else : ?>
-                                        <span class="bbai-quality-pill bbai-quality-pill--missing">
+                                        <span class="bbai-quality-pill bbai-quality-pill--missing"
+                                              data-bbai-tooltip="<?php echo esc_attr($bbai_quality_tooltip); ?>"
+                                              data-bbai-tooltip-position="top"
+                                              tabindex="0">
                                             <?php esc_html_e('MISSING', 'beepbeep-ai-alt-text-generator'); ?>
                                         </span>
                                     <?php endif; ?>
@@ -580,14 +682,33 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
                                 </td>
                                 <td class="bbai-library-cell--actions">
                                     <div class="bbai-library-actions">
+                                        <?php if ($bbai_has_alt && $bbai_quality_class === 'poor') : ?>
+                                            <button type="button"
+                                                    class="bbai-row-action-btn bbai-row-improve-btn <?php echo esc_attr($bbai_limit_reached_state ? 'bbai-is-locked' : ''); ?>"
+                                                    data-action="regenerate-single"
+                                                    data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>"
+                                                    data-bbai-lock-preserve-label="1"
+                                                    title="<?php esc_attr_e('Improve ALT text with AI', 'beepbeep-ai-alt-text-generator'); ?>"
+                                                    <?php if ($bbai_limit_reached_state) : ?>
+                                                        data-bbai-action="open-upgrade"
+                                                        data-bbai-locked-cta="1"
+                                                        data-bbai-lock-reason="regenerate_single"
+                                                        data-bbai-locked-source="library-row-improve"
+                                                        aria-disabled="true"
+                                                    <?php endif; ?>>
+                                                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                                                    <path d="M9.4 1.5L4.8 8h3l-1.2 6.5L11.2 8h-3l1.2-6.5z" stroke-linejoin="round"/>
+                                                </svg>
+                                                <?php esc_html_e('Improve', 'beepbeep-ai-alt-text-generator'); ?>
+                                            </button>
+                                        <?php endif; ?>
                                         <button type="button"
-                                                class="bbai-row-view-btn"
+                                                class="bbai-row-action-btn bbai-row-view-btn"
                                                 data-action="preview-image"
                                                 data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>"
                                                 title="<?php esc_attr_e('View image', 'beepbeep-ai-alt-text-generator'); ?>">
-                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="10" height="10" rx="2"/><path d="M6 8h4"/><path d="M8 6v4"/></svg>
+                                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="10" height="10" rx="2"/><path d="M6 8h4"/><path d="M8 6v4"/></svg>
                                             <?php esc_html_e('View', 'beepbeep-ai-alt-text-generator'); ?>
-                                            <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M2 3l2 2 2-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
                                         </button>
                                     </div>
                                 </td>
@@ -660,7 +781,7 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
             <div class="bbai-library-upgrade-float">
                 <?php
                 $bbai_bottom_upsell_compact = true;
-                $bbai_bottom_upsell_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/bottom-upsell-cta.php';
+                $bbai_bottom_upsell_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/bottom-upsell-cta.php';
                 if (file_exists($bbai_bottom_upsell_partial)) {
                     include $bbai_bottom_upsell_partial;
                 }
@@ -709,7 +830,7 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
         $bbai_alt_texts_generated = isset($bbai_usage_stats) && is_array($bbai_usage_stats) ? ($bbai_usage_stats['used'] ?? 0) : 0;
         $bbai_description_mode = ($bbai_alt_texts_generated > 0 || $bbai_with_alt_count > 0) ? 'active' : 'empty';
         $bbai_wrapper_class = 'bbai-premium-metrics-grid bbai-mt-6';
-        $bbai_metric_cards_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/metric-cards.php';
+        $bbai_metric_cards_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/metric-cards.php';
         if (file_exists($bbai_metric_cards_partial)) {
             include $bbai_metric_cards_partial;
         }
