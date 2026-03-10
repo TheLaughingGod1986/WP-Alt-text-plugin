@@ -96,7 +96,7 @@ $bbai_banner_is_fully_optimized = 0 === $bbai_banner_missing && 0 === $bbai_bann
         <div class="bbai-dashboard-hero-actions">
             <?php if ( $bbai_show_upgrade_primary ) : ?>
             <button type="button" class="bbai-dashboard-hero__cta bbai-dashboard-hero__cta--primary bbai-btn-primary" data-action="show-upgrade-modal">
-                <?php esc_html_e( 'Upgrade to Growth', 'beepbeep-ai-alt-text-generator' ); ?>
+                <?php esc_html_e( 'Upgrade your plan', 'beepbeep-ai-alt-text-generator' ); ?>
             </button>
             <?php else : ?>
             <button type="button" class="bbai-dashboard-hero__cta bbai-dashboard-hero__cta--primary bbai-btn-primary" data-bbai-action="scan-opportunity">

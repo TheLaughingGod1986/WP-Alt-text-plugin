@@ -50,9 +50,33 @@
         });
     }
 
+    function initUsageMarkerProgress() {
+        var markers = document.querySelectorAll('[data-bbai-marker-progress][data-bbai-marker-progress-target]');
+        markers.forEach(function(marker) {
+            var target = parseFloat(marker.getAttribute('data-bbai-marker-progress-target'));
+            if (!isNaN(target) && target >= 0) {
+                if (marker.getAttribute('data-bbai-marker-progress-initialized') === '1') {
+                    marker.style.setProperty('--bbai-marker-left', target + '%');
+                    return;
+                }
+
+                marker.style.setProperty('--bbai-marker-left', '0%');
+                marker.style.transition = 'none';
+                marker.offsetWidth;
+
+                setTimeout(function() {
+                    marker.style.transition = 'left 1s cubic-bezier(0.4, 0, 0.2, 1)';
+                    marker.style.setProperty('--bbai-marker-left', target + '%');
+                    marker.setAttribute('data-bbai-marker-progress-initialized', '1');
+                }, 200);
+            }
+        });
+    }
+
     function initOnLoad() {
         initProgressRings();
         initUsageBannerProgress();
+        initUsageMarkerProgress();
     }
 
     if (document.readyState === 'loading') {
