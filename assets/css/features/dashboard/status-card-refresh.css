@@ -615,6 +615,28 @@
     color: #2563eb;
 }
 
+#bbai-dashboard-main .bbai-inline-upgrade-trigger {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    appearance: none;
+    cursor: pointer;
+    font: inherit;
+    text-align: inherit;
+}
+
+#bbai-dashboard-main .bbai-inline-upgrade-trigger:hover {
+    text-decoration: underline;
+}
+
+#bbai-dashboard-main .bbai-inline-upgrade-trigger:focus-visible {
+    outline: 2px solid #4f46e5;
+    outline-offset: 3px;
+    border-radius: 6px;
+}
+
 #bbai-dashboard-main .bbai-upgrade-card {
     align-self: stretch;
     height: 100%;
@@ -739,7 +761,7 @@
 
 #bbai-dashboard-main .bbai-upgrade-card .bbai-card__footer.bbai-upgrade-bottom {
     flex: 0 0 auto;
-    margin-top: auto;
+    margin-top: 0;
     padding-top: 0;
     display: flex;
     flex-direction: column;
@@ -768,17 +790,18 @@
 
 #bbai-dashboard-main .bbai-upgrade-meters {
     margin-top: 18px;
-    margin-bottom: 22px;
+    margin-bottom: 20px;
     padding-top: 16px;
     border-top: 1px solid #eef0f3;
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 16px;
 }
 
 #bbai-dashboard-main .bbai-meter {
     display: flex;
     flex-direction: column;
+    gap: 6px;
     animation: bbai-slide-up 0.4s ease-out both;
 }
 #bbai-dashboard-main .bbai-meter-growth {
@@ -795,7 +818,7 @@
     font-weight: 600;
     line-height: 1.35;
     color: #374151;
-    margin-bottom: 8px;
+    margin-bottom: 0;
 }
 
 #bbai-dashboard-main .bbai-meter-value {
@@ -804,6 +827,7 @@
 }
 
 #bbai-dashboard-main .bbai-meter-bar {
+    position: relative;
     height: 8px;
     background: #e5e7eb;
     border-radius: 999px;
@@ -825,27 +849,46 @@
     background: linear-gradient(90deg, #7c3aed, #6366f1);
 }
 
-#bbai-dashboard-main .bbai-meter-growth .bbai-meter-bar {
-    box-sizing: border-box;
-    height: 12px;
-    padding: 1px;
-    background: linear-gradient(90deg, #ecfdf5, #f0fdf4);
-    border: 1px solid #dcfce7;
-    box-shadow: inset 0 1px 2px rgba(34, 197, 94, 0.08);
+#bbai-dashboard-main .bbai-meter-bar-growth {
+    position: relative;
+    height: 8px;
+    border-radius: 999px;
+    background: #def5e7;
+    overflow: visible;
+    box-shadow: inset 0 1px 2px rgba(46, 125, 74, 0.08);
 }
 
-#bbai-dashboard-main .bbai-meter-growth .bbai-meter-fill {
-    background: linear-gradient(90deg, #22c55e, #4ade80);
+#bbai-dashboard-main .bbai-meter-capacity-fill {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #4ccf7a, #6edb92);
+}
+
+#bbai-dashboard-main .bbai-meter-current-marker {
+    position: absolute;
+    top: 50%;
+    left: clamp(1.5px, var(--bbai-marker-left, 0%), calc(100% - 1.5px));
+    transform: translate(-50%, -50%);
+    width: 3px;
+    height: 16px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #7c3aed, #6366f1);
+    box-shadow: 0 0 0 2px #ffffff;
+    z-index: 1;
+    transition: left 1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 #bbai-dashboard-main .bbai-meter-caption {
-    margin-top: 8px;
+    margin-top: 0;
     font-size: 12px;
     color: #6b7280;
 }
 
 #bbai-dashboard-main .bbai-meter-growth .bbai-meter-caption {
-    color: #15803d;
+    font-weight: 500;
+    line-height: 1.4;
+    color: #6b7280;
 }
 
 #bbai-dashboard-main .bbai-upgrade-card .bbai-upgrade-cta.bbai-btn.bbai-btn-primary,
@@ -1193,8 +1236,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px 20px;
-    padding: 14px 18px;
+    gap: 16px 22px;
+    padding: 18px 22px;
     border: 1px solid #eef0f3;
     border-radius: 12px;
     background: #ffffff;
@@ -1203,8 +1246,9 @@
 
 #bbai-dashboard-main .bbai-review-prompt-card__summary {
     display: flex;
-    align-items: center;
-    gap: 18px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
     min-width: 0;
     flex: 1 1 auto;
 }
@@ -1222,7 +1266,7 @@
 #bbai-dashboard-main .bbai-review-prompt-card__meta {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     flex: 0 0 auto;
 }
 
@@ -1244,11 +1288,11 @@
 #bbai-dashboard-main .bbai-review-prompt-card__stars,
 #bbai-dashboard-main .bbai-review-stars {
     margin: 0;
-    font-size: 14px;
+    font-size: 16px;
     line-height: 1;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.125em;
     color: #f59e0b;
-    opacity: 0.9;
+    opacity: 0.95;
 }
 
 #bbai-dashboard-main .bbai-review-prompt-card__note {
@@ -1448,7 +1492,7 @@
 
     #bbai-dashboard-main .bbai-review-prompt-card__summary {
         width: 100%;
-        justify-content: space-between;
+        justify-content: flex-start;
     }
 
     #bbai-dashboard-main .bbai-dashboard-hero__cta {

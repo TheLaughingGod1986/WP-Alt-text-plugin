@@ -788,7 +788,7 @@ function handleLogout() {
     } else {
         // Vanilla JS fallback
         var formData = new FormData();
-        formData.append('action', 'alttextai_logout');
+        formData.append('action', 'beepbeepai_logout');
         formData.append('nonce', nonce);
 
         fetch(ajaxUrl, {
@@ -2073,5 +2073,4 @@ bbaiRunWithJQuery(function($) {
         if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Dashboard initialized');
     });
 });
-
 

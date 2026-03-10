@@ -2390,7 +2390,7 @@ function handleLogout() {
                         } else {
         // Vanilla JS fallback
         const formData = new FormData();
-        formData.append('action', 'alttextai_logout');
+        formData.append('action', 'beepbeepai_logout');
         formData.append('nonce', nonce);
         
         fetch(ajaxUrl, {

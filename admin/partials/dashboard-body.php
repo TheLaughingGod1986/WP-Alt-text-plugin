@@ -9,11 +9,6 @@ use BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers;
 
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/class-plan-helpers.php';
 
-$bbai_onboarding_modal_path = plugin_dir_path(BBAI_PLUGIN_FILE) . 'admin/partials/onboarding-modal.php';
-if (file_exists($bbai_onboarding_modal_path)) {
-    include $bbai_onboarding_modal_path;
-}
-
 /**
  * Row 1: Alt Text Status card (donut + metrics + plan usage + upgrade signal).
  */
@@ -168,7 +163,7 @@ $bbai_render_status_card = static function (array $state): void {
                 <p class="bbai-plan-usage__reset"><?php echo esc_html($state['credits_reset_line'] ?? $state['reset_label']); ?></p>
                 <?php if ($is_out_of_credits && $upgrade_unlock > 0) : ?>
                 <p class="bbai-plan-usage__remaining bbai-plan-usage__remaining--exhausted"><?php printf(esc_html__('You\'ve used all %s free generations.', 'beepbeep-ai-alt-text-generator'), esc_html(number_format_i18n($state['credits_total']))); ?></p>
-                <p class="bbai-plan-usage__upgrade-copy"><?php printf(esc_html__('Upgrade to generate %s more ALT texts this month.', 'beepbeep-ai-alt-text-generator'), esc_html(number_format_i18n($upgrade_unlock))); ?></p>
+                <button type="button" class="bbai-plan-usage__upgrade-copy bbai-inline-upgrade-trigger" data-action="show-upgrade-modal"><?php printf(esc_html__('Upgrade to generate %s more ALT texts this month.', 'beepbeep-ai-alt-text-generator'), esc_html(number_format_i18n($upgrade_unlock))); ?></button>
                 <?php else : ?>
                 <p class="bbai-plan-usage__remaining"><?php printf(esc_html__('%s AI generations remaining', 'beepbeep-ai-alt-text-generator'), esc_html(number_format_i18n($credits_remaining))); ?></p>
                 <?php endif; ?>
@@ -186,9 +181,19 @@ $bbai_render_upgrade_card = static function (array $state): void {
     if (empty($state['show_upgrade_card'])) {
         return;
     }
-    $upgrade_unlock = max(0, 1000 - (int) ($state['credits_used'] ?? 0));
+    $growth_plan_limit = 1000;
+    $current_usage = max(0, (int) ($state['credits_used'] ?? 0));
+    $upgrade_unlock = max(0, $growth_plan_limit - $current_usage);
     $weak = max(0, (int) ($state['needs_review_count'] ?? 0));
     $missing = max(0, (int) ($state['missing_alts'] ?? 0));
+    $bbai_free_pct = min(100, max(0, ((int) ($state['credits_total'] ?? 0) > 0 ? ($current_usage / (int) $state['credits_total']) * 100 : 0)));
+    $bbai_growth_marker_pct = min(100, max(0, ($growth_plan_limit > 0 ? ($current_usage / $growth_plan_limit) * 100 : 0)));
+    $bbai_growth_marker_visual_pct = min(100, max($bbai_growth_marker_pct, 10));
+    if ($bbai_growth_marker_pct >= 1) {
+        $bbai_growth_usage_label = number_format_i18n((int) round($bbai_growth_marker_pct));
+    } else {
+        $bbai_growth_usage_label = Usage_Tracker::format_percentage_label($bbai_growth_marker_pct);
+    }
 
     if ($weak > 0) {
         $upgrade_context = sprintf(
@@ -231,10 +236,9 @@ $bbai_render_upgrade_card = static function (array $state): void {
                     <div class="bbai-meter bbai-meter-free">
                         <div class="bbai-meter-header">
                             <span><?php esc_html_e('Free plan usage', 'beepbeep-ai-alt-text-generator'); ?></span>
-                            <span class="bbai-meter-value"><?php printf(esc_html__('%1$s / %2$s images', 'beepbeep-ai-alt-text-generator'), esc_html(number_format_i18n((int) $state['credits_used'])), esc_html(number_format_i18n((int) $state['credits_total']))); ?></span>
+                            <span class="bbai-meter-value"><?php printf(esc_html__('%1$s / %2$s images', 'beepbeep-ai-alt-text-generator'), esc_html(number_format_i18n($current_usage)), esc_html(number_format_i18n((int) $state['credits_total']))); ?></span>
                         </div>
                         <div class="bbai-meter-bar">
-                            <?php $bbai_free_pct = min(100, max(0, ($state['credits_total'] > 0 ? ($state['credits_used'] / $state['credits_total']) * 100 : 0))); ?>
                             <div class="bbai-meter-fill" style="width:0%" data-bbai-banner-progress data-bbai-banner-progress-target="<?php echo esc_attr($bbai_free_pct); ?>"></div>
                         </div>
                         <div class="bbai-meter-caption">
@@ -244,14 +248,21 @@ $bbai_render_upgrade_card = static function (array $state): void {
 
                     <div class="bbai-meter bbai-meter-growth">
                         <div class="bbai-meter-header">
-                            <span><?php esc_html_e('Growth plan capacity', 'beepbeep-ai-alt-text-generator'); ?></span>
+                            <span><?php esc_html_e('Growth plan limit', 'beepbeep-ai-alt-text-generator'); ?></span>
                             <span class="bbai-meter-value"><?php esc_html_e('1,000 images / month', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </div>
-                        <div class="bbai-meter-bar">
-                            <div class="bbai-meter-fill" style="width:0%" data-bbai-banner-progress data-bbai-banner-progress-target="100"></div>
+                        <div class="bbai-meter-bar bbai-meter-bar-growth" aria-hidden="true">
+                            <div class="bbai-meter-capacity-fill"></div>
+                            <div class="bbai-meter-current-marker" style="--bbai-marker-left: 0%;" data-bbai-marker-progress data-bbai-marker-progress-target="<?php echo esc_attr($bbai_growth_marker_visual_pct); ?>"></div>
                         </div>
                         <div class="bbai-meter-caption">
-                            <?php esc_html_e('~20× more image capacity', 'beepbeep-ai-alt-text-generator'); ?>
+                            <?php
+                            printf(
+                                /* translators: %s: percentage of the Growth plan used at current usage */
+                                esc_html__("You'd only use ~%s%% of this plan", 'beepbeep-ai-alt-text-generator'),
+                                esc_html($bbai_growth_usage_label)
+                            );
+                            ?>
                         </div>
                     </div>
                 </div>
@@ -261,7 +272,7 @@ $bbai_render_upgrade_card = static function (array $state): void {
         <footer class="bbai-card__footer bbai-upgrade-bottom">
             <button type="button" class="bbai-btn bbai-btn-primary bbai-upgrade-cta" data-action="show-upgrade-modal"><?php esc_html_e('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'); ?></button>
             <div class="bbai-upgrade-trust"><?php esc_html_e('Cancel anytime • No lock-in', 'beepbeep-ai-alt-text-generator'); ?></div>
-            <div class="bbai-upgrade-value">
+            <button type="button" class="bbai-upgrade-value bbai-inline-upgrade-trigger" data-action="show-upgrade-modal">
                 <?php
                 printf(
                     /* translators: %s: number of additional images unlocked this month */
@@ -269,7 +280,7 @@ $bbai_render_upgrade_card = static function (array $state): void {
                     esc_html(number_format_i18n($upgrade_unlock))
                 );
                 ?>
-            </div>
+            </button>
             <a href="#" class="bbai-link-secondary bbai-upgrade-compare-link bbai-compare-plans" data-action="show-upgrade-modal" onclick="if(typeof alttextaiShowModal==='function'){alttextaiShowModal();}else if(typeof window.alttextaiShowModal==='function'){window.alttextaiShowModal();}return false;"><?php esc_html_e('Compare plans', 'beepbeep-ai-alt-text-generator'); ?></a>
         </footer>
     </article>
