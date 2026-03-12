@@ -1,6 +1,6 @@
 <?php
 /**
- * Guide (How to) tab content - Premium SaaS Design.
+ * Help tab content - Premium SaaS Design.
  * Uses consistent card structure and unified CSS system.
  *
  * Expects $this (core class) and $bbai_usage_stats in scope.
@@ -40,11 +40,11 @@ $bbai_library_url = add_query_arg(['page' => 'bbai', 'tab' => 'library'], admin_
 $bbai_library_missing_url = add_query_arg(['page' => 'bbai', 'tab' => 'library', 'status' => 'missing'], admin_url('admin.php'));
 $bbai_settings_url = add_query_arg(['page' => 'bbai', 'tab' => 'settings'], admin_url('admin.php'));
 ?>
-<div class="bbai-dashboard-container bbai-guide-page bbai-page-inner">
+<div class="bbai-guide-page">
     <!-- Header Section -->
     <div class="bbai-guide-header bbai-page-section">
-        <h1 class="bbai-page-title"><?php esc_html_e('Getting Started with BeepBeep AI', 'beepbeep-ai-alt-text-generator'); ?></h1>
-        <p class="bbai-page-subtitle"><?php esc_html_e('Learn how to generate ALT text for your media library in minutes.', 'beepbeep-ai-alt-text-generator'); ?></p>
+        <h1 class="bbai-page-title"><?php esc_html_e('Help Center', 'beepbeep-ai-alt-text-generator'); ?></h1>
+        <p class="bbai-page-subtitle"><?php esc_html_e('Learn how scanning, generation, credits, and accessibility workflows work in BeepBeep AI.', 'beepbeep-ai-alt-text-generator'); ?></p>
     </div>
 
     <!-- Growth Features Block (Free users only) -->
@@ -307,11 +307,62 @@ $bbai_settings_url = add_query_arg(['page' => 'bbai', 'tab' => 'settings'], admi
         </div>
     </div>
 
-</div>
+    <div class="bbai-guide-two-col bbai-page-section">
+        <div class="bbai-card bbai-guide-features-card">
+            <h2 class="bbai-card-title"><?php esc_html_e('Credits & Plans', 'beepbeep-ai-alt-text-generator'); ?></h2>
+            <ul class="bbai-guide-features-list">
+                <li class="bbai-guide-feature">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M8 5V8L10 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    <span><?php esc_html_e('Free includes 50 AI generations each month.', 'beepbeep-ai-alt-text-generator'); ?></span>
+                </li>
+                <li class="bbai-guide-feature">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="M8 2L10 6L14 8L10 10L8 14L6 10L2 8L6 6L8 2Z" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                    <span><?php esc_html_e('Growth increases your monthly allowance and unlocks bulk workflows.', 'beepbeep-ai-alt-text-generator'); ?></span>
+                </li>
+                <li class="bbai-guide-feature">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M5 8H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    <span><?php esc_html_e('Open Usage to check credits remaining, reset timing, and recent activity.', 'beepbeep-ai-alt-text-generator'); ?></span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="bbai-card bbai-guide-features-card">
+            <h2 class="bbai-card-title"><?php esc_html_e('FAQs & Troubleshooting', 'beepbeep-ai-alt-text-generator'); ?></h2>
+            <ul class="bbai-guide-features-list">
+                <li class="bbai-guide-feature">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span><?php esc_html_e('Run a scan first if the ALT Library looks empty or out of date.', 'beepbeep-ai-alt-text-generator'); ?></span>
+                </li>
+                <li class="bbai-guide-feature">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="M3 8H13M8 3V13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    <span><?php esc_html_e('Retry generation from the ALT Library if an image description fails the first time.', 'beepbeep-ai-alt-text-generator'); ?></span>
+                </li>
+                <li class="bbai-guide-feature">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M8 6V8M8 10H8.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    <span><?php esc_html_e('Use Settings → Debug for support logs and system checks when troubleshooting.', 'beepbeep-ai-alt-text-generator'); ?></span>
+                </li>
+            </ul>
+        </div>
+    </div>
 
 </div>
 
-
+</div>
 
 
 

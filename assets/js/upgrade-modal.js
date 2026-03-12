@@ -156,10 +156,6 @@
         var variant = isLockedContext ? copy.locked : copy.defaults;
         var decisionDesc = variant.decisionDesc;
 
-        if (isLockedContext && context && context.message) {
-            decisionDesc = String(context.message);
-        }
-
         modal.setAttribute('data-bbai-upgrade-context', isLockedContext ? 'locked' : 'default');
         setModalNodeText(copy.nodes.title, variant.title);
         setModalNodeText(copy.nodes.subtitle, variant.subtitle);

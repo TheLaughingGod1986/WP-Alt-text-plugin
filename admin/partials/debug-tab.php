@@ -16,15 +16,16 @@ $bbai_can_view_debug = (defined('WP_DEBUG') && WP_DEBUG) || current_user_can('ma
 $bbai_is_authenticated = $this->api_client->is_authenticated();
 $bbai_has_license = $this->api_client->has_active_license();
 $bbai_can_access_debug = $bbai_is_authenticated || $bbai_has_license;
+$bbai_debug_embedded = !empty($bbai_debug_embedded);
 ?>
 <?php if (!$bbai_can_view_debug) : ?>
-    <div class="bbai-dashboard-container bbai-page-inner">
+    <div class="bbai-debug-page">
         <div class="notice notice-info">
             <p><?php esc_html_e('Debug Logs are only visible when WP_DEBUG is enabled or for administrators.', 'beepbeep-ai-alt-text-generator'); ?></p>
         </div>
     </div>
 <?php elseif (!$bbai_can_access_debug) : ?>
-    <div class="bbai-dashboard-container bbai-page-inner">
+    <div class="bbai-debug-page">
         <div class="bbai-settings-required">
             <div class="bbai-settings-required-content">
                 <div class="bbai-settings-required-icon">
@@ -121,10 +122,14 @@ $bbai_can_access_debug = $bbai_is_authenticated || $bbai_has_license;
             [data-bbai-debug-panel] .bbai-btn-group .bbai-btn { width: 100%; text-align: center; }
         }
     </style>
-    <div class="bbai-dashboard-container bbai-page-inner" data-bbai-debug-panel>
-        <div class="bbai-page-header bbai-mb-6">
+    <div class="bbai-debug-page" data-bbai-debug-panel>
+        <div class="bbai-page-header bbai-mb-6<?php echo $bbai_debug_embedded ? ' bbai-page-header--embedded' : ''; ?>">
             <div class="bbai-page-header-content">
+                <?php if ($bbai_debug_embedded) : ?>
+                <h2 class="bbai-page-title"><?php esc_html_e('Debug Logs', 'beepbeep-ai-alt-text-generator'); ?></h2>
+                <?php else : ?>
                 <h1 class="bbai-page-title"><?php esc_html_e('Debug Logs', 'beepbeep-ai-alt-text-generator'); ?></h1>
+                <?php endif; ?>
                 <p class="bbai-page-subtitle"><?php esc_html_e('Support-first troubleshooting for API calls, queue events, and failures.', 'beepbeep-ai-alt-text-generator'); ?></p>
             </div>
             <div class="bbai-btn-group">

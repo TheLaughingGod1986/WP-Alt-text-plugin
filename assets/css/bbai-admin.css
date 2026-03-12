@@ -1,3 +1,62 @@
+.bbai-container.bbai-content-shell {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.bbai-page {
+    padding-top: 28px;
+}
+
+.bbai-page-inner {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 32px 40px;
+    box-sizing: border-box;
+}
+
+.bbai-page-inner > .bbai-clean-dashboard,
+.bbai-page-inner > .bbai-library-container,
+.bbai-page-inner > .bbai-analytics-page,
+.bbai-page-inner > .bbai-settings-page,
+.bbai-page-inner > .bbai-guide-page,
+.bbai-page-inner > .bbai-credit-usage-page,
+.bbai-page-inner > .bbai-debug-page {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    min-height: 0;
+    box-sizing: border-box;
+}
+
+.bbai-page-inner .bbai-dashboard-container {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+}
+
+@media (max-width: 1024px) {
+    .bbai-page {
+        padding-top: 24px;
+    }
+
+    .bbai-page-inner {
+        padding: 0 24px 32px;
+    }
+}
+
+@media (max-width: 782px) {
+    .bbai-page-inner {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+}
+
 .bbai-setup-wizard-launch {
     margin: 8px 0 0;
 }

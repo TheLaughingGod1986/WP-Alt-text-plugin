@@ -163,18 +163,29 @@ trait Core_Assets {
         $page = $this->get_current_admin_page();
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
         $tab = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : '';
+        $tab_aliases = [
+            'credit-usage' => 'usage',
+            'guide'        => 'help',
+            'debug'        => 'settings',
+        ];
         $page_to_tab = [
             'bbai' => 'dashboard',
             'bbai-library' => 'library',
             'bbai-analytics' => 'analytics',
-            'bbai-credit-usage' => 'credit-usage',
-            'bbai-guide' => 'guide',
+            'bbai-credit-usage' => 'usage',
+            'bbai-guide' => 'help',
             'bbai-settings' => 'settings',
-            'bbai-debug' => 'debug',
+            'bbai-debug' => 'settings',
             'bbai-agency-overview' => 'agency-overview',
             'bbai-onboarding' => 'onboarding',
         ];
-        return $tab !== '' ? $tab : ($page_to_tab[ $page ] ?? 'dashboard');
+
+        if ($tab !== '') {
+            return $tab_aliases[ $tab ] ?? $tab;
+        }
+
+        $resolved = $page_to_tab[ $page ] ?? 'dashboard';
+        return $tab_aliases[ $resolved ] ?? $resolved;
     }
 
     /**
@@ -376,7 +387,7 @@ trait Core_Assets {
             $asset_version($modal_css, '4.3.0')
         );
 
-        $stats_data = $this->get_media_stats();
+        $stats_data = $this->get_dashboard_stats_payload();
         $usage_data = Usage_Tracker::get_stats_display();
 
         wp_enqueue_script(

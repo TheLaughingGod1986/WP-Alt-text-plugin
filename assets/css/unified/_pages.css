@@ -1387,6 +1387,46 @@ h1.bbai-heading {
     color: var(--bbai-info-dark);
 }
 
+.bbai-settings-section-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+    padding: var(--bbai-space-1);
+    background: var(--bbai-bg-secondary);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-full);
+    margin-bottom: var(--bbai-space-2);
+}
+
+.bbai-settings-section-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: 0 var(--bbai-space-4);
+    border-radius: var(--bbai-radius-full);
+    color: var(--bbai-text-muted);
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-medium);
+    text-decoration: none;
+    transition: all var(--bbai-transition-fast) var(--bbai-ease-out);
+}
+
+.bbai-settings-section-link:hover {
+    color: var(--bbai-text);
+    background: rgba(15, 23, 42, 0.04);
+}
+
+.bbai-settings-section-link.active {
+    color: var(--bbai-text);
+    background: var(--bbai-bg);
+    box-shadow: var(--bbai-shadow-sm);
+}
+
+.bbai-page-header--embedded .bbai-page-title {
+    font-size: var(--bbai-text-2xl);
+}
+
 .bbai-settings-sitewide-text {
     font-size: 14px;
     color: var(--bbai-info-dark);
@@ -1951,6 +1991,15 @@ h1.bbai-heading {
 
 /* Responsive Settings */
 @media (max-width: 640px) {
+    .bbai-settings-section-nav {
+        display: flex;
+        width: 100%;
+    }
+
+    .bbai-settings-section-link {
+        flex: 1 1 0;
+    }
+
     .bbai-settings-form-field--toggle {
         flex-direction: column;
         gap: var(--bbai-space-3);

@@ -15,13 +15,54 @@ if (!class_exists('\BeepBeepAI\AltTextGenerator\Usage_Tracker')) {
 
 $bbai_is_authenticated = $this->api_client->is_authenticated();
 $bbai_has_license = $this->api_client->has_active_license();
+$bbai_can_show_debug_section = isset($bbai_can_show_debug_tab)
+    ? (bool) $bbai_can_show_debug_tab
+    : ((defined('WP_DEBUG') && WP_DEBUG) || current_user_can('manage_options'));
+$bbai_settings_section = isset($bbai_settings_section) && 'debug' === (string) $bbai_settings_section && $bbai_can_show_debug_section
+    ? 'debug'
+    : 'general';
+$bbai_settings_general_url = admin_url('admin.php?page=bbai-settings');
+$bbai_settings_debug_url = add_query_arg(
+    [
+        'page'    => 'bbai-settings',
+        'section' => 'debug',
+    ],
+    admin_url('admin.php')
+);
 ?>
 <?php
 // Relax gating: allow settings for anyone, but show a soft prompt if not logged in/licensed.
 if (!$bbai_is_authenticated && !$bbai_has_license) :
 ?>
                 <!-- Settings require authentication -->
-                <div class="bbai-dashboard-container bbai-page-inner">
+                <div class="bbai-settings-page bbai-settings-page--gated">
+                    <div class="bbai-dashboard-header-section bbai-page-section">
+                        <h1 class="bbai-dashboard-title bbai-page-title"><?php esc_html_e('Settings', 'beepbeep-ai-alt-text-generator'); ?></h1>
+                        <p class="bbai-dashboard-subtitle bbai-page-subtitle"><?php esc_html_e('Configure BeepBeep AI and control how ALT text is generated for your media library.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                    </div>
+
+                    <?php if ($bbai_can_show_debug_section) : ?>
+                    <div class="bbai-settings-section-nav bbai-page-section" role="navigation" aria-label="<?php esc_attr_e('Settings sections', 'beepbeep-ai-alt-text-generator'); ?>">
+                        <a href="<?php echo esc_url($bbai_settings_general_url); ?>" class="bbai-settings-section-link<?php echo 'general' === $bbai_settings_section ? ' active' : ''; ?>"<?php echo 'general' === $bbai_settings_section ? ' aria-current="page"' : ''; ?>>
+                            <?php esc_html_e('General', 'beepbeep-ai-alt-text-generator'); ?>
+                        </a>
+                        <a href="<?php echo esc_url($bbai_settings_debug_url); ?>" class="bbai-settings-section-link<?php echo 'debug' === $bbai_settings_section ? ' active' : ''; ?>"<?php echo 'debug' === $bbai_settings_section ? ' aria-current="page"' : ''; ?>>
+                            <?php esc_html_e('Debug', 'beepbeep-ai-alt-text-generator'); ?>
+                        </a>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if ('debug' === $bbai_settings_section) : ?>
+                    <?php
+                    $bbai_debug_embedded = true;
+                    $bbai_debug_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/debug-tab.php';
+                    if (file_exists($bbai_debug_partial)) {
+                        include $bbai_debug_partial;
+                    } else {
+                        esc_html_e('Debug content unavailable.', 'beepbeep-ai-alt-text-generator');
+                    }
+                    ?>
+                    <?php else : ?>
                     <div class="bbai-settings-required">
                     <div class="bbai-settings-required-content">
                         <div class="bbai-settings-required-icon">
@@ -49,10 +90,11 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                         </div>
                     </div>
                 </div>
-            </div>
+                    <?php endif; ?>
+                </div>
             <?php else : ?>
             <!-- Settings Page -->
-            <div class="bbai-dashboard-container bbai-settings-page bbai-page-inner">
+            <div class="bbai-settings-page">
                 <?php
                     // Pull fresh usage from backend to avoid stale cache in Settings
                     if (isset($this->api_client)) {
@@ -130,6 +172,17 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                     </p>
                 </div>
 
+                <?php if ($bbai_can_show_debug_section) : ?>
+                <div class="bbai-settings-section-nav bbai-page-section" role="navigation" aria-label="<?php esc_attr_e('Settings sections', 'beepbeep-ai-alt-text-generator'); ?>">
+                    <a href="<?php echo esc_url($bbai_settings_general_url); ?>" class="bbai-settings-section-link<?php echo 'general' === $bbai_settings_section ? ' active' : ''; ?>"<?php echo 'general' === $bbai_settings_section ? ' aria-current="page"' : ''; ?>>
+                        <?php esc_html_e('General', 'beepbeep-ai-alt-text-generator'); ?>
+                    </a>
+                    <a href="<?php echo esc_url($bbai_settings_debug_url); ?>" class="bbai-settings-section-link<?php echo 'debug' === $bbai_settings_section ? ' active' : ''; ?>"<?php echo 'debug' === $bbai_settings_section ? ' aria-current="page"' : ''; ?>>
+                        <?php esc_html_e('Debug', 'beepbeep-ai-alt-text-generator'); ?>
+                    </a>
+                </div>
+                <?php endif; ?>
+
                 <?php
                 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display only, no action
                 if (isset($_GET['settings-updated']) && $_GET['settings-updated'] === 'true') :
@@ -139,7 +192,8 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                     <?php esc_html_e('Settings saved successfully.', 'beepbeep-ai-alt-text-generator'); ?>
                 </div>
                 <?php endif; ?>
-                
+
+                <?php if ('general' === $bbai_settings_section) : ?>
                 <!-- Site-Wide Settings Banner -->
                 <div class="bbai-settings-sitewide-banner bbai-page-section">
                     <svg class="bbai-settings-sitewide-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -327,6 +381,17 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                         </div>
                     </div>
                 </form>
+                <?php else : ?>
+                <?php
+                $bbai_debug_embedded = true;
+                $bbai_debug_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/debug-tab.php';
+                if (file_exists($bbai_debug_partial)) {
+                    include $bbai_debug_partial;
+                } else {
+                    esc_html_e('Debug content unavailable.', 'beepbeep-ai-alt-text-generator');
+                }
+                ?>
+                <?php endif; ?>
 
             </div>
             <?php endif; // End if/else for authentication check in settings tab ?>

@@ -6736,6 +6736,46 @@ h1.bbai-heading {
     color: var(--bbai-info-dark);
 }
 
+.bbai-settings-section-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+    padding: var(--bbai-space-1);
+    background: var(--bbai-bg-secondary);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-full);
+    margin-bottom: var(--bbai-space-2);
+}
+
+.bbai-settings-section-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: 0 var(--bbai-space-4);
+    border-radius: var(--bbai-radius-full);
+    color: var(--bbai-text-muted);
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-medium);
+    text-decoration: none;
+    transition: all var(--bbai-transition-fast) var(--bbai-ease-out);
+}
+
+.bbai-settings-section-link:hover {
+    color: var(--bbai-text);
+    background: rgba(15, 23, 42, 0.04);
+}
+
+.bbai-settings-section-link.active {
+    color: var(--bbai-text);
+    background: var(--bbai-bg);
+    box-shadow: var(--bbai-shadow-sm);
+}
+
+.bbai-page-header--embedded .bbai-page-title {
+    font-size: var(--bbai-text-2xl);
+}
+
 /* Plan Summary Card - Elevated Design */
 .bbai-settings-plan-summary-card {
     background: var(--bbai-bg);
@@ -7295,6 +7335,15 @@ h1.bbai-heading {
 
 /* Responsive Settings */
 @media (max-width: 640px) {
+    .bbai-settings-section-nav {
+        display: flex;
+        width: 100%;
+    }
+
+    .bbai-settings-section-link {
+        flex: 1 1 0;
+    }
+
     .bbai-settings-form-field--toggle {
         flex-direction: column;
         gap: var(--bbai-space-3);
@@ -11633,7 +11682,7 @@ h4.bbai-heading {
     max-width: var(--bbai-dashboard-max-width);
     margin: 0 auto;
     gap: var(--bbai-space-4);
-    overflow: hidden;
+    overflow: visible;
 }
 
 /* ============================================
@@ -11668,7 +11717,15 @@ h4.bbai-heading {
 .bbai-nav {
     display: flex;
     align-items: center;
-    gap: var(--bbai-space-1);
+    gap: var(--bbai-space-4);
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.bbai-nav__primary {
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
     flex: 1 1 auto;
     min-width: 0;
     overflow-x: auto;
@@ -11676,7 +11733,7 @@ h4.bbai-heading {
     scrollbar-width: none;
 }
 
-.bbai-nav::-webkit-scrollbar {
+.bbai-nav__primary::-webkit-scrollbar {
     display: none;
 }
 
@@ -11695,6 +11752,7 @@ h4.bbai-heading {
     border: none;
     cursor: pointer;
     white-space: nowrap;
+    min-height: 36px;
 }
 
 .bbai-nav-link:hover:not(.active) {
@@ -11734,22 +11792,28 @@ h4.bbai-heading {
     align-items: center;
     gap: var(--bbai-space-2);
     padding: var(--bbai-space-2) var(--bbai-space-3);
-    color: #ffffff;
+    color: rgba(255, 255, 255, 0.78);
     text-decoration: none;
     border-radius: var(--bbai-radius-full);
-    font-size: var(--bbai-text-xs);
+    font-size: var(--bbai-text-sm);
     font-weight: var(--bbai-font-medium);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.04);
     transition: all var(--bbai-transition-fast) var(--bbai-ease-out);
-    margin-left: var(--bbai-space-2);
-    margin-right: var(--bbai-space-4);
+    margin-left: auto;
+    flex-shrink: 0;
 }
 
 .bbai-header-guide-link:hover {
     color: white;
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.24);
+}
+
+.bbai-header-guide-link.active {
+    color: white;
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.24);
 }
 
 .bbai-header-guide-link:focus-visible {
@@ -11769,8 +11833,6 @@ h4.bbai-heading {
 
 @media (max-width: 900px) {
     .bbai-header-guide-link {
-        margin-left: var(--bbai-space-1);
-        margin-right: var(--bbai-space-2);
         padding: var(--bbai-space-1) var(--bbai-space-2);
     }
 
@@ -11928,15 +11990,17 @@ button.bbai-header-login-btn:hover {
         order: 3;
         width: 100%;
         justify-content: flex-start;
-        overflow-x: auto;
-        padding-bottom: var(--bbai-space-2);
         margin-top: var(--bbai-space-2);
-        -webkit-overflow-scrolling: touch;
+        padding-bottom: var(--bbai-space-2);
     }
 
     .bbai-nav-link {
         padding: var(--bbai-space-2) var(--bbai-space-3);
         font-size: var(--bbai-text-xs);
+    }
+
+    .bbai-nav__primary {
+        flex: 1 1 auto;
     }
 }
 

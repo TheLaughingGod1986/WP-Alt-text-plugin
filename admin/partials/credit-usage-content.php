@@ -22,7 +22,7 @@ $bbai_days_reset = isset($current_usage['days_until_reset']) && is_numeric($curr
 $bbai_reset_date = $current_usage['reset_date'] ?? '';
 $bbai_plan = isset($current_usage['plan']) && !empty($current_usage['plan']) ? $current_usage['plan'] : 'free';
 ?>
-<div class="bbai-dashboard-container bbai-credit-usage-page bbai-page-inner">
+<div class="bbai-credit-usage-page">
     <!-- 1. Page header -->
     <div class="bbai-credit-usage-header-section">
         <?php if ($view === 'user_detail' && $user_id > 0) : ?>
@@ -37,14 +37,14 @@ $bbai_plan = isset($current_usage['plan']) && !empty($current_usage['plan']) ? $
                 <?php echo esc_html(get_admin_page_title()); ?>
             </h1>
             <p class="bbai-page-subtitle">
-                <?php esc_html_e('Track your credit usage, view detailed activity by user, and monitor your monthly quota. Use filters to analyze usage patterns over time.', 'beepbeep-ai-alt-text-generator'); ?>
+                <?php esc_html_e('Track credits, generation activity, and plan usage across your site. Use filters to review usage patterns over time.', 'beepbeep-ai-alt-text-generator'); ?>
             </p>
         </div>
     </div>
 
     <!-- 2. Credit usage meter -->
     <div class="bbai-card bbai-credit-usage-meter-card">
-        <h3 class="bbai-credit-meter-title"><?php esc_html_e('Credit Usage', 'beepbeep-ai-alt-text-generator'); ?></h3>
+        <h3 class="bbai-credit-meter-title"><?php esc_html_e('Usage Summary', 'beepbeep-ai-alt-text-generator'); ?></h3>
         <?php if ($bbai_remaining === 0) : ?>
             <div class="bbai-limit-banner">
                 <strong><?php esc_html_e('Limit reached', 'beepbeep-ai-alt-text-generator'); ?></strong>
@@ -104,7 +104,7 @@ $bbai_plan = isset($current_usage['plan']) && !empty($current_usage['plan']) ? $
             } else {
                 printf(
                     /* translators: %s: credits remaining */
-                    esc_html__('You have %s credits remaining this month.', 'beepbeep-ai-alt-text-generator'),
+                    esc_html__('You have %s credits remaining in the current billing period.', 'beepbeep-ai-alt-text-generator'),
                     esc_html(number_format_i18n($bbai_remaining))
                 );
             }

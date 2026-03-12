@@ -71,34 +71,42 @@ if (isset($bbai_usage_stats) && is_array($bbai_usage_stats)) {
 $bbai_usage_used = min($bbai_usage_used, $bbai_usage_limit);
 $bbai_is_usage_triggered = ('free' === $bbai_current_plan) && $bbai_usage_remaining <= 0;
 $bbai_problem_images = 0;
+$bbai_modal_optimized_count = 0;
+$bbai_modal_library_size = 0;
 
 if (isset($bbai_state) && is_array($bbai_state)) {
     $bbai_problem_images = max(
         0,
         (int) ($bbai_state['missing_alts'] ?? 0) + (int) ($bbai_state['needs_review_count'] ?? 0)
     );
+    $bbai_modal_optimized_count = max(0, (int) ($bbai_state['optimized_count'] ?? 0));
+    $bbai_modal_library_size = max(0, (int) ($bbai_state['total_images'] ?? 0));
 } elseif (isset($bbai_stats) && is_array($bbai_stats)) {
     $bbai_problem_images = max(
         0,
         (int) ($bbai_stats['missing_alts'] ?? $bbai_stats['images_without_alt'] ?? 0) + (int) ($bbai_stats['needs_review_count'] ?? 0)
     );
+    $bbai_modal_optimized_count = max(0, (int) ($bbai_stats['optimized_count'] ?? $bbai_stats['with_alt'] ?? 0));
+    $bbai_modal_library_size = max(0, (int) ($bbai_stats['total_images'] ?? $bbai_stats['total'] ?? 0));
 }
 
-$bbai_modal_title = $bbai_is_usage_triggered
-    ? sprintf(
-        /* translators: %s: number of free AI generations */
-        __('You\'ve used all %s free AI generations', 'beepbeep-ai-alt-text-generator'),
-        number_format_i18n($bbai_usage_limit)
-    )
-    : __('Choose the right BeepBeep AI plan', 'beepbeep-ai-alt-text-generator');
+$bbai_modal_title = ('free' === $bbai_current_plan)
+    ? __('You\'re almost out of free ALT credits', 'beepbeep-ai-alt-text-generator')
+    : __('Manage your BeepBeep AI plan', 'beepbeep-ai-alt-text-generator');
 
-$bbai_modal_subtitle = $bbai_is_usage_triggered
-    ? __('Upgrade to continue optimizing images', 'beepbeep-ai-alt-text-generator')
-    : __('Pick the plan that matches your media library size and monthly AI usage.', 'beepbeep-ai-alt-text-generator');
+$bbai_modal_subtitle = ('free' === $bbai_current_plan)
+    ? __('Upgrade to continue generating ALT text automatically.', 'beepbeep-ai-alt-text-generator')
+    : __('Manage billing or add one-time credits for smaller batches.', 'beepbeep-ai-alt-text-generator');
+
+if ($bbai_is_usage_triggered && 'free' === $bbai_current_plan) {
+    $bbai_modal_title = __('You\'re out of free ALT credits', 'beepbeep-ai-alt-text-generator');
+}
 
 $bbai_usage_status = sprintf(
-    /* translators: 1: used generations, 2: monthly limit */
-    __('%1$s/%2$s used', 'beepbeep-ai-alt-text-generator'),
+    /* translators: 1: used credits, 2: credit limit */
+    ('free' === $bbai_current_plan)
+        ? __('%1$s of %2$s free credits used', 'beepbeep-ai-alt-text-generator')
+        : __('%1$s of %2$s credits used', 'beepbeep-ai-alt-text-generator'),
     number_format_i18n($bbai_usage_used),
     number_format_i18n($bbai_usage_limit)
 );
@@ -137,24 +145,54 @@ $bbai_decision_eyebrow = ('free' === $bbai_current_plan)
     ? __('Recommended', 'beepbeep-ai-alt-text-generator')
     : __('Account', 'beepbeep-ai-alt-text-generator');
 
+$bbai_free_decision_title = __('You\'ve already started optimizing your images.', 'beepbeep-ai-alt-text-generator');
+if ($bbai_modal_optimized_count > 0) {
+    $bbai_free_decision_title = sprintf(
+        _n(
+            'You\'ve already optimized %s image.',
+            'You\'ve already optimized %s images.',
+            $bbai_modal_optimized_count,
+            'beepbeep-ai-alt-text-generator'
+        ),
+        number_format_i18n($bbai_modal_optimized_count)
+    );
+} elseif ($bbai_usage_used > 0) {
+    $bbai_free_decision_title = sprintf(
+        _n(
+            'You\'ve already used %s free ALT credit.',
+            'You\'ve already used %s free ALT credits.',
+            $bbai_usage_used,
+            'beepbeep-ai-alt-text-generator'
+        ),
+        number_format_i18n($bbai_usage_used)
+    );
+}
+
+$bbai_free_decision_copy = __('Upgrade to Growth to remove the 50 image limit and optimize your entire media library automatically.', 'beepbeep-ai-alt-text-generator');
+$bbai_free_decision_meta = __('Most WordPress sites save hours writing ALT text with Growth.', 'beepbeep-ai-alt-text-generator');
+
 $bbai_decision_title = ('free' === $bbai_current_plan)
-    ? __('Growth is the best next step for most sites', 'beepbeep-ai-alt-text-generator')
+    ? $bbai_free_decision_title
     : __('Manage your plan or add one-time credits', 'beepbeep-ai-alt-text-generator');
 
 $bbai_decision_copy = ('free' === $bbai_current_plan)
-    ? __('1,000 ALT texts per month with bulk optimization and priority processing.', 'beepbeep-ai-alt-text-generator')
+    ? $bbai_free_decision_copy
     : __('Open billing for plan changes, or buy credits for smaller batches that do not expire.', 'beepbeep-ai-alt-text-generator');
 
 $bbai_default_decision_note = __('One-time credits for smaller batches. They do not expire.', 'beepbeep-ai-alt-text-generator');
-$bbai_locked_modal_title = sprintf(
-    /* translators: %s: number of free AI generations */
-    __('You\'ve used all %s free AI generations', 'beepbeep-ai-alt-text-generator'),
-    number_format_i18n($bbai_usage_limit)
-);
-$bbai_locked_modal_subtitle = __('Upgrade to continue optimizing images', 'beepbeep-ai-alt-text-generator');
+$bbai_locked_modal_title = ('free' === $bbai_current_plan)
+    ? __('You\'re out of free ALT credits', 'beepbeep-ai-alt-text-generator')
+    : __('Manage your BeepBeep AI plan', 'beepbeep-ai-alt-text-generator');
+$bbai_locked_modal_subtitle = ('free' === $bbai_current_plan)
+    ? __('Upgrade to continue generating ALT text automatically.', 'beepbeep-ai-alt-text-generator')
+    : __('Manage billing or add one-time credits for smaller batches.', 'beepbeep-ai-alt-text-generator');
 $bbai_locked_decision_eyebrow = __('Monthly limit reached', 'beepbeep-ai-alt-text-generator');
-$bbai_locked_decision_title = __('Upgrade to keep generating ALT text today', 'beepbeep-ai-alt-text-generator');
-$bbai_locked_decision_copy = __('Unlock 1,000 ALT texts per month, bulk optimization, and priority processing.', 'beepbeep-ai-alt-text-generator');
+$bbai_locked_decision_title = ('free' === $bbai_current_plan)
+    ? $bbai_free_decision_title
+    : __('Upgrade to keep generating ALT text today', 'beepbeep-ai-alt-text-generator');
+$bbai_locked_decision_copy = ('free' === $bbai_current_plan)
+    ? $bbai_free_decision_copy
+    : __('Unlock 1,000 ALT texts per month, bulk optimization, and priority processing.', 'beepbeep-ai-alt-text-generator');
 $bbai_locked_decision_note = __('One-time credits for smaller batches. They do not expire.', 'beepbeep-ai-alt-text-generator');
 ?>
 
@@ -206,6 +244,9 @@ $bbai_locked_decision_note = __('One-time credits for smaller batches. They do n
                     <p class="bbai-upgrade-modal__decision-eyebrow" data-bbai-upgrade-eyebrow><?php echo esc_html($bbai_decision_eyebrow); ?></p>
                     <p class="bbai-upgrade-modal__decision-title" data-bbai-upgrade-decision-title><?php echo esc_html($bbai_decision_title); ?></p>
                     <p class="bbai-upgrade-modal__decision-desc" data-bbai-upgrade-decision-desc><?php echo esc_html($bbai_decision_copy); ?></p>
+                    <?php if ('' !== $bbai_free_decision_meta && 'free' === $bbai_current_plan) : ?>
+                        <p class="bbai-upgrade-modal__decision-meta"><?php echo esc_html($bbai_free_decision_meta); ?></p>
+                    <?php endif; ?>
                 </div>
                 <div class="bbai-upgrade-modal__decision-actions">
                     <div class="bbai-upgrade-modal__credit-copy">
@@ -215,14 +256,17 @@ $bbai_locked_decision_note = __('One-time credits for smaller batches. They do n
                     </div>
                     <div class="bbai-upgrade-modal__decision-buttons">
                         <?php if ('free' === $bbai_current_plan) : ?>
-                            <button type="button"
-                                    class="bbai-btn bbai-btn-primary bbai-btn-lg bbai-upgrade-modal__primary-action"
-                                    data-action="checkout-plan"
-                                    data-plan="pro"
-                                    data-price-id="<?php echo esc_attr($bbai_pro_price_id); ?>"
-                                    data-fallback-url="<?php echo esc_url($bbai_stripe_links['pro']); ?>">
-                                <?php esc_html_e('Start Growth Plan', 'beepbeep-ai-alt-text-generator'); ?>
-                            </button>
+                            <div class="bbai-upgrade-modal__primary-stack">
+                                <button type="button"
+                                        class="bbai-btn bbai-btn-primary bbai-btn-lg bbai-upgrade-modal__primary-action"
+                                        data-action="checkout-plan"
+                                        data-plan="pro"
+                                        data-price-id="<?php echo esc_attr($bbai_pro_price_id); ?>"
+                                        data-fallback-url="<?php echo esc_url($bbai_stripe_links['pro']); ?>">
+                                    <?php esc_html_e('Start Growth', 'beepbeep-ai-alt-text-generator'); ?>
+                                </button>
+                                <p class="bbai-upgrade-modal__primary-trust"><?php esc_html_e('Secure checkout • Cancel anytime • No lock-in', 'beepbeep-ai-alt-text-generator'); ?></p>
+                            </div>
                         <?php else : ?>
                             <a href="<?php echo esc_url($bbai_billing_url); ?>" class="bbai-btn bbai-btn-primary bbai-btn-lg bbai-upgrade-modal__primary-action">
                                 <?php esc_html_e('Manage billing', 'beepbeep-ai-alt-text-generator'); ?>
@@ -347,9 +391,9 @@ $bbai_locked_decision_note = __('One-time credits for smaller batches. They do n
                                 data-plan="pro"
                                 data-price-id="<?php echo esc_attr($bbai_pro_price_id); ?>"
                                 data-fallback-url="<?php echo esc_url($bbai_stripe_links['pro']); ?>">
-                            <?php esc_html_e('Start Growth Plan', 'beepbeep-ai-alt-text-generator'); ?>
+                            <?php esc_html_e('Start Growth', 'beepbeep-ai-alt-text-generator'); ?>
                         </button>
-                        <p class="bbai-pricing-card__trust"><?php esc_html_e('Cancel anytime • Secure checkout', 'beepbeep-ai-alt-text-generator'); ?></p>
+                        <p class="bbai-pricing-card__trust"><?php esc_html_e('Secure checkout • Cancel anytime • No lock-in', 'beepbeep-ai-alt-text-generator'); ?></p>
                     <?php endif; ?>
                 </div>
 
@@ -362,7 +406,7 @@ $bbai_locked_decision_note = __('One-time credits for smaller batches. They do n
                     </div>
                     <div class="bbai-pricing-card__intro">
                         <h3 class="bbai-pricing-card__title"><?php esc_html_e('Agency', 'beepbeep-ai-alt-text-generator'); ?></h3>
-                        <p class="bbai-pricing-card__descriptor"><?php esc_html_e('Built for agencies and multi-site owners', 'beepbeep-ai-alt-text-generator'); ?></p>
+                        <p class="bbai-pricing-card__descriptor"><?php esc_html_e('Built for agencies managing multiple WordPress sites', 'beepbeep-ai-alt-text-generator'); ?></p>
                     </div>
                     <div class="bbai-pricing-card__price">
                         <span class="bbai-pricing-card__currency"><?php echo esc_html($bbai_currency['symbol']); ?></span>

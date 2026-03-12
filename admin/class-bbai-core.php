@@ -1233,19 +1233,10 @@ class Core {
 
             add_submenu_page(
                 'bbai',
-                __('Credit Usage', 'beepbeep-ai-alt-text-generator'),
-                __('Credit Usage', 'beepbeep-ai-alt-text-generator'),
+                __('Usage', 'beepbeep-ai-alt-text-generator'),
+                __('Usage', 'beepbeep-ai-alt-text-generator'),
                 $cap,
                 'bbai-credit-usage',
-                [$this, 'render_settings_page']
-            );
-
-            add_submenu_page(
-                'bbai',
-                __('How to', 'beepbeep-ai-alt-text-generator'),
-                __('How to', 'beepbeep-ai-alt-text-generator'),
-                $cap,
-                'bbai-guide',
                 [$this, 'render_settings_page']
             );
 
@@ -1257,17 +1248,6 @@ class Core {
                 'bbai-settings',
                 [$this, 'render_settings_page']
             );
-
-            if ($this->can_show_debug_logs_tab()) {
-                add_submenu_page(
-                    'bbai',
-                    __('Debug Logs', 'beepbeep-ai-alt-text-generator'),
-                    __('Debug Logs', 'beepbeep-ai-alt-text-generator'),
-                    $cap,
-                    'bbai-debug',
-                    [$this, 'render_settings_page']
-                );
-            }
         } else {
             // Keep trial link destinations routable without exposing sidebar navigation.
             add_submenu_page(
@@ -1281,6 +1261,27 @@ class Core {
 
             // Remove the auto-generated duplicate submenu under the top-level menu.
             remove_submenu_page(self::MENU_SLUG_DASHBOARD, self::MENU_SLUG_DASHBOARD);
+        }
+
+        // Keep utility routes addressable without exposing them in the primary submenu stack.
+        add_submenu_page(
+            '',
+            __('Help', 'beepbeep-ai-alt-text-generator'),
+            __('Help', 'beepbeep-ai-alt-text-generator'),
+            $cap,
+            'bbai-guide',
+            [$this, 'render_settings_page']
+        );
+
+        if ($this->can_show_debug_logs_tab()) {
+            add_submenu_page(
+                '',
+                __('Debug Logs', 'beepbeep-ai-alt-text-generator'),
+                __('Debug Logs', 'beepbeep-ai-alt-text-generator'),
+                $cap,
+                'bbai-debug',
+                [$this, 'render_settings_page']
+            );
         }
 
 	        // Prevent PHP 8.1+ strip_tags() null deprecation on hidden pages.
@@ -1993,8 +1994,11 @@ class Core {
 	        $bbai_page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
 	        $bbai_page_slug = $bbai_page_input;
         
-        // Initialize $bbai_tabs array (will be populated in if/else blocks below)
+        // Primary nav is limited to the product workflow. Utility routes stay accessible but hidden.
         $bbai_tabs = [];
+        $bbai_active_nav_tab = '';
+        $bbai_help_is_active = false;
+        $bbai_settings_section = 'general';
         
         // Non-registered users: show logged-out dashboard only (no header nav tabs).
         if (!$bbai_has_registered_user) {
@@ -2003,6 +2007,7 @@ class Core {
 
             $bbai_is_pro_for_admin = false;
             $bbai_is_agency_for_admin = false;
+            $bbai_can_show_debug_tab = false;
         } else {
             // Determine if agency license
             // Check API first, then include stored credentials
@@ -2028,49 +2033,48 @@ class Core {
             
             $bbai_is_agency = ($bbai_plan_slug === 'agency');
             $bbai_is_pro = ($bbai_plan_slug === 'pro' || $bbai_plan_slug === 'agency');
-            
-            // Build tabs array for registered users
-            // Core tabs always available
-            $bbai_tabs = [
-                'dashboard'    => __('Dashboard', 'beepbeep-ai-alt-text-generator'),
-                'library'      => __('ALT Library', 'beepbeep-ai-alt-text-generator'),
-                'analytics'    => __('Analytics', 'beepbeep-ai-alt-text-generator'),
-                'credit-usage' => __('Credit Usage', 'beepbeep-ai-alt-text-generator'),
-                'guide'        => __('How to', 'beepbeep-ai-alt-text-generator'),
-            ];
-            
-            $bbai_can_show_debug_tab = $this->can_show_debug_logs_tab();
 
-            // Additional tabs for authenticated/licensed users
-            if ($bbai_is_authenticated || $bbai_has_license) {
-                $bbai_tabs['settings'] = __('Settings', 'beepbeep-ai-alt-text-generator');
-                if ($bbai_can_show_debug_tab) {
-                    $bbai_tabs['debug'] = __('Debug Logs', 'beepbeep-ai-alt-text-generator');
-                }
+            // Visible primary navigation only includes the main product workflow areas.
+            $bbai_tabs = [
+                'dashboard' => __('Dashboard', 'beepbeep-ai-alt-text-generator'),
+                'library'   => __('ALT Library', 'beepbeep-ai-alt-text-generator'),
+                'analytics' => __('Analytics', 'beepbeep-ai-alt-text-generator'),
+                'usage'     => __('Usage', 'beepbeep-ai-alt-text-generator'),
+                'settings'  => __('Settings', 'beepbeep-ai-alt-text-generator'),
+            ];
+
+            $bbai_can_show_debug_tab = $this->can_show_debug_logs_tab();
+            $bbai_allowed_tabs = $bbai_tabs + [
+                'help' => __('Help', 'beepbeep-ai-alt-text-generator'),
+            ];
+
+            if ($bbai_can_show_debug_tab) {
+                $bbai_allowed_tabs['debug'] = __('Debug Logs', 'beepbeep-ai-alt-text-generator');
             }
-            
-            // Admin tab for Pro/Agency plans (replaces Debug Logs and Settings)
+
+            // Keep internal/admin routes available without promoting them into primary nav.
             if ($bbai_is_pro) {
-                // Remove individual debug/settings tabs and add admin tab
-                unset($bbai_tabs['debug'], $bbai_tabs['settings']);
-                $bbai_tabs['admin'] = __('Admin', 'beepbeep-ai-alt-text-generator');
+                $bbai_allowed_tabs['admin'] = __('Admin', 'beepbeep-ai-alt-text-generator');
             }
-            
-            // Agency Overview tab for Agency plans only
+
             if ($bbai_is_agency) {
-                $bbai_tabs['agency-overview'] = __('Agency Overview', 'beepbeep-ai-alt-text-generator');
+                $bbai_allowed_tabs['agency-overview'] = __('Agency Overview', 'beepbeep-ai-alt-text-generator');
             }
-            
-            // Map page slugs to tab slugs (for determining current tab from URL)
+
+            // Normalize legacy page slugs and tab params into the simplified nav model.
             $bbai_page_to_tab = [
-                'bbai' => 'dashboard',
-                'bbai-library' => 'library',
-                'bbai-analytics' => 'analytics',
-                'bbai-credit-usage' => 'credit-usage',
-                'bbai-guide' => 'guide',
-                'bbai-settings' => 'settings',
-                'bbai-debug' => 'debug',
+                'bbai'              => 'dashboard',
+                'bbai-library'      => 'library',
+                'bbai-analytics'    => 'analytics',
+                'bbai-credit-usage' => 'usage',
+                'bbai-guide'        => 'help',
+                'bbai-settings'     => 'settings',
+                'bbai-debug'        => 'debug',
                 'bbai-agency-overview' => 'agency-overview',
+            ];
+            $bbai_tab_aliases = [
+                'credit-usage' => 'usage',
+                'guide'        => 'help',
             ];
             
 	            // Determine current tab from URL
@@ -2078,16 +2082,45 @@ class Core {
 	            $bbai_page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : 'bbai';
 	            $bbai_current_page = $bbai_page_input ?: 'bbai';
 	            $tab_from_page = $bbai_page_to_tab[$bbai_current_page] ?? 'dashboard';
+                $tab_from_page = $bbai_tab_aliases[$tab_from_page] ?? $tab_from_page;
 	            
 	            // Use tab from URL parameter if provided, otherwise use page slug mapping
 	            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 	            $bbai_tab_input = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : '';
-	            $bbai_tab = $bbai_tab_input !== '' ? $bbai_tab_input : $tab_from_page;
+	            $bbai_requested_tab = $bbai_tab_input !== '' ? $bbai_tab_input : $tab_from_page;
+                $bbai_requested_tab = $bbai_tab_aliases[$bbai_requested_tab] ?? $bbai_requested_tab;
+
+                if ('debug' === $bbai_requested_tab && $bbai_can_show_debug_tab) {
+                    $bbai_tab = 'settings';
+                    $bbai_settings_section = 'debug';
+                } else {
+                    $bbai_tab = $bbai_requested_tab;
+                }
+
+                // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
+                $bbai_section_input = isset($_GET['section']) ? sanitize_key(wp_unslash($_GET['section'])) : '';
+                if ('settings' === $bbai_tab && 'debug' === $bbai_section_input && $bbai_can_show_debug_tab) {
+                    $bbai_settings_section = 'debug';
+                }
 
             // If trying to access restricted tabs, redirect to dashboard
-            if (!isset($bbai_tabs) || !is_array($bbai_tabs) || !in_array($bbai_tab, array_keys($bbai_tabs))) {
+            if (!isset($bbai_allowed_tabs) || !is_array($bbai_allowed_tabs) || !in_array($bbai_requested_tab, array_keys($bbai_allowed_tabs), true)) {
                 $bbai_tab = 'dashboard';
+                $bbai_settings_section = 'general';
             }
+
+            $bbai_active_nav_map = [
+                'dashboard'       => 'dashboard',
+                'library'         => 'library',
+                'analytics'       => 'analytics',
+                'usage'           => 'usage',
+                'settings'        => 'settings',
+                'debug'           => 'settings',
+                'admin'           => 'settings',
+                'agency-overview' => 'settings',
+            ];
+            $bbai_active_nav_tab = $bbai_active_nav_map[$bbai_requested_tab] ?? ($bbai_active_nav_map[$bbai_tab] ?? '');
+            $bbai_help_is_active = ('help' === $bbai_requested_tab);
             
             // Set variables for Admin tab access (used later in template)
             $bbai_is_pro_for_admin = $bbai_is_pro;
@@ -2125,52 +2158,36 @@ class Core {
                     </div>
                     <?php if ($bbai_has_registered_user) : ?>
                     <nav class="bbai-nav" role="navigation" aria-label="<?php esc_attr_e('Main navigation', 'beepbeep-ai-alt-text-generator'); ?>">
+                        <div class="bbai-nav__primary">
                         <?php
-                        // Ensure $bbai_tabs is defined (empty array is valid for non-registered users)
                         if (!isset($bbai_tabs) || !is_array($bbai_tabs)) {
                             $bbai_tabs = [];
                         }
 
-                        // Map tab slugs to page slugs for proper URL generation
                         $bbai_tab_to_page = [
                             'dashboard' => 'bbai',
-                            'library' => 'bbai-library',
+                            'library'   => 'bbai-library',
                             'analytics' => 'bbai-analytics',
-                            'credit-usage' => 'bbai-credit-usage',
-                            'guide' => 'bbai-guide',
-                            'settings' => 'bbai-settings',
-                            'debug' => 'bbai-debug', // Debug now has its own page
-                            'admin' => 'bbai', // Admin uses dashboard page with tab parameter
-                            'agency-overview' => 'bbai', // Agency Overview uses dashboard page with tab parameter
+                            'usage'     => 'bbai-credit-usage',
+                            'settings'  => 'bbai-settings',
                         ];
-                        
+
                         foreach ($bbai_tabs as $slug => $label) :
-                            // Generate proper URL using page slug if available, otherwise use tab parameter
                             $page_slug = $bbai_tab_to_page[$slug] ?? 'bbai';
-                            if ($slug === 'dashboard' || $slug === 'admin' || $slug === 'agency-overview') {
-                                // These tabs use the main page with tab parameter
-                                $url = admin_url('admin.php?page=' . $page_slug . ($slug !== 'dashboard' ? '&tab=' . $slug : ''));
-                            } else {
-                                // Other tabs use their dedicated page
-                                $url = admin_url('admin.php?page=' . $page_slug);
-                            }
-                            
-                            $active = (isset($bbai_tab) && $bbai_tab === $slug) ? ' active' : '';
-                            $aria_current = $active ? ' aria-current="page"' : '';
+                            $url = admin_url('admin.php?page=' . $page_slug);
+                            $active = (isset($bbai_active_nav_tab) && $bbai_active_nav_tab === $slug) ? ' active' : '';
                         ?>
-                            <a href="<?php echo esc_url($url); ?>"
-                               class="bbai-nav-link<?php echo esc_attr($active); ?>"
-                               <?php echo esc_attr($aria_current); ?>>
+                            <a href="<?php echo esc_url($url); ?>" class="bbai-nav-link<?php echo esc_attr($active); ?>"<?php echo $active ? ' aria-current="page"' : ''; ?>>
                                 <?php echo esc_html($label); ?>
                             </a>
                         <?php endforeach; ?>
-                        <!-- Help/Guide Link (inside nav) -->
-                        <a href="<?php echo esc_url(admin_url('admin.php?page=bbai-onboarding')); ?>" class="bbai-nav-link" id="bbai-guide-link" title="<?php esc_attr_e('Getting started guide', 'beepbeep-ai-alt-text-generator'); ?>" onclick="window.location.href='<?php echo esc_url(admin_url('admin.php?page=bbai-onboarding')); ?>'; return false;">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="margin-right:4px;">
+                        </div>
+                        <a href="<?php echo esc_url(admin_url('admin.php?page=bbai-guide')); ?>" class="bbai-header-guide-link<?php echo !empty($bbai_help_is_active) ? ' active' : ''; ?>" title="<?php esc_attr_e('Help and troubleshooting', 'beepbeep-ai-alt-text-generator'); ?>"<?php echo !empty($bbai_help_is_active) ? ' aria-current="page"' : ''; ?>>
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                 <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                 <path d="M8 11.5V11M8 9C8 7.5 9.5 7.5 9.5 6C9.5 5.17 8.83 4.5 8 4.5C7.17 4.5 6.5 5.17 6.5 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                             </svg>
-                            <?php esc_html_e('Guide', 'beepbeep-ai-alt-text-generator'); ?>
+                            <span class="bbai-header-guide-text"><?php esc_html_e('Help', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </a>
                     </nav>
                     <?php endif; ?>
@@ -2233,12 +2250,12 @@ class Core {
             </div>
             
             <!-- Main Content Container - uniform width across all tabs -->
-            <div class="bbai-container bbai-content-shell bbai-page<?php echo ( isset( $bbai_tab ) && $bbai_tab === 'dashboard' ) ? ' bbai-dashboard-shell' : ''; ?>">
+            <div class="bbai-container bbai-content-shell<?php echo ( isset( $bbai_tab ) && $bbai_tab === 'dashboard' ) ? ' bbai-dashboard-shell' : ''; ?>">
 
             <?php
             // Ensure usage stats for banner when on dashboard.
             if (
-                ( $bbai_tab === 'dashboard' || $bbai_tab === 'library' || $bbai_tab === 'analytics' || $bbai_tab === 'credit-usage' ) &&
+                ( $bbai_tab === 'dashboard' || $bbai_tab === 'library' || $bbai_tab === 'analytics' || $bbai_tab === 'usage' ) &&
                 ( $bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user ) &&
                 ( ! isset( $bbai_usage_stats ) || ! is_array( $bbai_usage_stats ) )
             ) {
@@ -2266,50 +2283,45 @@ class Core {
             <?php if ($bbai_tab === 'dashboard') : ?>
     <?php
     $bbai_dashboard_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-tab.php';
-    if (file_exists($bbai_dashboard_partial)) {
-        include $bbai_dashboard_partial;
-    } else {
-        esc_html_e('Dashboard content unavailable.', 'beepbeep-ai-alt-text-generator');
-    }
+    bbai_render_layout_template(
+        $bbai_dashboard_partial,
+        get_defined_vars(),
+        __('Dashboard content unavailable.', 'beepbeep-ai-alt-text-generator'),
+        $this
+    );
     ?>
 
 <?php elseif ($bbai_tab === 'library' && ($bbai_is_authenticated || $bbai_has_license || !$bbai_has_registered_user)) : ?>
     <?php
     $bbai_library_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/library-tab.php';
-    if (file_exists($bbai_library_partial)) {
-        include $bbai_library_partial;
-    } else {
-        esc_html_e('Library content unavailable.', 'beepbeep-ai-alt-text-generator');
-    }
+    bbai_render_layout_template(
+        $bbai_library_partial,
+        get_defined_vars(),
+        __('Library content unavailable.', 'beepbeep-ai-alt-text-generator'),
+        $this
+    );
     ?>
 
-<?php elseif ($bbai_tab === 'debug') : ?>
-    <?php
-    $bbai_debug_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/debug-tab.php';
-    if (file_exists($bbai_debug_partial)) {
-        include $bbai_debug_partial;
-    } else {
-        esc_html_e('Debug content unavailable.', 'beepbeep-ai-alt-text-generator');
-    }
-    ?>
-<?php elseif ($bbai_tab === 'guide' || $bbai_page_slug === 'bbai-guide') : ?>
+<?php elseif ($bbai_tab === 'help' || $bbai_page_slug === 'bbai-guide') : ?>
             <?php
             $bbai_guide_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/guide-tab.php';
-            if (file_exists($bbai_guide_partial)) {
-                include $bbai_guide_partial;
-            } else {
-                esc_html_e('Guide content unavailable.', 'beepbeep-ai-alt-text-generator');
-            }
+            bbai_render_layout_template(
+                $bbai_guide_partial,
+                get_defined_vars(),
+                __('Help content unavailable.', 'beepbeep-ai-alt-text-generator'),
+                $this
+            );
             ?>
 
-<?php elseif ($bbai_tab === 'credit-usage' && ($bbai_is_authenticated || $bbai_has_license)) : ?>
+<?php elseif ($bbai_tab === 'usage' && ($bbai_is_authenticated || $bbai_has_license)) : ?>
     <?php
     $bbai_credit_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/credit-usage-tab.php';
-    if (file_exists($bbai_credit_partial)) {
-        include $bbai_credit_partial;
-    } else {
-        esc_html_e('Credit usage content unavailable.', 'beepbeep-ai-alt-text-generator');
-    }
+    bbai_render_layout_template(
+        $bbai_credit_partial,
+        get_defined_vars(),
+        __('Usage content unavailable.', 'beepbeep-ai-alt-text-generator'),
+        $this
+    );
     ?>
 <?php elseif ($bbai_tab === 'agency-overview' && $bbai_is_agency) : ?>
     <?php
@@ -2327,31 +2339,23 @@ class Core {
         $bbai_usage_stats = Usage_Tracker::get_stats_display();
     }
     $bbai_analytics_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/analytics-tab.php';
-    if (file_exists($bbai_analytics_partial)) {
-        include $bbai_analytics_partial;
-    } else {
-        esc_html_e('Analytics content unavailable.', 'beepbeep-ai-alt-text-generator');
-    }
+    bbai_render_layout_template(
+        $bbai_analytics_partial,
+        get_defined_vars(),
+        __('Analytics content unavailable.', 'beepbeep-ai-alt-text-generator'),
+        $this
+    );
     ?>
 
 <?php elseif ($bbai_tab === 'settings') : ?>
             <?php
             $bbai_settings_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/settings-tab.php';
-            if (file_exists($bbai_settings_partial)) {
-                include $bbai_settings_partial;
-            } else {
-                esc_html_e('Settings content unavailable.', 'beepbeep-ai-alt-text-generator');
-            }
-            ?>
-            
-<?php elseif ($bbai_tab === 'debug' && ($bbai_is_authenticated || $bbai_has_license)) : ?>
-            <?php
-            $bbai_debug_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/debug-tab.php';
-            if (file_exists($bbai_debug_partial)) {
-                include $bbai_debug_partial;
-            } else {
-                esc_html_e('Debug logs content unavailable.', 'beepbeep-ai-alt-text-generator');
-            }
+            bbai_render_layout_template(
+                $bbai_settings_partial,
+                get_defined_vars(),
+                __('Settings content unavailable.', 'beepbeep-ai-alt-text-generator'),
+                $this
+            );
             ?>
 
             <?php elseif ($bbai_tab === 'admin' && $bbai_is_pro_for_admin) : ?>
@@ -2563,7 +2567,7 @@ class Core {
             </div>
         </div>
         
-        <?php endif; // End tab check (dashboard/library/guide/debug/settings/credit-usage)
+        <?php endif; // End tab check (dashboard/library/help/usage/settings/admin views)
         
         // Include upgrade modal OUTSIDE of tab conditionals so it's always available
         // Set up currency for upgrade modal - Always use GBP (£) with Stripe prices
@@ -2818,6 +2822,7 @@ class Core {
                     $cached['ai_source_count'] = (int) $cached['ai_source_count'];
                     $cached['needs_review_count'] = (int) $cached['needs_review_count'];
                     $cached['optimized_count'] = (int) ($cached['optimized_count'] ?? max(0, $cached['images_with_alt'] - $cached['needs_review_count']));
+                    $cached['approved_count'] = (int) ($cached['approved_count'] ?? 0);
                     $cached['filename_only_count'] = (int) ($cached['filename_only_count'] ?? 0);
                     $cached['duplicate_alt_count'] = (int) ($cached['duplicate_alt_count'] ?? 0);
                     return $cached;
@@ -2876,6 +2881,7 @@ class Core {
             // Needs-review count: images with alt text whose quality score is < 80 (needs-review or poor).
             // Uses same scoring as ALT Library table for consistent counts.
             $needs_review_count = 0;
+            $approved_count = 0;
             $filename_only_count = 0;
             $normalize_for_compare = static function ( $value ) {
                 $value = strtolower( (string) $value );
@@ -2886,9 +2892,10 @@ class Core {
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
                 $rows = $wpdb->get_results(
                     $wpdb->prepare(
-                        'SELECT p.ID, alt.meta_value AS alt_text FROM ' . $wpdb->posts . ' p INNER JOIN ' . $wpdb->postmeta . ' alt ON p.ID = alt.post_id AND alt.meta_key = %s AND TRIM(alt.meta_value) <> %s WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s',
+                        'SELECT p.ID, alt.meta_value AS alt_text, approved.meta_value AS approved_hash FROM ' . $wpdb->posts . ' p INNER JOIN ' . $wpdb->postmeta . ' alt ON p.ID = alt.post_id AND alt.meta_key = %s AND TRIM(alt.meta_value) <> %s LEFT JOIN ' . $wpdb->postmeta . ' approved ON p.ID = approved.post_id AND approved.meta_key = %s WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s',
                         '_wp_attachment_image_alt',
                         '',
+                        '_bbai_user_approved_hash',
                         'attachment',
                         'inherit',
                         $image_mime_like
@@ -2898,7 +2905,11 @@ class Core {
                 foreach ( $rows as $row ) {
                     $alt = isset( $row['alt_text'] ) ? (string) $row['alt_text'] : '';
                     $id  = isset( $row['ID'] ) ? (int) $row['ID'] : 0;
-                    if ( function_exists( 'bbai_calculate_alt_quality_score' ) && bbai_calculate_alt_quality_score( $alt ) < 80 ) {
+                    $approved_hash = isset( $row['approved_hash'] ) ? (string) $row['approved_hash'] : '';
+                    $is_user_approved = $approved_hash !== '' && hash_equals( $approved_hash, $this->hash_alt_text( $alt ) );
+                    if ( $is_user_approved ) {
+                        $approved_count++;
+                    } elseif ( function_exists( 'bbai_calculate_alt_quality_score' ) && bbai_calculate_alt_quality_score( $alt ) < 80 ) {
                         $needs_review_count++;
                     }
                     if ( $id > 0 && $alt !== '' ) {
@@ -2944,6 +2955,7 @@ class Core {
                 'ai_source_count' => $ai_source_count,
                 'needs_review_count' => $needs_review_count,
                 'optimized_count' => $optimized_count,
+                'approved_count' => $approved_count,
                 'filename_only_count' => $filename_only_count,
                 'duplicate_alt_count' => $duplicate_alt_count,
                 'free_plan_limit' => self::FREE_PLAN_IMAGE_LIMIT,
@@ -2962,12 +2974,55 @@ class Core {
                 'ai_source_count' => 0,
                 'needs_review_count' => 0,
                 'optimized_count' => 0,
+                'approved_count' => 0,
                 'filename_only_count' => 0,
                 'duplicate_alt_count' => 0,
                 'free_plan_limit' => self::FREE_PLAN_IMAGE_LIMIT,
                 'scanned_at' => time(),
             ];
         }
+    }
+
+    public function get_dashboard_stats_payload(bool $force_refresh = false): array {
+        if ($force_refresh) {
+            $this->invalidate_stats_cache();
+        }
+
+        $stats = $this->get_media_stats();
+        $coverage = $this->get_alt_text_coverage_scan($force_refresh);
+
+        $total_images = max(0, (int) ($coverage['total_images'] ?? ($stats['total'] ?? 0)));
+        $images_with_alt = max(0, (int) ($coverage['images_with_alt'] ?? ($stats['with_alt'] ?? 0)));
+        $images_missing_alt = max(0, (int) ($coverage['images_missing_alt'] ?? ($stats['missing'] ?? 0)));
+        $needs_review_count = max(0, (int) ($coverage['needs_review_count'] ?? 0));
+        $optimized_count = max(0, (int) ($coverage['optimized_count'] ?? max(0, $images_with_alt - $needs_review_count)));
+        $coverage_percent = max(
+            0,
+            min(
+                100,
+                (int) ($coverage['coverage_percent'] ?? ($total_images > 0 ? round(($images_with_alt / $total_images) * 100) : 0))
+            )
+        );
+
+        $payload = is_array($stats) ? $stats : [];
+        $payload['total'] = $total_images;
+        $payload['with_alt'] = $images_with_alt;
+        $payload['missing'] = $images_missing_alt;
+        $payload['coverage'] = $total_images > 0 ? round(($images_with_alt / $total_images) * 100, 1) : 0;
+        $payload['total_images'] = $total_images;
+        $payload['images_with_alt'] = $images_with_alt;
+        $payload['images_missing_alt'] = $images_missing_alt;
+        $payload['coverage_percent'] = $coverage_percent;
+        $payload['needs_review_count'] = $needs_review_count;
+        $payload['optimized_count'] = $optimized_count;
+        $payload['ai_source_count'] = max(0, (int) ($coverage['ai_source_count'] ?? 0));
+        $payload['approved_count'] = max(0, (int) ($coverage['approved_count'] ?? 0));
+        $payload['filename_only_count'] = max(0, (int) ($coverage['filename_only_count'] ?? 0));
+        $payload['duplicate_alt_count'] = max(0, (int) ($coverage['duplicate_alt_count'] ?? 0));
+        $payload['free_plan_limit'] = max(0, (int) ($coverage['free_plan_limit'] ?? self::FREE_PLAN_IMAGE_LIMIT));
+        $payload['scanned_at'] = max(0, (int) ($coverage['scanned_at'] ?? time()));
+
+        return $payload;
     }
 
     /**
@@ -3035,7 +3090,62 @@ class Core {
             'score_status' => $analysis['status'],
             'score_issues' => $analysis['issues'],
             'score_summary' => $analysis['review']['summary'] ?? '',
+            'user_approved' => !empty($analysis['user_approved']),
+            'user_approved_at' => isset($analysis['approved_at']) ? (string) $analysis['approved_at'] : '',
             'analysis' => $analysis,
+        ];
+    }
+
+    public function mark_attachment_reviewed(int $attachment_id): array {
+        $attachment_id = absint($attachment_id);
+        if ($attachment_id <= 0) {
+            return [];
+        }
+
+        $alt = trim((string) get_post_meta($attachment_id, '_wp_attachment_image_alt', true));
+        if ($alt === '') {
+            return [];
+        }
+
+        $approved_at = current_time('mysql');
+        update_post_meta($attachment_id, '_bbai_user_approved_hash', $this->hash_alt_text($alt));
+        update_post_meta($attachment_id, '_bbai_user_approved_at', $approved_at);
+        $this->invalidate_stats_cache();
+
+        return [
+            'approved' => true,
+            'approved_at' => $approved_at,
+            'alt' => $alt,
+        ];
+    }
+
+    public function mark_attachments_reviewed(array $attachment_ids): array {
+        $approved_ids = [];
+        $approved_at = current_time('mysql');
+
+        foreach (array_values(array_unique(array_map('absint', $attachment_ids))) as $attachment_id) {
+            if ($attachment_id <= 0) {
+                continue;
+            }
+
+            $alt = trim((string) get_post_meta($attachment_id, '_wp_attachment_image_alt', true));
+            if ($alt === '') {
+                continue;
+            }
+
+            update_post_meta($attachment_id, '_bbai_user_approved_hash', $this->hash_alt_text($alt));
+            update_post_meta($attachment_id, '_bbai_user_approved_at', $approved_at);
+            $approved_ids[] = $attachment_id;
+        }
+
+        if (!empty($approved_ids)) {
+            $this->invalidate_stats_cache();
+        }
+
+        return [
+            'approved_ids' => array_map('intval', $approved_ids),
+            'approved_count' => count($approved_ids),
+            'approved_at' => $approved_at,
         ];
     }
 
@@ -3043,6 +3153,34 @@ class Core {
         $alt = strtolower(trim((string) $alt));
         $alt = preg_replace('/\s+/', ' ', $alt);
         return wp_hash($alt);
+    }
+
+    private function clear_user_approval_meta(int $attachment_id): void{
+        delete_post_meta($attachment_id, '_bbai_user_approved_hash');
+        delete_post_meta($attachment_id, '_bbai_user_approved_at');
+    }
+
+    private function get_user_approval_snapshot(int $attachment_id, string $current_alt = ''): ?array{
+        $approved_hash = (string) get_post_meta($attachment_id, '_bbai_user_approved_hash', true);
+        $approved_at = (string) get_post_meta($attachment_id, '_bbai_user_approved_at', true);
+
+        if ($approved_hash === '' || $approved_at === '') {
+            return null;
+        }
+
+        if ($current_alt !== '') {
+            $current_hash = $this->hash_alt_text($current_alt);
+            if (!hash_equals($approved_hash, $current_hash)) {
+                $this->clear_user_approval_meta($attachment_id);
+                return null;
+            }
+        }
+
+        return [
+            'approved' => true,
+            'approved_at' => $approved_at,
+            'hash' => $approved_hash,
+        ];
     }
 
     private function purge_review_meta(int $attachment_id): void{
@@ -3261,7 +3399,7 @@ class Core {
             $combined_issues = array_merge($combined_issues, $heuristic['issues']);
             $combined_issues = array_values(array_unique(array_filter($combined_issues)));
 
-            return [
+            $result = [
                 'score' => $final_score,
                 'grade' => $final_grade,
                 'status'=> $final_status,
@@ -3269,9 +3407,24 @@ class Core {
                 'heuristic' => $heuristic,
                 'review'    => $review,
             ];
+            $approval = $this->get_user_approval_snapshot($attachment_id, $alt);
+            if ($approval) {
+                $result['score'] = max(85, $result['score']);
+                $result['grade'] = __('Strong', 'beepbeep-ai-alt-text-generator');
+                $result['status'] = 'good';
+                $result['issues'] = [];
+                $result['user_approved'] = true;
+                $result['approved_at'] = $approval['approved_at'];
+                $result['review'] = array_merge(is_array($result['review']) ? $result['review'] : [], [
+                    'summary' => __('Reviewed and approved in the ALT Library.', 'beepbeep-ai-alt-text-generator'),
+                    'user_approved' => true,
+                    'approved_at' => $approval['approved_at'],
+                ]);
+            }
+            return $result;
         }
 
-        return [
+        $result = [
             'score' => $heuristic['score'],
             'grade' => $heuristic['grade'],
             'status'=> $heuristic['status'],
@@ -3279,6 +3432,21 @@ class Core {
             'heuristic' => $heuristic,
             'review'    => null,
         ];
+        $approval = $this->get_user_approval_snapshot($attachment_id, $alt);
+        if ($approval) {
+            $result['score'] = max(85, $result['score']);
+            $result['grade'] = __('Strong', 'beepbeep-ai-alt-text-generator');
+            $result['status'] = 'good';
+            $result['issues'] = [];
+            $result['user_approved'] = true;
+            $result['approved_at'] = $approval['approved_at'];
+            $result['review'] = [
+                'summary' => __('Reviewed and approved in the ALT Library.', 'beepbeep-ai-alt-text-generator'),
+                'user_approved' => true,
+                'approved_at' => $approval['approved_at'],
+            ];
+        }
+        return $result;
     }
 
     private function status_from_score(int $score): string{
@@ -3331,6 +3499,47 @@ class Core {
 	            'SELECT p.ID FROM ' . $wpdb->posts . ' p LEFT JOIN ' . $wpdb->postmeta . ' m ON (p.ID = m.post_id AND m.meta_key = %s) WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s AND (m.meta_value IS NULL OR TRIM(m.meta_value) = %s) ORDER BY p.ID DESC LIMIT %d OFFSET %d',
 	            '_wp_attachment_image_alt', 'attachment', 'inherit', $image_mime_like, '', $limit, $offset
 	        )));
+	    }
+
+	    public function get_needs_review_attachment_ids($limit = 5, $offset = 0){
+	        global $wpdb;
+	        $limit  = max(1, intval($limit));
+	        $offset = max(0, intval($offset));
+	        $image_mime_like = $wpdb->esc_like('image/') . '%';
+
+	        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	        $rows = $wpdb->get_results($wpdb->prepare(
+	            'SELECT p.ID, alt.meta_value AS alt_text FROM ' . $wpdb->posts . ' p INNER JOIN ' . $wpdb->postmeta . ' alt ON p.ID = alt.post_id AND alt.meta_key = %s AND TRIM(alt.meta_value) <> %s WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s ORDER BY p.ID DESC',
+	            '_wp_attachment_image_alt',
+	            '',
+	            'attachment',
+	            'inherit',
+	            $image_mime_like
+	        ), ARRAY_A);
+
+	        if (empty($rows) || !function_exists('bbai_calculate_alt_quality_score')) {
+	            return [];
+	        }
+
+	        $needs_review_ids = [];
+	        foreach ((array) $rows as $row) {
+	            $attachment_id = isset($row['ID']) ? intval($row['ID']) : 0;
+	            $alt_text = isset($row['alt_text']) ? (string) $row['alt_text'] : '';
+
+	            if ($attachment_id <= 0 || $alt_text === '') {
+	                continue;
+	            }
+
+	            if (bbai_calculate_alt_quality_score($alt_text) < 80) {
+	                $needs_review_ids[] = $attachment_id;
+	            }
+	        }
+
+	        if ($offset > 0) {
+	            $needs_review_ids = array_slice($needs_review_ids, $offset);
+	        }
+
+	        return array_map('intval', array_slice($needs_review_ids, 0, $limit));
 	    }
 
 	    public function get_all_attachment_ids($limit = 5, $offset = 0){
@@ -3860,6 +4069,7 @@ class Core {
     }
 
     public function persist_generation_result(int $attachment_id, string $alt, array $usage_summary, string $source, string $model, string $image_strategy, $review_result): void{
+        $this->clear_user_approval_meta($attachment_id);
         update_post_meta($attachment_id, '_wp_attachment_image_alt', wp_strip_all_tags($alt));
         update_post_meta($attachment_id, '_bbai_source', $source);
         update_post_meta($attachment_id, '_bbai_model', $model);
@@ -5505,6 +5715,9 @@ class Core {
             ], 'generation');
         }
 
+        $response_meta = $this->prepare_attachment_snapshot($attachment_id);
+        $response_stats = $this->get_dashboard_stats_payload(true);
+
         wp_send_json_success([
             'message'        => __('Alt text generated successfully.', 'beepbeep-ai-alt-text-generator'),
             'alt_text'       => $result,
@@ -5512,11 +5725,15 @@ class Core {
             'attachment_id'  => $attachment_id,
             'request_key'    => $request_key,
             'usage'          => $updated_usage ?: null, // Include updated usage in response
+            'meta'           => $response_meta,
+            'stats'          => $response_stats,
             'data'           => [
                 'alt_text' => $result,
                 'altText'  => $result,
                 'request_key' => $request_key,
                 'usage'    => $updated_usage ?: null,
+                'meta'     => $response_meta,
+                'stats'    => $response_stats,
             ],
         ]);
     }
@@ -5680,8 +5897,8 @@ class Core {
             return;
         }
 
-        $scope_input = isset( $_POST['scope'] ) ? sanitize_key( wp_unslash( $_POST['scope'] ) ) : 'missing';
-        $scope       = in_array( $scope_input, [ 'missing', 'all' ], true ) ? $scope_input : 'missing';
+	        $scope_input = isset( $_POST['scope'] ) ? sanitize_key( wp_unslash( $_POST['scope'] ) ) : 'missing';
+	        $scope       = in_array( $scope_input, [ 'missing', 'all', 'needs-review' ], true ) ? $scope_input : 'missing';
 
         $limit_input  = isset( $_POST['limit'] ) ? absint( wp_unslash( $_POST['limit'] ) ) : 500;
         $offset_input = isset( $_POST['offset'] ) ? absint( wp_unslash( $_POST['offset'] ) ) : 0;
@@ -5689,9 +5906,13 @@ class Core {
         $limit  = max( 1, min( 500, $limit_input ) );
         $offset = max( 0, $offset_input );
 
-        $ids = ( 'all' === $scope )
-            ? $this->get_all_attachment_ids( $limit, $offset )
-            : $this->get_missing_attachment_ids( $limit, $offset );
+	        if ( 'all' === $scope ) {
+	            $ids = $this->get_all_attachment_ids( $limit, $offset );
+	        } elseif ( 'needs-review' === $scope ) {
+	            $ids = $this->get_needs_review_attachment_ids( $limit, $offset );
+	        } else {
+	            $ids = $this->get_missing_attachment_ids( $limit, $offset );
+	        }
 
         wp_send_json_success(
             [

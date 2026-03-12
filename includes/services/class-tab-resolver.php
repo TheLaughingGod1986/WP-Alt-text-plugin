@@ -52,10 +52,11 @@ class Tab_Resolver {
             case 'bbai-library':
                 return 'library';
             case 'bbai-credit-usage':
-                return 'credit-usage';
+                return 'usage';
             case 'bbai-guide':
-                return 'guide';
+                return 'help';
             case 'bbai-settings':
+            case 'bbai-debug':
                 return 'settings';
             case 'bbai':
                 return 'dashboard';

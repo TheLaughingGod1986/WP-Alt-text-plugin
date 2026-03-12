@@ -93,7 +93,7 @@ if (function_exists('wp_add_inline_script')) {
 }
 ?>
 
-<div class="bbai-analytics-container bbai-page-inner bbai-analytics-page">
+<div class="bbai-analytics-page">
         <!-- Header -->
         <div class="bbai-dashboard-header-section">
             <div class="bbai-page-header-content">

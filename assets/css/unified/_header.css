@@ -23,7 +23,7 @@
     max-width: var(--bbai-dashboard-max-width);
     margin: 0 auto;
     gap: var(--bbai-space-4);
-    overflow: hidden;
+    overflow: visible;
 }
 
 /* ============================================
@@ -58,7 +58,15 @@
 .bbai-nav {
     display: flex;
     align-items: center;
-    gap: var(--bbai-space-1);
+    gap: var(--bbai-space-4);
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.bbai-nav__primary {
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
     flex: 1 1 auto;
     min-width: 0;
     overflow-x: auto;
@@ -66,7 +74,7 @@
     scrollbar-width: none;
 }
 
-.bbai-nav::-webkit-scrollbar {
+.bbai-nav__primary::-webkit-scrollbar {
     display: none;
 }
 
@@ -85,6 +93,7 @@
     border: none;
     cursor: pointer;
     white-space: nowrap;
+    min-height: 36px;
 }
 
 .bbai-nav-link:hover:not(.active) {
@@ -124,22 +133,28 @@
     align-items: center;
     gap: var(--bbai-space-2);
     padding: var(--bbai-space-2) var(--bbai-space-3);
-    color: #ffffff;
+    color: rgba(255, 255, 255, 0.78);
     text-decoration: none;
     border-radius: var(--bbai-radius-full);
-    font-size: var(--bbai-text-xs);
+    font-size: var(--bbai-text-sm);
     font-weight: var(--bbai-font-medium);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.04);
     transition: all var(--bbai-transition-fast) var(--bbai-ease-out);
-    margin-left: var(--bbai-space-2);
-    margin-right: var(--bbai-space-4);
+    margin-left: auto;
+    flex-shrink: 0;
 }
 
 .bbai-header-guide-link:hover {
     color: white;
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.24);
+}
+
+.bbai-header-guide-link.active {
+    color: white;
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.24);
 }
 
 .bbai-header-guide-link:focus-visible {
@@ -159,8 +174,6 @@
 
 @media (max-width: 900px) {
     .bbai-header-guide-link {
-        margin-left: var(--bbai-space-1);
-        margin-right: var(--bbai-space-2);
         padding: var(--bbai-space-1) var(--bbai-space-2);
     }
 
@@ -318,15 +331,17 @@ button.bbai-header-login-btn:hover {
         order: 3;
         width: 100%;
         justify-content: flex-start;
-        overflow-x: auto;
-        padding-bottom: var(--bbai-space-2);
         margin-top: var(--bbai-space-2);
-        -webkit-overflow-scrolling: touch;
+        padding-bottom: var(--bbai-space-2);
     }
 
     .bbai-nav-link {
         padding: var(--bbai-space-2) var(--bbai-space-3);
         font-size: var(--bbai-text-xs);
+    }
+
+    .bbai-nav__primary {
+        flex: 1 1 auto;
     }
 }
 

@@ -9,6 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/class-bbai-admin-layout.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/class-bbai-core.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/class-bbai-rest-controller.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/class-bbai-admin-hooks.php';
