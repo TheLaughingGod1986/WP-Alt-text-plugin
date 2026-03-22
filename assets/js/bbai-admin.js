@@ -4813,11 +4813,24 @@
             subtext = __('Scan your library to find images missing ALT text and generate descriptions faster.', 'beepbeep-ai-alt-text-generator');
             nextStep = __('Start by scanning your media library.', 'beepbeep-ai-alt-text-generator');
         } else if (stats.images_missing_alt > 0 || stats.needs_review_count > 0) {
-            headline = __('Your library needs attention', 'beepbeep-ai-alt-text-generator');
-            subtext = stats.images_missing_alt > 0
-                ? __('Some images are still missing ALT text.', 'beepbeep-ai-alt-text-generator')
-                : __('Some images may need stronger descriptions.', 'beepbeep-ai-alt-text-generator');
-            nextStep = __('Next step: review and fix the remaining images.', 'beepbeep-ai-alt-text-generator');
+            if (stats.images_missing_alt > 0) {
+                headline = stats.images_missing_alt === 1
+                    ? __('1 image is costing you traffic', 'beepbeep-ai-alt-text-generator')
+                    : sprintf(
+                        __('%s images are costing you traffic', 'beepbeep-ai-alt-text-generator'),
+                        formatDashboardNumber(stats.images_missing_alt)
+                    );
+                subtext = stats.images_missing_alt === 1
+                    ? __('Fix it now and recover lost traffic. One click to reach 100% optimisation.', 'beepbeep-ai-alt-text-generator')
+                    : __('Fix them now and recover lost traffic.', 'beepbeep-ai-alt-text-generator');
+                nextStep = stats.images_missing_alt === 1
+                    ? __('Fix this to reach 100% image SEO coverage.', 'beepbeep-ai-alt-text-generator')
+                    : __('Fix them to reach 100% image SEO coverage.', 'beepbeep-ai-alt-text-generator');
+            } else {
+                headline = __('Your ALT text needs a final review', 'beepbeep-ai-alt-text-generator');
+                subtext = __('Strengthen weak ALT text to protect your rankings.', 'beepbeep-ai-alt-text-generator');
+                nextStep = __('Finish your review to reach full coverage.', 'beepbeep-ai-alt-text-generator');
+            }
         } else {
             headline = __('Your library is optimized', 'beepbeep-ai-alt-text-generator');
             subtext = __('All current images include ALT text.', 'beepbeep-ai-alt-text-generator');

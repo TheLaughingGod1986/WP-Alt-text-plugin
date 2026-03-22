@@ -100,9 +100,9 @@ $bbai_tertiary_action = $bbai_create_action();
 if ($bbai_is_first_run) {
     $bbai_hero_state = 'first-run';
     $bbai_hero_tone = 'setup';
-    $bbai_hero_headline = __('Get started with your media library', 'beepbeep-ai-alt-text-generator');
-    $bbai_hero_subtext = __('Scan your library to find images missing ALT text and generate descriptions faster.', 'beepbeep-ai-alt-text-generator');
-    $bbai_hero_next_step = __('Start by scanning your media library.', 'beepbeep-ai-alt-text-generator');
+    $bbai_hero_headline = __('No images found yet.', 'beepbeep-ai-alt-text-generator');
+    $bbai_hero_subtext = __('Upload images to start improving your SEO.', 'beepbeep-ai-alt-text-generator');
+    $bbai_hero_next_step = __('Scan your site once images are uploaded.', 'beepbeep-ai-alt-text-generator');
     $bbai_primary_action = $bbai_create_action(
         __('Scan Media Library', 'beepbeep-ai-alt-text-generator'),
         [
@@ -138,10 +138,10 @@ if ($bbai_is_first_run) {
         ]
     );
     $bbai_tertiary_action = $bbai_create_action(
-        __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+        __('View details', 'beepbeep-ai-alt-text-generator'),
         [
             'href' => $bbai_library_url,
-            'aria_label' => __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+            'aria_label' => __('View details', 'beepbeep-ai-alt-text-generator'),
         ]
     );
 } elseif ($bbai_is_low_credits) {
@@ -163,10 +163,10 @@ if ($bbai_is_first_run) {
             ]
         );
         $bbai_secondary_action = $bbai_create_action(
-            __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+            __('View details', 'beepbeep-ai-alt-text-generator'),
             [
                 'href' => $bbai_library_url,
-                'aria_label' => __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+                'aria_label' => __('View details', 'beepbeep-ai-alt-text-generator'),
             ]
         );
     } else {
@@ -189,77 +189,106 @@ if ($bbai_is_first_run) {
 } elseif (!$bbai_is_healthy) {
     $bbai_hero_state = 'incomplete';
     $bbai_hero_tone = 'attention';
-    $bbai_hero_headline = __('Your library needs attention', 'beepbeep-ai-alt-text-generator');
+    $bbai_hero_headline = $bbai_missing_count > 0
+        ? (
+            1 === $bbai_missing_count
+                ? __('1 image is costing you traffic', 'beepbeep-ai-alt-text-generator')
+                : sprintf(
+                    /* translators: %s: number of images missing ALT text */
+                    __('%s images are costing you traffic', 'beepbeep-ai-alt-text-generator'),
+                    number_format_i18n($bbai_missing_count)
+                )
+        )
+        : __('Your ALT text needs a final review', 'beepbeep-ai-alt-text-generator');
     $bbai_hero_subtext = $bbai_missing_count > 0
-        ? __('Some images are still missing ALT text.', 'beepbeep-ai-alt-text-generator')
-        : __('Some descriptions still need review.', 'beepbeep-ai-alt-text-generator');
+        ? (
+            1 === $bbai_missing_count
+                ? __('Fix it now and recover lost traffic. One click to reach 100% optimisation.', 'beepbeep-ai-alt-text-generator')
+                : __('Fix them now and recover lost traffic.', 'beepbeep-ai-alt-text-generator')
+        )
+        : __('Strengthen weak ALT text to protect your rankings.', 'beepbeep-ai-alt-text-generator');
     $bbai_hero_next_step = $bbai_missing_count > 0
-        ? __('Fix the remaining images to reach full coverage.', 'beepbeep-ai-alt-text-generator')
-        : __('Review the remaining descriptions to reach full coverage.', 'beepbeep-ai-alt-text-generator');
-    $bbai_primary_action = $bbai_create_action(
-        $bbai_missing_count > 0
-            ? __('Fix missing ALT text', 'beepbeep-ai-alt-text-generator')
-            : __('Review ALT text', 'beepbeep-ai-alt-text-generator'),
-        $bbai_missing_count > 0
-            ? [
+        ? (
+            1 === $bbai_missing_count
+                ? __('Fix this to reach 100% image SEO coverage.', 'beepbeep-ai-alt-text-generator')
+                : __('Fix them to reach 100% image SEO coverage.', 'beepbeep-ai-alt-text-generator')
+        )
+        : __('Finish your review to reach full coverage.', 'beepbeep-ai-alt-text-generator');
+    $bbai_primary_action = $bbai_missing_count > 0
+        ? $bbai_create_action(
+            sprintf(
+                /* translators: %s: number of images */
+                __('Fix missing ALT text (%s)', 'beepbeep-ai-alt-text-generator'),
+                number_format_i18n($bbai_missing_count)
+            ),
+            [
                 'action' => 'generate-missing',
                 'bbai_action' => 'generate_missing',
-                'aria_label' => __('Fix missing ALT text', 'beepbeep-ai-alt-text-generator'),
+                'aria_label' => sprintf(
+                    /* translators: %s: number of images */
+                    __('Fix missing ALT text (%s)', 'beepbeep-ai-alt-text-generator'),
+                    number_format_i18n($bbai_missing_count)
+                ),
             ]
-            : [
+        )
+        : $bbai_create_action(
+            __('Review ALT text', 'beepbeep-ai-alt-text-generator'),
+            [
                 'action' => 'show-generate-alt-modal',
                 'aria_label' => __('Review ALT text', 'beepbeep-ai-alt-text-generator'),
             ]
-    );
+        );
     $bbai_secondary_action = $bbai_create_action(
-        __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+        __('See what\'s broken', 'beepbeep-ai-alt-text-generator'),
         [
             'href' => $bbai_missing_count > 0 ? $bbai_missing_library_url : $bbai_needs_review_library_url,
-            'aria_label' => __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+            'aria_label' => __('See what\'s broken', 'beepbeep-ai-alt-text-generator'),
         ]
     );
 } elseif ($bbai_is_pro_plan) {
     $bbai_hero_state = 'healthy-pro';
     $bbai_hero_tone = 'healthy';
-    $bbai_hero_headline = __('Your library is optimized', 'beepbeep-ai-alt-text-generator');
-    $bbai_hero_subtext = __('All current images include ALT text.', 'beepbeep-ai-alt-text-generator');
-    $bbai_hero_next_step = __('Auto-optimization is ready to cover future uploads.', 'beepbeep-ai-alt-text-generator');
-    $bbai_hero_note = __('Review new uploads whenever you need a quick spot check.', 'beepbeep-ai-alt-text-generator');
+    $bbai_hero_headline = __('You’ve fully optimised your image SEO 🎉', 'beepbeep-ai-alt-text-generator');
+    $bbai_hero_subtext = __('Your site is now fully discoverable in Google Images.', 'beepbeep-ai-alt-text-generator');
+    $bbai_hero_next_step = '';
+    $bbai_hero_note = __('⚡ Full scan completed in under 10 seconds', 'beepbeep-ai-alt-text-generator');
     $bbai_primary_action = $bbai_create_action(
-        __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+        __('Check for new SEO issues', 'beepbeep-ai-alt-text-generator'),
         [
-            'href' => $bbai_library_url,
-            'aria_label' => __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+            'bbai_action' => 'scan-opportunity',
+            'aria_label' => __('Check for new SEO issues', 'beepbeep-ai-alt-text-generator'),
         ]
     );
     $bbai_secondary_action = $bbai_create_action(
-        __('Review usage', 'beepbeep-ai-alt-text-generator'),
+        __('View Library', 'beepbeep-ai-alt-text-generator'),
         [
-            'href' => $bbai_usage_url,
-            'aria_label' => __('Review usage', 'beepbeep-ai-alt-text-generator'),
+            'href' => $bbai_library_url,
+            'aria_label' => __('View library', 'beepbeep-ai-alt-text-generator'),
         ]
     );
+    $bbai_tertiary_action = [];
 } else {
     $bbai_hero_state = 'healthy-free';
     $bbai_hero_tone = 'healthy';
-    $bbai_hero_headline = __('Your library is optimized', 'beepbeep-ai-alt-text-generator');
-    $bbai_hero_subtext = __('All current images include ALT text.', 'beepbeep-ai-alt-text-generator');
-    $bbai_hero_next_step = __('Enable auto-optimization to cover future uploads automatically.', 'beepbeep-ai-alt-text-generator');
-    $bbai_hero_note = __('Auto-optimization is available on Growth.', 'beepbeep-ai-alt-text-generator');
+    $bbai_hero_headline = __('You’ve fully optimised your image SEO 🎉', 'beepbeep-ai-alt-text-generator');
+    $bbai_hero_subtext = __('Your site is now fully discoverable in Google Images.', 'beepbeep-ai-alt-text-generator');
+    $bbai_hero_next_step = '';
+    $bbai_hero_note = __('⚡ Full scan completed in under 10 seconds', 'beepbeep-ai-alt-text-generator');
     $bbai_primary_action = $bbai_create_action(
-        __('Enable auto-optimization', 'beepbeep-ai-alt-text-generator'),
+        __('Check for new SEO issues', 'beepbeep-ai-alt-text-generator'),
         [
-            'action' => 'show-upgrade-modal',
-            'aria_label' => __('Enable auto-optimization', 'beepbeep-ai-alt-text-generator'),
+            'bbai_action' => 'scan-opportunity',
+            'aria_label' => __('Check for new SEO issues', 'beepbeep-ai-alt-text-generator'),
         ]
     );
     $bbai_secondary_action = $bbai_create_action(
-        __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+        __('View Library', 'beepbeep-ai-alt-text-generator'),
         [
             'href' => $bbai_library_url,
-            'aria_label' => __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+            'aria_label' => __('View library', 'beepbeep-ai-alt-text-generator'),
         ]
     );
+    $bbai_tertiary_action = [];
 }
 
 $bbai_primary_label = (string) ($bbai_primary_action['label'] ?? '');
@@ -316,6 +345,16 @@ $bbai_tertiary_attrs = '' !== $bbai_tertiary_label ? $bbai_build_action_attrs($b
                         </div>
 
                         <p class="bbai-dashboard-hero__note" data-bbai-hero-note<?php echo '' !== $bbai_hero_note ? '' : ' hidden'; ?>><?php echo esc_html($bbai_hero_note); ?></p>
+                        <div class="bbai-dashboard-hero__loop" data-bbai-hero-loop hidden>
+                            <p class="bbai-dashboard-hero__loop-label"><?php esc_html_e('Stay ahead in search', 'beepbeep-ai-alt-text-generator'); ?></p>
+                            <p class="bbai-dashboard-hero__loop-support" data-bbai-hero-loop-support hidden></p>
+                            <div class="bbai-dashboard-hero__loop-actions">
+                                <a href="#" class="bbai-dashboard-hero__loop-link" data-bbai-hero-loop-scan><?php esc_html_e('Check for new SEO issues', 'beepbeep-ai-alt-text-generator'); ?></a>
+                                <a href="<?php echo esc_url($bbai_settings_url); ?>" class="bbai-dashboard-hero__loop-link" data-bbai-hero-loop-settings><?php esc_html_e('Auto-optimise future uploads', 'beepbeep-ai-alt-text-generator'); ?></a>
+                                <a href="#" class="bbai-dashboard-hero__loop-link" data-action="show-upgrade-modal" data-bbai-hero-loop-upgrade<?php echo $bbai_is_pro_plan ? ' hidden' : ''; ?>><?php esc_html_e('Upgrade for unlimited optimisation', 'beepbeep-ai-alt-text-generator'); ?></a>
+                            </div>
+                            <p class="bbai-dashboard-hero__loop-tension" data-bbai-hero-loop-tension hidden></p>
+                        </div>
                     </div>
 
                     <div class="bbai-dashboard-hero-actions" aria-label="<?php esc_attr_e('Recommended actions', 'beepbeep-ai-alt-text-generator'); ?>">

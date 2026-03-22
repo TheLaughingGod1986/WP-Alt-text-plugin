@@ -242,6 +242,14 @@
     line-height: var(--bbai-leading-snug);
 }
 
+.bbai-pricing-card__limit-sub {
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-medium);
+    color: var(--bbai-text-muted);
+    margin-top: calc(var(--bbai-space-5) * -1 + var(--bbai-space-2));
+    margin-bottom: var(--bbai-space-5);
+}
+
 /* Features */
 .bbai-pricing-card__features {
     list-style: none;
@@ -285,6 +293,14 @@
     color: var(--bbai-text);
 }
 
+.bbai-pricing-card__feature--muted {
+    color: var(--bbai-text-muted) !important;
+}
+
+.bbai-pricing-card__feature--muted svg {
+    color: var(--bbai-text-muted) !important;
+}
+
 /* Buttons - Extend base button classes */
 .bbai-pricing-card__btn {
     /* Base button styles are inherited from .bbai-btn */
@@ -313,6 +329,21 @@
 .bbai-pricing-card__btn:focus-visible {
     outline: 2px solid var(--bbai-primary);
     outline-offset: 2px;
+}
+
+.bbai-pricing-card__upgrade-trigger {
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-medium);
+    color: var(--bbai-text-secondary);
+    margin: 0 0 var(--bbai-space-3) 0;
+    line-height: var(--bbai-leading-relaxed);
+}
+
+.bbai-pricing-card__risk-reversal {
+    font-size: var(--bbai-text-xs);
+    color: var(--bbai-text-muted);
+    margin: var(--bbai-space-3) 0 0 0;
+    text-align: center;
 }
 
 /* Free button - High specificity to override base button styles */

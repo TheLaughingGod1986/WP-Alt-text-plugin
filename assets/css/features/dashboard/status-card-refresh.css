@@ -5910,6 +5910,125 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     background: linear-gradient(90deg, #16a34a 0%, #4ade80 100%);
 }
 
+#bbai-dashboard-main .bbai-dashboard-hero--command[data-bbai-success-state="1"] {
+    border-color: #cfe9d8;
+    background:
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.14), transparent 36%),
+        linear-gradient(145deg, #f7fff9 0%, #effaf2 55%, #ffffff 100%);
+    box-shadow:
+        0 16px 36px rgba(15, 23, 42, 0.06),
+        0 0 0 1px rgba(34, 197, 94, 0.08) inset;
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero--command[data-bbai-success-state="1"] .bbai-dashboard-hero__next-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    padding: 4px 12px 4px 8px;
+    border-radius: 999px;
+    background: rgba(34, 197, 94, 0.08);
+    color: #15803d;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero--command[data-bbai-success-state="1"] .bbai-dashboard-hero__icon {
+    background: rgba(34, 197, 94, 0.16);
+    color: #15803d;
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero__icon--draw svg path {
+    stroke-dasharray: 60;
+    stroke-dashoffset: 60;
+    animation: bbai-icon-draw 0.8s cubic-bezier(0.33, 1, 0.68, 1) 0.15s forwards;
+}
+
+@keyframes bbai-icon-draw {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero--celebrate {
+    animation: bbai-success-glow-pulse 0.6s ease-out both;
+}
+
+@keyframes bbai-success-glow-pulse {
+    0% {
+        box-shadow:
+            0 16px 36px rgba(15, 23, 42, 0.06),
+            0 0 0 0 rgba(34, 197, 94, 0.14);
+    }
+    55% {
+        box-shadow:
+            0 16px 36px rgba(15, 23, 42, 0.08),
+            0 0 0 8px rgba(34, 197, 94, 0.06);
+    }
+    100% {
+        box-shadow:
+            0 16px 36px rgba(15, 23, 42, 0.06),
+            0 0 0 0 rgba(34, 197, 94, 0);
+    }
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero__loop {
+    display: grid;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero__loop-label {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.45;
+    letter-spacing: 0.01em;
+    color: var(--bbai-ui-muted);
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero__loop-support {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--bbai-text-muted, #64748b);
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero__loop-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero__loop-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    background: rgba(255, 255, 255, 0.88);
+    color: var(--bbai-ui-ink);
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero__loop-link:hover {
+    border-color: rgba(34, 197, 94, 0.32);
+    background: rgba(255, 255, 255, 1);
+}
+
+#bbai-dashboard-main .bbai-dashboard-hero__loop-tension {
+    margin: 2px 0 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--bbai-text-muted, #94a3b8);
+    font-style: italic;
+}
+
 #bbai-dashboard-main .bbai-dashboard-hero--command[data-tone="attention"] .bbai-dashboard-hero-progress-fill {
     background: linear-gradient(90deg, #f59e0b 0%, #fb923c 100%);
 }
@@ -5920,9 +6039,10 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-dashboard-hero--command .bbai-dashboard-hero__note {
     margin-top: 8px;
-    font-size: 13px;
+    font-size: 12px;
     line-height: 1.5;
     color: var(--bbai-text-muted);
+    opacity: 0.78;
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command .bbai-dashboard-hero-actions {
@@ -6529,36 +6649,6 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     gap: 10px;
 }
 
-#bbai-dashboard-main .bbai-dashboard-review-prompt {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 10px 2px 0;
-    border-top: 1px solid #eef2f7;
-}
-
-#bbai-dashboard-main .bbai-dashboard-review-prompt__copy {
-    margin: 0;
-    font-size: 13px;
-    line-height: 1.5;
-    color: var(--bbai-text-muted);
-}
-
-#bbai-dashboard-main .bbai-dashboard-review-prompt__link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--bbai-primary-strong);
-    font-size: 13px;
-    font-weight: 600;
-    text-decoration: none;
-}
-
-#bbai-dashboard-main .bbai-dashboard-review-prompt__link:hover {
-    color: var(--bbai-primary);
-    text-decoration: underline;
-}
 
 #bbai-dashboard-main .bbai-dashboard-feedback {
     border-radius: 14px;
@@ -6622,11 +6712,6 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
         align-items: flex-start;
     }
 
-    #bbai-dashboard-main .bbai-dashboard-review-prompt {
-        flex-direction: column;
-        align-items: flex-start;
-        padding-top: 12px;
-    }
 }
 
 @media (max-width: 560px) {
@@ -6665,10 +6750,6 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     #bbai-dashboard-main .bbai-command-plan__row {
         flex-direction: row;
         align-items: center;
-    }
-
-    #bbai-dashboard-main .bbai-dashboard-review-prompt__link {
-        width: auto;
     }
 }
 
@@ -7338,36 +7419,164 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     color: var(--bbai-text-body);
 }
 
-#bbai-dashboard-main .bbai-dashboard-review-prompt {
+/* Review modal overlay */
+.bbai-dashboard-review-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding-top: 2px;
-    border-top: 0;
+    justify-content: center;
+    padding: 24px;
 }
 
-#bbai-dashboard-main .bbai-dashboard-review-prompt__copy {
-    margin: 0;
+.bbai-dashboard-review-overlay__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.28);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+
+.bbai-dashboard-review-overlay__dialog {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 380px;
+    padding: 28px 24px 24px;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow:
+        0 24px 48px rgba(15, 23, 42, 0.12),
+        0 0 0 1px rgba(148, 163, 184, 0.10);
+    text-align: center;
+}
+
+.bbai-dashboard-review-overlay__headline {
+    margin: 0 0 6px;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--bbai-ui-ink, #1f2937);
+}
+
+.bbai-dashboard-review-overlay__copy {
+    margin: 0 0 4px;
     font-size: 13px;
-    line-height: 1.5;
-    color: #7b8aa0;
+    line-height: 1.6;
+    color: var(--bbai-text-muted, #64748b);
 }
 
-#bbai-dashboard-main .bbai-dashboard-review-prompt__link {
+.bbai-dashboard-review-overlay__aside {
+    margin: 0 0 20px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--bbai-text-muted, #94a3b8);
+}
+
+.bbai-dashboard-review-overlay__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.bbai-dashboard-review-overlay__cta {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    font-size: 13px;
+    justify-content: center;
+    min-height: 40px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+    color: #ffffff;
+    font-size: 14px;
     font-weight: 600;
-    line-height: 1.4;
-    color: var(--bbai-primary-strong);
     text-decoration: none;
+    cursor: pointer;
+    transition: box-shadow 0.2s ease, transform 0.15s ease;
 }
 
-#bbai-dashboard-main .bbai-dashboard-review-prompt__link:hover {
-    color: var(--bbai-primary);
+.bbai-dashboard-review-overlay__cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(22, 163, 74, 0.24);
+    color: #ffffff;
+}
+
+.bbai-dashboard-review-overlay__cta:focus-visible {
+    outline: 2px solid #16a34a;
+    outline-offset: 2px;
+}
+
+.bbai-dashboard-review-overlay__later {
+    padding: 6px 12px;
+    border: none;
+    background: none;
+    color: var(--bbai-text-muted, #94a3b8);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+.bbai-dashboard-review-overlay__later:hover {
+    color: var(--bbai-ui-ink, #1f2937);
+}
+
+.bbai-dashboard-review-overlay__feedback {
+    display: block;
+    color: var(--bbai-text-muted, #94a3b8);
+    font-size: 12px;
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.bbai-dashboard-review-overlay__feedback:hover {
+    color: var(--bbai-ui-ink, #1f2937);
     text-decoration: underline;
+}
+
+.bbai-dashboard-review-overlay--enter .bbai-dashboard-review-overlay__backdrop {
+    animation: bbai-review-backdrop-enter 0.3s ease both;
+}
+.bbai-dashboard-review-overlay--enter .bbai-dashboard-review-overlay__dialog {
+    animation: bbai-review-dialog-enter 0.4s cubic-bezier(0.33, 1, 0.68, 1) both;
+}
+.bbai-dashboard-review-overlay--exit .bbai-dashboard-review-overlay__backdrop {
+    animation: bbai-review-backdrop-exit 0.25s ease forwards;
+}
+.bbai-dashboard-review-overlay--exit .bbai-dashboard-review-overlay__dialog {
+    animation: bbai-review-dialog-exit 0.25s ease forwards;
+}
+
+@keyframes bbai-review-backdrop-enter {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes bbai-review-backdrop-exit {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+@keyframes bbai-review-dialog-enter {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+@keyframes bbai-review-dialog-exit {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-6px) scale(0.98);
+    }
 }
 
 @keyframes bbai-command-donut-enter {
@@ -7425,9 +7634,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
         align-items: flex-start;
     }
 
-    #bbai-dashboard-main .bbai-dashboard-review-prompt {
-        flex-direction: column;
-        align-items: flex-start;
+    .bbai-dashboard-review-overlay__dialog {
+        max-width: 100%;
     }
 }
 
@@ -7470,6 +7678,95 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     }
 }
 
+/* Dashboard conversion: coverage motivation, plan urgency, completion state */
+#bbai-dashboard-main .bbai-command-card__header--with-badge {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+#bbai-dashboard-main .bbai-command-plan__low-credits-badge {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #b45309;
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    padding: 4px 10px;
+    border-radius: 999px;
+    line-height: 1.2;
+}
+
+#bbai-dashboard-main .bbai-command-plan__upgrade-note {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+}
+
+#bbai-dashboard-main .bbai-command-plan__upgrade-lead {
+    font-weight: 600;
+    color: var(--bbai-text-strong, #0f172a);
+}
+
+#bbai-dashboard-main .bbai-command-plan__upgrade-sub {
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--bbai-text-muted, #64748b);
+}
+
+#bbai-dashboard-main .bbai-command-status__motivation {
+    margin: 4px 0 0;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--bbai-text-muted, #475569);
+}
+
+#bbai-dashboard-main .bbai-command-status__coverage-badge {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.35;
+    color: #5f7489;
+    opacity: 0.92;
+}
+
+#bbai-dashboard-main .bbai-command-card--coverage-complete {
+    box-shadow: inset 0 0 0 1px #bbf7d0, 0 1px 2px rgba(15, 23, 42, 0.04);
+    background: linear-gradient(180deg, #f7fff9 0%, #ffffff 55%);
+}
+
+#bbai-dashboard-main .bbai-command-status__value [data-bbai-status-coverage-value] {
+    display: inline-block;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+@keyframes bbai-coverage-value-pulse {
+    0% {
+        transform: scale(1);
+        color: inherit;
+    }
+
+    45% {
+        transform: scale(1.06);
+        color: #15803d;
+    }
+
+    100% {
+        transform: scale(1);
+        color: inherit;
+    }
+}
+
+#bbai-dashboard-main .bbai-coverage-value--pulse {
+    animation: bbai-coverage-value-pulse 0.85s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
     #bbai-dashboard-main .bbai-dashboard-hero--command .bbai-dashboard-hero__cta,
     #bbai-dashboard-main .bbai-dashboard-hero--command .bbai-dashboard-hero__link,
@@ -7481,9 +7778,84 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     #bbai-dashboard-main .bbai-command-donut,
     #bbai-dashboard-main .bbai-command-meter__fill,
     #bbai-dashboard-main .bbai-dashboard-hero-progress-fill,
-    #bbai-dashboard-main .bbai-command-card__refresh-icon {
+    #bbai-dashboard-main .bbai-command-card__refresh-icon,
+    #bbai-dashboard-main .bbai-coverage-value--pulse,
+    #bbai-dashboard-main .bbai-dashboard-hero--celebrate,
+    #bbai-dashboard-main .bbai-dashboard-hero__icon--draw svg path,
+    .bbai-dashboard-review-overlay--enter .bbai-dashboard-review-overlay__backdrop,
+    .bbai-dashboard-review-overlay--enter .bbai-dashboard-review-overlay__dialog,
+    .bbai-dashboard-review-overlay--exit .bbai-dashboard-review-overlay__backdrop,
+    .bbai-dashboard-review-overlay--exit .bbai-dashboard-review-overlay__dialog {
         transition: none !important;
         transform: none !important;
+        animation: none !important;
+    }
+}
+
+/* ─── Final-polish pass ──────────────────────────────────────────────── */
+
+/* 3. Action hierarchy: first loop link = primary weight, upgrade = muted */
+#bbai-dashboard-main .bbai-dashboard-hero__loop-actions .bbai-dashboard-hero__loop-link:first-child {
+    font-weight: 600;
+    color: #1d7c4d;
+    border-bottom: 1px solid rgba(29, 124, 77, 0.25);
+}
+#bbai-dashboard-main .bbai-dashboard-hero__loop-actions .bbai-dashboard-hero__loop-link:not(:first-child) {
+    font-weight: 400;
+    opacity: 0.72;
+}
+#bbai-dashboard-main .bbai-dashboard-hero__loop-actions .bbai-dashboard-hero__loop-link:not(:first-child):hover {
+    opacity: 1;
+}
+
+/* 4. Coverage card one-time glow */
+@keyframes bbai-coverage-card-glow {
+    0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.0); }
+    30%  { box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.25); }
+    100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.0); }
+}
+#bbai-dashboard-main .bbai-command-card--coverage-glow {
+    animation: bbai-coverage-card-glow 0.65s ease-out forwards;
+}
+
+/* 5. Progress bar completion label — "Complete" badge at 100% */
+#bbai-dashboard-main .bbai-command-card--coverage-complete .bbai-command-progress-bar::after {
+    content: 'Complete';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #1d7c4d;
+    opacity: 0.85;
+    white-space: nowrap;
+    line-height: 1;
+}
+#bbai-dashboard-main .bbai-command-card--coverage-complete .bbai-command-progress-bar {
+    position: relative;
+    padding-right: 60px;
+}
+
+/* 6. Speed line — elevated contrast and weight */
+#bbai-dashboard-main .bbai-dashboard-hero--command[data-bbai-success-state="1"] .bbai-dashboard-hero__note {
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #3d7a5a;
+    opacity: 1;
+    letter-spacing: 0.01em;
+}
+
+/* 7. CTA vertical alignment */
+#bbai-dashboard-main .bbai-dashboard-hero--command[data-bbai-success-state="1"] .bbai-dashboard-hero-actions {
+    align-self: center;
+}
+
+/* Disable new animations for prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+    #bbai-dashboard-main .bbai-command-card--coverage-glow {
         animation: none !important;
     }
 }

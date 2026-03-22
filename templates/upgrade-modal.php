@@ -305,6 +305,12 @@ $bbai_show_agency_by_default = $bbai_is_agency_plan;
                                 </svg>
                                 <?php esc_html_e('Good for smaller libraries', 'beepbeep-ai-alt-text-generator'); ?>
                             </li>
+                            <li class="bbai-pricing-card__feature--muted">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                    <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <?php esc_html_e('No automatic optimisation for new uploads', 'beepbeep-ai-alt-text-generator'); ?>
+                            </li>
                         </ul>
                         <div class="bbai-pricing-card__footer">
                             <div class="bbai-pricing-card__price-stack">
@@ -334,7 +340,7 @@ $bbai_show_agency_by_default = $bbai_is_agency_plan;
                             <?php endif; ?>
                         </div>
                         <div class="bbai-pricing-card__intro">
-                            <h3 class="bbai-pricing-card__title"><?php esc_html_e('Growth', 'beepbeep-ai-alt-text-generator'); ?></h3>
+                            <h3 class="bbai-pricing-card__title"><?php esc_html_e('Growth — Most Popular', 'beepbeep-ai-alt-text-generator'); ?></h3>
                             <p class="bbai-pricing-card__descriptor"><?php esc_html_e('Best for active WordPress sites', 'beepbeep-ai-alt-text-generator'); ?></p>
                         </div>
                         <ul class="bbai-pricing-card__features">
@@ -342,25 +348,25 @@ $bbai_show_agency_by_default = $bbai_is_agency_plan;
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                                     <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
-                                <?php esc_html_e('Bulk library optimisation', 'beepbeep-ai-alt-text-generator'); ?>
+                                <?php esc_html_e('Fix your entire image library in one click', 'beepbeep-ai-alt-text-generator'); ?>
                             </li>
                             <li>
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                                     <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
-                                <?php esc_html_e('Faster accessibility cleanup', 'beepbeep-ai-alt-text-generator'); ?>
+                                <?php esc_html_e('Improve accessibility automatically', 'beepbeep-ai-alt-text-generator'); ?>
                             </li>
                             <li>
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                                     <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
-                                <?php esc_html_e('Priority queue processing', 'beepbeep-ai-alt-text-generator'); ?>
+                                <?php esc_html_e('Optimise images faster with priority processing', 'beepbeep-ai-alt-text-generator'); ?>
                             </li>
                             <li>
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                                     <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
-                                <?php esc_html_e('Multilingual SEO support', 'beepbeep-ai-alt-text-generator'); ?>
+                                <?php esc_html_e('Rank in multiple languages', 'beepbeep-ai-alt-text-generator'); ?>
                             </li>
                         </ul>
                         <div class="bbai-pricing-card__footer">
@@ -370,9 +376,11 @@ $bbai_show_agency_by_default = $bbai_is_agency_plan;
                                     <span class="bbai-pricing-card__amount"><?php echo esc_html(number_format($bbai_growth_monthly, 2)); ?></span>
                                     <span class="bbai-pricing-card__period"><?php esc_html_e('/month', 'beepbeep-ai-alt-text-generator'); ?></span>
                                 </div>
-                                <div class="bbai-pricing-card__limit"><?php esc_html_e('1,000 ALT texts/month', 'beepbeep-ai-alt-text-generator'); ?></div>
+                                <div class="bbai-pricing-card__limit"><?php esc_html_e('1,000 images optimised/month', 'beepbeep-ai-alt-text-generator'); ?></div>
+                                <div class="bbai-pricing-card__limit-sub"><?php esc_html_e('~£0.012 per image', 'beepbeep-ai-alt-text-generator'); ?></div>
                             </div>
                             <?php if ($bbai_is_free_plan) : ?>
+                                <p class="bbai-pricing-card__upgrade-trigger"><?php esc_html_e('New images won’t be optimised automatically on the free plan', 'beepbeep-ai-alt-text-generator'); ?></p>
                                 <button type="button"
                                         class="bbai-btn bbai-btn-primary bbai-btn-lg bbai-btn-block bbai-pricing-card__btn bbai-pricing-card__btn--growth"
                                         data-bbai-upgrade-growth-cta="1"
@@ -380,8 +388,9 @@ $bbai_show_agency_by_default = $bbai_is_agency_plan;
                                         data-plan="pro"
                                         data-price-id="<?php echo esc_attr($bbai_pro_price_id); ?>"
                                         data-fallback-url="<?php echo esc_url($bbai_stripe_links['pro']); ?>">
-                                    <?php esc_html_e('Start Growth', 'beepbeep-ai-alt-text-generator'); ?>
+                                    <?php esc_html_e('Unlock Full Site Optimisation', 'beepbeep-ai-alt-text-generator'); ?>
                                 </button>
+                                <p class="bbai-pricing-card__risk-reversal"><?php esc_html_e('Cancel anytime. No lock-in.', 'beepbeep-ai-alt-text-generator'); ?></p>
                             <?php else : ?>
                                 <a href="<?php echo esc_url($bbai_billing_url); ?>" class="bbai-btn bbai-btn-secondary bbai-btn-lg bbai-btn-block bbai-pricing-card__btn bbai-pricing-card__btn--growth" data-bbai-upgrade-growth-cta="1">
                                     <?php esc_html_e('Manage billing', 'beepbeep-ai-alt-text-generator'); ?>
