@@ -7794,68 +7794,146 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 /* ─── Final-polish pass ──────────────────────────────────────────────── */
 
-/* 3. Action hierarchy: first loop link = primary weight, upgrade = muted */
-#bbai-dashboard-main .bbai-dashboard-hero__loop-actions .bbai-dashboard-hero__loop-link:first-child {
-    font-weight: 600;
-    color: #1d7c4d;
-    border-bottom: 1px solid rgba(29, 124, 77, 0.25);
+/* 1,2,7. Spacing polish and action alignment for success state */
+#bbai-dashboard-main .bbai-dashboard-hero--command[data-bbai-success-state="1"] .bbai-dashboard-hero__subtext {
+    margin-top: 8px;
 }
-#bbai-dashboard-main .bbai-dashboard-hero__loop-actions .bbai-dashboard-hero__loop-link:not(:first-child) {
-    font-weight: 400;
-    opacity: 0.72;
+#bbai-dashboard-main .bbai-dashboard-hero--command[data-bbai-success-state="1"] .bbai-dashboard-hero__usage-block {
+    margin-top: 10px;
 }
-#bbai-dashboard-main .bbai-dashboard-hero__loop-actions .bbai-dashboard-hero__loop-link:not(:first-child):hover {
+#bbai-dashboard-main .bbai-dashboard-hero--command[data-bbai-success-state="1"] .bbai-dashboard-hero__note {
+    margin-top: 10px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #2f6f54;
     opacity: 1;
+    letter-spacing: 0.01em;
+}
+#bbai-dashboard-main .bbai-dashboard-hero--command[data-bbai-success-state="1"] .bbai-dashboard-hero-actions {
+    align-self: center;
 }
 
-/* 4. Coverage card one-time glow */
-@keyframes bbai-coverage-card-glow {
-    0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.0); }
-    30%  { box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.25); }
-    100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.0); }
+/* 3. Action hierarchy: primary action button + lighter secondary chips */
+#bbai-dashboard-main .bbai-dashboard-hero__loop-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, max-content));
+    gap: 8px;
+}
+#bbai-dashboard-main .bbai-dashboard-hero__loop-link {
+    min-height: 32px;
+    padding: 0 12px;
+    border-radius: 10px;
+    font-size: 12px;
+    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background-color 0.16s ease, color 0.16s ease, opacity 0.16s ease;
+}
+#bbai-dashboard-main .bbai-dashboard-hero__loop-link--primary {
+    grid-column: 1 / -1;
+    justify-content: center;
+    border: 1px solid transparent;
+    background: linear-gradient(135deg, var(--bbai-primary) 0%, var(--bbai-primary-strong) 100%);
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.14);
+}
+#bbai-dashboard-main .bbai-dashboard-hero__loop-link--secondary {
+    border: 1px solid #d9e2ee;
+    background: rgba(255, 255, 255, 0.92);
+    color: #334155;
+    font-weight: 500;
+    opacity: 0.86;
+}
+#bbai-dashboard-main .bbai-dashboard-hero__loop-link--upgrade {
+    border-color: #e7d3a6;
+}
+#bbai-dashboard-main .bbai-dashboard-hero__loop-link--primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
+}
+#bbai-dashboard-main .bbai-dashboard-hero__loop-link--secondary:hover {
+    transform: translateY(-1px);
+    opacity: 1;
+    border-color: #c8d4e3;
+    background: #ffffff;
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
+}
+#bbai-dashboard-main .bbai-dashboard-hero__loop-link:focus-visible {
+    outline: 2px solid var(--bbai-primary);
+    outline-offset: 2px;
+}
+
+/* 1. Monetisation tension line: higher contrast, subtle amber */
+#bbai-dashboard-main .bbai-dashboard-hero__loop-tension {
+    margin-top: 4px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #8a5a10;
+    font-style: normal;
+    font-weight: 500;
+}
+
+/* 4. Coverage card micro-interaction: one-time premium scale-in */
+@keyframes bbai-coverage-card-scale-in {
+    0% {
+        transform: scale(0.98);
+        box-shadow: 0 6px 14px rgba(15, 23, 42, 0.05);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: inset 0 0 0 1px #bbf7d0, 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
 }
 #bbai-dashboard-main .bbai-command-card--coverage-glow {
-    animation: bbai-coverage-card-glow 0.65s ease-out forwards;
+    transform-origin: 50% 50%;
+    animation: bbai-coverage-card-scale-in 0.28s ease-out forwards;
 }
 
-/* 5. Progress bar completion label — "Complete" badge at 100% */
+/* 5. Progress bar completion label — "Fully optimised" at 100% */
 #bbai-dashboard-main .bbai-command-card--coverage-complete .bbai-command-progress-bar::after {
-    content: 'Complete';
+    content: 'Fully optimised';
     position: absolute;
     right: 0;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    letter-spacing: 0.02em;
     color: #1d7c4d;
-    opacity: 0.85;
+    opacity: 0.92;
     white-space: nowrap;
     line-height: 1;
 }
 #bbai-dashboard-main .bbai-command-card--coverage-complete .bbai-command-progress-bar {
     position: relative;
-    padding-right: 60px;
+    padding-right: 98px;
 }
 
-/* 6. Speed line — elevated contrast and weight */
-#bbai-dashboard-main .bbai-dashboard-hero--command[data-bbai-success-state="1"] .bbai-dashboard-hero__note {
-    font-size: 11.5px;
+/* 6. Upgrade context and CTA benefit copy */
+#bbai-dashboard-main .bbai-command-plan__upgrade-sub {
+    font-size: 13px;
+    line-height: 1.45;
+    color: #8a5a10;
     font-weight: 500;
-    color: #3d7a5a;
-    opacity: 1;
-    letter-spacing: 0.01em;
+}
+#bbai-dashboard-main .bbai-command-plan__cta-sub {
+    margin: -4px 0 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #475569;
 }
 
-/* 7. CTA vertical alignment */
-#bbai-dashboard-main .bbai-dashboard-hero--command[data-bbai-success-state="1"] .bbai-dashboard-hero-actions {
-    align-self: center;
+/* 7.3 Hover lift consistency for right-side CTAs */
+#bbai-dashboard-main .bbai-dashboard-hero--command .bbai-dashboard-hero__link--secondary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
 }
 
-/* Disable new animations for prefers-reduced-motion */
+/* Reduce motion compatibility */
 @media (prefers-reduced-motion: reduce) {
     #bbai-dashboard-main .bbai-command-card--coverage-glow {
         animation: none !important;
+    }
+    #bbai-dashboard-main .bbai-dashboard-hero__loop-link,
+    #bbai-dashboard-main .bbai-dashboard-hero--command .bbai-dashboard-hero__link--secondary {
+        transition: none !important;
     }
 }

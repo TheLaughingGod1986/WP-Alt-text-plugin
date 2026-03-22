@@ -595,13 +595,16 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
                                 <span class="bbai-command-plan__upgrade-sub" data-bbai-plan-upgrade-sub><?php esc_html_e('Or upgrade for unlimited optimisation.', 'beepbeep-ai-alt-text-generator'); ?></span>
                             <?php else : ?>
                                 <span class="bbai-command-plan__upgrade-lead" data-bbai-plan-upgrade-lead><?php esc_html_e('Unlock full site optimisation', 'beepbeep-ai-alt-text-generator'); ?></span>
-                                <span class="bbai-command-plan__upgrade-sub" data-bbai-plan-upgrade-sub><?php esc_html_e('New images won’t be optimised automatically on free plan', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                <span class="bbai-command-plan__upgrade-sub" data-bbai-plan-upgrade-sub><?php esc_html_e('New uploads won’t be optimised automatically on the free plan', 'beepbeep-ai-alt-text-generator'); ?></span>
                             <?php endif; ?>
                         </p>
                         <div class="bbai-command-plan__actions">
                             <?php $bbai_render_action_link($bbai_plan_primary_action, $bbai_plan_primary_class, 'data-bbai-plan-action-primary'); ?>
                             <?php $bbai_render_action_link($bbai_plan_secondary_action, $bbai_plan_secondary_class, 'data-bbai-plan-action-secondary'); ?>
                         </div>
+                        <p class="bbai-command-plan__cta-sub" data-bbai-plan-upgrade-cta-sub<?php echo $isProPlan ? ' hidden' : ''; ?>>
+                            <?php esc_html_e('Automatically optimise every new image', 'beepbeep-ai-alt-text-generator'); ?>
+                        </p>
                     </div>
                 </article>
             </div>

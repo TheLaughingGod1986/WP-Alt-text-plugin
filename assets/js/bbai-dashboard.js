@@ -3881,7 +3881,7 @@ bbaiRunWithJQuery(function($) {
                 }
             );
             model.secondaryAction = createAction(
-                __('View Library', 'beepbeep-ai-alt-text-generator'),
+                __('View optimised images', 'beepbeep-ai-alt-text-generator'),
                 '',
                 {
                     href: libraryUrl
@@ -3911,7 +3911,7 @@ bbaiRunWithJQuery(function($) {
             }
         );
         model.secondaryAction = createAction(
-            __('View Library', 'beepbeep-ai-alt-text-generator'),
+            __('View optimised images', 'beepbeep-ai-alt-text-generator'),
             '',
             {
                 href: libraryUrl
@@ -3920,10 +3920,10 @@ bbaiRunWithJQuery(function($) {
         model.loopActions = [
             createAction(__('Check for new SEO issues', 'beepbeep-ai-alt-text-generator'), '', { bbaiAction: 'scan-opportunity' }),
             createAction(__('Auto-optimise future uploads', 'beepbeep-ai-alt-text-generator'), '', { href: settingsUrl }),
-            createAction(__('Upgrade for unlimited optimisation', 'beepbeep-ai-alt-text-generator'), '', { action: 'show-upgrade-modal' })
+            createAction(__('Unlock automatic optimisation', 'beepbeep-ai-alt-text-generator'), '', { action: 'show-upgrade-modal' })
         ];
         model.loopSupportLine = '';
-        model.upgradeTensionLine = __('New images won’t be optimised automatically on free plan', 'beepbeep-ai-alt-text-generator');
+        model.upgradeTensionLine = __('New uploads won’t be optimised automatically on the free plan', 'beepbeep-ai-alt-text-generator');
 
         return model;
     }
@@ -5127,7 +5127,7 @@ bbaiRunWithJQuery(function($) {
                 statusCard.classList.add('bbai-command-card--coverage-glow');
                 window.setTimeout(function() {
                     statusCard.classList.remove('bbai-command-card--coverage-glow');
-                }, 700);
+                }, 320);
             }
         } catch (e) {
             // noop — storage blocked
@@ -5498,6 +5498,7 @@ bbaiRunWithJQuery(function($) {
         var upgradeNoteNode = document.querySelector('[data-bbai-plan-upgrade-note]');
         var upgradeLeadNode = upgradeNoteNode ? upgradeNoteNode.querySelector('[data-bbai-plan-upgrade-lead]') : null;
         var upgradeSubNode = upgradeNoteNode ? upgradeNoteNode.querySelector('[data-bbai-plan-upgrade-sub]') : null;
+        var upgradeCtaSubNode = document.querySelector('[data-bbai-plan-upgrade-cta-sub]');
         var lowCreditsBadgeNode = document.querySelector('[data-bbai-plan-low-credits-badge]');
         var primaryActionNode = document.querySelector('[data-bbai-plan-action-primary]');
         var secondaryActionNode = document.querySelector('[data-bbai-plan-action-secondary]');
@@ -5581,7 +5582,14 @@ bbaiRunWithJQuery(function($) {
                 upgradeLeadNode.textContent = __('Unlock full site optimisation', 'beepbeep-ai-alt-text-generator');
             }
             if (upgradeSubNode) {
-                upgradeSubNode.textContent = __('New images won’t be optimised automatically on free plan', 'beepbeep-ai-alt-text-generator');
+                upgradeSubNode.textContent = __('New uploads won’t be optimised automatically on the free plan', 'beepbeep-ai-alt-text-generator');
+            }
+        }
+
+        if (upgradeCtaSubNode) {
+            upgradeCtaSubNode.hidden = !!data.isPremium;
+            if (!data.isPremium) {
+                upgradeCtaSubNode.textContent = __('Automatically optimise every new image', 'beepbeep-ai-alt-text-generator');
             }
         }
 
