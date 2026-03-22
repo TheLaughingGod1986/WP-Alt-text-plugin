@@ -680,6 +680,9 @@ CSS;
             'checkoutPrices' => $checkout_prices,
             'stats'       => $stats_data,
             'initialUsage' => $usage_data,
+            'pendingUpgradeTriggers' => [
+                'newUpload' => $this->consume_media_upload_upgrade_trigger(),
+            ],
             'wizard'      => $this->get_setup_wizard_bootstrap(),
         ];
 

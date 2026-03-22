@@ -102,7 +102,7 @@ $bbai_modal_title = $bbai_is_free_plan
 $bbai_modal_subtitle = $bbai_is_free_plan
     ? sprintf(
         /* translators: 1: used credits, 2: credit limit */
-        __('%1$s of %2$s credits used this month. Choose how you\'d like to continue.', 'beepbeep-ai-alt-text-generator'),
+        __('You\'ve used %1$s of %2$s credits. Choose how you want to continue.', 'beepbeep-ai-alt-text-generator'),
         number_format_i18n($bbai_usage_used),
         number_format_i18n($bbai_usage_limit)
     )
@@ -115,7 +115,7 @@ $bbai_locked_modal_title = $bbai_is_free_plan
 $bbai_locked_modal_subtitle = $bbai_is_free_plan
     ? sprintf(
         /* translators: 1: used credits, 2: credit limit */
-        __('%1$s of %2$s credits used this month. Choose how you\'d like to continue.', 'beepbeep-ai-alt-text-generator'),
+        __('You\'ve used %1$s of %2$s credits. Choose how you want to continue.', 'beepbeep-ai-alt-text-generator'),
         number_format_i18n($bbai_usage_used),
         number_format_i18n($bbai_usage_limit)
     )
@@ -133,7 +133,7 @@ $bbai_credit_pack_summary = sprintf(
 );
 
 $bbai_primary_button_label = $bbai_is_free_plan
-    ? __('Start Growth', 'beepbeep-ai-alt-text-generator')
+    ? __('Enable automatic optimisation', 'beepbeep-ai-alt-text-generator')
     : __('Open billing portal', 'beepbeep-ai-alt-text-generator');
 
 $bbai_primary_price = $bbai_is_free_plan
@@ -147,11 +147,20 @@ $bbai_primary_price = $bbai_is_free_plan
 
 $bbai_decision_eyebrow = __('Recommended', 'beepbeep-ai-alt-text-generator');
 $bbai_decision_title = $bbai_is_free_plan
-    ? __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator')
+    ? __('Keep your images optimised automatically', 'beepbeep-ai-alt-text-generator')
     : __('Manage billing', 'beepbeep-ai-alt-text-generator');
 $bbai_decision_copy = $bbai_is_free_plan
-    ? __('Continue generating ALT text automatically with 1,000 ALT texts each month.', 'beepbeep-ai-alt-text-generator')
+    ? sprintf(
+        /* translators: 1: currency symbol, 2: monthly Growth price */
+        __('Upgrade to Growth - %1$s%2$s/month', 'beepbeep-ai-alt-text-generator'),
+        $bbai_currency['symbol'],
+        number_format($bbai_growth_monthly, 2)
+    )
     : __('Open your billing portal to manage your plan, payment method, or subscription.', 'beepbeep-ai-alt-text-generator');
+
+$bbai_limit_label = $bbai_is_free_plan
+    ? __('You’re hitting your limit', 'beepbeep-ai-alt-text-generator')
+    : __('Usage limit reached', 'beepbeep-ai-alt-text-generator');
 
 $bbai_default_decision_note = $bbai_credit_pack_description;
 $bbai_locked_decision_eyebrow = __('Recommended', 'beepbeep-ai-alt-text-generator');
@@ -203,7 +212,7 @@ $bbai_show_agency_by_default = $bbai_is_agency_plan;
         <div class="bbai-upgrade-modal__body">
             <section class="bbai-upgrade-modal__view bbai-upgrade-modal__view--default" data-bbai-upgrade-view-panel="default">
                 <div class="bbai-upgrade-modal__header">
-                    <p class="bbai-upgrade-modal__section-label bbai-upgrade-modal__section-label--muted"><?php esc_html_e('Problem', 'beepbeep-ai-alt-text-generator'); ?></p>
+                    <p class="bbai-upgrade-modal__section-label bbai-upgrade-modal__section-label--muted"><?php echo esc_html($bbai_limit_label); ?></p>
                     <h2 id="bbai-upgrade-modal-title" data-bbai-upgrade-title><?php echo esc_html($bbai_modal_title); ?></h2>
                     <p id="bbai-upgrade-modal-description" class="bbai-upgrade-modal__subtitle" data-bbai-upgrade-subtitle><?php echo esc_html($bbai_modal_subtitle); ?></p>
                 </div>
@@ -226,6 +235,7 @@ $bbai_show_agency_by_default = $bbai_is_agency_plan;
                                     data-fallback-url="<?php echo esc_url($bbai_stripe_links['pro']); ?>">
                                 <?php echo esc_html($bbai_primary_button_label); ?>
                             </button>
+                            <p class="bbai-upgrade-modal__risk-note"><?php esc_html_e('Cancel anytime. No lock-in.', 'beepbeep-ai-alt-text-generator'); ?></p>
                         <?php else : ?>
                             <a href="<?php echo esc_url($bbai_billing_url); ?>" class="bbai-btn bbai-btn-primary bbai-btn-lg bbai-upgrade-modal__primary-action" data-bbai-upgrade-primary-action="1">
                                 <?php echo esc_html($bbai_primary_button_label); ?>

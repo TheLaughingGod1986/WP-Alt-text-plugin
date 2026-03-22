@@ -273,7 +273,21 @@
             return;
         }
 
-        var modalOpened = window.bbaiOpenUpgradeModal(usage);
+        var modalOpened = typeof window.bbaiTriggerUpgradePrompt === 'function'
+            ? window.bbaiTriggerUpgradePrompt('limit_reached', {
+                usage: usage,
+                source: 'limit-reached',
+                force: true,
+                limitMessage: baseMessage,
+                resetMessage: resetMessage
+            })
+            : window.bbaiOpenUpgradeModal('limit_reached', {
+                usage: usage,
+                source: 'limit-reached',
+                force: true,
+                limitMessage: baseMessage,
+                resetMessage: resetMessage
+            });
         if (typeof showNotification === 'function') {
             var fallbackMessage = fullMessage;
             if (!modalOpened) {

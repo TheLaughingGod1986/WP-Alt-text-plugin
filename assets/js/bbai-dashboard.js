@@ -3874,7 +3874,7 @@ bbaiRunWithJQuery(function($) {
             model.nextStep = '';
             model.note = __('⚡ Full scan completed in under 10 seconds', 'beepbeep-ai-alt-text-generator');
             model.primaryAction = createAction(
-                __('Check for new SEO issues', 'beepbeep-ai-alt-text-generator'),
+                __('Scan for new issues', 'beepbeep-ai-alt-text-generator'),
                 '',
                 {
                     bbaiAction: 'scan-opportunity'
@@ -3888,7 +3888,6 @@ bbaiRunWithJQuery(function($) {
                 }
             );
             model.loopActions = [
-                createAction(__('Check for new SEO issues', 'beepbeep-ai-alt-text-generator'), '', { bbaiAction: 'scan-opportunity' }),
                 createAction(__('Auto-optimise future uploads', 'beepbeep-ai-alt-text-generator'), '', { href: settingsUrl }),
                 createAction(__('Review optimisation settings', 'beepbeep-ai-alt-text-generator'), '', { href: settingsUrl })
             ];
@@ -3904,7 +3903,7 @@ bbaiRunWithJQuery(function($) {
         model.nextStep = '';
         model.note = __('⚡ Full scan completed in under 10 seconds', 'beepbeep-ai-alt-text-generator');
         model.primaryAction = createAction(
-            __('Check for new SEO issues', 'beepbeep-ai-alt-text-generator'),
+            __('Scan for new issues', 'beepbeep-ai-alt-text-generator'),
             '',
             {
                 bbaiAction: 'scan-opportunity'
@@ -3918,9 +3917,8 @@ bbaiRunWithJQuery(function($) {
             }
         );
         model.loopActions = [
-            createAction(__('Check for new SEO issues', 'beepbeep-ai-alt-text-generator'), '', { bbaiAction: 'scan-opportunity' }),
             createAction(__('Auto-optimise future uploads', 'beepbeep-ai-alt-text-generator'), '', { href: settingsUrl }),
-            createAction(__('Unlock automatic optimisation', 'beepbeep-ai-alt-text-generator'), '', { action: 'show-upgrade-modal' })
+            createAction(__('See upgrade options', 'beepbeep-ai-alt-text-generator'), '', { action: 'show-upgrade-modal' })
         ];
         model.loopSupportLine = '';
         model.upgradeTensionLine = __('New uploads will stop being optimised automatically on the free plan', 'beepbeep-ai-alt-text-generator');
@@ -4529,9 +4527,9 @@ bbaiRunWithJQuery(function($) {
     function getStatusCardSegmentColor(segmentKey, activeSegment) {
         var palette = {
             optimized: {
-                base: '#22c55e',
-                active: '#16a34a',
-                muted: '#d9f4e2'
+                base: '#3fa66f',
+                active: '#2f915e',
+                muted: '#deeee4'
             },
             weak: {
                 base: '#f59e0b',

@@ -80,6 +80,9 @@ body.modal-open #wpbody-content {
     justify-content: center;
     width: 40px;
     height: 40px;
+    /* .bbai-btn uses padding: 10px 20px !important — with border-box that leaves 0px width for the icon */
+    padding: 0 !important;
+    overflow: visible;
     border-radius: 999px;
     border: 1px solid rgba(203, 213, 225, 0.9);
     background: rgba(248, 250, 252, 0.92);
@@ -99,6 +102,11 @@ body.modal-open #wpbody-content {
     width: 18px;
     height: 18px;
     display: block;
+    flex-shrink: 0;
+}
+
+#bbai-upgrade-modal .bbai-upgrade-modal__close svg path {
+    stroke: currentColor;
 }
 
 #bbai-upgrade-modal .bbai-upgrade-modal__header,
@@ -168,7 +176,9 @@ body.modal-open #wpbody-content {
 }
 
 #bbai-upgrade-modal .bbai-upgrade-modal__action-card--secondary {
-    background: #fbfcfe;
+    border-color: #e6ebf2;
+    background: #f8fafc;
+    box-shadow: none;
 }
 
 #bbai-upgrade-modal .bbai-upgrade-modal__action-copy,
@@ -234,7 +244,7 @@ body.modal-open #wpbody-content {
     font-size: 13px;
     font-weight: 700;
     line-height: 1.2;
-    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+    transition: all 0.2s ease;
 }
 
 #bbai-upgrade-modal .bbai-upgrade-modal__primary-action,
@@ -264,18 +274,25 @@ body.modal-open #wpbody-content {
 #bbai-upgrade-modal .bbai-upgrade-modal__secondary-action,
 #bbai-upgrade-modal .bbai-pricing-card__btn--free,
 #bbai-upgrade-modal .bbai-pricing-card__btn--agency {
-    background: #ffffff !important;
-    color: #0f172a !important;
-    border: 1px solid #cbd5e1 !important;
+    background: #f8fafc !important;
+    color: #334155 !important;
+    border: 1px solid #dbe3ee !important;
     box-shadow: none !important;
 }
 
 #bbai-upgrade-modal .bbai-upgrade-modal__secondary-action:hover,
 #bbai-upgrade-modal .bbai-pricing-card__btn--free:hover:not(:disabled),
 #bbai-upgrade-modal .bbai-pricing-card__btn--agency:hover {
-    background: #f8fafc !important;
-    border-color: #94a3b8 !important;
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
     transform: translateY(-1px);
+}
+
+#bbai-upgrade-modal .bbai-upgrade-modal__risk-note {
+    margin: 7px 0 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #64748b;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card__btn--free:disabled {

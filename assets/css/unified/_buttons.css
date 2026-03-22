@@ -297,7 +297,8 @@
 
 /* Icon-only button - 44px minimum touch target for accessibility */
 .bbai-btn-icon-only {
-    padding: var(--bbai-space-2);
+    /* Must win over .bbai-btn padding !important so the icon is not clipped (border-box + overflow:hidden) */
+    padding: var(--bbai-space-2) !important;
     aspect-ratio: 1;
     min-width: 44px;
     min-height: 44px;

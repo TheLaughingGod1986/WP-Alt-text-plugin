@@ -6065,7 +6065,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     border-radius: 12px;
     font-size: 14px;
     font-weight: 600;
-    transition: all 0.2s ease-out;
+    transition: all 0.14s ease;
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command .bbai-dashboard-hero__cta--primary {
@@ -6090,9 +6090,9 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-command-action--secondary {
     justify-content: center;
     padding: 0 16px;
-    border: 1px solid #dbe5f1;
-    background: rgba(255, 255, 255, 0.88);
-    color: #1e293b;
+    border: 1px solid #e2e8f0;
+    background: rgba(255, 255, 255, 0.74);
+    color: #475569;
     box-shadow: none;
 }
 
@@ -6120,7 +6120,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     transform: translateY(-1px);
     box-shadow:
         0 0 0 rgba(124, 58, 237, 0),
-        0 8px 20px rgba(37, 99, 235, 0.28);
+        0 7px 16px rgba(37, 99, 235, 0.24);
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command .bbai-dashboard-hero__cta--primary:focus-visible,
@@ -6132,8 +6132,9 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-hero--command .bbai-dashboard-hero__link--secondary:hover,
 #bbai-dashboard-main .bbai-command-action--ghost:hover,
 #bbai-dashboard-main .bbai-command-action--secondary:hover {
-    border-color: #cfd9e6;
+    border-color: #d6dfeb;
     background: #f8fafc;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command .bbai-dashboard-hero__link--tertiary:hover,
@@ -7707,7 +7708,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-command-plan__upgrade-note {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 0;
     margin: 0;
 }
 
@@ -7800,18 +7801,38 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 /* 1,2,7. Spacing polish and action alignment for success state */
 #bbai-dashboard-main .bbai-dashboard-hero--command[data-bbai-success-state="1"] .bbai-dashboard-hero__subtext {
-    margin-top: 8px;
+    margin-top: 6px;
 }
 #bbai-dashboard-main .bbai-dashboard-hero--command[data-bbai-success-state="1"] .bbai-dashboard-hero__usage-block {
-    margin-top: 10px;
+    margin-top: 8px;
+}
+#bbai-dashboard-main .bbai-dashboard-hero--command[data-bbai-success-state="1"] .bbai-dashboard-hero-progress {
+    padding-top: 18px;
+}
+#bbai-dashboard-main .bbai-dashboard-hero--command[data-bbai-success-state="1"] .bbai-dashboard-hero-progress-track {
+    position: relative;
+}
+#bbai-dashboard-main .bbai-dashboard-hero--command[data-bbai-success-state="1"] .bbai-dashboard-hero-progress-track::before {
+    content: 'Fully optimised';
+    position: absolute;
+    top: -18px;
+    left: 0;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.2;
+    color: #64748b;
 }
 #bbai-dashboard-main .bbai-dashboard-hero--command[data-bbai-success-state="1"] .bbai-dashboard-hero__note {
-    margin-top: 10px;
+    margin-top: 6px;
     font-size: 12px;
     font-weight: 500;
     color: #2f6f54;
     opacity: 1;
     letter-spacing: 0.01em;
+}
+#bbai-dashboard-main .bbai-dashboard-hero--command[data-bbai-success-state="1"] .bbai-dashboard-hero__loop {
+    margin-top: 4px;
+    gap: 4px;
 }
 #bbai-dashboard-main .bbai-dashboard-hero--command[data-bbai-success-state="1"] .bbai-dashboard-hero-actions {
     align-self: center;
@@ -7824,44 +7845,25 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     gap: 8px;
 }
 #bbai-dashboard-main .bbai-dashboard-hero__loop-link {
-    min-height: 32px;
-    padding: 0 12px;
+    min-height: 30px;
+    padding: 0 10px;
     border-radius: 10px;
     font-size: 12px;
-    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background-color 0.16s ease, color 0.16s ease, opacity 0.16s ease;
-}
-#bbai-dashboard-main .bbai-dashboard-hero__loop-link--primary {
-    grid-column: 1 / -1;
-    justify-content: center;
-    border: 1px solid transparent;
-    background: linear-gradient(135deg, var(--bbai-primary) 0%, var(--bbai-primary-strong) 100%);
-    color: #ffffff;
-    font-weight: 600;
-    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.14);
+    transition: all 0.14s ease;
 }
 #bbai-dashboard-main .bbai-dashboard-hero__loop-link--secondary {
-    border: 1px solid #d9e2ee;
-    background: rgba(255, 255, 255, 0.92);
-    color: #334155;
+    border: 1px solid #e2e8f0;
+    background: rgba(255, 255, 255, 0.84);
+    color: #475569;
     font-weight: 500;
-    opacity: 0.86;
-}
-#bbai-dashboard-main .bbai-dashboard-hero__loop-link--upgrade {
-    border-color: #e7d3a6;
-}
-#bbai-dashboard-main .bbai-dashboard-hero__loop-link--primary:hover {
-    border-color: transparent;
-    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-    color: #ffffff;
-    transform: translateY(-1px);
-    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
+    opacity: 0.84;
 }
 #bbai-dashboard-main .bbai-dashboard-hero__loop-link--secondary:hover {
     transform: translateY(-1px);
     opacity: 1;
-    border-color: #c8d4e3;
-    background: #ffffff;
-    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
+    border-color: #d5dee9;
+    background: #f8fafc;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.05);
 }
 #bbai-dashboard-main .bbai-dashboard-hero__loop-link:focus-visible {
     outline: 2px solid var(--bbai-primary);
@@ -7875,7 +7877,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     line-height: 1.45;
     color: #8a5a10;
     font-style: normal;
-    font-weight: 500;
+    font-weight: 400;
 }
 
 /* 4. Coverage card micro-interaction: one-time premium scale-in */
@@ -7922,10 +7924,11 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     font-weight: 500;
 }
 #bbai-dashboard-main .bbai-command-plan__cta-sub {
-    margin: -4px 0 0;
+    margin: 9px 0 0;
     font-size: 12px;
     line-height: 1.45;
     color: #475569;
+    opacity: 0.78;
 }
 
 /* 7.3 Hover lift consistency for right-side CTAs */

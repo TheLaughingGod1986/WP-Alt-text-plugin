@@ -114,6 +114,7 @@ class Core {
     private const ALT_COVERAGE_SCAN_JOB_TTL = 900;
     private const ALT_COVERAGE_SCAN_BATCH_SIZE = 150;
     private const FREE_PLAN_IMAGE_LIMIT = 50;
+    private const MEDIA_UPLOAD_TRIGGER_TRANSIENT_PREFIX = 'bbai_upgrade_upload_';
 
     private const DEFAULT_CHECKOUT_PRICE_IDS = [
         'pro'     => 'price_1SMrxaJl9Rm418cMM4iikjlJ',
@@ -5810,6 +5811,9 @@ class Core {
         }
 
         $source_input = isset($_POST['source']) ? sanitize_key(wp_unslash($_POST['source'])) : 'dashboard';
+        $event_name_input = isset($_POST['event_name']) ? sanitize_key(wp_unslash($_POST['event_name'])) : 'upgrade_cta_clicked';
+        $trigger_input = isset($_POST['trigger']) ? sanitize_key(wp_unslash($_POST['trigger'])) : 'unknown';
+        $plan_input = isset($_POST['plan']) ? sanitize_key(wp_unslash($_POST['plan'])) : '';
         $allowed_sources = [
             'dashboard',
             'bulk',
@@ -5822,16 +5826,46 @@ class Core {
             'bbai_upgrade_modal_opened',
             'bbai_locked_cta_clicked',
             'bbai_limit_state_viewed',
+            'upgrade-trigger',
+            'limit-reached',
+            'checkout',
+            'upgrade-modal',
+        ];
+        $allowed_event_names = [
+            'upgrade_modal_viewed',
+            'upgrade_cta_clicked',
+            'upgrade_completed',
+        ];
+        $allowed_triggers = [
+            'scan_completion',
+            'new_image_upload',
+            'usage_80',
+            'limit_reached',
+            'upgrade_required',
+            'default',
+            'manual',
+            'unknown',
         ];
         $source = in_array($source_input, $allowed_sources, true) ? $source_input : 'dashboard';
+        $event_name = in_array($event_name_input, $allowed_event_names, true) ? $event_name_input : 'upgrade_cta_clicked';
+        $trigger = in_array($trigger_input, $allowed_triggers, true) ? $trigger_input : 'unknown';
         $event  = [
+            'event_name' => $event_name,
             'source' => $source,
+            'trigger' => $trigger,
+            'plan' => $plan_input,
             'user_id' => get_current_user_id(),
             'time'   => current_time('mysql'),
         ];
 
-        update_option('bbai_last_upgrade_click', $event, false);
-        do_action('bbai_upgrade_clicked', $event);
+        update_option('bbai_last_upgrade_event', $event, false);
+
+        if ($event_name === 'upgrade_cta_clicked') {
+            update_option('bbai_last_upgrade_click', $event, false);
+            do_action('bbai_upgrade_clicked', $event);
+        }
+
+        do_action('bbai_upgrade_event_tracked', $event);
 
         wp_send_json_success(['recorded' => true]);
     }
@@ -6740,9 +6774,71 @@ class Core {
             return;
         }
 
+        if ($this->is_image($attachment_id)) {
+            $this->queue_media_upload_upgrade_trigger((int) $attachment_id);
+        }
+
         if ($this->queue_attachment($attachment_id, 'upload')) {
             Queue::schedule_processing(15);
         }
+    }
+
+    private function get_media_upload_trigger_transient_key(int $user_id): string {
+        return self::MEDIA_UPLOAD_TRIGGER_TRANSIENT_PREFIX . max(0, $user_id);
+    }
+
+    private function queue_media_upload_upgrade_trigger(int $attachment_id = 0): void {
+        $user_id = get_current_user_id();
+        if ($user_id <= 0 || !$this->user_can_manage()) {
+            return;
+        }
+
+        $transient_key = $this->get_media_upload_trigger_transient_key($user_id);
+        $existing = get_transient($transient_key);
+        $upload_count = 1;
+
+        if (is_array($existing)) {
+            $upload_count += max(0, (int) ($existing['uploadCount'] ?? 0));
+        }
+
+        set_transient(
+            $transient_key,
+            [
+                'uploadCount' => min(25, $upload_count),
+                'attachmentId' => max(0, $attachment_id),
+                'createdAt' => time(),
+            ],
+            HOUR_IN_SECONDS
+        );
+    }
+
+    private function consume_media_upload_upgrade_trigger(): array {
+        $user_id = get_current_user_id();
+        if ($user_id <= 0) {
+            return [
+                'uploadCount' => 0,
+                'attachmentId' => 0,
+                'createdAt' => 0,
+            ];
+        }
+
+        $transient_key = $this->get_media_upload_trigger_transient_key($user_id);
+        $payload = get_transient($transient_key);
+        delete_transient($transient_key);
+
+        if (!is_array($payload)) {
+            return [
+                'uploadCount' => 0,
+                'attachmentId' => 0,
+                'createdAt' => 0,
+            ];
+        }
+
+        return [
+            'uploadCount' => max(0, (int) ($payload['uploadCount'] ?? 0)),
+            'attachmentId' => max(0, (int) ($payload['attachmentId'] ?? 0)),
+            'createdAt' => max(0, (int) ($payload['createdAt'] ?? 0)),
+        ];
     }
 
     public function handle_media_metadata_update($data, $post_id) {

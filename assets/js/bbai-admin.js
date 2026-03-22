@@ -1152,11 +1152,20 @@
     function openUpgradeModal(reasonOrUsage, context) {
         var hasReasonContext = typeof reasonOrUsage === 'string' ||
             (!!context && typeof context === 'object');
+        var resolvedReason = hasReasonContext && typeof reasonOrUsage === 'string' ? reasonOrUsage : '';
         var usage = reasonOrUsage;
         if (hasReasonContext) {
             if (context && typeof context === 'object' && context.usage) {
                 usage = context.usage;
             }
+        } else if (usage && typeof usage === 'object' && parseInt(usage.remaining, 10) <= 0) {
+            hasReasonContext = true;
+            resolvedReason = 'limit_reached';
+            context = {
+                usage: usage,
+                source: 'limit-reached',
+                force: true
+            };
         }
         if (hasVisibleLimitModal()) {
             return true;
@@ -1164,7 +1173,7 @@
 
         if (typeof window.bbaiOpenUpgradeModal === 'function') {
             var openResult = hasReasonContext
-                ? window.bbaiOpenUpgradeModal(reasonOrUsage, context)
+                ? window.bbaiOpenUpgradeModal(resolvedReason || reasonOrUsage, context)
                 : window.bbaiOpenUpgradeModal();
             if (openResult !== false) {
                 return true;
