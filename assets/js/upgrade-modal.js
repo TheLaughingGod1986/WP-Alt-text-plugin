@@ -9,6 +9,11 @@
 (function() {
     'use strict';
 
+    var upgradeModalState = {
+        keyHandlerBound: false,
+        lastTrigger: null
+    };
+
     function bbaiString(value) {
         return value === undefined || value === null ? '' : String(value);
     }
@@ -92,6 +97,185 @@
 
         document.body.classList.toggle('modal-open', !!isLocked);
         document.body.classList.toggle('bbai-modal-open', !!isLocked);
+    }
+
+    function isUpgradeModalVisible(modal) {
+        if (!modal) {
+            return false;
+        }
+
+        if (modal.getAttribute('aria-hidden') === 'true') {
+            return false;
+        }
+
+        return modal.classList.contains('active') ||
+            modal.classList.contains('is-visible') ||
+            bbaiString(modal.style.display).toLowerCase() === 'flex';
+    }
+
+    function getFocusableElements(container) {
+        if (!container || !container.querySelectorAll) {
+            return [];
+        }
+
+        return Array.prototype.slice.call(
+            container.querySelectorAll(
+                'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+            )
+        ).filter(function(element) {
+            if (!element) {
+                return false;
+            }
+
+            if (element.hidden || element.getAttribute('aria-hidden') === 'true') {
+                return false;
+            }
+
+            if (element.offsetParent === null && element !== document.activeElement) {
+                return false;
+            }
+
+            return true;
+        });
+    }
+
+    function trapFocusWithin(container, event) {
+        var focusableElements = getFocusableElements(container);
+        if (!focusableElements.length) {
+            event.preventDefault();
+            if (container && typeof container.focus === 'function') {
+                container.focus();
+            }
+            return;
+        }
+
+        var firstElement = focusableElements[0];
+        var lastElement = focusableElements[focusableElements.length - 1];
+        var activeElement = document.activeElement;
+
+        if (event.shiftKey && (activeElement === firstElement || activeElement === container)) {
+            event.preventDefault();
+            lastElement.focus();
+            return;
+        }
+
+        if (!event.shiftKey && activeElement === lastElement) {
+            event.preventDefault();
+            firstElement.focus();
+        }
+    }
+
+    function getDefaultAgencyExpandedState(modal) {
+        if (!modal) {
+            return false;
+        }
+
+        var toggle = modal.querySelector('[data-bbai-upgrade-toggle-agency="1"]');
+        if (toggle) {
+            return toggle.getAttribute('data-bbai-upgrade-initial-expanded') === 'true';
+        }
+
+        var panel = modal.querySelector('[data-bbai-upgrade-agency-panel]');
+        return !!(panel && !panel.hidden);
+    }
+
+    function updateAgencyComparisonState(modal, expanded) {
+        if (!modal) {
+            return;
+        }
+
+        var panel = modal.querySelector('[data-bbai-upgrade-agency-panel]');
+        var toggle = modal.querySelector('[data-bbai-upgrade-toggle-agency="1"]');
+        if (!panel) {
+            return;
+        }
+
+        var isExpanded = !!expanded;
+        panel.hidden = !isExpanded;
+        modal.setAttribute('data-bbai-upgrade-agency-visible', isExpanded ? 'true' : 'false');
+
+        if (!toggle) {
+            return;
+        }
+
+        toggle.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+
+        var showLabel = toggle.getAttribute('data-bbai-upgrade-show-label') || toggle.textContent;
+        var hideLabel = toggle.getAttribute('data-bbai-upgrade-hide-label') || showLabel;
+        toggle.textContent = isExpanded ? hideLabel : showLabel;
+    }
+
+    function resetAgencyComparisonState(modal) {
+        updateAgencyComparisonState(modal, getDefaultAgencyExpandedState(modal));
+    }
+
+    function setUpgradeModalView(modal, view) {
+        if (!modal) {
+            return;
+        }
+
+        var defaultPanel = modal.querySelector('[data-bbai-upgrade-view-panel="default"]');
+        var comparison = modal.querySelector('[data-bbai-upgrade-view-panel="compare"]');
+        var toggle = modal.querySelector('[data-bbai-upgrade-toggle-plans="1"]');
+        if (!defaultPanel || !comparison) {
+            return;
+        }
+
+        var activeView = view === 'compare' ? 'compare' : 'default';
+        var isCompareView = activeView === 'compare';
+
+        defaultPanel.hidden = isCompareView;
+        comparison.hidden = !isCompareView;
+        modal.setAttribute('data-bbai-upgrade-view', activeView);
+
+        if (toggle) {
+            toggle.setAttribute('aria-expanded', isCompareView ? 'true' : 'false');
+        }
+    }
+
+    function updatePlanComparisonState(modal, expanded) {
+        setUpgradeModalView(modal, expanded ? 'compare' : 'default');
+    }
+
+    function focusUpgradeModalTarget(modal) {
+        if (!modal) {
+            return;
+        }
+
+        var isCompareView = modal.getAttribute('data-bbai-upgrade-view') === 'compare';
+        var target = isCompareView
+            ? modal.querySelector('[data-bbai-upgrade-growth-cta="1"]') ||
+                modal.querySelector('[data-bbai-upgrade-back="1"]') ||
+                modal.querySelector('[data-bbai-upgrade-toggle-agency="1"]')
+            : modal.querySelector('[data-bbai-upgrade-primary-action="1"]') ||
+                modal.querySelector('[data-bbai-upgrade-secondary-action="1"]') ||
+                modal.querySelector('[data-bbai-upgrade-toggle-plans="1"]');
+
+        target = target ||
+            modal.querySelector('.bbai-upgrade-modal__close') ||
+            modal.querySelector('.bbai-upgrade-modal__content');
+
+        if (target && typeof target.focus === 'function') {
+            target.focus();
+        }
+    }
+
+    function handleUpgradeModalKeydown(event) {
+        var modal = resolveUpgradeModalElement();
+        if (!event || !isUpgradeModalVisible(modal)) {
+            return;
+        }
+
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            window.bbaiCloseUpgradeModal();
+            return;
+        }
+
+        if (event.key === 'Tab') {
+            var content = modal.querySelector('.bbai-upgrade-modal__content') || modal;
+            trapFocusWithin(content, event);
+        }
     }
 
     function setModalNodeText(node, value) {
@@ -246,19 +430,39 @@
         }
 
         var request = normalizeUpgradeOpenRequest(reasonOrContext, maybeContext);
+        upgradeModalState.lastTrigger = request.context && request.context.trigger ? request.context.trigger : document.activeElement;
         applyUpgradeModalContext(modal, request.reason, request.context);
+        resetAgencyComparisonState(modal);
+        updatePlanComparisonState(modal, !!(request.context && request.context.comparePlans));
+        if (request.context && request.context.showAgency) {
+            updateAgencyComparisonState(modal, true);
+        }
 
+        modal.classList.remove('active');
+        modal.classList.remove('is-visible');
         modal.removeAttribute('style');
-        modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important; overflow-y: auto !important;';
-        modal.classList.add('active');
-        modal.classList.add('is-visible');
+        modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; align-items: center !important; justify-content: center !important; overflow-y: auto !important;';
         modal.setAttribute('aria-hidden', 'false');
         setUpgradeModalScrollLock(true);
 
+        if (!upgradeModalState.keyHandlerBound) {
+            document.addEventListener('keydown', handleUpgradeModalKeydown, true);
+            upgradeModalState.keyHandlerBound = true;
+        }
+
         var content = modal.querySelector('.bbai-upgrade-modal__content');
         if (content) {
-            content.style.cssText = 'opacity: 1 !important; transform: translateY(0) scale(1) !important;';
+            content.removeAttribute('style');
         }
+
+        window.requestAnimationFrame(function() {
+            modal.classList.add('active');
+            modal.classList.add('is-visible');
+        });
+
+        window.setTimeout(function() {
+            focusUpgradeModalTarget(modal);
+        }, 140);
 
         return true;
     };
@@ -274,28 +478,50 @@
         }
 
         resetUpgradeModalContext(modal);
+        resetAgencyComparisonState(modal);
+        updatePlanComparisonState(modal, false);
     };
 
     /**
      * Close the upgrade modal
      */
     window.bbaiCloseUpgradeModal = function() {
+        var triggerToRestore = upgradeModalState.lastTrigger;
         var modal = resolveUpgradeModalElement();
+        var content = modal ? modal.querySelector('.bbai-upgrade-modal__content') : null;
+
         if (modal) {
             resetUpgradeModalContext(modal);
-            modal.style.display = 'none';
+            resetAgencyComparisonState(modal);
+            updatePlanComparisonState(modal, false);
             modal.classList.remove('active');
             modal.classList.remove('is-visible');
             modal.setAttribute('aria-hidden', 'true');
             setUpgradeModalScrollLock(false);
+            modal.style.display = 'none';
+            modal.removeAttribute('style');
+            if (content) {
+                content.removeAttribute('style');
+            }
         }
+
+        if (upgradeModalState.keyHandlerBound) {
+            document.removeEventListener('keydown', handleUpgradeModalKeydown, true);
+            upgradeModalState.keyHandlerBound = false;
+        }
+
+        if (triggerToRestore && typeof triggerToRestore.focus === 'function') {
+            window.setTimeout(function() {
+                triggerToRestore.focus();
+            }, 0);
+        }
+        upgradeModalState.lastTrigger = null;
     };
 
     /**
      * Initialize event listeners on DOM ready
      */
     function initUpgradeModalEvents() {
-        // Event delegation for upgrade buttons
         document.addEventListener('click', function(e) {
             var target = e.target.closest('[data-action="show-upgrade-modal"]');
             if (target) {
@@ -307,22 +533,60 @@
                 if (isGenerationActionControl(target) && isLockedActionControl(target)) {
                     window.bbaiOpenUpgradeModal('upgrade_required', { source: 'upgrade-modal', trigger: target });
                 } else {
-                    window.bbaiOpenUpgradeModal();
+                    window.bbaiOpenUpgradeModal('default', { source: 'upgrade-modal', trigger: target });
                 }
             }
         }, true);
 
-        // Close on backdrop click
         document.addEventListener('click', function(e) {
             if (e.target && e.target.id === 'bbai-upgrade-modal') {
                 window.bbaiCloseUpgradeModal();
+                return;
             }
-        });
 
-        // Close on escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
+            var closeTrigger = e.target && e.target.closest('[data-bbai-upgrade-close="1"]');
+            if (closeTrigger) {
+                e.preventDefault();
                 window.bbaiCloseUpgradeModal();
+                return;
+            }
+
+            var compareTrigger = e.target && e.target.closest('[data-bbai-upgrade-toggle-plans="1"]');
+            if (compareTrigger) {
+                e.preventDefault();
+                var modal = resolveUpgradeModalElement();
+                updatePlanComparisonState(modal, true);
+                window.setTimeout(function() {
+                    focusUpgradeModalTarget(modal);
+                }, 0);
+                return;
+            }
+
+            var backTrigger = e.target && e.target.closest('[data-bbai-upgrade-back="1"]');
+            if (backTrigger) {
+                e.preventDefault();
+                var modalFromBack = resolveUpgradeModalElement();
+                updatePlanComparisonState(modalFromBack, false);
+                window.setTimeout(function() {
+                    focusUpgradeModalTarget(modalFromBack);
+                }, 0);
+                return;
+            }
+
+            var agencyTrigger = e.target && e.target.closest('[data-bbai-upgrade-toggle-agency="1"]');
+            if (agencyTrigger) {
+                e.preventDefault();
+                var modalFromAgency = resolveUpgradeModalElement();
+                var shouldExpandAgency = agencyTrigger.getAttribute('aria-expanded') !== 'true';
+                updateAgencyComparisonState(modalFromAgency, shouldExpandAgency);
+                if (shouldExpandAgency) {
+                    window.setTimeout(function() {
+                        var agencyCta = modalFromAgency && modalFromAgency.querySelector('[data-bbai-upgrade-agency-panel] .bbai-pricing-card__btn');
+                        if (agencyCta && typeof agencyCta.focus === 'function') {
+                            agencyCta.focus();
+                        }
+                    }, 0);
+                }
             }
         });
 

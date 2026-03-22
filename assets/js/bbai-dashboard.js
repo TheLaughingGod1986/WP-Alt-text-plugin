@@ -25,11 +25,41 @@ function bbaiString(value) {
 }
 
 function bbaiGetUsageObject() {
-    return (window.BBAI_DASH && (window.BBAI_DASH.initialUsage || window.BBAI_DASH.usage)) ||
+    var root = document.querySelector('[data-bbai-dashboard-root="1"]');
+    var rootUsage = null;
+    var globalUsage = (window.BBAI_DASH && (window.BBAI_DASH.initialUsage || window.BBAI_DASH.usage)) ||
         (window.BBAI_DASHBOARD && window.BBAI_DASHBOARD.usage) ||
         (window.BBAI && window.BBAI.usage) ||
         (window.BBAI_UPGRADE && window.BBAI_UPGRADE.usage) ||
         null;
+
+    if (root) {
+        var rootUsed = parseInt(root.getAttribute('data-bbai-credits-used') || '0', 10);
+        var rootLimit = parseInt(root.getAttribute('data-bbai-credits-total') || '0', 10);
+        var rootRemaining = parseInt(root.getAttribute('data-bbai-credits-remaining') || '0', 10);
+
+        if (!isNaN(rootUsed) || !isNaN(rootLimit) || !isNaN(rootRemaining)) {
+            rootUsage = {
+                used: isNaN(rootUsed) ? 0 : rootUsed,
+                limit: isNaN(rootLimit) || rootLimit <= 0 ? 50 : rootLimit,
+                remaining: isNaN(rootRemaining) ? Math.max(0, (isNaN(rootLimit) || rootLimit <= 0 ? 50 : rootLimit) - (isNaN(rootUsed) ? 0 : rootUsed)) : rootRemaining,
+                reset_line: root.getAttribute('data-bbai-credits-reset-line') || ''
+            };
+        }
+    }
+
+    if (rootUsage && globalUsage && typeof globalUsage === 'object') {
+        var rootLimitValue = parseInt(rootUsage.limit, 10) || 0;
+        var globalLimitValue = parseInt(globalUsage.limit, 10) || 0;
+
+        if (rootLimitValue > 0 && globalLimitValue > 0 && rootLimitValue !== globalLimitValue) {
+            return rootLimitValue > globalLimitValue ? rootUsage : globalUsage;
+        }
+
+        return Object.assign({}, rootUsage, globalUsage);
+    }
+
+    return rootUsage || globalUsage;
 }
 
 function bbaiGetUsageFromDom() {
@@ -3210,13 +3240,14 @@ bbaiRunWithJQuery(function($) {
         return {
             line: data && data.isPremium
                 ? sprintf(
-                    __('Currently using %s%% of Growth', 'beepbeep-ai-alt-text-generator'),
+                    __('You are using %s%% of Growth capacity this month.', 'beepbeep-ai-alt-text-generator'),
                     displayPercent
                 )
                 : sprintf(
-                    __('At your current usage, you would use %s%% of Growth', 'beepbeep-ai-alt-text-generator'),
+                    __('On Growth, this usage would be %s%% of monthly capacity.', 'beepbeep-ai-alt-text-generator'),
                     displayPercent
                 ),
+            display: displayPercent,
             percent: usagePercent,
             indicatorPercent: usagePercent > 0 ? Math.min(99.5, Math.max(0.5, usagePercent)) : 0
         };
@@ -3229,11 +3260,42 @@ bbaiRunWithJQuery(function($) {
     }
 
     function getRemainingPlanLine(data) {
+        var remaining = Math.max(0, parseCount(data && data.creditsRemaining));
         return sprintf(
-            __('%1$s remaining on the %2$s', 'beepbeep-ai-alt-text-generator'),
-            formatCount(data && data.creditsRemaining),
-            getPlanLabel(data)
+            _n('%s remaining', '%s remaining', remaining, 'beepbeep-ai-alt-text-generator'),
+            formatCount(remaining)
         );
+    }
+
+    function getPlanResetLine(data) {
+        var daysUntilReset = parseCount(data && data.daysUntilReset);
+
+        if (daysUntilReset >= 0) {
+            return buildUsageResetCopy(daysUntilReset);
+        }
+
+        if (data && data.creditsResetLine) {
+            return String(data.creditsResetLine).replace(/^Credits\s+/i, '');
+        }
+
+        return __('Resets monthly', 'beepbeep-ai-alt-text-generator');
+    }
+
+    function getCompactPlanResetLine(data) {
+        var daysUntilReset = parseCount(data && data.daysUntilReset);
+
+        if (daysUntilReset >= 0) {
+            return sprintf(
+                _n('%s day', '%s days', daysUntilReset, 'beepbeep-ai-alt-text-generator'),
+                formatCount(daysUntilReset)
+            );
+        }
+
+        if (data && data.creditsResetLine) {
+            return String(data.creditsResetLine).replace(/^Credits\s+/i, '').replace(/^Resets\s+/i, '');
+        }
+
+        return __('Monthly', 'beepbeep-ai-alt-text-generator');
     }
 
     function getUpgradeValueMinutesCopy(data) {
@@ -3245,6 +3307,45 @@ bbaiRunWithJQuery(function($) {
         );
     }
 
+    function getCreditAlertCopy(data) {
+        var remaining = Math.max(0, parseCount(data && data.creditsRemaining));
+        var resetLine = data && data.creditsResetLine ? String(data.creditsResetLine) : '';
+
+        if (!data || data.isPremium) {
+            return null;
+        }
+
+        if (remaining <= 0) {
+            return {
+                modifier: 'danger',
+                title: __('No credits left', 'beepbeep-ai-alt-text-generator'),
+                message: __('AI generation is paused until your credits reset. Upgrade to keep optimizing images and automate future uploads.', 'beepbeep-ai-alt-text-generator'),
+                ctaLabel: __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
+                meta: resetLine
+            };
+        }
+
+        if (remaining <= 5) {
+            return {
+                modifier: 'warning',
+                title: __('You are running low on credits', 'beepbeep-ai-alt-text-generator'),
+                message: sprintf(
+                    _n(
+                        'You can optimize %s more image this month. Upgrade before new uploads start building up.',
+                        'You can optimize %s more images this month. Upgrade before new uploads start building up.',
+                        remaining,
+                        'beepbeep-ai-alt-text-generator'
+                    ),
+                    formatCount(remaining)
+                ),
+                ctaLabel: __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
+                meta: resetLine
+            };
+        }
+
+        return null;
+    }
+
     function getDashboardRoot() {
         return document.querySelector('[data-bbai-dashboard-root="1"]');
     }
@@ -3253,7 +3354,7 @@ bbaiRunWithJQuery(function($) {
         var safeDaysLeft = Math.max(0, parseCount(daysLeft));
 
         return sprintf(
-            _n('resets in %s day', 'resets in %s days', safeDaysLeft, 'beepbeep-ai-alt-text-generator'),
+            _n('Resets in %s day', 'Resets in %s days', safeDaysLeft, 'beepbeep-ai-alt-text-generator'),
             formatCount(safeDaysLeft)
         );
     }
@@ -3290,25 +3391,40 @@ bbaiRunWithJQuery(function($) {
 
     function getDashboardData() {
         var root = getDashboardRoot();
+        var hero = document.querySelector('[data-bbai-dashboard-hero="1"]');
         if (!root) {
             return null;
         }
 
+        var missing = parseCount(root.getAttribute('data-bbai-missing-count'));
+        var weak = parseCount(root.getAttribute('data-bbai-weak-count'));
+        var optimized = parseCount(root.getAttribute('data-bbai-optimized-count'));
+        var total = parseCount(root.getAttribute('data-bbai-total-count'));
+        var hasScanResultsAttr = root.getAttribute('data-bbai-has-scan-results');
+
         return {
             root: root,
-            missing: parseCount(root.getAttribute('data-bbai-missing-count')),
-            weak: parseCount(root.getAttribute('data-bbai-weak-count')),
-            optimized: parseCount(root.getAttribute('data-bbai-optimized-count')),
-            total: parseCount(root.getAttribute('data-bbai-total-count')),
+            missing: missing,
+            weak: weak,
+            optimized: optimized,
+            total: total,
             generated: parseCount(root.getAttribute('data-bbai-generated-count')),
             creditsUsed: parseCount(root.getAttribute('data-bbai-credits-used')),
             creditsTotal: Math.max(1, parseCount(root.getAttribute('data-bbai-credits-total'))),
             creditsRemaining: parseCount(root.getAttribute('data-bbai-credits-remaining')),
             creditsResetLine: root.getAttribute('data-bbai-credits-reset-line') || '',
             isPremium: root.getAttribute('data-bbai-is-premium') === '1',
+            hasScanResults: hasScanResultsAttr === null
+                ? (total > 0 || missing > 0 || weak > 0 || optimized > 0)
+                : hasScanResultsAttr === '1',
+            daysUntilReset: hero ? parseCount(hero.getAttribute('data-bbai-banner-days-left')) : 0,
             lastScanTs: parseCount(root.getAttribute('data-bbai-last-scan-ts')),
             libraryUrl: root.getAttribute('data-bbai-library-url') || '',
-            missingLibraryUrl: root.getAttribute('data-bbai-missing-library-url') || ''
+            missingLibraryUrl: root.getAttribute('data-bbai-missing-library-url') || '',
+            needsReviewLibraryUrl: root.getAttribute('data-bbai-needs-review-library-url') || '',
+            settingsUrl: root.getAttribute('data-bbai-settings-url') || '',
+            usageUrl: root.getAttribute('data-bbai-usage-url') || '',
+            guideUrl: root.getAttribute('data-bbai-guide-url') || ''
         };
     }
 
@@ -3345,6 +3461,7 @@ bbaiRunWithJQuery(function($) {
         var generated = stats.generated !== undefined ? parseCount(stats.generated) : currentGenerated;
         var currentLastScanTs = parseCount(root.getAttribute('data-bbai-last-scan-ts'));
         var lastScanTs = currentLastScanTs;
+        var hasScanResults = total > 0 || missing > 0 || weak > 0 || optimized > 0;
 
         if (stats.scanned_at !== undefined) {
             lastScanTs = parseCount(stats.scanned_at);
@@ -3357,6 +3474,7 @@ bbaiRunWithJQuery(function($) {
         root.setAttribute('data-bbai-optimized-count', String(optimized));
         root.setAttribute('data-bbai-total-count', String(total));
         root.setAttribute('data-bbai-generated-count', String(generated));
+        root.setAttribute('data-bbai-has-scan-results', hasScanResults ? '1' : '0');
         root.setAttribute('data-bbai-last-scan-ts', String(lastScanTs));
     }
 
@@ -3458,30 +3576,30 @@ bbaiRunWithJQuery(function($) {
         days = Math.floor(diffMs / 86400000);
 
         if (minutes < 1) {
-            return __('Last scan: just now', 'beepbeep-ai-alt-text-generator');
+            return __('Last scan just now', 'beepbeep-ai-alt-text-generator');
         }
         if (minutes < 60) {
             return sprintf(
-                _n('Last scan: %d minute ago', 'Last scan: %d minutes ago', minutes, 'beepbeep-ai-alt-text-generator'),
+                _n('Last scan %d minute ago', 'Last scan %d minutes ago', minutes, 'beepbeep-ai-alt-text-generator'),
                 minutes
             );
         }
         if (hours < 24) {
             return sprintf(
-                _n('Last scan: %d hour ago', 'Last scan: %d hours ago', hours, 'beepbeep-ai-alt-text-generator'),
+                _n('Last scan %d hour ago', 'Last scan %d hours ago', hours, 'beepbeep-ai-alt-text-generator'),
                 hours
             );
         }
         if (days < 7) {
             return sprintf(
-                _n('Last scan: %d day ago', 'Last scan: %d days ago', days, 'beepbeep-ai-alt-text-generator'),
+                _n('Last scan %d day ago', 'Last scan %d days ago', days, 'beepbeep-ai-alt-text-generator'),
                 days
             );
         }
 
         try {
             return sprintf(
-                __('Last scan: %s', 'beepbeep-ai-alt-text-generator'),
+                __('Last scan %s', 'beepbeep-ai-alt-text-generator'),
                 new Date(scanTs).toLocaleDateString(undefined, {
                     year: 'numeric',
                     month: 'long',
@@ -3494,7 +3612,260 @@ bbaiRunWithJQuery(function($) {
     }
 
     function hasScanResults(data) {
-        return !!(data && (data.total > 0 || data.missing > 0 || data.weak > 0 || data.optimized > 0));
+        if (!data) {
+            return false;
+        }
+
+        if (typeof data.hasScanResults === 'boolean') {
+            return data.hasScanResults;
+        }
+
+        return !!(data.total > 0 || data.missing > 0 || data.weak > 0 || data.optimized > 0);
+    }
+
+    function getDashboardHeroIconMarkup(tone) {
+        if (tone === 'setup') {
+            return '<svg viewBox="0 0 24 24" fill="none" focusable="false"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8"></circle><path d="M20 20L16.2 16.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>';
+        }
+
+        if (tone === 'attention') {
+            return '<svg viewBox="0 0 24 24" fill="none" focusable="false"><path d="M12 3L21 19H3L12 3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path><path d="M12 9V13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path><circle cx="12" cy="17" r="1" fill="currentColor"></circle></svg>';
+        }
+
+        if (tone === 'paused') {
+            return '<svg viewBox="0 0 24 24" fill="none" focusable="false"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"></circle><path d="M10 9V15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path><path d="M14 9V15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>';
+        }
+
+        return '<svg viewBox="0 0 24 24" fill="none" focusable="false"><path d="M22 11.08V12A10 10 0 1 1 12 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path><path d="M22 4L12 14.01L9 11.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+    }
+
+    function getDashboardHeroStateModel(data) {
+        var missing = Math.max(0, parseCount(data && data.missing));
+        var weak = Math.max(0, parseCount(data && data.weak));
+        var total = Math.max(0, parseCount(data && data.total));
+        var creditsRemaining = Math.max(0, parseCount(data && data.creditsRemaining));
+        var usagePercent = Math.min(100, Math.max(0, Math.round((parseCount(data && data.creditsUsed) / Math.max(1, parseCount(data && data.creditsTotal))) * 100)));
+        var isHealthy = missing === 0 && weak === 0 && total > 0;
+        var isLowCredits = creditsRemaining > 0 && creditsRemaining < 10;
+        var isOutOfCredits = creditsRemaining === 0;
+        var isFirstRun = !hasScanResults(data) || total === 0;
+        var libraryUrl = data && data.libraryUrl ? String(data.libraryUrl) : '#';
+        var usageUrl = data && data.usageUrl ? String(data.usageUrl) : '#';
+        var guideUrl = data && data.guideUrl ? String(data.guideUrl) : '#';
+        var settingsUrl = data && data.settingsUrl ? String(data.settingsUrl) : '#';
+
+        function createAction(label, helper, options) {
+            return $.extend({
+                label: label || '',
+                helper: helper || '',
+                href: '#',
+                removeAttributes: ['data-action', 'data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source', 'aria-describedby']
+            }, options || {});
+        }
+
+        var model = {
+            state: 'healthy-free',
+            tone: 'healthy',
+            headline: '',
+            subtext: '',
+            nextStep: '',
+            workflowHint: '',
+            note: '',
+            usagePercent: usagePercent,
+            primaryAction: createAction('', '', {}),
+            secondaryAction: null,
+            tertiaryAction: null
+        };
+
+        if (isFirstRun) {
+            model.state = 'first-run';
+            model.tone = 'setup';
+            model.headline = __('Get started with your media library', 'beepbeep-ai-alt-text-generator');
+            model.subtext = __('Scan your library to find images missing ALT text and generate descriptions faster.', 'beepbeep-ai-alt-text-generator');
+            model.nextStep = __('Start by scanning your media library.', 'beepbeep-ai-alt-text-generator');
+            model.primaryAction = createAction(
+                __('Scan Media Library', 'beepbeep-ai-alt-text-generator'),
+                '',
+                {
+                    bbaiAction: 'scan-opportunity'
+                }
+            );
+            model.secondaryAction = createAction(
+                __('Learn how it works', 'beepbeep-ai-alt-text-generator'),
+                '',
+                {
+                    href: guideUrl
+                }
+            );
+            return model;
+        }
+
+        if (isOutOfCredits) {
+            model.state = 'out-of-credits';
+            model.tone = 'paused';
+            model.headline = __("You've used all credits this cycle", 'beepbeep-ai-alt-text-generator');
+            model.subtext = __('ALT generation is paused until your allowance resets or you upgrade.', 'beepbeep-ai-alt-text-generator');
+            model.nextStep = __('Upgrade to continue optimizing new images.', 'beepbeep-ai-alt-text-generator');
+            model.primaryAction = createAction(
+                __('Upgrade', 'beepbeep-ai-alt-text-generator'),
+                '',
+                {
+                    action: 'show-upgrade-modal'
+                }
+            );
+            model.secondaryAction = createAction(
+                __('Review usage', 'beepbeep-ai-alt-text-generator'),
+                '',
+                {
+                    href: usageUrl
+                }
+            );
+            model.tertiaryAction = createAction(
+                __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+                '',
+                {
+                    href: libraryUrl
+                }
+            );
+            return model;
+        }
+
+        if (isLowCredits) {
+            model.state = 'low-credits';
+            model.tone = 'attention';
+            model.headline = __('You’re running low on credits', 'beepbeep-ai-alt-text-generator');
+            model.subtext = sprintf(
+                _n(
+                    'You have %s optimization left this cycle.',
+                    'You have %s optimizations left this cycle.',
+                    creditsRemaining,
+                    'beepbeep-ai-alt-text-generator'
+                ),
+                formatCount(creditsRemaining)
+            );
+
+            if (data && data.isPremium) {
+                model.nextStep = __('Review your usage and plan ahead.', 'beepbeep-ai-alt-text-generator');
+                model.primaryAction = createAction(
+                    __('Review usage', 'beepbeep-ai-alt-text-generator'),
+                    '',
+                    {
+                        href: usageUrl
+                    }
+                );
+                model.secondaryAction = createAction(
+                    __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+                    '',
+                    {
+                        href: libraryUrl
+                    }
+                );
+            } else {
+                model.nextStep = __('Upgrade to keep optimizing without interruption.', 'beepbeep-ai-alt-text-generator');
+                model.primaryAction = createAction(
+                    __('Upgrade', 'beepbeep-ai-alt-text-generator'),
+                    '',
+                    {
+                        action: 'show-upgrade-modal'
+                    }
+                );
+                model.secondaryAction = createAction(
+                    __('Review usage', 'beepbeep-ai-alt-text-generator'),
+                    '',
+                    {
+                        href: usageUrl
+                    }
+                );
+            }
+            return model;
+        }
+
+        if (!isHealthy) {
+            model.state = 'incomplete';
+            model.tone = 'attention';
+            model.headline = __('Your library needs attention', 'beepbeep-ai-alt-text-generator');
+            model.subtext = missing > 0
+                ? __('Some images are still missing ALT text.', 'beepbeep-ai-alt-text-generator')
+                : __('Some descriptions still need review.', 'beepbeep-ai-alt-text-generator');
+            model.nextStep = missing > 0
+                ? __('Fix the remaining images to reach full coverage.', 'beepbeep-ai-alt-text-generator')
+                : __('Review the remaining descriptions to reach full coverage.', 'beepbeep-ai-alt-text-generator');
+            model.secondaryAction = createAction(
+                __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+                '',
+                {
+                    href: missing > 0
+                        ? (data && data.missingLibraryUrl ? data.missingLibraryUrl : libraryUrl)
+                        : (data && data.needsReviewLibraryUrl ? data.needsReviewLibraryUrl : libraryUrl)
+                }
+            );
+            if (missing > 0) {
+                model.primaryAction = createAction(
+                    __('Fix missing ALT text', 'beepbeep-ai-alt-text-generator'),
+                    '',
+                    {
+                        action: 'generate-missing',
+                        bbaiAction: 'generate_missing'
+                    }
+                );
+            } else {
+                model.primaryAction = createAction(
+                    __('Review ALT text', 'beepbeep-ai-alt-text-generator'),
+                    '',
+                    {
+                        action: 'show-generate-alt-modal'
+                    }
+                );
+            }
+            return model;
+        }
+
+        if (data && data.isPremium) {
+            model.state = 'healthy-pro';
+            model.tone = 'healthy';
+            model.headline = __('Your library is optimized', 'beepbeep-ai-alt-text-generator');
+            model.subtext = __('All current images include ALT text.', 'beepbeep-ai-alt-text-generator');
+            model.nextStep = __('Auto-optimization is ready to cover future uploads.', 'beepbeep-ai-alt-text-generator');
+            model.note = __('Review new uploads or adjust automation in Settings whenever you need to.', 'beepbeep-ai-alt-text-generator');
+            model.primaryAction = createAction(
+                __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+                '',
+                {
+                    href: libraryUrl
+                }
+            );
+            model.secondaryAction = createAction(
+                __('Review usage', 'beepbeep-ai-alt-text-generator'),
+                '',
+                {
+                    href: usageUrl
+                }
+            );
+            return model;
+        }
+
+        model.state = 'healthy-free';
+        model.tone = 'healthy';
+        model.headline = __('Your library is optimized', 'beepbeep-ai-alt-text-generator');
+        model.subtext = __('All current images include ALT text.', 'beepbeep-ai-alt-text-generator');
+        model.nextStep = __('Enable auto-optimization to cover future uploads automatically.', 'beepbeep-ai-alt-text-generator');
+        model.note = __('Auto-optimization is available on Growth.', 'beepbeep-ai-alt-text-generator');
+        model.primaryAction = createAction(
+            __('Enable auto-optimization', 'beepbeep-ai-alt-text-generator'),
+            '',
+            {
+                action: 'show-upgrade-modal'
+            }
+        );
+        model.secondaryAction = createAction(
+            __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+            '',
+            {
+                href: libraryUrl
+            }
+        );
+
+        return model;
     }
 
     function formatMonthlyProgressCopy(count) {
@@ -3634,6 +4005,12 @@ bbaiRunWithJQuery(function($) {
         );
     }
 
+    function escapeDashboardHtml(text) {
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
     function setInteractiveControl(node, config) {
         if (!node || !config) {
             return;
@@ -3708,24 +4085,10 @@ bbaiRunWithJQuery(function($) {
             return;
         }
 
-        var linkRow = hero.querySelector('.bbai-dashboard-hero-actions__links');
-        var libraryLink = hero.querySelector('[data-bbai-hero-library-cta]');
-        var librarySeparator = hero.querySelector('[data-bbai-hero-library-separator]');
-        var secondaryLink = hero.querySelector('[data-bbai-hero-secondary-link]');
-        var secondarySeparator = hero.querySelector('[data-bbai-hero-secondary-separator]');
-        var rescanLink = hero.querySelector('[data-bbai-hero-rescan-cta]');
-        var showLibrary = !!(libraryLink && !libraryLink.hidden);
-        var showSecondary = !!(secondaryLink && !secondaryLink.hidden);
-        var showRescan = !!(rescanLink && !rescanLink.hidden);
-
-        if (linkRow) {
-            linkRow.hidden = !(showLibrary || showSecondary || showRescan);
-        }
-        if (librarySeparator) {
-            librarySeparator.hidden = !(showLibrary && (showSecondary || showRescan));
-        }
-        if (secondarySeparator) {
-            secondarySeparator.hidden = !(showSecondary && showRescan);
+        var tertiaryItem = hero.querySelector('[data-bbai-hero-tertiary-item]');
+        var tertiaryLink = hero.querySelector('[data-bbai-hero-secondary-link]');
+        if (tertiaryItem) {
+            tertiaryItem.hidden = !(tertiaryLink && !tertiaryLink.hidden);
         }
     }
 
@@ -3735,129 +4098,119 @@ bbaiRunWithJQuery(function($) {
             return;
         }
 
+        var model = getDashboardHeroStateModel(data);
+        if (!model) {
+            return;
+        }
+
+        var iconNode = hero.querySelector('[data-bbai-hero-icon]');
         var headline = hero.querySelector('[data-bbai-hero-headline]');
         var subtext = hero.querySelector('[data-bbai-hero-subtext]');
+        var nextStepNode = hero.querySelector('[data-bbai-hero-next-step]');
+        var workflowRow = hero.querySelector('[data-bbai-hero-workflow-row]');
+        var workflowNode = hero.querySelector('[data-bbai-hero-workflow]');
+        var noteNode = hero.querySelector('[data-bbai-hero-note]');
+        var primaryItem = hero.querySelector('[data-bbai-hero-primary-item]');
+        var secondaryItem = hero.querySelector('[data-bbai-hero-secondary-item]');
+        var tertiaryItem = hero.querySelector('[data-bbai-hero-tertiary-item]');
         var generatorCta = hero.querySelector('[data-bbai-hero-generator-cta]');
         var libraryCta = hero.querySelector('[data-bbai-hero-library-cta]');
         var secondaryLink = hero.querySelector('[data-bbai-hero-secondary-link]');
-        var actionHelper = hero.querySelector('[data-bbai-hero-action-helper]');
-        var rescanCta = hero.querySelector('[data-bbai-hero-rescan-cta]');
+        var primaryHelperNode = hero.querySelector('[data-bbai-hero-primary-helper]');
+        var secondaryHelperNode = hero.querySelector('[data-bbai-hero-secondary-helper]');
+        var tertiaryHelperNode = hero.querySelector('[data-bbai-hero-tertiary-helper]');
         var usageLine = hero.querySelector('[data-bbai-banner-usage-line]');
         var progressFill = hero.querySelector('[data-bbai-banner-progress]');
-        var heroHeadline = '';
-        var heroSubtext = '';
-        var generatorConfig = {
-            label: __('Generate ALT Text', 'beepbeep-ai-alt-text-generator'),
-            action: 'show-generate-alt-modal',
-            removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
-        };
-        var libraryConfig = {
-            label: __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
-            href: data.libraryUrl,
-            removeAttributes: ['data-bbai-regenerate-scope', 'data-bbai-generation-source']
-        };
-        var secondaryLinkConfig = {
-            label: '',
-            href: data.libraryUrl,
-            removeAttributes: ['data-action', 'data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
-        };
-        var rescanConfig = {
-            label: __('Rescan library', 'beepbeep-ai-alt-text-generator'),
-            bbaiAction: 'scan-opportunity',
-            removeAttributes: ['data-bbai-regenerate-scope', 'data-bbai-generation-source']
-        };
-        var helperCopy = '';
-        var showLibraryButton = false;
-        var showRescanLink = false;
-        var isFirstScanExperience = !hasScanResults(data);
 
-        if (isFirstScanExperience) {
-            heroHeadline = __('Welcome to BeepBeep AI', 'beepbeep-ai-alt-text-generator');
-            heroSubtext = __('Start by scanning your media library to find images missing ALT text.', 'beepbeep-ai-alt-text-generator');
-            generatorConfig.label = __('Scan Library', 'beepbeep-ai-alt-text-generator');
-            generatorConfig.bbaiAction = 'scan-opportunity';
-            delete generatorConfig.action;
-        } else if (data.missing > 0) {
-            heroHeadline = sprintf(
-                _n('%s image needs ALT text', '%s images need ALT text', data.missing, 'beepbeep-ai-alt-text-generator'),
-                formatCount(data.missing)
-            );
-            heroSubtext = _n(
-                'BeepBeep AI can automatically generate ALT text for the missing image in your media library.',
-                'BeepBeep AI can automatically generate ALT text for missing images in your media library.',
-                data.missing,
-                'beepbeep-ai-alt-text-generator'
-            );
-            helperCopy = sprintf(
-                _n('Uses %s credit', 'Uses %s credits', data.missing, 'beepbeep-ai-alt-text-generator'),
-                formatCount(data.missing)
-            );
-            secondaryLinkConfig.label = __('Review manually in ALT Library', 'beepbeep-ai-alt-text-generator');
-            secondaryLinkConfig.href = data.missingLibraryUrl || data.libraryUrl;
-            showRescanLink = true;
-        } else if (data.weak > 0) {
-            heroHeadline = __('Some ALT descriptions could be improved.', 'beepbeep-ai-alt-text-generator');
-            heroSubtext = sprintf(
-                _n('%s image may benefit from improved descriptions.', '%s images may benefit from improved descriptions.', data.weak, 'beepbeep-ai-alt-text-generator'),
-                formatCount(data.weak)
-            );
-            generatorConfig.label = __('Improve ALT Text', 'beepbeep-ai-alt-text-generator');
-            secondaryLinkConfig.label = __('Open ALT Library', 'beepbeep-ai-alt-text-generator');
-            secondaryLinkConfig.href = data.libraryUrl;
-            showRescanLink = true;
-        } else {
-            heroHeadline = __('Your media library looks healthy', 'beepbeep-ai-alt-text-generator');
-            heroSubtext = __('All images currently have ALT text.', 'beepbeep-ai-alt-text-generator');
-            generatorConfig.label = __('Scan Media Library', 'beepbeep-ai-alt-text-generator');
-            generatorConfig.bbaiAction = 'scan-opportunity';
-            delete generatorConfig.action;
-            showLibraryButton = true;
+        function renderAction(itemNode, controlNode, helperNode, helperId, actionConfig) {
+            var config;
+
+            if (!itemNode || !controlNode) {
+                return;
+            }
+
+            if (!actionConfig || !actionConfig.label) {
+                itemNode.hidden = true;
+                controlNode.hidden = true;
+                if (helperNode) {
+                    helperNode.hidden = true;
+                    helperNode.textContent = '';
+                }
+                return;
+            }
+
+            config = $.extend(true, {}, actionConfig);
+            controlNode.hidden = false;
+
+            if (helperNode) {
+                helperNode.textContent = actionConfig.helper || '';
+                helperNode.hidden = !(actionConfig.helper || '');
+            }
+
+            if (actionConfig.helper && helperId) {
+                config.attributes = $.extend({}, config.attributes || {}, {
+                    'aria-describedby': helperId
+                });
+            }
+
+            setInteractiveControl(controlNode, config);
+            itemNode.hidden = false;
         }
 
+        hero.setAttribute('data-state', model.state || 'healthy-free');
+        hero.setAttribute('data-tone', model.tone || 'healthy');
+        hero.setAttribute('data-bbai-banner-used', String(Math.max(0, parseCount(data.creditsUsed))));
+        hero.setAttribute('data-bbai-banner-limit', String(Math.max(1, parseCount(data.creditsTotal))));
+        hero.setAttribute('data-bbai-banner-remaining', String(Math.max(0, parseCount(data.creditsRemaining))));
+        hero.setAttribute('data-bbai-banner-missing-count', String(Math.max(0, parseCount(data.missing))));
+        hero.setAttribute('data-bbai-banner-weak-count', String(Math.max(0, parseCount(data.weak))));
+
+        if (iconNode) {
+            iconNode.innerHTML = getDashboardHeroIconMarkup(model.tone || 'healthy');
+        }
         if (headline) {
-            headline.textContent = heroHeadline;
+            headline.textContent = model.headline || '';
         }
         if (subtext) {
-            subtext.textContent = heroSubtext;
+            subtext.textContent = model.subtext || '';
         }
-        if (generatorCta) {
-            setInteractiveControl(generatorCta, generatorConfig);
+        if (nextStepNode) {
+            nextStepNode.textContent = model.nextStep || '';
+            nextStepNode.hidden = !model.nextStep;
         }
-        if (libraryCta) {
-            setInteractiveControl(libraryCta, libraryConfig);
-            libraryCta.hidden = !showLibraryButton;
+        if (workflowRow) {
+            workflowRow.hidden = !model.workflowHint;
         }
-        if (actionHelper) {
-            actionHelper.textContent = helperCopy;
-            actionHelper.hidden = !helperCopy;
+        if (workflowNode) {
+            workflowNode.textContent = model.workflowHint || '';
         }
-        if (secondaryLink) {
-            if (secondaryLinkConfig.label) {
-                setInteractiveControl(secondaryLink, secondaryLinkConfig);
-                secondaryLink.hidden = false;
-            } else {
-                secondaryLink.hidden = true;
-            }
+        if (noteNode) {
+            noteNode.textContent = model.note || '';
+            noteNode.hidden = !model.note;
         }
-        if (rescanCta) {
-            if (showRescanLink) {
-                setInteractiveControl(rescanCta, rescanConfig);
-                rescanCta.hidden = false;
-            } else {
-                rescanCta.hidden = true;
-            }
-        }
+
+        renderAction(primaryItem, generatorCta, primaryHelperNode, 'bbai-dashboard-hero-primary-helper', model.primaryAction);
+        renderAction(secondaryItem, libraryCta, secondaryHelperNode, 'bbai-dashboard-hero-secondary-helper', model.secondaryAction);
+        renderAction(tertiaryItem, secondaryLink, tertiaryHelperNode, 'bbai-dashboard-hero-tertiary-helper', model.tertiaryAction);
+
         syncHeroLinkRow(hero);
 
         if (usageLine) {
-            var resetCopy = getUsageResetCopy(usageLine);
-            usageLine.innerHTML = '<span class="bbai-dashboard-hero__usage-primary"><span class="bbai-number-animate bbai-banner-usage-used">' + formatCount(data.creditsUsed) + '</span> / <span class="bbai-number-animate bbai-banner-usage-limit">' + formatCount(data.creditsTotal) + '</span> AI generations used this month</span><span class="bbai-dashboard-hero__usage-progress-copy" data-bbai-banner-progress-copy hidden>' + (resetCopy || '') + '</span>';
+            var resetCopy = getPlanResetLine(data) || getUsageResetCopy(usageLine);
+            usageLine.setAttribute('data-bbai-reset-copy', resetCopy || '');
+            usageLine.innerHTML =
+                '<span class="bbai-dashboard-hero__usage-pill">' + escapeDashboardHtml(getPlanLabel(data)) + '</span>' +
+                '<span class="bbai-dashboard-hero__usage-primary">' + escapeDashboardHtml(getRemainingPlanLine(data)) + '</span>' +
+                (resetCopy ? '<span class="bbai-dashboard-hero__usage-secondary">' + escapeDashboardHtml(resetCopy) + '</span>' : '');
         }
 
         if (progressFill) {
-            var usagePercent = Math.min(100, Math.max(0, (data.creditsUsed / Math.max(1, data.creditsTotal)) * 100));
+            var usagePercent = model.usagePercent;
             progressFill.setAttribute('data-bbai-banner-progress-target', String(Math.round(usagePercent)));
             animateLinearProgress(progressFill, usagePercent, 400, 40);
+            if (progressFill.parentNode && typeof progressFill.parentNode.setAttribute === 'function') {
+                progressFill.parentNode.setAttribute('aria-valuenow', String(Math.round(usagePercent)));
+            }
         }
     }
 
@@ -4063,9 +4416,12 @@ bbaiRunWithJQuery(function($) {
 
         var reviewDesc = document.querySelector('[data-bbai-workflow-review-desc]');
         var reviewCta = document.querySelector('[data-bbai-workflow-review-cta]');
+        var reviewDescription = hasScanResults(data)
+            ? __('Review, edit, or improve generated descriptions.', 'beepbeep-ai-alt-text-generator')
+            : __('Review, edit, or improve generated descriptions after scanning.', 'beepbeep-ai-alt-text-generator');
 
         if (reviewDesc) {
-            reviewDesc.textContent = __('Review and edit ALT descriptions manually.', 'beepbeep-ai-alt-text-generator');
+            reviewDesc.textContent = reviewDescription;
         }
 
         if (reviewCta) {
@@ -4075,6 +4431,397 @@ bbaiRunWithJQuery(function($) {
                 href: data.libraryUrl,
                 removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
             });
+        }
+    }
+
+    function getStatusCardSegmentColor(segmentKey, activeSegment) {
+        var palette = {
+            optimized: {
+                base: '#22c55e',
+                active: '#16a34a',
+                muted: '#d9f4e2'
+            },
+            weak: {
+                base: '#f59e0b',
+                active: '#d97706',
+                muted: '#fde7c4'
+            },
+            missing: {
+                base: '#ef4444',
+                active: '#dc2626',
+                muted: '#fee2e2'
+            }
+        };
+        var colors = palette[segmentKey] || {
+            base: '#e2e8f0',
+            active: '#cbd5e1',
+            muted: '#e2e8f0'
+        };
+
+        if (!activeSegment) {
+            return colors.base;
+        }
+
+        return activeSegment === segmentKey ? colors.active : colors.muted;
+    }
+
+    function getStatusCardDonutGradient(statusCoverage, activeSegment) {
+        var optimizedAngle;
+        var weakAngle;
+        var optimizedEnd;
+        var weakEnd;
+
+        if (!statusCoverage || statusCoverage.total <= 0) {
+            return 'conic-gradient(#e2e8f0 0deg 360deg)';
+        }
+
+        optimizedAngle = 360 * (statusCoverage.optimized / statusCoverage.total);
+        weakAngle = 360 * (statusCoverage.weak / statusCoverage.total);
+        optimizedEnd = Math.max(0, Math.min(360, optimizedAngle));
+        weakEnd = Math.max(optimizedEnd, Math.min(360, optimizedEnd + weakAngle));
+
+        return 'conic-gradient(' +
+            getStatusCardSegmentColor('optimized', activeSegment) + ' 0deg ' + optimizedEnd.toFixed(3) + 'deg, ' +
+            getStatusCardSegmentColor('weak', activeSegment) + ' ' + optimizedEnd.toFixed(3) + 'deg ' + weakEnd.toFixed(3) + 'deg, ' +
+            getStatusCardSegmentColor('missing', activeSegment) + ' ' + weakEnd.toFixed(3) + 'deg 360deg' +
+            ')';
+    }
+
+    function getStatusCardActiveSegment(statusCard) {
+        if (!statusCard) {
+            return '';
+        }
+
+        return String(statusCard.getAttribute('data-bbai-status-active-segment') || '');
+    }
+
+    function applyStatusCardDonutState(statusCard, statusCoverage) {
+        var donutNode = statusCard ? statusCard.querySelector('[data-bbai-status-donut]') : null;
+        var activeSegment = getStatusCardActiveSegment(statusCard);
+
+        if (!donutNode) {
+            return;
+        }
+
+        donutNode.style.background = getStatusCardDonutGradient(statusCoverage, activeSegment);
+        donutNode.setAttribute('data-bbai-status-active-segment', activeSegment);
+    }
+
+    function setStatusCardActiveSegment(statusCard, segmentKey) {
+        var activeSegment = String(segmentKey || '');
+        var dashboardData;
+
+        if (!statusCard) {
+            return;
+        }
+
+        if (activeSegment) {
+            statusCard.setAttribute('data-bbai-status-active-segment', activeSegment);
+        } else {
+            statusCard.removeAttribute('data-bbai-status-active-segment');
+        }
+
+        Array.prototype.forEach.call(statusCard.querySelectorAll('[data-bbai-status-row]'), function(row) {
+            row.classList.toggle(
+                'is-active',
+                !!activeSegment && String(row.getAttribute('data-bbai-status-segment') || '') === activeSegment
+            );
+        });
+
+        dashboardData = getDashboardData();
+        applyStatusCardDonutState(statusCard, getStatusCoverageData(dashboardData));
+    }
+
+    function getStatusCardFilterValue(segmentKey, fallbackFilter) {
+        if (fallbackFilter) {
+            return String(fallbackFilter);
+        }
+
+        if (segmentKey === 'optimized') {
+            return 'optimized';
+        }
+        if (segmentKey === 'weak') {
+            return 'needs_review';
+        }
+        if (segmentKey === 'missing') {
+            return 'missing';
+        }
+
+        return '';
+    }
+
+    function buildStatusCardFilterUrl(baseUrl, filterValue) {
+        var cleanBaseUrl = String(baseUrl || '');
+        var statusValue = String(filterValue || '');
+
+        if (!cleanBaseUrl) {
+            return '';
+        }
+
+        try {
+            var url = new URL(cleanBaseUrl, window.location.href);
+            if (statusValue) {
+                url.searchParams.set('status', statusValue);
+            } else {
+                url.searchParams.delete('status');
+            }
+            return url.toString();
+        } catch (error) {
+            if (!statusValue) {
+                return cleanBaseUrl;
+            }
+            return cleanBaseUrl + (cleanBaseUrl.indexOf('?') === -1 ? '?' : '&') + 'status=' + encodeURIComponent(statusValue);
+        }
+    }
+
+    function resolveStatusCardRowUrl(row) {
+        var dashboardData;
+        var targetUrl;
+        var segmentKey;
+        var filterValue;
+
+        if (!row) {
+            return '';
+        }
+
+        targetUrl = String(row.getAttribute('href') || row.getAttribute('data-bbai-status-url') || '');
+        if (!targetUrl) {
+            dashboardData = getDashboardData();
+            segmentKey = String(row.getAttribute('data-bbai-status-segment') || '');
+            filterValue = getStatusCardFilterValue(
+                segmentKey,
+                row.getAttribute('data-bbai-status-filter') || ''
+            );
+            targetUrl = buildStatusCardFilterUrl(dashboardData && dashboardData.libraryUrl, filterValue);
+        }
+
+        return targetUrl;
+    }
+
+    function navigateToStatusCardFilter(row) {
+        var targetUrl = resolveStatusCardRowUrl(row);
+
+        if (targetUrl) {
+            window.location.assign(targetUrl);
+        }
+    }
+
+    function setStatusCardRefreshLoading(button, isLoading) {
+        if (!button) {
+            return;
+        }
+
+        button.classList.toggle('is-loading', !!isLoading);
+        button.disabled = !!isLoading;
+        if (isLoading) {
+            button.setAttribute('aria-busy', 'true');
+        } else {
+            button.removeAttribute('aria-busy');
+        }
+        button.setAttribute(
+            'aria-label',
+            isLoading
+                ? __('Refreshing library scan', 'beepbeep-ai-alt-text-generator')
+                : __('Refresh library scan', 'beepbeep-ai-alt-text-generator')
+        );
+    }
+
+    function dispatchDashboardFeedbackMessage(type, message) {
+        if (!message) {
+            return;
+        }
+
+        try {
+            document.dispatchEvent(new CustomEvent('bbai:dashboard-feedback', {
+                detail: {
+                    type: type || 'info',
+                    message: message,
+                    duration: 4200
+                }
+            }));
+        } catch (error) {
+            // Ignore CustomEvent failures.
+        }
+    }
+
+    function handleStatusCardRefresh(event) {
+        var button = event && event.currentTarget ? event.currentTarget : null;
+        var request;
+        var fallbackMessage = __('Unable to refresh the library scan right now.', 'beepbeep-ai-alt-text-generator');
+
+        if (event && typeof event.preventDefault === 'function') {
+            event.preventDefault();
+        }
+
+        if (!button || button.classList.contains('is-loading')) {
+            return;
+        }
+
+        if (typeof window.bbaiRefreshDashboardCoverage !== 'function') {
+            dispatchDashboardFeedbackMessage('error', fallbackMessage);
+            return;
+        }
+
+        setStatusCardRefreshLoading(button, true);
+        request = window.bbaiRefreshDashboardCoverage();
+
+        if (!request || typeof request.always !== 'function') {
+            setStatusCardRefreshLoading(button, false);
+            return;
+        }
+
+        if (typeof request.fail === 'function') {
+            request.fail(function(errorMessage) {
+                dispatchDashboardFeedbackMessage(
+                    'error',
+                    errorMessage || __('Scan failed. Please try again.', 'beepbeep-ai-alt-text-generator')
+                );
+            });
+        }
+
+        request.always(function() {
+            setStatusCardRefreshLoading(button, false);
+        });
+    }
+
+    function bindStatusCardInteractions() {
+        var statusCard = document.querySelector('[data-bbai-dashboard-status-card="1"]');
+        var statusRows;
+        var refreshButton;
+
+        if (!statusCard || statusCard.getAttribute('data-bbai-status-interactions-bound') === '1') {
+            return;
+        }
+
+        statusRows = statusCard.querySelectorAll('[data-bbai-status-row]');
+        refreshButton = statusCard.querySelector('[data-bbai-status-refresh]');
+
+        statusCard.setAttribute('data-bbai-status-interactions-bound', '1');
+
+        if (!statusRows.length && !refreshButton) {
+            return;
+        }
+
+        Array.prototype.forEach.call(statusRows, function(row) {
+            var targetUrl = resolveStatusCardRowUrl(row);
+
+            if (targetUrl) {
+                row.setAttribute('href', targetUrl);
+            }
+        });
+
+        statusCard.addEventListener('mouseover', function(event) {
+            var row = event.target && typeof event.target.closest === 'function'
+                ? event.target.closest('[data-bbai-status-row]')
+                : null;
+
+            if (!row || !statusCard.contains(row)) {
+                return;
+            }
+
+            setStatusCardActiveSegment(statusCard, row.getAttribute('data-bbai-status-segment') || '');
+        });
+
+        statusCard.addEventListener('mouseout', function(event) {
+            var row = event.target && typeof event.target.closest === 'function'
+                ? event.target.closest('[data-bbai-status-row]')
+                : null;
+            var relatedRow = event.relatedTarget && typeof event.relatedTarget.closest === 'function'
+                ? event.relatedTarget.closest('[data-bbai-status-row]')
+                : null;
+
+            if (!row || !statusCard.contains(row)) {
+                return;
+            }
+
+            if (relatedRow && statusCard.contains(relatedRow)) {
+                setStatusCardActiveSegment(statusCard, relatedRow.getAttribute('data-bbai-status-segment') || '');
+                return;
+            }
+
+            if (
+                document.activeElement &&
+                typeof document.activeElement.closest === 'function' &&
+                statusCard.contains(document.activeElement) &&
+                document.activeElement.closest('[data-bbai-status-row]')
+            ) {
+                setStatusCardActiveSegment(
+                    statusCard,
+                    document.activeElement.closest('[data-bbai-status-row]').getAttribute('data-bbai-status-segment') || ''
+                );
+                return;
+            }
+
+            setStatusCardActiveSegment(statusCard, '');
+        });
+
+        statusCard.addEventListener('focusin', function(event) {
+            var row = event.target && typeof event.target.closest === 'function'
+                ? event.target.closest('[data-bbai-status-row]')
+                : null;
+
+            if (!row || !statusCard.contains(row)) {
+                return;
+            }
+
+            setStatusCardActiveSegment(statusCard, row.getAttribute('data-bbai-status-segment') || '');
+        });
+
+        statusCard.addEventListener('focusout', function() {
+            window.setTimeout(function() {
+                var activeRow = document.activeElement && typeof document.activeElement.closest === 'function'
+                    ? document.activeElement.closest('[data-bbai-status-row]')
+                    : null;
+
+                if (activeRow && statusCard.contains(activeRow)) {
+                    setStatusCardActiveSegment(statusCard, activeRow.getAttribute('data-bbai-status-segment') || '');
+                    return;
+                }
+
+                if (!statusCard.matches(':hover')) {
+                    setStatusCardActiveSegment(statusCard, '');
+                }
+            }, 0);
+        });
+
+        statusCard.addEventListener('click', function(event) {
+            var row = event.target && typeof event.target.closest === 'function'
+                ? event.target.closest('[data-bbai-status-row]')
+                : null;
+            var targetUrl;
+            var isModifiedClick;
+
+            if (!row || !statusCard.contains(row)) {
+                return;
+            }
+
+            isModifiedClick = !!(
+                event.metaKey ||
+                event.ctrlKey ||
+                event.shiftKey ||
+                event.altKey ||
+                event.button !== 0
+            );
+            if (isModifiedClick) {
+                return;
+            }
+
+            event.preventDefault();
+            targetUrl = resolveStatusCardRowUrl(row);
+            if (!targetUrl) {
+                return;
+            }
+
+            setStatusCardActiveSegment(statusCard, row.getAttribute('data-bbai-status-segment') || '');
+            row.classList.add('is-pressed');
+
+            window.setTimeout(function() {
+                navigateToStatusCardFilter(row);
+            }, 110);
+        });
+
+        if (refreshButton) {
+            refreshButton.addEventListener('click', handleStatusCardRefresh);
         }
     }
 
@@ -4097,20 +4844,7 @@ bbaiRunWithJQuery(function($) {
             weak: statusCard.querySelector('[data-bbai-status-metric="weak"]'),
             missing: statusCard.querySelector('[data-bbai-status-metric="missing"]')
         };
-        var insight = statusCard.querySelector('[data-bbai-status-insight]');
-        var insightTitle = statusCard.querySelector('[data-bbai-status-insight-title]');
-        var insightText = statusCard.querySelector('[data-bbai-status-insight-text]');
-        var insightGuidance = statusCard.querySelector('[data-bbai-status-insight-guidance]');
-        var insightLastScan = statusCard.querySelector('[data-bbai-status-insight-last-scan]');
-        var insightActions = statusCard.querySelector('[data-bbai-status-insight-actions]');
-        var insightPrimary = statusCard.querySelector('[data-bbai-status-insight-primary]');
-        var insightReview = statusCard.querySelector('[data-bbai-status-insight-review]');
         var coverageValue = statusCard.querySelector('[data-bbai-status-coverage-value]');
-        var coverageSegments = {
-            optimized: statusCard.querySelector('[data-bbai-status-ring-segment="optimized"]'),
-            weak: statusCard.querySelector('[data-bbai-status-ring-segment="weak"]'),
-            missing: statusCard.querySelector('[data-bbai-status-ring-segment="missing"]')
-        };
 
         if (summaryRatioNode || summaryDetailNode) {
             var optimizedRatio = getOptimizedRatioCopy(statusCoverage);
@@ -4118,20 +4852,21 @@ bbaiRunWithJQuery(function($) {
             var summaryMeta = formatLastScanCopy(data.lastScanTs);
             var summaryDetail = '';
 
-            if (statusCoverage.missing > 0) {
+            if (!hasScanResults(data) || statusCoverage.total <= 0) {
+                summaryRatio = __('No images found in your media library', 'beepbeep-ai-alt-text-generator');
+                summaryDetail = __('Run your first scan to see coverage and missing ALT text.', 'beepbeep-ai-alt-text-generator');
+            } else if (statusCoverage.missing > 0) {
                 summaryDetail = sprintf(
-                    _n('%s image missing ALT text', '%s images missing ALT text', statusCoverage.missing, 'beepbeep-ai-alt-text-generator'),
+                    _n('%s image is missing ALT text.', '%s images are missing ALT text.', statusCoverage.missing, 'beepbeep-ai-alt-text-generator'),
                     formatCount(statusCoverage.missing)
                 );
             } else if (statusCoverage.weak > 0) {
                 summaryDetail = sprintf(
-                    _n('%s description could be improved', '%s descriptions could be improved', statusCoverage.weak, 'beepbeep-ai-alt-text-generator'),
+                    _n('%s description needs review.', '%s descriptions need review.', statusCoverage.weak, 'beepbeep-ai-alt-text-generator'),
                     formatCount(statusCoverage.weak)
                 );
             } else if (statusCoverage.optimized > 0) {
-                summaryDetail = __('All descriptions look good', 'beepbeep-ai-alt-text-generator');
-            } else {
-                summaryRatio = __('No images found in your media library', 'beepbeep-ai-alt-text-generator');
+                summaryDetail = __('All current images include ALT text.', 'beepbeep-ai-alt-text-generator');
             }
 
             if (summaryRatioNode) {
@@ -4149,7 +4884,7 @@ bbaiRunWithJQuery(function($) {
 
         Object.keys(metrics).forEach(function(key) {
             if (metrics[key]) {
-                metrics[key].textContent = formatCount(data[key]);
+                metrics[key].textContent = formatCount(statusCoverage[key]);
             }
         });
 
@@ -4157,124 +4892,7 @@ bbaiRunWithJQuery(function($) {
             coverageValue.textContent = formatCount(statusCoverage.coverage);
         }
 
-        if (coverageSegments.optimized || coverageSegments.weak || coverageSegments.missing) {
-            var ringReference = coverageSegments.optimized || coverageSegments.weak || coverageSegments.missing;
-            var circumference = parseFloat(ringReference.getAttribute('data-circumference')) || (2 * Math.PI * 48);
-            var ringSegments = getStatusRingSegments(statusCoverage, circumference);
-
-            Object.keys(coverageSegments).forEach(function(key) {
-                var segmentNode = coverageSegments[key];
-                var segmentStyle = ringSegments[key];
-
-                if (!segmentNode || !segmentStyle) {
-                    return;
-                }
-
-                segmentNode.setAttribute('stroke', segmentStyle.stroke);
-                segmentNode.setAttribute('stroke-dasharray', segmentStyle.dasharray);
-                segmentNode.setAttribute('stroke-dashoffset', segmentStyle.dashoffset);
-                segmentNode.setAttribute('stroke-linecap', segmentStyle.linecap);
-                segmentNode.style.stroke = segmentStyle.stroke;
-                segmentNode.style.strokeLinecap = segmentStyle.linecap;
-                animateStatusRingSegment(segmentNode, segmentStyle, circumference);
-            });
-        }
-
-        if (insight && insightTitle && insightText) {
-            if (statusCoverage.missing > 0) {
-                insight.hidden = false;
-                insight.className = 'bbai-status-insight bbai-status-insight--danger';
-                insightTitle.textContent = __('ALT text needed', 'beepbeep-ai-alt-text-generator');
-                insightText.textContent = sprintf(
-                    _n('%s image is missing ALT text.', '%s images are missing ALT text.', statusCoverage.missing, 'beepbeep-ai-alt-text-generator'),
-                    formatCount(statusCoverage.missing)
-                );
-                if (insightGuidance) {
-                    insightGuidance.textContent = __('Click "Generate ALT Text" to automatically create the description.', 'beepbeep-ai-alt-text-generator');
-                    insightGuidance.hidden = false;
-                }
-                if (insightLastScan) {
-                    insightLastScan.textContent = '';
-                    insightLastScan.hidden = true;
-                }
-                if (insightActions) {
-                    insightActions.hidden = false;
-                }
-                if (insightPrimary) {
-                    insightPrimary.hidden = false;
-                    insightPrimary.textContent = __('Generate ALT Text', 'beepbeep-ai-alt-text-generator');
-                    insightPrimary.setAttribute('aria-label', insightPrimary.textContent);
-                    insightPrimary.setAttribute('data-action', 'generate-missing');
-                    insightPrimary.setAttribute('data-bbai-action', 'generate_missing');
-                }
-                if (insightReview) {
-                    insightReview.hidden = false;
-                    insightReview.textContent = __('Review in ALT Library', 'beepbeep-ai-alt-text-generator');
-                    insightReview.setAttribute('href', data.missingLibraryUrl || data.libraryUrl);
-                }
-            } else if (statusCoverage.weak > 0) {
-                insight.hidden = false;
-                insight.className = 'bbai-status-insight bbai-status-insight--warning';
-                insightTitle.textContent = __('Accessibility improvements available', 'beepbeep-ai-alt-text-generator');
-                insightText.textContent = sprintf(
-                    _n('%s image still has a weak ALT description.', '%s images still have weak ALT descriptions.', statusCoverage.weak, 'beepbeep-ai-alt-text-generator'),
-                    formatCount(statusCoverage.weak)
-                );
-                if (insightGuidance) {
-                    insightGuidance.textContent = __('Improve weaker descriptions automatically or review them manually in the ALT Library.', 'beepbeep-ai-alt-text-generator');
-                    insightGuidance.hidden = false;
-                }
-                if (insightLastScan) {
-                    var lastScanCopy = formatLastScanCopy(data.lastScanTimestamp || data.last_scan_timestamp || 0);
-                    insightLastScan.textContent = lastScanCopy;
-                    insightLastScan.hidden = !lastScanCopy;
-                }
-                if (insightActions) {
-                    insightActions.hidden = false;
-                }
-                if (insightPrimary) {
-                    insightPrimary.hidden = false;
-                    insightPrimary.textContent = __('Improve Weak ALT Text', 'beepbeep-ai-alt-text-generator');
-                    insightPrimary.setAttribute('aria-label', insightPrimary.textContent);
-                    insightPrimary.setAttribute('data-action', 'show-generate-alt-modal');
-                    insightPrimary.removeAttribute('data-bbai-action');
-                }
-                if (insightReview) {
-                    insightReview.hidden = false;
-                    insightReview.textContent = __('Review in ALT Library', 'beepbeep-ai-alt-text-generator');
-                    insightReview.setAttribute('href', data.libraryUrl || '#');
-                }
-            } else {
-                insight.hidden = false;
-                insight.className = 'bbai-status-insight bbai-status-insight--success';
-                insightTitle.textContent = __('Library fully optimized', 'beepbeep-ai-alt-text-generator');
-                insightText.textContent = __('All images currently include accessible ALT text.', 'beepbeep-ai-alt-text-generator');
-                if (insightGuidance) {
-                    insightGuidance.textContent = __('Future uploads can be scanned and optimized automatically.', 'beepbeep-ai-alt-text-generator');
-                    insightGuidance.hidden = false;
-                }
-                if (insightLastScan) {
-                    var lastScanCopy = formatLastScanCopy(data.lastScanTs);
-                    insightLastScan.textContent = lastScanCopy;
-                    insightLastScan.hidden = !lastScanCopy;
-                }
-                if (insightActions) {
-                    insightActions.hidden = false;
-                }
-                if (insightPrimary) {
-                    insightPrimary.hidden = false;
-                    insightPrimary.textContent = __('Scan Media Library', 'beepbeep-ai-alt-text-generator');
-                    insightPrimary.setAttribute('aria-label', insightPrimary.textContent);
-                    insightPrimary.setAttribute('data-action', 'scan-library');
-                    insightPrimary.setAttribute('data-bbai-action', 'scan-opportunity');
-                }
-                if (insightReview) {
-                    insightReview.hidden = false;
-                    insightReview.textContent = __('Open ALT Library', 'beepbeep-ai-alt-text-generator');
-                    insightReview.setAttribute('href', data.libraryUrl || '#');
-                }
-            }
-        }
+        applyStatusCardDonutState(statusCard, statusCoverage);
     }
 
     function animateStatusRingSegment(segmentNode, segmentStyle, circumference) {
@@ -4345,22 +4963,27 @@ bbaiRunWithJQuery(function($) {
     function getAccessibilityImpact(data) {
         var optimized = Math.max(0, parseCount(data && data.optimized));
         var total = Math.max(0, parseCount(data && data.total));
-        var generated = Math.max(0, parseCount(data && data.generated));
         var coverage = total > 0 ? Math.round((optimized / total) * 100) : 0;
-
-        return {
+        var impact = {
             coverage: coverage,
             coverageLabel: formatCount(coverage),
             optimized: optimized,
-            optimizedLabel: formatCount(optimized),
-            generated: generated,
-            generatedLabel: formatCount(generated),
-            embedHtml: '<a href="https://beepbeep.ai">\n<img src="https://beepbeep.ai/badges/accessibility-improved.svg"\nalt="Accessibility improved with BeepBeep AI">\n</a>',
-            shareText: sprintf(
-                __('My WordPress site improved accessibility by %s%% using BeepBeep AI.', 'beepbeep-ai-alt-text-generator'),
-                formatCount(coverage)
-            )
+            optimizedLabel: formatCount(optimized)
         };
+
+        impact.altText = sprintf(
+            __('Shareable accessibility badge showing a %1$s%% accessibility score and %2$s optimized images powered by BeepBeep AI', 'beepbeep-ai-alt-text-generator'),
+            impact.coverageLabel,
+            impact.optimizedLabel
+        );
+        impact.embedHtml = '<a href="https://beepbeep.ai" target="_blank" rel="noreferrer noopener">\n<img src="' + getAccessibilityBadgeDataUrl(impact) + '"\nalt="' + escapeSvgText(impact.altText) + '">\n</a>';
+        impact.shareText = sprintf(
+            __('My WordPress site has an accessibility score of %1$s%% with %2$s optimized images powered by BeepBeep AI.', 'beepbeep-ai-alt-text-generator'),
+            impact.coverageLabel,
+            impact.optimizedLabel
+        );
+
+        return impact;
     }
 
     function escapeSvgText(value) {
@@ -4373,40 +4996,39 @@ bbaiRunWithJQuery(function($) {
     }
 
     function buildAccessibilityBadgeSvg(impact) {
-        var optimizedLine = sprintf(
-            _n('%s image optimized with BeepBeep AI', '%s images optimized with BeepBeep AI', impact.optimized, 'beepbeep-ai-alt-text-generator'),
-            impact.optimizedLabel
-        );
-        var titleText = __('Accessibility improved with BeepBeep AI', 'beepbeep-ai-alt-text-generator');
-        var descText = sprintf(
-            __('Accessibility improved by %1$s%% across %2$s optimized images with %3$s AI ALT descriptions generated.', 'beepbeep-ai-alt-text-generator'),
-            impact.coverageLabel,
-            impact.optimizedLabel,
-            impact.generatedLabel
-        );
+        var titleText = __('Accessibility badge powered by BeepBeep AI', 'beepbeep-ai-alt-text-generator');
+        var descText = impact && impact.altText
+            ? impact.altText
+            : sprintf(
+                __('Shareable accessibility badge showing a %1$s%% accessibility score and %2$s optimized images powered by BeepBeep AI', 'beepbeep-ai-alt-text-generator'),
+                impact.coverageLabel,
+                impact.optimizedLabel
+            );
 
         return [
-            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 160" width="460" height="160" role="img" aria-labelledby="bbai-badge-title bbai-badge-desc">',
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 220" width="460" height="220" role="img" aria-labelledby="bbai-badge-title bbai-badge-desc">',
             '<title id="bbai-badge-title">', escapeSvgText(titleText), '</title>',
             '<desc id="bbai-badge-desc">', escapeSvgText(descText), '</desc>',
             '<defs>',
-            '<linearGradient id="bbai-badge-gradient" x1="18" y1="18" x2="82" y2="82" gradientUnits="userSpaceOnUse">',
-            '<stop offset="0%" stop-color="#4F46E5"/>',
-            '<stop offset="100%" stop-color="#8B5CF6"/>',
+            '<linearGradient id="bbai-badge-bg" x1="30" y1="24" x2="430" y2="196" gradientUnits="userSpaceOnUse">',
+            '<stop offset="0%" stop-color="#FFFFFF"/>',
+            '<stop offset="100%" stop-color="#F3FBF5"/>',
+            '</linearGradient>',
+            '<linearGradient id="bbai-badge-score" x1="44" y1="58" x2="190" y2="58" gradientUnits="userSpaceOnUse">',
+            '<stop offset="0%" stop-color="#16A34A"/>',
+            '<stop offset="100%" stop-color="#15803D"/>',
             '</linearGradient>',
             '</defs>',
-            '<rect x="1" y="1" width="458" height="158" rx="22" fill="#FFFFFF" stroke="#E5E7EB"/>',
-            '<rect x="18" y="18" width="64" height="64" rx="18" fill="url(#bbai-badge-gradient)" opacity="0.14"/>',
-            '<rect x="18" y="18" width="64" height="64" rx="18" fill="none" stroke="#C7D2FE"/>',
-            '<path d="M38 51l11 11 24-24" fill="none" stroke="#4F46E5" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>',
-            '<text x="104" y="46" fill="#6B7280" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="600">', escapeSvgText(__('Accessibility improved by', 'beepbeep-ai-alt-text-generator')), '</text>',
-            '<text x="104" y="88" fill="#111827" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700">', escapeSvgText(impact.coverageLabel), '%</text>',
-            '<text x="292" y="46" fill="#6B7280" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="600">', escapeSvgText(__('Powered by', 'beepbeep-ai-alt-text-generator')), '</text>',
-            '<text x="292" y="79" fill="#1F2937" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="700">', escapeSvgText(__('BeepBeep AI', 'beepbeep-ai-alt-text-generator')), '</text>',
-            '<rect x="18" y="108" width="424" height="34" rx="12" fill="#F5F3FF"/>',
-            '<text x="34" y="130" fill="#4338CA" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="600">', escapeSvgText(optimizedLine), '</text>',
-            '<circle cx="422" cy="38" r="6" fill="#8B5CF6"/>',
-            '<circle cx="438" cy="38" r="4" fill="#C4B5FD"/>',
+            '<rect x="1" y="1" width="458" height="218" rx="24" fill="url(#bbai-badge-bg)" stroke="#B7DFC0"/>',
+            '<circle cx="396" cy="48" r="28" fill="#DCFCE7"/>',
+            '<circle cx="423" cy="34" r="8" fill="#86EFAC"/>',
+            '<path d="M384 49l9 9 18-20" fill="none" stroke="#15803D" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>',
+            '<text x="36" y="44" fill="#15803D" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" letter-spacing="0.03em">', escapeSvgText(__('Accessibility score', 'beepbeep-ai-alt-text-generator')), '</text>',
+            '<text x="36" y="112" fill="url(#bbai-badge-score)" font-family="Segoe UI, Arial, sans-serif" font-size="58" font-weight="700">', escapeSvgText(impact.coverageLabel), '%</text>',
+            '<path d="M36 138h388" stroke="#CDE7D2" stroke-width="1"/>',
+            '<text x="36" y="170" fill="#166534" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="600">', escapeSvgText(__('Images optimized', 'beepbeep-ai-alt-text-generator')), '</text>',
+            '<text x="424" y="170" text-anchor="end" fill="#0F172A" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="700">', escapeSvgText(impact.optimizedLabel), '</text>',
+            '<text x="36" y="196" fill="#166534" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="600">', escapeSvgText(__('Powered by BeepBeep AI', 'beepbeep-ai-alt-text-generator')), '</text>',
             '</svg>'
         ].join('');
     }
@@ -4428,9 +5050,9 @@ bbaiRunWithJQuery(function($) {
 
         if (!hasCreditsAvailable(data) && !data.isPremium) {
             return {
-                context: __('You\'ve reached your AI generation limit.', 'beepbeep-ai-alt-text-generator'),
-                ctaLabel: __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
-                growthLine: __('1,000 AI ALT texts per month', 'beepbeep-ai-alt-text-generator'),
+                context: __('You have reached your AI generation limit. Growth restarts progress immediately and keeps future uploads moving automatically.', 'beepbeep-ai-alt-text-generator'),
+                ctaLabel: __('Restart with Growth', 'beepbeep-ai-alt-text-generator'),
+                growthLine: __('Growth unlocks always-on media library automation.', 'beepbeep-ai-alt-text-generator'),
                 growthUsageLine: growthComparison.line,
                 growthUsagePercent: growthComparison.percent,
                 growthIndicatorPercent: growthComparison.indicatorPercent,
@@ -4448,9 +5070,9 @@ bbaiRunWithJQuery(function($) {
 
         if (!data.isPremium && data.creditsRemaining <= 5) {
             return {
-                context: __('You\'re running low on AI generations.', 'beepbeep-ai-alt-text-generator'),
-                ctaLabel: __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
-                growthLine: __('1,000 AI ALT texts per month', 'beepbeep-ai-alt-text-generator'),
+                context: __('You are running low on AI generations. Growth keeps automation running as new uploads arrive.', 'beepbeep-ai-alt-text-generator'),
+                ctaLabel: __('Upgrade Before You Run Out', 'beepbeep-ai-alt-text-generator'),
+                growthLine: __('Growth unlocks always-on media library automation.', 'beepbeep-ai-alt-text-generator'),
                 growthUsageLine: growthComparison.line,
                 growthUsagePercent: growthComparison.percent,
                 growthIndicatorPercent: growthComparison.indicatorPercent,
@@ -4466,10 +5088,30 @@ bbaiRunWithJQuery(function($) {
             };
         }
 
+        if (data.isPremium) {
+            return {
+                context: __('Growth is built for continuous coverage, not one-off manual cleanups.', 'beepbeep-ai-alt-text-generator'),
+                ctaLabel: __('Open Automation Settings', 'beepbeep-ai-alt-text-generator'),
+                growthLine: __('Growth automation is ready for future uploads and bulk clean-ups.', 'beepbeep-ai-alt-text-generator'),
+                growthUsageLine: growthComparison.line,
+                growthUsagePercent: growthComparison.percent,
+                growthIndicatorPercent: growthComparison.indicatorPercent,
+                usageLine: sprintf(
+                    __('%1$s / %2$s AI generations used this month', 'beepbeep-ai-alt-text-generator'),
+                    formatCount(data.creditsUsed),
+                    formatCount(data.creditsTotal)
+                ),
+                remainingLine: getRemainingPlanLine(data),
+                resetLine: data.creditsResetLine || '',
+                usagePercent: usagePercent,
+                urgent: false
+            };
+        }
+
         return {
-            context: '',
+            context: __('Upgrade for automatic coverage, faster bulk optimization, and less manual work each month.', 'beepbeep-ai-alt-text-generator'),
             ctaLabel: __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
-            growthLine: __('1,000 AI ALT texts per month', 'beepbeep-ai-alt-text-generator'),
+            growthLine: __('Growth unlocks always-on media library automation.', 'beepbeep-ai-alt-text-generator'),
             growthUsageLine: growthComparison.line,
             growthUsagePercent: growthComparison.percent,
             growthIndicatorPercent: growthComparison.indicatorPercent,
@@ -4485,6 +5127,52 @@ bbaiRunWithJQuery(function($) {
         };
     }
 
+    function getAutomationCardCopy(data) {
+        var firstRun;
+        var hasExistingIssues;
+
+        if (!data) {
+            return null;
+        }
+
+        firstRun = !hasScanResults(data) || data.total <= 0;
+        hasExistingIssues = data.missing > 0 || data.weak > 0;
+
+        if (data.isPremium) {
+            return {
+                lead: firstRun
+                    ? __('After your first scan, keep future uploads covered automatically from Settings.', 'beepbeep-ai-alt-text-generator')
+                    : (
+                        hasExistingIssues
+                            ? __('Finish cleaning up your current library, then use automation to keep new uploads from adding more manual work.', 'beepbeep-ai-alt-text-generator')
+                            : __('You’ve optimized your current images. Now keep future uploads covered automatically.', 'beepbeep-ai-alt-text-generator')
+                    ),
+                statusLabel: __('Growth ready', 'beepbeep-ai-alt-text-generator'),
+                statusHelper: __('Manage this in Settings when you want on-upload ALT generation.', 'beepbeep-ai-alt-text-generator'),
+                valueSupport: __('Manage how future uploads are handled in Settings whenever your workflow changes.', 'beepbeep-ai-alt-text-generator'),
+                ctaLabel: __('Manage Auto-Optimization', 'beepbeep-ai-alt-text-generator'),
+                secondaryLabel: __('Review ALT Library', 'beepbeep-ai-alt-text-generator'),
+                modifier: 'ready'
+            };
+        }
+
+        return {
+            lead: firstRun
+                ? __('After your first scan, this can keep new uploads optimized automatically.', 'beepbeep-ai-alt-text-generator')
+                : (
+                    hasExistingIssues
+                        ? __('Once your existing library is covered, this keeps new uploads optimized automatically.', 'beepbeep-ai-alt-text-generator')
+                        : __('You’ve optimized your current images. Now automate future uploads.', 'beepbeep-ai-alt-text-generator')
+                ),
+            statusLabel: __('Available on Growth', 'beepbeep-ai-alt-text-generator'),
+            statusHelper: __('Turn on with the Growth plan.', 'beepbeep-ai-alt-text-generator'),
+            valueSupport: __('Upgrade once and let Growth keep future uploads covered automatically.', 'beepbeep-ai-alt-text-generator'),
+            ctaLabel: __('Enable Auto-Optimization', 'beepbeep-ai-alt-text-generator'),
+            secondaryLabel: __('Compare plans', 'beepbeep-ai-alt-text-generator'),
+            modifier: 'locked'
+        };
+    }
+
     function renderPerformanceMetrics(data) {
         if (!data) {
             return;
@@ -4493,7 +5181,6 @@ bbaiRunWithJQuery(function($) {
         var minutesNode = document.querySelector('[data-bbai-performance-minutes]');
         var optimizedNode = document.querySelector('[data-bbai-performance-optimized]');
         var coverageNode = document.querySelector('[data-bbai-performance-coverage]');
-        var generatedNode = document.querySelector('[data-bbai-performance-generated]');
         var hoursSaved = Math.max(0, (data.creditsUsed * 2.5) / 60);
         var minutesSaved = Math.round(hoursSaved * 60);
         var coveragePercent = data.total > 0 ? Math.round((data.optimized / data.total) * 100) : 0;
@@ -4507,16 +5194,13 @@ bbaiRunWithJQuery(function($) {
         if (coverageNode) {
             coverageNode.textContent = formatCount(coveragePercent);
         }
-        if (generatedNode) {
-            generatedNode.textContent = formatCount(data.generated);
-        }
     }
 
     function renderAccessibilityImpact(data) {
         var cardNode = document.querySelector('[data-bbai-accessibility-card="1"]');
         var coverageNode;
         var optimizedNode;
-        var generatedLineNode;
+        var statsLineNode;
         var previewImageNode;
         var shareNode;
         var impact;
@@ -4527,7 +5211,7 @@ bbaiRunWithJQuery(function($) {
 
         coverageNode = cardNode.querySelector('[data-bbai-accessibility-coverage]');
         optimizedNode = cardNode.querySelector('[data-bbai-accessibility-optimized]');
-        generatedLineNode = cardNode.querySelector('[data-bbai-accessibility-generated-line]');
+        statsLineNode = cardNode.querySelector('[data-bbai-accessibility-stats-line]');
         previewImageNode = cardNode.querySelector('[data-bbai-accessibility-badge-preview]');
         shareNode = cardNode.querySelector('[data-bbai-accessibility-action="share"]');
         impact = getAccessibilityImpact(data);
@@ -4540,23 +5224,17 @@ bbaiRunWithJQuery(function($) {
             optimizedNode.textContent = impact.optimizedLabel;
         }
 
-        if (generatedLineNode) {
-            generatedLineNode.textContent = sprintf(
-                __('AI ALT descriptions generated: %s', 'beepbeep-ai-alt-text-generator'),
-                impact.generatedLabel
+        if (statsLineNode) {
+            statsLineNode.textContent = sprintf(
+                __('Accessibility score: %1$s%% | Images optimized: %2$s', 'beepbeep-ai-alt-text-generator'),
+                impact.coverageLabel,
+                impact.optimizedLabel
             );
         }
 
         if (previewImageNode) {
             previewImageNode.setAttribute('src', getAccessibilityBadgeDataUrl(impact));
-            previewImageNode.setAttribute(
-                'alt',
-                sprintf(
-                    __('Accessibility badge preview showing %1$s%% accessibility improvement and %2$s images optimized', 'beepbeep-ai-alt-text-generator'),
-                    impact.coverageLabel,
-                    impact.optimizedLabel
-                )
-            );
+            previewImageNode.setAttribute('alt', impact.altText);
         }
 
         if (shareNode) {
@@ -4568,80 +5246,297 @@ bbaiRunWithJQuery(function($) {
     }
 
     function renderUpgradeContext(data) {
-        var copy = getUpgradeCardCopy(data);
-        var cardNode = document.querySelector('.bbai-upgrade-card');
-        var contextNode = document.querySelector('[data-bbai-upgrade-context]');
-        var ctaNode = document.querySelector('[data-bbai-upgrade-cta]');
+        var planLabelNode = document.querySelector('[data-bbai-plan-label]');
         var usageLineNode = document.querySelector('[data-bbai-plan-usage-line]');
         var remainingLineNode = document.querySelector('[data-bbai-plan-usage-remaining]');
         var resetLineNode = document.querySelector('[data-bbai-plan-usage-reset]');
         var usageProgressNode = document.querySelector('[data-bbai-plan-usage-progress]');
-        var growthLineNode = document.querySelector('[data-bbai-upgrade-growth-line]');
-        var growthUsageNode = document.querySelector('[data-bbai-upgrade-growth-usage]');
-        var growthProgressNode = document.querySelector('[data-bbai-upgrade-growth-progress]');
-        var growthIndicatorNode = document.querySelector('[data-bbai-upgrade-growth-indicator]');
-        var valueMinutesNode = document.querySelector('[data-bbai-upgrade-value-minutes]');
+        var growthLineNode = document.querySelector('[data-bbai-plan-growth-line]');
+        var growthProgressNode = document.querySelector('[data-bbai-plan-growth-progress]');
+        var growthPercentNode = document.querySelector('[data-bbai-plan-growth-percent-label]');
+        var upgradeNoteNode = document.querySelector('[data-bbai-plan-upgrade-note]');
+        var primaryActionNode = document.querySelector('[data-bbai-plan-action-primary]');
+        var secondaryActionNode = document.querySelector('[data-bbai-plan-action-secondary]');
+        var growthComparison = getGrowthPlanComparison(data);
 
-        if (!copy) {
+        if (!data) {
             return;
         }
 
-        if (cardNode) {
-            cardNode.classList.toggle('bbai-upgrade-card--urgent', !!copy.urgent);
-            cardNode.classList.toggle('bbai-upgrade-card--subtle', !copy.urgent);
-        }
-
-        if (contextNode) {
-            contextNode.textContent = copy.context;
-            contextNode.hidden = !copy.context;
-        }
-
-        if (ctaNode) {
-            ctaNode.textContent = copy.ctaLabel;
-            ctaNode.setAttribute('aria-label', copy.ctaLabel);
+        if (planLabelNode) {
+            planLabelNode.textContent = getPlanLabel(data);
         }
 
         if (usageLineNode) {
-            usageLineNode.textContent = copy.usageLine || '';
+            usageLineNode.textContent = sprintf(
+                __('%1$s / %2$s used', 'beepbeep-ai-alt-text-generator'),
+                formatCount(data.creditsUsed),
+                formatCount(data.creditsTotal)
+            );
         }
 
         if (remainingLineNode) {
-            remainingLineNode.textContent = copy.remainingLine || '';
+            remainingLineNode.textContent = getRemainingPlanLine(data);
         }
 
         if (resetLineNode) {
-            resetLineNode.textContent = copy.resetLine || '';
+            resetLineNode.textContent = getCompactPlanResetLine(data);
         }
 
         if (usageProgressNode) {
-            usageProgressNode.setAttribute('data-bbai-plan-usage-progress-target', String(Math.round(copy.usagePercent || 0)));
-            animateLinearProgress(usageProgressNode, copy.usagePercent || 0, 600, 80);
+            var usagePercent = Math.min(100, Math.max(0, Math.round((data.creditsUsed / Math.max(1, data.creditsTotal)) * 100)));
+            usageProgressNode.setAttribute('data-bbai-plan-usage-progress-target', String(usagePercent));
+            animateLinearProgress(usageProgressNode, usagePercent, 600, 80);
         }
 
         if (growthLineNode) {
-            growthLineNode.textContent = copy.growthLine || '';
-        }
-
-        if (growthUsageNode) {
-            growthUsageNode.textContent = copy.growthUsageLine || '';
+            growthLineNode.textContent = growthComparison.line || '';
         }
 
         if (growthProgressNode) {
-            growthProgressNode.setAttribute('data-bbai-upgrade-growth-progress-target', String(copy.growthUsagePercent || 0));
-            animateLinearProgress(growthProgressNode, copy.growthUsagePercent || 0, 600, 140);
-            if (growthProgressNode.parentNode && typeof growthProgressNode.parentNode.setAttribute === 'function') {
-                growthProgressNode.parentNode.setAttribute('aria-valuenow', String(Math.round(copy.growthUsagePercent || 0)));
+            growthProgressNode.setAttribute('data-bbai-plan-growth-progress-target', String(growthComparison.percent || 0));
+            animateLinearProgress(growthProgressNode, growthComparison.percent || 0, 600, 120);
+        }
+
+        if (growthPercentNode) {
+            growthPercentNode.textContent = (growthComparison.display || '0') + '%';
+        }
+
+        if (upgradeNoteNode) {
+            upgradeNoteNode.hidden = !!data.isPremium;
+        }
+
+        if (primaryActionNode) {
+            if (data.isPremium) {
+                primaryActionNode.hidden = false;
+                primaryActionNode.className = 'bbai-command-action bbai-command-action--secondary';
+                primaryActionNode.textContent = __('Review usage', 'beepbeep-ai-alt-text-generator');
+                setInteractiveControl(primaryActionNode, {
+                    label: __('Review usage', 'beepbeep-ai-alt-text-generator'),
+                    href: data.usageUrl || '#',
+                    removeAttributes: ['data-action', 'data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                });
+            } else {
+                primaryActionNode.hidden = false;
+                primaryActionNode.className = 'bbai-command-action bbai-command-action--primary';
+                primaryActionNode.textContent = __('Upgrade', 'beepbeep-ai-alt-text-generator');
+                setInteractiveControl(primaryActionNode, {
+                    label: __('Upgrade', 'beepbeep-ai-alt-text-generator'),
+                    action: 'show-upgrade-modal',
+                    href: '#',
+                    removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                });
             }
         }
 
-        if (growthIndicatorNode) {
-            growthIndicatorNode.hidden = !(copy.growthUsagePercent > 0);
-            growthIndicatorNode.style.left = (copy.growthIndicatorPercent || 0) + '%';
+        if (secondaryActionNode) {
+            if (data.isPremium) {
+                secondaryActionNode.hidden = true;
+            } else {
+                secondaryActionNode.hidden = false;
+                secondaryActionNode.className = 'bbai-command-action bbai-command-action--secondary';
+                secondaryActionNode.textContent = __('Review usage', 'beepbeep-ai-alt-text-generator');
+                setInteractiveControl(secondaryActionNode, {
+                    label: __('Review usage', 'beepbeep-ai-alt-text-generator'),
+                    href: data.usageUrl || '#',
+                    removeAttributes: ['data-action', 'data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                });
+            }
+        }
+    }
+
+    function getDashboardAlertModel(data) {
+        var remaining;
+
+        if (!data) {
+            return null;
         }
 
-        if (valueMinutesNode) {
-            valueMinutesNode.textContent = getUpgradeValueMinutesCopy(data);
+        remaining = Math.max(0, parseCount(data.creditsRemaining));
+
+        if (remaining === 0) {
+            return {
+                tone: 'danger',
+                title: __('You have no optimizations left this cycle', 'beepbeep-ai-alt-text-generator'),
+                message: __('Upgrade or wait for your allowance to reset to continue ALT generation.', 'beepbeep-ai-alt-text-generator'),
+                primaryAction: {
+                    label: __('Upgrade', 'beepbeep-ai-alt-text-generator'),
+                    action: 'show-upgrade-modal',
+                    href: '#',
+                    removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                },
+                secondaryAction: {
+                    label: __('Review usage', 'beepbeep-ai-alt-text-generator'),
+                    href: data.usageUrl || '#',
+                    removeAttributes: ['data-action', 'data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                }
+            };
         }
+
+        if (parseCount(data.missing) > 0) {
+            return {
+                tone: 'warning',
+                title: __('Fix missing ALT text', 'beepbeep-ai-alt-text-generator'),
+                message: _n(
+                    'Fix the remaining image to reach full coverage.',
+                    'Fix the remaining images to reach full coverage.',
+                    parseCount(data.missing),
+                    'beepbeep-ai-alt-text-generator'
+                ),
+                primaryAction: {
+                    label: __('Fix missing ALT text', 'beepbeep-ai-alt-text-generator'),
+                    action: 'generate-missing',
+                    bbaiAction: 'generate_missing',
+                    href: '#',
+                    removeAttributes: ['data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                },
+                secondaryAction: {
+                    label: __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+                    href: data.missingLibraryUrl || data.libraryUrl || '#',
+                    removeAttributes: ['data-action', 'data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                }
+            };
+        }
+
+        if (parseCount(data.weak) > 0) {
+            return {
+                tone: 'warning',
+                title: __('Review ALT text', 'beepbeep-ai-alt-text-generator'),
+                message: _n(
+                    'Review the remaining description to reach full coverage.',
+                    'Review the remaining descriptions to reach full coverage.',
+                    parseCount(data.weak),
+                    'beepbeep-ai-alt-text-generator'
+                ),
+                primaryAction: {
+                    label: __('Review ALT text', 'beepbeep-ai-alt-text-generator'),
+                    action: 'show-generate-alt-modal',
+                    href: '#',
+                    removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                },
+                secondaryAction: {
+                    label: __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+                    href: data.needsReviewLibraryUrl || data.libraryUrl || '#',
+                    removeAttributes: ['data-action', 'data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                }
+            };
+        }
+
+        if (remaining > 0 && remaining < 10) {
+            if (data.isPremium) {
+                return {
+                    tone: 'warning',
+                    title: sprintf(
+                        _n('%s optimization left this cycle', '%s optimizations left this cycle', remaining, 'beepbeep-ai-alt-text-generator'),
+                        formatCount(remaining)
+                    ),
+                    message: __('Review your usage before the cycle resets.', 'beepbeep-ai-alt-text-generator'),
+                    primaryAction: {
+                        label: __('Review usage', 'beepbeep-ai-alt-text-generator'),
+                        href: data.usageUrl || '#',
+                        removeAttributes: ['data-action', 'data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                    },
+                    secondaryAction: {
+                        label: __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+                        href: data.libraryUrl || '#',
+                        removeAttributes: ['data-action', 'data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                    }
+                };
+            }
+
+            return {
+                tone: 'warning',
+                title: sprintf(
+                    _n('%s optimization left this cycle', '%s optimizations left this cycle', remaining, 'beepbeep-ai-alt-text-generator'),
+                    formatCount(remaining)
+                ),
+                message: __('Upgrade to keep optimizing without interruption.', 'beepbeep-ai-alt-text-generator'),
+                primaryAction: {
+                    label: __('Upgrade', 'beepbeep-ai-alt-text-generator'),
+                    action: 'show-upgrade-modal',
+                    href: '#',
+                    removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                },
+                secondaryAction: {
+                    label: __('Review usage', 'beepbeep-ai-alt-text-generator'),
+                    href: data.usageUrl || '#',
+                    removeAttributes: ['data-action', 'data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                }
+            };
+        }
+
+        return null;
+    }
+
+    function renderDashboardAlert(data) {
+        var alertSection = document.querySelector('[data-bbai-dashboard-alert="1"]');
+        var titleNode;
+        var messageNode;
+        var primaryNode;
+        var secondaryNode;
+        var alertModel;
+
+        if (!alertSection) {
+            return;
+        }
+
+        alertModel = getDashboardAlertModel(data);
+        if (!alertModel) {
+            alertSection.hidden = true;
+            return;
+        }
+
+        titleNode = alertSection.querySelector('[data-bbai-dashboard-alert-title]');
+        messageNode = alertSection.querySelector('[data-bbai-dashboard-alert-message]');
+        primaryNode = alertSection.querySelector('[data-bbai-dashboard-alert-primary]');
+        secondaryNode = alertSection.querySelector('[data-bbai-dashboard-alert-secondary]');
+
+        alertSection.className = 'bbai-dashboard-alert-card bbai-dashboard-alert-card--' + (alertModel.tone || 'warning');
+        alertSection.hidden = false;
+
+        if (titleNode) {
+            titleNode.textContent = alertModel.title || '';
+        }
+
+        if (messageNode) {
+            messageNode.textContent = alertModel.message || '';
+        }
+
+        if (primaryNode && alertModel.primaryAction) {
+            primaryNode.hidden = !(alertModel.primaryAction.label);
+            primaryNode.textContent = alertModel.primaryAction.label || '';
+            setInteractiveControl(primaryNode, alertModel.primaryAction);
+        }
+
+        if (secondaryNode && alertModel.secondaryAction) {
+            secondaryNode.hidden = !(alertModel.secondaryAction.label);
+            secondaryNode.textContent = alertModel.secondaryAction.label || '';
+            setInteractiveControl(secondaryNode, alertModel.secondaryAction);
+        }
+    }
+
+    function shouldShowDashboardReviewPrompt(data) {
+        var coverage = getStatusCoverageData(data);
+        var remaining = Math.max(0, parseCount(data && data.creditsRemaining));
+
+        if (!data || !coverage.total) {
+            return false;
+        }
+
+        return coverage.coverage >= 95 &&
+            coverage.optimized >= 20 &&
+            coverage.missing === 0 &&
+            coverage.weak === 0 &&
+            remaining >= 10;
+    }
+
+    function renderDashboardReviewPrompt(data) {
+        var promptNode = document.querySelector('[data-bbai-dashboard-review-prompt]');
+        if (!promptNode) {
+            return;
+        }
+
+        promptNode.hidden = !shouldShowDashboardReviewPrompt(data);
     }
 
     function renderDashboardState() {
@@ -4650,14 +5545,21 @@ bbaiRunWithJQuery(function($) {
             return;
         }
 
+        bindStatusCardInteractions();
         renderHero(data);
-        renderQuickActions(data);
-        renderWorkflow(data);
         renderStatusCard(data);
         renderUpgradeContext(data);
-        renderPerformanceMetrics(data);
-        renderAccessibilityImpact(data);
+        renderDashboardAlert(data);
+        renderDashboardReviewPrompt(data);
     }
+
+    window.bbaiGetDashboardData = getDashboardData;
+    window.bbaiRenderDashboardHero = function(dataOverride) {
+        renderHero(dataOverride || getDashboardData());
+    };
+    window.bbaiSyncDashboardState = function(statsOverride, usageOverride) {
+        syncAndRender(statsOverride || null, usageOverride || null);
+    };
 
     function setTemporaryButtonLabel(button, label) {
         var resetTimer;
@@ -4808,7 +5710,10 @@ bbaiRunWithJQuery(function($) {
             return;
         }
 
-        if (actionButton.getAttribute('data-bbai-accessibility-action') === 'download') {
+        if (
+            actionButton.getAttribute('data-bbai-accessibility-action') === 'download' ||
+            actionButton.getAttribute('data-bbai-accessibility-action') === 'get-badge'
+        ) {
             event.preventDefault();
             svg = buildAccessibilityBadgeSvg(impact);
 

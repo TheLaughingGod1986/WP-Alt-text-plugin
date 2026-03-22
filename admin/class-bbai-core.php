@@ -110,6 +110,9 @@ class Core {
     private const MENU_SLUG_ONBOARDING = 'bbai-onboarding';
     private const ALT_COVERAGE_TRANSIENT_KEY = 'bbai_alt_coverage_scan_v3';
     private const ALT_COVERAGE_TRANSIENT_TTL = 86400;
+    private const ALT_COVERAGE_SCAN_JOB_PREFIX = 'bbai_alt_coverage_job_';
+    private const ALT_COVERAGE_SCAN_JOB_TTL = 900;
+    private const ALT_COVERAGE_SCAN_BATCH_SIZE = 150;
     private const FREE_PLAN_IMAGE_LIMIT = 50;
 
     private const DEFAULT_CHECKOUT_PRICE_IDS = [
@@ -1743,9 +1746,12 @@ class Core {
             </div>
         </div>
         <?php
-        // Include upgrade modal for "View plans & pricing" button
+        // Include upgrade modal for "View plans & pricing" button.
         $bbai_checkout_prices = $this->get_checkout_price_ids();
-        include BEEPBEEP_AI_PLUGIN_DIR . 'templates/upgrade-modal.php';
+        $bbai_upgrade_modal = dirname(__DIR__) . '/templates/upgrade-modal.php';
+        if (file_exists($bbai_upgrade_modal)) {
+            include $bbai_upgrade_modal;
+        }
     }
 
     /**
@@ -1924,9 +1930,12 @@ class Core {
             </div>
         </div>
         <?php
-        // Include upgrade modal for "View plans & pricing" button
+        // Include upgrade modal for "View plans & pricing" button.
         $bbai_checkout_prices = $this->get_checkout_price_ids();
-        include BEEPBEEP_AI_PLUGIN_DIR . 'templates/upgrade-modal.php';
+        $bbai_upgrade_modal = dirname(__DIR__) . '/templates/upgrade-modal.php';
+        if (file_exists($bbai_upgrade_modal)) {
+            include $bbai_upgrade_modal;
+        }
     }
 
     public function render_settings_page() {
@@ -2574,9 +2583,12 @@ class Core {
         // GBP prices: Growth £12.99, Agency £49.99, Credits £9.99 (matching Stripe payment links)
         $bbai_currency = ['symbol' => '£', 'code' => 'GBP', 'free' => 0, 'growth' => 12.99, 'pro' => 12.99, 'agency' => 49.99, 'credits' => 9.99];
         
-        // Include upgrade modal - always available for all tabs
+        // Include upgrade modal - always available for all tabs.
         $bbai_checkout_prices = $this->get_checkout_price_ids();
-        include BEEPBEEP_AI_PLUGIN_DIR . 'templates/upgrade-modal.php';
+        $bbai_upgrade_modal = dirname(__DIR__) . '/templates/upgrade-modal.php';
+        if (file_exists($bbai_upgrade_modal)) {
+            include $bbai_upgrade_modal;
+        }
         $bbai_feature_modal = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/feature-unlock-modal.php';
         if ( file_exists( $bbai_feature_modal ) ) {
             include $bbai_feature_modal;
@@ -2809,6 +2821,334 @@ class Core {
      * @param bool $force_refresh Whether to bypass cache and run a fresh scan.
      * @return array<string, int>
      */
+    private function get_empty_alt_coverage_data(): array {
+        return [
+            'total_images' => 0,
+            'images_with_alt' => 0,
+            'images_missing_alt' => 0,
+            'coverage_percent' => 0,
+            'ai_source_count' => 0,
+            'needs_review_count' => 0,
+            'optimized_count' => 0,
+            'approved_count' => 0,
+            'filename_only_count' => 0,
+            'duplicate_alt_count' => 0,
+            'free_plan_limit' => self::FREE_PLAN_IMAGE_LIMIT,
+            'scanned_at' => time(),
+        ];
+    }
+
+    private function normalize_alt_coverage_compare_value(string $value): string {
+        $value = strtolower((string) $value);
+        $value = preg_replace('/[^a-z0-9]+/i', ' ', $value);
+        return trim((string) preg_replace('/\s+/', ' ', $value));
+    }
+
+    private function get_alt_coverage_image_total(): int {
+        global $wpdb;
+
+        $image_mime_like = $wpdb->esc_like('image/') . '%';
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        return (int) $wpdb->get_var(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- Table identifier comes from trusted core $wpdb.
+                'SELECT COUNT(*) FROM ' . $wpdb->posts . ' WHERE post_type = %s AND post_status = %s AND post_mime_type LIKE %s',
+                'attachment',
+                'inherit',
+                $image_mime_like
+            )
+        );
+    }
+
+    private function get_alt_coverage_batch_rows(int $limit, int $after_attachment_id = 0): array {
+        global $wpdb;
+
+        $limit = max(1, min(250, $limit));
+        $after_attachment_id = max(0, $after_attachment_id);
+        $image_mime_like = $wpdb->esc_like('image/') . '%';
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                'SELECT p.ID,
+                        MAX(CASE WHEN m.meta_key = %s THEN m.meta_value ELSE NULL END) AS alt_text,
+                        MAX(CASE WHEN m.meta_key = %s THEN m.meta_value ELSE NULL END) AS approved_hash,
+                        MAX(CASE WHEN m.meta_key = %s THEN m.meta_value ELSE NULL END) AS source_value
+                 FROM ' . $wpdb->posts . ' p
+                 LEFT JOIN ' . $wpdb->postmeta . ' m
+                    ON p.ID = m.post_id
+                   AND m.meta_key IN (%s, %s, %s)
+                 WHERE p.post_type = %s
+                   AND p.post_status = %s
+                   AND p.post_mime_type LIKE %s
+                   AND (%d = 0 OR p.ID < %d)
+                 GROUP BY p.ID
+                 ORDER BY p.ID DESC
+                 LIMIT %d',
+                '_wp_attachment_image_alt',
+                '_bbai_user_approved_hash',
+                '_bbai_source',
+                '_wp_attachment_image_alt',
+                '_bbai_user_approved_hash',
+                '_bbai_source',
+                'attachment',
+                'inherit',
+                $image_mime_like,
+                $after_attachment_id,
+                $after_attachment_id,
+                $limit
+            ),
+            ARRAY_A
+        );
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    private function get_alt_coverage_duplicate_count(): int {
+        global $wpdb;
+
+        $image_mime_like = $wpdb->esc_like('image/') . '%';
+        $duplicate_alt_count = 0;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        $duplicate_rows = $wpdb->get_results(
+            $wpdb->prepare(
+                'SELECT alt.meta_value AS alt_text, COUNT(*) AS cnt
+                 FROM ' . $wpdb->posts . ' p
+                 INNER JOIN ' . $wpdb->postmeta . ' alt
+                    ON p.ID = alt.post_id
+                   AND alt.meta_key = %s
+                   AND TRIM(alt.meta_value) <> %s
+                 WHERE p.post_type = %s
+                   AND p.post_status = %s
+                   AND p.post_mime_type LIKE %s
+                 GROUP BY alt.meta_value
+                 HAVING cnt > 1',
+                '_wp_attachment_image_alt',
+                '',
+                'attachment',
+                'inherit',
+                $image_mime_like
+            ),
+            ARRAY_A
+        );
+
+        foreach ((array) $duplicate_rows as $duplicate_row) {
+            $duplicate_alt_count += (int) ($duplicate_row['cnt'] ?? 0);
+        }
+
+        return max(0, $duplicate_alt_count);
+    }
+
+    private function get_alt_coverage_scan_job_key(string $job_id): string {
+        return self::ALT_COVERAGE_SCAN_JOB_PREFIX . sanitize_key($job_id);
+    }
+
+    private function get_alt_coverage_scan_stage_message(int $processed_images, int $total_images, string $status = 'running'): string {
+        if ($status === 'complete') {
+            return __('Scan complete.', 'beepbeep-ai-alt-text-generator');
+        }
+
+        if ($status === 'finalizing') {
+            return __('Preparing your coverage summary.', 'beepbeep-ai-alt-text-generator');
+        }
+
+        if ($total_images <= 0) {
+            return __('Checking images for missing ALT text.', 'beepbeep-ai-alt-text-generator');
+        }
+
+        $progress_percent = (int) floor(($processed_images / max(1, $total_images)) * 100);
+
+        if ($progress_percent < 35) {
+            return __('Checking images for missing ALT text.', 'beepbeep-ai-alt-text-generator');
+        }
+
+        if ($progress_percent < 70) {
+            return __('Reviewing existing ALT descriptions.', 'beepbeep-ai-alt-text-generator');
+        }
+
+        return __('Checking description quality and review signals.', 'beepbeep-ai-alt-text-generator');
+    }
+
+    private function build_alt_coverage_scan_job_payload(array $scan_state, array $coverage_payload = []): array {
+        $total_images = max(0, (int) ($scan_state['total_images'] ?? 0));
+        $processed_images = max(0, min($total_images, (int) ($scan_state['processed_images'] ?? 0)));
+        $progress_percent = $total_images > 0
+            ? (int) round(($processed_images / $total_images) * 100)
+            : 100;
+        $status = (string) ($scan_state['status'] ?? 'running');
+        $stage_message = (string) ($scan_state['stage_message'] ?? $this->get_alt_coverage_scan_stage_message($processed_images, $total_images, $status));
+
+        return [
+            'job_id' => (string) ($scan_state['job_id'] ?? ''),
+            'done' => $status === 'complete',
+            'status' => $status,
+            'progress_percent' => max(0, min(100, $progress_percent)),
+            'processed_images' => $processed_images,
+            'total_images' => $total_images,
+            'stage_message' => $stage_message,
+            'message' => $status === 'complete'
+                ? __('Media library scan complete.', 'beepbeep-ai-alt-text-generator')
+                : __('Scanning your media library.', 'beepbeep-ai-alt-text-generator'),
+            'payload' => $status === 'complete' ? $coverage_payload : [],
+        ];
+    }
+
+    private function persist_alt_coverage_scan_job(array $scan_state): void {
+        $job_id = (string) ($scan_state['job_id'] ?? '');
+        if ($job_id === '') {
+            return;
+        }
+
+        set_transient($this->get_alt_coverage_scan_job_key($job_id), $scan_state, self::ALT_COVERAGE_SCAN_JOB_TTL);
+    }
+
+    private function get_alt_coverage_scan_job(string $job_id): ?array {
+        if ($job_id === '') {
+            return null;
+        }
+
+        $scan_state = get_transient($this->get_alt_coverage_scan_job_key($job_id));
+        return is_array($scan_state) ? $scan_state : null;
+    }
+
+    private function start_alt_coverage_scan_job(): array {
+        $job_id = function_exists('wp_generate_uuid4') ? wp_generate_uuid4() : uniqid('bbai_scan_', true);
+        $total_images = $this->get_alt_coverage_image_total();
+        $scan_state = [
+            'job_id' => $job_id,
+            'user_id' => get_current_user_id(),
+            'status' => $total_images > 0 ? 'running' : 'complete',
+            'stage_message' => $this->get_alt_coverage_scan_stage_message(0, $total_images, $total_images > 0 ? 'running' : 'complete'),
+            'total_images' => $total_images,
+            'processed_images' => 0,
+            'images_with_alt' => 0,
+            'images_missing_alt' => 0,
+            'ai_source_count' => 0,
+            'needs_review_count' => 0,
+            'approved_count' => 0,
+            'filename_only_count' => 0,
+            'last_attachment_id' => 0,
+            'updated_at' => time(),
+            'scanned_at' => time(),
+        ];
+
+        if ($total_images <= 0) {
+            $coverage_data = $this->get_empty_alt_coverage_data();
+            set_transient(self::ALT_COVERAGE_TRANSIENT_KEY, $coverage_data, self::ALT_COVERAGE_TRANSIENT_TTL);
+            $scan_state['payload'] = $coverage_data;
+        }
+
+        $this->persist_alt_coverage_scan_job($scan_state);
+
+        return $scan_state;
+    }
+
+    private function process_alt_coverage_scan_job_batch(array $scan_state): array {
+        $status = (string) ($scan_state['status'] ?? 'running');
+        if ($status === 'complete') {
+            return $scan_state;
+        }
+
+        $total_images = max(0, (int) ($scan_state['total_images'] ?? 0));
+        if ($total_images <= 0) {
+            $scan_state['status'] = 'complete';
+            $scan_state['payload'] = $this->get_empty_alt_coverage_data();
+            return $scan_state;
+        }
+
+        $rows = $this->get_alt_coverage_batch_rows(
+            self::ALT_COVERAGE_SCAN_BATCH_SIZE,
+            (int) ($scan_state['last_attachment_id'] ?? 0)
+        );
+
+        foreach ($rows as $row) {
+            $attachment_id = isset($row['ID']) ? (int) $row['ID'] : 0;
+            $alt_text = isset($row['alt_text']) ? trim((string) $row['alt_text']) : '';
+            $approved_hash = isset($row['approved_hash']) ? (string) $row['approved_hash'] : '';
+            $source_value = strtolower(trim((string) ($row['source_value'] ?? '')));
+
+            if ($attachment_id <= 0) {
+                continue;
+            }
+
+            $scan_state['processed_images'] = max(0, (int) ($scan_state['processed_images'] ?? 0)) + 1;
+            $scan_state['last_attachment_id'] = $attachment_id;
+
+            if ($alt_text === '') {
+                $scan_state['images_missing_alt'] = max(0, (int) ($scan_state['images_missing_alt'] ?? 0)) + 1;
+                continue;
+            }
+
+            $scan_state['images_with_alt'] = max(0, (int) ($scan_state['images_with_alt'] ?? 0)) + 1;
+
+            if (in_array($source_value, ['ai', 'openai'], true)) {
+                $scan_state['ai_source_count'] = max(0, (int) ($scan_state['ai_source_count'] ?? 0)) + 1;
+            }
+
+            if ($approved_hash !== '' && hash_equals($approved_hash, $this->hash_alt_text($alt_text))) {
+                $scan_state['approved_count'] = max(0, (int) ($scan_state['approved_count'] ?? 0)) + 1;
+            } elseif (function_exists('bbai_calculate_alt_quality_score') && bbai_calculate_alt_quality_score($alt_text) < 80) {
+                $scan_state['needs_review_count'] = max(0, (int) ($scan_state['needs_review_count'] ?? 0)) + 1;
+            }
+
+            $attached_file = get_attached_file($attachment_id);
+            if ($attached_file) {
+                $base_name = pathinfo($attached_file, PATHINFO_FILENAME);
+                if (
+                    $base_name !== ''
+                    && $this->normalize_alt_coverage_compare_value($alt_text) === $this->normalize_alt_coverage_compare_value($base_name)
+                ) {
+                    $scan_state['filename_only_count'] = max(0, (int) ($scan_state['filename_only_count'] ?? 0)) + 1;
+                }
+            }
+        }
+
+        $scan_state['updated_at'] = time();
+
+        if (empty($rows) || (int) ($scan_state['processed_images'] ?? 0) >= $total_images) {
+            $scan_state['status'] = 'finalizing';
+            $scan_state['stage_message'] = $this->get_alt_coverage_scan_stage_message(
+                (int) ($scan_state['processed_images'] ?? 0),
+                $total_images,
+                'finalizing'
+            );
+
+            $coverage_data = [
+                'total_images' => $total_images,
+                'images_with_alt' => max(0, (int) ($scan_state['images_with_alt'] ?? 0)),
+                'images_missing_alt' => max(0, (int) ($scan_state['images_missing_alt'] ?? 0)),
+                'coverage_percent' => $total_images > 0
+                    ? (int) round((max(0, (int) ($scan_state['images_with_alt'] ?? 0)) / $total_images) * 100)
+                    : 0,
+                'ai_source_count' => max(0, (int) ($scan_state['ai_source_count'] ?? 0)),
+                'needs_review_count' => max(0, (int) ($scan_state['needs_review_count'] ?? 0)),
+                'optimized_count' => max(0, (int) ($scan_state['images_with_alt'] ?? 0) - (int) ($scan_state['needs_review_count'] ?? 0)),
+                'approved_count' => max(0, (int) ($scan_state['approved_count'] ?? 0)),
+                'filename_only_count' => max(0, (int) ($scan_state['filename_only_count'] ?? 0)),
+                'duplicate_alt_count' => $this->get_alt_coverage_duplicate_count(),
+                'free_plan_limit' => self::FREE_PLAN_IMAGE_LIMIT,
+                'scanned_at' => time(),
+            ];
+
+            $scan_state['status'] = 'complete';
+            $scan_state['processed_images'] = $total_images;
+            $scan_state['payload'] = $coverage_data;
+            $scan_state['stage_message'] = __('Scan complete.', 'beepbeep-ai-alt-text-generator');
+
+            set_transient(self::ALT_COVERAGE_TRANSIENT_KEY, $coverage_data, self::ALT_COVERAGE_TRANSIENT_TTL);
+        } else {
+            $scan_state['stage_message'] = $this->get_alt_coverage_scan_stage_message(
+                (int) ($scan_state['processed_images'] ?? 0),
+                $total_images,
+                'running'
+            );
+        }
+
+        return $scan_state;
+    }
+
     public function get_alt_text_coverage_scan(bool $force_refresh = false): array {
         if (!$force_refresh) {
             $cached = get_transient(self::ALT_COVERAGE_TRANSIENT_KEY);
@@ -2834,17 +3174,7 @@ class Core {
             global $wpdb;
 
             $image_mime_like = $wpdb->esc_like('image/') . '%';
-
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-            $total_images = (int) $wpdb->get_var(
-                $wpdb->prepare(
-                    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- Table identifier comes from trusted core $wpdb.
-                    'SELECT COUNT(*) FROM ' . $wpdb->posts . ' WHERE post_type = %s AND post_status = %s AND post_mime_type LIKE %s',
-                    'attachment',
-                    'inherit',
-                    $image_mime_like
-                )
-            );
+            $total_images = $this->get_alt_coverage_image_total();
 
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
             $images_with_alt = (int) $wpdb->get_var(
@@ -2883,11 +3213,6 @@ class Core {
             $needs_review_count = 0;
             $approved_count = 0;
             $filename_only_count = 0;
-            $normalize_for_compare = static function ( $value ) {
-                $value = strtolower( (string) $value );
-                $value = preg_replace( '/[^a-z0-9]+/i', ' ', $value );
-                return trim( preg_replace( '/\s+/', ' ', $value ) );
-            };
             if ( $images_with_alt > 0 ) {
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
                 $rows = $wpdb->get_results(
@@ -2916,8 +3241,8 @@ class Core {
                         $file = get_attached_file( $id );
                         if ( $file ) {
                             $base      = pathinfo( $file, PATHINFO_FILENAME );
-                            $norm_alt  = $normalize_for_compare( $alt );
-                            $norm_base = $normalize_for_compare( $base );
+                            $norm_alt  = $this->normalize_alt_coverage_compare_value( $alt );
+                            $norm_base = $this->normalize_alt_coverage_compare_value( $base );
                             if ( $norm_base !== '' && $norm_alt === $norm_base ) {
                                 $filename_only_count++;
                             }
@@ -2926,24 +3251,7 @@ class Core {
                 }
             }
 
-            $duplicate_alt_count = 0;
-            if ( $images_with_alt > 0 ) {
-                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-                $dup_rows = $wpdb->get_results(
-                    $wpdb->prepare(
-                        'SELECT alt.meta_value AS alt_text, COUNT(*) AS cnt FROM ' . $wpdb->posts . ' p INNER JOIN ' . $wpdb->postmeta . ' alt ON p.ID = alt.post_id AND alt.meta_key = %s AND TRIM(alt.meta_value) <> %s WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s GROUP BY alt.meta_value HAVING cnt > 1',
-                        '_wp_attachment_image_alt',
-                        '',
-                        'attachment',
-                        'inherit',
-                        $image_mime_like
-                    ),
-                    ARRAY_A
-                );
-                foreach ( $dup_rows as $dup ) {
-                    $duplicate_alt_count += (int) ( $dup['cnt'] ?? 0 );
-                }
-            }
+            $duplicate_alt_count = $images_with_alt > 0 ? $this->get_alt_coverage_duplicate_count() : 0;
 
             $optimized_count = max( 0, $images_with_alt - $needs_review_count );
 
@@ -2966,20 +3274,7 @@ class Core {
 
             return $coverage_data;
         } catch (\Exception $e) {
-            return [
-                'total_images' => 0,
-                'images_with_alt' => 0,
-                'images_missing_alt' => 0,
-                'coverage_percent' => 0,
-                'ai_source_count' => 0,
-                'needs_review_count' => 0,
-                'optimized_count' => 0,
-                'approved_count' => 0,
-                'filename_only_count' => 0,
-                'duplicate_alt_count' => 0,
-                'free_plan_limit' => self::FREE_PLAN_IMAGE_LIMIT,
-                'scanned_at' => time(),
-            ];
+            return $this->get_empty_alt_coverage_data();
         }
     }
 
@@ -3023,6 +3318,95 @@ class Core {
         $payload['scanned_at'] = max(0, (int) ($coverage['scanned_at'] ?? time()));
 
         return $payload;
+    }
+
+    /**
+     * AJAX handler: start a chunked ALT coverage scan job.
+     */
+    public function ajax_start_alt_coverage_scan() {
+        $action = 'beepbeepai_nonce';
+        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+            wp_send_json_error([ 'message' => __('Invalid nonce.', 'beepbeep-ai-alt-text-generator') ], 403);
+            return;
+        }
+
+        if (!$this->user_can_manage()) {
+            wp_send_json_error([ 'message' => __('Permission denied.', 'beepbeep-ai-alt-text-generator') ], 403);
+            return;
+        }
+
+        $this->invalidate_stats_cache();
+
+        try {
+            $scan_state = $this->start_alt_coverage_scan_job();
+
+            if ((string) ($scan_state['status'] ?? '') !== 'complete') {
+                $scan_state = $this->process_alt_coverage_scan_job_batch($scan_state);
+                $this->persist_alt_coverage_scan_job($scan_state);
+            }
+
+            $payload = $this->build_alt_coverage_scan_job_payload(
+                $scan_state,
+                is_array($scan_state['payload'] ?? null) ? $scan_state['payload'] : []
+            );
+
+            wp_send_json_success($payload);
+        } catch (\Exception $e) {
+            wp_send_json_error([
+                'message' => __('Unable to start the media library scan right now.', 'beepbeep-ai-alt-text-generator'),
+            ], 500);
+        }
+    }
+
+    /**
+     * AJAX handler: poll a running ALT coverage scan job.
+     */
+    public function ajax_poll_alt_coverage_scan() {
+        $action = 'beepbeepai_nonce';
+        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+            wp_send_json_error([ 'message' => __('Invalid nonce.', 'beepbeep-ai-alt-text-generator') ], 403);
+            return;
+        }
+
+        if (!$this->user_can_manage()) {
+            wp_send_json_error([ 'message' => __('Permission denied.', 'beepbeep-ai-alt-text-generator') ], 403);
+            return;
+        }
+
+        $job_id = sanitize_text_field(wp_unslash($_POST['job_id'] ?? ''));
+        if ($job_id === '') {
+            wp_send_json_error([ 'message' => __('Missing scan job.', 'beepbeep-ai-alt-text-generator') ], 400);
+            return;
+        }
+
+        $scan_state = $this->get_alt_coverage_scan_job($job_id);
+        if (!$scan_state) {
+            wp_send_json_error([ 'message' => __('Scan session expired. Please start again.', 'beepbeep-ai-alt-text-generator') ], 404);
+            return;
+        }
+
+        if ((int) ($scan_state['user_id'] ?? 0) !== get_current_user_id()) {
+            wp_send_json_error([ 'message' => __('Permission denied.', 'beepbeep-ai-alt-text-generator') ], 403);
+            return;
+        }
+
+        try {
+            if ((string) ($scan_state['status'] ?? '') !== 'complete') {
+                $scan_state = $this->process_alt_coverage_scan_job_batch($scan_state);
+                $this->persist_alt_coverage_scan_job($scan_state);
+            }
+
+            $payload = $this->build_alt_coverage_scan_job_payload(
+                $scan_state,
+                is_array($scan_state['payload'] ?? null) ? $scan_state['payload'] : []
+            );
+
+            wp_send_json_success($payload);
+        } catch (\Exception $e) {
+            wp_send_json_error([
+                'message' => __('Unable to continue the media library scan right now.', 'beepbeep-ai-alt-text-generator'),
+            ], 500);
+        }
     }
 
     /**

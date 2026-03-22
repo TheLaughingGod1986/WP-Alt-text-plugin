@@ -110,34 +110,29 @@
     }
 
     /**
-     * Finalize inline generation and show success modal
+     * Finalize inline generation and show success toast
      */
     function finalizeInlineGeneration(successes, failures) {
-        var $modal = $('#bbai-bulk-progress-modal');
         var total = successes + failures;
-        var startTime = $modal.length ? $modal.data('startTime') : Date.now();
-        var elapsed = (Date.now() - startTime) / 1000;
-
-        var timeSavedMinutes = successes * 2;
-        var timeSavedHours = Math.round(timeSavedMinutes / 60);
-        var timeSavedText = timeSavedHours > 0 ? timeSavedHours + ' hour' + (timeSavedHours !== 1 ? 's' : '') : '< 1 hour';
-
-        var confidence = total > 0 ? Math.round((successes / total) * 100) : 100;
-
         hideBulkProgress();
-
-        setTimeout(function() {
-            showSuccessModal({
-                processed: successes,
-                total: total,
-                failures: failures,
-                timeSaved: timeSavedText,
-                confidence: confidence
-            });
-        }, 300);
 
         if (typeof refreshUsageStats === 'function') {
             refreshUsageStats();
+        }
+
+        if (typeof window.bbaiRefreshDashboardCoverage === 'function') {
+            window.bbaiRefreshDashboardCoverage();
+        }
+
+        if (window.showToast && typeof window.showToast === 'function') {
+            window.showToast({
+                type: failures > 0 ? 'warning' : 'success',
+                title: failures > 0 ? 'ALT text generated with issues' : 'ALT text generated',
+                message: failures > 0
+                    ? (successes + ' image' + (successes !== 1 ? 's' : '') + ' processed, ' + failures + ' failed.')
+                    : (successes + ' image' + (successes !== 1 ? 's' : '') + ' processed successfully'),
+                duration: 4000
+            });
         }
     }
 

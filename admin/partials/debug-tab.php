@@ -40,12 +40,12 @@ $bbai_debug_embedded = !empty($bbai_debug_embedded);
                     <?php esc_html_e('If you don\'t have an account, you can create one for free or subscribe to a plan.', 'beepbeep-ai-alt-text-generator'); ?>
                 </p>
                 <div class="bbai-settings-required-actions">
-                    <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-icon" data-action="show-auth-modal" data-auth-tab="login">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <button type="button" class="bbai-btn bbai-btn-primary" data-action="show-auth-modal" data-auth-tab="login">
+                        <svg class="bbai-btn-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                             <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                             <circle cx="8" cy="8" r="2" fill="currentColor"/>
                         </svg>
-                        <span><?php esc_html_e('Log In', 'beepbeep-ai-alt-text-generator'); ?></span>
+                        <span class="bbai-btn__text"><?php esc_html_e('Log In', 'beepbeep-ai-alt-text-generator'); ?></span>
                     </button>
                 </div>
             </div>

@@ -127,6 +127,15 @@ trait Core_Assets {
     }
 
     /**
+     * Check if current tab is analytics.
+     *
+     * @return bool
+     */
+    private function is_analytics_tab(): bool {
+        return $this->get_resolved_tab() === 'analytics';
+    }
+
+    /**
      * Get the current BeepBeep AI admin page slug.
      *
      * @return string
@@ -199,13 +208,16 @@ trait Core_Assets {
         $use_debug_assets = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG;
         $js_base  = $use_debug_assets ? 'assets/src/js/' : 'assets/dist/js/';
 
+        $toast_file = $this->get_asset_path($js_base, 'toast', $use_debug_assets, 'js', $base_path);
+        $toast_version = $this->get_asset_version($toast_file, '1.0.0', $base_path);
         $admin_file = $this->get_asset_path($js_base, 'bbai-admin', $use_debug_assets, 'js', $base_path);
         $admin_version = $this->get_asset_version($admin_file, '3.0.0', $base_path);
 
         $checkout_prices = $this->get_checkout_price_ids();
         $l10n_common = $this->get_common_l10n();
 
-        wp_enqueue_script('bbai-admin', $base_url . $admin_file, ['jquery', 'wp-i18n'], $admin_version, true);
+        wp_enqueue_script('bbai-toast', $base_url . $toast_file, [], $toast_version, true);
+        wp_enqueue_script('bbai-admin', $base_url . $admin_file, ['jquery', 'wp-i18n', 'bbai-toast'], $admin_version, true);
         wp_localize_script('bbai-admin', 'BBAI', [
             'nonce'     => wp_create_nonce('wp_rest'),
             'rest'      => esc_url_raw(rest_url('bbai/v1/')),
@@ -317,13 +329,31 @@ trait Core_Assets {
             $asset_version( $status_card_css, '1.0.0' )
         );
 
+        $queue_workflow_css = 'assets/css/features/dashboard/queue-workflow.css';
+        wp_enqueue_style(
+            'bbai-queue-workflow',
+            $base_url . $queue_workflow_css,
+            [ 'bbai-dashboard-status-card-refresh' ],
+            $asset_version( $queue_workflow_css, '1.0.0' )
+        );
+
         $upgrade_modal_refresh_css = 'assets/css/features/pricing/upgrade-modal-refresh.css';
         wp_enqueue_style(
             'bbai-upgrade-modal-refresh',
             $base_url . $upgrade_modal_refresh_css,
-            [ 'bbai-dashboard-status-card-refresh' ],
+            [ 'bbai-queue-workflow' ],
             $asset_version( $upgrade_modal_refresh_css, '1.0.0' )
         );
+
+        if ($this->is_analytics_tab()) {
+            $analytics_page_css = 'assets/css/features/dashboard/analytics-page.css';
+            wp_enqueue_style(
+                'bbai-analytics-page',
+                $base_url . $analytics_page_css,
+                [ 'bbai-upgrade-modal-refresh' ],
+                $asset_version($analytics_page_css, '1.0.0')
+            );
+        }
 
         if ($this->is_onboarding_page()) {
             $onboarding_css = 'assets/css/onboarding.css';
@@ -393,7 +423,7 @@ trait Core_Assets {
         wp_enqueue_script(
             'bbai-dashboard',
             $base_url . $dashboard_js,
-            ['jquery', 'wp-api-fetch', 'wp-i18n'],
+            ['jquery', 'wp-api-fetch', 'wp-i18n', 'bbai-toast'],
             $asset_version($dashboard_js, '3.0.0'),
             true
         );

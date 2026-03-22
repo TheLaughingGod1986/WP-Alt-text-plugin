@@ -106,6 +106,25 @@
     }
 }
 
+.bbai-library-row--review-highlight {
+    animation: bbaiReviewPulse 2s ease-out forwards;
+}
+
+@keyframes bbaiReviewPulse {
+    0% {
+        background-color: rgba(245, 158, 11, 0.18);
+        outline: 2px solid rgba(245, 158, 11, 0.3);
+    }
+    70% {
+        background-color: rgba(245, 158, 11, 0.08);
+        outline: 2px solid rgba(245, 158, 11, 0.12);
+    }
+    100% {
+        background-color: transparent;
+        outline: 2px solid transparent;
+    }
+}
+
 /* ==================================================
    LIBRARY BUTTON TRANSITIONS
    ================================================== */

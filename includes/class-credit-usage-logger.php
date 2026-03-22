@@ -475,6 +475,196 @@ class Credit_Usage_Logger {
 	}
 
 	/**
+	 * Get raw credit activity rows for the Usage page.
+	 *
+	 * @param array $args Optional. Query arguments (date_from, date_to, source, user_id, per_page, page).
+	 * @return array Results with pagination info.
+	 */
+	public static function get_activity_rows($args = []) {
+		if (!self::table_exists()) {
+			return [
+				'items'    => [],
+				'total'    => 0,
+				'pages'    => 0,
+				'page'     => 1,
+				'per_page' => 20,
+			];
+		}
+
+		global $wpdb;
+
+		$defaults = [
+			'date_from' => null,
+			'date_to'   => null,
+			'source'    => null,
+			'user_id'   => null,
+			'per_page'  => 20,
+			'page'      => 1,
+		];
+		$args = wp_parse_args( $args, $defaults );
+
+		$cache_suffix = 'activity_rows_' . md5( wp_json_encode( $args ) );
+		$cached = BBAI_Cache::get( 'credit_usage', $cache_suffix );
+		if ( false !== $cached ) {
+			return $cached;
+		}
+
+		$user_filter = ( $args['user_id'] !== null && $args['user_id'] !== '' ) ? absint( $args['user_id'] ) : 0;
+		$has_user_filter = $user_filter > 0 ? 1 : 0;
+
+		$table = esc_sql( self::table() );
+		$filter_state = self::build_usage_filter_state( $args );
+		$where_params = array_merge(
+			[ $has_user_filter, 0, $user_filter ],
+			self::get_usage_filter_params( $filter_state )
+		);
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$total = (int) $wpdb->get_var(
+			// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
+			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT COUNT(*) FROM `{$table}` WHERE (%d = %d OR user_id = %d) AND (%d = %d OR generated_at >= %s) AND (%d = %d OR generated_at <= %s) AND (%d = %d OR source = %s)",
+				$where_params
+			)
+		);
+
+		$per_page = max( 1, absint( $args['per_page'] ) );
+		$page = max( 1, absint( $args['page'] ) );
+		$offset = ( $page - 1 ) * $per_page;
+		$pages = (int) ceil( $total / $per_page );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$items = $wpdb->get_results(
+			// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
+			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT id, user_id, attachment_id, credits_used, token_cost, model, source, generated_at FROM `{$table}` WHERE (%d = %d OR user_id = %d) AND (%d = %d OR generated_at >= %s) AND (%d = %d OR generated_at <= %s) AND (%d = %d OR source = %s) ORDER BY generated_at DESC LIMIT %d OFFSET %d",
+				array_merge( $where_params, [ $per_page, $offset ] )
+			),
+			ARRAY_A
+		);
+
+		if ( ! is_array( $items ) ) {
+			$items = [];
+		}
+
+		foreach ( $items as &$item ) {
+			$user_id = intval( $item['user_id'] ?? 0 );
+			$user_identity = self::resolve_activity_user_identity( $user_id );
+			$item['display_name'] = $user_identity['display_name'];
+			$item['user_email'] = $user_identity['user_email'];
+
+			$attachment_id = absint( $item['attachment_id'] ?? 0 );
+			$item['attachment_id'] = $attachment_id;
+			$item['item_label'] = '';
+			$item['item_meta'] = '';
+			$item['item_url'] = '';
+
+			if ( $attachment_id > 0 ) {
+				$item_title = get_the_title( $attachment_id );
+				$item['item_label'] = $item_title
+					? $item_title
+					: sprintf(
+						/* translators: %d: media attachment ID. */
+						__( 'Image #%d', 'beepbeep-ai-alt-text-generator' ),
+						$attachment_id
+					);
+				$item['item_meta'] = sprintf(
+					/* translators: %d: media attachment ID. */
+					__( 'Media ID %d', 'beepbeep-ai-alt-text-generator' ),
+					$attachment_id
+				);
+				$item['item_url'] = (string) get_edit_post_link( $attachment_id, '' );
+			}
+
+			$item['source_label'] = self::format_source_label( $item['source'] ?? '' );
+		}
+		unset( $item );
+
+		$result = [
+			'items'    => $items,
+			'total'    => $total,
+			'pages'    => $pages,
+			'page'     => $page,
+			'per_page' => $per_page,
+		];
+
+		BBAI_Cache::set( 'credit_usage', $cache_suffix, $result, BBAI_Cache::DEFAULT_TTL );
+		return $result;
+	}
+
+	/**
+	 * Format a usage source slug into a user-facing label.
+	 *
+	 * @param string $source Raw source slug.
+	 * @return string
+	 */
+	public static function format_source_label($source) {
+		$source_key = sanitize_key( (string) $source );
+
+		$labels = [
+			'ajax'            => __( 'Quick action', 'beepbeep-ai-alt-text-generator' ),
+			'bulk'            => __( 'Bulk', 'beepbeep-ai-alt-text-generator' ),
+			'bulk-regenerate' => __( 'Bulk regenerate', 'beepbeep-ai-alt-text-generator' ),
+			'dashboard'       => __( 'Dashboard', 'beepbeep-ai-alt-text-generator' ),
+			'library'         => __( 'ALT Library', 'beepbeep-ai-alt-text-generator' ),
+			'manual'          => __( 'Manual', 'beepbeep-ai-alt-text-generator' ),
+			'metadata'        => __( 'Metadata', 'beepbeep-ai-alt-text-generator' ),
+			'onboarding'      => __( 'Onboarding', 'beepbeep-ai-alt-text-generator' ),
+			'queue'           => __( 'Queue', 'beepbeep-ai-alt-text-generator' ),
+			'save'            => __( 'Save', 'beepbeep-ai-alt-text-generator' ),
+			'unknown'         => __( 'Unknown', 'beepbeep-ai-alt-text-generator' ),
+			'update'          => __( 'Update', 'beepbeep-ai-alt-text-generator' ),
+			'upload'          => __( 'Upload', 'beepbeep-ai-alt-text-generator' ),
+		];
+
+		if ( isset( $labels[ $source_key ] ) ) {
+			return $labels[ $source_key ];
+		}
+
+		if ( '' === $source_key ) {
+			return __( 'Manual', 'beepbeep-ai-alt-text-generator' );
+		}
+
+		return ucwords( str_replace( '-', ' ', $source_key ) );
+	}
+
+	/**
+	 * Resolve a credit activity actor into display fields.
+	 *
+	 * @param int $user_id WordPress user ID.
+	 * @return array{display_name:string,user_email:string}
+	 */
+	private static function resolve_activity_user_identity($user_id) {
+		$user_id = absint( $user_id );
+
+		if ( $user_id <= 0 ) {
+			return [
+				'display_name' => __( 'System', 'beepbeep-ai-alt-text-generator' ),
+				'user_email'   => '',
+			];
+		}
+
+		$wp_user = get_user_by( 'ID', $user_id );
+		if ( $wp_user instanceof \WP_User ) {
+			return [
+				'display_name' => $wp_user->display_name ?: $wp_user->user_login,
+				'user_email'   => (string) $wp_user->user_email,
+			];
+		}
+
+		return [
+			'display_name' => sprintf(
+				/* translators: %d: WordPress user ID for a deleted/missing user. */
+				__( 'User #%d', 'beepbeep-ai-alt-text-generator' ),
+				$user_id
+			),
+			'user_email'   => '',
+		];
+	}
+
+	/**
 	 * Get usage breakdown by user.
 	 *
 	 * @param array $args Optional. Query arguments (date_from, date_to, source, per_page, page).

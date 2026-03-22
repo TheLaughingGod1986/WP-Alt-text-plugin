@@ -10,6 +10,9 @@ if (!defined('ABSPATH')) {
 
 use BeepBeepAI\AltTextGenerator\BBAI_Cache;
 
+$bbai_library_template_buffer_level = ob_get_level();
+ob_start();
+
 // Pagination setup
 $bbai_per_page = 10;
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
@@ -100,8 +103,8 @@ $bbai_is_pro = ($bbai_is_growth || $bbai_is_agency);
 // Calculate stats percentages
 $bbai_optimized_percent = $bbai_total_images > 0 ? round(($bbai_with_alt_count / $bbai_total_images) * 100) : 0;
 
-// Get ALT coverage for Smart Review Filters (optimized, needs_review, missing, auto_generated).
-$bbai_coverage = isset($this) && method_exists($this, 'get_alt_text_coverage_scan') ? $this->get_alt_text_coverage_scan(false) : [];
+// Get fresh ALT coverage for workflow/progress/filter accuracy on the library page.
+$bbai_coverage = isset($this) && method_exists($this, 'get_alt_text_coverage_scan') ? $this->get_alt_text_coverage_scan(true) : [];
 if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
     $bbai_coverage = [
         'total_images' => $bbai_total_images,
@@ -605,8 +608,19 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
     $bbai_cov_opt_pct = $bbai_cov_total > 0 ? round(($bbai_cov_optimized / $bbai_cov_total) * 100) : 0;
     $bbai_cov_review_pct = $bbai_cov_total > 0 ? round(($bbai_cov_needs_review / $bbai_cov_total) * 100) : 0;
     $bbai_cov_miss_pct = $bbai_cov_total > 0 ? round(($bbai_cov_missing / $bbai_cov_total) * 100) : 0;
+    $bbai_requested_status = isset($_GET['status']) ? sanitize_key(wp_unslash($_GET['status'])) : '';
+    $bbai_requested_filter_map = [
+        'all'          => 'all',
+        'missing'      => 'missing',
+        'optimized'    => 'optimized',
+        'weak'         => 'weak',
+        'needs_review' => 'weak',
+        'needs-review' => 'weak',
+    ];
     $bbai_default_review_filter = 'all';
-    if ($bbai_cov_missing > 0) {
+    if (isset($bbai_requested_filter_map[$bbai_requested_status])) {
+        $bbai_default_review_filter = $bbai_requested_filter_map[$bbai_requested_status];
+    } elseif ($bbai_cov_missing > 0) {
         $bbai_default_review_filter = 'missing';
     } elseif ($bbai_cov_needs_review > 0) {
         $bbai_default_review_filter = 'weak';
@@ -631,6 +645,16 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
     }
     $bbai_has_review_issues = ($bbai_cov_missing + $bbai_cov_needs_review) > 0;
     $bbai_library_healthy = $bbai_cov_total > 0 && !$bbai_has_review_issues;
+
+    $bbai_workspace_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/library-workspace.php';
+    if (file_exists($bbai_workspace_partial)) {
+        while (ob_get_level() > $bbai_library_template_buffer_level) {
+            ob_end_clean();
+        }
+
+        include $bbai_workspace_partial;
+        return;
+    }
     ?>
     <div id="bbai-alt-coverage-card"
          class="bbai-library-summary-card"
@@ -937,7 +961,7 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
             </div>
         </div>
 
-        <div class="bbai-library-table-area bbai-library-table-wrapper">
+        <div id="bbai-alt-table" class="bbai-library-table-area bbai-library-table-wrapper">
         <div class="bbai-library-table-column">
         <div class="bbai-table-card">
             <div class="bbai-table-wrap">

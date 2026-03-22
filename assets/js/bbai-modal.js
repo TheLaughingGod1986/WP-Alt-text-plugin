@@ -93,18 +93,24 @@
 
             // Close on backdrop click
             $(document).on('click', '.bbai-modal-backdrop', function() {
+                if (self.activeModal && self.activeModal.closeOnBackdrop === false) {
+                    return;
+                }
                 self.close();
             });
 
             // Close on ESC key
             $(document).on('keydown', function(e) {
                 if (e.key === 'Escape' && self.activeModal) {
+                    if (self.activeModal.closeOnEscape === false) {
+                        return;
+                    }
                     self.close();
                 }
             });
 
-            // Trap focus inside modal
-            $(document).on('keydown', '#bbai-modal-overlay', function(e) {
+            // Trap focus inside the active modal, even if other dialogs exist on the page.
+            $(document).on('keydown', function(e) {
                 if (e.key === 'Tab' && self.activeModal) {
                     self.trapFocus(e);
                 }
@@ -120,6 +126,7 @@
          * @param {string} options.type - Modal type: error|warning|info|success (default: info)
          * @param {Array} options.buttons - Array of button configurations (optional)
          * @param {Function} options.onClose - Callback when modal closes (optional)
+         * @param {boolean} options.skipAutoFocus - Skip default first-button autofocus (optional)
          */
         show(options) {
             if (!options || !options.message) {
@@ -164,10 +171,12 @@
             // Show modal
             this.activeModal = options;
 
-            // Focus first button
-            setTimeout(() => {
-                this.overlay.find('.bbai-modal-button').first().focus();
-            }, 250);
+            // Focus first button unless the caller will manage focus explicitly.
+            if (options.skipAutoFocus !== true) {
+                setTimeout(() => {
+                    this.overlay.find('.bbai-modal-button').first().focus();
+                }, 250);
+            }
 
             // Store onClose callback
             this.onCloseCallback = options.onClose;
@@ -213,14 +222,40 @@
          * Trap focus inside modal
          */
         trapFocus(e) {
-            const focusableElements = this.overlay.find('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            const overlayNode = this.overlay && this.overlay[0] ? this.overlay[0] : null;
+            if (!overlayNode || this.overlay.css('display') === 'none') {
+                return;
+            }
+
+            const focusableElements = this.overlay
+                .find('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+                .filter(function() {
+                    const element = this;
+                    return !element.disabled &&
+                        $(element).is(':visible') &&
+                        element.getAttribute('aria-hidden') !== 'true';
+                });
+
+            if (!focusableElements.length) {
+                e.preventDefault();
+                return;
+            }
+
             const firstElement = focusableElements.first()[0];
             const lastElement = focusableElements.last()[0];
+            const activeElement = document.activeElement;
+            const focusInsideOverlay = activeElement && overlayNode.contains(activeElement);
 
-            if (e.shiftKey && document.activeElement === firstElement) {
+            if (!focusInsideOverlay) {
+                e.preventDefault();
+                (e.shiftKey ? lastElement : firstElement).focus();
+                return;
+            }
+
+            if (e.shiftKey && activeElement === firstElement) {
                 e.preventDefault();
                 lastElement.focus();
-            } else if (!e.shiftKey && document.activeElement === lastElement) {
+            } else if (!e.shiftKey && activeElement === lastElement) {
                 e.preventDefault();
                 firstElement.focus();
             }

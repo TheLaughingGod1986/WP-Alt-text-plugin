@@ -127,6 +127,8 @@ class Admin_Hooks {
 			'bbai_trial_generate_single'      => 'ajax_trial_generate_single',
 			'bbai_trial_demo_generate_batch'  => 'ajax_trial_demo_generate_batch',
 			'bbai_scan_missing_alt'           => 'ajax_scan_missing_alt',
+			'bbai_start_alt_coverage_scan'   => 'ajax_start_alt_coverage_scan',
+			'bbai_poll_alt_coverage_scan'    => 'ajax_poll_alt_coverage_scan',
 			'bbai_rescan_alt_coverage'       => 'ajax_rescan_alt_coverage',
 			'bbai_generate_preview_alt'       => 'ajax_generate_preview_alt',
 			'bbai_apply_alt_batch'            => 'ajax_apply_alt_batch',

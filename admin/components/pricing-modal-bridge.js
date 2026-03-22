@@ -301,7 +301,9 @@
             return false;
         }
 
-        if (typeof window.alttextaiCloseModal === 'function') {
+        if (typeof window.bbaiCloseUpgradeModal === 'function') {
+            window.bbaiCloseUpgradeModal();
+        } else if (typeof window.alttextaiCloseModal === 'function') {
             window.alttextaiCloseModal();
         } else if (typeof alttextaiCloseModal === 'function') {
             alttextaiCloseModal();
@@ -324,6 +326,17 @@
 
     function openFallbackModal() {
         window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Trying fallback modal systems...');
+
+        if (typeof window.bbaiOpenUpgradeModal === 'function') {
+            window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Using window.bbaiOpenUpgradeModal');
+            window.bbaiOpenUpgradeModal('default', {
+                source: 'pricing-modal-bridge',
+                trigger: pricingModalState.lastFocusedElement || document.activeElement
+            });
+            if (isUpgradeModalVisible()) {
+                return true;
+            }
+        }
 
         if (typeof window.showUpgradeModal === 'function') {
             window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Using window.showUpgradeModal');
@@ -372,7 +385,7 @@
             phpModal.style.justifyContent = 'center';
             phpModal.classList.add('active');
             phpModal.classList.add('is-visible');
-            phpModal.removeAttribute('aria-hidden');
+            phpModal.setAttribute('aria-hidden', 'false');
             phpModal.setAttribute('aria-modal', 'true');
             document.body.style.overflow = 'hidden';
             if (document.documentElement) {
@@ -523,7 +536,7 @@
                     return;
                 }
 
-                const closeTrigger = e.target.closest('.bbai-upgrade-modal__close, [onclick*="alttextaiCloseModal"], [data-action="close-modal"]');
+                const closeTrigger = e.target.closest('.bbai-upgrade-modal__close, [data-bbai-upgrade-close="1"], [onclick*="alttextaiCloseModal"], [data-action="close-modal"]');
                 if (closeTrigger || e.target === modal) {
                     queueFocusRestore(320);
                 }

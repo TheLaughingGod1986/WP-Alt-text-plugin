@@ -12,15 +12,66 @@ if (!defined('ABSPATH')) {
 }
 ?>
 <?php
-$bbai_used = (int) ($current_usage['used'] ?? 0);
-$bbai_limit = max(1, (int) ($current_usage['limit'] ?? 50));
-$bbai_remaining = (int) ($current_usage['remaining'] ?? 0);
-$bbai_progress_pct = min(100, round(($bbai_used / $bbai_limit) * 100));
-$bbai_days_reset = isset($current_usage['days_until_reset']) && is_numeric($current_usage['days_until_reset'])
-    ? max(0, (int) $current_usage['days_until_reset'])
-    : 0;
+$bbai_usage_surface = isset($usage_surface) && is_array($usage_surface) ? $usage_surface : [];
+$bbai_used = (int) ($bbai_usage_surface['creditsUsed'] ?? ($current_usage['used'] ?? 0));
+$bbai_limit = max(1, (int) ($bbai_usage_surface['creditsLimit'] ?? ($current_usage['limit'] ?? 50)));
+$bbai_remaining = (int) ($bbai_usage_surface['creditsRemaining'] ?? ($current_usage['remaining'] ?? 0));
+$bbai_progress_pct = min(100, max(0, (int) ($bbai_usage_surface['usagePercent'] ?? 0)));
+$bbai_days_reset = isset($bbai_usage_surface['daysUntilReset'])
+    ? max(0, (int) $bbai_usage_surface['daysUntilReset'])
+    : (isset($current_usage['days_until_reset']) && is_numeric($current_usage['days_until_reset']) ? max(0, (int) $current_usage['days_until_reset']) : 0);
 $bbai_reset_date = $current_usage['reset_date'] ?? '';
-$bbai_plan = isset($current_usage['plan']) && !empty($current_usage['plan']) ? $current_usage['plan'] : 'free';
+$bbai_plan_label = (string) ($bbai_usage_surface['planLabel'] ?? ucfirst((string) ($current_usage['plan'] ?? 'free')));
+$bbai_summary_tone = (string) ($bbai_usage_surface['summaryTone'] ?? 'healthy');
+$bbai_insight_tone = (string) ($bbai_usage_surface['insightTone'] ?? 'healthy');
+$bbai_has_usage_activity = !empty($bbai_usage_surface['hasUsageActivity']);
+$bbai_has_filtered_results = !empty($bbai_usage_surface['hasFilteredResults']);
+$bbai_is_pro_plan = !empty($bbai_usage_surface['isProPlan']);
+$bbai_has_active_usage_filters = !empty($date_from) || !empty($date_to) || !empty($source) || $user_id > 0;
+$bbai_usage_activity_items = isset($usage_activity['items']) && is_array($usage_activity['items']) ? $usage_activity['items'] : [];
+$bbai_activity_total = (int) ($usage_activity['total'] ?? 0);
+$bbai_activity_pages = max(0, (int) ($usage_activity['pages'] ?? 0));
+$bbai_activity_per_page = max(1, (int) ($usage_activity['per_page'] ?? 20));
+$bbai_activity_start = $bbai_activity_total > 0 ? (($page - 1) * $bbai_activity_per_page) + 1 : 0;
+$bbai_activity_end = $bbai_activity_total > 0 ? min($bbai_activity_total, $bbai_activity_start + count($bbai_usage_activity_items) - 1) : 0;
+$bbai_remaining_pct = $bbai_limit > 0 ? ($bbai_remaining / $bbai_limit) * 100 : 100;
+$bbai_remaining_class = 'bbai-credit-stat-value--success';
+if ($bbai_remaining_pct <= 10) {
+    $bbai_remaining_class = 'bbai-credit-stat-value--danger';
+} elseif ($bbai_remaining_pct <= 30) {
+    $bbai_remaining_class = 'bbai-credit-stat-value--warning';
+}
+
+$bbai_activity_base_url = add_query_arg(
+    array_filter(
+        [
+            'page'      => 'bbai-credit-usage',
+            'date_from' => $date_from ?: null,
+            'date_to'   => $date_to ?: null,
+            'source'    => $source ?: null,
+            'user_id'   => $user_id > 0 ? $user_id : null,
+            'view'      => $view !== 'summary' ? $view : null,
+        ],
+        static function ($value) {
+            return null !== $value && '' !== $value;
+        }
+    ),
+    admin_url('admin.php')
+);
+
+$bbai_activity_pagination = $bbai_activity_pages > 1
+    ? paginate_links(
+        [
+            'base'      => add_query_arg('paged', '%#%', $bbai_activity_base_url),
+            'format'    => '',
+            'current'   => max(1, $page),
+            'total'     => $bbai_activity_pages,
+            'type'      => 'plain',
+            'prev_text' => __('Previous', 'beepbeep-ai-alt-text-generator'),
+            'next_text' => __('Next', 'beepbeep-ai-alt-text-generator'),
+        ]
+    )
+    : '';
 ?>
 <div class="bbai-credit-usage-page">
     <!-- 1. Page header -->
@@ -43,22 +94,15 @@ $bbai_plan = isset($current_usage['plan']) && !empty($current_usage['plan']) ? $
     </div>
 
     <!-- 2. Credit usage meter -->
-    <div class="bbai-card bbai-credit-usage-meter-card">
+    <div class="bbai-card bbai-credit-usage-meter-card bbai-credit-usage-meter-card--<?php echo esc_attr($bbai_summary_tone); ?>">
         <h3 class="bbai-credit-meter-title"><?php esc_html_e('Usage Summary', 'beepbeep-ai-alt-text-generator'); ?></h3>
         <?php if ($bbai_remaining === 0) : ?>
             <div class="bbai-limit-banner">
-                <strong><?php esc_html_e('Limit reached', 'beepbeep-ai-alt-text-generator'); ?></strong>
-                <?php
-                printf(
-                    /* translators: 1: credits limit (e.g. 50), 2: upgrade limit (e.g. 1,000) */
-                    esc_html__('You\'ve used all %1$s free credits this month. Upgrade to generate up to %2$s ALT texts automatically.', 'beepbeep-ai-alt-text-generator'),
-                    esc_html(number_format_i18n($bbai_limit)),
-                    esc_html(number_format_i18n(1000))
-                );
-                ?>
+                <strong><?php esc_html_e('Credits exhausted', 'beepbeep-ai-alt-text-generator'); ?></strong>
+                <span><?php echo esc_html($bbai_usage_surface['insightCopy'] ?? ''); ?></span>
             </div>
         <?php endif; ?>
-        <div class="bbai-credit-bar" role="progressbar" aria-valuenow="<?php echo esc_attr($bbai_progress_pct); ?>" aria-valuemin="0" aria-valuemax="100">
+        <div class="bbai-credit-bar bbai-credit-bar--<?php echo esc_attr($bbai_summary_tone); ?>" role="progressbar" aria-valuenow="<?php echo esc_attr($bbai_progress_pct); ?>" aria-valuemin="0" aria-valuemax="100">
             <div class="bbai-credit-bar-fill" style="width: <?php echo esc_attr($bbai_progress_pct); ?>%;"></div>
         </div>
         <p class="bbai-credit-usage-text">
@@ -71,45 +115,22 @@ $bbai_plan = isset($current_usage['plan']) && !empty($current_usage['plan']) ? $
             );
             ?>
         </p>
-        <p class="bbai-credit-reset">
-            <?php
-            if ($bbai_days_reset > 0) {
-                echo esc_html(
-                    sprintf(
-                        /* translators: %d: number of days until reset */
-                        _n('Resets in %d day', 'Resets in %d days', $bbai_days_reset, 'beepbeep-ai-alt-text-generator'),
-                        $bbai_days_reset
-                    )
-                );
-            } elseif (!empty($bbai_reset_date)) {
-                printf(
-                    /* translators: %s: reset date */
-                    esc_html__('Resets on %s', 'beepbeep-ai-alt-text-generator'),
-                    esc_html($bbai_reset_date)
-                );
-            } else {
-                esc_html_e('Monthly reset', 'beepbeep-ai-alt-text-generator');
-            }
-            ?>
-        </p>
-        <p class="bbai-credit-helper">
-            <?php
-            if ($bbai_remaining === 0) {
-                printf(
-                    /* translators: 1: credits limit (e.g. 50), 2: upgrade limit (e.g. 1,000) */
-                    esc_html__('You\'ve used all %1$s free credits this month. Upgrade to generate up to %2$s ALT texts automatically.', 'beepbeep-ai-alt-text-generator'),
-                    esc_html(number_format_i18n($bbai_limit)),
-                    esc_html(number_format_i18n(1000))
-                );
-            } else {
-                printf(
-                    /* translators: %s: credits remaining */
-                    esc_html__('You have %s credits remaining in the current billing period.', 'beepbeep-ai-alt-text-generator'),
-                    esc_html(number_format_i18n($bbai_remaining))
-                );
-            }
-            ?>
-        </p>
+        <div class="bbai-credit-summary-copy">
+            <p class="bbai-credit-summary-line bbai-credit-summary-line--<?php echo esc_attr($bbai_summary_tone); ?>">
+                <?php echo esc_html($bbai_usage_surface['summaryPositionCopy'] ?? ''); ?>
+            </p>
+            <div class="bbai-credit-summary-meta" aria-label="<?php esc_attr_e('Current usage details', 'beepbeep-ai-alt-text-generator'); ?>">
+                <span class="bbai-credit-summary-pill"><?php echo esc_html($bbai_usage_surface['summaryRemainingCopy'] ?? ''); ?></span>
+                <span class="bbai-credit-summary-pill"><?php echo esc_html($bbai_usage_surface['summaryResetCopy'] ?? ''); ?></span>
+            </div>
+            <div class="bbai-credit-insight bbai-credit-insight--<?php echo esc_attr($bbai_insight_tone); ?>">
+                <span class="bbai-credit-insight-label"><?php esc_html_e('Usage insight', 'beepbeep-ai-alt-text-generator'); ?></span>
+                <p><?php echo esc_html($bbai_usage_surface['insightCopy'] ?? ''); ?></p>
+            </div>
+            <p class="bbai-credit-automation-note">
+                <?php echo esc_html($bbai_usage_surface['automationCopy'] ?? ''); ?>
+            </p>
+        </div>
     </div>
 
     <!-- 3. Stats cards + 4. Upgrade card -->
@@ -117,7 +138,7 @@ $bbai_plan = isset($current_usage['plan']) && !empty($current_usage['plan']) ? $
         <div class="bbai-credit-stats-grid">
             <div class="bbai-card bbai-credit-stat-card">
                 <span class="bbai-credit-stat-title"><?php esc_html_e('Plan', 'beepbeep-ai-alt-text-generator'); ?></span>
-                <span class="bbai-credit-stat-value"><?php echo esc_html(ucfirst($bbai_plan)); ?></span>
+                <span class="bbai-credit-stat-value"><?php echo esc_html($bbai_plan_label); ?></span>
             </div>
             <div class="bbai-card bbai-credit-stat-card">
                 <span class="bbai-credit-stat-title"><?php esc_html_e('Credits Used', 'beepbeep-ai-alt-text-generator'); ?></span>
@@ -125,15 +146,6 @@ $bbai_plan = isset($current_usage['plan']) && !empty($current_usage['plan']) ? $
             </div>
             <div class="bbai-card bbai-credit-stat-card">
                 <span class="bbai-credit-stat-title"><?php esc_html_e('Credits Remaining', 'beepbeep-ai-alt-text-generator'); ?></span>
-                <?php
-                $bbai_remaining_pct = $bbai_limit > 0 ? ($bbai_remaining / $bbai_limit) * 100 : 100;
-                $bbai_remaining_class = 'bbai-credit-stat-value--success';
-                if ($bbai_remaining_pct <= 10) {
-                    $bbai_remaining_class = 'bbai-credit-stat-value--danger';
-                } elseif ($bbai_remaining_pct <= 30) {
-                    $bbai_remaining_class = 'bbai-credit-stat-value--warning';
-                }
-                ?>
                 <span class="bbai-credit-stat-value <?php echo esc_attr($bbai_remaining_class); ?>"><?php echo esc_html(number_format_i18n($bbai_remaining)); ?></span>
             </div>
             <div class="bbai-card bbai-credit-stat-card">
@@ -156,27 +168,31 @@ $bbai_plan = isset($current_usage['plan']) && !empty($current_usage['plan']) ? $
             </div>
         </div>
         <div class="bbai-card bbai-credit-upgrade-card bbai-upgrade-growth-card">
-            <h3 class="bbai-credit-upgrade-title"><?php esc_html_e('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'); ?></h3>
+            <p class="bbai-credit-upgrade-eyebrow"><?php echo esc_html($bbai_usage_surface['upgradeEyebrow'] ?? ''); ?></p>
+            <p class="bbai-credit-upgrade-context"><?php echo esc_html($bbai_usage_surface['upgradeContext'] ?? ''); ?></p>
+            <h3 class="bbai-credit-upgrade-title"><?php echo esc_html($bbai_usage_surface['upgradeTitle'] ?? ''); ?></h3>
             <p class="bbai-credit-upgrade-desc">
-                <?php esc_html_e('Generate up to 1,000 ALT texts per month.', 'beepbeep-ai-alt-text-generator'); ?>
+                <?php echo esc_html($bbai_usage_surface['upgradeDescription'] ?? ''); ?>
             </p>
             <ul class="bbai-credit-upgrade-features">
-                <li><?php esc_html_e('Bulk processing for media library', 'beepbeep-ai-alt-text-generator'); ?></li>
-                <li><?php esc_html_e('Priority queue for faster results', 'beepbeep-ai-alt-text-generator'); ?></li>
-                <li><?php esc_html_e('WooCommerce product image support', 'beepbeep-ai-alt-text-generator'); ?></li>
-                <li><?php esc_html_e('Multilingual SEO support', 'beepbeep-ai-alt-text-generator'); ?></li>
+                <?php foreach (($bbai_usage_surface['upgradeBenefits'] ?? []) as $bbai_benefit) : ?>
+                    <li><?php echo esc_html($bbai_benefit); ?></li>
+                <?php endforeach; ?>
             </ul>
-            <button type="button" class="bbai-btn bbai-btn-primary bbai-credit-upgrade-cta" data-action="show-upgrade-modal">
-                <?php esc_html_e('Upgrade Plan', 'beepbeep-ai-alt-text-generator'); ?>
-            </button>
-            <p class="bbai-credit-upgrade-footer"><?php esc_html_e('£12.99/month • Cancel anytime', 'beepbeep-ai-alt-text-generator'); ?></p>
+            <?php if (($bbai_usage_surface['upgradeCtaType'] ?? '') === 'link') : ?>
+                <a href="<?php echo esc_url($bbai_usage_surface['upgradeCtaUrl'] ?? ''); ?>" class="bbai-btn bbai-btn-primary bbai-credit-upgrade-cta">
+                    <?php echo esc_html($bbai_usage_surface['upgradeCtaLabel'] ?? ''); ?>
+                </a>
+            <?php else : ?>
+                <button type="button" class="bbai-btn bbai-btn-primary bbai-credit-upgrade-cta" data-action="show-upgrade-modal">
+                    <?php echo esc_html($bbai_usage_surface['upgradeCtaLabel'] ?? ''); ?>
+                </button>
+            <?php endif; ?>
+            <p class="bbai-credit-upgrade-footer"><?php echo esc_html($bbai_usage_surface['upgradeFooter'] ?? ''); ?></p>
         </div>
     </div>
 
     <!-- 5. Usage activity section -->
-    <?php
-    $bbai_has_active_usage_filters = !empty($date_from) || !empty($date_to) || !empty($source) || $user_id > 0;
-    ?>
     <details class="bbai-card bbai-credit-filters-card bbai-credit-usage-activity" <?php echo $bbai_has_active_usage_filters ? 'open' : ''; ?>>
         <summary class="bbai-credit-usage-activity-summary">
             <div class="bbai-credit-usage-activity-header">
@@ -212,10 +228,11 @@ $bbai_plan = isset($current_usage['plan']) && !empty($current_usage['plan']) ? $
                     <div class="bbai-credit-filter-field">
                         <label class="bbai-credit-filter-label"><?php esc_html_e('Source', 'beepbeep-ai-alt-text-generator'); ?></label>
                         <select name="source" class="bbai-credit-filter-select">
-                            <option value=""><?php esc_html_e('All', 'beepbeep-ai-alt-text-generator'); ?></option>
-                            <option value="api" <?php selected($source, 'api'); ?>><?php esc_html_e('API', 'beepbeep-ai-alt-text-generator'); ?></option>
-                            <option value="upload" <?php selected($source, 'upload'); ?>><?php esc_html_e('Upload', 'beepbeep-ai-alt-text-generator'); ?></option>
-                            <option value="bulk" <?php selected($source, 'bulk'); ?>><?php esc_html_e('Bulk', 'beepbeep-ai-alt-text-generator'); ?></option>
+                            <?php foreach (($source_options ?? []) as $bbai_source_value => $bbai_source_label) : ?>
+                                <option value="<?php echo esc_attr($bbai_source_value); ?>" <?php selected($source, $bbai_source_value); ?>>
+                                    <?php echo esc_html($bbai_source_label); ?>
+                                </option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="bbai-credit-filter-field">
@@ -235,6 +252,125 @@ $bbai_plan = isset($current_usage['plan']) && !empty($current_usage['plan']) ? $
                     <a href="<?php echo esc_url(admin_url('admin.php?page=bbai-credit-usage')); ?>" class="bbai-clear-filter-link"><?php esc_html_e('Clear', 'beepbeep-ai-alt-text-generator'); ?></a>
                 </div>
             </form>
+            <div class="bbai-credit-activity-shell">
+                <?php if (!$bbai_has_usage_activity) : ?>
+                    <div class="bbai-credit-activity-state bbai-credit-activity-state--empty">
+                        <div class="bbai-credit-activity-state__copy">
+                            <h4 class="bbai-credit-activity-state__title"><?php esc_html_e('No usage yet', 'beepbeep-ai-alt-text-generator'); ?></h4>
+                            <p class="bbai-credit-activity-state__description"><?php esc_html_e('Credit activity will appear here when images are scanned, generated, or reviewed.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                        </div>
+                        <div class="bbai-credit-activity-state__actions">
+                            <button type="button" class="bbai-btn bbai-btn-primary" data-bbai-action="scan-opportunity"><?php esc_html_e('Scan Media Library', 'beepbeep-ai-alt-text-generator'); ?></button>
+                            <?php if ($bbai_is_pro_plan) : ?>
+                                <a href="<?php echo esc_url($bbai_usage_surface['automationUrl'] ?? ''); ?>" class="bbai-btn bbai-btn-secondary"><?php esc_html_e('Automation settings', 'beepbeep-ai-alt-text-generator'); ?></a>
+                            <?php else : ?>
+                                <button type="button" class="bbai-btn bbai-btn-secondary" data-action="show-upgrade-modal"><?php esc_html_e('Enable auto-optimization', 'beepbeep-ai-alt-text-generator'); ?></button>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php elseif (!$bbai_has_filtered_results) : ?>
+                    <div class="bbai-credit-activity-state bbai-credit-activity-state--empty">
+                        <div class="bbai-credit-activity-state__copy">
+                            <h4 class="bbai-credit-activity-state__title"><?php esc_html_e('No matching activity found', 'beepbeep-ai-alt-text-generator'); ?></h4>
+                            <p class="bbai-credit-activity-state__description"><?php esc_html_e('Try a different date range, source, or user filter.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                        </div>
+                        <div class="bbai-credit-activity-state__actions">
+                            <a href="<?php echo esc_url(admin_url('admin.php?page=bbai-credit-usage')); ?>" class="bbai-btn bbai-btn-secondary"><?php esc_html_e('Clear filters', 'beepbeep-ai-alt-text-generator'); ?></a>
+                        </div>
+                    </div>
+                <?php else : ?>
+                    <div class="bbai-usage-table-card bbai-credit-activity-results">
+                        <div class="bbai-credit-activity-results-header">
+                            <div>
+                                <h4 class="bbai-card-title"><?php esc_html_e('Recent credit activity', 'beepbeep-ai-alt-text-generator'); ?></h4>
+                                <p class="bbai-credit-activity-results-copy">
+                                    <?php
+                                    printf(
+                                        /* translators: 1: first visible row number, 2: last visible row number, 3: total activity row count. */
+                                        esc_html__('Showing %1$s-%2$s of %3$s logged credit events.', 'beepbeep-ai-alt-text-generator'),
+                                        esc_html(number_format_i18n($bbai_activity_start)),
+                                        esc_html(number_format_i18n($bbai_activity_end)),
+                                        esc_html(number_format_i18n($bbai_activity_total))
+                                    );
+                                    ?>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="bbai-credit-activity-table-wrap">
+                            <table class="widefat fixed striped">
+                                <thead>
+                                    <tr>
+                                        <th><?php esc_html_e('Date', 'beepbeep-ai-alt-text-generator'); ?></th>
+                                        <th><?php esc_html_e('Action / Source', 'beepbeep-ai-alt-text-generator'); ?></th>
+                                        <th><?php esc_html_e('Credits Used', 'beepbeep-ai-alt-text-generator'); ?></th>
+                                        <th><?php esc_html_e('User', 'beepbeep-ai-alt-text-generator'); ?></th>
+                                        <th><?php esc_html_e('Related Item', 'beepbeep-ai-alt-text-generator'); ?></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($bbai_usage_activity_items as $bbai_activity_item) : ?>
+                                        <?php
+                                        $bbai_activity_timestamp = !empty($bbai_activity_item['generated_at']) ? strtotime($bbai_activity_item['generated_at']) : false;
+                                        $bbai_related_label = $bbai_activity_item['item_label'] ?? '';
+                                        $bbai_related_meta = $bbai_activity_item['item_meta'] ?? '';
+                                        $bbai_related_url = $bbai_activity_item['item_url'] ?? '';
+                                        ?>
+                                        <tr>
+                                            <td>
+                                                <?php if ($bbai_activity_timestamp) : ?>
+                                                    <?php echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $bbai_activity_timestamp)); ?>
+                                                <?php else : ?>
+                                                    &mdash;
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <strong><?php echo esc_html($bbai_activity_item['source_label'] ?? __('Manual', 'beepbeep-ai-alt-text-generator')); ?></strong>
+                                                <?php if (!empty($bbai_activity_item['model'])) : ?>
+                                                    <div class="bbai-table-subtitle">
+                                                        <?php
+                                                        printf(
+                                                            /* translators: %s: model name. */
+                                                            esc_html__('Model: %s', 'beepbeep-ai-alt-text-generator'),
+                                                            esc_html($bbai_activity_item['model'])
+                                                        );
+                                                        ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <span class="bbai-credit-activity-credits"><?php echo esc_html(number_format_i18n((int) ($bbai_activity_item['credits_used'] ?? 0))); ?></span>
+                                            </td>
+                                            <td>
+                                                <strong><?php echo esc_html($bbai_activity_item['display_name'] ?? __('System', 'beepbeep-ai-alt-text-generator')); ?></strong>
+                                                <?php if (!empty($bbai_activity_item['user_email'])) : ?>
+                                                    <div class="bbai-table-subtitle"><?php echo esc_html($bbai_activity_item['user_email']); ?></div>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <?php if (!empty($bbai_related_label) && !empty($bbai_related_url)) : ?>
+                                                    <a href="<?php echo esc_url($bbai_related_url); ?>" class="bbai-credit-activity-link"><?php echo esc_html($bbai_related_label); ?></a>
+                                                <?php elseif (!empty($bbai_related_label)) : ?>
+                                                    <span><?php echo esc_html($bbai_related_label); ?></span>
+                                                <?php else : ?>
+                                                    <span>&mdash;</span>
+                                                <?php endif; ?>
+                                                <?php if (!empty($bbai_related_meta)) : ?>
+                                                    <div class="bbai-table-subtitle"><?php echo esc_html($bbai_related_meta); ?></div>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <?php if (!empty($bbai_activity_pagination)) : ?>
+                            <nav class="bbai-credit-activity-pagination" aria-label="<?php esc_attr_e('Usage activity pages', 'beepbeep-ai-alt-text-generator'); ?>">
+                                <?php echo wp_kses_post($bbai_activity_pagination); ?>
+                            </nav>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
         </div>
     </details>
 
