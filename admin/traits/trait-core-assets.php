@@ -114,7 +114,7 @@ trait Core_Assets {
      * @return bool
      */
     private function is_dashboard_tab(): bool {
-        return $this->get_resolved_tab() === 'dashboard';
+        return $this->is_dashboard_main_page() && $this->get_resolved_tab() === 'dashboard';
     }
 
     /**
@@ -127,26 +127,74 @@ trait Core_Assets {
     }
 
     /**
+     * Check if current tab is analytics.
+     *
+     * @return bool
+     */
+    private function is_analytics_tab(): bool {
+        return $this->get_resolved_tab() === 'analytics';
+    }
+
+    /**
+     * Get the current BeepBeep AI admin page slug.
+     *
+     * @return string
+     */
+    private function get_current_admin_page(): string {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
+        return isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+    }
+
+    /**
+     * Check if the current page is the main dashboard page.
+     *
+     * @return bool
+     */
+    private function is_dashboard_main_page(): bool {
+        return $this->get_current_admin_page() === self::MENU_SLUG_DASHBOARD;
+    }
+
+    /**
+     * Check if the current page is the dedicated onboarding page.
+     *
+     * @return bool
+     */
+    private function is_onboarding_page(): bool {
+        return $this->get_current_admin_page() === self::MENU_SLUG_ONBOARDING;
+    }
+
+    /**
      * Resolve current tab from page slug and URL param.
      *
      * @return string
      */
     private function get_resolved_tab(): string {
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
-        $page = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : 'bbai';
+        $page = $this->get_current_admin_page();
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
         $tab = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : '';
+        $tab_aliases = [
+            'credit-usage' => 'usage',
+            'guide'        => 'help',
+            'debug'        => 'settings',
+        ];
         $page_to_tab = [
             'bbai' => 'dashboard',
             'bbai-library' => 'library',
             'bbai-analytics' => 'analytics',
-            'bbai-credit-usage' => 'credit-usage',
-            'bbai-guide' => 'guide',
+            'bbai-credit-usage' => 'usage',
+            'bbai-guide' => 'help',
             'bbai-settings' => 'settings',
-            'bbai-debug' => 'debug',
+            'bbai-debug' => 'settings',
             'bbai-agency-overview' => 'agency-overview',
+            'bbai-onboarding' => 'onboarding',
         ];
-        return $tab !== '' ? $tab : ($page_to_tab[ $page ] ?? 'dashboard');
+
+        if ($tab !== '') {
+            return $tab_aliases[ $tab ] ?? $tab;
+        }
+
+        $resolved = $page_to_tab[ $page ] ?? 'dashboard';
+        return $tab_aliases[ $resolved ] ?? $resolved;
     }
 
     /**
@@ -159,16 +207,17 @@ trait Core_Assets {
     private function enqueue_media_library_assets(string $hook, string $base_url, string $base_path): void {
         $use_debug_assets = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG;
         $js_base  = $use_debug_assets ? 'assets/src/js/' : 'assets/dist/js/';
-        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
-        $trial_status = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_status();
 
+        $toast_file = $this->get_asset_path($js_base, 'toast', $use_debug_assets, 'js', $base_path);
+        $toast_version = $this->get_asset_version($toast_file, '1.0.0', $base_path);
         $admin_file = $this->get_asset_path($js_base, 'bbai-admin', $use_debug_assets, 'js', $base_path);
         $admin_version = $this->get_asset_version($admin_file, '3.0.0', $base_path);
 
         $checkout_prices = $this->get_checkout_price_ids();
         $l10n_common = $this->get_common_l10n();
 
-        wp_enqueue_script('bbai-admin', $base_url . $admin_file, ['jquery', 'wp-i18n'], $admin_version, true);
+        wp_enqueue_script('bbai-toast', $base_url . $toast_file, [], $toast_version, true);
+        wp_enqueue_script('bbai-admin', $base_url . $admin_file, ['jquery', 'wp-i18n', 'bbai-toast'], $admin_version, true);
         wp_localize_script('bbai-admin', 'BBAI', [
             'nonce'     => wp_create_nonce('wp_rest'),
             'rest'      => esc_url_raw(rest_url('bbai/v1/')),
@@ -184,15 +233,16 @@ trait Core_Assets {
             'upgradeUrl' => esc_url(Usage_Tracker::get_upgrade_url()),
             'billingPortalUrl' => esc_url(Usage_Tracker::get_billing_portal_url()),
             'checkoutPrices' => $checkout_prices,
-            'trial' => $trial_status,
             'canManage' => $this->user_can_manage(),
             'inlineBatchSize' => defined('BBAI_INLINE_BATCH') ? max(1, intval(BBAI_INLINE_BATCH)) : 1,
+            'wizard' => $this->get_setup_wizard_bootstrap(),
         ]);
         wp_localize_script('bbai-admin', 'bbai_ajax', [
             'ajaxurl' => admin_url('admin-ajax.php'),
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce'   => wp_create_nonce('beepbeepai_nonce'),
-            'trial' => $trial_status,
+            'admin_url' => admin_url('admin.php'),
+            'admin_logout_confirm' => __('Are you sure you want to log out of the admin panel?', 'beepbeep-ai-alt-text-generator'),
             'can_manage' => $this->user_can_manage(),
             'logout_redirect' => admin_url('admin.php?page=bbai'),
         ]);
@@ -219,13 +269,26 @@ trait Core_Assets {
         $checkout_prices = $this->get_checkout_price_ids();
         $l10n_common = $this->get_common_l10n();
 
-        // Helper closures
         $asset_version = function(string $relative, string $fallback) use ($base_path): string {
             return $this->get_asset_version($relative, $fallback, $base_path);
         };
-        $asset_path = function(string $base, string $name, bool $debug, string $type) use ($base_path): string {
-            return $this->get_asset_path($base, $name, $debug, $type, $base_path);
-        };
+
+        $dashboard_js = $this->get_asset_path($js_base, 'bbai-dashboard', $use_debug_assets, 'js', $base_path);
+        $usage_bridge_js = $this->get_asset_path($js_base, 'usage-components-bridge', $use_debug_assets, 'js', $base_path);
+        $upgrade_js = $this->get_asset_path($js_base, 'upgrade-modal', $use_debug_assets, 'js', $base_path);
+        $auth_js = $this->get_asset_path($js_base, 'auth-modal', $use_debug_assets, 'js', $base_path);
+        $dashboard_scripts_js = $this->get_asset_path($js_base, 'bbai-dashboard-scripts', $use_debug_assets, 'js', $base_path);
+        $admin_panel_js = $this->get_asset_path($js_base, 'bbai-admin-panel', $use_debug_assets, 'js', $base_path);
+        $logger_js = $this->get_asset_path($js_base, 'bbai-logger', $use_debug_assets, 'js', $base_path);
+        $tooltips_js = $this->get_asset_path($js_base, 'bbai-tooltips', $use_debug_assets, 'js', $base_path);
+        $modal_js = $this->get_asset_path($js_base, 'bbai-modal', $use_debug_assets, 'js', $base_path);
+        $analytics_js = $this->get_asset_path($js_base, 'bbai-analytics', $use_debug_assets, 'js', $base_path);
+        $debug_js = $this->get_asset_path($js_base, 'bbai-debug', $use_debug_assets, 'js', $base_path);
+        $contact_modal_js = $this->get_asset_path($js_base, 'bbai-contact-modal', $use_debug_assets, 'js', $base_path);
+        $modal_css = $this->get_asset_path($css_base, 'bbai-modal', $use_debug_assets, 'css', $base_path);
+        $tooltips_css = $this->get_asset_path($css_base, 'bbai-tooltips', $use_debug_assets, 'css', $base_path);
+        $admin_css = $this->get_asset_path($css_base, 'bbai-admin', $use_debug_assets, 'css', $base_path);
+        $contact_modal_css = $this->get_asset_path($css_base, 'bbai-contact-modal', $use_debug_assets, 'css', $base_path);
 
         // Unified CSS bundle (with fallback if minified missing)
         $unified_css = $use_debug_assets ? 'assets/css/unified.css' : 'assets/css/unified.min.css';
@@ -251,230 +314,128 @@ trait Core_Assets {
             $asset_version( $modern_css, '5.0.0' )
         );
 
-        // Modal CSS
         wp_enqueue_style(
-            'bbai-modal',
-            $base_url . $asset_path($css_base, 'bbai-modal', $use_debug_assets, 'css'),
+            'bbai-admin-wizard',
+            $base_url . $admin_css,
             ['bbai-unified'],
-            $asset_version($asset_path($css_base, 'bbai-modal', $use_debug_assets, 'css'), '4.3.0')
-        );
-
-        // Tooltips CSS
-        wp_enqueue_style(
-            'bbai-tooltips',
-            $base_url . $asset_path($css_base, 'bbai-tooltips', $use_debug_assets, 'css'),
-            ['bbai-unified'],
-            $asset_version($asset_path($css_base, 'bbai-tooltips', $use_debug_assets, 'css'), '4.3.0')
+            $asset_version($admin_css, '1.0.0')
         );
 
         $status_card_css = 'assets/css/features/dashboard/status-card-refresh.css';
         wp_enqueue_style(
             'bbai-dashboard-status-card-refresh',
             $base_url . $status_card_css,
-            [ 'bbai-modern', 'bbai-modal', 'bbai-tooltips' ],
+            [ 'bbai-modern', 'bbai-admin-wizard' ],
             $asset_version( $status_card_css, '1.0.0' )
+        );
+
+        $queue_workflow_css = 'assets/css/features/dashboard/queue-workflow.css';
+        wp_enqueue_style(
+            'bbai-queue-workflow',
+            $base_url . $queue_workflow_css,
+            [ 'bbai-dashboard-status-card-refresh' ],
+            $asset_version( $queue_workflow_css, '1.0.0' )
         );
 
         $upgrade_modal_refresh_css = 'assets/css/features/pricing/upgrade-modal-refresh.css';
         wp_enqueue_style(
             'bbai-upgrade-modal-refresh',
             $base_url . $upgrade_modal_refresh_css,
-            [ 'bbai-dashboard-status-card-refresh' ],
+            [ 'bbai-queue-workflow' ],
             $asset_version( $upgrade_modal_refresh_css, '1.0.0' )
         );
 
-        // JavaScript files
-        $js_file = $asset_path($js_base, 'bbai-dashboard', $use_debug_assets, 'js');
-        $upgrade_js = $asset_path($js_base, 'upgrade-modal', $use_debug_assets, 'js');
-        $auth_js = $asset_path($js_base, 'auth-modal', $use_debug_assets, 'js');
-
-        // Logger (must load first)
-        wp_enqueue_script(
-            'bbai-logger',
-            $base_url . $asset_path($js_base, 'bbai-logger', $use_debug_assets, 'js'),
-            [],
-            $asset_version($asset_path($js_base, 'bbai-logger', $use_debug_assets, 'js'), '4.3.0'),
-            true
-        );
-
-        // Modal JS
-        wp_enqueue_script(
-            'bbai-modal',
-            $base_url . $asset_path($js_base, 'bbai-modal', $use_debug_assets, 'js'),
-            ['jquery', 'bbai-logger', 'wp-i18n'],
-            $asset_version($asset_path($js_base, 'bbai-modal', $use_debug_assets, 'js'), '4.3.0'),
-            true
-        );
-
-        // Tooltips JS
-        wp_enqueue_script(
-            'bbai-tooltips',
-            $base_url . $asset_path($js_base, 'bbai-tooltips', $use_debug_assets, 'js'),
-            ['jquery', 'wp-i18n'],
-            $asset_version($asset_path($js_base, 'bbai-tooltips', $use_debug_assets, 'js'), '4.3.0'),
-            true
-        );
-
-        // Loading States JS
-        wp_enqueue_script(
-            'bbai-loading-states',
-            $base_url . $asset_path($js_base, 'bbai-loading-states', $use_debug_assets, 'js'),
-            [],
-            $asset_version($asset_path($js_base, 'bbai-loading-states', $use_debug_assets, 'js'), '1.0.0'),
-            true
-        );
-
-        // Performance Optimizations JS - Load early, no dependencies
-        $perf_path = $asset_path($js_base, 'bbai-performance', $use_debug_assets, 'js');
-        wp_enqueue_script(
-            'bbai-performance',
-            $base_url . $perf_path,
-            [],
-            $asset_version($perf_path, file_exists($base_path . $perf_path) ? filemtime($base_path . $perf_path) : '1.0.0'),
-            true
-        );
-
-        // Accessibility JS - Load early, no dependencies
-        $access_path = $asset_path($js_base, 'bbai-accessibility', $use_debug_assets, 'js');
-        wp_enqueue_script(
-            'bbai-accessibility',
-            $base_url . $access_path,
-            [],
-            $asset_version($access_path, file_exists($base_path . $access_path) ? filemtime($base_path . $access_path) : '1.0.0'),
-            true
-        );
-
-        // Toast Notifications JS - Load early, needed by other scripts
-        $toast_path = $asset_path($js_base, 'bbai-toast', $use_debug_assets, 'js');
-        wp_enqueue_script(
-            'bbai-toast',
-            $base_url . $toast_path,
-            [],
-            $asset_version($toast_path, file_exists($base_path . $toast_path) ? filemtime($base_path . $toast_path) : '1.0.0'),
-            true
-        );
-
-        // Error Handler JS - Depends on jQuery for AJAX interception
-        $error_path = $asset_path($js_base, 'bbai-error-handler', $use_debug_assets, 'js');
-        wp_enqueue_script(
-            'bbai-error-handler',
-            $base_url . $error_path,
-            ['jquery', 'wp-i18n'],
-            $asset_version($error_path, file_exists($base_path . $error_path) ? filemtime($base_path . $error_path) : '1.0.0'),
-            true
-        );
-
-        // Onboarding JS - Load on all pages (including dedicated onboarding page)
-        $onboard_path = $asset_path($js_base, 'bbai-onboarding', $use_debug_assets, 'js');
-        wp_enqueue_script(
-            'bbai-onboarding',
-            $base_url . $onboard_path,
-            ['jquery', 'bbai-modal', 'wp-i18n'],
-            $asset_version($onboard_path, file_exists($base_path . $onboard_path) ? filemtime($base_path . $onboard_path) : '1.0.0'),
-            true
-        );
-
-        // Social Proof JS - Depends on jQuery for carousel functionality
-        $social_path = $asset_path($js_base, 'bbai-social-proof', $use_debug_assets, 'js');
-        wp_enqueue_script(
-            'bbai-social-proof',
-            $base_url . $social_path,
-            ['jquery'],
-            $asset_version($social_path, file_exists($base_path . $social_path) ? filemtime($base_path . $social_path) : '1.0.0'),
-            true
-        );
-
-        // Celebrations JS - Depends on toast notifications
-        $celeb_path = $asset_path($js_base, 'bbai-celebrations', $use_debug_assets, 'js');
-        wp_enqueue_script(
-            'bbai-celebrations',
-            $base_url . $celeb_path,
-            ['jquery', 'bbai-toast'],
-            $asset_version($celeb_path, file_exists($base_path . $celeb_path) ? filemtime($base_path . $celeb_path) : '1.0.0'),
-            true
-        );
-
-        // Context-Aware Upgrades JS - Depends on toast notifications
-        $context_path = $asset_path($js_base, 'bbai-context-upgrades', $use_debug_assets, 'js');
-        wp_enqueue_script(
-            'bbai-context-upgrades',
-            $base_url . $context_path,
-            ['jquery', 'bbai-toast'],
-            $asset_version($context_path, file_exists($base_path . $context_path) ? filemtime($base_path . $context_path) : '1.0.0'),
-            true
-        );
-
-        // Analytics JS - Depends on jQuery for AJAX and DOM manipulation
-        $analytics_path = $asset_path($js_base, 'bbai-analytics', $use_debug_assets, 'js');
-        wp_enqueue_script(
-            'bbai-analytics',
-            $base_url . $analytics_path,
-            ['jquery', 'wp-i18n'],
-            $asset_version($analytics_path, file_exists($base_path . $analytics_path) ? filemtime($base_path . $analytics_path) : '1.0.0'),
-            true
-        );
-
-        // Copy & Export JS - Depends on jQuery for DOM manipulation
-        $copy_path = $asset_path($js_base, 'bbai-copy-export', $use_debug_assets, 'js');
-	        wp_enqueue_script(
-	            'bbai-copy-export',
-	            $base_url . $copy_path,
-	            ['jquery', 'wp-i18n'],
-	            $asset_version($copy_path, file_exists($base_path . $copy_path) ? filemtime($base_path . $copy_path) : '1.0.0'),
-	            true
-	        );
-
-        // Dashboard JS (lazy-loaded: only when on dashboard tab for faster initial load on other tabs)
-        if ( $this->is_dashboard_tab() ) {
-            $stats_data = $this->get_media_stats();
-            $usage_data = Usage_Tracker::get_stats_display();
-
-            // Monthly reset insight modal — detect if a new billing period started.
-            $reset_modal_data = null;
-            if ( $this->api_client->is_authenticated() && Usage_Tracker::detect_reset() ) {
-                $reset_modal_data = Usage_Tracker::get_reset_modal_data();
-                // Store current usage for next month's comparison.
-                Usage_Tracker::store_previous_month_data(
-                    absint( $usage_data['used'] ),
-                    absint( $usage_data['limit'] )
-                );
-            } elseif ( $this->api_client->is_authenticated() && absint( $usage_data['used'] ) > 0 ) {
-                // Keep stored usage up to date for next month's reset comparison.
-                Usage_Tracker::store_previous_month_data(
-                    absint( $usage_data['used'] ),
-                    absint( $usage_data['limit'] )
-                );
-            }
-
-            wp_enqueue_script(
-                'bbai-dashboard',
-                $base_url . $js_file,
-                ['jquery', 'wp-api-fetch', 'wp-i18n'],
-                $asset_version($js_file, '3.0.0'),
-                true
+        if ($this->is_analytics_tab()) {
+            $analytics_page_css = 'assets/css/features/dashboard/analytics-page.css';
+            wp_enqueue_style(
+                'bbai-analytics-page',
+                $base_url . $analytics_page_css,
+                [ 'bbai-upgrade-modal-refresh' ],
+                $asset_version($analytics_page_css, '1.0.0')
             );
-
-            // Admin JS (for Generate Missing and Re-optimize All buttons)
-            $admin_file = $asset_path($js_base, 'bbai-admin', $use_debug_assets, 'js');
-            $admin_version = $asset_version($admin_file, '3.0.0');
-            wp_enqueue_script(
-                'bbai-admin',
-                $base_url . $admin_file,
-                ['jquery', 'bbai-dashboard'],
-                $admin_version,
-                true
-            );
-
-            // Localize scripts (BBAI_DASH is shared by both bbai-dashboard and bbai-admin)
-            $this->localize_dashboard_scripts($stats_data, $usage_data, $checkout_prices, $l10n_common, $reset_modal_data);
-        } else {
-            // Non-dashboard tabs: bbai-admin from enqueue_media_library_assets; localize for library/toolbar
-            $stats_data = $this->get_media_stats();
-            $usage_data = Usage_Tracker::get_stats_display();
-            $this->localize_dashboard_scripts($stats_data, $usage_data, $checkout_prices, $l10n_common, null);
         }
 
-        // Upgrade modal JS
+        if ($this->is_onboarding_page()) {
+            $onboarding_css = 'assets/css/onboarding.css';
+            $onboarding_js  = 'assets/js/onboarding.js';
+
+            wp_enqueue_style(
+                'bbai-onboarding',
+                $base_url . $onboarding_css,
+                ['bbai-unified', 'bbai-modern'],
+                $asset_version($onboarding_css, '1.0.0')
+            );
+
+            wp_enqueue_script(
+                'bbai-onboarding',
+                $base_url . $onboarding_js,
+                ['jquery', 'wp-i18n'],
+                $asset_version($onboarding_js, '1.0.0'),
+                true
+            );
+
+            $is_onboarding_completed = class_exists('\BeepBeepAI\AltTextGenerator\Onboarding')
+                ? \BeepBeepAI\AltTextGenerator\Onboarding::is_completed()
+                : false;
+
+            wp_localize_script('bbai-onboarding', 'bbai_env', [
+                'ajax_url'  => admin_url('admin-ajax.php'),
+                'admin_url' => admin_url(),
+                'upload_url'=> admin_url('upload.php'),
+                'rest_root' => esc_url_raw(rest_url()),
+                'nonce'     => wp_create_nonce('bbai_ajax_nonce'),
+            ]);
+
+            wp_localize_script('bbai-onboarding', 'bbaiOnboarding', [
+                'ajaxUrl'               => admin_url('admin-ajax.php'),
+                'nonce'                 => wp_create_nonce('bbai_onboarding'),
+                'queueStatsNonce'       => wp_create_nonce('beepbeepai_nonce'),
+                'dashboardUrl'          => admin_url('admin.php?page=bbai'),
+                'libraryUrl'            => admin_url('admin.php?page=' . self::MENU_SLUG_LIBRARY),
+                'step3Url'              => admin_url('admin.php?page=bbai-onboarding&step=3'),
+                'isAuthenticated'       => bbai_is_authenticated(),
+                'isOnboardingCompleted' => $is_onboarding_completed,
+                'strings'               => [
+                    'scanStart'    => __('Starting your scan...', 'beepbeep-ai-alt-text-generator'),
+                    'scanQueued'   => __('Scan queued.', 'beepbeep-ai-alt-text-generator'),
+                    'scanFailed'   => __('Unable to start the scan. Please try again.', 'beepbeep-ai-alt-text-generator'),
+                    'skipFailed'   => __('Unable to skip onboarding. Please try again.', 'beepbeep-ai-alt-text-generator'),
+                    'scanLabel'    => __('Scanning...', 'beepbeep-ai-alt-text-generator'),
+                    'skipLabel'    => __('Skipping...', 'beepbeep-ai-alt-text-generator'),
+                    'statsLoading' => __('Loading...', 'beepbeep-ai-alt-text-generator'),
+                    'statsFailed'  => __('Unable to load stats.', 'beepbeep-ai-alt-text-generator'),
+                ],
+            ]);
+        }
+
+        wp_add_inline_style('bbai-unified', $this->get_dashboard_hero_inline_css());
+
+        wp_enqueue_style(
+            'bbai-modal',
+            $base_url . $modal_css,
+            ['bbai-unified'],
+            $asset_version($modal_css, '4.3.0')
+        );
+
+        $stats_data = $this->get_dashboard_stats_payload();
+        $usage_data = Usage_Tracker::get_stats_display();
+
+        wp_enqueue_script(
+            'bbai-dashboard',
+            $base_url . $dashboard_js,
+            ['jquery', 'wp-api-fetch', 'wp-i18n', 'bbai-toast'],
+            $asset_version($dashboard_js, '3.0.0'),
+            true
+        );
+
+        wp_enqueue_script(
+            'bbai-analytics',
+            $base_url . $analytics_js,
+            ['jquery', 'bbai-dashboard'],
+            $asset_version($analytics_js, '1.0.0'),
+            true
+        );
+
         wp_enqueue_script(
             'bbai-upgrade',
             $base_url . $upgrade_js,
@@ -492,24 +453,183 @@ trait Core_Assets {
             true
         );
 
-        // Debug JS
+        if (!$this->is_dashboard_tab()) {
+            wp_enqueue_script(
+                'bbai-admin-panel',
+                $base_url . $admin_panel_js,
+                ['jquery', 'bbai-dashboard'],
+                $asset_version($admin_panel_js, '1.0.0'),
+                true
+            );
+        }
+
         wp_enqueue_script(
-            'bbai-debug',
-            $base_url . $asset_path($js_base, 'bbai-debug', $use_debug_assets, 'js'),
-            ['jquery'],
-            $asset_version($asset_path($js_base, 'bbai-debug', $use_debug_assets, 'js'), '1.0.0'),
+            'bbai-dashboard-scripts',
+            $base_url . $dashboard_scripts_js,
+            ['jquery', 'bbai-dashboard'],
+            $asset_version($dashboard_scripts_js, '1.0.0'),
             true
         );
 
-        // ALT Library Smart Review Filters — load on all BBAI pages so filters work
-        // regardless of navigation path (script no-ops if .bbai-alt-review-filters is absent)
         wp_enqueue_script(
-            'bbai-alt-library-filters',
-            $base_url . 'assets/js/alt-library-filters.js',
+            'bbai-logger',
+            $base_url . $logger_js,
             [],
-            $asset_version('assets/js/alt-library-filters.js', '1.0.0'),
+            $asset_version($logger_js, '4.3.0'),
             true
         );
+
+        wp_enqueue_style(
+            'bbai-tooltips',
+            $base_url . $tooltips_css,
+            ['bbai-unified'],
+            $asset_version($tooltips_css, '4.3.0')
+        );
+
+        wp_enqueue_script(
+            'bbai-tooltips',
+            $base_url . $tooltips_js,
+            ['jquery', 'wp-i18n'],
+            $asset_version($tooltips_js, '4.3.0'),
+            true
+        );
+
+        wp_enqueue_script(
+            'bbai-modal',
+            $base_url . $modal_js,
+            ['jquery', 'bbai-logger', 'wp-i18n'],
+            $asset_version($modal_js, '4.3.0'),
+            true
+        );
+
+        $pricing_bridge_path = 'admin/components/pricing-modal-bridge.js';
+        $pricing_bridge_full_path = $base_path . $pricing_bridge_path;
+        if (file_exists($pricing_bridge_full_path)) {
+            wp_enqueue_script(
+                'bbai-pricing-modal-bridge',
+                $base_url . $pricing_bridge_path,
+                ['jquery', 'bbai-dashboard'],
+                filemtime($pricing_bridge_full_path),
+                true
+            );
+        }
+
+        if (file_exists($base_path . $usage_bridge_js)) {
+            wp_enqueue_script(
+                'bbai-usage-bridge',
+                $base_url . $usage_bridge_js,
+                ['bbai-dashboard', 'wp-element'],
+                $asset_version($usage_bridge_js, '1.0.0'),
+                true
+            );
+        }
+
+        wp_enqueue_script(
+            'bbai-debug',
+            $base_url . $debug_js,
+            ['jquery'],
+            $asset_version($debug_js, '1.0.0'),
+            true
+        );
+
+        wp_enqueue_script(
+            'bbai-contact-modal',
+            $base_url . $contact_modal_js,
+            ['jquery', 'wp-i18n'],
+            $asset_version($contact_modal_js, '1.0.0'),
+            true
+        );
+
+        wp_enqueue_style(
+            'bbai-contact-modal',
+            $base_url . $contact_modal_css,
+            ['bbai-unified'],
+            $asset_version($contact_modal_css, '1.0.0')
+        );
+
+        wp_localize_script('bbai-contact-modal', 'bbaiContactData', [
+            'wp_version' => get_bloginfo('version'),
+            'plugin_version' => BEEPBEEP_AI_VERSION,
+        ]);
+
+        $this->localize_dashboard_scripts($stats_data, $usage_data, $checkout_prices, $l10n_common);
+    }
+
+    /**
+     * Shared inline CSS injected for the dashboard hero treatment.
+     *
+     * @return string
+     */
+    private function get_dashboard_hero_inline_css(): string {
+        return <<<'CSS'
+.bbai-hero-section {
+    background: linear-gradient(to bottom, #f7fee7 0%, #ffffff 100%);
+    border-radius: 24px;
+    margin-bottom: 32px;
+    padding: 48px 40px;
+    text-align: center;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+.bbai-hero-content {
+    margin-bottom: 32px;
+}
+.bbai-hero-title {
+    margin: 0 0 16px 0;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.2;
+}
+.bbai-hero-subtitle {
+    margin: 0;
+    font-size: 1.125rem;
+    color: #475569;
+    line-height: 1.6;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.bbai-hero-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.bbai-hero-btn-primary {
+    background: linear-gradient(135deg, #14b8a6 0%, #84cc16 100%);
+    color: white;
+    border: none;
+    padding: 16px 32px;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+}
+.bbai-hero-btn-primary:hover {
+    opacity: 0.9;
+}
+.bbai-hero-link-secondary {
+    background: transparent;
+    border: none;
+    color: #6b7280;
+    text-decoration: underline;
+    font-size: 14px;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    padding: 0;
+}
+.bbai-hero-link-secondary:hover {
+    color: #14b8a6;
+}
+.bbai-hero-micro-copy {
+    font-size: 14px;
+    color: #64748b;
+    font-weight: 500;
+}
+CSS;
     }
 
     /**
@@ -517,20 +637,15 @@ trait Core_Assets {
      *
      * @param array      $stats_data       Media stats
      * @param array      $usage_data       Usage stats
-     * @param array      $checkout_prices  Checkout prices
-     * @param array      $l10n_common      Common L10n strings
-     * @param array|null $reset_modal_data Monthly reset modal data (null when not on dashboard)
+     * @param array $checkout_prices Checkout prices
+     * @param array $l10n_common     Common L10n strings
      */
-    private function localize_dashboard_scripts(array $stats_data, array $usage_data, array $checkout_prices, array $l10n_common, ?array $reset_modal_data = null): void {
-        // Debug script
+    private function localize_dashboard_scripts(array $stats_data, array $usage_data, array $checkout_prices, array $l10n_common): void {
         wp_localize_script('bbai-debug', 'BBAI_DEBUG', [
             'restLogs' => esc_url_raw(add_query_arg('action', 'bbai_debug_logs', admin_url('admin-ajax.php'))),
             'restClear' => esc_url_raw(add_query_arg('action', 'bbai_debug_logs_clear', admin_url('admin-ajax.php'))),
             'nonce' => wp_create_nonce('wp_rest'),
-            'initial' => $this->get_debug_payload([
-                'per_page' => 10,
-                'page' => 1,
-            ]),
+            'initial' => $this->get_debug_bootstrap(),
             'strings' => [
                 'noLogs' => __('No logs recorded yet.', 'beepbeep-ai-alt-text-generator'),
                 'contextTitle' => __('View Details', 'beepbeep-ai-alt-text-generator'),
@@ -550,7 +665,6 @@ trait Core_Assets {
             ],
         ]);
 
-        // Dashboard script (shared with bbai-admin)
         $bbai_dash_data = [
             'nonce'       => wp_create_nonce('wp_rest'),
             'rest'        => esc_url_raw(rest_url('bbai/v1/generate/')),
@@ -566,53 +680,13 @@ trait Core_Assets {
             'checkoutPrices' => $checkout_prices,
             'stats'       => $stats_data,
             'initialUsage' => $usage_data,
-            'usage'       => $usage_data,
-            'resetModal'  => $reset_modal_data ?? null,
+            'wizard'      => $this->get_setup_wizard_bootstrap(),
         ];
-        
-        // Include trial quota status for the frontend.
-        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
-        $bbai_trial_status = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_status();
-        $bbai_dash_data['trial'] = $bbai_trial_status;
 
         wp_localize_script('bbai-dashboard', 'BBAI_DASH', $bbai_dash_data);
 
-        // Also localize for bbai-admin (it depends on bbai-dashboard, but this ensures it's available)
-        wp_localize_script('bbai-admin', 'BBAI_DASH', $bbai_dash_data);
-
-        $bbai_reset_timestamp = isset($usage_data['reset_timestamp']) ? intval($usage_data['reset_timestamp']) : 0;
-        if ($bbai_reset_timestamp <= 0 && !empty($usage_data['reset_date'])) {
-            $bbai_reset_timestamp = strtotime((string) $usage_data['reset_date']);
-        }
-        $bbai_reset_iso = '';
-        if ($bbai_reset_timestamp > 0) {
-            $bbai_reset_iso = gmdate('c', $bbai_reset_timestamp);
-        }
-        $bbai_days_left = isset($usage_data['days_until_reset']) ? max(0, intval($usage_data['days_until_reset'])) : 0;
-        $bbai_used_credits = isset($usage_data['used']) ? max(0, intval($usage_data['used'])) : 0;
-        $bbai_limit_credits = isset($usage_data['limit']) ? max(0, intval($usage_data['limit'])) : 0;
-        $bbai_missing_count = isset($stats_data['missing']) ? max(0, intval($stats_data['missing'])) : 0;
-        $bbai_admin_data = [
-            'credits' => [
-                'used' => $bbai_used_credits,
-                'limit' => $bbai_limit_credits,
-                'resetDate' => $bbai_reset_iso,
-                'daysLeft' => $bbai_days_left,
-            ],
-            'counts' => [
-                'missing' => $bbai_missing_count,
-            ],
-            'urls' => [
-                'upgrade' => esc_url(Usage_Tracker::get_upgrade_url()),
-            ],
-            'isLocked' => ($bbai_limit_credits > 0 && $bbai_used_credits >= $bbai_limit_credits),
-        ];
-        wp_localize_script('bbai-dashboard', 'bbai_admin', $bbai_admin_data);
-        wp_localize_script('bbai-admin', 'bbai_admin', $bbai_admin_data);
-
-        // AJAX vars
-        $options = get_option(self::OPTION_KEY, []);
         $api_url = 'https://alttext-ai-backend.onrender.com';
+        $sanitized_user_data = $this->sanitize_api_user_data_for_localize($this->api_client->get_user_data());
 
         wp_localize_script('bbai-dashboard', 'bbai_ajax', [
             'ajaxurl' => admin_url('admin-ajax.php'),
@@ -620,8 +694,9 @@ trait Core_Assets {
             'nonce'   => wp_create_nonce('beepbeepai_nonce'),
             'api_url' => $api_url,
             'is_authenticated' => $this->api_client->is_authenticated(),
-            'user_data' => $this->api_client->get_user_data(),
-            'trial' => $bbai_trial_status,
+            'user_data' => $sanitized_user_data,
+            'admin_url' => admin_url('admin.php'),
+            'admin_logout_confirm' => __('Are you sure you want to log out of the admin panel?', 'beepbeep-ai-alt-text-generator'),
             'can_manage' => $this->user_can_manage(),
             'logout_redirect' => admin_url('admin.php?page=bbai'),
             'stripe_links' => self::DEFAULT_STRIPE_LINKS,
@@ -680,8 +755,8 @@ trait Core_Assets {
      * @param string $hook Current admin hook
      */
     public function enqueue_admin($hook): void {
-        $base_path = BBAI_PLUGIN_DIR;
-        $base_url  = BBAI_PLUGIN_URL;
+        $base_path = BEEPBEEP_AI_PLUGIN_DIR;
+        $base_url  = BEEPBEEP_AI_PLUGIN_URL;
 
         $is_bbai_page = $this->is_bbai_admin_page($hook);
 
@@ -690,8 +765,11 @@ trait Core_Assets {
             return;
         }
 
-        $this->enqueue_media_library_assets($hook, $base_url, $base_path);
+        wp_dequeue_script('wp-auth-check');
+        wp_deregister_script('wp-auth-check');
+        remove_action('admin_print_footer_scripts', 'wp_auth_check_html', 5);
 
+        $this->enqueue_media_library_assets($hook, $base_url, $base_path);
         $this->enqueue_dashboard_assets($base_url, $base_path);
     }
 }

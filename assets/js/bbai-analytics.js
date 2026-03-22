@@ -244,35 +244,36 @@
             activities.forEach((activity, index) => {
                 const item = document.createElement('div');
                 const type = (activity.type || activity.action || '').toLowerCase();
-                let iconClass = 'bg-sky-100 text-sky-600';
+                let iconClass = 'bbai-analytics-activity__icon--default';
                 let iconSvg = '<path d="M12 3l1.8 4.8L19 9l-5.2 1.2L12 15l-1.8-4.8L5 9l5.2-1.2L12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>';
 
                 if (type.includes('reopt') || type.includes('retry') || type.includes('warning')) {
-                    iconClass = 'bg-amber-100 text-amber-600';
+                    iconClass = 'bbai-analytics-activity__icon--warning';
                     iconSvg = '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>';
-                } else if (type.includes('generate') || type.includes('new') || type.includes('success') || type.includes('optim')) {
-                    iconClass = 'bg-emerald-100 text-emerald-600';
+                } else if (type.includes('generate') || type.includes('new') || type.includes('success') || type.includes('optim') || type.includes('bulk')) {
+                    iconClass = 'bbai-analytics-activity__icon--success';
                     iconSvg = '<path d="M5 19L19 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9 5H19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>';
                 }
 
-                const title = this.escapeHtml(activity.title || activity.description || '');
-                const description = activity.details ? this.escapeHtml(activity.details) : '';
+                const rawDescription = activity.details || activity.description || '';
+                const title = this.escapeHtml(this.formatActivityTitle(activity, rawDescription));
+                const description = this.escapeHtml(this.formatActivityDescription(activity, rawDescription));
                 const timeLabel = activity.timeAgo ? this.escapeHtml(activity.timeAgo) : this.formatTime(activity.timestamp);
 
-                item.className = 'bbai-activity-item flex items-start gap-3';
+                item.className = 'bbai-activity-item bbai-analytics-activity__item';
                 if (hasOverflow && index >= maxVisible) {
                     item.classList.add('bbai-activity-item--extra', 'is-hidden');
                 }
                 item.innerHTML = `
-                    <span class="flex h-8 w-8 items-center justify-center rounded-full ${iconClass}">
-                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">${iconSvg}</svg>
+                    <span class="bbai-analytics-activity__icon ${iconClass}">
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">${iconSvg}</svg>
                     </span>
-                    <div class="flex-1 space-y-1">
-                        <div class="flex flex-wrap items-baseline justify-between gap-2">
-                            <p class="text-sm text-slate-800">${title}</p>
-                            <span class="text-xs text-slate-500">${timeLabel}</span>
+                    <div class="bbai-analytics-activity__content">
+                        <div class="bbai-analytics-activity__header">
+                            <p class="bbai-analytics-activity__title">${title}</p>
+                            <span class="bbai-analytics-activity__time">${timeLabel}</span>
                         </div>
-                        ${description ? `<p class="text-xs text-slate-500">${description}</p>` : ''}
+                        ${description ? `<p class="bbai-analytics-activity__description">${description}</p>` : ''}
                     </div>
                 `;
                 timeline.appendChild(item);
@@ -359,6 +360,60 @@
             }
         },
 
+        formatActivityTitle: function(activity, description) {
+            const type = (activity.type || activity.action || '').toLowerCase();
+            const target = this.extractActivityTarget(description);
+            const fallbackTitle = (activity.title || activity.description || '').trim();
+
+            if (type.includes('bulk')) {
+                return __('Bulk optimization completed', 'beepbeep-ai-alt-text-generator');
+            }
+
+            if ((type.includes('regenerate') || type.includes('reopt')) && target) {
+                return sprintf(__('ALT regenerated for %s', 'beepbeep-ai-alt-text-generator'), target);
+            }
+
+            if ((type.includes('generate') || type.includes('optim') || type.includes('success')) && target) {
+                return sprintf(__('ALT generated for %s', 'beepbeep-ai-alt-text-generator'), target);
+            }
+
+            if (type.includes('regenerate') || type.includes('reopt')) {
+                return __('ALT regenerated', 'beepbeep-ai-alt-text-generator');
+            }
+
+            if (type.includes('generate') || type.includes('optim') || type.includes('success')) {
+                return __('Images optimized', 'beepbeep-ai-alt-text-generator');
+            }
+
+            return fallbackTitle || __('Recent activity', 'beepbeep-ai-alt-text-generator');
+        },
+
+        formatActivityDescription: function(activity, description) {
+            const type = (activity.type || activity.action || '').toLowerCase();
+            const cleanedDescription = this.extractActivityTarget(description);
+
+            if (type.includes('bulk')) {
+                return description || __('Optimizations were applied across your media library.', 'beepbeep-ai-alt-text-generator');
+            }
+
+            if (cleanedDescription && cleanedDescription !== String(description).trim()) {
+                return '';
+            }
+
+            return cleanedDescription;
+        },
+
+        extractActivityTarget: function(description) {
+            if (!description) {
+                return '';
+            }
+
+            return String(description)
+                .replace(/^Image:\s*/i, '')
+                .replace(/^Image ID:\s*/i, '')
+                .trim();
+        },
+
         /**
          * Bind events
          */
@@ -380,6 +435,7 @@
                     const period = button.getAttribute('data-period') || '30d';
                     periodSelect.querySelectorAll('button[data-period]').forEach((btn) => {
                         const isActive = btn === button;
+                        btn.classList.toggle('bbai-period-btn--active', isActive);
                         btn.classList.toggle('bg-slate-50', isActive);
                         btn.classList.toggle('text-slate-900', isActive);
                         btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');

@@ -16,15 +16,16 @@ $bbai_can_view_debug = (defined('WP_DEBUG') && WP_DEBUG) || current_user_can('ma
 $bbai_is_authenticated = $this->api_client->is_authenticated();
 $bbai_has_license = $this->api_client->has_active_license();
 $bbai_can_access_debug = $bbai_is_authenticated || $bbai_has_license;
+$bbai_debug_embedded = !empty($bbai_debug_embedded);
 ?>
 <?php if (!$bbai_can_view_debug) : ?>
-    <div class="bbai-dashboard-container">
+    <div class="bbai-debug-page">
         <div class="notice notice-info">
             <p><?php esc_html_e('Debug Logs are only visible when WP_DEBUG is enabled or for administrators.', 'beepbeep-ai-alt-text-generator'); ?></p>
         </div>
     </div>
 <?php elseif (!$bbai_can_access_debug) : ?>
-    <div class="bbai-dashboard-container">
+    <div class="bbai-debug-page">
         <div class="bbai-settings-required">
             <div class="bbai-settings-required-content">
                 <div class="bbai-settings-required-icon">
@@ -39,12 +40,12 @@ $bbai_can_access_debug = $bbai_is_authenticated || $bbai_has_license;
                     <?php esc_html_e('If you don\'t have an account, you can create one for free or subscribe to a plan.', 'beepbeep-ai-alt-text-generator'); ?>
                 </p>
                 <div class="bbai-settings-required-actions">
-                    <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-icon" data-action="show-auth-modal" data-auth-tab="login">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <button type="button" class="bbai-btn bbai-btn-primary" data-action="show-auth-modal" data-auth-tab="login">
+                        <svg class="bbai-btn-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                             <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
                             <circle cx="8" cy="8" r="2" fill="currentColor"/>
                         </svg>
-                        <span><?php esc_html_e('Log In', 'beepbeep-ai-alt-text-generator'); ?></span>
+                        <span class="bbai-btn__text"><?php esc_html_e('Log In', 'beepbeep-ai-alt-text-generator'); ?></span>
                     </button>
                 </div>
             </div>
@@ -121,10 +122,14 @@ $bbai_can_access_debug = $bbai_is_authenticated || $bbai_has_license;
             [data-bbai-debug-panel] .bbai-btn-group .bbai-btn { width: 100%; text-align: center; }
         }
     </style>
-    <div class="bbai-dashboard-container" data-bbai-debug-panel>
-        <div class="bbai-page-header bbai-mb-6">
+    <div class="bbai-debug-page" data-bbai-debug-panel>
+        <div class="bbai-page-header bbai-mb-6<?php echo $bbai_debug_embedded ? ' bbai-page-header--embedded' : ''; ?>">
             <div class="bbai-page-header-content">
+                <?php if ($bbai_debug_embedded) : ?>
+                <h2 class="bbai-page-title"><?php esc_html_e('Debug Logs', 'beepbeep-ai-alt-text-generator'); ?></h2>
+                <?php else : ?>
                 <h1 class="bbai-page-title"><?php esc_html_e('Debug Logs', 'beepbeep-ai-alt-text-generator'); ?></h1>
+                <?php endif; ?>
                 <p class="bbai-page-subtitle"><?php esc_html_e('Support-first troubleshooting for API calls, queue events, and failures.', 'beepbeep-ai-alt-text-generator'); ?></p>
             </div>
             <div class="bbai-btn-group">

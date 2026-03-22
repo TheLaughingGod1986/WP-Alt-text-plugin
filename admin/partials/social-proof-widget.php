@@ -138,7 +138,7 @@ if (!function_exists('bbai_get_wporg_reviews_for_social_proof')) {
             return bbai_prepare_social_proof_reviews($cached, $limit);
         }
 
-        $snapshot_file = plugin_dir_path(BBAI_PLUGIN_FILE) . 'admin/partials/data/wporg-reviews-snapshot.php';
+        $snapshot_file = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/data/wporg-reviews-snapshot.php';
         $snapshot = file_exists($snapshot_file) ? include $snapshot_file : [];
 
         $response = wp_remote_get(
@@ -220,7 +220,7 @@ if (!function_exists('bbai_get_wporg_reviews_for_social_proof')) {
 }
 
 // Load local fallback testimonials data.
-$bbai_testimonials_file = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/data/testimonials.php';
+$bbai_testimonials_file = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/data/testimonials.php';
 $bbai_fallback_testimonials = file_exists($bbai_testimonials_file) ? include $bbai_testimonials_file : [];
 $bbai_fallback_testimonials = is_array($bbai_fallback_testimonials) ? $bbai_fallback_testimonials : [];
 $bbai_fallback_testimonials = bbai_prepare_social_proof_reviews($bbai_fallback_testimonials, max(1, count($bbai_fallback_testimonials)));
@@ -243,7 +243,7 @@ if (empty($bbai_testimonials)) {
 // Get usage stats for social proof
 $bbai_usage_stats = isset($bbai_usage_stats) && is_array($bbai_usage_stats) ? $bbai_usage_stats : [];
 $bbai_total_sites = 10000; // This could be dynamic from API
-$bbai_plugin_url = defined('BEEPBEEP_AI_PLUGIN_URL') ? BEEPBEEP_AI_PLUGIN_URL : (defined('BBAI_PLUGIN_URL') ? BBAI_PLUGIN_URL : '');
+$bbai_plugin_url = defined('BEEPBEEP_AI_PLUGIN_URL') ? BEEPBEEP_AI_PLUGIN_URL : '';
 ?>
 
 <div class="bbai-social-proof-widget">

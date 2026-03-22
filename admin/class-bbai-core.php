@@ -73,6 +73,7 @@ require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/traits/trait-core-media.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/traits/trait-core-generation.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/traits/trait-core-review.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/traits/trait-core-assets.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/traits/trait-core-export.php';
 
 use BeepBeepAI\AltTextGenerator\Queue;
 use BeepBeepAI\AltTextGenerator\Debug_Log;
@@ -86,6 +87,7 @@ use BeepBeepAI\AltTextGenerator\Traits\Core_Media;
 use BeepBeepAI\AltTextGenerator\Traits\Core_Generation;
 use BeepBeepAI\AltTextGenerator\Traits\Core_Review;
 use BeepBeepAI\AltTextGenerator\Traits\Core_Assets;
+use BeepBeepAI\AltTextGenerator\Traits\Core_Export;
 
 class Core {
     // Use traits for modular functionality
@@ -96,7 +98,10 @@ class Core {
     use Core_Media;
     use Core_Generation;
     use Core_Review;
-    use Core_Assets;
+    use Core_Export;
+    use Core_Assets {
+        enqueue_admin as private trait_enqueue_admin;
+    }
     const OPTION_KEY = 'bbai_settings';
     const NONCE_KEY  = 'bbai_nonce';
     const CAPABILITY = 'manage_bbbbai_text';
@@ -105,6 +110,9 @@ class Core {
     private const MENU_SLUG_ONBOARDING = 'bbai-onboarding';
     private const ALT_COVERAGE_TRANSIENT_KEY = 'bbai_alt_coverage_scan_v3';
     private const ALT_COVERAGE_TRANSIENT_TTL = 86400;
+    private const ALT_COVERAGE_SCAN_JOB_PREFIX = 'bbai_alt_coverage_job_';
+    private const ALT_COVERAGE_SCAN_JOB_TTL = 900;
+    private const ALT_COVERAGE_SCAN_BATCH_SIZE = 150;
     private const FREE_PLAN_IMAGE_LIMIT = 50;
 
     private const DEFAULT_CHECKOUT_PRICE_IDS = [
@@ -179,7 +187,7 @@ class Core {
         if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
             // Log initialization (table is created by DB_Schema on activation/upgrade).
             Debug_Log::log('info', 'AI Alt Text plugin initialized', [
-                'version' => BBAI_VERSION,
+                'version' => BEEPBEEP_AI_VERSION,
                 'authenticated' => $this->api_client->is_authenticated() ? 'yes' : 'no',
             ], 'core');
 
@@ -1228,19 +1236,10 @@ class Core {
 
             add_submenu_page(
                 'bbai',
-                __('Credit Usage', 'beepbeep-ai-alt-text-generator'),
-                __('Credit Usage', 'beepbeep-ai-alt-text-generator'),
+                __('Usage', 'beepbeep-ai-alt-text-generator'),
+                __('Usage', 'beepbeep-ai-alt-text-generator'),
                 $cap,
                 'bbai-credit-usage',
-                [$this, 'render_settings_page']
-            );
-
-            add_submenu_page(
-                'bbai',
-                __('How to', 'beepbeep-ai-alt-text-generator'),
-                __('How to', 'beepbeep-ai-alt-text-generator'),
-                $cap,
-                'bbai-guide',
                 [$this, 'render_settings_page']
             );
 
@@ -1252,17 +1251,6 @@ class Core {
                 'bbai-settings',
                 [$this, 'render_settings_page']
             );
-
-            if ($this->can_show_debug_logs_tab()) {
-                add_submenu_page(
-                    'bbai',
-                    __('Debug Logs', 'beepbeep-ai-alt-text-generator'),
-                    __('Debug Logs', 'beepbeep-ai-alt-text-generator'),
-                    $cap,
-                    'bbai-debug',
-                    [$this, 'render_settings_page']
-                );
-            }
         } else {
             // Keep trial link destinations routable without exposing sidebar navigation.
             add_submenu_page(
@@ -1276,6 +1264,27 @@ class Core {
 
             // Remove the auto-generated duplicate submenu under the top-level menu.
             remove_submenu_page(self::MENU_SLUG_DASHBOARD, self::MENU_SLUG_DASHBOARD);
+        }
+
+        // Keep utility routes addressable without exposing them in the primary submenu stack.
+        add_submenu_page(
+            '',
+            __('Help', 'beepbeep-ai-alt-text-generator'),
+            __('Help', 'beepbeep-ai-alt-text-generator'),
+            $cap,
+            'bbai-guide',
+            [$this, 'render_settings_page']
+        );
+
+        if ($this->can_show_debug_logs_tab()) {
+            add_submenu_page(
+                '',
+                __('Debug Logs', 'beepbeep-ai-alt-text-generator'),
+                __('Debug Logs', 'beepbeep-ai-alt-text-generator'),
+                $cap,
+                'bbai-debug',
+                [$this, 'render_settings_page']
+            );
         }
 
 	        // Prevent PHP 8.1+ strip_tags() null deprecation on hidden pages.
@@ -1737,9 +1746,12 @@ class Core {
             </div>
         </div>
         <?php
-        // Include upgrade modal for "View plans & pricing" button
+        // Include upgrade modal for "View plans & pricing" button.
         $bbai_checkout_prices = $this->get_checkout_price_ids();
-        include BBAI_PLUGIN_DIR . 'templates/upgrade-modal.php';
+        $bbai_upgrade_modal = dirname(__DIR__) . '/templates/upgrade-modal.php';
+        if (file_exists($bbai_upgrade_modal)) {
+            include $bbai_upgrade_modal;
+        }
     }
 
     /**
@@ -1918,9 +1930,12 @@ class Core {
             </div>
         </div>
         <?php
-        // Include upgrade modal for "View plans & pricing" button
+        // Include upgrade modal for "View plans & pricing" button.
         $bbai_checkout_prices = $this->get_checkout_price_ids();
-        include BBAI_PLUGIN_DIR . 'templates/upgrade-modal.php';
+        $bbai_upgrade_modal = dirname(__DIR__) . '/templates/upgrade-modal.php';
+        if (file_exists($bbai_upgrade_modal)) {
+            include $bbai_upgrade_modal;
+        }
     }
 
     public function render_settings_page() {
@@ -1988,8 +2003,11 @@ class Core {
 	        $bbai_page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
 	        $bbai_page_slug = $bbai_page_input;
         
-        // Initialize $bbai_tabs array (will be populated in if/else blocks below)
+        // Primary nav is limited to the product workflow. Utility routes stay accessible but hidden.
         $bbai_tabs = [];
+        $bbai_active_nav_tab = '';
+        $bbai_help_is_active = false;
+        $bbai_settings_section = 'general';
         
         // Non-registered users: show logged-out dashboard only (no header nav tabs).
         if (!$bbai_has_registered_user) {
@@ -1998,6 +2016,7 @@ class Core {
 
             $bbai_is_pro_for_admin = false;
             $bbai_is_agency_for_admin = false;
+            $bbai_can_show_debug_tab = false;
         } else {
             // Determine if agency license
             // Check API first, then include stored credentials
@@ -2023,49 +2042,48 @@ class Core {
             
             $bbai_is_agency = ($bbai_plan_slug === 'agency');
             $bbai_is_pro = ($bbai_plan_slug === 'pro' || $bbai_plan_slug === 'agency');
-            
-            // Build tabs array for registered users
-            // Core tabs always available
-            $bbai_tabs = [
-                'dashboard'    => __('Dashboard', 'beepbeep-ai-alt-text-generator'),
-                'library'      => __('ALT Library', 'beepbeep-ai-alt-text-generator'),
-                'analytics'    => __('Analytics', 'beepbeep-ai-alt-text-generator'),
-                'credit-usage' => __('Credit Usage', 'beepbeep-ai-alt-text-generator'),
-                'guide'        => __('How to', 'beepbeep-ai-alt-text-generator'),
-            ];
-            
-            $bbai_can_show_debug_tab = $this->can_show_debug_logs_tab();
 
-            // Additional tabs for authenticated/licensed users
-            if ($bbai_is_authenticated || $bbai_has_license) {
-                $bbai_tabs['settings'] = __('Settings', 'beepbeep-ai-alt-text-generator');
-                if ($bbai_can_show_debug_tab) {
-                    $bbai_tabs['debug'] = __('Debug Logs', 'beepbeep-ai-alt-text-generator');
-                }
+            // Visible primary navigation only includes the main product workflow areas.
+            $bbai_tabs = [
+                'dashboard' => __('Dashboard', 'beepbeep-ai-alt-text-generator'),
+                'library'   => __('ALT Library', 'beepbeep-ai-alt-text-generator'),
+                'analytics' => __('Analytics', 'beepbeep-ai-alt-text-generator'),
+                'usage'     => __('Usage', 'beepbeep-ai-alt-text-generator'),
+                'settings'  => __('Settings', 'beepbeep-ai-alt-text-generator'),
+            ];
+
+            $bbai_can_show_debug_tab = $this->can_show_debug_logs_tab();
+            $bbai_allowed_tabs = $bbai_tabs + [
+                'help' => __('Help', 'beepbeep-ai-alt-text-generator'),
+            ];
+
+            if ($bbai_can_show_debug_tab) {
+                $bbai_allowed_tabs['debug'] = __('Debug Logs', 'beepbeep-ai-alt-text-generator');
             }
-            
-            // Admin tab for Pro/Agency plans (replaces Debug Logs and Settings)
+
+            // Keep internal/admin routes available without promoting them into primary nav.
             if ($bbai_is_pro) {
-                // Remove individual debug/settings tabs and add admin tab
-                unset($bbai_tabs['debug'], $bbai_tabs['settings']);
-                $bbai_tabs['admin'] = __('Admin', 'beepbeep-ai-alt-text-generator');
+                $bbai_allowed_tabs['admin'] = __('Admin', 'beepbeep-ai-alt-text-generator');
             }
-            
-            // Agency Overview tab for Agency plans only
+
             if ($bbai_is_agency) {
-                $bbai_tabs['agency-overview'] = __('Agency Overview', 'beepbeep-ai-alt-text-generator');
+                $bbai_allowed_tabs['agency-overview'] = __('Agency Overview', 'beepbeep-ai-alt-text-generator');
             }
-            
-            // Map page slugs to tab slugs (for determining current tab from URL)
+
+            // Normalize legacy page slugs and tab params into the simplified nav model.
             $bbai_page_to_tab = [
-                'bbai' => 'dashboard',
-                'bbai-library' => 'library',
-                'bbai-analytics' => 'analytics',
-                'bbai-credit-usage' => 'credit-usage',
-                'bbai-guide' => 'guide',
-                'bbai-settings' => 'settings',
-                'bbai-debug' => 'debug',
+                'bbai'              => 'dashboard',
+                'bbai-library'      => 'library',
+                'bbai-analytics'    => 'analytics',
+                'bbai-credit-usage' => 'usage',
+                'bbai-guide'        => 'help',
+                'bbai-settings'     => 'settings',
+                'bbai-debug'        => 'debug',
                 'bbai-agency-overview' => 'agency-overview',
+            ];
+            $bbai_tab_aliases = [
+                'credit-usage' => 'usage',
+                'guide'        => 'help',
             ];
             
 	            // Determine current tab from URL
@@ -2073,16 +2091,45 @@ class Core {
 	            $bbai_page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : 'bbai';
 	            $bbai_current_page = $bbai_page_input ?: 'bbai';
 	            $tab_from_page = $bbai_page_to_tab[$bbai_current_page] ?? 'dashboard';
+                $tab_from_page = $bbai_tab_aliases[$tab_from_page] ?? $tab_from_page;
 	            
 	            // Use tab from URL parameter if provided, otherwise use page slug mapping
 	            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 	            $bbai_tab_input = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : '';
-	            $bbai_tab = $bbai_tab_input !== '' ? $bbai_tab_input : $tab_from_page;
+	            $bbai_requested_tab = $bbai_tab_input !== '' ? $bbai_tab_input : $tab_from_page;
+                $bbai_requested_tab = $bbai_tab_aliases[$bbai_requested_tab] ?? $bbai_requested_tab;
+
+                if ('debug' === $bbai_requested_tab && $bbai_can_show_debug_tab) {
+                    $bbai_tab = 'settings';
+                    $bbai_settings_section = 'debug';
+                } else {
+                    $bbai_tab = $bbai_requested_tab;
+                }
+
+                // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
+                $bbai_section_input = isset($_GET['section']) ? sanitize_key(wp_unslash($_GET['section'])) : '';
+                if ('settings' === $bbai_tab && 'debug' === $bbai_section_input && $bbai_can_show_debug_tab) {
+                    $bbai_settings_section = 'debug';
+                }
 
             // If trying to access restricted tabs, redirect to dashboard
-            if (!isset($bbai_tabs) || !is_array($bbai_tabs) || !in_array($bbai_tab, array_keys($bbai_tabs))) {
+            if (!isset($bbai_allowed_tabs) || !is_array($bbai_allowed_tabs) || !in_array($bbai_requested_tab, array_keys($bbai_allowed_tabs), true)) {
                 $bbai_tab = 'dashboard';
+                $bbai_settings_section = 'general';
             }
+
+            $bbai_active_nav_map = [
+                'dashboard'       => 'dashboard',
+                'library'         => 'library',
+                'analytics'       => 'analytics',
+                'usage'           => 'usage',
+                'settings'        => 'settings',
+                'debug'           => 'settings',
+                'admin'           => 'settings',
+                'agency-overview' => 'settings',
+            ];
+            $bbai_active_nav_tab = $bbai_active_nav_map[$bbai_requested_tab] ?? ($bbai_active_nav_map[$bbai_tab] ?? '');
+            $bbai_help_is_active = ('help' === $bbai_requested_tab);
             
             // Set variables for Admin tab access (used later in template)
             $bbai_is_pro_for_admin = $bbai_is_pro;
@@ -2120,52 +2167,36 @@ class Core {
                     </div>
                     <?php if ($bbai_has_registered_user) : ?>
                     <nav class="bbai-nav" role="navigation" aria-label="<?php esc_attr_e('Main navigation', 'beepbeep-ai-alt-text-generator'); ?>">
+                        <div class="bbai-nav__primary">
                         <?php
-                        // Ensure $bbai_tabs is defined (empty array is valid for non-registered users)
                         if (!isset($bbai_tabs) || !is_array($bbai_tabs)) {
                             $bbai_tabs = [];
                         }
 
-                        // Map tab slugs to page slugs for proper URL generation
                         $bbai_tab_to_page = [
                             'dashboard' => 'bbai',
-                            'library' => 'bbai-library',
+                            'library'   => 'bbai-library',
                             'analytics' => 'bbai-analytics',
-                            'credit-usage' => 'bbai-credit-usage',
-                            'guide' => 'bbai-guide',
-                            'settings' => 'bbai-settings',
-                            'debug' => 'bbai-debug', // Debug now has its own page
-                            'admin' => 'bbai', // Admin uses dashboard page with tab parameter
-                            'agency-overview' => 'bbai', // Agency Overview uses dashboard page with tab parameter
+                            'usage'     => 'bbai-credit-usage',
+                            'settings'  => 'bbai-settings',
                         ];
-                        
+
                         foreach ($bbai_tabs as $slug => $label) :
-                            // Generate proper URL using page slug if available, otherwise use tab parameter
                             $page_slug = $bbai_tab_to_page[$slug] ?? 'bbai';
-                            if ($slug === 'dashboard' || $slug === 'admin' || $slug === 'agency-overview') {
-                                // These tabs use the main page with tab parameter
-                                $url = admin_url('admin.php?page=' . $page_slug . ($slug !== 'dashboard' ? '&tab=' . $slug : ''));
-                            } else {
-                                // Other tabs use their dedicated page
-                                $url = admin_url('admin.php?page=' . $page_slug);
-                            }
-                            
-                            $active = (isset($bbai_tab) && $bbai_tab === $slug) ? ' active' : '';
-                            $aria_current = $active ? ' aria-current="page"' : '';
+                            $url = admin_url('admin.php?page=' . $page_slug);
+                            $active = (isset($bbai_active_nav_tab) && $bbai_active_nav_tab === $slug) ? ' active' : '';
                         ?>
-                            <a href="<?php echo esc_url($url); ?>"
-                               class="bbai-nav-link<?php echo esc_attr($active); ?>"
-                               <?php echo esc_attr($aria_current); ?>>
+                            <a href="<?php echo esc_url($url); ?>" class="bbai-nav-link<?php echo esc_attr($active); ?>"<?php echo $active ? ' aria-current="page"' : ''; ?>>
                                 <?php echo esc_html($label); ?>
                             </a>
                         <?php endforeach; ?>
-                        <!-- Help/Guide Link (inside nav) -->
-                        <a href="<?php echo esc_url(admin_url('admin.php?page=bbai-onboarding')); ?>" class="bbai-nav-link" id="bbai-guide-link" title="<?php esc_attr_e('Getting started guide', 'beepbeep-ai-alt-text-generator'); ?>" onclick="window.location.href='<?php echo esc_url(admin_url('admin.php?page=bbai-onboarding')); ?>'; return false;">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="margin-right:4px;">
+                        </div>
+                        <a href="<?php echo esc_url(admin_url('admin.php?page=bbai-guide')); ?>" class="bbai-header-guide-link<?php echo !empty($bbai_help_is_active) ? ' active' : ''; ?>" title="<?php esc_attr_e('Help and troubleshooting', 'beepbeep-ai-alt-text-generator'); ?>"<?php echo !empty($bbai_help_is_active) ? ' aria-current="page"' : ''; ?>>
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                 <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
                                 <path d="M8 11.5V11M8 9C8 7.5 9.5 7.5 9.5 6C9.5 5.17 8.83 4.5 8 4.5C7.17 4.5 6.5 5.17 6.5 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                             </svg>
-                            <?php esc_html_e('Guide', 'beepbeep-ai-alt-text-generator'); ?>
+                            <span class="bbai-header-guide-text"><?php esc_html_e('Help', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </a>
                     </nav>
                     <?php endif; ?>
@@ -2233,7 +2264,7 @@ class Core {
             <?php
             // Ensure usage stats for banner when on dashboard.
             if (
-                ( $bbai_tab === 'dashboard' || $bbai_tab === 'library' || $bbai_tab === 'analytics' || $bbai_tab === 'credit-usage' ) &&
+                ( $bbai_tab === 'dashboard' || $bbai_tab === 'library' || $bbai_tab === 'analytics' || $bbai_tab === 'usage' ) &&
                 ( $bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user ) &&
                 ( ! isset( $bbai_usage_stats ) || ! is_array( $bbai_usage_stats ) )
             ) {
@@ -2261,50 +2292,45 @@ class Core {
             <?php if ($bbai_tab === 'dashboard') : ?>
     <?php
     $bbai_dashboard_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-tab.php';
-    if (file_exists($bbai_dashboard_partial)) {
-        include $bbai_dashboard_partial;
-    } else {
-        esc_html_e('Dashboard content unavailable.', 'beepbeep-ai-alt-text-generator');
-    }
+    bbai_render_layout_template(
+        $bbai_dashboard_partial,
+        get_defined_vars(),
+        __('Dashboard content unavailable.', 'beepbeep-ai-alt-text-generator'),
+        $this
+    );
     ?>
 
 <?php elseif ($bbai_tab === 'library' && ($bbai_is_authenticated || $bbai_has_license || !$bbai_has_registered_user)) : ?>
     <?php
     $bbai_library_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/library-tab.php';
-    if (file_exists($bbai_library_partial)) {
-        include $bbai_library_partial;
-    } else {
-        esc_html_e('Library content unavailable.', 'beepbeep-ai-alt-text-generator');
-    }
+    bbai_render_layout_template(
+        $bbai_library_partial,
+        get_defined_vars(),
+        __('Library content unavailable.', 'beepbeep-ai-alt-text-generator'),
+        $this
+    );
     ?>
 
-<?php elseif ($bbai_tab === 'debug') : ?>
-    <?php
-    $bbai_debug_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/debug-tab.php';
-    if (file_exists($bbai_debug_partial)) {
-        include $bbai_debug_partial;
-    } else {
-        esc_html_e('Debug content unavailable.', 'beepbeep-ai-alt-text-generator');
-    }
-    ?>
-<?php elseif ($bbai_tab === 'guide' || $bbai_page_slug === 'bbai-guide') : ?>
+<?php elseif ($bbai_tab === 'help' || $bbai_page_slug === 'bbai-guide') : ?>
             <?php
             $bbai_guide_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/guide-tab.php';
-            if (file_exists($bbai_guide_partial)) {
-                include $bbai_guide_partial;
-            } else {
-                esc_html_e('Guide content unavailable.', 'beepbeep-ai-alt-text-generator');
-            }
+            bbai_render_layout_template(
+                $bbai_guide_partial,
+                get_defined_vars(),
+                __('Help content unavailable.', 'beepbeep-ai-alt-text-generator'),
+                $this
+            );
             ?>
 
-<?php elseif ($bbai_tab === 'credit-usage' && ($bbai_is_authenticated || $bbai_has_license)) : ?>
+<?php elseif ($bbai_tab === 'usage' && ($bbai_is_authenticated || $bbai_has_license)) : ?>
     <?php
     $bbai_credit_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/credit-usage-tab.php';
-    if (file_exists($bbai_credit_partial)) {
-        include $bbai_credit_partial;
-    } else {
-        esc_html_e('Credit usage content unavailable.', 'beepbeep-ai-alt-text-generator');
-    }
+    bbai_render_layout_template(
+        $bbai_credit_partial,
+        get_defined_vars(),
+        __('Usage content unavailable.', 'beepbeep-ai-alt-text-generator'),
+        $this
+    );
     ?>
 <?php elseif ($bbai_tab === 'agency-overview' && $bbai_is_agency) : ?>
     <?php
@@ -2322,31 +2348,23 @@ class Core {
         $bbai_usage_stats = Usage_Tracker::get_stats_display();
     }
     $bbai_analytics_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/analytics-tab.php';
-    if (file_exists($bbai_analytics_partial)) {
-        include $bbai_analytics_partial;
-    } else {
-        esc_html_e('Analytics content unavailable.', 'beepbeep-ai-alt-text-generator');
-    }
+    bbai_render_layout_template(
+        $bbai_analytics_partial,
+        get_defined_vars(),
+        __('Analytics content unavailable.', 'beepbeep-ai-alt-text-generator'),
+        $this
+    );
     ?>
 
 <?php elseif ($bbai_tab === 'settings') : ?>
             <?php
             $bbai_settings_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/settings-tab.php';
-            if (file_exists($bbai_settings_partial)) {
-                include $bbai_settings_partial;
-            } else {
-                esc_html_e('Settings content unavailable.', 'beepbeep-ai-alt-text-generator');
-            }
-            ?>
-            
-<?php elseif ($bbai_tab === 'debug' && ($bbai_is_authenticated || $bbai_has_license)) : ?>
-            <?php
-            $bbai_debug_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/debug-tab.php';
-            if (file_exists($bbai_debug_partial)) {
-                include $bbai_debug_partial;
-            } else {
-                esc_html_e('Debug logs content unavailable.', 'beepbeep-ai-alt-text-generator');
-            }
+            bbai_render_layout_template(
+                $bbai_settings_partial,
+                get_defined_vars(),
+                __('Settings content unavailable.', 'beepbeep-ai-alt-text-generator'),
+                $this
+            );
             ?>
 
             <?php elseif ($bbai_tab === 'admin' && $bbai_is_pro_for_admin) : ?>
@@ -2558,16 +2576,19 @@ class Core {
             </div>
         </div>
         
-        <?php endif; // End tab check (dashboard/library/guide/debug/settings/credit-usage)
+        <?php endif; // End tab check (dashboard/library/help/usage/settings/admin views)
         
         // Include upgrade modal OUTSIDE of tab conditionals so it's always available
         // Set up currency for upgrade modal - Always use GBP (£) with Stripe prices
         // GBP prices: Growth £12.99, Agency £49.99, Credits £9.99 (matching Stripe payment links)
         $bbai_currency = ['symbol' => '£', 'code' => 'GBP', 'free' => 0, 'growth' => 12.99, 'pro' => 12.99, 'agency' => 49.99, 'credits' => 9.99];
         
-        // Include upgrade modal - always available for all tabs
+        // Include upgrade modal - always available for all tabs.
         $bbai_checkout_prices = $this->get_checkout_price_ids();
-        include BBAI_PLUGIN_DIR . 'templates/upgrade-modal.php';
+        $bbai_upgrade_modal = dirname(__DIR__) . '/templates/upgrade-modal.php';
+        if (file_exists($bbai_upgrade_modal)) {
+            include $bbai_upgrade_modal;
+        }
         $bbai_feature_modal = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/feature-unlock-modal.php';
         if ( file_exists( $bbai_feature_modal ) ) {
             include $bbai_feature_modal;
@@ -2800,6 +2821,334 @@ class Core {
      * @param bool $force_refresh Whether to bypass cache and run a fresh scan.
      * @return array<string, int>
      */
+    private function get_empty_alt_coverage_data(): array {
+        return [
+            'total_images' => 0,
+            'images_with_alt' => 0,
+            'images_missing_alt' => 0,
+            'coverage_percent' => 0,
+            'ai_source_count' => 0,
+            'needs_review_count' => 0,
+            'optimized_count' => 0,
+            'approved_count' => 0,
+            'filename_only_count' => 0,
+            'duplicate_alt_count' => 0,
+            'free_plan_limit' => self::FREE_PLAN_IMAGE_LIMIT,
+            'scanned_at' => time(),
+        ];
+    }
+
+    private function normalize_alt_coverage_compare_value(string $value): string {
+        $value = strtolower((string) $value);
+        $value = preg_replace('/[^a-z0-9]+/i', ' ', $value);
+        return trim((string) preg_replace('/\s+/', ' ', $value));
+    }
+
+    private function get_alt_coverage_image_total(): int {
+        global $wpdb;
+
+        $image_mime_like = $wpdb->esc_like('image/') . '%';
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        return (int) $wpdb->get_var(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- Table identifier comes from trusted core $wpdb.
+                'SELECT COUNT(*) FROM ' . $wpdb->posts . ' WHERE post_type = %s AND post_status = %s AND post_mime_type LIKE %s',
+                'attachment',
+                'inherit',
+                $image_mime_like
+            )
+        );
+    }
+
+    private function get_alt_coverage_batch_rows(int $limit, int $after_attachment_id = 0): array {
+        global $wpdb;
+
+        $limit = max(1, min(250, $limit));
+        $after_attachment_id = max(0, $after_attachment_id);
+        $image_mime_like = $wpdb->esc_like('image/') . '%';
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                'SELECT p.ID,
+                        MAX(CASE WHEN m.meta_key = %s THEN m.meta_value ELSE NULL END) AS alt_text,
+                        MAX(CASE WHEN m.meta_key = %s THEN m.meta_value ELSE NULL END) AS approved_hash,
+                        MAX(CASE WHEN m.meta_key = %s THEN m.meta_value ELSE NULL END) AS source_value
+                 FROM ' . $wpdb->posts . ' p
+                 LEFT JOIN ' . $wpdb->postmeta . ' m
+                    ON p.ID = m.post_id
+                   AND m.meta_key IN (%s, %s, %s)
+                 WHERE p.post_type = %s
+                   AND p.post_status = %s
+                   AND p.post_mime_type LIKE %s
+                   AND (%d = 0 OR p.ID < %d)
+                 GROUP BY p.ID
+                 ORDER BY p.ID DESC
+                 LIMIT %d',
+                '_wp_attachment_image_alt',
+                '_bbai_user_approved_hash',
+                '_bbai_source',
+                '_wp_attachment_image_alt',
+                '_bbai_user_approved_hash',
+                '_bbai_source',
+                'attachment',
+                'inherit',
+                $image_mime_like,
+                $after_attachment_id,
+                $after_attachment_id,
+                $limit
+            ),
+            ARRAY_A
+        );
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    private function get_alt_coverage_duplicate_count(): int {
+        global $wpdb;
+
+        $image_mime_like = $wpdb->esc_like('image/') . '%';
+        $duplicate_alt_count = 0;
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        $duplicate_rows = $wpdb->get_results(
+            $wpdb->prepare(
+                'SELECT alt.meta_value AS alt_text, COUNT(*) AS cnt
+                 FROM ' . $wpdb->posts . ' p
+                 INNER JOIN ' . $wpdb->postmeta . ' alt
+                    ON p.ID = alt.post_id
+                   AND alt.meta_key = %s
+                   AND TRIM(alt.meta_value) <> %s
+                 WHERE p.post_type = %s
+                   AND p.post_status = %s
+                   AND p.post_mime_type LIKE %s
+                 GROUP BY alt.meta_value
+                 HAVING cnt > 1',
+                '_wp_attachment_image_alt',
+                '',
+                'attachment',
+                'inherit',
+                $image_mime_like
+            ),
+            ARRAY_A
+        );
+
+        foreach ((array) $duplicate_rows as $duplicate_row) {
+            $duplicate_alt_count += (int) ($duplicate_row['cnt'] ?? 0);
+        }
+
+        return max(0, $duplicate_alt_count);
+    }
+
+    private function get_alt_coverage_scan_job_key(string $job_id): string {
+        return self::ALT_COVERAGE_SCAN_JOB_PREFIX . sanitize_key($job_id);
+    }
+
+    private function get_alt_coverage_scan_stage_message(int $processed_images, int $total_images, string $status = 'running'): string {
+        if ($status === 'complete') {
+            return __('Scan complete.', 'beepbeep-ai-alt-text-generator');
+        }
+
+        if ($status === 'finalizing') {
+            return __('Preparing your coverage summary.', 'beepbeep-ai-alt-text-generator');
+        }
+
+        if ($total_images <= 0) {
+            return __('Checking images for missing ALT text.', 'beepbeep-ai-alt-text-generator');
+        }
+
+        $progress_percent = (int) floor(($processed_images / max(1, $total_images)) * 100);
+
+        if ($progress_percent < 35) {
+            return __('Checking images for missing ALT text.', 'beepbeep-ai-alt-text-generator');
+        }
+
+        if ($progress_percent < 70) {
+            return __('Reviewing existing ALT descriptions.', 'beepbeep-ai-alt-text-generator');
+        }
+
+        return __('Checking description quality and review signals.', 'beepbeep-ai-alt-text-generator');
+    }
+
+    private function build_alt_coverage_scan_job_payload(array $scan_state, array $coverage_payload = []): array {
+        $total_images = max(0, (int) ($scan_state['total_images'] ?? 0));
+        $processed_images = max(0, min($total_images, (int) ($scan_state['processed_images'] ?? 0)));
+        $progress_percent = $total_images > 0
+            ? (int) round(($processed_images / $total_images) * 100)
+            : 100;
+        $status = (string) ($scan_state['status'] ?? 'running');
+        $stage_message = (string) ($scan_state['stage_message'] ?? $this->get_alt_coverage_scan_stage_message($processed_images, $total_images, $status));
+
+        return [
+            'job_id' => (string) ($scan_state['job_id'] ?? ''),
+            'done' => $status === 'complete',
+            'status' => $status,
+            'progress_percent' => max(0, min(100, $progress_percent)),
+            'processed_images' => $processed_images,
+            'total_images' => $total_images,
+            'stage_message' => $stage_message,
+            'message' => $status === 'complete'
+                ? __('Media library scan complete.', 'beepbeep-ai-alt-text-generator')
+                : __('Scanning your media library.', 'beepbeep-ai-alt-text-generator'),
+            'payload' => $status === 'complete' ? $coverage_payload : [],
+        ];
+    }
+
+    private function persist_alt_coverage_scan_job(array $scan_state): void {
+        $job_id = (string) ($scan_state['job_id'] ?? '');
+        if ($job_id === '') {
+            return;
+        }
+
+        set_transient($this->get_alt_coverage_scan_job_key($job_id), $scan_state, self::ALT_COVERAGE_SCAN_JOB_TTL);
+    }
+
+    private function get_alt_coverage_scan_job(string $job_id): ?array {
+        if ($job_id === '') {
+            return null;
+        }
+
+        $scan_state = get_transient($this->get_alt_coverage_scan_job_key($job_id));
+        return is_array($scan_state) ? $scan_state : null;
+    }
+
+    private function start_alt_coverage_scan_job(): array {
+        $job_id = function_exists('wp_generate_uuid4') ? wp_generate_uuid4() : uniqid('bbai_scan_', true);
+        $total_images = $this->get_alt_coverage_image_total();
+        $scan_state = [
+            'job_id' => $job_id,
+            'user_id' => get_current_user_id(),
+            'status' => $total_images > 0 ? 'running' : 'complete',
+            'stage_message' => $this->get_alt_coverage_scan_stage_message(0, $total_images, $total_images > 0 ? 'running' : 'complete'),
+            'total_images' => $total_images,
+            'processed_images' => 0,
+            'images_with_alt' => 0,
+            'images_missing_alt' => 0,
+            'ai_source_count' => 0,
+            'needs_review_count' => 0,
+            'approved_count' => 0,
+            'filename_only_count' => 0,
+            'last_attachment_id' => 0,
+            'updated_at' => time(),
+            'scanned_at' => time(),
+        ];
+
+        if ($total_images <= 0) {
+            $coverage_data = $this->get_empty_alt_coverage_data();
+            set_transient(self::ALT_COVERAGE_TRANSIENT_KEY, $coverage_data, self::ALT_COVERAGE_TRANSIENT_TTL);
+            $scan_state['payload'] = $coverage_data;
+        }
+
+        $this->persist_alt_coverage_scan_job($scan_state);
+
+        return $scan_state;
+    }
+
+    private function process_alt_coverage_scan_job_batch(array $scan_state): array {
+        $status = (string) ($scan_state['status'] ?? 'running');
+        if ($status === 'complete') {
+            return $scan_state;
+        }
+
+        $total_images = max(0, (int) ($scan_state['total_images'] ?? 0));
+        if ($total_images <= 0) {
+            $scan_state['status'] = 'complete';
+            $scan_state['payload'] = $this->get_empty_alt_coverage_data();
+            return $scan_state;
+        }
+
+        $rows = $this->get_alt_coverage_batch_rows(
+            self::ALT_COVERAGE_SCAN_BATCH_SIZE,
+            (int) ($scan_state['last_attachment_id'] ?? 0)
+        );
+
+        foreach ($rows as $row) {
+            $attachment_id = isset($row['ID']) ? (int) $row['ID'] : 0;
+            $alt_text = isset($row['alt_text']) ? trim((string) $row['alt_text']) : '';
+            $approved_hash = isset($row['approved_hash']) ? (string) $row['approved_hash'] : '';
+            $source_value = strtolower(trim((string) ($row['source_value'] ?? '')));
+
+            if ($attachment_id <= 0) {
+                continue;
+            }
+
+            $scan_state['processed_images'] = max(0, (int) ($scan_state['processed_images'] ?? 0)) + 1;
+            $scan_state['last_attachment_id'] = $attachment_id;
+
+            if ($alt_text === '') {
+                $scan_state['images_missing_alt'] = max(0, (int) ($scan_state['images_missing_alt'] ?? 0)) + 1;
+                continue;
+            }
+
+            $scan_state['images_with_alt'] = max(0, (int) ($scan_state['images_with_alt'] ?? 0)) + 1;
+
+            if (in_array($source_value, ['ai', 'openai'], true)) {
+                $scan_state['ai_source_count'] = max(0, (int) ($scan_state['ai_source_count'] ?? 0)) + 1;
+            }
+
+            if ($approved_hash !== '' && hash_equals($approved_hash, $this->hash_alt_text($alt_text))) {
+                $scan_state['approved_count'] = max(0, (int) ($scan_state['approved_count'] ?? 0)) + 1;
+            } elseif (function_exists('bbai_calculate_alt_quality_score') && bbai_calculate_alt_quality_score($alt_text) < 80) {
+                $scan_state['needs_review_count'] = max(0, (int) ($scan_state['needs_review_count'] ?? 0)) + 1;
+            }
+
+            $attached_file = get_attached_file($attachment_id);
+            if ($attached_file) {
+                $base_name = pathinfo($attached_file, PATHINFO_FILENAME);
+                if (
+                    $base_name !== ''
+                    && $this->normalize_alt_coverage_compare_value($alt_text) === $this->normalize_alt_coverage_compare_value($base_name)
+                ) {
+                    $scan_state['filename_only_count'] = max(0, (int) ($scan_state['filename_only_count'] ?? 0)) + 1;
+                }
+            }
+        }
+
+        $scan_state['updated_at'] = time();
+
+        if (empty($rows) || (int) ($scan_state['processed_images'] ?? 0) >= $total_images) {
+            $scan_state['status'] = 'finalizing';
+            $scan_state['stage_message'] = $this->get_alt_coverage_scan_stage_message(
+                (int) ($scan_state['processed_images'] ?? 0),
+                $total_images,
+                'finalizing'
+            );
+
+            $coverage_data = [
+                'total_images' => $total_images,
+                'images_with_alt' => max(0, (int) ($scan_state['images_with_alt'] ?? 0)),
+                'images_missing_alt' => max(0, (int) ($scan_state['images_missing_alt'] ?? 0)),
+                'coverage_percent' => $total_images > 0
+                    ? (int) round((max(0, (int) ($scan_state['images_with_alt'] ?? 0)) / $total_images) * 100)
+                    : 0,
+                'ai_source_count' => max(0, (int) ($scan_state['ai_source_count'] ?? 0)),
+                'needs_review_count' => max(0, (int) ($scan_state['needs_review_count'] ?? 0)),
+                'optimized_count' => max(0, (int) ($scan_state['images_with_alt'] ?? 0) - (int) ($scan_state['needs_review_count'] ?? 0)),
+                'approved_count' => max(0, (int) ($scan_state['approved_count'] ?? 0)),
+                'filename_only_count' => max(0, (int) ($scan_state['filename_only_count'] ?? 0)),
+                'duplicate_alt_count' => $this->get_alt_coverage_duplicate_count(),
+                'free_plan_limit' => self::FREE_PLAN_IMAGE_LIMIT,
+                'scanned_at' => time(),
+            ];
+
+            $scan_state['status'] = 'complete';
+            $scan_state['processed_images'] = $total_images;
+            $scan_state['payload'] = $coverage_data;
+            $scan_state['stage_message'] = __('Scan complete.', 'beepbeep-ai-alt-text-generator');
+
+            set_transient(self::ALT_COVERAGE_TRANSIENT_KEY, $coverage_data, self::ALT_COVERAGE_TRANSIENT_TTL);
+        } else {
+            $scan_state['stage_message'] = $this->get_alt_coverage_scan_stage_message(
+                (int) ($scan_state['processed_images'] ?? 0),
+                $total_images,
+                'running'
+            );
+        }
+
+        return $scan_state;
+    }
+
     public function get_alt_text_coverage_scan(bool $force_refresh = false): array {
         if (!$force_refresh) {
             $cached = get_transient(self::ALT_COVERAGE_TRANSIENT_KEY);
@@ -2813,6 +3162,7 @@ class Core {
                     $cached['ai_source_count'] = (int) $cached['ai_source_count'];
                     $cached['needs_review_count'] = (int) $cached['needs_review_count'];
                     $cached['optimized_count'] = (int) ($cached['optimized_count'] ?? max(0, $cached['images_with_alt'] - $cached['needs_review_count']));
+                    $cached['approved_count'] = (int) ($cached['approved_count'] ?? 0);
                     $cached['filename_only_count'] = (int) ($cached['filename_only_count'] ?? 0);
                     $cached['duplicate_alt_count'] = (int) ($cached['duplicate_alt_count'] ?? 0);
                     return $cached;
@@ -2824,17 +3174,7 @@ class Core {
             global $wpdb;
 
             $image_mime_like = $wpdb->esc_like('image/') . '%';
-
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-            $total_images = (int) $wpdb->get_var(
-                $wpdb->prepare(
-                    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- Table identifier comes from trusted core $wpdb.
-                    'SELECT COUNT(*) FROM ' . $wpdb->posts . ' WHERE post_type = %s AND post_status = %s AND post_mime_type LIKE %s',
-                    'attachment',
-                    'inherit',
-                    $image_mime_like
-                )
-            );
+            $total_images = $this->get_alt_coverage_image_total();
 
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
             $images_with_alt = (int) $wpdb->get_var(
@@ -2871,19 +3211,16 @@ class Core {
             // Needs-review count: images with alt text whose quality score is < 80 (needs-review or poor).
             // Uses same scoring as ALT Library table for consistent counts.
             $needs_review_count = 0;
+            $approved_count = 0;
             $filename_only_count = 0;
-            $normalize_for_compare = static function ( $value ) {
-                $value = strtolower( (string) $value );
-                $value = preg_replace( '/[^a-z0-9]+/i', ' ', $value );
-                return trim( preg_replace( '/\s+/', ' ', $value ) );
-            };
             if ( $images_with_alt > 0 ) {
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
                 $rows = $wpdb->get_results(
                     $wpdb->prepare(
-                        'SELECT p.ID, alt.meta_value AS alt_text FROM ' . $wpdb->posts . ' p INNER JOIN ' . $wpdb->postmeta . ' alt ON p.ID = alt.post_id AND alt.meta_key = %s AND TRIM(alt.meta_value) <> %s WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s',
+                        'SELECT p.ID, alt.meta_value AS alt_text, approved.meta_value AS approved_hash FROM ' . $wpdb->posts . ' p INNER JOIN ' . $wpdb->postmeta . ' alt ON p.ID = alt.post_id AND alt.meta_key = %s AND TRIM(alt.meta_value) <> %s LEFT JOIN ' . $wpdb->postmeta . ' approved ON p.ID = approved.post_id AND approved.meta_key = %s WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s',
                         '_wp_attachment_image_alt',
                         '',
+                        '_bbai_user_approved_hash',
                         'attachment',
                         'inherit',
                         $image_mime_like
@@ -2893,15 +3230,19 @@ class Core {
                 foreach ( $rows as $row ) {
                     $alt = isset( $row['alt_text'] ) ? (string) $row['alt_text'] : '';
                     $id  = isset( $row['ID'] ) ? (int) $row['ID'] : 0;
-                    if ( function_exists( 'bbai_calculate_alt_quality_score' ) && bbai_calculate_alt_quality_score( $alt ) < 80 ) {
+                    $approved_hash = isset( $row['approved_hash'] ) ? (string) $row['approved_hash'] : '';
+                    $is_user_approved = $approved_hash !== '' && hash_equals( $approved_hash, $this->hash_alt_text( $alt ) );
+                    if ( $is_user_approved ) {
+                        $approved_count++;
+                    } elseif ( function_exists( 'bbai_calculate_alt_quality_score' ) && bbai_calculate_alt_quality_score( $alt ) < 80 ) {
                         $needs_review_count++;
                     }
                     if ( $id > 0 && $alt !== '' ) {
                         $file = get_attached_file( $id );
                         if ( $file ) {
                             $base      = pathinfo( $file, PATHINFO_FILENAME );
-                            $norm_alt  = $normalize_for_compare( $alt );
-                            $norm_base = $normalize_for_compare( $base );
+                            $norm_alt  = $this->normalize_alt_coverage_compare_value( $alt );
+                            $norm_base = $this->normalize_alt_coverage_compare_value( $base );
                             if ( $norm_base !== '' && $norm_alt === $norm_base ) {
                                 $filename_only_count++;
                             }
@@ -2910,24 +3251,7 @@ class Core {
                 }
             }
 
-            $duplicate_alt_count = 0;
-            if ( $images_with_alt > 0 ) {
-                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-                $dup_rows = $wpdb->get_results(
-                    $wpdb->prepare(
-                        'SELECT alt.meta_value AS alt_text, COUNT(*) AS cnt FROM ' . $wpdb->posts . ' p INNER JOIN ' . $wpdb->postmeta . ' alt ON p.ID = alt.post_id AND alt.meta_key = %s AND TRIM(alt.meta_value) <> %s WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s GROUP BY alt.meta_value HAVING cnt > 1',
-                        '_wp_attachment_image_alt',
-                        '',
-                        'attachment',
-                        'inherit',
-                        $image_mime_like
-                    ),
-                    ARRAY_A
-                );
-                foreach ( $dup_rows as $dup ) {
-                    $duplicate_alt_count += (int) ( $dup['cnt'] ?? 0 );
-                }
-            }
+            $duplicate_alt_count = $images_with_alt > 0 ? $this->get_alt_coverage_duplicate_count() : 0;
 
             $optimized_count = max( 0, $images_with_alt - $needs_review_count );
 
@@ -2939,6 +3263,7 @@ class Core {
                 'ai_source_count' => $ai_source_count,
                 'needs_review_count' => $needs_review_count,
                 'optimized_count' => $optimized_count,
+                'approved_count' => $approved_count,
                 'filename_only_count' => $filename_only_count,
                 'duplicate_alt_count' => $duplicate_alt_count,
                 'free_plan_limit' => self::FREE_PLAN_IMAGE_LIMIT,
@@ -2949,19 +3274,138 @@ class Core {
 
             return $coverage_data;
         } catch (\Exception $e) {
-            return [
-                'total_images' => 0,
-                'images_with_alt' => 0,
-                'images_missing_alt' => 0,
-                'coverage_percent' => 0,
-                'ai_source_count' => 0,
-                'needs_review_count' => 0,
-                'optimized_count' => 0,
-                'filename_only_count' => 0,
-                'duplicate_alt_count' => 0,
-                'free_plan_limit' => self::FREE_PLAN_IMAGE_LIMIT,
-                'scanned_at' => time(),
-            ];
+            return $this->get_empty_alt_coverage_data();
+        }
+    }
+
+    public function get_dashboard_stats_payload(bool $force_refresh = false): array {
+        if ($force_refresh) {
+            $this->invalidate_stats_cache();
+        }
+
+        $stats = $this->get_media_stats();
+        $coverage = $this->get_alt_text_coverage_scan($force_refresh);
+
+        $total_images = max(0, (int) ($coverage['total_images'] ?? ($stats['total'] ?? 0)));
+        $images_with_alt = max(0, (int) ($coverage['images_with_alt'] ?? ($stats['with_alt'] ?? 0)));
+        $images_missing_alt = max(0, (int) ($coverage['images_missing_alt'] ?? ($stats['missing'] ?? 0)));
+        $needs_review_count = max(0, (int) ($coverage['needs_review_count'] ?? 0));
+        $optimized_count = max(0, (int) ($coverage['optimized_count'] ?? max(0, $images_with_alt - $needs_review_count)));
+        $coverage_percent = max(
+            0,
+            min(
+                100,
+                (int) ($coverage['coverage_percent'] ?? ($total_images > 0 ? round(($images_with_alt / $total_images) * 100) : 0))
+            )
+        );
+
+        $payload = is_array($stats) ? $stats : [];
+        $payload['total'] = $total_images;
+        $payload['with_alt'] = $images_with_alt;
+        $payload['missing'] = $images_missing_alt;
+        $payload['coverage'] = $total_images > 0 ? round(($images_with_alt / $total_images) * 100, 1) : 0;
+        $payload['total_images'] = $total_images;
+        $payload['images_with_alt'] = $images_with_alt;
+        $payload['images_missing_alt'] = $images_missing_alt;
+        $payload['coverage_percent'] = $coverage_percent;
+        $payload['needs_review_count'] = $needs_review_count;
+        $payload['optimized_count'] = $optimized_count;
+        $payload['ai_source_count'] = max(0, (int) ($coverage['ai_source_count'] ?? 0));
+        $payload['approved_count'] = max(0, (int) ($coverage['approved_count'] ?? 0));
+        $payload['filename_only_count'] = max(0, (int) ($coverage['filename_only_count'] ?? 0));
+        $payload['duplicate_alt_count'] = max(0, (int) ($coverage['duplicate_alt_count'] ?? 0));
+        $payload['free_plan_limit'] = max(0, (int) ($coverage['free_plan_limit'] ?? self::FREE_PLAN_IMAGE_LIMIT));
+        $payload['scanned_at'] = max(0, (int) ($coverage['scanned_at'] ?? time()));
+
+        return $payload;
+    }
+
+    /**
+     * AJAX handler: start a chunked ALT coverage scan job.
+     */
+    public function ajax_start_alt_coverage_scan() {
+        $action = 'beepbeepai_nonce';
+        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+            wp_send_json_error([ 'message' => __('Invalid nonce.', 'beepbeep-ai-alt-text-generator') ], 403);
+            return;
+        }
+
+        if (!$this->user_can_manage()) {
+            wp_send_json_error([ 'message' => __('Permission denied.', 'beepbeep-ai-alt-text-generator') ], 403);
+            return;
+        }
+
+        $this->invalidate_stats_cache();
+
+        try {
+            $scan_state = $this->start_alt_coverage_scan_job();
+
+            if ((string) ($scan_state['status'] ?? '') !== 'complete') {
+                $scan_state = $this->process_alt_coverage_scan_job_batch($scan_state);
+                $this->persist_alt_coverage_scan_job($scan_state);
+            }
+
+            $payload = $this->build_alt_coverage_scan_job_payload(
+                $scan_state,
+                is_array($scan_state['payload'] ?? null) ? $scan_state['payload'] : []
+            );
+
+            wp_send_json_success($payload);
+        } catch (\Exception $e) {
+            wp_send_json_error([
+                'message' => __('Unable to start the media library scan right now.', 'beepbeep-ai-alt-text-generator'),
+            ], 500);
+        }
+    }
+
+    /**
+     * AJAX handler: poll a running ALT coverage scan job.
+     */
+    public function ajax_poll_alt_coverage_scan() {
+        $action = 'beepbeepai_nonce';
+        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+            wp_send_json_error([ 'message' => __('Invalid nonce.', 'beepbeep-ai-alt-text-generator') ], 403);
+            return;
+        }
+
+        if (!$this->user_can_manage()) {
+            wp_send_json_error([ 'message' => __('Permission denied.', 'beepbeep-ai-alt-text-generator') ], 403);
+            return;
+        }
+
+        $job_id = sanitize_text_field(wp_unslash($_POST['job_id'] ?? ''));
+        if ($job_id === '') {
+            wp_send_json_error([ 'message' => __('Missing scan job.', 'beepbeep-ai-alt-text-generator') ], 400);
+            return;
+        }
+
+        $scan_state = $this->get_alt_coverage_scan_job($job_id);
+        if (!$scan_state) {
+            wp_send_json_error([ 'message' => __('Scan session expired. Please start again.', 'beepbeep-ai-alt-text-generator') ], 404);
+            return;
+        }
+
+        if ((int) ($scan_state['user_id'] ?? 0) !== get_current_user_id()) {
+            wp_send_json_error([ 'message' => __('Permission denied.', 'beepbeep-ai-alt-text-generator') ], 403);
+            return;
+        }
+
+        try {
+            if ((string) ($scan_state['status'] ?? '') !== 'complete') {
+                $scan_state = $this->process_alt_coverage_scan_job_batch($scan_state);
+                $this->persist_alt_coverage_scan_job($scan_state);
+            }
+
+            $payload = $this->build_alt_coverage_scan_job_payload(
+                $scan_state,
+                is_array($scan_state['payload'] ?? null) ? $scan_state['payload'] : []
+            );
+
+            wp_send_json_success($payload);
+        } catch (\Exception $e) {
+            wp_send_json_error([
+                'message' => __('Unable to continue the media library scan right now.', 'beepbeep-ai-alt-text-generator'),
+            ], 500);
         }
     }
 
@@ -3030,7 +3474,62 @@ class Core {
             'score_status' => $analysis['status'],
             'score_issues' => $analysis['issues'],
             'score_summary' => $analysis['review']['summary'] ?? '',
+            'user_approved' => !empty($analysis['user_approved']),
+            'user_approved_at' => isset($analysis['approved_at']) ? (string) $analysis['approved_at'] : '',
             'analysis' => $analysis,
+        ];
+    }
+
+    public function mark_attachment_reviewed(int $attachment_id): array {
+        $attachment_id = absint($attachment_id);
+        if ($attachment_id <= 0) {
+            return [];
+        }
+
+        $alt = trim((string) get_post_meta($attachment_id, '_wp_attachment_image_alt', true));
+        if ($alt === '') {
+            return [];
+        }
+
+        $approved_at = current_time('mysql');
+        update_post_meta($attachment_id, '_bbai_user_approved_hash', $this->hash_alt_text($alt));
+        update_post_meta($attachment_id, '_bbai_user_approved_at', $approved_at);
+        $this->invalidate_stats_cache();
+
+        return [
+            'approved' => true,
+            'approved_at' => $approved_at,
+            'alt' => $alt,
+        ];
+    }
+
+    public function mark_attachments_reviewed(array $attachment_ids): array {
+        $approved_ids = [];
+        $approved_at = current_time('mysql');
+
+        foreach (array_values(array_unique(array_map('absint', $attachment_ids))) as $attachment_id) {
+            if ($attachment_id <= 0) {
+                continue;
+            }
+
+            $alt = trim((string) get_post_meta($attachment_id, '_wp_attachment_image_alt', true));
+            if ($alt === '') {
+                continue;
+            }
+
+            update_post_meta($attachment_id, '_bbai_user_approved_hash', $this->hash_alt_text($alt));
+            update_post_meta($attachment_id, '_bbai_user_approved_at', $approved_at);
+            $approved_ids[] = $attachment_id;
+        }
+
+        if (!empty($approved_ids)) {
+            $this->invalidate_stats_cache();
+        }
+
+        return [
+            'approved_ids' => array_map('intval', $approved_ids),
+            'approved_count' => count($approved_ids),
+            'approved_at' => $approved_at,
         ];
     }
 
@@ -3038,6 +3537,34 @@ class Core {
         $alt = strtolower(trim((string) $alt));
         $alt = preg_replace('/\s+/', ' ', $alt);
         return wp_hash($alt);
+    }
+
+    private function clear_user_approval_meta(int $attachment_id): void{
+        delete_post_meta($attachment_id, '_bbai_user_approved_hash');
+        delete_post_meta($attachment_id, '_bbai_user_approved_at');
+    }
+
+    private function get_user_approval_snapshot(int $attachment_id, string $current_alt = ''): ?array{
+        $approved_hash = (string) get_post_meta($attachment_id, '_bbai_user_approved_hash', true);
+        $approved_at = (string) get_post_meta($attachment_id, '_bbai_user_approved_at', true);
+
+        if ($approved_hash === '' || $approved_at === '') {
+            return null;
+        }
+
+        if ($current_alt !== '') {
+            $current_hash = $this->hash_alt_text($current_alt);
+            if (!hash_equals($approved_hash, $current_hash)) {
+                $this->clear_user_approval_meta($attachment_id);
+                return null;
+            }
+        }
+
+        return [
+            'approved' => true,
+            'approved_at' => $approved_at,
+            'hash' => $approved_hash,
+        ];
     }
 
     private function purge_review_meta(int $attachment_id): void{
@@ -3256,7 +3783,7 @@ class Core {
             $combined_issues = array_merge($combined_issues, $heuristic['issues']);
             $combined_issues = array_values(array_unique(array_filter($combined_issues)));
 
-            return [
+            $result = [
                 'score' => $final_score,
                 'grade' => $final_grade,
                 'status'=> $final_status,
@@ -3264,9 +3791,24 @@ class Core {
                 'heuristic' => $heuristic,
                 'review'    => $review,
             ];
+            $approval = $this->get_user_approval_snapshot($attachment_id, $alt);
+            if ($approval) {
+                $result['score'] = max(85, $result['score']);
+                $result['grade'] = __('Strong', 'beepbeep-ai-alt-text-generator');
+                $result['status'] = 'good';
+                $result['issues'] = [];
+                $result['user_approved'] = true;
+                $result['approved_at'] = $approval['approved_at'];
+                $result['review'] = array_merge(is_array($result['review']) ? $result['review'] : [], [
+                    'summary' => __('Reviewed and approved in the ALT Library.', 'beepbeep-ai-alt-text-generator'),
+                    'user_approved' => true,
+                    'approved_at' => $approval['approved_at'],
+                ]);
+            }
+            return $result;
         }
 
-        return [
+        $result = [
             'score' => $heuristic['score'],
             'grade' => $heuristic['grade'],
             'status'=> $heuristic['status'],
@@ -3274,6 +3816,21 @@ class Core {
             'heuristic' => $heuristic,
             'review'    => null,
         ];
+        $approval = $this->get_user_approval_snapshot($attachment_id, $alt);
+        if ($approval) {
+            $result['score'] = max(85, $result['score']);
+            $result['grade'] = __('Strong', 'beepbeep-ai-alt-text-generator');
+            $result['status'] = 'good';
+            $result['issues'] = [];
+            $result['user_approved'] = true;
+            $result['approved_at'] = $approval['approved_at'];
+            $result['review'] = [
+                'summary' => __('Reviewed and approved in the ALT Library.', 'beepbeep-ai-alt-text-generator'),
+                'user_approved' => true,
+                'approved_at' => $approval['approved_at'],
+            ];
+        }
+        return $result;
     }
 
     private function status_from_score(int $score): string{
@@ -3326,6 +3883,47 @@ class Core {
 	            'SELECT p.ID FROM ' . $wpdb->posts . ' p LEFT JOIN ' . $wpdb->postmeta . ' m ON (p.ID = m.post_id AND m.meta_key = %s) WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s AND (m.meta_value IS NULL OR TRIM(m.meta_value) = %s) ORDER BY p.ID DESC LIMIT %d OFFSET %d',
 	            '_wp_attachment_image_alt', 'attachment', 'inherit', $image_mime_like, '', $limit, $offset
 	        )));
+	    }
+
+	    public function get_needs_review_attachment_ids($limit = 5, $offset = 0){
+	        global $wpdb;
+	        $limit  = max(1, intval($limit));
+	        $offset = max(0, intval($offset));
+	        $image_mime_like = $wpdb->esc_like('image/') . '%';
+
+	        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	        $rows = $wpdb->get_results($wpdb->prepare(
+	            'SELECT p.ID, alt.meta_value AS alt_text FROM ' . $wpdb->posts . ' p INNER JOIN ' . $wpdb->postmeta . ' alt ON p.ID = alt.post_id AND alt.meta_key = %s AND TRIM(alt.meta_value) <> %s WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s ORDER BY p.ID DESC',
+	            '_wp_attachment_image_alt',
+	            '',
+	            'attachment',
+	            'inherit',
+	            $image_mime_like
+	        ), ARRAY_A);
+
+	        if (empty($rows) || !function_exists('bbai_calculate_alt_quality_score')) {
+	            return [];
+	        }
+
+	        $needs_review_ids = [];
+	        foreach ((array) $rows as $row) {
+	            $attachment_id = isset($row['ID']) ? intval($row['ID']) : 0;
+	            $alt_text = isset($row['alt_text']) ? (string) $row['alt_text'] : '';
+
+	            if ($attachment_id <= 0 || $alt_text === '') {
+	                continue;
+	            }
+
+	            if (bbai_calculate_alt_quality_score($alt_text) < 80) {
+	                $needs_review_ids[] = $attachment_id;
+	            }
+	        }
+
+	        if ($offset > 0) {
+	            $needs_review_ids = array_slice($needs_review_ids, $offset);
+	        }
+
+	        return array_map('intval', array_slice($needs_review_ids, 0, $limit));
 	    }
 
 	    public function get_all_attachment_ids($limit = 5, $offset = 0){
@@ -3526,168 +4124,6 @@ class Core {
         }
 
         return $direct;
-    }
-
-    /**
-     * Sanitize and neutralize CSV cell values to prevent spreadsheet formula injection.
-     *
-     * @param mixed $value
-     * @param bool  $allow_html Whether to allow safe post HTML via wp_kses_post().
-     * @return string
-     */
-    private function bbai_csv_safe_cell($value, bool $allow_html = false): string {
-        if ($value === null) {
-            $value = '';
-        } elseif (is_bool($value)) {
-            $value = $value ? '1' : '0';
-        } elseif (is_scalar($value)) {
-            $value = (string) $value;
-        } else {
-            $encoded = wp_json_encode($value);
-            $value = $encoded === false ? '' : (string) $encoded;
-        }
-
-        // CSV isn't HTML, but output is user-controlled; sanitize to avoid exporting unsafe content.
-        $value = $allow_html ? wp_kses_post($value) : sanitize_text_field($value);
-
-        // Prefix every non-empty value to prevent CSV injection in spreadsheet software.
-        if ($value !== '' && strpos($value, "\t") !== 0) {
-            $value = "\t" . $value;
-        }
-
-        return $value;
-    }
-
-    /**
-     * Build a single CSV row (RFC4180-style) without using file handles.
-     *
-     * @param array $fields
-     * @return string
-     */
-    private function bbai_csv_row(array $fields): string {
-        $delimiter = ',';
-        $enclosure = '"';
-
-        $out = [];
-        foreach ($fields as $field) {
-            if ($field === null) {
-                $field = '';
-            } elseif (is_bool($field)) {
-                $field = $field ? '1' : '0';
-            } elseif (is_scalar($field)) {
-                $field = (string) $field;
-            } else {
-                $encoded = wp_json_encode($field);
-                $field = $encoded === false ? '' : (string) $encoded;
-            }
-
-            $needs_enclosure = strpbrk($field, $delimiter . $enclosure . "\r\n\t\v\0") !== false;
-            if ($needs_enclosure) {
-                $field = $enclosure . str_replace($enclosure, $enclosure . $enclosure, $field) . $enclosure;
-            }
-            $out[] = $field;
-        }
-
-        return implode($delimiter, $out) . "\n";
-    }
-
-    /**
-     * Stream raw CSV/text bytes to the HTTP response.
-     *
-     * @param string $contents
-     * @return void
-     */
-    private function bbai_output_contents(string $contents): void {
-        // Streaming CSV/text downloads; escaping would corrupt the file content.
-        echo $contents; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-    }
-
-    /**
-     * Clean active output buffers before streaming file downloads.
-     *
-     * @return void
-     */
-    private function bbai_prepare_download_stream(): void {
-        while (ob_get_level() > 0) {
-            $status = ob_get_status();
-            $flags = isset($status['flags']) ? (int) $status['flags'] : 0;
-            if (($flags & PHP_OUTPUT_HANDLER_REMOVABLE) === 0) {
-                break;
-            }
-            ob_end_clean();
-        }
-    }
-
-    public function handle_usage_export(){
-        check_admin_referer('bbai_usage_export');
-        if (!$this->user_can_manage()){
-            wp_die(esc_html__('You do not have permission to export usage data.', 'beepbeep-ai-alt-text-generator'));
-        }
-
-        $rows = $this->get_usage_rows(10, true);
-        $filename = 'bbai-usage-' . gmdate('Ymd-His') . '.csv';
-
-        header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename=' . $filename);
-
-        $this->bbai_prepare_download_stream();
-        $this->bbai_output_contents($this->bbai_csv_row(['Attachment ID', 'Title', 'ALT Text', 'Source', 'Model', 'Generated At']));
-        foreach ($rows as $row){
-            $this->bbai_output_contents($this->bbai_csv_row([
-                $this->bbai_csv_safe_cell($row['id'] ?? ''),
-                $this->bbai_csv_safe_cell($row['title'] ?? ''),
-                $this->bbai_csv_safe_cell($row['alt'] ?? ''),
-                $this->bbai_csv_safe_cell($row['source'] ?? ''),
-                $this->bbai_csv_safe_cell($row['tokens'] ?? ''),
-                $this->bbai_csv_safe_cell($row['prompt'] ?? ''),
-                $this->bbai_csv_safe_cell($row['completion'] ?? ''),
-                $this->bbai_csv_safe_cell($row['model'] ?? ''),
-                '',
-            ]));
-        }
-        exit;
-    }
-
-    public function handle_debug_log_export() {
-        check_admin_referer('bbai_debug_export');
-        if (!$this->user_can_manage()){
-            wp_die(esc_html__('You do not have permission to export debug logs.', 'beepbeep-ai-alt-text-generator'));
-        }
-
-        if (!class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-            wp_die(esc_html__('Debug logging is not available.', 'beepbeep-ai-alt-text-generator'));
-        }
-
-				        global $wpdb;
-				        $table = esc_sql( Debug_Log::table() );
-				        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-				        $rows = $wpdb->get_results(
-				            // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
-				            $wpdb->prepare(
-				                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
-				                "SELECT * FROM `{$table}` WHERE %d = %d ORDER BY created_at DESC",
-				                1,
-				                1
-				            ),
-			            ARRAY_A
-			        );
-
-        header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename=bbai-debug-logs-' . gmdate('Ymd-His') . '.csv');
-
-        $this->bbai_prepare_download_stream();
-        $this->bbai_output_contents($this->bbai_csv_row(['Timestamp', 'Level', 'Message', 'Source', 'Context']));
-        foreach ($rows as $row){
-            $context = $row['context'] ?? '';
-            $this->bbai_output_contents($this->bbai_csv_row([
-                $this->bbai_csv_safe_cell($row['created_at'] ?? ''),
-                $this->bbai_csv_safe_cell($row['level'] ?? ''),
-                $this->bbai_csv_safe_cell($row['message'] ?? ''),
-                $this->bbai_csv_safe_cell($row['source'] ?? ''),
-                $this->bbai_csv_safe_cell($context),
-            ]));
-        }
-        exit;
     }
 
     private function redact_api_token($message){
@@ -4017,6 +4453,7 @@ class Core {
     }
 
     public function persist_generation_result(int $attachment_id, string $alt, array $usage_summary, string $source, string $model, string $image_strategy, $review_result): void{
+        $this->clear_user_approval_meta($attachment_id);
         update_post_meta($attachment_id, '_wp_attachment_image_alt', wp_strip_all_tags($alt));
         update_post_meta($attachment_id, '_bbai_source', $source);
         update_post_meta($attachment_id, '_bbai_model', $model);
@@ -4978,583 +5415,7 @@ class Core {
     }
 
 	    public function enqueue_admin($hook){
-        $base_path = BBAI_PLUGIN_DIR;
-        $base_url  = BBAI_PLUGIN_URL;
-
-        $asset_version = static function(string $relative, string $fallback = '1.0.0') use ($base_path): string {
-            $relative = ltrim($relative, '/');
-            $path = $base_path . $relative;
-            return file_exists($path) ? (string) filemtime($path) : $fallback;
-        };
-
-        $use_debug_assets = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG;
-        $js_base  = $use_debug_assets ? 'assets/src/js/' : 'assets/dist/js/';
-        $css_base = $use_debug_assets ? 'assets/src/css/' : 'assets/dist/css/';
-        $asset_path = static function(string $base, string $name, bool $debug, string $type) use ($base_path): string {
-            $extension = $debug ? ".$type" : ".min.$type";
-            $path = $base . $name . $extension;
-
-            if ($debug && !file_exists($base_path . $path)) {
-                $dist_base = str_replace('assets/src/', 'assets/dist/', $base);
-                $dist_path = $dist_base . $name . ".min.$type";
-                if (file_exists($base_path . $dist_path)) {
-                    return $dist_path;
-                }
-            }
-
-            // If minified file doesn't exist, fall back to source file
-            if (!$debug && !file_exists($base_path . $path)) {
-                $source_base = str_replace('assets/dist/', 'assets/src/', $base);
-                $source_path = $source_base . $name . ".$type";
-                if (file_exists($base_path . $source_path)) {
-                    return $source_path;
-                }
-                // Final fallback: assets/js/ or assets/css/ (ZIP build moves src into these)
-                $flat_path = "assets/$type/" . $name . ".$type";
-                if (file_exists($base_path . $flat_path)) {
-                    return $flat_path;
-                }
-                // Fallback for bundle output (build-assets.js outputs .bundle.min.js)
-                $bundle_path = "assets/$type/" . $name . ".bundle.min.$type";
-                if (file_exists($base_path . $bundle_path)) {
-                    return $bundle_path;
-                }
-                return $source_path;
-            }
-
-            return $path;
-        };
-
-        $admin_file    = $asset_path($js_base, 'bbai-admin', $use_debug_assets, 'js');
-        $admin_version = $asset_version($admin_file, '3.0.0');
-        
-        $bbai_checkout_prices = $this->get_checkout_price_ids();
-
-        $l10n_common = [
-            'reviewCue'           => __('Visit the ALT Library to double-check the wording.', 'beepbeep-ai-alt-text-generator'),
-            'statusReady'         => '',
-            'previewAltHeading'   => __('Review generated ALT text', 'beepbeep-ai-alt-text-generator'),
-            'previewAltHint'      => __('Review the generated description before applying it to your media item.', 'beepbeep-ai-alt-text-generator'),
-            'previewAltApply'     => __('Use this ALT', 'beepbeep-ai-alt-text-generator'),
-            'previewAltCancel'    => __('Keep current ALT', 'beepbeep-ai-alt-text-generator'),
-            'previewAltDismissed' => __('Preview dismissed. Existing ALT kept.', 'beepbeep-ai-alt-text-generator'),
-            'previewAltShortcut'  => __('Shift + Enter for newline.', 'beepbeep-ai-alt-text-generator'),
-        ];
-
-        // Detect any BeepBeep AI admin screens (top-level or subpages)
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
-        // Check hook name first, then fallback to $_GET['page'] parameter
-	        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
-	        $bbai_page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
-	        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
-	        $bbai_tab_input = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : '';
-	        $bbai_current_page = $bbai_page_input;
-	        $is_dashboard_main_page = $bbai_current_page === self::MENU_SLUG_DASHBOARD;
-	        $is_dashboard_tab = $is_dashboard_main_page && ($bbai_tab_input === '' || $bbai_tab_input === 'dashboard');
-        $hook_str = (string)($hook ?? '');
-        $is_bbai_page = strpos($hook_str, 'toplevel_page_bbai') === 0
-            || strpos($hook_str, 'bbai_page_bbai') === 0
-            || strpos($hook_str, 'media_page_bbai') === 0
-            || strpos($hook_str, '_page_bbai') !== false
-            || (!empty($bbai_current_page) && strpos($bbai_current_page, 'bbai') === 0);
-
-        // Restrict plugin assets/scripts to BeepBeep AI admin pages only.
-        if (!$is_bbai_page) {
-            return;
-        }
-
-        // "Session expired" comes from WordPress auth-check UI and can be misleading on plugin screens
-        // when the BeepBeep API session (not WordPress auth) is what actually expired.
-        wp_dequeue_script('wp-auth-check');
-        wp_deregister_script('wp-auth-check');
-        remove_action('admin_print_footer_scripts', 'wp_auth_check_html', 5);
-
-        if ($is_bbai_page){
-            wp_enqueue_script('bbai-admin', $base_url . $admin_file, ['jquery', 'wp-i18n'], $admin_version, true);
-            wp_localize_script('bbai-admin', 'BBAI', [
-                'nonce'     => wp_create_nonce('wp_rest'),
-                'rest'      => esc_url_raw( rest_url('bbai/v1/') ),
-                'restAlt'   => esc_url_raw( rest_url('bbai/v1/alt/') ),
-                'restStats' => esc_url_raw( rest_url('bbai/v1/stats') ),
-                'restUsage' => esc_url_raw( rest_url('bbai/v1/usage') ),
-                'restMissing'=> esc_url_raw( add_query_arg(['scope' => 'missing'], rest_url('bbai/v1/list')) ),
-                'restAll'    => esc_url_raw( add_query_arg(['scope' => 'all'], rest_url('bbai/v1/list')) ),
-                'restQueue'  => esc_url_raw( rest_url('bbai/v1/queue') ),
-                'restRoot'  => esc_url_raw( rest_url() ),
-                'restPlans' => esc_url_raw( rest_url('bbai/v1/plans') ),
-                'l10n'      => $l10n_common,
-                'upgradeUrl'=> esc_url( Usage_Tracker::get_upgrade_url() ),
-                'billingPortalUrl' => esc_url( Usage_Tracker::get_billing_portal_url() ),
-                'checkoutPrices' => $bbai_checkout_prices,
-                'canManage' => $this->user_can_manage(),
-                'inlineBatchSize' => defined('BBAI_INLINE_BATCH') ? max(1, intval(BBAI_INLINE_BATCH)) : 1,
-                'wizard' => $this->get_setup_wizard_bootstrap(),
-            ]);
-            // Also add bbai_ajax for regenerate functionality
-            wp_localize_script('bbai-admin', 'bbai_ajax', [
-                'ajaxurl' => admin_url('admin-ajax.php'),
-                'ajax_url'=> admin_url('admin-ajax.php'),
-                'nonce'   => wp_create_nonce('beepbeepai_nonce'),
-                'admin_url' => admin_url('admin.php'),
-                'admin_logout_confirm' => __('Are you sure you want to log out of the admin panel?', 'beepbeep-ai-alt-text-generator'),
-                'can_manage' => $this->user_can_manage(),
-                'logout_redirect' => admin_url('admin.php?page=bbai'),
-            ]);
-            wp_localize_script('bbai-admin', 'bbai_env', [
-                'ajax_url'  => admin_url('admin-ajax.php'),
-                'admin_url' => admin_url(),
-                'upload_url'=> admin_url('upload.php'),
-                'rest_root' => esc_url_raw(rest_url()),
-                'nonce'     => wp_create_nonce('bbai_ajax_nonce'),
-            ]);
-        }
-
-        if ($is_bbai_page){
-            $css_file    = $asset_path($css_base, 'bbai-dashboard', $use_debug_assets, 'css');
-            $js_file     = $asset_path($js_base, 'bbai-dashboard', $use_debug_assets, 'js');
-            $usage_bridge = $asset_path($js_base, 'usage-components-bridge', $use_debug_assets, 'js');
-            $upgrade_css = $asset_path($css_base, 'upgrade-modal', $use_debug_assets, 'css');
-            $upgrade_js  = $asset_path($js_base, 'upgrade-modal', $use_debug_assets, 'js');
-            $auth_css    = $asset_path($css_base, 'auth-modal', $use_debug_assets, 'css');
-            $auth_js     = $asset_path($js_base, 'auth-modal', $use_debug_assets, 'js');
-            $dashboard_scripts_js = $asset_path($js_base, 'bbai-dashboard-scripts', $use_debug_assets, 'js');
-            $admin_panel_js = $asset_path($js_base, 'bbai-admin-panel', $use_debug_assets, 'js');
-
-            // Enqueue unified CSS bundle (v6.0 - single optimized stylesheet)
-            // This replaces: design-system, components, dashboard, ui, button-enhancements,
-            // guide-settings, debug, bulk-progress, success-modal, auth-modal, upgrade-modal
-            $unified_css = $use_debug_assets ? 'assets/css/unified.css' : 'assets/css/unified.min.css';
-            if ( ! file_exists( $base_path . $unified_css ) ) {
-                $unified_css = $use_debug_assets ? 'assets/css/unified.min.css' : 'assets/css/unified.css';
-            }
-            wp_enqueue_style(
-                'bbai-unified',
-                $base_url . $unified_css,
-                [],
-                $asset_version( $unified_css, '6.0.4' )
-            );
-
-            // Enqueue modern bundle CSS (contains page-specific layouts from modern-style.css)
-            $modern_css = 'assets/css/modern.bundle.min.css';
-            if ( ! file_exists( $base_path . $modern_css ) ) {
-                $modern_css = 'assets/css/modern.bundle.css';
-            }
-            wp_enqueue_style(
-                'bbai-modern',
-                $base_url . $modern_css,
-                [ 'bbai-unified' ],
-                $asset_version( $modern_css, '5.0.0' )
-            );
-
-            $admin_css_file = $asset_path($css_base, 'bbai-admin', $use_debug_assets, 'css');
-            wp_enqueue_style(
-                'bbai-admin-wizard',
-                $base_url . $admin_css_file,
-                ['bbai-unified'],
-                $asset_version($admin_css_file, '1.0.0')
-            );
-
-            $status_card_css = 'assets/css/features/dashboard/status-card-refresh.css';
-            wp_enqueue_style(
-                'bbai-dashboard-status-card-refresh',
-                $base_url . $status_card_css,
-                [ 'bbai-modern', 'bbai-admin-wizard' ],
-                $asset_version( $status_card_css, '1.0.0' )
-            );
-
-            $upgrade_modal_refresh_css = 'assets/css/features/pricing/upgrade-modal-refresh.css';
-            wp_enqueue_style(
-                'bbai-upgrade-modal-refresh',
-                $base_url . $upgrade_modal_refresh_css,
-                [ 'bbai-dashboard-status-card-refresh' ],
-                $asset_version( $upgrade_modal_refresh_css, '1.0.0' )
-            );
-
-            if ($bbai_current_page === 'bbai-onboarding') {
-                $onboarding_css = 'assets/css/onboarding.css';
-                $onboarding_js  = 'assets/js/onboarding.js';
-
-                wp_enqueue_style(
-                    'bbai-onboarding',
-                    $base_url . $onboarding_css,
-                    ['bbai-unified', 'bbai-modern'],
-                    $asset_version($onboarding_css, '1.0.0')
-                );
-
-                wp_enqueue_script(
-                    'bbai-onboarding',
-                    $base_url . $onboarding_js,
-                    ['jquery', 'wp-i18n'],
-                    $asset_version($onboarding_js, '1.0.0'),
-                    true
-                );
-
-                // Check if onboarding is already completed (for idempotent JS behavior)
-                $is_onboarding_completed = class_exists('\BeepBeepAI\AltTextGenerator\Onboarding')
-                    ? \BeepBeepAI\AltTextGenerator\Onboarding::is_completed()
-                    : false;
-
-                wp_localize_script('bbai-onboarding', 'bbai_env', [
-                    'ajax_url'  => admin_url('admin-ajax.php'),
-                    'admin_url' => admin_url(),
-                    'upload_url'=> admin_url('upload.php'),
-                    'rest_root' => esc_url_raw(rest_url()),
-                    'nonce'     => wp_create_nonce('bbai_ajax_nonce'),
-                ]);
-
-                wp_localize_script('bbai-onboarding', 'bbaiOnboarding', [
-                    'ajaxUrl'               => admin_url('admin-ajax.php'),
-                    'nonce'                 => wp_create_nonce('bbai_onboarding'),
-                    'queueStatsNonce'       => wp_create_nonce('beepbeepai_nonce'),
-                    'dashboardUrl'          => admin_url('admin.php?page=bbai'),
-                    'libraryUrl'            => admin_url('admin.php?page=' . self::MENU_SLUG_LIBRARY),
-                    'step3Url'              => admin_url('admin.php?page=bbai-onboarding&step=3'),
-                    'isAuthenticated'       => bbai_is_authenticated(),
-                    'isOnboardingCompleted' => $is_onboarding_completed,
-                    'strings'               => [
-                        'scanStart'    => __('Starting your scan...', 'beepbeep-ai-alt-text-generator'),
-                        'scanQueued'   => __('Scan queued.', 'beepbeep-ai-alt-text-generator'),
-                        'scanFailed'   => __('Unable to start the scan. Please try again.', 'beepbeep-ai-alt-text-generator'),
-                        'skipFailed'   => __('Unable to skip onboarding. Please try again.', 'beepbeep-ai-alt-text-generator'),
-                        'scanLabel'    => __('Scanning...', 'beepbeep-ai-alt-text-generator'),
-                        'skipLabel'    => __('Skipping...', 'beepbeep-ai-alt-text-generator'),
-                        'statsLoading' => __('Loading...', 'beepbeep-ai-alt-text-generator'),
-                        'statsFailed'  => __('Unable to load stats.', 'beepbeep-ai-alt-text-generator'),
-                    ],
-                ]);
-            }
-
-            $hero_css = ".bbai-hero-section {\n" .
-                "    background: linear-gradient(to bottom, #f7fee7 0%, #ffffff 100%);\n" .
-                "    border-radius: 24px;\n" .
-                "    margin-bottom: 32px;\n" .
-                "    padding: 48px 40px;\n" .
-                "    text-align: center;\n" .
-                "    box-shadow: 0 4px 16px rgba(0,0,0,0.08);\n" .
-                "}\n" .
-                ".bbai-hero-content {\n" .
-                "    margin-bottom: 32px;\n" .
-                "}\n" .
-                ".bbai-hero-title {\n" .
-                "    margin: 0 0 16px 0;\n" .
-                "    font-size: 2.5rem;\n" .
-                "    font-weight: 700;\n" .
-                "    color: #0f172a;\n" .
-                "    line-height: 1.2;\n" .
-                "}\n" .
-                ".bbai-hero-subtitle {\n" .
-                "    margin: 0;\n" .
-                "    font-size: 1.125rem;\n" .
-                "    color: #475569;\n" .
-                "    line-height: 1.6;\n" .
-                "    max-width: 600px;\n" .
-                "    margin-left: auto;\n" .
-                "    margin-right: auto;\n" .
-                "}\n" .
-                ".bbai-hero-actions {\n" .
-                "    display: flex;\n" .
-                "    flex-direction: column;\n" .
-                "    align-items: center;\n" .
-                "    gap: 16px;\n" .
-                "    margin-bottom: 24px;\n" .
-                "}\n" .
-                ".bbai-hero-btn-primary {\n" .
-                "    background: linear-gradient(135deg, #14b8a6 0%, #84cc16 100%);\n" .
-                "    color: white;\n" .
-                "    border: none;\n" .
-                "    padding: 16px 32px;\n" .
-                "    border-radius: 16px;\n" .
-                "    font-size: 16px;\n" .
-                "    font-weight: 600;\n" .
-                "    cursor: pointer;\n" .
-                "    transition: opacity 0.2s ease;\n" .
-                "    box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);\n" .
-                "}\n" .
-                ".bbai-hero-btn-primary:hover {\n" .
-                "    opacity: 0.9;\n" .
-                "}\n" .
-                ".bbai-hero-link-secondary {\n" .
-                "    background: transparent;\n" .
-                "    border: none;\n" .
-                "    color: #6b7280;\n" .
-                "    text-decoration: underline;\n" .
-                "    font-size: 14px;\n" .
-                "    cursor: pointer;\n" .
-                "    transition: color 0.2s ease;\n" .
-                "    padding: 0;\n" .
-                "}\n" .
-                ".bbai-hero-link-secondary:hover {\n" .
-                "    color: #14b8a6;\n" .
-                "}\n" .
-                ".bbai-hero-micro-copy {\n" .
-                "    font-size: 14px;\n" .
-                "    color: #64748b;\n" .
-                "    font-weight: 500;\n" .
-                "}\n";
-
-            wp_add_inline_style('bbai-unified', $hero_css);
-
-            // Custom modal system (replaces native alert())
-            wp_enqueue_style(
-                'bbai-modal',
-                $base_url . $asset_path($css_base, 'bbai-modal', $use_debug_assets, 'css'),
-                ['bbai-unified'],
-                $asset_version($asset_path($css_base, 'bbai-modal', $use_debug_assets, 'css'), '4.3.0')
-            );
-
-
-            $stats_data = $this->get_media_stats();
-            $bbai_usage_data = Usage_Tracker::get_stats_display();
-            
-            wp_enqueue_script(
-                'bbai-dashboard',
-                $base_url . $js_file,
-                ['jquery', 'wp-api-fetch', 'wp-i18n'],
-                $asset_version($js_file, '3.0.0'),
-                true
-            );
-
-            $analytics_js = $asset_path($js_base, 'bbai-analytics', $use_debug_assets, 'js');
-            wp_enqueue_script(
-                'bbai-analytics',
-                $base_url . $analytics_js,
-                ['jquery', 'bbai-dashboard'],
-                $asset_version($analytics_js, '1.0.0'),
-                true
-            );
-            wp_enqueue_script(
-                'bbai-upgrade',
-                $base_url . $upgrade_js,
-                ['jquery'],
-                $asset_version($upgrade_js, '3.1.0'),
-                true
-            );
-            wp_enqueue_script(
-                'bbai-auth',
-                $base_url . $auth_js,
-                ['jquery', 'wp-i18n'],
-                $asset_version($auth_js, '4.0.0'),
-                true
-            );
-
-            if (!$is_dashboard_tab) {
-                wp_enqueue_script(
-                    'bbai-admin-panel',
-                    $base_url . $admin_panel_js,
-                    ['jquery', 'bbai-dashboard'],
-                    $asset_version($admin_panel_js, '1.0.0'),
-                    true
-                );
-            }
-
-            // Dashboard UI helpers (number/ring animations, card equal heights) must run on Dashboard tab.
-            wp_enqueue_script(
-                'bbai-dashboard-scripts',
-                $base_url . $dashboard_scripts_js,
-                ['jquery', 'bbai-dashboard'],
-                $asset_version($dashboard_scripts_js, '1.0.0'),
-                true
-            );
-
-            // Debug logger (must load first)
-            wp_enqueue_script(
-                'bbai-logger',
-                $base_url . $asset_path($js_base, 'bbai-logger', $use_debug_assets, 'js'),
-                [],
-                $asset_version($asset_path($js_base, 'bbai-logger', $use_debug_assets, 'js'), '4.3.0'),
-                true
-            );
-
-            // Tooltip system
-            wp_enqueue_style(
-                'bbai-tooltips',
-                $base_url . $asset_path($css_base, 'bbai-tooltips', $use_debug_assets, 'css'),
-                ['bbai-unified'],
-                $asset_version($asset_path($css_base, 'bbai-tooltips', $use_debug_assets, 'css'), '4.3.0')
-            );
-            wp_enqueue_script(
-                'bbai-tooltips',
-                $base_url . $asset_path($js_base, 'bbai-tooltips', $use_debug_assets, 'js'),
-                ['jquery', 'wp-i18n'],
-                $asset_version($asset_path($js_base, 'bbai-tooltips', $use_debug_assets, 'js'), '4.3.0'),
-                true
-            );
-
-            // Custom modal system (must load before other scripts that use it)
-            wp_enqueue_script(
-                'bbai-modal',
-                $base_url . $asset_path($js_base, 'bbai-modal', $use_debug_assets, 'js'),
-                ['jquery', 'bbai-logger', 'wp-i18n'],
-                $asset_version($asset_path($js_base, 'bbai-modal', $use_debug_assets, 'js'), '4.3.0'),
-                true
-            );
-
-            // Pricing modal bridge (handles upgrade modal triggers)
-            $pricing_bridge_path = 'admin/components/pricing-modal-bridge.js';
-            $pricing_bridge_full_path = $base_path . $pricing_bridge_path;
-            if (file_exists($pricing_bridge_full_path)) {
-                wp_enqueue_script(
-                    'bbai-pricing-modal-bridge',
-                    $base_url . $pricing_bridge_path,
-                    ['jquery', 'bbai-dashboard'],
-                    filemtime($pricing_bridge_full_path),
-                    true
-                );
-            }
-
-            // Usage bridge is optional; it mounts React-driven widgets only when runtime/component globals exist.
-            if (file_exists($base_path . $usage_bridge)) {
-                wp_enqueue_script(
-                    'bbai-usage-bridge',
-                    $base_url . $usage_bridge,
-                    ['bbai-dashboard', 'wp-element'],
-                    $asset_version($usage_bridge, '1.0.0'),
-                    true
-                );
-            }
-            wp_enqueue_script(
-                'bbai-debug',
-                $base_url . $asset_path($js_base, 'bbai-debug', $use_debug_assets, 'js'),
-                ['jquery'],
-                $asset_version($asset_path($js_base, 'bbai-debug', $use_debug_assets, 'js'), '1.0.0'),
-                true
-            );
-
-            // Enqueue contact modal script and styles
-            wp_enqueue_script(
-                'bbai-contact-modal',
-                $base_url . $asset_path($js_base, 'bbai-contact-modal', $use_debug_assets, 'js'),
-                ['jquery', 'wp-i18n'],
-                $asset_version($asset_path($js_base, 'bbai-contact-modal', $use_debug_assets, 'js'), '1.0.0'),
-                true
-            );
-
-            wp_enqueue_style(
-                'bbai-contact-modal',
-                $base_url . $asset_path($css_base, 'bbai-contact-modal', $use_debug_assets, 'css'),
-                ['bbai-unified'],
-                $asset_version($asset_path($css_base, 'bbai-contact-modal', $use_debug_assets, 'css'), '1.0.0')
-            );
-
-            // Localize contact modal script
-            wp_localize_script('bbai-contact-modal', 'bbaiContactData', [
-                'wp_version' => get_bloginfo('version'),
-                'plugin_version' => BEEPBEEP_AI_VERSION,
-            ]);
-            
-            // Localize debug script configuration
-            wp_localize_script('bbai-debug', 'BBAI_DEBUG', [
-                'restLogs' => esc_url_raw( add_query_arg( 'action', 'bbai_debug_logs', admin_url( 'admin-ajax.php' ) ) ),
-                'restClear' => esc_url_raw( add_query_arg( 'action', 'bbai_debug_logs_clear', admin_url( 'admin-ajax.php' ) ) ),
-                'nonce' => wp_create_nonce('wp_rest'),
-                'initial' => $this->get_debug_bootstrap(),
-                'strings' => [
-                    'noLogs' => __('No logs recorded yet.', 'beepbeep-ai-alt-text-generator'),
-                    'contextTitle' => __('View Details', 'beepbeep-ai-alt-text-generator'),
-                    'clearConfirm' => __('This will permanently delete all debug logs. Continue?', 'beepbeep-ai-alt-text-generator'),
-                    'errorGeneric' => __('Unable to load debug logs. Please try again.', 'beepbeep-ai-alt-text-generator'),
-                    'emptyContext' => __('No additional context was provided for this entry.', 'beepbeep-ai-alt-text-generator'),
-                    'emptyPayload' => __('No request payload was captured for this entry.', 'beepbeep-ai-alt-text-generator'),
-                    'emptyResponse' => __('No response payload was captured for this entry.', 'beepbeep-ai-alt-text-generator'),
-                    'emptyStack' => __('No stack trace was captured for this entry.', 'beepbeep-ai-alt-text-generator'),
-                    'modalTitle' => __('Log Context Details', 'beepbeep-ai-alt-text-generator'),
-                    'cleared' => __('Logs cleared successfully.', 'beepbeep-ai-alt-text-generator'),
-                    'copied' => __('Debug info copied to clipboard.', 'beepbeep-ai-alt-text-generator'),
-                    'copyFailed' => __('Unable to copy debug info. Please copy it manually.', 'beepbeep-ai-alt-text-generator'),
-                    'connected' => __('Connected', 'beepbeep-ai-alt-text-generator'),
-                    'failed' => __('Failed', 'beepbeep-ai-alt-text-generator'),
-                    'noWarnings' => __('No warnings or errors recorded yet.', 'beepbeep-ai-alt-text-generator'),
-                ],
-            ]);
-
-            wp_localize_script('bbai-dashboard', 'BBAI_DASH', [
-                'nonce'       => wp_create_nonce('wp_rest'),
-                'rest'        => esc_url_raw( rest_url('bbai/v1/generate/') ),
-                'restStats'   => esc_url_raw( rest_url('bbai/v1/stats') ),
-                'restUsage'   => esc_url_raw( rest_url('bbai/v1/usage') ),
-                'restMissing' => esc_url_raw( add_query_arg(['scope' => 'missing'], rest_url('bbai/v1/list')) ),
-                'restAll'     => esc_url_raw( add_query_arg(['scope' => 'all'], rest_url('bbai/v1/list')) ),
-                'restQueue'   => esc_url_raw( rest_url('bbai/v1/queue') ),
-                'restRoot'    => esc_url_raw( rest_url() ),
-                'restPlans'   => esc_url_raw( rest_url('bbai/v1/plans') ),
-                'upgradeUrl'  => esc_url( Usage_Tracker::get_upgrade_url() ),
-                'billingPortalUrl'=> esc_url( Usage_Tracker::get_billing_portal_url() ),
-                'checkoutPrices' => $bbai_checkout_prices,
-                'stats'       => $stats_data,
-                'initialUsage'=> $bbai_usage_data,
-                'wizard'      => $this->get_setup_wizard_bootstrap(),
-            ]);
-            
-            // Add AJAX variables for regenerate functionality and auth
-            $options = get_option(self::OPTION_KEY, []);
-            // Production API URL - always use production
-            $production_url = 'https://alttext-ai-backend.onrender.com';
-            $api_url = $production_url;
-            $sanitized_user_data = $this->sanitize_api_user_data_for_localize($this->api_client->get_user_data());
-
-            wp_localize_script('bbai-dashboard', 'bbai_ajax', [
-                'ajaxurl' => admin_url('admin-ajax.php'),
-                'ajax_url'=> admin_url('admin-ajax.php'),
-                'nonce'   => wp_create_nonce('beepbeepai_nonce'),
-                'api_url' => $api_url,
-                'is_authenticated' => $this->api_client->is_authenticated(),
-                'user_data' => $sanitized_user_data,
-                'admin_url' => admin_url('admin.php'),
-                'admin_logout_confirm' => __('Are you sure you want to log out of the admin panel?', 'beepbeep-ai-alt-text-generator'),
-                'can_manage' => $this->user_can_manage(),
-                'logout_redirect' => admin_url('admin.php?page=bbai'),
-                'stripe_links' => self::DEFAULT_STRIPE_LINKS,
-            ]);
-            
-            wp_localize_script('bbai-dashboard', 'bbai_env', [
-                'ajax_url'  => admin_url('admin-ajax.php'),
-                'admin_url' => admin_url(),
-                'upload_url'=> admin_url('upload.php'),
-                'rest_root' => esc_url_raw(rest_url()),
-                'nonce'     => wp_create_nonce('bbai_ajax_nonce'),
-            ]);
-            
-            wp_localize_script('bbai-dashboard', 'BBAI_DASH_L10N', [
-                'l10n'        => array_merge([
-                    'processing'         => __('Generating ALT text…', 'beepbeep-ai-alt-text-generator'),
-                    /* translators: 1: image ID */
-                    'processingMissing'  => __('Generating ALT for #%d…', 'beepbeep-ai-alt-text-generator'),
-                    'error'              => __('Something went wrong. Check console for details.', 'beepbeep-ai-alt-text-generator'),
-                    /* translators: 1: images generated, 2: error count */
-                    'summary'            => __('Generated %1$d images (%2$d errors).', 'beepbeep-ai-alt-text-generator'),
-                    'restUnavailable'    => __('REST endpoint unavailable', 'beepbeep-ai-alt-text-generator'),
-                    'prepareBatch'       => __('Preparing image list…', 'beepbeep-ai-alt-text-generator'),
-                    'coverageCopy'       => __('of images currently include ALT text.', 'beepbeep-ai-alt-text-generator'),
-                    'noRequests'         => __('None yet', 'beepbeep-ai-alt-text-generator'),
-                    'noAudit'            => __('No usage data recorded yet.', 'beepbeep-ai-alt-text-generator'),
-                    'nothingToProcess'   => __('No images to process.', 'beepbeep-ai-alt-text-generator'),
-                    'batchStart'         => __('Starting batch…', 'beepbeep-ai-alt-text-generator'),
-                    'batchComplete'      => __('Batch complete.', 'beepbeep-ai-alt-text-generator'),
-                    /* translators: 1: completion time */
-                    'batchCompleteAt'    => __('Batch complete at %s', 'beepbeep-ai-alt-text-generator'),
-                    /* translators: 1: image ID */
-                    'completedItem'      => __('Finished #%d', 'beepbeep-ai-alt-text-generator'),
-                    /* translators: 1: image ID */
-                    'failedItem'         => __('Failed #%d', 'beepbeep-ai-alt-text-generator'),
-                    'loadingButton'      => __('Processing…', 'beepbeep-ai-alt-text-generator'),
-                ], $l10n_common),
-            ]);
-            
-            // Localize upgrade modal script
-            wp_localize_script('bbai-upgrade', 'BBAI_UPGRADE', [
-                'nonce' => wp_create_nonce('beepbeepai_nonce'),
-                'ajaxurl' => admin_url('admin-ajax.php'),
-                'usage' => $bbai_usage_data,
-                'upgradeUrl' => esc_url( Usage_Tracker::get_upgrade_url() ),
-                'billingPortalUrl' => esc_url( Usage_Tracker::get_billing_portal_url() ),
-                'priceIds' => $bbai_checkout_prices,
-                'restPlans' => esc_url_raw( rest_url('bbai/v1/plans') ),
-                'canManage' => $this->user_can_manage(),
-            ]);
-
-            // Quota lock behavior is handled by bbai-admin.js with clickable upgrade CTAs.
-
-        }
+        $this->trait_enqueue_admin($hook);
     }
 
     public function wpcli_command($args, $assoc){
@@ -6238,6 +6099,9 @@ class Core {
             ], 'generation');
         }
 
+        $response_meta = $this->prepare_attachment_snapshot($attachment_id);
+        $response_stats = $this->get_dashboard_stats_payload(true);
+
         wp_send_json_success([
             'message'        => __('Alt text generated successfully.', 'beepbeep-ai-alt-text-generator'),
             'alt_text'       => $result,
@@ -6245,11 +6109,15 @@ class Core {
             'attachment_id'  => $attachment_id,
             'request_key'    => $request_key,
             'usage'          => $updated_usage ?: null, // Include updated usage in response
+            'meta'           => $response_meta,
+            'stats'          => $response_stats,
             'data'           => [
                 'alt_text' => $result,
                 'altText'  => $result,
                 'request_key' => $request_key,
                 'usage'    => $updated_usage ?: null,
+                'meta'     => $response_meta,
+                'stats'    => $response_stats,
             ],
         ]);
     }
@@ -6413,8 +6281,8 @@ class Core {
             return;
         }
 
-        $scope_input = isset( $_POST['scope'] ) ? sanitize_key( wp_unslash( $_POST['scope'] ) ) : 'missing';
-        $scope       = in_array( $scope_input, [ 'missing', 'all' ], true ) ? $scope_input : 'missing';
+	        $scope_input = isset( $_POST['scope'] ) ? sanitize_key( wp_unslash( $_POST['scope'] ) ) : 'missing';
+	        $scope       = in_array( $scope_input, [ 'missing', 'all', 'needs-review' ], true ) ? $scope_input : 'missing';
 
         $limit_input  = isset( $_POST['limit'] ) ? absint( wp_unslash( $_POST['limit'] ) ) : 500;
         $offset_input = isset( $_POST['offset'] ) ? absint( wp_unslash( $_POST['offset'] ) ) : 0;
@@ -6422,9 +6290,13 @@ class Core {
         $limit  = max( 1, min( 500, $limit_input ) );
         $offset = max( 0, $offset_input );
 
-        $ids = ( 'all' === $scope )
-            ? $this->get_all_attachment_ids( $limit, $offset )
-            : $this->get_missing_attachment_ids( $limit, $offset );
+	        if ( 'all' === $scope ) {
+	            $ids = $this->get_all_attachment_ids( $limit, $offset );
+	        } elseif ( 'needs-review' === $scope ) {
+	            $ids = $this->get_needs_review_attachment_ids( $limit, $offset );
+	        } else {
+	            $ids = $this->get_missing_attachment_ids( $limit, $offset );
+	        }
 
         wp_send_json_success(
             [

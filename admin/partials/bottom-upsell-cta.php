@@ -148,7 +148,7 @@ $bbai_bottom_upsell_class = !empty($bbai_bottom_upsell_compact) ? ' bbai-bottom-
                 $bbai_badge_text = esc_html__('AGENCY', 'beepbeep-ai-alt-text-generator');
                 $bbai_badge_variant = 'agency';
                 $bbai_badge_class = '';
-                $bbai_badge_partial = plugin_dir_path( BBAI_PLUGIN_FILE ) . 'admin/partials/badge.php';
+                $bbai_badge_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/badge.php';
                 if (file_exists($bbai_badge_partial)) {
                     include $bbai_badge_partial;
                 }

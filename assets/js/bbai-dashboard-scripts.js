@@ -42,10 +42,12 @@
                 fill.offsetWidth;
 
                 setTimeout(function() {
-                    fill.style.transition = 'width 1s cubic-bezier(0.4, 0, 0.2, 1)';
-                    fill.style.width = target + '%';
-                    fill.setAttribute('data-bbai-banner-progress-initialized', '1');
-                }, 60);
+                    requestAnimationFrame(function() {
+                        fill.style.transition = 'width 1s cubic-bezier(0.4, 0, 0.2, 1)';
+                        fill.style.width = target + '%';
+                        fill.setAttribute('data-bbai-banner-progress-initialized', '1');
+                    });
+                }, 80);
             }
         });
     }
@@ -65,10 +67,12 @@
                 marker.offsetWidth;
 
                 setTimeout(function() {
-                    marker.style.transition = 'left 1s cubic-bezier(0.4, 0, 0.2, 1)';
-                    marker.style.setProperty('--bbai-marker-left', target + '%');
-                    marker.setAttribute('data-bbai-marker-progress-initialized', '1');
-                }, 200);
+                    requestAnimationFrame(function() {
+                        marker.style.transition = 'left 1s cubic-bezier(0.4, 0, 0.2, 1)';
+                        marker.style.setProperty('--bbai-marker-left', target + '%');
+                        marker.setAttribute('data-bbai-marker-progress-initialized', '1');
+                    });
+                }, 220);
             }
         });
     }
@@ -79,10 +83,21 @@
         initUsageMarkerProgress();
     }
 
+    function runWhenReady() {
+        requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+                initOnLoad();
+            });
+        });
+    }
+
+    window.bbaiInitUsageBannerProgress = initUsageBannerProgress;
+    window.bbaiInitUsageMarkerProgress = initUsageMarkerProgress;
+
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initOnLoad);
+        document.addEventListener('DOMContentLoaded', runWhenReady);
     } else {
-        setTimeout(initOnLoad, 50);
+        runWhenReady();
     }
 })();
 
@@ -514,11 +529,25 @@
             $('.bbai-progress-ring__value-text').text(percentage + '%');
             $('.bbai-progress-ring[role="progressbar"]').attr('aria-valuenow', percentage);
             $('.bbai-progress-bar__fill').css('width', percentage + '%');
+            var growthPct = Math.min(100, (used / 1000) * 100);
+            var growthFillPct = Math.max(0.2, growthPct);
             $('[data-bbai-banner-progress]').each(function() {
                 var $el = $(this);
-                $el.css('width', percentage + '%');
-                $el.attr('data-bbai-banner-progress-target', percentage);
+                var target = $el.closest('.bbai-meter-growth').length ? growthFillPct : percentage;
+                $el.removeAttr('data-bbai-banner-progress-initialized');
+                $el.attr('data-bbai-banner-progress-target', String(Math.round(target * 10) / 10));
             });
+            $('[data-bbai-marker-progress]').each(function() {
+                var $el = $(this);
+                $el.removeAttr('data-bbai-marker-progress-initialized');
+                $el.attr('data-bbai-marker-progress-target', String(Math.round(growthPct * 10) / 10));
+            });
+            if (typeof window.bbaiInitUsageBannerProgress === 'function') {
+                window.bbaiInitUsageBannerProgress();
+            }
+            if (typeof window.bbaiInitUsageMarkerProgress === 'function') {
+                window.bbaiInitUsageMarkerProgress();
+            }
             $('.bbai-progress-meta__complete').each(function() {
                 var $el = $(this);
                 var text = $el.text();

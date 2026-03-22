@@ -68,7 +68,8 @@
         isOpen: false,
         currentPlan: null,
         isLoading: false,
-        onPlanSelect: null
+        onPlanSelect: null,
+        lastFocusedElement: null
     };
 
     /**
@@ -141,6 +142,7 @@
      * @param {string} variant - Modal variant (currently only 'enterprise' supported)
      */
     const existingOpenPricingModal = typeof window.openPricingModal === 'function' ? window.openPricingModal : null;
+    const existingClosePricingModal = typeof window.closePricingModal === 'function' ? window.closePricingModal : null;
 
     function isReactModalVisible() {
         const reactRoot = document.getElementById('bbai-pricing-modal-root');
@@ -203,8 +205,138 @@
         return null;
     }
 
+    function getExternalClosePricingModal() {
+        const currentClosePricingModal = window.closePricingModal;
+        if (typeof currentClosePricingModal === 'function' && currentClosePricingModal !== closePricingModal) {
+            return currentClosePricingModal;
+        }
+
+        if (existingClosePricingModal && existingClosePricingModal !== closePricingModal) {
+            return existingClosePricingModal;
+        }
+
+        return null;
+    }
+
+    function rememberFocusedElement() {
+        if (document.activeElement && typeof document.activeElement.focus === 'function') {
+            pricingModalState.lastFocusedElement = document.activeElement;
+        }
+    }
+
+    function restoreFocus() {
+        const focusTarget = pricingModalState.lastFocusedElement;
+        pricingModalState.lastFocusedElement = null;
+
+        if (focusTarget && typeof focusTarget.focus === 'function') {
+            try {
+                focusTarget.focus();
+            } catch (error) {
+                window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Unable to restore focus after closing pricing modal.', error);
+            }
+        }
+    }
+
+    function queueFocusRestore(delay) {
+        window.setTimeout(function() {
+            if (!isUpgradeModalVisible()) {
+                restoreFocus();
+            }
+        }, delay || 0);
+    }
+
+    function getFocusableElements(modal) {
+        if (!modal) {
+            return [];
+        }
+
+        return Array.prototype.slice.call(
+            modal.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')
+        ).filter(function(element) {
+            const style = window.getComputedStyle(element);
+            return style.display !== 'none' && style.visibility !== 'hidden';
+        });
+    }
+
+    function trapFocusInModal(event) {
+        if (event.key !== 'Tab') {
+            return;
+        }
+
+        const modal = getUpgradeModalElement();
+        if (!modal || !isUpgradeModalVisible()) {
+            return;
+        }
+
+        const focusableElements = getFocusableElements(modal);
+        if (!focusableElements.length) {
+            return;
+        }
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (!modal.contains(document.activeElement)) {
+            event.preventDefault();
+            firstElement.focus();
+            return;
+        }
+
+        if (event.shiftKey && document.activeElement === firstElement) {
+            event.preventDefault();
+            lastElement.focus();
+            return;
+        }
+
+        if (!event.shiftKey && document.activeElement === lastElement) {
+            event.preventDefault();
+            firstElement.focus();
+        }
+    }
+
+    function closeFallbackModal() {
+        const phpModal = getUpgradeModalElement();
+        if (!phpModal) {
+            queueFocusRestore(0);
+            return false;
+        }
+
+        if (typeof window.bbaiCloseUpgradeModal === 'function') {
+            window.bbaiCloseUpgradeModal();
+        } else if (typeof window.alttextaiCloseModal === 'function') {
+            window.alttextaiCloseModal();
+        } else if (typeof alttextaiCloseModal === 'function') {
+            alttextaiCloseModal();
+        } else {
+            phpModal.style.display = 'none';
+            phpModal.style.visibility = 'hidden';
+            phpModal.style.opacity = '0';
+            phpModal.classList.remove('active');
+            phpModal.classList.remove('is-visible');
+            phpModal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+            if (document.documentElement) {
+                document.documentElement.style.overflow = '';
+            }
+        }
+
+        queueFocusRestore(320);
+        return true;
+    }
+
     function openFallbackModal() {
         window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Trying fallback modal systems...');
+
+        if (typeof window.bbaiOpenUpgradeModal === 'function') {
+            window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Using window.bbaiOpenUpgradeModal');
+            window.bbaiOpenUpgradeModal('default', {
+                source: 'pricing-modal-bridge',
+                trigger: pricingModalState.lastFocusedElement || document.activeElement
+            });
+            if (isUpgradeModalVisible()) {
+                return true;
+            }
+        }
 
         if (typeof window.showUpgradeModal === 'function') {
             window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Using window.showUpgradeModal');
@@ -253,7 +385,7 @@
             phpModal.style.justifyContent = 'center';
             phpModal.classList.add('active');
             phpModal.classList.add('is-visible');
-            phpModal.removeAttribute('aria-hidden');
+            phpModal.setAttribute('aria-hidden', 'false');
             phpModal.setAttribute('aria-modal', 'true');
             document.body.style.overflow = 'hidden';
             if (document.documentElement) {
@@ -289,6 +421,7 @@
     function openPricingModal(variant = 'enterprise') {
         window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] openPricingModal called with variant:', variant);
         pricingModalState.isOpen = true;
+        rememberFocusedElement();
         
         // Fetch user plan when opening (don't wait for it)
         fetchUserPlan();
@@ -333,9 +466,15 @@
      */
     function closePricingModal() {
         pricingModalState.isOpen = false;
-        if (typeof window.closePricingModal === 'function') {
-            window.closePricingModal();
+        const externalClosePricingModal = getExternalClosePricingModal();
+
+        if (externalClosePricingModal) {
+            externalClosePricingModal();
+            queueFocusRestore(320);
+            return;
         }
+
+        closeFallbackModal();
     }
 
     /**
@@ -389,6 +528,33 @@
                 e.preventDefault();
                 e.stopPropagation();
                 openPricingModal('enterprise');
+            }, true);
+
+            document.addEventListener('click', function(e) {
+                const modal = getUpgradeModalElement();
+                if (!modal || !isUpgradeModalVisible()) {
+                    return;
+                }
+
+                const closeTrigger = e.target.closest('.bbai-upgrade-modal__close, [data-bbai-upgrade-close="1"], [onclick*="alttextaiCloseModal"], [data-action="close-modal"]');
+                if (closeTrigger || e.target === modal) {
+                    queueFocusRestore(320);
+                }
+            }, true);
+
+            document.addEventListener('keydown', function(e) {
+                if (!isUpgradeModalVisible()) {
+                    return;
+                }
+
+                if (e.key === 'Tab') {
+                    trapFocusInModal(e);
+                    return;
+                }
+
+                if (e.key === 'Escape' || e.keyCode === 27) {
+                    queueFocusRestore(320);
+                }
             }, true);
         };
 

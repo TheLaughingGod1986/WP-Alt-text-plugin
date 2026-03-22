@@ -28,6 +28,9 @@ var FALLBACK_UPGRADE_SELECTOR = [
 function getUpgradeModalElement() {
     var modalById = document.getElementById('bbai-upgrade-modal');
     if (modalById && modalById.querySelector('.bbai-upgrade-modal__content')) {
+        if (document.body && modalById.parentNode !== document.body) {
+            document.body.appendChild(modalById);
+        }
         return modalById;
     }
 
@@ -36,10 +39,22 @@ function getUpgradeModalElement() {
         if (modalByData.id !== 'bbai-upgrade-modal') {
             modalByData.id = 'bbai-upgrade-modal';
         }
+        if (document.body && modalByData.parentNode !== document.body) {
+            document.body.appendChild(modalByData);
+        }
         return modalByData;
     }
 
     return null;
+}
+
+function setUpgradeModalScrollLock(isLocked) {
+    if (!document.body || !document.body.classList) {
+        return;
+    }
+
+    document.body.classList.toggle('modal-open', !!isLocked);
+    document.body.classList.toggle('bbai-modal-open', !!isLocked);
 }
 
 /**
@@ -58,7 +73,7 @@ function alttextaiShowModal() {
     }
 
     // Force display with inline styles (most reliable)
-    modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important; visibility: visible !important; opacity: 1 !important;';
+    modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important; overflow-y: auto !important; visibility: visible !important; opacity: 1 !important;';
 
     // Also force the modal content to be visible
     var modalContent = modal.querySelector('.bbai-upgrade-modal__content');
@@ -71,10 +86,7 @@ function alttextaiShowModal() {
     modal.classList.add('is-visible');
     modal.removeAttribute('aria-hidden');
     modal.setAttribute('aria-modal', 'true');
-    document.body.style.overflow = 'hidden';
-    if (document.documentElement) {
-        document.documentElement.style.overflow = 'hidden';
-    }
+    setUpgradeModalScrollLock(true);
 
     // Focus the close button after animation starts
     setTimeout(function() {
@@ -104,10 +116,7 @@ function alttextaiCloseModal() {
             modal.setAttribute('aria-hidden', 'true');
         }, 300); // Match animation duration
         
-        document.body.style.overflow = '';
-        if (document.documentElement) {
-            document.documentElement.style.overflow = '';
-        }
+        setUpgradeModalScrollLock(false);
     }
 }
 
@@ -130,10 +139,7 @@ function handleUpgradeTrigger(event, triggerElement) {
                 modal.classList.add('active');
                 modal.classList.add('is-visible');
                 modal.setAttribute('aria-hidden', 'false');
-                document.body.style.overflow = 'hidden';
-                if (document.documentElement) {
-                    document.documentElement.style.overflow = 'hidden';
-                }
+                setUpgradeModalScrollLock(true);
             }
         }
     } catch (err) {

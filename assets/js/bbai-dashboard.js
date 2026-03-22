@@ -18,16 +18,48 @@ const bbaiRunWithJQuery = (function() {
     };
 })();
 
+const BBAI_STATS_SYNC_KEY = 'bbai-dashboard-stats-sync';
+
 function bbaiString(value) {
     return value === undefined || value === null ? '' : String(value);
 }
 
 function bbaiGetUsageObject() {
-    return (window.BBAI_DASH && (window.BBAI_DASH.initialUsage || window.BBAI_DASH.usage)) ||
+    var root = document.querySelector('[data-bbai-dashboard-root="1"]');
+    var rootUsage = null;
+    var globalUsage = (window.BBAI_DASH && (window.BBAI_DASH.initialUsage || window.BBAI_DASH.usage)) ||
         (window.BBAI_DASHBOARD && window.BBAI_DASHBOARD.usage) ||
         (window.BBAI && window.BBAI.usage) ||
         (window.BBAI_UPGRADE && window.BBAI_UPGRADE.usage) ||
         null;
+
+    if (root) {
+        var rootUsed = parseInt(root.getAttribute('data-bbai-credits-used') || '0', 10);
+        var rootLimit = parseInt(root.getAttribute('data-bbai-credits-total') || '0', 10);
+        var rootRemaining = parseInt(root.getAttribute('data-bbai-credits-remaining') || '0', 10);
+
+        if (!isNaN(rootUsed) || !isNaN(rootLimit) || !isNaN(rootRemaining)) {
+            rootUsage = {
+                used: isNaN(rootUsed) ? 0 : rootUsed,
+                limit: isNaN(rootLimit) || rootLimit <= 0 ? 50 : rootLimit,
+                remaining: isNaN(rootRemaining) ? Math.max(0, (isNaN(rootLimit) || rootLimit <= 0 ? 50 : rootLimit) - (isNaN(rootUsed) ? 0 : rootUsed)) : rootRemaining,
+                reset_line: root.getAttribute('data-bbai-credits-reset-line') || ''
+            };
+        }
+    }
+
+    if (rootUsage && globalUsage && typeof globalUsage === 'object') {
+        var rootLimitValue = parseInt(rootUsage.limit, 10) || 0;
+        var globalLimitValue = parseInt(globalUsage.limit, 10) || 0;
+
+        if (rootLimitValue > 0 && globalLimitValue > 0 && rootLimitValue !== globalLimitValue) {
+            return rootLimitValue > globalLimitValue ? rootUsage : globalUsage;
+        }
+
+        return Object.assign({}, rootUsage, globalUsage);
+    }
+
+    return rootUsage || globalUsage;
 }
 
 function bbaiGetUsageFromDom() {
@@ -454,14 +486,11 @@ bbaiRunWithJQuery(function($) {
             if (modal) {
                 window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Found modal, showing directly');
                 modal.removeAttribute('style');
-                modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important;';
+                modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important; overflow-y: auto !important;';
                 modal.classList.add('active'); // Required for content to become visible (opacity: 1)
                 modal.classList.add('is-visible');
                 modal.setAttribute('aria-hidden', 'false');
-                document.body.style.overflow = 'hidden';
-                if (document.documentElement) {
-                    document.documentElement.style.overflow = 'hidden';
-                }
+                bbaiSetUpgradeModalScrollLock(true);
 
                 // Also ensure modal content is visible
                 const modalContent = modal.querySelector('.bbai-upgrade-modal__content');
@@ -471,8 +500,10 @@ bbaiRunWithJQuery(function($) {
                 return false;
             }
 
-            // Fallback: Use new pricing modal if available
-            if (typeof window.openPricingModal === 'function') {
+            // Prefer the server-rendered modal before optional bridge wrappers.
+            if (typeof window.bbaiOpenUpgradeModal === 'function') {
+                window.bbaiOpenUpgradeModal();
+            } else if (typeof window.openPricingModal === 'function') {
                 window.openPricingModal('enterprise');
             } else if (typeof bbaiApp !== 'undefined' && typeof bbaiApp.showModal === 'function') {
                 // Fallback to old modal
@@ -1965,6 +1996,9 @@ var alttextaiDebug = (typeof window.bbai_ajax !== 'undefined' && window.bbai_aja
 function findUpgradeModalElement() {
     var modalById = document.getElementById('bbai-upgrade-modal');
     if (modalById && modalById.querySelector('.bbai-upgrade-modal__content')) {
+        if (document.body && modalById.parentNode !== document.body) {
+            document.body.appendChild(modalById);
+        }
         return modalById;
     }
 
@@ -1972,6 +2006,9 @@ function findUpgradeModalElement() {
     if (modalByData && modalByData.querySelector('.bbai-upgrade-modal__content')) {
         if (modalByData.id !== 'bbai-upgrade-modal') {
             modalByData.id = 'bbai-upgrade-modal';
+        }
+        if (document.body && modalByData.parentNode !== document.body) {
+            document.body.appendChild(modalByData);
         }
         return modalByData;
     }
@@ -2001,6 +2038,21 @@ function findUpgradeModalElement() {
 
 // Global app object to avoid collisions
 var bbaiApp = bbaiApp || {};
+
+function bbaiSetUpgradeModalScrollLock(isLocked) {
+    if (document.body && document.body.classList) {
+        document.body.classList.toggle('modal-open', !!isLocked);
+        document.body.classList.toggle('bbai-modal-open', !!isLocked);
+    }
+
+    if (document.body) {
+        document.body.style.overflow = isLocked ? 'hidden' : '';
+    }
+
+    if (document.documentElement) {
+        document.documentElement.style.overflow = isLocked ? 'hidden' : '';
+    }
+}
 
 // Global functions for modal - make it very robust (legacy support)
 function alttextaiShowModal() {
@@ -2032,10 +2084,7 @@ function alttextaiShowModal() {
     modal.classList.add('active');
     modal.classList.add('is-visible');
     modal.removeAttribute('aria-hidden');
-    document.body.style.overflow = 'hidden';
-    if (document.documentElement) {
-        document.documentElement.style.overflow = 'hidden';
-    }
+    bbaiSetUpgradeModalScrollLock(true);
     
     // Focus the close button after animation starts
     setTimeout(function() {
@@ -2074,10 +2123,7 @@ window.showUpgradeModal = function() {
         modal.classList.add('active');
         modal.classList.add('is-visible');
         modal.removeAttribute('aria-hidden');
-        document.body.style.overflow = 'hidden';
-        if (document.documentElement) {
-            document.documentElement.style.overflow = 'hidden';
-        }
+        bbaiSetUpgradeModalScrollLock(true);
         return true;
     }
     
@@ -2121,9 +2167,9 @@ function alttextaiCloseModal() {
         }, 300); // Match animation duration
         
         // Restore body scroll
-        document.body.style.overflow = '';
-        if (document.documentElement) {
-            document.documentElement.style.overflow = '';
+        bbaiSetUpgradeModalScrollLock(false);
+        if (typeof window.bbaiResetUpgradeModalContext === 'function') {
+            window.bbaiResetUpgradeModalContext();
         }
     }
 }
@@ -2149,14 +2195,11 @@ window.alttextaiCloseModal = alttextaiCloseModal;
         
         // Remove inline style completely, then set with !important
         modal.removeAttribute('style');
-        modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0, 0, 0, 0.6) !important;';
+        modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0, 0, 0, 0.6) !important; align-items: center !important; justify-content: center !important; overflow-y: auto !important;';
         modal.classList.add('active');
         modal.classList.add('is-visible');
         modal.setAttribute('aria-hidden', 'false');
-        document.body.style.overflow = 'hidden';
-        if (document.documentElement) {
-            document.documentElement.style.overflow = 'hidden';
-        }
+        bbaiSetUpgradeModalScrollLock(true);
         
         window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Modal shown via direct method');
         return true;
@@ -2190,6 +2233,9 @@ window.alttextaiCloseModal = alttextaiCloseModal;
             // Prevent default immediately
             e.preventDefault();
             e.stopPropagation();
+            if (typeof e.stopImmediatePropagation === 'function') {
+                e.stopImmediatePropagation();
+            }
             
             // Show modal directly - don't wait for anything
             if (typeof alttextaiShowModal === 'function') {
@@ -2213,10 +2259,7 @@ window.alttextaiCloseModal = alttextaiCloseModal;
                 if (modal) {
                     modal.style.display = 'none';
                     modal.setAttribute('aria-hidden', 'true');
-                    document.body.style.overflow = '';
-                    if (document.documentElement) {
-                        document.documentElement.style.overflow = '';
-                    }
+                    bbaiSetUpgradeModalScrollLock(false);
                 }
             }
             return false;
@@ -2232,10 +2275,7 @@ window.alttextaiCloseModal = alttextaiCloseModal;
             } else {
                 modal.style.display = 'none';
                 modal.setAttribute('aria-hidden', 'true');
-                document.body.style.overflow = '';
-                if (document.documentElement) {
-                    document.documentElement.style.overflow = '';
-                }
+                bbaiSetUpgradeModalScrollLock(false);
             }
             return false;
         }
@@ -2252,10 +2292,7 @@ window.alttextaiCloseModal = alttextaiCloseModal;
                 } else {
                     modal.style.display = 'none';
                     modal.setAttribute('aria-hidden', 'true');
-                    document.body.style.overflow = '';
-                    if (document.documentElement) {
-                        document.documentElement.style.overflow = '';
-                    }
+                    bbaiSetUpgradeModalScrollLock(false);
                 }
             }
         }
@@ -3001,6 +3038,10 @@ bbaiRunWithJQuery(function($) {
     'use strict';
 
     function showUpgradeModalFallback() {
+        if (typeof window.bbaiOpenUpgradeModal === 'function') {
+            return window.bbaiOpenUpgradeModal();
+        }
+
         if (typeof window.openPricingModal === 'function') {
             window.openPricingModal('enterprise');
             return true;
@@ -3013,14 +3054,11 @@ bbaiRunWithJQuery(function($) {
         var modal = findUpgradeModalElement();
         if (modal) {
             modal.removeAttribute('style');
-            modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important;';
+            modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important; overflow-y: auto !important;';
             modal.classList.add('active');
             modal.classList.add('is-visible');
             modal.setAttribute('aria-hidden', 'false');
-            document.body.style.overflow = 'hidden';
-            if (document.documentElement) {
-                document.documentElement.style.overflow = 'hidden';
-            }
+            bbaiSetUpgradeModalScrollLock(true);
             var modalContent = modal.querySelector('.bbai-upgrade-modal__content');
             if (modalContent) {
                 modalContent.style.cssText = 'opacity: 1 !important; visibility: visible !important; transform: translateY(0) scale(1) !important;';
@@ -3036,7 +3074,7 @@ bbaiRunWithJQuery(function($) {
             return;
         }
 
-        var trigger = e.target.closest('[data-action="show-upgrade-modal"], [data-action="generate-missing"], [data-action="regenerate-all"], [data-action="regenerate-single"], [data-bbai-action="generate_missing"], [data-bbai-action="reoptimize_all"]');
+        var trigger = e.target.closest('[data-action="show-upgrade-modal"], [data-action="generate-missing"], [data-action="regenerate-all"], [data-action="regenerate-single"], [data-action="regenerate-selected"], [data-bbai-action="generate_missing"], [data-bbai-action="reoptimize_all"], [data-bbai-action="open-upgrade"]');
         if (!trigger) {
             return;
         }
@@ -3055,7 +3093,7 @@ bbaiRunWithJQuery(function($) {
             return;
         }
 
-        var isBulkAction = trigger.matches('[data-action="generate-missing"], [data-action="regenerate-all"], [data-action="regenerate-single"], [data-bbai-action="generate_missing"], [data-bbai-action="reoptimize_all"]');
+        var isBulkAction = trigger.matches('[data-action="generate-missing"], [data-action="regenerate-all"], [data-action="regenerate-single"], [data-action="regenerate-selected"], [data-bbai-action="generate_missing"], [data-bbai-action="reoptimize_all"], [data-bbai-action="open-upgrade"]');
         if (isBulkAction) {
             var isLockedTrigger = !!(
                 trigger.disabled ||
@@ -3088,6 +3126,10 @@ bbaiRunWithJQuery(function($) {
 
         if (trigger.matches('[data-action="show-upgrade-modal"]')) {
             e.preventDefault();
+            e.stopPropagation();
+            if (typeof e.stopImmediatePropagation === 'function') {
+                e.stopImmediatePropagation();
+            }
             showUpgradeModalFallback();
             return;
         }
@@ -3120,7 +3162,7 @@ bbaiRunWithJQuery(function($) {
         if (e.key !== 'Enter' && e.key !== ' ') {
             return;
         }
-        var trigger = e.target.closest('[data-action="show-upgrade-modal"], [data-action="generate-missing"], [data-action="regenerate-all"], [data-action="regenerate-single"], [data-bbai-action="generate_missing"], [data-bbai-action="reoptimize_all"]');
+        var trigger = e.target.closest('[data-action="show-upgrade-modal"], [data-action="generate-missing"], [data-action="regenerate-all"], [data-action="regenerate-single"], [data-action="regenerate-selected"], [data-bbai-action="generate_missing"], [data-bbai-action="reoptimize_all"], [data-bbai-action="open-upgrade"]');
         if (!trigger || trigger.getAttribute('role') !== 'button') {
             return;
         }
@@ -3129,90 +3171,2638 @@ bbaiRunWithJQuery(function($) {
     }, true);
 })();
 
-// Update Generate Missing button state when stats change
+// Keep the dashboard action surfaces in sync with live stats and usage updates.
 bbaiRunWithJQuery(function($) {
     'use strict';
-    
-    function updateGenerateMissingButtons(stats) {
-        if (!stats) {
+
+    var i18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
+    var __ = i18n && typeof i18n.__ === 'function' ? i18n.__ : function(text) { return text; };
+    var _n = i18n && typeof i18n._n === 'function' ? i18n._n : function(single, plural, number) { return number === 1 ? single : plural; };
+    var sprintf = i18n && typeof i18n.sprintf === 'function' ? i18n.sprintf : function(format) {
+        var args = Array.prototype.slice.call(arguments, 1);
+        var index = 0;
+        return String(format).replace(/%(\d+\$)?s/g, function() {
+            var value = args[index];
+            index += 1;
+            return value;
+        });
+    };
+    var feedbackTimeout = null;
+
+    function parseCount(value) {
+        var parsed = parseInt(value, 10);
+        return isNaN(parsed) || parsed < 0 ? 0 : parsed;
+    }
+
+    function formatCount(value) {
+        return parseCount(value).toLocaleString();
+    }
+
+    function formatPercentageLabel(value) {
+        var numericValue = parseFloat(value);
+
+        if (isNaN(numericValue) || numericValue <= 0) {
+            return '0';
+        }
+
+        if (numericValue >= 100) {
+            return '100';
+        }
+
+        if (numericValue < 0.01) {
+            return '<0.01';
+        }
+
+        if (numericValue < 0.1) {
+            return numericValue.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        if (numericValue < 10) {
+            return numericValue.toLocaleString(undefined, {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1
+            });
+        }
+
+        return numericValue.toLocaleString(undefined, {
+            maximumFractionDigits: 0
+        });
+    }
+
+    function getGrowthPlanComparison(data) {
+        var growthCapacity = data && data.isPremium ? Math.max(1000, parseCount(data.creditsTotal)) : 1000;
+        var usagePercent = Math.min(100, Math.max(0, (parseCount(data && data.creditsUsed) / Math.max(1, growthCapacity)) * 100));
+        var displayPercent = formatPercentageLabel(usagePercent);
+
+        return {
+            line: data && data.isPremium
+                ? sprintf(
+                    __('You are using %s%% of Growth capacity this month.', 'beepbeep-ai-alt-text-generator'),
+                    displayPercent
+                )
+                : sprintf(
+                    __('On Growth, this usage would be %s%% of monthly capacity.', 'beepbeep-ai-alt-text-generator'),
+                    displayPercent
+                ),
+            display: displayPercent,
+            percent: usagePercent,
+            indicatorPercent: usagePercent > 0 ? Math.min(99.5, Math.max(0.5, usagePercent)) : 0
+        };
+    }
+
+    function getPlanLabel(data) {
+        return data && data.isPremium
+            ? __('Growth plan', 'beepbeep-ai-alt-text-generator')
+            : __('Free plan', 'beepbeep-ai-alt-text-generator');
+    }
+
+    function getRemainingPlanLine(data) {
+        var remaining = Math.max(0, parseCount(data && data.creditsRemaining));
+        return sprintf(
+            _n('%s remaining', '%s remaining', remaining, 'beepbeep-ai-alt-text-generator'),
+            formatCount(remaining)
+        );
+    }
+
+    function getPlanResetLine(data) {
+        var daysUntilReset = parseCount(data && data.daysUntilReset);
+
+        if (daysUntilReset >= 0) {
+            return buildUsageResetCopy(daysUntilReset);
+        }
+
+        if (data && data.creditsResetLine) {
+            return String(data.creditsResetLine).replace(/^Credits\s+/i, '');
+        }
+
+        return __('Resets monthly', 'beepbeep-ai-alt-text-generator');
+    }
+
+    function getCompactPlanResetLine(data) {
+        var daysUntilReset = parseCount(data && data.daysUntilReset);
+
+        if (daysUntilReset >= 0) {
+            return sprintf(
+                _n('%s day', '%s days', daysUntilReset, 'beepbeep-ai-alt-text-generator'),
+                formatCount(daysUntilReset)
+            );
+        }
+
+        if (data && data.creditsResetLine) {
+            return String(data.creditsResetLine).replace(/^Credits\s+/i, '').replace(/^Resets\s+/i, '');
+        }
+
+        return __('Monthly', 'beepbeep-ai-alt-text-generator');
+    }
+
+    function getUpgradeValueMinutesCopy(data) {
+        var minutesSaved = Math.max(0, Math.round(parseCount(data && data.creditsUsed) * 2.5));
+
+        return sprintf(
+            _n('~%s minute', '~%s minutes', minutesSaved, 'beepbeep-ai-alt-text-generator'),
+            formatCount(minutesSaved)
+        );
+    }
+
+    function getCreditAlertCopy(data) {
+        var remaining = Math.max(0, parseCount(data && data.creditsRemaining));
+        var resetLine = data && data.creditsResetLine ? String(data.creditsResetLine) : '';
+
+        if (!data || data.isPremium) {
+            return null;
+        }
+
+        if (remaining <= 0) {
+            return {
+                modifier: 'danger',
+                title: __('No credits left', 'beepbeep-ai-alt-text-generator'),
+                message: __('AI generation is paused until your credits reset. Upgrade to keep optimizing images and automate future uploads.', 'beepbeep-ai-alt-text-generator'),
+                ctaLabel: __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
+                meta: resetLine
+            };
+        }
+
+        if (remaining <= 5) {
+            return {
+                modifier: 'warning',
+                title: __('You are running low on credits', 'beepbeep-ai-alt-text-generator'),
+                message: sprintf(
+                    _n(
+                        'You can optimize %s more image this month. Upgrade before new uploads start building up.',
+                        'You can optimize %s more images this month. Upgrade before new uploads start building up.',
+                        remaining,
+                        'beepbeep-ai-alt-text-generator'
+                    ),
+                    formatCount(remaining)
+                ),
+                ctaLabel: __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
+                meta: resetLine
+            };
+        }
+
+        return null;
+    }
+
+    function getDashboardRoot() {
+        return document.querySelector('[data-bbai-dashboard-root="1"]');
+    }
+
+    function buildUsageResetCopy(daysLeft) {
+        var safeDaysLeft = Math.max(0, parseCount(daysLeft));
+
+        return sprintf(
+            _n('Resets in %s day', 'Resets in %s days', safeDaysLeft, 'beepbeep-ai-alt-text-generator'),
+            formatCount(safeDaysLeft)
+        );
+    }
+
+    function getUsageResetCopy(usageLine) {
+        var hero;
+        var daysLeftAttr;
+
+        if (!usageLine) {
+            return '';
+        }
+
+        hero = usageLine.closest('[data-bbai-dashboard-hero="1"]');
+        if (hero) {
+            daysLeftAttr = hero.getAttribute('data-bbai-banner-days-left');
+            if (daysLeftAttr !== null && daysLeftAttr !== '') {
+                var inlineCopy = buildUsageResetCopy(daysLeftAttr);
+                usageLine.setAttribute('data-bbai-reset-copy', inlineCopy);
+                return inlineCopy;
+            }
+        }
+
+        var existing = usageLine.getAttribute('data-bbai-reset-copy');
+        if (existing) {
+            return existing;
+        }
+
+        var text = usageLine.textContent || '';
+        var parts = text.split('•');
+        var resetCopy = parts.length > 1 ? parts.slice(1).join('•').trim() : '';
+        usageLine.setAttribute('data-bbai-reset-copy', resetCopy);
+        return resetCopy;
+    }
+
+    function getDashboardData() {
+        var root = getDashboardRoot();
+        var hero = document.querySelector('[data-bbai-dashboard-hero="1"]');
+        if (!root) {
+            return null;
+        }
+
+        var missing = parseCount(root.getAttribute('data-bbai-missing-count'));
+        var weak = parseCount(root.getAttribute('data-bbai-weak-count'));
+        var optimized = parseCount(root.getAttribute('data-bbai-optimized-count'));
+        var total = parseCount(root.getAttribute('data-bbai-total-count'));
+        var hasScanResultsAttr = root.getAttribute('data-bbai-has-scan-results');
+
+        return {
+            root: root,
+            missing: missing,
+            weak: weak,
+            optimized: optimized,
+            total: total,
+            generated: parseCount(root.getAttribute('data-bbai-generated-count')),
+            creditsUsed: parseCount(root.getAttribute('data-bbai-credits-used')),
+            creditsTotal: Math.max(1, parseCount(root.getAttribute('data-bbai-credits-total'))),
+            creditsRemaining: parseCount(root.getAttribute('data-bbai-credits-remaining')),
+            creditsResetLine: root.getAttribute('data-bbai-credits-reset-line') || '',
+            isPremium: root.getAttribute('data-bbai-is-premium') === '1',
+            hasScanResults: hasScanResultsAttr === null
+                ? (total > 0 || missing > 0 || weak > 0 || optimized > 0)
+                : hasScanResultsAttr === '1',
+            daysUntilReset: hero ? parseCount(hero.getAttribute('data-bbai-banner-days-left')) : 0,
+            lastScanTs: parseCount(root.getAttribute('data-bbai-last-scan-ts')),
+            libraryUrl: root.getAttribute('data-bbai-library-url') || '',
+            missingLibraryUrl: root.getAttribute('data-bbai-missing-library-url') || '',
+            needsReviewLibraryUrl: root.getAttribute('data-bbai-needs-review-library-url') || '',
+            settingsUrl: root.getAttribute('data-bbai-settings-url') || '',
+            usageUrl: root.getAttribute('data-bbai-usage-url') || '',
+            guideUrl: root.getAttribute('data-bbai-guide-url') || ''
+        };
+    }
+
+    function syncStatsToRoot(stats) {
+        var root = getDashboardRoot();
+        if (!root || !stats || typeof stats !== 'object') {
             return;
         }
-        
-        // Get missing count from various possible locations
-        var missingCount = parseInt(stats.missing || stats.missingImages || 0, 10) || 0;
-        var $buttons = $('[data-action="generate-missing"]');
-        
-        $buttons.each(function() {
-            var $btn = $(this);
-            var isLocked = $btn.hasClass('bbai-optimization-cta--locked') ||
-                $btn.hasClass('bbai-is-locked') ||
-                $btn.hasClass('disabled') ||
-                $btn.attr('data-bbai-locked-cta') === '1' ||
-                $btn.attr('aria-disabled') === 'true';
-            
-            // Locked controls are handled by dedicated upgrade-modal flow.
-            if (isLocked) {
+
+        var currentMissing = parseCount(root.getAttribute('data-bbai-missing-count'));
+        var currentWeak = parseCount(root.getAttribute('data-bbai-weak-count'));
+        var currentOptimized = parseCount(root.getAttribute('data-bbai-optimized-count'));
+        var currentTotal = parseCount(root.getAttribute('data-bbai-total-count'));
+        var missing = stats.images_missing_alt !== undefined
+            ? parseCount(stats.images_missing_alt)
+            : (stats.missing !== undefined ? parseCount(stats.missing) : currentMissing);
+        var weak = stats.needs_review_count !== undefined
+            ? parseCount(stats.needs_review_count)
+            : currentWeak;
+        var optimized = currentOptimized;
+
+        if (stats.optimized_count !== undefined) {
+            optimized = parseCount(stats.optimized_count);
+        } else if (stats.needs_review_count !== undefined && stats.images_with_alt !== undefined) {
+            optimized = Math.max(0, parseCount(stats.images_with_alt) - parseCount(stats.needs_review_count));
+        } else if (stats.needs_review_count !== undefined && stats.with_alt !== undefined) {
+            optimized = Math.max(0, parseCount(stats.with_alt) - parseCount(stats.needs_review_count));
+        }
+
+        var total = stats.total_images !== undefined
+            ? parseCount(stats.total_images)
+            : (stats.total !== undefined ? parseCount(stats.total) : currentTotal);
+        var currentGenerated = parseCount(root.getAttribute('data-bbai-generated-count'));
+        var generated = stats.generated !== undefined ? parseCount(stats.generated) : currentGenerated;
+        var currentLastScanTs = parseCount(root.getAttribute('data-bbai-last-scan-ts'));
+        var lastScanTs = currentLastScanTs;
+        var hasScanResults = total > 0 || missing > 0 || weak > 0 || optimized > 0;
+
+        if (stats.scanned_at !== undefined) {
+            lastScanTs = parseCount(stats.scanned_at);
+        } else if (stats.scannedAt !== undefined) {
+            lastScanTs = parseCount(stats.scannedAt);
+        }
+
+        root.setAttribute('data-bbai-missing-count', String(missing));
+        root.setAttribute('data-bbai-weak-count', String(weak));
+        root.setAttribute('data-bbai-optimized-count', String(optimized));
+        root.setAttribute('data-bbai-total-count', String(total));
+        root.setAttribute('data-bbai-generated-count', String(generated));
+        root.setAttribute('data-bbai-has-scan-results', hasScanResults ? '1' : '0');
+        root.setAttribute('data-bbai-last-scan-ts', String(lastScanTs));
+    }
+
+    function syncUsageToRoot(usage) {
+        var root = getDashboardRoot();
+        var hero = document.querySelector('[data-bbai-dashboard-hero="1"]');
+        var daysUntilReset = parseInt(usage && usage.days_until_reset, 10);
+
+        if (!root || !usage || typeof usage !== 'object') {
+            return;
+        }
+
+        var used = parseCount(usage.used);
+        var limit = Math.max(1, parseCount(usage.limit || 50));
+        var remaining = usage.remaining !== undefined && usage.remaining !== null
+            ? parseCount(usage.remaining)
+            : Math.max(0, limit - used);
+
+        root.setAttribute('data-bbai-credits-used', String(used));
+        root.setAttribute('data-bbai-credits-total', String(limit));
+        root.setAttribute('data-bbai-credits-remaining', String(remaining));
+        root.setAttribute(
+            'data-bbai-credits-reset-line',
+            buildCreditsResetLine(usage, root.getAttribute('data-bbai-credits-reset-line') || '')
+        );
+
+        if (hero && !isNaN(daysUntilReset)) {
+            hero.setAttribute('data-bbai-banner-days-left', String(Math.max(0, daysUntilReset)));
+        }
+    }
+
+    function hasCreditsAvailable(data) {
+        return !!(data && (data.isPremium || data.creditsRemaining > 0));
+    }
+
+    function buildCreditsResetLine(usage, fallback) {
+        var existing = String(fallback || '');
+        var resetTsRaw;
+        var resetTs;
+        var formatted = '';
+
+        if (!usage || typeof usage !== 'object') {
+            return existing;
+        }
+
+        resetTsRaw = usage.reset_timestamp || usage.resetTimestamp || usage.reset_ts || 0;
+        resetTs = parseInt(resetTsRaw, 10);
+
+        if (!isNaN(resetTs) && resetTs > 0 && resetTs < 1000000000000) {
+            resetTs = resetTs * 1000;
+        }
+
+        if ((!resetTs || isNaN(resetTs)) && usage.resetDate) {
+            resetTs = Date.parse(String(usage.resetDate));
+        }
+        if ((!resetTs || isNaN(resetTs)) && usage.reset_date) {
+            resetTs = Date.parse(String(usage.reset_date));
+        }
+
+        if (resetTs && !isNaN(resetTs)) {
+            try {
+                formatted = new Date(resetTs).toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            } catch (error) {
+                formatted = '';
+            }
+        }
+
+        if (!formatted) {
+            formatted = usage.resetDate || usage.reset_date || '';
+        }
+
+        return formatted
+            ? sprintf(__('Credits reset %s', 'beepbeep-ai-alt-text-generator'), formatted)
+            : existing;
+    }
+
+    function formatLastScanCopy(timestamp) {
+        var scanTs = parseInt(timestamp, 10);
+        var diffMs;
+        var minutes;
+        var hours;
+        var days;
+
+        if (isNaN(scanTs) || scanTs <= 0) {
+            return '';
+        }
+
+        if (scanTs < 1000000000000) {
+            scanTs = scanTs * 1000;
+        }
+
+        diffMs = Math.max(0, Date.now() - scanTs);
+        minutes = Math.floor(diffMs / 60000);
+        hours = Math.floor(diffMs / 3600000);
+        days = Math.floor(diffMs / 86400000);
+
+        if (minutes < 1) {
+            return __('Last scan just now', 'beepbeep-ai-alt-text-generator');
+        }
+        if (minutes < 60) {
+            return sprintf(
+                _n('Last scan %d minute ago', 'Last scan %d minutes ago', minutes, 'beepbeep-ai-alt-text-generator'),
+                minutes
+            );
+        }
+        if (hours < 24) {
+            return sprintf(
+                _n('Last scan %d hour ago', 'Last scan %d hours ago', hours, 'beepbeep-ai-alt-text-generator'),
+                hours
+            );
+        }
+        if (days < 7) {
+            return sprintf(
+                _n('Last scan %d day ago', 'Last scan %d days ago', days, 'beepbeep-ai-alt-text-generator'),
+                days
+            );
+        }
+
+        try {
+            return sprintf(
+                __('Last scan %s', 'beepbeep-ai-alt-text-generator'),
+                new Date(scanTs).toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                })
+            );
+        } catch (error) {
+            return '';
+        }
+    }
+
+    function hasScanResults(data) {
+        if (!data) {
+            return false;
+        }
+
+        if (typeof data.hasScanResults === 'boolean') {
+            return data.hasScanResults;
+        }
+
+        return !!(data.total > 0 || data.missing > 0 || data.weak > 0 || data.optimized > 0);
+    }
+
+    function getDashboardHeroIconMarkup(tone) {
+        if (tone === 'setup') {
+            return '<svg viewBox="0 0 24 24" fill="none" focusable="false"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8"></circle><path d="M20 20L16.2 16.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>';
+        }
+
+        if (tone === 'attention') {
+            return '<svg viewBox="0 0 24 24" fill="none" focusable="false"><path d="M12 3L21 19H3L12 3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path><path d="M12 9V13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path><circle cx="12" cy="17" r="1" fill="currentColor"></circle></svg>';
+        }
+
+        if (tone === 'paused') {
+            return '<svg viewBox="0 0 24 24" fill="none" focusable="false"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"></circle><path d="M10 9V15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path><path d="M14 9V15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>';
+        }
+
+        return '<svg viewBox="0 0 24 24" fill="none" focusable="false"><path d="M22 11.08V12A10 10 0 1 1 12 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path><path d="M22 4L12 14.01L9 11.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+    }
+
+    function getDashboardHeroStateModel(data) {
+        var missing = Math.max(0, parseCount(data && data.missing));
+        var weak = Math.max(0, parseCount(data && data.weak));
+        var total = Math.max(0, parseCount(data && data.total));
+        var creditsRemaining = Math.max(0, parseCount(data && data.creditsRemaining));
+        var usagePercent = Math.min(100, Math.max(0, Math.round((parseCount(data && data.creditsUsed) / Math.max(1, parseCount(data && data.creditsTotal))) * 100)));
+        var isHealthy = missing === 0 && weak === 0 && total > 0;
+        var isLowCredits = creditsRemaining > 0 && creditsRemaining < 10;
+        var isOutOfCredits = creditsRemaining === 0;
+        var isFirstRun = !hasScanResults(data) || total === 0;
+        var libraryUrl = data && data.libraryUrl ? String(data.libraryUrl) : '#';
+        var usageUrl = data && data.usageUrl ? String(data.usageUrl) : '#';
+        var guideUrl = data && data.guideUrl ? String(data.guideUrl) : '#';
+        var settingsUrl = data && data.settingsUrl ? String(data.settingsUrl) : '#';
+
+        function createAction(label, helper, options) {
+            return $.extend({
+                label: label || '',
+                helper: helper || '',
+                href: '#',
+                removeAttributes: ['data-action', 'data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source', 'aria-describedby']
+            }, options || {});
+        }
+
+        var model = {
+            state: 'healthy-free',
+            tone: 'healthy',
+            headline: '',
+            subtext: '',
+            nextStep: '',
+            workflowHint: '',
+            note: '',
+            usagePercent: usagePercent,
+            primaryAction: createAction('', '', {}),
+            secondaryAction: null,
+            tertiaryAction: null
+        };
+
+        if (isFirstRun) {
+            model.state = 'first-run';
+            model.tone = 'setup';
+            model.headline = __('Get started with your media library', 'beepbeep-ai-alt-text-generator');
+            model.subtext = __('Scan your library to find images missing ALT text and generate descriptions faster.', 'beepbeep-ai-alt-text-generator');
+            model.nextStep = __('Start by scanning your media library.', 'beepbeep-ai-alt-text-generator');
+            model.primaryAction = createAction(
+                __('Scan Media Library', 'beepbeep-ai-alt-text-generator'),
+                '',
+                {
+                    bbaiAction: 'scan-opportunity'
+                }
+            );
+            model.secondaryAction = createAction(
+                __('Learn how it works', 'beepbeep-ai-alt-text-generator'),
+                '',
+                {
+                    href: guideUrl
+                }
+            );
+            return model;
+        }
+
+        if (isOutOfCredits) {
+            model.state = 'out-of-credits';
+            model.tone = 'paused';
+            model.headline = __("You've used all credits this cycle", 'beepbeep-ai-alt-text-generator');
+            model.subtext = __('ALT generation is paused until your allowance resets or you upgrade.', 'beepbeep-ai-alt-text-generator');
+            model.nextStep = __('Upgrade to continue optimizing new images.', 'beepbeep-ai-alt-text-generator');
+            model.primaryAction = createAction(
+                __('Upgrade', 'beepbeep-ai-alt-text-generator'),
+                '',
+                {
+                    action: 'show-upgrade-modal'
+                }
+            );
+            model.secondaryAction = createAction(
+                __('Review usage', 'beepbeep-ai-alt-text-generator'),
+                '',
+                {
+                    href: usageUrl
+                }
+            );
+            model.tertiaryAction = createAction(
+                __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+                '',
+                {
+                    href: libraryUrl
+                }
+            );
+            return model;
+        }
+
+        if (isLowCredits) {
+            model.state = 'low-credits';
+            model.tone = 'attention';
+            model.headline = __('You’re running low on credits', 'beepbeep-ai-alt-text-generator');
+            model.subtext = sprintf(
+                _n(
+                    'You have %s optimization left this cycle.',
+                    'You have %s optimizations left this cycle.',
+                    creditsRemaining,
+                    'beepbeep-ai-alt-text-generator'
+                ),
+                formatCount(creditsRemaining)
+            );
+
+            if (data && data.isPremium) {
+                model.nextStep = __('Review your usage and plan ahead.', 'beepbeep-ai-alt-text-generator');
+                model.primaryAction = createAction(
+                    __('Review usage', 'beepbeep-ai-alt-text-generator'),
+                    '',
+                    {
+                        href: usageUrl
+                    }
+                );
+                model.secondaryAction = createAction(
+                    __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+                    '',
+                    {
+                        href: libraryUrl
+                    }
+                );
+            } else {
+                model.nextStep = __('Upgrade to keep optimizing without interruption.', 'beepbeep-ai-alt-text-generator');
+                model.primaryAction = createAction(
+                    __('Upgrade', 'beepbeep-ai-alt-text-generator'),
+                    '',
+                    {
+                        action: 'show-upgrade-modal'
+                    }
+                );
+                model.secondaryAction = createAction(
+                    __('Review usage', 'beepbeep-ai-alt-text-generator'),
+                    '',
+                    {
+                        href: usageUrl
+                    }
+                );
+            }
+            return model;
+        }
+
+        if (!isHealthy) {
+            model.state = 'incomplete';
+            model.tone = 'attention';
+            model.headline = __('Your library needs attention', 'beepbeep-ai-alt-text-generator');
+            model.subtext = missing > 0
+                ? __('Some images are still missing ALT text.', 'beepbeep-ai-alt-text-generator')
+                : __('Some descriptions still need review.', 'beepbeep-ai-alt-text-generator');
+            model.nextStep = missing > 0
+                ? __('Fix the remaining images to reach full coverage.', 'beepbeep-ai-alt-text-generator')
+                : __('Review the remaining descriptions to reach full coverage.', 'beepbeep-ai-alt-text-generator');
+            model.secondaryAction = createAction(
+                __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+                '',
+                {
+                    href: missing > 0
+                        ? (data && data.missingLibraryUrl ? data.missingLibraryUrl : libraryUrl)
+                        : (data && data.needsReviewLibraryUrl ? data.needsReviewLibraryUrl : libraryUrl)
+                }
+            );
+            if (missing > 0) {
+                model.primaryAction = createAction(
+                    __('Fix missing ALT text', 'beepbeep-ai-alt-text-generator'),
+                    '',
+                    {
+                        action: 'generate-missing',
+                        bbaiAction: 'generate_missing'
+                    }
+                );
+            } else {
+                model.primaryAction = createAction(
+                    __('Review ALT text', 'beepbeep-ai-alt-text-generator'),
+                    '',
+                    {
+                        action: 'show-generate-alt-modal'
+                    }
+                );
+            }
+            return model;
+        }
+
+        if (data && data.isPremium) {
+            model.state = 'healthy-pro';
+            model.tone = 'healthy';
+            model.headline = __('Your library is optimized', 'beepbeep-ai-alt-text-generator');
+            model.subtext = __('All current images include ALT text.', 'beepbeep-ai-alt-text-generator');
+            model.nextStep = __('Auto-optimization is ready to cover future uploads.', 'beepbeep-ai-alt-text-generator');
+            model.note = __('Review new uploads or adjust automation in Settings whenever you need to.', 'beepbeep-ai-alt-text-generator');
+            model.primaryAction = createAction(
+                __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+                '',
+                {
+                    href: libraryUrl
+                }
+            );
+            model.secondaryAction = createAction(
+                __('Review usage', 'beepbeep-ai-alt-text-generator'),
+                '',
+                {
+                    href: usageUrl
+                }
+            );
+            return model;
+        }
+
+        model.state = 'healthy-free';
+        model.tone = 'healthy';
+        model.headline = __('Your library is optimized', 'beepbeep-ai-alt-text-generator');
+        model.subtext = __('All current images include ALT text.', 'beepbeep-ai-alt-text-generator');
+        model.nextStep = __('Enable auto-optimization to cover future uploads automatically.', 'beepbeep-ai-alt-text-generator');
+        model.note = __('Auto-optimization is available on Growth.', 'beepbeep-ai-alt-text-generator');
+        model.primaryAction = createAction(
+            __('Enable auto-optimization', 'beepbeep-ai-alt-text-generator'),
+            '',
+            {
+                action: 'show-upgrade-modal'
+            }
+        );
+        model.secondaryAction = createAction(
+            __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+            '',
+            {
+                href: libraryUrl
+            }
+        );
+
+        return model;
+    }
+
+    function formatMonthlyProgressCopy(count) {
+        var optimizedThisMonth = parseCount(count);
+        if (optimizedThisMonth <= 0) {
+            return __('No ALT descriptions generated by AI yet this month', 'beepbeep-ai-alt-text-generator');
+        }
+
+        return sprintf(
+            _n('%s ALT description generated by AI this month', '%s ALT descriptions generated by AI this month', optimizedThisMonth, 'beepbeep-ai-alt-text-generator'),
+            formatCount(optimizedThisMonth)
+        );
+    }
+
+    function getStatusCoverageData(data) {
+        var optimized = parseCount(data && data.optimized);
+        var weak = parseCount(data && data.weak);
+        var missing = parseCount(data && data.missing);
+        var total = Math.max(0, optimized + weak + missing);
+        var coverage = total > 0 ? Math.round((optimized / total) * 100) : 0;
+
+        return {
+            optimized: optimized,
+            weak: weak,
+            missing: missing,
+            total: total,
+            coverage: coverage
+        };
+    }
+
+    function getOptimizedRatioCopy(statusCoverage) {
+        if (!statusCoverage || statusCoverage.total <= 0) {
+            return __('No images found in your media library', 'beepbeep-ai-alt-text-generator');
+        }
+
+        return sprintf(
+            _n('%1$s / %2$s image optimized', '%1$s / %2$s images optimized', statusCoverage.total, 'beepbeep-ai-alt-text-generator'),
+            formatCount(statusCoverage.optimized),
+            formatCount(statusCoverage.total)
+        );
+    }
+
+    function getStatusRingSegments(statusCoverage, circumference) {
+        var segmentGap = 0;
+        var segmentOffset = 0;
+        var nonZeroSegments = 0;
+        var linecap = 'butt';
+        var segments = {};
+        var animationOrder = 0;
+        var segmentConfig = [
+            {
+                key: 'optimized',
+                value: statusCoverage.optimized,
+                stroke: '#16A34A'
+            },
+            {
+                key: 'weak',
+                value: statusCoverage.weak,
+                stroke: '#F97316'
+            },
+            {
+                key: 'missing',
+                value: statusCoverage.missing,
+                stroke: '#EF4444'
+            }
+        ];
+
+        segmentConfig.forEach(function(segment) {
+            if (segment.value > 0) {
+                nonZeroSegments += 1;
+            }
+        });
+
+        if (nonZeroSegments <= 1) {
+            linecap = 'round';
+        }
+
+        if (nonZeroSegments > 1) {
+            linecap = 'butt';
+        }
+
+        segmentConfig.forEach(function(segment) {
+            var segmentLength = statusCoverage.total > 0
+                ? circumference * (segment.value / statusCoverage.total)
+                : 0;
+            var gap = nonZeroSegments > 1 ? Math.min(segmentGap, segmentLength * 0.35) : 0;
+            var visibleLength = Math.max(0, segmentLength - gap);
+
+            segments[segment.key] = {
+                stroke: segment.stroke,
+                dasharray: visibleLength.toFixed(3) + ' ' + Math.max(0, circumference - visibleLength).toFixed(3),
+                dashoffset: (-segmentOffset).toFixed(3),
+                isVisible: visibleLength > 0.01,
+                linecap: linecap,
+                animationOrder: visibleLength > 0.01 ? animationOrder++ : animationOrder
+            };
+
+            segmentOffset += segmentLength;
+        });
+
+        return segments;
+    }
+
+    function getPrimaryAction(data) {
+        if (!data) {
+            return 'scan';
+        }
+        if (!hasCreditsAvailable(data)) {
+            return 'upgrade';
+        }
+        if (data.missing > 0) {
+            return 'generate_missing';
+        }
+        if (data.weak > 0) {
+            return 'review_weak';
+        }
+        if (hasScanResults(data)) {
+            return 'review_library';
+        }
+        return 'scan';
+    }
+
+    function formatCreditHelper(required, remaining) {
+        var requiredCount = Math.max(0, parseCount(required));
+        var remainingCount = Math.max(0, parseCount(remaining));
+
+        if (remainingCount >= requiredCount) {
+            return sprintf(
+                _n('Uses %s credit', 'Uses %s credits', requiredCount, 'beepbeep-ai-alt-text-generator'),
+                formatCount(requiredCount)
+            );
+        }
+
+        return sprintf(
+            _n('%s credit available now', '%s credits available now', remainingCount, 'beepbeep-ai-alt-text-generator'),
+            formatCount(remainingCount)
+        );
+    }
+
+    function escapeDashboardHtml(text) {
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function setInteractiveControl(node, config) {
+        if (!node || !config) {
+            return;
+        }
+
+        var href = config.href || '#';
+        if (!config.preserveContent) {
+            node.textContent = config.label || '';
+        }
+        node.setAttribute('href', href);
+
+        if (config.ariaLabel || config.label) {
+            node.setAttribute('aria-label', config.ariaLabel || config.label);
+        } else {
+            node.removeAttribute('aria-label');
+        }
+
+        if (Array.isArray(config.removeAttributes)) {
+            config.removeAttributes.forEach(function(attributeName) {
+                if (attributeName) {
+                    node.removeAttribute(attributeName);
+                }
+            });
+        }
+
+        if (config.action) {
+            node.setAttribute('data-action', config.action);
+        } else {
+            node.removeAttribute('data-action');
+        }
+
+        if (config.bbaiAction) {
+            node.setAttribute('data-bbai-action', config.bbaiAction);
+        } else {
+            node.removeAttribute('data-bbai-action');
+        }
+
+        ['data-bbai-regenerate-scope', 'data-bbai-generation-source'].forEach(function(attributeName) {
+            if (!config.attributes || !Object.prototype.hasOwnProperty.call(config.attributes, attributeName)) {
+                node.removeAttribute(attributeName);
+            }
+        });
+
+        if (config.attributes) {
+            Object.keys(config.attributes).forEach(function(attributeName) {
+                if (!attributeName) {
+                    return;
+                }
+
+                var attributeValue = config.attributes[attributeName];
+                if (attributeValue === null || attributeValue === undefined || attributeValue === '') {
+                    node.removeAttribute(attributeName);
+                    return;
+                }
+
+                node.setAttribute(attributeName, attributeValue);
+            });
+        }
+
+        if (config.disabled) {
+            node.classList.add('is-disabled');
+            node.setAttribute('aria-disabled', 'true');
+            node.setAttribute('href', '#');
+        } else {
+            node.classList.remove('is-disabled');
+            node.removeAttribute('aria-disabled');
+        }
+    }
+
+    function syncHeroLinkRow(hero) {
+        if (!hero) {
+            return;
+        }
+
+        var tertiaryItem = hero.querySelector('[data-bbai-hero-tertiary-item]');
+        var tertiaryLink = hero.querySelector('[data-bbai-hero-secondary-link]');
+        if (tertiaryItem) {
+            tertiaryItem.hidden = !(tertiaryLink && !tertiaryLink.hidden);
+        }
+    }
+
+    function renderHero(data) {
+        var hero = document.querySelector('[data-bbai-dashboard-hero="1"]');
+        if (!hero || !data) {
+            return;
+        }
+
+        var model = getDashboardHeroStateModel(data);
+        if (!model) {
+            return;
+        }
+
+        var iconNode = hero.querySelector('[data-bbai-hero-icon]');
+        var headline = hero.querySelector('[data-bbai-hero-headline]');
+        var subtext = hero.querySelector('[data-bbai-hero-subtext]');
+        var nextStepNode = hero.querySelector('[data-bbai-hero-next-step]');
+        var workflowRow = hero.querySelector('[data-bbai-hero-workflow-row]');
+        var workflowNode = hero.querySelector('[data-bbai-hero-workflow]');
+        var noteNode = hero.querySelector('[data-bbai-hero-note]');
+        var primaryItem = hero.querySelector('[data-bbai-hero-primary-item]');
+        var secondaryItem = hero.querySelector('[data-bbai-hero-secondary-item]');
+        var tertiaryItem = hero.querySelector('[data-bbai-hero-tertiary-item]');
+        var generatorCta = hero.querySelector('[data-bbai-hero-generator-cta]');
+        var libraryCta = hero.querySelector('[data-bbai-hero-library-cta]');
+        var secondaryLink = hero.querySelector('[data-bbai-hero-secondary-link]');
+        var primaryHelperNode = hero.querySelector('[data-bbai-hero-primary-helper]');
+        var secondaryHelperNode = hero.querySelector('[data-bbai-hero-secondary-helper]');
+        var tertiaryHelperNode = hero.querySelector('[data-bbai-hero-tertiary-helper]');
+        var usageLine = hero.querySelector('[data-bbai-banner-usage-line]');
+        var progressFill = hero.querySelector('[data-bbai-banner-progress]');
+
+        function renderAction(itemNode, controlNode, helperNode, helperId, actionConfig) {
+            var config;
+
+            if (!itemNode || !controlNode) {
                 return;
             }
-            
-            if (missingCount <= 0) {
-                // Disable button when no missing images
-                $btn.addClass('bbai-optimization-cta--disabled disabled').prop('disabled', true);
-                $btn.attr('title', 'All images already have alt text');
-                $btn.removeAttr('data-bbai-tooltip');
-                // Force grey styling
-                $btn.css({
-                    'background-color': '#f3f4f6',
-                    'color': '#9ca3af',
-                    'opacity': '0.6',
-                    'cursor': 'not-allowed'
+
+            if (!actionConfig || !actionConfig.label) {
+                itemNode.hidden = true;
+                controlNode.hidden = true;
+                if (helperNode) {
+                    helperNode.hidden = true;
+                    helperNode.textContent = '';
+                }
+                return;
+            }
+
+            config = $.extend(true, {}, actionConfig);
+            controlNode.hidden = false;
+
+            if (helperNode) {
+                helperNode.textContent = actionConfig.helper || '';
+                helperNode.hidden = !(actionConfig.helper || '');
+            }
+
+            if (actionConfig.helper && helperId) {
+                config.attributes = $.extend({}, config.attributes || {}, {
+                    'aria-describedby': helperId
+                });
+            }
+
+            setInteractiveControl(controlNode, config);
+            itemNode.hidden = false;
+        }
+
+        hero.setAttribute('data-state', model.state || 'healthy-free');
+        hero.setAttribute('data-tone', model.tone || 'healthy');
+        hero.setAttribute('data-bbai-banner-used', String(Math.max(0, parseCount(data.creditsUsed))));
+        hero.setAttribute('data-bbai-banner-limit', String(Math.max(1, parseCount(data.creditsTotal))));
+        hero.setAttribute('data-bbai-banner-remaining', String(Math.max(0, parseCount(data.creditsRemaining))));
+        hero.setAttribute('data-bbai-banner-missing-count', String(Math.max(0, parseCount(data.missing))));
+        hero.setAttribute('data-bbai-banner-weak-count', String(Math.max(0, parseCount(data.weak))));
+
+        if (iconNode) {
+            iconNode.innerHTML = getDashboardHeroIconMarkup(model.tone || 'healthy');
+        }
+        if (headline) {
+            headline.textContent = model.headline || '';
+        }
+        if (subtext) {
+            subtext.textContent = model.subtext || '';
+        }
+        if (nextStepNode) {
+            nextStepNode.textContent = model.nextStep || '';
+            nextStepNode.hidden = !model.nextStep;
+        }
+        if (workflowRow) {
+            workflowRow.hidden = !model.workflowHint;
+        }
+        if (workflowNode) {
+            workflowNode.textContent = model.workflowHint || '';
+        }
+        if (noteNode) {
+            noteNode.textContent = model.note || '';
+            noteNode.hidden = !model.note;
+        }
+
+        renderAction(primaryItem, generatorCta, primaryHelperNode, 'bbai-dashboard-hero-primary-helper', model.primaryAction);
+        renderAction(secondaryItem, libraryCta, secondaryHelperNode, 'bbai-dashboard-hero-secondary-helper', model.secondaryAction);
+        renderAction(tertiaryItem, secondaryLink, tertiaryHelperNode, 'bbai-dashboard-hero-tertiary-helper', model.tertiaryAction);
+
+        syncHeroLinkRow(hero);
+
+        if (usageLine) {
+            var resetCopy = getPlanResetLine(data) || getUsageResetCopy(usageLine);
+            usageLine.setAttribute('data-bbai-reset-copy', resetCopy || '');
+            usageLine.innerHTML =
+                '<span class="bbai-dashboard-hero__usage-pill">' + escapeDashboardHtml(getPlanLabel(data)) + '</span>' +
+                '<span class="bbai-dashboard-hero__usage-primary">' + escapeDashboardHtml(getRemainingPlanLine(data)) + '</span>' +
+                (resetCopy ? '<span class="bbai-dashboard-hero__usage-secondary">' + escapeDashboardHtml(resetCopy) + '</span>' : '');
+        }
+
+        if (progressFill) {
+            var usagePercent = model.usagePercent;
+            progressFill.setAttribute('data-bbai-banner-progress-target', String(Math.round(usagePercent)));
+            animateLinearProgress(progressFill, usagePercent, 400, 40);
+            if (progressFill.parentNode && typeof progressFill.parentNode.setAttribute === 'function') {
+                progressFill.parentNode.setAttribute('aria-valuenow', String(Math.round(usagePercent)));
+            }
+        }
+    }
+
+    function renderQuickActions(data) {
+        var row = document.querySelector('[data-bbai-quick-actions]');
+        if (!row || !data) {
+            return;
+        }
+
+        var generateButton = row.querySelector('[data-bbai-quick-action="generate-missing"]');
+        var reviewButton = row.querySelector('[data-bbai-quick-action="review-weak"]');
+        var bulkButton = row.querySelector('[data-bbai-quick-action="bulk-optimize"]');
+        var generatePrimary = !hasScanResults(data) || data.missing > 0;
+        var reviewPrimary = !generatePrimary && data.weak > 0;
+        var bulkPrimary = !generatePrimary && !reviewPrimary;
+
+        function setQuickButton(node, config) {
+            if (!node) {
+                return;
+            }
+
+            var variant = config.primary ? 'bbai-dashboard-quick-actions__button bbai-dashboard-quick-actions__button--primary' : 'bbai-dashboard-quick-actions__button bbai-dashboard-quick-actions__button--secondary';
+            node.className = variant + (config.disabled ? ' is-disabled' : '') + (config.complete ? ' is-complete' : '');
+            setInteractiveControl(node, config);
+
+            var labelNode = node.querySelector('[data-bbai-quick-action-label]');
+            var helperNode = node.querySelector('[data-bbai-quick-action-helper]');
+
+            if (labelNode) {
+                labelNode.textContent = config.label || '';
+            }
+
+            if (helperNode) {
+                helperNode.textContent = config.helper || '';
+                helperNode.hidden = !config.helper;
+            }
+        }
+
+        if (!hasScanResults(data)) {
+            setQuickButton(generateButton, {
+                label: __('Scan Media Library', 'beepbeep-ai-alt-text-generator'),
+                helper: __('Find images missing ALT text before generating descriptions.', 'beepbeep-ai-alt-text-generator'),
+                bbaiAction: 'scan-opportunity',
+                primary: generatePrimary,
+                preserveContent: true
+            });
+        } else if (data.missing > 0 && !hasCreditsAvailable(data)) {
+            setQuickButton(generateButton, {
+                label: __('Upgrade to continue generating ALT text', 'beepbeep-ai-alt-text-generator'),
+                helper: __('Buy additional credits', 'beepbeep-ai-alt-text-generator'),
+                action: 'show-upgrade-modal',
+                primary: generatePrimary,
+                preserveContent: true,
+                removeAttributes: ['data-bbai-action']
+            });
+        } else if (data.missing > 0) {
+            var generateLabel = sprintf(
+                _n('Generate ALT for %s image', 'Generate ALT for %s images', data.missing, 'beepbeep-ai-alt-text-generator'),
+                formatCount(data.missing)
+            );
+            var generateHelper = formatCreditHelper(
+                data.missing,
+                data.creditsRemaining > 0 ? data.creditsRemaining : data.missing
+            );
+
+            setQuickButton(generateButton, {
+                label: generateLabel,
+                helper: generateHelper,
+                action: 'generate-missing',
+                bbaiAction: 'generate_missing',
+                primary: generatePrimary,
+                preserveContent: true,
+                ariaLabel: generateLabel + '. ' + generateHelper
+            });
+        } else {
+            var generateDoneHelper = __('No images are currently missing ALT text.', 'beepbeep-ai-alt-text-generator');
+            setQuickButton(generateButton, {
+                label: __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+                helper: generateDoneHelper,
+                href: data.libraryUrl,
+                primary: generatePrimary,
+                complete: true,
+                preserveContent: true,
+                removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+            });
+        }
+
+        if (!hasScanResults(data)) {
+            setQuickButton(reviewButton, {
+                label: __('Improve ALT descriptions', 'beepbeep-ai-alt-text-generator'),
+                helper: __('Scan first to find weaker ALT descriptions that need review.', 'beepbeep-ai-alt-text-generator'),
+                primary: reviewPrimary,
+                disabled: true,
+                preserveContent: true,
+                removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+            });
+        } else if (data.weak > 0 && !hasCreditsAvailable(data)) {
+            setQuickButton(reviewButton, {
+                label: __('Upgrade to continue generating ALT text', 'beepbeep-ai-alt-text-generator'),
+                helper: __('Buy additional credits', 'beepbeep-ai-alt-text-generator'),
+                action: 'show-upgrade-modal',
+                primary: reviewPrimary,
+                preserveContent: true,
+                removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+            });
+        } else if (data.weak > 0) {
+            var reviewLabel = sprintf(
+                _n('Improve %s ALT description', 'Improve %s ALT descriptions', data.weak, 'beepbeep-ai-alt-text-generator'),
+                formatCount(data.weak)
+            );
+            var reviewHelper = formatCreditHelper(
+                data.weak,
+                data.creditsRemaining > 0 ? data.creditsRemaining : data.weak
+            );
+
+            setQuickButton(reviewButton, {
+                label: reviewLabel,
+                helper: reviewHelper,
+                action: 'regenerate-all',
+                attributes: {
+                    'data-bbai-regenerate-scope': 'needs-review',
+                    'data-bbai-generation-source': 'regenerate-weak'
+                },
+                removeAttributes: ['data-bbai-action'],
+                primary: reviewPrimary,
+                preserveContent: true,
+                ariaLabel: reviewLabel + '. ' + reviewHelper
+            });
+        } else {
+            setQuickButton(reviewButton, {
+                label: __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+                helper: __('No weak ALT descriptions are waiting for review.', 'beepbeep-ai-alt-text-generator'),
+                href: data.libraryUrl,
+                primary: reviewPrimary,
+                preserveContent: true,
+                removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+            });
+        }
+
+        if (!bulkButton) {
+            return;
+        }
+
+        if (!data.isPremium) {
+            setQuickButton(bulkButton, {
+                label: __('Automatically optimize every new image you upload', 'beepbeep-ai-alt-text-generator'),
+                helper: __('Never worry about missing ALT text again.', 'beepbeep-ai-alt-text-generator'),
+                action: 'show-upgrade-modal',
+                primary: bulkPrimary,
+                preserveContent: true,
+                removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+            });
+            return;
+        }
+
+        if (!hasScanResults(data)) {
+            setQuickButton(bulkButton, {
+                label: __('Scan Media Library', 'beepbeep-ai-alt-text-generator'),
+                helper: __('Scan first to find images that can be fixed automatically.', 'beepbeep-ai-alt-text-generator'),
+                bbaiAction: 'scan-opportunity',
+                primary: bulkPrimary,
+                preserveContent: true,
+                removeAttributes: ['data-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+            });
+        } else if (data.missing > 0) {
+            setQuickButton(bulkButton, {
+                label: __('Fix all images automatically', 'beepbeep-ai-alt-text-generator'),
+                helper: __('Bulk generation is available on your plan.', 'beepbeep-ai-alt-text-generator'),
+                action: 'generate-missing',
+                bbaiAction: 'generate_missing',
+                primary: bulkPrimary,
+                preserveContent: true
+            });
+        } else if (data.weak > 0) {
+            setQuickButton(bulkButton, {
+                label: __('Fix all images automatically', 'beepbeep-ai-alt-text-generator'),
+                helper: __('Bulk improvements are available on your plan.', 'beepbeep-ai-alt-text-generator'),
+                action: 'regenerate-all',
+                attributes: {
+                    'data-bbai-regenerate-scope': 'needs-review',
+                    'data-bbai-generation-source': 'regenerate-weak'
+                },
+                removeAttributes: ['data-bbai-action'],
+                primary: bulkPrimary,
+                preserveContent: true
+            });
+        } else {
+            setQuickButton(bulkButton, {
+                label: __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+                helper: __('No bulk fixes are needed right now.', 'beepbeep-ai-alt-text-generator'),
+                href: data.libraryUrl,
+                primary: bulkPrimary,
+                preserveContent: true,
+                removeAttributes: ['data-action', 'data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+            });
+        }
+    }
+
+    function renderWorkflow(data) {
+        if (!data) {
+            return;
+        }
+
+        var reviewDesc = document.querySelector('[data-bbai-workflow-review-desc]');
+        var reviewCta = document.querySelector('[data-bbai-workflow-review-cta]');
+        var reviewDescription = hasScanResults(data)
+            ? __('Review, edit, or improve generated descriptions.', 'beepbeep-ai-alt-text-generator')
+            : __('Review, edit, or improve generated descriptions after scanning.', 'beepbeep-ai-alt-text-generator');
+
+        if (reviewDesc) {
+            reviewDesc.textContent = reviewDescription;
+        }
+
+        if (reviewCta) {
+            reviewCta.className = 'bbai-workflow-step__btn bbai-workflow-step__btn--secondary';
+            setInteractiveControl(reviewCta, {
+                label: __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+                href: data.libraryUrl,
+                removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+            });
+        }
+    }
+
+    function getStatusCardSegmentColor(segmentKey, activeSegment) {
+        var palette = {
+            optimized: {
+                base: '#22c55e',
+                active: '#16a34a',
+                muted: '#d9f4e2'
+            },
+            weak: {
+                base: '#f59e0b',
+                active: '#d97706',
+                muted: '#fde7c4'
+            },
+            missing: {
+                base: '#ef4444',
+                active: '#dc2626',
+                muted: '#fee2e2'
+            }
+        };
+        var colors = palette[segmentKey] || {
+            base: '#e2e8f0',
+            active: '#cbd5e1',
+            muted: '#e2e8f0'
+        };
+
+        if (!activeSegment) {
+            return colors.base;
+        }
+
+        return activeSegment === segmentKey ? colors.active : colors.muted;
+    }
+
+    function getStatusCardDonutGradient(statusCoverage, activeSegment) {
+        var optimizedAngle;
+        var weakAngle;
+        var optimizedEnd;
+        var weakEnd;
+
+        if (!statusCoverage || statusCoverage.total <= 0) {
+            return 'conic-gradient(#e2e8f0 0deg 360deg)';
+        }
+
+        optimizedAngle = 360 * (statusCoverage.optimized / statusCoverage.total);
+        weakAngle = 360 * (statusCoverage.weak / statusCoverage.total);
+        optimizedEnd = Math.max(0, Math.min(360, optimizedAngle));
+        weakEnd = Math.max(optimizedEnd, Math.min(360, optimizedEnd + weakAngle));
+
+        return 'conic-gradient(' +
+            getStatusCardSegmentColor('optimized', activeSegment) + ' 0deg ' + optimizedEnd.toFixed(3) + 'deg, ' +
+            getStatusCardSegmentColor('weak', activeSegment) + ' ' + optimizedEnd.toFixed(3) + 'deg ' + weakEnd.toFixed(3) + 'deg, ' +
+            getStatusCardSegmentColor('missing', activeSegment) + ' ' + weakEnd.toFixed(3) + 'deg 360deg' +
+            ')';
+    }
+
+    function getStatusCardActiveSegment(statusCard) {
+        if (!statusCard) {
+            return '';
+        }
+
+        return String(statusCard.getAttribute('data-bbai-status-active-segment') || '');
+    }
+
+    function applyStatusCardDonutState(statusCard, statusCoverage) {
+        var donutNode = statusCard ? statusCard.querySelector('[data-bbai-status-donut]') : null;
+        var activeSegment = getStatusCardActiveSegment(statusCard);
+
+        if (!donutNode) {
+            return;
+        }
+
+        donutNode.style.background = getStatusCardDonutGradient(statusCoverage, activeSegment);
+        donutNode.setAttribute('data-bbai-status-active-segment', activeSegment);
+    }
+
+    function setStatusCardActiveSegment(statusCard, segmentKey) {
+        var activeSegment = String(segmentKey || '');
+        var dashboardData;
+
+        if (!statusCard) {
+            return;
+        }
+
+        if (activeSegment) {
+            statusCard.setAttribute('data-bbai-status-active-segment', activeSegment);
+        } else {
+            statusCard.removeAttribute('data-bbai-status-active-segment');
+        }
+
+        Array.prototype.forEach.call(statusCard.querySelectorAll('[data-bbai-status-row]'), function(row) {
+            row.classList.toggle(
+                'is-active',
+                !!activeSegment && String(row.getAttribute('data-bbai-status-segment') || '') === activeSegment
+            );
+        });
+
+        dashboardData = getDashboardData();
+        applyStatusCardDonutState(statusCard, getStatusCoverageData(dashboardData));
+    }
+
+    function getStatusCardFilterValue(segmentKey, fallbackFilter) {
+        if (fallbackFilter) {
+            return String(fallbackFilter);
+        }
+
+        if (segmentKey === 'optimized') {
+            return 'optimized';
+        }
+        if (segmentKey === 'weak') {
+            return 'needs_review';
+        }
+        if (segmentKey === 'missing') {
+            return 'missing';
+        }
+
+        return '';
+    }
+
+    function buildStatusCardFilterUrl(baseUrl, filterValue) {
+        var cleanBaseUrl = String(baseUrl || '');
+        var statusValue = String(filterValue || '');
+
+        if (!cleanBaseUrl) {
+            return '';
+        }
+
+        try {
+            var url = new URL(cleanBaseUrl, window.location.href);
+            if (statusValue) {
+                url.searchParams.set('status', statusValue);
+            } else {
+                url.searchParams.delete('status');
+            }
+            return url.toString();
+        } catch (error) {
+            if (!statusValue) {
+                return cleanBaseUrl;
+            }
+            return cleanBaseUrl + (cleanBaseUrl.indexOf('?') === -1 ? '?' : '&') + 'status=' + encodeURIComponent(statusValue);
+        }
+    }
+
+    function resolveStatusCardRowUrl(row) {
+        var dashboardData;
+        var targetUrl;
+        var segmentKey;
+        var filterValue;
+
+        if (!row) {
+            return '';
+        }
+
+        targetUrl = String(row.getAttribute('href') || row.getAttribute('data-bbai-status-url') || '');
+        if (!targetUrl) {
+            dashboardData = getDashboardData();
+            segmentKey = String(row.getAttribute('data-bbai-status-segment') || '');
+            filterValue = getStatusCardFilterValue(
+                segmentKey,
+                row.getAttribute('data-bbai-status-filter') || ''
+            );
+            targetUrl = buildStatusCardFilterUrl(dashboardData && dashboardData.libraryUrl, filterValue);
+        }
+
+        return targetUrl;
+    }
+
+    function navigateToStatusCardFilter(row) {
+        var targetUrl = resolveStatusCardRowUrl(row);
+
+        if (targetUrl) {
+            window.location.assign(targetUrl);
+        }
+    }
+
+    function setStatusCardRefreshLoading(button, isLoading) {
+        if (!button) {
+            return;
+        }
+
+        button.classList.toggle('is-loading', !!isLoading);
+        button.disabled = !!isLoading;
+        if (isLoading) {
+            button.setAttribute('aria-busy', 'true');
+        } else {
+            button.removeAttribute('aria-busy');
+        }
+        button.setAttribute(
+            'aria-label',
+            isLoading
+                ? __('Refreshing library scan', 'beepbeep-ai-alt-text-generator')
+                : __('Refresh library scan', 'beepbeep-ai-alt-text-generator')
+        );
+    }
+
+    function dispatchDashboardFeedbackMessage(type, message) {
+        if (!message) {
+            return;
+        }
+
+        try {
+            document.dispatchEvent(new CustomEvent('bbai:dashboard-feedback', {
+                detail: {
+                    type: type || 'info',
+                    message: message,
+                    duration: 4200
+                }
+            }));
+        } catch (error) {
+            // Ignore CustomEvent failures.
+        }
+    }
+
+    function handleStatusCardRefresh(event) {
+        var button = event && event.currentTarget ? event.currentTarget : null;
+        var request;
+        var fallbackMessage = __('Unable to refresh the library scan right now.', 'beepbeep-ai-alt-text-generator');
+
+        if (event && typeof event.preventDefault === 'function') {
+            event.preventDefault();
+        }
+
+        if (!button || button.classList.contains('is-loading')) {
+            return;
+        }
+
+        if (typeof window.bbaiRefreshDashboardCoverage !== 'function') {
+            dispatchDashboardFeedbackMessage('error', fallbackMessage);
+            return;
+        }
+
+        setStatusCardRefreshLoading(button, true);
+        request = window.bbaiRefreshDashboardCoverage();
+
+        if (!request || typeof request.always !== 'function') {
+            setStatusCardRefreshLoading(button, false);
+            return;
+        }
+
+        if (typeof request.fail === 'function') {
+            request.fail(function(errorMessage) {
+                dispatchDashboardFeedbackMessage(
+                    'error',
+                    errorMessage || __('Scan failed. Please try again.', 'beepbeep-ai-alt-text-generator')
+                );
+            });
+        }
+
+        request.always(function() {
+            setStatusCardRefreshLoading(button, false);
+        });
+    }
+
+    function bindStatusCardInteractions() {
+        var statusCard = document.querySelector('[data-bbai-dashboard-status-card="1"]');
+        var statusRows;
+        var refreshButton;
+
+        if (!statusCard || statusCard.getAttribute('data-bbai-status-interactions-bound') === '1') {
+            return;
+        }
+
+        statusRows = statusCard.querySelectorAll('[data-bbai-status-row]');
+        refreshButton = statusCard.querySelector('[data-bbai-status-refresh]');
+
+        statusCard.setAttribute('data-bbai-status-interactions-bound', '1');
+
+        if (!statusRows.length && !refreshButton) {
+            return;
+        }
+
+        Array.prototype.forEach.call(statusRows, function(row) {
+            var targetUrl = resolveStatusCardRowUrl(row);
+
+            if (targetUrl) {
+                row.setAttribute('href', targetUrl);
+            }
+        });
+
+        statusCard.addEventListener('mouseover', function(event) {
+            var row = event.target && typeof event.target.closest === 'function'
+                ? event.target.closest('[data-bbai-status-row]')
+                : null;
+
+            if (!row || !statusCard.contains(row)) {
+                return;
+            }
+
+            setStatusCardActiveSegment(statusCard, row.getAttribute('data-bbai-status-segment') || '');
+        });
+
+        statusCard.addEventListener('mouseout', function(event) {
+            var row = event.target && typeof event.target.closest === 'function'
+                ? event.target.closest('[data-bbai-status-row]')
+                : null;
+            var relatedRow = event.relatedTarget && typeof event.relatedTarget.closest === 'function'
+                ? event.relatedTarget.closest('[data-bbai-status-row]')
+                : null;
+
+            if (!row || !statusCard.contains(row)) {
+                return;
+            }
+
+            if (relatedRow && statusCard.contains(relatedRow)) {
+                setStatusCardActiveSegment(statusCard, relatedRow.getAttribute('data-bbai-status-segment') || '');
+                return;
+            }
+
+            if (
+                document.activeElement &&
+                typeof document.activeElement.closest === 'function' &&
+                statusCard.contains(document.activeElement) &&
+                document.activeElement.closest('[data-bbai-status-row]')
+            ) {
+                setStatusCardActiveSegment(
+                    statusCard,
+                    document.activeElement.closest('[data-bbai-status-row]').getAttribute('data-bbai-status-segment') || ''
+                );
+                return;
+            }
+
+            setStatusCardActiveSegment(statusCard, '');
+        });
+
+        statusCard.addEventListener('focusin', function(event) {
+            var row = event.target && typeof event.target.closest === 'function'
+                ? event.target.closest('[data-bbai-status-row]')
+                : null;
+
+            if (!row || !statusCard.contains(row)) {
+                return;
+            }
+
+            setStatusCardActiveSegment(statusCard, row.getAttribute('data-bbai-status-segment') || '');
+        });
+
+        statusCard.addEventListener('focusout', function() {
+            window.setTimeout(function() {
+                var activeRow = document.activeElement && typeof document.activeElement.closest === 'function'
+                    ? document.activeElement.closest('[data-bbai-status-row]')
+                    : null;
+
+                if (activeRow && statusCard.contains(activeRow)) {
+                    setStatusCardActiveSegment(statusCard, activeRow.getAttribute('data-bbai-status-segment') || '');
+                    return;
+                }
+
+                if (!statusCard.matches(':hover')) {
+                    setStatusCardActiveSegment(statusCard, '');
+                }
+            }, 0);
+        });
+
+        statusCard.addEventListener('click', function(event) {
+            var row = event.target && typeof event.target.closest === 'function'
+                ? event.target.closest('[data-bbai-status-row]')
+                : null;
+            var targetUrl;
+            var isModifiedClick;
+
+            if (!row || !statusCard.contains(row)) {
+                return;
+            }
+
+            isModifiedClick = !!(
+                event.metaKey ||
+                event.ctrlKey ||
+                event.shiftKey ||
+                event.altKey ||
+                event.button !== 0
+            );
+            if (isModifiedClick) {
+                return;
+            }
+
+            event.preventDefault();
+            targetUrl = resolveStatusCardRowUrl(row);
+            if (!targetUrl) {
+                return;
+            }
+
+            setStatusCardActiveSegment(statusCard, row.getAttribute('data-bbai-status-segment') || '');
+            row.classList.add('is-pressed');
+
+            window.setTimeout(function() {
+                navigateToStatusCardFilter(row);
+            }, 110);
+        });
+
+        if (refreshButton) {
+            refreshButton.addEventListener('click', handleStatusCardRefresh);
+        }
+    }
+
+    function renderStatusCard(data) {
+        if (!data) {
+            return;
+        }
+
+        var statusCoverage = getStatusCoverageData(data);
+        var statusCard = document.querySelector('[data-bbai-dashboard-status-card="1"]');
+        if (!statusCard) {
+            return;
+        }
+
+        var summaryRatioNode = statusCard.querySelector('[data-bbai-status-summary-ratio]');
+        var summaryMetaNode = statusCard.querySelector('[data-bbai-status-last-scan]');
+        var summaryDetailNode = statusCard.querySelector('[data-bbai-status-summary-detail]');
+        var metrics = {
+            optimized: statusCard.querySelector('[data-bbai-status-metric="optimized"]'),
+            weak: statusCard.querySelector('[data-bbai-status-metric="weak"]'),
+            missing: statusCard.querySelector('[data-bbai-status-metric="missing"]')
+        };
+        var coverageValue = statusCard.querySelector('[data-bbai-status-coverage-value]');
+
+        if (summaryRatioNode || summaryDetailNode) {
+            var optimizedRatio = getOptimizedRatioCopy(statusCoverage);
+            var summaryRatio = optimizedRatio;
+            var summaryMeta = formatLastScanCopy(data.lastScanTs);
+            var summaryDetail = '';
+
+            if (!hasScanResults(data) || statusCoverage.total <= 0) {
+                summaryRatio = __('No images found in your media library', 'beepbeep-ai-alt-text-generator');
+                summaryDetail = __('Run your first scan to see coverage and missing ALT text.', 'beepbeep-ai-alt-text-generator');
+            } else if (statusCoverage.missing > 0) {
+                summaryDetail = sprintf(
+                    _n('%s image is missing ALT text.', '%s images are missing ALT text.', statusCoverage.missing, 'beepbeep-ai-alt-text-generator'),
+                    formatCount(statusCoverage.missing)
+                );
+            } else if (statusCoverage.weak > 0) {
+                summaryDetail = sprintf(
+                    _n('%s description needs review.', '%s descriptions need review.', statusCoverage.weak, 'beepbeep-ai-alt-text-generator'),
+                    formatCount(statusCoverage.weak)
+                );
+            } else if (statusCoverage.optimized > 0) {
+                summaryDetail = __('All current images include ALT text.', 'beepbeep-ai-alt-text-generator');
+            }
+
+            if (summaryRatioNode) {
+                summaryRatioNode.textContent = summaryRatio;
+            }
+            if (summaryMetaNode) {
+                summaryMetaNode.textContent = summaryMeta;
+                summaryMetaNode.hidden = !summaryMeta;
+            }
+            if (summaryDetailNode) {
+                summaryDetailNode.textContent = summaryDetail;
+                summaryDetailNode.hidden = !summaryDetail;
+            }
+        }
+
+        Object.keys(metrics).forEach(function(key) {
+            if (metrics[key]) {
+                metrics[key].textContent = formatCount(statusCoverage[key]);
+            }
+        });
+
+        if (coverageValue) {
+            coverageValue.textContent = formatCount(statusCoverage.coverage);
+        }
+
+        applyStatusCardDonutState(statusCard, statusCoverage);
+    }
+
+    function animateStatusRingSegment(segmentNode, segmentStyle, circumference) {
+        if (!segmentNode || !segmentStyle) {
+            return;
+        }
+
+        var hiddenDasharray = '0 ' + Math.max(0, circumference).toFixed(3);
+        var targetOpacity = segmentStyle.isVisible ? '1' : '0';
+        var hasAnimated = segmentNode.getAttribute('data-bbai-status-ring-initialized') === '1';
+        var animationDelay = Math.max(0, parseInt(segmentStyle.animationOrder, 10) || 0) * 180;
+
+        if (hasAnimated) {
+            segmentNode.style.transition = 'stroke-dasharray 0.8s ease, stroke-dashoffset 0.8s ease, opacity 0.25s ease';
+            segmentNode.style.strokeDasharray = segmentStyle.dasharray;
+            segmentNode.style.strokeDashoffset = segmentStyle.dashoffset;
+            segmentNode.style.opacity = targetOpacity;
+            return;
+        }
+
+        segmentNode.style.transition = 'none';
+        segmentNode.style.strokeDasharray = hiddenDasharray;
+        segmentNode.style.strokeDashoffset = segmentStyle.dashoffset;
+        segmentNode.style.opacity = targetOpacity;
+        segmentNode.offsetWidth;
+
+        requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+                segmentNode.style.transition = 'stroke-dasharray 0.8s ease ' + animationDelay + 'ms, stroke-dashoffset 0.8s ease ' + animationDelay + 'ms, opacity 0.25s ease ' + animationDelay + 'ms';
+                segmentNode.style.strokeDasharray = segmentStyle.dasharray;
+                segmentNode.style.strokeDashoffset = segmentStyle.dashoffset;
+                segmentNode.style.opacity = targetOpacity;
+                segmentNode.setAttribute('data-bbai-status-ring-initialized', '1');
+            });
+        });
+    }
+
+    function animateLinearProgress(node, targetPercent, duration, delay) {
+        if (!node) {
+            return;
+        }
+
+        var target = Math.min(100, Math.max(0, parseFloat(targetPercent) || 0));
+        var transitionDuration = Math.max(0, parseInt(duration, 10) || 600);
+        var transitionDelay = Math.max(0, parseInt(delay, 10) || 0);
+        var hasAnimated = node.getAttribute('data-bbai-progress-initialized') === '1';
+        var transitionValue = 'width ' + transitionDuration + 'ms ease' + (transitionDelay > 0 ? ' ' + transitionDelay + 'ms' : '');
+
+        if (hasAnimated) {
+            node.style.transition = transitionValue;
+            node.style.width = target + '%';
+            return;
+        }
+
+        node.style.transition = 'none';
+        node.style.width = '0%';
+        node.offsetWidth;
+
+        requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+                node.style.transition = transitionValue;
+                node.style.width = target + '%';
+                node.setAttribute('data-bbai-progress-initialized', '1');
+            });
+        });
+    }
+
+    function getAccessibilityImpact(data) {
+        var optimized = Math.max(0, parseCount(data && data.optimized));
+        var total = Math.max(0, parseCount(data && data.total));
+        var coverage = total > 0 ? Math.round((optimized / total) * 100) : 0;
+        var impact = {
+            coverage: coverage,
+            coverageLabel: formatCount(coverage),
+            optimized: optimized,
+            optimizedLabel: formatCount(optimized)
+        };
+
+        impact.altText = sprintf(
+            __('Shareable accessibility badge showing a %1$s%% accessibility score and %2$s optimized images powered by BeepBeep AI', 'beepbeep-ai-alt-text-generator'),
+            impact.coverageLabel,
+            impact.optimizedLabel
+        );
+        impact.embedHtml = '<a href="https://beepbeep.ai" target="_blank" rel="noreferrer noopener">\n<img src="' + getAccessibilityBadgeDataUrl(impact) + '"\nalt="' + escapeSvgText(impact.altText) + '">\n</a>';
+        impact.shareText = sprintf(
+            __('My WordPress site has an accessibility score of %1$s%% with %2$s optimized images powered by BeepBeep AI.', 'beepbeep-ai-alt-text-generator'),
+            impact.coverageLabel,
+            impact.optimizedLabel
+        );
+
+        return impact;
+    }
+
+    function escapeSvgText(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function buildAccessibilityBadgeSvg(impact) {
+        var titleText = __('Accessibility badge powered by BeepBeep AI', 'beepbeep-ai-alt-text-generator');
+        var descText = impact && impact.altText
+            ? impact.altText
+            : sprintf(
+                __('Shareable accessibility badge showing a %1$s%% accessibility score and %2$s optimized images powered by BeepBeep AI', 'beepbeep-ai-alt-text-generator'),
+                impact.coverageLabel,
+                impact.optimizedLabel
+            );
+
+        return [
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 220" width="460" height="220" role="img" aria-labelledby="bbai-badge-title bbai-badge-desc">',
+            '<title id="bbai-badge-title">', escapeSvgText(titleText), '</title>',
+            '<desc id="bbai-badge-desc">', escapeSvgText(descText), '</desc>',
+            '<defs>',
+            '<linearGradient id="bbai-badge-bg" x1="30" y1="24" x2="430" y2="196" gradientUnits="userSpaceOnUse">',
+            '<stop offset="0%" stop-color="#FFFFFF"/>',
+            '<stop offset="100%" stop-color="#F3FBF5"/>',
+            '</linearGradient>',
+            '<linearGradient id="bbai-badge-score" x1="44" y1="58" x2="190" y2="58" gradientUnits="userSpaceOnUse">',
+            '<stop offset="0%" stop-color="#16A34A"/>',
+            '<stop offset="100%" stop-color="#15803D"/>',
+            '</linearGradient>',
+            '</defs>',
+            '<rect x="1" y="1" width="458" height="218" rx="24" fill="url(#bbai-badge-bg)" stroke="#B7DFC0"/>',
+            '<circle cx="396" cy="48" r="28" fill="#DCFCE7"/>',
+            '<circle cx="423" cy="34" r="8" fill="#86EFAC"/>',
+            '<path d="M384 49l9 9 18-20" fill="none" stroke="#15803D" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>',
+            '<text x="36" y="44" fill="#15803D" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" letter-spacing="0.03em">', escapeSvgText(__('Accessibility score', 'beepbeep-ai-alt-text-generator')), '</text>',
+            '<text x="36" y="112" fill="url(#bbai-badge-score)" font-family="Segoe UI, Arial, sans-serif" font-size="58" font-weight="700">', escapeSvgText(impact.coverageLabel), '%</text>',
+            '<path d="M36 138h388" stroke="#CDE7D2" stroke-width="1"/>',
+            '<text x="36" y="170" fill="#166534" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="600">', escapeSvgText(__('Images optimized', 'beepbeep-ai-alt-text-generator')), '</text>',
+            '<text x="424" y="170" text-anchor="end" fill="#0F172A" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="700">', escapeSvgText(impact.optimizedLabel), '</text>',
+            '<text x="36" y="196" fill="#166534" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="600">', escapeSvgText(__('Powered by BeepBeep AI', 'beepbeep-ai-alt-text-generator')), '</text>',
+            '</svg>'
+        ].join('');
+    }
+
+    function getAccessibilityBadgeDataUrl(impact) {
+        return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(buildAccessibilityBadgeSvg(impact));
+    }
+
+    function getUpgradeCardCopy(data) {
+        var usagePercent;
+        var growthComparison;
+
+        if (!data) {
+            return null;
+        }
+
+        usagePercent = Math.min(100, Math.max(0, (data.creditsUsed / Math.max(1, data.creditsTotal)) * 100));
+        growthComparison = getGrowthPlanComparison(data);
+
+        if (!hasCreditsAvailable(data) && !data.isPremium) {
+            return {
+                context: __('You have reached your AI generation limit. Growth restarts progress immediately and keeps future uploads moving automatically.', 'beepbeep-ai-alt-text-generator'),
+                ctaLabel: __('Restart with Growth', 'beepbeep-ai-alt-text-generator'),
+                growthLine: __('Growth unlocks always-on media library automation.', 'beepbeep-ai-alt-text-generator'),
+                growthUsageLine: growthComparison.line,
+                growthUsagePercent: growthComparison.percent,
+                growthIndicatorPercent: growthComparison.indicatorPercent,
+                usageLine: sprintf(
+                    __('%1$s / %2$s AI generations used this month', 'beepbeep-ai-alt-text-generator'),
+                    formatCount(data.creditsUsed),
+                    formatCount(data.creditsTotal)
+                ),
+                remainingLine: getRemainingPlanLine(data),
+                resetLine: data.creditsResetLine || '',
+                usagePercent: usagePercent,
+                urgent: true
+            };
+        }
+
+        if (!data.isPremium && data.creditsRemaining <= 5) {
+            return {
+                context: __('You are running low on AI generations. Growth keeps automation running as new uploads arrive.', 'beepbeep-ai-alt-text-generator'),
+                ctaLabel: __('Upgrade Before You Run Out', 'beepbeep-ai-alt-text-generator'),
+                growthLine: __('Growth unlocks always-on media library automation.', 'beepbeep-ai-alt-text-generator'),
+                growthUsageLine: growthComparison.line,
+                growthUsagePercent: growthComparison.percent,
+                growthIndicatorPercent: growthComparison.indicatorPercent,
+                usageLine: sprintf(
+                    __('%1$s / %2$s AI generations used this month', 'beepbeep-ai-alt-text-generator'),
+                    formatCount(data.creditsUsed),
+                    formatCount(data.creditsTotal)
+                ),
+                remainingLine: getRemainingPlanLine(data),
+                resetLine: data.creditsResetLine || '',
+                usagePercent: usagePercent,
+                urgent: true
+            };
+        }
+
+        if (data.isPremium) {
+            return {
+                context: __('Growth is built for continuous coverage, not one-off manual cleanups.', 'beepbeep-ai-alt-text-generator'),
+                ctaLabel: __('Open Automation Settings', 'beepbeep-ai-alt-text-generator'),
+                growthLine: __('Growth automation is ready for future uploads and bulk clean-ups.', 'beepbeep-ai-alt-text-generator'),
+                growthUsageLine: growthComparison.line,
+                growthUsagePercent: growthComparison.percent,
+                growthIndicatorPercent: growthComparison.indicatorPercent,
+                usageLine: sprintf(
+                    __('%1$s / %2$s AI generations used this month', 'beepbeep-ai-alt-text-generator'),
+                    formatCount(data.creditsUsed),
+                    formatCount(data.creditsTotal)
+                ),
+                remainingLine: getRemainingPlanLine(data),
+                resetLine: data.creditsResetLine || '',
+                usagePercent: usagePercent,
+                urgent: false
+            };
+        }
+
+        return {
+            context: __('Upgrade for automatic coverage, faster bulk optimization, and less manual work each month.', 'beepbeep-ai-alt-text-generator'),
+            ctaLabel: __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
+            growthLine: __('Growth unlocks always-on media library automation.', 'beepbeep-ai-alt-text-generator'),
+            growthUsageLine: growthComparison.line,
+            growthUsagePercent: growthComparison.percent,
+            growthIndicatorPercent: growthComparison.indicatorPercent,
+            usageLine: sprintf(
+                __('%1$s / %2$s AI generations used this month', 'beepbeep-ai-alt-text-generator'),
+                formatCount(data.creditsUsed),
+                formatCount(data.creditsTotal)
+            ),
+            remainingLine: getRemainingPlanLine(data),
+            resetLine: data.creditsResetLine || '',
+            usagePercent: usagePercent,
+            urgent: false
+        };
+    }
+
+    function getAutomationCardCopy(data) {
+        var firstRun;
+        var hasExistingIssues;
+
+        if (!data) {
+            return null;
+        }
+
+        firstRun = !hasScanResults(data) || data.total <= 0;
+        hasExistingIssues = data.missing > 0 || data.weak > 0;
+
+        if (data.isPremium) {
+            return {
+                lead: firstRun
+                    ? __('After your first scan, keep future uploads covered automatically from Settings.', 'beepbeep-ai-alt-text-generator')
+                    : (
+                        hasExistingIssues
+                            ? __('Finish cleaning up your current library, then use automation to keep new uploads from adding more manual work.', 'beepbeep-ai-alt-text-generator')
+                            : __('You’ve optimized your current images. Now keep future uploads covered automatically.', 'beepbeep-ai-alt-text-generator')
+                    ),
+                statusLabel: __('Growth ready', 'beepbeep-ai-alt-text-generator'),
+                statusHelper: __('Manage this in Settings when you want on-upload ALT generation.', 'beepbeep-ai-alt-text-generator'),
+                valueSupport: __('Manage how future uploads are handled in Settings whenever your workflow changes.', 'beepbeep-ai-alt-text-generator'),
+                ctaLabel: __('Manage Auto-Optimization', 'beepbeep-ai-alt-text-generator'),
+                secondaryLabel: __('Review ALT Library', 'beepbeep-ai-alt-text-generator'),
+                modifier: 'ready'
+            };
+        }
+
+        return {
+            lead: firstRun
+                ? __('After your first scan, this can keep new uploads optimized automatically.', 'beepbeep-ai-alt-text-generator')
+                : (
+                    hasExistingIssues
+                        ? __('Once your existing library is covered, this keeps new uploads optimized automatically.', 'beepbeep-ai-alt-text-generator')
+                        : __('You’ve optimized your current images. Now automate future uploads.', 'beepbeep-ai-alt-text-generator')
+                ),
+            statusLabel: __('Available on Growth', 'beepbeep-ai-alt-text-generator'),
+            statusHelper: __('Turn on with the Growth plan.', 'beepbeep-ai-alt-text-generator'),
+            valueSupport: __('Upgrade once and let Growth keep future uploads covered automatically.', 'beepbeep-ai-alt-text-generator'),
+            ctaLabel: __('Enable Auto-Optimization', 'beepbeep-ai-alt-text-generator'),
+            secondaryLabel: __('Compare plans', 'beepbeep-ai-alt-text-generator'),
+            modifier: 'locked'
+        };
+    }
+
+    function renderPerformanceMetrics(data) {
+        if (!data) {
+            return;
+        }
+
+        var minutesNode = document.querySelector('[data-bbai-performance-minutes]');
+        var optimizedNode = document.querySelector('[data-bbai-performance-optimized]');
+        var coverageNode = document.querySelector('[data-bbai-performance-coverage]');
+        var hoursSaved = Math.max(0, (data.creditsUsed * 2.5) / 60);
+        var minutesSaved = Math.round(hoursSaved * 60);
+        var coveragePercent = data.total > 0 ? Math.round((data.optimized / data.total) * 100) : 0;
+
+        if (minutesNode) {
+            minutesNode.textContent = formatCount(minutesSaved);
+        }
+        if (optimizedNode) {
+            optimizedNode.textContent = formatCount(data.optimized);
+        }
+        if (coverageNode) {
+            coverageNode.textContent = formatCount(coveragePercent);
+        }
+    }
+
+    function renderAccessibilityImpact(data) {
+        var cardNode = document.querySelector('[data-bbai-accessibility-card="1"]');
+        var coverageNode;
+        var optimizedNode;
+        var statsLineNode;
+        var previewImageNode;
+        var shareNode;
+        var impact;
+
+        if (!cardNode || !data) {
+            return;
+        }
+
+        coverageNode = cardNode.querySelector('[data-bbai-accessibility-coverage]');
+        optimizedNode = cardNode.querySelector('[data-bbai-accessibility-optimized]');
+        statsLineNode = cardNode.querySelector('[data-bbai-accessibility-stats-line]');
+        previewImageNode = cardNode.querySelector('[data-bbai-accessibility-badge-preview]');
+        shareNode = cardNode.querySelector('[data-bbai-accessibility-action="share"]');
+        impact = getAccessibilityImpact(data);
+
+        if (coverageNode) {
+            coverageNode.textContent = impact.coverageLabel;
+        }
+
+        if (optimizedNode) {
+            optimizedNode.textContent = impact.optimizedLabel;
+        }
+
+        if (statsLineNode) {
+            statsLineNode.textContent = sprintf(
+                __('Accessibility score: %1$s%% | Images optimized: %2$s', 'beepbeep-ai-alt-text-generator'),
+                impact.coverageLabel,
+                impact.optimizedLabel
+            );
+        }
+
+        if (previewImageNode) {
+            previewImageNode.setAttribute('src', getAccessibilityBadgeDataUrl(impact));
+            previewImageNode.setAttribute('alt', impact.altText);
+        }
+
+        if (shareNode) {
+            shareNode.setAttribute(
+                'href',
+                'https://twitter.com/intent/tweet?text=' + encodeURIComponent(impact.shareText) + '&url=' + encodeURIComponent('https://beepbeep.ai')
+            );
+        }
+    }
+
+    function renderUpgradeContext(data) {
+        var planLabelNode = document.querySelector('[data-bbai-plan-label]');
+        var usageLineNode = document.querySelector('[data-bbai-plan-usage-line]');
+        var remainingLineNode = document.querySelector('[data-bbai-plan-usage-remaining]');
+        var resetLineNode = document.querySelector('[data-bbai-plan-usage-reset]');
+        var usageProgressNode = document.querySelector('[data-bbai-plan-usage-progress]');
+        var growthLineNode = document.querySelector('[data-bbai-plan-growth-line]');
+        var growthProgressNode = document.querySelector('[data-bbai-plan-growth-progress]');
+        var growthPercentNode = document.querySelector('[data-bbai-plan-growth-percent-label]');
+        var upgradeNoteNode = document.querySelector('[data-bbai-plan-upgrade-note]');
+        var primaryActionNode = document.querySelector('[data-bbai-plan-action-primary]');
+        var secondaryActionNode = document.querySelector('[data-bbai-plan-action-secondary]');
+        var growthComparison = getGrowthPlanComparison(data);
+
+        if (!data) {
+            return;
+        }
+
+        if (planLabelNode) {
+            planLabelNode.textContent = getPlanLabel(data);
+        }
+
+        if (usageLineNode) {
+            usageLineNode.textContent = sprintf(
+                __('%1$s / %2$s used', 'beepbeep-ai-alt-text-generator'),
+                formatCount(data.creditsUsed),
+                formatCount(data.creditsTotal)
+            );
+        }
+
+        if (remainingLineNode) {
+            remainingLineNode.textContent = getRemainingPlanLine(data);
+        }
+
+        if (resetLineNode) {
+            resetLineNode.textContent = getCompactPlanResetLine(data);
+        }
+
+        if (usageProgressNode) {
+            var usagePercent = Math.min(100, Math.max(0, Math.round((data.creditsUsed / Math.max(1, data.creditsTotal)) * 100)));
+            usageProgressNode.setAttribute('data-bbai-plan-usage-progress-target', String(usagePercent));
+            animateLinearProgress(usageProgressNode, usagePercent, 600, 80);
+        }
+
+        if (growthLineNode) {
+            growthLineNode.textContent = growthComparison.line || '';
+        }
+
+        if (growthProgressNode) {
+            growthProgressNode.setAttribute('data-bbai-plan-growth-progress-target', String(growthComparison.percent || 0));
+            animateLinearProgress(growthProgressNode, growthComparison.percent || 0, 600, 120);
+        }
+
+        if (growthPercentNode) {
+            growthPercentNode.textContent = (growthComparison.display || '0') + '%';
+        }
+
+        if (upgradeNoteNode) {
+            upgradeNoteNode.hidden = !!data.isPremium;
+        }
+
+        if (primaryActionNode) {
+            if (data.isPremium) {
+                primaryActionNode.hidden = false;
+                primaryActionNode.className = 'bbai-command-action bbai-command-action--secondary';
+                primaryActionNode.textContent = __('Review usage', 'beepbeep-ai-alt-text-generator');
+                setInteractiveControl(primaryActionNode, {
+                    label: __('Review usage', 'beepbeep-ai-alt-text-generator'),
+                    href: data.usageUrl || '#',
+                    removeAttributes: ['data-action', 'data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
                 });
             } else {
-                // Enable button when there are missing images
-                $btn.removeClass('bbai-optimization-cta--disabled disabled').prop('disabled', false);
-                $btn.attr('data-bbai-tooltip', 'Automatically generate alt text for all images that don\'t have any. Processes in the background without slowing down your site.');
-                $btn.removeAttr('title');
-                // Remove forced styling to allow normal styles
-                $btn.css({
-                    'background-color': '',
-                    'color': '',
-                    'opacity': '',
-                    'cursor': ''
+                primaryActionNode.hidden = false;
+                primaryActionNode.className = 'bbai-command-action bbai-command-action--primary';
+                primaryActionNode.textContent = __('Upgrade', 'beepbeep-ai-alt-text-generator');
+                setInteractiveControl(primaryActionNode, {
+                    label: __('Upgrade', 'beepbeep-ai-alt-text-generator'),
+                    action: 'show-upgrade-modal',
+                    href: '#',
+                    removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
                 });
             }
-        });
-    }
-    
-    // Check initial state on page load
-    function checkInitialState() {
-        // Try to get stats from window object
-        var stats = null;
-        if (window.BBAI_DASH && window.BBAI_DASH.stats) {
-            stats = window.BBAI_DASH.stats;
-        } else if (window.BBAI && window.BBAI.stats) {
-            stats = window.BBAI.stats;
-        } else if (window.bbaiDashboardData && window.bbaiDashboardData.stats) {
-            stats = window.bbaiDashboardData.stats;
         }
-        
+
+        if (secondaryActionNode) {
+            if (data.isPremium) {
+                secondaryActionNode.hidden = true;
+            } else {
+                secondaryActionNode.hidden = false;
+                secondaryActionNode.className = 'bbai-command-action bbai-command-action--secondary';
+                secondaryActionNode.textContent = __('Review usage', 'beepbeep-ai-alt-text-generator');
+                setInteractiveControl(secondaryActionNode, {
+                    label: __('Review usage', 'beepbeep-ai-alt-text-generator'),
+                    href: data.usageUrl || '#',
+                    removeAttributes: ['data-action', 'data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                });
+            }
+        }
+    }
+
+    function getDashboardAlertModel(data) {
+        var remaining;
+
+        if (!data) {
+            return null;
+        }
+
+        remaining = Math.max(0, parseCount(data.creditsRemaining));
+
+        if (remaining === 0) {
+            return {
+                tone: 'danger',
+                title: __('You have no optimizations left this cycle', 'beepbeep-ai-alt-text-generator'),
+                message: __('Upgrade or wait for your allowance to reset to continue ALT generation.', 'beepbeep-ai-alt-text-generator'),
+                primaryAction: {
+                    label: __('Upgrade', 'beepbeep-ai-alt-text-generator'),
+                    action: 'show-upgrade-modal',
+                    href: '#',
+                    removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                },
+                secondaryAction: {
+                    label: __('Review usage', 'beepbeep-ai-alt-text-generator'),
+                    href: data.usageUrl || '#',
+                    removeAttributes: ['data-action', 'data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                }
+            };
+        }
+
+        if (parseCount(data.missing) > 0) {
+            return {
+                tone: 'warning',
+                title: __('Fix missing ALT text', 'beepbeep-ai-alt-text-generator'),
+                message: _n(
+                    'Fix the remaining image to reach full coverage.',
+                    'Fix the remaining images to reach full coverage.',
+                    parseCount(data.missing),
+                    'beepbeep-ai-alt-text-generator'
+                ),
+                primaryAction: {
+                    label: __('Fix missing ALT text', 'beepbeep-ai-alt-text-generator'),
+                    action: 'generate-missing',
+                    bbaiAction: 'generate_missing',
+                    href: '#',
+                    removeAttributes: ['data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                },
+                secondaryAction: {
+                    label: __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+                    href: data.missingLibraryUrl || data.libraryUrl || '#',
+                    removeAttributes: ['data-action', 'data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                }
+            };
+        }
+
+        if (parseCount(data.weak) > 0) {
+            return {
+                tone: 'warning',
+                title: __('Review ALT text', 'beepbeep-ai-alt-text-generator'),
+                message: _n(
+                    'Review the remaining description to reach full coverage.',
+                    'Review the remaining descriptions to reach full coverage.',
+                    parseCount(data.weak),
+                    'beepbeep-ai-alt-text-generator'
+                ),
+                primaryAction: {
+                    label: __('Review ALT text', 'beepbeep-ai-alt-text-generator'),
+                    action: 'show-generate-alt-modal',
+                    href: '#',
+                    removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                },
+                secondaryAction: {
+                    label: __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+                    href: data.needsReviewLibraryUrl || data.libraryUrl || '#',
+                    removeAttributes: ['data-action', 'data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                }
+            };
+        }
+
+        if (remaining > 0 && remaining < 10) {
+            if (data.isPremium) {
+                return {
+                    tone: 'warning',
+                    title: sprintf(
+                        _n('%s optimization left this cycle', '%s optimizations left this cycle', remaining, 'beepbeep-ai-alt-text-generator'),
+                        formatCount(remaining)
+                    ),
+                    message: __('Review your usage before the cycle resets.', 'beepbeep-ai-alt-text-generator'),
+                    primaryAction: {
+                        label: __('Review usage', 'beepbeep-ai-alt-text-generator'),
+                        href: data.usageUrl || '#',
+                        removeAttributes: ['data-action', 'data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                    },
+                    secondaryAction: {
+                        label: __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+                        href: data.libraryUrl || '#',
+                        removeAttributes: ['data-action', 'data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                    }
+                };
+            }
+
+            return {
+                tone: 'warning',
+                title: sprintf(
+                    _n('%s optimization left this cycle', '%s optimizations left this cycle', remaining, 'beepbeep-ai-alt-text-generator'),
+                    formatCount(remaining)
+                ),
+                message: __('Upgrade to keep optimizing without interruption.', 'beepbeep-ai-alt-text-generator'),
+                primaryAction: {
+                    label: __('Upgrade', 'beepbeep-ai-alt-text-generator'),
+                    action: 'show-upgrade-modal',
+                    href: '#',
+                    removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                },
+                secondaryAction: {
+                    label: __('Review usage', 'beepbeep-ai-alt-text-generator'),
+                    href: data.usageUrl || '#',
+                    removeAttributes: ['data-action', 'data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                }
+            };
+        }
+
+        return null;
+    }
+
+    function renderDashboardAlert(data) {
+        var alertSection = document.querySelector('[data-bbai-dashboard-alert="1"]');
+        var titleNode;
+        var messageNode;
+        var primaryNode;
+        var secondaryNode;
+        var alertModel;
+
+        if (!alertSection) {
+            return;
+        }
+
+        alertModel = getDashboardAlertModel(data);
+        if (!alertModel) {
+            alertSection.hidden = true;
+            return;
+        }
+
+        titleNode = alertSection.querySelector('[data-bbai-dashboard-alert-title]');
+        messageNode = alertSection.querySelector('[data-bbai-dashboard-alert-message]');
+        primaryNode = alertSection.querySelector('[data-bbai-dashboard-alert-primary]');
+        secondaryNode = alertSection.querySelector('[data-bbai-dashboard-alert-secondary]');
+
+        alertSection.className = 'bbai-dashboard-alert-card bbai-dashboard-alert-card--' + (alertModel.tone || 'warning');
+        alertSection.hidden = false;
+
+        if (titleNode) {
+            titleNode.textContent = alertModel.title || '';
+        }
+
+        if (messageNode) {
+            messageNode.textContent = alertModel.message || '';
+        }
+
+        if (primaryNode && alertModel.primaryAction) {
+            primaryNode.hidden = !(alertModel.primaryAction.label);
+            primaryNode.textContent = alertModel.primaryAction.label || '';
+            setInteractiveControl(primaryNode, alertModel.primaryAction);
+        }
+
+        if (secondaryNode && alertModel.secondaryAction) {
+            secondaryNode.hidden = !(alertModel.secondaryAction.label);
+            secondaryNode.textContent = alertModel.secondaryAction.label || '';
+            setInteractiveControl(secondaryNode, alertModel.secondaryAction);
+        }
+    }
+
+    function shouldShowDashboardReviewPrompt(data) {
+        var coverage = getStatusCoverageData(data);
+        var remaining = Math.max(0, parseCount(data && data.creditsRemaining));
+
+        if (!data || !coverage.total) {
+            return false;
+        }
+
+        return coverage.coverage >= 95 &&
+            coverage.optimized >= 20 &&
+            coverage.missing === 0 &&
+            coverage.weak === 0 &&
+            remaining >= 10;
+    }
+
+    function renderDashboardReviewPrompt(data) {
+        var promptNode = document.querySelector('[data-bbai-dashboard-review-prompt]');
+        if (!promptNode) {
+            return;
+        }
+
+        promptNode.hidden = !shouldShowDashboardReviewPrompt(data);
+    }
+
+    function renderDashboardState() {
+        var data = getDashboardData();
+        if (!data) {
+            return;
+        }
+
+        bindStatusCardInteractions();
+        renderHero(data);
+        renderStatusCard(data);
+        renderUpgradeContext(data);
+        renderDashboardAlert(data);
+        renderDashboardReviewPrompt(data);
+    }
+
+    window.bbaiGetDashboardData = getDashboardData;
+    window.bbaiRenderDashboardHero = function(dataOverride) {
+        renderHero(dataOverride || getDashboardData());
+    };
+    window.bbaiSyncDashboardState = function(statsOverride, usageOverride) {
+        syncAndRender(statsOverride || null, usageOverride || null);
+    };
+
+    function setTemporaryButtonLabel(button, label) {
+        var resetTimer;
+
+        if (!button) {
+            return;
+        }
+
+        if (!button.getAttribute('data-bbai-default-label')) {
+            button.setAttribute('data-bbai-default-label', button.textContent || '');
+        }
+
+        button.textContent = label;
+        resetTimer = parseInt(button.getAttribute('data-bbai-reset-timer'), 10);
+        if (!isNaN(resetTimer) && resetTimer) {
+            window.clearTimeout(resetTimer);
+        }
+
+        resetTimer = window.setTimeout(function() {
+            button.textContent = button.getAttribute('data-bbai-default-label') || button.textContent;
+            button.removeAttribute('data-bbai-reset-timer');
+        }, 1800);
+
+        button.setAttribute('data-bbai-reset-timer', String(resetTimer));
+    }
+
+    function copyTextToClipboard(text, onSuccess, onError) {
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+            navigator.clipboard.writeText(text).then(function() {
+                if (typeof onSuccess === 'function') {
+                    onSuccess();
+                }
+            }).catch(function(error) {
+                if (typeof onError === 'function') {
+                    onError(error);
+                }
+            });
+            return;
+        }
+
+        try {
+            var textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.setAttribute('readonly', 'readonly');
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            textarea.style.pointerEvents = 'none';
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+
+            if (document.execCommand('copy')) {
+                document.body.removeChild(textarea);
+                if (typeof onSuccess === 'function') {
+                    onSuccess();
+                }
+                return;
+            }
+
+            document.body.removeChild(textarea);
+        } catch (error) {
+            if (typeof onError === 'function') {
+                onError(error);
+            }
+            return;
+        }
+
+        if (typeof onError === 'function') {
+            onError(new Error('copy_failed'));
+        }
+    }
+
+    function showDashboardFeedback(detail) {
+        var feedbackNode = document.querySelector('[data-bbai-dashboard-feedback]');
+        if (!feedbackNode || !detail || !detail.message) {
+            return;
+        }
+
+        feedbackNode.hidden = false;
+        feedbackNode.textContent = detail.message;
+        feedbackNode.className = 'bbai-dashboard-feedback bbai-dashboard-feedback--' + (detail.type || 'info');
+
+        if (feedbackTimeout) {
+            window.clearTimeout(feedbackTimeout);
+        }
+
+        feedbackTimeout = window.setTimeout(function() {
+            feedbackNode.hidden = true;
+            feedbackNode.textContent = '';
+            feedbackNode.className = 'bbai-dashboard-feedback';
+        }, Math.max(2500, parseInt(detail && detail.duration, 10) || 6000));
+    }
+
+    function syncAndRender(stats, usage) {
         if (stats) {
-            updateGenerateMissingButtons(stats);
+            syncStatsToRoot(stats);
         }
+        if (usage) {
+            syncUsageToRoot(usage);
+        }
+        renderDashboardState();
     }
-    
-    // Listen for stats update events
+
+    $(document).on('click', '[data-bbai-quick-action].is-disabled, [data-bbai-workflow-generate-cta].is-disabled', function(event) {
+        if (this.getAttribute('data-action') === 'show-upgrade-modal') {
+            return;
+        }
+        event.preventDefault();
+    });
+
+    document.addEventListener('click', function(event) {
+        var eventTarget = event.target && event.target.nodeType === 1 ? event.target : event.target.parentElement;
+        var actionButton = eventTarget && typeof eventTarget.closest === 'function'
+            ? eventTarget.closest('[data-bbai-accessibility-action]')
+            : null;
+        var data;
+        var cardNode;
+        var previewNode;
+        var impact;
+        var svg;
+        var blob;
+        var url;
+        var downloadLink;
+
+        if (!actionButton) {
+            return;
+        }
+
+        data = getDashboardData();
+        if (!data) {
+            return;
+        }
+
+        cardNode = actionButton.closest('[data-bbai-accessibility-card="1"]');
+        if (!cardNode) {
+            return;
+        }
+
+        previewNode = cardNode.querySelector('[data-bbai-accessibility-preview]');
+        impact = getAccessibilityImpact(data);
+
+        if (actionButton.getAttribute('data-bbai-accessibility-action') === 'preview') {
+            event.preventDefault();
+            if (previewNode) {
+                previewNode.hidden = !previewNode.hidden;
+                actionButton.setAttribute('aria-expanded', previewNode.hidden ? 'false' : 'true');
+            }
+            return;
+        }
+
+        if (
+            actionButton.getAttribute('data-bbai-accessibility-action') === 'download' ||
+            actionButton.getAttribute('data-bbai-accessibility-action') === 'get-badge'
+        ) {
+            event.preventDefault();
+            svg = buildAccessibilityBadgeSvg(impact);
+
+            if (typeof Blob === 'function' && window.URL && typeof window.URL.createObjectURL === 'function') {
+                blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+                url = window.URL.createObjectURL(blob);
+                downloadLink = document.createElement('a');
+                downloadLink.href = url;
+                downloadLink.download = 'beepbeep-ai-accessibility-impact.svg';
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                window.setTimeout(function() {
+                    window.URL.revokeObjectURL(url);
+                }, 1000);
+            } else {
+                window.open(getAccessibilityBadgeDataUrl(impact), '_blank', 'noopener,noreferrer');
+            }
+
+            setTemporaryButtonLabel(actionButton, __('Downloaded', 'beepbeep-ai-alt-text-generator'));
+            return;
+        }
+
+        if (actionButton.getAttribute('data-bbai-accessibility-action') === 'copy-embed') {
+            event.preventDefault();
+            copyTextToClipboard(
+                impact.embedHtml,
+                function() {
+                    setTemporaryButtonLabel(actionButton, __('Copied', 'beepbeep-ai-alt-text-generator'));
+                },
+                function() {
+                    setTemporaryButtonLabel(actionButton, __('Copy failed', 'beepbeep-ai-alt-text-generator'));
+                }
+            );
+        }
+    });
+
+    document.addEventListener('bbai:dashboard-feedback', function(event) {
+        if (event && event.detail) {
+            showDashboardFeedback(event.detail);
+        }
+    });
+
     if (typeof window.addEventListener === 'function') {
-        window.addEventListener('bbai-stats-update', function(e) {
-            if (e.detail && e.detail.stats) {
-                updateGenerateMissingButtons(e.detail.stats);
+        window.addEventListener('bbai-stats-update', function(event) {
+            var usage = event && event.detail ? event.detail.usage : null;
+            var stats = event && event.detail ? event.detail.stats : null;
+            syncAndRender(stats, usage);
+        });
+
+        window.addEventListener('storage', function(event) {
+            if (!event || event.key !== BBAI_STATS_SYNC_KEY || !event.newValue) {
+                return;
+            }
+
+            try {
+                var payload = JSON.parse(event.newValue);
+                syncAndRender(payload && payload.stats ? payload.stats : null, payload && payload.usage ? payload.usage : null);
+            } catch (storageError) {
+                window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Failed to parse cross-tab dashboard stats sync payload.', storageError);
             }
         });
     }
-    
-    // Check on DOM ready
+
+    $(document).on('bbai:stats-updated.bbaiOperational bbai:usage-updated.bbaiOperational', function(event, payload) {
+        var stats = null;
+        var usage = bbaiGetUsageObject();
+
+        if (event && event.type === 'bbai:stats-updated') {
+            if (payload && payload.stats) {
+                stats = payload.stats;
+            } else if (event.detail && event.detail.stats) {
+                stats = event.detail.stats;
+            }
+        }
+
+        syncAndRender(stats, usage);
+    });
+
     $(document).ready(function() {
-        checkInitialState();
-        // Also check after a short delay in case stats load asynchronously
-        setTimeout(checkInitialState, 500);
+        syncAndRender(
+            (window.BBAI_DASH && window.BBAI_DASH.stats) || (window.BBAI && window.BBAI.stats) || null,
+            bbaiGetUsageObject()
+        );
+        setTimeout(function() {
+            syncAndRender(
+                (window.BBAI_DASH && window.BBAI_DASH.stats) || (window.BBAI && window.BBAI.stats) || null,
+                bbaiGetUsageObject()
+            );
+        }, 400);
     });
 });

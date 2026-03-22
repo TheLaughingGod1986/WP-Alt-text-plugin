@@ -13,9 +13,21 @@
 /* Uniform content shell - same width and padding on all tabs (Dashboard, ALT Library, Analytics, etc.) */
 .bbai-container.bbai-content-shell {
     width: 100%;
-    max-width: 1400px;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.bbai-page {
+    padding-top: 28px;
+}
+
+.bbai-page-inner {
+    width: 100%;
+    max-width: 1280px;
     margin: 0 auto;
-    padding: 24px 24px 40px;
+    padding: 0 32px 40px;
     box-sizing: border-box;
 }
 
@@ -97,8 +109,11 @@
 
 /* Dashboard Container */
 .bbai-dashboard-container {
-    max-width: var(--bbai-dashboard-max-width);
-    margin: 0 auto;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 .bbai-dashboard-header-section {
     margin-bottom: var(--bbai-space-6);
@@ -169,8 +184,11 @@
    ============================================ */
 
 .bbai-library-container {
-    max-width: var(--bbai-dashboard-max-width);
-    margin: 0 auto;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 .bbai-library-header {
     margin-bottom: var(--bbai-space-6);
@@ -201,4 +219,21 @@
 }
 .bbai-section:last-child {
     margin-bottom: 0;
+}
+
+@media (max-width: 1024px) {
+    .bbai-page {
+        padding-top: 24px;
+    }
+
+    .bbai-page-inner {
+        padding: 0 24px 32px;
+    }
+}
+
+@media (max-width: 782px) {
+    .bbai-page-inner {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
 }

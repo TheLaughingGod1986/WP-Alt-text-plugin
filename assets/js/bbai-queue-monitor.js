@@ -366,6 +366,15 @@
 
         showNotification: function(message, type) {
             type = type || 'info';
+            if (window.showToast && typeof window.showToast === 'function') {
+                window.showToast({
+                    type: type,
+                    message: message,
+                    duration: 4500
+                });
+                return;
+            }
+
             var $notice = $('<div/>', {
                 'class': 'notice notice-' + type + ' is-dismissible bbai-queue-notice'
             }).append(

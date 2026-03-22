@@ -36,10 +36,6 @@ class Admin_Hooks {
 	 */
 	public function register() {
 		add_action( 'admin_menu', [ $this->core, 'add_settings_page' ] );
-		$enable_new_dashboard = apply_filters( 'bbai_enable_new_dashboard', false );
-		if ( $enable_new_dashboard ) {
-			$this->register_dashboard_page();
-		}
 		add_action( 'admin_menu', [ __CLASS__, 'register_credit_usage_page' ] );
 		add_action( 'admin_init', [ $this->core, 'register_settings' ] );
 		add_action( 'admin_init', [ $this->core, 'maybe_redirect_to_onboarding' ] );
@@ -69,9 +65,6 @@ class Admin_Hooks {
 		add_action( 'admin_footer', [ $this->core, 'maybe_render_external_api_notice' ] );
 
 		$this->register_ajax_hooks();
-		if ( $enable_new_dashboard ) {
-			$this->register_dashboard_ajax_hooks();
-		}
 
 		add_action( \BeepBeepAI\AltTextGenerator\Queue::CRON_HOOK, [ $this->core, 'process_queue' ] );
 		add_action( 'beepbeepai_run_migration', [ $this->core, 'run_migration' ] );
@@ -79,18 +72,6 @@ class Admin_Hooks {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			\WP_CLI::add_command( 'beepbeepai', [ $this->core, 'wpcli_command' ] );
 		}
-	}
-
-	/**
-	 * Register the standalone dashboard page and assets.
-	 */
-	private function register_dashboard_page() {
-		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/class-bbai-admin-dashboard.php';
-
-		$dashboard = new Admin_Dashboard();
-
-		add_action( 'admin_menu', [ $dashboard, 'register_menu' ], 20 );
-		add_action( 'admin_enqueue_scripts', [ $dashboard, 'enqueue_assets' ] );
 	}
 
 	/**
@@ -146,6 +127,8 @@ class Admin_Hooks {
 			'bbai_trial_generate_single'      => 'ajax_trial_generate_single',
 			'bbai_trial_demo_generate_batch'  => 'ajax_trial_demo_generate_batch',
 			'bbai_scan_missing_alt'           => 'ajax_scan_missing_alt',
+			'bbai_start_alt_coverage_scan'   => 'ajax_start_alt_coverage_scan',
+			'bbai_poll_alt_coverage_scan'    => 'ajax_poll_alt_coverage_scan',
 			'bbai_rescan_alt_coverage'       => 'ajax_rescan_alt_coverage',
 			'bbai_generate_preview_alt'       => 'ajax_generate_preview_alt',
 			'bbai_apply_alt_batch'            => 'ajax_apply_alt_batch',
@@ -156,18 +139,6 @@ class Admin_Hooks {
 		foreach ( $ajax_actions as $action => $callback ) {
 			add_action( "wp_ajax_{$action}", [ $this->core, $callback ] );
 		}
-	}
-
-	/**
-	 * Register AJAX stubs for the dashboard actions.
-	 */
-	private function register_dashboard_ajax_hooks() {
-		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/class-bbai-admin-dashboard.php';
-
-		$dashboard = new Admin_Dashboard();
-
-		add_action( 'wp_ajax_bbai_generate_missing', [ $dashboard, 'ajax_generate_missing' ] );
-		add_action( 'wp_ajax_bbai_reoptimize_all', [ $dashboard, 'ajax_reoptimize_all' ] );
 	}
 
 	/**

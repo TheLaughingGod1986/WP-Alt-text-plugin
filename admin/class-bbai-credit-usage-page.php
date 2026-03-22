@@ -107,10 +107,24 @@ class Credit_Usage_Page {
 	}
 
 	$bbai_missing_images = self::get_missing_images_count();
+	$bbai_settings_automation_url = admin_url( 'admin.php?page=bbai-settings#bbai-enable-on-upload' );
 
 	// Table is created by DB_Schema on activation/upgrade.
 	// Get usage by user (local WordPress data)
 	$usage_by_user = Credit_Usage_Logger::get_usage_by_user($query_args);
+	$usage_activity = Credit_Usage_Logger::get_activity_rows( $query_args );
+	$has_usage_activity = Credit_Usage_Logger::get_site_generation_count() > 0;
+	$has_filtered_results = ! empty( $usage_activity['items'] );
+	$source_options = self::get_source_options();
+	$billing_portal_url = Usage_Tracker::get_billing_portal_url();
+	$usage_surface = self::build_usage_surface_state(
+		$current_usage,
+		$bbai_missing_images,
+		$has_usage_activity,
+		$has_filtered_results,
+		$bbai_settings_automation_url,
+		$billing_portal_url
+	);
 
 	// Get backend user activity (SEO Heroes - shows who's contributing most)
 	$backend_user_activity = [];
@@ -249,6 +263,312 @@ class Credit_Usage_Page {
 		);
 
 		return max(0, $missing);
+	}
+
+	/**
+	 * Build usage-aware messaging and state for the Usage page.
+	 *
+	 * @param array  $current_usage Current quota usage.
+	 * @param int    $missing_images Current missing image count.
+	 * @param bool   $has_usage_activity Whether the site has any logged usage activity.
+	 * @param bool   $has_filtered_results Whether the current filters returned results.
+	 * @param string $automation_settings_url Settings URL for automation.
+	 * @param string $billing_portal_url Billing portal URL when available.
+	 * @return array<string,mixed>
+	 */
+	private static function build_usage_surface_state($current_usage, $missing_images, $has_usage_activity, $has_filtered_results, $automation_settings_url, $billing_portal_url) {
+		$credits_used = max( 0, intval( $current_usage['used'] ?? 0 ) );
+		$credits_limit = max( 0, intval( $current_usage['limit'] ?? 0 ) );
+		$credits_remaining = isset( $current_usage['remaining'] )
+			? max( 0, intval( $current_usage['remaining'] ) )
+			: max( 0, $credits_limit - $credits_used );
+		$days_until_reset = isset( $current_usage['days_until_reset'] ) && is_numeric( $current_usage['days_until_reset'] )
+			? max( 0, intval( $current_usage['days_until_reset'] ) )
+			: 0;
+		$usage_percent = $credits_limit > 0 ? (int) round( ( $credits_used / $credits_limit ) * 100 ) : 0;
+		$usage_percent = min( 100, max( 0, $usage_percent ) );
+		$plan_slug = sanitize_key( (string) ( $current_usage['plan'] ?? 'free' ) );
+		$plan_label = sanitize_text_field( (string) ( $current_usage['plan_label'] ?? ucfirst( $plan_slug ?: 'free' ) ) );
+		$is_pro_plan = in_array( $plan_slug, [ 'pro', 'growth', 'agency', 'enterprise' ], true );
+		$is_low_credits = $credits_remaining < 10 && $credits_remaining > 0;
+		$is_out_of_credits = 0 === $credits_remaining;
+
+		$pace = self::calculate_average_credits_per_day(
+			$credits_used,
+			intval( $current_usage['reset_timestamp'] ?? 0 ),
+			$days_until_reset
+		);
+		$average_credits_per_day = (float) $pace['average'];
+		$elapsed_days = intval( $pace['elapsed_days'] );
+		$estimated_days_remaining = $average_credits_per_day > 0 && $credits_remaining > 0
+			? (int) floor( $credits_remaining / $average_credits_per_day )
+			: null;
+		$has_predictive_signal = $average_credits_per_day > 0 && $credits_used >= 5 && $elapsed_days >= 3;
+
+		$summary_tone = 'healthy';
+		if ( $is_out_of_credits ) {
+			$summary_tone = 'danger';
+		} elseif ( $is_low_credits || $usage_percent >= 80 ) {
+			$summary_tone = 'warning';
+		}
+
+		if ( $is_out_of_credits ) {
+			$summary_position_copy = __( 'You have reached 100% of your monthly allowance.', 'beepbeep-ai-alt-text-generator' );
+			$summary_remaining_copy = __( 'No credits are left in this billing period.', 'beepbeep-ai-alt-text-generator' );
+		} elseif ( $credits_used > 0 ) {
+			$summary_position_copy = sprintf(
+				/* translators: %d: percentage of monthly allowance used. */
+				__( 'You have used %d%% of your monthly allowance so far.', 'beepbeep-ai-alt-text-generator' ),
+				$usage_percent
+			);
+			if ( $is_low_credits ) {
+				$summary_remaining_copy = sprintf(
+					/* translators: %s: remaining credit count. */
+					__( 'Only %s credits are still available in this billing period.', 'beepbeep-ai-alt-text-generator' ),
+					number_format_i18n( $credits_remaining )
+				);
+			} else {
+				$summary_remaining_copy = sprintf(
+					/* translators: %s: remaining credit count. */
+					__( '%s credits are still available in this billing period.', 'beepbeep-ai-alt-text-generator' ),
+					number_format_i18n( $credits_remaining )
+				);
+			}
+		} else {
+			$summary_position_copy = __( 'Your monthly allowance is still fully available.', 'beepbeep-ai-alt-text-generator' );
+			$summary_remaining_copy = sprintf(
+				/* translators: %s: remaining credit count. */
+				__( '%s credits are ready to use in this billing period.', 'beepbeep-ai-alt-text-generator' ),
+				number_format_i18n( $credits_remaining )
+			);
+		}
+
+		$summary_reset_copy = self::build_reset_copy( $days_until_reset, (string) ( $current_usage['reset_date'] ?? '' ) );
+
+		if ( $is_out_of_credits ) {
+			$insight_copy = __( 'You have used all credits for this cycle. Upgrade to continue generating ALT text.', 'beepbeep-ai-alt-text-generator' );
+			$insight_tone = 'danger';
+		} elseif ( $is_low_credits && $has_predictive_signal && null !== $estimated_days_remaining && $estimated_days_remaining <= 0 ) {
+			$insight_copy = __( 'At your current pace, your remaining credits may run out today.', 'beepbeep-ai-alt-text-generator' );
+			$insight_tone = 'warning';
+		} elseif ( $has_predictive_signal && null !== $estimated_days_remaining ) {
+			if ( $days_until_reset > 0 && $estimated_days_remaining >= $days_until_reset ) {
+				$insight_copy = __( 'At your current pace, your remaining credits should last through this billing cycle.', 'beepbeep-ai-alt-text-generator' );
+				$insight_tone = 'healthy';
+			} else {
+				$insight_copy = sprintf(
+					/* translators: %d: estimated days remaining at current usage pace. */
+					_n(
+						'At your current pace, your remaining credits should last about %d more day.',
+						'At your current pace, your remaining credits should last about %d more days.',
+						max( 1, intval( $estimated_days_remaining ) ),
+						'beepbeep-ai-alt-text-generator'
+					),
+					max( 1, intval( $estimated_days_remaining ) )
+				);
+				$insight_tone = $is_low_credits ? 'warning' : 'healthy';
+			}
+		} elseif ( $is_low_credits ) {
+			$insight_copy = __( 'You are getting close to your monthly limit.', 'beepbeep-ai-alt-text-generator' );
+			$insight_tone = 'warning';
+		} elseif ( $credits_used <= 0 || $usage_percent <= 25 ) {
+			$insight_copy = __( 'You still have plenty of credits available this cycle.', 'beepbeep-ai-alt-text-generator' );
+			$insight_tone = 'healthy';
+		} else {
+			$insight_copy = __( 'Your current usage is tracking comfortably for this cycle.', 'beepbeep-ai-alt-text-generator' );
+			$insight_tone = 'healthy';
+		}
+
+		$automation_copy = $is_pro_plan
+			? __( 'On-upload automation is available in Settings and can keep new uploads covered between manual cleanup passes.', 'beepbeep-ai-alt-text-generator' )
+			: __( 'Growth can keep new uploads optimized automatically, reducing manual work each month.', 'beepbeep-ai-alt-text-generator' );
+
+		if ( $is_pro_plan ) {
+			$upgrade_context = __( 'Your current plan supports automation for future uploads.', 'beepbeep-ai-alt-text-generator' );
+			$upgrade_eyebrow = __( 'Current plan', 'beepbeep-ai-alt-text-generator' );
+			$upgrade_title = __( 'Keep future uploads covered', 'beepbeep-ai-alt-text-generator' );
+			$upgrade_description = $missing_images > 0
+				? sprintf(
+					/* translators: %s: count of images still missing ALT text. */
+					__( 'Use bulk tools to clear the remaining %s images faster, then let automation keep new uploads from rebuilding the backlog.', 'beepbeep-ai-alt-text-generator' ),
+					number_format_i18n( $missing_images )
+				)
+				: __( 'Review your on-upload automation settings so new media keeps flowing through without another manual scan.', 'beepbeep-ai-alt-text-generator' );
+			$upgrade_cta_label = __( 'Open automation settings', 'beepbeep-ai-alt-text-generator' );
+			$upgrade_cta_type = 'link';
+			$upgrade_cta_url = $automation_settings_url;
+			$upgrade_footer = __( 'Growth automation is already available on your current plan.', 'beepbeep-ai-alt-text-generator' );
+		} else {
+			if ( $is_out_of_credits ) {
+				$upgrade_context = __( 'You have reached your plan limit. Upgrade to continue.', 'beepbeep-ai-alt-text-generator' );
+			} elseif ( $is_low_credits ) {
+				$upgrade_context = __( 'You are running low on credits this cycle.', 'beepbeep-ai-alt-text-generator' );
+			} elseif ( $credits_used > 0 && $credits_remaining > 0 ) {
+				$upgrade_context = sprintf(
+					/* translators: %s: credits used this cycle. */
+					__( 'You have used %s credits this cycle. Scale without interruption.', 'beepbeep-ai-alt-text-generator' ),
+					number_format_i18n( $credits_used )
+				);
+			} else {
+				$upgrade_context = __( 'Automate your ALT workflow before usage becomes manual overhead.', 'beepbeep-ai-alt-text-generator' );
+			}
+
+			$upgrade_eyebrow = __( 'Growth · £12.99/month', 'beepbeep-ai-alt-text-generator' );
+			$upgrade_title = __( 'Automate your ALT workflow', 'beepbeep-ai-alt-text-generator' );
+			$upgrade_description = $missing_images > 0
+				? sprintf(
+					/* translators: %s: count of images still missing ALT text. */
+					__( 'Automatically generate ALT text for future uploads and move through the remaining %s images faster.', 'beepbeep-ai-alt-text-generator' ),
+					number_format_i18n( $missing_images )
+				)
+				: __( 'Automatically generate ALT text for future uploads, optimize larger libraries faster, and reduce manual scanning each month.', 'beepbeep-ai-alt-text-generator' );
+			$upgrade_cta_label = __( 'Upgrade to Growth', 'beepbeep-ai-alt-text-generator' );
+			$upgrade_cta_type = 'upgrade';
+			$upgrade_cta_url = $billing_portal_url;
+			$upgrade_footer = __( '£12.99/month • Cancel anytime', 'beepbeep-ai-alt-text-generator' );
+		}
+
+		return [
+			'creditsUsed'            => $credits_used,
+			'creditsLimit'           => $credits_limit,
+			'creditsRemaining'       => $credits_remaining,
+			'daysUntilReset'         => $days_until_reset,
+			'averageCreditsPerDay'   => $average_credits_per_day,
+			'estimatedDaysRemaining' => $estimated_days_remaining,
+			'usagePercent'           => $usage_percent,
+			'isLowCredits'           => $is_low_credits,
+			'isOutOfCredits'         => $is_out_of_credits,
+			'isProPlan'              => $is_pro_plan,
+			'hasUsageActivity'       => (bool) $has_usage_activity,
+			'hasFilteredResults'     => (bool) $has_filtered_results,
+			'planLabel'              => $plan_label,
+			'summaryTone'            => $summary_tone,
+			'summaryPositionCopy'    => $summary_position_copy,
+			'summaryRemainingCopy'   => $summary_remaining_copy,
+			'summaryResetCopy'       => $summary_reset_copy,
+			'insightCopy'            => $insight_copy,
+			'insightTone'            => $insight_tone,
+			'automationCopy'         => $automation_copy,
+			'automationUrl'          => $automation_settings_url,
+			'upgradeContext'         => $upgrade_context,
+			'upgradeEyebrow'         => $upgrade_eyebrow,
+			'upgradeTitle'           => $upgrade_title,
+			'upgradeDescription'     => $upgrade_description,
+			'upgradeBenefits'        => [
+				__( 'Automatic ALT generation for future uploads', 'beepbeep-ai-alt-text-generator' ),
+				__( 'Bulk optimization', 'beepbeep-ai-alt-text-generator' ),
+				__( 'Priority processing', 'beepbeep-ai-alt-text-generator' ),
+				__( 'WooCommerce image support', 'beepbeep-ai-alt-text-generator' ),
+				__( 'Multilingual SEO support', 'beepbeep-ai-alt-text-generator' ),
+			],
+			'upgradeCtaLabel'        => $upgrade_cta_label,
+			'upgradeCtaType'         => $upgrade_cta_type,
+			'upgradeCtaUrl'          => $upgrade_cta_url,
+			'upgradeFooter'          => $upgrade_footer,
+		];
+	}
+
+	/**
+	 * Calculate a rough current-cycle usage pace.
+	 *
+	 * @param int $credits_used Credits used this cycle.
+	 * @param int $reset_timestamp Reset timestamp.
+	 * @param int $days_until_reset Days remaining in current cycle.
+	 * @return array{average:float,elapsed_days:int}
+	 */
+	private static function calculate_average_credits_per_day($credits_used, $reset_timestamp, $days_until_reset) {
+		$credits_used = max( 0, intval( $credits_used ) );
+		if ( $credits_used <= 0 ) {
+			return [
+				'average'      => 0.0,
+				'elapsed_days' => 0,
+			];
+		}
+
+		$current_timestamp = (int) current_time( 'timestamp' );
+		$elapsed_days = 0;
+		$reset_timestamp = absint( $reset_timestamp );
+
+		if ( $reset_timestamp > $current_timestamp ) {
+			$cycle_start_timestamp = strtotime( '-1 month', $reset_timestamp );
+			if ( $cycle_start_timestamp && $cycle_start_timestamp < $current_timestamp ) {
+				$elapsed_days = max( 1, (int) ceil( ( $current_timestamp - $cycle_start_timestamp ) / DAY_IN_SECONDS ) );
+			}
+		}
+
+		if ( $elapsed_days <= 0 && $days_until_reset > 0 ) {
+			$elapsed_days = max( 1, 30 - max( 0, intval( $days_until_reset ) ) );
+		}
+
+		if ( $elapsed_days <= 0 ) {
+			return [
+				'average'      => 0.0,
+				'elapsed_days' => 0,
+			];
+		}
+
+		return [
+			'average'      => round( $credits_used / $elapsed_days, 2 ),
+			'elapsed_days' => $elapsed_days,
+		];
+	}
+
+	/**
+	 * Build human-readable reset copy.
+	 *
+	 * @param int    $days_until_reset Days until reset.
+	 * @param string $reset_date Fallback reset date.
+	 * @return string
+	 */
+	private static function build_reset_copy($days_until_reset, $reset_date) {
+		$days_until_reset = max( 0, intval( $days_until_reset ) );
+		$reset_date = sanitize_text_field( $reset_date );
+
+		if ( $days_until_reset > 0 ) {
+			return sprintf(
+				/* translators: %d: days until the plan resets. */
+				_n(
+					'Your plan resets in %d day.',
+					'Your plan resets in %d days.',
+					$days_until_reset,
+					'beepbeep-ai-alt-text-generator'
+				),
+				$days_until_reset
+			);
+		}
+
+		if ( '' !== $reset_date ) {
+			return sprintf(
+				/* translators: %s: reset date. */
+				__( 'Your plan resets on %s.', 'beepbeep-ai-alt-text-generator' ),
+				$reset_date
+			);
+		}
+
+		return __( 'Your plan resets with the next billing cycle.', 'beepbeep-ai-alt-text-generator' );
+	}
+
+	/**
+	 * Usage source options for the activity filter.
+	 *
+	 * @return array<string,string>
+	 */
+	private static function get_source_options() {
+		return [
+			''                => __( 'All sources', 'beepbeep-ai-alt-text-generator' ),
+			'manual'          => Credit_Usage_Logger::format_source_label( 'manual' ),
+			'dashboard'       => Credit_Usage_Logger::format_source_label( 'dashboard' ),
+			'library'         => Credit_Usage_Logger::format_source_label( 'library' ),
+			'bulk'            => Credit_Usage_Logger::format_source_label( 'bulk' ),
+			'bulk-regenerate' => Credit_Usage_Logger::format_source_label( 'bulk-regenerate' ),
+			'upload'          => Credit_Usage_Logger::format_source_label( 'upload' ),
+			'queue'           => Credit_Usage_Logger::format_source_label( 'queue' ),
+			'ajax'            => Credit_Usage_Logger::format_source_label( 'ajax' ),
+			'onboarding'      => Credit_Usage_Logger::format_source_label( 'onboarding' ),
+			'metadata'        => Credit_Usage_Logger::format_source_label( 'metadata' ),
+			'update'          => Credit_Usage_Logger::format_source_label( 'update' ),
+			'save'            => Credit_Usage_Logger::format_source_label( 'save' ),
+		];
 	}
 
 	/**

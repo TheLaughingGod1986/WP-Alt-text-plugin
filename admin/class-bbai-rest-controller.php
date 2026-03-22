@@ -81,6 +81,33 @@ class REST_Controller {
 
 		register_rest_route(
 			'bbai/v1',
+			'/review/(?P<id>\d+)',
+			[
+				'methods'             => 'POST',
+				'callback'            => [ $this, 'handle_mark_reviewed' ],
+				'permission_callback' => [ $this, 'can_edit_attachment' ],
+				'args'                => [
+					'id' => [
+						'required'          => true,
+						'sanitize_callback' => 'absint',
+						'validate_callback' => [ __CLASS__, 'validate_positive_int_arg' ],
+					],
+				],
+			]
+		);
+
+		register_rest_route(
+			'bbai/v1',
+			'/review',
+			[
+				'methods'             => 'POST',
+				'callback'            => [ $this, 'handle_mark_reviewed_batch' ],
+				'permission_callback' => [ $this, 'can_edit_media' ],
+			]
+		);
+
+		register_rest_route(
+			'bbai/v1',
 			'/list',
 			[
 				'methods'             => 'GET',
@@ -510,7 +537,7 @@ class REST_Controller {
 	 */
 	public static function sanitize_scope_arg( $value ) {
 		$scope = is_scalar( $value ) ? sanitize_key( (string) $value ) : '';
-		return in_array( $scope, [ 'missing', 'all' ], true ) ? $scope : 'missing';
+		return in_array( $scope, [ 'missing', 'all', 'needs-review' ], true ) ? $scope : 'missing';
 	}
 
 	/**
@@ -849,12 +876,75 @@ class REST_Controller {
 			$review_result
 		);
 
+		$approval = $this->core->mark_attachment_reviewed( $id );
+
 		return [
 			'id'     => $id,
 			'alt'    => $alt_sanitized,
 			'meta'   => $this->core->prepare_attachment_snapshot( $id ),
-			'stats'  => $this->core->get_media_stats(),
+			'stats'  => $this->core->get_dashboard_stats_payload( true ),
+			'approved' => ! empty( $approval['approved'] ),
+			'approved_at' => $approval['approved_at'] ?? '',
 			'source' => 'manual-edit',
+		];
+	}
+
+	/**
+	 * Mark a single attachment as reviewed and approved by the user.
+	 *
+	 * @param \WP_REST_Request $request REST request instance.
+	 * @return array|\WP_Error
+	 */
+	public function handle_mark_reviewed( \WP_REST_Request $request ) {
+		$id = absint( $request->get_param( 'id' ) );
+		if ( $id <= 0 ) {
+			return new \WP_Error( 'invalid_attachment', __( 'Invalid attachment ID.', 'beepbeep-ai-alt-text-generator' ), [ 'status' => 400 ] );
+		}
+
+		$result = $this->core->mark_attachment_reviewed( $id );
+		if ( empty( $result['approved'] ) ) {
+			return new \WP_Error( 'invalid_alt', __( 'ALT text must exist before it can be approved.', 'beepbeep-ai-alt-text-generator' ), [ 'status' => 400 ] );
+		}
+
+		return [
+			'id' => $id,
+			'alt' => $result['alt'] ?? '',
+			'approved' => true,
+			'approved_at' => $result['approved_at'] ?? '',
+			'meta' => $this->core->prepare_attachment_snapshot( $id ),
+			'stats' => $this->core->get_dashboard_stats_payload( true ),
+		];
+	}
+
+	/**
+	 * Mark multiple attachments as reviewed and approved by the user.
+	 *
+	 * @param \WP_REST_Request $request REST request instance.
+	 * @return array|\WP_Error
+	 */
+	public function handle_mark_reviewed_batch( \WP_REST_Request $request ) {
+		$ids_param = $request->get_param( 'ids' );
+		$ids = is_array( $ids_param ) ? array_map( 'absint', $ids_param ) : [];
+		$ids = array_values(
+			array_filter(
+				array_unique( $ids ),
+				static function ( int $attachment_id ): bool {
+					return $attachment_id > 0 && current_user_can( 'edit_post', $attachment_id );
+				}
+			)
+		);
+
+		if ( empty( $ids ) ) {
+			return new \WP_Error( 'invalid_ids', __( 'Select at least one image to mark as reviewed.', 'beepbeep-ai-alt-text-generator' ), [ 'status' => 400 ] );
+		}
+
+		$result = $this->core->mark_attachments_reviewed( $ids );
+
+		return [
+			'approved_ids' => $result['approved_ids'] ?? [],
+			'approved_count' => (int) ( $result['approved_count'] ?? 0 ),
+			'approved_at' => $result['approved_at'] ?? '',
+			'stats' => $this->core->get_dashboard_stats_payload( true ),
 		];
 	}
 
@@ -866,7 +956,10 @@ class REST_Controller {
 	 */
 	public function handle_list( \WP_REST_Request $request ) {
 		$scope_input = $request->get_param( 'scope' );
-		$scope = ( is_string( $scope_input ) && 'all' === sanitize_key( $scope_input ) ) ? 'all' : 'missing';
+		$scope       = is_string( $scope_input ) ? sanitize_key( $scope_input ) : 'missing';
+		if ( ! in_array( $scope, [ 'missing', 'all', 'needs-review' ], true ) ) {
+			$scope = 'missing';
+		}
 		$legacy_limit_input = $request->get_param( 'limit' );
 		$per_page_input     = $request->get_param( 'per_page' );
 		$page_input         = $request->get_param( 'page' );
@@ -885,9 +978,13 @@ class REST_Controller {
 		$include_preview = filter_var( $include_preview_raw, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
 		$preview_limit = max( 1, min( 5, absint( $request->get_param( 'preview_limit' ) ?: 5 ) ) );
 
-		$ids = ( 'missing' === $scope )
-			? $this->core->get_missing_attachment_ids( $per_page, $offset )
-			: $this->core->get_all_attachment_ids( $per_page, $offset );
+		if ( 'all' === $scope ) {
+			$ids = $this->core->get_all_attachment_ids( $per_page, $offset );
+		} elseif ( 'needs-review' === $scope ) {
+			$ids = $this->core->get_needs_review_attachment_ids( $per_page, $offset );
+		} else {
+			$ids = $this->core->get_missing_attachment_ids( $per_page, $offset );
+		}
 
 		$response = [
 			'ids' => array_map( 'intval', $ids ),
@@ -980,11 +1077,7 @@ class REST_Controller {
 	public function handle_stats( \WP_REST_Request $request ) {
 		$fresh_input = $request->get_param( 'fresh' );
 		$fresh = filter_var( $fresh_input, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
-		if ( $fresh === true ) {
-			$this->core->invalidate_stats_cache();
-		}
-
-		return $this->core->get_media_stats();
+		return $this->core->get_dashboard_stats_payload( $fresh === true );
 	}
 
 	/**
