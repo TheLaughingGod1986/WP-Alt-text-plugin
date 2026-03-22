@@ -3733,7 +3733,7 @@ bbaiRunWithJQuery(function($) {
             model.subtext = __('ALT generation is paused until your allowance resets or you upgrade.', 'beepbeep-ai-alt-text-generator');
             model.nextStep = __('Upgrade to continue optimizing new images.', 'beepbeep-ai-alt-text-generator');
             model.primaryAction = createAction(
-                __('Upgrade', 'beepbeep-ai-alt-text-generator'),
+                __('Turn on automatic optimisation', 'beepbeep-ai-alt-text-generator'),
                 '',
                 {
                     action: 'show-upgrade-modal'
@@ -3789,7 +3789,7 @@ bbaiRunWithJQuery(function($) {
             } else {
                 model.nextStep = __('Upgrade to keep optimizing without interruption.', 'beepbeep-ai-alt-text-generator');
                 model.primaryAction = createAction(
-                    __('Upgrade', 'beepbeep-ai-alt-text-generator'),
+                    __('Turn on automatic optimisation', 'beepbeep-ai-alt-text-generator'),
                     '',
                     {
                         action: 'show-upgrade-modal'
@@ -3923,7 +3923,7 @@ bbaiRunWithJQuery(function($) {
             createAction(__('Unlock automatic optimisation', 'beepbeep-ai-alt-text-generator'), '', { action: 'show-upgrade-modal' })
         ];
         model.loopSupportLine = '';
-        model.upgradeTensionLine = __('New uploads won’t be optimised automatically on the free plan', 'beepbeep-ai-alt-text-generator');
+        model.upgradeTensionLine = __('New uploads will stop being optimised automatically on the free plan', 'beepbeep-ai-alt-text-generator');
 
         return model;
     }
@@ -4185,7 +4185,6 @@ bbaiRunWithJQuery(function($) {
         var loopScanNode = hero.querySelector('[data-bbai-hero-loop-scan]');
         var loopSettingsNode = hero.querySelector('[data-bbai-hero-loop-settings]');
         var loopUpgradeNode = hero.querySelector('[data-bbai-hero-loop-upgrade]');
-        var loopSupportNode = hero.querySelector('[data-bbai-hero-loop-support]');
         var loopTensionNode = hero.querySelector('[data-bbai-hero-loop-tension]');
 
         function renderAction(itemNode, controlNode, helperNode, helperId, actionConfig) {
@@ -4278,10 +4277,6 @@ bbaiRunWithJQuery(function($) {
             renderLoopAction(loopSettingsNode, loopActions[1] || null);
             renderLoopAction(loopUpgradeNode, loopActions[2] || null);
 
-            if (loopSupportNode) {
-                loopSupportNode.textContent = model.loopSupportLine || '';
-                loopSupportNode.hidden = !model.loopSupportLine;
-            }
             if (loopTensionNode) {
                 loopTensionNode.textContent = model.upgradeTensionLine || '';
                 loopTensionNode.hidden = !model.upgradeTensionLine;
@@ -5582,7 +5577,7 @@ bbaiRunWithJQuery(function($) {
                 upgradeLeadNode.textContent = __('Unlock full site optimisation', 'beepbeep-ai-alt-text-generator');
             }
             if (upgradeSubNode) {
-                upgradeSubNode.textContent = __('New uploads won’t be optimised automatically on the free plan', 'beepbeep-ai-alt-text-generator');
+                upgradeSubNode.textContent = __('New uploads will stop being optimised automatically on the free plan', 'beepbeep-ai-alt-text-generator');
             }
         }
 
@@ -5610,9 +5605,9 @@ bbaiRunWithJQuery(function($) {
             } else {
                 primaryActionNode.hidden = false;
                 primaryActionNode.className = 'bbai-command-action bbai-command-action--primary';
-                primaryActionNode.textContent = __('Upgrade', 'beepbeep-ai-alt-text-generator');
+                primaryActionNode.textContent = __('Turn on automatic optimisation', 'beepbeep-ai-alt-text-generator');
                 setInteractiveControl(primaryActionNode, {
-                    label: __('Upgrade', 'beepbeep-ai-alt-text-generator'),
+                    label: __('Turn on automatic optimisation', 'beepbeep-ai-alt-text-generator'),
                     action: 'show-upgrade-modal',
                     href: '#',
                     removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']

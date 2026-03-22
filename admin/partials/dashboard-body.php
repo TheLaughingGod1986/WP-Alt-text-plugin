@@ -285,7 +285,7 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
     }
 
     $bbai_plan_primary_action = $bbai_build_action(
-        $isProPlan ? __('Review usage', 'beepbeep-ai-alt-text-generator') : __('Upgrade', 'beepbeep-ai-alt-text-generator'),
+        $isProPlan ? __('Review usage', 'beepbeep-ai-alt-text-generator') : __('Turn on automatic optimisation', 'beepbeep-ai-alt-text-generator'),
         $isProPlan
             ? [
                 'href' => $bbai_usage_url,
@@ -293,7 +293,7 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
             ]
             : [
                 'action' => 'show-upgrade-modal',
-                'aria_label' => __('Upgrade plan', 'beepbeep-ai-alt-text-generator'),
+                'aria_label' => __('Turn on automatic optimisation', 'beepbeep-ai-alt-text-generator'),
             ]
     );
 
@@ -595,7 +595,7 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
                                 <span class="bbai-command-plan__upgrade-sub" data-bbai-plan-upgrade-sub><?php esc_html_e('Or upgrade for unlimited optimisation.', 'beepbeep-ai-alt-text-generator'); ?></span>
                             <?php else : ?>
                                 <span class="bbai-command-plan__upgrade-lead" data-bbai-plan-upgrade-lead><?php esc_html_e('Unlock full site optimisation', 'beepbeep-ai-alt-text-generator'); ?></span>
-                                <span class="bbai-command-plan__upgrade-sub" data-bbai-plan-upgrade-sub><?php esc_html_e('New uploads won’t be optimised automatically on the free plan', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                <span class="bbai-command-plan__upgrade-sub" data-bbai-plan-upgrade-sub><?php esc_html_e('New uploads will stop being optimised automatically on the free plan', 'beepbeep-ai-alt-text-generator'); ?></span>
                             <?php endif; ?>
                         </p>
                         <div class="bbai-command-plan__actions">

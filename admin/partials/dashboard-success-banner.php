@@ -124,10 +124,10 @@ if ($bbai_is_first_run) {
     $bbai_hero_subtext = __('ALT generation is paused until your allowance resets or you upgrade.', 'beepbeep-ai-alt-text-generator');
     $bbai_hero_next_step = __('Upgrade to continue optimizing new images.', 'beepbeep-ai-alt-text-generator');
     $bbai_primary_action = $bbai_create_action(
-        __('Upgrade', 'beepbeep-ai-alt-text-generator'),
+        __('Turn on automatic optimisation', 'beepbeep-ai-alt-text-generator'),
         [
             'action' => 'show-upgrade-modal',
-            'aria_label' => __('Upgrade to continue optimizing new images', 'beepbeep-ai-alt-text-generator'),
+            'aria_label' => __('Turn on automatic optimisation', 'beepbeep-ai-alt-text-generator'),
         ]
     );
     $bbai_secondary_action = $bbai_create_action(
@@ -172,10 +172,10 @@ if ($bbai_is_first_run) {
     } else {
         $bbai_hero_next_step = __('Upgrade to keep optimizing without interruption.', 'beepbeep-ai-alt-text-generator');
         $bbai_primary_action = $bbai_create_action(
-            __('Upgrade', 'beepbeep-ai-alt-text-generator'),
+            __('Turn on automatic optimisation', 'beepbeep-ai-alt-text-generator'),
             [
                 'action' => 'show-upgrade-modal',
-                'aria_label' => __('Upgrade to keep optimizing without interruption', 'beepbeep-ai-alt-text-generator'),
+                'aria_label' => __('Turn on automatic optimisation', 'beepbeep-ai-alt-text-generator'),
             ]
         );
         $bbai_secondary_action = $bbai_create_action(
@@ -347,7 +347,6 @@ $bbai_tertiary_attrs = '' !== $bbai_tertiary_label ? $bbai_build_action_attrs($b
                         <p class="bbai-dashboard-hero__note" data-bbai-hero-note<?php echo '' !== $bbai_hero_note ? '' : ' hidden'; ?>><?php echo esc_html($bbai_hero_note); ?></p>
                         <div class="bbai-dashboard-hero__loop" data-bbai-hero-loop hidden>
                             <p class="bbai-dashboard-hero__loop-label"><?php esc_html_e('Stay ahead in search', 'beepbeep-ai-alt-text-generator'); ?></p>
-                            <p class="bbai-dashboard-hero__loop-support" data-bbai-hero-loop-support hidden></p>
                             <div class="bbai-dashboard-hero__loop-actions">
                                 <a href="#" class="bbai-dashboard-hero__loop-link bbai-dashboard-hero__loop-link--primary" data-bbai-hero-loop-scan><?php esc_html_e('Check for new SEO issues', 'beepbeep-ai-alt-text-generator'); ?></a>
                                 <a href="<?php echo esc_url($bbai_settings_url); ?>" class="bbai-dashboard-hero__loop-link bbai-dashboard-hero__loop-link--secondary" data-bbai-hero-loop-settings><?php esc_html_e('Auto-optimise future uploads', 'beepbeep-ai-alt-text-generator'); ?></a>
