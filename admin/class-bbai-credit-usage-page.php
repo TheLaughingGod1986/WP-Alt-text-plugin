@@ -10,6 +10,8 @@ if (!defined('ABSPATH')) {
 	exit;
 }
 
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/banner-system.php';
+
 class Credit_Usage_Page {
 
 	/**
@@ -126,7 +128,29 @@ class Credit_Usage_Page {
 		$billing_portal_url
 	);
 
-	// Get backend user activity (SEO Heroes - shows who's contributing most)
+	$bbai_cycle_range         = self::get_billing_cycle_local_mysql_range( $current_usage );
+	$bbai_cycle_source_rows   = Credit_Usage_Logger::get_credit_totals_by_source(
+		[
+			'date_from' => $bbai_cycle_range['from'],
+			'date_to'   => $bbai_cycle_range['to'],
+			'source'    => null,
+		]
+	);
+	$bbai_cycle_site_usage    = Credit_Usage_Logger::get_site_usage(
+		[
+			'date_from' => $bbai_cycle_range['from'],
+			'date_to'   => $bbai_cycle_range['to'],
+			'source'    => null,
+		]
+	);
+	$usage_insights           = self::build_usage_insights_payload(
+		$current_usage,
+		$usage_surface,
+		$bbai_cycle_source_rows,
+		$bbai_cycle_site_usage
+	);
+
+	// Optional backend contributor snapshot (Usage page: "Top contributors").
 	$backend_user_activity = [];
 	try {
 		$api_client = \BeepBeepAI\AltTextGenerator\Api_Client_V2::get_instance();
@@ -238,6 +262,29 @@ class Credit_Usage_Page {
 	 *
 	 * @return int
 	 */
+	/**
+	 * ALT coverage snapshot for shared status-banner (aligned with Dashboard / Library).
+	 *
+	 * @return array{missing:int,weak:int,optimized:int,total:int}
+	 */
+	private static function get_library_coverage_counts_for_banner(): array {
+		if ( ! function_exists( 'bbai_get_attention_counts' ) ) {
+			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/banner-system.php';
+		}
+		$a   = bbai_get_attention_counts();
+		$tot = max(
+			$a['total_images'],
+			$a['missing'] + $a['needs_review'] + $a['optimized_count']
+		);
+
+		return [
+			'missing'   => $a['missing'],
+			'weak'      => $a['needs_review'],
+			'optimized' => $a['optimized_count'],
+			'total'     => $tot,
+		];
+	}
+
 	private static function get_missing_images_count() {
 		global $wpdb;
 
@@ -277,6 +324,19 @@ class Credit_Usage_Page {
 	 * @return array<string,mixed>
 	 */
 	private static function build_usage_surface_state($current_usage, $missing_images, $has_usage_activity, $has_filtered_results, $automation_settings_url, $billing_portal_url) {
+		$lib_counts = self::get_library_coverage_counts_for_banner();
+		$bc_miss    = (int) $lib_counts['missing'];
+		$bc_weak    = (int) $lib_counts['weak'];
+		$bc_opt     = (int) $lib_counts['optimized'];
+		$bc_tot     = (int) $lib_counts['total'];
+		if ($bc_tot <= 0) {
+			$bc_tot = $bc_opt + $bc_weak + $bc_miss;
+		}
+		if ($bc_tot <= 0 && $missing_images > 0) {
+			$bc_miss = max($bc_miss, (int) $missing_images);
+			$bc_tot  = $bc_miss;
+		}
+
 		$credits_used = max( 0, intval( $current_usage['used'] ?? 0 ) );
 		$credits_limit = max( 0, intval( $current_usage['limit'] ?? 0 ) );
 		$credits_remaining = isset( $current_usage['remaining'] )
@@ -429,6 +489,11 @@ class Credit_Usage_Page {
 		}
 
 		return [
+			'missingCount'           => max( 0, (int) $missing_images ),
+			'weakCount'              => $bc_weak,
+			'bannerMissingCount'     => $bc_miss,
+			'bannerWeakCount'        => $bc_weak,
+			'bannerTotalImages'      => $bc_tot,
 			'creditsUsed'            => $credits_used,
 			'creditsLimit'           => $credits_limit,
 			'creditsRemaining'       => $credits_remaining,
@@ -546,6 +611,226 @@ class Credit_Usage_Page {
 		}
 
 		return __( 'Your plan resets with the next billing cycle.', 'beepbeep-ai-alt-text-generator' );
+	}
+
+	/**
+	 * Approximate local MySQL datetimes for the current billing window (matches pace logic).
+	 *
+	 * @param array<string,mixed> $current_usage Quota row.
+	 * @return array{from:string,to:string}
+	 */
+	private static function get_billing_cycle_local_mysql_range( array $current_usage ): array {
+		$reset_ts   = absint( $current_usage['reset_timestamp'] ?? 0 );
+		$days_until = max( 0, (int) ( $current_usage['days_until_reset'] ?? 0 ) );
+		$now_ts     = (int) current_time( 'timestamp' );
+
+		$start_ts = null;
+
+		if ( $reset_ts > $now_ts ) {
+			$cycle_start_ts = strtotime( '-1 month', $reset_ts );
+			if ( $cycle_start_ts && $cycle_start_ts < $now_ts ) {
+				$start_ts = (int) $cycle_start_ts;
+			}
+		}
+
+		if ( null === $start_ts && $days_until > 0 ) {
+			$elapsed_days = max( 1, 30 - $days_until );
+			$start_ts     = $now_ts - ( $elapsed_days * (int) DAY_IN_SECONDS );
+		}
+
+		if ( null === $start_ts ) {
+			$start_ts = $now_ts - (int) DAY_IN_SECONDS;
+		}
+
+		return [
+			'from' => date( 'Y-m-d H:i:s', $start_ts ),
+			'to'   => date( 'Y-m-d H:i:s', $now_ts ),
+		];
+	}
+
+	/**
+	 * @param array<string,mixed> $current_usage
+	 * @param array<string,mixed> $surface       From build_usage_surface_state().
+	 * @param list<array{source:string,total_credits:int,event_count:int}> $by_source
+	 * @param array<string,mixed> $cycle_site_usage From get_site_usage() for the cycle window.
+	 * @return array{forecast:string,driver:string,recommend:string,tone:string,chips:list<array{label:string}>}
+	 */
+	private static function build_usage_insights_payload( array $current_usage, array $surface, array $by_source, array $cycle_site_usage ): array {
+		$credits_used      = max( 0, (int) ( $current_usage['used'] ?? 0 ) );
+		$credits_limit     = max( 1, (int) ( $current_usage['limit'] ?? 1 ) );
+		$credits_remaining = isset( $current_usage['remaining'] )
+			? max( 0, (int) $current_usage['remaining'] )
+			: max( 0, $credits_limit - $credits_used );
+		$days_until_reset  = max( 0, (int) ( $current_usage['days_until_reset'] ?? 0 ) );
+		$usage_percent     = min( 100, max( 0, (int) ( $surface['usagePercent'] ?? 0 ) ) );
+		$is_pro            = ! empty( $surface['isProPlan'] );
+		$is_out            = 0 === $credits_remaining;
+		$is_low            = ! empty( $surface['isLowCredits'] );
+
+		$pace                  = self::calculate_average_credits_per_day(
+			$credits_used,
+			(int) ( $current_usage['reset_timestamp'] ?? 0 ),
+			$days_until_reset
+		);
+		$average_per_day       = (float) $pace['average'];
+		$elapsed_days          = max( 0, (int) $pace['elapsed_days'] );
+		$estimated_days_left   = ( $average_per_day > 0 && $credits_remaining > 0 )
+			? (int) floor( $credits_remaining / $average_per_day )
+			: null;
+		$has_predictive_signal = $average_per_day > 0 && $credits_used >= 5 && $elapsed_days >= 3;
+
+		$runs_out_before_reset = false;
+		if ( ! $is_out && $has_predictive_signal && null !== $estimated_days_left && $days_until_reset > 0 ) {
+			$runs_out_before_reset = $estimated_days_left < $days_until_reset;
+		}
+
+		// 1) Forecast
+		if ( $is_out ) {
+			$forecast = __( 'Credits are exhausted for this cycle; usage will resume after your plan resets.', 'beepbeep-ai-alt-text-generator' );
+			$tone     = 'danger';
+		} elseif ( $runs_out_before_reset ) {
+			$forecast = __( 'At your current pace, your current plan may run out before reset.', 'beepbeep-ai-alt-text-generator' );
+			$tone     = 'warning';
+		} elseif ( $has_predictive_signal && null !== $estimated_days_left && $credits_remaining > 0 ) {
+			if ( $days_until_reset > 0 && $estimated_days_left >= $days_until_reset ) {
+				$forecast = __( 'At your current pace, your remaining credits should last through this billing cycle.', 'beepbeep-ai-alt-text-generator' );
+				$tone     = 'healthy';
+			} else {
+				$est = max( 1, $estimated_days_left );
+				$forecast = sprintf(
+					/* translators: %d: estimated whole days remaining at current pace */
+					_n(
+						'At your current pace, your remaining credits may last about %d more day.',
+						'At your current pace, your remaining credits may last about %d more days.',
+						$est,
+						'beepbeep-ai-alt-text-generator'
+					),
+					$est
+				);
+				$tone = $is_low ? 'warning' : 'healthy';
+			}
+		} elseif ( $credits_used <= 0 ) {
+			$forecast = __( 'No credits have been used yet this cycle. Your allowance is ready when you start optimizing.', 'beepbeep-ai-alt-text-generator' );
+			$tone     = 'healthy';
+		} else {
+			$forecast = __( 'Usage is steady and within plan limits this cycle.', 'beepbeep-ai-alt-text-generator' );
+			$tone     = 'healthy';
+		}
+
+		// 2) Driver summary
+		$logged_total = 0;
+		foreach ( $by_source as $row ) {
+			$logged_total += (int) ( $row['total_credits'] ?? 0 );
+		}
+		$top = isset( $by_source[0] ) && is_array( $by_source[0] ) ? $by_source[0] : null;
+
+		if ( $logged_total < 1 ) {
+			if ( $credits_used > 0 ) {
+				$driver = __( 'Quota usage is tracked on your plan; detailed per-action sources will show here once events are logged locally.', 'beepbeep-ai-alt-text-generator' );
+			} else {
+				$driver = __( 'Once you generate ALT text, this summary highlights where credits are going.', 'beepbeep-ai-alt-text-generator' );
+			}
+		} elseif ( $top && ! empty( $top['source'] ) ) {
+			$bucket = self::map_source_to_usage_driver_bucket( (string) $top['source'] );
+			switch ( $bucket ) {
+				case 'bulk':
+					$driver = __( 'Bulk optimization is driving the highest usage in your logged activity this cycle.', 'beepbeep-ai-alt-text-generator' );
+					break;
+				case 'automation':
+					$driver = __( 'Automation and queued jobs account for most of your logged credit usage this cycle.', 'beepbeep-ai-alt-text-generator' );
+					break;
+				case 'manual':
+					$driver = __( 'Most logged credit usage this cycle came from manual ALT generation in the admin.', 'beepbeep-ai-alt-text-generator' );
+					break;
+				default:
+					$driver = sprintf(
+						/* translators: %s: formatted source label */
+						__( 'Largest logged source this cycle: %s.', 'beepbeep-ai-alt-text-generator' ),
+						Credit_Usage_Logger::format_source_label( (string) $top['source'] )
+					);
+			}
+		} else {
+			$driver = __( 'Usage is spread across several sources this cycle.', 'beepbeep-ai-alt-text-generator' );
+		}
+
+		// 3) Recommendation
+		if ( $is_out ) {
+			$recommend = __( 'Review usage activity below, then upgrade or wait for reset to continue without limits.', 'beepbeep-ai-alt-text-generator' );
+		} elseif ( $runs_out_before_reset ) {
+			$recommend = __( 'If this pace continues, upgrading before reset may avoid interruption.', 'beepbeep-ai-alt-text-generator' );
+		} elseif ( ! $is_pro && ( $is_low || $usage_percent >= 75 ) ) {
+			$recommend = __( 'Upgrade to Growth if you want automatic coverage without monitoring credits closely.', 'beepbeep-ai-alt-text-generator' );
+		} else {
+			$recommend = __( 'Review usage activity below to see which actions are consuming credits fastest.', 'beepbeep-ai-alt-text-generator' );
+		}
+
+		// Optional chips (insight-only; avoid repeating headline quota numbers)
+		$chips = [];
+		if ( $has_predictive_signal && ! $is_out && null !== $estimated_days_left && $estimated_days_left > 0 ) {
+			$chip_days = max( 1, $estimated_days_left );
+			$chips[]   = [
+				'label' => sprintf(
+					/* translators: %d: approximate days */
+					_n(
+						'~%d day at current pace',
+						'~%d days at current pace',
+						$chip_days,
+						'beepbeep-ai-alt-text-generator'
+					),
+					$chip_days
+				),
+			];
+		}
+		if ( $top && $logged_total > 0 ) {
+			$chips[] = [
+				'label' => sprintf(
+					/* translators: %s: human-readable source name */
+					__( 'Top source: %s', 'beepbeep-ai-alt-text-generator' ),
+					Credit_Usage_Logger::format_source_label( (string) $top['source'] )
+				),
+			];
+		}
+		$cycle_images = max( 0, (int) ( $cycle_site_usage['total_images'] ?? 0 ) );
+		if ( $cycle_images > 0 ) {
+			$chips[] = [
+				'label' => sprintf(
+					/* translators: %s: count of distinct images in log */
+					_n(
+						'%s image in activity log (this window)',
+						'%s images in activity log (this window)',
+						$cycle_images,
+						'beepbeep-ai-alt-text-generator'
+					),
+					number_format_i18n( $cycle_images )
+				),
+			];
+		}
+		$chips = array_slice( $chips, 0, 3 );
+
+		return [
+			'forecast'  => $forecast,
+			'driver'    => $driver,
+			'recommend' => $recommend,
+			'tone'      => $tone,
+			'chips'     => $chips,
+		];
+	}
+
+	/**
+	 * Group logger source slugs for driver copy.
+	 */
+	private static function map_source_to_usage_driver_bucket( string $source ): string {
+		$source = sanitize_key( $source );
+		if ( in_array( $source, [ 'bulk', 'bulk-regenerate' ], true ) ) {
+			return 'bulk';
+		}
+		if ( in_array( $source, [ 'upload', 'queue', 'metadata' ], true ) ) {
+			return 'automation';
+		}
+		if ( in_array( $source, [ 'manual', 'library', 'dashboard', 'ajax', 'save', 'update', 'onboarding' ], true ) ) {
+			return 'manual';
+		}
+		return 'other';
 	}
 
 	/**

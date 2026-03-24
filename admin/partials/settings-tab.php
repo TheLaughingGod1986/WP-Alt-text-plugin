@@ -34,12 +34,8 @@ $bbai_settings_debug_url = add_query_arg(
 // Relax gating: allow settings for anyone, but show a soft prompt if not logged in/licensed.
 if (!$bbai_is_authenticated && !$bbai_has_license) :
 ?>
-                <!-- Settings require authentication -->
-                <div class="bbai-settings-page bbai-settings-page--gated">
-                    <div class="bbai-dashboard-header-section bbai-page-section">
-                        <h1 class="bbai-dashboard-title bbai-page-title"><?php esc_html_e('Settings', 'beepbeep-ai-alt-text-generator'); ?></h1>
-                        <p class="bbai-dashboard-subtitle bbai-page-subtitle"><?php esc_html_e('Configure BeepBeep AI and control how ALT text is generated for your media library.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                    </div>
+                <!-- Settings Control Panel (unauthenticated) -->
+                <div class="bbai-container bbai-settings-page bbai-settings-page--gated">
 
                     <?php if ($bbai_can_show_debug_section) : ?>
                     <div class="bbai-settings-section-nav bbai-page-section" role="navigation" aria-label="<?php esc_attr_e('Settings sections', 'beepbeep-ai-alt-text-generator'); ?>">
@@ -63,38 +59,213 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                     }
                     ?>
                     <?php else : ?>
-                    <div class="bbai-settings-required">
-                    <div class="bbai-settings-required-content">
-                        <div class="bbai-settings-required-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                <rect x="4" y="10" width="16" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
-                                <path d="M7 10V7C7 4.23858 9.23858 2 12 2C14.7614 2 17 4.23858 17 7V10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
+                    <!-- Settings Control Panel: hero + 2-column feature grid -->
+
+                    <!-- Hero -->
+                    <div class="bbai-hero bbai-hero--neutral bbai-sg-hero">
+                        <div class="bbai-sg-hero__text">
+                            <h1 class="bbai-sg-hero__title"><?php esc_html_e('Control how BeepBeep AI writes your ALT text', 'beepbeep-ai-alt-text-generator'); ?></h1>
+                            <p class="bbai-sg-hero__desc"><?php esc_html_e('Tune the tone, length, and style for every image. Log in to save your preferences across all your sites.', 'beepbeep-ai-alt-text-generator'); ?></p>
                         </div>
-                        <h2><?php esc_html_e('Authentication Required', 'beepbeep-ai-alt-text-generator'); ?></h2>
-                        <p><?php esc_html_e('Settings are now available to all users. Log in to save settings to your account.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        <p class="bbai-settings-required-note">
-                            <?php esc_html_e('If you continue without logging in, your changes may be stored locally for this site only.', 'beepbeep-ai-alt-text-generator'); ?>
-                        </p>
-                        <div class="bbai-settings-required-actions">
+                        <div class="bbai-sg-hero__actions">
                             <button type="button" class="bbai-btn bbai-btn-primary" data-action="show-auth-modal" data-auth-tab="login">
-                                <svg class="bbai-btn-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                                    <path d="M8 1L15 8L8 15L1 8L8 1Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                                    <circle cx="8" cy="8" r="2" fill="currentColor"/>
-                                </svg>
-                                <span class="bbai-btn__text"><?php esc_html_e('Log In', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                <?php esc_html_e('Log in', 'beepbeep-ai-alt-text-generator'); ?>
                             </button>
-                            <a class="bbai-btn bbai-btn-outline-primary" href="<?php echo esc_url(add_query_arg(['tab' => 'settings'])); ?>">
-                                <?php esc_html_e('Continue without login', 'beepbeep-ai-alt-text-generator'); ?>
+                            <a class="bbai-sg-hero__skip" href="<?php echo esc_url(add_query_arg(['tab' => 'settings'])); ?>">
+                                <?php esc_html_e('Continue with local settings', 'beepbeep-ai-alt-text-generator'); ?>
+                            </a>
+                        </div>
+                    </div><!-- /.bbai-sg-hero -->
+
+                    <div class="bbai-metrics bbai-page-section" aria-label="<?php esc_attr_e('Settings availability', 'beepbeep-ai-alt-text-generator'); ?>">
+                        <div>
+                            <strong><?php esc_html_e('Local controls visible', 'beepbeep-ai-alt-text-generator'); ?></strong>
+                            <span><?php esc_html_e('You can review all settings before login.', 'beepbeep-ai-alt-text-generator'); ?></span>
+                        </div>
+                        <div>
+                            <strong><?php esc_html_e('Cloud sync locked', 'beepbeep-ai-alt-text-generator'); ?></strong>
+                            <span><?php esc_html_e('Log in to sync preferences across sites.', 'beepbeep-ai-alt-text-generator'); ?></span>
+                        </div>
+                        <div>
+                            <strong><?php esc_html_e('Automation available on Growth', 'beepbeep-ai-alt-text-generator'); ?></strong>
+                            <span><?php esc_html_e('Enable upload automation once upgraded.', 'beepbeep-ai-alt-text-generator'); ?></span>
+                        </div>
+                    </div>
+
+                    <!-- 2-column grid -->
+                    <div class="bbai-sg-grid">
+
+                        <!-- LEFT: ALT Generation + Advanced -->
+                        <div class="bbai-sg-main">
+
+                            <!-- ALT Generation section -->
+                            <div class="bbai-card bbai-sg-section">
+                                <div class="bbai-sg-section__head">
+                                    <h2 class="bbai-sg-section__title"><?php esc_html_e('ALT Generation', 'beepbeep-ai-alt-text-generator'); ?></h2>
+                                    <p class="bbai-sg-section__desc"><?php esc_html_e('Control the style and format of every AI-generated description.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                                </div>
+
+                                <div class="bbai-sg-feature-grid">
+
+                                    <div class="bbai-sg-feature">
+                                        <div class="bbai-sg-feature__head">
+                                            <span class="bbai-sg-feature__label"><?php esc_html_e('Description Style', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                            <span class="bbai-sg-feature__lock" title="<?php echo esc_attr(__('Available on Growth plan', 'beepbeep-ai-alt-text-generator')); ?>">
+                                                <svg width="9" height="11" viewBox="0 0 9 11" fill="none" aria-hidden="true"><rect x="0.75" y="4.75" width="7.5" height="5.75" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M2.75 4.75V3.25C2.75 2.283 3.533 1.5 4.5 1.5C5.467 1.5 6.25 2.283 6.25 3.25V4.75" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                                                <?php esc_html_e('Pro', 'beepbeep-ai-alt-text-generator'); ?>
+                                            </span>
+                                        </div>
+                                        <p class="bbai-sg-feature__desc"><?php esc_html_e('Set the AI\'s writing tone — professional, SEO-optimised, or accessibility-focused.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                                        <div class="bbai-sg-feature__default"><?php esc_html_e('Default: Professional', 'beepbeep-ai-alt-text-generator'); ?></div>
+                                        <button type="button" class="bbai-sg-feature__cta" data-action="show-auth-modal" data-auth-tab="login"><?php esc_html_e('Log in to configure', 'beepbeep-ai-alt-text-generator'); ?></button>
+                                    </div>
+
+                                    <div class="bbai-sg-feature">
+                                        <div class="bbai-sg-feature__head">
+                                            <span class="bbai-sg-feature__label"><?php esc_html_e('Text Length', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                            <span class="bbai-sg-feature__lock" title="<?php echo esc_attr(__('Available on Growth plan', 'beepbeep-ai-alt-text-generator')); ?>">
+                                                <svg width="9" height="11" viewBox="0 0 9 11" fill="none" aria-hidden="true"><rect x="0.75" y="4.75" width="7.5" height="5.75" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M2.75 4.75V3.25C2.75 2.283 3.533 1.5 4.5 1.5C5.467 1.5 6.25 2.283 6.25 3.25V4.75" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                                                <?php esc_html_e('Pro', 'beepbeep-ai-alt-text-generator'); ?>
+                                            </span>
+                                        </div>
+                                        <p class="bbai-sg-feature__desc"><?php esc_html_e('Choose how detailed descriptions should be — from a concise phrase to a full sentence.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                                        <div class="bbai-sg-feature__default"><?php esc_html_e('Default: Standard', 'beepbeep-ai-alt-text-generator'); ?></div>
+                                        <button type="button" class="bbai-sg-feature__cta" data-action="show-auth-modal" data-auth-tab="login"><?php esc_html_e('Log in to configure', 'beepbeep-ai-alt-text-generator'); ?></button>
+                                    </div>
+
+                                    <div class="bbai-sg-feature">
+                                        <div class="bbai-sg-feature__head">
+                                            <span class="bbai-sg-feature__label"><?php esc_html_e('SEO Keywords', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                            <span class="bbai-sg-feature__lock" title="<?php echo esc_attr(__('Available on Growth plan', 'beepbeep-ai-alt-text-generator')); ?>">
+                                                <svg width="9" height="11" viewBox="0 0 9 11" fill="none" aria-hidden="true"><rect x="0.75" y="4.75" width="7.5" height="5.75" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M2.75 4.75V3.25C2.75 2.283 3.533 1.5 4.5 1.5C5.467 1.5 6.25 2.283 6.25 3.25V4.75" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                                                <?php esc_html_e('Pro', 'beepbeep-ai-alt-text-generator'); ?>
+                                            </span>
+                                        </div>
+                                        <p class="bbai-sg-feature__desc"><?php esc_html_e('Weave target keywords into descriptions to improve image search rankings.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                                        <div class="bbai-sg-feature__default"><?php esc_html_e('Default: Off', 'beepbeep-ai-alt-text-generator'); ?></div>
+                                        <button type="button" class="bbai-sg-feature__cta" data-action="show-auth-modal" data-auth-tab="login"><?php esc_html_e('Log in to configure', 'beepbeep-ai-alt-text-generator'); ?></button>
+                                    </div>
+
+                                </div><!-- /.bbai-sg-feature-grid -->
+                            </div><!-- /.bbai-sg-section ALT Generation -->
+
+                            <!-- Advanced section -->
+                            <div class="bbai-card bbai-sg-section">
+                                <div class="bbai-sg-section__head">
+                                    <h2 class="bbai-sg-section__title"><?php esc_html_e('Advanced', 'beepbeep-ai-alt-text-generator'); ?></h2>
+                                    <p class="bbai-sg-section__desc"><?php esc_html_e('Fine-tune language and prompt behaviour.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                                </div>
+
+                                <div class="bbai-sg-feature bbai-sg-feature--row">
+                                    <div class="bbai-sg-feature__row-body">
+                                        <div class="bbai-sg-feature__head">
+                                            <span class="bbai-sg-feature__label"><?php esc_html_e('Language', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                            <span class="bbai-sg-feature__lock" title="<?php echo esc_attr(__('Available on Growth plan', 'beepbeep-ai-alt-text-generator')); ?>">
+                                                <svg width="9" height="11" viewBox="0 0 9 11" fill="none" aria-hidden="true"><rect x="0.75" y="4.75" width="7.5" height="5.75" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M2.75 4.75V3.25C2.75 2.283 3.533 1.5 4.5 1.5C5.467 1.5 6.25 2.283 6.25 3.25V4.75" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                                                <?php esc_html_e('Pro', 'beepbeep-ai-alt-text-generator'); ?>
+                                            </span>
+                                        </div>
+                                        <p class="bbai-sg-feature__desc"><?php esc_html_e('Generate descriptions in your audience\'s language.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                                    </div>
+                                    <div class="bbai-sg-feature__row-aside">
+                                        <div class="bbai-sg-feature__default"><?php esc_html_e('English', 'beepbeep-ai-alt-text-generator'); ?></div>
+                                        <button type="button" class="bbai-sg-feature__cta" data-action="show-auth-modal" data-auth-tab="login"><?php esc_html_e('Log in', 'beepbeep-ai-alt-text-generator'); ?></button>
+                                    </div>
+                                </div>
+
+                                <div class="bbai-sg-feature bbai-sg-feature--row">
+                                    <div class="bbai-sg-feature__row-body">
+                                        <div class="bbai-sg-feature__head">
+                                            <span class="bbai-sg-feature__label"><?php esc_html_e('Custom Prompt', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                            <span class="bbai-sg-feature__lock" title="<?php echo esc_attr(__('Available on Growth plan', 'beepbeep-ai-alt-text-generator')); ?>">
+                                                <svg width="9" height="11" viewBox="0 0 9 11" fill="none" aria-hidden="true"><rect x="0.75" y="4.75" width="7.5" height="5.75" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M2.75 4.75V3.25C2.75 2.283 3.533 1.5 4.5 1.5C5.467 1.5 6.25 2.283 6.25 3.25V4.75" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                                                <?php esc_html_e('Pro', 'beepbeep-ai-alt-text-generator'); ?>
+                                            </span>
+                                        </div>
+                                        <p class="bbai-sg-feature__desc"><?php esc_html_e('Add specific instructions for the AI to follow on every image.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                                    </div>
+                                    <div class="bbai-sg-feature__row-aside">
+                                        <div class="bbai-sg-feature__default"><?php esc_html_e('Not set', 'beepbeep-ai-alt-text-generator'); ?></div>
+                                        <button type="button" class="bbai-sg-feature__cta" data-action="show-auth-modal" data-auth-tab="login"><?php esc_html_e('Log in', 'beepbeep-ai-alt-text-generator'); ?></button>
+                                    </div>
+                                </div>
+                            </div><!-- /.bbai-sg-section Advanced -->
+
+                        </div><!-- /.bbai-sg-main -->
+
+                        <!-- RIGHT: Automation + Scan Frequency -->
+                        <div class="bbai-sg-aside">
+
+                            <!-- Automation: primary feature card -->
+                            <div class="bbai-card bbai-sg-section bbai-sg-section--automation">
+                                <div class="bbai-sg-automation__icon" aria-hidden="true">
+                                    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                                        <path d="M10 2.5L18 6.5V10C18 14.14 14.47 17.97 10 19C5.53 17.97 2 14.14 2 10V6.5L10 2.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                                        <path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                                <h2 class="bbai-sg-section__title bbai-sg-automation__title"><?php esc_html_e('Auto-optimise Uploads', 'beepbeep-ai-alt-text-generator'); ?></h2>
+                                <p class="bbai-sg-automation__desc"><?php esc_html_e('Every image you upload gets ALT text instantly — no manual steps, no missed files.', 'beepbeep-ai-alt-text-generator'); ?></p>
+
+                                <div class="bbai-sg-automation__toggle-row">
+                                    <div class="bbai-sg-toggle-visual" aria-hidden="true">
+                                        <span class="bbai-sg-toggle-track"><span class="bbai-sg-toggle-thumb"></span></span>
+                                    </div>
+                                    <span class="bbai-sg-automation__toggle-label"><?php esc_html_e('Auto-generate on upload', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                    <span class="bbai-sg-feature__lock" title="<?php echo esc_attr(__('Available on Growth plan', 'beepbeep-ai-alt-text-generator')); ?>">
+                                        <svg width="9" height="11" viewBox="0 0 9 11" fill="none" aria-hidden="true"><rect x="0.75" y="4.75" width="7.5" height="5.75" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M2.75 4.75V3.25C2.75 2.283 3.533 1.5 4.5 1.5C5.467 1.5 6.25 2.283 6.25 3.25V4.75" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                                        <?php esc_html_e('Growth', 'beepbeep-ai-alt-text-generator'); ?>
+                                    </span>
+                                </div>
+
+                                <button type="button" class="bbai-btn bbai-btn-primary bbai-sg-automation__cta" data-action="show-upgrade-modal">
+                                    <?php esc_html_e('Enable Auto-Optimisation', 'beepbeep-ai-alt-text-generator'); ?>
+                                </button>
+                                <p class="bbai-sg-automation__note">
+                                    <a href="#" data-action="show-auth-modal" data-auth-tab="login"><?php esc_html_e('Log in first', 'beepbeep-ai-alt-text-generator'); ?></a>
+                                    <?php esc_html_e('to access your current plan.', 'beepbeep-ai-alt-text-generator'); ?>
+                                </p>
+                            </div><!-- /.bbai-sg-section--automation -->
+
+                            <!-- Scan Frequency -->
+                            <div class="bbai-card bbai-sg-section bbai-sg-section--loose">
+                                <div class="bbai-sg-feature__head">
+                                    <span class="bbai-sg-feature__label"><?php esc_html_e('Scan Frequency', 'beepbeep-ai-alt-text-generator'); ?></span>
+                                    <span class="bbai-sg-feature__lock" title="<?php echo esc_attr(__('Available on Growth plan', 'beepbeep-ai-alt-text-generator')); ?>">
+                                        <svg width="9" height="11" viewBox="0 0 9 11" fill="none" aria-hidden="true"><rect x="0.75" y="4.75" width="7.5" height="5.75" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M2.75 4.75V3.25C2.75 2.283 3.533 1.5 4.5 1.5C5.467 1.5 6.25 2.283 6.25 3.25V4.75" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                                        <?php esc_html_e('Growth', 'beepbeep-ai-alt-text-generator'); ?>
+                                    </span>
+                                </div>
+                                <p class="bbai-sg-feature__desc"><?php esc_html_e('Schedule automatic scans to catch newly uploaded images missing ALT text.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                                <div class="bbai-sg-feature__default"><?php esc_html_e('Default: Manual only', 'beepbeep-ai-alt-text-generator'); ?></div>
+                                <button type="button" class="bbai-sg-feature__cta" data-action="show-auth-modal" data-auth-tab="login"><?php esc_html_e('Log in to configure', 'beepbeep-ai-alt-text-generator'); ?></button>
+                            </div><!-- /.bbai-sg-section Scan Frequency -->
+
+                        </div><!-- /.bbai-sg-aside -->
+
+                    </div><!-- /.bbai-sg-grid -->
+
+                    <div class="bbai-card bbai-settings-upgrade-block">
+                        <h3 class="bbai-settings-card-title"><?php esc_html_e('Unlock synced settings across sites', 'beepbeep-ai-alt-text-generator'); ?></h3>
+                        <ul>
+                            <li><?php esc_html_e('Sync settings across sites', 'beepbeep-ai-alt-text-generator'); ?></li>
+                            <li><?php esc_html_e('Track optimisation history', 'beepbeep-ai-alt-text-generator'); ?></li>
+                            <li><?php esc_html_e('Access usage and credits', 'beepbeep-ai-alt-text-generator'); ?></li>
+                        </ul>
+                        <div class="bbai-settings-upgrade-block__actions">
+                            <button type="button" class="bbai-btn bbai-btn-primary" data-action="show-auth-modal" data-auth-tab="login">
+                                <?php esc_html_e('Log in', 'beepbeep-ai-alt-text-generator'); ?>
+                            </button>
+                            <a class="bbai-btn bbai-btn-secondary" href="<?php echo esc_url(add_query_arg(['tab' => 'settings'])); ?>">
+                                <?php esc_html_e('Continue with local settings', 'beepbeep-ai-alt-text-generator'); ?>
                             </a>
                         </div>
                     </div>
-                </div>
                     <?php endif; ?>
                 </div>
             <?php else : ?>
             <!-- Settings Page -->
-            <div class="bbai-settings-page">
+            <div class="bbai-container bbai-settings-page">
                 <?php
                     // Pull fresh usage from backend to avoid stale cache in Settings
                     if (isset($this->api_client)) {
@@ -163,13 +334,28 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                 ?>
 
                 <!-- Header Section -->
-                <div class="bbai-dashboard-header-section bbai-page-section">
+                <div class="bbai-hero bbai-hero--neutral bbai-dashboard-header-section bbai-page-section">
                     <h1 class="bbai-dashboard-title bbai-page-title"><?php esc_html_e('Settings', 'beepbeep-ai-alt-text-generator'); ?></h1>
                     <p class="bbai-dashboard-subtitle bbai-page-subtitle"><?php esc_html_e('Configure BeepBeep AI and control how ALT text is generated for your media library.', 'beepbeep-ai-alt-text-generator'); ?></p>
                     <p class="bbai-dashboard-subtitle bbai-settings-disclosure bbai-sub-label">
                         <?php esc_html_e('Alt text generation and review send image data and related context to external AI services over HTTPS. The free plan includes 50 generations per month; paid plans increase your monthly limits.', 'beepbeep-ai-alt-text-generator'); ?>
                         <a href="<?php echo esc_url('https://oppti.dev/privacy'); ?>" target="_blank" rel="noopener"><?php esc_html_e('Privacy Policy', 'beepbeep-ai-alt-text-generator'); ?></a>
                     </p>
+                </div>
+
+                <div class="bbai-metrics bbai-page-section" aria-label="<?php esc_attr_e('Settings account metrics', 'beepbeep-ai-alt-text-generator'); ?>">
+                    <div>
+                        <strong><?php echo esc_html($bbai_plan_label); ?></strong>
+                        <span><?php esc_html_e('current plan', 'beepbeep-ai-alt-text-generator'); ?></span>
+                    </div>
+                    <div>
+                        <strong><?php echo esc_html(number_format_i18n($bbai_used_credits) . ' / ' . number_format_i18n($bbai_total_credits)); ?></strong>
+                        <span><?php esc_html_e('credits used this cycle', 'beepbeep-ai-alt-text-generator'); ?></span>
+                    </div>
+                    <div>
+                        <strong><?php echo esc_html($bbai_reset_label); ?></strong>
+                        <span><?php esc_html_e('next reset', 'beepbeep-ai-alt-text-generator'); ?></span>
+                    </div>
                 </div>
 
                 <?php if ($bbai_can_show_debug_section) : ?>
@@ -195,7 +381,7 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
 
                 <?php if ('general' === $bbai_settings_section) : ?>
                 <!-- Site-Wide Settings Banner -->
-                <div class="bbai-settings-sitewide-banner bbai-page-section">
+                <div class="bbai-alert bbai-alert--info bbai-settings-sitewide-banner bbai-page-section">
                     <svg class="bbai-settings-sitewide-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
                         <circle cx="10" cy="10" r="8" stroke="#3b82f6" stroke-width="2" fill="none"/>
                         <path d="M10 6V10M10 14H10.01" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
@@ -235,8 +421,8 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                         <?php endif; ?>
                     </div>
                     <?php if (!$bbai_is_growth_plan) : ?>
-                    <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-lg" data-action="show-upgrade-modal" data-bbai-tooltip="<?php esc_attr_e('Get 1,000 images/month and advanced features', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="bottom">
-                        <?php esc_html_e('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'); ?>
+                    <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-lg" data-action="show-upgrade-modal" data-bbai-tooltip="<?php esc_attr_e('Automation, bulk optimisation, and higher monthly limits', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="bottom">
+                        <?php esc_html_e('Enable Auto-Optimisation', 'beepbeep-ai-alt-text-generator'); ?>
                     </button>
                     <?php endif; ?>
                 </div>

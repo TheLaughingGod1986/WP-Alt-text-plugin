@@ -52,7 +52,7 @@ $bbai_banner_progress_label = sprintf(
                     type="button"
                     class="bbai-usage-banner__cta bbai-btn-primary"
                     data-action="show-upgrade-modal"
-                ><?php esc_html_e( 'Upgrade Plan', 'beepbeep-ai-alt-text-generator' ); ?></button>
+                ><?php esc_html_e( 'Enable Auto-Optimisation', 'beepbeep-ai-alt-text-generator' ); ?></button>
             </div>
         </div>
         <p class="bbai-usage-banner__credits"><?php echo esc_html( $bbai_banner_supporting ); ?></p>

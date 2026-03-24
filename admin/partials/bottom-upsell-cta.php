@@ -69,7 +69,7 @@ $bbai_bottom_upsell_class = !empty($bbai_bottom_upsell_compact) ? ' bbai-bottom-
             <div class="bbai-upgrade-card__grid">
                 <div class="bbai-upgrade-card__value">
                     <h3 id="upgrade-headline" class="bbai-upgrade-card__title">
-                        <?php echo esc_html($bbai_headline_override !== '' ? $bbai_headline_override : __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator')); ?>
+                        <?php echo esc_html($bbai_headline_override !== '' ? $bbai_headline_override : __('Never think about ALT text again', 'beepbeep-ai-alt-text-generator')); ?>
                     </h3>
                     <p class="bbai-upgrade-card__description"><?php esc_html_e('Automate AI text generation and scale image optimisation', 'beepbeep-ai-alt-text-generator'); ?></p>
 
@@ -130,10 +130,10 @@ $bbai_bottom_upsell_class = !empty($bbai_bottom_upsell_compact) ? ' bbai-bottom-
                             <strong class="bbai-upgrade-stat-value"><?php echo esc_html($bbai_days_to_reset_label); ?></strong>
                         </div>
 
-                        <button type="button" class="bbai-upgrade-cta bbai-cta-primary" data-action="show-upgrade-modal" aria-label="<?php esc_attr_e('Upgrade to Growth – £12.99/month', 'beepbeep-ai-alt-text-generator'); ?>">
-                            <?php esc_html_e('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'); ?> – <?php esc_html_e('£12.99/month', 'beepbeep-ai-alt-text-generator'); ?>
+                        <button type="button" class="bbai-upgrade-cta bbai-cta-primary" data-action="show-upgrade-modal" aria-label="<?php esc_attr_e('Enable Auto-Optimisation – from £12.99/month', 'beepbeep-ai-alt-text-generator'); ?>">
+                            <?php esc_html_e('Enable Auto-Optimisation', 'beepbeep-ai-alt-text-generator'); ?>
                         </button>
-                        <p class="bbai-cta-microcopy"><?php esc_html_e('Cancel anytime', 'beepbeep-ai-alt-text-generator'); ?> · <a href="#" class="bbai-compare-link" data-action="show-upgrade-modal"><?php esc_html_e('Compare plans', 'beepbeep-ai-alt-text-generator'); ?></a></p>
+                        <p class="bbai-cta-microcopy"><?php esc_html_e('From £12.99/month · Cancel anytime', 'beepbeep-ai-alt-text-generator'); ?> · <a href="#" class="bbai-compare-link" data-action="show-upgrade-modal"><?php esc_html_e('View pricing', 'beepbeep-ai-alt-text-generator'); ?></a></p>
                     </div>
                 </div>
             </div>
@@ -202,11 +202,11 @@ $bbai_bottom_upsell_class = !empty($bbai_bottom_upsell_compact) ? ' bbai-bottom-
             <!-- CTA Section -->
             <div class="bbai-cta-section">
                 <button type="button" class="bbai-cta-primary" data-action="show-upgrade-modal">
-                    <?php esc_html_e('Upgrade to Agency', 'beepbeep-ai-alt-text-generator'); ?>
+                    <?php esc_html_e('Enable Auto-Optimisation', 'beepbeep-ai-alt-text-generator'); ?>
                 </button>
-                <p class="bbai-cta-microcopy"><?php esc_html_e('Perfect for agencies managing multiple client sites.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                <p class="bbai-cta-microcopy"><?php esc_html_e('Higher limits and multi-site coverage for agencies.', 'beepbeep-ai-alt-text-generator'); ?></p>
                 <a href="#" class="bbai-compare-link" data-action="show-upgrade-modal">
-                    <?php esc_html_e('Compare plans', 'beepbeep-ai-alt-text-generator'); ?>
+                    <?php esc_html_e('View pricing', 'beepbeep-ai-alt-text-generator'); ?>
                 </a>
             </div>
         </div>

@@ -116,7 +116,10 @@ class BBAI_SEO_Quality_Checker {
     }
 
     /**
-     * Calculate SEO quality score for alt text
+     * Calculate SEO quality score for alt text.
+     *
+     * Delegates to the unified BBAI_Alt_Quality_Scorer engine so that
+     * hard-fail rules and weighted scoring are applied consistently.
      *
      * @param string $text The alt text to check
      * @return array {
@@ -127,9 +130,6 @@ class BBAI_SEO_Quality_Checker {
      * }
      */
     public static function calculate_quality($text) {
-        $issues = [];
-        $score = 100;
-
         if (empty($text) || trim($text) === '') {
             return [
                 'score' => 0,
@@ -139,94 +139,32 @@ class BBAI_SEO_Quality_Checker {
             ];
         }
 
-        $text_length = mb_strlen($text);
-
-        // Check length (125 chars recommended for Google Images)
-        if ($text_length > 125) {
-            $issues[] = sprintf(
-                /* translators: 1: character count */
-                __('Too long (%d chars). Aim for ≤125 for optimal Google Images SEO', 'beepbeep-ai-alt-text-generator'),
-                $text_length
-            );
-            $score -= 25;
-        }
-
-        // Check for redundant prefixes
-        if (self::has_redundant_prefix($text)) {
-            $issues[] = __('Starts with "image of" or similar. Remove redundant prefix', 'beepbeep-ai-alt-text-generator');
-            $score -= 20;
-        }
-
-        // Check if it's just a filename
-        if (self::is_just_filename($text)) {
-            $issues[] = __('Appears to be a filename. Use descriptive text instead', 'beepbeep-ai-alt-text-generator');
-            $score -= 30;
-        }
-
-        // Check for descriptive content
-        if (!self::has_descriptive_content($text)) {
-            $issues[] = __('Too short or lacks descriptive keywords', 'beepbeep-ai-alt-text-generator');
-            $score -= 15;
-        }
-
-        // Gibberish check: longest alphabetic word has no vowels — likely nonsensical
-        $words_arr = preg_split('/\s+/', trim($text), -1, PREG_SPLIT_NO_EMPTY);
-        $longest_alpha = '';
-        foreach ($words_arr as $w) {
-            $alpha = preg_replace('/[^a-zA-Z]/', '', $w);
-            if (strlen($alpha) >= 3 && strlen($alpha) > strlen($longest_alpha)) {
-                $longest_alpha = $alpha;
+        // Load unified scorer if not already loaded.
+        if (!class_exists('BBAI_Alt_Quality_Scorer')) {
+            $scorer_path = defined('BEEPBEEP_AI_PLUGIN_DIR')
+                ? BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-alt-quality-scorer.php'
+                : dirname(__FILE__) . '/class-alt-quality-scorer.php';
+            if (file_exists($scorer_path)) {
+                require_once $scorer_path;
             }
         }
-        if (strlen($longest_alpha) >= 3 && !preg_match('/[aeiou]/i', $longest_alpha)) {
-            $issues[] = __('Does not appear to describe the image — edit or regenerate', 'beepbeep-ai-alt-text-generator');
-            $score -= 35;
+
+        if (class_exists('BBAI_Alt_Quality_Scorer')) {
+            $result = BBAI_Alt_Quality_Scorer::score($text);
+            return [
+                'score'  => $result['score'],
+                'grade'  => $result['grade'],
+                'issues' => $result['issues'],
+                'badge'  => $result['badge'],
+            ];
         }
 
-        // Placeholder / non-descriptive check: test text, slang, or words that don't describe images
-        $nondescriptive_words = [
-            'test', 'testing', 'tested', 'tests', 'asdf', 'qwerty', 'placeholder', 'sample',
-            'example', 'demo', 'foo', 'bar', 'abc', 'xyz', 'temp', 'tmp', 'crap', 'stuff',
-            'thing', 'things', 'something', 'anything', 'whatever', 'blah', 'meh', 'idk',
-            'nada', 'random', 'garbage', 'junk', 'dummy', 'fake', 'lorem', 'ipsum',
-        ];
-        $lower_words = array_map('strtolower', $words_arr);
-        $bad_count = 0;
-        foreach ($nondescriptive_words as $bad) {
-            if (in_array($bad, $lower_words, true)) {
-                $bad_count++;
-            }
-        }
-        if ($bad_count >= 1 && ($bad_count >= 2 || count($words_arr) <= 4)) {
-            $issues[] = __('Does not appear to describe the image — edit or regenerate', 'beepbeep-ai-alt-text-generator');
-            $score -= 50;
-        }
-
-        // Determine grade and badge
-        $score = max(0, $score);
-
-        if ($score >= 90) {
-            $grade = 'A';
-            $badge = 'excellent';
-        } elseif ($score >= 75) {
-            $grade = 'B';
-            $badge = 'good';
-        } elseif ($score >= 60) {
-            $grade = 'C';
-            $badge = 'fair';
-        } elseif ($score >= 40) {
-            $grade = 'D';
-            $badge = 'poor';
-        } else {
-            $grade = 'F';
-            $badge = 'needs-work';
-        }
-
+        // Fallback: should not happen, but keeps backward compat.
         return [
-            'score' => $score,
-            'grade' => $grade,
-            'issues' => $issues,
-            'badge' => $badge,
+            'score'  => 50,
+            'grade'  => 'C',
+            'issues' => [__('Unable to evaluate quality', 'beepbeep-ai-alt-text-generator')],
+            'badge'  => 'fair',
         ];
     }
 

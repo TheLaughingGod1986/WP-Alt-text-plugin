@@ -155,7 +155,8 @@ add_action( 'parse_request', 'bbai_enable_wp_json_fallback_route', 5 );
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-cache.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-db.php';
 
-// Load helper functions first.
+// Load unified quality scorer and helper functions.
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-alt-quality-scorer.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-json.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-alt-quality.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-debug.php';

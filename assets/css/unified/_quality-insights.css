@@ -124,3 +124,84 @@
     background: rgba(192, 43, 43, 0.25);
     color: #ff9a9a;
 }
+
+/* ── Score Breakdown (tooltip content & inline panel) ── */
+
+.bbai-score-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 200px;
+}
+
+.bbai-score-breakdown__header {
+    font-weight: var(--bbai-font-semibold, 600);
+    font-size: var(--bbai-text-sm, 13px);
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    margin-bottom: 2px;
+}
+
+.bbai-score-breakdown__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: var(--bbai-text-xs, 11px);
+    color: var(--bbai-text-muted, #6b7280);
+}
+
+.bbai-score-breakdown__bar {
+    flex: 0 0 60px;
+    height: 4px;
+    background: rgba(0, 0, 0, 0.06);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-left: 8px;
+}
+
+.bbai-score-breakdown__fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.bbai-score-breakdown__fill--high { background: #16a34a; }
+.bbai-score-breakdown__fill--mid  { background: #d97706; }
+.bbai-score-breakdown__fill--low  { background: #dc2626; }
+
+.bbai-score-breakdown__issues {
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    font-size: var(--bbai-text-xs, 11px);
+    color: var(--bbai-text-muted, #6b7280);
+}
+
+.bbai-score-breakdown__issue {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 1px 0;
+}
+
+.bbai-score-breakdown__issue::before {
+    content: "•";
+    color: #d97706;
+    flex-shrink: 0;
+}
+
+/* Dark Mode — breakdown */
+[data-theme="dark"] .bbai-score-breakdown__header,
+.bbai-dark-mode .bbai-score-breakdown__header {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .bbai-score-breakdown__bar,
+.bbai-dark-mode .bbai-score-breakdown__bar {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .bbai-score-breakdown__issues,
+.bbai-dark-mode .bbai-score-breakdown__issues {
+    border-top-color: rgba(255, 255, 255, 0.08);
+}

@@ -1,0 +1,344 @@
+/**
+ * BeepBeep AI — final micro-motion & interaction polish (admin).
+ * Restrained SaaS-grade transitions; pairs with unified/_tokens.css variables.
+ *
+ * @package BeepBeep_AI
+ */
+
+/* ── Shared status banner: subtle entry ─────────────────────────────────── */
+@keyframes bbai-banner-enter-subtle {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.bbai-command-hero-host .bbai-banner.bbai-dashboard-hero--command {
+    animation: bbai-banner-enter-subtle var(--bbai-motion-base, 180ms) var(--bbai-ease-premium, cubic-bezier(0.2, 0.8, 0.2, 1)) both;
+}
+
+/* Content rhythm: headline block → support copy */
+.bbai-command-hero-host .bbai-banner__headline.bbai-dashboard-hero__headline {
+    margin-top: 0;
+}
+
+/* Vertical stack for shared status banner: see command-hero-host.css (.bbai-status-banner … 12 / 8 / 16). */
+.bbai-command-hero-host .bbai-banner__subtext.bbai-dashboard-hero__subtext {
+    margin-top: 0;
+}
+
+.bbai-command-hero-host .bbai-banner__meta.bbai-dashboard-hero__next-step:not([hidden]) {
+    margin-top: 0;
+}
+
+.bbai-command-hero-host .bbai-banner__utility.bbai-dashboard-hero__usage-block {
+    margin-top: 0;
+}
+
+/* Banner progress: smooth fill when width changes (inline / JS) */
+.bbai-command-hero-host .bbai-banner__progress-fill.bbai-dashboard-hero-progress-fill,
+#bbai-dashboard-main .bbai-banner__progress-fill.bbai-dashboard-hero-progress-fill {
+    transition: width var(--bbai-motion-slow, 420ms) var(--bbai-ease-premium, cubic-bezier(0.2, 0.8, 0.2, 1));
+    transform-origin: left center;
+}
+
+/* Primary CTA: pressed = settle down, no rubber scale */
+.bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__cta--primary:active,
+.bbai-command-hero-host .bbai-banner .bbai-banner__cta--primary:active,
+#bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__cta--primary:active,
+#bbai-dashboard-main .bbai-banner .bbai-banner__cta--primary:active {
+    transform: translateY(1px) !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Secondary banner CTAs: subtle lift, still quieter than primary */
+.bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__link--secondary:hover,
+.bbai-command-hero-host .bbai-banner .bbai-banner__link--secondary:hover,
+#bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__link--secondary:hover,
+#bbai-dashboard-main .bbai-banner .bbai-banner__link--secondary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+    transition:
+        background-color var(--bbai-motion-fast, 140ms) var(--bbai-ease-premium, cubic-bezier(0.2, 0.8, 0.2, 1)),
+        border-color var(--bbai-motion-fast, 140ms) var(--bbai-ease-premium, cubic-bezier(0.2, 0.8, 0.2, 1)),
+        color var(--bbai-motion-fast, 140ms) var(--bbai-ease-premium, cubic-bezier(0.2, 0.8, 0.2, 1)),
+        box-shadow var(--bbai-motion-fast, 140ms) var(--bbai-ease-premium, cubic-bezier(0.2, 0.8, 0.2, 1)),
+        transform var(--bbai-motion-fast, 140ms) var(--bbai-ease-premium, cubic-bezier(0.2, 0.8, 0.2, 1));
+}
+
+.bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__link--secondary:active,
+.bbai-command-hero-host .bbai-banner .bbai-banner__link--secondary:active,
+#bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__link--secondary:active,
+#bbai-dashboard-main .bbai-banner .bbai-banner__link--secondary:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__link--tertiary,
+.bbai-command-hero-host .bbai-banner .bbai-banner__link--tertiary,
+#bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__link--tertiary,
+#bbai-dashboard-main .bbai-banner .bbai-banner__link--tertiary {
+    transition:
+        color var(--bbai-motion-fast, 140ms) ease,
+        text-decoration-color var(--bbai-motion-fast, 140ms) ease,
+        opacity var(--bbai-motion-fast, 140ms) ease;
+}
+
+.bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__link--tertiary:hover,
+.bbai-command-hero-host .bbai-banner .bbai-banner__link--tertiary:hover,
+#bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__link--tertiary:hover,
+#bbai-dashboard-main .bbai-banner .bbai-banner__link--tertiary:hover {
+    opacity: 0.92;
+}
+
+/* ── Dashboard command cards ───────────────────────────────────────────── */
+#bbai-dashboard-main .bbai-command-card {
+    transition:
+        transform var(--bbai-motion-base, 180ms) var(--bbai-ease-premium, cubic-bezier(0.2, 0.8, 0.2, 1)),
+        box-shadow var(--bbai-motion-base, 180ms) var(--bbai-ease-premium, cubic-bezier(0.2, 0.8, 0.2, 1)),
+        border-color var(--bbai-motion-base, 180ms) ease;
+}
+
+#bbai-dashboard-main .bbai-command-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.07);
+}
+
+/* Status breakdown rows: arrow + press */
+#bbai-dashboard-main .bbai-command-breakdown__arrow {
+    display: inline-block;
+    opacity: 0.55;
+    transform: translateX(0);
+    transition:
+        opacity var(--bbai-motion-fast, 140ms) var(--bbai-ease-premium, cubic-bezier(0.2, 0.8, 0.2, 1)),
+        transform var(--bbai-motion-fast, 140ms) var(--bbai-ease-premium, cubic-bezier(0.2, 0.8, 0.2, 1));
+}
+
+#bbai-dashboard-main .bbai-command-breakdown:hover .bbai-command-breakdown__arrow,
+#bbai-dashboard-main .bbai-command-breakdown:focus-visible .bbai-command-breakdown__arrow,
+#bbai-dashboard-main .bbai-command-breakdown.is-active .bbai-command-breakdown__arrow {
+    opacity: 1;
+    transform: translateX(2px);
+}
+
+#bbai-dashboard-main .bbai-command-breakdown {
+    transition:
+        background-color var(--bbai-motion-fast, 140ms) ease,
+        border-color var(--bbai-motion-fast, 140ms) ease,
+        transform var(--bbai-motion-micro, 90ms) var(--bbai-ease-premium, cubic-bezier(0.2, 0.8, 0.2, 1));
+}
+
+#bbai-dashboard-main .bbai-command-breakdown.is-pressed {
+    transform: translateY(1px);
+}
+
+/* Donut: smooth cross-fade when segment focus changes (JS sets background) */
+#bbai-dashboard-main [data-bbai-status-donut] {
+    transition: background var(--bbai-motion-base, 180ms) var(--bbai-ease-premium, cubic-bezier(0.2, 0.8, 0.2, 1));
+}
+
+/* Refresh control */
+#bbai-dashboard-main .bbai-command-card__refresh {
+    transition:
+        background-color var(--bbai-motion-fast, 140ms) ease,
+        border-color var(--bbai-motion-fast, 140ms) ease,
+        color var(--bbai-motion-fast, 140ms) ease,
+        transform var(--bbai-motion-micro, 90ms) ease;
+}
+
+#bbai-dashboard-main .bbai-command-card__refresh:hover:not([disabled]) {
+    background-color: rgba(148, 163, 184, 0.12);
+}
+
+#bbai-dashboard-main .bbai-command-card__refresh-icon svg {
+    transition: transform var(--bbai-motion-base, 180ms) var(--bbai-ease-premium, cubic-bezier(0.2, 0.8, 0.2, 1));
+}
+
+@keyframes bbai-refresh-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+#bbai-dashboard-main .bbai-command-card__refresh.is-loading .bbai-command-card__refresh-icon svg {
+    animation: bbai-refresh-spin 0.7s linear infinite;
+}
+
+/* Plan / usage meters */
+#bbai-dashboard-main .bbai-command-meter__fill {
+    transition: width var(--bbai-motion-slow, 420ms) var(--bbai-ease-premium, cubic-bezier(0.2, 0.8, 0.2, 1));
+}
+
+#bbai-dashboard-main .bbai-command-meter__fill--growth {
+    transition: width var(--bbai-motion-slow, 420ms) var(--bbai-ease-premium, cubic-bezier(0.2, 0.8, 0.2, 1));
+}
+
+/* ── Global buttons (unified) ──────────────────────────────────────────── */
+.bbai-btn-primary:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
+}
+
+.bbai-btn-secondary:active:not(:disabled),
+.bbai-btn-ghost:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.bbai-btn {
+    transition:
+        transform var(--bbai-motion-fast, 140ms) var(--bbai-ease-premium, cubic-bezier(0.2, 0.8, 0.2, 1)),
+        box-shadow var(--bbai-motion-fast, 140ms) var(--bbai-ease-premium, cubic-bezier(0.2, 0.8, 0.2, 1)),
+        background-color var(--bbai-motion-fast, 140ms) ease,
+        border-color var(--bbai-motion-fast, 140ms) ease,
+        color var(--bbai-motion-fast, 140ms) ease;
+}
+
+/* ── Modals (unified shell) ───────────────────────────────────────────── */
+.bbai-modal-backdrop {
+    transition:
+        opacity var(--bbai-motion-base, 180ms) var(--bbai-ease-premium, cubic-bezier(0.2, 0.8, 0.2, 1)),
+        visibility var(--bbai-motion-base, 180ms) var(--bbai-ease-premium, cubic-bezier(0.2, 0.8, 0.2, 1));
+}
+
+.bbai-modal {
+    transform: scale(0.985) translateY(8px);
+    opacity: 0;
+    transition:
+        transform var(--bbai-motion-base, 180ms) var(--bbai-ease-premium, cubic-bezier(0.2, 0.8, 0.2, 1)),
+        opacity var(--bbai-motion-base, 180ms) var(--bbai-ease-premium, cubic-bezier(0.2, 0.8, 0.2, 1));
+}
+
+.bbai-modal-backdrop.active .bbai-modal,
+.bbai-modal-backdrop.is-visible .bbai-modal {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+.bbai-modal-close {
+    transition:
+        background-color var(--bbai-motion-fast, 140ms) ease,
+        color var(--bbai-motion-fast, 140ms) ease,
+        border-color var(--bbai-motion-fast, 140ms) ease,
+        box-shadow var(--bbai-motion-fast, 140ms) ease;
+    border: 1px solid transparent;
+}
+
+.bbai-modal-close:hover {
+    border-color: var(--bbai-border, #e5e7eb);
+}
+
+/* ── ALT Library workspace ───────────────────────────────────────────── */
+.bbai-library-workspace #bbai-review-filter-tabs .bbai-filter-group__item {
+    transition:
+        background-color var(--bbai-motion-fast, 140ms) var(--bbai-ease-premium, cubic-bezier(0.2, 0.8, 0.2, 1)),
+        border-color var(--bbai-motion-fast, 140ms) var(--bbai-ease-premium, cubic-bezier(0.2, 0.8, 0.2, 1)),
+        color var(--bbai-motion-fast, 140ms) ease,
+        box-shadow var(--bbai-motion-fast, 140ms) ease;
+}
+
+.bbai-library-workspace #bbai-review-filter-tabs .bbai-filter-group__item:active {
+    transform: scale(0.98);
+}
+
+.bbai-library-workspace .bbai-library-row,
+.bbai-library-workspace .bbai-library-review-card {
+    transition:
+        background-color var(--bbai-motion-fast, 140ms) ease,
+        border-color var(--bbai-motion-fast, 140ms) ease,
+        box-shadow var(--bbai-motion-fast, 140ms) ease;
+}
+
+.bbai-library-workspace .bbai-library-card__quick-action {
+    transition:
+        background-color var(--bbai-motion-fast, 140ms) ease,
+        border-color var(--bbai-motion-fast, 140ms) ease,
+        color var(--bbai-motion-fast, 140ms) ease,
+        filter var(--bbai-motion-micro, 90ms) ease,
+        box-shadow var(--bbai-motion-fast, 140ms) ease;
+}
+
+.bbai-library-workspace .bbai-library-card__quick-action:active {
+    filter: brightness(0.97);
+}
+
+.bbai-library-workspace .bbai-library-score-badge {
+    transition:
+        background-color var(--bbai-motion-fast, 140ms) ease,
+        border-color var(--bbai-motion-fast, 140ms) ease,
+        color var(--bbai-motion-fast, 140ms) ease;
+}
+
+.bbai-library-workspace .bbai-library-row-menu__toggle {
+    transition:
+        background-color var(--bbai-motion-fast, 140ms) ease,
+        color var(--bbai-motion-fast, 140ms) ease,
+        opacity var(--bbai-motion-fast, 140ms) ease;
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .bbai-command-hero-host .bbai-banner.bbai-dashboard-hero--command {
+        animation: none;
+    }
+
+    #bbai-dashboard-main .bbai-command-card:hover {
+        transform: none;
+    }
+
+    .bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__cta--primary:hover,
+    .bbai-command-hero-host .bbai-banner .bbai-banner__cta--primary:hover,
+    #bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__cta--primary:hover,
+    #bbai-dashboard-main .bbai-banner .bbai-banner__cta--primary:hover,
+    .bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__link--secondary:hover,
+    .bbai-command-hero-host .bbai-banner .bbai-banner__link--secondary:hover,
+    #bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__link--secondary:hover,
+    #bbai-dashboard-main .bbai-banner .bbai-banner__link--secondary:hover {
+        transform: none;
+    }
+
+    #bbai-dashboard-main .bbai-command-breakdown:hover .bbai-command-breakdown__arrow,
+    #bbai-dashboard-main .bbai-command-breakdown:focus-visible .bbai-command-breakdown__arrow,
+    #bbai-dashboard-main .bbai-command-breakdown.is-active .bbai-command-breakdown__arrow {
+        transform: none;
+    }
+
+    #bbai-dashboard-main [data-bbai-status-donut],
+    #bbai-dashboard-main .bbai-command-meter__fill,
+    #bbai-dashboard-main .bbai-command-meter__fill--growth,
+    .bbai-command-hero-host .bbai-banner__progress-fill.bbai-dashboard-hero-progress-fill,
+    #bbai-dashboard-main .bbai-banner__progress-fill.bbai-dashboard-hero-progress-fill {
+        transition: none;
+    }
+
+    #bbai-dashboard-main .bbai-command-card__refresh.is-loading .bbai-command-card__refresh-icon svg {
+        animation: none;
+    }
+
+    .bbai-modal,
+    .bbai-modal-backdrop {
+        transition: opacity 0.01ms !important;
+    }
+
+    .bbai-btn-primary:hover:not(:disabled),
+    .bbai-btn-primary:active:not(:disabled) {
+        transform: none;
+    }
+
+    .bbai-library-workspace #bbai-review-filter-tabs .bbai-filter-group__item:active,
+    .bbai-library-workspace .bbai-library-card__quick-action:active {
+        transform: none;
+    }
+
+    #bbai-upgrade-modal .bbai-upgrade-modal__close:hover {
+        transform: none;
+    }
+
+    #bbai-upgrade-modal .bbai-upgrade-modal__content {
+        transition: opacity 0.01ms !important;
+    }
+}

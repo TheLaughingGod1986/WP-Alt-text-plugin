@@ -267,8 +267,8 @@ h4.bbai-heading {
     white-space: normal;
 }
 
-/* Disabled state indicator */
-[aria-disabled="true"] {
+/* Disabled state indicator — exclude upgrade/locked CTAs that remain clickable via delegated handlers */
+[aria-disabled="true"]:not([data-bbai-locked-cta="1"]):not(.bbai-is-locked) {
     opacity: 0.6;
     cursor: not-allowed;
     pointer-events: none;

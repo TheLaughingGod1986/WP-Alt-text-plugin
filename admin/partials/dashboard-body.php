@@ -11,6 +11,8 @@ use BeepBeepAI\AltTextGenerator\Usage_Tracker;
 use BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers;
 
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/class-plan-helpers.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/banner-system.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/ui-components.php';
 
 $bbai_build_action = static function (string $label = '', array $overrides = []): array {
     return array_merge(
@@ -167,16 +169,18 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
     }
 
     $bbai_coverage = (isset($this) && method_exists($this, 'get_alt_text_coverage_scan')) ? $this->get_alt_text_coverage_scan(false) : [];
-    $bbai_missing_count = max(0, (int) ($bbai_stats['missing'] ?? 0));
-    $bbai_weak_count = max(0, (int) ($bbai_coverage['needs_review_count'] ?? 0));
-    $bbai_with_alt_count = max(0, (int) ($bbai_stats['with_alt'] ?? 0));
-    $bbai_optimized_count = isset($bbai_stats['optimized_count'])
-        ? max(0, (int) $bbai_stats['optimized_count'])
-        : max(0, $bbai_with_alt_count - $bbai_weak_count);
-    $bbai_total_images = max(
+    $bbai_attn = bbai_get_attention_counts(
+        (!empty($bbai_coverage) && isset($bbai_coverage['total_images'])) ? $bbai_coverage : null
+    );
+    $bbai_missing_count   = $bbai_attn['missing'];
+    $bbai_weak_count      = $bbai_attn['needs_review'];
+    $bbai_optimized_count = $bbai_attn['optimized_count'];
+    $bbai_with_alt_count  = max(0, $bbai_optimized_count + $bbai_weak_count);
+    $bbai_total_images    = max(
         0,
         max(
             (int) ($bbai_stats['total'] ?? 0),
+            $bbai_attn['total_images'],
             $bbai_optimized_count + $bbai_missing_count + $bbai_weak_count
         )
     );
@@ -251,7 +255,7 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
     $creditsRemaining = $bbai_credits_remaining;
     $daysUntilReset = null !== $bbai_days_until_reset ? (int) $bbai_days_until_reset : 0;
     $usagePercent = $bbai_usage_percent;
-    $isLowCredits = $creditsRemaining < 10 && $creditsRemaining > 0;
+    $isLowCredits = $creditsRemaining > 0 && $creditsRemaining <= BBAI_BANNER_LOW_CREDITS_THRESHOLD;
     $isOutOfCredits = $creditsRemaining === 0;
     $hasScanHistory = $bbai_has_scan_history;
     $isFirstRun = !$hasScanHistory || $totalImages === 0;
@@ -380,7 +384,7 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
 
     <div
         id="bbai-dashboard-main"
-        class="bbai-dashboard"
+        class="bbai-dashboard bbai-container"
         data-bbai-dashboard-container
         data-bbai-dashboard-root="1"
         data-bbai-missing-count="<?php echo esc_attr($missingCount); ?>"
@@ -418,7 +422,7 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
                     <header class="bbai-command-card__header">
                         <div>
                             <p class="bbai-command-card__eyebrow"><?php esc_html_e('Library status', 'beepbeep-ai-alt-text-generator'); ?></p>
-                            <h2 id="bbai-status-title" class="bbai-command-card__title"><?php esc_html_e('Your SEO Coverage', 'beepbeep-ai-alt-text-generator'); ?></h2>
+                            <h2 id="bbai-status-title" class="bbai-command-card__title"><?php esc_html_e('Coverage', 'beepbeep-ai-alt-text-generator'); ?></h2>
                         </div>
                         <div class="bbai-command-card__meta-group">
                             <p class="bbai-command-card__meta" data-bbai-status-last-scan<?php echo '' !== ($bbai_dashboard_state['lastScanLine'] ?? '') ? '' : ' hidden'; ?>>
@@ -474,64 +478,65 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
                             </div>
                         </div>
 
-                        <nav class="bbai-command-status__summary" aria-label="<?php esc_attr_e('Open filtered views in ALT Library', 'beepbeep-ai-alt-text-generator'); ?>">
-                            <a
-                                class="bbai-command-breakdown bbai-command-breakdown--optimized"
-                                href="<?php echo esc_url($bbai_optimized_library_url); ?>"
-                                data-bbai-status-row
-                                data-bbai-status-segment="optimized"
-                                data-bbai-status-filter="optimized"
-                                data-bbai-status-url="<?php echo esc_url($bbai_optimized_library_url); ?>"
-                                aria-label="<?php esc_attr_e('View optimized images in ALT Library', 'beepbeep-ai-alt-text-generator'); ?>"
-                            >
-                                <span class="bbai-command-breakdown__label"><?php esc_html_e('Optimized', 'beepbeep-ai-alt-text-generator'); ?></span>
-                                <span class="bbai-command-breakdown__meta">
-                                    <span class="bbai-command-breakdown__value" data-bbai-status-metric="optimized"><?php echo esc_html(number_format_i18n($optimizedCount)); ?></span>
-                                    <span class="bbai-command-breakdown__arrow" aria-hidden="true">→</span>
-                                </span>
-                            </a>
-                            <a
-                                class="bbai-command-breakdown bbai-command-breakdown--weak"
-                                href="<?php echo esc_url($bbai_needs_review_library_url); ?>"
-                                data-bbai-status-row
-                                data-bbai-status-segment="weak"
-                                data-bbai-status-filter="needs_review"
-                                data-bbai-status-url="<?php echo esc_url($bbai_needs_review_library_url); ?>"
-                                aria-label="<?php esc_attr_e('View images needing review in ALT Library', 'beepbeep-ai-alt-text-generator'); ?>"
-                            >
-                                <span class="bbai-command-breakdown__label"><?php esc_html_e('Needs review', 'beepbeep-ai-alt-text-generator'); ?></span>
-                                <span class="bbai-command-breakdown__meta">
-                                    <span class="bbai-command-breakdown__value" data-bbai-status-metric="weak"><?php echo esc_html(number_format_i18n($weakCount)); ?></span>
-                                    <span class="bbai-command-breakdown__arrow" aria-hidden="true">→</span>
-                                </span>
-                            </a>
-                            <a
-                                class="bbai-command-breakdown bbai-command-breakdown--missing"
-                                href="<?php echo esc_url($bbai_missing_library_url); ?>"
-                                data-bbai-status-row
-                                data-bbai-status-segment="missing"
-                                data-bbai-status-filter="missing"
-                                data-bbai-status-url="<?php echo esc_url($bbai_missing_library_url); ?>"
-                                aria-label="<?php esc_attr_e('View images missing ALT text in ALT Library', 'beepbeep-ai-alt-text-generator'); ?>"
-                            >
-                                <span class="bbai-command-breakdown__label"><?php esc_html_e('Missing', 'beepbeep-ai-alt-text-generator'); ?></span>
-                                <span class="bbai-command-breakdown__meta">
-                                    <span class="bbai-command-breakdown__value" data-bbai-status-metric="missing"><?php echo esc_html(number_format_i18n($missingCount)); ?></span>
-                                    <span class="bbai-command-breakdown__arrow" aria-hidden="true">→</span>
-                                </span>
-                            </a>
-                        </nav>
+                        <?php
+                        bbai_ui_render(
+                            'filter-group',
+                            [
+                                'variant' => 'vertical',
+                                'interaction_mode' => 'navigate',
+                                'root_class' => 'bbai-command-status__summary',
+                                'items' => [
+                                    [
+                                        'key' => 'all',
+                                        'label' => __('All', 'beepbeep-ai-alt-text-generator'),
+                                        'count' => $totalImages,
+                                        'href' => $bbai_library_url,
+                                        'status_url' => $bbai_library_url,
+                                        'item_aria_label' => __('View all images in ALT Library', 'beepbeep-ai-alt-text-generator'),
+                                        'metric_key' => 'all',
+                                    ],
+                                    [
+                                        'key' => 'optimized',
+                                        'label' => __('Optimized', 'beepbeep-ai-alt-text-generator'),
+                                        'count' => $optimizedCount,
+                                        'href' => $bbai_optimized_library_url,
+                                        'status_url' => $bbai_optimized_library_url,
+                                        'item_aria_label' => __('View optimized images in ALT Library', 'beepbeep-ai-alt-text-generator'),
+                                        'metric_key' => 'optimized',
+                                    ],
+                                    [
+                                        'key' => 'weak',
+                                        'label' => __('Needs review', 'beepbeep-ai-alt-text-generator'),
+                                        'count' => $weakCount,
+                                        'href' => $bbai_needs_review_library_url,
+                                        'status_url' => $bbai_needs_review_library_url,
+                                        'item_aria_label' => __('View images needing review in ALT Library', 'beepbeep-ai-alt-text-generator'),
+                                        'metric_key' => 'weak',
+                                    ],
+                                    [
+                                        'key' => 'missing',
+                                        'label' => __('Missing', 'beepbeep-ai-alt-text-generator'),
+                                        'count' => $missingCount,
+                                        'href' => $bbai_missing_library_url,
+                                        'status_url' => $bbai_missing_library_url,
+                                        'item_aria_label' => __('View images missing ALT text in ALT Library', 'beepbeep-ai-alt-text-generator'),
+                                        'metric_key' => 'missing',
+                                    ],
+                                ],
+                            ]
+                        );
+                        ?>
                         <p class="bbai-command-status__detail" data-bbai-status-summary-detail<?php echo '' !== $bbai_status_detail ? '' : ' hidden'; ?>><?php echo esc_html($bbai_status_detail); ?></p>
                     </div>
                 </article>
 
-                <article class="bbai-dashboard-card bbai-command-card bbai-command-card--plan" aria-labelledby="bbai-plan-title">
+                <article class="bbai-dashboard-card bbai-command-card bbai-command-card--plan bbai-product-rail-surface" aria-labelledby="bbai-plan-title">
                     <header class="bbai-command-card__header bbai-command-card__header--with-badge">
                         <div>
                             <p class="bbai-command-card__eyebrow"><?php esc_html_e('Plan & usage', 'beepbeep-ai-alt-text-generator'); ?></p>
                             <h2 id="bbai-plan-title" class="bbai-command-card__title"><?php esc_html_e('Current allowance', 'beepbeep-ai-alt-text-generator'); ?></h2>
                         </div>
-                        <span class="bbai-command-plan__low-credits-badge" data-bbai-plan-low-credits-badge<?php echo ($creditsRemaining > 0 && $creditsRemaining < 10) ? '' : ' hidden'; ?>><?php esc_html_e('Low credits', 'beepbeep-ai-alt-text-generator'); ?></span>
+                        <span class="bbai-command-plan__low-credits-badge" data-bbai-plan-low-credits-badge<?php echo ($creditsRemaining > 0 && $creditsRemaining <= BBAI_BANNER_LOW_CREDITS_THRESHOLD) ? '' : ' hidden'; ?>><?php esc_html_e('Low credits', 'beepbeep-ai-alt-text-generator'); ?></span>
                     </header>
 
                     <div class="bbai-command-plan">

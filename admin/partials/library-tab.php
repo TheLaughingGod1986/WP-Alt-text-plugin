@@ -18,11 +18,31 @@ $bbai_per_page = 10;
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 $bbai_alt_page_input = isset($_GET['alt_page']) ? absint(wp_unslash($_GET['alt_page'])) : 0;
 $bbai_current_page = max(1, $bbai_alt_page_input);
-$bbai_offset = ($bbai_current_page - 1) * $bbai_per_page;
 
 global $wpdb;
 
 $bbai_image_mime_like = $wpdb->esc_like('image/') . '%';
+
+$bbai_library_workspace_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/library-workspace.php';
+$bbai_use_library_workspace       = is_readable($bbai_library_workspace_partial );
+
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
+$bbai_requested_status = isset($_GET['status']) ? sanitize_key(wp_unslash($_GET['status'])) : '';
+$bbai_workspace_status_map = [
+    'missing'      => 'missing',
+    'optimized'    => 'optimized',
+    'weak'         => 'weak',
+    'needs_review' => 'weak',
+    'needs-review' => 'weak',
+    'attention'    => 'weak',
+];
+$bbai_default_review_filter = 'all';
+$bbai_review_filter_from_url  = false;
+if ($bbai_requested_status !== '' && isset($bbai_workspace_status_map[ $bbai_requested_status ])) {
+    $bbai_default_review_filter = $bbai_workspace_status_map[ $bbai_requested_status ];
+    $bbai_review_filter_from_url = true;
+}
+$bbai_active_library_filter = $bbai_default_review_filter;
 
 // Get total count of all images (cached).
 $bbai_total_images = BBAI_Cache::get( 'library', 'total' );
@@ -50,28 +70,113 @@ $bbai_with_alt_count = (int) $bbai_with_alt_count;
 
 $bbai_missing_count = $bbai_total_images - $bbai_with_alt_count;
 
-// Get all images with their alt text (cached per page).
-$bbai_images_cache_suffix = 'images_' . $bbai_current_page . '_' . $bbai_per_page;
-$bbai_all_images = BBAI_Cache::get( 'library', $bbai_images_cache_suffix );
-if ( false === $bbai_all_images ) {
+if ($bbai_use_library_workspace) {
+    // Full library dataset (no LIMIT): normalize each row, then filter, then paginate.
     // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-    $bbai_all_images = $wpdb->get_results($wpdb->prepare(
-        'SELECT p.ID, p.post_title, p.post_date, p.post_modified, MAX(COALESCE(pm.meta_value, %s)) as alt_text, MAX(CASE WHEN pm.meta_value IS NOT NULL AND TRIM(pm.meta_value) <> %s THEN 1 ELSE 0 END) as has_alt, MAX(src.meta_value) as ai_source FROM ' . $wpdb->posts . ' p LEFT JOIN ' . $wpdb->postmeta . ' pm ON p.ID = pm.post_id AND pm.meta_key = %s LEFT JOIN ' . $wpdb->postmeta . ' src ON p.ID = src.post_id AND src.meta_key = %s WHERE p.post_type = %s AND p.post_mime_type LIKE %s AND p.post_status = %s GROUP BY p.ID, p.post_title, p.post_date, p.post_modified ORDER BY p.post_date DESC LIMIT %d OFFSET %d',
+    $bbai_library_full_images = $wpdb->get_results($wpdb->prepare(
+        'SELECT p.ID, p.post_title, p.post_date, p.post_modified, MAX(COALESCE(pm.meta_value, %s)) as alt_text, MAX(CASE WHEN pm.meta_value IS NOT NULL AND TRIM(pm.meta_value) <> %s THEN 1 ELSE 0 END) as has_alt, MAX(src.meta_value) as ai_source FROM ' . $wpdb->posts . ' p LEFT JOIN ' . $wpdb->postmeta . ' pm ON p.ID = pm.post_id AND pm.meta_key = %s LEFT JOIN ' . $wpdb->postmeta . ' src ON p.ID = src.post_id AND src.meta_key = %s WHERE p.post_type = %s AND p.post_mime_type LIKE %s AND p.post_status = %s GROUP BY p.ID, p.post_title, p.post_date, p.post_modified ORDER BY p.post_date DESC',
         '',
         '',
         '_wp_attachment_image_alt',
         '_bbai_source',
         'attachment',
         $bbai_image_mime_like,
-        'inherit',
-        $bbai_per_page,
-        $bbai_offset
+        'inherit'
     ));
-    BBAI_Cache::set( 'library', $bbai_images_cache_suffix, $bbai_all_images, BBAI_Cache::DEFAULT_TTL );
-}
 
-$bbai_total_count = $bbai_total_images;
-$bbai_total_pages = ceil($bbai_total_count / $bbai_per_page);
+    $bbai_library_normalized_rows = [];
+    $bbai_table_filter_counts     = [
+        'all'       => 0,
+        'missing'   => 0,
+        'weak'      => 0,
+        'optimized' => 0,
+    ];
+
+    foreach ($bbai_library_full_images as $bbai_full_row_image) {
+        $bbai_row_state  = $this->get_library_workspace_row_state($bbai_full_row_image);
+        $bbai_row_status = isset($bbai_row_state['status']) ? (string) $bbai_row_state['status'] : 'optimized';
+        if ('missing' === $bbai_row_status) {
+            ++$bbai_table_filter_counts['missing'];
+        } elseif ('weak' === $bbai_row_status) {
+            ++$bbai_table_filter_counts['weak'];
+        } else {
+            ++$bbai_table_filter_counts['optimized'];
+        }
+        $bbai_library_normalized_rows[] = [
+            'image' => $bbai_full_row_image,
+            'state' => $bbai_row_state,
+        ];
+    }
+    $bbai_table_filter_counts['all'] = count($bbai_library_normalized_rows);
+
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        $bbai_count_sum_check = $bbai_table_filter_counts['missing'] + $bbai_table_filter_counts['weak'] + $bbai_table_filter_counts['optimized'];
+        if ($bbai_count_sum_check !== $bbai_table_filter_counts['all']) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug invariant only.
+            error_log('BBAI library: filter count invariant failed (missing + weak + optimized !== all).');
+        }
+    }
+
+    $bbai_filtered_normalized = array_values(
+        array_filter(
+            $bbai_library_normalized_rows,
+            static function (array $row) use ($bbai_active_library_filter) : bool {
+                if ('all' === $bbai_active_library_filter) {
+                    return true;
+                }
+                $st = isset($row['state']['status']) ? (string) $row['state']['status'] : '';
+
+                return $st === $bbai_active_library_filter;
+            }
+        )
+    );
+
+    $bbai_library_filtered_total = count($bbai_filtered_normalized);
+    $bbai_library_total_pages    = $bbai_per_page > 0 ? (int) ceil($bbai_library_filtered_total / $bbai_per_page) : 1;
+    if ($bbai_library_total_pages < 1) {
+        $bbai_library_total_pages = 1;
+    }
+    if ($bbai_current_page > $bbai_library_total_pages) {
+        $bbai_current_page = $bbai_library_total_pages;
+    }
+    $bbai_offset               = ($bbai_current_page - 1) * $bbai_per_page;
+    $bbai_page_normalized_slice = array_slice($bbai_filtered_normalized, $bbai_offset, $bbai_per_page);
+
+    $bbai_all_images         = [];
+    $bbai_library_row_states = [];
+    foreach ($bbai_page_normalized_slice as $bbai_slice_idx => $bbai_norm_row) {
+        $bbai_all_images[]                         = $bbai_norm_row['image'];
+        $bbai_library_row_states[ $bbai_slice_idx ] = $bbai_norm_row['state'];
+    }
+
+    $bbai_total_pages = $bbai_library_total_pages;
+    $bbai_total_count = $bbai_library_filtered_total;
+} else {
+    $bbai_offset              = ($bbai_current_page - 1) * $bbai_per_page;
+    $bbai_images_cache_suffix = 'images_' . $bbai_current_page . '_' . $bbai_per_page;
+    $bbai_all_images          = BBAI_Cache::get('library', $bbai_images_cache_suffix);
+    if (false === $bbai_all_images) {
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $bbai_all_images = $wpdb->get_results($wpdb->prepare(
+            'SELECT p.ID, p.post_title, p.post_date, p.post_modified, MAX(COALESCE(pm.meta_value, %s)) as alt_text, MAX(CASE WHEN pm.meta_value IS NOT NULL AND TRIM(pm.meta_value) <> %s THEN 1 ELSE 0 END) as has_alt, MAX(src.meta_value) as ai_source FROM ' . $wpdb->posts . ' p LEFT JOIN ' . $wpdb->postmeta . ' pm ON p.ID = pm.post_id AND pm.meta_key = %s LEFT JOIN ' . $wpdb->postmeta . ' src ON p.ID = src.post_id AND src.meta_key = %s WHERE p.post_type = %s AND p.post_mime_type LIKE %s AND p.post_status = %s GROUP BY p.ID, p.post_title, p.post_date, p.post_modified ORDER BY p.post_date DESC LIMIT %d OFFSET %d',
+            '',
+            '',
+            '_wp_attachment_image_alt',
+            '_bbai_source',
+            'attachment',
+            $bbai_image_mime_like,
+            'inherit',
+            $bbai_per_page,
+            $bbai_offset
+        ));
+        BBAI_Cache::set('library', $bbai_images_cache_suffix, $bbai_all_images, BBAI_Cache::DEFAULT_TTL);
+    }
+    $bbai_table_filter_counts    = null;
+    $bbai_library_row_states     = null;
+    $bbai_library_filtered_total = null;
+    $bbai_total_count            = $bbai_total_images;
+    $bbai_total_pages            = $bbai_per_page > 0 ? (int) ceil($bbai_total_count / $bbai_per_page) : 0;
+}
 
 // Get plan info
 $bbai_has_license = $this->api_client->has_active_license();
@@ -114,13 +219,21 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
         'ai_source_count' => 0,
     ];
 }
+
+// Workspace: align coverage payload with the same normalized row dataset used for filter chips and filtering.
+if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
+    $bbai_coverage['total_images']       = $bbai_table_filter_counts['all'];
+    $bbai_coverage['images_missing_alt'] = $bbai_table_filter_counts['missing'];
+    $bbai_coverage['needs_review_count'] = $bbai_table_filter_counts['weak'];
+    $bbai_coverage['optimized_count']    = $bbai_table_filter_counts['optimized'];
+}
 ?>
 
-<div class="bbai-library-container" data-bbai-empty-filter="<?php echo esc_attr__('No images match this filter.', 'beepbeep-ai-alt-text-generator'); ?>">
+<div class="bbai-library-container bbai-container" data-bbai-empty-filter="<?php echo esc_attr__('No images match this filter.', 'beepbeep-ai-alt-text-generator'); ?>">
     <style id="bbai-library-polish">
     #bbai-alt-coverage-card,
     #bbai-review-filter-tabs { display: block !important; visibility: visible !important; opacity: 1 !important; }
-    .bbai-toolbar.bbai-library-toolbar { margin: 18px 0 16px; }
+    .bbai-toolbar.bbai-library-toolbar { margin: var(--card-gap, 16px) 0 var(--card-gap, 16px); }
     .bbai-library-summary-card,
     .bbai-library-guidance,
     .bbai-library-selection-bar {
@@ -129,9 +242,9 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
         border-radius: 16px;
         box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
     }
-    .bbai-library-summary-card { padding: 24px; margin: 20px 0 16px; }
+    .bbai-library-summary-card { padding: var(--section-spacing, 24px); margin: var(--section-spacing, 24px) 0 var(--card-gap, 16px); }
     .bbai-library-summary-card__head,
-    .bbai-library-guidance { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+    .bbai-library-guidance { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--section-spacing, 24px); }
     .bbai-library-summary-card__eyebrow,
     .bbai-library-guidance__eyebrow {
         display: inline-flex;
@@ -151,8 +264,8 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
     .bbai-library-summary-card__stats {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 14px;
-        margin: 22px 0 18px;
+        gap: var(--card-gap, 16px);
+        margin: var(--section-spacing, 24px) 0 var(--card-gap, 16px);
     }
     .bbai-library-summary-card__stat {
         padding: 14px 16px;
@@ -168,7 +281,7 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
     .bbai-library-summary-card__bar {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 8px;
+        gap: var(--card-gap, 16px);
         align-items: center;
     }
     .bbai-library-summary-card__progress {
@@ -187,22 +300,22 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 16px;
-        margin-top: 10px;
+        gap: var(--card-gap, 16px);
+        margin-top: var(--card-gap, 16px);
         color: #475569;
         font-size: 13px;
     }
     .bbai-library-summary-card__foot strong { color: #0f172a; }
     .bbai-library-guidance {
-        margin-bottom: 16px;
+        margin-bottom: var(--card-gap, 16px);
         padding: 20px 22px;
     }
     .bbai-library-bulk-banner {
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
-        gap: 18px;
-        margin: 0 0 16px;
+        gap: var(--card-gap, 16px);
+        margin: 0 0 var(--card-gap, 16px);
         padding: 20px 22px;
         border-radius: 18px;
         border: 1px solid #fcd34d;
@@ -212,7 +325,7 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
     .bbai-library-bulk-banner__main {
         display: flex;
         align-items: flex-start;
-        gap: 14px;
+        gap: var(--card-gap, 16px);
         min-width: 0;
         flex: 1;
     }
@@ -256,7 +369,7 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        gap: 8px;
+        gap: var(--card-gap, 16px);
         flex: 0 0 auto;
     }
     .bbai-library-bulk-banner__cta {
@@ -277,14 +390,14 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
     .bbai-library-guidance__actions {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: var(--card-gap, 16px);
         flex-wrap: wrap;
         margin-left: auto;
     }
     #bbai-review-filter-tabs {
-        margin: 0 0 16px;
+        margin: 0 0 var(--card-gap, 16px);
         display: flex !important;
-        gap: 10px;
+        gap: var(--card-gap, 16px);
         flex-wrap: wrap;
     }
     .bbai-alt-review-filters__btn {
@@ -307,31 +420,31 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
     }
     .bbai-library-selection-bar {
         position: sticky;
-        top: 24px;
+        top: var(--section-spacing, 24px);
         z-index: 6;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 18px;
+        gap: var(--card-gap, 16px);
         padding: 14px 18px;
-        margin: 0 0 14px;
+        margin: 0 0 var(--card-gap, 16px);
     }
     .bbai-library-selection-bar__summary {
         display: flex;
         align-items: center;
-        gap: 14px;
+        gap: var(--card-gap, 16px);
         min-width: 0;
         flex-wrap: wrap;
     }
     .bbai-library-selection-bar__lead {
         display: inline-flex;
         align-items: center;
-        gap: 10px;
+        gap: var(--card-gap, 16px);
         font-weight: 700;
         color: #0f172a;
     }
     .bbai-library-selection-bar__count { font-size: 14px; color: #475569; }
-    .bbai-library-selection-bar__actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .bbai-library-selection-bar__actions { display: flex; align-items: center; gap: var(--card-gap, 16px); flex-wrap: wrap; }
     .bbai-library-selection-bar .bbai-toolbar__btn { box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08); }
     .bbai-library-selection-bar .bbai-toolbar__btn:disabled { opacity: 0.52; cursor: not-allowed; }
     .bbai-library-table-wrapper { margin-top: 0; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 40px rgba(15, 23, 42, 0.05); }
@@ -549,14 +662,6 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
         .bbai-library-hover-preview { display: none; }
     }
     </style>
-    <!-- Header -->
-    <div class="bbai-page-header bbai-mb-6">
-        <div class="bbai-page-header-content">
-            <h1 class="bbai-heading-1"><?php esc_html_e('Image ALT Text Library', 'beepbeep-ai-alt-text-generator'); ?></h1>
-            <p class="bbai-subtitle"><?php esc_html_e('Review, edit, and regenerate AI alt text for images in your media library.', 'beepbeep-ai-alt-text-generator'); ?></p>
-        </div>
-    </div>
-
     <?php
     // Bulk scan recommendation: show when library has many images and some are missing
     $bbai_show_scan_banner = $bbai_total_images >= 50 && $bbai_missing_count > 0;
@@ -608,23 +713,7 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
     $bbai_cov_opt_pct = $bbai_cov_total > 0 ? round(($bbai_cov_optimized / $bbai_cov_total) * 100) : 0;
     $bbai_cov_review_pct = $bbai_cov_total > 0 ? round(($bbai_cov_needs_review / $bbai_cov_total) * 100) : 0;
     $bbai_cov_miss_pct = $bbai_cov_total > 0 ? round(($bbai_cov_missing / $bbai_cov_total) * 100) : 0;
-    $bbai_requested_status = isset($_GET['status']) ? sanitize_key(wp_unslash($_GET['status'])) : '';
-    $bbai_requested_filter_map = [
-        'all'          => 'all',
-        'missing'      => 'missing',
-        'optimized'    => 'optimized',
-        'weak'         => 'weak',
-        'needs_review' => 'weak',
-        'needs-review' => 'weak',
-    ];
-    $bbai_default_review_filter = 'all';
-    if (isset($bbai_requested_filter_map[$bbai_requested_status])) {
-        $bbai_default_review_filter = $bbai_requested_filter_map[$bbai_requested_status];
-    } elseif ($bbai_cov_missing > 0) {
-        $bbai_default_review_filter = 'missing';
-    } elseif ($bbai_cov_needs_review > 0) {
-        $bbai_default_review_filter = 'weak';
-    }
+    // $bbai_default_review_filter / $bbai_review_filter_from_url are set at the top of this partial.
     $bbai_bulk_issue_count = $bbai_cov_missing + $bbai_cov_needs_review;
     $bbai_show_bulk_optimization_banner = $bbai_bulk_issue_count > 0;
     $bbai_bulk_optimization_available = $bbai_is_pro;
@@ -646,13 +735,12 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
     $bbai_has_review_issues = ($bbai_cov_missing + $bbai_cov_needs_review) > 0;
     $bbai_library_healthy = $bbai_cov_total > 0 && !$bbai_has_review_issues;
 
-    $bbai_workspace_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/library-workspace.php';
-    if (file_exists($bbai_workspace_partial)) {
+    if ($bbai_use_library_workspace) {
         while (ob_get_level() > $bbai_library_template_buffer_level) {
             ob_end_clean();
         }
 
-        include $bbai_workspace_partial;
+        include $bbai_library_workspace_partial;
         return;
     }
     ?>
@@ -701,11 +789,16 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
         <div class="bbai-library-guidance" data-bbai-library-guidance data-state="healthy">
             <div>
                 <p class="bbai-library-guidance__eyebrow"><?php esc_html_e('Healthy Library', 'beepbeep-ai-alt-text-generator'); ?></p>
-                <h2 class="bbai-library-guidance__title"><?php esc_html_e('Your media library is fully optimized', 'beepbeep-ai-alt-text-generator'); ?></h2>
-                <p class="bbai-library-guidance__copy"><?php esc_html_e('All images have ALT text. New uploads will be scanned automatically.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                <h2 class="bbai-library-guidance__title"><?php esc_html_e('All images are optimised', 'beepbeep-ai-alt-text-generator'); ?></h2>
+                <p class="bbai-library-guidance__copy"><?php esc_html_e('Keep coverage complete as new uploads arrive by running quick scans or enabling automation.', 'beepbeep-ai-alt-text-generator'); ?></p>
             </div>
             <div class="bbai-library-guidance__actions">
                 <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-sm" data-action="rescan-media-library"><?php esc_html_e('Scan for new uploads', 'beepbeep-ai-alt-text-generator'); ?></button>
+                <?php if ($bbai_is_pro) : ?>
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=bbai-settings')); ?>" class="bbai-btn bbai-btn-secondary bbai-btn-sm"><?php esc_html_e('Enable automatic optimisation', 'beepbeep-ai-alt-text-generator'); ?></a>
+                <?php else : ?>
+                    <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm" data-action="show-upgrade-modal"><?php esc_html_e('Enable automatic optimisation', 'beepbeep-ai-alt-text-generator'); ?></button>
+                <?php endif; ?>
             </div>
         </div>
     <?php elseif ($bbai_cov_missing > 0) : ?>
@@ -1085,6 +1178,21 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
                                     }
                                 }
 
+                                // Hard-fail safety net: re-check with unified scorer
+                                // to ensure bad ALT can never display as "Good".
+                                if (in_array($bbai_quality_class, ['excellent', 'good'], true)
+                                    && class_exists('BBAI_Alt_Quality_Scorer')) {
+                                    $bbai_safety_check = BBAI_Alt_Quality_Scorer::score($bbai_clean_alt);
+                                    if (!empty($bbai_safety_check['hard_fail'])) {
+                                        $bbai_quality_score = $bbai_safety_check['score'];
+                                        $bbai_quality_class = $bbai_safety_check['badge'];
+                                        $bbai_quality_label = $bbai_safety_check['label'];
+                                        $bbai_analysis['breakdown']   = $bbai_safety_check['breakdown'];
+                                        $bbai_analysis['issues']      = $bbai_safety_check['issues'];
+                                        $bbai_analysis['suggestions'] = $bbai_safety_check['suggestions'];
+                                    }
+                                }
+
                                 if ($bbai_is_user_approved || in_array($bbai_quality_class, ['excellent', 'good'], true)) {
                                     $status = 'optimized';
                                     $bbai_status_label = __('Optimized', 'beepbeep-ai-alt-text-generator');
@@ -1104,8 +1212,32 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
                             $bbai_ai_source_raw = isset($bbai_image->ai_source) ? strtolower(trim((string) $bbai_image->ai_source)) : '';
                             $bbai_ai_source = in_array($bbai_ai_source_raw, ['ai', 'openai'], true) ? 'ai' : '';
                             $bbai_quality_tooltip = __('No ALT text detected', 'beepbeep-ai-alt-text-generator');
+                            $bbai_breakdown = isset($bbai_analysis['breakdown']) ? $bbai_analysis['breakdown'] : null;
+                            $bbai_suggestions = isset($bbai_analysis['suggestions']) ? $bbai_analysis['suggestions'] : array();
                             if ($bbai_has_alt) {
-                                if ($bbai_quality_class === 'excellent') {
+                                // Build a detailed tooltip with score breakdown when available.
+                                if ($bbai_breakdown && is_array($bbai_breakdown)) {
+                                    $bbai_tooltip_lines = array();
+                                    $bbai_tooltip_lines[] = sprintf(
+                                        /* translators: 1: label, 2: score */
+                                        __('Quality: %1$s (%2$d/100)', 'beepbeep-ai-alt-text-generator'),
+                                        $bbai_quality_label,
+                                        $bbai_quality_score
+                                    );
+                                    $bbai_tooltip_lines[] = '';
+                                    $bbai_tooltip_lines[] = sprintf(__('Descriptiveness: %d', 'beepbeep-ai-alt-text-generator'), $bbai_breakdown['descriptiveness']);
+                                    $bbai_tooltip_lines[] = sprintf(__('Relevance: %d', 'beepbeep-ai-alt-text-generator'), $bbai_breakdown['relevance']);
+                                    $bbai_tooltip_lines[] = sprintf(__('Accessibility: %d', 'beepbeep-ai-alt-text-generator'), $bbai_breakdown['accessibility']);
+                                    $bbai_tooltip_lines[] = sprintf(__('SEO: %d', 'beepbeep-ai-alt-text-generator'), $bbai_breakdown['seo']);
+                                    $bbai_tooltip_lines[] = sprintf(__('Conciseness: %d', 'beepbeep-ai-alt-text-generator'), $bbai_breakdown['conciseness']);
+                                    if (!empty($bbai_analysis['issues'])) {
+                                        $bbai_tooltip_lines[] = '';
+                                        foreach (array_slice($bbai_analysis['issues'], 0, 3) as $bbai_issue_line) {
+                                            $bbai_tooltip_lines[] = '• ' . $bbai_issue_line;
+                                        }
+                                    }
+                                    $bbai_quality_tooltip = implode("\n", $bbai_tooltip_lines);
+                                } elseif ($bbai_quality_class === 'excellent') {
                                     $bbai_quality_tooltip = __('ALT text is descriptive and SEO-friendly', 'beepbeep-ai-alt-text-generator');
                                 } elseif ($bbai_quality_class === 'good') {
                                     $bbai_quality_tooltip = __('ALT text is clear and descriptive', 'beepbeep-ai-alt-text-generator');
@@ -1145,7 +1277,11 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
                                 data-review-summary="<?php echo esc_attr($bbai_row_summary); ?>"
                                 data-quality-label="<?php echo esc_attr($bbai_quality_label); ?>"
                                 data-quality-class="<?php echo esc_attr($bbai_quality_class); ?>"
-                                data-quality-tooltip="<?php echo esc_attr($bbai_quality_tooltip); ?>">
+                                data-quality-tooltip="<?php echo esc_attr($bbai_quality_tooltip); ?>"
+                                data-quality-score="<?php echo esc_attr($bbai_quality_score); ?>"
+                                <?php if ($bbai_breakdown) : ?>data-quality-breakdown="<?php echo esc_attr(wp_json_encode($bbai_breakdown)); ?>"<?php endif; ?>
+                                <?php if (!empty($bbai_suggestions)) : ?>data-quality-suggestions="<?php echo esc_attr(wp_json_encode(array_slice($bbai_suggestions, 0, 4))); ?>"<?php endif; ?>
+                                <?php if (!empty($bbai_analysis['issues'])) : ?>data-quality-issues="<?php echo esc_attr(wp_json_encode(array_slice($bbai_analysis['issues'], 0, 5))); ?>"<?php endif; ?>>
                                 <td class="bbai-library-cell--select">
                                     <input type="checkbox" class="bbai-checkbox bbai-library-row-check bbai-image-checkbox" value="<?php echo esc_attr($bbai_attachment_id); ?>" data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>" aria-label="<?php
                                     /* translators: 1: image title */
@@ -1201,6 +1337,7 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
                                                   data-bbai-tooltip-position="top"
                                                   tabindex="0">i</span>
                                         </div>
+                                        <div class="bbai-library-alt-slot" data-bbai-alt-slot="1">
                                         <button type="button"
                                                 class="bbai-library-alt-trigger"
                                                 data-action="edit-alt-inline"
@@ -1211,6 +1348,7 @@ if (empty($bbai_coverage) || !isset($bbai_coverage['total_images'])) {
                                                 <span class="bbai-alt-text-missing"><?php esc_html_e('No alt text', 'beepbeep-ai-alt-text-generator'); ?></span>
                                             <?php endif; ?>
                                         </button>
+                                        </div>
                                         <p class="bbai-library-alt-helper"><?php echo esc_html($bbai_has_alt ? __('Click the ALT text to edit inline and save without leaving the page.', 'beepbeep-ai-alt-text-generator') : __('Add ALT text inline or generate it with AI.', 'beepbeep-ai-alt-text-generator')); ?></p>
                                         <?php if ($status === 'weak') : ?>
                                             <p class="bbai-library-alt-summary"><?php echo esc_html($bbai_row_summary); ?></p>

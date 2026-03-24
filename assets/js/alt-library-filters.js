@@ -17,7 +17,7 @@
     const ROW_SELECTOR = '.bbai-library-row';
     const BODY_SELECTOR = '#bbai-library-table-body';
     const EMPTY_SELECTOR = '#bbai-library-filter-empty';
-    const BTN_SELECTOR = '.bbai-alt-review-filters__btn';
+    const BTN_SELECTOR = '#bbai-review-filter-tabs button[data-filter]';
 
     function getTableBody() {
         return document.querySelector(BODY_SELECTOR);
@@ -61,6 +61,7 @@
 
         switch (filter) {
             case FILTER_NEEDS_REVIEW:
+            case 'weak':
                 return quality === 'needs-review' || quality === 'poor';
             case FILTER_MISSING:
                 return altMissing === 'true' || status === 'missing';
@@ -104,14 +105,15 @@
         const btns = document.querySelectorAll(BTN_SELECTOR);
         btns.forEach(function (btn) {
             const btnFilter = btn.getAttribute('data-filter');
-            const isActive = btnFilter === filter;
+            const isActive = btnFilter === filter || (filter === 'weak' && btnFilter === 'needs-review');
             btn.classList.toggle('bbai-alt-review-filters__btn--active', isActive);
+            btn.classList.toggle('bbai-filter-group__item--active', isActive);
             btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
         });
     }
 
     function init() {
-        const container = document.querySelector('.bbai-alt-review-filters');
+        const container = document.getElementById('bbai-review-filter-tabs');
         if (!container) return;
 
         const btns = container.querySelectorAll(BTN_SELECTOR);

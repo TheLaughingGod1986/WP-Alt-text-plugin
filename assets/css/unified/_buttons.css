@@ -66,46 +66,57 @@
    ============================================ */
 
 .bbai-btn-primary {
-    background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
+    min-height: var(--bbai-cta-primary-min-height, 40px);
+    padding-left: var(--bbai-cta-primary-padding-x, 16px) !important;
+    padding-right: var(--bbai-cta-primary-padding-x, 16px) !important;
+    min-width: var(--bbai-cta-primary-min-width, 220px);
+    border-radius: var(--bbai-cta-primary-radius, 8px);
+    font-size: var(--bbai-cta-primary-font-size, 14px);
+    font-weight: var(--bbai-cta-primary-font-weight, 500);
+    background: var(--bbai-cta-primary-bg, #10b981) !important;
     color: white !important;
-    border-color: #10B981 !important;
-    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4), 0 0 0 1px rgba(16, 185, 129, 0.1);
-    font-weight: var(--bbai-font-bold);
+    border-color: var(--bbai-cta-primary-bg, #10b981) !important;
+    box-shadow: var(--bbai-cta-primary-shadow, 0 1px 2px rgba(15, 23, 42, 0.06));
+    transform: translateY(0);
     position: relative;
     overflow: hidden;
+    transition: var(--bbai-cta-primary-transition, all 0.15s ease);
 }
 
 .bbai-btn-primary::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-    transition: left 0.5s ease;
+    display: none;
 }
 
 .bbai-btn-primary:hover:not(:disabled) {
-    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
-    border-color: #059669 !important;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5), 0 0 0 1px rgba(16, 185, 129, 0.2);
+    background: var(--bbai-cta-primary-bg-hover, #059669) !important;
+    border-color: var(--bbai-cta-primary-bg-hover, #059669) !important;
+    transform: translateY(-1px);
+    box-shadow: var(--bbai-cta-primary-shadow-hover, 0 3px 10px rgba(15, 23, 42, 0.1));
 }
 
 .bbai-btn-primary:hover:not(:disabled)::before {
-    left: 100%;
+    display: none;
 }
 
 .bbai-btn-primary:active:not(:disabled) {
-    transform: translateY(0);
-    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+    background: var(--bbai-cta-primary-bg-active, #047857) !important;
+    border-color: var(--bbai-cta-primary-bg-active, #047857) !important;
+    transform: translateY(0) scale(0.98);
+    box-shadow: var(--bbai-cta-primary-shadow, 0 1px 2px rgba(15, 23, 42, 0.06));
 }
 
 .bbai-btn-primary:focus-visible {
-    box-shadow: var(--bbai-shadow-focus), 0 6px 20px rgba(16, 185, 129, 0.5);
-    outline: 2px solid white;
+    outline: 2px solid #ffffff;
     outline-offset: 2px;
+    transform: translateY(0);
+    box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px rgba(16, 185, 129, 0.35);
+}
+
+/* Compact primary (toolbar / tables) — same colours, no min-width lock */
+.bbai-btn.bbai-btn-primary.bbai-btn-sm,
+.bbai-btn-primary.bbai-btn-sm {
+    min-width: 0;
+    min-height: 36px;
 }
 
 /* ============================================
@@ -114,20 +125,23 @@
 
 .bbai-btn-secondary {
     background: #ffffff !important;
-    color: #111827 !important;
-    border: 1px solid #e5e7eb !important;
+    color: #64748b !important;
+    border: 1px solid #e8ecf0 !important;
+    box-shadow: none !important;
+    transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
 }
 
 .bbai-btn-secondary:hover:not(:disabled) {
-    background: #f9fafb !important;
-    border-color: #d1d5db !important;
-    transform: translateY(-1px);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    background: #f8fafc !important;
+    border-color: #dce3e9 !important;
+    color: #475569 !important;
+    transform: none;
+    box-shadow: none !important;
 }
 
 .bbai-btn-secondary:active:not(:disabled) {
-    transform: translateY(0);
-    background: var(--bbai-bg-tertiary);
+    transform: none;
+    background: #f1f5f9 !important;
 }
 
 /* ============================================
@@ -411,10 +425,10 @@
 }
 
 .bbai-optimization-cta--primary {
-    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    background: #10b981;
     color: white !important;
     border-color: transparent;
-    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.45), 0 0 0 1px rgba(16, 185, 129, 0.1);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
     font-weight: 600;
     font-size: 15px !important;
     padding: 14px 28px !important; /* Consistent large button padding */
@@ -423,34 +437,29 @@
 }
 
 .bbai-optimization-cta--primary::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-    transition: left 0.5s ease;
+    display: none;
 }
 
 .bbai-optimization-cta--primary:hover:not(:disabled) {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.55), 0 0 0 1px rgba(16, 185, 129, 0.2);
+    background: #059669;
+    transform: none;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
 }
 
 .bbai-optimization-cta--primary:hover:not(:disabled)::before {
-    left: 100%;
+    display: none;
 }
 
 .bbai-optimization-cta--primary:active:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.45);
+    background: #047857;
+    transform: none;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
 .bbai-optimization-cta--primary:focus-visible {
-    outline: 3px solid white;
-    outline-offset: 3px;
-    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.3), 0 8px 24px rgba(16, 185, 129, 0.55);
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px rgba(16, 185, 129, 0.35);
 }
 
 .bbai-optimization-cta--secondary {
@@ -760,17 +769,29 @@
    High-specificity rules to override WP admin CSS
    ============================================ */
 
-/* Primary Button - Green Gradient */
+/* Primary Button - solid product green (matches banner / hero CTAs) */
 .wrap .bbai-btn.bbai-btn-primary,
 .bbai-dashboard-container .bbai-btn.bbai-btn-primary,
 .bbai-settings-card .bbai-btn.bbai-btn-primary,
 .bbai-card .bbai-btn.bbai-btn-primary,
 button.bbai-btn.bbai-btn-primary,
 a.bbai-btn.bbai-btn-primary {
-    background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
+    min-height: var(--bbai-cta-primary-min-height, 40px) !important;
+    min-width: var(--bbai-cta-primary-min-width, 220px);
+    border-radius: var(--bbai-cta-primary-radius, 10px) !important;
+    font-weight: var(--bbai-cta-primary-font-weight, 600) !important;
+    background: var(--bbai-cta-primary-bg, #10b981) !important;
     color: #ffffff !important;
-    border-color: #10B981 !important;
-    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4) !important;
+    border-color: var(--bbai-cta-primary-bg, #10b981) !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06) !important;
+    transform: none !important;
+    transition: var(
+        --bbai-cta-primary-transition,
+        background-color 140ms ease,
+        box-shadow 140ms ease,
+        transform 140ms ease,
+        border-color 140ms ease
+    ) !important;
 }
 
 .wrap .bbai-btn.bbai-btn-primary:hover,
@@ -779,12 +800,35 @@ a.bbai-btn.bbai-btn-primary {
 .bbai-card .bbai-btn.bbai-btn-primary:hover,
 button.bbai-btn.bbai-btn-primary:hover,
 a.bbai-btn.bbai-btn-primary:hover {
-    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5) !important;
+    background: var(--bbai-cta-primary-bg-hover, #059669) !important;
+    border-color: var(--bbai-cta-primary-bg-hover, #059669) !important;
+    transform: none !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
 }
 
-/* Secondary Button - White with Border */
+.wrap .bbai-btn.bbai-btn-primary:active,
+.bbai-dashboard-container .bbai-btn.bbai-btn-primary:active,
+.bbai-settings-card .bbai-btn.bbai-btn-primary:active,
+.bbai-card .bbai-btn.bbai-btn-primary:active,
+button.bbai-btn.bbai-btn-primary:active,
+a.bbai-btn.bbai-btn-primary:active {
+    background: var(--bbai-cta-primary-bg-active, #047857) !important;
+    border-color: var(--bbai-cta-primary-bg-active, #047857) !important;
+    box-shadow: 0 1px 1px rgba(15, 23, 42, 0.05) !important;
+    transform: scale(0.98) !important;
+}
+
+.wrap .bbai-btn.bbai-btn-primary.bbai-btn-sm,
+.bbai-dashboard-container .bbai-btn.bbai-btn-primary.bbai-btn-sm,
+.bbai-settings-card .bbai-btn.bbai-btn-primary.bbai-btn-sm,
+.bbai-card .bbai-btn.bbai-btn-primary.bbai-btn-sm,
+button.bbai-btn.bbai-btn-primary.bbai-btn-sm,
+a.bbai-btn.bbai-btn-primary.bbai-btn-sm {
+    min-width: 0 !important;
+    min-height: 36px !important;
+}
+
+/* Secondary Button - quiet, non-competing */
 .wrap .bbai-btn.bbai-btn-secondary,
 .bbai-dashboard-container .bbai-btn.bbai-btn-secondary,
 .bbai-settings-card .bbai-btn.bbai-btn-secondary,
@@ -792,9 +836,9 @@ a.bbai-btn.bbai-btn-primary:hover {
 button.bbai-btn.bbai-btn-secondary,
 a.bbai-btn.bbai-btn-secondary {
     background: #ffffff !important;
-    color: #111827 !important;
-    border: 1px solid #e5e7eb !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+    color: #64748b !important;
+    border: 1px solid #e8ecf0 !important;
+    box-shadow: none !important;
 }
 
 .wrap .bbai-btn.bbai-btn-secondary:hover,
@@ -803,9 +847,11 @@ a.bbai-btn.bbai-btn-secondary {
 .bbai-card .bbai-btn.bbai-btn-secondary:hover,
 button.bbai-btn.bbai-btn-secondary:hover,
 a.bbai-btn.bbai-btn-secondary:hover {
-    background: #f9fafb !important;
-    border-color: #d1d5db !important;
-    transform: translateY(-1px);
+    background: #f8fafc !important;
+    border-color: #dce3e9 !important;
+    color: #475569 !important;
+    transform: none !important;
+    box-shadow: none !important;
 }
 
 /* Danger Button - Red */

@@ -624,16 +624,16 @@ body.media_page_bbai #wpwrap {
 
 /* Primary Button */
 .bbai-btn-primary {
-    background: var(--bbai-info);
+    background: #10b981;
     color: var(--bbai-white);
     font-size: var(--bbai-text-base);
     font-weight: var(--bbai-font-semibold);
     padding: 1.05rem 2.65rem;
-    border: none;
+    border: 1px solid #10b981;
     border-radius: var(--bbai-radius-md);
     cursor: pointer;
     transition: var(--bbai-transition);
-    box-shadow: 0 8px 20px -6px rgba(59, 130, 246, 0.45);
+    box-shadow: 0 8px 20px -6px rgba(16, 185, 129, 0.35);
 }
 
 /* Place primary CTA on a new line under the chips */
@@ -643,9 +643,10 @@ body.media_page_bbai #wpwrap {
 }
 
 .bbai-btn-primary:hover {
-    background: var(--bbai-primary-dark);
+    background: #059669;
+    border-color: #059669;
     transform: translateY(-1px);
-    box-shadow: 0 12px 24px -8px rgba(37, 99, 235, 0.5);
+    box-shadow: 0 12px 24px -8px rgba(5, 150, 105, 0.4);
 }
 
 .bbai-btn-primary:disabled {

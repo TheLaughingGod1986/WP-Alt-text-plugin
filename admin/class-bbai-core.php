@@ -108,7 +108,7 @@ class Core {
     private const MENU_SLUG_DASHBOARD = 'bbai';
     private const MENU_SLUG_LIBRARY   = 'bbai-library';
     private const MENU_SLUG_ONBOARDING = 'bbai-onboarding';
-    private const ALT_COVERAGE_TRANSIENT_KEY = 'bbai_alt_coverage_scan_v3';
+    private const ALT_COVERAGE_TRANSIENT_KEY = 'bbai_alt_coverage_scan_v4';
     private const ALT_COVERAGE_TRANSIENT_TTL = 86400;
     private const ALT_COVERAGE_SCAN_JOB_PREFIX = 'bbai_alt_coverage_job_';
     private const ALT_COVERAGE_SCAN_JOB_TTL = 900;
@@ -1159,6 +1159,35 @@ class Core {
     
     // create_performance_indexes() and migrate_usage_logs_table() have been
     // consolidated into DB_Schema::install() — see includes/class-bbai-db.php.
+
+    /**
+     * Add body class on plugin admin screens that use the dashboard shell so CSS can break out of core .wrap width.
+     *
+     * @param string $classes Space-separated body classes.
+     * @return string
+     */
+    public function filter_admin_body_class( $classes ) {
+        if ( ! is_admin() ) {
+            return $classes;
+        }
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
+        $page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+        $dashboard_shell_pages = [
+            self::MENU_SLUG_DASHBOARD,
+            self::MENU_SLUG_LIBRARY,
+            'bbai-analytics',
+            'bbai-credit-usage',
+            'bbai-settings',
+            'bbai-guide',
+            'bbai-debug',
+            self::MENU_SLUG_ONBOARDING,
+        ];
+        if ( ! in_array( $page, $dashboard_shell_pages, true ) ) {
+            return $classes;
+        }
+        $classes = is_string( $classes ) ? $classes : '';
+        return trim( $classes . ' bbai-dashboard' );
+    }
 
     public function add_settings_page() {
         $cap = current_user_can(self::CAPABILITY) ? self::CAPABILITY : 'manage_options';
@@ -3067,7 +3096,6 @@ class Core {
         foreach ($rows as $row) {
             $attachment_id = isset($row['ID']) ? (int) $row['ID'] : 0;
             $alt_text = isset($row['alt_text']) ? trim((string) $row['alt_text']) : '';
-            $approved_hash = isset($row['approved_hash']) ? (string) $row['approved_hash'] : '';
             $source_value = strtolower(trim((string) ($row['source_value'] ?? '')));
 
             if ($attachment_id <= 0) {
@@ -3088,9 +3116,15 @@ class Core {
                 $scan_state['ai_source_count'] = max(0, (int) ($scan_state['ai_source_count'] ?? 0)) + 1;
             }
 
-            if ($approved_hash !== '' && hash_equals($approved_hash, $this->hash_alt_text($alt_text))) {
+            $row_state_obj = (object) [
+                'ID'       => $attachment_id,
+                'alt_text' => $alt_text,
+            ];
+            $row_state = $this->get_library_workspace_row_state($row_state_obj);
+            if (!empty($row_state['user_approved'])) {
                 $scan_state['approved_count'] = max(0, (int) ($scan_state['approved_count'] ?? 0)) + 1;
-            } elseif (function_exists('bbai_calculate_alt_quality_score') && bbai_calculate_alt_quality_score($alt_text) < 80) {
+            }
+            if (($row_state['status'] ?? '') === 'weak') {
                 $scan_state['needs_review_count'] = max(0, (int) ($scan_state['needs_review_count'] ?? 0)) + 1;
             }
 
@@ -3209,8 +3243,7 @@ class Core {
                 )
             );
 
-            // Needs-review count: images with alt text whose quality score is < 80 (needs-review or poor).
-            // Uses same scoring as ALT Library table for consistent counts.
+            // Needs-review count: same classification as ALT Library rows (get_library_workspace_row_state → status weak).
             $needs_review_count = 0;
             $approved_count = 0;
             $filename_only_count = 0;
@@ -3231,11 +3264,15 @@ class Core {
                 foreach ( $rows as $row ) {
                     $alt = isset( $row['alt_text'] ) ? (string) $row['alt_text'] : '';
                     $id  = isset( $row['ID'] ) ? (int) $row['ID'] : 0;
-                    $approved_hash = isset( $row['approved_hash'] ) ? (string) $row['approved_hash'] : '';
-                    $is_user_approved = $approved_hash !== '' && hash_equals( $approved_hash, $this->hash_alt_text( $alt ) );
-                    if ( $is_user_approved ) {
+                    $image_row = (object) [
+                        'ID'       => $id,
+                        'alt_text' => $alt,
+                    ];
+                    $norm_state = $this->get_library_workspace_row_state( $image_row );
+                    if ( ! empty( $norm_state['user_approved'] ) ) {
                         $approved_count++;
-                    } elseif ( function_exists( 'bbai_calculate_alt_quality_score' ) && bbai_calculate_alt_quality_score( $alt ) < 80 ) {
+                    }
+                    if ( ( $norm_state['status'] ?? '' ) === 'weak' ) {
                         $needs_review_count++;
                     }
                     if ( $id > 0 && $alt !== '' ) {
@@ -3633,6 +3670,83 @@ class Core {
         ];
     }
 
+    /**
+     * Single source of truth for ALT Library table row filter state (must match workspace row markup).
+     *
+     * @param object $image Row object (expects ID, alt_text like DB row).
+     * @return array{status:string,status_label:string,quality_class:string,quality_label:string,quality_score:int,score_tier:string,score_tier_label:string,analysis:?array,user_approved:bool,has_alt:bool,clean_alt:string}
+     */
+    public function get_library_workspace_row_state(object $image): array {
+        $attachment_id = isset($image->ID) ? (int) $image->ID : 0;
+        $current_alt   = $image->alt_text ?? '';
+        $clean_alt     = is_string($current_alt) ? trim($current_alt) : '';
+        $has_alt       = '' !== $clean_alt;
+
+        if ($attachment_id <= 0 || ! $has_alt) {
+            return [
+                'status'            => 'missing',
+                'status_label'      => __('Missing', 'beepbeep-ai-alt-text-generator'),
+                'quality_class'     => 'poor',
+                'quality_label'     => __('Weak', 'beepbeep-ai-alt-text-generator'),
+                'quality_score'     => 0,
+                'score_tier'        => 'missing',
+                'score_tier_label'  => '',
+                'analysis'          => null,
+                'user_approved'     => false,
+                'has_alt'           => $has_alt,
+                'clean_alt'         => $clean_alt,
+            ];
+        }
+
+        $bbai_analysis = $this->evaluate_alt_health($attachment_id, $clean_alt);
+        $bbai_is_user_approved = ! empty($bbai_analysis['user_approved']);
+        $bbai_quality_score      = (is_array($bbai_analysis) && isset($bbai_analysis['score']))
+            ? (int) $bbai_analysis['score']
+            : (function_exists('bbai_calculate_alt_quality_score')
+                ? bbai_calculate_alt_quality_score($clean_alt)
+                : 50);
+        $bbai_quality_score = max(0, min(100, $bbai_quality_score));
+
+        if ($bbai_quality_score >= 85) {
+            $bbai_score_tier       = 'good';
+            $bbai_score_tier_label = __('Good', 'beepbeep-ai-alt-text-generator');
+            $bbai_quality_class    = 'excellent';
+            $bbai_quality_label    = __('Good', 'beepbeep-ai-alt-text-generator');
+        } elseif ($bbai_quality_score >= 70) {
+            $bbai_score_tier       = 'review';
+            $bbai_score_tier_label = __('Review', 'beepbeep-ai-alt-text-generator');
+            $bbai_quality_class    = 'needs-review';
+            $bbai_quality_label    = __('Review', 'beepbeep-ai-alt-text-generator');
+        } else {
+            $bbai_score_tier       = 'weak';
+            $bbai_score_tier_label = __('Weak', 'beepbeep-ai-alt-text-generator');
+            $bbai_quality_class    = 'poor';
+            $bbai_quality_label    = __('Weak', 'beepbeep-ai-alt-text-generator');
+        }
+
+        if ($bbai_is_user_approved || $bbai_quality_score >= 85) {
+            $status       = 'optimized';
+            $status_label = __('Optimized', 'beepbeep-ai-alt-text-generator');
+        } else {
+            $status       = 'weak';
+            $status_label = __('Needs review', 'beepbeep-ai-alt-text-generator');
+        }
+
+        return [
+            'status'           => $status,
+            'status_label'     => $status_label,
+            'quality_class'    => $bbai_quality_class,
+            'quality_label'    => $bbai_quality_label,
+            'quality_score'    => $bbai_quality_score,
+            'score_tier'       => $bbai_score_tier,
+            'score_tier_label' => $bbai_score_tier_label,
+            'analysis'         => $bbai_analysis,
+            'user_approved'    => $bbai_is_user_approved,
+            'has_alt'          => true,
+            'clean_alt'        => $clean_alt,
+        ];
+    }
+
     private function evaluate_alt_health(int $attachment_id, string $alt): array{
         $alt = trim((string) $alt);
         if ($alt === ''){
@@ -3902,7 +4016,7 @@ class Core {
 	            $image_mime_like
 	        ), ARRAY_A);
 
-	        if (empty($rows) || !function_exists('bbai_calculate_alt_quality_score')) {
+	        if (empty($rows)) {
 	            return [];
 	        }
 
@@ -3915,7 +4029,12 @@ class Core {
 	                continue;
 	            }
 
-	            if (bbai_calculate_alt_quality_score($alt_text) < 80) {
+	            $img = (object) [
+	                'ID'       => $attachment_id,
+	                'alt_text' => $alt_text,
+	            ];
+	            $st = $this->get_library_workspace_row_state($img);
+	            if (($st['status'] ?? '') === 'weak') {
 	                $needs_review_ids[] = $attachment_id;
 	            }
 	        }

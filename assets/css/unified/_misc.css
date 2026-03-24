@@ -10,8 +10,8 @@
 /* Unauthenticated */
 .bbai-unauth-container { padding: 40px; text-align: center; }
 .bbai-unauth-list { text-align: left; display: inline-block; }
-.bbai-settings-required-note { margin-top: 12px; font-size: var(--bbai-text-sm); color: var(--bbai-gray-500); }
-.bbai-settings-required-actions { margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap; }
+.bbai-settings-required-note { margin-top: var(--bbai-space-4); font-size: 12px; color: var(--bbai-gray-500); line-height: 1.5; }
+.bbai-settings-required-actions { margin-top: 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
 
 /* Debug */
 .bbai-debug-hint { margin-top: 12px; font-size: var(--bbai-text-sm); color: var(--bbai-gray-500); }

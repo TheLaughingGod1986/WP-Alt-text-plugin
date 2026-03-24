@@ -16,7 +16,7 @@ if ( ! function_exists( 'bbai_render_layout' ) ) {
 	function bbai_render_layout( callable $content_callback ) {
 		?>
 		<div class="bbai-page">
-			<div class="bbai-page-inner">
+			<div class="bbai-page-inner bbai-page-container">
 				<?php call_user_func( $content_callback ); ?>
 			</div>
 		</div>

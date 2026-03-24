@@ -18,7 +18,7 @@ body.modal-open #wpbody-content {
     padding: 20px;
     background: rgba(15, 23, 42, 0.56);
     backdrop-filter: blur(10px);
-    transition: opacity 0.24s ease, visibility 0.24s ease;
+    transition: opacity 0.17s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0.17s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 #bbai-upgrade-modal.active,
@@ -44,8 +44,10 @@ body.modal-open #wpbody-content {
     background: #ffffff;
     box-shadow: 0 28px 80px rgba(15, 23, 42, 0.22);
     opacity: 0;
-    transform: translateY(14px) scale(0.975);
-    transition: opacity 0.24s ease, transform 0.24s ease;
+    transform: translateY(8px) scale(0.985);
+    transition:
+        opacity 0.17s cubic-bezier(0.2, 0.8, 0.2, 1),
+        transform 0.17s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 #bbai-upgrade-modal.active .bbai-upgrade-modal__content,
@@ -88,7 +90,12 @@ body.modal-open #wpbody-content {
     background: rgba(248, 250, 252, 0.92);
     color: #64748b;
     box-shadow: none;
-    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+    transition:
+        background 0.14s cubic-bezier(0.2, 0.8, 0.2, 1),
+        border-color 0.14s cubic-bezier(0.2, 0.8, 0.2, 1),
+        color 0.14s cubic-bezier(0.2, 0.8, 0.2, 1),
+        transform 0.14s cubic-bezier(0.2, 0.8, 0.2, 1),
+        box-shadow 0.14s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 #bbai-upgrade-modal .bbai-upgrade-modal__close:hover {
@@ -96,6 +103,19 @@ body.modal-open #wpbody-content {
     border-color: rgba(148, 163, 184, 0.9);
     color: #0f172a;
     transform: translateY(-1px);
+}
+
+#bbai-upgrade-modal .bbai-upgrade-modal__close:active {
+    transform: translateY(0);
+}
+
+#bbai-upgrade-modal .bbai-upgrade-modal__close:focus {
+    outline: none;
+}
+
+#bbai-upgrade-modal .bbai-upgrade-modal__close:focus-visible {
+    outline: 2px solid rgba(16, 185, 129, 0.45);
+    outline-offset: 2px;
 }
 
 #bbai-upgrade-modal .bbai-upgrade-modal__close svg {
@@ -250,25 +270,27 @@ body.modal-open #wpbody-content {
 #bbai-upgrade-modal .bbai-upgrade-modal__primary-action,
 #bbai-upgrade-modal .bbai-pricing-card__btn--growth.bbai-btn-primary,
 #bbai-upgrade-modal a.bbai-pricing-card__btn--growth {
-    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%) !important;
-    background-image: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%) !important;
+    background: #10b981 !important;
+    background-image: none !important;
     color: #ffffff !important;
     border: 0 !important;
-    box-shadow: 0 10px 24px rgba(79, 70, 229, 0.22) !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06) !important;
 }
 
 #bbai-upgrade-modal .bbai-upgrade-modal__primary-action:hover,
 #bbai-upgrade-modal .bbai-pricing-card__btn--growth.bbai-btn-primary:hover,
 #bbai-upgrade-modal a.bbai-pricing-card__btn--growth:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 16px 34px rgba(79, 70, 229, 0.28) !important;
+    background: #059669 !important;
+    transform: none;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
 }
 
 #bbai-upgrade-modal .bbai-upgrade-modal__primary-action:active,
 #bbai-upgrade-modal .bbai-pricing-card__btn--growth.bbai-btn-primary:active,
 #bbai-upgrade-modal a.bbai-pricing-card__btn--growth:active {
-    transform: translateY(0);
-    box-shadow: 0 8px 18px rgba(79, 70, 229, 0.2) !important;
+    background: #047857 !important;
+    transform: none;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06) !important;
 }
 
 #bbai-upgrade-modal .bbai-upgrade-modal__secondary-action,

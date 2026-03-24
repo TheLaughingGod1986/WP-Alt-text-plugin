@@ -1,0 +1,709 @@
+/* BeepBeep AI SaaS consistency system
+ * Shared across Dashboard, Library, Analytics, Usage, Settings.
+ */
+
+/*
+ * WordPress admin shell — plugin screens only (body.bbai-dashboard via filter_admin_body_class).
+ * Removes core .wrap / #wpbody-content constraints so the product owns horizontal canvas.
+ */
+body.bbai-dashboard #wpbody-content {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+body.bbai-dashboard #wpbody-content .wrap {
+    max-width: none !important;
+    width: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+body.bbai-dashboard #wpcontent {
+    padding-left: 0 !important;
+}
+
+/* Plugin canvas inset: matches header bar; not browser edge-to-edge */
+body.bbai-dashboard .wrap.bbai-wrap > .bbai-header {
+    padding-left: 24px;
+    padding-right: 32px;
+}
+
+body.bbai-dashboard .wrap.bbai-wrap > .bbai-container.bbai-content-shell {
+    padding-left: 24px;
+    padding-right: 32px;
+    padding-top: 0;
+    padding-bottom: 0;
+    box-sizing: border-box;
+}
+
+/* Onboarding uses .wrap > .bbai-container without .bbai-content-shell — same canvas inset + full width */
+body.bbai-dashboard .wrap.bbai-wrap > .bbai-container:not(.bbai-content-shell) {
+    max-width: none;
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 24px;
+    padding-right: 32px;
+    box-sizing: border-box;
+}
+
+/* Horizontal gutter lives on .bbai-content-shell; nested tab roots keep vertical padding only */
+body.bbai-dashboard .bbai-container.bbai-content-shell .bbai-container {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+body.bbai-dashboard .bbai-header-content {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+}
+
+/* ALT Library review surface: full width inside content-shell (no nested max-width / extra gutter) */
+body.bbai-dashboard .bbai-library-container.bbai-library-workspace.bbai-container {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    padding-left: 0;
+    padding-right: 0;
+    box-sizing: border-box;
+}
+
+body.bbai-dashboard .bbai-library-workspace .bbai-workspace {
+    width: 100%;
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+    box-sizing: border-box;
+}
+
+/*
+ * ALT Library only (data root): main column + fixed-width rail so the review workspace
+ * uses the admin canvas; avoids fractional rail stealing width on large screens.
+ */
+body.bbai-dashboard [data-bbai-library-workspace-root] .bbai-workspace-grid.bbai-library-workspace-grid {
+    width: 100%;
+    max-width: none;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+}
+
+body.bbai-dashboard [data-bbai-library-workspace-root] .bbai-workspace-grid .bbai-main-content {
+    max-width: none;
+    width: 100%;
+    min-width: 0;
+}
+
+body.bbai-dashboard [data-bbai-library-workspace-root] .bbai-workspace.bbai-library-main,
+body.bbai-dashboard [data-bbai-library-workspace-root] .bbai-library-main {
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+}
+
+@media (max-width: 1024px) {
+    body.bbai-dashboard [data-bbai-library-workspace-root] .bbai-workspace-grid.bbai-library-workspace-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── Global spacing tokens (only three — document-wide, no per-page overrides) ─ */
+:root {
+    /* Spacing scale — use across Dashboard, Library, Analytics */
+    --bbai-space-8: 8px;
+    --bbai-space-12: 12px;
+    --bbai-space-16: 16px;
+    --bbai-space-20: 20px;
+    --bbai-space-24: 24px;
+    --bbai-space-32: 32px;
+    --page-padding-top: 24px;
+    --section-spacing: 24px;
+    --card-gap: 16px;
+    /* Single product primary CTA (physical spec — Dashboard is source of truth) */
+    --bbai-cta-primary-bg: #10b981;
+    --bbai-cta-primary-bg-hover: #059669;
+    --bbai-cta-primary-bg-active: #047857;
+    --bbai-cta-primary-min-height: 40px;
+    --bbai-cta-primary-padding-x: 16px;
+    --bbai-cta-primary-min-width: 220px;
+    --bbai-cta-primary-min-width-rail: 200px;
+    --bbai-cta-primary-radius: 8px;
+    --bbai-cta-primary-font-size: 14px;
+    --bbai-cta-primary-font-weight: 500;
+    --bbai-cta-primary-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    --bbai-cta-primary-shadow-hover: 0 3px 10px rgba(15, 23, 42, 0.1);
+    --bbai-cta-primary-transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    /* Vertical rhythm: space above primary action groups */
+    --bbai-cta-group-margin-top: 16px;
+}
+
+/* Ensure plugin screens inside .wrap inherit the same values explicitly */
+.wrap.bbai-wrap,
+.wrap.bbai-wrap.bbai-modern {
+    --page-padding-top: 24px;
+    --section-spacing: 24px;
+    --card-gap: 16px;
+    --bbai-cta-primary-radius: 8px;
+    --bbai-cta-primary-font-size: 14px;
+    --bbai-cta-primary-font-weight: 500;
+    --bbai-cta-primary-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    --bbai-cta-primary-shadow-hover: 0 3px 10px rgba(15, 23, 42, 0.1);
+    --bbai-cta-group-margin-top: 16px;
+    --bbai-cta-primary-transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    /* Legacy modern.bundle tokens → one green primary system inside plugin UI */
+    --bbai-color-primary: #10b981;
+    --bbai-color-primary-hover: #059669;
+    --bbai-color-primary-dark: #047857;
+    --bbai-color-primary-light: #d1fae5;
+}
+
+/* Page canvas: top from token; sides/bottom use tokens only (no per-page overrides) */
+.bbai-page-container {
+    padding-top: var(--page-padding-top);
+}
+
+.bbai-card-grid {
+    display: grid;
+    gap: var(--card-gap);
+}
+
+.bbai-card-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--card-gap);
+}
+
+/* Major vertical blocks — use instead of ad-hoc margins */
+.bbai-section {
+    margin-bottom: var(--section-spacing);
+}
+
+.bbai-section:last-child,
+.bbai-section:last-of-type {
+    margin-bottom: 0;
+}
+
+/* Unified page container (tab roots reset inside .bbai-page-inner.bbai-page-container) */
+.bbai-container {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: var(--section-spacing, 24px) var(--section-spacing, 24px);
+    box-sizing: border-box;
+}
+
+.bbai-page-inner.bbai-page-container > .bbai-container {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* Core surfaces */
+.bbai-card,
+.bbai-usage-action,
+.bbai-usage-status,
+.bbai-analytics-trend-block,
+.bbai-library-summary-card,
+.bbai-library-guidance,
+.bbai-lib-core-card,
+.bbai-settings-card,
+.bbai-settings-plan-summary-card {
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    box-shadow: 0 2px 12px rgba(15, 23, 42, 0.05);
+    transform: translateY(0);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.wrap.bbai-wrap .bbai-card:hover,
+.wrap.bbai-wrap .bbai-usage-action:hover,
+.wrap.bbai-wrap .bbai-usage-status:hover,
+.wrap.bbai-wrap .bbai-analytics-trend-block:hover,
+.wrap.bbai-wrap .bbai-library-summary-card:hover,
+.wrap.bbai-wrap .bbai-library-guidance:hover,
+.wrap.bbai-wrap .bbai-lib-core-card:hover,
+.wrap.bbai-wrap .bbai-settings-card:hover,
+.wrap.bbai-wrap .bbai-settings-plan-summary-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.07);
+    border-color: #e2e8e0;
+}
+
+/* Type rhythm */
+.bbai-page-title,
+.bbai-analytics-hero__headline,
+.bbai-usage-status__number,
+.bbai-library-summary-card__title {
+    color: #0f172a;
+}
+
+.bbai-page-subtitle,
+.bbai-analytics-hero__subtitle,
+.bbai-usage-status__meta,
+.bbai-library-summary-card__copy,
+.bbai-settings-card-description {
+    color: #6b7280;
+}
+
+/* Hero primitive */
+.bbai-hero {
+    border-radius: 12px;
+    padding: 28px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 12px rgba(15, 23, 42, 0.05);
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.bbai-hero--warning {
+    border-color: #fbcaca;
+    background: linear-gradient(180deg, #fff7f7 0%, #ffffff 100%);
+}
+
+.bbai-hero--success {
+    border-color: #bbf7d0;
+    background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%);
+}
+
+.bbai-hero--neutral {
+    border-color: #dbeafe;
+    background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
+}
+
+/* Metric strip */
+.bbai-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--card-gap);
+    margin: var(--section-spacing) 0;
+}
+
+.bbai-metrics > * {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #ffffff;
+    padding: 14px 16px;
+}
+
+.bbai-metrics > * strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 16px;
+    color: #0f172a;
+}
+
+.bbai-metrics > * span {
+    display: block;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* Alert primitive */
+.bbai-alert {
+    border-radius: 12px;
+    border: 1px solid #bfdbfe;
+    background: #eff6ff;
+    padding: 16px;
+}
+
+.bbai-alert--success {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+}
+
+.bbai-alert--warning {
+    border-color: #fde68a;
+    background: #fffbeb;
+}
+
+.bbai-alert--info {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+}
+
+/* Button hierarchy: one primary system (solid green, shared spec) */
+.bbai-btn.bbai-btn-primary,
+.bbai-btn-primary {
+    min-height: var(--bbai-cta-primary-min-height);
+    padding-left: var(--bbai-cta-primary-padding-x) !important;
+    padding-right: var(--bbai-cta-primary-padding-x) !important;
+    min-width: var(--bbai-cta-primary-min-width);
+    border-radius: var(--bbai-cta-primary-radius);
+    font-size: var(--bbai-cta-primary-font-size, 14px);
+    font-weight: var(--bbai-cta-primary-font-weight);
+    background: var(--bbai-cta-primary-bg) !important;
+    border-color: var(--bbai-cta-primary-bg) !important;
+    color: #ffffff !important;
+    box-shadow: var(--bbai-cta-primary-shadow);
+    transform: translateY(0);
+    transition: var(--bbai-cta-primary-transition);
+}
+
+.bbai-btn.bbai-btn-primary:hover,
+.bbai-btn-primary:hover {
+    /* Lift + shadow only — same fill (elite micro-interaction spec) */
+    background: var(--bbai-cta-primary-bg) !important;
+    border-color: var(--bbai-cta-primary-bg) !important;
+    box-shadow: var(--bbai-cta-primary-shadow-hover);
+    transform: translateY(-1px);
+}
+
+.bbai-btn.bbai-btn-primary:active,
+.bbai-btn-primary:active {
+    background: var(--bbai-cta-primary-bg) !important;
+    border-color: var(--bbai-cta-primary-bg) !important;
+    box-shadow: var(--bbai-cta-primary-shadow);
+    transform: translateY(0) scale(0.98);
+}
+
+.bbai-btn.bbai-btn-primary:focus-visible,
+.bbai-btn-primary:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+    background: var(--bbai-cta-primary-bg) !important;
+    border-color: var(--bbai-cta-primary-bg) !important;
+    box-shadow:
+        0 0 0 2px #ffffff,
+        0 0 0 4px rgba(16, 185, 129, 0.35);
+    transform: translateY(0);
+}
+
+.bbai-btn.bbai-btn-secondary,
+.bbai-btn-secondary {
+    background: #ffffff !important;
+    border: 1px solid rgba(148, 163, 184, 0.11) !important;
+    color: #7b8898 !important;
+    font-weight: 400 !important;
+    box-shadow: none !important;
+    transform: none;
+    transition:
+        background-color 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.bbai-btn.bbai-btn-secondary:hover,
+.bbai-btn-secondary:hover {
+    background: #f6f8fa !important;
+    border-color: rgba(148, 163, 184, 0.26) !important;
+    color: #606b78 !important;
+    transform: none;
+    box-shadow: none !important;
+}
+
+/* ── Interactive link scale (admin shell): readable + clearly clickable ── */
+.wrap.bbai-wrap {
+    --bbai-link-primary: #1d4ed8;
+    --bbai-link-primary-hover: #1e3a8a;
+    --bbai-link-secondary: #2563eb;
+    --bbai-link-secondary-hover: #1d4ed8;
+    --bbai-link-tertiary: #3b82f6;
+    --bbai-link-tertiary-hover: #1d4ed8;
+    --bbai-link-disabled-fg: #94a3b8;
+    --bbai-link-disabled-bg: #f1f5f9;
+}
+
+.bbai-link-btn,
+.bbai-usage-action__btn-ghost,
+.bbai-clear-filter-link {
+    color: var(--bbai-link-secondary, #2563eb);
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.bbai-link-btn:hover,
+.bbai-usage-action__btn-ghost:hover,
+.bbai-clear-filter-link:hover {
+    color: var(--bbai-link-secondary-hover, #1d4ed8);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+/* Locked upgrade CTAs: still clickable — do not use global disabled hit-target */
+.wrap.bbai-wrap button.bbai-is-locked[data-bbai-action='open-upgrade'],
+.wrap.bbai-wrap .bbai-is-locked[data-bbai-locked-cta='1'] {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+.wrap.bbai-wrap .bbai-btn.bbai-is-locked[data-bbai-action='open-upgrade'] {
+    opacity: 1 !important;
+    background: #fffbeb !important;
+    border-color: #fbbf24 !important;
+    color: #92400e !important;
+    box-shadow: 0 1px 3px rgba(146, 64, 14, 0.1) !important;
+}
+
+.wrap.bbai-wrap .bbai-btn.bbai-is-locked[data-bbai-action='open-upgrade']:hover {
+    background: #fef3c7 !important;
+    border-color: #f59e0b !important;
+    color: #78350f !important;
+}
+
+/* Shared content + sidebar layout (canonical product shell) */
+.bbai-workspace-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.95fr);
+    gap: var(--bbai-space-24, 24px);
+    align-items: start;
+}
+
+/* Status banner: narrative only — primary CTAs live in main column or product rail */
+.wrap.bbai-wrap .bbai-command-hero-wrap--text-only .bbai-banner__layout.bbai-dashboard-hero__layout {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.wrap.bbai-wrap .bbai-command-hero-wrap--text-only .bbai-banner__actions.bbai-dashboard-hero-actions {
+    display: none;
+}
+
+/* Supporting rail — quieter than primary column (one main block per page) */
+.bbai-product-rail__inner {
+    padding: var(--bbai-space-20, 20px) var(--bbai-space-20, 20px) var(--bbai-space-20, 20px);
+    border-radius: 14px;
+    border: 1px solid rgba(241, 245, 249, 0.95);
+    background: #fafbfc;
+    box-shadow: 0 1px 8px rgba(15, 23, 42, 0.028);
+    transition: box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.wrap.bbai-wrap .bbai-product-rail__inner:hover {
+    box-shadow: 0 3px 12px rgba(15, 23, 42, 0.042);
+    border-color: #eef2f7;
+}
+
+.bbai-product-rail__title {
+    margin: 0 0 var(--bbai-space-8, 8px);
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+    color: #0f172a;
+}
+
+.bbai-product-rail__copy {
+    margin: 0 0 var(--bbai-space-16, 16px);
+    font-size: 13px;
+    line-height: 1.5;
+    color: #64748b;
+}
+
+.bbai-product-rail__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--bbai-space-8, 8px);
+    margin-bottom: var(--bbai-space-12, 12px);
+}
+
+.bbai-product-rail__actions:last-child {
+    margin-bottom: 0;
+}
+
+.bbai-product-rail__actions--tertiary {
+    margin-bottom: 0;
+}
+
+.bbai-product-rail__meta {
+    margin: 0 0 var(--bbai-space-12, 12px);
+    font-size: 12px;
+    line-height: 1.45;
+    color: #64748b;
+}
+
+.bbai-product-rail__meta:last-child {
+    margin-bottom: 0;
+}
+
+.bbai-product-rail__foot {
+    margin: var(--bbai-space-12, 12px) 0 0;
+    padding-top: var(--bbai-space-12, 12px);
+    border-top: 1px solid rgba(241, 245, 249, 0.9);
+}
+
+.bbai-dashboard-surface-card--rail {
+    background: #f8fafc;
+    border-color: #e8ecf1;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+
+/* Dashboard command grid — same ratio as workspace (primary + rail) */
+#bbai-dashboard-main .bbai-dashboard-command__grid {
+    grid-template-columns: minmax(0, 1.7fr) minmax(260px, 0.95fr);
+    gap: var(--bbai-space-24, 24px);
+    align-items: start;
+}
+
+#bbai-dashboard-main .bbai-command-card--plan.bbai-product-rail-surface {
+    background: #fafbfc;
+    border-color: rgba(241, 245, 249, 0.95);
+    box-shadow: 0 1px 10px rgba(15, 23, 42, 0.032);
+}
+
+#bbai-dashboard-main .bbai-command-card--plan.bbai-product-rail-surface:hover {
+    border-color: #eef2f7;
+    box-shadow: 0 3px 14px rgba(15, 23, 42, 0.048);
+}
+
+.bbai-main-content,
+.bbai-sidebar {
+    min-width: 0;
+}
+
+.bbai-sidebar-sticky {
+    position: sticky;
+    top: 90px;
+}
+
+.bbai-sidebar-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--card-gap, 16px);
+}
+
+/* Usage page polish */
+.bbai-usage-workspace {
+    max-width: 1280px;
+}
+
+.bbai-usage-action__list {
+    margin: 10px 0 12px;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 6px;
+    color: #0f172a;
+    font-size: 13px;
+}
+
+.bbai-usage-action__list li::before {
+    content: "✓";
+    color: #16a34a;
+    margin-right: 8px;
+    font-weight: 700;
+}
+
+.bbai-credit-filter-actions {
+    justify-content: flex-end;
+}
+
+.bbai-credit-activity-table-wrap table.widefat.fixed.striped tbody tr:nth-child(odd) {
+    background: #fcfcfd;
+}
+
+.bbai-credit-activity-table-wrap table.widefat.fixed.striped tbody tr:hover {
+    background: #f9fafb;
+}
+
+/* Analytics page polish */
+.bbai-analytics-page .bbai-analytics-hero {
+    margin-bottom: var(--card-gap, 16px);
+}
+
+.bbai-analytics-page .bbai-analytics-hero__actions {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    margin-top: var(--bbai-cta-group-margin-top, 16px);
+    margin-bottom: 0;
+}
+
+.bbai-analytics-emphasis {
+    margin-bottom: 18px;
+    font-weight: 600;
+}
+
+.bbai-analytics-conversion-card {
+    padding: 18px;
+}
+
+.bbai-analytics-conversion-card h3,
+.bbai-analytics-conversion-card h4 {
+    margin: 0 0 8px;
+}
+
+.bbai-analytics-conversion-card p {
+    margin: 0 0 10px;
+    color: #6b7280;
+}
+
+.bbai-analytics-conversion-card ul {
+    margin: 0 0 12px 18px;
+    color: #1f2937;
+}
+
+/* Library page polish — premium workspace uses full content width (see library-workspace.php) */
+.bbai-library-container.bbai-container:not(.bbai-library-workspace) {
+    max-width: 1280px;
+}
+
+.bbai-library-table .bbai-alt-text-preview {
+    line-height: 1.5;
+}
+
+.bbai-library-table tbody tr td {
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+
+.bbai-library-table tbody tr:hover {
+    background: #f9fafb;
+}
+
+.bbai-library-table .bbai-alt-actions-cell .bbai-btn {
+    margin-right: 8px;
+}
+
+/* Settings page polish */
+.bbai-settings-page.bbai-container {
+    max-width: 1280px;
+}
+
+.bbai-settings-upgrade-block {
+    margin-top: 24px;
+    padding: 20px;
+}
+
+.bbai-settings-upgrade-block ul {
+    margin: 10px 0 12px 18px;
+}
+
+.bbai-settings-upgrade-block__actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* General table comfort */
+.bbai-table tr:hover,
+table.widefat tbody tr:hover {
+    background: #f9fafb;
+}
+
+table.widefat td,
+table.widefat th {
+    padding-top: 11px;
+    padding-bottom: 11px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .bbai-container {
+        padding: 18px;
+    }
+
+    .bbai-workspace-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .bbai-sidebar-sticky {
+        position: static;
+    }
+}
+
+@media (max-width: 860px) {
+    .bbai-metrics {
+        grid-template-columns: 1fr;
+    }
+}

@@ -6,25 +6,28 @@
     box-sizing: border-box;
 }
 
+/* Top + horizontal canvas: .bbai-page-inner.bbai-page-container (status-card-refresh) */
 .bbai-page {
-    padding-top: 28px;
+    padding-top: 0;
 }
 
-.bbai-page-inner {
+.bbai-page-inner:not(.bbai-page-container) {
     width: 100%;
     max-width: 1280px;
     margin: 0 auto;
-    padding: 0 32px 40px;
+    padding: 0 var(--section-spacing, 24px)
+        calc(var(--section-spacing, 24px) + var(--card-gap, 16px));
     box-sizing: border-box;
 }
 
-.bbai-page-inner > .bbai-clean-dashboard,
-.bbai-page-inner > .bbai-library-container,
-.bbai-page-inner > .bbai-analytics-page,
-.bbai-page-inner > .bbai-settings-page,
-.bbai-page-inner > .bbai-guide-page,
-.bbai-page-inner > .bbai-credit-usage-page,
-.bbai-page-inner > .bbai-debug-page {
+.bbai-page-inner.bbai-page-container > .bbai-container,
+.bbai-page-inner.bbai-page-container > .bbai-clean-dashboard,
+.bbai-page-inner.bbai-page-container > .bbai-library-container,
+.bbai-page-inner.bbai-page-container > .bbai-analytics-page,
+.bbai-page-inner.bbai-page-container > .bbai-settings-page,
+.bbai-page-inner.bbai-page-container > .bbai-guide-page,
+.bbai-page-inner.bbai-page-container > .bbai-credit-usage-page,
+.bbai-page-inner.bbai-page-container > .bbai-debug-page {
     width: 100%;
     max-width: none;
     margin: 0;
@@ -34,26 +37,23 @@
     box-sizing: border-box;
 }
 
-.bbai-page-inner .bbai-dashboard-container {
+.bbai-page-inner.bbai-page-container .bbai-dashboard-container {
     max-width: none;
     margin: 0;
     padding: 0;
 }
 
 @media (max-width: 1024px) {
-    .bbai-page {
-        padding-top: 24px;
-    }
-
-    .bbai-page-inner {
-        padding: 0 24px 32px;
+    .bbai-page-inner:not(.bbai-page-container) {
+        padding: 0 var(--section-spacing, 24px)
+            calc(var(--section-spacing, 24px) + var(--card-gap, 16px));
     }
 }
 
 @media (max-width: 782px) {
-    .bbai-page-inner {
-        padding-left: 20px;
-        padding-right: 20px;
+    .bbai-page-inner:not(.bbai-page-container) {
+        padding-left: var(--section-spacing, 24px);
+        padding-right: var(--section-spacing, 24px);
     }
 }
 
@@ -422,22 +422,12 @@
 }
 
 .bbai-modern .bbai-library-row:hover {
-    background: #f8fbff;
-    box-shadow: inset 2px 0 0 rgba(59, 130, 246, 0.42);
+    background: #f1f5f9;
+    box-shadow: inset 2px 0 0 rgba(59, 130, 246, 0.55);
 }
 
 .bbai-modern .bbai-library-actions {
     gap: 10px;
-}
-
-.bbai-modern .bbai-library-actions .bbai-link-sm {
-    opacity: 0.75;
-    font-weight: 600;
-}
-
-.bbai-modern .bbai-library-row:hover .bbai-library-actions .bbai-link-sm,
-.bbai-modern .bbai-library-actions .bbai-link-sm:focus-visible {
-    opacity: 1;
 }
 
 .bbai-modern .bbai-library-action-lock {
@@ -574,12 +564,18 @@
 }
 
 .bbai-modern .bbai-library-preview-modal__action--locked {
-    background: #e2e8f0 !important;
-    border-color: #cbd5e1 !important;
-    box-shadow: none !important;
-    color: #475569 !important;
+    background: #fffbeb !important;
+    border-color: #fbbf24 !important;
+    box-shadow: 0 1px 3px rgba(146, 64, 14, 0.1) !important;
+    color: #92400e !important;
     cursor: pointer !important;
     pointer-events: auto !important;
+}
+
+.bbai-modern .bbai-library-preview-modal__action--locked:hover {
+    background: #fef3c7 !important;
+    border-color: #f59e0b !important;
+    color: #78350f !important;
 }
 
 /* Bottom upsell – modern SaaS upgrade card */
@@ -603,22 +599,25 @@
 }
 
 .bbai-modern .bbai-library-row:hover {
-    background: #f0f5ff;
-    box-shadow: inset 3px 0 0 #3b82f6;
+    background: #f1f5f9;
+    box-shadow: inset 2px 0 0 rgba(59, 130, 246, 0.55);
 }
 
-/* Actions fade in on hover */
+/* Row text actions — always read as links (no “washed out” idle state) */
 .bbai-modern .bbai-library-actions .bbai-link-sm {
-    opacity: 0.55;
-    font-weight: 500;
+    opacity: 1;
+    font-weight: 600;
     font-size: 13px;
-    color: #3b82f6;
+    color: #2563eb;
     background: none;
     border: none;
     cursor: pointer;
     padding: 4px 8px;
     border-radius: 6px;
-    transition: opacity 0.15s ease, background 0.15s ease;
+    text-decoration: underline;
+    text-decoration-color: rgba(37, 99, 235, 0.35);
+    text-underline-offset: 2px;
+    transition: color 0.15s ease, background 0.15s ease, text-decoration-color 0.15s ease;
 }
 
 .bbai-modern .bbai-library-row:hover .bbai-library-actions .bbai-link-sm {
@@ -626,17 +625,28 @@
 }
 
 .bbai-modern .bbai-library-actions .bbai-link-sm:hover {
-    opacity: 1;
+    color: #1d4ed8;
     background: rgba(59, 130, 246, 0.08);
+    text-decoration-color: rgba(29, 78, 216, 0.55);
+}
+
+.bbai-modern .bbai-library-actions .bbai-link-sm:focus-visible {
+    outline: 2px solid rgba(59, 130, 246, 0.35);
+    outline-offset: 2px;
 }
 
 .bbai-modern .bbai-library-actions .bbai-link-sm--disabled {
-    color: #94a3b8;
-    cursor: default;
+    color: #94a3b8 !important;
+    text-decoration: none !important;
+    cursor: not-allowed !important;
+    opacity: 1;
+    pointer-events: none;
 }
 
 .bbai-modern .bbai-library-actions .bbai-link-sm--disabled:hover {
-    background: none;
+    background: none !important;
+    color: #94a3b8 !important;
+    text-decoration: none !important;
 }
 
 /* Locked action indicator */

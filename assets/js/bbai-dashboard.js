@@ -3187,6 +3187,8 @@ bbaiRunWithJQuery(function($) {
             return value;
         });
     };
+    /** @see BBAI_BANNER_LOW_CREDITS_THRESHOLD in includes/admin/banner-system.php */
+    var BBAI_BANNER_LOW_CREDITS_THRESHOLD = 10;
     var feedbackTimeout = null;
 
     function parseCount(value) {
@@ -3667,13 +3669,16 @@ bbaiRunWithJQuery(function($) {
     function getDashboardHeroStateModel(data) {
         var missing = Math.max(0, parseCount(data && data.missing));
         var weak = Math.max(0, parseCount(data && data.weak));
+        if (weak <= 0 && data && data.needs_review_count !== undefined && data.needs_review_count !== null) {
+            weak = parseCount(data.needs_review_count);
+        }
         var total = Math.max(0, parseCount(data && data.total));
+        var totalIssues = missing + weak;
         var creditsRemaining = Math.max(0, parseCount(data && data.creditsRemaining));
         var usagePercent = Math.min(100, Math.max(0, Math.round((parseCount(data && data.creditsUsed) / Math.max(1, parseCount(data && data.creditsTotal))) * 100)));
-        var isHealthy = missing === 0 && weak === 0 && total > 0;
-        var isLowCredits = creditsRemaining > 0 && creditsRemaining < 10;
+        var isLowCredits = creditsRemaining > 0 && creditsRemaining <= BBAI_BANNER_LOW_CREDITS_THRESHOLD;
         var isOutOfCredits = creditsRemaining === 0;
-        var isFirstRun = !hasScanResults(data) || total === 0;
+        var thresh = BBAI_BANNER_LOW_CREDITS_THRESHOLD;
         var libraryUrl = data && data.libraryUrl ? String(data.libraryUrl) : '#';
         var usageUrl = data && data.usageUrl ? String(data.usageUrl) : '#';
         var guideUrl = data && data.guideUrl ? String(data.guideUrl) : '#';
@@ -3703,37 +3708,34 @@ bbaiRunWithJQuery(function($) {
             tertiaryAction: null
         };
 
-        if (isFirstRun) {
-            model.state = 'first-run';
-            model.tone = 'setup';
-            model.headline = __('No images found yet.', 'beepbeep-ai-alt-text-generator');
-            model.subtext = __('Upload images to start improving your SEO.', 'beepbeep-ai-alt-text-generator');
-            model.nextStep = __('Scan your site once images are uploaded.', 'beepbeep-ai-alt-text-generator');
-            model.primaryAction = createAction(
-                __('Scan Media Library', 'beepbeep-ai-alt-text-generator'),
-                '',
-                {
-                    bbaiAction: 'scan-opportunity'
-                }
-            );
-            model.secondaryAction = createAction(
-                __('Learn how it works', 'beepbeep-ai-alt-text-generator'),
-                '',
-                {
-                    href: guideUrl
-                }
-            );
-            return model;
-        }
-
         if (isOutOfCredits) {
             model.state = 'out-of-credits';
             model.tone = 'paused';
-            model.headline = __("You've used all credits this cycle", 'beepbeep-ai-alt-text-generator');
-            model.subtext = __('ALT generation is paused until your allowance resets or you upgrade.', 'beepbeep-ai-alt-text-generator');
-            model.nextStep = __('Upgrade to continue optimizing new images.', 'beepbeep-ai-alt-text-generator');
+            var cycleOut = typeof window !== 'undefined' && typeof window.bbaiBuildBannerMessage === 'function'
+                ? window.bbaiBuildBannerMessage({ creditsRemaining: 0, issueCount: totalIssues })
+                : null;
+            if (cycleOut) {
+                model.headline = cycleOut.title || cycleOut.line1;
+                model.subtext = cycleOut.supportingLine || cycleOut.line2;
+                model.nextStep = '';
+            } else {
+                model.headline = __('You’re out of credits', 'beepbeep-ai-alt-text-generator');
+                model.subtext = __('Upgrade to continue optimizing your images.', 'beepbeep-ai-alt-text-generator');
+                model.nextStep =
+                    totalIssues > 0
+                        ? sprintf(
+                              _n(
+                                  '%s image still needs attention.',
+                                  '%s images still need attention.',
+                                  totalIssues,
+                                  'beepbeep-ai-alt-text-generator'
+                              ),
+                              formatCount(totalIssues)
+                          )
+                        : '';
+            }
             model.primaryAction = createAction(
-                __('Turn on automatic optimisation', 'beepbeep-ai-alt-text-generator'),
+                __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
                 '',
                 {
                     action: 'show-upgrade-modal'
@@ -3746,108 +3748,80 @@ bbaiRunWithJQuery(function($) {
                     href: usageUrl
                 }
             );
-            model.tertiaryAction = createAction(
-                __('View details', 'beepbeep-ai-alt-text-generator'),
-                '',
-                {
-                    href: libraryUrl
-                }
-            );
+            model.tertiaryAction = null;
             return model;
         }
 
         if (isLowCredits) {
             model.state = 'low-credits';
             model.tone = 'attention';
-            model.headline = __('You’re running low on credits', 'beepbeep-ai-alt-text-generator');
-            model.subtext = sprintf(
-                _n(
-                    'You have %s optimization left this cycle.',
-                    'You have %s optimizations left this cycle.',
-                    creditsRemaining,
-                    'beepbeep-ai-alt-text-generator'
-                ),
-                formatCount(creditsRemaining)
-            );
-
-            if (data && data.isPremium) {
-                model.nextStep = __('Review your usage and plan ahead.', 'beepbeep-ai-alt-text-generator');
-                model.primaryAction = createAction(
-                    __('Review usage', 'beepbeep-ai-alt-text-generator'),
-                    '',
-                    {
-                        href: usageUrl
-                    }
-                );
-                model.secondaryAction = createAction(
-                    __('View details', 'beepbeep-ai-alt-text-generator'),
-                    '',
-                    {
-                        href: libraryUrl
-                    }
-                );
+            var cycleLow = typeof window !== 'undefined' && typeof window.bbaiBuildBannerMessage === 'function'
+                ? window.bbaiBuildBannerMessage({ creditsRemaining: creditsRemaining, issueCount: totalIssues })
+                : null;
+            if (cycleLow) {
+                model.headline = cycleLow.title || cycleLow.line1;
+                model.subtext = cycleLow.supportingLine || cycleLow.line2;
+                model.nextStep = '';
             } else {
+                model.headline = __('You’re running low on credits', 'beepbeep-ai-alt-text-generator');
+                model.subtext = sprintf(
+                    _n(
+                        'You have %s optimization left this cycle.',
+                        'You have %s optimizations left this cycle.',
+                        creditsRemaining,
+                        'beepbeep-ai-alt-text-generator'
+                    ),
+                    formatCount(creditsRemaining)
+                );
+                if (totalIssues > 0) {
+                    model.subtext +=
+                        ' ' +
+                        sprintf(
+                            _n(
+                                '%s image still needs attention.',
+                                '%s images still need attention.',
+                                totalIssues,
+                                'beepbeep-ai-alt-text-generator'
+                            ),
+                            formatCount(totalIssues)
+                        );
+                }
                 model.nextStep = __('Upgrade to keep optimizing without interruption.', 'beepbeep-ai-alt-text-generator');
-                model.primaryAction = createAction(
-                    __('Turn on automatic optimisation', 'beepbeep-ai-alt-text-generator'),
-                    '',
-                    {
-                        action: 'show-upgrade-modal'
-                    }
-                );
-                model.secondaryAction = createAction(
-                    __('Review usage', 'beepbeep-ai-alt-text-generator'),
-                    '',
-                    {
-                        href: usageUrl
-                    }
-                );
             }
+            model.primaryAction = createAction(
+                __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
+                '',
+                {
+                    action: 'show-upgrade-modal'
+                }
+            );
+            model.secondaryAction = createAction(
+                __('Review usage', 'beepbeep-ai-alt-text-generator'),
+                '',
+                {
+                    href: usageUrl
+                }
+            );
             return model;
         }
 
-        if (!isHealthy) {
+        var needsLibraryAttention = creditsRemaining > thresh && totalIssues > 0;
+
+        if (needsLibraryAttention) {
             model.state = 'incomplete';
             model.tone = 'attention';
-            model.headline = missing > 0
-                ? (
-                    missing === 1
-                        ? __('1 image is costing you traffic', 'beepbeep-ai-alt-text-generator')
-                        : sprintf(
-                            __('%s images are costing you traffic', 'beepbeep-ai-alt-text-generator'),
-                            formatCount(missing)
-                        )
-                )
-                : __('Your ALT text needs a final review', 'beepbeep-ai-alt-text-generator');
-            model.subtext = missing > 0
-                ? (
-                    missing === 1
-                        ? __('Fix it now and recover lost traffic. One click to reach 100% optimisation.', 'beepbeep-ai-alt-text-generator')
-                        : __('Fix them now and recover lost traffic.', 'beepbeep-ai-alt-text-generator')
-                )
-                : __('Strengthen weak ALT text to protect your rankings.', 'beepbeep-ai-alt-text-generator');
-            model.nextStep = missing > 0
-                ? (
-                    missing === 1
-                        ? __('Fix this to reach 100% image SEO coverage.', 'beepbeep-ai-alt-text-generator')
-                        : __('Fix them to reach 100% image SEO coverage.', 'beepbeep-ai-alt-text-generator')
-                )
-                : __('Finish your review to reach full coverage.', 'beepbeep-ai-alt-text-generator');
-            model.secondaryAction = createAction(
-                __('See what\'s broken', 'beepbeep-ai-alt-text-generator'),
-                '',
-                {
-                    href: missing > 0
-                        ? (data && data.missingLibraryUrl ? data.missingLibraryUrl : libraryUrl)
-                        : (data && data.needsReviewLibraryUrl ? data.needsReviewLibraryUrl : libraryUrl)
-                }
-            );
+            model.headline = __('Your library needs attention', 'beepbeep-ai-alt-text-generator');
+            model.subtext = __('Some images are missing ALT text or need improvement.', 'beepbeep-ai-alt-text-generator');
+            model.nextStep =
+                typeof window !== 'undefined' && typeof window.bbaiBuildIssueAttentionMessage === 'function'
+                    ? window.bbaiBuildIssueAttentionMessage(totalIssues)
+                    : sprintf(
+                          _n('%s image needs attention.', '%s images need attention.', totalIssues, 'beepbeep-ai-alt-text-generator'),
+                          formatCount(totalIssues)
+                      );
             if (missing > 0) {
                 model.primaryAction = createAction(
-                    sprintf(
-                        __('Fix missing ALT text (%s)', 'beepbeep-ai-alt-text-generator'),
-                        formatCount(missing)
-                    ),
+                    __('Fix missing ALT text', 'beepbeep-ai-alt-text-generator'),
                     '',
                     {
                         action: 'generate-missing',
@@ -3856,73 +3830,92 @@ bbaiRunWithJQuery(function($) {
                 );
             } else {
                 model.primaryAction = createAction(
-                    __('Review ALT text', 'beepbeep-ai-alt-text-generator'),
+                    __('Improve ALT text', 'beepbeep-ai-alt-text-generator'),
                     '',
                     {
-                        action: 'show-generate-alt-modal'
+                        action: 'regenerate-all',
+                        attributes: {
+                            'data-bbai-regenerate-scope': 'needs-review',
+                            'data-bbai-generation-source': 'regenerate-weak'
+                        }
                     }
                 );
             }
-            return model;
-        }
-
-        if (data && data.isPremium) {
-            model.state = 'healthy-pro';
-            model.tone = 'healthy';
-            model.headline = __('You’ve fully optimised your image SEO 🎉', 'beepbeep-ai-alt-text-generator');
-            model.subtext = __('Your site is now fully discoverable in Google Images.', 'beepbeep-ai-alt-text-generator');
-            model.nextStep = '';
-            model.note = __('⚡ Full scan completed in under 10 seconds', 'beepbeep-ai-alt-text-generator');
-            model.primaryAction = createAction(
-                __('Scan for new issues', 'beepbeep-ai-alt-text-generator'),
-                '',
-                {
-                    bbaiAction: 'scan-opportunity'
-                }
-            );
             model.secondaryAction = createAction(
-                __('View optimised images', 'beepbeep-ai-alt-text-generator'),
+                __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
                 '',
                 {
                     href: libraryUrl
                 }
             );
-            model.loopActions = [
-                createAction(__('Auto-optimise future uploads', 'beepbeep-ai-alt-text-generator'), '', { href: settingsUrl }),
-                createAction(__('Review optimisation settings', 'beepbeep-ai-alt-text-generator'), '', { href: settingsUrl })
-            ];
-            model.loopSupportLine = '';
-            model.upgradeTensionLine = '';
             return model;
         }
 
-        model.state = 'healthy-free';
-        model.tone = 'healthy';
-        model.headline = __('You’ve fully optimised your image SEO 🎉', 'beepbeep-ai-alt-text-generator');
-        model.subtext = __('Your site is now fully discoverable in Google Images.', 'beepbeep-ai-alt-text-generator');
-        model.nextStep = '';
-        model.note = __('⚡ Full scan completed in under 10 seconds', 'beepbeep-ai-alt-text-generator');
+        if (total > 0 && totalIssues === 0) {
+            if (data && data.isPremium) {
+                model.state = 'healthy-pro';
+            } else {
+                model.state = 'healthy-free';
+            }
+            model.tone = 'healthy';
+            model.headline = __('Your library is in great shape', 'beepbeep-ai-alt-text-generator');
+            model.subtext = __('All images are optimized and up to date.', 'beepbeep-ai-alt-text-generator');
+            model.nextStep = '';
+            model.note = '';
+            if (data && data.isPremium) {
+                model.primaryAction = createAction(
+                    __('Enable Auto-Optimisation', 'beepbeep-ai-alt-text-generator'),
+                    '',
+                    {
+                        href: settingsUrl
+                    }
+                );
+            } else {
+                model.primaryAction = createAction(
+                    __('Enable Auto-Optimisation', 'beepbeep-ai-alt-text-generator'),
+                    '',
+                    {
+                        action: 'show-upgrade-modal'
+                    }
+                );
+            }
+            model.secondaryAction = createAction(
+                __('Scan manually', 'beepbeep-ai-alt-text-generator'),
+                '',
+                {
+                    action: 'rescan-media-library'
+                }
+            );
+            model.loopActions = [
+                createAction(__('Auto-optimise future uploads', 'beepbeep-ai-alt-text-generator'), '', { href: settingsUrl }),
+                createAction(__('See upgrade options', 'beepbeep-ai-alt-text-generator'), '', { action: 'show-upgrade-modal' })
+            ];
+            model.loopSupportLine = '';
+            model.upgradeTensionLine = data && data.isPremium
+                ? ''
+                : __('New uploads will stop being optimised automatically on the free plan', 'beepbeep-ai-alt-text-generator');
+            return model;
+        }
+
+        model.state = 'first-run';
+        model.tone = 'setup';
+        model.headline = __('Get started with your media library', 'beepbeep-ai-alt-text-generator');
+        model.subtext = __('Scan your library to find missing ALT text and improve accessibility faster.', 'beepbeep-ai-alt-text-generator');
+        model.nextStep = __('Start by scanning your media library.', 'beepbeep-ai-alt-text-generator');
         model.primaryAction = createAction(
-            __('Scan for new issues', 'beepbeep-ai-alt-text-generator'),
+            __('Scan Media Library', 'beepbeep-ai-alt-text-generator'),
             '',
             {
                 bbaiAction: 'scan-opportunity'
             }
         );
         model.secondaryAction = createAction(
-            __('View optimised images', 'beepbeep-ai-alt-text-generator'),
+            __('Learn how it works', 'beepbeep-ai-alt-text-generator'),
             '',
             {
-                href: libraryUrl
+                href: guideUrl
             }
         );
-        model.loopActions = [
-            createAction(__('Auto-optimise future uploads', 'beepbeep-ai-alt-text-generator'), '', { href: settingsUrl }),
-            createAction(__('See upgrade options', 'beepbeep-ai-alt-text-generator'), '', { action: 'show-upgrade-modal' })
-        ];
-        model.loopSupportLine = '';
-        model.upgradeTensionLine = __('New uploads will stop being optimised automatically on the free plan', 'beepbeep-ai-alt-text-generator');
-
         return model;
     }
 
@@ -3941,8 +3934,13 @@ bbaiRunWithJQuery(function($) {
     function getStatusCoverageData(data) {
         var optimized = parseCount(data && data.optimized);
         var weak = parseCount(data && data.weak);
+        if (weak <= 0 && data && data.needs_review_count !== undefined && data.needs_review_count !== null) {
+            weak = parseCount(data.needs_review_count);
+        }
         var missing = parseCount(data && data.missing);
-        var total = Math.max(0, optimized + weak + missing);
+        var derivedTotal = Math.max(0, optimized + weak + missing);
+        var statedTotal = data && data.total !== undefined && data.total !== null ? parseCount(data.total) : 0;
+        var total = statedTotal > 0 ? statedTotal : derivedTotal;
         var coverage = total > 0 ? Math.round((optimized / total) * 100) : 0;
 
         return {
@@ -4222,6 +4220,8 @@ bbaiRunWithJQuery(function($) {
 
         hero.setAttribute('data-state', model.state || 'healthy-free');
         hero.setAttribute('data-tone', model.tone || 'healthy');
+        hero.classList.remove('bbai-banner--success', 'bbai-banner--warning');
+        hero.classList.add((model.tone || 'healthy') === 'healthy' ? 'bbai-banner--success' : 'bbai-banner--warning');
         hero.setAttribute('data-bbai-banner-used', String(Math.max(0, parseCount(data.creditsUsed))));
         hero.setAttribute('data-bbai-banner-limit', String(Math.max(1, parseCount(data.creditsTotal))));
         hero.setAttribute('data-bbai-banner-remaining', String(Math.max(0, parseCount(data.creditsRemaining))));
@@ -4287,17 +4287,30 @@ bbaiRunWithJQuery(function($) {
             var resetCopy = getPlanResetLine(data) || getUsageResetCopy(usageLine);
             usageLine.setAttribute('data-bbai-reset-copy', resetCopy || '');
             usageLine.innerHTML =
-                '<span class="bbai-dashboard-hero__usage-pill">' + escapeDashboardHtml(getPlanLabel(data)) + '</span>' +
-                '<span class="bbai-dashboard-hero__usage-primary">' + escapeDashboardHtml(getRemainingPlanLine(data)) + '</span>' +
-                (resetCopy ? '<span class="bbai-dashboard-hero__usage-secondary">' + escapeDashboardHtml(resetCopy) + '</span>' : '');
+                '<span class="bbai-dashboard-hero__usage-pill bbai-banner__pill">' + escapeDashboardHtml(getPlanLabel(data)) + '</span>' +
+                '<span class="bbai-dashboard-hero__usage-primary bbai-banner__usage-primary">' + escapeDashboardHtml(getRemainingPlanLine(data)) + '</span>' +
+                (resetCopy ? '<span class="bbai-dashboard-hero__usage-secondary bbai-banner__usage-secondary">' + escapeDashboardHtml(resetCopy) + '</span>' : '');
         }
 
         if (progressFill) {
             var usagePercent = model.usagePercent;
             progressFill.setAttribute('data-bbai-banner-progress-target', String(Math.round(usagePercent)));
             animateLinearProgress(progressFill, usagePercent, 400, 40);
-            if (progressFill.parentNode && typeof progressFill.parentNode.setAttribute === 'function') {
-                progressFill.parentNode.setAttribute('aria-valuenow', String(Math.round(usagePercent)));
+            var progressTrack = progressFill.parentNode;
+            if (progressTrack && typeof progressTrack.setAttribute === 'function') {
+                progressTrack.setAttribute('aria-valuenow', String(Math.round(usagePercent)));
+                var usedNow = Math.max(0, parseCount(data.creditsUsed));
+                var limitNow = Math.max(1, parseCount(data.creditsTotal));
+                progressTrack.setAttribute(
+                    'aria-valuetext',
+                    sprintf(
+                        /* translators: 1: percent used, 2: credits used, 3: credit limit */
+                        __('%1$s%% used — %2$s of %3$s credits this cycle.', 'beepbeep-ai-alt-text-generator'),
+                        String(Math.round(usagePercent)),
+                        formatCount(usedNow),
+                        formatCount(limitNow)
+                    )
+                );
             }
         }
 
@@ -4620,7 +4633,7 @@ bbaiRunWithJQuery(function($) {
                 donutNode.removeAttribute('data-bbai-donut-intro-raf');
                 donutNode.removeAttribute('data-bbai-donut-intro-animating');
                 donutNode.setAttribute('data-bbai-donut-intro-played', '1');
-                donutNode.style.transition = 'background 0.65s cubic-bezier(0.33, 1, 0.68, 1)';
+                donutNode.style.transition = 'background 0.45s cubic-bezier(0.2, 0.8, 0.2, 1)';
                 donutNode.style.background = getStatusCardDonutGradient(statusCoverage, activeSegment);
                 donutNode.setAttribute('data-bbai-status-active-segment', activeSegment);
             }
@@ -4691,7 +4704,7 @@ bbaiRunWithJQuery(function($) {
             return;
         }
 
-        donutNode.style.transition = 'background 0.65s cubic-bezier(0.33, 1, 0.68, 1)';
+        donutNode.style.transition = 'background 0.45s cubic-bezier(0.2, 0.8, 0.2, 1)';
         donutNode.style.background = getStatusCardDonutGradient(statusCoverage, activeSegment);
         donutNode.setAttribute('data-bbai-status-active-segment', activeSegment);
 
@@ -5011,6 +5024,10 @@ bbaiRunWithJQuery(function($) {
             window.setTimeout(function() {
                 navigateToStatusCardFilter(row);
             }, 110);
+
+            window.setTimeout(function() {
+                row.classList.remove('is-pressed');
+            }, 220);
         });
 
         if (refreshButton) {
@@ -5033,6 +5050,7 @@ bbaiRunWithJQuery(function($) {
         var summaryMetaNode = statusCard.querySelector('[data-bbai-status-last-scan]');
         var summaryDetailNode = statusCard.querySelector('[data-bbai-status-summary-detail]');
         var metrics = {
+            all: statusCard.querySelector('[data-bbai-status-metric="all"]'),
             optimized: statusCard.querySelector('[data-bbai-status-metric="optimized"]'),
             weak: statusCard.querySelector('[data-bbai-status-metric="weak"]'),
             missing: statusCard.querySelector('[data-bbai-status-metric="missing"]')
@@ -5082,9 +5100,11 @@ bbaiRunWithJQuery(function($) {
         }
 
         Object.keys(metrics).forEach(function(key) {
-            if (metrics[key]) {
-                metrics[key].textContent = formatCount(statusCoverage[key]);
+            if (!metrics[key]) {
+                return;
             }
+            var value = key === 'all' ? statusCoverage.total : statusCoverage[key];
+            metrics[key].textContent = formatCount(value);
         });
 
         if (coverageValue) {
@@ -5401,7 +5421,7 @@ bbaiRunWithJQuery(function($) {
             statusLabel: __('Available on Growth', 'beepbeep-ai-alt-text-generator'),
             statusHelper: __('Turn on with the Growth plan.', 'beepbeep-ai-alt-text-generator'),
             valueSupport: __('Upgrade once and let Growth keep future uploads covered automatically.', 'beepbeep-ai-alt-text-generator'),
-            ctaLabel: __('Enable Auto-Optimization', 'beepbeep-ai-alt-text-generator'),
+            ctaLabel: __('Enable Auto-Optimisation', 'beepbeep-ai-alt-text-generator'),
             secondaryLabel: __('Compare plans', 'beepbeep-ai-alt-text-generator'),
             modifier: 'locked'
         };
@@ -5779,7 +5799,7 @@ bbaiRunWithJQuery(function($) {
 
         if (!successNow) {
             hero.setAttribute('data-bbai-success-state', '0');
-            hero.classList.remove('bbai-dashboard-hero--celebrate');
+            hero.classList.remove('bbai-dashboard-hero--celebrate', 'bbai-banner--celebrate');
             return;
         }
 
@@ -5798,9 +5818,9 @@ bbaiRunWithJQuery(function($) {
         try {
             if (!sessionStorage.getItem(SUCCESS_CELEBRATION_SESSION_KEY) && shouldMarkNewSuccess) {
                 sessionStorage.setItem(SUCCESS_CELEBRATION_SESSION_KEY, '1');
-                hero.classList.remove('bbai-dashboard-hero--celebrate');
+                hero.classList.remove('bbai-dashboard-hero--celebrate', 'bbai-banner--celebrate');
                 window.setTimeout(function() {
-                    hero.classList.add('bbai-dashboard-hero--celebrate');
+                    hero.classList.add('bbai-dashboard-hero--celebrate', 'bbai-banner--celebrate');
 
                     var iconNode = hero.querySelector('[data-bbai-hero-icon]');
                     if (iconNode) {
@@ -5808,7 +5828,7 @@ bbaiRunWithJQuery(function($) {
                     }
 
                     window.setTimeout(function() {
-                        hero.classList.remove('bbai-dashboard-hero--celebrate');
+                        hero.classList.remove('bbai-dashboard-hero--celebrate', 'bbai-banner--celebrate');
                     }, 620);
                 }, 20);
             }

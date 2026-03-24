@@ -40,6 +40,7 @@ trait Core_Review {
             '_bbai_review_model',
             '_bbai_reviewed_at',
             '_bbai_review_alt_hash',
+            '_bbai_review_version',
         ];
         foreach ($keys as $key) {
             delete_post_meta($attachment_id, $key);
@@ -53,9 +54,22 @@ trait Core_Review {
      * @param string $current_alt   Current alt text for comparison
      * @return array|null Review data or null
      */
+    /**
+     * Scoring system version. Bump this to invalidate all cached reviews
+     * scored under a previous (weaker) rubric.
+     */
+    const REVIEW_SCORING_VERSION = 2;
+
     private function get_review_snapshot(int $attachment_id, string $current_alt = ''): ?array {
         $score = intval(get_post_meta($attachment_id, '_bbai_review_score', true));
         if ($score <= 0) {
+            return null;
+        }
+
+        // Purge reviews scored under an older scoring system version.
+        $stored_version = intval(get_post_meta($attachment_id, '_bbai_review_version', true));
+        if ($stored_version < self::REVIEW_SCORING_VERSION) {
+            $this->purge_review_meta($attachment_id);
             return null;
         }
 
@@ -103,7 +117,10 @@ trait Core_Review {
     }
 
     /**
-     * Evaluate alt text health using heuristics
+     * Evaluate alt text health using the unified scoring engine.
+     *
+     * Delegates to BBAI_Alt_Quality_Scorer for deterministic scoring,
+     * then merges with any cached LLM review (taking the stricter score).
      *
      * @param int    $attachment_id Attachment ID
      * @param string $alt           Alt text to evaluate
@@ -127,141 +144,64 @@ trait Core_Review {
             ];
         }
 
-        $score = 100;
-        $issues = [];
+        // Build context from attachment metadata.
+        $context = [];
+        $title = get_the_title($attachment_id);
+        if ($title) {
+            $context['title'] = $title;
+        }
+        $file = get_attached_file($attachment_id);
+        if ($file) {
+            $context['filename'] = basename($file);
+        }
+        $context['attachment_id'] = $attachment_id;
 
-        $normalized = strtolower(trim($alt));
-        $placeholder_pattern = '/^(test|testing|sample|example|dummy|placeholder|alt(?:\s+text)?|image|photo|picture|n\/a|none|lorem)$/';
-        if ($normalized === '' || preg_match($placeholder_pattern, $normalized)) {
-            return [
-                'score' => 0,
-                'grade' => __('Critical', 'beepbeep-ai-alt-text-generator'),
-                'status' => 'critical',
-                'issues' => [__('ALT text looks like placeholder content and must be rewritten.', 'beepbeep-ai-alt-text-generator')],
-                'heuristic' => [
-                    'score' => 0,
-                    'grade' => __('Critical', 'beepbeep-ai-alt-text-generator'),
-                    'status'=> 'critical',
-                    'issues'=> [__('ALT text looks like placeholder content and must be rewritten.', 'beepbeep-ai-alt-text-generator')],
-                ],
-                'review' => null,
+        // Load unified scorer.
+        if (!class_exists('BBAI_Alt_Quality_Scorer')) {
+            $scorer_path = defined('BEEPBEEP_AI_PLUGIN_DIR')
+                ? BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-alt-quality-scorer.php'
+                : dirname(dirname(__FILE__)) . '/../includes/class-alt-quality-scorer.php';
+            if (file_exists($scorer_path)) {
+                require_once $scorer_path;
+            }
+        }
+
+        // Get deterministic score from unified engine.
+        if (class_exists('BBAI_Alt_Quality_Scorer')) {
+            $scored = \BBAI_Alt_Quality_Scorer::score($alt, $context);
+        } else {
+            // Fallback: minimal scoring.
+            $scored = [
+                'score' => 50,
+                'label' => 'Needs improvement',
+                'grade' => 'C',
+                'issues' => [],
+                'suggestions' => [],
+                'hard_fail' => false,
             ];
         }
 
-        $length = function_exists('mb_strlen') ? mb_strlen($alt) : strlen($alt);
-        if ($length < 45) {
-            $score -= 35;
-            $issues[] = __('Too short – add a richer description (45+ characters).', 'beepbeep-ai-alt-text-generator');
-        } elseif ($length > 160) {
-            $score -= 15;
-            $issues[] = __('Very long – trim to keep the description concise (under 160 characters).', 'beepbeep-ai-alt-text-generator');
-        }
-
-        if (preg_match('/\b(image|picture|photo|screenshot)\b/i', $alt)) {
-            $score -= 10;
-            $issues[] = __('Contains generic filler words like "image" or "photo".', 'beepbeep-ai-alt-text-generator');
-        }
-
-        $redundant_phrases = [
-            "it's a photo of", 'its a photo of', 'a photo of', 'an image of', 'a picture of',
-            "it's an image of", 'its an image of', "it's a picture of", 'its a picture of',
-        ];
-        $lower_alt = strtolower($alt);
-        foreach ($redundant_phrases as $phrase) {
-            if (str_starts_with($lower_alt, $phrase)) {
-                $score -= 25;
-                $issues[] = __('Starts with redundant phrase like "photo of" or "image of" – describe the subject directly.', 'beepbeep-ai-alt-text-generator');
-                break;
-            }
-        }
-
-        if (preg_match('/\b(test|testing|sample|example|dummy|placeholder|lorem|alt text)\b/i', $alt)) {
-            $score = min($score - 80, 5);
-            $issues[] = __('Contains placeholder wording such as "test" or "sample". Replace with a real description.', 'beepbeep-ai-alt-text-generator');
-        }
-
-        $word_count = str_word_count($alt, 0, '0123456789');
-        if ($word_count < 4) {
-            $score -= 70;
-            $score = min($score, 5);
-            $issues[] = __('ALT text is extremely brief – add meaningful descriptive words.', 'beepbeep-ai-alt-text-generator');
-        } elseif ($word_count < 6) {
-            $score -= 50;
-            $score = min($score, 20);
-            $issues[] = __('ALT text is too short to convey the subject in detail.', 'beepbeep-ai-alt-text-generator');
-        } elseif ($word_count < 8) {
-            $score -= 35;
-            $score = min($score, 40);
-            $issues[] = __('ALT text could use a few more descriptive words.', 'beepbeep-ai-alt-text-generator');
-        }
-
-        if ($score > 40 && $length < 30) {
-            $score = min($score, 40);
-            $issues[] = __('Expand the description with one or two concrete details.', 'beepbeep-ai-alt-text-generator');
-        }
-
-        $normalize = static function($value) {
-            $value = strtolower((string) $value);
-            $value = preg_replace('/[^a-z0-9]+/i', ' ', $value);
-            return trim(preg_replace('/\s+/', ' ', $value));
-        };
-
-        $normalized_alt = $normalize($alt);
-        $title = get_the_title($attachment_id);
-        if ($title && $normalized_alt !== '') {
-            $normalized_title = $normalize($title);
-            if ($normalized_title !== '' && $normalized_alt === $normalized_title) {
-                $score -= 12;
-                $issues[] = __('Matches the attachment title – add more unique detail.', 'beepbeep-ai-alt-text-generator');
-            }
-        }
-
-        $file = get_attached_file($attachment_id);
-        if ($file && $normalized_alt !== '') {
-            $base = pathinfo($file, PATHINFO_FILENAME);
-            $normalized_base = $normalize($base);
-            if ($normalized_base !== '' && $normalized_alt === $normalized_base) {
-                $score -= 20;
-                $issues[] = __('Matches the file name – rewrite it to describe the image.', 'beepbeep-ai-alt-text-generator');
-            }
-        }
-
-        if (!preg_match('/[a-z]{4,}/i', $alt)) {
-            $score -= 15;
-            $issues[] = __('Lacks descriptive language – include meaningful nouns or adjectives.', 'beepbeep-ai-alt-text-generator');
-        }
-
-        if (!preg_match('/\b[a-z]/i', $alt)) {
-            $score -= 20;
-        }
-
-        $score = max(0, min(100, $score));
-
+        $score  = $scored['score'];
         $status = $this->status_from_score($score);
         $grade  = $this->grade_from_status($status);
 
-        if ($status === 'review' && empty($issues)) {
-            $issues[] = __('Give this ALT another look to ensure it reflects the image details.', 'beepbeep-ai-alt-text-generator');
-        } elseif ($status === 'critical' && empty($issues)) {
-            $issues[] = __('ALT text should be rewritten for accessibility.', 'beepbeep-ai-alt-text-generator');
-        }
-
         $heuristic = [
-            'score' => $score,
-            'grade' => $grade,
-            'status'=> $status,
-            'issues'=> array_values(array_unique($issues)),
+            'score'  => $score,
+            'grade'  => $grade,
+            'status' => $status,
+            'issues' => $scored['issues'],
         ];
 
+        // Merge with cached LLM review if available.
         $review = $this->get_review_snapshot($attachment_id, $alt);
         if ($review && empty($review['hash_present']) && $heuristic['score'] < $review['score']) {
             $review = null;
         }
         if ($review) {
-            $final_score = min($heuristic['score'], $review['score']);
+            $final_score   = min($heuristic['score'], $review['score']);
             $review_status = $review['status'] ?: $this->status_from_score($review['score']);
-            $final_status = $this->worst_status($heuristic['status'], $review_status);
-            $final_grade  = $review['grade'] ?: $this->grade_from_status($final_status);
+            $final_status  = $this->worst_status($heuristic['status'], $review_status);
+            $final_grade   = $review['grade'] ?: $this->grade_from_status($final_status);
 
             $combined_issues = [];
             if (!empty($review['summary'])) {
@@ -274,22 +214,26 @@ trait Core_Review {
             $combined_issues = array_values(array_unique(array_filter($combined_issues)));
 
             return [
-                'score' => $final_score,
-                'grade' => $final_grade,
-                'status'=> $final_status,
-                'issues'=> $combined_issues,
+                'score'     => $final_score,
+                'grade'     => $final_grade,
+                'status'    => $final_status,
+                'issues'    => $combined_issues,
                 'heuristic' => $heuristic,
                 'review'    => $review,
+                'breakdown' => $scored['breakdown'] ?? null,
+                'suggestions' => $scored['suggestions'] ?? [],
             ];
         }
 
         return [
-            'score' => $heuristic['score'],
-            'grade' => $heuristic['grade'],
-            'status'=> $heuristic['status'],
-            'issues'=> $heuristic['issues'],
+            'score'     => $heuristic['score'],
+            'grade'     => $heuristic['grade'],
+            'status'    => $heuristic['status'],
+            'issues'    => $heuristic['issues'],
             'heuristic' => $heuristic,
             'review'    => null,
+            'breakdown' => $scored['breakdown'] ?? null,
+            'suggestions' => $scored['suggestions'] ?? [],
         ];
     }
 
@@ -373,7 +317,20 @@ trait Core_Review {
             }
         }
 
-        $prompt = sprintf(
+        // Build context for the LLM review.
+        $image_context = [];
+        $title = get_the_title($attachment_id);
+        if ($title) {
+            $image_context['title'] = $title;
+        }
+        $file = get_attached_file($attachment_id);
+        if ($file) {
+            $image_context['filename'] = basename($file);
+        }
+
+        // Use the strict system prompt from the unified scorer.
+        $system_prompt = '';
+        $user_prompt   = sprintf(
             'Review the following ALT text for accessibility quality. Score it 0-100 and identify issues. ALT text: "%s"
 
 Return JSON only:
@@ -387,6 +344,11 @@ Return JSON only:
             $alt_text
         );
 
+        if (class_exists('BBAI_Alt_Quality_Scorer')) {
+            $system_prompt = \BBAI_Alt_Quality_Scorer::get_review_system_prompt();
+            $user_prompt   = \BBAI_Alt_Quality_Scorer::get_review_user_prompt($alt_text, $image_context);
+        }
+
         // Check if chat_completion method exists (may not be available in all API client versions)
         if (!method_exists($this->api_client, 'chat_completion')) {
             return new \WP_Error(
@@ -395,10 +357,14 @@ Return JSON only:
             );
         }
 
+        $messages = [];
+        if ($system_prompt !== '') {
+            $messages[] = ['role' => 'system', 'content' => $system_prompt];
+        }
+        $messages[] = ['role' => 'user', 'content' => $user_prompt];
+
         $response = $this->api_client->chat_completion([
-            'messages' => [
-                ['role' => 'user', 'content' => $prompt],
-            ],
+            'messages'   => $messages,
             'max_tokens' => 500,
         ]);
 
@@ -426,6 +392,18 @@ Return JSON only:
             }
         }
 
+        // Hard-fail guard: the LLM must not override deterministic hard-fail caps.
+        if (class_exists('BBAI_Alt_Quality_Scorer')) {
+            $deterministic = \BBAI_Alt_Quality_Scorer::score($alt_text, $image_context);
+            if ($deterministic['hard_fail'] && $score > $deterministic['cap']) {
+                $score  = $deterministic['cap'];
+                $status = $this->status_from_score($score);
+                $grade  = $this->grade_from_status($status);
+                $issues = array_merge($deterministic['issues'], $issues);
+                $issues = array_values(array_unique($issues));
+            }
+        }
+
         $model = $response['model'] ?? 'unknown';
         $hash = $this->hash_alt_text($alt_text);
 
@@ -437,6 +415,7 @@ Return JSON only:
         update_post_meta($attachment_id, '_bbai_review_model', sanitize_text_field($model));
         update_post_meta($attachment_id, '_bbai_reviewed_at', current_time('mysql'));
         update_post_meta($attachment_id, '_bbai_review_alt_hash', $hash);
+        update_post_meta($attachment_id, '_bbai_review_version', self::REVIEW_SCORING_VERSION);
 
         return [
             'score' => $score,

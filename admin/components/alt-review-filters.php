@@ -31,10 +31,10 @@ $bbai_filter_optimized = isset($bbai_coverage['optimized_count']) ? (int) $bbai_
         </button>
         <button type="button"
                 class="bbai-alt-review-filters__btn"
-                data-filter="needs-review"
+                data-filter="weak"
                 aria-pressed="false"
                 aria-label="<?php echo esc_attr(sprintf(/* translators: %d: count of images needing review */ __('Filter by needs review (%d)', 'beepbeep-ai-alt-text-generator'), $bbai_filter_needs_review)); ?>">
-            <?php esc_html_e('Needs Review', 'beepbeep-ai-alt-text-generator'); ?>
+            <?php esc_html_e('Needs review', 'beepbeep-ai-alt-text-generator'); ?>
             <span class="bbai-alt-review-filters__count">(<?php echo esc_html(number_format_i18n($bbai_filter_needs_review)); ?>)</span>
         </button>
         <button type="button"
@@ -42,7 +42,7 @@ $bbai_filter_optimized = isset($bbai_coverage['optimized_count']) ? (int) $bbai_
                 data-filter="missing"
                 aria-pressed="false"
                 aria-label="<?php echo esc_attr(sprintf(/* translators: %d: count of images missing ALT */ __('Filter by missing ALT (%d)', 'beepbeep-ai-alt-text-generator'), $bbai_filter_missing)); ?>">
-            <?php esc_html_e('Missing ALT', 'beepbeep-ai-alt-text-generator'); ?>
+            <?php esc_html_e('Missing', 'beepbeep-ai-alt-text-generator'); ?>
             <span class="bbai-alt-review-filters__count">(<?php echo esc_html(number_format_i18n($bbai_filter_missing)); ?>)</span>
         </button>
         <button type="button"

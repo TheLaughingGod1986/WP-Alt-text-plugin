@@ -16,6 +16,13 @@
 	--bbai-duration-slow: 350ms;
 	--bbai-duration-slower: 500ms;
 
+	/* Align with unified admin micro-motion (when both load) */
+	--bbai-motion-micro: 90ms;
+	--bbai-motion-fast: 140ms;
+	--bbai-motion-base: 180ms;
+	--bbai-motion-slow: 420ms;
+	--bbai-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+
 	/* Easing Functions */
 	--bbai-ease-in: cubic-bezier(0.4, 0, 1, 1);
 	--bbai-ease-out: cubic-bezier(0, 0, 0.2, 1);

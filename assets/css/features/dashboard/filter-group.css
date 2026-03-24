@@ -1,0 +1,339 @@
+/**
+ * Shared dataset filter group — tokens, horizontal (library), vertical shell (dashboard).
+ * Scoped: library workspace + dashboard status card.
+ */
+
+.bbai-filter-group {
+    --bbai-fg-radius-pill: 999px;
+    --bbai-fg-radius-md: 12px;
+    --bbai-fg-gap: 8px;
+    --bbai-fg-border: #e2e8f0;
+    --bbai-fg-surface: #f1f5f9;
+    --bbai-fg-text: #334155;
+    --bbai-fg-muted: #64748b;
+    /* Neutral “All” selected */
+    --bbai-fg-active-bg: #0f172a;
+    --bbai-fg-active-fg: #ffffff;
+    --bbai-fg-focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.22);
+    /* Semantic status tokens — shared language for dots, pill shells, count chips */
+    --bbai-status-neutral-dot: #94a3b8;
+    --bbai-status-missing-dot: #e11d48;
+    --bbai-status-weak-dot: #d97706;
+    --bbai-status-opt-dot: #16a34a;
+    --bbai-status-missing-border: rgba(244, 63, 94, 0.38);
+    --bbai-status-missing-bg: rgba(255, 241, 242, 0.88);
+    --bbai-status-missing-active-bg: #be123c;
+    --bbai-status-missing-active-border: #9f1239;
+    --bbai-status-weak-border: rgba(245, 158, 11, 0.42);
+    --bbai-status-weak-bg: rgba(255, 251, 235, 0.92);
+    --bbai-status-weak-active-bg: #b45309;
+    --bbai-status-weak-active-border: #92400e;
+    --bbai-status-opt-border: rgba(34, 197, 94, 0.36);
+    --bbai-status-opt-bg: rgba(240, 253, 244, 0.88);
+    --bbai-status-opt-active-bg: #15803d;
+    --bbai-status-opt-active-border: #166534;
+    /* Legacy dot aliases (horizontal filters) */
+    --bbai-fg-dot-all: var(--bbai-status-neutral-dot);
+    --bbai-fg-dot-opt: var(--bbai-status-opt-dot);
+    --bbai-fg-dot-rev: var(--bbai-status-weak-dot);
+    --bbai-fg-dot-miss: var(--bbai-status-missing-dot);
+}
+
+/* ── Vertical (dashboard): nav groups breakdown links ─────────────────── */
+.bbai-filter-group--vertical.bbai-filter-group--navigate {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding-top: 4px;
+}
+
+#bbai-dashboard-main .bbai-command-breakdown--all .bbai-command-breakdown__label::before {
+    background: var(--bbai-fg-dot-all);
+}
+
+#bbai-dashboard-main .bbai-command-breakdown--all .bbai-command-breakdown__value {
+    color: var(--bbai-text-strong, #111827);
+}
+
+/* ── Workspace status rail (below banner, above table) ─────────────────── */
+.bbai-library-workspace .bbai-library-workspace-filter-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    min-width: 0;
+    width: 100%;
+}
+
+.bbai-library-workspace .bbai-library-workspace-filter-bar .bbai-library-filter-toolbar {
+    margin: 0;
+}
+
+/* ── Toolbar row: filters + metadata ───────────────────────────────────── */
+.bbai-library-workspace .bbai-library-filter-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 18px;
+    min-width: 0;
+}
+
+.bbai-library-workspace .bbai-filter-metadata-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: var(--bbai-fg-radius-md);
+    border: 1px dashed #cbd5e1;
+    background: #ffffff;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--bbai-fg-muted);
+    text-decoration: none;
+    transition: border-color 0.14s ease, background-color 0.14s ease, color 0.14s ease;
+}
+
+.bbai-library-workspace .bbai-filter-metadata-chip:hover {
+    border-color: #94a3b8;
+    background: #f8fafc;
+    color: #475569;
+}
+
+.bbai-library-workspace .bbai-filter-metadata-chip:focus-visible {
+    outline: none;
+    box-shadow: var(--bbai-fg-focus-ring);
+}
+
+.bbai-library-workspace .bbai-filter-metadata-chip__value {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--bbai-library-text, #0f172a);
+}
+
+/* ── Horizontal filter chips (ALT Library) ─────────────────────────────── */
+.bbai-library-workspace .bbai-filter-group--horizontal.bbai-filter-group--filter {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--bbai-fg-gap);
+    padding: 4px;
+    border-radius: var(--bbai-fg-radius-pill);
+    background: var(--bbai-fg-surface);
+    border: 1px solid var(--bbai-fg-border);
+    max-width: 100%;
+    margin: 0;
+}
+
+.bbai-library-workspace .bbai-filter-group--horizontal .bbai-filter-group__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 8px 12px;
+    border-radius: var(--bbai-fg-radius-pill);
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--bbai-fg-text);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    font-family: inherit;
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.bbai-library-workspace .bbai-filter-group--horizontal .bbai-filter-group__item--status-all:not(.bbai-filter-group__item--active):hover {
+    background: #ffffff;
+    border-color: #dbe4f0;
+}
+
+.bbai-library-workspace .bbai-filter-group--horizontal .bbai-filter-group__item--status-missing:not(.bbai-filter-group__item--active):hover {
+    background: rgba(255, 228, 230, 0.95);
+    border-color: rgba(244, 63, 94, 0.48);
+}
+
+.bbai-library-workspace .bbai-filter-group--horizontal .bbai-filter-group__item--status-weak:not(.bbai-filter-group__item--active):hover {
+    background: rgba(254, 243, 199, 0.7);
+    border-color: rgba(245, 158, 11, 0.55);
+}
+
+.bbai-library-workspace .bbai-filter-group--horizontal .bbai-filter-group__item--status-optimized:not(.bbai-filter-group__item--active):hover {
+    background: rgba(220, 252, 231, 0.78);
+    border-color: rgba(34, 197, 94, 0.45);
+}
+
+.bbai-library-workspace .bbai-filter-group--horizontal .bbai-filter-group__item:focus-visible {
+    outline: none;
+    box-shadow: var(--bbai-fg-focus-ring);
+}
+
+/* Default active = “All” — neutral slate */
+.bbai-library-workspace .bbai-filter-group--horizontal .bbai-filter-group__item--active.bbai-filter-group__item--status-all {
+    background: var(--bbai-fg-active-bg);
+    border-color: var(--bbai-fg-active-bg);
+    color: var(--bbai-fg-active-fg);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+}
+
+.bbai-library-workspace .bbai-filter-group--horizontal .bbai-filter-group__item--active.bbai-filter-group__item--status-all:hover {
+    background: #020617;
+    border-color: #020617;
+    color: var(--bbai-fg-active-fg);
+}
+
+.bbai-library-workspace .bbai-filter-group--horizontal .bbai-filter-group__item--active.bbai-filter-group__item--status-missing {
+    background: var(--bbai-status-missing-active-bg);
+    border-color: var(--bbai-status-missing-active-border);
+    color: #ffffff;
+    box-shadow: 0 8px 18px rgba(190, 18, 60, 0.18);
+}
+
+.bbai-library-workspace .bbai-filter-group--horizontal .bbai-filter-group__item--active.bbai-filter-group__item--status-missing:hover {
+    background: #9f1239;
+    border-color: #881337;
+    color: #ffffff;
+}
+
+.bbai-library-workspace .bbai-filter-group--horizontal .bbai-filter-group__item--active.bbai-filter-group__item--status-weak {
+    background: var(--bbai-status-weak-active-bg);
+    border-color: var(--bbai-status-weak-active-border);
+    color: #fffbeb;
+    box-shadow: 0 8px 18px rgba(180, 83, 9, 0.16);
+}
+
+.bbai-library-workspace .bbai-filter-group--horizontal .bbai-filter-group__item--active.bbai-filter-group__item--status-weak:hover {
+    background: #92400e;
+    border-color: #78350f;
+    color: #fffbeb;
+}
+
+.bbai-library-workspace .bbai-filter-group--horizontal .bbai-filter-group__item--active.bbai-filter-group__item--status-optimized {
+    background: var(--bbai-status-opt-active-bg);
+    border-color: var(--bbai-status-opt-active-border);
+    color: #f0fdf4;
+    box-shadow: 0 8px 18px rgba(21, 128, 61, 0.14);
+}
+
+.bbai-library-workspace .bbai-filter-group--horizontal .bbai-filter-group__item--active.bbai-filter-group__item--status-optimized:hover {
+    background: #166534;
+    border-color: #14532d;
+    color: #f0fdf4;
+}
+
+.bbai-library-workspace .bbai-filter-group--horizontal .bbai-filter-group__item:active {
+    transform: scale(0.98);
+}
+
+.bbai-library-workspace .bbai-filter-group__status-dot {
+    flex: 0 0 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--bbai-fg-dot-all);
+}
+
+.bbai-library-workspace .bbai-filter-group__item--status-all .bbai-filter-group__status-dot {
+    background: var(--bbai-fg-dot-all);
+}
+
+.bbai-library-workspace .bbai-filter-group__item--status-optimized .bbai-filter-group__status-dot {
+    background: var(--bbai-fg-dot-opt);
+}
+
+.bbai-library-workspace .bbai-filter-group__item--status-weak .bbai-filter-group__status-dot {
+    background: var(--bbai-fg-dot-rev);
+}
+
+.bbai-library-workspace .bbai-filter-group__item--status-missing .bbai-filter-group__status-dot {
+    background: var(--bbai-fg-dot-miss);
+}
+
+.bbai-library-workspace .bbai-filter-group__item--active .bbai-filter-group__status-dot {
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
+}
+
+.bbai-library-workspace .bbai-filter-group__item--active.bbai-filter-group__item--status-all .bbai-filter-group__status-dot {
+    background: rgba(255, 255, 255, 0.88);
+}
+
+.bbai-library-workspace .bbai-filter-group__item--active.bbai-filter-group__item--status-missing .bbai-filter-group__status-dot,
+.bbai-library-workspace .bbai-filter-group__item--active.bbai-filter-group__item--status-weak .bbai-filter-group__status-dot,
+.bbai-library-workspace .bbai-filter-group__item--active.bbai-filter-group__item--status-optimized .bbai-filter-group__status-dot {
+    background: rgba(255, 255, 255, 0.92);
+}
+
+.bbai-library-workspace .bbai-filter-group__label {
+    white-space: nowrap;
+}
+
+.bbai-library-workspace .bbai-filter-group__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 26px;
+    padding: 3px 8px;
+    border-radius: var(--bbai-fg-radius-pill);
+    background: rgba(15, 23, 42, 0.07);
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--bbai-fg-muted);
+}
+
+.bbai-library-workspace .bbai-filter-group__item--active .bbai-filter-group__count {
+    background: rgba(255, 255, 255, 0.14);
+    color: rgba(255, 255, 255, 0.82);
+}
+
+/* Inactive: per-status shells (Missing = rose, Needs review = amber, Optimized = calm green) */
+.bbai-library-workspace .bbai-filter-group--horizontal .bbai-filter-group__item--status-missing:not(.bbai-filter-group__item--active) {
+    border-color: var(--bbai-status-missing-border);
+    background: var(--bbai-status-missing-bg);
+}
+
+.bbai-library-workspace .bbai-filter-group--horizontal .bbai-filter-group__item--status-missing:not(.bbai-filter-group__item--active) .bbai-filter-group__count {
+    color: #9f1239;
+    background: rgba(244, 63, 94, 0.14);
+}
+
+.bbai-library-workspace .bbai-filter-group--horizontal .bbai-filter-group__item--status-weak:not(.bbai-filter-group__item--active) {
+    border-color: var(--bbai-status-weak-border);
+    background: var(--bbai-status-weak-bg);
+}
+
+.bbai-library-workspace .bbai-filter-group--horizontal .bbai-filter-group__item--status-weak:not(.bbai-filter-group__item--active) .bbai-filter-group__count {
+    color: #92400e;
+    background: rgba(245, 158, 11, 0.18);
+}
+
+.bbai-library-workspace .bbai-filter-group--horizontal .bbai-filter-group__item--status-optimized:not(.bbai-filter-group__item--active) {
+    border-color: var(--bbai-status-opt-border);
+    background: var(--bbai-status-opt-bg);
+}
+
+.bbai-library-workspace .bbai-filter-group--horizontal .bbai-filter-group__item--status-optimized:not(.bbai-filter-group__item--active) .bbai-filter-group__count {
+    color: #166534;
+    background: rgba(34, 197, 94, 0.14);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bbai-library-workspace .bbai-filter-group--horizontal .bbai-filter-group__item,
+    .bbai-library-workspace .bbai-filter-metadata-chip {
+        transition: none;
+    }
+
+    .bbai-library-workspace .bbai-filter-group--horizontal .bbai-filter-group__item:active {
+        transform: none;
+    }
+}
+
+/* Filter strip sits outside toolbar card — align pill group when wrapped */
+.bbai-library-workspace-filter-strip .bbai-filter-group--horizontal.bbai-filter-group--filter {
+    background: #ffffff;
+    border-color: #e2e8f0;
+}

@@ -1,0 +1,656 @@
+/**
+ * Shared product banner — same shell for Dashboard, Library, Analytics command hero.
+ * Structure: .bbai-banner + .bbai-banner--success | .bbai-banner--warning (state only).
+ * Legacy .bbai-dashboard-hero--command classes remain for JS hooks.
+ *
+ * @package BeepBeep_AI
+ */
+
+/* ── Shell (layout + density identical everywhere) ─────────────────────────── */
+
+.bbai-command-hero-host .bbai-banner.bbai-dashboard-hero--command,
+#bbai-dashboard-main .bbai-banner.bbai-dashboard-hero--command {
+    width: 100%;
+    margin: 0;
+    min-height: 0;
+    /* Tighter vertical rhythm vs 15px (aligns with Dashboard / Analytics density) */
+    padding: 11px 20px;
+    border-radius: 16px;
+    border: 1px solid #e9eef5;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    transform: translateY(0);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.bbai-command-hero-host .bbai-banner__inner.bbai-dashboard-hero-inner,
+#bbai-dashboard-main .bbai-banner__inner.bbai-dashboard-hero-inner {
+    min-height: 0;
+}
+
+.bbai-command-hero-host .bbai-banner__layout.bbai-dashboard-hero__layout,
+#bbai-dashboard-main .bbai-banner__layout.bbai-dashboard-hero__layout,
+/* Beat #bbai-dashboard-main .bbai-dashboard-hero--command .bbai-dashboard-hero__layout (status-card) */
+#bbai-dashboard-main .bbai-banner.bbai-dashboard-hero--command .bbai-banner__layout.bbai-dashboard-hero__layout {
+    display: grid;
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr) minmax(256px, 300px);
+    gap: var(--card-gap, 16px) 0;
+    align-items: start;
+}
+
+.bbai-command-hero-host .bbai-banner__content.bbai-dashboard-hero-copy,
+#bbai-dashboard-main .bbai-banner__content.bbai-dashboard-hero-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-width: 0;
+}
+
+.bbai-command-hero-host .bbai-banner__head.bbai-dashboard-hero__heading-row,
+#bbai-dashboard-main .bbai-banner__head.bbai-dashboard-hero__heading-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin: 0;
+}
+
+.bbai-command-hero-host .bbai-banner__title-wrap.bbai-dashboard-hero__heading-copy,
+#bbai-dashboard-main .bbai-banner__title-wrap.bbai-dashboard-hero__heading-copy {
+    min-width: 0;
+}
+
+/* Icon */
+.bbai-command-hero-host .bbai-banner__icon.bbai-dashboard-hero__icon,
+#bbai-dashboard-main .bbai-banner__icon.bbai-dashboard-hero__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    max-width: 32px;
+    height: 32px;
+    max-height: 32px;
+    flex: 0 0 32px;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    background: rgba(255, 255, 255, 0.84);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    color: var(--bbai-primary-strong, #047857);
+}
+
+.bbai-command-hero-host .bbai-banner__icon.bbai-dashboard-hero__icon svg,
+#bbai-dashboard-main .bbai-banner__icon.bbai-dashboard-hero__icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Typography */
+.bbai-command-hero-host .bbai-banner__headline.bbai-dashboard-hero__headline,
+#bbai-dashboard-main .bbai-banner__headline.bbai-dashboard-hero__headline {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    color: #0f172a;
+}
+
+.bbai-command-hero-host .bbai-banner__subtext.bbai-dashboard-hero__subtext,
+#bbai-dashboard-main .bbai-banner__subtext.bbai-dashboard-hero__subtext {
+    margin: 4px 0 0;
+    max-width: 64ch;
+    font-size: 15px;
+    line-height: 1.55;
+    color: #4b5563;
+}
+
+.bbai-command-hero-host .bbai-banner__meta.bbai-dashboard-hero__next-step,
+#bbai-dashboard-main .bbai-banner__meta.bbai-dashboard-hero__next-step {
+    margin: 0;
+    max-width: 64ch;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: #64748b;
+}
+
+/* Utility row (plan / remaining) */
+.bbai-command-hero-host .bbai-banner__utility.bbai-dashboard-hero__usage-block,
+#bbai-dashboard-main .bbai-banner__utility.bbai-dashboard-hero__usage-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 6px;
+    max-width: 620px;
+}
+
+.bbai-command-hero-host .bbai-banner__usage.bbai-dashboard-hero__usage,
+#bbai-dashboard-main .bbai-banner__usage.bbai-dashboard-hero__usage {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #334155;
+}
+
+.bbai-command-hero-host .bbai-banner__pill.bbai-dashboard-hero__usage-pill,
+#bbai-dashboard-main .bbai-banner__pill.bbai-dashboard-hero__usage-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px solid #dde6f0;
+    background: rgba(255, 255, 255, 0.94);
+    color: #334155;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.bbai-command-hero-host .bbai-banner__usage-primary.bbai-dashboard-hero__usage-primary,
+#bbai-dashboard-main .bbai-banner__usage-primary.bbai-dashboard-hero__usage-primary {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.bbai-command-hero-host .bbai-banner__usage-secondary.bbai-dashboard-hero__usage-secondary,
+#bbai-dashboard-main .bbai-banner__usage-secondary.bbai-dashboard-hero__usage-secondary {
+    color: #64748b;
+}
+
+/* Progress */
+.bbai-command-hero-host .bbai-banner__progress.bbai-dashboard-hero-progress,
+#bbai-dashboard-main .bbai-banner__progress.bbai-dashboard-hero-progress {
+    width: 100%;
+}
+
+.bbai-command-hero-host .bbai-banner__progress-track.bbai-dashboard-hero-progress-track,
+#bbai-dashboard-main .bbai-banner__progress-track.bbai-dashboard-hero-progress-track {
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.18);
+    overflow: hidden;
+}
+
+.bbai-command-hero-host .bbai-banner__progress-fill.bbai-dashboard-hero-progress-fill,
+#bbai-dashboard-main .bbai-banner__progress-fill.bbai-dashboard-hero-progress-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background-color: #10b981;
+}
+
+.bbai-banner--success .bbai-banner__progress-fill.bbai-dashboard-hero-progress-fill,
+.bbai-banner--success.bbai-dashboard-hero--command .bbai-dashboard-hero-progress-fill {
+    background-color: #16a34a;
+}
+
+/* Low-credits: slightly desaturated amber (calmer than pure tailwind-amber) */
+.bbai-banner--warning[data-tone='attention'] .bbai-banner__progress-fill.bbai-dashboard-hero-progress-fill,
+.bbai-banner--warning.bbai-dashboard-hero--command[data-tone='attention'] .bbai-dashboard-hero-progress-fill {
+    background: linear-gradient(90deg, #c78a30 0%, #d9a85c 100%);
+}
+
+.bbai-banner--warning[data-tone='paused'] .bbai-banner__progress-fill.bbai-dashboard-hero-progress-fill,
+.bbai-banner--warning.bbai-dashboard-hero--command[data-tone='paused'] .bbai-dashboard-hero-progress-fill {
+    background: linear-gradient(90deg, #f97316 0%, #ef4444 100%);
+}
+
+/* Dashboard + .bbai-status-banner: ID-safe parity with shared warning progress fills */
+#bbai-dashboard-main .bbai-status-banner.bbai-banner--warning[data-tone='attention'] .bbai-banner__progress-fill.bbai-dashboard-hero-progress-fill,
+#bbai-dashboard-main .bbai-status-banner.bbai-banner--warning.bbai-dashboard-hero--command[data-tone='attention'] .bbai-dashboard-hero-progress-fill {
+    background: linear-gradient(90deg, #c78a30 0%, #d9a85c 100%);
+}
+
+#bbai-dashboard-main .bbai-status-banner.bbai-banner--warning[data-tone='paused'] .bbai-banner__progress-fill.bbai-dashboard-hero-progress-fill,
+#bbai-dashboard-main .bbai-status-banner.bbai-banner--warning.bbai-dashboard-hero--command[data-tone='paused'] .bbai-dashboard-hero-progress-fill {
+    background: linear-gradient(90deg, #f97316 0%, #ef4444 100%);
+}
+
+/*
+ * Low credits: identical progress bar on Dashboard, Library, Analytics, Usage
+ * (not gated on #bbai-dashboard-main — Usage/Library live under .wrap only).
+ */
+body.bbai-dashboard .bbai-status-banner.bbai-banner--warning[data-tone='attention'] .bbai-banner__progress-track.bbai-dashboard-hero-progress-track,
+body.bbai-dashboard .bbai-command-hero-host .bbai-status-banner.bbai-banner--warning[data-tone='attention'] .bbai-banner__progress-track.bbai-dashboard-hero-progress-track {
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.18);
+    overflow: hidden;
+}
+
+body.bbai-dashboard .bbai-status-banner.bbai-banner--warning[data-tone='attention'] .bbai-banner__progress-fill.bbai-dashboard-hero-progress-fill,
+body.bbai-dashboard .bbai-command-hero-host .bbai-status-banner.bbai-banner--warning[data-tone='attention'] .bbai-banner__progress-fill.bbai-dashboard-hero-progress-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #c78a30 0%, #d9a85c 100%);
+}
+
+/* Inline stats (Library) */
+.bbai-command-hero-host .bbai-banner__inline-stats.bbai-dashboard-hero__inline-stats,
+#bbai-dashboard-main .bbai-banner__inline-stats.bbai-dashboard-hero__inline-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    margin-top: 8px;
+}
+
+.bbai-command-hero-host .bbai-banner__inline-stats .bbai-dashboard-hero__inline-stat,
+#bbai-dashboard-main .bbai-banner__inline-stats .bbai-dashboard-hero__inline-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.bbai-command-hero-host .bbai-banner__inline-stats .bbai-dashboard-hero__inline-stat-label,
+#bbai-dashboard-main .bbai-banner__inline-stats .bbai-dashboard-hero__inline-stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.bbai-command-hero-host .bbai-banner__inline-stats .bbai-dashboard-hero__inline-stat-value,
+#bbai-dashboard-main .bbai-banner__inline-stats .bbai-dashboard-hero__inline-stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+/* Note + loop */
+.bbai-command-hero-host .bbai-banner__note.bbai-dashboard-hero__note,
+#bbai-dashboard-main .bbai-banner__note.bbai-dashboard-hero__note {
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #64748b;
+    opacity: 0.85;
+}
+
+.bbai-command-hero-host .bbai-banner__loop.bbai-dashboard-hero__loop,
+#bbai-dashboard-main .bbai-banner__loop.bbai-dashboard-hero__loop {
+    display: grid;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+/* Actions rail — primary vs secondary+tertiary hierarchy */
+.bbai-command-hero-host .bbai-banner__actions.bbai-dashboard-hero-actions,
+#bbai-dashboard-main .bbai-banner__actions.bbai-dashboard-hero-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+    min-width: 0;
+    width: min(100%, 300px);
+    max-width: none;
+    margin-left: auto;
+    /* Optical: pull rail toward copy while keeping end alignment in the cell */
+    transform: translateX(-12px);
+    /* Optical lock to headline: nudge up vs token rhythm (CTA reads slightly low at 16px) */
+    margin-top: calc(var(--bbai-cta-group-margin-top, 16px) - 3px);
+    justify-self: stretch;
+}
+
+.bbai-command-hero-host .bbai-banner__secondary-actions.bbai-dashboard-hero__secondary-actions,
+#bbai-dashboard-main .bbai-banner__secondary-actions.bbai-dashboard-hero__secondary-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.bbai-command-hero-host .bbai-banner__actions .bbai-dashboard-hero-actions__item,
+#bbai-dashboard-main .bbai-banner__actions .bbai-dashboard-hero-actions__item {
+    display: flex;
+    width: 100%;
+}
+
+/* CTAs — identical primary / secondary / tertiary */
+.bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__cta,
+.bbai-command-hero-host .bbai-banner .bbai-banner__cta,
+#bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__cta,
+#bbai-dashboard-main .bbai-banner .bbai-banner__cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: var(--bbai-cta-primary-min-height, 40px);
+    padding: 0 var(--bbai-cta-primary-padding-x, 16px);
+    border-radius: var(--bbai-cta-primary-radius, 8px);
+    font-size: var(--bbai-cta-primary-font-size, 14px);
+    font-weight: var(--bbai-cta-primary-font-weight, 500);
+    line-height: 1.1;
+    text-decoration: none;
+    box-sizing: border-box;
+    transition: var(
+        --bbai-cta-primary-transition,
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        background-color 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease
+    );
+}
+
+.bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__cta--primary,
+.bbai-command-hero-host .bbai-banner .bbai-banner__cta--primary,
+#bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__cta--primary,
+#bbai-dashboard-main .bbai-banner .bbai-banner__cta--primary {
+    min-width: var(--bbai-cta-primary-min-width, 220px);
+    border: 1px solid transparent !important;
+    background-color: var(--bbai-cta-primary-bg, #10b981) !important;
+    color: #ffffff !important;
+    box-shadow: var(--bbai-cta-primary-shadow, 0 1px 2px rgba(15, 23, 42, 0.06)) !important;
+    transform: translateY(0);
+    transition: var(
+        --bbai-cta-primary-transition,
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        background-color 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease
+    ) !important;
+}
+
+/* Upgrade-locked hero primary: clearly actionable, not “dead grey” */
+.bbai-command-hero-host .bbai-banner .bbai-banner__cta--primary.bbai-is-locked,
+.bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__cta--primary.bbai-is-locked,
+#bbai-dashboard-main .bbai-banner .bbai-banner__cta--primary.bbai-is-locked,
+#bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__cta--primary.bbai-is-locked {
+    background: #fffbeb !important;
+    border: 1px solid #fbbf24 !important;
+    color: #92400e !important;
+    box-shadow: 0 1px 3px rgba(146, 64, 14, 0.12) !important;
+    cursor: pointer !important;
+}
+
+.bbai-command-hero-host .bbai-banner .bbai-banner__cta--primary.bbai-is-locked:hover,
+.bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__cta--primary.bbai-is-locked:hover,
+#bbai-dashboard-main .bbai-banner .bbai-banner__cta--primary.bbai-is-locked:hover,
+#bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__cta--primary.bbai-is-locked:hover {
+    background: #fef3c7 !important;
+    border-color: #f59e0b !important;
+    color: #78350f !important;
+    transform: translateY(-1px);
+}
+
+.bbai-command-hero-host .bbai-banner .bbai-banner__link--secondary.bbai-is-locked,
+.bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__link--secondary.bbai-is-locked,
+#bbai-dashboard-main .bbai-banner .bbai-banner__link--secondary.bbai-is-locked,
+#bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__link--secondary.bbai-is-locked {
+    background: #fffbeb !important;
+    border-color: #fbbf24 !important;
+    color: #92400e !important;
+    cursor: pointer !important;
+}
+
+.bbai-command-hero-host .bbai-banner .bbai-banner__link--secondary.bbai-is-locked:hover,
+#bbai-dashboard-main .bbai-banner .bbai-banner__link--secondary.bbai-is-locked:hover {
+    background: #fef3c7 !important;
+    border-color: #f59e0b !important;
+    color: #78350f !important;
+}
+
+.bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__cta--primary:hover,
+.bbai-command-hero-host .bbai-banner .bbai-banner__cta--primary:hover,
+#bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__cta--primary:hover,
+#bbai-dashboard-main .bbai-banner .bbai-banner__cta--primary:hover {
+    background-color: var(--bbai-cta-primary-bg, #10b981) !important;
+    color: #ffffff !important;
+    box-shadow: var(--bbai-cta-primary-shadow-hover, 0 3px 10px rgba(15, 23, 42, 0.1)) !important;
+    transform: translateY(-1px);
+}
+
+.bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__cta--primary:active,
+.bbai-command-hero-host .bbai-banner .bbai-banner__cta--primary:active,
+#bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__cta--primary:active,
+#bbai-dashboard-main .bbai-banner .bbai-banner__cta--primary:active {
+    background-color: var(--bbai-cta-primary-bg, #10b981) !important;
+    color: #ffffff !important;
+    box-shadow: var(--bbai-cta-primary-shadow, 0 1px 2px rgba(15, 23, 42, 0.06)) !important;
+    transform: translateY(1px) !important;
+}
+
+.bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__link--secondary,
+.bbai-command-hero-host .bbai-banner .bbai-banner__link--secondary,
+#bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__link--secondary,
+#bbai-dashboard-main .bbai-banner .bbai-banner__link--secondary {
+    min-height: var(--bbai-cta-primary-min-height, 40px);
+    padding: 0 var(--bbai-cta-primary-padding-x, 16px);
+    border-radius: var(--bbai-cta-primary-radius, 8px);
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    background: #f0f6ff;
+    color: #1d4ed8;
+    font-weight: 600;
+    box-shadow: none;
+    transform: none;
+    cursor: pointer;
+    transition:
+        background-color 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__link--secondary:hover,
+.bbai-command-hero-host .bbai-banner .bbai-banner__link--secondary:hover,
+#bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__link--secondary:hover,
+#bbai-dashboard-main .bbai-banner .bbai-banner__link--secondary:hover {
+    border-color: rgba(37, 99, 235, 0.55);
+    background: #e8f0fe;
+    color: #1e3a8a;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__link--tertiary,
+.bbai-command-hero-host .bbai-banner .bbai-banner__link--tertiary,
+#bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__link--tertiary,
+#bbai-dashboard-main .bbai-banner .bbai-banner__link--tertiary {
+    min-height: auto;
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: #2563eb;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-color: rgba(37, 99, 235, 0.42);
+    text-underline-offset: 3px;
+    justify-content: flex-start;
+    cursor: pointer;
+}
+
+.bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__link--tertiary:hover,
+.bbai-command-hero-host .bbai-banner .bbai-banner__link--tertiary:hover,
+#bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__link--tertiary:hover,
+#bbai-dashboard-main .bbai-banner .bbai-banner__link--tertiary:hover {
+    color: #1d4ed8;
+    text-decoration-color: rgba(29, 78, 216, 0.75);
+}
+
+.bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__link--tertiary::after,
+.bbai-command-hero-host .bbai-banner .bbai-banner__link--tertiary::after,
+#bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__link--tertiary::after,
+#bbai-dashboard-main .bbai-banner .bbai-banner__link--tertiary::after {
+    content: '\00a0→';
+    display: inline-block;
+    font-weight: 500;
+    opacity: 0.75;
+}
+
+.bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__cta--primary:focus-visible,
+.bbai-command-hero-host .bbai-banner .bbai-banner__cta--primary:focus-visible,
+#bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__cta--primary:focus-visible,
+#bbai-dashboard-main .bbai-banner .bbai-banner__cta--primary:focus-visible {
+    outline: none !important;
+    background-color: var(--bbai-cta-primary-bg, #10b981) !important;
+    color: #ffffff !important;
+    box-shadow:
+        0 0 0 2px #ffffff,
+        0 0 0 4px rgba(16, 185, 129, 0.35) !important;
+    transform: translateY(0) !important;
+}
+
+.bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__link--secondary:focus-visible,
+.bbai-command-hero-host .bbai-banner .bbai-banner__link--secondary:focus-visible,
+#bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__link--secondary:focus-visible,
+#bbai-dashboard-main .bbai-banner .bbai-banner__link--secondary:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.35);
+}
+
+.bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__link--tertiary:focus-visible,
+.bbai-command-hero-host .bbai-banner .bbai-banner__link--tertiary:focus-visible,
+#bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__link--tertiary:focus-visible,
+#bbai-dashboard-main .bbai-banner .bbai-banner__link--tertiary:focus-visible {
+    outline: none;
+    box-shadow: none;
+    text-decoration-color: rgba(51, 65, 85, 0.8);
+}
+
+/* ── State surfaces only (success vs warning) ────────────────────────────── */
+
+.bbai-command-hero-host .bbai-banner--success.bbai-dashboard-hero--command,
+#bbai-dashboard-main .bbai-banner--success.bbai-dashboard-hero--command {
+    border-color: #e8f0ec;
+    background:
+        radial-gradient(circle at top right, rgba(22, 163, 74, 0.048), transparent 36%),
+        linear-gradient(135deg, #fdfffe 0%, #f9fcfa 50%, #ffffff 100%);
+}
+
+.bbai-command-hero-host .bbai-banner--success.bbai-dashboard-hero--command:hover,
+#bbai-dashboard-main .bbai-banner--success.bbai-dashboard-hero--command:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+.bbai-command-hero-host .bbai-banner--warning.bbai-dashboard-hero--command,
+#bbai-dashboard-main .bbai-banner--warning.bbai-dashboard-hero--command {
+    border-color: #f0dec9;
+    background:
+        radial-gradient(circle at top right, rgba(217, 119, 6, 0.08), transparent 36%),
+        linear-gradient(140deg, #fffdf9 0%, #fff8f0 58%, #ffffff 100%);
+}
+
+.bbai-command-hero-host .bbai-banner--warning.bbai-dashboard-hero--command[data-tone='setup'],
+#bbai-dashboard-main .bbai-banner--warning.bbai-dashboard-hero--command[data-tone='setup'] {
+    border-color: #e8edf4;
+    background:
+        radial-gradient(circle at top right, rgba(37, 99, 235, 0.035), transparent 36%),
+        linear-gradient(155deg, #fdfeff 0%, #f8fbff 54%, #ffffff 100%);
+}
+
+.bbai-command-hero-host .bbai-banner--warning.bbai-dashboard-hero--command[data-tone='paused'],
+#bbai-dashboard-main .bbai-banner--warning.bbai-dashboard-hero--command[data-tone='paused'] {
+    border-color: #f1d7d4;
+    background:
+        radial-gradient(circle at top right, rgba(239, 68, 68, 0.08), transparent 34%),
+        linear-gradient(135deg, #fffdfd 0%, #fff4f3 54%, #ffffff 100%);
+}
+
+.bbai-command-hero-host .bbai-banner--warning.bbai-dashboard-hero--command:hover,
+#bbai-dashboard-main .bbai-banner--warning.bbai-dashboard-hero--command:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+/* Icon tint by tone (warning family) */
+.bbai-banner--success.bbai-dashboard-hero--command .bbai-banner__icon {
+    color: #15803d;
+    background: rgba(22, 163, 74, 0.1);
+}
+
+.bbai-banner--warning.bbai-dashboard-hero--command[data-tone='attention'] .bbai-banner__icon {
+    color: #c2410c;
+    background: rgba(249, 115, 22, 0.1);
+}
+
+.bbai-banner--warning.bbai-dashboard-hero--command[data-tone='paused'] .bbai-banner__icon {
+    color: #b91c1c;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.bbai-banner--warning.bbai-dashboard-hero--command[data-tone='setup'] .bbai-banner__icon {
+    background: rgba(37, 99, 235, 0.12);
+    color: #1d4ed8;
+}
+
+/* Dashboard: full success celebration (same component, calmer base + burst) */
+#bbai-dashboard-main .bbai-banner--success.bbai-dashboard-hero--command[data-bbai-success-state='1'],
+.bbai-command-hero-host .bbai-banner--success.bbai-dashboard-hero--command[data-bbai-success-state='1'] {
+    border-color: #cfe9d8;
+    background:
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.1), transparent 36%),
+        linear-gradient(145deg, #f7fff9 0%, #effaf2 55%, #ffffff 100%);
+    box-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.04),
+        0 0 0 1px rgba(34, 197, 94, 0.06) inset;
+}
+
+#bbai-dashboard-main .bbai-banner--success.bbai-dashboard-hero--command[data-bbai-success-state='1'] .bbai-banner__icon,
+.bbai-command-hero-host .bbai-banner--success.bbai-dashboard-hero--command[data-bbai-success-state='1'] .bbai-banner__icon {
+    background: rgba(34, 197, 94, 0.16);
+    color: #15803d;
+}
+
+#bbai-dashboard-main .bbai-banner--success.bbai-dashboard-hero--command[data-bbai-success-state='1'] .bbai-banner__meta:not([hidden]),
+.bbai-command-hero-host .bbai-banner--success.bbai-dashboard-hero--command[data-bbai-success-state='1'] .bbai-banner__meta:not([hidden]) {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 0;
+    padding: 4px 12px 4px 8px;
+    border-radius: 999px;
+    background: rgba(34, 197, 94, 0.055);
+    color: #4a7c5c;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.5;
+}
+
+#bbai-dashboard-main .bbai-banner--celebrate,
+.bbai-command-hero-host .bbai-banner--celebrate {
+    animation: bbai-product-banner-glow-pulse 0.6s ease-out both;
+}
+
+@keyframes bbai-product-banner-glow-pulse {
+    0% {
+        box-shadow:
+            0 1px 2px rgba(0, 0, 0, 0.04),
+            0 0 0 0 rgba(34, 197, 94, 0.08);
+    }
+    55% {
+        box-shadow:
+            0 2px 8px rgba(15, 23, 42, 0.05),
+            0 0 0 4px rgba(34, 197, 94, 0.04);
+    }
+    100% {
+        box-shadow:
+            0 1px 2px rgba(0, 0, 0, 0.04),
+            0 0 0 0 rgba(34, 197, 94, 0);
+    }
+}
+
+@media (max-width: 1080px) {
+    .bbai-command-hero-host .bbai-banner__layout.bbai-dashboard-hero__layout,
+    #bbai-dashboard-main .bbai-banner__layout.bbai-dashboard-hero__layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .bbai-command-hero-host .bbai-banner__actions.bbai-dashboard-hero-actions,
+    #bbai-dashboard-main .bbai-banner__actions.bbai-dashboard-hero-actions {
+        width: 100%;
+        max-width: none;
+        margin-left: 0;
+        transform: none;
+    }
+}

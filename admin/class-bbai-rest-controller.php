@@ -108,6 +108,16 @@ class REST_Controller {
 
 		register_rest_route(
 			'bbai/v1',
+			'/alt/clear',
+			[
+				'methods'             => 'POST',
+				'callback'            => [ $this, 'handle_clear_alt_batch' ],
+				'permission_callback' => [ $this, 'can_edit_media' ],
+			]
+		);
+
+		register_rest_route(
+			'bbai/v1',
 			'/list',
 			[
 				'methods'             => 'GET',
@@ -945,6 +955,63 @@ class REST_Controller {
 			'approved_count' => (int) ( $result['approved_count'] ?? 0 ),
 			'approved_at' => $result['approved_at'] ?? '',
 			'stats' => $this->core->get_dashboard_stats_payload( true ),
+		];
+	}
+
+	/**
+	 * Meta keys to remove when clearing ALT (review snapshot + approval).
+	 *
+	 * @return array<int, string>
+	 */
+	private static function bbai_alt_dependent_meta_keys(): array {
+		return [
+			'_bbai_review_score',
+			'_bbai_review_status',
+			'_bbai_review_grade',
+			'_bbai_review_summary',
+			'_bbai_review_issues',
+			'_bbai_review_model',
+			'_bbai_reviewed_at',
+			'_bbai_review_alt_hash',
+			'_bbai_user_approved_hash',
+			'_bbai_user_approved_at',
+		];
+	}
+
+	/**
+	 * Remove ALT text and related review meta for multiple attachments.
+	 *
+	 * @param \WP_REST_Request $request REST request instance.
+	 * @return array|\WP_Error
+	 */
+	public function handle_clear_alt_batch( \WP_REST_Request $request ) {
+		$ids_param = $request->get_param( 'ids' );
+		$ids       = is_array( $ids_param ) ? array_map( 'absint', $ids_param ) : [];
+		$ids       = array_values(
+			array_filter(
+				array_unique( $ids ),
+				static function ( int $attachment_id ): bool {
+					return $attachment_id > 0 && current_user_can( 'edit_post', $attachment_id );
+				}
+			)
+		);
+
+		if ( empty( $ids ) ) {
+			return new \WP_Error( 'invalid_ids', __( 'Select at least one image to clear ALT text.', 'beepbeep-ai-alt-text-generator' ), [ 'status' => 400 ] );
+		}
+
+		$cleared = [];
+		foreach ( $ids as $id ) {
+			delete_post_meta( $id, '_wp_attachment_image_alt' );
+			foreach ( self::bbai_alt_dependent_meta_keys() as $meta_key ) {
+				delete_post_meta( $id, $meta_key );
+			}
+			$cleared[] = $id;
+		}
+
+		return [
+			'cleared_ids' => $cleared,
+			'stats'       => $this->core->get_dashboard_stats_payload( true ),
 		];
 	}
 

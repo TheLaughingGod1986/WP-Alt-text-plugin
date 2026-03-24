@@ -63,39 +63,38 @@
 }
 
 /* ==========================================================================
-   Dashboard: Blue primary only - override all green buttons
-   Scan Library, Upgrade to Growth, Actions, Banner CTA use same blue
+   Dashboard: primary CTA — solid green (single system, no gradients)
    ========================================================================== */
 .bbai-tab-content#tab-dashboard .bbai-btn-primary,
 .bbai-dashboard-shell .bbai-btn-primary,
 #bbai-dashboard-main .bbai-btn-primary,
 .bbai-container .bbai-dashboard-shell .bbai-btn-primary {
-    background: linear-gradient(180deg, #3b82f6, #2563eb) !important;
+    background: #10b981 !important;
     color: #ffffff !important;
-    border: none !important;
-    border-color: transparent !important;
+    border: 1px solid #10b981 !important;
     min-height: 46px !important;
     padding: 12px 18px !important;
     font-weight: 600 !important;
     font-size: 14px !important;
     border-radius: 10px !important;
-    box-shadow: 0 6px 14px rgba(59, 130, 246, 0.18) !important;
-    transition: all 0.2s ease;
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.22) !important;
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .bbai-tab-content#tab-dashboard .bbai-btn-primary:hover:not(:disabled),
 .bbai-dashboard-shell .bbai-btn-primary:hover:not(:disabled),
 #bbai-dashboard-main .bbai-btn-primary:hover:not(:disabled),
 .bbai-container .bbai-dashboard-shell .bbai-btn-primary:hover:not(:disabled) {
-    background: linear-gradient(180deg, #2563eb, #1d4ed8) !important;
-    box-shadow: 0 8px 18px rgba(59, 130, 246, 0.22) !important;
+    background: #059669 !important;
+    border-color: #059669 !important;
+    box-shadow: 0 8px 20px rgba(5, 150, 105, 0.28) !important;
     transform: translateY(-1px);
 }
 
 .bbai-tab-content#tab-dashboard .bbai-btn-primary:focus-visible,
 .bbai-dashboard-shell .bbai-btn-primary:focus-visible,
 #bbai-dashboard-main .bbai-btn-primary:focus-visible {
-    outline: 2px solid #1d4ed8 !important;
+    outline: 2px solid #059669 !important;
     outline-offset: 2px;
 }
 
@@ -224,15 +223,18 @@
     font-weight: 600;
     font-size: 14px;
     border-radius: 10px;
-    background: linear-gradient(135deg, #4f7df3, #3a64e6) !important;
+    border: 1px solid #10b981;
+    background: #10b981 !important;
     color: #ffffff !important;
-    box-shadow: 0 6px 14px rgba(59, 130, 246, 0.18);
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.22);
 }
 
 .bbai-dashboard-hero__cta--primary:hover,
 .bbai-dashboard-hero-actions .bbai-btn-primary:hover {
     transform: translateY(-1px) !important;
-    box-shadow: 0 8px 18px rgba(59, 130, 246, 0.22) !important;
+    border-color: #059669;
+    background: #059669 !important;
+    box-shadow: 0 8px 20px rgba(5, 150, 105, 0.28) !important;
 }
 
 .bbai-dashboard-hero__cta--tertiary {
@@ -680,105 +682,40 @@
     border-top: none;
 }
 
-/* Status card - clean SaaS, matches reference image */
+/* Status card - centered layout, mini command center */
 .bbai-status-card {
-    padding: 32px !important;
-    border-radius: 18px !important;
-    background: #ffffff !important;
-    border: 1px solid #eef1f5 !important;
+    text-align: center;
 }
 
 .bbai-status-card .bbai-card__header {
-    margin-bottom: 18px;
-    text-align: center;
-}
-
-.bbai-status-card .bbai-card__title {
-    font-size: 18px;
-    font-weight: 600;
-    color: #1f2d3d;
-    text-align: center;
+    margin-bottom: 10px;
 }
 
 .bbai-status-card .bbai-progress-donut-wrap {
     display: flex;
     justify-content: center;
-    margin: 0 0 12px;
+    margin: 0 0 14px;
 }
 
-.bbai-status-card .bbai-progress-donut {
-    max-width: 220px;
-    width: 220px;
-    height: 220px;
-}
-
-.bbai-status-card .bbai-progress-donut-center,
-.bbai-status-card .bbai-donut-center {
-    width: 68%;
-    height: 68%;
-    inset: 16%;
-    margin: 0;
-    background: #ffffff;
-    border-radius: 50%;
-}
-
-.bbai-status-card .bbai-progress-donut-value,
-.bbai-status-card .bbai-donut-value {
-    font-size: 36px;
-    font-weight: 700;
-    line-height: 1.1;
-    color: #1f2d3d;
-}
-
-.bbai-status-card .bbai-progress-donut-percent,
-.bbai-status-card .bbai-donut-percent {
-    font-size: 16px;
-    color: #1f2d3d;
-}
-
-.bbai-status-card .bbai-progress-donut-label,
-.bbai-status-card .bbai-donut-label {
-    font-size: 11px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    line-height: 1.1;
-    margin-top: 6px;
-    color: #1f2d3d;
-}
-
-/* Primary summary line - centred under donut, muted grey */
-.bbai-status-summary {
-    text-align: center !important;
-    font-size: 14px;
-    font-weight: 400;
-    color: #6b7280;
-    margin: 12px auto 18px;
-    line-height: 1.4;
-    display: block;
-    width: 100%;
-}
-
-/* Status metrics grid - 2x2, left-aligned */
+/* Section 3: Image status metrics grid */
 .bbai-status-metrics {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px 24px;
-    margin: 8px auto 18px;
-    max-width: 360px;
+    gap: 12px 18px;
+    margin-top: 0;
+    margin-bottom: 0;
     text-align: left;
 }
 
 .bbai-status-metric {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 0;
+    gap: 2px;
 }
 
 .bbai-status-metric__label {
-    font-size: 13px;
-    color: #374151;
-    margin-bottom: 4px;
+    font-size: 12px;
+    color: #6b7b8c;
 }
 
 .bbai-status-metric__value {
@@ -787,46 +724,26 @@
     color: #1f2d3d;
 }
 
-/* Advisory text - full width, light grey box, centred */
+/* Intelligent insight line */
 .bbai-status-insight {
-    width: 100%;
-    max-width: none;
-    margin: 0 0 20px;
-    padding: 12px 16px;
-    border-radius: 10px;
-    background: #f4f6f9;
-    border: 1px solid #e6ecf2;
     font-size: 13px;
-    font-weight: 400;
-    color: #6b7280;
+    color: #4b5563;
+    margin: 8px 0 0;
     line-height: 1.4;
-    text-align: center;
 }
 
-/* Divider before plan usage */
-.bbai-plan-usage-divider {
-    border-top: 1px solid #eef1f5;
-    margin: 20px 0 22px;
-}
-
-/* Plan usage - light grey card, all text centred */
+/* Section 4: Plan usage */
 .bbai-plan-usage {
-    width: 100%;
-    max-width: none;
-    margin: 0 auto;
-    padding: 20px 24px;
-    border-radius: 12px;
-    background: #f9fafb;
-    border: 1px solid #eef1f5;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-    text-align: center;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid #eef1f5;
 }
 
 .bbai-plan-usage__title {
-    font-size: 14px;
-    font-weight: 700;
-    color: #1f2d3d;
-    margin: 0 0 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #4b5563;
+    margin: 0 0 4px;
 }
 
 .bbai-plan-usage__line,
@@ -834,120 +751,87 @@
     font-size: 13px;
     color: #4b5563;
     margin: 0;
-    line-height: 1.6;
-}
-
-.bbai-plan-usage__reset {
-    margin-top: 4px;
-}
-
-.bbai-plan-usage__remaining {
-    font-size: 14px;
-    font-weight: 600;
-    color: #2563eb;
-    margin-top: 10px;
-    line-height: 1.6;
-}
-
-/* Upgrade footer CTA - centred */
-.bbai-status-upgrade-hint {
-    margin-top: 20px;
-    text-align: center;
-    font-size: 13px;
-    font-weight: 500;
-    color: #2563eb;
     line-height: 1.4;
 }
 
-/* Upgrade card - premium SaaS, pairs with Alt Text Status */
+.bbai-plan-usage__reset {
+    margin-top: 2px;
+}
+
+/* Section 5: Upgrade opportunity */
+.bbai-status-upgrade-hint {
+    margin-top: 6px;
+}
+
+.bbai-status-upgrade-hint__line {
+    font-size: 13px;
+    font-weight: 600;
+    color: #2563eb;
+    margin: 0;
+}
+
+.bbai-status-upgrade-hint__cta {
+    font-size: 13px;
+    color: #2563eb;
+    margin: 4px 0 0;
+    line-height: 1.4;
+}
+
+/* Upgrade card - subtle blue gradient, more breathing room */
 .bbai-upgrade-card {
-    padding: 32px !important;
-    border-radius: 18px !important;
-    background: #ffffff !important;
-    border: 1px solid #eef1f5 !important;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.04) 0%, rgba(239, 246, 255, 0.6) 50%, #ffffff 100%) !important;
+    border-color: rgba(59, 130, 246, 0.2) !important;
+    padding: 28px !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
     display: flex;
     flex-direction: column;
 }
 
 .bbai-upgrade-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.06);
-}
-
-.bbai-upgrade-card--highlight {
-    border-color: #dbeafe !important;
-    background: linear-gradient(180deg, #ffffff, #f8fbff) !important;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+    border-color: rgba(59, 130, 246, 0.35) !important;
 }
 
 .bbai-upgrade-card .bbai-card__header {
-    margin-bottom: 0;
-    text-align: left;
-}
-
-.bbai-upgrade-card .bbai-card__title {
-    font-size: 18px;
-    font-weight: 600;
-    color: #1f2d3d;
-    margin-bottom: 8px;
-    text-align: left;
+    margin-bottom: 14px;
 }
 
 .bbai-upgrade-card .bbai-card__copy {
-    font-size: 14px;
-    color: #6b7280;
-    line-height: 1.5;
-    margin-bottom: 16px;
-    max-width: 420px;
-    text-align: left;
+    margin-bottom: 14px;
 }
 
 .bbai-upgrade-card .bbai-feature-list {
     list-style: none;
-    margin: 0 0 18px;
+    margin: 0 0 10px;
     padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
 }
 
 .bbai-upgrade-card .bbai-feature-list li {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     font-size: 14px;
-    font-weight: 500;
-    color: #374151;
+    color: #334155;
+    margin-bottom: 12px;
 }
 
 .bbai-upgrade-card .bbai-feature-check {
-    color: #22c55e;
+    color: #10b981;
     font-weight: 700;
-    flex-shrink: 0;
-}
-
-.bbai-upgrade-card__divider {
-    border-top: 1px solid #eef1f5;
-    margin: 18px 0 20px;
-}
-
-.bbai-upgrade-card .bbai-card__footer {
-    margin-top: 0;
-    padding-top: 0;
 }
 
 .bbai-upgrade-card .bbai-upgrade-cta {
     width: 100%;
-    height: 44px;
-    padding: 0 20px;
-    margin-bottom: 10px;
+    padding: 12px 24px;
     font-size: 14px;
     font-weight: 600;
-    border-radius: 10px !important;
-    background: linear-gradient(90deg, #3b82f6, #2563eb) !important;
+    min-height: 46px;
+    margin-bottom: 12px;
+    background: linear-gradient(180deg, #3b82f6, #2563eb) !important;
     box-shadow: 0 10px 24px rgba(59, 130, 246, 0.18) !important;
-    border: none !important;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 10px;
+    transition: all 0.2s ease;
 }
 
 .bbai-upgrade-card .bbai-upgrade-cta:hover {
@@ -957,23 +841,19 @@
 
 .bbai-upgrade-card .bbai-upgrade-helper {
     font-size: 13px;
-    color: #6b7280;
-    margin: 0 0 6px;
+    color: #64748b;
+    margin: 0 0 12px;
     line-height: 1.4;
 }
 
-.bbai-upgrade-card .bbai-link-secondary,
-.bbai-upgrade-card .bbai-upgrade-compare-link {
-    font-size: 13px;
-    color: #2563eb;
-    font-weight: 500;
+.bbai-upgrade-card .bbai-link-secondary {
+    font-size: 14px;
+    color: #3b82f6;
     text-decoration: none;
-    cursor: pointer;
-    display: inline-block;
+    font-weight: 500;
 }
 
-.bbai-upgrade-card .bbai-link-secondary:hover,
-.bbai-upgrade-card .bbai-upgrade-compare-link:hover {
+.bbai-upgrade-card .bbai-link-secondary:hover {
     text-decoration: underline;
 }
 
@@ -999,10 +879,6 @@
     line-height: 1.35;
     color: #374151;
     margin-bottom: 8px;
-}
-
-.bbai-meter-fill {
-    border-radius: 999px;
 }
 
 .bbai-meter-value {

@@ -63,39 +63,38 @@
 }
 
 /* ==========================================================================
-   Dashboard: Blue primary only - override all green buttons
-   Scan Library, Upgrade to Growth, Actions, Banner CTA use same blue
+   Dashboard: primary CTA — solid green (single system, no gradients)
    ========================================================================== */
 .bbai-tab-content#tab-dashboard .bbai-btn-primary,
 .bbai-dashboard-shell .bbai-btn-primary,
 #bbai-dashboard-main .bbai-btn-primary,
 .bbai-container .bbai-dashboard-shell .bbai-btn-primary {
-    background: linear-gradient(180deg, #3b82f6, #2563eb) !important;
+    background: #10b981 !important;
     color: #ffffff !important;
-    border: none !important;
-    border-color: transparent !important;
+    border: 1px solid #10b981 !important;
     min-height: 46px !important;
     padding: 12px 18px !important;
     font-weight: 600 !important;
     font-size: 14px !important;
     border-radius: 10px !important;
-    box-shadow: 0 6px 14px rgba(59, 130, 246, 0.18) !important;
-    transition: all 0.2s ease;
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.22) !important;
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .bbai-tab-content#tab-dashboard .bbai-btn-primary:hover:not(:disabled),
 .bbai-dashboard-shell .bbai-btn-primary:hover:not(:disabled),
 #bbai-dashboard-main .bbai-btn-primary:hover:not(:disabled),
 .bbai-container .bbai-dashboard-shell .bbai-btn-primary:hover:not(:disabled) {
-    background: linear-gradient(180deg, #2563eb, #1d4ed8) !important;
-    box-shadow: 0 8px 18px rgba(59, 130, 246, 0.22) !important;
+    background: #059669 !important;
+    border-color: #059669 !important;
+    box-shadow: 0 8px 20px rgba(5, 150, 105, 0.28) !important;
     transform: translateY(-1px);
 }
 
 .bbai-tab-content#tab-dashboard .bbai-btn-primary:focus-visible,
 .bbai-dashboard-shell .bbai-btn-primary:focus-visible,
 #bbai-dashboard-main .bbai-btn-primary:focus-visible {
-    outline: 2px solid #1d4ed8 !important;
+    outline: 2px solid #059669 !important;
     outline-offset: 2px;
 }
 
@@ -224,15 +223,18 @@
     font-weight: 600;
     font-size: 14px;
     border-radius: 10px;
-    background: linear-gradient(135deg, #4f7df3, #3a64e6) !important;
+    border: 1px solid #10b981;
+    background: #10b981 !important;
     color: #ffffff !important;
-    box-shadow: 0 6px 14px rgba(59, 130, 246, 0.18);
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.22);
 }
 
 .bbai-dashboard-hero__cta--primary:hover,
 .bbai-dashboard-hero-actions .bbai-btn-primary:hover {
     transform: translateY(-1px) !important;
-    box-shadow: 0 8px 18px rgba(59, 130, 246, 0.22) !important;
+    border-color: #059669;
+    background: #059669 !important;
+    box-shadow: 0 8px 20px rgba(5, 150, 105, 0.28) !important;
 }
 
 .bbai-dashboard-hero__cta--tertiary {

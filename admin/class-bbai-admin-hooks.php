@@ -35,6 +35,7 @@ class Admin_Hooks {
 	 * Register all hooks with WordPress.
 	 */
 	public function register() {
+		add_filter( 'admin_body_class', [ $this->core, 'filter_admin_body_class' ] );
 		add_action( 'admin_menu', [ $this->core, 'add_settings_page' ] );
 		add_action( 'admin_menu', [ __CLASS__, 'register_credit_usage_page' ] );
 		add_action( 'admin_init', [ $this->core, 'register_settings' ] );

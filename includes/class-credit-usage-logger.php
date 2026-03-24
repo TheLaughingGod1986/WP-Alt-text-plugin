@@ -430,6 +430,67 @@ class Credit_Usage_Logger {
 	}
 
 	/**
+	 * Sum credits used per source (for Usage insights / driver summary).
+	 *
+	 * @param array $args Optional. date_from, date_to, source (same semantics as get_site_usage).
+	 * @return list<array{source:string,total_credits:int,event_count:int}>
+	 */
+	public static function get_credit_totals_by_source( array $args = [] ): array {
+		if ( ! self::table_exists() ) {
+			return [];
+		}
+
+		global $wpdb;
+
+		$defaults = [
+			'date_from' => null,
+			'date_to'   => null,
+			'source'    => null,
+		];
+		$args       = wp_parse_args( $args, $defaults );
+		$cache_key  = 'credit_by_source_' . md5( wp_json_encode( $args ) );
+		$cached     = BBAI_Cache::get( 'credit_usage', $cache_key );
+		if ( false !== $cached && is_array( $cached ) ) {
+			return $cached;
+		}
+
+		$table        = esc_sql( self::table() );
+		$filter_state = self::build_usage_filter_state( $args );
+		$params       = self::get_usage_filter_params( $filter_state );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
+			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT source, SUM(credits_used) AS total_credits, COUNT(*) AS event_count FROM `{$table}` WHERE 1 = 1 AND (%d = %d OR generated_at >= %s) AND (%d = %d OR generated_at <= %s) AND (%d = %d OR source = %s) GROUP BY source ORDER BY total_credits DESC",
+				$params
+			),
+			ARRAY_A
+		);
+
+		if ( ! is_array( $rows ) ) {
+			$rows = [];
+		}
+
+		$out = [];
+		foreach ( $rows as $row ) {
+			$src = sanitize_key( (string) ( $row['source'] ?? '' ) );
+			if ( '' === $src ) {
+				$src = 'unknown';
+			}
+			$out[] = [
+				'source'        => $src,
+				'total_credits' => max( 0, (int) ( $row['total_credits'] ?? 0 ) ),
+				'event_count'   => max( 0, (int) ( $row['event_count'] ?? 0 ) ),
+			];
+		}
+
+		BBAI_Cache::set( 'credit_usage', $cache_key, $out, BBAI_Cache::DEFAULT_TTL );
+		return $out;
+	}
+
+	/**
 	 * Get total generation events across the site.
 	 *
 	 * @param array $args Optional. Query arguments (date_from, date_to, source).
