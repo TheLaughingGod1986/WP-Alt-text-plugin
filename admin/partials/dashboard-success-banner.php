@@ -51,5 +51,12 @@ $bbai_command_hero = bbai_banner_build_command_hero(
         ],
     ]
 );
+$bbai_dash_banner_state = bbai_banner_pick_state(BBAI_BANNER_CTX_DASHBOARD, $bbai_snap);
+$bbai_dash_banner_slot  = bbai_get_active_banner_slot_from_state($bbai_dash_banner_state);
+if (!isset($bbai_command_hero['section_data_attrs']) || !is_array($bbai_command_hero['section_data_attrs'])) {
+    $bbai_command_hero['section_data_attrs'] = [];
+}
+$bbai_command_hero['section_data_attrs']['data-bbai-active-banner-slot'] = (string) ($bbai_dash_banner_slot ?? '');
+$bbai_command_hero['banner_logical_state'] = $bbai_dash_banner_state;
 
 require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/shared-command-hero.php';

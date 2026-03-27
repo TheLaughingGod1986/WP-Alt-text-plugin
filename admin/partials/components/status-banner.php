@@ -2,13 +2,15 @@
 /**
  * Canonical top status / command hero banner (Analytics, ALT Library, Usage, Dashboard).
  *
- * Single source of truth for banner shell, grid, typography, and CTA column.
- * Action area: components/action-stack.php. CTAs: bbai_command_hero_render_* → components/ui-button.php.
+ * Public API: `bbai_ui_render( 'bbai-banner', [ 'command_hero' => $cfg ] );` (or legacy `'status-banner'`).
+ * Shell classes: .bbai-banner, .bbai-status-banner, .bbai-dashboard-hero--command.
  *
- * $bbai_ui keys:
- * - command_hero: array (hero config — see legacy shared-command-hero docs)
- *
- * Legacy: dashboard-success-banner may load via shared-command-hero.php shim, which sets $bbai_ui['command_hero'].
+ * command_hero keys:
+ * - suppress_banner_render, suppress_host, section_hidden
+ * - heading_tag: h1 | h2 (default h1)
+ * - stack_paragraphs: string[] — multiple .bbai-banner__subtext; else single body paragraph
+ * - progress_caption: string — label above progress bar
+ * - status_line, meta (meta normalized by bbai_banner_inline_payload_to_command_hero)
  *
  * @package BeepBeep_AI
  */
@@ -24,16 +26,25 @@ $bbai_command_hero = isset($bbai_ui['command_hero']) && is_array($bbai_ui['comma
 
 $bbai_ch = $bbai_command_hero;
 
+if (!empty($bbai_ch['suppress_banner_render'])) {
+    return;
+}
+
+$bbai_ch_title = trim((string) ($bbai_ch['title'] ?? ''));
+if ('' === $bbai_ch_title) {
+    return;
+}
+
 $bbai_ch_wrapper_extra = (string) ($bbai_ch['wrapper_extra_class'] ?? '');
 $bbai_ch_section_extra = (string) ($bbai_ch['section_extra_class'] ?? '');
 $bbai_ch_section_id = (string) ($bbai_ch['section_id'] ?? '');
 $bbai_ch_aria = (string) ($bbai_ch['aria_label'] ?? '');
 $bbai_ch_semantic_state = (string) ($bbai_ch['semantic_state'] ?? 'default');
 $bbai_ch_tone = (string) ($bbai_ch['tone'] ?? 'healthy');
-$bbai_ch_title = (string) ($bbai_ch['title'] ?? '');
 $bbai_ch_body = (string) ($bbai_ch['body'] ?? '');
 $bbai_ch_status = (string) ($bbai_ch['status_line'] ?? '');
 $bbai_ch_note = (string) ($bbai_ch['note'] ?? '');
+$bbai_ch_stack = isset($bbai_ch['stack_paragraphs']) && is_array($bbai_ch['stack_paragraphs']) ? $bbai_ch['stack_paragraphs'] : [];
 $bbai_ch_icon_html = isset($bbai_ch['icon_html']) && is_string($bbai_ch['icon_html']) && $bbai_ch['icon_html'] !== ''
     ? $bbai_ch['icon_html']
     : null;
@@ -47,10 +58,14 @@ $bbai_ch_subtext_attrs = isset($bbai_ch['subtext_attrs']) && is_array($bbai_ch['
     ? $bbai_ch['subtext_attrs']
     : [];
 
+$bbai_ch_ht_raw = strtolower((string) ($bbai_ch['heading_tag'] ?? 'h1'));
+$bbai_ch_heading_tag = in_array($bbai_ch_ht_raw, ['h1', 'h2'], true) ? $bbai_ch_ht_raw : 'h1';
+
 $bbai_ch_show_progress = !empty($bbai_ch['show_progress']);
 $bbai_ch_progress_percent = (int) ($bbai_ch['progress_percent'] ?? 0);
 $bbai_ch_progress_percent = min(100, max(0, $bbai_ch_progress_percent));
 $bbai_ch_progress_aria = trim((string) ($bbai_ch['progress_aria_valuetext'] ?? ''));
+$bbai_ch_progress_caption = trim((string) ($bbai_ch['progress_caption'] ?? ''));
 
 $bbai_ch_show_loop = !empty($bbai_ch['show_hero_loop']);
 $bbai_ch_settings_url = (string) ($bbai_ch['settings_url'] ?? admin_url('admin.php?page=bbai-settings'));
@@ -68,6 +83,9 @@ $bbai_ch_section_data = isset($bbai_ch['section_data_attrs']) && is_array($bbai_
 
 $bbai_ch_eyebrow = trim((string) ($bbai_ch['eyebrow'] ?? ''));
 $bbai_ch_eyebrow_show = '' !== $bbai_ch_eyebrow;
+
+$bbai_ch_suppress_host = !empty($bbai_ch['suppress_host']);
+$bbai_ch_section_hidden = !empty($bbai_ch['section_hidden']);
 
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/command-hero.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/page-hero.php';
@@ -118,7 +136,7 @@ $bbai_ch_has_tertiary = '' !== trim($bbai_ch_tertiary_html);
 $bbai_ch_status_show = '' !== trim($bbai_ch_status);
 $bbai_ch_note_show = '' !== trim($bbai_ch_note);
 
-$bbai_ch_banner_variant = isset($bbai_ch['banner_variant']) && in_array((string) $bbai_ch['banner_variant'], ['success', 'warning'], true)
+$bbai_ch_banner_variant = isset($bbai_ch['banner_variant']) && in_array((string) $bbai_ch['banner_variant'], ['success', 'warning', 'info', 'neutral'], true)
     ? (string) $bbai_ch['banner_variant']
     : (in_array($bbai_ch_tone, ['attention', 'paused', 'setup'], true) ? 'warning' : 'success');
 
@@ -142,10 +160,14 @@ $bbai_ch_section_class = trim(implode(' ', array_filter([
     '' !== $bbai_ch_section_extra ? trim($bbai_ch_section_extra) : '',
 ])));
 ?>
+<?php if (!$bbai_ch_suppress_host) : ?>
 <div class="bbai-hero-full bbai-command-hero-host bbai-page-hero-host<?php echo '' !== $bbai_ch_wrapper_extra ? ' ' . esc_attr(trim($bbai_ch_wrapper_extra)) : ''; ?>">
     <div class="bbai-hero-inner bbai-page-hero__frame">
+<?php endif; ?>
         <section<?php echo $bbai_ch_section_id_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
             class="<?php echo esc_attr($bbai_ch_section_class); ?>"
+            <?php echo $bbai_ch_section_hidden ? 'hidden ' : ''; ?>
+            data-bbai-banner="1"
             data-bbai-status-banner="1"
             data-bbai-shared-command-hero="1"
             data-bbai-page-hero="1"
@@ -164,15 +186,45 @@ $bbai_ch_section_class = trim(implode(' ', array_filter([
                             </div>
                             <div class="bbai-dashboard-hero__heading-copy bbai-banner__title-wrap bbai-page-hero__title-wrap">
                                 <p class="bbai-page-hero__eyebrow bbai-banner__eyebrow" data-bbai-page-hero-eyebrow<?php echo $bbai_ch_eyebrow_show ? '' : ' hidden'; ?>><?php echo esc_html($bbai_ch_eyebrow); ?></p>
+                                <?php if ('h2' === $bbai_ch_heading_tag) : ?>
+                                <h2 <?php echo $bbai_ch_headline_attr_str; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>><?php echo esc_html($bbai_ch_title); ?></h2>
+                                <?php else : ?>
                                 <h1 <?php echo $bbai_ch_headline_attr_str; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>><?php echo esc_html($bbai_ch_title); ?></h1>
+                                <?php endif; ?>
                             </div>
                         </div>
 
+                        <?php if (!empty($bbai_ch_stack)) : ?>
+                            <div class="bbai-banner__body-stack">
+                                <?php
+                                $bbai_ch_stack_first_sub = true;
+                                foreach ($bbai_ch_stack as $bbai_ch_para) :
+                                    $bbai_ch_para = trim((string) $bbai_ch_para);
+                                    if ('' === $bbai_ch_para) {
+                                        continue;
+                                    }
+                                    ?>
+                                    <?php if ($bbai_ch_stack_first_sub) : ?>
+                                    <p <?php echo $bbai_ch_subtext_attr_str; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>><?php echo esc_html($bbai_ch_para); ?></p>
+                                    <?php
+                                    $bbai_ch_stack_first_sub = false;
+                                    else :
+                                        ?>
+                                    <p class="bbai-dashboard-hero__subtext bbai-banner__subtext"><?php echo esc_html($bbai_ch_para); ?></p>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else : ?>
                         <p <?php echo $bbai_ch_subtext_attr_str; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>><?php echo esc_html($bbai_ch_body); ?></p>
+                        <?php endif; ?>
+
                         <p class="bbai-dashboard-hero__next-step bbai-banner__meta" data-bbai-hero-next-step<?php echo $bbai_ch_status_show ? '' : ' hidden'; ?>><?php echo esc_html($bbai_ch_status); ?></p>
 
                         <?php if ($bbai_ch_show_progress) : ?>
                         <div class="bbai-dashboard-hero__usage-block bbai-banner__utility bbai-banner__utility--progress-only">
+                            <?php if ('' !== $bbai_ch_progress_caption) : ?>
+                                <p class="bbai-banner__progress-caption"><?php echo esc_html($bbai_ch_progress_caption); ?></p>
+                            <?php endif; ?>
                             <div class="bbai-dashboard-hero-progress bbai-banner__progress" aria-label="<?php esc_attr_e('Credit usage this cycle', 'beepbeep-ai-alt-text-generator'); ?>">
                                 <div class="bbai-dashboard-hero-progress-track bbai-banner__progress-track" role="progressbar" aria-valuenow="<?php echo esc_attr((string) $bbai_ch_progress_percent); ?>" aria-valuemin="0" aria-valuemax="100"<?php echo '' !== $bbai_ch_progress_aria ? ' aria-valuetext="' . esc_attr($bbai_ch_progress_aria) . '"' : ''; ?>>
                                     <span class="bbai-dashboard-hero-progress-fill bbai-banner__progress-fill" data-bbai-banner-progress data-bbai-banner-progress-target="<?php echo esc_attr((string) $bbai_ch_progress_percent); ?>" style="width: <?php echo esc_attr((string) $bbai_ch_progress_percent); ?>%;"></span>
@@ -229,5 +281,7 @@ $bbai_ch_section_class = trim(implode(' ', array_filter([
                 </div>
             </div>
         </section>
+<?php if (!$bbai_ch_suppress_host) : ?>
     </div>
 </div>
+<?php endif; ?>

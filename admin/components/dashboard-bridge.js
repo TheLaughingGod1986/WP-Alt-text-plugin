@@ -10,6 +10,109 @@
     const i18n = window.wp && window.wp.i18n ? window.wp.i18n : null;
     const __ = i18n && typeof i18n.__ === 'function' ? i18n.__ : (text) => text;
 
+    function readUsageNumber(source, keys) {
+        if (!source || typeof source !== 'object') {
+            return NaN;
+        }
+
+        for (const key of keys) {
+            const value = source[key];
+            if (value === undefined || value === null || value === '') {
+                continue;
+            }
+
+            const parsed = parseInt(value, 10);
+            if (!Number.isNaN(parsed)) {
+                return parsed;
+            }
+        }
+
+        return NaN;
+    }
+
+    function readUsageString(source, keys) {
+        if (!source || typeof source !== 'object') {
+            return '';
+        }
+
+        for (const key of keys) {
+            const value = source[key];
+            if (typeof value === 'string' && value.trim() !== '') {
+                return value;
+            }
+        }
+
+        return '';
+    }
+
+    function normalizeUsage(usageStats) {
+        const usage = usageStats && usageStats.data && typeof usageStats.data === 'object'
+            ? usageStats.data
+            : usageStats;
+        const quota = usage && usage.quota && typeof usage.quota === 'object' ? usage.quota : {};
+        if (!usage || typeof usage !== 'object') {
+            return null;
+        }
+
+        let used = readUsageNumber(usage, ['used']);
+        if (Number.isNaN(used)) {
+            used = readUsageNumber(quota, ['used']);
+        }
+        used = Number.isNaN(used) ? 0 : Math.max(0, used);
+
+        let limit = readUsageNumber(usage, ['limit']);
+        if (Number.isNaN(limit)) {
+            limit = readUsageNumber(quota, ['limit']);
+        }
+        limit = Number.isNaN(limit) || limit <= 0 ? 50 : limit;
+
+        let remaining = readUsageNumber(usage, ['remaining']);
+        if (Number.isNaN(remaining)) {
+            remaining = readUsageNumber(quota, ['remaining']);
+        }
+        if (Number.isNaN(remaining)) {
+            remaining = Math.max(0, limit - used);
+        }
+        remaining = Math.max(0, remaining);
+
+        const resetDate = readUsageString(usage, ['resetDate']) || readUsageString(usage, ['reset_date']) || readUsageString(quota, ['reset_date']);
+        let resetTimestamp = readUsageNumber(usage, ['reset_timestamp', 'resetTimestamp', 'reset_ts']);
+        if (Number.isNaN(resetTimestamp)) {
+            resetTimestamp = readUsageNumber(quota, ['reset_timestamp']);
+        }
+        let daysUntilReset = readUsageNumber(usage, ['days_until_reset', 'daysUntilReset']);
+        if (Number.isNaN(daysUntilReset)) {
+            daysUntilReset = readUsageNumber(quota, ['days_until_reset']);
+        }
+
+        const planType = readUsageString(usage, ['plan_type', 'plan']) || readUsageString(quota, ['plan_type']) || 'free';
+
+        return {
+            ...usage,
+            used,
+            limit,
+            remaining,
+            resetDate: resetDate || '',
+            reset_date: readUsageString(usage, ['reset_date']) || resetDate || '',
+            reset_timestamp: Number.isNaN(resetTimestamp) ? 0 : resetTimestamp,
+            days_until_reset: Number.isNaN(daysUntilReset) ? null : Math.max(0, daysUntilReset),
+            plan: planType,
+            plan_type: planType,
+            creditsUsed: used,
+            creditsTotal: limit,
+            creditsLimit: limit,
+            creditsRemaining: remaining,
+            quota: {
+                used,
+                limit,
+                remaining,
+                reset_date: readUsageString(usage, ['reset_date']) || resetDate || '',
+                reset_timestamp: Number.isNaN(resetTimestamp) ? 0 : resetTimestamp,
+                plan_type: planType
+            }
+        };
+    }
+
     // Check if React and ReactDOM are available
     if (typeof React === 'undefined' || typeof ReactDOM === 'undefined') {
         window.BBAI_LOG && window.BBAI_LOG.warn('[BeepBeep AI] React is not loaded. Dashboard requires React and ReactDOM.');
@@ -68,30 +171,40 @@
                     window.BBAI_LOG && window.BBAI_LOG.warn('[BeepBeep AI] Could not fetch queue stats:', e);
                 }
 
-                // Determine plan
-                let plan = 'free';
-                if (usageStats.plan) {
-                    plan = usageStats.plan.toLowerCase();
-                } else if (usageStats.limit >= 10000) {
-                    plan = 'agency';
-                } else if (usageStats.limit >= 1000) {
-                    plan = 'growth';
-                }
-
-                const usage = {
-                    used: usageStats.used || 0,
-                    limit: usageStats.limit || (plan === 'free' ? 50 : plan === 'growth' ? 1000 : 10000),
-                    remaining: usageStats.remaining || 0,
-                    resetDate: usageStats.reset_date || usageStats.resetDate || '',
-                    plan: usageStats.plan || plan
+                const usage = normalizeUsage(usageStats) || {
+                    used: 0,
+                    limit: 50,
+                    remaining: 50,
+                    resetDate: '',
+                    reset_date: '',
+                    reset_timestamp: 0,
+                    days_until_reset: null,
+                    plan: 'free',
+                    plan_type: 'free',
+                    creditsUsed: 0,
+                    creditsTotal: 50,
+                    creditsLimit: 50,
+                    creditsRemaining: 50,
+                    quota: {
+                        used: 0,
+                        limit: 50,
+                        remaining: 50,
+                        reset_date: '',
+                        reset_timestamp: 0,
+                        plan_type: 'free'
+                    }
                 };
+                const plan = usage.plan_type || usage.plan || 'free';
                 // Ensure handleRegenerateAll / handleGenerateMissing can read usage when out of credits
                 if (typeof window !== 'undefined') {
                     window.BBAI_DASH = window.BBAI_DASH || {};
                     window.BBAI_DASH.usage = usage;
                     window.BBAI_DASH.initialUsage = usage;
+                    window.BBAI_DASH.quota = usage.quota;
                     if (window.BBAI) {
                         window.BBAI.usage = usage;
+                        window.BBAI.initialUsage = usage;
+                        window.BBAI.quota = usage.quota;
                     }
                 }
                 return {
@@ -109,7 +222,29 @@
                 // Return defaults on error
                 return {
                     plan: 'free',
-                    usageStats: { used: 0, limit: 50, remaining: 50, resetDate: '' },
+                    usageStats: {
+                        used: 0,
+                        limit: 50,
+                        remaining: 50,
+                        resetDate: '',
+                        reset_date: '',
+                        reset_timestamp: 0,
+                        days_until_reset: null,
+                        plan: 'free',
+                        plan_type: 'free',
+                        creditsUsed: 0,
+                        creditsTotal: 50,
+                        creditsLimit: 50,
+                        creditsRemaining: 50,
+                        quota: {
+                            used: 0,
+                            limit: 50,
+                            remaining: 50,
+                            reset_date: '',
+                            reset_timestamp: 0,
+                            plan_type: 'free'
+                        }
+                    },
                     stats: { total: 0, with_alt: 0, missing: 0 },
                     queueStats: { pending: 0, completed_recent: 0, failed: 0 }
                 };

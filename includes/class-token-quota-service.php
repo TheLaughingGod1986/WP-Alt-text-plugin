@@ -1,7 +1,9 @@
 <?php
 /**
- * Token Quota Service
- * Manages site-wide shared token quota with abuse prevention
+ * Legacy quota cache compatibility shim.
+ *
+ * Runtime quota comes from the backend usage API. This class keeps a
+ * short-lived local mirror for older callers that still clear/read the quota cache.
  */
 
 namespace BeepBeepAI\AltTextGenerator;
@@ -45,34 +47,37 @@ class Token_Quota_Service {
 			return $usage;
 		}
 		
-		// Format quota data
+		// Build a short-lived mirror from the authoritative usage payload.
 		$quota = [
-			'plan_type' => $usage['plan'] ?? 'free',
+			'plan_type' => $usage['plan_type'] ?? $usage['plan'] ?? 'free',
 			'limit' => isset($usage['limit']) ? max(0, intval($usage['limit'])) : 50,
 			'used' => isset($usage['used']) ? max(0, intval($usage['used'])) : 0,
-			'remaining' => 0, // Will be calculated below
+			'remaining' => isset($usage['remaining']) ? max(0, intval($usage['remaining'])) : 0,
 			'resets_at' => 0,
 		];
 		
-		// Calculate reset timestamp
-		if (!empty($usage['resetDate'])) {
+		// Prefer the canonical reset timestamp when available.
+		if (!empty($usage['reset_timestamp'])) {
+			$quota['resets_at'] = intval($usage['reset_timestamp']);
+		} elseif (!empty($usage['reset_date'])) {
+			$reset_ts = strtotime($usage['reset_date']);
+			if ($reset_ts > 0) {
+				$quota['resets_at'] = $reset_ts;
+			}
+		} elseif (!empty($usage['resetDate'])) {
 			$reset_ts = strtotime($usage['resetDate']);
 			if ($reset_ts > 0) {
 				$quota['resets_at'] = $reset_ts;
 			}
 		}
 		
-		if ($quota['resets_at'] <= 0 && !empty($usage['resetTimestamp'])) {
-			$quota['resets_at'] = intval($usage['resetTimestamp']);
-		}
-		
 		if ($quota['resets_at'] <= 0) {
 			$quota['resets_at'] = strtotime('first day of next month');
 		}
 		
-		// Always calculate remaining from limit - used for accuracy
-		// The API's remaining value might be stale or incorrect
-		$quota['remaining'] = max(0, $quota['limit'] - $quota['used']);
+		if (!isset($usage['remaining'])) {
+			$quota['remaining'] = max(0, $quota['limit'] - $quota['used']);
+		}
 		
 		// Cache the result
 		set_transient(self::CACHE_KEY, $quota, self::CACHE_EXPIRY);
@@ -81,10 +86,10 @@ class Token_Quota_Service {
 	}
 	
 	/**
-	 * Check if site can consume specified tokens
-	 * Uses cached usage first (more reliable) and falls back to fresh API check
+	 * Check if the cached quota mirror currently allows another generation.
+	 * Uses cached usage first and falls back to a fresh usage API check.
 	 * 
-	 * @param int $tokens Number of tokens to check
+	 * @param int $tokens Requested generation units. Name kept for backwards compatibility.
 	 * @return bool True if can consume, false otherwise
 	 */
 	public static function can_consume($tokens) {
@@ -138,10 +143,10 @@ class Token_Quota_Service {
 	}
 	
 	/**
-	 * Record local usage (for UI responsiveness)
-	 * This is secondary to backend tracking
+	 * Record a local compatibility mirror.
+	 * Backend usage remains authoritative; this only updates the short-lived cache.
 	 * 
-	 * @param int $tokens Number of tokens used
+	 * @param int $tokens Requested generation units. Name kept for backwards compatibility.
 	 * @return bool Success
 	 */
 	public static function record_local_usage($tokens) {
@@ -187,4 +192,3 @@ class Token_Quota_Service {
 		Usage_Tracker::clear_cache();
 	}
 }
-

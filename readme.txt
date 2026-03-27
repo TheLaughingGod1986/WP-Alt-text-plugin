@@ -3,22 +3,22 @@ Plugin Name: BeepBeep AI – Alt Text Generator
 Contributors: beepbeepv2
 Plugin URI: https://oppti.dev/beepbeep-ai-alt-text-generator
 Author URI: https://oppti.dev
-Tags: accessibility, alt text, image seo, woocommerce, media library
+Tags: accessibility, alt text, seo, woocommerce, images
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 4.5.19
+Stable tag: 4.5.21
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
 
-Generate AI alt text for WordPress and WooCommerce images in bulk. Fix missing alt text, improve image SEO, and meet accessibility standards.
+Bulk AI alt text for WordPress and WooCommerce. Find missing ALT text, generate descriptions, and improve image SEO and accessibility.
 
 == Description ==
 
-Images without alt text hurt your site's accessibility and visibility in Google Images. Manually writing descriptions for hundreds of images is slow and tedious.
+Images without ALT (alternative) text hurt accessibility, Google Images visibility, and product discoverability for WooCommerce stores. Writing hundreds of descriptions by hand is slow, inconsistent, and easy to defer.
 
-BeepBeep AI fixes that. This alt text generator scans your WordPress media library and WooCommerce product images, finds what's missing, and generates AI descriptions you can review before publishing. Fix missing alt text in bulk, improve image SEO, and meet accessibility standards—without spending hours on manual work.
+**BeepBeep AI – Alt Text Generator** is a WordPress plugin that scans your Media Library and WooCommerce product images, surfaces gaps, and generates context-aware ALT suggestions you can review before publishing. Use it to **bulk-fix missing ALT text**, tighten **image SEO**, and support **WCAG-oriented** workflows—without rebuilding your theme or catalog.
 
 Works with standard WordPress media and WooCommerce product images, including featured images and galleries. No theme changes required.
 
@@ -118,6 +118,10 @@ Non-minified source files are included in this plugin package in `assets/src/` a
 
 AI-generated alt text gives search engines clearer context for every image, improving relevance signals for Google Images and product-focused search queries. BeepBeep AI Alt Text Generator helps you scale consistent, descriptive metadata across your library, which strengthens image SEO and supports better discoverability.
 
+= How does this plugin help Google Images and image search? =
+
+Descriptive ALT text helps search engines understand what an image shows. When ALT is missing or generic, Google Images and on-site image search have weaker signals. BeepBeep AI helps you roll out consistent, specific descriptions across WordPress attachments and WooCommerce imagery so product and content images are easier to interpret and rank.
+
 = Is this plugin compatible with WooCommerce product images? =
 
 Yes. BeepBeep AI Alt Text Generator supports WooCommerce featured images, gallery images, and standard WordPress media attachments used on product pages. You can apply WooCommerce image optimization workflows in bulk without changing your catalog structure or theme templates.
@@ -163,6 +167,18 @@ Data sent: Name, email, subject, message, site URL, WordPress version, and plugi
 Privacy policy: https://resend.com/legal/privacy
 
 == Changelog ==
+
+= 4.5.21 =
+* Fixed ALT Library status filters so switching back to All shows the full review workspace reliably.
+* Added production-safe PostHog analytics wiring across plugin admin screens for key onboarding, generation, review, and upgrade funnel events.
+* Improved plugin admin analytics loading so tracking is scoped to BeepBeep AI screens and fails safely when blocked.
+
+= 4.5.20 =
+* Improved sign-in reliability and fixed admin screen loading issues.
+* Fixed free trial handling so the 3-image trial is enforced consistently and exhausted states persist after refresh.
+* Fixed "Review ALT text" actions to open the review workflow instead of starting generation.
+* Improved top-banner hierarchy so only one primary message is shown at a time.
+* Improved Dashboard and ALT Library top-section consistency for clearer layout, CTA hierarchy, and messaging.
 
 = 4.5.19 =
 * Maintenance release with bug fixes and stability improvements.
@@ -318,6 +334,12 @@ Privacy policy: https://resend.com/legal/privacy
 
 
 == Upgrade Notice ==
+
+= 4.5.21 =
+Recommended update for ALT Library filter reliability plus scoped PostHog analytics across the plugin admin experience.
+
+= 4.5.20 =
+Recommended stabilization update for sign-in reliability, trial state accuracy, review-flow clarity, and cleaner top-level messaging.
 
 = 4.5.19 =
 Recommended maintenance update with WooCommerce, Image SEO, and Accessibility reliability improvements.

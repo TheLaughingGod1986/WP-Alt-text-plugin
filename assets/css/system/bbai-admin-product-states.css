@@ -1,0 +1,235 @@
+/**
+ * BeepBeep AI — Phase 11: shared product states (loading, empty, error, partial, retry)
+ *
+ * Scoped: body.bbai-dashboard
+ * Depends: bbai-admin-foundation-tokens.css, bbai-admin-interactions.css (spinner)
+ *
+ * @package BeepBeep_AI
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Base block                                                                */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-state {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--bbai-admin-space-3);
+    max-width: 36rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding: var(--bbai-admin-space-8) var(--bbai-admin-space-6);
+    border-radius: var(--bbai-admin-radius-lg);
+    border: var(--bbai-admin-border-default);
+    background: var(--bbai-admin-color-bg);
+    color: var(--bbai-admin-color-text);
+    transition: opacity var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease);
+}
+
+body.bbai-dashboard .bbai-state--compact {
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+    padding: var(--bbai-admin-space-5) var(--bbai-admin-space-4);
+    gap: var(--bbai-admin-space-2);
+}
+
+body.bbai-dashboard .bbai-state--section {
+    max-width: none;
+    width: 100%;
+    min-height: 8rem;
+    justify-content: center;
+}
+
+body.bbai-dashboard tr.bbai-state-row > td {
+    padding: 0 !important;
+    vertical-align: middle;
+    border-bottom: none !important;
+}
+
+body.bbai-dashboard tr.bbai-state-row .bbai-state {
+    border: none;
+    background: transparent;
+    margin: 0;
+    max-width: none;
+}
+
+body.bbai-dashboard .bbai-library-filter-empty__cell .bbai-state {
+    border: none;
+    background: transparent;
+    margin: 0 auto;
+    max-width: 28rem;
+    padding: var(--bbai-admin-space-4) var(--bbai-admin-space-3);
+}
+
+body.bbai-dashboard .bbai-analytics-result-card .bbai-analytics-trend-block__empty.bbai-state {
+    width: 100%;
+    margin-top: var(--bbai-admin-space-2);
+    margin-bottom: var(--bbai-admin-space-1);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Elements                                                                  */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-state__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bbai-admin-color-text-muted);
+}
+
+body.bbai-dashboard .bbai-state__icon svg {
+    display: block;
+}
+
+body.bbai-dashboard .bbai-state__icon--loading {
+    color: var(--bbai-admin-color-primary);
+}
+
+body.bbai-dashboard .bbai-state__title {
+    margin: 0;
+    font-size: var(--bbai-admin-type-h5);
+    font-weight: var(--bbai-admin-type-weight-semibold);
+    line-height: var(--bbai-admin-type-leading-snug);
+    color: var(--bbai-admin-color-text);
+}
+
+body.bbai-dashboard .bbai-state--compact .bbai-state__title {
+    font-size: var(--bbai-admin-type-body);
+}
+
+body.bbai-dashboard .bbai-state__body {
+    margin: 0;
+    font-size: var(--bbai-admin-type-body);
+    line-height: var(--bbai-admin-type-leading-relaxed);
+    color: var(--bbai-admin-color-text-secondary);
+    max-width: 32rem;
+}
+
+body.bbai-dashboard .bbai-state--compact .bbai-state__body {
+    font-size: var(--bbai-admin-type-body-sm);
+}
+
+body.bbai-dashboard .bbai-state__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--bbai-admin-space-2);
+    margin-top: var(--bbai-admin-space-1);
+}
+
+body.bbai-dashboard .bbai-state__meta {
+    margin: 0;
+    font-size: var(--bbai-admin-type-meta);
+    color: var(--bbai-admin-color-text-muted);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Modifiers — tone                                                          */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-state--loading {
+    border-style: dashed;
+    border-color: var(--bbai-admin-color-border-strong);
+    background: var(--bbai-admin-color-bg-muted);
+}
+
+body.bbai-dashboard .bbai-state--empty {
+    background: var(--bbai-admin-color-bg-muted);
+    border-color: var(--bbai-gray-200);
+}
+
+body.bbai-dashboard .bbai-state--error {
+    border-color: var(--bbai-admin-semantic-error-border);
+    background: var(--bbai-admin-semantic-error-bg);
+}
+
+body.bbai-dashboard .bbai-state--error .bbai-state__icon {
+    color: var(--bbai-admin-semantic-error-fg);
+}
+
+body.bbai-dashboard .bbai-state--error .bbai-state__title {
+    color: var(--bbai-admin-semantic-error-fg);
+}
+
+body.bbai-dashboard .bbai-state--partial {
+    border-color: var(--bbai-admin-semantic-warning-border);
+    background: var(--bbai-admin-semantic-warning-bg);
+    text-align: left;
+    align-items: flex-start;
+}
+
+body.bbai-dashboard .bbai-state--partial .bbai-state__title {
+    color: var(--bbai-admin-semantic-warning-fg);
+}
+
+body.bbai-dashboard .bbai-state--partial .bbai-state__body {
+    color: var(--bbai-admin-semantic-warning-fg);
+}
+
+body.bbai-dashboard .bbai-state--retry {
+    border-color: var(--bbai-admin-semantic-info-border);
+    background: var(--bbai-admin-semantic-info-bg);
+}
+
+body.bbai-dashboard .bbai-state--retry .bbai-state__title {
+    color: var(--bbai-admin-semantic-info-fg);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Card-wrapped empty (library) — outer card unchanged, inner uses bbai-state   */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-library-empty-state .bbai-state,
+body.bbai-dashboard .bbai-credit-activity-state.bbai-state {
+    border: none;
+    background: transparent;
+    padding: var(--bbai-admin-space-2) 0;
+}
+
+body.bbai-dashboard .bbai-credit-activity-state.bbai-state--empty {
+    align-items: flex-start;
+    text-align: left;
+    max-width: none;
+    padding: var(--bbai-admin-space-6);
+    border: var(--bbai-admin-border-default);
+    background: var(--bbai-admin-color-bg-muted);
+    border-radius: var(--bbai-admin-radius-md);
+}
+
+body.bbai-dashboard .bbai-credit-activity-state__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--bbai-admin-space-2);
+    margin-top: var(--bbai-admin-space-3);
+}
+
+/* Legacy class harmony */
+body.bbai-dashboard .bbai-credit-activity-state__title {
+    margin: 0 0 var(--bbai-admin-space-2);
+    font-size: var(--bbai-admin-type-h5);
+    font-weight: var(--bbai-admin-type-weight-semibold);
+    color: var(--bbai-admin-color-text);
+}
+
+body.bbai-dashboard .bbai-credit-activity-state__description {
+    margin: 0;
+    font-size: var(--bbai-admin-type-body);
+    color: var(--bbai-admin-color-text-secondary);
+    line-height: var(--bbai-admin-type-leading-relaxed);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Reduced motion                                                            */
+/* -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+    body.bbai-dashboard .bbai-state {
+        transition: none;
+    }
+}

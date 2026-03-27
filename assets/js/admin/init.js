@@ -10,10 +10,16 @@
     'use strict';
 
     function getUsage() {
-        return (window.BBAI_DASH && (window.BBAI_DASH.initialUsage || window.BBAI_DASH.usage)) ||
+        var usage = (window.BBAI_DASH && (window.BBAI_DASH.initialUsage || window.BBAI_DASH.usage)) ||
             (window.BBAI && window.BBAI.usage) ||
             (window.BBAI_UPGRADE && window.BBAI_UPGRADE.usage) ||
             null;
+
+        if (typeof window.bbaiNormalizeAuthenticatedUsage === 'function') {
+            return window.bbaiNormalizeAuthenticatedUsage(usage);
+        }
+
+        return usage;
     }
 
     function isOutOfCredits() {
@@ -22,8 +28,6 @@
             var remaining = NaN;
             if (usage.remaining !== undefined && usage.remaining !== null) {
                 remaining = parseInt(usage.remaining, 10);
-            } else if (usage.generations_remaining !== undefined && usage.generations_remaining !== null) {
-                remaining = parseInt(usage.generations_remaining, 10);
             } else if (usage.limit !== undefined && usage.used !== undefined) {
                 remaining = parseInt(usage.limit, 10) - parseInt(usage.used, 10);
             }
@@ -152,6 +156,16 @@
             } else {
                 window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] handleRegenerateSingle function not found');
             }
+        });
+
+        $(document).on('click', '[data-action="phase17-improve-alt"]', function(e) {
+            if (blockIfOutOfCredits(e, this)) {
+                return false;
+            }
+            if (typeof window.bbaiHandlePhase17ImproveAlt === 'function') {
+                return window.bbaiHandlePhase17ImproveAlt.call(this, e);
+            }
+            return false;
         });
 
         // License management handlers

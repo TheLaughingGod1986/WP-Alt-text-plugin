@@ -134,6 +134,33 @@ class Plan_Helpers {
     }
 
     /**
+     * Phase 15 canonical monetisation tier: free | growth | pro.
+     * Maps API slugs: pro/growth → growth; agency/enterprise → pro.
+     *
+     * @return string 'free'|'growth'|'pro'
+     */
+    public static function get_canonical_monetisation_tier() {
+        if (!function_exists('bbai_monetisation_canonical_tier_from_slug')) {
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/monetisation-phase15.php';
+        }
+        return bbai_monetisation_canonical_tier_from_slug(self::get_plan_slug());
+    }
+
+    /**
+     * True when on the top commercial tier (agency / enterprise in API terms).
+     */
+    public static function is_monetisation_pro_tier() {
+        return self::get_canonical_monetisation_tier() === 'pro';
+    }
+
+    /**
+     * True for Growth or Pro canonical tier (any paid subscription in Phase 15 vocabulary).
+     */
+    public static function is_monetisation_growth_or_higher() {
+        return !self::is_free();
+    }
+
+    /**
      * Clear the cached plan data
      * Useful when plan changes during a session
      */
@@ -193,6 +220,7 @@ class Plan_Helpers {
             'is_growth' => $data['is_growth'],
             'is_agency' => $data['is_agency'],
             'is_pro' => $data['is_pro'],
+            'canonical_monetisation_tier' => self::get_canonical_monetisation_tier(),
             'plan_badge_text' => self::get_plan_badge_text(),
             'plan_badge_variant' => self::get_plan_badge_variant(),
         ];

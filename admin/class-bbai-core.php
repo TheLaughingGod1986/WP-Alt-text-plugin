@@ -53,7 +53,7 @@ if (!defined('BBAI_PLUGIN_BASENAME')) {
 }
 
 if (!defined('BBAI_VERSION')) {
-    define('BBAI_VERSION', defined('BEEPBEEP_AI_VERSION') ? BEEPBEEP_AI_VERSION : '4.5.19');
+    define('BBAI_VERSION', defined('BEEPBEEP_AI_VERSION') ? BEEPBEEP_AI_VERSION : '4.5.21');
 }
 
 // Load API clients, usage tracker, and queue infrastructure
@@ -348,11 +348,13 @@ class Core {
         $trial = $this->get_trial_status();
 
         return [
-            'message' => __("You've used your 10 free generations. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator'),
+            'message' => __("You've used your 3 free images. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator'),
             'code' => 'bbai_trial_exhausted',
             'remaining' => 0,
+            'remaining_free_images' => 0,
+            'trial_exhausted' => true,
             'limit' => $trial['limit'],
-            'used' => $trial['limit'],
+            'used' => $trial['used'],
             'site_hash' => $trial['site_hash'],
         ];
     }
@@ -550,6 +552,24 @@ class Core {
      */
     private function can_show_debug_logs_tab(): bool {
         return (defined('WP_DEBUG') && WP_DEBUG) || current_user_can('manage_options');
+    }
+
+    /**
+     * Internal UI Kit preview (Phase 8). Not for production shoppers.
+     *
+     * @return bool
+     */
+    private function can_show_ui_kit_page(): bool {
+        if (!current_user_can('manage_options') && !current_user_can(self::CAPABILITY)) {
+            return false;
+        }
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            return true;
+        }
+        if (defined('BBAI_UI_KIT') && BBAI_UI_KIT) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -1122,6 +1142,17 @@ class Core {
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
         \BeepBeepAI\AltTextGenerator\get_site_identifier();
 
+        if ( function_exists( 'bbai_telemetry_emit' ) && ! get_option( 'bbai_telemetry_plugin_installed_logged', false ) ) {
+            update_option( 'bbai_telemetry_plugin_installed_logged', '1', false );
+            bbai_telemetry_emit( 'plugin_installed', [] );
+        }
+
+        $bbai_growth_file = BEEPBEEP_AI_PLUGIN_DIR . 'includes/growth/class-bbai-growth-engine.php';
+        if ( is_readable( $bbai_growth_file ) ) {
+            require_once $bbai_growth_file;
+            \BeepBeepAI\AltTextGenerator\Growth_Engine::record_install_timestamp();
+        }
+
         $defaults = [
             'api_url'          => 'https://alttext-ai-backend.onrender.com',
             'model'            => 'gpt-4o-mini',
@@ -1180,13 +1211,18 @@ class Core {
             'bbai-settings',
             'bbai-guide',
             'bbai-debug',
+            'bbai-ui-kit',
             self::MENU_SLUG_ONBOARDING,
         ];
         if ( ! in_array( $page, $dashboard_shell_pages, true ) ) {
             return $classes;
         }
         $classes = is_string( $classes ) ? $classes : '';
-        return trim( $classes . ' bbai-dashboard' );
+        $bbai_body = 'bbai-dashboard';
+        if ( 'bbai-ui-kit' === $page ) {
+            $bbai_body .= ' bbai-ui-kit-page';
+        }
+        return trim( $classes . ' ' . $bbai_body );
     }
 
     public function add_settings_page() {
@@ -1313,6 +1349,17 @@ class Core {
                 __('Debug Logs', 'beepbeep-ai-alt-text-generator'),
                 $cap,
                 'bbai-debug',
+                [$this, 'render_settings_page']
+            );
+        }
+
+        if ($this->can_show_ui_kit_page()) {
+            add_submenu_page(
+                '',
+                __('UI Kit (dev)', 'beepbeep-ai-alt-text-generator'),
+                __('UI Kit (dev)', 'beepbeep-ai-alt-text-generator'),
+                $cap,
+                'bbai-ui-kit',
                 [$this, 'render_settings_page']
             );
         }
@@ -1497,7 +1544,7 @@ class Core {
         $dashboard_url = admin_url('admin.php?page=bbai');
         $step2_url = admin_url('admin.php?page=bbai-onboarding&step=2');
         ?>
-        <div class="wrap bbai-wrap bbai-modern bbai-onboarding">
+        <div class="wrap bbai-wrap bbai-modern bbai-onboarding" data-bbai-onboarding-step="1">
             <div class="bbai-header">
                 <div class="bbai-header-content">
                     <a class="bbai-logo" href="<?php echo esc_url($dashboard_url); ?>">
@@ -1543,8 +1590,6 @@ class Core {
 
                 <div class="bbai-card bbai-card--large bbai-onboarding-hero bbai-mb-6">
                     <div class="bbai-card-body">
-                        <h2 class="bbai-card-title"><?php esc_html_e('Scan your media library', 'beepbeep-ai-alt-text-generator'); ?></h2>
-                        <p class="bbai-card-subtitle"><?php esc_html_e('BeepBeep AI will scan your WordPress media library and find images missing alt text.', 'beepbeep-ai-alt-text-generator'); ?></p>
                         <div class="bbai-onboarding-divider" aria-hidden="true"></div>
 
                         <div class="bbai-onboarding-features bbai-mt-4">
@@ -1558,14 +1603,14 @@ class Core {
                             <div class="bbai-feature-item">
                                 <span class="bbai-feature-icon">✓</span>
                                 <div class="bbai-feature-content">
-                                    <strong><?php esc_html_e('Step 2: Generate alt text', 'beepbeep-ai-alt-text-generator'); ?></strong>
+                                    <strong><?php echo esc_html(bbai_copy_cta_generate_missing_images()); ?></strong>
                                     <p><?php esc_html_e('Create clear alt text for each image missing it.', 'beepbeep-ai-alt-text-generator'); ?></p>
                                 </div>
                             </div>
                             <div class="bbai-feature-item">
                                 <span class="bbai-feature-icon">✓</span>
                                 <div class="bbai-feature-content">
-                                    <strong><?php esc_html_e('Step 3: Review results', 'beepbeep-ai-alt-text-generator'); ?></strong>
+                                    <strong><?php esc_html_e('Step 3: Review ALT text', 'beepbeep-ai-alt-text-generator'); ?></strong>
                                     <p><?php esc_html_e('Review the generated results before publishing.', 'beepbeep-ai-alt-text-generator'); ?></p>
                                 </div>
                             </div>
@@ -1573,7 +1618,7 @@ class Core {
 
                         <div class="bbai-btn-group bbai-mt-6">
                             <a href="<?php echo esc_url($step2_url); ?>" class="bbai-btn bbai-btn-primary">
-                                <?php esc_html_e('Start scanning', 'beepbeep-ai-alt-text-generator'); ?>
+                                <?php echo esc_html(bbai_copy_cta_scan_media_library()); ?>
                             </a>
                             <button type="button" class="bbai-btn bbai-btn-secondary" data-bbai-onboarding-action="skip">
                                 <?php esc_html_e('Skip setup', 'beepbeep-ai-alt-text-generator'); ?>
@@ -1597,7 +1642,7 @@ class Core {
                             <span class="bbai-onboarding-step-icon" aria-hidden="true">
                                 <span class="bbai-step-number">2</span>
                             </span>
-                            <p class="bbai-onboarding-step-text"><?php esc_html_e('Generate alt text', 'beepbeep-ai-alt-text-generator'); ?></p>
+                            <p class="bbai-onboarding-step-text"><?php echo esc_html(bbai_copy_cta_generate_missing_images()); ?></p>
                         </div>
                     </div>
                     <div class="bbai-card bbai-card--compact bbai-onboarding-step-card">
@@ -1605,7 +1650,7 @@ class Core {
                             <span class="bbai-onboarding-step-icon" aria-hidden="true">
                                 <span class="bbai-step-number">3</span>
                             </span>
-                            <p class="bbai-onboarding-step-text"><?php esc_html_e('Review results', 'beepbeep-ai-alt-text-generator'); ?></p>
+                            <p class="bbai-onboarding-step-text"><?php esc_html_e('Review ALT text', 'beepbeep-ai-alt-text-generator'); ?></p>
                         </div>
                     </div>
                 </div>
@@ -1640,7 +1685,7 @@ class Core {
             ? \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_upgrade_url()
             : $dashboard_url;
         ?>
-        <div class="wrap bbai-wrap bbai-modern bbai-onboarding">
+        <div class="wrap bbai-wrap bbai-modern bbai-onboarding" data-bbai-onboarding-step="2">
             <div class="bbai-header">
                 <div class="bbai-header-content">
                     <a class="bbai-logo" href="<?php echo esc_url($dashboard_url); ?>">
@@ -1681,70 +1726,69 @@ class Core {
             <div class="bbai-container">
                 <div class="bbai-page-header bbai-mb-6">
                     <div class="bbai-page-header-content">
-                        <h1 class="bbai-page-title"><?php esc_html_e('Generate alt text', 'beepbeep-ai-alt-text-generator'); ?></h1>
-                        <p class="bbai-page-subtitle"><?php esc_html_e('Scan your media library and generate alt text for images that are missing it.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                        <h1 class="bbai-page-title"><?php echo esc_html(bbai_copy_cta_generate_missing_images()); ?></h1>
+                        <p class="bbai-page-subtitle"><?php esc_html_e('Use the scan results to create AI descriptions for images that are missing ALT text. You stay in control—review before anything goes live.', 'beepbeep-ai-alt-text-generator'); ?></p>
                     </div>
                     <div class="bbai-page-header-actions">
                         <div class="bbai-onboarding-progress">
                             <span class="bbai-onboarding-progress-text"><?php esc_html_e('Step 2 of 3', 'beepbeep-ai-alt-text-generator'); ?></span>
-                            <span class="bbai-badge bbai-badge--getting-started"><?php esc_html_e('Generate', 'beepbeep-ai-alt-text-generator'); ?></span>
+                            <span class="bbai-badge bbai-badge--getting-started"><?php echo esc_html(bbai_copy_cta_generate_missing_images()); ?></span>
                         </div>
                     </div>
                 </div>
 
                 <div class="bbai-card bbai-card--large bbai-onboarding-hero bbai-mb-6">
                     <div class="bbai-card-body">
-                        <h2 class="bbai-card-title"><?php esc_html_e('Generate alt text', 'beepbeep-ai-alt-text-generator'); ?></h2>
-                        <p class="bbai-card-subtitle"><?php esc_html_e('BeepBeep AI will scan your WordPress media library and find images missing alt text.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        <div class="bbai-onboarding-divider" aria-hidden="true"></div>
+                        <p class="bbai-card-subtitle bbai-mb-0"><?php esc_html_e('When you continue, we queue ALT text generation for images that need it. Progress appears below; then you can review results in the next step.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                        <div class="bbai-onboarding-divider bbai-mt-4" aria-hidden="true"></div>
                         <div class="bbai-btn-group bbai-mt-4">
                             <button type="button" class="bbai-btn bbai-btn-primary" data-bbai-onboarding-action="start-scan">
-                                <?php esc_html_e('Start scanning', 'beepbeep-ai-alt-text-generator'); ?>
+                                <?php echo esc_html(bbai_copy_cta_generate_missing_images()); ?>
                             </button>
                             <button type="button" class="bbai-btn bbai-btn-secondary" data-bbai-onboarding-action="skip">
                                 <?php esc_html_e('Skip setup', 'beepbeep-ai-alt-text-generator'); ?>
                             </button>
                         </div>
                         <div class="bbai-onboarding-scan-meta bbai-mt-4" data-bbai-scan-meta hidden>
-                            <p class="bbai-onboarding-scan-count" data-bbai-scan-count><?php esc_html_e('Scanning 0 images', 'beepbeep-ai-alt-text-generator'); ?></p>
+                            <p class="bbai-onboarding-scan-count" data-bbai-scan-count><?php esc_html_e('Queuing 0 images', 'beepbeep-ai-alt-text-generator'); ?></p>
                             <p class="bbai-onboarding-scan-time" data-bbai-scan-time><?php esc_html_e('Estimated time: ~0 seconds', 'beepbeep-ai-alt-text-generator'); ?></p>
                         </div>
                         <div class="bbai-onboarding-scan-progress bbai-mt-3" data-bbai-scan-progress hidden>
-                            <div class="bbai-onboarding-scan-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="<?php esc_attr_e('Scan progress', 'beepbeep-ai-alt-text-generator'); ?>">
+                            <div class="bbai-onboarding-scan-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="<?php esc_attr_e('Generation progress', 'beepbeep-ai-alt-text-generator'); ?>">
                                 <span class="bbai-onboarding-scan-progress-fill" data-bbai-scan-progress-fill style="width: 0%;"></span>
                             </div>
-                            <p class="bbai-onboarding-scan-progress-text" data-bbai-scan-progress-text><?php esc_html_e('Preparing scan...', 'beepbeep-ai-alt-text-generator'); ?></p>
+                            <p class="bbai-onboarding-scan-progress-text" data-bbai-scan-progress-text><?php esc_html_e('Preparing generation...', 'beepbeep-ai-alt-text-generator'); ?></p>
                         </div>
-                        <p class="bbai-onboarding-reassurance"><?php esc_html_e('Only images without alt text are processed. Review everything before publishing.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        <p class="bbai-onboarding-helper"><?php esc_html_e('Initial scan processes up to 500 images. You can adjust this later.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                        <p class="bbai-onboarding-reassurance"><?php esc_html_e('Only images missing ALT text are queued. You can edit or reject suggestions before publishing.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                        <p class="bbai-onboarding-helper"><?php esc_html_e('Up to 500 images are included in this first run. Run again anytime from the Dashboard.', 'beepbeep-ai-alt-text-generator'); ?></p>
                         <div class="bbai-onboarding-status" role="status" aria-live="polite"></div>
                     </div>
                 </div>
 
                 <div class="bbai-mb-6">
-                    <h2 class="bbai-section-title"><?php esc_html_e('How it works', 'beepbeep-ai-alt-text-generator'); ?></h2>
+                    <h2 class="bbai-section-title"><?php esc_html_e('Your setup path', 'beepbeep-ai-alt-text-generator'); ?></h2>
                     <div class="bbai-grid bbai-grid-3 bbai-gap-4">
                         <div class="bbai-card bbai-card--compact bbai-onboarding-step-card">
                             <div class="bbai-card-body">
-                                <span class="bbai-onboarding-step-icon" aria-hidden="true">
+                                <span class="bbai-onboarding-step-icon bbai-onboarding-step-icon--done" aria-hidden="true">
                                     <svg viewBox="0 0 24 24" role="presentation" focusable="false">
                                         <circle cx="11" cy="11" r="6" fill="none" stroke="currentColor" stroke-width="2" />
                                         <path d="M20 20l-4.2-4.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                                     </svg>
                                 </span>
-                                <h3 class="bbai-card-title"><?php esc_html_e('Scan your library', 'beepbeep-ai-alt-text-generator'); ?></h3>
-                                <p class="bbai-onboarding-step-text"><?php esc_html_e('Find images missing alt text in your library.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                                <h3 class="bbai-card-title"><?php esc_html_e('Scan your media library', 'beepbeep-ai-alt-text-generator'); ?></h3>
+                                <p class="bbai-onboarding-step-text"><?php esc_html_e('Done — we know which images need ALT text.', 'beepbeep-ai-alt-text-generator'); ?></p>
                             </div>
                         </div>
                         <div class="bbai-card bbai-card--compact bbai-onboarding-step-card">
                             <div class="bbai-card-body">
-                                <span class="bbai-onboarding-step-icon" aria-hidden="true">
+                                <span class="bbai-onboarding-step-icon bbai-onboarding-step-icon--active" aria-hidden="true">
                                     <svg viewBox="0 0 24 24" role="presentation" focusable="false">
                                         <path d="M12 3l1.6 3.6L17 8l-3.4 1.4L12 13l-1.6-3.6L7 8l3.4-1.4L12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
                                     </svg>
                                 </span>
-                                <h3 class="bbai-card-title"><?php esc_html_e('Generate alt text', 'beepbeep-ai-alt-text-generator'); ?></h3>
-                                <p class="bbai-onboarding-step-text"><?php esc_html_e('Generate clear, SEO-ready alt text.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                                <h3 class="bbai-card-title"><?php echo esc_html(bbai_copy_cta_generate_missing_images()); ?></h3>
+                                <p class="bbai-onboarding-step-text"><?php esc_html_e('Create descriptions for the images your scan flagged.', 'beepbeep-ai-alt-text-generator'); ?></p>
                             </div>
                         </div>
                         <div class="bbai-card bbai-card--compact bbai-onboarding-step-card">
@@ -1755,8 +1799,8 @@ class Core {
                                         <path d="M8.5 12.5l2.5 2.5 4.5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                     </svg>
                                 </span>
-                                <h3 class="bbai-card-title"><?php esc_html_e('Review and publish', 'beepbeep-ai-alt-text-generator'); ?></h3>
-                                <p class="bbai-onboarding-step-text"><?php esc_html_e('Review and publish when you are ready.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                                <h3 class="bbai-card-title"><?php esc_html_e('Review ALT text', 'beepbeep-ai-alt-text-generator'); ?></h3>
+                                <p class="bbai-onboarding-step-text"><?php esc_html_e('Check wording, then save when you are happy.', 'beepbeep-ai-alt-text-generator'); ?></p>
                             </div>
                         </div>
                     </div>
@@ -1799,6 +1843,7 @@ class Core {
 
         $dashboard_url = admin_url('admin.php?page=bbai');
         $library_url = admin_url('admin.php?page=' . self::MENU_SLUG_LIBRARY);
+        $library_needs_review_url = function_exists('bbai_alt_library_needs_review_url') ? bbai_alt_library_needs_review_url() : $library_url;
         $bbai_is_authenticated = bbai_is_authenticated();
 
         // Mark onboarding complete as soon as Step 3 is reached to prevent redirect loops.
@@ -1807,7 +1852,7 @@ class Core {
             \BeepBeepAI\AltTextGenerator\Onboarding::update_last_seen();
         }
         ?>
-        <div class="wrap bbai-wrap bbai-modern bbai-onboarding bbai-onboarding-step3">
+        <div class="wrap bbai-wrap bbai-modern bbai-onboarding bbai-onboarding-step3" data-bbai-onboarding-step="3">
             <div class="bbai-header">
                 <div class="bbai-header-content">
                     <a class="bbai-logo" href="<?php echo esc_url($dashboard_url); ?>">
@@ -1848,13 +1893,13 @@ class Core {
             <div class="bbai-container">
                 <div class="bbai-page-header bbai-mb-6">
                     <div class="bbai-page-header-content">
-                        <h1 class="bbai-page-title"><?php esc_html_e('Review results', 'beepbeep-ai-alt-text-generator'); ?></h1>
-                        <p class="bbai-page-subtitle"><?php esc_html_e('Alt text is generating in the background. Review your first results as they arrive.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                        <h1 class="bbai-page-title"><?php esc_html_e('Review ALT text', 'beepbeep-ai-alt-text-generator'); ?></h1>
+                        <p class="bbai-page-subtitle"><?php esc_html_e('Open the review workspace to check generated ALT text, tweak wording, and save when you are ready to publish.', 'beepbeep-ai-alt-text-generator'); ?></p>
                     </div>
                     <div class="bbai-page-header-actions">
                         <div class="bbai-onboarding-progress">
                             <span class="bbai-onboarding-progress-text"><?php esc_html_e('Step 3 of 3', 'beepbeep-ai-alt-text-generator'); ?></span>
-                            <span class="bbai-badge bbai-badge--getting-started"><?php esc_html_e('Setup complete', 'beepbeep-ai-alt-text-generator'); ?></span>
+                            <span class="bbai-badge bbai-badge--getting-started"><?php esc_html_e('Review', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </div>
                     </div>
                 </div>
@@ -1880,9 +1925,8 @@ class Core {
                 <!-- Authenticated state: Show queue stats and CTAs -->
                 <div class="bbai-card bbai-card--large bbai-onboarding-hero bbai-mb-6">
                     <div class="bbai-card-body">
-                        <h2 class="bbai-card-title"><?php esc_html_e('Review results', 'beepbeep-ai-alt-text-generator'); ?></h2>
-                        <p class="bbai-card-subtitle"><?php esc_html_e('Your images are being processed. Check the stats below and start reviewing when ready.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        <div class="bbai-onboarding-divider" aria-hidden="true"></div>
+                        <p class="bbai-card-subtitle bbai-mb-0"><?php esc_html_e('Your images are being processed. When the queue clears, everything below is up to date. Use the review workspace to approve or edit ALT text before it goes live.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                        <div class="bbai-onboarding-divider bbai-mt-4" aria-hidden="true"></div>
 
                         <!-- KPI Stats Row -->
                         <div class="bbai-onboarding-kpi-row bbai-mt-4" data-bbai-step3-stats>
@@ -1905,8 +1949,8 @@ class Core {
                         </div>
 
                         <div class="bbai-btn-group bbai-mt-4">
-                            <a href="<?php echo esc_url($library_url); ?>" class="bbai-btn bbai-btn-primary">
-                                <?php esc_html_e('Open ALT Library', 'beepbeep-ai-alt-text-generator'); ?>
+                            <a href="<?php echo esc_url($library_needs_review_url); ?>" class="bbai-btn bbai-btn-primary" data-bbai-navigation="review-results">
+                                <?php esc_html_e('Open review workspace', 'beepbeep-ai-alt-text-generator'); ?>
                             </a>
                             <a href="<?php echo esc_url($dashboard_url); ?>" class="bbai-btn bbai-btn-secondary">
                                 <?php esc_html_e('Go to Dashboard', 'beepbeep-ai-alt-text-generator'); ?>
@@ -2032,6 +2076,14 @@ class Core {
 	        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 	        $bbai_page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
 	        $bbai_page_slug = $bbai_page_input;
+
+        if ($bbai_page_slug === 'bbai-ui-kit' && ! $this->can_show_ui_kit_page()) {
+            wp_die(
+                esc_html__('You do not have permission to view the UI Kit preview.', 'beepbeep-ai-alt-text-generator'),
+                esc_html__('Forbidden', 'beepbeep-ai-alt-text-generator'),
+                ['response' => 403]
+            );
+        }
         
         // Primary nav is limited to the product workflow. Utility routes stay accessible but hidden.
         $bbai_tabs = [];
@@ -2042,11 +2094,18 @@ class Core {
         // Non-registered users: show logged-out dashboard only (no header nav tabs).
         if (!$bbai_has_registered_user) {
             $bbai_tabs = [];
-            $bbai_tab = 'dashboard';
+            if ($bbai_page_slug === 'bbai-ui-kit' && $this->can_show_ui_kit_page()) {
+                $bbai_tab = 'ui-kit';
+            } else {
+                $bbai_tab = 'dashboard';
+            }
 
             $bbai_is_pro_for_admin = false;
             $bbai_is_agency_for_admin = false;
             $bbai_can_show_debug_tab = false;
+            $bbai_active_nav_tab = '';
+            $bbai_help_is_active = false;
+            $bbai_settings_section = 'general';
         } else {
             // Determine if agency license
             // Check API first, then include stored credentials
@@ -2100,6 +2159,11 @@ class Core {
                 $bbai_allowed_tabs['agency-overview'] = __('Agency Overview', 'beepbeep-ai-alt-text-generator');
             }
 
+            $bbai_can_show_ui_kit_page = $this->can_show_ui_kit_page();
+            if ($bbai_can_show_ui_kit_page) {
+                $bbai_allowed_tabs['ui-kit'] = __('UI Kit (dev)', 'beepbeep-ai-alt-text-generator');
+            }
+
             // Normalize legacy page slugs and tab params into the simplified nav model.
             $bbai_page_to_tab = [
                 'bbai'              => 'dashboard',
@@ -2110,6 +2174,7 @@ class Core {
                 'bbai-settings'     => 'settings',
                 'bbai-debug'        => 'debug',
                 'bbai-agency-overview' => 'agency-overview',
+                'bbai-ui-kit'       => 'ui-kit',
             ];
             $bbai_tab_aliases = [
                 'credit-usage' => 'usage',
@@ -2275,14 +2340,32 @@ class Core {
                                 <?php endif; ?>
                             </div>
                         <?php else : ?>
-                            <button type="button" class="bbai-header-login-btn" data-action="show-auth-modal" data-auth-tab="login">
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <?php
+                            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only routing for login fallback URL.
+                            $bbai_header_login_page = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : 'bbai';
+                            if ('' === $bbai_header_login_page || 0 !== strpos($bbai_header_login_page, 'bbai')) {
+                                $bbai_header_login_page = 'bbai';
+                            }
+                            $bbai_header_login_href = add_query_arg(
+                                'bbai_open_auth',
+                                '1',
+                                admin_url('admin.php?page=' . $bbai_header_login_page)
+                            );
+                            ?>
+                            <a
+                                href="<?php echo esc_url($bbai_header_login_href); ?>"
+                                class="bbai-header-login-btn"
+                                role="button"
+                                data-action="show-auth-modal"
+                                data-auth-tab="login"
+                            >
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
                                     <path d="M10 14H13C13.5523 14 14 13.5523 14 13V3C14 2.44772 13.5523 2 13 2H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                                     <path d="M5 11L2 8L5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                                     <path d="M2 8H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                                 </svg>
                                 <span><?php esc_html_e('Login', 'beepbeep-ai-alt-text-generator'); ?></span>
-                            </button>
+                            </a>
                         <?php endif; ?>
                 </div>
                 </div>
@@ -2384,6 +2467,16 @@ class Core {
         __('Analytics content unavailable.', 'beepbeep-ai-alt-text-generator'),
         $this
     );
+    ?>
+
+<?php elseif ($bbai_tab === 'ui-kit' && $this->can_show_ui_kit_page()) : ?>
+    <?php
+    $bbai_ui_kit_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/ui-kit-tab.php';
+    if (file_exists($bbai_ui_kit_partial)) {
+        include $bbai_ui_kit_partial;
+    } else {
+        esc_html_e('UI Kit preview is unavailable.', 'beepbeep-ai-alt-text-generator');
+    }
     ?>
 
 <?php elseif ($bbai_tab === 'settings') : ?>
@@ -3494,7 +3587,15 @@ class Core {
             $source_key = 'unknown';
         }
 
-        $analysis = $this->evaluate_alt_health($attachment_id, $alt);
+        $row       = $this->get_library_workspace_row_state( (object) [ 'ID' => $attachment_id, 'alt_text' => $alt ] );
+        $analysis  = $row['analysis'];
+        $issues    = ( is_array( $analysis ) && isset( $analysis['issues'] ) && is_array( $analysis['issues'] ) ) ? $analysis['issues'] : [];
+        $grade     = is_array( $analysis ) && isset( $analysis['grade'] ) ? (string) $analysis['grade'] : __( 'Missing', 'beepbeep-ai-alt-text-generator' );
+        $rev_stat  = is_array( $analysis ) && isset( $analysis['status'] ) ? sanitize_key( (string) $analysis['status'] ) : 'critical';
+        $rev_sum   = '';
+        if ( is_array( $analysis ) && isset( $analysis['review'] ) && is_array( $analysis['review'] ) && isset( $analysis['review']['summary'] ) ) {
+            $rev_sum = (string) $analysis['review']['summary'];
+        }
 
         return [
             'id' => $attachment_id,
@@ -3507,13 +3608,14 @@ class Core {
             'source_key' => $source_key,
             'source_label' => $this->format_source_label($source_key),
             'source_description' => $this->format_source_description($source_key),
-            'score' => $analysis['score'],
-            'score_grade' => $analysis['grade'],
-            'score_status' => $analysis['status'],
-            'score_issues' => $analysis['issues'],
-            'score_summary' => $analysis['review']['summary'] ?? '',
-            'user_approved' => !empty($analysis['user_approved']),
-            'user_approved_at' => isset($analysis['approved_at']) ? (string) $analysis['approved_at'] : '',
+            'score' => (int) $row['quality_score'],
+            'row_status' => (string) $row['status'],
+            'score_grade' => $grade,
+            'score_status' => $rev_stat,
+            'score_issues' => $issues,
+            'score_summary' => $rev_sum,
+            'user_approved' => ! empty( $row['user_approved'] ),
+            'user_approved_at' => is_array( $analysis ) && isset( $analysis['approved_at'] ) ? (string) $analysis['approved_at'] : '',
             'analysis' => $analysis,
         ];
     }
@@ -3605,71 +3707,6 @@ class Core {
         ];
     }
 
-    private function purge_review_meta(int $attachment_id): void{
-        $keys = [
-            '_bbai_review_score',
-            '_bbai_review_status',
-            '_bbai_review_grade',
-            '_bbai_review_summary',
-            '_bbai_review_issues',
-            '_bbai_review_model',
-            '_bbai_reviewed_at',
-            '_bbai_review_alt_hash',
-        ];
-        foreach ($keys as $key){
-            delete_post_meta($attachment_id, $key);
-        }
-    }
-
-    private function get_review_snapshot(int $attachment_id, string $current_alt = ''): ?array{
-        $score = intval(get_post_meta($attachment_id, '_bbai_review_score', true));
-        if ($score <= 0){
-            return null;
-        }
-
-        $stored_hash = get_post_meta($attachment_id, '_bbai_review_alt_hash', true);
-        if ($current_alt !== ''){
-            $current_hash = $this->hash_alt_text($current_alt);
-            if ($stored_hash && !hash_equals($stored_hash, $current_hash)){
-                $this->purge_review_meta($attachment_id);
-                return null;
-            }
-        }
-
-        $status     = sanitize_key(get_post_meta($attachment_id, '_bbai_review_status', true));
-        $grade_input  = get_post_meta($attachment_id, '_bbai_review_grade', true);
-        $summary    = get_post_meta($attachment_id, '_bbai_review_summary', true);
-        $model      = get_post_meta($attachment_id, '_bbai_review_model', true);
-        $reviewed_at = get_post_meta($attachment_id, '_bbai_reviewed_at', true);
-
-        $issues_input = get_post_meta($attachment_id, '_bbai_review_issues', true);
-        $issues = [];
-        if ($issues_input){
-            $decoded = json_decode($issues_input, true);
-            if (is_array($decoded)){
-                foreach ($decoded as $issue){
-                    if (is_string($issue)){
-                        $issue = sanitize_text_field($issue);
-                        if ($issue !== ''){
-                            $issues[] = $issue;
-                        }
-                    }
-                }
-            }
-        }
-
-        return [
-            'score'   => max(0, min(100, $score)),
-            'status'  => $status ?: null,
-            'grade'   => is_string($grade_input) ? sanitize_text_field($grade_input) : null,
-            'summary' => is_string($summary) ? sanitize_text_field($summary) : '',
-            'issues'  => $issues,
-            'model'   => is_string($model) ? sanitize_text_field($model) : '',
-            'reviewed_at' => is_string($reviewed_at) ? $reviewed_at : '',
-            'hash_present' => !empty($stored_hash),
-        ];
-    }
-
     /**
      * Single source of truth for ALT Library table row filter state (must match workspace row markup).
      *
@@ -3719,12 +3756,21 @@ class Core {
             $bbai_quality_label    = __('Review', 'beepbeep-ai-alt-text-generator');
         } else {
             $bbai_score_tier       = 'weak';
-            $bbai_score_tier_label = __('Weak', 'beepbeep-ai-alt-text-generator');
+            $bbai_score_tier_label = bbai_copy_score_band_needs_review();
             $bbai_quality_class    = 'poor';
-            $bbai_quality_label    = __('Weak', 'beepbeep-ai-alt-text-generator');
+            $bbai_quality_label    = bbai_copy_score_band_needs_review();
         }
 
-        if ($bbai_is_user_approved || $bbai_quality_score >= 85) {
+        $bbai_hard_fail = ! empty( $bbai_analysis['hard_fail'] );
+        $bbai_breakdown = isset( $bbai_analysis['breakdown'] ) && is_array( $bbai_analysis['breakdown'] ) ? $bbai_analysis['breakdown'] : null;
+        $bbai_optimized_eligible = class_exists( '\BBAI_Alt_Quality_Scorer' )
+            ? \BBAI_Alt_Quality_Scorer::passes_optimized_row_gates( $clean_alt, $bbai_quality_score, $bbai_breakdown, $bbai_hard_fail )
+            : false;
+
+        // User approval must not promote low-quality ALT to "Optimized"; gates + score drive status only.
+        $bbai_row_optimized = $bbai_optimized_eligible && $bbai_quality_score >= 70;
+
+        if ( $bbai_row_optimized ) {
             $status       = 'optimized';
             $status_label = __('Optimized', 'beepbeep-ai-alt-text-generator');
         } else {
@@ -3745,245 +3791,6 @@ class Core {
             'has_alt'          => true,
             'clean_alt'        => $clean_alt,
         ];
-    }
-
-    private function evaluate_alt_health(int $attachment_id, string $alt): array{
-        $alt = trim((string) $alt);
-        if ($alt === ''){
-            return [
-                'score' => 0,
-                'grade' => __('Missing', 'beepbeep-ai-alt-text-generator'),
-                'status' => 'critical',
-                'issues' => [__('ALT text is missing.', 'beepbeep-ai-alt-text-generator')],
-                'heuristic' => [
-                    'score' => 0,
-                    'grade' => __('Missing', 'beepbeep-ai-alt-text-generator'),
-                    'status' => 'critical',
-                    'issues' => [__('ALT text is missing.', 'beepbeep-ai-alt-text-generator')],
-                ],
-                'review' => null,
-            ];
-        }
-
-        $score = 100;
-        $issues = [];
-
-        $normalized = strtolower(trim($alt));
-        $placeholder_pattern = '/^(test|testing|sample|example|dummy|placeholder|alt(?:\s+text)?|image|photo|picture|n\/a|none|lorem)$/';
-        if ($normalized === '' || preg_match($placeholder_pattern, $normalized)){
-            return [
-                'score' => 0,
-                'grade' => __('Critical', 'beepbeep-ai-alt-text-generator'),
-                'status' => 'critical',
-                'issues' => [__('ALT text looks like placeholder content and must be rewritten.', 'beepbeep-ai-alt-text-generator')],
-                'heuristic' => [
-                    'score' => 0,
-                    'grade' => __('Critical', 'beepbeep-ai-alt-text-generator'),
-                    'status'=> 'critical',
-                    'issues'=> [__('ALT text looks like placeholder content and must be rewritten.', 'beepbeep-ai-alt-text-generator')],
-                ],
-                'review' => null,
-            ];
-        }
-
-        $length = function_exists('mb_strlen') ? mb_strlen($alt) : strlen($alt);
-        if ($length < 45){
-            $score -= 35;
-            $issues[] = __('Too short – add a richer description (45+ characters).', 'beepbeep-ai-alt-text-generator');
-        } elseif ($length > 160){
-            $score -= 15;
-            $issues[] = __('Very long – trim to keep the description concise (under 160 characters).', 'beepbeep-ai-alt-text-generator');
-        }
-
-        if (preg_match('/\b(image|picture|photo|screenshot)\b/i', $alt)){
-            $score -= 10;
-            $issues[] = __('Contains generic filler words like “image” or “photo”.', 'beepbeep-ai-alt-text-generator');
-        }
-
-        if (preg_match('/\b(test|testing|sample|example|dummy|placeholder|lorem|alt text)\b/i', $alt)){
-            $score = min($score - 80, 5);
-            $issues[] = __('Contains placeholder wording such as “test” or “sample”. Replace with a real description.', 'beepbeep-ai-alt-text-generator');
-        }
-
-        $word_count = str_word_count($alt, 0, '0123456789');
-        if ($word_count < 4){
-            $score -= 70;
-            $score = min($score, 5);
-            $issues[] = __('ALT text is extremely brief – add meaningful descriptive words.', 'beepbeep-ai-alt-text-generator');
-        } elseif ($word_count < 6){
-            $score -= 50;
-            $score = min($score, 20);
-            $issues[] = __('ALT text is too short to convey the subject in detail.', 'beepbeep-ai-alt-text-generator');
-        } elseif ($word_count < 8){
-            $score -= 35;
-            $score = min($score, 40);
-            $issues[] = __('ALT text could use a few more descriptive words.', 'beepbeep-ai-alt-text-generator');
-        }
-
-        if ($score > 40 && $length < 30){
-            $score = min($score, 40);
-            $issues[] = __('Expand the description with one or two concrete details.', 'beepbeep-ai-alt-text-generator');
-        }
-
-        $normalize = static function($value){
-            $value = strtolower((string) $value);
-            $value = preg_replace('/[^a-z0-9]+/i', ' ', $value);
-            return trim(preg_replace('/\s+/', ' ', $value));
-        };
-
-        $normalized_alt = $normalize($alt);
-        $title = get_the_title($attachment_id);
-        if ($title && $normalized_alt !== ''){
-            $normalized_title = $normalize($title);
-            if ($normalized_title !== '' && $normalized_alt === $normalized_title){
-                $score -= 12;
-                $issues[] = __('Matches the attachment title – add more unique detail.', 'beepbeep-ai-alt-text-generator');
-            }
-        }
-
-        $file = get_attached_file($attachment_id);
-        if ($file && $normalized_alt !== ''){
-            $base = pathinfo($file, PATHINFO_FILENAME);
-            $normalized_base = $normalize($base);
-            if ($normalized_base !== '' && $normalized_alt === $normalized_base){
-                $score -= 20;
-                $issues[] = __('Matches the file name – rewrite it to describe the image.', 'beepbeep-ai-alt-text-generator');
-            }
-        }
-
-        if (!preg_match('/[a-z]{4,}/i', $alt)){
-            $score -= 15;
-            $issues[] = __('Lacks descriptive language – include meaningful nouns or adjectives.', 'beepbeep-ai-alt-text-generator');
-        }
-
-        if (!preg_match('/\b[a-z]/i', $alt)){
-            $score -= 20;
-        }
-
-        $score = max(0, min(100, $score));
-
-        $status = $this->status_from_score($score);
-        $grade  = $this->grade_from_status($status);
-
-        if ($status === 'review' && empty($issues)){
-            $issues[] = __('Give this ALT another look to ensure it reflects the image details.', 'beepbeep-ai-alt-text-generator');
-        } elseif ($status === 'critical' && empty($issues)){
-            $issues[] = __('ALT text should be rewritten for accessibility.', 'beepbeep-ai-alt-text-generator');
-        }
-
-        $heuristic = [
-            'score' => $score,
-            'grade' => $grade,
-            'status'=> $status,
-            'issues'=> array_values(array_unique($issues)),
-        ];
-
-        $review = $this->get_review_snapshot($attachment_id, $alt);
-        if ($review && empty($review['hash_present']) && $heuristic['score'] < $review['score']){
-            $review = null;
-        }
-        if ($review){
-            $final_score = min($heuristic['score'], $review['score']);
-            $review_status = $review['status'] ?: $this->status_from_score($review['score']);
-            $final_status = $this->worst_status($heuristic['status'], $review_status);
-            $final_grade  = $review['grade'] ?: $this->grade_from_status($final_status);
-
-            $combined_issues = [];
-            if (!empty($review['summary'])){
-                $combined_issues[] = $review['summary'];
-            }
-            if (!empty($review['issues'])){
-                $combined_issues = array_merge($combined_issues, $review['issues']);
-            }
-            $combined_issues = array_merge($combined_issues, $heuristic['issues']);
-            $combined_issues = array_values(array_unique(array_filter($combined_issues)));
-
-            $result = [
-                'score' => $final_score,
-                'grade' => $final_grade,
-                'status'=> $final_status,
-                'issues'=> $combined_issues,
-                'heuristic' => $heuristic,
-                'review'    => $review,
-            ];
-            $approval = $this->get_user_approval_snapshot($attachment_id, $alt);
-            if ($approval) {
-                $result['score'] = max(85, $result['score']);
-                $result['grade'] = __('Strong', 'beepbeep-ai-alt-text-generator');
-                $result['status'] = 'good';
-                $result['issues'] = [];
-                $result['user_approved'] = true;
-                $result['approved_at'] = $approval['approved_at'];
-                $result['review'] = array_merge(is_array($result['review']) ? $result['review'] : [], [
-                    'summary' => __('Reviewed and approved in the ALT Library.', 'beepbeep-ai-alt-text-generator'),
-                    'user_approved' => true,
-                    'approved_at' => $approval['approved_at'],
-                ]);
-            }
-            return $result;
-        }
-
-        $result = [
-            'score' => $heuristic['score'],
-            'grade' => $heuristic['grade'],
-            'status'=> $heuristic['status'],
-            'issues'=> $heuristic['issues'],
-            'heuristic' => $heuristic,
-            'review'    => null,
-        ];
-        $approval = $this->get_user_approval_snapshot($attachment_id, $alt);
-        if ($approval) {
-            $result['score'] = max(85, $result['score']);
-            $result['grade'] = __('Strong', 'beepbeep-ai-alt-text-generator');
-            $result['status'] = 'good';
-            $result['issues'] = [];
-            $result['user_approved'] = true;
-            $result['approved_at'] = $approval['approved_at'];
-            $result['review'] = [
-                'summary' => __('Reviewed and approved in the ALT Library.', 'beepbeep-ai-alt-text-generator'),
-                'user_approved' => true,
-                'approved_at' => $approval['approved_at'],
-            ];
-        }
-        return $result;
-    }
-
-    private function status_from_score(int $score): string{
-        if ($score >= 90){
-            return 'great';
-        }
-        if ($score >= 75){
-            return 'good';
-        }
-        if ($score >= 60){
-            return 'review';
-        }
-        return 'critical';
-    }
-
-    private function grade_from_status(string $status): string{
-        switch ($status){
-            case 'great':
-                return __('Excellent', 'beepbeep-ai-alt-text-generator');
-            case 'good':
-                return __('Strong', 'beepbeep-ai-alt-text-generator');
-            case 'review':
-                return __('Needs review', 'beepbeep-ai-alt-text-generator');
-            default:
-                return __('Critical', 'beepbeep-ai-alt-text-generator');
-        }
-    }
-
-    private function worst_status(string $first, string $second): string{
-        $weights = [
-            'great' => 1,
-            'good' => 2,
-            'review' => 3,
-            'critical' => 4,
-        ];
-        $first_weight = $weights[$first] ?? 2;
-        $second_weight = $weights[$second] ?? 2;
-        return $first_weight >= $second_weight ? $first : $second;
     }
 
 	    public function get_missing_attachment_ids($limit = 5, $offset = 0){
@@ -4588,7 +4395,14 @@ class Core {
             update_post_meta($attachment_id, '_bbai_image_reference', $image_strategy);
         }
 
-        if (!is_wp_error($review_result)){
+        if (!is_wp_error($review_result) && is_array($review_result)){
+            // Never persist a remote/API score above the deterministic local cap (hard-fails, thin ALT, etc.).
+            if (class_exists('\BBAI_Alt_Quality_Scorer')) {
+                $ctx = $this->build_generation_context_for_attachment($attachment_id);
+                $local = \BBAI_Alt_Quality_Scorer::score($alt, $ctx);
+                $api_score = (int) ($review_result['score'] ?? 0);
+                $review_result['score'] = min($api_score, (int) $local['score']);
+            }
             update_post_meta($attachment_id, '_bbai_review_score', $review_result['score']);
             update_post_meta($attachment_id, '_bbai_review_status', $review_result['status']);
             update_post_meta($attachment_id, '_bbai_review_grade', $review_result['grade']);
@@ -4597,11 +4411,13 @@ class Core {
             update_post_meta($attachment_id, '_bbai_review_model', $review_result['model']);
             update_post_meta($attachment_id, '_bbai_reviewed_at', current_time('mysql'));
             update_post_meta($attachment_id, '_bbai_review_alt_hash', $this->hash_alt_text($alt));
+            // Keep in sync with Core_Review::REVIEW_SCORING_VERSION (invalidates stale cached LLM scores).
+            update_post_meta($attachment_id, '_bbai_review_version', 3);
             delete_post_meta($attachment_id, '_bbai_review_error');
             if (!empty($review_result['usage'])){
                 $this->record_usage($review_result['usage']);
             }
-        } else {
+        } elseif (is_wp_error($review_result)) {
             update_post_meta($attachment_id, '_bbai_review_error', $review_result->get_error_message());
         }
 
@@ -4813,7 +4629,7 @@ class Core {
                     if (is_wp_error($usage)) {
                         // Fall back to cached usage for display
                         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
-                        $usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
+                        $usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_local_usage_snapshot();
                     }
                     
                     $bbai_reset_date = isset($usage['resetDate']) ? $usage['resetDate'] : null;
@@ -4914,7 +4730,7 @@ class Core {
             } elseif ($is_quota_error) {
                 // Check cached usage before accepting the backend's quota error
                 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
-                $cached_usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
+                $cached_usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_local_usage_snapshot();
                 
                 if (is_array($cached_usage) && isset($cached_usage['remaining']) && is_numeric($cached_usage['remaining']) && $cached_usage['remaining'] > 0) {
                     // Cached usage shows credits available - backend error might be incorrect
@@ -5048,9 +4864,9 @@ class Core {
         // The backend may have consumed credits when calling OpenAI, but if alt_text is missing,
         // we should NOT record it as successful usage locally
         
-        // Backend returns credits_used and credits_remaining at root level, not nested in 'usage'
-        // The 'usage' key contains token information (prompt_tokens, completion_tokens, etc.)
-        // Build usage data from both root-level credits and nested usage token info
+        // Normalize any refreshed post-generation usage fields into the shared
+        // usage shape used by the plugin UI. Credit counters may still arrive at
+        // the response root, while nested `usage` carries model-token metadata.
         $bbai_usage_data = [];
         
         // Get credits from root level (primary source)
@@ -5172,33 +4988,47 @@ class Core {
             $updated_license  = $existing_license ?: [];
             $organization     = $updated_license['organization'] ?? [];
 
-            // Update limit first
+            // Persist the normalized quota model used by the backend /usage endpoint.
             if (isset($bbai_usage_data['limit'])) {
-                $organization['tokenLimit'] = intval($bbai_usage_data['limit']);
+                $organization['limit'] = intval($bbai_usage_data['limit']);
             } elseif (isset($bbai_usage_data['used']) && isset($bbai_usage_data['remaining'])) {
-                // Calculate limit from used + remaining if not provided
-                $organization['tokenLimit'] = intval($bbai_usage_data['used']) + intval($bbai_usage_data['remaining']);
+                $organization['limit'] = intval($bbai_usage_data['used']) + intval($bbai_usage_data['remaining']);
             }
 
-            // Update remaining credits (this is the critical value for display)
+            if (isset($bbai_usage_data['used'])) {
+                $organization['used'] = max(0, intval($bbai_usage_data['used']));
+            }
+
             if (isset($bbai_usage_data['remaining'])) {
-                $organization['tokensRemaining'] = max(0, intval($bbai_usage_data['remaining']));
-            } elseif (isset($bbai_usage_data['used']) && isset($organization['tokenLimit'])) {
-                // Calculate remaining from limit and used
-                $organization['tokensRemaining'] = max(0, intval($organization['tokenLimit']) - intval($bbai_usage_data['used']));
+                $organization['remaining'] = max(0, intval($bbai_usage_data['remaining']));
+            } elseif (isset($bbai_usage_data['used']) && isset($organization['limit'])) {
+                $organization['remaining'] = max(0, intval($organization['limit']) - intval($bbai_usage_data['used']));
             } elseif (isset($bbai_usage_data['limit']) && isset($bbai_usage_data['used'])) {
-                // Calculate remaining from limit and used if remaining not provided
-                $organization['tokensRemaining'] = max(0, intval($bbai_usage_data['limit']) - intval($bbai_usage_data['used']));
-                if (!isset($organization['tokenLimit'])) {
-                    $organization['tokenLimit'] = intval($bbai_usage_data['limit']);
+                $organization['remaining'] = max(0, intval($bbai_usage_data['limit']) - intval($bbai_usage_data['used']));
+                if (!isset($organization['limit'])) {
+                    $organization['limit'] = intval($bbai_usage_data['limit']);
                 }
             }
+
+            if (isset($organization['used'])) {
+                $organization['creditsUsed'] = intval($organization['used']);
+            }
+            if (isset($organization['limit'])) {
+                $organization['creditsTotal'] = intval($organization['limit']);
+                $organization['creditsLimit'] = intval($organization['limit']);
+            }
+            if (isset($organization['remaining'])) {
+                $organization['creditsRemaining'] = max(0, intval($organization['remaining']));
+            }
+
+            unset($organization['token' . 'Limit'], $organization['tokens' . 'Remaining']);
 
             // Log the update for debugging
             if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
                 Debug_Log::log('info', 'Updating license organization data with usage', [
-                    'tokensRemaining' => $organization['tokensRemaining'] ?? 'not set',
-                    'tokenLimit' => $organization['tokenLimit'] ?? 'not set',
+                    'used' => $organization['used'] ?? 'not set',
+                    'limit' => $organization['limit'] ?? 'not set',
+                    'remaining' => $organization['remaining'] ?? 'not set',
                     'usage_data' => $bbai_usage_data,
                 ], 'generation');
             }
@@ -5330,7 +5160,7 @@ class Core {
         // Note: We do NOT call Token_Quota_Service::record_local_usage() here because:
         // 1. We already update usage correctly via Usage_Tracker::update_usage() above (line 3303)
         // 2. Usage_Tracker gets the correct credits from the backend API response
-        // 3. Calling record_local_usage() with token counts would double-count and treat tokens as credits
+        // 3. Calling the legacy quota cache shim here would double-count and treat request units as credits
         // 4. The backend API response already contains the accurate credits_used value
         
         if ($bbai_has_license) {
@@ -5349,8 +5179,8 @@ class Core {
             ], 'generation');
         }
 
-        // Increment trial usage counter only after the generation has fully succeeded.
-        if ( \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() ) {
+        // Trial-source requests pre-claim quota in AJAX handlers; avoid double counting here.
+        if ( \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() && 'trial' !== $source ) {
             \BeepBeepAI\AltTextGenerator\Trial_Quota::increment();
         }
 
@@ -5451,8 +5281,15 @@ class Core {
             'plan'            => 'sanitize_key',
             'planSlug'        => 'sanitize_key',
             'plan_type'       => 'sanitize_key',
-            'tokensRemaining' => 'absint',
-            'tokenLimit'      => 'absint',
+            'used'            => 'absint',
+            'limit'           => 'absint',
+            'remaining'       => 'absint',
+            'creditsUsed'     => 'absint',
+            'creditsTotal'    => 'absint',
+            'creditsLimit'    => 'absint',
+            'creditsRemaining'=> 'absint',
+            'resetDate'       => 'sanitize_text_field',
+            'reset_date'      => 'sanitize_text_field',
         ];
 
         foreach ($allowed as $key => $sanitizer) {
@@ -5480,9 +5317,16 @@ class Core {
                 '_id'             => 'sanitize_text_field',
                 'name'            => 'sanitize_text_field',
                 'plan'            => 'sanitize_key',
-                'tokenLimit'      => 'absint',
-                'tokensRemaining' => 'absint',
+                'plan_type'       => 'sanitize_key',
+                'used'            => 'absint',
+                'limit'           => 'absint',
+                'remaining'       => 'absint',
+                'creditsUsed'     => 'absint',
+                'creditsTotal'    => 'absint',
+                'creditsLimit'    => 'absint',
+                'creditsRemaining'=> 'absint',
                 'resetDate'       => 'sanitize_text_field',
+                'reset_date'      => 'sanitize_text_field',
             ];
 
             $org_sanitized = [];
@@ -5752,6 +5596,20 @@ class Core {
             // No images need alt text - still proceed to Step 3 for full onboarding experience
             // Onboarding will be marked complete when Step 3 is viewed
             $step3_url = admin_url('admin.php?page=bbai-onboarding&step=3');
+            if ( function_exists( 'bbai_telemetry_emit' ) ) {
+                $bbai_uid = get_current_user_id();
+                if ( $bbai_uid && ! get_user_meta( $bbai_uid, 'bbai_telemetry_first_scan', true ) ) {
+                    update_user_meta( $bbai_uid, 'bbai_telemetry_first_scan', time() );
+                    bbai_telemetry_emit(
+                        'first_scan_triggered',
+                        [
+                            'queued'             => 0,
+                            'total_candidates'   => 0,
+                            'library_pre_empty' => true,
+                        ]
+                    );
+                }
+            }
             wp_send_json_success([
                 'message' => __('Your media library is already optimized! All images have alt text.', 'beepbeep-ai-alt-text-generator'),
                 'queued'  => 0,
@@ -5770,6 +5628,20 @@ class Core {
 
         // Redirect to Step 3 review screen
         $step3_url = admin_url('admin.php?page=bbai-onboarding&step=3');
+
+        if ( function_exists( 'bbai_telemetry_emit' ) ) {
+            $bbai_uid = get_current_user_id();
+            if ( $bbai_uid && ! get_user_meta( $bbai_uid, 'bbai_telemetry_first_scan', true ) ) {
+                update_user_meta( $bbai_uid, 'bbai_telemetry_first_scan', time() );
+                bbai_telemetry_emit(
+                    'first_scan_triggered',
+                    [
+                        'queued'           => (int) $queued,
+                        'total_candidates' => count( $ids ),
+                    ]
+                );
+            }
+        }
 
         wp_send_json_success([
             'message' => sprintf(
@@ -5986,7 +5858,64 @@ class Core {
 
         do_action('bbai_upgrade_event_tracked', $event);
 
+        if ( function_exists( 'bbai_telemetry_emit' ) ) {
+            $telemetry_event = 'upgrade_modal_viewed' === $event_name ? 'upgrade_modal_opened' : $event_name;
+            $telemetry_props = [
+                'source'  => $source,
+                'trigger' => $trigger,
+            ];
+            if ( '' !== $plan_input ) {
+                $telemetry_props['plan_selected'] = $plan_input;
+            }
+            bbai_telemetry_emit( $telemetry_event, $telemetry_props );
+        }
+
         wp_send_json_success(['recorded' => true]);
+    }
+
+    /**
+     * Batch telemetry from the admin client (UI events, navigation, filters).
+     */
+    public function ajax_telemetry() {
+        $action = 'beepbeepai_nonce';
+        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+            wp_send_json_error( [ 'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ) ], 403 );
+            return;
+        }
+        if ( ! $this->user_can_manage() ) {
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ) ] );
+            return;
+        }
+
+        $raw = isset( $_POST['events'] ) ? wp_unslash( $_POST['events'] ) : '';
+        if ( ! is_string( $raw ) || '' === $raw ) {
+            wp_send_json_success( [ 'recorded' => 0 ] );
+            return;
+        }
+
+        $decoded = json_decode( $raw, true );
+        if ( ! is_array( $decoded ) ) {
+            wp_send_json_error( [ 'message' => __( 'Invalid payload.', 'beepbeep-ai-alt-text-generator' ) ], 400 );
+            return;
+        }
+
+        $recorded = 0;
+        foreach ( array_slice( $decoded, 0, 25 ) as $row ) {
+            if ( ! is_array( $row ) ) {
+                continue;
+            }
+            $name = isset( $row['event'] ) ? sanitize_key( (string) $row['event'] ) : '';
+            if ( ! preg_match( '/^[a-z0-9_]{1,80}$/', $name ) ) {
+                continue;
+            }
+            $props = isset( $row['properties'] ) && is_array( $row['properties'] ) ? $row['properties'] : [];
+            if ( function_exists( 'bbai_telemetry_emit' ) ) {
+                bbai_telemetry_emit( $name, $props );
+                ++$recorded;
+            }
+        }
+
+        wp_send_json_success( [ 'recorded' => $recorded ] );
     }
 
     public function ajax_refresh_usage() {
@@ -6009,6 +5938,16 @@ class Core {
 	            $bbai_stats = Usage_Tracker::get_stats_display();
 	            wp_send_json_success($bbai_stats);
 	        } else {
+	            if ( function_exists( 'bbai_telemetry_emit' ) ) {
+	                bbai_telemetry_emit(
+	                    'api_error',
+	                    [
+	                        'error_type'   => 'usage_fetch_failed',
+	                        'endpoint'     => 'get_usage',
+	                        'recoverable'  => true,
+	                    ]
+	                );
+	            }
 	            wp_send_json_error(['message' => __('Failed to fetch usage data', 'beepbeep-ai-alt-text-generator')]);
 	            return;
 	        }
@@ -6062,7 +6001,7 @@ class Core {
                 if (is_wp_error($usage)) {
                     // Fall back to cached usage for display
                     require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
-                    $usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
+                    $usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_local_usage_snapshot();
                 }
                 
                 wp_send_json_error([
@@ -6092,7 +6031,7 @@ class Core {
             } elseif ($error_code === 'quota_check_mismatch') {
                 $user_message = __('Credits appear available but the backend reported a limit. Please try again in a moment.', 'beepbeep-ai-alt-text-generator');
             } elseif ($error_code === 'bbai_trial_exhausted') {
-                $user_message = __("You've used your 10 free generations. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator');
+                $user_message = __("You've used your 3 free images. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator');
             } elseif ($error_code === 'limit_reached' || $error_code === 'quota_exhausted') {
                 $bbai_reset_date = null;
                 if (is_array($error_data) && isset($error_data['usage']) && is_array($error_data['usage'])) {
@@ -6138,6 +6077,23 @@ class Core {
             } elseif ($error_code === 'quota_check_mismatch') {
                 $retry_after = 3;
             }
+
+            if ( function_exists( 'bbai_telemetry_emit' ) ) {
+                $err_kind = 'generation_error';
+                if ( in_array( $error_code, [ 'api_timeout', 'api_unreachable', 'network_error' ], true ) ) {
+                    $err_kind = 'network_error';
+                } elseif ( strpos( (string) $error_code, 'api' ) === 0 || $error_code === 'server_error' ) {
+                    $err_kind = 'api_error';
+                }
+                bbai_telemetry_emit(
+                    $err_kind,
+                    [
+                        'error_type'  => (string) $error_code,
+                        'endpoint'    => 'regenerate_single',
+                        'recoverable' => $is_retryable,
+                    ]
+                );
+            }
             
             wp_send_json_error([
                 'message' => $user_message,
@@ -6153,70 +6109,30 @@ class Core {
 
         // Get updated usage AFTER generation
         // generate_and_save() updates the cache, but we need to ensure we have the latest data
-        // For free users, fetch fresh from API to ensure accuracy
-        // For license users, read from license data
-        
-        $updated_usage = null;
-        
-        // For license users, read directly from license data
-        if ($this->api_client->has_active_license()) {
-            $bbai_license_data = $this->api_client->get_license_data();
-            if ($bbai_license_data && isset($bbai_license_data['organization'])) {
-                $bbai_org = $bbai_license_data['organization'];
-                $bbai_plan = isset($bbai_org['plan']) ? strtolower($bbai_org['plan']) : 'free';
-                $limit = isset($bbai_org['tokenLimit']) ? intval($bbai_org['tokenLimit']) : 
-                         ($bbai_plan === 'free' ? 50 : ($bbai_plan === 'pro' ? 1000 : 10000));
-                $tokens_remaining = isset($bbai_org['tokensRemaining']) ? max(0, intval($bbai_org['tokensRemaining'])) : $limit;
-                $used = max(0, $limit - $tokens_remaining);
-                
-                $reset_ts = strtotime('first day of next month');
-                if (!empty($bbai_org['resetDate'])) {
-                    $parsed = strtotime($bbai_org['resetDate']);
-                    if ($parsed > 0) {
-                        $reset_ts = $parsed;
-                    }
-                }
+        // The cache is updated from the authoritative /usage response in generate_and_save().
+        // Read it back here instead of rebuilding quota from legacy license fields.
+        $updated_usage = Usage_Tracker::get_cached_usage(false);
 
-                $updated_usage = [
-                    'used' => $used,
-                    'limit' => $limit,
-                    'remaining' => $tokens_remaining,
-                    'plan' => $bbai_plan,
-                    'resetDate' => wp_date('Y-m-d', $reset_ts),
-                    'reset_timestamp' => $reset_ts,
-                    'seconds_until_reset' => max(0, $reset_ts - time()),
-                ];
-                
-                // Update the cache with this fresh data
-                Usage_Tracker::update_usage($updated_usage);
-            }
-        }
-        
-        // For free users OR if license data didn't provide usage, fetch fresh from API
-        // This ensures we have the most up-to-date usage data from the backend
         if (!$updated_usage || !is_array($updated_usage) || !isset($updated_usage['used'])) {
-            // Clear cache first to force fresh fetch
             Usage_Tracker::clear_cache();
-            
-            // Fetch fresh usage from API - this should reflect the generation we just did
+
             $fresh_usage = $this->api_client->get_usage();
             if (!is_wp_error($fresh_usage) && is_array($fresh_usage)) {
                 Usage_Tracker::update_usage($fresh_usage);
-                $updated_usage = $fresh_usage;
-                
-                // Log for debugging
+                $updated_usage = Usage_Tracker::get_cached_usage(false);
+
                 if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
                     Debug_Log::log('info', 'Fetched fresh usage from API after regeneration', [
-                        'used' => $fresh_usage['used'] ?? 'not set',
-                        'remaining' => $fresh_usage['remaining'] ?? 'not set',
-                        'limit' => $fresh_usage['limit'] ?? 'not set',
+                        'used' => $updated_usage['used'] ?? 'not set',
+                        'remaining' => $updated_usage['remaining'] ?? 'not set',
+                        'limit' => $updated_usage['limit'] ?? 'not set',
                     ], 'generation');
                 }
             } else {
-                // Fallback to cached usage if API fails
-                $updated_usage = Usage_Tracker::get_cached_usage(false);
+                $updated_usage = Usage_Tracker::get_local_usage_snapshot();
+
                 if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-                    Debug_Log::log('warning', 'API usage fetch failed, using cached usage', [
+                    Debug_Log::log('warning', 'API usage fetch failed, using local usage snapshot', [
                         'api_error' => is_wp_error($fresh_usage) ? $fresh_usage->get_error_message() : 'unknown error',
                         'cached_usage' => $updated_usage,
                     ], 'generation');
@@ -6229,8 +6145,8 @@ class Core {
         
         // Ensure we have valid usage data to return
         if (!$updated_usage || !is_array($updated_usage) || !isset($updated_usage['used'])) {
-            // Last resort: try to get cached usage
-            $updated_usage = Usage_Tracker::get_cached_usage(false);
+            // Last resort: return the local snapshot so the response stays shape-safe.
+            $updated_usage = Usage_Tracker::get_local_usage_snapshot();
             
             if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
                 Debug_Log::log('warning', 'No usage data available after regeneration, using cached fallback', [
@@ -6254,6 +6170,17 @@ class Core {
 
         $response_meta = $this->prepare_attachment_snapshot($attachment_id);
         $response_stats = $this->get_dashboard_stats_payload(true);
+
+        if ( function_exists( 'bbai_telemetry_emit' ) ) {
+            bbai_telemetry_emit(
+                'alt_regenerated',
+                [
+                    'number_of_images' => 1,
+                    'success'          => true,
+                ]
+            );
+            \BeepBeepAI\AltTextGenerator\BBAI_Telemetry::bump_session_images_processed( 1 );
+        }
 
         wp_send_json_success([
             'message'        => __('Alt text generated successfully.', 'beepbeep-ai-alt-text-generator'),
@@ -6380,6 +6307,16 @@ class Core {
                 // Inline flows queue IDs for dedupe/visibility but should not race cron processing.
                 if (!$skip_schedule) {
                     Queue::schedule_processing();
+                }
+
+                if ( function_exists( 'bbai_telemetry_emit' ) ) {
+                    bbai_telemetry_emit(
+                        'bulk_generate_triggered',
+                        [
+                            'number_of_images' => (int) $queued,
+                            'source'           => $source,
+                        ]
+                    );
                 }
                 
                 wp_send_json_success([
@@ -6812,7 +6749,7 @@ class Core {
         $batch_size = apply_filters('bbai_queue_batch_size', 3);
         $max_attempts = apply_filters('bbai_queue_max_attempts', 3);
         $bbai_trial_blocked = false;
-        $bbai_trial_message = __("You've used your 10 free generations. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator');
+        $bbai_trial_message = __("You've used your 3 free images. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator');
 
         Queue::reset_stale(apply_filters('bbai_queue_stale_timeout', 10 * MINUTE_IN_SECONDS));
 
@@ -7853,6 +7790,8 @@ class Core {
             return;
         }
 
+        $bbai_gen_started = microtime( true );
+
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
         if ( \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_exhausted() ) {
             wp_send_json_error( $this->get_trial_exhausted_payload() );
@@ -7957,6 +7896,54 @@ class Core {
         
         // wp_send_json_success() will send headers and output, then exit
         // This ensures no output interferes with the JSON response
+        if ( function_exists( 'bbai_telemetry_emit' ) ) {
+            $bbai_duration_ms = (int) round( ( microtime( true ) - $bbai_gen_started ) * 1000 );
+            $bbai_ok          = 0;
+            $bbai_fail        = 0;
+            foreach ( $results as $bbai_r ) {
+                if ( ! empty( $bbai_r['success'] ) ) {
+                    ++$bbai_ok;
+                } else {
+                    ++$bbai_fail;
+                }
+            }
+            if ( $bbai_ok > 0 ) {
+                bbai_telemetry_emit(
+                    'alt_generated_success',
+                    [
+                        'number_of_images'   => $bbai_ok,
+                        'processing_time_ms' => $bbai_duration_ms,
+                        'failure_count'      => $bbai_fail,
+                    ]
+                );
+                \BeepBeepAI\AltTextGenerator\BBAI_Telemetry::bump_session_images_processed( $bbai_ok );
+                $uid = get_current_user_id();
+                if ( $uid > 0 && ! get_user_meta( $uid, 'bbai_telemetry_first_alt_at', true ) ) {
+                    update_user_meta( $uid, 'bbai_telemetry_first_alt_at', time() );
+                    bbai_telemetry_emit( 'first_alt_generated', [ 'number_of_images' => $bbai_ok ] );
+                }
+            }
+            if ( $bbai_fail > 0 ) {
+                bbai_telemetry_emit(
+                    'alt_generated_failed',
+                    [
+                        'number_of_images'   => $bbai_fail,
+                        'processing_time_ms' => $bbai_duration_ms,
+                        'success_count'      => $bbai_ok,
+                    ]
+                );
+            }
+            if ( $bbai_duration_ms > 45000 ) {
+                bbai_telemetry_emit(
+                    'slow_operation_flag',
+                    [
+                        'operation'          => 'inline_generate',
+                        'processing_time_ms' => $bbai_duration_ms,
+                    ]
+                );
+            }
+        }
+
         wp_send_json_success([
             'results' => $results,
         ]);
@@ -7998,7 +7985,7 @@ class Core {
             return;
         }
 
-        $limit = min( $remaining, 10 ); // Cap at 10 (trial limit)
+        $limit = min( $remaining, \BeepBeepAI\AltTextGenerator\Trial_Quota::get_limit() );
         $ids   = $this->get_missing_attachment_ids( $limit );
 
         $stats             = $this->get_media_stats();
@@ -8031,6 +8018,7 @@ class Core {
             'count'             => count( $images ),
             'missing_alt_count' => $missing_alt_count,
             'remaining'         => $remaining,
+            'remaining_free_images' => $remaining,
             'limit'             => \BeepBeepAI\AltTextGenerator\Trial_Quota::get_limit(),
             'used'              => \BeepBeepAI\AltTextGenerator\Trial_Quota::get_used(),
         ] );
@@ -8042,9 +8030,19 @@ class Core {
      * @param int $attachment_id Attachment ID.
      * @return array{result:mixed,retry_attempts:int}
      */
-    private function generate_trial_single_with_retry( int $attachment_id ): array {
+    private function generate_trial_single_with_retry( int $attachment_id, bool $quota_claimed = false ): array {
         $retry_attempts = 0;
         $max_retries    = 2;
+        $claimed_slots  = 0;
+        if ( ! $quota_claimed ) {
+            $claimed_slots = \BeepBeepAI\AltTextGenerator\Trial_Quota::claim( 1 );
+            if ( $claimed_slots <= 0 ) {
+                return [
+                    'result'         => $this->get_trial_exhausted_error(),
+                    'retry_attempts' => 0,
+                ];
+            }
+        }
         $result         = $this->generate_and_save( $attachment_id, 'trial', 1, [], false );
 
         while ( is_wp_error( $result ) && 'quota_check_mismatch' === $result->get_error_code() && $retry_attempts < $max_retries ) {
@@ -8060,6 +8058,10 @@ class Core {
             usleep( $retry_delay_us );
 
             $result = $this->generate_and_save( $attachment_id, 'trial', 1, [], false );
+        }
+
+        if ( ! $quota_claimed && is_wp_error( $result ) && $claimed_slots > 0 ) {
+            \BeepBeepAI\AltTextGenerator\Trial_Quota::release( $claimed_slots );
         }
 
         return [
@@ -8108,10 +8110,17 @@ class Core {
         }
 
         $requested = isset( $_POST['limit'] ) ? absint( wp_unslash( $_POST['limit'] ) ) : 3;
-        $requested = max( 1, min( 10, $requested ) );
+        $requested = max( 1, min( \BeepBeepAI\AltTextGenerator\Trial_Quota::get_limit(), $requested ) );
 
-        $remaining_before = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_remaining();
-        $batch_limit      = min( $requested, $remaining_before );
+        // Atomically claim allowance before any processing starts.
+        $accepted_count = \BeepBeepAI\AltTextGenerator\Trial_Quota::claim( $requested );
+        if ( $accepted_count <= 0 ) {
+            if ( ob_get_level() > 0 ) { ob_clean(); }
+            wp_send_json_error( $this->get_trial_exhausted_payload() );
+            return;
+        }
+
+        $batch_limit      = $accepted_count;
         $ids              = $this->get_missing_attachment_ids( $batch_limit );
 
         if ( empty( $ids ) ) {
@@ -8121,9 +8130,11 @@ class Core {
                 $missing_alt_count = max( 0, intval( $stats['missing_alt'] ) );
             }
 
+            \BeepBeepAI\AltTextGenerator\Trial_Quota::release( $accepted_count );
             if ( ob_get_level() > 0 ) { ob_clean(); }
             wp_send_json_success( [
                 'requested'         => $requested,
+                'accepted_count'    => 0,
                 'attempted'         => 0,
                 'generated_count'   => 0,
                 'summary'           => [],
@@ -8162,7 +8173,7 @@ class Core {
                 );
             }
 
-            $generation     = $this->generate_trial_single_with_retry( $attachment_id );
+            $generation     = $this->generate_trial_single_with_retry( $attachment_id, true );
             $result         = $generation['result'];
             $retry_attempts = isset( $generation['retry_attempts'] ) ? absint( $generation['retry_attempts'] ) : 0;
 
@@ -8199,6 +8210,10 @@ class Core {
 
         $generated_count = count( $summary );
         $attempted_count = $generated_count + count( $errors );
+        $unused_claimed  = max( 0, $accepted_count - $generated_count );
+        if ( $unused_claimed > 0 ) {
+            \BeepBeepAI\AltTextGenerator\Trial_Quota::release( $unused_claimed );
+        }
         $remaining_after = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_remaining();
         $trial_exhausted = $trial_exhausted || $remaining_after <= 0;
 
@@ -8214,7 +8229,7 @@ class Core {
                 $generated_count
             );
         } elseif ( $trial_exhausted ) {
-            $message = __( "You've used your 10 free generations. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator' );
+            $message = __( "You've used your 3 free images. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator' );
         } else {
             $message = __( 'No images were updated. Please try again.', 'beepbeep-ai-alt-text-generator' );
         }
@@ -8222,11 +8237,13 @@ class Core {
         if ( ob_get_level() > 0 ) { ob_clean(); }
         wp_send_json_success( [
             'requested'         => $requested,
+            'accepted_count'    => $accepted_count,
             'attempted'         => $attempted_count,
             'generated_count'   => $generated_count,
             'summary'           => $summary,
             'errors'            => $errors,
             'remaining'         => $remaining_after,
+            'remaining_free_images' => $remaining_after,
             'used'              => \BeepBeepAI\AltTextGenerator\Trial_Quota::get_used(),
             'limit'             => \BeepBeepAI\AltTextGenerator\Trial_Quota::get_limit(),
             'missing_alt_count' => $missing_alt_count,
@@ -8272,11 +8289,19 @@ class Core {
         }
 
         try {
-            $generation     = $this->generate_trial_single_with_retry( $attachment_id );
+            $accepted_count = \BeepBeepAI\AltTextGenerator\Trial_Quota::claim( 1 );
+            if ( $accepted_count <= 0 ) {
+                if ( ob_get_level() > 0 ) { ob_clean(); }
+                wp_send_json_error( $this->get_trial_exhausted_payload() );
+                return;
+            }
+
+            $generation     = $this->generate_trial_single_with_retry( $attachment_id, true );
             $result         = $generation['result'];
             $retry_attempts = isset( $generation['retry_attempts'] ) ? absint( $generation['retry_attempts'] ) : 0;
 
             if ( is_wp_error( $result ) ) {
+                \BeepBeepAI\AltTextGenerator\Trial_Quota::release( 1 );
                 $code = $result->get_error_code();
                 $data = [
                     'message' => $result->get_error_message(),
@@ -8312,7 +8337,10 @@ class Core {
                 'alt_text'      => $result,
                 'title'         => get_the_title( $attachment_id ),
                 'remaining'     => $trial_remaining,
+                'remaining_free_images' => $trial_remaining,
                 'used'          => $trial_used,
+                'accepted_count' => 1,
+                'trial_exhausted' => $trial_remaining <= 0,
             ] );
         } catch ( \Exception $e ) {
             if ( ob_get_level() > 0 ) { ob_clean(); }

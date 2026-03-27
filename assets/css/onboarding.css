@@ -238,7 +238,13 @@
     background: linear-gradient(135deg, #14b8a6 0%, #22c55e 100%);
 }
 
-.bbai-onboarding .bbai-onboarding-step-card:not(:has(.bbai-onboarding-step-icon--active)) .bbai-onboarding-step-icon {
+.bbai-onboarding .bbai-onboarding-step-icon--done {
+    background: linear-gradient(135deg, #0f766e 0%, #15803d 100%);
+    box-shadow: 0 4px 12px rgba(21, 128, 61, 0.22);
+    color: #ffffff;
+}
+
+.bbai-onboarding .bbai-onboarding-step-card .bbai-onboarding-step-icon:not(.bbai-onboarding-step-icon--active):not(.bbai-onboarding-step-icon--done) {
     background: #e5e7eb;
     box-shadow: none;
     color: #9ca3af;

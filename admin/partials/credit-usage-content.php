@@ -103,403 +103,11 @@ if (!in_array($bbai_ins_tone, ['healthy', 'warning', 'danger'], true)) {
 }
 $bbai_ins_chips = isset($bbai_usage_insights['chips']) && is_array($bbai_usage_insights['chips']) ? $bbai_usage_insights['chips'] : [];
 ?>
-<style id="bbai-usage-page-style">
-/* ─────────────────────────────────────────────────────────────────────────────
-   Usage workspace — full-width SaaS layout
-   Replaces the narrow 640px article column with a proper admin canvas.
-───────────────────────────────────────────────────────────────────────────── */
 
-body.beepbeep-ai_page_bbai-credit-usage #wpbody-content .wrap {
-    max-width: 100% !important;
-    padding: 0 !important;
-}
-
-body.beepbeep-ai_page_bbai-credit-usage #wpcontent {
-    padding-left: 0 !important;
-}
-
-/* Root wrapper: canvas padding from .bbai-page-container only */
-.bbai-usage-workspace {
-    width: 100%;
-    max-width: none;
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-/* ── Space below shared banner ───────────────────────────────────────────── */
-.bbai-usage-after-banner {
-    margin-top: var(--section-spacing, 24px);
-}
-
-/* ── Usage insights (interpretation — lighter than banner, no quota hero) ─── */
-.bbai-usage-insights {
-    padding: 22px 26px 20px;
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    background: #fafbfc;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
-    margin-bottom: var(--section-spacing, 24px);
-    border-left: 3px solid #cbd5e1;
-}
-.bbai-usage-insights--healthy { border-left-color: #22c55e; }
-.bbai-usage-insights--warning { border-left-color: #f59e0b; background: #fffbeb; border-color: #fde68a; }
-.bbai-usage-insights--danger { border-left-color: #ef4444; background: #fef2f2; border-color: #fecaca; }
-
-.bbai-usage-insights__heading {
-    margin: 0 0 6px;
-    font-size: 18px;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    color: #0f172a;
-    line-height: 1.25;
-}
-.bbai-usage-insights__lead {
-    margin: 0 0 18px;
-    font-size: 13px;
-    color: #64748b;
-    line-height: 1.45;
-    max-width: 72ch;
-}
-.bbai-usage-insights__grid {
-    display: grid;
-    gap: 14px 20px;
-    margin: 0 0 16px;
-}
-@media (min-width: 720px) {
-    .bbai-usage-insights__grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-}
-.bbai-usage-insights__block {
-    margin: 0;
-}
-.bbai-usage-insights__label {
-    display: block;
-    margin: 0 0 6px;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #94a3b8;
-}
-.bbai-usage-insights__text {
-    margin: 0;
-    font-size: 14px;
-    font-weight: 500;
-    color: #334155;
-    line-height: 1.5;
-}
-.bbai-usage-insights__chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 10px;
-    margin: 0 0 14px;
-    padding: 0;
-    list-style: none;
-}
-.bbai-usage-insights__chip {
-    display: inline-flex;
-    align-items: center;
-    padding: 5px 11px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #475569;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    line-height: 1.3;
-}
-.bbai-usage-insights__footer {
-    margin: 0;
-    padding-top: 12px;
-    border-top: 1px solid #e8edf3;
-    font-size: 13px;
-}
-.bbai-usage-insights__footer a {
-    color: #2563eb;
-    font-weight: 600;
-    text-decoration: none;
-}
-.bbai-usage-insights__footer a:hover {
-    text-decoration: underline;
-}
-
-.bbai-usage-table {
-    width: 100%;
-}
-
-.bbai-usage-table__row {
-    transition: background-color .16s ease;
-}
-
-.bbai-usage-table__row.is-clickable {
-    cursor: pointer;
-}
-
-.bbai-usage-table__row.is-clickable:hover,
-.bbai-usage-table__row.is-clickable:focus-within {
-    background: #f9fafb;
-}
-
-/* ── Usage activity (major section — always visible) ─────────────────────── */
-.bbai-usage-activity-section {
-    border-radius: 16px;
-    border: 1px solid #e2e8f0;
-    background: #ffffff;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-    overflow: hidden;
-    margin-bottom: var(--section-spacing, 24px);
-}
-.bbai-usage-activity-section__header {
-    padding: 22px 28px 18px;
-    border-bottom: 1px solid #f1f5f9;
-}
-.bbai-usage-activity-section__heading {
-    margin: 0 0 6px;
-    font-size: 18px;
-    font-weight: 700;
-    color: #0f172a;
-    letter-spacing: -0.02em;
-    line-height: 1.25;
-}
-.bbai-usage-activity-section__lead {
-    margin: 0;
-    font-size: 13px;
-    color: #64748b;
-    line-height: 1.45;
-    max-width: 70ch;
-}
-.bbai-usage-activity-section__body {
-    padding: var(--section-spacing, 24px) 28px 28px;
-}
-
-/* Filter grid — 4 columns on desktop */
-.bbai-usage-filter-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: var(--card-gap, 16px);
-    margin-bottom: var(--card-gap, 16px);
-}
-
-.bbai-credit-filter-field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-.bbai-credit-filter-label {
-    font-size: 11px;
-    font-weight: 700;
-    color: #475569;
-    text-transform: uppercase;
-    letter-spacing: .07em;
-}
-.bbai-credit-filter-input-wrapper { position: relative; }
-.bbai-credit-filter-input,
-.bbai-credit-filter-select {
-    width: 100%;
-    padding: 9px 12px;
-    border-radius: 10px;
-    border: 1px solid #d1d5db;
-    background: #ffffff;
-    font-size: 13px;
-    color: #0f172a;
-    box-sizing: border-box;
-}
-.bbai-credit-filter-input:focus,
-.bbai-credit-filter-select:focus {
-    border-color: #38bdf8;
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(56,189,248,.12);
-}
-.bbai-credit-filter-calendar-icon {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #94a3b8;
-    pointer-events: none;
-}
-
-.bbai-credit-filter-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 4px;
-}
-.bbai-clear-filter-link {
-    font-size: 13px;
-    color: #64748b;
-    text-decoration: none;
-}
-.bbai-clear-filter-link:hover { color: #0f172a; }
-
-/* Activity results */
-.bbai-credit-activity-state {
-    text-align: center;
-    padding: 40px 24px;
-}
-.bbai-credit-activity-state__title {
-    font-size: 16px;
-    font-weight: 700;
-    color: #0f172a;
-    margin: 0 0 8px;
-}
-.bbai-credit-activity-state__description {
-    font-size: 14px;
-    color: #64748b;
-    margin: 0 0 var(--section-spacing, 24px);
-}
-.bbai-credit-activity-state__actions {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.bbai-credit-activity-results-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: var(--card-gap, 16px);
-    margin-bottom: var(--card-gap, 16px);
-}
-.bbai-credit-activity-results-copy { font-size: 13px; color: #64748b; margin: 4px 0 0; }
-.bbai-credit-activity-credits { font-weight: 700; color: #0f172a; }
-.bbai-credit-activity-link { color: #0284c7; text-decoration: none; }
-.bbai-credit-activity-link:hover { text-decoration: underline; }
-.bbai-credit-activity-pagination {
-    margin-top: var(--card-gap, 16px);
-    display: flex;
-    align-items: center;
-    gap: var(--card-gap, 16px);
-    flex-wrap: wrap;
-}
-.bbai-table-subtitle { font-size: 12px; color: #64748b; margin-top: 2px; }
-
-.bbai-credit-activity-table-wrap {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-}
-
-/* ── Billing & cycle (compact, informational) ───────────────────────────── */
-.bbai-usage-billing {
-    border-radius: 14px;
-    border: 1px solid #e8edf3;
-    background: #fafbfc;
-    padding: 20px 24px 22px;
-    margin-bottom: var(--section-spacing, 24px);
-}
-.bbai-usage-billing__title {
-    margin: 0 0 14px;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #64748b;
-}
-.bbai-usage-billing__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 14px 24px;
-    margin-bottom: 12px;
-}
-.bbai-usage-billing__item dt {
-    margin: 0 0 4px;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #94a3b8;
-}
-.bbai-usage-billing__item dd {
-    margin: 0;
-    font-size: 14px;
-    font-weight: 600;
-    color: #1e293b;
-    line-height: 1.4;
-}
-.bbai-usage-billing__links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px 18px;
-    padding-top: 12px;
-    border-top: 1px solid #e8edf3;
-    font-size: 13px;
-}
-.bbai-usage-billing__links a {
-    color: #2563eb;
-    text-decoration: none;
-    font-weight: 600;
-}
-.bbai-usage-billing__links a:hover {
-    text-decoration: underline;
-}
-.bbai-usage-billing__note {
-    margin: 12px 0 0;
-    font-size: 12px;
-    color: #94a3b8;
-    line-height: 1.45;
-}
-
-/* ── Top contributors (low emphasis) ─────────────────────────────────────── */
-.bbai-usage-contributors {
-    border-radius: 14px;
-    border: 1px solid #e8edf3;
-    background: #ffffff;
-    padding: 18px 22px 20px;
-    margin-bottom: var(--card-gap, 16px);
-}
-.bbai-usage-contributors__title {
-    margin: 0 0 4px;
-    font-size: 15px;
-    font-weight: 700;
-    color: #334155;
-}
-.bbai-usage-contributors__lead {
-    margin: 0 0 14px;
-    font-size: 12px;
-    color: #94a3b8;
-    line-height: 1.4;
-}
-.bbai-usage-contributors .widefat {
-    font-size: 13px;
-}
-.bbai-usage-contributors .widefat th,
-.bbai-usage-contributors .widefat td {
-    padding: 8px 10px;
-}
-
-/* ── Supplemental (user detail, etc.) ─────────────────────────────────────── */
-.bbai-usage-supplemental {
-    margin-top: var(--card-gap, 16px);
-}
-
-/* ── Responsive ─────────────────────────────────────────────────────────── */
-@media (max-width: 1060px) {
-    .bbai-usage-filter-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 640px) {
-    .bbai-usage-insights {
-        padding: 18px 18px 16px;
-    }
-    .bbai-usage-activity-section__header,
-    .bbai-usage-activity-section__body {
-        padding-left: 20px;
-        padding-right: 20px;
-    }
-    .bbai-usage-filter-grid { grid-template-columns: 1fr; }
-}
-</style>
-
-<div class="bbai-container bbai-usage-workspace bbai-ui-page-shell">
+<div class="bbai-container bbai-usage-workspace bbai-ui-page-shell bbai-credit-usage-page">
 
     <?php if ($view === 'user_detail' && $user_id > 0) : ?>
-        <div style="margin-bottom: var(--card-gap, 16px);">
+        <div class="bbai-usage-back-wrap">
             <a href="<?php echo esc_url(admin_url('admin.php?page=bbai-credit-usage')); ?>" class="bbai-back-btn">
                 <?php esc_html_e('← Back to Summary', 'beepbeep-ai-alt-text-generator'); ?>
             </a>
@@ -531,63 +139,56 @@ body.beepbeep-ai_page_bbai-credit-usage #wpcontent {
             'plan_label'          => (string) ( $bbai_usage_surface['planLabel'] ?? '' ),
             'library_url'         => admin_url( 'admin.php?page=bbai-library' ),
             'missing_library_url' => add_query_arg( [ 'page' => 'bbai-library', 'status' => 'missing' ], admin_url( 'admin.php' ) ),
-            'needs_review_library_url' => add_query_arg( [ 'page' => 'bbai-library', 'status' => 'needs_review' ], admin_url( 'admin.php' ) ),
+            'needs_review_library_url' => bbai_alt_library_needs_review_url(),
             'usage_url'           => admin_url( 'admin.php?page=bbai-credit-usage' ),
             'settings_url'        => admin_url( 'admin.php?page=bbai-settings' ),
             'guide_url'           => admin_url( 'admin.php?page=bbai-guide' ),
         ]
     );
-    bbai_ui_render('status-banner', [ 'command_hero' => $bbai_command_hero ]);
+    bbai_ui_render('bbai-banner', [ 'command_hero' => $bbai_command_hero ]);
     ?>
 
     <div class="bbai-usage-after-banner" id="bbai-usage-overview">
-        <section
-            id="bbai-usage-insights"
-            class="bbai-usage-insights bbai-usage-insights--<?php echo esc_attr($bbai_ins_tone); ?>"
-            aria-labelledby="bbai-usage-insights-heading"
-        >
-            <h2 id="bbai-usage-insights-heading" class="bbai-usage-insights__heading"><?php esc_html_e('Usage insights', 'beepbeep-ai-alt-text-generator'); ?></h2>
-            <p class="bbai-usage-insights__lead"><?php esc_html_e('How your credits are tracking this cycle and what to do next.', 'beepbeep-ai-alt-text-generator'); ?></p>
+        <?php
+        $bbai_ins_stack_lines = [
+            __('How your credits are tracking this cycle and what to do next.', 'beepbeep-ai-alt-text-generator'),
+        ];
+        if ('' !== trim($bbai_ins_forecast)) {
+            $bbai_ins_stack_lines[] = sprintf(
+                /* translators: 1: section label, 2: insight text */
+                __('%1$s — %2$s', 'beepbeep-ai-alt-text-generator'),
+                __('Forecast', 'beepbeep-ai-alt-text-generator'),
+                $bbai_ins_forecast
+            );
+        }
+        if ('' !== trim($bbai_ins_driver)) {
+            $bbai_ins_stack_lines[] = sprintf(
+                /* translators: 1: section label, 2: insight text */
+                __('%1$s — %2$s', 'beepbeep-ai-alt-text-generator'),
+                __('What is driving usage', 'beepbeep-ai-alt-text-generator'),
+                $bbai_ins_driver
+            );
+        }
+        if ('' !== trim($bbai_ins_recommend)) {
+            $bbai_ins_stack_lines[] = sprintf(
+                /* translators: 1: section label, 2: insight text */
+                __('%1$s — %2$s', 'beepbeep-ai-alt-text-generator'),
+                __('Suggested next step', 'beepbeep-ai-alt-text-generator'),
+                $bbai_ins_recommend
+            );
+        }
 
-            <div class="bbai-usage-insights__grid">
-                <div class="bbai-usage-insights__block">
-                    <span class="bbai-usage-insights__label"><?php esc_html_e('Forecast', 'beepbeep-ai-alt-text-generator'); ?></span>
-                    <p class="bbai-usage-insights__text"><?php echo esc_html($bbai_ins_forecast); ?></p>
-                </div>
-                <div class="bbai-usage-insights__block">
-                    <span class="bbai-usage-insights__label"><?php esc_html_e('What is driving usage', 'beepbeep-ai-alt-text-generator'); ?></span>
-                    <p class="bbai-usage-insights__text"><?php echo esc_html($bbai_ins_driver); ?></p>
-                </div>
-                <div class="bbai-usage-insights__block">
-                    <span class="bbai-usage-insights__label"><?php esc_html_e('Suggested next step', 'beepbeep-ai-alt-text-generator'); ?></span>
-                    <p class="bbai-usage-insights__text"><?php echo esc_html($bbai_ins_recommend); ?></p>
-                </div>
-            </div>
-
-            <?php if (!empty($bbai_ins_chips)) : ?>
-                <ul class="bbai-usage-insights__chips" aria-label="<?php esc_attr_e('Supporting metrics', 'beepbeep-ai-alt-text-generator'); ?>">
-                    <?php foreach ($bbai_ins_chips as $bbai_ins_chip) : ?>
-                        <?php
-                        $bbai_chip_label = isset($bbai_ins_chip['label']) ? (string) $bbai_ins_chip['label'] : '';
-                        if ('' === $bbai_chip_label) {
-                            continue;
-                        }
-                        ?>
-                        <li><span class="bbai-usage-insights__chip"><?php echo esc_html($bbai_chip_label); ?></span></li>
-                    <?php endforeach; ?>
-                </ul>
-            <?php endif; ?>
-
-            <p class="bbai-usage-insights__footer">
-                <a href="#bbai-usage-activity"><?php esc_html_e('Open usage activity log', 'beepbeep-ai-alt-text-generator'); ?></a>
-            </p>
-        </section>
+        require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/components/usage-insights-card.php';
+        ?>
     </div>
 
-    <section class="bbai-usage-activity-section" id="bbai-usage-activity" aria-labelledby="bbai-usage-activity-heading">
-        <header class="bbai-usage-activity-section__header">
-            <h2 id="bbai-usage-activity-heading" class="bbai-usage-activity-section__heading"><?php esc_html_e('Usage activity', 'beepbeep-ai-alt-text-generator'); ?></h2>
-            <p class="bbai-usage-activity-section__lead"><?php esc_html_e('Operational detail: every logged credit event. Filter by date, source, or user to find what consumed your quota fastest.', 'beepbeep-ai-alt-text-generator'); ?></p>
+    <section class="bbai-usage-activity-section bbai-card" id="bbai-usage-activity" aria-labelledby="bbai-usage-activity-heading">
+        <header class="bbai-usage-activity-section__header bbai-ui-section-header bbai-section-header">
+            <div class="bbai-ui-section-header__text">
+                <p class="bbai-section-label bbai-card-label"><?php esc_html_e('Usage', 'beepbeep-ai-alt-text-generator'); ?></p>
+                <h2 id="bbai-usage-activity-heading" class="bbai-usage-activity-section__heading bbai-section-title bbai-card-title"><?php esc_html_e('Usage activity', 'beepbeep-ai-alt-text-generator'); ?></h2>
+                <p class="bbai-usage-activity-section__lead bbai-section-description bbai-card-description"><?php esc_html_e('Operational detail: every logged credit event. Filter by date, source, or user to find what consumed your quota fastest.', 'beepbeep-ai-alt-text-generator'); ?></p>
+            </div>
         </header>
 
         <div class="bbai-usage-activity-section__body">
@@ -595,11 +196,11 @@ body.beepbeep-ai_page_bbai-credit-usage #wpcontent {
             <!-- Filter grid -->
             <form method="get" class="bbai-credit-filter-form">
                 <input type="hidden" name="page" value="bbai-credit-usage" />
-                <div class="bbai-usage-filter-grid">
+                <div class="bbai-credit-filter-row">
                     <div class="bbai-credit-filter-field">
                         <label class="bbai-credit-filter-label" for="bbai-date-from"><?php esc_html_e('Date From', 'beepbeep-ai-alt-text-generator'); ?></label>
                         <div class="bbai-credit-filter-input-wrapper">
-                            <input type="date" id="bbai-date-from" name="date_from" value="<?php echo esc_attr($date_from); ?>" class="bbai-credit-filter-input" placeholder="mm/dd/yyyy">
+                            <input type="date" id="bbai-date-from" name="date_from" value="<?php echo esc_attr($date_from); ?>" class="bbai-credit-filter-input bbai-input" placeholder="mm/dd/yyyy">
                             <svg class="bbai-credit-filter-calendar-icon" width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                                 <rect x="2" y="3" width="12" height="11" rx="1" stroke="currentColor" stroke-width="1.5"/>
                                 <path d="M5 1V4M11 1V4M2 7H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -609,7 +210,7 @@ body.beepbeep-ai_page_bbai-credit-usage #wpcontent {
                     <div class="bbai-credit-filter-field">
                         <label class="bbai-credit-filter-label" for="bbai-date-to"><?php esc_html_e('Date To', 'beepbeep-ai-alt-text-generator'); ?></label>
                         <div class="bbai-credit-filter-input-wrapper">
-                            <input type="date" id="bbai-date-to" name="date_to" value="<?php echo esc_attr($date_to); ?>" class="bbai-credit-filter-input" placeholder="mm/dd/yyyy">
+                            <input type="date" id="bbai-date-to" name="date_to" value="<?php echo esc_attr($date_to); ?>" class="bbai-credit-filter-input bbai-input" placeholder="mm/dd/yyyy">
                             <svg class="bbai-credit-filter-calendar-icon" width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                                 <rect x="2" y="3" width="12" height="11" rx="1" stroke="currentColor" stroke-width="1.5"/>
                                 <path d="M5 1V4M11 1V4M2 7H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -618,7 +219,7 @@ body.beepbeep-ai_page_bbai-credit-usage #wpcontent {
                     </div>
                     <div class="bbai-credit-filter-field">
                         <label class="bbai-credit-filter-label" for="bbai-source-filter"><?php esc_html_e('Source', 'beepbeep-ai-alt-text-generator'); ?></label>
-                        <select id="bbai-source-filter" name="source" class="bbai-credit-filter-select">
+                        <select id="bbai-source-filter" name="source" class="bbai-credit-filter-select bbai-select">
                             <?php foreach (($source_options ?? []) as $bbai_source_value => $bbai_source_label) : ?>
                                 <option value="<?php echo esc_attr($bbai_source_value); ?>" <?php selected($source, $bbai_source_value); ?>>
                                     <?php echo esc_html($bbai_source_label); ?>
@@ -628,7 +229,7 @@ body.beepbeep-ai_page_bbai-credit-usage #wpcontent {
                     </div>
                     <div class="bbai-credit-filter-field">
                         <label class="bbai-credit-filter-label" for="bbai-user-filter"><?php esc_html_e('User', 'beepbeep-ai-alt-text-generator'); ?></label>
-                        <select id="bbai-user-filter" name="user_id" class="bbai-credit-filter-select">
+                        <select id="bbai-user-filter" name="user_id" class="bbai-credit-filter-select bbai-select">
                             <option value="0"><?php esc_html_e('All Users', 'beepbeep-ai-alt-text-generator'); ?></option>
                             <?php foreach ($all_users as $bbai_user) : ?>
                                 <option value="<?php echo esc_attr($bbai_user->ID); ?>" <?php selected($user_id, $bbai_user->ID); ?>>
@@ -640,42 +241,58 @@ body.beepbeep-ai_page_bbai-credit-usage #wpcontent {
                 </div>
                 <div class="bbai-credit-filter-actions">
                     <button type="submit" class="bbai-btn bbai-btn-primary bbai-btn-sm"><?php esc_html_e('Apply filters', 'beepbeep-ai-alt-text-generator'); ?></button>
-                    <a href="<?php echo esc_url(admin_url('admin.php?page=bbai-credit-usage')); ?>" class="bbai-clear-filter-link"><?php esc_html_e('Clear', 'beepbeep-ai-alt-text-generator'); ?></a>
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=bbai-credit-usage')); ?>" class="bbai-clear-filter-link bbai-link bbai-link--muted"><?php esc_html_e('Clear', 'beepbeep-ai-alt-text-generator'); ?></a>
                 </div>
             </form>
 
             <!-- Activity results -->
-            <div class="bbai-credit-activity-shell" style="margin-top: var(--section-spacing, 24px);">
+            <div class="bbai-credit-activity-shell">
                 <?php if (!$bbai_has_usage_activity) : ?>
-                    <div class="bbai-credit-activity-state bbai-credit-activity-state--empty">
-                        <div class="bbai-credit-activity-state__copy">
-                            <h3 class="bbai-credit-activity-state__title"><?php esc_html_e('No usage yet', 'beepbeep-ai-alt-text-generator'); ?></h3>
-                            <p class="bbai-credit-activity-state__description"><?php esc_html_e('Credit activity will appear here when images are scanned, generated, or reviewed.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        </div>
-                        <div class="bbai-credit-activity-state__actions">
-                            <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-sm" data-bbai-action="scan-opportunity"><?php esc_html_e('Scan Media Library', 'beepbeep-ai-alt-text-generator'); ?></button>
-                            <?php if ($bbai_is_pro_plan) : ?>
-                                <a href="<?php echo esc_url($bbai_automation_url); ?>" class="bbai-btn bbai-btn-secondary bbai-btn-sm"><?php esc_html_e('Automation settings', 'beepbeep-ai-alt-text-generator'); ?></a>
-                            <?php else : ?>
-                                <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm" data-action="show-upgrade-modal"><?php esc_html_e('Enable auto-optimisation', 'beepbeep-ai-alt-text-generator'); ?></button>
-                            <?php endif; ?>
-                        </div>
-                    </div>
+                    <?php
+                    ob_start();
+                    ?>
+                    <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-sm" data-bbai-action="scan-opportunity"><?php echo esc_html(bbai_copy_cta_scan_media_library()); ?></button>
+                    <?php if ($bbai_is_pro_plan) : ?>
+                        <a href="<?php echo esc_url($bbai_automation_url); ?>" class="bbai-btn bbai-btn-secondary bbai-btn-sm"><?php esc_html_e('Automation settings', 'beepbeep-ai-alt-text-generator'); ?></a>
+                    <?php else : ?>
+                        <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm" data-action="show-upgrade-modal"><?php esc_html_e('Enable auto-optimisation', 'beepbeep-ai-alt-text-generator'); ?></button>
+                    <?php endif; ?>
+                    <?php
+                    $bbai_usage_empty_actions = ob_get_clean();
+                    bbai_ui_render(
+                        'product-state',
+                        [
+                            'variant'      => 'empty',
+                            'title'        => __('No usage yet', 'beepbeep-ai-alt-text-generator'),
+                            'body'         => __('Credit activity will appear here when images are scanned, generated, or reviewed.', 'beepbeep-ai-alt-text-generator'),
+                            'actions_html' => $bbai_usage_empty_actions,
+                            'root_class'   => 'bbai-credit-activity-state',
+                        ]
+                    );
+                    ?>
                 <?php elseif (!$bbai_has_filtered_results) : ?>
-                    <div class="bbai-credit-activity-state bbai-credit-activity-state--empty">
-                        <div class="bbai-credit-activity-state__copy">
-                            <h4 class="bbai-credit-activity-state__title"><?php esc_html_e('No matching activity found', 'beepbeep-ai-alt-text-generator'); ?></h4>
-                            <p class="bbai-credit-activity-state__description"><?php esc_html_e('Try a different date range, source, or user filter.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        </div>
-                        <div class="bbai-credit-activity-state__actions">
-                            <a href="<?php echo esc_url(admin_url('admin.php?page=bbai-credit-usage')); ?>" class="bbai-btn bbai-btn-secondary bbai-btn-sm"><?php esc_html_e('Clear filters', 'beepbeep-ai-alt-text-generator'); ?></a>
-                        </div>
-                    </div>
+                    <?php
+                    ob_start();
+                    ?>
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=bbai-credit-usage')); ?>" class="bbai-btn bbai-btn-secondary bbai-btn-sm"><?php esc_html_e('Clear filters', 'beepbeep-ai-alt-text-generator'); ?></a>
+                    <?php
+                    $bbai_usage_filter_empty_actions = ob_get_clean();
+                    bbai_ui_render(
+                        'product-state',
+                        [
+                            'variant'      => 'empty',
+                            'title'        => __('No matching activity found', 'beepbeep-ai-alt-text-generator'),
+                            'body'         => __('Try a different date range, source, or user filter.', 'beepbeep-ai-alt-text-generator'),
+                            'actions_html' => $bbai_usage_filter_empty_actions,
+                            'root_class'   => 'bbai-credit-activity-state',
+                        ]
+                    );
+                    ?>
                 <?php else : ?>
                     <div class="bbai-usage-table-card bbai-credit-activity-results">
                         <div class="bbai-credit-activity-results-header">
                             <div>
-                                <h3 class="bbai-card-title" style="margin: 0 0 4px;"><?php esc_html_e('Recent credit activity', 'beepbeep-ai-alt-text-generator'); ?></h3>
+                                <h3 class="bbai-card-title"><?php esc_html_e('Recent credit activity', 'beepbeep-ai-alt-text-generator'); ?></h3>
                                 <p class="bbai-credit-activity-results-copy">
                                     <?php
                                     printf(
@@ -778,7 +395,7 @@ body.beepbeep-ai_page_bbai-credit-usage #wpcontent {
     </section><!-- /.bbai-usage-activity-section -->
 
     <section class="bbai-usage-billing" aria-labelledby="bbai-usage-billing-heading">
-        <h2 id="bbai-usage-billing-heading" class="bbai-usage-billing__title"><?php esc_html_e('Billing & cycle', 'beepbeep-ai-alt-text-generator'); ?></h2>
+        <h2 id="bbai-usage-billing-heading" class="bbai-usage-billing__title bbai-ui-section-header__title bbai-section-title"><?php esc_html_e('Billing & cycle', 'beepbeep-ai-alt-text-generator'); ?></h2>
         <dl class="bbai-usage-billing__grid">
             <div class="bbai-usage-billing__item">
                 <dt><?php esc_html_e('Plan', 'beepbeep-ai-alt-text-generator'); ?></dt>
@@ -841,8 +458,8 @@ body.beepbeep-ai_page_bbai-credit-usage #wpcontent {
 
     <?php if ($view === 'summary' && !empty($backend_user_activity['users'])) : ?>
     <section class="bbai-usage-contributors" aria-labelledby="bbai-usage-contributors-heading">
-        <h2 id="bbai-usage-contributors-heading" class="bbai-usage-contributors__title"><?php esc_html_e('Top contributors', 'beepbeep-ai-alt-text-generator'); ?></h2>
-        <p class="bbai-usage-contributors__lead"><?php esc_html_e('Users who consumed the most credits in the current reporting period.', 'beepbeep-ai-alt-text-generator'); ?></p>
+        <h2 id="bbai-usage-contributors-heading" class="bbai-usage-contributors__title bbai-section-title"><?php esc_html_e('Top contributors', 'beepbeep-ai-alt-text-generator'); ?></h2>
+        <p class="bbai-usage-contributors__lead bbai-ui-section-header__description"><?php esc_html_e('Users who consumed the most credits in the current reporting period.', 'beepbeep-ai-alt-text-generator'); ?></p>
         <table class="widefat fixed striped">
             <caption class="screen-reader-text"><?php esc_html_e('Top contributors by credits used this period', 'beepbeep-ai-alt-text-generator'); ?></caption>
             <thead>

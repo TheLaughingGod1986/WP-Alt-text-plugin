@@ -12,7 +12,9 @@ use BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers;
 
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/class-plan-helpers.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/banner-system.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/retention-lifecycle.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/ui-components.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/content/bbai-admin-copy.php';
 
 $bbai_build_action = static function (string $label = '', array $overrides = []): array {
     return array_merge(
@@ -159,9 +161,7 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
 
     $bbai_credits_used = max(0, (int) ($bbai_usage_stats['used'] ?? 0));
     $bbai_credits_total = max(1, (int) ($bbai_usage_stats['limit'] ?? 50));
-    $bbai_credits_remaining = isset($bbai_usage_stats['remaining'])
-        ? max(0, (int) $bbai_usage_stats['remaining'])
-        : max(0, $bbai_credits_total - $bbai_credits_used);
+    $bbai_credits_remaining = max(0, (int) ($bbai_usage_stats['remaining'] ?? 0));
 
     if ($bbai_credits_used > $bbai_credits_total) {
         $bbai_credits_used = $bbai_credits_total;
@@ -207,11 +207,28 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
     $bbai_credits_reset_line = ($bbai_reset_raw !== '' || $bbai_has_reset_timestamp)
         ? sprintf(__('Credits reset %s', 'beepbeep-ai-alt-text-generator'), date_i18n('F j, Y', $bbai_has_reset_timestamp ? (int) $bbai_reset_ts : current_time('timestamp')))
         : __('Credits reset monthly', 'beepbeep-ai-alt-text-generator');
+    $bbai_plan_label = isset($bbai_usage_stats['plan_label']) && is_string($bbai_usage_stats['plan_label']) && '' !== trim($bbai_usage_stats['plan_label'])
+        ? sanitize_text_field($bbai_usage_stats['plan_label'])
+        : ($isProPlan ? __('Growth plan', 'beepbeep-ai-alt-text-generator') : __('Free plan', 'beepbeep-ai-alt-text-generator'));
 
     $bbai_last_scan_timestamp = isset($bbai_coverage['scanned_at']) ? max(0, (int) $bbai_coverage['scanned_at']) : 0;
     $bbai_has_scan_history = $bbai_last_scan_timestamp > 0;
     $bbai_has_scan_results = $bbai_total_images > 0 || $bbai_missing_count > 0 || $bbai_weak_count > 0 || $bbai_optimized_count > 0;
+
+    // Phase 13 — activation / FTUE (pre–first successful generation).
+    $bbai_current_user_id       = get_current_user_id();
+    $bbai_first_alt_ts          = $bbai_current_user_id ? (int) get_user_meta($bbai_current_user_id, 'bbai_telemetry_first_alt_at', true) : 0;
+    $bbai_stats_generated       = (int) ($bbai_stats['generated'] ?? 0);
+    $bbai_has_ever_generated_alt = $bbai_credits_used > 0 || $bbai_first_alt_ts > 0 || $bbai_stats_generated > 0;
+    $bbai_ftue_session_images    = $bbai_current_user_id
+        ? (int) get_user_meta($bbai_current_user_id, '_bbai_telemetry_session_images_' . gmdate('Ymd'), true)
+        : 0;
+    $bbai_attn_total_need        = $bbai_missing_count + $bbai_weak_count;
     $bbai_coverage_percent = $bbai_total_images > 0 ? (int) round(($bbai_optimized_count / $bbai_total_images) * 100) : 0;
+    // Match FTUE: credits spent but no visible library rows yet (optimized or needs-review).
+    $bbai_coverage_processing = ($bbai_credits_used > 0 && $bbai_optimized_count === 0 && $bbai_weak_count === 0);
+    $bbai_coverage_processing_ui = $bbai_coverage_processing && $bbai_total_images > 0;
+    $bbai_coverage_processing_msg = __('Processing your first results — this usually takes a few seconds', 'beepbeep-ai-alt-text-generator');
     $bbai_coverage_motivation = '';
     $bbai_coverage_badge = '';
     if ($bbai_total_images > 0) {
@@ -221,7 +238,7 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
         } elseif ($bbai_coverage_percent >= 95) {
             $bbai_coverage_motivation = __('Almost complete 🎯', 'beepbeep-ai-alt-text-generator');
             $bbai_coverage_badge = __('1 image away from 100%', 'beepbeep-ai-alt-text-generator');
-        } elseif ($bbai_coverage_percent < 80) {
+        } elseif ($bbai_coverage_percent < 80 && ! $bbai_coverage_processing) {
             $bbai_coverage_motivation = __('You’re leaving rankings on the table', 'beepbeep-ai-alt-text-generator');
         }
     }
@@ -260,9 +277,31 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
     $hasScanHistory = $bbai_has_scan_history;
     $isFirstRun = !$hasScanHistory || $totalImages === 0;
 
+    $bbai_ftue_pre_scan  = !$isOutOfCredits && !$hasScanHistory && !$bbai_has_ever_generated_alt;
+    $bbai_ftue_post_scan = !$isOutOfCredits && $hasScanHistory && !$bbai_has_ever_generated_alt;
+    $bbai_ftue_show_hero = $bbai_ftue_pre_scan || $bbai_ftue_post_scan;
+
+    /**
+     * Activation-first onboarding dashboard: suppress operational command grid until first ALT generation.
+     * Default matches FTUE hero eligibility; narrow with the filter if needed.
+     */
+    $bbai_onboarding_first_open = (bool) apply_filters(
+        'bbai_dashboard_onboarding_first_open',
+        $bbai_ftue_show_hero,
+        [
+            'user_id'             => $bbai_current_user_id,
+            'has_scan_history'    => $bbai_has_scan_history,
+            'has_generated_alt'   => $bbai_has_ever_generated_alt,
+            'is_out_of_credits'   => $isOutOfCredits,
+            'credits_used'        => $bbai_credits_used,
+            'stats_generated'     => $bbai_stats_generated,
+            'telemetry_first_alt' => $bbai_first_alt_ts,
+        ]
+    );
+
     $bbai_library_url = add_query_arg(['page' => 'bbai-library'], admin_url('admin.php'));
     $bbai_optimized_library_url = add_query_arg(['page' => 'bbai-library', 'status' => 'optimized'], admin_url('admin.php'));
-    $bbai_needs_review_library_url = add_query_arg(['page' => 'bbai-library', 'status' => 'needs_review'], admin_url('admin.php'));
+    $bbai_needs_review_library_url = bbai_alt_library_needs_review_url();
     $bbai_missing_library_url = add_query_arg(['page' => 'bbai-library', 'status' => 'missing'], admin_url('admin.php'));
     $bbai_usage_url = admin_url('admin.php?page=bbai-credit-usage');
     $bbai_settings_url = admin_url('admin.php?page=bbai-settings');
@@ -271,6 +310,8 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
     $bbai_status_detail = '';
     if ($isFirstRun) {
         $bbai_status_detail = __('Run your first scan to see coverage and missing ALT text.', 'beepbeep-ai-alt-text-generator');
+    } elseif ($bbai_coverage_processing_ui) {
+        $bbai_status_detail = __('This count updates after ALT text is saved — it usually takes a few seconds.', 'beepbeep-ai-alt-text-generator');
     } elseif ($missingCount > 0) {
         $bbai_status_detail = 1 === $missingCount
             ? __('One fix away from complete coverage.', 'beepbeep-ai-alt-text-generator')
@@ -286,6 +327,17 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
         );
     } elseif ($totalImages > 0) {
         $bbai_status_detail = __('All current images include ALT text.', 'beepbeep-ai-alt-text-generator');
+    }
+
+    $bbai_dashboard_primary_missing = $missingCount > 0 && !$isOutOfCredits;
+    $bbai_dashboard_primary_review = 0 === $missingCount && $weakCount > 0 && !$isOutOfCredits && $bbai_has_scan_results;
+    $bbai_dashboard_show_primary_action = $bbai_dashboard_primary_missing || $bbai_dashboard_primary_review;
+
+    if ($bbai_dashboard_primary_missing && ! $bbai_coverage_processing_ui) {
+        $bbai_status_detail = '';
+    }
+    if ($bbai_dashboard_primary_review) {
+        $bbai_status_detail = '';
     }
 
     $bbai_plan_primary_action = $bbai_build_action(
@@ -331,7 +383,7 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
         'isFirstRun' => $isFirstRun,
         'lastScanTimestamp' => $bbai_last_scan_timestamp,
         'lastScanLine' => $bbai_format_last_scan($bbai_last_scan_timestamp),
-        'planLabel' => $isProPlan ? __('Growth plan', 'beepbeep-ai-alt-text-generator') : __('Free plan', 'beepbeep-ai-alt-text-generator'),
+        'planLabel' => $bbai_plan_label,
         'resetTiming' => $bbai_reset_timing,
         'compactResetTiming' => $bbai_format_reset_value($bbai_days_until_reset, $bbai_reset_timing),
         'creditsResetLine' => $bbai_credits_reset_line,
@@ -360,7 +412,38 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
         'guideUrl' => $bbai_guide_url,
         'planPrimaryAction' => $bbai_plan_primary_action,
         'planSecondaryAction' => $bbai_plan_secondary_action,
+        'hasEverGeneratedAlt' => $bbai_has_ever_generated_alt,
+        'onboardingFirstOpen' => $bbai_onboarding_first_open,
+        'coverageProcessing' => $bbai_coverage_processing,
     ];
+
+    $bbai_banner_snapshot       = bbai_banner_snapshot_from_dashboard_state($bbai_dashboard_state);
+    $bbai_primary_banner_state  = bbai_resolve_top_banner($bbai_banner_snapshot, BBAI_BANNER_CTX_DASHBOARD);
+    $bbai_dashboard_banner_slot = bbai_get_active_banner_slot_from_state($bbai_primary_banner_state);
+
+    $bbai_retention_strip = null;
+    if ($bbai_current_user_id) {
+        bbai_retention_schedule_snapshot_update($bbai_current_user_id, $bbai_total_images);
+        $bbai_retention_strip = bbai_retention_build_strip_model(
+            [
+                'user_id'                  => $bbai_current_user_id,
+                'ftue_show_hero'           => $bbai_ftue_show_hero,
+                'ftue_pre_scan'            => $bbai_ftue_pre_scan,
+                'has_scan_history'         => $bbai_has_scan_history,
+                'is_out_of_credits'        => $isOutOfCredits,
+                'is_pro'                   => $isProPlan,
+                'missing'                  => $missingCount,
+                'weak'                     => $weakCount,
+                'optimized'                => $optimizedCount,
+                'total'                    => $totalImages,
+                'coverage_pct'             => $coveragePercent,
+                'credits_used'             => $creditsUsed,
+                'missing_library_url'      => $bbai_missing_library_url,
+                'needs_review_library_url' => $bbai_needs_review_library_url,
+                'library_url'              => $bbai_library_url,
+            ]
+        );
+    }
 
     $bbai_primary_action = 'scan';
     if ($isOutOfCredits) {
@@ -384,9 +467,10 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
 
     <div
         id="bbai-dashboard-main"
-        class="bbai-dashboard bbai-container"
+        class="bbai-dashboard bbai-container<?php echo $bbai_onboarding_first_open ? ' bbai-dashboard--onboarding-first-open' : ''; ?>"
         data-bbai-dashboard-container
         data-bbai-dashboard-root="1"
+        data-bbai-onboarding-first-open="<?php echo esc_attr($bbai_onboarding_first_open ? '1' : '0'); ?>"
         data-bbai-missing-count="<?php echo esc_attr($missingCount); ?>"
         data-bbai-weak-count="<?php echo esc_attr($weakCount); ?>"
         data-bbai-optimized-count="<?php echo esc_attr($optimizedCount); ?>"
@@ -406,23 +490,111 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
         data-bbai-settings-url="<?php echo esc_url($bbai_settings_url); ?>"
         data-bbai-usage-url="<?php echo esc_url($bbai_usage_url); ?>"
         data-bbai-guide-url="<?php echo esc_url($bbai_guide_url); ?>"
+        data-bbai-primary-banner-state="<?php echo esc_attr($bbai_primary_banner_state); ?>"
+        data-bbai-active-banner-slot="<?php echo esc_attr((string) (bbai_get_active_banner_slot_from_state($bbai_primary_banner_state) ?? '')); ?>"
+        data-bbai-coverage-processing="<?php echo esc_attr($bbai_coverage_processing ? '1' : '0'); ?>"
     >
         <div id="bbai-limit-state-root" class="bbai-limit-state-root" hidden></div>
 
         <?php
         $bbai_banner_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-success-banner.php';
-        if (file_exists($bbai_banner_partial)) {
+        if (!$bbai_onboarding_first_open && !$bbai_ftue_show_hero && file_exists($bbai_banner_partial)) {
             include $bbai_banner_partial;
         }
+
+        if ($bbai_ftue_show_hero) {
+            $bbai_ftue_phase = $bbai_ftue_pre_scan ? 'pre_scan' : 'post_scan';
+            $bbai_onboarding_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-onboarding-first-open.php';
+            if (file_exists($bbai_onboarding_partial)) {
+                include $bbai_onboarding_partial;
+            }
+        }
+
+        $bbai_retention_partial      = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-retention-strip.php';
         ?>
 
-        <div class="bbai-dashboard-command">
-            <div class="bbai-dashboard-command__grid">
-                <article class="bbai-dashboard-card bbai-command-card bbai-command-card--status<?php echo ($bbai_coverage_percent >= 100 && $bbai_total_images > 0) ? ' bbai-command-card--coverage-complete' : ''; ?>" data-bbai-dashboard-status-card="1" aria-labelledby="bbai-status-title">
+        <?php if (!$bbai_onboarding_first_open) : ?>
+        <div class="bbai-dashboard-command bbai-top-section-stack">
+                <?php if ($bbai_dashboard_show_primary_action && !bbai_banner_is_priority_slot_active($bbai_dashboard_banner_slot)) : ?>
+                <article
+                    class="bbai-dashboard-card bbai-command-card bbai-command-card--dashboard-primary"
+                    data-bbai-dashboard-primary-action-card="1"
+                    aria-labelledby="bbai-dashboard-primary-title"
+                >
                     <header class="bbai-command-card__header">
                         <div>
-                            <p class="bbai-command-card__eyebrow"><?php esc_html_e('Library status', 'beepbeep-ai-alt-text-generator'); ?></p>
-                            <h2 id="bbai-status-title" class="bbai-command-card__title"><?php esc_html_e('Coverage', 'beepbeep-ai-alt-text-generator'); ?></h2>
+                            <p class="bbai-command-card__eyebrow bbai-section-label bbai-card-label"><?php esc_html_e('Next step', 'beepbeep-ai-alt-text-generator'); ?></p>
+                            <h2 id="bbai-dashboard-primary-title" class="bbai-command-card__title bbai-section-title bbai-card-title">
+                                <?php
+                                if ($bbai_dashboard_primary_missing) {
+                                    echo esc_html(
+                                        sprintf(
+                                            /* translators: %s: number of images */
+                                            _n(
+                                                '%s image missing ALT text',
+                                                '%s images missing ALT text',
+                                                $missingCount,
+                                                'beepbeep-ai-alt-text-generator'
+                                            ),
+                                            number_format_i18n($missingCount)
+                                        )
+                                    );
+                                } else {
+                                    echo esc_html(
+                                        sprintf(
+                                            /* translators: %s: number of descriptions */
+                                            _n(
+                                                '%s description needs review.',
+                                                '%s descriptions need review.',
+                                                $weakCount,
+                                                'beepbeep-ai-alt-text-generator'
+                                            ),
+                                            number_format_i18n($weakCount)
+                                        )
+                                    );
+                                }
+                                ?>
+                            </h2>
+                        </div>
+                    </header>
+                    <div class="bbai-command-plan__actions">
+                        <?php if ($bbai_dashboard_primary_missing) : ?>
+                            <a
+                                href="#"
+                                class="bbai-command-action bbai-command-action--primary bbai-btn bbai-btn-primary"
+                                data-bbai-dashboard-primary-cta="1"
+                                data-action="generate-missing"
+                                data-bbai-action="generate_missing"
+                                data-bbai-starter-cap="10"
+                                aria-label="<?php echo esc_attr(bbai_copy_cta_generate_missing_images()); ?>"
+                            ><?php echo esc_html(bbai_copy_cta_generate_missing_images()); ?></a>
+                        <?php else : ?>
+                            <a
+                                href="#"
+                                class="bbai-command-action bbai-command-action--primary bbai-btn bbai-btn-primary"
+                                data-bbai-dashboard-primary-cta="1"
+                                data-action="regenerate-all"
+                                data-bbai-regenerate-scope="needs-review"
+                                data-bbai-generation-source="regenerate-weak"
+                                aria-label="<?php echo esc_attr(bbai_copy_cta_improve_alt()); ?>"
+                            ><?php echo esc_html(bbai_copy_cta_improve_alt()); ?></a>
+                            <a
+                                href="<?php echo esc_url($bbai_needs_review_library_url); ?>"
+                                class="bbai-command-action bbai-command-action--secondary bbai-btn bbai-btn-secondary"
+                                data-bbai-dashboard-primary-library="1"
+                                data-bbai-navigation="review-results"
+                            ><?php esc_html_e('Review ALT text', 'beepbeep-ai-alt-text-generator'); ?></a>
+                        <?php endif; ?>
+                    </div>
+                </article>
+                <?php endif; ?>
+
+            <div class="bbai-dashboard-command__grid">
+                <article class="bbai-dashboard-card bbai-command-card bbai-command-card--status<?php echo ($bbai_coverage_percent >= 100 && $bbai_total_images > 0) ? ' bbai-command-card--coverage-complete' : ''; ?><?php echo $bbai_coverage_processing_ui ? ' bbai-command-card--coverage-processing' : ''; ?>" data-bbai-dashboard-status-card="1" aria-labelledby="bbai-status-title">
+                    <header class="bbai-command-card__header">
+                        <div>
+                            <p class="bbai-command-card__eyebrow bbai-section-label bbai-card-label"><?php esc_html_e('Library status', 'beepbeep-ai-alt-text-generator'); ?></p>
+                            <h2 id="bbai-status-title" class="bbai-command-card__title bbai-section-title bbai-card-title"><?php esc_html_e('Coverage', 'beepbeep-ai-alt-text-generator'); ?></h2>
                         </div>
                         <div class="bbai-command-card__meta-group">
                             <p class="bbai-command-card__meta" data-bbai-status-last-scan<?php echo '' !== ($bbai_dashboard_state['lastScanLine'] ?? '') ? '' : ' hidden'; ?>>
@@ -448,7 +620,7 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
                     <div class="bbai-command-status">
                         <div class="bbai-command-status__overview">
                             <div
-                                class="bbai-command-donut"
+                                class="bbai-command-donut<?php echo $bbai_coverage_processing_ui ? ' bbai-command-donut--processing' : ''; ?>"
                                 data-bbai-status-donut
                                 aria-hidden="true"
                                 style="background: <?php echo esc_attr($bbai_donut_initial_background); ?>;"
@@ -468,8 +640,14 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
                             <div class="bbai-command-status__content">
                                 <p class="bbai-command-status__label"><?php esc_html_e('Coverage', 'beepbeep-ai-alt-text-generator'); ?></p>
                                 <div class="bbai-command-status__value-group">
-                                    <p class="bbai-command-status__value">
-                                        <span data-bbai-status-coverage-value><?php echo esc_html(number_format_i18n($coveragePercent)); ?></span><span>%</span>
+                                    <p class="bbai-command-status__value<?php echo $bbai_coverage_processing_ui ? ' bbai-command-status__value--processing' : ''; ?>">
+                                        <span class="bbai-command-status__coverage-percent-wrap" data-bbai-status-coverage-percent-wrap<?php echo $bbai_coverage_processing_ui ? ' hidden' : ''; ?>>
+                                            <span data-bbai-status-coverage-value><?php echo esc_html(number_format_i18n($coveragePercent)); ?></span><span>%</span>
+                                        </span>
+                                        <span class="bbai-command-status__coverage-processing" data-bbai-status-coverage-processing<?php echo $bbai_coverage_processing_ui ? '' : ' hidden'; ?>>
+                                            <span class="bbai-command-status__processing-spinner" aria-hidden="true"></span>
+                                            <span data-bbai-status-coverage-processing-text><?php echo esc_html($bbai_coverage_processing_msg); ?></span>
+                                        </span>
                                     </p>
                                     <p class="bbai-command-status__motivation" data-bbai-status-coverage-motivation<?php echo '' !== $bbai_coverage_motivation ? '' : ' hidden'; ?>><?php echo esc_html($bbai_coverage_motivation); ?></p>
                                     <span class="bbai-command-status__coverage-badge" data-bbai-status-coverage-badge<?php echo '' !== $bbai_coverage_badge ? '' : ' hidden'; ?>><?php echo esc_html($bbai_coverage_badge); ?></span>
@@ -533,8 +711,8 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
                 <article class="bbai-dashboard-card bbai-command-card bbai-command-card--plan bbai-product-rail-surface" aria-labelledby="bbai-plan-title">
                     <header class="bbai-command-card__header bbai-command-card__header--with-badge">
                         <div>
-                            <p class="bbai-command-card__eyebrow"><?php esc_html_e('Plan & usage', 'beepbeep-ai-alt-text-generator'); ?></p>
-                            <h2 id="bbai-plan-title" class="bbai-command-card__title"><?php esc_html_e('Current allowance', 'beepbeep-ai-alt-text-generator'); ?></h2>
+                            <p class="bbai-command-card__eyebrow bbai-section-label bbai-card-label"><?php esc_html_e('Plan & usage', 'beepbeep-ai-alt-text-generator'); ?></p>
+                            <h2 id="bbai-plan-title" class="bbai-command-card__title bbai-section-title bbai-card-title"><?php esc_html_e('Current allowance', 'beepbeep-ai-alt-text-generator'); ?></h2>
                         </div>
                         <span class="bbai-command-plan__low-credits-badge" data-bbai-plan-low-credits-badge<?php echo ($creditsRemaining > 0 && $creditsRemaining <= BBAI_BANNER_LOW_CREDITS_THRESHOLD) ? '' : ' hidden'; ?>><?php esc_html_e('Low credits', 'beepbeep-ai-alt-text-generator'); ?></span>
                     </header>
@@ -577,7 +755,13 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
                         </div>
                         <?php
                         $bbai_has_enough_credits = $missingCount > 0 && $creditsRemaining >= $missingCount;
-                        $bbai_show_plan_note = !$isProPlan || $missingCount > 0;
+                        $bbai_show_plan_note = (!$isProPlan || $missingCount > 0)
+                            && !bbai_banner_suppress_dashboard_plan_attention_note(
+                                $bbai_primary_banner_state,
+                                $missingCount,
+                                $weakCount
+                            )
+                            && ! $bbai_dashboard_primary_missing;
                         ?>
                         <p class="bbai-command-plan__upgrade-note" data-bbai-plan-upgrade-note<?php echo $bbai_show_plan_note ? '' : ' hidden'; ?>>
                             <?php if ($isProPlan && $missingCount > 0) : ?>
@@ -613,6 +797,17 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
                     </div>
                 </article>
             </div>
+
+            <?php
+            if (
+                !$bbai_ftue_show_hero
+                && !bbai_banner_is_priority_slot_active($bbai_dashboard_banner_slot)
+                && $bbai_retention_strip
+                && is_readable($bbai_retention_partial)
+            ) {
+                include $bbai_retention_partial;
+            }
+            ?>
 
             <div
                 class="bbai-dashboard-review-overlay"
@@ -653,5 +848,8 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
 
             <div class="bbai-dashboard-feedback" data-bbai-dashboard-feedback hidden aria-live="polite" role="status"></div>
         </div>
+        <?php else : ?>
+        <div class="bbai-dashboard-feedback bbai-dashboard-feedback--onboarding" data-bbai-dashboard-feedback hidden aria-live="polite" role="status"></div>
+        <?php endif; ?>
     </div>
 <?php endif; ?>

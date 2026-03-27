@@ -57,7 +57,7 @@
 
     function restore(btn) {
         var original = btn.data('original-text');
-        btn.text(original || __('Generate Alt', 'beepbeep-ai-alt-text-generator'));
+        btn.text(original || __('Generate missing ALT text', 'beepbeep-ai-alt-text-generator'));
         if (btn.is('button, input')) {
             btn.prop('disabled', false);
         }

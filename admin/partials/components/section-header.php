@@ -17,14 +17,14 @@ if (!defined('ABSPATH')) {
 }
 
 $bbai_ui = isset($bbai_ui) && is_array($bbai_ui) ? $bbai_ui : [];
-$bbai_root_class = isset($bbai_ui['class']) ? trim((string) $bbai_ui['class']) : 'bbai-ui-section-header';
+$bbai_root_class = isset($bbai_ui['class']) ? trim((string) $bbai_ui['class']) : 'bbai-ui-section-header bbai-section-header';
 $bbai_eyebrow = trim((string) ($bbai_ui['eyebrow'] ?? ''));
 $bbai_title = (string) ($bbai_ui['title'] ?? '');
 $bbai_description = trim((string) ($bbai_ui['description'] ?? ''));
 $bbai_actions = (string) ($bbai_ui['actions_html'] ?? '');
-$bbai_eyebrow_class = isset($bbai_ui['eyebrow_class']) ? trim((string) $bbai_ui['eyebrow_class']) : 'bbai-ui-section-header__eyebrow';
-$bbai_title_class = isset($bbai_ui['title_class']) ? trim((string) $bbai_ui['title_class']) : 'bbai-ui-section-header__title';
-$bbai_desc_class = isset($bbai_ui['description_class']) ? trim((string) $bbai_ui['description_class']) : 'bbai-ui-section-header__description';
+$bbai_eyebrow_class = isset($bbai_ui['eyebrow_class']) ? trim((string) $bbai_ui['eyebrow_class']) : 'bbai-ui-section-header__eyebrow bbai-section-label bbai-card-label';
+$bbai_title_class = isset($bbai_ui['title_class']) ? trim((string) $bbai_ui['title_class']) : 'bbai-ui-section-header__title bbai-section-title bbai-card-title';
+$bbai_desc_class = isset($bbai_ui['description_class']) ? trim((string) $bbai_ui['description_class']) : 'bbai-ui-section-header__description bbai-section-description bbai-card-description';
 $bbai_title_tag = isset($bbai_ui['title_tag']) && 'h3' === (string) $bbai_ui['title_tag'] ? 'h3' : 'h2';
 ?>
 <header class="<?php echo esc_attr($bbai_root_class); ?>">

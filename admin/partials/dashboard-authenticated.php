@@ -36,23 +36,15 @@ use BeepBeepAI\AltTextGenerator\Usage_Tracker;
                 // Get raw values directly from the stats array - same calculation method as Settings tab
                 $bbai_dashboard_used = max(0, intval($bbai_usage_stats['used'] ?? 0));
                 $bbai_dashboard_limit = max(1, intval($bbai_usage_stats['limit'] ?? 50));
-                $bbai_dashboard_remaining = max(0, intval($bbai_usage_stats['remaining'] ?? 50));
-                
-                // Recalculate remaining to ensure accuracy
-                $bbai_dashboard_remaining = max(0, $bbai_dashboard_limit - $bbai_dashboard_used);
-                
-                // Cap used at limit to prevent showing > 100%
-                if ($bbai_dashboard_used > $bbai_dashboard_limit) {
-                    $bbai_dashboard_used = $bbai_dashboard_limit;
-                    $bbai_dashboard_remaining = 0;
-                }
+                $bbai_dashboard_remaining = max(0, intval($bbai_usage_stats['remaining'] ?? 0));
                 
                 // Calculate percentage - same way as Settings tab
-                $bbai_percentage = $bbai_dashboard_limit > 0 ? (($bbai_dashboard_used / $bbai_dashboard_limit) * 100) : 0;
+                $bbai_percentage_used = min($bbai_dashboard_used, $bbai_dashboard_limit);
+                $bbai_percentage = $bbai_dashboard_limit > 0 ? (($bbai_percentage_used / $bbai_dashboard_limit) * 100) : 0;
                 $bbai_percentage = min(100, max(0, $bbai_percentage));
                 
                 // If at limit, ensure it shows 100%
-                if ($bbai_dashboard_used >= $bbai_dashboard_limit && $bbai_dashboard_remaining <= 0) {
+                if ($bbai_percentage_used >= $bbai_dashboard_limit && $bbai_dashboard_remaining <= 0) {
                     $bbai_percentage = 100;
                 }
                 

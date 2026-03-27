@@ -116,6 +116,10 @@ trait Core_Ajax_Auth {
             require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-token-quota-service.php';
             \BeepBeepAI\AltTextGenerator\Token_Quota_Service::clear_cache();
 
+            if ( function_exists( 'bbai_telemetry_emit' ) ) {
+                bbai_telemetry_emit( 'account_created', [ 'source' => 'ajax_register' ] );
+            }
+
             wp_send_json_success([
                 'message' => __('Account created successfully', 'beepbeep-ai-alt-text-generator'),
 	                'user' => $result['user'] ?? null

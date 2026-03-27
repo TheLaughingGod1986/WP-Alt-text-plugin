@@ -31,6 +31,19 @@
     background: rgba(255, 255, 255, 0.9);
 }
 
+.bbai-command-hero-host .bbai-page-hero--info.bbai-banner--info {
+    border-color: #dbeafe;
+    background:
+        radial-gradient(circle at top right, rgba(37, 99, 235, 0.05), transparent 38%),
+        linear-gradient(140deg, #fdfeff 0%, #f4f8ff 55%, #ffffff 100%);
+}
+
+.bbai-command-hero-host .bbai-page-hero--info .bbai-page-hero__icon.bbai-banner__icon {
+    color: #1d4ed8;
+    border-color: rgba(59, 130, 246, 0.22);
+    background: rgba(239, 246, 255, 0.95);
+}
+
 /* Title wrap: eyebrow + h1 stack */
 .bbai-command-hero-host .bbai-page-hero__title-wrap .bbai-page-hero__eyebrow + .bbai-banner__headline {
     margin-top: 0;

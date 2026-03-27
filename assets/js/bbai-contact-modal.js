@@ -99,7 +99,7 @@
                                     <textarea 
                                         id="bbai-contact-message" 
                                         name="message" 
-                                        class="bbai-contact-form-textarea" 
+                                        class="bbai-contact-form-textarea bbai-textarea" 
                                         required 
                                         rows="5"
                                         placeholder="${__('Please describe your issue or question...', 'beepbeep-ai-alt-text-generator')}"

@@ -238,14 +238,90 @@ class API_Client_V2 {
      */
     public function get_license_data() {
         $data = get_option($this->license_data_option_key, null);
-        return ($data !== false && $data !== null) ? $data : null;
+        if ($data === false || $data === null || !is_array($data)) {
+            return null;
+        }
+
+        return $this->normalize_license_data_snapshot($data);
     }
 
     /**
      * Store license data
      */
     public function set_license_data($license_data) {
-        update_option($this->license_data_option_key, $license_data, false);
+        if (!is_array($license_data)) {
+            return;
+        }
+
+        update_option($this->license_data_option_key, $this->normalize_license_data_snapshot($license_data), false);
+    }
+
+    /**
+     * Normalize a stored license snapshot so callers always see the quota model
+     * used by the backend usage endpoint.
+     *
+     * @param array $license_data Stored license payload.
+     * @return array
+     */
+    private function normalize_license_data_snapshot(array $license_data): array {
+        $normalized = $license_data;
+
+        if (isset($normalized['organization']) && is_array($normalized['organization'])) {
+            $org = $normalized['organization'];
+
+            $used = max(
+                0,
+                intval($org['used'] ?? $org['creditsUsed'] ?? $org['credits_used'] ?? 0)
+            );
+            $limit = intval(
+                $org['limit']
+                ?? $org['creditsTotal']
+                ?? $org['credits_total']
+                ?? $org['creditsLimit']
+                ?? $org['monthly_limit']
+                ?? 0
+            );
+            if ($limit <= 0) {
+                $limit = 50;
+            }
+
+            $remaining = intval(
+                $org['remaining']
+                ?? $org['creditsRemaining']
+                ?? $org['credits_remaining']
+                ?? max(0, $limit - $used)
+            );
+            if ($remaining < 0) {
+                $remaining = 0;
+            }
+            if ($used > $limit) {
+                $used = $limit;
+                $remaining = 0;
+            }
+
+            $plan = strtolower((string) ($org['plan'] ?? $org['plan_type'] ?? 'free'));
+
+            $org['used'] = $used;
+            $org['limit'] = $limit;
+            $org['remaining'] = $remaining;
+            $org['creditsUsed'] = $used;
+            $org['creditsTotal'] = $limit;
+            $org['creditsLimit'] = $limit;
+            $org['creditsRemaining'] = $remaining;
+            $org['plan'] = $plan;
+            $org['plan_type'] = $plan;
+
+            if (!empty($org['resetDate'])) {
+                $org['resetDate'] = sanitize_text_field((string) $org['resetDate']);
+            } elseif (!empty($org['reset_date'])) {
+                $org['resetDate'] = sanitize_text_field((string) $org['reset_date']);
+            }
+
+            unset($org['token' . 'Limit'], $org['tokens' . 'Remaining']);
+            $normalized['organization'] = $org;
+        }
+
+        return $normalized;
     }
 
     /**
@@ -1366,8 +1442,15 @@ class API_Client_V2 {
                 'used' => 0,
                 'remaining' => 50,
                 'limit' => 50,
+                'creditsUsed' => 0,
+                'creditsRemaining' => 50,
+                'creditsTotal' => 50,
+                'creditsLimit' => 50,
                 'plan' => 'free',
+                'plan_type' => 'free',
                 'resetDate' => '',
+                'reset_date' => '',
+                'source' => 'local_snapshot',
                 'authenticated' => false,
             ];
         }
@@ -1378,27 +1461,8 @@ class API_Client_V2 {
         $response = $this->make_request('/api/usage');
 
         if (is_wp_error($response)) {
-            // If API call fails, try to use cached usage as fallback
-            if ($has_license && $license_cache) {
-                $cached_usage = $this->format_license_usage_from_cache($license_cache);
-                if ($cached_usage) {
-                    return $cached_usage;
-                }
-            }
-            
-            // For non-license accounts, try cached usage as fallback
-            if (!$has_license) {
-                require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
-                $cached_usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
-                // Only use cached usage if it's a valid array with remaining credits >= 0
-                // This ensures we have valid data before falling back to cache
-                if (is_array($cached_usage) && isset($cached_usage['remaining']) && is_numeric($cached_usage['remaining']) && $cached_usage['remaining'] >= 0) {
-                    // Return cached usage if available
-                    return $cached_usage;
-                }
-            }
-            
-            return $response;
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+            return \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_local_usage_snapshot();
         }
 
         // Unwrap the response from make_request
@@ -1421,14 +1485,19 @@ class API_Client_V2 {
                 'remaining' => intval($api_data['remaining'] ?? $api_data['credits_remaining'] ?? 0),
                 'limit' => intval($api_data['limit'] ?? $api_data['total_limit'] ?? 50),
                 'plan' => $api_data['plan'] ?? $api_data['plan_type'] ?? 'free',
+                'plan_type' => $api_data['plan_type'] ?? $api_data['plan'] ?? 'free',
                 'resetDate' => $api_data['resetDate'] ?? $api_data['reset_date'] ?? '',
+                'reset_date' => $api_data['reset_date'] ?? $api_data['resetDate'] ?? '',
+                'credits_used' => intval($api_data['credits_used'] ?? $api_data['used'] ?? 0),
+                'credits_remaining' => intval($api_data['credits_remaining'] ?? $api_data['remaining'] ?? 0),
+                'credits_total' => intval($api_data['credits_total'] ?? $api_data['limit'] ?? $api_data['total_limit'] ?? 50),
             ];
 
             // Update usage cache
             require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
             \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($usage);
 
-            return $usage;
+            return \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
         }
 
         // Handle legacy/mock API response format (wrapped in success/data/usage)
@@ -1447,31 +1516,12 @@ class API_Client_V2 {
                 \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($usage);
             }
 
-            return $usage;
-        }
-
-        if ($has_license && $license_cache) {
-            $cached_usage = $this->format_license_usage_from_cache($license_cache);
-            if ($cached_usage) {
-                return $cached_usage;
-            }
-        }
-        
-        // For non-license accounts, try cached usage as fallback
-        if (!$has_license) {
             require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
-            $cached_usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
-            // Only use cached usage if it's a valid array with remaining credits >= 0
-            if (is_array($cached_usage) && isset($cached_usage['remaining']) && is_numeric($cached_usage['remaining']) && $cached_usage['remaining'] >= 0) {
-                // Return cached usage if available
-                return $cached_usage;
-            }
+            return \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
         }
 
-        return new \WP_Error(
-            'usage_failed',
-            $response['data']['error'] ?? __('Failed to get usage info', 'beepbeep-ai-alt-text-generator')
-        );
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+        return \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_local_usage_snapshot();
     }
 
     /**
@@ -1483,28 +1533,49 @@ class API_Client_V2 {
         }
 
         $org = $license_data['organization'];
-            $limit = isset($org['tokenLimit']) ? intval($org['tokenLimit']) : 10000;
-            $remaining = isset($org['tokensRemaining']) ? intval($org['tokensRemaining']) : $limit;
-            $used = max(0, $limit - $remaining);
-
-            $reset_ts = 0;
-            if (!empty($org['resetDate'])) {
-                $reset_ts = strtotime($org['resetDate']);
-            }
-            if ($reset_ts <= 0) {
-                $reset_ts = strtotime('first day of next month');
-            }
-
-            return [
-                'used' => $used,
-                'limit' => $limit,
-                'remaining' => $remaining,
-                'plan' => strtolower($org['plan'] ?? 'agency'),
-                'resetDate' => wp_date('Y-m-d', $reset_ts),
-                'reset_timestamp' => $reset_ts,
-                'seconds_until_reset' => max(0, $reset_ts - time()),
-            ];
+        $used = max(0, intval($org['used'] ?? $org['creditsUsed'] ?? $org['credits_used'] ?? 0));
+        $limit = intval($org['limit'] ?? $org['creditsTotal'] ?? $org['credits_total'] ?? $org['creditsLimit'] ?? $org['monthly_limit'] ?? 0);
+        if ($limit <= 0) {
+            $limit = 50;
         }
+
+        $remaining = intval($org['remaining'] ?? $org['creditsRemaining'] ?? $org['credits_remaining'] ?? max(0, $limit - $used));
+        if ($remaining < 0) {
+            $remaining = 0;
+        }
+        if ($used > $limit) {
+            $used = $limit;
+            $remaining = 0;
+        }
+
+        $reset_ts = 0;
+        if (!empty($org['resetDate'])) {
+            $reset_ts = strtotime($org['resetDate']);
+        } elseif (!empty($org['reset_date'])) {
+            $reset_ts = strtotime($org['reset_date']);
+        }
+        if ($reset_ts <= 0) {
+            $reset_ts = strtotime('first day of next month');
+        }
+
+        $plan = strtolower($org['plan'] ?? $org['plan_type'] ?? 'agency');
+
+        return [
+            'used' => $used,
+            'limit' => $limit,
+            'remaining' => $remaining,
+            'creditsUsed' => $used,
+            'creditsRemaining' => $remaining,
+            'creditsTotal' => $limit,
+            'creditsLimit' => $limit,
+            'plan' => $plan,
+            'plan_type' => $plan,
+            'resetDate' => wp_date('Y-m-d', $reset_ts),
+            'reset_date' => date_i18n('F j, Y', $reset_ts),
+            'reset_timestamp' => $reset_ts,
+            'seconds_until_reset' => max(0, $reset_ts - time()),
+        ];
+    }
 
     /**
      * Persist license usage snapshots so cached data stays in sync
@@ -1520,15 +1591,24 @@ class API_Client_V2 {
             $org = array_merge($org, $organization);
         }
 
-        if (isset($usage['limit'])) {
-            $org['tokenLimit'] = intval($usage['limit']);
+        $used = max(0, intval($usage['used'] ?? $usage['credits_used'] ?? 0));
+        $limit = intval($usage['limit'] ?? $usage['credits_total'] ?? $usage['total_limit'] ?? $usage['monthly_limit'] ?? 0);
+        if ($limit <= 0) {
+            $limit = max(50, $used);
+        }
+        $remaining = intval($usage['remaining'] ?? $usage['credits_remaining'] ?? max(0, $limit - $used));
+        if ($remaining < 0) {
+            $remaining = 0;
         }
 
-        if (isset($usage['remaining'])) {
-            $org['tokensRemaining'] = max(0, intval($usage['remaining']));
-        } elseif (isset($usage['used']) && isset($org['tokenLimit'])) {
-            $org['tokensRemaining'] = max(0, intval($org['tokenLimit']) - intval($usage['used']));
-        }
+        $org['used'] = $used;
+        $org['limit'] = $limit;
+        $org['remaining'] = $remaining;
+        $org['creditsUsed'] = $used;
+        $org['creditsTotal'] = $limit;
+        $org['creditsLimit'] = $limit;
+        $org['creditsRemaining'] = $remaining;
+        unset($org['token' . 'Limit'], $org['tokens' . 'Remaining']);
 
         if (!empty($usage['resetDate'])) {
             $org['resetDate'] = sanitize_text_field($usage['resetDate']);
@@ -1672,7 +1752,7 @@ class API_Client_V2 {
                 $limit = \BeepBeepAI\AltTextGenerator\bbai_get_trial_limit();
                 return new \WP_Error(
                     'bbai_trial_exhausted',
-                    __( "You've used your 10 free generations. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator' ),
+                    __( "You've used your 3 free images. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator' ),
                     [
                         'code'      => 'bbai_trial_exhausted',
                         'remaining' => 0,

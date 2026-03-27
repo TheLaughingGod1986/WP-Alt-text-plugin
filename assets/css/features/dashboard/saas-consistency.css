@@ -24,13 +24,13 @@ body.bbai-dashboard #wpcontent {
 
 /* Plugin canvas inset: matches header bar; not browser edge-to-edge */
 body.bbai-dashboard .wrap.bbai-wrap > .bbai-header {
-    padding-left: 24px;
-    padding-right: 32px;
+    padding-left: var(--bbai-space-6);
+    padding-right: var(--bbai-space-8);
 }
 
 body.bbai-dashboard .wrap.bbai-wrap > .bbai-container.bbai-content-shell {
-    padding-left: 24px;
-    padding-right: 32px;
+    padding-left: var(--bbai-space-6);
+    padding-right: var(--bbai-space-8);
     padding-top: 0;
     padding-bottom: 0;
     box-sizing: border-box;
@@ -42,8 +42,8 @@ body.bbai-dashboard .wrap.bbai-wrap > .bbai-container:not(.bbai-content-shell) {
     width: 100%;
     margin-left: 0;
     margin-right: 0;
-    padding-left: 24px;
-    padding-right: 32px;
+    padding-left: var(--bbai-space-6);
+    padding-right: var(--bbai-space-8);
     box-sizing: border-box;
 }
 
@@ -106,48 +106,52 @@ body.bbai-dashboard [data-bbai-library-workspace-root] .bbai-library-main {
     }
 }
 
-/* ── Global spacing tokens (only three — document-wide, no per-page overrides) ─ */
+/* ── Global spacing tokens (page rhythm only — do not redefine --bbai-space-*; unified.css owns the 4px scale) ─ */
 :root {
-    /* Spacing scale — use across Dashboard, Library, Analytics */
-    --bbai-space-8: 8px;
-    --bbai-space-12: 12px;
-    --bbai-space-16: 16px;
-    --bbai-space-20: 20px;
-    --bbai-space-24: 24px;
-    --bbai-space-32: 32px;
-    --page-padding-top: 24px;
-    --section-spacing: 24px;
-    --card-gap: 16px;
+    --page-padding-top: var(--bbai-space-6);
+    --section-spacing: var(--bbai-space-6);
+    --card-gap: var(--bbai-space-4);
     /* Single product primary CTA (physical spec — Dashboard is source of truth) */
     --bbai-cta-primary-bg: #10b981;
     --bbai-cta-primary-bg-hover: #059669;
     --bbai-cta-primary-bg-active: #047857;
     --bbai-cta-primary-min-height: 40px;
-    --bbai-cta-primary-padding-x: 16px;
+    --bbai-cta-primary-padding-x: var(--bbai-space-4);
     --bbai-cta-primary-min-width: 220px;
     --bbai-cta-primary-min-width-rail: 200px;
-    --bbai-cta-primary-radius: 8px;
+    --bbai-cta-primary-radius: var(--bbai-space-2);
     --bbai-cta-primary-font-size: 14px;
     --bbai-cta-primary-font-weight: 500;
     --bbai-cta-primary-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
     --bbai-cta-primary-shadow-hover: 0 3px 10px rgba(15, 23, 42, 0.1);
     --bbai-cta-primary-transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
     /* Vertical rhythm: space above primary action groups */
-    --bbai-cta-group-margin-top: 16px;
+    --bbai-cta-group-margin-top: var(--bbai-space-4);
+}
+
+/*
+ * Single page scrollbar: wide tables use a horizontal scrollport only.
+ * Spec: if overflow-x is not visible, overflow-y: visible computes to auto — nested vertical scrollbar.
+ */
+body.bbai-dashboard .bbai-table-wrap,
+body.bbai-dashboard .bbai-table-scroll {
+    overflow-x: auto;
+    overflow-y: clip;
+    -webkit-overflow-scrolling: touch;
 }
 
 /* Ensure plugin screens inside .wrap inherit the same values explicitly */
 .wrap.bbai-wrap,
 .wrap.bbai-wrap.bbai-modern {
-    --page-padding-top: 24px;
-    --section-spacing: 24px;
-    --card-gap: 16px;
-    --bbai-cta-primary-radius: 8px;
+    --page-padding-top: var(--bbai-space-6);
+    --section-spacing: var(--bbai-space-6);
+    --card-gap: var(--bbai-space-4);
+    --bbai-cta-primary-radius: var(--bbai-space-2);
     --bbai-cta-primary-font-size: 14px;
     --bbai-cta-primary-font-weight: 500;
     --bbai-cta-primary-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
     --bbai-cta-primary-shadow-hover: 0 3px 10px rgba(15, 23, 42, 0.1);
-    --bbai-cta-group-margin-top: 16px;
+    --bbai-cta-group-margin-top: var(--bbai-space-4);
     --bbai-cta-primary-transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
     /* Legacy modern.bundle tokens → one green primary system inside plugin UI */
     --bbai-color-primary: #10b981;
@@ -203,7 +207,6 @@ body.bbai-dashboard [data-bbai-library-workspace-root] .bbai-library-main {
 .bbai-usage-status,
 .bbai-analytics-trend-block,
 .bbai-library-summary-card,
-.bbai-library-guidance,
 .bbai-lib-core-card,
 .bbai-settings-card,
 .bbai-settings-plan-summary-card {
@@ -220,7 +223,6 @@ body.bbai-dashboard [data-bbai-library-workspace-root] .bbai-library-main {
 .wrap.bbai-wrap .bbai-usage-status:hover,
 .wrap.bbai-wrap .bbai-analytics-trend-block:hover,
 .wrap.bbai-wrap .bbai-library-summary-card:hover,
-.wrap.bbai-wrap .bbai-library-guidance:hover,
 .wrap.bbai-wrap .bbai-lib-core-card:hover,
 .wrap.bbai-wrap .bbai-settings-card:hover,
 .wrap.bbai-wrap .bbai-settings-plan-summary-card:hover {
@@ -445,7 +447,7 @@ body.bbai-dashboard [data-bbai-library-workspace-root] .bbai-library-main {
 .bbai-workspace-grid {
     display: grid;
     grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.95fr);
-    gap: var(--bbai-space-24, 24px);
+    gap: var(--section-spacing, var(--bbai-space-6));
     align-items: start;
 }
 
@@ -460,7 +462,7 @@ body.bbai-dashboard [data-bbai-library-workspace-root] .bbai-library-main {
 
 /* Supporting rail — quieter than primary column (one main block per page) */
 .bbai-product-rail__inner {
-    padding: var(--bbai-space-20, 20px) var(--bbai-space-20, 20px) var(--bbai-space-20, 20px);
+    padding: var(--bbai-space-5);
     border-radius: 14px;
     border: 1px solid rgba(241, 245, 249, 0.95);
     background: #fafbfc;
@@ -474,7 +476,7 @@ body.bbai-dashboard [data-bbai-library-workspace-root] .bbai-library-main {
 }
 
 .bbai-product-rail__title {
-    margin: 0 0 var(--bbai-space-8, 8px);
+    margin: 0 0 var(--bbai-space-2);
     font-size: 16px;
     font-weight: 600;
     line-height: 1.3;
@@ -483,7 +485,7 @@ body.bbai-dashboard [data-bbai-library-workspace-root] .bbai-library-main {
 }
 
 .bbai-product-rail__copy {
-    margin: 0 0 var(--bbai-space-16, 16px);
+    margin: 0 0 var(--bbai-space-4);
     font-size: 13px;
     line-height: 1.5;
     color: #64748b;
@@ -493,8 +495,8 @@ body.bbai-dashboard [data-bbai-library-workspace-root] .bbai-library-main {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--bbai-space-8, 8px);
-    margin-bottom: var(--bbai-space-12, 12px);
+    gap: var(--bbai-rhythm-action-stack-gap, var(--bbai-space-2));
+    margin-bottom: var(--bbai-space-3);
 }
 
 .bbai-product-rail__actions:last-child {
@@ -506,7 +508,7 @@ body.bbai-dashboard [data-bbai-library-workspace-root] .bbai-library-main {
 }
 
 .bbai-product-rail__meta {
-    margin: 0 0 var(--bbai-space-12, 12px);
+    margin: 0 0 var(--bbai-space-3);
     font-size: 12px;
     line-height: 1.45;
     color: #64748b;
@@ -517,8 +519,8 @@ body.bbai-dashboard [data-bbai-library-workspace-root] .bbai-library-main {
 }
 
 .bbai-product-rail__foot {
-    margin: var(--bbai-space-12, 12px) 0 0;
-    padding-top: var(--bbai-space-12, 12px);
+    margin: var(--bbai-space-3) 0 0;
+    padding-top: var(--bbai-space-3);
     border-top: 1px solid rgba(241, 245, 249, 0.9);
 }
 
@@ -529,10 +531,77 @@ body.bbai-dashboard [data-bbai-library-workspace-root] .bbai-library-main {
 }
 
 /* Dashboard command grid — same ratio as workspace (primary + rail) */
+#bbai-dashboard-main .bbai-top-section-stack,
+body.bbai-dashboard .bbai-library-workspace .bbai-top-section-stack {
+    display: grid;
+    gap: var(--section-spacing, var(--bbai-space-6));
+    align-content: start;
+}
+
+/* Shared banner shell parity across Dashboard, Library, Analytics, Usage.
+ * Neutralizes dashboard-only drift from legacy selectors by forcing one
+ * canonical layout contract for .bbai-status-banner.
+ */
+body.bbai-dashboard .bbai-command-hero-host .bbai-status-banner.bbai-dashboard-hero--command,
+body.bbai-dashboard #bbai-dashboard-main .bbai-status-banner.bbai-dashboard-hero--command {
+    padding: 11px 20px !important;
+    border-radius: 16px !important;
+}
+
+body.bbai-dashboard .bbai-command-hero-host .bbai-status-banner.bbai-dashboard-hero--command .bbai-banner__layout.bbai-dashboard-hero__layout,
+body.bbai-dashboard #bbai-dashboard-main .bbai-status-banner.bbai-dashboard-hero--command .bbai-banner__layout.bbai-dashboard-hero__layout {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    column-gap: var(--card-gap, 24px) !important;
+    row-gap: var(--bbai-space-2, 8px) !important;
+}
+
+@media (max-width: 1023px) {
+    body.bbai-dashboard .bbai-command-hero-host .bbai-status-banner.bbai-dashboard-hero--command .bbai-banner__layout.bbai-dashboard-hero__layout,
+    body.bbai-dashboard #bbai-dashboard-main .bbai-status-banner.bbai-dashboard-hero--command .bbai-banner__layout.bbai-dashboard-hero__layout {
+        grid-template-columns: minmax(0, 1fr) !important;
+        row-gap: var(--bbai-space-4, 16px) !important;
+        column-gap: 0 !important;
+    }
+}
+
+body.bbai-dashboard .bbai-command-hero-host .bbai-status-banner.bbai-dashboard-hero--command .bbai-banner__icon.bbai-dashboard-hero__icon,
+body.bbai-dashboard #bbai-dashboard-main .bbai-status-banner.bbai-dashboard-hero--command .bbai-banner__icon.bbai-dashboard-hero__icon {
+    width: 32px !important;
+    height: 32px !important;
+    flex-basis: 32px !important;
+}
+
+body.bbai-dashboard .bbai-command-hero-host .bbai-status-banner.bbai-dashboard-hero--command .bbai-banner__headline.bbai-dashboard-hero__headline,
+body.bbai-dashboard #bbai-dashboard-main .bbai-status-banner.bbai-dashboard-hero--command .bbai-banner__headline.bbai-dashboard-hero__headline {
+    font-size: 28px !important;
+    line-height: 1.08 !important;
+}
+
+body.bbai-dashboard .bbai-library-workspace .bbai-command-card--workspace {
+    padding: 0;
+    border-radius: 16px;
+}
+
+body.bbai-dashboard .bbai-library-workspace .bbai-command-card--workspace .bbai-library-workspace-card__head {
+    padding-top: var(--bbai-command-card-padding, var(--bbai-rhythm-card-padding, var(--bbai-space-6)));
+}
+
+body.bbai-dashboard .bbai-library-workspace .bbai-command-card--workspace .bbai-library-workspace-card__filter-toolbar {
+    padding-top: var(--bbai-space-4);
+}
+
 #bbai-dashboard-main .bbai-dashboard-command__grid {
     grid-template-columns: minmax(0, 1.7fr) minmax(260px, 0.95fr);
-    gap: var(--bbai-space-24, 24px);
+    gap: var(--section-spacing, var(--bbai-space-6));
     align-items: start;
+}
+
+/* Keep CTA hierarchy visually consistent between Dashboard and Library action surfaces. */
+#bbai-dashboard-main .bbai-dashboard-primary-action-card .bbai-command-action.bbai-btn,
+#bbai-dashboard-main .bbai-dashboard-card .bbai-command-action.bbai-btn {
+    min-height: var(--bbai-control-height-lg, 44px);
+    border-radius: var(--bbai-radius-md, 10px);
+    font-weight: 600;
 }
 
 #bbai-dashboard-main .bbai-command-card--plan.bbai-product-rail-surface {

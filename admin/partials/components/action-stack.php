@@ -1,6 +1,6 @@
 <?php
 /**
- * Banner / hero CTA column — shared by status-banner only.
+ * Banner / hero CTA column — shared by bbai-banner (status-banner.php).
  *
  * Expects `$bbai_action_stack_cfg` (array):
  * - has_primary, has_secondary, has_tertiary (bool)

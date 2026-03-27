@@ -247,10 +247,10 @@ $bbai_debug_embedded = !empty($bbai_debug_embedded);
         </section>
 
         <section class="bbai-card bbai-mb-6" data-debug-recent-errors-section <?php if (empty($bbai_recent_errors)) : ?>hidden<?php endif; ?>>
-            <div class="bbai-card-header">
+            <div class="bbai-card-header bbai-table-header">
                 <h2 class="bbai-card-title"><?php esc_html_e('Recent Errors', 'beepbeep-ai-alt-text-generator'); ?></h2>
             </div>
-            <div class="bbai-table-wrap">
+            <div class="bbai-table-wrap bbai-table__scroll">
                 <table class="bbai-table">
                     <thead>
                         <tr>
@@ -294,11 +294,11 @@ $bbai_debug_embedded = !empty($bbai_debug_embedded);
                                 </tr>
                             <?php endforeach; ?>
                         <?php else : ?>
-                            <tr>
-                                <td colspan="4" class="bbai-text-center bbai-text-muted bbai-text-sm">
-                                    <?php esc_html_e('No warnings or errors recorded yet.', 'beepbeep-ai-alt-text-generator'); ?>
-                                </td>
-                            </tr>
+                                <tr class="bbai-row">
+                                    <td colspan="4" class="bbai-text-center bbai-text-muted bbai-text-sm bbai-table-empty bbai-table-empty--cell">
+                                        <?php esc_html_e('No warnings or errors recorded yet.', 'beepbeep-ai-alt-text-generator'); ?>
+                                    </td>
+                                </tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
@@ -308,7 +308,7 @@ $bbai_debug_embedded = !empty($bbai_debug_embedded);
         <form data-debug-filter class="bbai-filter-form bbai-mb-6">
             <div>
                 <label for="bbai-debug-level" class="bbai-filter-label"><?php esc_html_e('Level', 'beepbeep-ai-alt-text-generator'); ?></label>
-                <select id="bbai-debug-level" name="level" class="bbai-filter-select">
+                <select id="bbai-debug-level" name="level" class="bbai-filter-select bbai-select">
                     <option value=""><?php esc_html_e('All levels', 'beepbeep-ai-alt-text-generator'); ?></option>
                     <option value="debug"><?php esc_html_e('Debug', 'beepbeep-ai-alt-text-generator'); ?></option>
                     <option value="info"><?php esc_html_e('Info', 'beepbeep-ai-alt-text-generator'); ?></option>
@@ -319,13 +319,13 @@ $bbai_debug_embedded = !empty($bbai_debug_embedded);
             <div>
                 <label class="bbai-filter-label"><?php esc_html_e('Date Range', 'beepbeep-ai-alt-text-generator'); ?></label>
                 <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--bbai-space-2);">
-                    <input type="date" id="bbai-debug-date-from" name="date_from" class="bbai-filter-input" aria-label="<?php esc_attr_e('Start date', 'beepbeep-ai-alt-text-generator'); ?>">
-                    <input type="date" id="bbai-debug-date-to" name="date_to" class="bbai-filter-input" aria-label="<?php esc_attr_e('End date', 'beepbeep-ai-alt-text-generator'); ?>">
+                    <input type="date" id="bbai-debug-date-from" name="date_from" class="bbai-filter-input bbai-input" aria-label="<?php esc_attr_e('Start date', 'beepbeep-ai-alt-text-generator'); ?>">
+                    <input type="date" id="bbai-debug-date-to" name="date_to" class="bbai-filter-input bbai-input" aria-label="<?php esc_attr_e('End date', 'beepbeep-ai-alt-text-generator'); ?>">
                 </div>
             </div>
             <div>
                 <label for="bbai-debug-search" class="bbai-filter-label"><?php esc_html_e('Search', 'beepbeep-ai-alt-text-generator'); ?></label>
-                <input type="search" id="bbai-debug-search" name="search" class="bbai-filter-input" placeholder="<?php esc_attr_e('Search logs', 'beepbeep-ai-alt-text-generator'); ?>">
+                <input type="search" id="bbai-debug-search" name="search" class="bbai-filter-input bbai-input bbai-input--search" placeholder="<?php esc_attr_e('Search logs', 'beepbeep-ai-alt-text-generator'); ?>">
             </div>
             <div class="bbai-filter-submit">
                 <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm" data-debug-reset>
@@ -335,7 +335,7 @@ $bbai_debug_embedded = !empty($bbai_debug_embedded);
         </form>
 
         <div class="bbai-card bbai-mb-6">
-            <div class="bbai-table-wrap">
+            <div class="bbai-table-wrap bbai-table__scroll">
                 <table class="bbai-table">
                     <thead>
                         <tr>
@@ -408,8 +408,8 @@ $bbai_debug_embedded = !empty($bbai_debug_embedded);
                                 </tr>
                             <?php endforeach; ?>
                         <?php else : ?>
-                            <tr>
-                                <td colspan="4" class="bbai-text-center bbai-text-muted bbai-text-sm">
+                            <tr class="bbai-row">
+                                <td colspan="4" class="bbai-text-center bbai-text-muted bbai-text-sm bbai-table-empty bbai-table-empty--cell">
                                     <?php esc_html_e('No logs recorded yet.', 'beepbeep-ai-alt-text-generator'); ?>
                                 </td>
                             </tr>
@@ -420,7 +420,7 @@ $bbai_debug_embedded = !empty($bbai_debug_embedded);
         </div>
 
         <?php if ($bbai_debug_pages > 1) : ?>
-        <div class="bbai-pagination bbai-mb-6">
+        <div class="bbai-pagination bbai-table-meta bbai-mb-6">
             <span class="bbai-pagination-info" data-debug-page-indicator>
                 <?php
                     printf(

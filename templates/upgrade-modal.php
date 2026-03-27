@@ -96,33 +96,33 @@ $bbai_is_growth_plan = ('growth' === $bbai_current_plan);
 $bbai_is_agency_plan = ('agency' === $bbai_current_plan);
 
 $bbai_modal_title = $bbai_is_free_plan
-    ? __('You\'re almost out of ALT credits', 'beepbeep-ai-alt-text-generator')
+    ? __('Continue improving your library', 'beepbeep-ai-alt-text-generator')
     : __('Manage your BeepBeep AI plan', 'beepbeep-ai-alt-text-generator');
 
 $bbai_modal_subtitle = $bbai_is_free_plan
     ? sprintf(
         /* translators: 1: used credits, 2: credit limit */
-        __('You\'ve used %1$s of %2$s credits. Choose how you want to continue.', 'beepbeep-ai-alt-text-generator'),
+        __('You\'ve already improved %1$s of %2$s images this month. Keep your images optimised automatically as you continue.', 'beepbeep-ai-alt-text-generator'),
         number_format_i18n($bbai_usage_used),
         number_format_i18n($bbai_usage_limit)
     )
     : __('Compare plans, manage billing, or add one-time credits for smaller batches.', 'beepbeep-ai-alt-text-generator');
 
 $bbai_locked_modal_title = $bbai_is_free_plan
-    ? __('You\'re out of ALT credits', 'beepbeep-ai-alt-text-generator')
+    ? __('You’ve used this month’s free allowance', 'beepbeep-ai-alt-text-generator')
     : __('Manage your BeepBeep AI plan', 'beepbeep-ai-alt-text-generator');
 
 $bbai_locked_modal_subtitle = $bbai_is_free_plan
     ? sprintf(
         /* translators: 1: used credits, 2: credit limit */
-        __('You\'ve used %1$s of %2$s credits. Choose how you want to continue.', 'beepbeep-ai-alt-text-generator'),
+        __('You\'ve already improved %1$s of %2$s images. Your existing results are still available to review.', 'beepbeep-ai-alt-text-generator'),
         number_format_i18n($bbai_usage_used),
         number_format_i18n($bbai_usage_limit)
     )
     : __('Compare plans, manage billing, or add one-time credits for smaller batches.', 'beepbeep-ai-alt-text-generator');
 
 $bbai_credit_pack_price = number_format((float) ($bbai_currency['credits'] ?? 9.99), 2);
-$bbai_credit_pack_button_label = __('Buy credits', 'beepbeep-ai-alt-text-generator');
+$bbai_credit_pack_button_label = __('Buy more credits', 'beepbeep-ai-alt-text-generator');
 $bbai_credit_pack_title = __('Buy 100 extra credits', 'beepbeep-ai-alt-text-generator');
 $bbai_credit_pack_description = __('A one-time top-up for occasional usage.', 'beepbeep-ai-alt-text-generator');
 $bbai_credit_pack_summary = sprintf(
@@ -133,7 +133,7 @@ $bbai_credit_pack_summary = sprintf(
 );
 
 $bbai_primary_button_label = $bbai_is_free_plan
-    ? __('Enable automatic optimisation', 'beepbeep-ai-alt-text-generator')
+    ? __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator')
     : __('Open billing portal', 'beepbeep-ai-alt-text-generator');
 
 $bbai_primary_price = $bbai_is_free_plan
@@ -152,14 +152,14 @@ $bbai_decision_title = $bbai_is_free_plan
 $bbai_decision_copy = $bbai_is_free_plan
     ? sprintf(
         /* translators: 1: currency symbol, 2: monthly Growth price */
-        __('Upgrade to Growth - %1$s%2$s/month', 'beepbeep-ai-alt-text-generator'),
+        __('Unlock more monthly ALT text generation and keep automation running — %1$s%2$s/month', 'beepbeep-ai-alt-text-generator'),
         $bbai_currency['symbol'],
         number_format($bbai_growth_monthly, 2)
     )
     : __('Open your billing portal to manage your plan, payment method, or subscription.', 'beepbeep-ai-alt-text-generator');
 
 $bbai_limit_label = $bbai_is_free_plan
-    ? __('You’re hitting your limit', 'beepbeep-ai-alt-text-generator')
+    ? __('Continue generating ALT text', 'beepbeep-ai-alt-text-generator')
     : __('Usage limit reached', 'beepbeep-ai-alt-text-generator');
 
 $bbai_default_decision_note = $bbai_credit_pack_description;

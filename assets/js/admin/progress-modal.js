@@ -43,6 +43,7 @@
             '    <div class="bbai-bulk-progress-modal__content">' +
             '        <div class="bbai-bulk-progress__header">' +
             '            <h2 class="bbai-bulk-progress__title">Processing Images...</h2>' +
+            '            <p class="bbai-bulk-progress__helper" hidden></p>' +
             '            <button type="button" class="bbai-bulk-progress__close" aria-label="Close">×</button>' +
             '        </div>' +
             '        <div class="bbai-bulk-progress__body">' +
@@ -185,6 +186,67 @@
         if (!$modal.length) return;
 
         $modal.find('.bbai-bulk-progress__title').text(title);
+    };
+
+    /**
+     * Update bulk progress modal subtitle (e.g. time expectation)
+     */
+    window.updateBulkProgressSubtitle = function(text) {
+        var $modal = $('#bbai-bulk-progress-modal');
+        if (!$modal.length) return;
+
+        var $sub = $modal.find('.bbai-bulk-progress__helper');
+        if (!$sub.length) return;
+        if (text) {
+            $sub.text(text).prop('hidden', false);
+        } else {
+            $sub.text('').prop('hidden', true);
+        }
+    };
+
+    /**
+     * Show completion state inside the progress modal.
+     * Replaces the live-progress body with a success summary and CTAs.
+     */
+    window.showBulkProgressComplete = function(successes, failures) {
+        var $modal = $('#bbai-bulk-progress-modal');
+        if (!$modal.length) return;
+
+        var adminBase = (window.bbai_ajax && window.bbai_ajax.admin_url) ||
+            (window.bbai_env && window.bbai_env.admin_url) || '';
+        if (adminBase) {
+            adminBase = String(adminBase).replace(/admin\.php.*$/i, '');
+            if (adminBase.charAt(adminBase.length - 1) !== '/') {
+                adminBase += '/';
+            }
+        }
+        var libraryUrl = adminBase ? adminBase + 'admin.php?page=bbai-library' : 'admin.php?page=bbai-library';
+        var reviewResultsUrl = adminBase
+            ? adminBase + 'admin.php?page=bbai-library&status=needs_review&filter=needs-review#bbai-review-filter-tabs'
+            : 'admin.php?page=bbai-library&status=needs_review&filter=needs-review#bbai-review-filter-tabs';
+
+        var titleText    = failures > 0 ? 'Images processed with some issues' : 'All images improved \uD83C\uDF89';
+        var messageText  = failures > 0
+            ? (successes + ' succeeded, ' + failures + ' failed. Review your ALT text in the library.')
+            : 'Review and publish your ALT text';
+
+        var completionHtml =
+            '<div class="bbai-bulk-progress__complete">' +
+            '    <p class="bbai-bulk-progress__complete-title">' + titleText + '</p>' +
+            '    <p class="bbai-bulk-progress__complete-message">' + messageText + '</p>' +
+            '    <div class="bbai-bulk-progress__complete-actions">' +
+            '        <a href="' + reviewResultsUrl + '" class="button button-primary bbai-bulk-progress__complete-review">Review ALT text</a>' +
+            '        <a href="' + libraryUrl + '" class="button bbai-bulk-progress__complete-library">Open ALT Library</a>' +
+            '    </div>' +
+            '</div>';
+
+        $modal.find('.bbai-bulk-progress__title').text(titleText);
+        $modal.find('.bbai-bulk-progress__helper').prop('hidden', true);
+        $modal.find('.bbai-bulk-progress__body').html(completionHtml);
+
+        $modal.find('.bbai-bulk-progress__complete-review').on('click', function() {
+            window.hideBulkProgress();
+        });
     };
 
     /**

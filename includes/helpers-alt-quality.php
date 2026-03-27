@@ -55,21 +55,23 @@ if ( ! function_exists( 'bbai_calculate_alt_quality' ) ) {
 	function bbai_calculate_alt_quality( $alt_text, $context = array() ) {
 		if ( empty( $alt_text ) || ! is_string( $alt_text ) ) {
 			return array(
-				'score'       => 0,
-				'label'       => 'Critical',
-				'grade'       => 'F',
-				'badge'       => 'needs-work',
-				'breakdown'   => array(
+				'score'              => 0,
+				'label'              => 'Critical',
+				'grade'              => 'F',
+				'badge'              => 'needs-work',
+				'breakdown'          => array(
 					'descriptiveness' => 0,
 					'relevance'       => 0,
 					'accessibility'   => 0,
 					'seo'             => 0,
 					'conciseness'     => 0,
 				),
-				'issues'      => array( __( 'ALT text is missing.', 'beepbeep-ai-alt-text-generator' ) ),
-				'suggestions' => array( __( 'Add a description that conveys the image content to screen-reader users.', 'beepbeep-ai-alt-text-generator' ) ),
-				'hard_fail'   => true,
-				'cap'         => 0,
+				'issues'             => array( __( 'ALT text is missing.', 'beepbeep-ai-alt-text-generator' ) ),
+				'suggestions'        => array( __( 'Add a description that conveys the image content to screen-reader users.', 'beepbeep-ai-alt-text-generator' ) ),
+				'hard_fail'          => true,
+				'cap'                => 0,
+				'optimized_eligible' => false,
+				'status'             => 'missing',
 			);
 		}
 
@@ -87,21 +89,23 @@ if ( ! function_exists( 'bbai_calculate_alt_quality' ) ) {
 		}
 
 		return array(
-			'score'       => 0,
-			'label'       => 'Critical',
-			'grade'       => 'F',
-			'badge'       => 'needs-work',
-			'breakdown'   => array(
+			'score'              => 0,
+			'label'              => 'Critical',
+			'grade'              => 'F',
+			'badge'              => 'needs-work',
+			'breakdown'          => array(
 				'descriptiveness' => 0,
 				'relevance'       => 0,
 				'accessibility'   => 0,
 				'seo'             => 0,
 				'conciseness'     => 0,
 			),
-			'issues'      => array(),
-			'suggestions' => array(),
-			'hard_fail'   => false,
-			'cap'         => null,
+			'issues'             => array(),
+			'suggestions'        => array(),
+			'hard_fail'          => false,
+			'cap'                => null,
+			'optimized_eligible' => false,
+			'status'             => 'needs_review',
 		);
 	}
 }

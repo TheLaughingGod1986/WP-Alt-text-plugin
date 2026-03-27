@@ -273,11 +273,13 @@
         color var(--bbai-motion-fast, 140ms) ease;
 }
 
-.bbai-library-workspace .bbai-library-row-menu__toggle {
+.bbai-library-workspace .bbai-library-card__extra-actions .bbai-library-card__quick-action {
     transition:
         background-color var(--bbai-motion-fast, 140ms) ease,
+        border-color var(--bbai-motion-fast, 140ms) ease,
+        box-shadow var(--bbai-motion-fast, 140ms) ease,
         color var(--bbai-motion-fast, 140ms) ease,
-        opacity var(--bbai-motion-fast, 140ms) ease;
+        filter var(--bbai-motion-micro, 90ms) ease;
 }
 
 /* ── Reduced motion ───────────────────────────────────────────────────── */

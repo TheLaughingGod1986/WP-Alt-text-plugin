@@ -1,0 +1,487 @@
+/**
+ * BeepBeep AI — Phase 4 semantic status system
+ *
+ * Single visual language for: status badges, filter pills, score pills, row left rails.
+ * Tokens: bbai-admin-foundation-tokens.css (--bbai-status-*).
+ *
+ * Depends: bbai-admin-foundation-tokens, bbai-admin-design-system (toolbar primitives).
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Badges — product + DS alias                                                   */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-badge,
+body.bbai-dashboard .bbai-ds-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-1);
+    padding: var(--bbai-badge-padding-y) var(--bbai-badge-padding-x);
+    border-radius: var(--bbai-badge-radius);
+    font-size: var(--bbai-badge-font-size);
+    font-weight: var(--bbai-badge-font-weight);
+    line-height: var(--bbai-leading-none);
+    border: 1px solid transparent;
+    vertical-align: middle;
+}
+
+body.bbai-dashboard .bbai-badge--neutral,
+body.bbai-dashboard .bbai-ds-badge--neutral {
+    background: var(--bbai-ds-status-neutral-bg);
+    color: var(--bbai-ds-status-neutral-fg);
+    border-color: var(--bbai-ds-status-neutral-border);
+}
+
+body.bbai-dashboard .bbai-badge--optimized,
+body.bbai-dashboard .bbai-badge--success,
+body.bbai-dashboard .bbai-ds-badge--success {
+    background: var(--bbai-status-optimized-bg);
+    color: var(--bbai-status-optimized-fg);
+    border-color: var(--bbai-status-optimized-border);
+}
+
+body.bbai-dashboard .bbai-badge--needs-review,
+body.bbai-dashboard .bbai-badge--warning,
+body.bbai-dashboard .bbai-ds-badge--warning {
+    background: var(--bbai-status-needs-review-bg);
+    color: var(--bbai-status-needs-review-fg);
+    border-color: var(--bbai-status-needs-review-border);
+}
+
+body.bbai-dashboard .bbai-badge--missing {
+    background: var(--bbai-status-missing-bg);
+    color: var(--bbai-status-missing-fg);
+    border-color: var(--bbai-status-missing-border);
+}
+
+body.bbai-dashboard .bbai-ds-badge--error {
+    background: var(--bbai-ds-status-error-bg);
+    color: var(--bbai-ds-status-error-fg);
+    border-color: var(--bbai-ds-status-error-border);
+}
+
+body.bbai-dashboard .bbai-badge--info,
+body.bbai-dashboard .bbai-ds-badge--info {
+    background: var(--bbai-ds-status-info-bg);
+    color: var(--bbai-ds-status-info-fg);
+    border-color: var(--bbai-ds-status-info-border);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Score pills (quality tiers)                                                 */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-score-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-1);
+    padding: 3px 8px;
+    border-radius: var(--bbai-radius-full);
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-bold);
+    line-height: var(--bbai-leading-snug);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+body.bbai-dashboard .bbai-score-pill--excellent {
+    background: var(--bbai-status-score-excellent-bg);
+    color: var(--bbai-status-score-excellent-fg);
+    border-color: var(--bbai-status-score-excellent-border);
+}
+
+body.bbai-dashboard .bbai-score-pill--good {
+    background: var(--bbai-status-score-good-bg);
+    color: var(--bbai-status-score-good-fg);
+    border-color: var(--bbai-status-score-good-border);
+}
+
+body.bbai-dashboard .bbai-score-pill--needs-improvement {
+    background: var(--bbai-status-score-needs-improvement-bg);
+    color: var(--bbai-status-score-needs-improvement-fg);
+    border-color: var(--bbai-status-score-needs-improvement-border);
+}
+
+body.bbai-dashboard .bbai-score-pill--poor {
+    background: var(--bbai-status-score-poor-bg);
+    color: var(--bbai-status-score-poor-fg);
+    border-color: var(--bbai-status-score-poor-border);
+}
+
+body.bbai-dashboard .bbai-score-pill--critical {
+    background: var(--bbai-status-score-critical-bg);
+    color: var(--bbai-status-score-critical-fg);
+    border-color: var(--bbai-status-score-critical-border);
+}
+
+/* Library score badge = score pill family */
+body.bbai-dashboard .bbai-library-score-badge {
+    border: 1px solid transparent;
+}
+
+body.bbai-dashboard .bbai-library-score-badge--good {
+    background: var(--bbai-status-score-good-bg);
+    color: var(--bbai-status-score-good-fg);
+    border-color: var(--bbai-status-score-good-border);
+}
+
+body.bbai-dashboard .bbai-library-score-badge--review {
+    background: var(--bbai-status-score-needs-improvement-bg);
+    color: var(--bbai-status-score-needs-improvement-fg);
+    border-color: var(--bbai-status-score-needs-improvement-border);
+}
+
+body.bbai-dashboard .bbai-library-score-badge--weak {
+    background: var(--bbai-status-score-poor-bg);
+    color: var(--bbai-status-score-poor-fg);
+    border-color: var(--bbai-status-score-poor-border);
+}
+
+body.bbai-dashboard .bbai-library-score-badge--missing {
+    background: var(--bbai-status-missing-bg);
+    color: var(--bbai-status-missing-fg);
+    border-color: var(--bbai-status-missing-border);
+}
+
+/* Row status badges in library cards */
+body.bbai-dashboard .bbai-library-status-badge--optimized {
+    background: var(--bbai-status-optimized-bg);
+    color: var(--bbai-status-optimized-fg);
+    border: 1px solid var(--bbai-status-optimized-border);
+}
+
+body.bbai-dashboard .bbai-library-status-badge--weak {
+    background: var(--bbai-status-needs-review-bg);
+    color: var(--bbai-status-needs-review-fg);
+    border: 1px solid var(--bbai-status-needs-review-border);
+}
+
+body.bbai-dashboard .bbai-library-status-badge--missing {
+    background: var(--bbai-status-missing-bg);
+    color: var(--bbai-status-missing-fg);
+    border: 1px solid var(--bbai-status-missing-border);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Row left accent — reusable hook (library cards already use data-status)      */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-row-accent {
+    position: relative;
+}
+
+body.bbai-dashboard .bbai-row-accent--missing {
+    --bbai-row-rail-current: var(--bbai-status-missing-rail);
+    --bbai-row-rail-hover: var(--bbai-status-missing-rail-strong);
+    background: var(--bbai-status-missing-row-bg);
+}
+
+body.bbai-dashboard .bbai-row-accent--needs-review {
+    --bbai-row-rail-current: var(--bbai-status-needs-review-rail);
+    --bbai-row-rail-hover: var(--bbai-status-needs-review-rail-strong);
+    background: var(--bbai-status-needs-review-row-bg);
+}
+
+body.bbai-dashboard .bbai-row-accent--optimized {
+    --bbai-row-rail-current: var(--bbai-status-optimized-rail);
+    --bbai-row-rail-hover: var(--bbai-status-optimized-rail-strong);
+    background: var(--bbai-status-optimized-row-bg);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Filter pill family — ALT review (all surfaces: library tab + workspace)    */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-filter-pill,
+body.bbai-dashboard .bbai-alt-review-filters__btn {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 7px 12px;
+    min-height: var(--bbai-ds-control-height-sm);
+    font-family: var(--bbai-font-family);
+    font-size: 13px;
+    font-weight: var(--bbai-font-semibold);
+    line-height: 1;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition:
+        background-color var(--bbai-status-filter-transition-duration) var(--bbai-status-filter-transition-ease),
+        border-color var(--bbai-status-filter-transition-duration) var(--bbai-status-filter-transition-ease),
+        color var(--bbai-status-filter-transition-duration) var(--bbai-status-filter-transition-ease),
+        box-shadow var(--bbai-status-filter-transition-duration) var(--bbai-status-filter-transition-ease);
+}
+
+body.bbai-dashboard .bbai-filter-pill:focus,
+body.bbai-dashboard .bbai-alt-review-filters__btn:focus {
+    outline: none;
+}
+
+body.bbai-dashboard .bbai-filter-pill:focus-visible,
+body.bbai-dashboard .bbai-alt-review-filters__btn:focus-visible {
+    outline: none;
+    z-index: 2;
+    box-shadow: var(--bbai-status-filter-focus-ring);
+}
+
+body.bbai-dashboard .bbai-filter-pill .bbai-alt-review-filters__count,
+body.bbai-dashboard .bbai-alt-review-filters__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 26px;
+    margin-left: 0;
+    padding: 3px 8px;
+    border-radius: var(--bbai-radius-full);
+    font-size: 12px;
+    font-weight: var(--bbai-font-bold);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+    border: 1px solid transparent;
+    box-sizing: border-box;
+    transition:
+        background-color var(--bbai-status-filter-transition-duration) var(--bbai-status-filter-transition-ease),
+        border-color var(--bbai-status-filter-transition-duration) var(--bbai-status-filter-transition-ease),
+        color var(--bbai-status-filter-transition-duration) var(--bbai-status-filter-transition-ease),
+        box-shadow var(--bbai-status-filter-transition-duration) var(--bbai-status-filter-transition-ease);
+}
+
+/* Neutral / All */
+body.bbai-dashboard .bbai-filter-pill--all:not(.bbai-alt-review-filters__btn--active):not(.bbai-filter-pill--active),
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='all']:not(.bbai-alt-review-filters__btn--active) {
+    background: var(--bbai-status-filter-all-inactive-bg);
+    border-color: var(--bbai-status-filter-all-inactive-border);
+    color: var(--bbai-status-filter-all-inactive-fg);
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+}
+
+body.bbai-dashboard .bbai-filter-pill--all:not(.bbai-alt-review-filters__btn--active):not(.bbai-filter-pill--active) .bbai-alt-review-filters__count,
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='all']:not(.bbai-alt-review-filters__btn--active) .bbai-alt-review-filters__count {
+    color: #475569;
+    background: rgba(15, 23, 42, 0.06);
+    border-color: var(--bbai-status-filter-count-border-muted);
+    box-shadow: var(--bbai-status-filter-count-shadow);
+}
+
+body.bbai-dashboard .bbai-filter-pill--all:not(.bbai-alt-review-filters__btn--active):not(.bbai-filter-pill--active):hover,
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='all']:not(.bbai-alt-review-filters__btn--active):hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    box-shadow: var(--bbai-status-filter-hover-lift);
+}
+
+body.bbai-dashboard .bbai-filter-pill--all.bbai-alt-review-filters__btn--active,
+body.bbai-dashboard .bbai-filter-pill--all.bbai-filter-pill--active,
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='all'].bbai-alt-review-filters__btn--active {
+    background: var(--bbai-status-filter-all-active-bg);
+    border-color: #020617;
+    color: var(--bbai-status-filter-all-active-fg);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12), 0 1px 0 rgba(255, 255, 255, 0.06) inset;
+}
+
+body.bbai-dashboard .bbai-filter-pill--all.bbai-alt-review-filters__btn--active .bbai-alt-review-filters__count,
+body.bbai-dashboard .bbai-filter-pill--all.bbai-filter-pill--active .bbai-alt-review-filters__count,
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='all'].bbai-alt-review-filters__btn--active .bbai-alt-review-filters__count {
+    color: var(--bbai-status-filter-all-count-fg);
+    background: var(--bbai-status-filter-count-surface);
+    border-color: rgba(15, 23, 42, 0.12);
+    box-shadow: var(--bbai-status-filter-count-shadow);
+}
+
+body.bbai-dashboard .bbai-filter-pill--all.bbai-alt-review-filters__btn--active:hover,
+body.bbai-dashboard .bbai-filter-pill--all.bbai-filter-pill--active:hover,
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='all'].bbai-alt-review-filters__btn--active:hover {
+    background: #020617;
+    border-color: #020617;
+    color: var(--bbai-status-filter-all-active-fg);
+}
+
+/* Missing */
+body.bbai-dashboard .bbai-filter-pill--missing:not(.bbai-alt-review-filters__btn--active):not(.bbai-filter-pill--active),
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='missing']:not(.bbai-alt-review-filters__btn--active) {
+    background: var(--bbai-status-missing-bg);
+    border-color: var(--bbai-status-missing-border);
+    color: var(--bbai-status-missing-fg);
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+}
+
+body.bbai-dashboard .bbai-filter-pill--missing:not(.bbai-alt-review-filters__btn--active):not(.bbai-filter-pill--active) .bbai-alt-review-filters__count,
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='missing']:not(.bbai-alt-review-filters__btn--active) .bbai-alt-review-filters__count {
+    color: var(--bbai-status-missing-count-fg);
+    background: rgba(255, 255, 255, 0.72);
+    border-color: rgba(244, 63, 94, 0.22);
+    box-shadow: var(--bbai-status-filter-count-shadow);
+}
+
+body.bbai-dashboard .bbai-filter-pill--missing:not(.bbai-alt-review-filters__btn--active):not(.bbai-filter-pill--active):hover,
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='missing']:not(.bbai-alt-review-filters__btn--active):hover {
+    background: rgba(255, 228, 230, 0.92);
+    border-color: rgba(244, 63, 94, 0.48);
+    box-shadow: var(--bbai-status-filter-hover-lift);
+}
+
+body.bbai-dashboard .bbai-filter-pill--missing.bbai-alt-review-filters__btn--active,
+body.bbai-dashboard .bbai-filter-pill--missing.bbai-filter-pill--active,
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='missing'].bbai-alt-review-filters__btn--active {
+    background: var(--bbai-status-missing-active-bg);
+    border-color: var(--bbai-status-missing-active-border);
+    color: #ffffff;
+    box-shadow: 0 2px 10px rgba(190, 18, 60, 0.2), 0 1px 0 rgba(255, 255, 255, 0.08) inset;
+}
+
+body.bbai-dashboard .bbai-filter-pill--missing.bbai-alt-review-filters__btn--active .bbai-alt-review-filters__count,
+body.bbai-dashboard .bbai-filter-pill--missing.bbai-filter-pill--active .bbai-alt-review-filters__count,
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='missing'].bbai-alt-review-filters__btn--active .bbai-alt-review-filters__count {
+    color: var(--bbai-status-missing-count-fg);
+    background: var(--bbai-status-filter-count-surface);
+    border-color: rgba(190, 18, 60, 0.22);
+    box-shadow: var(--bbai-status-filter-count-shadow);
+}
+
+body.bbai-dashboard .bbai-filter-pill--missing.bbai-alt-review-filters__btn--active:hover,
+body.bbai-dashboard .bbai-filter-pill--missing.bbai-filter-pill--active:hover,
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='missing'].bbai-alt-review-filters__btn--active:hover {
+    background: #9f1239;
+    border-color: #881337;
+    color: #ffffff;
+}
+
+/* Needs review (data-filter weak) */
+body.bbai-dashboard .bbai-filter-pill--needs-review:not(.bbai-alt-review-filters__btn--active):not(.bbai-filter-pill--active),
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='weak']:not(.bbai-alt-review-filters__btn--active) {
+    background: var(--bbai-status-needs-review-bg);
+    border-color: var(--bbai-status-needs-review-border);
+    color: var(--bbai-status-needs-review-fg);
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+}
+
+body.bbai-dashboard .bbai-filter-pill--needs-review:not(.bbai-alt-review-filters__btn--active):not(.bbai-filter-pill--active) .bbai-alt-review-filters__count,
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='weak']:not(.bbai-alt-review-filters__btn--active) .bbai-alt-review-filters__count {
+    color: var(--bbai-status-needs-review-count-fg);
+    background: rgba(255, 255, 255, 0.75);
+    border-color: rgba(245, 158, 11, 0.28);
+    box-shadow: var(--bbai-status-filter-count-shadow);
+}
+
+body.bbai-dashboard .bbai-filter-pill--needs-review:not(.bbai-alt-review-filters__btn--active):not(.bbai-filter-pill--active):hover,
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='weak']:not(.bbai-alt-review-filters__btn--active):hover {
+    background: rgba(254, 243, 199, 0.88);
+    border-color: rgba(217, 119, 6, 0.52);
+    box-shadow: var(--bbai-status-filter-hover-lift);
+}
+
+body.bbai-dashboard .bbai-filter-pill--needs-review.bbai-alt-review-filters__btn--active,
+body.bbai-dashboard .bbai-filter-pill--needs-review.bbai-filter-pill--active,
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='weak'].bbai-alt-review-filters__btn--active {
+    background: var(--bbai-status-needs-review-active-bg);
+    border-color: var(--bbai-status-needs-review-active-border);
+    color: #fffbeb;
+    box-shadow: 0 2px 10px rgba(180, 83, 9, 0.18), 0 1px 0 rgba(255, 255, 255, 0.1) inset;
+}
+
+body.bbai-dashboard .bbai-filter-pill--needs-review.bbai-alt-review-filters__btn--active .bbai-alt-review-filters__count,
+body.bbai-dashboard .bbai-filter-pill--needs-review.bbai-filter-pill--active .bbai-alt-review-filters__count,
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='weak'].bbai-alt-review-filters__btn--active .bbai-alt-review-filters__count {
+    color: var(--bbai-status-needs-review-count-fg);
+    background: var(--bbai-status-filter-count-surface);
+    border-color: rgba(180, 83, 9, 0.28);
+    box-shadow: var(--bbai-status-filter-count-shadow);
+}
+
+body.bbai-dashboard .bbai-filter-pill--needs-review.bbai-alt-review-filters__btn--active:hover,
+body.bbai-dashboard .bbai-filter-pill--needs-review.bbai-filter-pill--active:hover,
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='weak'].bbai-alt-review-filters__btn--active:hover {
+    background: #92400e;
+    border-color: #78350f;
+    color: #fffbeb;
+}
+
+/* Optimized */
+body.bbai-dashboard .bbai-filter-pill--optimized:not(.bbai-alt-review-filters__btn--active):not(.bbai-filter-pill--active),
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='optimized']:not(.bbai-alt-review-filters__btn--active) {
+    background: var(--bbai-status-optimized-bg);
+    border-color: var(--bbai-status-optimized-border);
+    color: var(--bbai-status-optimized-fg);
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+}
+
+body.bbai-dashboard .bbai-filter-pill--optimized:not(.bbai-alt-review-filters__btn--active):not(.bbai-filter-pill--active) .bbai-alt-review-filters__count,
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='optimized']:not(.bbai-alt-review-filters__btn--active) .bbai-alt-review-filters__count {
+    color: var(--bbai-status-optimized-count-fg);
+    background: rgba(255, 255, 255, 0.75);
+    border-color: rgba(34, 197, 94, 0.22);
+    box-shadow: var(--bbai-status-filter-count-shadow);
+}
+
+body.bbai-dashboard .bbai-filter-pill--optimized:not(.bbai-alt-review-filters__btn--active):not(.bbai-filter-pill--active):hover,
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='optimized']:not(.bbai-alt-review-filters__btn--active):hover {
+    background: rgba(220, 252, 231, 0.9);
+    border-color: rgba(22, 163, 74, 0.45);
+    box-shadow: var(--bbai-status-filter-hover-lift);
+}
+
+body.bbai-dashboard .bbai-filter-pill--optimized.bbai-alt-review-filters__btn--active,
+body.bbai-dashboard .bbai-filter-pill--optimized.bbai-filter-pill--active,
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='optimized'].bbai-alt-review-filters__btn--active {
+    background: var(--bbai-status-optimized-active-bg);
+    border-color: var(--bbai-status-optimized-active-border);
+    color: #f0fdf4;
+    box-shadow: 0 2px 10px rgba(21, 128, 61, 0.18), 0 1px 0 rgba(255, 255, 255, 0.1) inset;
+}
+
+body.bbai-dashboard .bbai-filter-pill--optimized.bbai-alt-review-filters__btn--active .bbai-alt-review-filters__count,
+body.bbai-dashboard .bbai-filter-pill--optimized.bbai-filter-pill--active .bbai-alt-review-filters__count,
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='optimized'].bbai-alt-review-filters__btn--active .bbai-alt-review-filters__count {
+    color: var(--bbai-status-optimized-count-fg);
+    background: var(--bbai-status-filter-count-surface);
+    border-color: rgba(21, 128, 61, 0.28);
+    box-shadow: var(--bbai-status-filter-count-shadow);
+}
+
+body.bbai-dashboard .bbai-filter-pill--optimized.bbai-alt-review-filters__btn--active:hover,
+body.bbai-dashboard .bbai-filter-pill--optimized.bbai-filter-pill--active:hover,
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='optimized'].bbai-alt-review-filters__btn--active:hover {
+    background: #166534;
+    border-color: #14532d;
+    color: #f0fdf4;
+}
+
+/* Problem emphasis (non-zero queue) */
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='missing'].bbai-alt-review-filters__btn--problem:not(.bbai-alt-review-filters__btn--active) {
+    border-color: rgba(244, 63, 94, 0.42);
+}
+
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='weak'].bbai-alt-review-filters__btn--problem:not(.bbai-alt-review-filters__btn--active) {
+    border-color: rgba(245, 158, 11, 0.48);
+}
+
+/* Active + focus-visible stacked shadow */
+body.bbai-dashboard .bbai-alt-review-filters__btn--active:focus-visible {
+    box-shadow: var(--bbai-status-filter-focus-ring), 0 2px 10px rgba(15, 23, 42, 0.12);
+}
+
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='missing'].bbai-alt-review-filters__btn--active:focus-visible {
+    box-shadow: var(--bbai-status-filter-focus-ring), 0 2px 10px rgba(190, 18, 60, 0.2);
+}
+
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='weak'].bbai-alt-review-filters__btn--active:focus-visible {
+    box-shadow: var(--bbai-status-filter-focus-ring), 0 2px 10px rgba(180, 83, 9, 0.18);
+}
+
+body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='optimized'].bbai-alt-review-filters__btn--active:focus-visible {
+    box-shadow: var(--bbai-status-filter-focus-ring), 0 2px 10px rgba(21, 128, 61, 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.bbai-dashboard .bbai-filter-pill,
+    body.bbai-dashboard .bbai-alt-review-filters__btn,
+    body.bbai-dashboard .bbai-alt-review-filters__count {
+        transition: none;
+    }
+}

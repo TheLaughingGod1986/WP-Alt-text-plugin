@@ -108,11 +108,11 @@ $bbai_settings_url = add_query_arg(['page' => 'bbai', 'tab' => 'settings'], admi
                     <h3 class="bbai-guide-step-title"><?php esc_html_e('Scan Your Media Library', 'beepbeep-ai-alt-text-generator'); ?></h3>
                     <p class="bbai-guide-step-desc"><?php esc_html_e('Find images missing ALT text in seconds.', 'beepbeep-ai-alt-text-generator'); ?></p>
                     <ul class="bbai-guide-step-bullets">
-                        <li><?php esc_html_e('Click "Scan Media Library"', 'beepbeep-ai-alt-text-generator'); ?></li>
+                        <li><?php echo esc_html(sprintf(/* translators: %s: CTA label */ __('Click "%s"', 'beepbeep-ai-alt-text-generator'), bbai_copy_cta_scan_media_library())); ?></li>
                         <li><?php esc_html_e('BeepBeep AI will analyze all images', 'beepbeep-ai-alt-text-generator'); ?></li>
                         <li><?php esc_html_e('Missing ALT text will appear in the ALT Library', 'beepbeep-ai-alt-text-generator'); ?></li>
                     </ul>
-                    <a href="<?php echo esc_url($bbai_library_missing_url); ?>" class="bbai-btn bbai-btn-primary bbai-guide-step-cta"><?php esc_html_e('Scan Media Library', 'beepbeep-ai-alt-text-generator'); ?></a>
+                    <a href="<?php echo esc_url($bbai_library_missing_url); ?>" class="bbai-btn bbai-btn-primary bbai-guide-step-cta"><?php echo esc_html(bbai_copy_cta_scan_media_library()); ?></a>
                 </div>
             </div>
             <div class="bbai-guide-step bbai-guide-step-card">
@@ -120,11 +120,11 @@ $bbai_settings_url = add_query_arg(['page' => 'bbai', 'tab' => 'settings'], admi
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 </div>
                 <div class="bbai-guide-step-content">
-                    <h3 class="bbai-guide-step-title"><?php esc_html_e('Generate ALT Text', 'beepbeep-ai-alt-text-generator'); ?></h3>
+                    <h3 class="bbai-guide-step-title"><?php echo esc_html(bbai_copy_cta_generate_missing_images()); ?></h3>
                     <p class="bbai-guide-step-desc"><?php esc_html_e('Generate descriptive AI ALT text for missing images.', 'beepbeep-ai-alt-text-generator'); ?></p>
                     <ul class="bbai-guide-step-bullets">
                         <li><?php esc_html_e('Select images', 'beepbeep-ai-alt-text-generator'); ?></li>
-                        <li><?php esc_html_e('Click Generate ALT Text', 'beepbeep-ai-alt-text-generator'); ?></li>
+                        <li><?php echo esc_html(sprintf(/* translators: %s: CTA label */ __('Click %s', 'beepbeep-ai-alt-text-generator'), bbai_copy_cta_generate_missing_images())); ?></li>
                         <li><?php esc_html_e('AI will create accessible descriptions', 'beepbeep-ai-alt-text-generator'); ?></li>
                     </ul>
                 </div>
@@ -141,7 +141,7 @@ $bbai_settings_url = add_query_arg(['page' => 'bbai', 'tab' => 'settings'], admi
                         <li><?php esc_html_e('Review generated descriptions', 'beepbeep-ai-alt-text-generator'); ?></li>
                         <li><?php esc_html_e('Edit or regenerate anytime', 'beepbeep-ai-alt-text-generator'); ?></li>
                     </ul>
-                    <a href="<?php echo esc_url($bbai_library_url); ?>" class="bbai-btn bbai-btn-secondary bbai-guide-step-cta"><?php esc_html_e('Open ALT Library', 'beepbeep-ai-alt-text-generator'); ?></a>
+                    <a href="<?php echo esc_url($bbai_library_url); ?>" class="bbai-btn bbai-btn-secondary bbai-guide-step-cta"><?php echo esc_html(bbai_copy_cta_open_alt_library()); ?></a>
                 </div>
             </div>
             <div class="bbai-guide-step bbai-guide-step-card">
@@ -165,7 +165,7 @@ $bbai_settings_url = add_query_arg(['page' => 'bbai', 'tab' => 'settings'], admi
     <div class="bbai-card bbai-guide-cta-card bbai-page-section">
         <h2 class="bbai-guide-cta-title"><?php esc_html_e('Start Optimizing Your Images', 'beepbeep-ai-alt-text-generator'); ?></h2>
         <p class="bbai-guide-cta-desc"><?php esc_html_e('Generate ALT text for your entire media library in minutes.', 'beepbeep-ai-alt-text-generator'); ?></p>
-        <a href="<?php echo esc_url($bbai_library_missing_url); ?>" class="bbai-btn bbai-btn-primary bbai-guide-cta-btn"><?php esc_html_e('Scan Media Library', 'beepbeep-ai-alt-text-generator'); ?></a>
+        <a href="<?php echo esc_url($bbai_library_missing_url); ?>" class="bbai-btn bbai-btn-primary bbai-guide-cta-btn"><?php echo esc_html(bbai_copy_cta_scan_media_library()); ?></a>
     </div>
 
     <!-- Why Alt Text Matters -->

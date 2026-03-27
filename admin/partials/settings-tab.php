@@ -100,9 +100,11 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
 
                             <!-- ALT Generation section -->
                             <div class="bbai-card bbai-sg-section">
-                                <div class="bbai-sg-section__head">
-                                    <h2 class="bbai-sg-section__title"><?php esc_html_e('ALT Generation', 'beepbeep-ai-alt-text-generator'); ?></h2>
-                                    <p class="bbai-sg-section__desc"><?php esc_html_e('Control the style and format of every AI-generated description.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                                <div class="bbai-sg-section__head bbai-section-header bbai-ui-section-header">
+                                    <div class="bbai-ui-section-header__text">
+                                    <h2 class="bbai-sg-section__title bbai-section-title"><?php esc_html_e('ALT Generation', 'beepbeep-ai-alt-text-generator'); ?></h2>
+                                    <p class="bbai-sg-section__desc bbai-section-description"><?php esc_html_e('Control the style and format of every AI-generated description.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                                    </div>
                                 </div>
 
                                 <div class="bbai-sg-feature-grid">
@@ -151,9 +153,11 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
 
                             <!-- Advanced section -->
                             <div class="bbai-card bbai-sg-section">
-                                <div class="bbai-sg-section__head">
-                                    <h2 class="bbai-sg-section__title"><?php esc_html_e('Advanced', 'beepbeep-ai-alt-text-generator'); ?></h2>
-                                    <p class="bbai-sg-section__desc"><?php esc_html_e('Fine-tune language and prompt behaviour.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                                <div class="bbai-sg-section__head bbai-section-header bbai-ui-section-header">
+                                    <div class="bbai-ui-section-header__text">
+                                    <h2 class="bbai-sg-section__title bbai-section-title"><?php esc_html_e('Advanced', 'beepbeep-ai-alt-text-generator'); ?></h2>
+                                    <p class="bbai-sg-section__desc bbai-section-description"><?php esc_html_e('Fine-tune language and prompt behaviour.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                                    </div>
                                 </div>
 
                                 <div class="bbai-sg-feature bbai-sg-feature--row">
@@ -395,8 +399,8 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                 </div>
 
                 <!-- Account Status Card -->
-                <div class="bbai-card bbai-settings-plan-summary-card bbai-page-section">
-                    <h3 class="bbai-settings-card-title"><?php esc_html_e('Account Status', 'beepbeep-ai-alt-text-generator'); ?></h3>
+                <div class="bbai-card bbai-card--compact bbai-settings-plan-summary-card bbai-page-section">
+                    <h3 class="bbai-settings-card-title bbai-card-title"><?php esc_html_e('Account Status', 'beepbeep-ai-alt-text-generator'); ?></h3>
 
                     <div class="bbai-settings-plan-info">
                         <div class="bbai-settings-plan-info-item">
@@ -527,7 +531,7 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                             <select
                                 id="bbai-tone"
                                 name="<?php echo esc_attr(self::OPTION_KEY); ?>[tone]"
-                                class="bbai-settings-form-input bbai-select"
+                                class="bbai-settings-form-input bbai-select bbai-input"
                             >
                                 <option value="Professional" <?php selected($bbai_tone_value, 'Professional'); ?>>
                                     <?php esc_html_e('Professional', 'beepbeep-ai-alt-text-generator'); ?>
@@ -556,7 +560,7 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                                 name="<?php echo esc_attr(self::OPTION_KEY); ?>[custom_prompt]"
                                 rows="4"
                                 placeholder="<?php esc_attr_e('Enter any specific instructions for the AI...', 'beepbeep-ai-alt-text-generator'); ?>"
-                                class="bbai-settings-form-textarea"
+                                class="bbai-settings-form-textarea bbai-textarea"
                             ><?php echo esc_textarea($bbai_o['custom_prompt'] ?? ''); ?></textarea>
                         </div>
 

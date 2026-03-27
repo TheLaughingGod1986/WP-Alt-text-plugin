@@ -17,9 +17,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Trial_Quota {
 
 	/**
-	 * Default number of free trial generations.
+	 * Default number of free trial images.
 	 */
-	const TRIAL_LIMIT = 10;
+	const TRIAL_LIMIT = 3;
 
 	/**
 	 * Option name prefix for trial usage counter.
@@ -101,6 +101,84 @@ class Trial_Quota {
 	}
 
 	/**
+	 * Claim up to N trial image slots atomically for this site.
+	 *
+	 * @param int $requested Requested image count.
+	 * @return int Granted image count (0 when exhausted).
+	 */
+	public static function claim( int $requested ): int {
+		$requested = max( 0, absint( $requested ) );
+		if ( $requested <= 0 ) {
+			return 0;
+		}
+
+		$key      = self::option_key();
+		$lock_key = $key . '_lock';
+		$granted  = 0;
+		$max_wait = 800000; // 0.8s.
+		$start_us = (int) ( microtime( true ) * 1000000 );
+
+		while ( ! add_option( $lock_key, (string) time(), '', false ) ) {
+			usleep( 10000 ); // 10ms.
+			$elapsed = (int) ( microtime( true ) * 1000000 ) - $start_us;
+			if ( $elapsed >= $max_wait ) {
+				return 0;
+			}
+		}
+
+		try {
+			$limit     = self::get_limit();
+			$used      = absint( get_option( $key, 0 ) );
+			$remaining = max( 0, $limit - $used );
+			$granted   = min( $requested, $remaining );
+			if ( $granted > 0 ) {
+				update_option( $key, min( $limit, $used + $granted ), false );
+			}
+		} finally {
+			delete_option( $lock_key );
+		}
+
+		return $granted;
+	}
+
+	/**
+	 * Release previously claimed trial image slots (for failed generations).
+	 *
+	 * @param int $count Slots to release.
+	 * @return int Updated used count.
+	 */
+	public static function release( int $count ): int {
+		$count = max( 0, absint( $count ) );
+		if ( $count <= 0 ) {
+			return self::get_used();
+		}
+
+		$key      = self::option_key();
+		$lock_key = $key . '_lock';
+		$max_wait = 800000; // 0.8s.
+		$start_us = (int) ( microtime( true ) * 1000000 );
+
+		while ( ! add_option( $lock_key, (string) time(), '', false ) ) {
+			usleep( 10000 ); // 10ms.
+			$elapsed = (int) ( microtime( true ) * 1000000 ) - $start_us;
+			if ( $elapsed >= $max_wait ) {
+				return self::get_used();
+			}
+		}
+
+		try {
+			$limit = self::get_limit();
+			$used  = absint( get_option( $key, 0 ) );
+			$used  = max( 0, $used - $count );
+			update_option( $key, min( $limit, $used ), false );
+		} finally {
+			delete_option( $lock_key );
+		}
+
+		return self::get_used();
+	}
+
+	/**
 	 * Check whether the current user should be gated by the trial system.
 	 * Returns true if the user is NOT authenticated (no account/license).
 	 *
@@ -159,7 +237,7 @@ class Trial_Quota {
 
 		return new \WP_Error(
 			'bbai_trial_exhausted',
-			__( "You've used your 10 free generations. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator' ),
+			__( "You've used your 3 free images. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator' ),
 			[
 				'code'      => 'bbai_trial_exhausted',
 				'remaining' => 0,

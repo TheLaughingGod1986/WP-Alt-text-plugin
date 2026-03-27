@@ -68,6 +68,17 @@ trait Core_Ajax_Billing {
             return;
         }
 
+        if ( function_exists( 'bbai_telemetry_emit' ) ) {
+            $plan_hint = isset( $_POST['plan_id'] ) ? sanitize_key( wp_unslash( $_POST['plan_id'] ) ) : '';
+            bbai_telemetry_emit(
+                'checkout_session_created',
+                [
+                    'source'         => 'stripe_checkout',
+                    'plan_selected'  => $plan_hint,
+                ]
+            );
+        }
+
         wp_send_json_success([
             'url' => $result['url'] ?? '',
             'session_id' => $result['sessionId'] ?? ''

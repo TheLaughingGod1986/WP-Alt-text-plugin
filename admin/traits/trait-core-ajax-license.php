@@ -53,6 +53,18 @@ trait Core_Ajax_License {
         delete_transient('bbai_usage_cache');
         delete_transient('opptibbai_usage_cache');
 
+        if ( function_exists( 'bbai_telemetry_emit' ) ) {
+            $org   = isset( $result['organization'] ) && is_array( $result['organization'] ) ? $result['organization'] : [];
+            $plan  = isset( $org['plan'] ) ? sanitize_key( (string) $org['plan'] ) : 'unknown';
+            bbai_telemetry_emit(
+                'plan_changed',
+                [
+                    'source'         => 'license_activate',
+                    'plan_selected'  => $plan,
+                ]
+            );
+        }
+
         wp_send_json_success([
             'message' => __('License activated successfully', 'beepbeep-ai-alt-text-generator'),
             'organization' => $result['organization'] ?? null,

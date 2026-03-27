@@ -384,14 +384,14 @@ trait Core_Admin_UI {
                             <div class="bbai-feature-item">
                                 <span class="bbai-feature-icon">✓</span>
                                 <div class="bbai-feature-content">
-                                    <strong><?php esc_html_e('Step 2: Generate alt text', 'beepbeep-ai-alt-text-generator'); ?></strong>
+                                    <strong><?php echo esc_html(bbai_copy_cta_generate_missing_images()); ?></strong>
                                     <p><?php esc_html_e('Create clear alt text for each image missing it.', 'beepbeep-ai-alt-text-generator'); ?></p>
                                 </div>
                             </div>
                             <div class="bbai-feature-item">
                                 <span class="bbai-feature-icon">✓</span>
                                 <div class="bbai-feature-content">
-                                    <strong><?php esc_html_e('Step 3: Review results', 'beepbeep-ai-alt-text-generator'); ?></strong>
+                                    <strong><?php esc_html_e('Step 3: Review ALT text', 'beepbeep-ai-alt-text-generator'); ?></strong>
                                     <p><?php esc_html_e('Review the generated results before publishing.', 'beepbeep-ai-alt-text-generator'); ?></p>
                                 </div>
                             </div>
@@ -399,7 +399,7 @@ trait Core_Admin_UI {
 
                         <div class="bbai-btn-group bbai-mt-6">
                             <a href="<?php echo esc_url($step2_url); ?>" class="bbai-btn bbai-btn-primary">
-                                <?php esc_html_e('Start scanning', 'beepbeep-ai-alt-text-generator'); ?>
+                                <?php echo esc_html(bbai_copy_cta_scan_media_library()); ?>
                             </a>
                             <button type="button" class="bbai-btn bbai-btn-secondary" data-bbai-onboarding-action="skip">
                                 <?php esc_html_e('Skip setup', 'beepbeep-ai-alt-text-generator'); ?>
@@ -423,7 +423,7 @@ trait Core_Admin_UI {
                             <span class="bbai-onboarding-step-icon" aria-hidden="true">
                                 <span class="bbai-step-number">2</span>
                             </span>
-                            <p class="bbai-onboarding-step-text"><?php esc_html_e('Generate alt text', 'beepbeep-ai-alt-text-generator'); ?></p>
+                            <p class="bbai-onboarding-step-text"><?php echo esc_html(bbai_copy_cta_generate_missing_images()); ?></p>
                         </div>
                     </div>
                     <div class="bbai-card bbai-card--compact bbai-onboarding-step-card">
@@ -431,7 +431,7 @@ trait Core_Admin_UI {
                             <span class="bbai-onboarding-step-icon" aria-hidden="true">
                                 <span class="bbai-step-number">3</span>
                             </span>
-                            <p class="bbai-onboarding-step-text"><?php esc_html_e('Review results', 'beepbeep-ai-alt-text-generator'); ?></p>
+                            <p class="bbai-onboarding-step-text"><?php esc_html_e('Review ALT text', 'beepbeep-ai-alt-text-generator'); ?></p>
                         </div>
                     </div>
                 </div>
@@ -507,7 +507,7 @@ trait Core_Admin_UI {
             <div class="bbai-container">
                 <div class="bbai-page-header bbai-mb-6">
                     <div class="bbai-page-header-content">
-                        <h1 class="bbai-page-title"><?php esc_html_e('Generate alt text', 'beepbeep-ai-alt-text-generator'); ?></h1>
+                        <h1 class="bbai-page-title"><?php echo esc_html(bbai_copy_cta_generate_missing_images()); ?></h1>
                         <p class="bbai-page-subtitle"><?php esc_html_e('Scan your media library and generate alt text for images that are missing it.', 'beepbeep-ai-alt-text-generator'); ?></p>
                     </div>
                     <div class="bbai-page-header-actions">
@@ -520,12 +520,12 @@ trait Core_Admin_UI {
 
                 <div class="bbai-card bbai-card--large bbai-onboarding-hero bbai-mb-6">
                     <div class="bbai-card-body">
-                        <h2 class="bbai-card-title"><?php esc_html_e('Generate alt text', 'beepbeep-ai-alt-text-generator'); ?></h2>
+                        <h2 class="bbai-card-title"><?php echo esc_html(bbai_copy_cta_generate_missing_images()); ?></h2>
                         <p class="bbai-card-subtitle"><?php esc_html_e('BeepBeep AI will scan your WordPress media library and find images missing alt text.', 'beepbeep-ai-alt-text-generator'); ?></p>
                         <div class="bbai-onboarding-divider" aria-hidden="true"></div>
                         <div class="bbai-btn-group bbai-mt-4">
                             <button type="button" class="bbai-btn bbai-btn-primary" data-bbai-onboarding-action="start-scan">
-                                <?php esc_html_e('Start scanning', 'beepbeep-ai-alt-text-generator'); ?>
+                                <?php echo esc_html(bbai_copy_cta_scan_media_library()); ?>
                             </button>
                             <button type="button" class="bbai-btn bbai-btn-secondary" data-bbai-onboarding-action="skip">
                                 <?php esc_html_e('Skip setup', 'beepbeep-ai-alt-text-generator'); ?>
@@ -569,7 +569,7 @@ trait Core_Admin_UI {
                                         <path d="M12 3l1.6 3.6L17 8l-3.4 1.4L12 13l-1.6-3.6L7 8l3.4-1.4L12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
                                     </svg>
                                 </span>
-                                <h3 class="bbai-card-title"><?php esc_html_e('Generate alt text', 'beepbeep-ai-alt-text-generator'); ?></h3>
+                                <h3 class="bbai-card-title"><?php echo esc_html(bbai_copy_cta_generate_missing_images()); ?></h3>
                                 <p class="bbai-onboarding-step-text"><?php esc_html_e('Generate clear, SEO-ready alt text.', 'beepbeep-ai-alt-text-generator'); ?></p>
                             </div>
                         </div>
@@ -671,7 +671,7 @@ trait Core_Admin_UI {
             <div class="bbai-container">
                 <div class="bbai-page-header bbai-mb-6">
                     <div class="bbai-page-header-content">
-                        <h1 class="bbai-page-title"><?php esc_html_e('Review results', 'beepbeep-ai-alt-text-generator'); ?></h1>
+                        <h1 class="bbai-page-title"><?php esc_html_e('Review ALT text', 'beepbeep-ai-alt-text-generator'); ?></h1>
                         <p class="bbai-page-subtitle"><?php esc_html_e('Alt text is generating in the background. Review your first results as they arrive.', 'beepbeep-ai-alt-text-generator'); ?></p>
                     </div>
                     <div class="bbai-page-header-actions">
@@ -703,7 +703,7 @@ trait Core_Admin_UI {
                 <!-- Authenticated state: Show queue stats and CTAs -->
                 <div class="bbai-card bbai-card--large bbai-onboarding-hero bbai-mb-6">
                     <div class="bbai-card-body">
-                        <h2 class="bbai-card-title"><?php esc_html_e('Review results', 'beepbeep-ai-alt-text-generator'); ?></h2>
+                        <h2 class="bbai-card-title"><?php esc_html_e('Review ALT text', 'beepbeep-ai-alt-text-generator'); ?></h2>
                         <p class="bbai-card-subtitle"><?php esc_html_e('Your images are being processed. Check the stats below and start reviewing when ready.', 'beepbeep-ai-alt-text-generator'); ?></p>
                         <div class="bbai-onboarding-divider" aria-hidden="true"></div>
 
@@ -1095,14 +1095,32 @@ trait Core_Admin_UI {
                                 <?php endif; ?>
                             </div>
                         <?php else : ?>
-                            <button type="button" class="bbai-header-login-btn" data-action="show-auth-modal" data-auth-tab="login">
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <?php
+                            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only routing for login fallback URL.
+                            $bbai_header_login_page = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : 'bbai';
+                            if ('' === $bbai_header_login_page || 0 !== strpos($bbai_header_login_page, 'bbai')) {
+                                $bbai_header_login_page = 'bbai';
+                            }
+                            $bbai_header_login_href = add_query_arg(
+                                'bbai_open_auth',
+                                '1',
+                                admin_url('admin.php?page=' . $bbai_header_login_page)
+                            );
+                            ?>
+                            <a
+                                href="<?php echo esc_url($bbai_header_login_href); ?>"
+                                class="bbai-header-login-btn"
+                                role="button"
+                                data-action="show-auth-modal"
+                                data-auth-tab="login"
+                            >
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
                                     <path d="M10 14H13C13.5523 14 14 13.5523 14 13V3C14 2.44772 13.5523 2 13 2H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                                     <path d="M5 11L2 8L5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                                     <path d="M2 8H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                                 </svg>
                                 <span><?php esc_html_e('Login', 'beepbeep-ai-alt-text-generator'); ?></span>
-                            </button>
+                            </a>
                         <?php endif; ?>
                 </div>
                 </div>

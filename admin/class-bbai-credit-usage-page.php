@@ -82,31 +82,9 @@ class Credit_Usage_Page {
 	// Get site-wide usage summary
 	$site_usage = Credit_Usage_Logger::get_site_usage($query_args);
 
-	// Get current usage stats - use Token Quota Service for accurate site-wide quota
-	require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-token-quota-service.php';
-	$quota = \BeepBeepAI\AltTextGenerator\Token_Quota_Service::get_site_quota();
+	// Get current usage stats directly from the authoritative backend usage snapshot.
 	require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
-	$display_usage = Usage_Tracker::get_stats_display();
-	if (is_wp_error($quota)) {
-		// Fallback to usage tracker
-		$current_usage = $display_usage;
-	} else {
-		$used = max(0, intval($quota['used'] ?? 0));
-		$limit = max(1, intval($quota['limit'] ?? 50));
-		// Always calculate remaining from limit - used for accuracy
-		$remaining = max(0, $limit - $used);
-		$current_usage = [
-			'used' => $used,
-			'limit' => $limit,
-			'remaining' => $remaining,
-			'percentage' => $limit > 0 ? round(($used / $limit) * 100) : 0,
-			'plan' => $display_usage['plan'] ?? ( $quota['plan_type'] ?? 'free' ),
-			'plan_label' => $display_usage['plan_label'] ?? ucfirst($display_usage['plan'] ?? 'free'),
-			'reset_date' => $display_usage['reset_date'] ?? '',
-			'reset_timestamp' => $display_usage['reset_timestamp'] ?? 0,
-			'days_until_reset' => $display_usage['days_until_reset'] ?? 0,
-		];
-	}
+	$current_usage = Usage_Tracker::get_stats_display(true);
 
 	$bbai_missing_images = self::get_missing_images_count();
 	$bbai_settings_automation_url = admin_url( 'admin.php?page=bbai-settings#bbai-enable-on-upload' );
@@ -462,7 +440,7 @@ class Credit_Usage_Page {
 			if ( $is_out_of_credits ) {
 				$upgrade_context = __( 'You have reached your plan limit. Upgrade to continue.', 'beepbeep-ai-alt-text-generator' );
 			} elseif ( $is_low_credits ) {
-				$upgrade_context = __( 'You are running low on credits this cycle.', 'beepbeep-ai-alt-text-generator' );
+				$upgrade_context = __( 'You are close to this month’s allowance.', 'beepbeep-ai-alt-text-generator' );
 			} elseif ( $credits_used > 0 && $credits_remaining > 0 ) {
 				$upgrade_context = sprintf(
 					/* translators: %s: credits used this cycle. */

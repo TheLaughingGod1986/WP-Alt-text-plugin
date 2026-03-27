@@ -38,22 +38,13 @@
     min-width: 0;
 }
 
+/* Typography for eyebrow/title: assets/css/features/dashboard/bbai-section-header.css (.bbai-section-label, .bbai-section-title) */
 .bbai-ui-section-header__eyebrow {
     margin: 0 0 6px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #64748b;
 }
 
 .bbai-ui-section-header__title {
     margin: 0 0 8px;
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    color: #0f172a;
-    line-height: 1.25;
 }
 
 .bbai-ui-section-header__description {

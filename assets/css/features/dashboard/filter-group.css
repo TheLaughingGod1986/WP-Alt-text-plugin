@@ -6,37 +6,20 @@
 .bbai-filter-group {
     --bbai-fg-radius-pill: 999px;
     --bbai-fg-radius-md: 12px;
-    --bbai-fg-gap: 8px;
+    --bbai-fg-gap: var(--bbai-rhythm-filter-pill-gap, var(--bbai-space-2));
     --bbai-fg-border: #e2e8f0;
     --bbai-fg-surface: #f1f5f9;
     --bbai-fg-text: #334155;
     --bbai-fg-muted: #64748b;
     /* Neutral “All” selected */
-    --bbai-fg-active-bg: #0f172a;
-    --bbai-fg-active-fg: #ffffff;
+    --bbai-fg-active-bg: var(--bbai-status-filter-all-active-bg, #0f172a);
+    --bbai-fg-active-fg: var(--bbai-status-filter-all-active-fg, #ffffff);
     --bbai-fg-focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.22);
-    /* Semantic status tokens — shared language for dots, pill shells, count chips */
-    --bbai-status-neutral-dot: #94a3b8;
-    --bbai-status-missing-dot: #e11d48;
-    --bbai-status-weak-dot: #d97706;
-    --bbai-status-opt-dot: #16a34a;
-    --bbai-status-missing-border: rgba(244, 63, 94, 0.38);
-    --bbai-status-missing-bg: rgba(255, 241, 242, 0.88);
-    --bbai-status-missing-active-bg: #be123c;
-    --bbai-status-missing-active-border: #9f1239;
-    --bbai-status-weak-border: rgba(245, 158, 11, 0.42);
-    --bbai-status-weak-bg: rgba(255, 251, 235, 0.92);
-    --bbai-status-weak-active-bg: #b45309;
-    --bbai-status-weak-active-border: #92400e;
-    --bbai-status-opt-border: rgba(34, 197, 94, 0.36);
-    --bbai-status-opt-bg: rgba(240, 253, 244, 0.88);
-    --bbai-status-opt-active-bg: #15803d;
-    --bbai-status-opt-active-border: #166534;
-    /* Legacy dot aliases (horizontal filters) */
-    --bbai-fg-dot-all: var(--bbai-status-neutral-dot);
-    --bbai-fg-dot-opt: var(--bbai-status-opt-dot);
-    --bbai-fg-dot-rev: var(--bbai-status-weak-dot);
-    --bbai-fg-dot-miss: var(--bbai-status-missing-dot);
+    /* Dots + shells: Phase 4 foundation tokens (bbai-admin-foundation-tokens.css) */
+    --bbai-fg-dot-all: var(--bbai-status-neutral-indicator);
+    --bbai-fg-dot-opt: var(--bbai-status-optimized-accent);
+    --bbai-fg-dot-rev: var(--bbai-status-needs-review-accent);
+    --bbai-fg-dot-miss: var(--bbai-status-missing-accent);
 }
 
 /* ── Vertical (dashboard): nav groups breakdown links ─────────────────── */
@@ -44,7 +27,7 @@
     display: flex;
     flex-direction: column;
     gap: 0;
-    padding-top: 4px;
+    padding-top: var(--bbai-space-1);
 }
 
 #bbai-dashboard-main .bbai-command-breakdown--all .bbai-command-breakdown__label::before {
@@ -74,15 +57,15 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 12px 18px;
+    gap: var(--bbai-space-3) var(--bbai-space-5);
     min-width: 0;
 }
 
 .bbai-library-workspace .bbai-filter-metadata-chip {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 7px 12px;
+    gap: var(--bbai-space-1-5);
+    padding: var(--bbai-space-2) var(--bbai-space-3);
     border-radius: var(--bbai-fg-radius-md);
     border: 1px dashed #cbd5e1;
     background: #ffffff;

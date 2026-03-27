@@ -307,7 +307,7 @@
                                                 message: 'Your monthly quota has been exceeded. Upgrade to continue generating alt text.',
                                                 buttons: [
                                                     {
-                                                        text: 'Upgrade now',
+                                                        text: 'Upgrade to Growth',
                                                         primary: true,
                                                         action: function() {
                                                             window.bbaiModal.close();
@@ -563,7 +563,7 @@
                                             message: 'Your monthly quota has been exceeded. Upgrade to continue generating alt text.',
                                             buttons: [
                                                 {
-                                                    text: 'Upgrade now',
+                                                    text: 'Upgrade to Growth',
                                                     primary: true,
                                                     action: function() {
                                                         window.bbaiModal.close();

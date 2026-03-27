@@ -239,11 +239,11 @@
             if (canManage) {
                 window.bbaiModal.show({
                     type: 'warning',
-                    title: __('Monthly quota reached', 'beepbeep-ai-alt-text-generator'),
-                    message: fullMessage + '\n\n' + __('Upgrade now to keep generating alt text immediately.', 'beepbeep-ai-alt-text-generator'),
+                    title: __('This month’s free allowance is used', 'beepbeep-ai-alt-text-generator'),
+                    message: fullMessage + '\n\n' + __('Your existing ALT text is still available to review. Upgrade to continue generating ALT text now.', 'beepbeep-ai-alt-text-generator'),
                     buttons: [
                         {
-                            text: __('Upgrade now', 'beepbeep-ai-alt-text-generator'),
+                            text: __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
                             primary: true,
                             action: function() {
                                 window.bbaiModal.close();
@@ -265,7 +265,7 @@
             } else {
                 window.bbaiModal.show({
                     type: 'warning',
-                    title: __('Monthly quota reached', 'beepbeep-ai-alt-text-generator'),
+                    title: __('This month’s free allowance is used', 'beepbeep-ai-alt-text-generator'),
                     message: fullMessage + '\n\n' + __('You do not have permission to upgrade this account. Please contact the account owner.', 'beepbeep-ai-alt-text-generator'),
                     buttons: [
                         {
@@ -310,13 +310,13 @@
         trial.exhausted = trial.remaining <= 0;
 
         // Update any visible trial banners
-        var bannerText = document.querySelector('.bbai-trial-banner__text');
+        var bannerText = document.getElementById('bbai-trial-banner-text') || document.querySelector('[data-bbai-trial-banner-text="1"]');
         if (bannerText && trial.remaining > 0) {
             bannerText.textContent = trial.remaining + ' of ' + trial.limit + ' free trial generations remaining';
         } else if (bannerText && trial.remaining <= 0) {
             var banner = document.querySelector('.bbai-trial-banner');
             if (banner) {
-                banner.classList.add('bbai-trial-banner--exhausted');
+                banner.classList.add('bbai-trial-banner--exhausted', 'bbai-banner--warning');
                 bannerText.textContent = 'Free trial exhausted — create a free account to continue';
             }
         }
@@ -1531,7 +1531,7 @@
                             }
                         },
                         {
-                            text: 'Upgrade now',
+                            text: 'Upgrade to Growth',
                             primary: false,
                             action: function() {
                                 window.bbaiModal.close();
@@ -1878,7 +1878,7 @@
                                                 message: 'Your monthly quota has been exceeded. Upgrade to continue generating alt text.',
                                                 buttons: [
                                                     {
-                                                        text: 'Upgrade now',
+                                                        text: 'Upgrade to Growth',
                                                         primary: true,
                                                         action: function() {
                                                             window.bbaiModal.close();
@@ -2134,7 +2134,7 @@
                                             message: 'Your monthly quota has been exceeded. Upgrade to continue generating alt text.',
                                             buttons: [
                                                 {
-                                                    text: 'Upgrade now',
+                                                    text: 'Upgrade to Growth',
                                                     primary: true,
                                                     action: function() {
                                                         window.bbaiModal.close();

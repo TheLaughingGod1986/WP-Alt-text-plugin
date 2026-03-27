@@ -34,7 +34,7 @@ $bbai_surface = isset($bbai_ui['surface']) ? strtolower((string) $bbai_ui['surfa
 if ('custom' === $bbai_surface) {
     $bbai_classes = trim('bbai-ui-section-shell ' . $bbai_extra);
 } else {
-    $bbai_classes = trim('bbai-ui-section-card bbai-dashboard-surface-card ' . $bbai_extra);
+    $bbai_classes = trim('bbai-ui-section-card bbai-dashboard-surface-card bbai-card ' . $bbai_extra);
 }
 $bbai_aria = isset($bbai_ui['aria_label']) ? trim((string) $bbai_ui['aria_label']) : '';
 $bbai_aria_out = '' !== $bbai_aria ? ' aria-label="' . esc_attr($bbai_aria) . '"' : '';

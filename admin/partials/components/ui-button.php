@@ -40,16 +40,16 @@ $bbai_from_array = $bbai_pairs ? implode(' ', $bbai_pairs) : '';
 
 $bbai_cls = '';
 if ('primary' === $bbai_variant) {
-    $bbai_cls = 'bbai-dashboard-hero__cta bbai-dashboard-hero__cta--primary bbai-banner__cta bbai-banner__cta--primary bbai-ui-btn bbai-ui-btn--primary';
+    $bbai_cls = 'bbai-dashboard-hero__cta bbai-dashboard-hero__cta--primary bbai-banner__cta bbai-banner__cta--primary bbai-ui-btn bbai-ui-btn--primary bbai-btn bbai-btn-primary';
     if ($bbai_locked) {
         $bbai_cls .= ' bbai-is-locked';
     }
 } elseif ('tertiary' === $bbai_variant) {
-    $bbai_cls = 'bbai-dashboard-hero__link bbai-dashboard-hero__link--tertiary bbai-banner__link bbai-banner__link--tertiary bbai-ui-btn bbai-ui-btn--tertiary';
+    $bbai_cls = 'bbai-dashboard-hero__link bbai-dashboard-hero__link--tertiary bbai-banner__link bbai-banner__link--tertiary bbai-ui-btn bbai-ui-btn--tertiary bbai-btn bbai-btn-ghost';
 } elseif ('warning' === $bbai_variant) {
-    $bbai_cls = 'bbai-dashboard-hero__link bbai-dashboard-hero__link--secondary bbai-banner__link bbai-banner__link--secondary bbai-ui-btn bbai-ui-btn--secondary bbai-ui-btn--warning';
+    $bbai_cls = 'bbai-dashboard-hero__link bbai-dashboard-hero__link--secondary bbai-banner__link bbai-banner__link--secondary bbai-ui-btn bbai-ui-btn--secondary bbai-ui-btn--warning bbai-btn bbai-btn-secondary';
 } else {
-    $bbai_cls = 'bbai-dashboard-hero__link bbai-dashboard-hero__link--secondary bbai-banner__link bbai-banner__link--secondary bbai-ui-btn bbai-ui-btn--secondary';
+    $bbai_cls = 'bbai-dashboard-hero__link bbai-dashboard-hero__link--secondary bbai-banner__link bbai-banner__link--secondary bbai-ui-btn bbai-ui-btn--secondary bbai-btn bbai-btn-secondary';
 }
 
 $bbai_label_e = esc_html($bbai_label);

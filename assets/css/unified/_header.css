@@ -270,7 +270,8 @@
 .bbai-header-login-btn,
 .bbai-header .bbai-header-login-btn,
 .wrap .bbai-header-login-btn,
-button.bbai-header-login-btn {
+button.bbai-header-login-btn,
+a.bbai-header-login-btn {
     display: inline-flex !important;
     align-items: center;
     gap: 6px;
@@ -295,7 +296,8 @@ button.bbai-header-login-btn {
 .bbai-header-login-btn:hover,
 .bbai-header .bbai-header-login-btn:hover,
 .wrap .bbai-header-login-btn:hover,
-button.bbai-header-login-btn:hover {
+button.bbai-header-login-btn:hover,
+a.bbai-header-login-btn:hover {
     background: #059669 !important;
     color: #ffffff !important;
     border: none !important;
@@ -304,7 +306,9 @@ button.bbai-header-login-btn:hover {
 .bbai-header-login-btn:focus,
 .bbai-header-login-btn:focus-visible,
 .bbai-header .bbai-header-login-btn:focus,
-.bbai-header .bbai-header-login-btn:focus-visible {
+.bbai-header .bbai-header-login-btn:focus-visible,
+a.bbai-header-login-btn:focus,
+a.bbai-header-login-btn:focus-visible {
     outline: 2px solid rgba(16, 185, 129, 0.5) !important;
     outline-offset: 2px !important;
     background: #10B981 !important;

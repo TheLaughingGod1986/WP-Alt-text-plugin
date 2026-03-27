@@ -52,7 +52,7 @@ $bbai_images_delta_percent = max(0, (float) ($bbai_usage_stats['imagesDeltaPerce
 
 $bbai_usage_used = max(0, (int) ($bbai_usage_stats['used'] ?? 0));
 $bbai_usage_limit = max(1, (int) ($bbai_usage_stats['limit'] ?? 50));
-$bbai_usage_remaining = max(0, (int) ($bbai_usage_stats['remaining'] ?? ($bbai_usage_limit - $bbai_usage_used)));
+$bbai_usage_remaining = max(0, (int) ($bbai_usage_stats['remaining'] ?? 0));
 $bbai_credits_used_percent = (int) round(($bbai_usage_used / $bbai_usage_limit) * 100);
 
 $bbai_days_in_month = max(1, (int) wp_date('t'));
@@ -476,7 +476,7 @@ $bbai_analytics_snap = bbai_banner_snapshot_merge(
         'is_out_of_credits' => $bbai_is_out_of_credits,
         'library_url'       => $bbai_library_url,
         'missing_library_url' => add_query_arg(['page' => 'bbai-library', 'status' => 'missing'], admin_url('admin.php')),
-        'needs_review_library_url' => add_query_arg(['page' => 'bbai-library', 'status' => 'needs_review'], admin_url('admin.php')),
+        'needs_review_library_url' => bbai_alt_library_needs_review_url(),
         'usage_url'         => admin_url('admin.php?page=bbai-credit-usage'),
         'settings_url'      => $bbai_settings_url,
         'guide_url'         => admin_url('admin.php?page=bbai-guide'),
@@ -506,6 +506,11 @@ $bbai_analytics_command_hero = bbai_banner_build_command_hero(
         ],
     ]
 );
+$bbai_analytics_banner_slot = bbai_get_active_banner_slot_from_state($bbai_analytics_banner_logic);
+if (!isset($bbai_analytics_command_hero['section_data_attrs']) || !is_array($bbai_analytics_command_hero['section_data_attrs'])) {
+    $bbai_analytics_command_hero['section_data_attrs'] = [];
+}
+$bbai_analytics_command_hero['section_data_attrs']['data-bbai-active-banner-slot'] = (string) ($bbai_analytics_banner_slot ?? '');
 
 $bbai_rail_credits_line = sprintf(
     /* translators: 1: used credits, 2: credit limit */
@@ -545,7 +550,7 @@ bbai_ui_render('page-shell', [
     'phase' => 'open',
     'class' => 'bbai-analytics-page',
 ]);
-bbai_ui_render('status-banner', [
+bbai_ui_render('bbai-banner', [
     'command_hero' => $bbai_analytics_command_hero,
 ]);
 bbai_ui_render('metrics-grid', [
@@ -593,9 +598,9 @@ bbai_ui_render('section-card', [
     'class' => 'bbai-analytics-trend-block bbai-analytics-result-card',
 ]);
 bbai_ui_render('section-header', [
-    'class'           => 'bbai-analytics-trend-block__head bbai-ui-section-header',
-    'eyebrow_class'   => 'bbai-analytics-trend-block__eyebrow bbai-ui-section-header__eyebrow',
-    'title_class'     => 'bbai-analytics-trend-block__title bbai-ui-section-header__title',
+    'class'           => 'bbai-analytics-trend-block__head bbai-ui-section-header bbai-section-header',
+    'eyebrow_class'   => 'bbai-analytics-trend-block__eyebrow bbai-ui-section-header__eyebrow bbai-section-label bbai-card-label',
+    'title_class'     => 'bbai-analytics-trend-block__title bbai-ui-section-header__title bbai-section-title bbai-card-title',
     'eyebrow'         => __('Trend', 'beepbeep-ai-alt-text-generator'),
     'title'           => __('Coverage over time', 'beepbeep-ai-alt-text-generator'),
 ]);
@@ -604,6 +609,20 @@ bbai_ui_render('section-header', [
 <div class="bbai-analytics-trend-block__chart">
     <canvas id="bbai-coverage-chart"></canvas>
 </div>
+<?php else : ?>
+<?php
+bbai_ui_render(
+    'product-state',
+    [
+        'variant'    => 'empty',
+        'section'    => true,
+        'compact'    => true,
+        'root_class' => 'bbai-analytics-trend-block__empty',
+        'title'      => __('Not enough history yet', 'beepbeep-ai-alt-text-generator'),
+        'body'       => __('The coverage chart appears after your library has data to plot.', 'beepbeep-ai-alt-text-generator'),
+    ]
+);
+?>
 <?php endif; ?>
 <p class="bbai-analytics-trend-block__summary"><?php echo esc_html($bbai_trend_sentence); ?></p>
 <?php

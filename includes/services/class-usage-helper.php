@@ -25,7 +25,7 @@ class Usage_Helper {
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 
         $live_usage = null;
-        $usage_stats = Usage_Tracker::get_stats_display(false);
+        $usage_stats = Usage_Tracker::get_local_usage_snapshot();
 
         try {
             $can_fetch = $has_registered_user
@@ -35,17 +35,16 @@ class Usage_Helper {
             if ($can_fetch) {
                 $live_usage = $api_client->get_usage();
                 if (is_array($live_usage) && !empty($live_usage) && !is_wp_error($live_usage)) {
-                    Usage_Tracker::update_usage($live_usage);
-                    $usage_stats = Usage_Tracker::get_stats_display(true);
-                } else {
-                    $usage_stats = Usage_Tracker::get_stats_display(true);
+                    if (($live_usage['source'] ?? '') !== 'local_snapshot') {
+                        Usage_Tracker::update_usage($live_usage);
+                    }
+                    $usage_stats = self::normalize_usage($usage_stats, $live_usage);
                 }
             }
         } catch (Exception $e) {
-            // Fallback to cached usage
-            $usage_stats = Usage_Tracker::get_stats_display(false);
+            $usage_stats = Usage_Tracker::get_local_usage_snapshot();
         } catch (Error $e) {
-            $usage_stats = Usage_Tracker::get_stats_display(false);
+            $usage_stats = Usage_Tracker::get_local_usage_snapshot();
         }
 
         if (isset($live_usage) && is_array($live_usage) && !empty($live_usage) && !is_wp_error($live_usage)) {
@@ -58,6 +57,9 @@ class Usage_Helper {
     /**
      * Normalize usage stats with API data.
      *
+     * Runtime quota comes from the normalized usage API payload. Do not read
+     * deprecated account/license quota fields here.
+     *
      * @param  array      $usage_stats Cached usage.
      * @param  array|null $live_usage  Live usage from API.
      * @return array
@@ -67,31 +69,48 @@ class Usage_Helper {
             return $usage_stats;
         }
 
-        $usage_stats['used'] = max(0, intval($live_usage['used'] ?? ($usage_stats['used'] ?? 0)));
-        $usage_stats['limit'] = max(1, intval($live_usage['limit'] ?? ($usage_stats['limit'] ?? 50)));
-        $usage_stats['remaining'] = max(0, intval($live_usage['remaining'] ?? ($usage_stats['limit'] - $usage_stats['used'])));
+        $used = max(0, intval($live_usage['used'] ?? ($usage_stats['used'] ?? 0)));
+        $limit = max(1, intval($live_usage['limit'] ?? ($usage_stats['limit'] ?? 50)));
+        $remaining = max(0, intval($live_usage['remaining'] ?? ($usage_stats['remaining'] ?? 0)));
 
-        $percentage = $usage_stats['limit'] > 0 ? (($usage_stats['used'] / $usage_stats['limit']) * 100) : 0;
+        $usage_stats['used'] = $used;
+        $usage_stats['limit'] = $limit;
+        $usage_stats['remaining'] = $remaining;
+        $usage_stats['creditsUsed'] = $used;
+        $usage_stats['creditsTotal'] = $limit;
+        $usage_stats['creditsLimit'] = $limit;
+        $usage_stats['creditsRemaining'] = $remaining;
+
+        $percentage = $limit > 0 ? (($used / $limit) * 100) : 0;
         $usage_stats['percentage'] = min(100, max(0, $percentage));
         $usage_stats['percentage_display'] = Usage_Tracker::format_percentage_label($usage_stats['percentage']);
 
-        if (isset($live_usage['plan'])) {
-            $usage_stats['plan'] = $live_usage['plan'];
-        }
+        $plan = $live_usage['plan_type'] ?? $live_usage['plan'] ?? ($usage_stats['plan_type'] ?? ($usage_stats['plan'] ?? 'free'));
+        $usage_stats['source'] = $live_usage['source'] ?? 'remote_usage';
+        $usage_stats['plan'] = $plan;
+        $usage_stats['plan_type'] = $plan;
+        $usage_stats['plan_label'] = ucfirst($plan);
+        $usage_stats['is_free'] = $plan === 'free';
+        $usage_stats['is_pro'] = in_array($plan, ['pro', 'growth', 'agency', 'enterprise'], true);
+
         if (isset($live_usage['resetDate'])) {
             $usage_stats['resetDate'] = $live_usage['resetDate'];
         }
         if (isset($live_usage['reset_timestamp'])) {
             $usage_stats['reset_timestamp'] = $live_usage['reset_timestamp'];
-            // Also update the display-formatted reset_date to match
             $usage_stats['reset_date'] = date_i18n('F j, Y', $live_usage['reset_timestamp']);
-        } elseif (isset($live_usage['resetDate'])) {
-            // If we have resetDate but not reset_timestamp, parse and update reset_date display
-            $parsed_ts = strtotime($live_usage['resetDate']);
+        } elseif (isset($live_usage['resetDate']) || isset($live_usage['reset_date'])) {
+            $reset_value = $live_usage['resetDate'] ?? $live_usage['reset_date'];
+            $parsed_ts = strtotime((string) $reset_value);
             if ($parsed_ts > 0) {
                 $usage_stats['reset_timestamp'] = $parsed_ts;
                 $usage_stats['reset_date'] = date_i18n('F j, Y', $parsed_ts);
+                $usage_stats['resetDate'] = date_i18n('Y-m-d', $parsed_ts);
             }
+        }
+
+        if (!isset($usage_stats['resetDate']) && isset($usage_stats['reset_timestamp'])) {
+            $usage_stats['resetDate'] = date_i18n('Y-m-d', (int) $usage_stats['reset_timestamp']);
         }
 
         if (isset($usage_stats['reset_timestamp']) && is_numeric($usage_stats['reset_timestamp'])) {

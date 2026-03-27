@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @return int
  */
 function bbai_get_trial_limit(): int {
-	$limit = apply_filters( 'bbai_trial_limit', 10 );
+	$limit = apply_filters( 'bbai_trial_limit', 3 );
 	return max( 0, absint( $limit ) );
 }
 

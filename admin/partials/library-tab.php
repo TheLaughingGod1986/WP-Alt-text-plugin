@@ -8,6 +8,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/ui-components.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/banner-system.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/page-hero.php';
+
 use BeepBeepAI\AltTextGenerator\BBAI_Cache;
 
 $bbai_library_template_buffer_level = ob_get_level();
@@ -28,6 +32,14 @@ $bbai_use_library_workspace       = is_readable($bbai_library_workspace_partial 
 
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 $bbai_requested_status = isset($_GET['status']) ? sanitize_key(wp_unslash($_GET['status'])) : '';
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
+$bbai_filter_param = isset($_GET['filter']) ? sanitize_key(wp_unslash($_GET['filter'])) : '';
+if ($bbai_requested_status === '' && $bbai_filter_param !== '') {
+    $bbai_filter_norm = strtolower(str_replace('-', '_', $bbai_filter_param));
+    if ('needs_review' === $bbai_filter_norm) {
+        $bbai_requested_status = 'needs_review';
+    }
+}
 $bbai_workspace_status_map = [
     'missing'      => 'missing',
     'optimized'    => 'optimized',
@@ -94,7 +106,7 @@ if ($bbai_use_library_workspace) {
 
     foreach ($bbai_library_full_images as $bbai_full_row_image) {
         $bbai_row_state  = $this->get_library_workspace_row_state($bbai_full_row_image);
-        $bbai_row_status = isset($bbai_row_state['status']) ? (string) $bbai_row_state['status'] : 'optimized';
+        $bbai_row_status = isset($bbai_row_state['status']) ? (string) $bbai_row_state['status'] : 'weak';
         if ('missing' === $bbai_row_status) {
             ++$bbai_table_filter_counts['missing'];
         } elseif ('weak' === $bbai_row_status) {
@@ -229,461 +241,7 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
 }
 ?>
 
-<div class="bbai-library-container bbai-container" data-bbai-empty-filter="<?php echo esc_attr__('No images match this filter.', 'beepbeep-ai-alt-text-generator'); ?>">
-    <style id="bbai-library-polish">
-    #bbai-alt-coverage-card,
-    #bbai-review-filter-tabs { display: block !important; visibility: visible !important; opacity: 1 !important; }
-    .bbai-toolbar.bbai-library-toolbar { margin: var(--card-gap, 16px) 0 var(--card-gap, 16px); }
-    .bbai-library-summary-card,
-    .bbai-library-guidance,
-    .bbai-library-selection-bar {
-        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
-    }
-    .bbai-library-summary-card { padding: var(--section-spacing, 24px); margin: var(--section-spacing, 24px) 0 var(--card-gap, 16px); }
-    .bbai-library-summary-card__head,
-    .bbai-library-guidance { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--section-spacing, 24px); }
-    .bbai-library-summary-card__eyebrow,
-    .bbai-library-guidance__eyebrow {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        margin: 0 0 8px;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: .12em;
-        text-transform: uppercase;
-        color: #0f766e;
-    }
-    .bbai-library-summary-card__title,
-    .bbai-library-guidance__title { margin: 0; font-size: 24px; line-height: 1.15; color: #0f172a; }
-    .bbai-library-summary-card__copy,
-    .bbai-library-guidance__copy { margin: 8px 0 0; max-width: 640px; color: #475569; }
-    .bbai-library-summary-card__stats {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: var(--card-gap, 16px);
-        margin: var(--section-spacing, 24px) 0 var(--card-gap, 16px);
-    }
-    .bbai-library-summary-card__stat {
-        padding: 14px 16px;
-        border-radius: 14px;
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-    }
-    .bbai-library-summary-card__stat-label { display: block; font-size: 12px; color: #64748b; }
-    .bbai-library-summary-card__stat-value { display: block; margin-top: 6px; font-size: 26px; font-weight: 700; color: #0f172a; }
-    .bbai-library-summary-card__stat--optimized { border-color: #bbf7d0; background: #f0fdf4; }
-    .bbai-library-summary-card__stat--weak { border-color: #fde68a; background: #fffbeb; }
-    .bbai-library-summary-card__stat--missing { border-color: #fecaca; background: #fef2f2; }
-    .bbai-library-summary-card__bar {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: var(--card-gap, 16px);
-        align-items: center;
-    }
-    .bbai-library-summary-card__progress {
-        grid-column: 1 / -1;
-        height: 12px;
-        border-radius: 999px;
-        overflow: hidden;
-        background: #e2e8f0;
-        display: flex;
-    }
-    .bbai-library-summary-card__segment { height: 100%; display: block; }
-    .bbai-library-summary-card__segment--optimized { background: linear-gradient(90deg, #16a34a 0%, #22c55e 100%); }
-    .bbai-library-summary-card__segment--weak { background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%); }
-    .bbai-library-summary-card__segment--missing { background: linear-gradient(90deg, #ef4444 0%, #f87171 100%); }
-    .bbai-library-summary-card__foot {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: var(--card-gap, 16px);
-        margin-top: var(--card-gap, 16px);
-        color: #475569;
-        font-size: 13px;
-    }
-    .bbai-library-summary-card__foot strong { color: #0f172a; }
-    .bbai-library-guidance {
-        margin-bottom: var(--card-gap, 16px);
-        padding: 20px 22px;
-    }
-    .bbai-library-bulk-banner {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: var(--card-gap, 16px);
-        margin: 0 0 var(--card-gap, 16px);
-        padding: 20px 22px;
-        border-radius: 18px;
-        border: 1px solid #fcd34d;
-        background: linear-gradient(180deg, #fffdf5 0%, #fffbeb 100%);
-        box-shadow: 0 18px 40px rgba(120, 53, 15, 0.08);
-    }
-    .bbai-library-bulk-banner__main {
-        display: flex;
-        align-items: flex-start;
-        gap: var(--card-gap, 16px);
-        min-width: 0;
-        flex: 1;
-    }
-    .bbai-library-bulk-banner__icon {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 42px;
-        height: 42px;
-        flex: 0 0 42px;
-        border-radius: 12px;
-        color: #b45309;
-        background: rgba(251, 191, 36, 0.18);
-    }
-    .bbai-library-bulk-banner__eyebrow {
-        margin: 0 0 6px;
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-        color: #92400e;
-    }
-    .bbai-library-bulk-banner__title {
-        margin: 0;
-        font-size: 22px;
-        line-height: 1.15;
-        color: #111827;
-    }
-    .bbai-library-bulk-banner__copy {
-        margin: 8px 0 0;
-        color: #4b5563;
-        font-size: 14px;
-    }
-    .bbai-library-bulk-banner__meta {
-        margin: 10px 0 0;
-        color: #92400e;
-        font-size: 13px;
-        font-weight: 600;
-    }
-    .bbai-library-bulk-banner__actions {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--card-gap, 16px);
-        flex: 0 0 auto;
-    }
-    .bbai-library-bulk-banner__cta {
-        min-width: 232px;
-        justify-content: center;
-        box-shadow: 0 12px 24px rgba(217, 119, 6, 0.18);
-    }
-    .bbai-library-bulk-banner__plan-note {
-        margin: 0;
-        color: #92400e;
-        font-size: 12px;
-        font-weight: 700;
-    }
-    .bbai-library-guidance[data-state="healthy"] {
-        border-color: #bbf7d0;
-        background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%);
-    }
-    .bbai-library-guidance__actions {
-        display: flex;
-        align-items: center;
-        gap: var(--card-gap, 16px);
-        flex-wrap: wrap;
-        margin-left: auto;
-    }
-    #bbai-review-filter-tabs {
-        margin: 0 0 var(--card-gap, 16px);
-        display: flex !important;
-        gap: var(--card-gap, 16px);
-        flex-wrap: wrap;
-    }
-    .bbai-alt-review-filters__btn {
-        background: #ffffff !important;
-        border: 1px solid #d1d5db !important;
-        color: #334155 !important;
-        padding: 9px 15px !important;
-        border-radius: 999px !important;
-        font-size: 13px !important;
-        font-weight: 700 !important;
-        cursor: pointer;
-        transition: all .15s ease;
-    }
-    .bbai-alt-review-filters__btn:hover { background: #f8fafc !important; border-color: #94a3b8 !important; }
-    .bbai-alt-review-filters__btn--problem { border-color: #f59e0b !important; background: #fffbeb !important; }
-    .bbai-alt-review-filters__btn--active {
-        background: #0f172a !important;
-        border-color: #0f172a !important;
-        color: #ffffff !important;
-    }
-    .bbai-library-selection-bar {
-        position: sticky;
-        top: var(--section-spacing, 24px);
-        z-index: 6;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: var(--card-gap, 16px);
-        padding: 14px 18px;
-        margin: 0 0 var(--card-gap, 16px);
-    }
-    .bbai-library-selection-bar__summary {
-        display: flex;
-        align-items: center;
-        gap: var(--card-gap, 16px);
-        min-width: 0;
-        flex-wrap: wrap;
-    }
-    .bbai-library-selection-bar__lead {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--card-gap, 16px);
-        font-weight: 700;
-        color: #0f172a;
-    }
-    .bbai-library-selection-bar__count { font-size: 14px; color: #475569; }
-    .bbai-library-selection-bar__actions { display: flex; align-items: center; gap: var(--card-gap, 16px); flex-wrap: wrap; }
-    .bbai-library-selection-bar .bbai-toolbar__btn { box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08); }
-    .bbai-library-selection-bar .bbai-toolbar__btn:disabled { opacity: 0.52; cursor: not-allowed; }
-    .bbai-library-table-wrapper { margin-top: 0; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 40px rgba(15, 23, 42, 0.05); }
-    .bbai-library-table thead th {
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: .12em;
-        color: #64748b;
-        background: #f8fafc;
-    }
-    .bbai-library-table tbody td { vertical-align: top; border-bottom: 1px solid #edf2f7; }
-    .bbai-library-table tbody tr:hover,
-    .bbai-library-table tbody tr:hover > td { background: #fcfdff !important; }
-    .bbai-library-row--hidden { display: none; }
-    .bbai-library-cell--select { width: 56px; }
-    .bbai-library-cell--asset { width: 270px; }
-    .bbai-library-cell--alt-text { width: 42%; min-width: 320px; }
-    .bbai-library-cell--status { width: 280px; }
-    .bbai-library-asset { display: flex; gap: 14px; }
-    .bbai-library-thumbnail-button {
-        position: relative;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border: 0;
-        background: transparent;
-        padding: 0;
-        cursor: pointer;
-    }
-    .bbai-library-thumbnail,
-    .bbai-library-thumbnail-placeholder {
-        width: 72px;
-        height: 72px;
-        border-radius: 16px;
-        object-fit: cover;
-        background: #e2e8f0;
-        border: 1px solid #dbeafe;
-    }
-    .bbai-library-hover-preview {
-        position: absolute;
-        left: calc(100% + 14px);
-        top: 50%;
-        transform: translateY(-50%);
-        width: 190px;
-        padding: 10px;
-        border-radius: 18px;
-        background: rgba(15, 23, 42, 0.96);
-        box-shadow: 0 24px 48px rgba(15, 23, 42, 0.2);
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity .18s ease, transform .18s ease;
-        z-index: 4;
-    }
-    .bbai-library-hover-preview img { display: block; width: 100%; border-radius: 12px; }
-    .bbai-library-thumbnail-button:hover .bbai-library-hover-preview,
-    .bbai-library-thumbnail-button:focus-visible .bbai-library-hover-preview {
-        opacity: 1;
-        transform: translateY(-50%) scale(1.01);
-    }
-    .bbai-library-info-cell { display: flex; flex-direction: column; gap: 6px; }
-    .bbai-library-info-name { font-size: 14px; font-weight: 700; color: #0f172a; word-break: break-word; }
-    .bbai-library-info-meta,
-    .bbai-library-info-updated { font-size: 12px; color: #64748b; }
-    .bbai-library-review-block { display: flex; flex-direction: column; gap: 8px; }
-    .bbai-library-review-label {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 12px;
-        font-weight: 700;
-        color: #475569;
-        text-transform: uppercase;
-        letter-spacing: .08em;
-    }
-    .bbai-library-review-tip {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 18px;
-        height: 18px;
-        border-radius: 999px;
-        border: 1px solid #cbd5e1;
-        color: #475569;
-        background: #ffffff;
-    }
-    .bbai-library-alt-trigger {
-        width: 100%;
-        min-height: 70px;
-        padding: 14px 16px;
-        border-radius: 14px;
-        border: 1px solid #dbe4ee;
-        background: #ffffff;
-        text-align: left;
-        cursor: text;
-        transition: border-color .15s ease, box-shadow .15s ease;
-    }
-    .bbai-library-alt-trigger:hover,
-    .bbai-library-alt-trigger:focus-visible {
-        border-color: #38bdf8;
-        box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.12);
-        outline: none;
-    }
-    .bbai-alt-text-preview {
-        font-size: 14px;
-        line-height: 1.55;
-        color: #0f172a;
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        white-space: normal;
-    }
-    .bbai-alt-text-missing { font-size: 13px; color: #dc2626; font-style: italic; }
-    .bbai-library-alt-helper { margin: 0; font-size: 12px; color: #64748b; }
-    .bbai-library-alt-summary { margin: 0; font-size: 12px; color: #92400e; }
-    .bbai-library-inline-edit { display: flex; flex-direction: column; gap: 10px; }
-    .bbai-library-inline-edit__textarea {
-        width: 100%;
-        min-height: 96px;
-        padding: 12px 14px;
-        border-radius: 14px;
-        border: 1px solid #38bdf8;
-        box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.12);
-        resize: vertical;
-    }
-    .bbai-library-inline-edit__actions { display: flex; align-items: center; gap: 8px; }
-    .bbai-library-inline-edit__icon {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 34px;
-        height: 34px;
-        border-radius: 999px;
-        border: 1px solid #d1d5db;
-        background: #ffffff;
-        color: #334155;
-        cursor: pointer;
-    }
-    .bbai-library-inline-edit__icon--save { background: #dcfce7; border-color: #86efac; color: #166534; }
-    .bbai-library-inline-edit__error { margin: 0; min-height: 18px; font-size: 12px; color: #dc2626; }
-    .bbai-library-status-stack { display: flex; flex-direction: column; gap: 12px; }
-    .bbai-library-status-badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 7px 12px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: 800;
-        letter-spacing: .05em;
-        text-transform: uppercase;
-        width: fit-content;
-    }
-    .bbai-library-status-badge--optimized { background: #dcfce7; color: #166534; }
-    .bbai-library-status-badge--weak { background: #fef3c7; color: #b45309; }
-    .bbai-library-status-badge--missing { background: #fee2e2; color: #b91c1c; }
-    .bbai-library-status-copy { margin: 0; font-size: 12px; color: #64748b; }
-    .bbai-library-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .bbai-row-action-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 8px 12px;
-        border-radius: 999px;
-        border: 1px solid #d1d5db;
-        background: #ffffff;
-        color: #334155;
-        font-size: 12px;
-        font-weight: 700;
-        line-height: 1;
-        cursor: pointer;
-        transition: all .15s ease;
-    }
-    .bbai-row-action-btn:hover:not(:disabled) { background: #f8fafc; border-color: #94a3b8; }
-    .bbai-row-action-btn svg { flex: 0 0 auto; }
-    .bbai-row-action-btn--primary { background: #0f172a; border-color: #0f172a; color: #ffffff; }
-    .bbai-row-action-btn--primary:hover:not(:disabled) { background: #1e293b; border-color: #1e293b; }
-    .bbai-row-action-btn--review { background: #dcfce7; border-color: #86efac; color: #166534; }
-    .bbai-row-action-btn--ghost { background: #ffffff; }
-    .bbai-row-action-btn.is-loading { opacity: .75; pointer-events: none; }
-    .bbai-row-action-spinner {
-        width: 12px;
-        height: 12px;
-        border-radius: 999px;
-        border: 2px solid currentColor;
-        border-right-color: transparent;
-        animation: bbaiSpin .8s linear infinite;
-    }
-    .bbai-library-reviewing { display: inline-flex; align-items: center; gap: 8px; color: #0f172a; font-size: 13px; font-weight: 600; }
-    .bbai-library-filter-empty__cell { padding: 28px !important; text-align: center; color: #64748b; }
-    .bbai-library-preview-modal__dialog { border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); padding: 24px; }
-    @keyframes bbaiSpin { to { transform: rotate(360deg); } }
-    @media (max-width: 960px) {
-        .bbai-library-summary-card__stats { grid-template-columns: 1fr; }
-        .bbai-library-summary-card__head,
-        .bbai-library-guidance,
-        .bbai-library-selection-bar { flex-direction: column; align-items: stretch; }
-        .bbai-library-bulk-banner { flex-direction: column; align-items: stretch; }
-        .bbai-library-bulk-banner__actions { width: 100%; }
-        .bbai-library-bulk-banner__cta { width: 100%; min-width: 0; }
-        .bbai-library-selection-bar__actions { width: 100%; }
-    }
-    @media (max-width: 782px) {
-        .bbai-library-table thead { display: none; }
-        .bbai-library-table,
-        .bbai-library-table tbody,
-        .bbai-library-table tr,
-        .bbai-library-table td { display: block; width: 100%; }
-        .bbai-library-table tbody tr { padding: 12px 14px; border-bottom: 1px solid #e2e8f0; }
-        .bbai-library-cell--select { padding-bottom: 4px !important; }
-        .bbai-library-cell--alt-text,
-        .bbai-library-cell--status,
-        .bbai-library-cell--asset { width: 100%; min-width: 0; }
-        .bbai-library-hover-preview { display: none; }
-    }
-    </style>
-    <?php
-    // Bulk scan recommendation: show when library has many images and some are missing
-    $bbai_show_scan_banner = $bbai_total_images >= 50 && $bbai_missing_count > 0;
-    if ($bbai_show_scan_banner) :
-        $bbai_scan_library_url = add_query_arg(['page' => 'bbai-library', 'status' => 'missing'], admin_url('admin.php'));
-        ?>
-        <div class="bbai-scan-banner bbai-mb-4">
-            <p class="bbai-scan-banner__text">
-                <?php
-                printf(
-                    /* translators: %d: number of images */
-                    esc_html__('Your site has %s images. Scan now to find missing ALT text and improve media SEO.', 'beepbeep-ai-alt-text-generator'),
-                    '<strong>' . esc_html(number_format_i18n($bbai_total_images)) . '</strong>'
-                );
-                ?>
-            </p>
-            <a href="<?php echo esc_url($bbai_scan_library_url); ?>" class="bbai-scan-banner__cta bbai-btn bbai-btn-primary bbai-btn-sm">
-                <?php esc_html_e('Scan Library', 'beepbeep-ai-alt-text-generator'); ?>
-            </a>
-        </div>
-    <?php endif; ?>
-
+<div class="bbai-library-container bbai-container" data-bbai-empty-filter="<?php echo esc_attr__('No images match this filter.', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-empty-filter-hint="<?php echo esc_attr__('Try another filter or show all images.', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-library-is-pro="<?php echo $bbai_is_pro ? '1' : '0'; ?>" data-bbai-settings-url="<?php echo esc_url(admin_url('admin.php?page=bbai-settings')); ?>">
     <?php
     // Precompute limit state for quick-actions (same logic as bulk actions block)
     $bbai_plan = isset($bbai_usage_stats) && is_array($bbai_usage_stats) && !empty($bbai_usage_stats['plan']) ? $bbai_usage_stats['plan'] : 'free';
@@ -714,26 +272,6 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
     $bbai_cov_review_pct = $bbai_cov_total > 0 ? round(($bbai_cov_needs_review / $bbai_cov_total) * 100) : 0;
     $bbai_cov_miss_pct = $bbai_cov_total > 0 ? round(($bbai_cov_missing / $bbai_cov_total) * 100) : 0;
     // $bbai_default_review_filter / $bbai_review_filter_from_url are set at the top of this partial.
-    $bbai_bulk_issue_count = $bbai_cov_missing + $bbai_cov_needs_review;
-    $bbai_show_bulk_optimization_banner = $bbai_bulk_issue_count > 0;
-    $bbai_bulk_optimization_available = $bbai_is_pro;
-    $bbai_bulk_estimated_seconds = max(0, $bbai_bulk_issue_count * 20);
-    if ($bbai_bulk_estimated_seconds >= 60) {
-        $bbai_bulk_estimated_minutes = (int) ceil($bbai_bulk_estimated_seconds / 60);
-        $bbai_bulk_time_saved_label = sprintf(
-            /* translators: %d: number of minutes */
-            _n('~%d minute', '~%d minutes', $bbai_bulk_estimated_minutes, 'beepbeep-ai-alt-text-generator'),
-            $bbai_bulk_estimated_minutes
-        );
-    } else {
-        $bbai_bulk_time_saved_label = sprintf(
-            /* translators: %d: number of seconds */
-            _n('~%d second', '~%d seconds', $bbai_bulk_estimated_seconds, 'beepbeep-ai-alt-text-generator'),
-            $bbai_bulk_estimated_seconds
-        );
-    }
-    $bbai_has_review_issues = ($bbai_cov_missing + $bbai_cov_needs_review) > 0;
-    $bbai_library_healthy = $bbai_cov_total > 0 && !$bbai_has_review_issues;
 
     if ($bbai_use_library_workspace) {
         while (ob_get_level() > $bbai_library_template_buffer_level) {
@@ -750,25 +288,25 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
          data-bbai-free-plan-limit="<?php echo esc_attr((int) ($bbai_coverage['free_plan_limit'] ?? 50)); ?>">
         <div class="bbai-library-summary-card__head">
             <div>
-                <p class="bbai-library-summary-card__eyebrow"><?php esc_html_e('ALT Optimization Progress', 'beepbeep-ai-alt-text-generator'); ?></p>
+                <p class="bbai-library-summary-card__eyebrow"><?php echo esc_html(bbai_copy_section_library_progress()); ?></p>
                 <h2 class="bbai-library-summary-card__title"><span data-bbai-library-progress-label><?php echo esc_html(sprintf(__('%s%% optimized', 'beepbeep-ai-alt-text-generator'), number_format_i18n($bbai_cov_opt_pct))); ?></span></h2>
-                <p class="bbai-library-summary-card__copy"><?php esc_html_e('Move through the queue by fixing missing ALT first, then approving or improving weaker descriptions.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                <p class="bbai-library-summary-card__copy"><?php echo esc_html(bbai_copy_helper_queue_missing_then_review()); ?></p>
             </div>
             <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm" data-action="rescan-media-library">
-                <?php esc_html_e('Scan for new uploads', 'beepbeep-ai-alt-text-generator'); ?>
+                <?php echo esc_html(bbai_copy_cta_scan_new_uploads()); ?>
             </button>
         </div>
         <div class="bbai-library-summary-card__stats">
             <div class="bbai-library-summary-card__stat bbai-library-summary-card__stat--optimized">
-                <span class="bbai-library-summary-card__stat-label"><?php esc_html_e('Optimized', 'beepbeep-ai-alt-text-generator'); ?></span>
+                <span class="bbai-library-summary-card__stat-label"><?php echo esc_html(bbai_copy_status_optimized()); ?></span>
                 <strong class="bbai-library-summary-card__stat-value" data-bbai-library-optimized><?php echo esc_html(number_format_i18n($bbai_cov_optimized)); ?></strong>
             </div>
             <div class="bbai-library-summary-card__stat bbai-library-summary-card__stat--weak">
-                <span class="bbai-library-summary-card__stat-label"><?php esc_html_e('Need improvement', 'beepbeep-ai-alt-text-generator'); ?></span>
+                <span class="bbai-library-summary-card__stat-label"><?php echo esc_html(bbai_copy_status_needs_review()); ?></span>
                 <strong class="bbai-library-summary-card__stat-value" data-bbai-library-weak><?php echo esc_html(number_format_i18n($bbai_cov_needs_review)); ?></strong>
             </div>
             <div class="bbai-library-summary-card__stat bbai-library-summary-card__stat--missing">
-                <span class="bbai-library-summary-card__stat-label"><?php esc_html_e('Missing ALT', 'beepbeep-ai-alt-text-generator'); ?></span>
+                <span class="bbai-library-summary-card__stat-label"><?php echo esc_html(bbai_copy_status_missing()); ?></span>
                 <strong class="bbai-library-summary-card__stat-value" data-bbai-library-missing><?php echo esc_html(number_format_i18n($bbai_cov_missing)); ?></strong>
             </div>
         </div>
@@ -785,156 +323,85 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
         </div>
     </div>
 
-    <?php if ($bbai_library_healthy) : ?>
-        <div class="bbai-library-guidance" data-bbai-library-guidance data-state="healthy">
-            <div>
-                <p class="bbai-library-guidance__eyebrow"><?php esc_html_e('Healthy Library', 'beepbeep-ai-alt-text-generator'); ?></p>
-                <h2 class="bbai-library-guidance__title"><?php esc_html_e('All images are optimised', 'beepbeep-ai-alt-text-generator'); ?></h2>
-                <p class="bbai-library-guidance__copy"><?php esc_html_e('Keep coverage complete as new uploads arrive by running quick scans or enabling automation.', 'beepbeep-ai-alt-text-generator'); ?></p>
-            </div>
-            <div class="bbai-library-guidance__actions">
-                <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-sm" data-action="rescan-media-library"><?php esc_html_e('Scan for new uploads', 'beepbeep-ai-alt-text-generator'); ?></button>
-                <?php if ($bbai_is_pro) : ?>
-                    <a href="<?php echo esc_url(admin_url('admin.php?page=bbai-settings')); ?>" class="bbai-btn bbai-btn-secondary bbai-btn-sm"><?php esc_html_e('Enable automatic optimisation', 'beepbeep-ai-alt-text-generator'); ?></a>
-                <?php else : ?>
-                    <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm" data-action="show-upgrade-modal"><?php esc_html_e('Enable automatic optimisation', 'beepbeep-ai-alt-text-generator'); ?></button>
-                <?php endif; ?>
-            </div>
-        </div>
-    <?php elseif ($bbai_cov_missing > 0) : ?>
-        <div class="bbai-library-guidance" data-bbai-library-guidance data-state="issues">
-            <div>
-                <p class="bbai-library-guidance__eyebrow"><?php esc_html_e('Next Task', 'beepbeep-ai-alt-text-generator'); ?></p>
-                <h2 class="bbai-library-guidance__title">
-                    <?php
-                    printf(
-                        /* translators: %s: number of missing images */
-                        esc_html__('%s images are missing ALT text', 'beepbeep-ai-alt-text-generator'),
-                        esc_html(number_format_i18n($bbai_cov_missing))
-                    );
-                    ?>
-                </h2>
-                <p class="bbai-library-guidance__copy"><?php esc_html_e('Generate ALT text to improve accessibility and SEO before reviewing weaker descriptions.', 'beepbeep-ai-alt-text-generator'); ?></p>
-            </div>
-            <div class="bbai-library-guidance__actions">
-                <button type="button"
-                        class="bbai-btn bbai-btn-primary bbai-btn-sm <?php echo esc_attr($bbai_limit_reached_state ? 'bbai-is-locked' : ''); ?>"
-                        data-action="generate-missing"
-                        data-bbai-lock-preserve-label="1"
-                        <?php if ($bbai_limit_reached_state) : ?>
-                            data-bbai-action="open-upgrade"
-                            data-bbai-locked-cta="1"
-                            data-bbai-lock-reason="generate_missing"
-                            data-bbai-locked-source="library-guidance"
-                            aria-disabled="true"
-                        <?php endif; ?>>
-                    <?php esc_html_e('Generate ALT for missing images', 'beepbeep-ai-alt-text-generator'); ?>
-                </button>
-            </div>
-        </div>
-    <?php elseif ($bbai_cov_needs_review > 0) : ?>
-        <div class="bbai-library-guidance" data-bbai-library-guidance data-state="issues">
-            <div>
-                <p class="bbai-library-guidance__eyebrow"><?php esc_html_e('Next Task', 'beepbeep-ai-alt-text-generator'); ?></p>
-                <h2 class="bbai-library-guidance__title">
-                    <?php
-                    printf(
-                        /* translators: %s: number of weak images */
-                        esc_html__('%s images need a stronger ALT description', 'beepbeep-ai-alt-text-generator'),
-                        esc_html(number_format_i18n($bbai_cov_needs_review))
-                    );
-                    ?>
-                </h2>
-                <p class="bbai-library-guidance__copy"><?php esc_html_e('Approve copy you are happy with, or regenerate weaker ALT text to move through the review queue quickly.', 'beepbeep-ai-alt-text-generator'); ?></p>
-            </div>
-            <div class="bbai-library-guidance__actions">
-                <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-sm" data-bbai-filter-target="weak"><?php esc_html_e('Review weak ALT', 'beepbeep-ai-alt-text-generator'); ?></button>
-            </div>
-        </div>
-    <?php endif; ?>
+    <?php
+    $bbai_usage_used = max(0, (int) ($bbai_usage_stats['used'] ?? 0));
+    $bbai_usage_limit = max(1, (int) ($bbai_usage_stats['limit'] ?? 50));
+    $bbai_usage_remaining = max(0, (int) ($bbai_usage_stats['remaining'] ?? 0));
+    $bbai_usage_pct = min(100, max(0, (int) round($bbai_usage_limit ? ($bbai_usage_used / $bbai_usage_limit) * 100 : 0)));
+    $bbai_settings_automation_url = admin_url('admin.php?page=bbai-settings#bbai-enable-on-upload');
+    $bbai_review_usage_url = admin_url('admin.php?page=bbai-credit-usage');
+    $bbai_is_low_credits = $bbai_usage_remaining > 0 && $bbai_usage_remaining <= BBAI_BANNER_LOW_CREDITS_THRESHOLD;
+    $bbai_is_out_of_credits = (0 === $bbai_usage_remaining);
 
-    <?php if ($bbai_show_bulk_optimization_banner) : ?>
-        <div class="bbai-library-bulk-banner"
-             data-bbai-bulk-optimization-banner
-             data-bbai-issue-count="<?php echo esc_attr($bbai_bulk_issue_count); ?>"
-             data-bbai-missing-count="<?php echo esc_attr($bbai_cov_missing); ?>"
-             data-bbai-weak-count="<?php echo esc_attr($bbai_cov_needs_review); ?>"
-             data-bbai-growth-enabled="<?php echo esc_attr($bbai_bulk_optimization_available ? 'true' : 'false'); ?>">
-            <div class="bbai-library-bulk-banner__main">
-                <div class="bbai-library-bulk-banner__icon" aria-hidden="true">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <path d="M10 2.5L18 17.5H2L10 2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
-                        <path d="M10 7.2V11.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-                        <circle cx="10" cy="14.3" r="1" fill="currentColor"/>
-                    </svg>
-                </div>
-                <div>
-                    <p class="bbai-library-bulk-banner__eyebrow"><?php esc_html_e('Accessibility improvements available', 'beepbeep-ai-alt-text-generator'); ?></p>
-                    <h2 class="bbai-library-bulk-banner__title"><?php esc_html_e('Fix all ALT issues in one pass', 'beepbeep-ai-alt-text-generator'); ?></h2>
-                    <p class="bbai-library-bulk-banner__copy" data-bbai-bulk-optimization-count>
-                        <?php
-                        printf(
-                            /* translators: %s: number of images */
-                            esc_html(_n('%s image could be optimized automatically', '%s images could be optimized automatically', $bbai_bulk_issue_count, 'beepbeep-ai-alt-text-generator')),
-                            esc_html(number_format_i18n($bbai_bulk_issue_count))
-                        );
-                        ?>
-                    </p>
-                    <p class="bbai-library-bulk-banner__meta" data-bbai-bulk-optimization-time>
-                        <?php
-                        printf(
-                            /* translators: %s: estimated time saved */
-                            esc_html__('Estimated time saved: %s', 'beepbeep-ai-alt-text-generator'),
-                            esc_html($bbai_bulk_time_saved_label)
-                        );
-                        ?>
-                    </p>
-                </div>
-            </div>
-            <div class="bbai-library-bulk-banner__actions">
-                <button type="button"
-                        class="bbai-btn bbai-btn-primary bbai-library-bulk-banner__cta"
-                        data-action="fix-all-images-automatically"
-                        data-bbai-issue-count="<?php echo esc_attr($bbai_bulk_issue_count); ?>"
-                        <?php if (!$bbai_bulk_optimization_available) : ?>
-                            data-bbai-action="open-upgrade"
-                            data-bbai-direct-upgrade-modal="1"
-                            data-bbai-lock-reason="reoptimize_all"
-                            data-bbai-locked-source="library-bulk-optimization-banner"
-                        <?php endif; ?>>
-                    <?php esc_html_e('Automatically optimize every new image you upload', 'beepbeep-ai-alt-text-generator'); ?>
-                </button>
-                <?php if (!$bbai_bulk_optimization_available) : ?>
-                    <p class="bbai-library-bulk-banner__plan-note"><?php esc_html_e('Never worry about missing ALT text again.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                <?php endif; ?>
-            </div>
-        </div>
-    <?php endif; ?>
+    $bbai_command_hero = bbai_page_hero_library_command_hero(
+        [
+            'cov_total'                => $bbai_cov_total,
+            'cov_missing'              => $bbai_cov_missing,
+            'cov_needs_review'         => $bbai_cov_needs_review,
+            'is_pro'                   => $bbai_is_pro,
+            'settings_automation_url'  => $bbai_settings_automation_url,
+            'is_low_credits'           => $bbai_is_low_credits,
+            'is_out_of_credits'        => $bbai_is_out_of_credits,
+            'credits_remaining'        => $bbai_usage_remaining,
+            'credits_used'             => $bbai_usage_used,
+            'credits_limit'            => $bbai_usage_limit,
+            'usage_percent'            => $bbai_usage_pct,
+            'library_url'              => add_query_arg(['page' => 'bbai-library'], admin_url('admin.php')),
+            'missing_library_url'      => add_query_arg(['page' => 'bbai-library', 'status' => 'missing'], admin_url('admin.php')),
+            'needs_review_library_url' => bbai_alt_library_needs_review_url(),
+            'usage_url'                => $bbai_review_usage_url,
+            'plan_label'               => isset($bbai_usage_stats['plan_label']) ? (string) $bbai_usage_stats['plan_label'] : '',
+            'remaining_line'           => '',
+            'reset_timing'             => isset($bbai_usage_stats['days_until_reset'])
+                ? sprintf(
+                    /* translators: %d: days until credit reset */
+                    _n('%d day until reset', '%d days until reset', (int) $bbai_usage_stats['days_until_reset'], 'beepbeep-ai-alt-text-generator'),
+                    (int) $bbai_usage_stats['days_until_reset']
+                )
+                : '',
+        ]
+    );
+    $bbai_command_hero['wrapper_extra_class'] = trim(
+        ((string) ($bbai_command_hero['wrapper_extra_class'] ?? '')) . ' bbai-library-guidance-host'
+    );
+    $bbai_command_hero['section_extra_class'] = trim(
+        ((string) ($bbai_command_hero['section_extra_class'] ?? '')) . ' bbai-library-guidance-banner'
+    );
+    if (!isset($bbai_command_hero['section_data_attrs']) || !is_array($bbai_command_hero['section_data_attrs'])) {
+        $bbai_command_hero['section_data_attrs'] = [];
+    }
+    $bbai_command_hero['section_data_attrs']['data-bbai-library-guidance'] = '1';
+    $bbai_command_hero['section_data_attrs']['data-bbai-library-guidance-limit-reached'] = $bbai_limit_reached_state ? '1' : '0';
+    $bbai_banner_slot = bbai_get_active_banner_slot_from_state((string) ($bbai_command_hero['banner_logical_state'] ?? ''));
+    $bbai_command_hero['section_data_attrs']['data-bbai-active-banner-slot'] = (string) ($bbai_banner_slot ?? '');
+
+    bbai_ui_render('bbai-banner', ['command_hero' => $bbai_command_hero]);
+    ?>
 
     <div id="bbai-review-filter-tabs" class="bbai-alt-review-filters" data-bbai-default-filter="<?php echo esc_attr($bbai_default_review_filter); ?>">
         <button type="button"
-                class="bbai-alt-review-filters__btn <?php echo $bbai_default_review_filter === 'missing' ? 'bbai-alt-review-filters__btn--active' : ''; ?> <?php echo $bbai_cov_missing > 0 ? 'bbai-alt-review-filters__btn--problem' : ''; ?>"
+                class="bbai-filter-pill bbai-filter-pill--missing bbai-alt-review-filters__btn <?php echo $bbai_default_review_filter === 'missing' ? 'bbai-alt-review-filters__btn--active' : ''; ?> <?php echo $bbai_cov_missing > 0 ? 'bbai-alt-review-filters__btn--problem' : ''; ?>"
                 data-filter="missing"
-                data-bbai-filter-label="<?php esc_attr_e('Missing ALT', 'beepbeep-ai-alt-text-generator'); ?>">
-            <?php esc_html_e('Missing ALT', 'beepbeep-ai-alt-text-generator'); ?> (<?php echo esc_html(number_format_i18n($bbai_cov_missing)); ?>)
+                data-bbai-filter-label="<?php echo esc_attr(bbai_copy_status_missing()); ?>">
+            <?php echo esc_html(bbai_copy_status_missing()); ?> (<?php echo esc_html(number_format_i18n($bbai_cov_missing)); ?>)
         </button>
         <button type="button"
-                class="bbai-alt-review-filters__btn <?php echo $bbai_default_review_filter === 'weak' ? 'bbai-alt-review-filters__btn--active' : ''; ?> <?php echo $bbai_cov_needs_review > 0 ? 'bbai-alt-review-filters__btn--problem' : ''; ?>"
+                class="bbai-filter-pill bbai-filter-pill--needs-review bbai-alt-review-filters__btn <?php echo $bbai_default_review_filter === 'weak' ? 'bbai-alt-review-filters__btn--active' : ''; ?> <?php echo $bbai_cov_needs_review > 0 ? 'bbai-alt-review-filters__btn--problem' : ''; ?>"
                 data-filter="weak"
-                data-bbai-filter-label="<?php esc_attr_e('Weak ALT', 'beepbeep-ai-alt-text-generator'); ?>">
-            <?php esc_html_e('Weak ALT', 'beepbeep-ai-alt-text-generator'); ?> (<?php echo esc_html(number_format_i18n($bbai_cov_needs_review)); ?>)
+                data-bbai-filter-label="<?php echo esc_attr(bbai_copy_status_needs_review()); ?>">
+            <?php echo esc_html(bbai_copy_status_needs_review()); ?> (<?php echo esc_html(number_format_i18n($bbai_cov_needs_review)); ?>)
         </button>
         <button type="button"
-                class="bbai-alt-review-filters__btn <?php echo $bbai_default_review_filter === 'all' ? 'bbai-alt-review-filters__btn--active' : ''; ?>"
+                class="bbai-filter-pill bbai-filter-pill--all bbai-alt-review-filters__btn <?php echo $bbai_default_review_filter === 'all' ? 'bbai-alt-review-filters__btn--active' : ''; ?>"
                 data-filter="all"
-                data-bbai-filter-label="<?php esc_attr_e('All', 'beepbeep-ai-alt-text-generator'); ?>">
-            <?php esc_html_e('All', 'beepbeep-ai-alt-text-generator'); ?> (<?php echo esc_html(number_format_i18n($bbai_cov_total)); ?>)
+                data-bbai-filter-label="<?php echo esc_attr(bbai_copy_filter_all()); ?>">
+            <?php echo esc_html(bbai_copy_filter_all()); ?> (<?php echo esc_html(number_format_i18n($bbai_cov_total)); ?>)
         </button>
         <button type="button"
-                class="bbai-alt-review-filters__btn <?php echo $bbai_default_review_filter === 'optimized' ? 'bbai-alt-review-filters__btn--active' : ''; ?>"
+                class="bbai-filter-pill bbai-filter-pill--optimized bbai-alt-review-filters__btn <?php echo $bbai_default_review_filter === 'optimized' ? 'bbai-alt-review-filters__btn--active' : ''; ?>"
                 data-filter="optimized"
-                data-bbai-filter-label="<?php esc_attr_e('Optimized', 'beepbeep-ai-alt-text-generator'); ?>">
-            <?php esc_html_e('Optimized', 'beepbeep-ai-alt-text-generator'); ?> (<?php echo esc_html(number_format_i18n($bbai_cov_optimized)); ?>)
+                data-bbai-filter-label="<?php echo esc_attr(bbai_copy_status_optimized()); ?>">
+            <?php echo esc_html(bbai_copy_status_optimized()); ?> (<?php echo esc_html(number_format_i18n($bbai_cov_optimized)); ?>)
         </button>
     </div>
 
@@ -965,7 +432,7 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
                     <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/>
                     <path d="M11 11L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                 </svg>
-                <input type="text" id="bbai-library-search" class="bbai-toolbar__search-input" placeholder="<?php esc_attr_e('Search', 'beepbeep-ai-alt-text-generator'); ?>" />
+                <input type="text" id="bbai-library-search" class="bbai-toolbar__search-input bbai-input" placeholder="<?php esc_attr_e('Search', 'beepbeep-ai-alt-text-generator'); ?>" />
             </div>
             <div class="bbai-toolbar__filters">
                 <button type="button" class="bbai-toolbar__icon-btn" id="bbai-status-filter-btn" title="<?php esc_attr_e('Filter', 'beepbeep-ai-alt-text-generator'); ?>">
@@ -1021,7 +488,7 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
                             aria-disabled="true"
                             title="<?php esc_attr_e('Upgrade to generate ALT text for selected images', 'beepbeep-ai-alt-text-generator'); ?>"
                         <?php endif; ?>>
-                    <?php esc_html_e('Generate ALT', 'beepbeep-ai-alt-text-generator'); ?>
+                    <?php echo esc_html(bbai_copy_cta_generate_alt()); ?>
                 </button>
                 <button type="button"
                         class="bbai-toolbar__btn <?php echo esc_attr($bbai_limit_reached_state ? 'bbai-is-locked' : ''); ?>"
@@ -1131,9 +598,9 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
 
                             // Determine queue state
                             $status = 'missing';
-                            $bbai_status_label = __('Missing ALT', 'beepbeep-ai-alt-text-generator');
+                            $bbai_status_label = bbai_copy_status_missing();
                             $bbai_quality_class = 'poor';
-                            $bbai_quality_label = __('Poor', 'beepbeep-ai-alt-text-generator');
+                            $bbai_quality_label = bbai_copy_score_poor();
                             $bbai_quality_score = 0;
                             $bbai_word_count = 0;
                             $bbai_analysis = null;
@@ -1150,31 +617,31 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
                                     $bbai_is_user_approved = !empty($bbai_analysis['user_approved']);
                                     if (stripos($bbai_grade, 'Excellent') !== false || $bbai_quality_score >= 90) {
                                         $bbai_quality_class = 'excellent';
-                                        $bbai_quality_label = __('Excellent', 'beepbeep-ai-alt-text-generator');
-                                    } elseif (stripos($bbai_grade, 'Strong') !== false || $bbai_quality_score >= 75) {
+                                        $bbai_quality_label = bbai_copy_score_excellent();
+                                    } elseif (stripos($bbai_grade, 'Strong') !== false || stripos($bbai_grade, 'Good') !== false || $bbai_quality_score >= 75) {
                                         $bbai_quality_class = 'good';
-                                        $bbai_quality_label = __('Good', 'beepbeep-ai-alt-text-generator');
-                                    } elseif (stripos($bbai_grade, 'Needs review') !== false || $bbai_quality_score >= 60) {
+                                        $bbai_quality_label = bbai_copy_score_good();
+                                    } elseif (stripos($bbai_grade, 'Needs review') !== false || stripos($bbai_grade, 'Needs improvement') !== false || $bbai_quality_score >= 60) {
                                         $bbai_quality_class = 'needs-review';
-                                        $bbai_quality_label = __('Needs review', 'beepbeep-ai-alt-text-generator');
+                                        $bbai_quality_label = bbai_copy_score_needs_improvement();
                                     } else {
                                         $bbai_quality_class = 'poor';
-                                        $bbai_quality_label = __('Poor', 'beepbeep-ai-alt-text-generator');
+                                        $bbai_quality_label = bbai_copy_score_poor();
                                     }
                                 } else {
                                     $bbai_quality_score = function_exists('bbai_calculate_alt_quality_score') ? bbai_calculate_alt_quality_score($bbai_clean_alt) : 50;
                                     if ($bbai_quality_score >= 90) {
                                         $bbai_quality_class = 'excellent';
-                                        $bbai_quality_label = __('Excellent', 'beepbeep-ai-alt-text-generator');
+                                        $bbai_quality_label = bbai_copy_score_excellent();
                                     } elseif ($bbai_quality_score >= 80) {
                                         $bbai_quality_class = 'good';
-                                        $bbai_quality_label = __('Good', 'beepbeep-ai-alt-text-generator');
+                                        $bbai_quality_label = bbai_copy_score_good();
                                     } elseif ($bbai_quality_score >= 60) {
                                         $bbai_quality_class = 'needs-review';
-                                        $bbai_quality_label = __('Needs review', 'beepbeep-ai-alt-text-generator');
+                                        $bbai_quality_label = bbai_copy_score_needs_improvement();
                                     } else {
                                         $bbai_quality_class = 'poor';
-                                        $bbai_quality_label = __('Poor', 'beepbeep-ai-alt-text-generator');
+                                        $bbai_quality_label = bbai_copy_score_poor();
                                     }
                                 }
 
@@ -1185,20 +652,37 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
                                     $bbai_safety_check = BBAI_Alt_Quality_Scorer::score($bbai_clean_alt);
                                     if (!empty($bbai_safety_check['hard_fail'])) {
                                         $bbai_quality_score = $bbai_safety_check['score'];
-                                        $bbai_quality_class = $bbai_safety_check['badge'];
-                                        $bbai_quality_label = $bbai_safety_check['label'];
-                                        $bbai_analysis['breakdown']   = $bbai_safety_check['breakdown'];
-                                        $bbai_analysis['issues']      = $bbai_safety_check['issues'];
-                                        $bbai_analysis['suggestions'] = $bbai_safety_check['suggestions'];
+                                        $bbai_badge_map = array(
+                                            'excellent' => 'excellent',
+                                            'good'      => 'good',
+                                            'fair'      => 'needs-review',
+                                            'poor'      => 'poor',
+                                            'needs-work'=> 'poor',
+                                        );
+                                        $bbai_sbadge = isset($bbai_safety_check['badge']) ? (string) $bbai_safety_check['badge'] : '';
+                                        $bbai_quality_class = isset($bbai_badge_map[ $bbai_sbadge ]) ? $bbai_badge_map[ $bbai_sbadge ] : 'poor';
+                                        $bbai_quality_label = isset($bbai_safety_check['label']) ? (string) $bbai_safety_check['label'] : bbai_copy_score_poor();
+                                        $bbai_analysis['breakdown']          = $bbai_safety_check['breakdown'];
+                                        $bbai_analysis['issues']             = $bbai_safety_check['issues'];
+                                        $bbai_analysis['suggestions']       = $bbai_safety_check['suggestions'];
+                                        $bbai_analysis['hard_fail']          = true;
+                                        $bbai_analysis['optimized_eligible'] = false;
                                     }
                                 }
 
-                                if ($bbai_is_user_approved || in_array($bbai_quality_class, ['excellent', 'good'], true)) {
+                                $bbai_hard_fail_lt = ! empty( $bbai_analysis['hard_fail'] );
+                                $bbai_breakdown_lt = isset( $bbai_analysis['breakdown'] ) && is_array( $bbai_analysis['breakdown'] ) ? $bbai_analysis['breakdown'] : null;
+                                $bbai_opt_eligible_lt = class_exists( 'BBAI_Alt_Quality_Scorer' )
+                                    ? BBAI_Alt_Quality_Scorer::passes_optimized_row_gates( $bbai_clean_alt, $bbai_quality_score, $bbai_breakdown_lt, $bbai_hard_fail_lt )
+                                    : false;
+                                $bbai_row_optimized_lt = $bbai_opt_eligible_lt && $bbai_quality_score >= 70;
+
+                                if ( $bbai_row_optimized_lt ) {
                                     $status = 'optimized';
-                                    $bbai_status_label = __('Optimized', 'beepbeep-ai-alt-text-generator');
+                                    $bbai_status_label = bbai_copy_status_optimized();
                                 } else {
                                     $status = 'weak';
-                                    $bbai_status_label = __('Weak ALT', 'beepbeep-ai-alt-text-generator');
+                                    $bbai_status_label = bbai_copy_status_needs_review();
                                 }
                             }
                             $bbai_preview_image_url = $bbai_thumb_url && isset($bbai_thumb_url[0]) ? $bbai_thumb_url[0] : '';
@@ -1362,34 +846,72 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
                                         </span>
                                         <p class="bbai-library-status-copy"><?php echo esc_html($bbai_row_summary); ?></p>
                                         <div class="bbai-library-actions">
-                                            <button type="button"
-                                                    class="bbai-row-action-btn"
-                                                    data-action="edit-alt-inline"
-                                                    data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>">
-                                                <?php esc_html_e('Edit', 'beepbeep-ai-alt-text-generator'); ?>
-                                            </button>
-                                            <button type="button"
-                                                    class="bbai-row-action-btn bbai-row-action-btn--primary <?php echo esc_attr($bbai_limit_reached_state ? 'bbai-is-locked' : ''); ?>"
-                                                    data-action="regenerate-single"
-                                                    data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>"
-                                                    data-bbai-lock-preserve-label="1"
-                                                    title="<?php echo esc_attr($bbai_has_alt ? __('Regenerate ALT text with AI', 'beepbeep-ai-alt-text-generator') : __('Generate ALT text with AI', 'beepbeep-ai-alt-text-generator')); ?>"
-                                                    <?php if ($bbai_limit_reached_state) : ?>
-                                                        data-bbai-action="open-upgrade"
-                                                        data-bbai-locked-cta="1"
-                                                        data-bbai-lock-reason="regenerate_single"
-                                                        data-bbai-locked-source="library-row-regenerate"
-                                                        aria-disabled="true"
-                                                    <?php endif; ?>>
-                                                <?php echo esc_html($bbai_has_alt ? __('Regenerate', 'beepbeep-ai-alt-text-generator') : __('Generate ALT', 'beepbeep-ai-alt-text-generator')); ?>
-                                            </button>
-                                            <?php if ($bbai_has_alt && $status === 'weak') : ?>
+                                            <div class="bbai-library-actions__main">
                                                 <button type="button"
-                                                        class="bbai-row-action-btn bbai-row-action-btn--review"
-                                                        data-action="approve-alt-inline"
-                                                        data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>">
-                                                    <?php esc_html_e('Approve', 'beepbeep-ai-alt-text-generator'); ?>
+                                                        class="bbai-row-action-btn bbai-row-action-btn--primary <?php echo esc_attr($bbai_limit_reached_state ? 'bbai-is-locked' : ''); ?>"
+                                                        data-action="regenerate-single"
+                                                        data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>"
+                                                        data-bbai-lock-preserve-label="1"
+                                                        title="<?php echo esc_attr($bbai_has_alt ? __('Regenerate ALT text with AI', 'beepbeep-ai-alt-text-generator') : bbai_copy_cta_generate_missing_images()); ?>"
+                                                        <?php if ($bbai_limit_reached_state) : ?>
+                                                            data-bbai-action="open-upgrade"
+                                                            data-bbai-locked-cta="1"
+                                                            data-bbai-lock-reason="regenerate_single"
+                                                            data-bbai-locked-source="library-row-regenerate"
+                                                            aria-disabled="true"
+                                                        <?php endif; ?>>
+                                                    <?php echo esc_html($bbai_has_alt ? __('Regenerate', 'beepbeep-ai-alt-text-generator') : __('Generate', 'beepbeep-ai-alt-text-generator')); ?>
                                                 </button>
+                                                <button type="button"
+                                                        class="bbai-row-action-btn"
+                                                        data-action="edit-alt-inline"
+                                                        data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>"
+                                                        title="<?php echo esc_attr(__('Edit ALT text manually', 'beepbeep-ai-alt-text-generator')); ?>">
+                                                    <?php esc_html_e('Edit manually', 'beepbeep-ai-alt-text-generator'); ?>
+                                                </button>
+                                            </div>
+                                            <?php
+                                            $bbai_table_extra_copy = $bbai_has_alt;
+                                            $bbai_table_extra_improve = $bbai_has_alt && 'weak' === $status;
+                                            $bbai_table_extra_review = 'weak' === $status && $bbai_has_alt && !$bbai_is_user_approved;
+                                            $bbai_table_has_extras = $bbai_table_extra_copy || $bbai_table_extra_improve || $bbai_table_extra_review;
+                                            ?>
+                                            <?php if ($bbai_table_has_extras) : ?>
+                                                <div class="bbai-library-actions__extras" role="group" aria-label="<?php esc_attr_e('Additional actions', 'beepbeep-ai-alt-text-generator'); ?>">
+                                                    <?php if ($bbai_table_extra_copy) : ?>
+                                                        <button type="button"
+                                                                class="bbai-row-action-btn bbai-row-action-btn--ghost"
+                                                                data-action="copy-alt-text"
+                                                                data-alt-text="<?php echo esc_attr($bbai_clean_alt); ?>"
+                                                                data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>">
+                                                            <?php esc_html_e('Copy ALT', 'beepbeep-ai-alt-text-generator'); ?>
+                                                        </button>
+                                                    <?php endif; ?>
+                                                    <?php if ($bbai_table_extra_improve) : ?>
+                                                        <button type="button"
+                                                                class="bbai-row-action-btn bbai-row-action-btn--ghost <?php echo esc_attr($bbai_limit_reached_state ? 'bbai-is-locked' : ''); ?>"
+                                                                data-action="phase17-improve-alt"
+                                                                data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>"
+                                                                title="<?php echo esc_attr($bbai_limit_reached_state ? __('Upgrade to unlock AI improvements', 'beepbeep-ai-alt-text-generator') : __('Improve ALT with AI (uses one credit)', 'beepbeep-ai-alt-text-generator')); ?>"
+                                                                <?php if ($bbai_limit_reached_state) : ?>
+                                                                    data-bbai-action="open-upgrade"
+                                                                    data-bbai-locked-cta="1"
+                                                                    data-bbai-lock-reason="regenerate_single"
+                                                                    data-bbai-locked-source="library-table-phase17-improve"
+                                                                    aria-disabled="true"
+                                                                <?php endif; ?>>
+                                                            <?php esc_html_e('Improve ALT', 'beepbeep-ai-alt-text-generator'); ?>
+                                                        </button>
+                                                    <?php endif; ?>
+                                                    <?php if ($bbai_table_extra_review) : ?>
+                                                        <button type="button"
+                                                                class="bbai-row-action-btn bbai-row-action-btn--ghost"
+                                                                data-action="approve-alt-inline"
+                                                                data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>">
+                                                            <?php esc_html_e('Mark reviewed', 'beepbeep-ai-alt-text-generator'); ?>
+                                                        </button>
+                                                    <?php endif; ?>
+                                                </div>
                                             <?php endif; ?>
                                         </div>
                                     </div>
@@ -1403,7 +925,7 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
 
         <!-- Pagination -->
         <?php if ($bbai_total_pages > 1) : ?>
-            <div class="bbai-pagination">
+            <div class="bbai-pagination bbai-table-meta">
                 <span class="bbai-pagination-info">
                     <?php
                     $bbai_start = $bbai_offset + 1;
@@ -1477,32 +999,38 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
         $bbai_empty_can_generate = isset($bbai_can_generate) ? (bool) $bbai_can_generate : false;
         $bbai_empty_show_generate = $bbai_empty_can_generate && $bbai_empty_missing_count > 0;
         ?>
-        <!-- Empty State -->
+        <!-- Empty State (shared product-state surface) -->
         <div class="bbai-library-empty-state bbai-empty-state">
             <div class="bbai-card bbai-text-center bbai-p-12">
-                <div class="bbai-library-empty-content">
-                    <div class="bbai-library-empty-icon" aria-hidden="true">
-                        <svg width="56" height="56" viewBox="0 0 24 24" fill="none">
-                            <path d="M4 5.5A1.5 1.5 0 015.5 4h13A1.5 1.5 0 0120 5.5v13a1.5 1.5 0 01-1.5 1.5h-13A1.5 1.5 0 014 18.5v-13z" stroke="currentColor" stroke-width="1.5"/>
-                            <path d="M8 15l2.5-2.5L13 15l3-3 2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            <circle cx="9" cy="9" r="1.2" fill="currentColor"/>
-                        </svg>
-                    </div>
-                    <h3 class="bbai-empty-state-title"><?php esc_html_e('No images analyzed yet', 'beepbeep-ai-alt-text-generator'); ?></h3>
-                    <p class="bbai-empty-state-description">
-                        <?php esc_html_e('Upload images to your media library and BeepBeep will generate alt text here.', 'beepbeep-ai-alt-text-generator'); ?>
-                    </p>
-                    <div class="bbai-library-empty-actions bbai-flex bbai-gap-3 bbai-items-center bbai-justify-center bbai-flex-wrap">
-                        <a href="<?php echo esc_url(admin_url('upload.php')); ?>" class="bbai-btn bbai-btn-primary bbai-btn-sm">
-                            <?php esc_html_e('Go to Media Library', 'beepbeep-ai-alt-text-generator'); ?>
-                        </a>
-                        <?php if ($bbai_empty_show_generate) : ?>
-                            <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm" data-action="generate-missing">
-                                <?php esc_html_e('Generate Missing Alt Text', 'beepbeep-ai-alt-text-generator'); ?>
-                            </button>
-                        <?php endif; ?>
-                    </div>
-                </div>
+                <?php
+                $bbai_lib_empty_icon = '<svg width="56" height="56" viewBox="0 0 24 24" fill="none" aria-hidden="true">'
+                    . '<path d="M4 5.5A1.5 1.5 0 015.5 4h13A1.5 1.5 0 0120 5.5v13a1.5 1.5 0 01-1.5 1.5h-13A1.5 1.5 0 014 18.5v-13z" stroke="currentColor" stroke-width="1.5"/>'
+                    . '<path d="M8 15l2.5-2.5L13 15l3-3 2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'
+                    . '<circle cx="9" cy="9" r="1.2" fill="currentColor"/>'
+                    . '</svg>';
+                ob_start();
+                ?>
+                <a href="<?php echo esc_url(admin_url('upload.php')); ?>" class="bbai-btn bbai-btn-primary bbai-btn-sm">
+                    <?php esc_html_e('Go to Media Library', 'beepbeep-ai-alt-text-generator'); ?>
+                </a>
+                <?php if ($bbai_empty_show_generate) : ?>
+                    <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm" data-action="generate-missing">
+                        <?php echo esc_html(bbai_copy_cta_generate_missing_images()); ?>
+                    </button>
+                <?php endif; ?>
+                <?php
+                $bbai_lib_empty_actions = ob_get_clean();
+                bbai_ui_render(
+                    'product-state',
+                    [
+                        'variant'      => 'empty',
+                        'icon_html'    => $bbai_lib_empty_icon,
+                        'title'        => __('No images analyzed yet', 'beepbeep-ai-alt-text-generator'),
+                        'body'         => __('Upload images to your media library and BeepBeep will generate alt text here.', 'beepbeep-ai-alt-text-generator'),
+                        'actions_html' => $bbai_lib_empty_actions,
+                    ]
+                );
+                ?>
             </div>
         </div>
 

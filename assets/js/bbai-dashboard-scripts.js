@@ -156,6 +156,45 @@
 
     var numberSelector = '.bbai-number-counting, .bbai-number-animate, .bbai-metric-value, .bbai-card-value, .bbai-usage-value, .bbai-usage-stat-value, .bbai-optimization-stat-value, .bbai-donut-value, .bbai-circular-progress-percent, .bbai-usage-text strong, .bbai-usage-count-main, .bbai-upgrade-compare-item strong, .bbai-banner-headline-number, .bbai-banner-usage-used, .bbai-banner-usage-limit';
 
+    function normalizeUsagePayload(rawUsage) {
+        if (typeof window.bbaiNormalizeAuthenticatedUsage === 'function') {
+            return window.bbaiNormalizeAuthenticatedUsage(rawUsage);
+        }
+
+        if (!rawUsage || typeof rawUsage !== 'object') {
+            return null;
+        }
+
+        return rawUsage;
+    }
+
+    function mirrorUsagePayload(rawUsage) {
+        var usage;
+        var targets;
+
+        if (typeof window.bbaiMirrorAuthenticatedUsage === 'function') {
+            return window.bbaiMirrorAuthenticatedUsage(rawUsage);
+        }
+
+        usage = normalizeUsagePayload(rawUsage);
+        if (!usage) {
+            return null;
+        }
+
+        targets = [window.BBAI_DASH, window.BBAI_DASHBOARD, window.BBAI, window.BBAI_UPGRADE];
+        targets.forEach(function(target) {
+            if (!target || typeof target !== 'object') {
+                return;
+            }
+
+            target.usage = usage;
+            target.initialUsage = usage;
+            target.quota = usage.quota || null;
+        });
+
+        return usage;
+    }
+
     function getNumberTargets() {
         return $(numberSelector);
     }
@@ -414,22 +453,16 @@
     };
 
     function updateUsageDisplay(response) {
+        response = mirrorUsagePayload(response);
+
         if (!response || typeof response !== 'object') {
             window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Invalid usage data for display:', response);
             return;
         }
 
-        if (window.BBAI_DASH) {
-            window.BBAI_DASH.usage = response;
-            window.BBAI_DASH.initialUsage = response;
-        }
-        if (window.BBAI) {
-            window.BBAI.usage = response;
-        }
-
         var used = response.used !== undefined ? response.used : 0;
         var limit = response.limit !== undefined ? response.limit : 50;
-        var remaining = response.remaining !== undefined ? response.remaining : (limit - used);
+        var remaining = response.remaining !== undefined ? response.remaining : 0;
 
         $('.bbai-usage-stat-item').each(function() {
             var $item = $(this);

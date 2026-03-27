@@ -353,7 +353,7 @@
                             }
                         },
                         {
-                            text: 'Upgrade now',
+                            text: 'Upgrade to Growth',
                             primary: false,
                             action: function() {
                                 window.bbaiModal.close();

@@ -40,6 +40,24 @@ class BbAIAuthModal {
         this.checkResetPasswordParams();
     }
 
+    emitAnalyticsEvent(eventName, properties) {
+        try {
+            document.dispatchEvent(new CustomEvent('bbai:analytics', {
+                detail: Object.assign({ event: eventName }, properties || {})
+            }));
+        } catch (error) {
+            // Ignore analytics dispatch failures.
+        }
+    }
+
+    resolveSource(trigger, fallback) {
+        if (window.bbaiAnalytics && typeof window.bbaiAnalytics.resolveSource === 'function') {
+            return window.bbaiAnalytics.resolveSource(trigger || this.modalElement);
+        }
+
+        return fallback || 'modal';
+    }
+
     checkResetPasswordParams() {
         // Check if URL contains reset token and email params
         const urlParams = new URLSearchParams(window.location.search);
@@ -116,6 +134,9 @@ class BbAIAuthModal {
     }
 
     createModalHTML() {
+        if (document.getElementById('alttext-auth-modal')) {
+            return;
+        }
         const modalHTML = `
             <div id="alttext-auth-modal" class="alttext-auth-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="alttext-auth-modal-title" aria-describedby="alttext-auth-modal-desc">
                 <div class="alttext-auth-modal__overlay">
@@ -279,6 +300,15 @@ class BbAIAuthModal {
 
                 const requestedTab = authTrigger.getAttribute('data-auth-tab') || authTrigger.dataset?.authTab || 
                                    (authTrigger.id === 'bbai-show-auth-login-btn' ? 'login' : 'register');
+                const source = self.resolveSource(authTrigger, 'dashboard');
+
+                if (requestedTab === 'register') {
+                    self.emitAnalyticsEvent('signup_cta_clicked', { source: source });
+                } else {
+                    self.emitAnalyticsEvent('login_cta_clicked', { source: source });
+                    self.emitAnalyticsEvent('login_modal_opened', { source: source });
+                }
+
                 self.show();
                 if (requestedTab === 'register') {
                     self.showRegisterForm();
@@ -306,6 +336,7 @@ class BbAIAuthModal {
             if (e.target.id === 'show-register' || e.target.closest('#show-register')) {
                 e.preventDefault();
                 e.stopPropagation();
+                self.emitAnalyticsEvent('signup_cta_clicked', { source: 'modal' });
                 self.showRegisterForm();
                 return;
             }
@@ -496,8 +527,12 @@ class BbAIAuthModal {
         const formData = new FormData(form);
         const email = formData.get('email');
         const password = formData.get('password');
+        const source = this.resolveSource(this.modalElement, 'modal');
 
         this.setLoading(form, true);
+        this.emitAnalyticsEvent('login_submitted', {
+            source: source
+        });
 
         // Validate AJAX config exists
         if (!window.bbai_ajax?.ajaxurl) {
@@ -526,6 +561,10 @@ class BbAIAuthModal {
             if (data.success) {
                 // WordPress AJAX success response
                 const userData = data.data?.user || {};
+                this.emitAnalyticsEvent('login_succeeded', {
+                    source: source
+                });
+                this.onAuthSuccess(userData);
                 this.hide();
                 this.showSuccess('Welcome back! You are now signed in to SEO AI Alt Text.');
 
@@ -570,6 +609,10 @@ class BbAIAuthModal {
                 } else {
                     this.showError(errorMessage);
                 }
+                this.emitAnalyticsEvent('login_failed', {
+                    source: source,
+                    error_code: errorCode || 'login_failed'
+                });
                 // Clear portal flag on login failure
                 localStorage.removeItem('alttextai_open_portal_after_login');
             }
@@ -580,6 +623,10 @@ class BbAIAuthModal {
             } else {
                 this.showError('Network error. Please try again.');
             }
+            this.emitAnalyticsEvent('login_failed', {
+                source: source,
+                error_code: 'network_error'
+            });
             // Clear portal flag on network error
             localStorage.removeItem('alttextai_open_portal_after_login');
         } finally {
@@ -593,6 +640,7 @@ class BbAIAuthModal {
         const email = formData.get('email');
         const password = formData.get('password');
         const confirmPassword = formData.get('confirmPassword');
+        const source = this.resolveSource(this.modalElement, 'modal');
 
         if (password !== confirmPassword) {
             this.showError('Passwords do not match');
@@ -600,6 +648,9 @@ class BbAIAuthModal {
         }
 
         this.setLoading(form, true);
+        this.emitAnalyticsEvent('signup_started', {
+            source: source
+        });
 
         // Validate AJAX config exists
         if (!window.bbai_ajax?.ajaxurl) {
@@ -628,6 +679,10 @@ class BbAIAuthModal {
             if (data.success) {
                 // WordPress AJAX success response
                 const userData = data.data?.user || {};
+                this.emitAnalyticsEvent('signup_succeeded', {
+                    source: source
+                });
+                this.onAuthSuccess(userData);
                 this.hide();
                 this.showSuccess('Account created successfully! Welcome to SEO AI Alt Text.');
 
@@ -957,11 +1012,19 @@ class BbAIAuthModal {
         const userElements = document.querySelectorAll('[data-user-email]');
         userElements.forEach(el => el.textContent = user.email);
 
+        const usageSnapshot = typeof window.bbaiGetUsageSnapshot === 'function'
+            ? window.bbaiGetUsageSnapshot(null)
+            : null;
+
         const planElements = document.querySelectorAll('[data-user-plan]');
-        planElements.forEach(el => el.textContent = user.plan);
+        const planText = (usageSnapshot && (usageSnapshot.plan_type || usageSnapshot.plan)) || user.plan || user.plan_type || user.planSlug || '';
+        planElements.forEach(el => el.textContent = planText);
 
         const tokenElements = document.querySelectorAll('[data-user-tokens]');
-        tokenElements.forEach(el => el.textContent = user.tokensRemaining);
+        const remainingText = usageSnapshot && usageSnapshot.remaining != null
+            ? usageSnapshot.remaining
+            : (user.remaining ?? 0);
+        tokenElements.forEach(el => el.textContent = remainingText);
     }
 
     storeToken(token) {

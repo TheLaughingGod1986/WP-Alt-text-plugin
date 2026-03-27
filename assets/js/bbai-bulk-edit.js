@@ -154,8 +154,8 @@ bbaiRunWithJQuery(function($) {
                                 <label class="bbai-bulk-edit-form-label">
                                     ${labelText}
                                 </label>
-                                <textarea 
-                                    class="bbai-bulk-edit-form-textarea" 
+                                <textarea
+                                    class="bbai-bulk-edit-form-textarea bbai-textarea"
                                     id="bbai-bulk-edit-textarea"
                                     placeholder="${this.escapeHtml(__('Enter alt text to apply to all selected images...', 'beepbeep-ai-alt-text-generator'))}"
                                 ></textarea>

@@ -217,9 +217,40 @@
     --bbai-spacing-2xl: var(--bbai-space-12);
 
     /* Cross-tab page rhythm (Dashboard-aligned; use only these for plugin shell spacing) */
-    --page-padding-top: 24px;
-    --section-spacing: 24px;
-    --card-gap: 16px;
+    --page-padding-top: var(--bbai-space-6);
+    --section-spacing: var(--bbai-space-6);
+    --card-gap: var(--bbai-space-4);
+
+    /* Rhythm semantics — cards, banners, headers, rows, controls (4px grid) */
+    --bbai-rhythm-card-padding: var(--bbai-space-6);
+    --bbai-rhythm-card-padding-compact: var(--bbai-space-4);
+    --bbai-rhythm-card-padding-inline: var(--bbai-space-6);
+    --bbai-rhythm-card-header-padding-y: var(--bbai-space-4);
+    --bbai-rhythm-card-body-padding-y: var(--bbai-space-4);
+    --bbai-rhythm-label-to-title: var(--bbai-space-2);
+    --bbai-rhythm-title-to-description: var(--bbai-space-2);
+    --bbai-rhythm-description-to-content: var(--bbai-space-4);
+    --bbai-rhythm-section-gap: var(--bbai-space-4);
+    --bbai-rhythm-banner-padding-block: var(--bbai-space-6);
+    --bbai-rhythm-banner-padding-inline: var(--bbai-space-6);
+    --bbai-rhythm-banner-after-headline: var(--bbai-space-3);
+    --bbai-rhythm-banner-support-to-progress: var(--bbai-space-4);
+    --bbai-rhythm-banner-cta-gap: var(--bbai-space-2);
+    --bbai-rhythm-banner-progress-pad-bottom: var(--bbai-space-4);
+    --bbai-rhythm-section-header-inline-pad: var(--bbai-space-6);
+    --bbai-rhythm-section-header-split-gap: var(--bbai-space-4);
+    --bbai-rhythm-section-header-pad-y: var(--bbai-space-2);
+    --bbai-rhythm-section-header-pad-b: var(--bbai-space-1);
+    --bbai-rhythm-row-padding-y: var(--bbai-space-3);
+    --bbai-rhythm-row-gap: var(--bbai-space-4);
+    --bbai-rhythm-action-stack-gap: var(--bbai-space-2);
+    --bbai-rhythm-form-field-gap: var(--bbai-space-4);
+    --bbai-rhythm-filter-pill-gap: var(--bbai-space-2);
+    --bbai-rhythm-chip-gap: var(--bbai-space-2);
+    --bbai-rhythm-strip-padding-block: var(--bbai-space-3);
+    --bbai-rhythm-strip-padding-inline: var(--bbai-space-4);
+    --bbai-rhythm-strip-stack-gap: var(--bbai-space-2);
+    --bbai-rhythm-strip-actions-margin-top: var(--bbai-space-3);
 
     /* ========================================
        BORDER RADIUS - Refined
@@ -3473,6 +3504,7 @@ a.bbai-btn.bbai-btn-outline-primary:hover {
 .bbai-table-wrap,
 .bbai-table-scroll {
     overflow-x: auto;
+    overflow-y: clip;
     -webkit-overflow-scrolling: touch;
 }
 
@@ -12752,7 +12784,8 @@ h4.bbai-heading {
 .bbai-header-login-btn,
 .bbai-header .bbai-header-login-btn,
 .wrap .bbai-header-login-btn,
-button.bbai-header-login-btn {
+button.bbai-header-login-btn,
+a.bbai-header-login-btn {
     display: inline-flex !important;
     align-items: center;
     gap: 6px;
@@ -12777,7 +12810,8 @@ button.bbai-header-login-btn {
 .bbai-header-login-btn:hover,
 .bbai-header .bbai-header-login-btn:hover,
 .wrap .bbai-header-login-btn:hover,
-button.bbai-header-login-btn:hover {
+button.bbai-header-login-btn:hover,
+a.bbai-header-login-btn:hover {
     background: #059669 !important;
     color: #ffffff !important;
     border: none !important;
@@ -12786,7 +12820,9 @@ button.bbai-header-login-btn:hover {
 .bbai-header-login-btn:focus,
 .bbai-header-login-btn:focus-visible,
 .bbai-header .bbai-header-login-btn:focus,
-.bbai-header .bbai-header-login-btn:focus-visible {
+.bbai-header .bbai-header-login-btn:focus-visible,
+a.bbai-header-login-btn:focus,
+a.bbai-header-login-btn:focus-visible {
     outline: 2px solid rgba(16, 185, 129, 0.5) !important;
     outline-offset: 2px !important;
     background: #10B981 !important;
@@ -16170,6 +16206,7 @@ button[disabled][data-bbai-tooltip] {
     gap: 4px;
     padding: 4px 8px;
     border-radius: var(--bbai-radius-full);
+    border: 1px solid transparent;
     font-size: var(--bbai-text-xs);
     font-weight: var(--bbai-font-semibold);
     text-transform: uppercase;
@@ -16178,24 +16215,34 @@ button[disabled][data-bbai-tooltip] {
 }
 
 .bbai-quality-badge--excellent {
-    background: #ecfdf5;
-    color: #16a34a;
+    background: var(--bbai-status-score-excellent-bg, #dcfce7);
+    color: var(--bbai-status-score-excellent-fg, #14532d);
+    border: 1px solid var(--bbai-status-score-excellent-border, rgba(22, 163, 74, 0.22));
 }
 
 .bbai-quality-badge--good {
-    background: #ecfdf5;
-    color: #16a34a;
+    background: var(--bbai-status-score-good-bg, #ecfdf5);
+    color: var(--bbai-status-score-good-fg, #166534);
+    border: 1px solid var(--bbai-status-score-good-border, rgba(16, 185, 129, 0.28));
 }
 
 .bbai-quality-badge--needs-review,
 .bbai-quality-badge--fair {
-    background: #fef3c7;
-    color: #d97706;
+    background: var(--bbai-status-score-needs-improvement-bg, #fef3c7);
+    color: var(--bbai-status-score-needs-improvement-fg, #92400e);
+    border: 1px solid var(--bbai-status-score-needs-improvement-border, rgba(245, 158, 11, 0.32));
 }
 
 .bbai-quality-badge--poor {
-    background: #fdeaea;
-    color: #c02b2b;
+    background: var(--bbai-status-score-poor-bg, #ffedd5);
+    color: var(--bbai-status-score-poor-fg, #9a3412);
+    border: 1px solid var(--bbai-status-score-poor-border, rgba(234, 88, 12, 0.35));
+}
+
+.bbai-quality-badge--critical {
+    background: var(--bbai-status-score-critical-bg, #ffe4e6);
+    color: var(--bbai-status-score-critical-fg, #9f1239);
+    border: 1px solid var(--bbai-status-score-critical-border, rgba(244, 63, 94, 0.35));
 }
 
 /* Quality Hints */
@@ -16283,6 +16330,12 @@ button[disabled][data-bbai-tooltip] {
 .bbai-dark-mode .bbai-quality-badge--poor {
     background: rgba(192, 43, 43, 0.25);
     color: #ff9a9a;
+}
+
+[data-theme="dark"] .bbai-quality-badge--critical,
+.bbai-dark-mode .bbai-quality-badge--critical {
+    background: rgba(190, 18, 60, 0.28);
+    color: #fecdd3;
 }
 
 

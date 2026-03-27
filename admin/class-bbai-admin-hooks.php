@@ -65,6 +65,18 @@ class Admin_Hooks {
 		add_action( 'admin_notices', [ $this->core, 'maybe_render_queue_notice' ] );
 		add_action( 'admin_footer', [ $this->core, 'maybe_render_external_api_notice' ] );
 
+		$bbai_growth_engine_file = BEEPBEEP_AI_PLUGIN_DIR . 'includes/growth/class-bbai-growth-engine.php';
+		if ( is_readable( $bbai_growth_engine_file ) ) {
+			require_once $bbai_growth_engine_file;
+			\BeepBeepAI\AltTextGenerator\Growth_Engine::init();
+		}
+
+		$bbai_phase17_file = BEEPBEEP_AI_PLUGIN_DIR . 'includes/automation/class-bbai-phase17-engine.php';
+		if ( is_readable( $bbai_phase17_file ) ) {
+			require_once $bbai_phase17_file;
+			\BeepBeepAI\AltTextGenerator\Phase17_Engine::init();
+		}
+
 		$this->register_ajax_hooks();
 
 		add_action( \BeepBeepAI\AltTextGenerator\Queue::CRON_HOOK, [ $this->core, 'process_queue' ] );
@@ -89,6 +101,7 @@ class Admin_Hooks {
 			'beepbeepai_queue_clear_completed'  => 'ajax_queue_clear_completed',
 			'beepbeepai_queue_stats'            => 'ajax_queue_stats',
 			'beepbeepai_track_upgrade'          => 'ajax_track_upgrade',
+			'beepbeepai_telemetry'              => 'ajax_telemetry',
 			'beepbeepai_register'               => 'ajax_register',
 			'beepbeepai_login'                  => 'ajax_login',
 			'beepbeepai_logout'                 => 'ajax_logout',

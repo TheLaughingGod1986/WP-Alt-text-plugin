@@ -2,6 +2,8 @@
  * Library Filters Component
  * Filter buttons and search wrapper
  *
+ * Legacy `.bbai-filter-btn` — prefer `bbai-filter-pill` / `#bbai-review-filter-tabs` (status tokens).
+ *
  * @package BeepBeep_AI
  * @since 5.0.0
  */
@@ -19,27 +21,27 @@
    ================================================== */
 
 .bbai-filter-btn {
-    padding: 8px 16px;
-    border: 1px solid #e5e7eb;
-    background: #ffffff;
-    color: #374151;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
+    padding: var(--bbai-space-2, 8px) var(--bbai-space-4, 16px);
+    border: 1px solid var(--bbai-border, #e5e7eb);
+    background: var(--bbai-bg-primary, #ffffff);
+    color: var(--bbai-text-secondary, #374151);
+    border-radius: var(--bbai-radius, 8px);
+    font-size: var(--bbai-text-sm, 14px);
+    font-weight: var(--bbai-font-semibold, 600);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
     white-space: nowrap;
 }
 
 .bbai-filter-btn:hover {
-    background: #f9fafb !important;
-    border-color: #d1d5db !important;
+    background: var(--bbai-bg-secondary, #f9fafb) !important;
+    border-color: var(--bbai-gray-300, #d1d5db) !important;
 }
 
 .bbai-filter-btn.active {
-    background: #eff6ff !important;
-    border-color: #3b82f6 !important;
-    color: #1e40af !important;
+    background: var(--bbai-primary-soft, rgba(16, 185, 129, 0.12)) !important;
+    border-color: var(--bbai-primary, #10b981) !important;
+    color: var(--bbai-primary-dark, #047857) !important;
 }
 
 /* ==================================================

@@ -1,7 +1,7 @@
 <?php
 /**
  * Shared admin page hero (Analytics, ALT Library, future screens).
- * Renders via admin/partials/components/status-banner.php + assets/css/features/dashboard/page-hero.css.
+ * Renders via admin/partials/components/bbai-banner.php (status-banner.php) + page-hero.css.
  *
  * @package BeepBeep_AI
  */
@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
  */
 function bbai_page_hero_resolve_variant(string $tone, string $semantic_state, string $banner_variant, string $explicit = ''): string {
     $explicit = trim($explicit);
-    if (in_array($explicit, ['success', 'warning', 'neutral'], true)) {
+    if (in_array($explicit, ['success', 'warning', 'neutral', 'info'], true)) {
         return $explicit;
     }
 
@@ -86,7 +86,7 @@ function bbai_page_hero_library_command_hero(array $args): array
             'usage_percent'       => (int) ($args['usage_percent'] ?? 0),
             'library_url'         => (string) ($args['library_url'] ?? $lib),
             'missing_library_url' => (string) ($args['missing_library_url'] ?? add_query_arg(['page' => 'bbai-library', 'status' => 'missing'], admin_url('admin.php'))),
-            'needs_review_library_url' => (string) ($args['needs_review_library_url'] ?? add_query_arg(['page' => 'bbai-library', 'status' => 'needs_review'], admin_url('admin.php'))),
+            'needs_review_library_url' => (string) ($args['needs_review_library_url'] ?? (function_exists('bbai_alt_library_needs_review_url') ? bbai_alt_library_needs_review_url() : add_query_arg(['page' => 'bbai-library', 'status' => 'needs_review'], admin_url('admin.php')))),
             'usage_url'           => (string) ($args['usage_url'] ?? admin_url('admin.php?page=bbai-credit-usage')),
             'settings_url'        => $settings,
             'guide_url'           => (string) ($args['guide_url'] ?? admin_url('admin.php?page=bbai-guide')),
@@ -96,7 +96,7 @@ function bbai_page_hero_library_command_hero(array $args): array
         ]
     );
 
-    return bbai_banner_build_command_hero(
+    $hero = bbai_banner_build_command_hero(
         BBAI_BANNER_CTX_LIBRARY,
         $snap,
         [
@@ -108,6 +108,9 @@ function bbai_page_hero_library_command_hero(array $args): array
             'section_data_attrs' => $surface['section_data_attrs'],
         ]
     );
+    $hero['banner_logical_state'] = bbai_banner_pick_state(BBAI_BANNER_CTX_LIBRARY, $snap);
+
+    return $hero;
 }
 
 /**
@@ -152,7 +155,7 @@ function bbai_page_hero_usage_command_hero(array $args = []): array
         $page_var = 'warning';
     }
 
-    return bbai_banner_build_command_hero(
+    $hero = bbai_banner_build_command_hero(
         BBAI_BANNER_CTX_USAGE,
         $snap,
         [
@@ -167,4 +170,12 @@ function bbai_page_hero_usage_command_hero(array $args = []): array
             ),
         ]
     );
+    $hero['banner_logical_state'] = $logical;
+    $usage_slot = bbai_get_active_banner_slot_from_state($logical);
+    if (!isset($hero['section_data_attrs']) || !is_array($hero['section_data_attrs'])) {
+        $hero['section_data_attrs'] = [];
+    }
+    $hero['section_data_attrs']['data-bbai-active-banner-slot'] = (string) ($usage_slot ?? '');
+
+    return $hero;
 }

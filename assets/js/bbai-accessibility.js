@@ -69,6 +69,7 @@
                 'generate-missing': 'Generate Missing',
                 'regenerate-all': 'Re-optimise All',
                 'regenerate-single': 'Regenerate alt text for this image',
+                'phase17-improve-alt': 'Improve ALT text for this image with AI',
                 'open-billing-portal': 'Open billing portal',
                 'logout': 'Log out',
                 'show-auth-modal': 'Show authentication modal'

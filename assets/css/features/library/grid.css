@@ -54,6 +54,7 @@
 
 .bbai-table-scroll {
     overflow-x: auto;
+    overflow-y: clip;
     border-radius: 12px;
     border: 1px solid #e5e7eb;
     background: #fff;

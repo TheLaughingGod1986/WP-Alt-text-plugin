@@ -144,8 +144,12 @@
          * Show approaching limit prompt
          */
         showApproachingLimitPrompt: function(usage) {
-            const remaining = usage.limit - usage.used;
-            const message = `You're running low on credits (${remaining} remaining). Upgrade to Growth for 1,000 monthly credits.`;
+            let remaining = parseInt(usage.remaining, 10);
+            if (isNaN(remaining)) {
+                remaining = usage.limit - usage.used;
+            }
+            remaining = Math.max(0, remaining);
+            const message = `You're close to this month's allowance (${remaining} remaining). Upgrade to Growth for 1,000 monthly credits.`;
 
             if (window.bbaiToast) {
                 window.bbaiToast.warning(message, {
@@ -374,7 +378,7 @@
         isFreeUser: function() {
             // Check from usage stats or plan data
             if (typeof BBAI_DASH !== 'undefined' && BBAI_DASH.initialUsage) {
-                const plan = BBAI_DASH.initialUsage.plan || 'free';
+                const plan = BBAI_DASH.initialUsage.plan_type || BBAI_DASH.initialUsage.plan || 'free';
                 return plan === 'free';
             }
 

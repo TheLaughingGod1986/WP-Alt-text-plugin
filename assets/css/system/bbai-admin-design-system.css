@@ -1,0 +1,258 @@
+/**
+ * BeepBeep AI — Admin design system (Phase 4+ compositions)
+ *
+ * Phase 1: bbai-admin-foundation-tokens.css
+ * Phase 2: bbai-admin-controls.css
+ * Phase 3: bbai-admin-surfaces.css (.bbai-card, section headers, dividers)
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Phase 4 — Badges + filter pills                                            */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-ds-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-1);
+    padding: var(--bbai-badge-padding-y) var(--bbai-badge-padding-x);
+    border-radius: var(--bbai-badge-radius);
+    font-size: var(--bbai-badge-font-size);
+    font-weight: var(--bbai-badge-font-weight);
+    line-height: var(--bbai-leading-none);
+    border: 1px solid transparent;
+    vertical-align: middle;
+}
+
+body.bbai-dashboard .bbai-ds-badge--neutral {
+    background: var(--bbai-ds-status-neutral-bg);
+    color: var(--bbai-ds-status-neutral-fg);
+    border-color: var(--bbai-ds-status-neutral-border);
+}
+
+body.bbai-dashboard .bbai-ds-badge--success {
+    background: var(--bbai-ds-status-success-bg);
+    color: var(--bbai-ds-status-success-fg);
+    border-color: var(--bbai-ds-status-success-border);
+}
+
+body.bbai-dashboard .bbai-ds-badge--warning {
+    background: var(--bbai-ds-status-warning-bg);
+    color: var(--bbai-ds-status-warning-fg);
+    border-color: var(--bbai-ds-status-warning-border);
+}
+
+body.bbai-dashboard .bbai-ds-badge--error {
+    background: var(--bbai-ds-status-error-bg);
+    color: var(--bbai-ds-status-error-fg);
+    border-color: var(--bbai-ds-status-error-border);
+}
+
+body.bbai-dashboard .bbai-ds-badge--info {
+    background: var(--bbai-ds-status-info-bg);
+    color: var(--bbai-ds-status-info-fg);
+    border-color: var(--bbai-ds-status-info-border);
+}
+
+body.bbai-dashboard .bbai-ds-filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-1-5);
+    min-height: var(--bbai-ds-control-height-sm);
+    padding: var(--bbai-space-1) var(--bbai-space-3);
+    border-radius: var(--bbai-radius-full);
+    border: 1px solid var(--bbai-border);
+    background: var(--bbai-bg-primary);
+    font-family: var(--bbai-font-family);
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text-secondary);
+    cursor: pointer;
+    transition: var(--bbai-ds-transition);
+}
+
+body.bbai-dashboard .bbai-ds-filter-pill:hover {
+    border-color: var(--bbai-gray-400);
+    background: var(--bbai-bg-secondary);
+}
+
+body.bbai-dashboard .bbai-ds-filter-pill[aria-pressed='true'],
+body.bbai-dashboard .bbai-ds-filter-pill--active {
+    border-color: var(--bbai-primary);
+    background: var(--bbai-primary-soft);
+    color: var(--bbai-primary-dark);
+}
+
+body.bbai-dashboard .bbai-ds-filter-pill:focus {
+    outline: none;
+}
+
+body.bbai-dashboard .bbai-ds-filter-pill:focus-visible {
+    outline: var(--bbai-ds-focus-outline);
+    outline-offset: var(--bbai-ds-focus-offset);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Phase 5 — Table / list rows: bbai-admin-table-workspace.css               */
+/* Phase 4 — Toolbar; DS row/table primitives (extend with .bbai-row-*)     */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-ds-filter-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--bbai-space-2-5) var(--bbai-space-3);
+}
+
+body.bbai-dashboard .bbai-ds-row-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: var(--bbai-space-2);
+    min-width: 0;
+}
+
+body.bbai-dashboard .bbai-ds-row-actions--row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+body.bbai-dashboard .bbai-ds-status-group {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--bbai-space-1-5);
+}
+
+body.bbai-dashboard .bbai-ds-table-row > th,
+body.bbai-dashboard .bbai-ds-table-row > td,
+body.bbai-dashboard tr.bbai-ds-table-row > th,
+body.bbai-dashboard tr.bbai-ds-table-row > td {
+    vertical-align: middle;
+    border-bottom: 1px solid var(--bbai-border);
+    transition: background-color var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease);
+}
+
+body.bbai-dashboard tbody tr.bbai-ds-table-row:hover > td,
+body.bbai-dashboard .bbai-ds-table-row--div:hover {
+    background: var(--bbai-bg-secondary);
+}
+
+body.bbai-dashboard .bbai-ds-table-row--div {
+    display: grid;
+    align-items: center;
+    min-height: var(--bbai-space-14);
+    padding: var(--bbai-space-3) 0;
+    border-bottom: 1px solid var(--bbai-border);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Compositions — product patterns (opt-in wrappers)                          */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-ds-command-host {
+    /* Reserved: align with .bbai-dashboard-hero / banner; use tokens only */
+    --bbai-ds-command-pad: var(--bbai-space-6);
+}
+
+body.bbai-dashboard .bbai-ds-stat-card {
+    box-sizing: border-box;
+    padding: var(--bbai-ds-card-padding);
+    border-radius: var(--bbai-ds-card-radius);
+    border: var(--bbai-ds-card-border);
+    background: var(--bbai-ds-card-bg);
+    box-shadow: var(--bbai-ds-card-shadow);
+}
+
+body.bbai-dashboard .bbai-ds-stat-card__label {
+    margin: 0 0 var(--bbai-space-1);
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-semibold);
+    text-transform: uppercase;
+    letter-spacing: var(--bbai-tracking-wide);
+    color: var(--bbai-text-muted);
+}
+
+body.bbai-dashboard .bbai-ds-stat-card__value {
+    margin: 0;
+    font-size: var(--bbai-text-2xl);
+    font-weight: var(--bbai-font-bold);
+    line-height: var(--bbai-leading-tight);
+    color: var(--bbai-text-primary);
+}
+
+body.bbai-dashboard .bbai-ds-workspace-card {
+    box-sizing: border-box;
+    padding: var(--bbai-ds-card-padding);
+    border-radius: var(--bbai-ds-card-radius);
+    border: var(--bbai-ds-card-border);
+    background: var(--bbai-ds-card-bg);
+    box-shadow: var(--bbai-ds-card-shadow);
+}
+
+body.bbai-dashboard .bbai-ds-plan-card {
+    box-sizing: border-box;
+    padding: var(--bbai-space-5);
+    border-radius: var(--bbai-radius-xl);
+    border: 1px solid var(--bbai-border);
+    background: linear-gradient(145deg, var(--bbai-bg-primary) 0%, var(--bbai-bg-secondary) 100%);
+    box-shadow: var(--bbai-shadow-sm);
+}
+
+body.bbai-dashboard .bbai-ds-empty {
+    box-sizing: border-box;
+    padding: var(--bbai-space-10) var(--bbai-space-6);
+    text-align: center;
+    border-radius: var(--bbai-ds-card-radius);
+    border: 1px dashed var(--bbai-border-secondary);
+    background: var(--bbai-bg-secondary);
+}
+
+body.bbai-dashboard .bbai-ds-empty__title {
+    margin: 0 0 var(--bbai-space-2);
+    font-size: var(--bbai-ds-subsection-title);
+    font-weight: var(--bbai-font-bold);
+    color: var(--bbai-text-primary);
+}
+
+body.bbai-dashboard .bbai-ds-empty__text {
+    margin: 0 auto;
+    max-width: 42ch;
+    font-size: var(--bbai-ds-body);
+    line-height: var(--bbai-leading-relaxed);
+    color: var(--bbai-text-muted);
+}
+
+body.bbai-dashboard .bbai-ds-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bbai-space-3);
+}
+
+body.bbai-dashboard .bbai-ds-stack--sm {
+    gap: var(--bbai-space-2);
+}
+
+body.bbai-dashboard .bbai-ds-stack--lg {
+    gap: var(--bbai-space-5);
+}
+
+/* Page title scale helper (Settings, Usage, etc.) */
+body.bbai-dashboard .bbai-ds-page-title {
+    margin: 0 0 var(--bbai-space-2);
+    font-size: var(--bbai-ds-page-title);
+    font-weight: var(--bbai-font-extrabold);
+    line-height: var(--bbai-leading-tight);
+    letter-spacing: var(--bbai-tracking-tight);
+    color: var(--bbai-text-primary);
+}
+
+body.bbai-dashboard .bbai-ds-page-subtitle {
+    margin: 0 0 var(--bbai-space-4);
+    max-width: 72ch;
+    font-size: var(--bbai-ds-body-lg);
+    line-height: var(--bbai-leading-relaxed);
+    color: var(--bbai-text-muted);
+}

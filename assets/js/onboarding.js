@@ -49,6 +49,16 @@
         return $.post(bbaiOnboarding.ajaxUrl, payload);
     }
 
+    function emitAnalyticsEvent(eventName, properties) {
+        try {
+            document.dispatchEvent(new CustomEvent('bbai:analytics', {
+                detail: $.extend({ event: eventName }, properties || {})
+            }));
+        } catch (error) {
+            // Ignore analytics dispatch failures.
+        }
+    }
+
     function initOnboarding() {
         if (typeof bbaiOnboarding === 'undefined') {
             return;
@@ -59,6 +69,17 @@
         if (!root) {
             return;
         }
+
+        var step = parseInt(
+            root.getAttribute('data-bbai-onboarding-step') ||
+                (bbaiOnboarding.currentStep ? String(bbaiOnboarding.currentStep) : '1'),
+            10
+        );
+        if (!step || step < 1) {
+            step = 1;
+        }
+
+        var isGenerateStep = step === 2;
 
         var scanButton = root.querySelector('[data-bbai-onboarding-action="start-scan"]');
         var skipButton = root.querySelector('[data-bbai-onboarding-action="skip"]');
@@ -116,15 +137,27 @@
             var estimateSeconds = Math.max(5, Math.ceil(Math.max(count, 1) / 6));
 
             if (scanCountEl) {
-                scanCountEl.textContent = sprintf(
-                    _n(
-                        'Scanning %d image',
-                        'Scanning %d images',
-                        count,
-                        'beepbeep-ai-alt-text-generator'
-                    ),
-                    count
-                );
+                if (isGenerateStep) {
+                    scanCountEl.textContent = sprintf(
+                        _n(
+                            'Queuing %d image for ALT text',
+                            'Queuing %d images for ALT text',
+                            count,
+                            'beepbeep-ai-alt-text-generator'
+                        ),
+                        count
+                    );
+                } else {
+                    scanCountEl.textContent = sprintf(
+                        _n(
+                            'Scanning %d image',
+                            'Scanning %d images',
+                            count,
+                            'beepbeep-ai-alt-text-generator'
+                        ),
+                        count
+                    );
+                }
             }
 
             if (scanTimeEl) {
@@ -185,17 +218,32 @@
         if (scanButton) {
             // Capture original label for reliable restoration
             var scanButtonOriginalLabel = (scanButton.textContent || '').trim();
+            var startBusyLabel = isGenerateStep
+                ? (strings.generateStart || __('Starting generation...', 'beepbeep-ai-alt-text-generator'))
+                : (strings.scanStart || __('Starting scan...', 'beepbeep-ai-alt-text-generator'));
+            var prepareLabel = isGenerateStep
+                ? __('Preparing generation...', 'beepbeep-ai-alt-text-generator')
+                : __('Preparing scan...', 'beepbeep-ai-alt-text-generator');
+            var failMessage = isGenerateStep
+                ? (strings.generateFailed || __("Couldn't start generation. Please try again.", 'beepbeep-ai-alt-text-generator'))
+                : (strings.scanFailed || __("Couldn't start the scan. Please try again.", 'beepbeep-ai-alt-text-generator'));
 
             scanButton.addEventListener('click', function () {
                 clearScanTimers();
                 hasRedirected = false;
 
                 // Immediately disable and update label
-                setLoading(scanButton, true, strings.scanStart || __('Starting scan...', 'beepbeep-ai-alt-text-generator'));
+                setLoading(scanButton, true, startBusyLabel);
                 setStatus(statusEl, '', '');
                 setHidden(scanMetaEl, true);
                 setHidden(scanProgressEl, true);
-                setScanProgress(0, __('Preparing scan...', 'beepbeep-ai-alt-text-generator'));
+                setScanProgress(0, prepareLabel);
+
+                if (!isGenerateStep) {
+                    emitAnalyticsEvent('scan_started', {
+                        source: 'onboarding'
+                    });
+                }
 
                 postAction('bbai_start_scan')
                     .done(function (response) {
@@ -214,17 +262,40 @@
                             var totalImages = parseInt((data.total != null ? data.total : queued), 10) || queued;
                             var estimateSeconds = setScanEstimate(totalImages);
 
+                            if (isGenerateStep) {
+                                emitAnalyticsEvent('generation_started', {
+                                    source: 'onboarding',
+                                    requested_count: queued
+                                });
+                            } else {
+                                emitAnalyticsEvent('scan_completed', {
+                                    source: 'onboarding',
+                                    total_images: totalImages,
+                                    queued_count: queued
+                                });
+                            }
+
                             // Build and show success message
                             if (queued > 0) {
-                                var successMsg = sprintf(
-                                    _n(
-                                        "Scan started. We've queued %d image for alt text generation. You can safely leave this page while we process your library in the background.",
-                                        "Scan started. We've queued %d images for alt text generation. You can safely leave this page while we process your library in the background.",
-                                        queued,
-                                        'beepbeep-ai-alt-text-generator'
-                                    ),
-                                    queued
-                                );
+                                var successMsg = isGenerateStep
+                                    ? sprintf(
+                                        _n(
+                                            "We're generating ALT for %d image. You can leave this page—work continues in the background.",
+                                            "We're generating ALT for %d images. You can leave this page—work continues in the background.",
+                                            queued,
+                                            'beepbeep-ai-alt-text-generator'
+                                        ),
+                                        queued
+                                    )
+                                    : sprintf(
+                                        _n(
+                                            "Scan started. We've queued %d image for alt text generation. You can safely leave this page while we process your library in the background.",
+                                            "Scan started. We've queued %d images for alt text generation. You can safely leave this page while we process your library in the background.",
+                                            queued,
+                                            'beepbeep-ai-alt-text-generator'
+                                        ),
+                                        queued
+                                    );
                                 setStatus(statusEl, successMsg, 'success');
                                 setHidden(scanMetaEl, false);
                                 setHidden(scanProgressEl, false);
@@ -354,13 +425,19 @@
                         // Server error response - restore via helper to avoid inconsistent state
                         clearScanTimers();
                         setLoading(scanButton, false, scanButtonOriginalLabel);
-                        setStatus(statusEl, __("Couldn't start the scan. Please try again.", 'beepbeep-ai-alt-text-generator'), 'error');
+                        setStatus(statusEl, failMessage, 'error');
+                        emitAnalyticsEvent(isGenerateStep ? 'generation_failed' : 'scan_failed', {
+                            source: 'onboarding'
+                        });
                     })
                     .fail(function () {
                         // Network or request error - restore via helper
                         clearScanTimers();
                         setLoading(scanButton, false, scanButtonOriginalLabel);
-                        setStatus(statusEl, __("Couldn't start the scan. Please try again.", 'beepbeep-ai-alt-text-generator'), 'error');
+                        setStatus(statusEl, failMessage, 'error');
+                        emitAnalyticsEvent(isGenerateStep ? 'generation_failed' : 'scan_failed', {
+                            source: 'onboarding'
+                        });
                     });
             });
         }

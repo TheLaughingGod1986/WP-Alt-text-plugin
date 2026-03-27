@@ -32,6 +32,26 @@ function bbai_command_hero_icon_markup(string $tone): string
 }
 
 /**
+ * Icon for unified inline banners (variant + tone).
+ *
+ * @param string $variant success|warning|info|neutral
+ */
+function bbai_command_hero_icon_markup_for_banner_variant(string $variant, string $tone = 'healthy'): string
+{
+    if ('warning' === $variant) {
+        return bbai_command_hero_icon_markup('paused' === $tone ? 'paused' : ('attention' === $tone ? 'attention' : 'attention'));
+    }
+    if ('info' === $variant) {
+        return '<svg viewBox="0 0 24 24" fill="none" focusable="false" width="22" height="22"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 10V16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="7" r="1" fill="currentColor"/></svg>';
+    }
+    if ('neutral' === $variant) {
+        return '<svg viewBox="0 0 24 24" fill="none" focusable="false" width="22" height="22"><path d="M4 19V5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M4 15h4l3-6 4 10 3-4h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    }
+
+    return bbai_command_hero_icon_markup('healthy');
+}
+
+/**
  * Render primary / secondary / tertiary CTA using dashboard command-hero classes.
  *
  * @param array<string, mixed>|null $action Same shape as analytics-tab make_button_action / make_link_action.

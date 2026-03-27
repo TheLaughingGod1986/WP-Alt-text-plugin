@@ -1,0 +1,485 @@
+/**
+ * BeepBeep AI — Phase 5 table / workspace row system
+ *
+ * Structural patterns: .bbai-table*, .bbai-row*, .bbai-row-actions*
+ * Bridges: ALT Library (.bbai-library-*), design-system (.bbai-ds-table-row)
+ *
+ * Depends: bbai-admin-foundation-tokens, bbai-admin-semantic-status (load order)
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Tokens bridge (dashboard)                                                   */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard {
+    --bbai-table-row-pad-y: var(--bbai-admin-table-row-pad-y);
+    --bbai-table-row-pad-x: var(--bbai-admin-table-row-pad-x);
+    --bbai-table-row-gap-x: var(--bbai-admin-table-row-gap-x);
+    --bbai-table-row-gap-y: var(--bbai-admin-table-row-gap-y);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Table shell — wrappers, semantic <table>                                   */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-table-wrap,
+body.bbai-dashboard .bbai-table__scroll {
+    overflow-x: auto;
+    overflow-y: clip;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+}
+
+body.bbai-dashboard .bbai-table--workspace {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: transparent;
+}
+
+body.bbai-dashboard .bbai-table__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    min-width: 0;
+}
+
+body.bbai-dashboard .bbai-table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--bbai-space-3);
+    flex-wrap: wrap;
+    padding: 0 0 var(--bbai-space-2);
+    border-bottom: 1px solid var(--bbai-border);
+    margin-bottom: var(--bbai-space-2);
+}
+
+body.bbai-dashboard .bbai-table-header__title {
+    margin: 0;
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text-primary);
+}
+
+/* Semantic data tables (Debug, exports, etc.) */
+body.bbai-dashboard .bbai-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--bbai-text-sm);
+    line-height: var(--bbai-leading-snug);
+    background: var(--bbai-bg-primary);
+}
+
+body.bbai-dashboard .bbai-table thead th {
+    text-align: left;
+    padding: var(--bbai-admin-table-cell-pad-y) var(--bbai-admin-table-cell-pad-x);
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-semibold);
+    text-transform: uppercase;
+    letter-spacing: var(--bbai-tracking-wide);
+    color: var(--bbai-text-muted);
+    background: var(--bbai-admin-table-header-bg);
+    border-bottom: var(--bbai-admin-table-border);
+    white-space: nowrap;
+}
+
+body.bbai-dashboard .bbai-table tbody td {
+    padding: var(--bbai-admin-table-cell-pad-y) var(--bbai-admin-table-cell-pad-x);
+    vertical-align: middle;
+    border-bottom: var(--bbai-admin-table-border);
+    color: var(--bbai-text-primary);
+    transition: background-color var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease);
+}
+
+body.bbai-dashboard .bbai-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+body.bbai-dashboard .bbai-table tbody tr:hover > td {
+    background: var(--bbai-admin-table-hover-bg);
+}
+
+body.bbai-dashboard tr.bbai-ds-table-row > td,
+body.bbai-dashboard tr.bbai-ds-table-row > th {
+    vertical-align: middle;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Row surface — list / card rows (ALT Library)                                 */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-row,
+body.bbai-dashboard .bbai-library-review-card.bbai-row {
+    box-sizing: border-box;
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+}
+
+body.bbai-dashboard .bbai-row__main,
+body.bbai-dashboard .bbai-library-card__main.bbai-row__main {
+    min-width: 0;
+    width: 100%;
+}
+
+body.bbai-dashboard .bbai-row__media,
+body.bbai-dashboard .bbai-row__meta,
+body.bbai-dashboard .bbai-row__status,
+body.bbai-dashboard .bbai-row__content,
+body.bbai-dashboard .bbai-row__actions {
+    min-width: 0;
+}
+
+body.bbai-dashboard .bbai-row__media {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+}
+
+body.bbai-dashboard .bbai-row__meta {
+    align-self: center;
+}
+
+body.bbai-dashboard .bbai-row__status {
+    align-self: center;
+}
+
+body.bbai-dashboard .bbai-row__content {
+    align-self: center;
+}
+
+body.bbai-dashboard .bbai-row__actions {
+    align-self: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    max-width: min(var(--bbai-admin-table-actions-col-max), 100%);
+}
+
+@media (min-width: 900px) {
+    body.bbai-dashboard .bbai-library-workspace .bbai-library-card__main.bbai-row__main {
+        display: grid;
+        grid-template-columns:
+            minmax(0, min(200px, 20vw))
+            minmax(108px, 128px)
+            minmax(0, 1fr)
+            minmax(var(--bbai-admin-table-actions-col-min), var(--bbai-admin-table-actions-col-max));
+        column-gap: var(--bbai-table-row-gap-x);
+        row-gap: var(--bbai-table-row-gap-y);
+        align-items: center;
+    }
+
+    body.bbai-dashboard .bbai-library-workspace .bbai-library-card__main.bbai-row__main > .bbai-row__meta {
+        grid-column: 1;
+        grid-row: 1;
+        align-self: center;
+    }
+
+    body.bbai-dashboard .bbai-library-workspace .bbai-library-card__main.bbai-row__main > .bbai-row__status {
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: start;
+        align-self: center;
+    }
+
+    body.bbai-dashboard .bbai-library-workspace .bbai-library-card__main.bbai-row__main > .bbai-library-card__review-body {
+        display: contents;
+    }
+
+    body.bbai-dashboard .bbai-library-workspace .bbai-library-card__main.bbai-row__main .bbai-row__content {
+        grid-column: 3;
+        grid-row: 1;
+        min-width: 0;
+        align-self: center;
+    }
+
+    body.bbai-dashboard .bbai-library-workspace .bbai-library-card__main.bbai-row__main .bbai-row__actions {
+        grid-column: 4;
+        grid-row: 1;
+        min-width: 0;
+        justify-self: end;
+        align-self: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: stretch;
+        max-width: var(--bbai-admin-table-actions-col-max);
+    }
+
+    body.bbai-dashboard .bbai-library-workspace .bbai-library-card__review-body .bbai-library-alt-slot {
+        width: 100%;
+    }
+
+    body.bbai-dashboard .bbai-library-workspace .bbai-library-card__review-body .bbai-library-card__action-cluster {
+        width: 100%;
+        max-width: var(--bbai-admin-table-actions-col-max);
+        justify-content: center;
+        margin-top: 0;
+    }
+}
+
+@media (min-width: 1200px) {
+    body.bbai-dashboard .bbai-library-workspace .bbai-library-card__main.bbai-row__main {
+        grid-template-columns:
+            minmax(0, min(220px, 18vw))
+            minmax(112px, 136px)
+            minmax(0, 1fr)
+            minmax(var(--bbai-admin-table-actions-col-min-lg), var(--bbai-admin-table-actions-col-max-lg));
+    }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Row actions column                                                         */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-row-actions,
+body.bbai-dashboard .bbai-library-card__action-cluster.bbai-row-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: var(--bbai-space-2);
+    min-width: 0;
+    width: 100%;
+    margin-top: 0;
+}
+
+body.bbai-dashboard .bbai-library-workspace .bbai-library-card__action-cluster.bbai-row-actions .bbai-library-card__quick-actions {
+    width: 100%;
+}
+
+@media (min-width: 900px) {
+    body.bbai-dashboard .bbai-library-workspace .bbai-library-card__action-cluster.bbai-row-actions {
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: center;
+    }
+
+    body.bbai-dashboard .bbai-library-workspace .bbai-library-card__action-cluster.bbai-row-actions .bbai-library-card__quick-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    body.bbai-dashboard .bbai-library-workspace .bbai-library-card__action-cluster.bbai-row-actions .bbai-library-card__quick-action {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
+body.bbai-dashboard .bbai-row-actions__primary,
+body.bbai-dashboard .bbai-row-actions__secondary {
+    flex: 0 0 auto;
+    min-width: 0;
+}
+
+body.bbai-dashboard .bbai-library-card__extra-actions {
+    flex: 0 0 auto;
+    align-self: stretch;
+    width: 100%;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Table meta + pagination                                                    */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-table-meta,
+body.bbai-dashboard nav.bbai-pagination.bbai-table-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--bbai-space-3);
+    flex-wrap: wrap;
+    margin-top: var(--bbai-space-4);
+    padding-top: var(--bbai-space-4);
+    border-top: 1px solid var(--bbai-border);
+}
+
+body.bbai-dashboard .bbai-table-meta .bbai-pagination-info,
+body.bbai-dashboard .bbai-pagination.bbai-table-meta .bbai-pagination-info {
+    font-size: var(--bbai-text-xs);
+    line-height: var(--bbai-leading-snug);
+    font-weight: var(--bbai-font-medium);
+    color: var(--bbai-admin-table-meta-color);
+}
+
+body.bbai-dashboard .bbai-pagination-controls,
+body.bbai-dashboard .bbai-pagination-pages {
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+    flex-wrap: wrap;
+}
+
+body.bbai-dashboard .bbai-pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.375rem;
+    min-height: 2.375rem;
+    padding: 0 var(--bbai-space-3);
+    border-radius: var(--bbai-radius-md);
+    border: 1px solid var(--bbai-border);
+    background: var(--bbai-bg-primary);
+    color: var(--bbai-text-secondary);
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-semibold);
+    line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+        border-color var(--bbai-transition-fast) var(--bbai-ease-out),
+        background-color var(--bbai-transition-fast) var(--bbai-ease-out),
+        color var(--bbai-transition-fast) var(--bbai-ease-out),
+        box-shadow var(--bbai-transition-fast) var(--bbai-ease-out);
+}
+
+body.bbai-dashboard .bbai-pagination-btn:hover:not(.bbai-pagination-btn--current):not(.bbai-pagination-btn--disabled) {
+    border-color: var(--bbai-border-secondary);
+    background: var(--bbai-bg-secondary);
+    box-shadow: var(--bbai-shadow-sm);
+}
+
+body.bbai-dashboard .bbai-pagination-btn--current {
+    background: var(--bbai-primary);
+    border-color: var(--bbai-primary);
+    color: var(--bbai-text-inverse);
+    cursor: default;
+}
+
+body.bbai-dashboard .bbai-pagination-ellipsis {
+    color: var(--bbai-text-muted);
+    font-size: var(--bbai-text-sm);
+    padding: 0 var(--bbai-space-1);
+    user-select: none;
+}
+
+@media (max-width: 782px) {
+    body.bbai-dashboard .bbai-table-meta,
+    body.bbai-dashboard nav.bbai-pagination.bbai-table-meta {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    body.bbai-dashboard .bbai-pagination-controls {
+        justify-content: flex-start;
+    }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Empty states                                                               */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-table-empty {
+    box-sizing: border-box;
+    text-align: center;
+}
+
+body.bbai-dashboard .bbai-table-empty__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 4.5rem;
+    height: 4.5rem;
+    margin: 0 auto var(--bbai-space-4);
+    border-radius: var(--bbai-radius-xl);
+    background: var(--bbai-bg-secondary);
+    color: var(--bbai-text-muted);
+}
+
+body.bbai-dashboard .bbai-table-empty__title {
+    margin: 0;
+    font-size: var(--bbai-text-xl);
+    font-weight: var(--bbai-font-bold);
+    line-height: var(--bbai-leading-tight);
+    letter-spacing: -0.02em;
+    color: var(--bbai-text-primary);
+}
+
+body.bbai-dashboard .bbai-table-empty__copy {
+    margin: var(--bbai-space-3) auto 0;
+    max-width: 36rem;
+    font-size: var(--bbai-text-sm);
+    line-height: var(--bbai-leading-relaxed);
+    color: var(--bbai-text-muted);
+}
+
+body.bbai-dashboard .bbai-table-empty__actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--bbai-space-2);
+    flex-wrap: wrap;
+    margin-top: var(--bbai-space-6);
+}
+
+/* Filter / inline empty (inside list body) */
+body.bbai-dashboard .bbai-library-filter-empty.bbai-table-empty--inline {
+    width: 100%;
+}
+
+body.bbai-dashboard .bbai-library-empty-card,
+body.bbai-dashboard .bbai-table-empty__panel {
+    padding: var(--bbai-space-6) var(--bbai-space-5);
+    margin-top: var(--bbai-space-1);
+    border-radius: var(--bbai-radius-xl);
+    border: 1px dashed var(--bbai-border);
+    background: linear-gradient(180deg, var(--bbai-bg-secondary) 0%, var(--bbai-bg-primary) 100%);
+    text-align: center;
+}
+
+body.bbai-dashboard .bbai-library-empty-card__title,
+body.bbai-dashboard .bbai-table-empty__panel-title {
+    margin: 0;
+    font-size: var(--bbai-text-lg);
+    font-weight: var(--bbai-font-bold);
+    line-height: var(--bbai-leading-tight);
+    color: var(--bbai-text-primary);
+}
+
+body.bbai-dashboard .bbai-library-empty-card__copy,
+body.bbai-dashboard .bbai-table-empty__panel-copy {
+    margin: var(--bbai-space-2) auto 0;
+    max-width: 30rem;
+    font-size: var(--bbai-text-sm);
+    line-height: var(--bbai-leading-relaxed);
+    color: var(--bbai-text-muted);
+}
+
+body.bbai-dashboard .bbai-library-empty-card__actions,
+body.bbai-dashboard .bbai-table-empty__panel-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--bbai-space-2);
+    flex-wrap: wrap;
+    margin-top: var(--bbai-space-4);
+}
+
+body.bbai-dashboard .bbai-table-empty--cell {
+    padding: var(--bbai-space-8) var(--bbai-space-4) !important;
+    text-align: center;
+    color: var(--bbai-text-muted);
+    font-size: var(--bbai-text-sm);
+    vertical-align: middle;
+}
+
+/* ALT Library — full empty (no images) keeps workspace rhythm */
+body.bbai-dashboard .bbai-library-workspace .bbai-library-empty-state.bbai-table-empty {
+    padding: var(--bbai-space-8);
+    border-radius: var(--bbai-radius-xl);
+    border: 1px solid var(--bbai-border);
+    background: linear-gradient(180deg, var(--bbai-bg-secondary) 0%, var(--bbai-bg-primary) 100%);
+    box-shadow: var(--bbai-shadow-sm);
+}
+
+body.bbai-dashboard .bbai-library-workspace-card__table-surface .bbai-pagination.bbai-table-meta {
+    margin: var(--bbai-space-3) 0 0;
+    padding: var(--bbai-space-3) 0 var(--bbai-space-2);
+    border-top: 1px solid var(--bbai-border);
+}

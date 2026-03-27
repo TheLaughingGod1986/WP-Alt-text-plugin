@@ -22,6 +22,10 @@ const BBAI_BANNER_STATE_HEALTHY          = 'healthy';
 const BBAI_BANNER_STATE_NEEDS_ATTENTION  = 'needs_attention';
 const BBAI_BANNER_STATE_LOW_CREDITS      = 'low_credits';
 const BBAI_BANNER_STATE_OUT_OF_CREDITS   = 'out_of_credits';
+/** Dashboard-only celebration slot (early activation); never competes with credit/attention banners. */
+const BBAI_BANNER_STATE_FIRST_SUCCESS    = 'first_success';
+/** Explicit no primary status-banner render (opt-in via filter or future callers). */
+const BBAI_BANNER_STATE_NONE             = 'none';
 
 /**
  * Credits remaining at or below this value (and > 0) => low_credits banner state.
@@ -128,12 +132,14 @@ function bbai_banner_snapshot_from_dashboard_state(array $d): array
         'is_first_run'      => !empty($d['isFirstRun']),
         'is_low_credits'    => !empty($d['isLowCredits']),
         'is_out_of_credits' => !empty($d['isOutOfCredits']),
+        'has_ever_generated_alt' => !empty($d['hasEverGeneratedAlt']),
+        'optimized_count'   => max(0, (int) ($d['optimizedCount'] ?? 0)),
         'plan_label'        => (string) ($d['planLabel'] ?? ''),
         'remaining_line'    => (string) ($d['remainingLine'] ?? ''),
         'reset_timing'      => (string) ($d['resetTiming'] ?? ''),
         'library_url'       => (string) ($d['libraryUrl'] ?? admin_url('admin.php?page=bbai-library')),
         'missing_library_url' => (string) ($d['missingLibraryUrl'] ?? admin_url('admin.php?page=bbai-library')),
-        'needs_review_library_url' => (string) ($d['needsReviewLibraryUrl'] ?? admin_url('admin.php?page=bbai-library')),
+        'needs_review_library_url' => (string) ($d['needsReviewLibraryUrl'] ?? bbai_alt_library_needs_review_url()),
         'usage_url'         => (string) ($d['usageUrl'] ?? admin_url('admin.php?page=bbai-credit-usage')),
         'settings_url'      => (string) ($d['settingsUrl'] ?? admin_url('admin.php?page=bbai-settings')),
         'guide_url'         => (string) ($d['guideUrl'] ?? admin_url('admin.php?page=bbai-guide')),
@@ -161,12 +167,14 @@ function bbai_banner_snapshot_merge(array $overrides): array
         'is_first_run'        => false,
         'is_low_credits'      => false,
         'is_out_of_credits'   => false,
+        'has_ever_generated_alt' => false,
+        'optimized_count'     => 0,
         'plan_label'          => '',
         'remaining_line'      => '',
         'reset_timing'        => '',
         'library_url'         => admin_url('admin.php?page=bbai-library'),
         'missing_library_url' => add_query_arg(['page' => 'bbai-library', 'status' => 'missing'], admin_url('admin.php')),
-        'needs_review_library_url' => add_query_arg(['page' => 'bbai-library', 'status' => 'needs_review'], admin_url('admin.php')),
+        'needs_review_library_url' => bbai_alt_library_needs_review_url(),
         'usage_url'           => admin_url('admin.php?page=bbai-credit-usage'),
         'settings_url'        => admin_url('admin.php?page=bbai-settings'),
         'guide_url'           => admin_url('admin.php?page=bbai-guide'),
@@ -184,19 +192,7 @@ function bbai_banner_snapshot_merge(array $overrides): array
  */
 function bbai_banner_build_issue_attention_message(int $issue_count): string
 {
-    if ($issue_count <= 0) {
-        return __('All images are optimized.', 'beepbeep-ai-alt-text-generator');
-    }
-
-    if (1 === $issue_count) {
-        return __('1 image still needs attention.', 'beepbeep-ai-alt-text-generator');
-    }
-
-    return sprintf(
-        /* translators: %s: formatted issue count (locale-aware) */
-        _n('%s image still needs attention.', '%s images still need attention.', $issue_count, 'beepbeep-ai-alt-text-generator'),
-        number_format_i18n($issue_count)
-    );
+    return bbai_copy_attention_issue_sentence($issue_count);
 }
 
 /**
@@ -211,32 +207,29 @@ function bbai_banner_build_credit_supporting_line(int $credits_remaining, int $i
 {
     $credits_remaining = max(0, $credits_remaining);
     $issue_count       = max(0, $issue_count);
-    $credits_fmt         = number_format_i18n($credits_remaining);
+    $credits_fmt      = number_format_i18n($credits_remaining);
+    $credits_segment  = '';
 
-    $credits_segment = sprintf(
-        /* translators: %s: credits remaining (locale-formatted number) */
-        _n(
-            '%s optimization left this cycle',
-            '%s optimizations left this cycle',
-            $credits_remaining,
-            'beepbeep-ai-alt-text-generator'
-        ),
-        $credits_fmt
-    );
+    if ($credits_remaining <= 0) {
+        $credits_segment = __('You can still review your existing ALT text. Upgrade to continue generating.', 'beepbeep-ai-alt-text-generator');
+    } else {
+        $credits_segment = sprintf(
+            /* translators: %s: credits remaining (locale-formatted number) */
+            _n(
+                '%s credit left this month. Keep your library moving.',
+                '%s credits left this month. Keep your library moving.',
+                $credits_remaining,
+                'beepbeep-ai-alt-text-generator'
+            ),
+            $credits_fmt
+        );
+    }
 
     if ($issue_count <= 0) {
         return $credits_segment;
     }
 
-    if (1 === $issue_count) {
-        $issues_segment = __('1 image needs attention', 'beepbeep-ai-alt-text-generator');
-    } else {
-        $issues_segment = sprintf(
-            /* translators: %s: issue count (locale-formatted, 2+) */
-            __('%s images need attention', 'beepbeep-ai-alt-text-generator'),
-            number_format_i18n($issue_count)
-        );
-    }
+    $issues_segment = bbai_copy_attention_issue_sentence($issue_count);
 
     return $credits_segment . ' • ' . $issues_segment;
 }
@@ -277,8 +270,148 @@ function bbai_banner_normalize_banner_data(array $input): array
 }
 
 /**
- * Single highest-priority banner logical state (same on every admin surface).
- * Priority: out_of_credits → low_credits → needs_attention → healthy.
+ * Single primary top-of-page banner state (strict priority). Use this for gating which hero/banner renders.
+ *
+ * Priority:
+ * 1. out_of_credits
+ * 2. low_credits
+ * 3. needs_attention
+ * 4. first_success (dashboard context only; early activation, no open issues, credits above low threshold)
+ * 5. none
+ *
+ * Product slot labels (lowCredits → missingAlt → milestone): see bbai_get_active_banner_slot_from_state().
+ *
+ * @param array<string, mixed> $snapshot Keys aligned with bbai_banner_snapshot_merge + optional flags.
+ * @param string               $page_context BBAI_BANNER_CTX_*; first_success applies only to dashboard.
+ */
+function bbai_get_primary_banner_state(array $snapshot, string $page_context = ''): string
+{
+    $d = bbai_banner_normalize_banner_data($snapshot);
+
+    if (0 === $d['credits_remaining']) {
+        return BBAI_BANNER_STATE_OUT_OF_CREDITS;
+    }
+
+    if ($d['credits_remaining'] > 0 && $d['credits_remaining'] <= $d['low_credit_threshold']) {
+        return BBAI_BANNER_STATE_LOW_CREDITS;
+    }
+
+    if ($d['total_issues'] > 0) {
+        return BBAI_BANNER_STATE_NEEDS_ATTENTION;
+    }
+
+    if (
+        BBAI_BANNER_CTX_DASHBOARD === $page_context
+        && bbai_banner_snapshot_first_success_eligible($snapshot, $d)
+    ) {
+        return BBAI_BANNER_STATE_FIRST_SUCCESS;
+    }
+
+    return BBAI_BANNER_STATE_NONE;
+}
+
+/**
+ * Canonical top-banner resolver alias (readability helper for page templates).
+ *
+ * @param array<string, mixed> $snapshot
+ */
+function bbai_resolve_top_banner(array $snapshot, string $page_context = ''): string
+{
+    return bbai_get_primary_banner_state($snapshot, $page_context);
+}
+
+/**
+ * Map internal banner state to a single product slot key (mirrors client `bbaiGetActiveBanner`).
+ *
+ * @return 'lowCredits'|'missingAlt'|'milestone'|null
+ */
+function bbai_get_active_banner_slot_from_state(string $state): ?string
+{
+    if (BBAI_BANNER_STATE_OUT_OF_CREDITS === $state || BBAI_BANNER_STATE_LOW_CREDITS === $state) {
+        return 'lowCredits';
+    }
+    if (BBAI_BANNER_STATE_NEEDS_ATTENTION === $state) {
+        return 'missingAlt';
+    }
+    if (BBAI_BANNER_STATE_FIRST_SUCCESS === $state) {
+        return 'milestone';
+    }
+
+    return null;
+}
+
+/**
+ * Active top-banner slot from snapshot (strict priority via bbai_get_primary_banner_state).
+ *
+ * @return 'lowCredits'|'missingAlt'|'milestone'|null
+ */
+function bbai_get_active_banner_slot(array $snapshot, string $page_context = ''): ?string
+{
+    return bbai_get_active_banner_slot_from_state(bbai_get_primary_banner_state($snapshot, $page_context));
+}
+
+/**
+ * When non-null, only the primary command hero should show — hide milestone strips, retention nudges, etc.
+ */
+function bbai_banner_is_priority_slot_active(?string $active_slot): bool
+{
+    return null !== $active_slot && '' !== $active_slot;
+}
+
+/**
+ * Early-activation “first success” slot: at least one optimized (saved) ALT visible in coverage, no library issues, modest credit usage.
+ *
+ * @param array<string, mixed>        $snapshot Raw snapshot.
+ * @param array<string, mixed> $d Normalized banner data.
+ */
+function bbai_banner_snapshot_first_success_eligible(array $snapshot, array $d): bool
+{
+    $optimized = max(0, (int) ($snapshot['optimized_count'] ?? 0));
+    if ($optimized <= 0) {
+        return false;
+    }
+    if (empty($snapshot['has_ever_generated_alt'])) {
+        return false;
+    }
+    if (!empty($snapshot['suppress_first_success_banner'])) {
+        return false;
+    }
+    if ($d['total_issues'] > 0) {
+        return false;
+    }
+    $used = max(0, (int) ($snapshot['credits_used'] ?? 0));
+    $max  = (int) apply_filters('bbai_banner_first_success_max_credits_used', 15);
+    if ($used > $max) {
+        return false;
+    }
+
+    return (bool) apply_filters('bbai_banner_first_success_eligible', true, $snapshot, $d);
+}
+
+/**
+ * When true, omit dashboard plan-card lines that repeat credit + attention messaging already in the primary banner.
+ *
+ * @param string $primary_state Result of bbai_get_primary_banner_state().
+ */
+function bbai_banner_suppress_dashboard_plan_attention_note(string $primary_state, int $missing_count, int $weak_count): bool
+{
+    if ($missing_count <= 0 && $weak_count <= 0) {
+        return false;
+    }
+
+    return in_array(
+        $primary_state,
+        [
+            BBAI_BANNER_STATE_OUT_OF_CREDITS,
+            BBAI_BANNER_STATE_LOW_CREDITS,
+            BBAI_BANNER_STATE_NEEDS_ATTENTION,
+        ],
+        true
+    );
+}
+
+/**
+ * Credit + attention subset only (no first_success / none). Prefer bbai_get_primary_banner_state().
  *
  * @param array<string, mixed> $data Raw or normalized counts (see bbai_banner_normalize_banner_data()).
  */
@@ -328,7 +461,7 @@ function bbai_banner_get_content(string $state, array $data): array
             return [
                 'state'                   => $state,
                 'needs_attention_variant' => null,
-                'title'                   => __('You’re out of credits', 'beepbeep-ai-alt-text-generator'),
+                'title'                   => bbai_copy_banner_out_of_credits_title(),
                 'body'                    => bbai_banner_build_credit_supporting_line(0, $issues),
                 'status_line'             => '',
                 'show_progress'           => false,
@@ -338,7 +471,7 @@ function bbai_banner_get_content(string $state, array $data): array
             return [
                 'state'                   => $state,
                 'needs_attention_variant' => null,
-                'title'                   => __('You’re running low on credits', 'beepbeep-ai-alt-text-generator'),
+                'title'                   => bbai_copy_banner_low_credits_title(),
                 'body'                    => bbai_banner_build_credit_supporting_line($rem, $issues),
                 'status_line'             => '',
                 'show_progress'           => true,
@@ -358,9 +491,29 @@ function bbai_banner_get_content(string $state, array $data): array
             return [
                 'state'                   => $state,
                 'needs_attention_variant' => $variant,
-                'title'                   => __('Your library needs attention', 'beepbeep-ai-alt-text-generator'),
-                'body'                    => __('Some images are missing ALT text or need improvement.', 'beepbeep-ai-alt-text-generator'),
+                'title'                   => bbai_copy_banner_needs_attention_title(),
+                'body'                    => bbai_copy_banner_needs_attention_body(),
                 'status_line'             => $status,
+                'show_progress'           => false,
+            ];
+
+        case BBAI_BANNER_STATE_FIRST_SUCCESS:
+            return [
+                'state'                   => $state,
+                'needs_attention_variant' => null,
+                'title'                   => __('Nice — your first ALT is live', 'beepbeep-ai-alt-text-generator'),
+                'body'                    => __('Screen readers and search engines can better understand your images. Keep going to lift coverage across your library.', 'beepbeep-ai-alt-text-generator'),
+                'status_line'             => '',
+                'show_progress'           => false,
+            ];
+
+        case BBAI_BANNER_STATE_NONE:
+            return [
+                'state'                   => $state,
+                'needs_attention_variant' => null,
+                'title'                   => '',
+                'body'                    => '',
+                'status_line'             => '',
                 'show_progress'           => false,
             ];
 
@@ -370,8 +523,8 @@ function bbai_banner_get_content(string $state, array $data): array
                 return [
                     'state'                   => BBAI_BANNER_STATE_HEALTHY,
                     'needs_attention_variant' => null,
-                    'title'                   => __('Your library is in great shape', 'beepbeep-ai-alt-text-generator'),
-                    'body'                    => __('All images are optimized and up to date.', 'beepbeep-ai-alt-text-generator'),
+                    'title'                   => bbai_copy_banner_healthy_title(),
+                    'body'                    => bbai_copy_banner_healthy_body(),
                     'status_line'             => '',
                     'show_progress'           => false,
                 ];
@@ -380,9 +533,9 @@ function bbai_banner_get_content(string $state, array $data): array
             return [
                 'state'                   => BBAI_BANNER_STATE_HEALTHY,
                 'needs_attention_variant' => null,
-                'title'                   => __('Get started with your media library', 'beepbeep-ai-alt-text-generator'),
-                'body'                    => __('Scan your library to find missing ALT text and improve accessibility faster.', 'beepbeep-ai-alt-text-generator'),
-                'status_line'             => __('Start by scanning your media library.', 'beepbeep-ai-alt-text-generator'),
+                'title'                   => bbai_copy_banner_first_run_title(),
+                'body'                    => bbai_copy_banner_first_run_body(),
+                'status_line'             => bbai_copy_banner_first_run_status(),
                 'show_progress'           => false,
             ];
     }
@@ -407,7 +560,7 @@ function bbai_banner_get_banner_state(int $remaining_credits, int $missing_count
         'needs_review_count' => $needs_review_count,
         'total_images'       => $total_images,
     ];
-    $state = bbai_banner_resolve_state($payload);
+    $state = bbai_get_primary_banner_state($payload, '');
 
     return array_merge(bbai_banner_get_content($state, $payload), ['state' => $state]);
 }
@@ -424,9 +577,10 @@ function bbai_get_banner_state(int $remaining_credits, int $missing_count, int $
 
 /**
  * @param array<string, mixed> $s Snapshot (credits_remaining, missing_count, weak_count, total_images).
+ * @param string               $page_context BBAI_BANNER_CTX_* for first_success gating.
  * @return array<string, mixed>
  */
-function bbai_banner_get_banner_state_from_snapshot(array $s): array
+function bbai_banner_get_banner_state_from_snapshot(array $s, string $page_context = ''): array
 {
     $payload = [
         'credits_remaining'  => max(0, (int) ($s['credits_remaining'] ?? 0)),
@@ -435,7 +589,8 @@ function bbai_banner_get_banner_state_from_snapshot(array $s): array
         'total_images'       => max(0, (int) ($s['total_images'] ?? 0)),
         'credits_limit'      => max(1, (int) ($s['credits_limit'] ?? 50)),
     ];
-    $state = bbai_banner_resolve_state($payload);
+    $merged = array_merge($s, $payload);
+    $state  = bbai_get_primary_banner_state($merged, $page_context);
 
     return array_merge(bbai_banner_get_content($state, $payload), ['state' => $state]);
 }
@@ -448,20 +603,18 @@ function bbai_banner_get_banner_state_from_snapshot(array $s): array
  */
 function bbai_banner_get_system_state(string $context, array $s): string
 {
-    unset($context);
-
-    return (string) bbai_banner_get_banner_state_from_snapshot($s)['state'];
+    return (string) bbai_banner_get_banner_state_from_snapshot($s, $context)['state'];
 }
 
 /**
- * Pick logical banner state (alias of strict system resolver).
+ * Pick logical banner state (single priority chain).
  *
  * @param string               $page_context BBAI_BANNER_CTX_*.
  * @param array<string, mixed> $s            Snapshot.
  */
 function bbai_banner_pick_state(string $page_context, array $s): string
 {
-    return bbai_banner_get_system_state($page_context, $s);
+    return bbai_get_primary_banner_state($s, $page_context);
 }
 
 /**
@@ -486,7 +639,7 @@ function bbai_banner_action_scan(string $page_context): array
 {
     if (BBAI_BANNER_CTX_DASHBOARD === $page_context) {
         return [
-            'label'      => __('Scan Media Library', 'beepbeep-ai-alt-text-generator'),
+            'label'      => bbai_copy_cta_scan_media_library(),
             'href'       => '#',
             'attributes' => [
                 'data-bbai-action' => 'scan-opportunity',
@@ -495,7 +648,7 @@ function bbai_banner_action_scan(string $page_context): array
     }
 
     return [
-        'label'      => __('Scan Media Library', 'beepbeep-ai-alt-text-generator'),
+        'label'      => bbai_copy_cta_scan_media_library(),
         'attributes' => [
             'data-action' => 'rescan-media-library',
         ],
@@ -527,12 +680,12 @@ function bbai_banner_action_automation(array $s, string $page_context): array
     $settings = (string) ($s['settings_url'] ?? admin_url('admin.php?page=bbai-settings')) . '#bbai-enable-on-upload';
     if (!empty($s['is_pro_plan'])) {
         $a = [
-            'label' => __('Enable Auto-Optimisation', 'beepbeep-ai-alt-text-generator'),
+            'label' => bbai_copy_cta_enable_auto_optimization(),
             'href'  => $settings,
             'attributes' => [],
         ];
     } else {
-        $a = bbai_banner_action_upgrade_modal(__('Enable Auto-Optimisation', 'beepbeep-ai-alt-text-generator'));
+        $a = bbai_banner_action_upgrade_modal(bbai_copy_cta_enable_auto_optimization());
     }
 
     if (BBAI_BANNER_CTX_LIBRARY === $page_context) {
@@ -555,7 +708,7 @@ function bbai_banner_action_scan_manual(string $page_context): array
     }
 
     return [
-        'label'      => __('Scan manually', 'beepbeep-ai-alt-text-generator'),
+        'label'      => bbai_copy_cta_rescan_media_library(),
         'attributes' => $attrs,
     ];
 }
@@ -573,7 +726,7 @@ function bbai_banner_action_open_library(string $page_context, string $library_u
     }
 
     return [
-        'label'      => __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+        'label'      => bbai_copy_cta_open_alt_library(),
         'href'       => $library_url,
         'attributes' => $attrs,
     ];
@@ -604,7 +757,7 @@ function bbai_banner_action_open_library(string $page_context, string $library_u
  */
 function bbai_banner_get_config(string $page_context, array $s, array $opts = []): array
 {
-    $bs    = bbai_banner_get_banner_state_from_snapshot($s);
+    $bs    = bbai_banner_get_banner_state_from_snapshot($s, $page_context);
     $state = (string) $bs['state'];
 
     $used    = max(0, (int) ($s['credits_used'] ?? 0));
@@ -623,9 +776,9 @@ function bbai_banner_get_config(string $page_context, array $s, array $opts = []
         (string) number_format_i18n($limit)
     );
 
-    $upgrade_growth = __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator');
+    $upgrade_growth = bbai_copy_cta_upgrade_growth();
     $review_usage   = [
-        'label'      => __('Review usage', 'beepbeep-ai-alt-text-generator'),
+        'label'      => bbai_copy_cta_review_usage(),
         'href'       => $usage_url,
         'attributes' => [],
     ];
@@ -664,7 +817,7 @@ function bbai_banner_get_config(string $page_context, array $s, array $opts = []
                     'show_progress'    => (bool) $bs['show_progress'],
                     'primary_action'   => bbai_banner_action_scan($page_context),
                     'secondary_action' => [
-                        'label'      => __('Learn how it works', 'beepbeep-ai-alt-text-generator'),
+                        'label'      => bbai_copy_cta_learn_how(),
                         'href'       => $guide_url,
                         'attributes' => [],
                     ],
@@ -687,18 +840,19 @@ function bbai_banner_get_config(string $page_context, array $s, array $opts = []
         case BBAI_BANNER_STATE_NEEDS_ATTENTION:
             $variant = (string) ($bs['needs_attention_variant'] ?? 'missing');
             if ('weak' === $variant) {
+                $weak_review_url = (string) ($s['needs_review_library_url'] ?? '');
+                if ('' === $weak_review_url) {
+                    $weak_review_url = bbai_alt_library_needs_review_url();
+                }
                 $primary = [
-                    'label'      => __('Improve ALT text', 'beepbeep-ai-alt-text-generator'),
-                    'attributes' => [
-                        'data-action'                  => 'regenerate-all',
-                        'data-bbai-regenerate-scope'   => 'needs-review',
-                        'data-bbai-generation-source'  => 'regenerate-weak',
-                    ],
+                    'label'      => bbai_copy_cta_review_needs_review_filter(),
+                    'href'       => $weak_review_url,
+                    'attributes' => [],
                 ];
                 $semantic = 'attention_weak';
             } else {
                 $primary = [
-                    'label'      => __('Fix missing ALT text', 'beepbeep-ai-alt-text-generator'),
+                    'label'      => bbai_copy_cta_fix_missing_alt(),
                     'attributes' => [
                         'data-action'      => 'generate-missing',
                         'data-bbai-action' => 'generate_missing',
@@ -749,9 +903,44 @@ function bbai_banner_get_config(string $page_context, array $s, array $opts = []
                 'show_hero_loop'   => false,
             ]);
 
+        case BBAI_BANNER_STATE_FIRST_SUCCESS:
+            return array_merge($base, [
+                'semantic_state'   => 'first_success',
+                'tone'             => 'healthy',
+                'banner_variant'   => 'success',
+                'title'            => (string) $bs['title'],
+                'body'             => (string) $bs['body'],
+                'status_line'      => (string) $bs['status_line'],
+                'show_progress'    => false,
+                'primary_action'   => [
+                    'label'      => bbai_copy_cta_generate_missing_images(),
+                    'attributes' => [
+                        'data-action'           => 'generate-missing',
+                        'data-bbai-starter-cap' => '10',
+                    ],
+                ],
+                'secondary_action' => bbai_banner_action_open_library($page_context, $library_url),
+                'show_hero_loop'   => false,
+            ]);
+
+        case BBAI_BANNER_STATE_NONE:
+            return array_merge($base, [
+                'suppress_banner_render' => true,
+                'semantic_state'         => 'none',
+                'tone'                   => 'healthy',
+                'banner_variant'         => 'success',
+                'title'                  => '',
+                'body'                   => '',
+                'status_line'            => '',
+                'show_progress'          => false,
+                'primary_action'         => null,
+                'secondary_action'       => null,
+                'show_hero_loop'         => false,
+            ]);
+
         default:
             $open_library = [
-                'label'      => __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+                'label'      => bbai_copy_cta_open_alt_library(),
                 'href'       => $library_url,
                 'attributes' => [],
             ];
@@ -784,6 +973,10 @@ function bbai_banner_dashboard_semantic_slug(string $state, array $s): string
             return 'out-of-credits';
         case BBAI_BANNER_STATE_NEEDS_ATTENTION:
             return 'incomplete';
+        case BBAI_BANNER_STATE_FIRST_SUCCESS:
+            return 'first-success';
+        case BBAI_BANNER_STATE_NONE:
+            return 'none';
         default:
             return 'healthy-free';
     }
@@ -845,6 +1038,7 @@ function bbai_banner_build_command_hero(string $page_context, array $s, array $o
         'semantic_state'           => $semantic,
         'tone'                     => (string) $cfg['tone'],
         'banner_variant'           => (string) $cfg['banner_variant'],
+        'suppress_banner_render'   => !empty($cfg['suppress_banner_render']),
         'page_hero_variant'        => (string) ($opts['page_hero_variant'] ?? ''),
         'aria_label'               => (string) ($opts['aria_label'] ?? __('BeepBeep AI', 'beepbeep-ai-alt-text-generator')),
         'eyebrow'                  => (string) ($opts['eyebrow'] ?? ''),
@@ -878,6 +1072,60 @@ function bbai_banner_build_command_hero(string $page_context, array $s, array $o
     }
 
     return $hero;
+}
+
+/**
+ * Map legacy inline-banner / quota payloads into command_hero for the shared bbai-banner shell.
+ *
+ * @param array<string, mixed> $ib Keys: variant, meta, progress_aria, heading_tag, etc.
+ *
+ * @return array<string, mixed>
+ */
+function bbai_banner_inline_payload_to_command_hero(array $ib): array
+{
+    require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/command-hero.php';
+
+    $ch = $ib;
+
+    $variant = strtolower(trim((string) ($ib['variant'] ?? '')));
+    if ('' !== $variant && in_array($variant, ['success', 'warning', 'info', 'neutral'], true)) {
+        $ch['banner_variant'] = $variant;
+    }
+    unset($ch['variant']);
+
+    if (isset($ib['meta'])) {
+        if (!isset($ch['status_line']) || '' === trim((string) $ch['status_line'])) {
+            $ch['status_line'] = (string) $ib['meta'];
+        }
+        unset($ch['meta']);
+    }
+
+    if (isset($ib['progress_aria'])) {
+        if (!isset($ch['progress_aria_valuetext']) || '' === trim((string) $ch['progress_aria_valuetext'])) {
+            $ch['progress_aria_valuetext'] = trim((string) $ib['progress_aria']);
+        }
+        unset($ch['progress_aria']);
+    }
+
+    $bv = strtolower(trim((string) ($ch['banner_variant'] ?? 'neutral')));
+    if (!in_array($bv, ['success', 'warning', 'info', 'neutral'], true)) {
+        $bv = 'neutral';
+        $ch['banner_variant'] = $bv;
+    }
+
+    $tone = trim((string) ($ch['tone'] ?? ''));
+    if ('' === $tone) {
+        $ch['tone'] = 'warning' === $bv ? 'attention' : ('info' === $bv ? 'setup' : 'healthy');
+    }
+
+    if (empty($ch['icon_html']) || !is_string($ch['icon_html']) || '' === $ch['icon_html']) {
+        $ch['icon_html'] = bbai_command_hero_icon_markup_for_banner_variant($bv, (string) $ch['tone']);
+    }
+
+    $ht = strtolower((string) ($ch['heading_tag'] ?? 'h1'));
+    $ch['heading_tag'] = in_array($ht, ['h1', 'h2'], true) ? $ht : 'h1';
+
+    return $ch;
 }
 
 /**

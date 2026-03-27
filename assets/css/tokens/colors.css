@@ -9,11 +9,11 @@
  */
 
 :root {
-	/* Brand Colors */
-	--bbai-color-primary: #2563eb;
-	--bbai-color-primary-hover: #1d4ed8;
-	--bbai-color-primary-light: #dbeafe;
-	--bbai-color-primary-dark: #1e40af;
+	/* Brand Colors — primary = product CTA green (blue reserved for info/links, not solid CTAs) */
+	--bbai-color-primary: #10b981;
+	--bbai-color-primary-hover: #059669;
+	--bbai-color-primary-light: #d1fae5;
+	--bbai-color-primary-dark: #047857;
 
 	/* Semantic Colors */
 	--bbai-color-success: #10b981;

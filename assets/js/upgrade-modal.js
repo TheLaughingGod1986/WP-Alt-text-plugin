@@ -234,7 +234,7 @@
         var className = bbaiString(element.className).toLowerCase();
         var label = (bbaiString(element.getAttribute && element.getAttribute('aria-label')) + ' ' + bbaiString(element.textContent)).toLowerCase();
 
-        if (action === 'generate-missing' || action === 'regenerate-all' || action === 'regenerate-single') {
+        if (action === 'generate-missing' || action === 'regenerate-all' || action === 'regenerate-single' || action === 'phase17-improve-alt') {
             return true;
         }
         if (bbaiAction === 'generate_missing' || bbaiAction === 'reoptimize_all') {
@@ -572,7 +572,7 @@
                 pendingCountLabel
             );
             variant.subtitle = __('Enable automatic optimisation so future uploads are handled the moment they arrive.', 'beepbeep-ai-alt-text-generator');
-            variant.note = __('Buy credits if you only need a one-off top-up for this scan.', 'beepbeep-ai-alt-text-generator');
+            variant.note = __('Buy more credits if you only need a one-off top-up for this scan.', 'beepbeep-ai-alt-text-generator');
             return variant;
         }
 
@@ -588,36 +588,36 @@
                 pendingCountLabel
             );
             variant.subtitle = __('Enable automatic optimisation so every new image is optimised as soon as it is uploaded.', 'beepbeep-ai-alt-text-generator');
-            variant.note = __('Buy credits if you prefer to keep uploads manual for now.', 'beepbeep-ai-alt-text-generator');
+            variant.note = __('Buy more credits if you prefer to keep uploads manual for now.', 'beepbeep-ai-alt-text-generator');
             return variant;
         }
 
         if (reason === 'usage_80') {
-            variant.eyebrow = __('Approaching your limit', 'beepbeep-ai-alt-text-generator');
+            variant.eyebrow = __('Keep your library moving', 'beepbeep-ai-alt-text-generator');
             variant.title = sprintf(
-                __('You have used %s%% of your monthly credits.', 'beepbeep-ai-alt-text-generator'),
+                __('You’ve already used %s%% of your monthly credits.', 'beepbeep-ai-alt-text-generator'),
                 percent
             );
             variant.subtitle = sprintf(
                 _n(
-                    'Only %s credit is left before new uploads stop being optimised automatically.',
-                    'Only %s credits are left before new uploads stop being optimised automatically.',
+                    '%s credit left this month. Continue generating ALT text without interruption.',
+                    '%s credits left this month. Continue generating ALT text without interruption.',
                     remaining,
                     'beepbeep-ai-alt-text-generator'
                 ),
                 remaining
             );
-            variant.note = __('Buy credits for a quick top-up, or upgrade to keep everything running automatically.', 'beepbeep-ai-alt-text-generator');
+            variant.note = __('Your existing ALT text remains available to review while you choose what to do next.', 'beepbeep-ai-alt-text-generator');
             return variant;
         }
 
         if (reason === 'limit_reached') {
-            variant.eyebrow = __('Usage limit reached', 'beepbeep-ai-alt-text-generator');
-            variant.title = __('You have used all of this month\'s credits.', 'beepbeep-ai-alt-text-generator');
+            variant.eyebrow = __('Continue improving your library', 'beepbeep-ai-alt-text-generator');
+            variant.title = __('You’ve used this month’s free allowance.', 'beepbeep-ai-alt-text-generator');
             variant.subtitle = bbaiString(context && context.resetMessage) ||
-                __('Enable automatic optimisation or buy credits to keep new uploads moving.', 'beepbeep-ai-alt-text-generator');
+                __('Your existing results are still available to review. Upgrade to continue generating ALT text now.', 'beepbeep-ai-alt-text-generator');
             variant.note = bbaiString(context && context.limitMessage) ||
-                __('Your existing modal actions are still available below.', 'beepbeep-ai-alt-text-generator');
+                __('Upgrade to Growth for ongoing automation, or buy more credits for smaller batches.', 'beepbeep-ai-alt-text-generator');
             return variant;
         }
 
@@ -723,6 +723,31 @@
 
         if (isUpgradeModalVisible(modal)) {
             return true;
+        }
+
+        /**
+         * Value-first UX guardrail:
+         * - Never auto-interrupt from passive triggers (usage/scan/upload).
+         * - During onboarding/activation, suppress automatic upgrade prompts until
+         *   at least one visible ALT result exists and processing settles.
+         * Manual triggers (buttons) and explicit forward-action limit gates remain allowed.
+         */
+        if (!context || !context.force) {
+            var root = document.querySelector('[data-bbai-dashboard-root="1"]');
+            var onboardingActive = !!(root && root.getAttribute('data-bbai-onboarding-first-open') === '1');
+            var processingActive = !!(root && root.getAttribute('data-bbai-coverage-processing') === '1');
+            var optimizedCount = root ? Math.max(0, parseCount(root.getAttribute('data-bbai-optimized-count'))) : 0;
+            var weakCount = root ? Math.max(0, parseCount(root.getAttribute('data-bbai-weak-count'))) : 0;
+            var hasVisibleAlt = (optimizedCount + weakCount) > 0;
+            var passiveTrigger = triggerKey === 'usage_80' || triggerKey === 'scan_completion' || triggerKey === 'new_image_upload';
+
+            if (passiveTrigger) {
+                return true;
+            }
+
+            if ((onboardingActive || processingActive) && !hasVisibleAlt) {
+                return true;
+            }
         }
 
         return false;
@@ -1027,7 +1052,7 @@
             focusUpgradeModalTarget(modal);
         }, 140);
 
-        trackUpgradeEvent('upgrade_modal_viewed', {
+        trackUpgradeEvent('upgrade_modal_opened', {
             source: request.context && request.context.source ? request.context.source : 'upgrade-modal',
             trigger: triggerKey,
             reason: request.reason || 'default'
@@ -1089,6 +1114,15 @@
         upgradeModalState.lastTrigger = null;
         upgradeModalState.activeRequest = null;
 
+        trackUpgradeEvent('upgrade_modal_closed', {
+            source: closedRequest && closedRequest.context && closedRequest.context.source
+                ? closedRequest.context.source
+                : 'upgrade-modal',
+            trigger: closedRequest && closedRequest.context && closedRequest.context.triggerKey
+                ? closedRequest.context.triggerKey
+                : 'manual',
+            reason: closedRequest && closedRequest.reason ? closedRequest.reason : 'default'
+        });
         dispatchUpgradeEvent('bbai:upgrade-modal-closed', { request: closedRequest });
     };
 
@@ -1124,6 +1158,12 @@
                 };
 
                 trackUpgradeEvent('upgrade_cta_clicked', {
+                    source: 'checkout',
+                    trigger: checkoutPayload.trigger,
+                    reason: checkoutPayload.reason,
+                    plan: checkoutPayload.plan
+                });
+                trackUpgradeEvent('upgrade_started', {
                     source: 'checkout',
                     trigger: checkoutPayload.trigger,
                     reason: checkoutPayload.reason,

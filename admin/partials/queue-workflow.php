@@ -41,24 +41,24 @@ $bbai_wf_steps = [
     [
         'key'    => 'scan',
         'icon'   => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>',
-        'title'  => __( 'Scan Library', 'beepbeep-ai-alt-text-generator' ),
+        'title'  => bbai_copy_cta_scan_media_library(),
         'metric' => sprintf(
             _n( '%s image scanned', '%s images scanned', max( 1, $bbai_wf_total ), 'beepbeep-ai-alt-text-generator' ),
             number_format_i18n( $bbai_wf_total )
         ),
-        'btn_label' => __( 'Scan Media Library', 'beepbeep-ai-alt-text-generator' ),
+        'btn_label' => bbai_copy_cta_scan_media_library(),
         'btn_attrs' => 'data-bbai-action="scan-opportunity"',
         'btn_tag'   => 'button',
     ],
     [
         'key'    => 'generate',
         'icon'   => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
-        'title'  => __( 'Generate ALT', 'beepbeep-ai-alt-text-generator' ),
+        'title'  => bbai_copy_cta_generate_missing_images(),
         'metric' => sprintf(
             _n( '%s image missing ALT', '%s images missing ALT', max( 1, $bbai_wf_missing ), 'beepbeep-ai-alt-text-generator' ),
             number_format_i18n( $bbai_wf_missing )
         ),
-        'btn_label' => __( 'Generate ALT Text', 'beepbeep-ai-alt-text-generator' ),
+        'btn_label' => bbai_copy_cta_generate_missing_images(),
         'btn_attrs' => ! empty( $bbai_limit_reached_state )
             ? 'data-bbai-action="open-upgrade" data-bbai-locked-cta="1" data-bbai-lock-reason="generate_missing" data-bbai-locked-source="queue-workflow-generate" aria-disabled="true"'
             : 'data-action="show-generate-alt-modal"',
@@ -67,12 +67,12 @@ $bbai_wf_steps = [
     [
         'key'    => 'review',
         'icon'   => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>',
-        'title'  => __( 'Review Results', 'beepbeep-ai-alt-text-generator' ),
+        'title'  => bbai_copy_cta_improve_alt(),
         'metric' => sprintf(
             _n( '%s image needs review', '%s images need review', max( 1, $bbai_wf_weak ), 'beepbeep-ai-alt-text-generator' ),
             number_format_i18n( $bbai_wf_weak )
         ),
-        'btn_label' => __( 'Review ALT results', 'beepbeep-ai-alt-text-generator' ),
+        'btn_label' => bbai_copy_cta_improve_alt(),
         'btn_attrs' => 'href="' . esc_url( $bbai_wf_library ) . '#bbai-alt-table" data-bbai-review-scroll="1"',
         'btn_tag'   => 'a',
     ],

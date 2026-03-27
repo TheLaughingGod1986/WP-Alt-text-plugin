@@ -427,6 +427,33 @@ class REST_Controller {
 				'permission_callback' => [ $this, 'can_edit_media' ],
 			]
 		);
+
+		register_rest_route(
+			'bbai/v1',
+			'/assistant/chat',
+			[
+				'methods'             => 'POST',
+				'callback'            => [ $this, 'handle_assistant_chat' ],
+				'permission_callback' => [ $this, 'can_manage_admin' ],
+			]
+		);
+
+		register_rest_route(
+			'bbai/v1',
+			'/improve-alt/(?P<id>\d+)',
+			[
+				'methods'             => 'POST',
+				'callback'            => [ $this, 'handle_improve_alt' ],
+				'permission_callback' => [ $this, 'can_edit_attachment' ],
+				'args'                => [
+					'id' => [
+						'required'          => true,
+						'sanitize_callback' => 'absint',
+						'validate_callback' => [ __CLASS__, 'validate_positive_int_arg' ],
+					],
+				],
+			]
+		);
 	}
 
 	/**
@@ -886,15 +913,13 @@ class REST_Controller {
 			$review_result
 		);
 
-		$approval = $this->core->mark_attachment_reviewed( $id );
-
 		return [
 			'id'     => $id,
 			'alt'    => $alt_sanitized,
 			'meta'   => $this->core->prepare_attachment_snapshot( $id ),
 			'stats'  => $this->core->get_dashboard_stats_payload( true ),
-			'approved' => ! empty( $approval['approved'] ),
-			'approved_at' => $approval['approved_at'] ?? '',
+			'approved' => false,
+			'approved_at' => '',
 			'source' => 'manual-edit',
 		];
 	}
@@ -914,6 +939,16 @@ class REST_Controller {
 		$result = $this->core->mark_attachment_reviewed( $id );
 		if ( empty( $result['approved'] ) ) {
 			return new \WP_Error( 'invalid_alt', __( 'ALT text must exist before it can be approved.', 'beepbeep-ai-alt-text-generator' ), [ 'status' => 400 ] );
+		}
+
+		if ( function_exists( 'bbai_telemetry_emit' ) ) {
+			bbai_telemetry_emit(
+				'alt_marked_reviewed',
+				[
+					'attachment_id' => $id,
+					'scope'         => 'single',
+				]
+			);
 		}
 
 		return [
@@ -949,6 +984,17 @@ class REST_Controller {
 		}
 
 		$result = $this->core->mark_attachments_reviewed( $ids );
+
+		$approved_count = (int) ( $result['approved_count'] ?? 0 );
+		if ( $approved_count > 0 && function_exists( 'bbai_telemetry_emit' ) ) {
+			bbai_telemetry_emit(
+				'alt_marked_reviewed',
+				[
+					'approved_count' => $approved_count,
+					'scope'          => 'batch',
+				]
+			);
+		}
 
 		return [
 			'approved_ids' => $result['approved_ids'] ?? [],
@@ -1229,20 +1275,11 @@ class REST_Controller {
 	 */
 	public function handle_user_usage( \WP_REST_Request $request ) {
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/usage/class-usage-helpers.php';
-		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-token-quota-service.php';
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 
-		// Use token quota service for accurate site-wide quota
-		$quota = \BeepBeepAI\AltTextGenerator\Token_Quota_Service::get_site_quota();
-		if (is_wp_error($quota)) {
-			// Fallback to usage tracker if quota service fails
-			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
-			$usage_tracker = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_stats_display();
-			$total_allowed = $usage_tracker['limit'] ?? 50;
-			$total_used = \BeepBeepAI\AltTextGenerator\Usage\get_monthly_total_usage();
-		} else {
-			$total_allowed = $quota['limit'] ?? 50;
-			$total_used = $quota['used'] ?? 0;
-		}
+		$usage_tracker = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_stats_display(true);
+		$total_allowed = max( 1, intval( $usage_tracker['limit'] ?? 50 ) );
+		$total_used    = max( 0, intval( $usage_tracker['used'] ?? 0 ) );
 		
 		$users = \BeepBeepAI\AltTextGenerator\Usage\get_monthly_usage_by_user();
 
@@ -1367,24 +1404,20 @@ class REST_Controller {
 	 * @return array|\WP_Error
 	 */
 	public function handle_usage_summary( \WP_REST_Request $request ) {
-		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-token-quota-service.php';
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 		
-		$quota = \BeepBeepAI\AltTextGenerator\Token_Quota_Service::get_site_quota();
-		
-		if (is_wp_error($quota)) {
-			return $quota;
-		}
+		$usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_stats_display(true);
 		
 		$site_id = \BeepBeepAI\AltTextGenerator\get_site_identifier();
 		
 		return [
 			'site_id' => $site_id,
-			'total_limit' => $quota['limit'] ?? 0,
-			'total_used' => $quota['used'] ?? 0,
-			'remaining' => $quota['remaining'] ?? 0,
-			'resets_at' => $quota['resets_at'] ?? 0,
-			'plan_type' => $quota['plan_type'] ?? 'free',
+			'total_limit' => $usage['limit'] ?? 0,
+			'total_used' => $usage['used'] ?? 0,
+			'remaining' => $usage['remaining'] ?? 0,
+			'resets_at' => $usage['reset_timestamp'] ?? 0,
+			'plan_type' => $usage['plan_type'] ?? 'free',
 		];
 	}
 
@@ -1440,6 +1473,124 @@ class REST_Controller {
 		$result = \BeepBeepAI\AltTextGenerator\Usage\get_usage_events( $filters );
 
 		return $result;
+	}
+
+	/**
+	 * Phase 17 — Lightweight in-product assistant (rule-based + filter for LLM).
+	 *
+	 * @param \WP_REST_Request $request REST request instance.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function handle_assistant_chat( \WP_REST_Request $request ) {
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/automation/class-bbai-phase17-assistant.php';
+
+		$params  = $request->get_json_params();
+		if ( ! is_array( $params ) ) {
+			$params = [];
+		}
+		$message = isset( $params['message'] ) ? sanitize_text_field( (string) $params['message'] ) : '';
+		$context = isset( $params['context'] ) && is_array( $params['context'] ) ? $params['context'] : [];
+
+		$safe_context = [];
+		foreach ( $context as $k => $v ) {
+			$key = is_string( $k ) ? sanitize_key( $k ) : '';
+			if ( '' === $key ) {
+				continue;
+			}
+			if ( is_scalar( $v ) ) {
+				$safe_context[ $key ] = is_string( $v ) ? sanitize_text_field( (string) $v ) : $v;
+			}
+		}
+
+		$out = \BeepBeepAI\AltTextGenerator\Phase17_Assistant::reply( $message, $safe_context );
+
+		if ( function_exists( 'bbai_telemetry_emit' ) ) {
+			bbai_telemetry_emit(
+				'phase17_assistant_used',
+				[
+					'mode' => isset( $out['mode'] ) ? (string) $out['mode'] : 'unknown',
+				]
+			);
+		}
+
+		return rest_ensure_response( $out );
+	}
+
+	/**
+	 * Phase 17 — One-click ALT improvement (uses existing regenerate path; does not change scoring).
+	 *
+	 * @param \WP_REST_Request $request REST request instance.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function handle_improve_alt( \WP_REST_Request $request ) {
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/automation/class-bbai-phase17-assistant.php';
+
+		$id = absint( $request->get_param( 'id' ) );
+		if ( $id <= 0 ) {
+			return new \WP_Error( 'invalid_attachment', __( 'Invalid attachment ID.', 'beepbeep-ai-alt-text-generator' ), [ 'status' => 400 ] );
+		}
+
+		$prev_alt = (string) get_post_meta( $id, '_wp_attachment_image_alt', true );
+		$tip      = \BeepBeepAI\AltTextGenerator\Phase17_Assistant::suggest_text_only( $prev_alt );
+
+		$output_started = ob_get_level() > 0;
+		if ( ! $output_started ) {
+			ob_start();
+		}
+
+		try {
+			$alt = $this->core->generate_and_save( $id, 'ajax', 0, [], true );
+
+			if ( is_wp_error( $alt ) ) {
+				if ( ! $output_started ) {
+					ob_end_clean();
+				}
+				$code = $alt->get_error_code();
+				$status = 500;
+				if ( in_array( $code, [ 'limit_reached', 'bbai_trial_exhausted' ], true ) ) {
+					$status = 403;
+				} elseif ( in_array( $code, [ 'auth_required', 'user_not_found' ], true ) ) {
+					$status = 401;
+				}
+				return new \WP_Error( $code, $alt->get_error_message(), [ 'status' => $status, 'text_only_tip' => $tip ] );
+			}
+
+			try {
+				$meta = $this->core->prepare_attachment_snapshot( $id );
+			} catch ( \Exception $e ) {
+				$meta = [];
+			}
+
+			try {
+				$stats = $this->core->get_media_stats();
+			} catch ( \Exception $e ) {
+				$stats = [];
+			}
+
+			if ( ! $output_started ) {
+				ob_end_clean();
+			}
+
+			if ( function_exists( 'bbai_telemetry_emit' ) ) {
+				bbai_telemetry_emit( 'phase17_improve_alt_applied', [ 'attachment_id' => $id ] );
+			}
+
+			return rest_ensure_response(
+				[
+					'id'            => $id,
+					'alt'           => $alt,
+					'meta'          => $meta,
+					'stats'         => $stats,
+					'text_only_tip' => $tip,
+					'improve'       => true,
+				]
+			);
+		} catch ( \Exception $e ) {
+			if ( ! $output_started ) {
+				ob_end_clean();
+			}
+			return new \WP_Error( 'improve_failed', $e->getMessage(), [ 'status' => 500 ] );
+		}
 	}
 
 }

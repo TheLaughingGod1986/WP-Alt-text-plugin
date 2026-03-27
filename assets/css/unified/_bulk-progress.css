@@ -38,3 +38,9 @@
 .bbai-bulk-progress__log-entry--error { background: var(--bbai-error-bg); border-left: 3px solid var(--bbai-error); }
 .bbai-bulk-progress__log-time { font-size: var(--bbai-text-xs); color: var(--bbai-text-muted); font-family: var(--bbai-font-mono); min-width: 70px; }
 .bbai-bulk-progress__log-text { flex: 1; color: var(--bbai-text); }
+
+/* Completion state */
+.bbai-bulk-progress__complete { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--bbai-space-4); padding: var(--bbai-space-10) var(--bbai-space-6); text-align: center; }
+.bbai-bulk-progress__complete-title { margin: 0; font-size: var(--bbai-text-2xl); font-weight: var(--bbai-font-bold); color: var(--bbai-text); }
+.bbai-bulk-progress__complete-message { margin: 0; font-size: var(--bbai-text-base); color: var(--bbai-text-muted); }
+.bbai-bulk-progress__complete-actions { display: flex; gap: var(--bbai-space-3); flex-wrap: wrap; justify-content: center; margin-top: var(--bbai-space-2); }

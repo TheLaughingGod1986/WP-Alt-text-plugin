@@ -34,6 +34,7 @@ class BBAI_Alt_Quality_Scorer {
 	const CAP_GENERIC_ONLY       = 10;
 	const CAP_SINGLE_WORD        = 15;
 	const CAP_TOO_FEW_WORDS      = 20;
+	const CAP_THIN_MEANING       = 30; // Fewer than 3 meaningful words (non-hard-fail edge cases).
 	const CAP_NONSENSE           = 15;
 
 	/* ─── Known word lists ─── */
@@ -86,6 +87,7 @@ class BBAI_Alt_Quality_Scorer {
 	 *     @type array  $suggestions Actionable improvement suggestions.
 	 *     @type bool   $hard_fail   Whether a hard-fail rule triggered.
 	 *     @type int    $cap         Hard-fail cap applied (null if none).
+	 *     @type bool   $optimized_eligible Whether ALT meets gates for “Optimized” workflow (still needs score ≥ 85 or user approval in UI).
 	 * }
 	 */
 	public static function score( $alt_text, $context = array() ) {
@@ -96,7 +98,7 @@ class BBAI_Alt_Quality_Scorer {
 				__( 'ALT text is missing.', 'beepbeep-ai-alt-text-generator' ),
 			), array(
 				__( 'Add a description that conveys the image content to screen-reader users.', 'beepbeep-ai-alt-text-generator' ),
-			), true, self::CAP_EMPTY );
+			), true, self::CAP_EMPTY, $alt_text );
 		}
 
 		$issues      = array();
@@ -110,7 +112,7 @@ class BBAI_Alt_Quality_Scorer {
 		if ( $hard_fail !== false ) {
 			// Build minimal breakdown — everything is bad.
 			$breakdown = self::zero_breakdown();
-			return self::build_result( $hard_fail, $breakdown, $issues, $suggestions, true, $hard_fail );
+			return self::build_result( $hard_fail, $breakdown, $issues, $suggestions, true, $hard_fail, $alt_text );
 		}
 
 		/* ──────────────────────────────────────────────
@@ -128,7 +130,25 @@ class BBAI_Alt_Quality_Scorer {
 
 		$score = max( 0, min( 100, $weighted_score ) );
 
-		return self::build_result( $score, $breakdown, $issues, $suggestions, false, null );
+		// Final descriptive-quality gate: non-empty ALT must not score “high” without real image description.
+		if ( ! self::passes_minimum_descriptive_alt( $alt_text ) ) {
+			$before = $score;
+			$score  = min( $score, self::CAP_THIN_MEANING );
+			if ( $score < $before ) {
+				$issues[]      = __( 'ALT text is not descriptive enough for accessibility or SEO.', 'beepbeep-ai-alt-text-generator' );
+				$suggestions[] = __( 'Use at least three meaningful words, including what the image shows (people, objects, setting, text on image).', 'beepbeep-ai-alt-text-generator' );
+			}
+		} elseif ( ! self::breakdown_supports_optimized( $breakdown ) ) {
+			$before = $score;
+			$score  = min( $score, 65 );
+			if ( $score < $before ) {
+				$issues[] = __( 'ALT text is weak in one or more quality dimensions (description, clarity, or usefulness).', 'beepbeep-ai-alt-text-generator' );
+			}
+		}
+
+		$score = max( 0, min( 100, $score ) );
+
+		return self::build_result( $score, $breakdown, $issues, $suggestions, false, null, $alt_text );
 	}
 
 	/**
@@ -139,7 +159,7 @@ class BBAI_Alt_Quality_Scorer {
 	 */
 	public static function is_acceptable( $alt_text ) {
 		$result = self::score( $alt_text );
-		return $result['score'] >= 70;
+		return ! empty( $result['optimized_eligible'] ) && $result['score'] >= 70;
 	}
 
 	/**
@@ -249,6 +269,10 @@ PROMPT;
 			// Allow only if it's a recognized proper noun / brand — but we can't know that here.
 			// A single word is never adequate ALT text.
 			$issues[]      = __( 'ALT text is a single word — too brief to be meaningful.', 'beepbeep-ai-alt-text-generator' );
+			$issues[]      = __( 'Not descriptive enough for the image content.', 'beepbeep-ai-alt-text-generator' );
+			$issues[]      = __( 'Not relevant enough to explain what the image shows.', 'beepbeep-ai-alt-text-generator' );
+			$issues[]      = __( 'Not useful for screen reader users without more context.', 'beepbeep-ai-alt-text-generator' );
+			$issues[]      = __( 'Not useful for SEO — add a natural description of the subject.', 'beepbeep-ai-alt-text-generator' );
 			$suggestions[] = __( 'Describe what the image shows using at least a short phrase (e.g. "Golden retriever playing in park").', 'beepbeep-ai-alt-text-generator' );
 
 			// Check if it's also a placeholder word.
@@ -284,12 +308,12 @@ PROMPT;
 			}
 		}
 
-		// ── Fewer than 3 meaningful words ──
+		// ── Fewer than 3 meaningful words (has ALT ≠ good ALT) ──
 		$meaningful_count = self::count_meaningful_words( $lc_words );
-		if ( $meaningful_count < 2 ) {
+		if ( $meaningful_count < 3 ) {
 			$issues[]      = __( 'ALT text lacks enough meaningful words to describe the image.', 'beepbeep-ai-alt-text-generator' );
 			$suggestions[] = __( 'Add descriptive nouns and adjectives (e.g. "Red bicycle leaning against brick wall").', 'beepbeep-ai-alt-text-generator' );
-			return self::CAP_TOO_FEW_WORDS;
+			return self::CAP_THIN_MEANING;
 		}
 
 		// ── Gibberish: no vowels in longest alphabetic word ──
@@ -363,15 +387,15 @@ PROMPT;
 		$char_count = function_exists( 'mb_strlen' ) ? mb_strlen( $alt_text ) : strlen( $alt_text );
 
 		/* ── 1. Descriptiveness (0–100) ── */
-		$desc = 50; // Base.
+		$desc = 35; // Base — non-empty ALT is not automatically descriptive.
 
-		// Word count rewards.
+		// Word count rewards (beyond hard gate minimum).
 		if ( $word_count >= 5 && $word_count <= 20 ) {
-			$desc += 25;
+			$desc += 30;
 		} elseif ( $word_count >= 3 ) {
-			$desc += 10;
+			$desc += 15;
 		} else {
-			$desc -= 30;
+			$desc -= 25;
 		}
 
 		// Descriptive markers: verbs/prepositions that indicate a real description.
@@ -445,13 +469,13 @@ PROMPT;
 		$rel = max( 0, min( 100, $rel ) );
 
 		/* ── 3. Accessibility clarity (0–100) ── */
-		$acc = 70; // Base.
+		$acc = 28; // Base — vague or tiny phrases are not useful to screen reader users.
 
 		// Ideal character range for screen readers: 30–160.
 		if ( $char_count >= 30 && $char_count <= 160 ) {
-			$acc += 20;
+			$acc += 35;
 		} elseif ( $char_count < 30 ) {
-			$acc -= 15;
+			$acc -= 5;
 			$issues[]      = __( 'Too short for a screen reader to convey useful information.', 'beepbeep-ai-alt-text-generator' );
 			$suggestions[] = __( 'Expand the description to at least 30 characters with concrete details.', 'beepbeep-ai-alt-text-generator' );
 		} elseif ( $char_count > 160 ) {
@@ -459,9 +483,9 @@ PROMPT;
 			$issues[] = __( 'Very long — trim to keep it concise for screen-reader users (under 160 characters).', 'beepbeep-ai-alt-text-generator' );
 		}
 
-		// Starts with capital letter — proper sentence structure.
-		if ( preg_match( '/^[A-Z]/', $alt_text ) ) {
-			$acc += 5;
+		// Starts with capital letter — minor signal only when other content exists.
+		if ( $char_count >= 24 && preg_match( '/^[A-Z]/', $alt_text ) ) {
+			$acc += 4;
 		}
 
 		// No special characters that screen readers struggle with.
@@ -470,16 +494,21 @@ PROMPT;
 			$issues[] = __( 'Contains special characters that may confuse screen readers.', 'beepbeep-ai-alt-text-generator' );
 		}
 
+		// Substantive phrase in a screen-reader-friendly length — not rewarded by character count alone.
+		if ( self::passes_minimum_descriptive_alt( $alt_text ) && $char_count >= 28 && $char_count <= 155 ) {
+			$acc += 10;
+		}
+
 		$acc = max( 0, min( 100, $acc ) );
 
 		/* ── 4. SEO usefulness (0–100) ── */
-		$seo = 60; // Base.
+		$seo = 18; // Base — nonsense or generic fragments get no SEO credit.
 
-		// Ideal length for Google Images: ≤125 chars.
-		if ( $char_count > 0 && $char_count <= 125 ) {
-			$seo += 20;
+		// Ideal length for Google Images: ≤125 chars (only helps when text is substantive).
+		if ( $char_count > 0 && $char_count <= 125 && self::passes_minimum_descriptive_alt( $alt_text ) ) {
+			$seo += 32;
 		} elseif ( $char_count > 125 ) {
-			$seo -= 15;
+			$seo -= 12;
 			$issues[] = sprintf(
 				/* translators: %d: character count */
 				__( 'At %d characters, this exceeds the 125-char SEO sweet spot for Google Images.', 'beepbeep-ai-alt-text-generator' ),
@@ -488,13 +517,13 @@ PROMPT;
 		}
 
 		// Has a proper noun / capitalised word (likely a topic keyword).
-		if ( preg_match( '/\b[A-Z][a-z]{2,}/', $alt_text ) ) {
-			$seo += 10;
+		if ( $char_count >= 20 && preg_match( '/\b[A-Z][a-z]{2,}/', $alt_text ) ) {
+			$seo += 12;
 		}
 
 		// Contains a number (specificity signal).
 		if ( preg_match( '/\d+/', $alt_text ) ) {
-			$seo += 5;
+			$seo += 6;
 		}
 
 		// Keyword stuffing detection: same word repeated 3+ times.
@@ -545,8 +574,15 @@ PROMPT;
 	/**
 	 * Build a standardised result array.
 	 */
-	private static function build_result( $score, $breakdown, $issues, $suggestions, $hard_fail, $cap ) {
+	private static function build_result( $score, $breakdown, $issues, $suggestions, $hard_fail, $cap, $alt_text = '' ) {
 		$score = max( 0, min( 100, (int) $score ) );
+
+		$breakdown = $breakdown ?: self::zero_breakdown();
+
+		$optimized_eligible = ! $hard_fail
+			&& $score >= 70
+			&& self::passes_minimum_descriptive_alt( (string) $alt_text )
+			&& self::breakdown_supports_optimized( $breakdown );
 
 		// Ensure at least one suggestion if score is below 70.
 		if ( $score < 70 && empty( $suggestions ) ) {
@@ -557,16 +593,25 @@ PROMPT;
 		$issues      = array_values( array_unique( array_filter( $issues ) ) );
 		$suggestions = array_values( array_unique( array_filter( $suggestions ) ) );
 
+		$library_status = 'needs_review';
+		if ( (string) $alt_text === '' ) {
+			$library_status = 'missing';
+		} elseif ( $optimized_eligible && $score >= 70 ) {
+			$library_status = 'optimized';
+		}
+
 		return array(
-			'score'       => $score,
-			'label'       => self::label_from_score( $score ),
-			'grade'       => self::grade_from_score( $score ),
-			'badge'       => self::badge_from_score( $score ),
-			'breakdown'   => $breakdown ?: self::zero_breakdown(),
-			'issues'      => $issues,
-			'suggestions' => $suggestions,
-			'hard_fail'   => (bool) $hard_fail,
-			'cap'         => $cap,
+			'score'              => $score,
+			'label'              => self::label_from_score( $score ),
+			'grade'              => self::grade_from_score( $score ),
+			'badge'              => self::badge_from_score( $score ),
+			'breakdown'          => $breakdown,
+			'issues'             => $issues,
+			'suggestions'        => $suggestions,
+			'hard_fail'          => (bool) $hard_fail,
+			'cap'                => $cap,
+			'optimized_eligible' => (bool) $optimized_eligible,
+			'status'             => $library_status,
 		);
 	}
 
@@ -634,6 +679,76 @@ PROMPT;
 			$count++;
 		}
 		return $count;
+	}
+
+	/**
+	 * True when ALT has enough substantive language to describe an image (not merely “has text”).
+	 *
+	 * @param string $alt_text ALT text.
+	 * @return bool
+	 */
+	/**
+	 * Whether merged/final scores qualify for an "Optimized" library row (all quality gates).
+	 *
+	 * @param string   $alt_text    Normalized ALT text.
+	 * @param int      $final_score Score after heuristic + review merge.
+	 * @param array|null $breakdown Scorer breakdown (may be null on hard-fail).
+	 * @param bool     $hard_fail   Hard-fail from deterministic scorer.
+	 * @return bool
+	 */
+	public static function passes_optimized_row_gates( $alt_text, $final_score, $breakdown, $hard_fail ) {
+		$final_score = (int) $final_score;
+		if ( $hard_fail || $final_score < 70 ) {
+			return false;
+		}
+		if ( ! self::passes_minimum_descriptive_alt( (string) $alt_text ) ) {
+			return false;
+		}
+		if ( ! is_array( $breakdown ) || ! self::breakdown_supports_optimized( $breakdown ) ) {
+			return false;
+		}
+		return true;
+	}
+
+	private static function passes_minimum_descriptive_alt( $alt_text ) {
+		$alt_text = trim( (string) $alt_text );
+		if ( $alt_text === '' ) {
+			return false;
+		}
+		$words    = preg_split( '/\s+/', $alt_text, -1, PREG_SPLIT_NO_EMPTY );
+		$lc_words = array_map( 'strtolower', $words );
+		if ( self::count_meaningful_words( $lc_words ) < 3 ) {
+			return false;
+		}
+		$max_alpha = 0;
+		foreach ( $lc_words as $w ) {
+			if ( in_array( $w, self::$placeholder_words, true ) || in_array( $w, self::$generic_image_words, true ) ) {
+				continue;
+			}
+			$alpha = preg_replace( '/[^a-z]/i', '', $w );
+			$len   = strlen( $alpha );
+			if ( $len > $max_alpha ) {
+				$max_alpha = $len;
+			}
+		}
+		$meaningful = self::count_meaningful_words( $lc_words );
+		// Require at least one non-trivial token, or several medium tokens (not only 3-letter words).
+		return ( $max_alpha >= 5 || ( $meaningful >= 4 && $max_alpha >= 4 ) );
+	}
+
+	/**
+	 * Minimum per-dimension quality for “optimized” eligibility.
+	 *
+	 * @param array $breakdown Scoring breakdown.
+	 * @return bool
+	 */
+	private static function breakdown_supports_optimized( array $breakdown ) {
+		return isset( $breakdown['descriptiveness'], $breakdown['relevance'], $breakdown['accessibility'], $breakdown['seo'] )
+			&& (int) $breakdown['descriptiveness'] >= 52
+			&& (int) $breakdown['relevance'] >= 50
+			&& (int) $breakdown['accessibility'] >= 42
+			&& (int) $breakdown['seo'] >= 35
+			&& (int) $breakdown['conciseness'] >= 35;
 	}
 
 	/**

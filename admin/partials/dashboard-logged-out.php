@@ -11,11 +11,25 @@
 if (!defined('ABSPATH')) {
     exit;
 }
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/ui-components.php';
 
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
-$bbai_trial_remaining = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_remaining();
-$bbai_trial_limit     = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_limit();
-$bbai_trial_exhausted = \BeepBeepAI\AltTextGenerator\Trial_Quota::is_exhausted();
+$bbai_trial_status      = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_status();
+$bbai_trial_limit       = max(0, (int) ($bbai_trial_status['limit'] ?? \BeepBeepAI\AltTextGenerator\Trial_Quota::get_limit()));
+$bbai_trial_used        = max(0, (int) ($bbai_trial_status['used'] ?? 0));
+$bbai_trial_remaining   = max(0, (int) ($bbai_trial_status['remaining'] ?? max(0, $bbai_trial_limit - $bbai_trial_used)));
+$bbai_trial_exhausted   = isset($bbai_trial_status['exhausted'])
+    ? (bool) $bbai_trial_status['exhausted']
+    : ($bbai_trial_remaining <= 0);
+$bbai_trial_exhausted   = $bbai_trial_exhausted || $bbai_trial_remaining <= 0;
+/**
+ * Single source of truth for the logged-out hero state.
+ *
+ * trial_available — free trial credits remain.
+ * trial_complete  — no free trial credits remain; show signup/login instead.
+ */
+$bbai_ftue_post_free_trial = $bbai_trial_exhausted || $bbai_trial_remaining <= 0;
+$bbai_hero_state           = $bbai_ftue_post_free_trial ? 'trial_complete' : 'trial_available';
 
 // Count images missing alt text.
 $bbai_missing_alt_count = (int) $GLOBALS['wpdb']->get_var(
@@ -53,47 +67,37 @@ $bbai_remaining_without_alt_message = sprintf(
 $bbai_page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : 'bbai';
 $bbai_current_page = $bbai_page_input ?: 'bbai';
 $bbai_fallback_url = admin_url('admin.php?page=' . $bbai_current_page);
-$bbai_library_url  = admin_url('admin.php?page=' . $bbai_current_page . '&tab=library');
 ?>
 
-<div class="bbai-logged-out" role="main" aria-labelledby="bbai-logged-out-title">
+<div class="bbai-logged-out" role="main" data-hero-state="<?php echo esc_attr($bbai_hero_state); ?>" aria-label="<?php esc_attr_e('Get started with BeepBeep AI', 'beepbeep-ai-alt-text-generator'); ?>">
     <div class="bbai-logged-out__container">
         <div class="bbai-logged-out__card bbai-ftue-card">
-            <?php if ( ! $bbai_trial_exhausted ) : ?>
-                <div class="bbai-trial-banner" role="status" aria-live="polite">
-                    <span class="bbai-trial-banner__icon" aria-hidden="true">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2L12.09 7.26L18 8.27L14 12.14L14.18 18.02L10 15.77L5.82 18.02L6 12.14L2 8.27L7.91 7.26L10 2Z" fill="currentColor"/></svg>
-                    </span>
-                    <span class="bbai-trial-banner__text" id="bbai-trial-banner-text">
-                        <?php
-                        printf(
+            <div id="bbai-ftue-panel-trial" class="bbai-ftue-panel bbai-ftue-panel--trial"<?php echo $bbai_ftue_post_free_trial ? ' hidden' : ''; ?>>
+                <?php
+                bbai_ui_render(
+                    'banner',
+                    [
+                        'type'        => 'info',
+                        'title'       => __('Free trial active', 'beepbeep-ai-alt-text-generator'),
+                        'description' => sprintf(
                             /* translators: 1: remaining count, 2: total limit */
-                            esc_html__( 'Trial: %1$d of %2$d free generations remaining', 'beepbeep-ai-alt-text-generator' ),
+                            __('Trial: %1$d of %2$d free generations remaining', 'beepbeep-ai-alt-text-generator'),
                             (int) $bbai_trial_remaining,
                             (int) $bbai_trial_limit
-                        );
-                        ?>
-                    </span>
-                </div>
-            <?php endif; ?>
+                        ),
+                        'description_attrs' => [
+                            'id' => 'bbai-trial-banner-text',
+                            'data-bbai-trial-banner-text' => '1',
+                        ],
+                        'extra_class' => 'bbai-trial-banner bbai-unified-trial-banner',
+                    ]
+                );
+                ?>
 
-            <header class="bbai-logged-out__header">
-                <h1 id="bbai-logged-out-title" class="bbai-logged-out__title">
-                    <?php if ( $bbai_trial_exhausted ) : ?>
-                        <?php esc_html_e('Free trial complete 🎉', 'beepbeep-ai-alt-text-generator'); ?>
-                    <?php else : ?>
+                <header class="bbai-logged-out__header">
+                    <h1 id="bbai-logged-out-title-trial" class="bbai-logged-out__title">
                         <?php esc_html_e('Automatically generate alt text for your WordPress and WooCommerce images', 'beepbeep-ai-alt-text-generator'); ?>
-                    <?php endif; ?>
-                </h1>
-
-                <?php if ( $bbai_trial_exhausted ) : ?>
-                    <p class="bbai-logged-out__subtitle">
-                        <?php esc_html_e('You\'ve generated alt text for 10 images.', 'beepbeep-ai-alt-text-generator'); ?>
-                    </p>
-                    <p class="bbai-ftue-missing-count">
-                        <?php echo esc_html($bbai_remaining_without_alt_message); ?>
-                    </p>
-                <?php else : ?>
+                    </h1>
                     <p class="bbai-logged-out__subtitle">
                         <?php esc_html_e('Optimized for WooCommerce product images and WordPress media libraries.', 'beepbeep-ai-alt-text-generator'); ?>
                     </p>
@@ -103,19 +107,18 @@ $bbai_library_url  = admin_url('admin.php?page=' . $bbai_current_page . '&tab=li
                     <p class="bbai-ftue-missing-count" id="bbai-missing-summary" role="status" aria-live="polite">
                         <?php echo esc_html($bbai_missing_alt_message); ?>
                     </p>
-                <?php endif; ?>
-            </header>
+                </header>
 
-            <?php if ( ! $bbai_trial_exhausted ) : ?>
-                <div class="bbai-ftue-actions">
-                    <button type="button" class="button button-primary button-large" id="bbai-trial-generate-btn">
+                <?php if ('trial_available' === $bbai_hero_state) : ?>
+                <div class="bbai-ftue-actions" id="bbai-ftue-trial-actions">
+                    <button type="button" class="button button-primary button-large bbai-btn bbai-btn-primary bbai-btn-lg" id="bbai-trial-generate-btn">
                         <?php esc_html_e('Generate alt text for 3 images (free)', 'beepbeep-ai-alt-text-generator'); ?>
                     </button>
                     <p class="description bbai-ftue-action-note" id="bbai-ftue-action-note">
                         <?php esc_html_e('No account needed. Takes ~10 seconds.', 'beepbeep-ai-alt-text-generator'); ?>
                     </p>
                     <a
-                        class="button button-secondary"
+                        class="button button-secondary bbai-btn bbai-btn-secondary"
                         id="bbai-secondary-action"
                         href="<?php echo esc_url($bbai_fallback_url); ?>"
                         data-action="show-auth-modal"
@@ -135,69 +138,40 @@ $bbai_library_url  = admin_url('admin.php?page=' . $bbai_current_page . '&tab=li
                         <?php esc_html_e('Sign up', 'beepbeep-ai-alt-text-generator'); ?>
                     </a>
                 </div>
+                <?php endif; ?>
+            </div>
 
-                <section class="bbai-ftue-progress" id="bbai-ftue-progress" hidden aria-live="polite">
-                    <div class="bbai-ftue-progress__row">
-                        <strong id="bbai-progress-label"><?php esc_html_e('Generating alt text...', 'beepbeep-ai-alt-text-generator'); ?></strong>
-                        <span id="bbai-progress-count">0 / 0</span>
-                    </div>
-                    <div class="bbai-ftue-progress__bar" aria-hidden="true">
-                        <span class="bbai-ftue-progress__fill" id="bbai-progress-fill"></span>
-                    </div>
-                    <p class="description bbai-ftue-progress__message" id="bbai-progress-message"></p>
-                </section>
-
-                <section class="bbai-ftue-instant-win" id="bbai-instant-win" hidden aria-live="polite">
-                    <h2 class="bbai-logged-out__section-title" id="bbai-instant-win-title">
-                        <?php esc_html_e('✅ Generated alt text for 3 images', 'beepbeep-ai-alt-text-generator'); ?>
-                    </h2>
-                    <ul class="bbai-ftue-instant-win__list" id="bbai-instant-win-list"></ul>
-                    <div class="bbai-ftue-instant-win__actions">
-                        <button type="button" class="button button-secondary" id="bbai-demo-generate-more-btn">
-                            <?php esc_html_e('Generate 7 more (free trial)', 'beepbeep-ai-alt-text-generator'); ?>
-                        </button>
-                        <a
-                            class="button button-primary"
-                            id="bbai-demo-unlock-btn"
-                            href="<?php echo esc_url($bbai_fallback_url); ?>"
-                            data-action="show-auth-modal"
-                            data-auth-tab="register"
-                        >
-                            <?php esc_html_e('Unlock 50/month (free)', 'beepbeep-ai-alt-text-generator'); ?>
-                        </a>
-                    </div>
-                </section>
-
-                <p class="bbai-ftue-empty-message" id="bbai-ftue-empty-message" hidden></p>
-
-                <section class="bbai-ftue-preview" aria-labelledby="bbai-preview-title">
-                    <h2 id="bbai-preview-title" class="bbai-logged-out__section-title">
-                        <?php esc_html_e('Preview', 'beepbeep-ai-alt-text-generator'); ?>
-                    </h2>
-                    <p class="bbai-ftue-preview__line">
-                        <strong><?php esc_html_e('Before:', 'beepbeep-ai-alt-text-generator'); ?></strong>
-                        <span id="bbai-preview-before"><?php esc_html_e('Scanning your media library...', 'beepbeep-ai-alt-text-generator'); ?></span>
+            <div id="bbai-ftue-panel-conversion" class="bbai-ftue-panel bbai-ftue-panel--conversion"<?php echo $bbai_ftue_post_free_trial ? '' : ' hidden'; ?>>
+                <header class="bbai-logged-out__header">
+                    <h1 id="bbai-logged-out-title-conversion" class="bbai-logged-out__title">
+                        <?php esc_html_e('You’ve generated your first alt text 🎉', 'beepbeep-ai-alt-text-generator'); ?>
+                    </h1>
+                    <p class="bbai-logged-out__subtitle">
+                        <?php esc_html_e('Continue generating alt text across your media library.', 'beepbeep-ai-alt-text-generator'); ?>
                     </p>
-                    <p class="bbai-ftue-preview__line">
-                        <strong><?php esc_html_e('After (generated):', 'beepbeep-ai-alt-text-generator'); ?></strong>
-                        <span id="bbai-preview-after">&quot;Red running shoes with white sole and breathable mesh upper&quot;</span>
+                    <p class="bbai-ftue-missing-count" id="bbai-missing-summary-conversion" role="status" aria-live="polite">
+                        <?php echo esc_html($bbai_remaining_without_alt_message); ?>
                     </p>
-                </section>
-            <?php else : ?>
-                <div class="bbai-ftue-actions">
+                </header>
+
+                <div class="bbai-ftue-actions" id="bbai-ftue-conversion-actions">
                     <a
-                        class="button button-primary button-large"
+                        class="button button-primary button-large bbai-btn bbai-btn-primary bbai-btn-lg"
+                        id="bbai-conversion-register-btn"
                         href="<?php echo esc_url($bbai_fallback_url); ?>"
                         data-action="show-auth-modal"
                         data-auth-tab="register"
                     >
-                        <?php esc_html_e('Unlock 50/month (free)', 'beepbeep-ai-alt-text-generator'); ?>
+                        <?php esc_html_e('Create free account (50 images/month)', 'beepbeep-ai-alt-text-generator'); ?>
                     </a>
                     <a
-                        class="bbai-ftue-secondary-link"
-                        href="<?php echo esc_url($bbai_library_url); ?>"
+                        class="bbai-ftue-secondary-link bbai-link bbai-link--muted"
+                        id="bbai-conversion-login-btn"
+                        href="<?php echo esc_url($bbai_fallback_url); ?>"
+                        data-action="show-auth-modal"
+                        data-auth-tab="login"
                     >
-                        <?php esc_html_e('View optimized images', 'beepbeep-ai-alt-text-generator'); ?>
+                        <?php esc_html_e('Already have an account? Log in', 'beepbeep-ai-alt-text-generator'); ?>
                     </a>
                 </div>
 
@@ -208,7 +182,57 @@ $bbai_library_url  = admin_url('admin.php?page=' . $bbai_current_page . '&tab=li
                         <li><?php esc_html_e('Scale alt text updates quickly with bulk generation.', 'beepbeep-ai-alt-text-generator'); ?></li>
                     </ul>
                 </section>
-            <?php endif; ?>
+            </div>
+
+            <section class="bbai-ftue-progress" id="bbai-ftue-progress" hidden aria-live="polite">
+                <div class="bbai-ftue-progress__row">
+                    <strong id="bbai-progress-label"><?php esc_html_e('Generating alt text...', 'beepbeep-ai-alt-text-generator'); ?></strong>
+                    <span id="bbai-progress-count">0 / 0</span>
+                </div>
+                <div class="bbai-ftue-progress__bar" aria-hidden="true">
+                    <span class="bbai-ftue-progress__fill" id="bbai-progress-fill"></span>
+                </div>
+                <p class="description bbai-ftue-progress__message" id="bbai-progress-message"></p>
+            </section>
+
+            <section class="bbai-ftue-instant-win" id="bbai-instant-win" hidden aria-live="polite">
+                <h2 class="bbai-logged-out__section-title" id="bbai-instant-win-title">
+                    <?php esc_html_e('✅ Generated alt text for 3 images', 'beepbeep-ai-alt-text-generator'); ?>
+                </h2>
+                <ul class="bbai-ftue-instant-win__list" id="bbai-instant-win-list"></ul>
+                <?php if ('trial_available' === $bbai_hero_state) : ?>
+                <div class="bbai-ftue-instant-win__actions" id="bbai-instant-win-actions" hidden>
+                    <button type="button" class="button button-secondary bbai-btn bbai-btn-secondary" id="bbai-demo-generate-more-btn">
+                        <?php esc_html_e('Generate 7 more (free trial)', 'beepbeep-ai-alt-text-generator'); ?>
+                    </button>
+                    <a
+                        class="button button-primary bbai-btn bbai-btn-primary"
+                        id="bbai-demo-unlock-btn"
+                        href="<?php echo esc_url($bbai_fallback_url); ?>"
+                        data-action="show-auth-modal"
+                        data-auth-tab="register"
+                    >
+                        <?php esc_html_e('Unlock 50/month (free)', 'beepbeep-ai-alt-text-generator'); ?>
+                    </a>
+                </div>
+                <?php endif; ?>
+            </section>
+
+            <p class="bbai-ftue-empty-message" id="bbai-ftue-empty-message" hidden></p>
+
+            <section class="bbai-ftue-preview" aria-labelledby="bbai-preview-title">
+                <h2 id="bbai-preview-title" class="bbai-logged-out__section-title">
+                    <?php esc_html_e('Preview', 'beepbeep-ai-alt-text-generator'); ?>
+                </h2>
+                <p class="bbai-ftue-preview__line">
+                    <strong><?php esc_html_e('Before:', 'beepbeep-ai-alt-text-generator'); ?></strong>
+                    <span id="bbai-preview-before"><?php esc_html_e('Scanning your media library...', 'beepbeep-ai-alt-text-generator'); ?></span>
+                </p>
+                <p class="bbai-ftue-preview__line">
+                    <strong><?php esc_html_e('After (generated):', 'beepbeep-ai-alt-text-generator'); ?></strong>
+                    <span id="bbai-preview-after">&quot;Red running shoes with white sole and breathable mesh upper&quot;</span>
+                </p>
+            </section>
 
             <div class="bbai-logged-out__divider" aria-hidden="true"></div>
 
@@ -511,12 +535,8 @@ $bbai_library_url  = admin_url('admin.php?page=' . $bbai_current_page . '&tab=li
         'remainingSingle' => __('You still have %s image without alt text.', 'beepbeep-ai-alt-text-generator'),
         /* translators: %s: number of images */
         'remainingPlural' => __('You still have %s images without alt text.', 'beepbeep-ai-alt-text-generator'),
-        'trialCompleteHeadline' => __('Free trial complete 🎉', 'beepbeep-ai-alt-text-generator'),
-        'trialCompleteSuccess' => __('You\'ve generated alt text for 10 images.', 'beepbeep-ai-alt-text-generator'),
         'buttonGenerate' => __('Generate alt text for 3 images (free)', 'beepbeep-ai-alt-text-generator'),
         'buttonGenerating' => __('Generating alt text…', 'beepbeep-ai-alt-text-generator'),
-        'buttonExhausted' => __('Unlock 50/month (free)', 'beepbeep-ai-alt-text-generator'),
-        'secondaryExhausted' => __('View optimized images', 'beepbeep-ai-alt-text-generator'),
         /* translators: 1: current count, 2: total limit */
         'bannerFormat' => __('Trial: %1$d of %2$d free generations remaining', 'beepbeep-ai-alt-text-generator'),
         'bannerExhausted' => __('Free trial exhausted - create a free account to continue', 'beepbeep-ai-alt-text-generator'),
@@ -540,26 +560,22 @@ $bbai_library_url  = admin_url('admin.php?page=' . $bbai_current_page . '&tab=li
     var ajaxUrl = <?php echo wp_json_encode(admin_url('admin-ajax.php')); ?>;
     var nonce = <?php echo wp_json_encode(wp_create_nonce('beepbeepai_nonce')); ?>;
     var signupUrl = <?php echo wp_json_encode($bbai_fallback_url); ?>;
-    var libraryUrl = <?php echo wp_json_encode($bbai_library_url); ?>;
     var uploadUrl = <?php echo wp_json_encode(admin_url('media-new.php')); ?>;
     var trialRemaining = <?php echo (int) $bbai_trial_remaining; ?>;
     var trialLimit = <?php echo (int) $bbai_trial_limit; ?>;
+    var trialUsed = <?php echo (int) $bbai_trial_used; ?>;
+    var trialExhausted = <?php echo $bbai_trial_exhausted ? 'true' : 'false'; ?>;
     var missingAltCount = <?php echo (int) $bbai_missing_alt_count; ?>;
 
     var btn = document.getElementById('bbai-trial-generate-btn');
-    if (!btn) {
-        return;
-    }
-
-    var titleEl = document.getElementById('bbai-logged-out-title');
-    var subtitleEl = document.querySelector('.bbai-logged-out__subtitle');
+    var panelTrial = document.getElementById('bbai-ftue-panel-trial');
+    var panelConversion = document.getElementById('bbai-ftue-panel-conversion');
     var scanStatusEl = document.getElementById('bbai-scan-status');
     var missingSummaryEl = document.getElementById('bbai-missing-summary');
+    var missingSummaryConversionEl = document.getElementById('bbai-missing-summary-conversion');
     var previewBeforeEl = document.getElementById('bbai-preview-before');
     var previewAfterEl = document.getElementById('bbai-preview-after');
     var bannerTextEl = document.getElementById('bbai-trial-banner-text');
-    var actionNoteEl = document.getElementById('bbai-ftue-action-note');
-    var secondaryActionEl = document.getElementById('bbai-secondary-action');
 
     var progressEl = document.getElementById('bbai-ftue-progress');
     var progressLabelEl = document.getElementById('bbai-progress-label');
@@ -573,9 +589,117 @@ $bbai_library_url  = admin_url('admin.php?page=' . $bbai_current_page . '&tab=li
     var generateMoreBtn = document.getElementById('bbai-demo-generate-more-btn');
     var unlockBtn = document.getElementById('bbai-demo-unlock-btn');
     var emptyMessageEl = document.getElementById('bbai-ftue-empty-message');
+    var instantWinActionsEl = document.getElementById('bbai-instant-win-actions');
 
     var requestInFlight = false;
-    var trialComplete = false;
+    var trialStartedTracked = false;
+    var trialExhaustedTracked = false;
+    var trialCompleteStateTracked = false;
+    var loggedOutConversionStateTracked = false;
+
+    function emitAnalyticsEvent(eventName, properties) {
+        try {
+            document.dispatchEvent(new CustomEvent('bbai:analytics', {
+                detail: Object.assign({ event: eventName }, properties || {})
+            }));
+        } catch (error) {
+            // Ignore analytics dispatch failures.
+        }
+    }
+
+    function syncAnalyticsContext() {
+        if (window.bbaiAnalytics && typeof window.bbaiAnalytics.updateContext === 'function') {
+            window.bbaiAnalytics.updateContext({
+                remaining_free_images: trialRemaining,
+                trial_exhausted: trialExhausted,
+                missing_alt_count: missingAltCount
+            });
+        }
+    }
+
+    function maybeTrackLoggedOutStateExposure() {
+        if (getHeroState() !== 'trial_complete') {
+            return;
+        }
+
+        if (!trialCompleteStateTracked) {
+            trialCompleteStateTracked = true;
+            emitAnalyticsEvent('trial_complete_state_shown', {
+                source: 'guest_dashboard',
+                remaining_free_images: trialRemaining
+            });
+        }
+
+        if (!loggedOutConversionStateTracked) {
+            loggedOutConversionStateTracked = true;
+            emitAnalyticsEvent('logged_out_conversion_state_shown', {
+                source: 'guest_dashboard',
+                remaining_free_images: trialRemaining
+            });
+        }
+    }
+
+    function maybeTrackTrialExhausted(properties) {
+        if (trialExhaustedTracked || !trialExhausted) {
+            return;
+        }
+
+        trialExhaustedTracked = true;
+        emitAnalyticsEvent('trial_exhausted', Object.assign({
+            source: 'guest_dashboard',
+            remaining_free_images: trialRemaining
+        }, properties || {}));
+    }
+
+    /**
+     * Central hero state resolver — single source of truth for JS.
+     * Mirrors the PHP $bbai_hero_state variable.
+     *
+     * Returns: 'trial_available' | 'trial_complete'
+     */
+    function getHeroState() {
+        if (trialExhausted || trialRemaining <= 0) {
+            return 'trial_complete';
+        }
+        return 'trial_available';
+    }
+
+    // Keep isPostFreeTrial as a thin alias so any future callers still work.
+    function isPostFreeTrial() {
+        return getHeroState() === 'trial_complete';
+    }
+
+    function syncPostFreeTrialUi() {
+        var state = getHeroState();
+        var post  = (state === 'trial_complete');
+
+        // Stamp the resolved state on the root element for CSS / debug targeting.
+        var rootEl = document.querySelector('.bbai-logged-out');
+        if (rootEl) {
+            rootEl.setAttribute('data-hero-state', state);
+        }
+
+        if (panelTrial) {
+            panelTrial.hidden = post;
+        }
+        if (panelConversion) {
+            panelConversion.hidden = !post;
+        }
+        if (post) {
+            if (progressEl) {
+                progressEl.hidden = true;
+            }
+            if (instantWinEl) {
+                instantWinEl.hidden = true;
+            }
+            if (instantWinActionsEl) {
+                instantWinActionsEl.hidden = true;
+            }
+        }
+
+        syncAnalyticsContext();
+        maybeTrackLoggedOutStateExposure();
+    }
 
     function formatNumber(value) {
         var parsed = parseInt(value, 10);
@@ -643,15 +767,17 @@ $bbai_library_url  = admin_url('admin.php?page=' . $bbai_current_page . '&tab=li
     }
 
     function updateMissingSummary() {
-        if (!missingSummaryEl) {
-            return;
-        }
-
-        var template = trialComplete
+        var post = isPostFreeTrial();
+        var template = post
             ? (missingAltCount === 1 ? i18n.remainingSingle : i18n.remainingPlural)
             : (missingAltCount === 1 ? i18n.missingSingle : i18n.missingPlural);
-
-        missingSummaryEl.textContent = simpleSprintf(template, formatNumber(missingAltCount));
+        var text = simpleSprintf(template, formatNumber(missingAltCount));
+        if (missingSummaryEl) {
+            missingSummaryEl.textContent = text;
+        }
+        if (missingSummaryConversionEl) {
+            missingSummaryConversionEl.textContent = text;
+        }
         window.missingAltCount = missingAltCount;
     }
 
@@ -664,7 +790,7 @@ $bbai_library_url  = admin_url('admin.php?page=' . $bbai_current_page . '&tab=li
     }
 
     function updateBanner() {
-        if (!bannerTextEl) {
+        if (!bannerTextEl || !panelTrial || panelTrial.hidden) {
             return;
         }
 
@@ -674,6 +800,49 @@ $bbai_library_url  = admin_url('admin.php?page=' . $bbai_current_page . '&tab=li
         }
 
         bannerTextEl.textContent = simpleSprintf(i18n.bannerFormat, formatNumber(trialRemaining), formatNumber(trialLimit));
+    }
+
+    function hydrateTrialStateFromServer() {
+        return postAction('bbai_trial_get_missing', { limit: 1 }).then(function(resp) {
+            if (!resp || !resp.success) {
+                var dataErr = resp && resp.data ? resp.data : {};
+                var codeErr = String(dataErr.code || '').toLowerCase();
+                if (codeErr === 'bbai_trial_exhausted') {
+                    trialRemaining = 0;
+                    trialUsed = Math.max(trialUsed, trialLimit);
+                    trialExhausted = true;
+                    syncPostFreeTrialUi();
+                    updateBanner();
+                }
+                return;
+            }
+
+            var data = resp.data || {};
+            var remainingRaw = parseInt(
+                typeof data.remaining_free_images !== 'undefined' ? data.remaining_free_images : data.remaining,
+                10
+            );
+            var limitRaw = parseInt(data.limit, 10);
+            var usedRaw = parseInt(data.used, 10);
+
+            if (!isNaN(limitRaw) && limitRaw >= 0) {
+                trialLimit = limitRaw;
+            }
+            if (!isNaN(usedRaw) && usedRaw >= 0) {
+                trialUsed = usedRaw;
+            }
+            if (!isNaN(remainingRaw) && remainingRaw >= 0) {
+                trialRemaining = remainingRaw;
+            } else if (trialLimit > 0 && trialUsed >= 0) {
+                trialRemaining = Math.max(0, trialLimit - trialUsed);
+            }
+
+            trialExhausted = !!data.trial_exhausted || trialRemaining <= 0;
+            syncPostFreeTrialUi();
+            updateBanner();
+        }).catch(function() {
+            // Keep server-rendered values if hydration fails.
+        });
     }
 
     function showProgress(current, total, message) {
@@ -721,31 +890,6 @@ $bbai_library_url  = admin_url('admin.php?page=' . $bbai_current_page . '&tab=li
         emptyMessageEl.hidden = false;
     }
 
-    function applyTrialCompleteState() {
-        trialComplete = true;
-        trialRemaining = 0;
-
-        if (titleEl) {
-            titleEl.textContent = i18n.trialCompleteHeadline;
-        }
-        if (subtitleEl) {
-            subtitleEl.textContent = i18n.trialCompleteSuccess;
-        }
-        if (scanStatusEl) {
-            scanStatusEl.textContent = '';
-            scanStatusEl.style.display = 'none';
-        }
-        if (actionNoteEl) {
-            actionNoteEl.style.display = 'none';
-        }
-        if (secondaryActionEl) {
-            secondaryActionEl.textContent = i18n.secondaryExhausted;
-            secondaryActionEl.href = libraryUrl;
-            secondaryActionEl.removeAttribute('data-action');
-            secondaryActionEl.removeAttribute('data-auth-tab');
-        }
-    }
-
     function updateMoreButtonLabel() {
         if (!generateMoreBtn) {
             return;
@@ -765,19 +909,17 @@ $bbai_library_url  = admin_url('admin.php?page=' . $bbai_current_page . '&tab=li
     }
 
     function setPrimaryButtonState() {
+        if (!btn) {
+            return;
+        }
+        if (isPostFreeTrial()) {
+            return;
+        }
         if (requestInFlight) {
             btn.disabled = true;
             btn.textContent = i18n.buttonGenerating;
             return;
         }
-
-        if (trialRemaining <= 0) {
-            applyTrialCompleteState();
-            btn.disabled = false;
-            btn.textContent = i18n.buttonExhausted;
-            return;
-        }
-
         btn.disabled = false;
         btn.textContent = i18n.buttonGenerate;
     }
@@ -829,13 +971,28 @@ $bbai_library_url  = admin_url('admin.php?page=' . $bbai_current_page . '&tab=li
             return;
         }
 
-        if (trialRemaining <= 0) {
+        if (isPostFreeTrial()) {
             triggerSignupFlow();
             return;
         }
 
         hideEmptyMessage();
         requestInFlight = true;
+        if (!trialStartedTracked && trialUsed <= 0) {
+            trialStartedTracked = true;
+            emitAnalyticsEvent('trial_started', {
+                source: 'guest_dashboard',
+                requested_count: limit,
+                remaining_free_images: trialRemaining,
+                missing_alt_count: missingAltCount
+            });
+        }
+        emitAnalyticsEvent('trial_generation_started', {
+            source: 'guest_dashboard',
+            requested_count: limit,
+            remaining_free_images: trialRemaining,
+            missing_alt_count: missingAltCount
+        });
         setPrimaryButtonState();
         updateMoreButtonLabel();
         showProgress(0, Math.max(1, limit), i18n.progressStarting);
@@ -846,10 +1003,18 @@ $bbai_library_url  = admin_url('admin.php?page=' . $bbai_current_page . '&tab=li
                 var errorCode = String(errorData.code || '').toLowerCase();
 
                 if (errorCode === 'bbai_trial_exhausted') {
-                    applyTrialCompleteState();
+                    trialRemaining = 0;
+                    trialExhausted = true;
+                    syncPostFreeTrialUi();
+                    maybeTrackTrialExhausted({
+                        source: 'guest_dashboard',
+                        requested_count: limit,
+                        remaining_free_images: 0
+                    });
                     showEmptyMessage(errorData.message || i18n.bannerExhausted);
                     showProgress(0, 1, errorData.message || i18n.bannerExhausted);
                     updateScanStatus(errorData.message || i18n.bannerExhausted, false);
+                    updateMissingSummary();
                     return;
                 }
 
@@ -860,19 +1025,58 @@ $bbai_library_url  = admin_url('admin.php?page=' . $bbai_current_page . '&tab=li
             }
 
             var data = resp.data || {};
-            trialRemaining = Math.max(0, parseInt(data.remaining, 10) || trialRemaining);
-            trialLimit = Math.max(0, parseInt(data.limit, 10) || trialLimit);
+            // Fix: parseInt("0") is falsy, so `|| fallback` would silently keep the old
+            // value when the server returns 0 (trial exhausted). Use isNaN guard instead.
+            var _remaining = parseInt(
+                typeof data.remaining_free_images !== 'undefined' ? data.remaining_free_images : data.remaining,
+                10
+            );
+            if (!isNaN(_remaining)) {
+                trialRemaining = Math.max(0, _remaining);
+            }
+            var _limit = parseInt(data.limit, 10);
+            if (!isNaN(_limit) && _limit > 0) {
+                trialLimit = _limit;
+            }
+            var _used = parseInt(data.used, 10);
+            if (!isNaN(_used) && _used >= 0) {
+                trialUsed = _used;
+            } else {
+                trialUsed = Math.max(0, trialLimit - trialRemaining);
+            }
             missingAltCount = Math.max(0, parseInt(data.missing_alt_count, 10) || 0);
 
             var summary = Array.isArray(data.summary) ? data.summary : [];
             var generatedCount = parseInt(data.generated_count, 10) || summary.length;
+            var acceptedCount = parseInt(data.accepted_count, 10);
+            if (isNaN(acceptedCount)) {
+                acceptedCount = generatedCount;
+            }
 
             showProgress(generatedCount, Math.max(1, parseInt(data.attempted, 10) || limit), data.message || i18n.progressDone);
 
+            if (generatedCount > 0 || acceptedCount > 0) {
+                emitAnalyticsEvent('trial_generation_completed', {
+                    source: 'guest_dashboard',
+                    requested_count: limit,
+                    processed_count: generatedCount,
+                    accepted_count: acceptedCount,
+                    remaining_free_images: trialRemaining,
+                    missing_alt_count: missingAltCount
+                });
+            }
+
             if (generatedCount > 0) {
-                renderInstantWin(summary);
                 updatePreviewFromSummary(summary);
                 updateScanStatus(i18n.scanReady, false);
+                if (isPostFreeTrial()) {
+                    syncPostFreeTrialUi();
+                } else {
+                    renderInstantWin(summary);
+                    if (instantWinActionsEl) {
+                        instantWinActionsEl.hidden = false;
+                    }
+                }
             } else {
                 var emptyMessage = data.message || i18n.friendlyEmpty;
                 showEmptyMessage(emptyMessage, data.upload_url || uploadUrl, i18n.friendlyUpload);
@@ -883,10 +1087,18 @@ $bbai_library_url  = admin_url('admin.php?page=' . $bbai_current_page . '&tab=li
                 updateScanStatus(i18n.scanNoMissing, false);
             }
 
-            if (trialRemaining <= 0 || data.trial_exhausted) {
-                applyTrialCompleteState();
+            if (data.trial_exhausted || trialRemaining <= 0) {
+                trialRemaining = 0;
+                trialExhausted = true;
+                maybeTrackTrialExhausted({
+                    source: 'guest_dashboard',
+                    processed_count: generatedCount,
+                    accepted_count: acceptedCount,
+                    remaining_free_images: 0
+                });
             }
 
+            syncPostFreeTrialUi();
             updateBanner();
             updateMissingSummary();
         }).catch(function() {
@@ -901,18 +1113,34 @@ $bbai_library_url  = admin_url('admin.php?page=' . $bbai_current_page . '&tab=li
         });
     }
 
-    btn.addEventListener('click', function(event) {
-        event.preventDefault();
-        if (trialRemaining <= 0) {
-            triggerSignupFlow();
-            return;
-        }
-        runDemoBatch(Math.min(3, trialRemaining));
-    });
+    if (btn) {
+        btn.addEventListener('click', function(event) {
+            event.preventDefault();
+            emitAnalyticsEvent('trial_cta_clicked', {
+                source: 'guest_dashboard_primary',
+                requested_count: Math.min(3, trialRemaining),
+                remaining_free_images: trialRemaining
+            });
+            if (isPostFreeTrial()) {
+                triggerSignupFlow();
+                return;
+            }
+            runDemoBatch(Math.min(3, trialRemaining));
+        });
+    }
 
     if (generateMoreBtn) {
         generateMoreBtn.addEventListener('click', function(event) {
             event.preventDefault();
+            emitAnalyticsEvent('trial_cta_clicked', {
+                source: 'guest_dashboard_expand',
+                requested_count: Math.min(7, trialRemaining),
+                remaining_free_images: trialRemaining
+            });
+            if (isPostFreeTrial()) {
+                triggerSignupFlow();
+                return;
+            }
             if (trialRemaining <= 0) {
                 triggerSignupFlow();
                 return;
@@ -935,9 +1163,11 @@ $bbai_library_url  = admin_url('admin.php?page=' . $bbai_current_page . '&tab=li
         updateScanStatus(i18n.scanReady, false);
     }
 
+    syncPostFreeTrialUi();
     updateMissingSummary();
     updateBanner();
     setPrimaryButtonState();
     updateMoreButtonLabel();
+    hydrateTrialStateFromServer();
 })();
 </script>

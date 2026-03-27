@@ -99,7 +99,7 @@ class Generation_Service {
 			$trial_status = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_status();
 			return array(
 				'success'   => false,
-				'message'   => __( "You've used your 10 free generations. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator' ),
+				'message'   => __( "You've used your 3 free images. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator' ),
 				'code'      => 'bbai_trial_exhausted',
 				'remaining' => 0,
 				'limit'     => intval( $trial_status['limit'] ?? 10 ),
@@ -185,7 +185,7 @@ class Generation_Service {
 			$trial_status = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_status();
 			return array(
 				'success'   => false,
-				'message'   => __( "You've used your 10 free generations. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator' ),
+				'message'   => __( "You've used your 3 free images. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator' ),
 				'code'      => 'bbai_trial_exhausted',
 				'remaining' => 0,
 				'limit'     => intval( $trial_status['limit'] ?? 10 ),
@@ -278,7 +278,7 @@ class Generation_Service {
 			$trial_status = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_status();
 			return array(
 				'success'   => false,
-				'message'   => __( "You've used your 10 free generations. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator' ),
+				'message'   => __( "You've used your 3 free images. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator' ),
 				'code'      => 'bbai_trial_exhausted',
 				'remaining' => 0,
 				'limit'     => intval( $trial_status['limit'] ?? 10 ),

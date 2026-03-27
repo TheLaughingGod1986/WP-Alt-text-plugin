@@ -57,8 +57,12 @@ trait Core_Review {
     /**
      * Scoring system version. Bump this to invalidate all cached reviews
      * scored under a previous (weaker) rubric.
+     *
+     * Trait constants are unsupported on older PHP runtimes, so keep this as a method.
      */
-    const REVIEW_SCORING_VERSION = 2;
+    private function review_scoring_version(): int {
+        return 3;
+    }
 
     private function get_review_snapshot(int $attachment_id, string $current_alt = ''): ?array {
         $score = intval(get_post_meta($attachment_id, '_bbai_review_score', true));
@@ -68,7 +72,7 @@ trait Core_Review {
 
         // Purge reviews scored under an older scoring system version.
         $stored_version = intval(get_post_meta($attachment_id, '_bbai_review_version', true));
-        if ($stored_version < self::REVIEW_SCORING_VERSION) {
+        if ($stored_version < $this->review_scoring_version()) {
             $this->purge_review_meta($attachment_id);
             return null;
         }
@@ -170,18 +174,20 @@ trait Core_Review {
         if (class_exists('BBAI_Alt_Quality_Scorer')) {
             $scored = \BBAI_Alt_Quality_Scorer::score($alt, $context);
         } else {
-            // Fallback: minimal scoring.
+            // Fallback: minimal scoring — never mark as optimized-eligible without the real engine.
             $scored = [
                 'score' => 50,
-                'label' => 'Needs improvement',
+                'label' => bbai_copy_score_needs_improvement(),
                 'grade' => 'C',
                 'issues' => [],
                 'suggestions' => [],
                 'hard_fail' => false,
+                'optimized_eligible' => false,
+                'breakdown' => null,
             ];
         }
 
-        $score  = $scored['score'];
+        $score  = (int) $scored['score'];
         $status = $this->status_from_score($score);
         $grade  = $this->grade_from_status($status);
 
@@ -189,7 +195,7 @@ trait Core_Review {
             'score'  => $score,
             'grade'  => $grade,
             'status' => $status,
-            'issues' => $scored['issues'],
+            'issues' => $scored['issues'] ?? [],
         ];
 
         // Merge with cached LLM review if available.
@@ -213,28 +219,90 @@ trait Core_Review {
             $combined_issues = array_merge($combined_issues, $heuristic['issues']);
             $combined_issues = array_values(array_unique(array_filter($combined_issues)));
 
-            return [
-                'score'     => $final_score,
-                'grade'     => $final_grade,
-                'status'    => $final_status,
-                'issues'    => $combined_issues,
-                'heuristic' => $heuristic,
-                'review'    => $review,
-                'breakdown' => $scored['breakdown'] ?? null,
-                'suggestions' => $scored['suggestions'] ?? [],
+            $hard_fail = !empty($scored['hard_fail']);
+            $optimized_eligible = class_exists( '\BBAI_Alt_Quality_Scorer' )
+                ? \BBAI_Alt_Quality_Scorer::passes_optimized_row_gates(
+                    $alt,
+                    $final_score,
+                    isset( $scored['breakdown'] ) && is_array( $scored['breakdown'] ) ? $scored['breakdown'] : null,
+                    $hard_fail
+                )
+                : false;
+
+            $result = [
+                'score'              => $final_score,
+                'grade'              => $final_grade,
+                'status'             => $final_status,
+                'issues'             => $combined_issues,
+                'heuristic'          => $heuristic,
+                'review'             => $review,
+                'breakdown'          => $scored['breakdown'] ?? null,
+                'suggestions'        => $scored['suggestions'] ?? [],
+                'hard_fail'          => $hard_fail,
+                'optimized_eligible' => $optimized_eligible,
+            ];
+
+            return $this->apply_user_approval_to_alt_health_result($result, $attachment_id, $alt);
+        }
+
+        $hard_fail = !empty($scored['hard_fail']);
+        $optimized_eligible = class_exists( '\BBAI_Alt_Quality_Scorer' )
+            ? \BBAI_Alt_Quality_Scorer::passes_optimized_row_gates(
+                $alt,
+                $score,
+                isset( $scored['breakdown'] ) && is_array( $scored['breakdown'] ) ? $scored['breakdown'] : null,
+                $hard_fail
+            )
+            : false;
+
+        $result = [
+            'score'              => $heuristic['score'],
+            'grade'              => $heuristic['grade'],
+            'status'             => $heuristic['status'],
+            'issues'             => $heuristic['issues'],
+            'heuristic'          => $heuristic,
+            'review'             => null,
+            'breakdown'          => $scored['breakdown'] ?? null,
+            'suggestions'        => $scored['suggestions'] ?? [],
+            'hard_fail'          => $hard_fail,
+            'optimized_eligible' => $optimized_eligible,
+        ];
+
+        return $this->apply_user_approval_to_alt_health_result($result, $attachment_id, $alt);
+    }
+
+    /**
+     * Attach user approval metadata without inflating low-quality scores to “optimized”.
+     *
+     * @param array  $result        Alt health array.
+     * @param int    $attachment_id Attachment ID.
+     * @param string $alt           Current alt text.
+     * @return array
+     */
+    private function apply_user_approval_to_alt_health_result(array $result, int $attachment_id, string $alt): array {
+        $approval = $this->get_user_approval_snapshot($attachment_id, $alt);
+        if (!$approval) {
+            return $result;
+        }
+
+        $result['user_approved'] = true;
+        $result['approved_at'] = $approval['approved_at'];
+
+        if (!empty($result['review']) && is_array($result['review'])) {
+            $result['review'] = array_merge($result['review'], [
+                'summary'       => __('Reviewed and approved in the ALT Library.', 'beepbeep-ai-alt-text-generator'),
+                'user_approved' => true,
+                'approved_at'   => $approval['approved_at'],
+            ]);
+        } else {
+            $result['review'] = [
+                'summary'       => __('Reviewed and approved in the ALT Library.', 'beepbeep-ai-alt-text-generator'),
+                'user_approved' => true,
+                'approved_at'   => $approval['approved_at'],
             ];
         }
 
-        return [
-            'score'     => $heuristic['score'],
-            'grade'     => $heuristic['grade'],
-            'status'    => $heuristic['status'],
-            'issues'    => $heuristic['issues'],
-            'heuristic' => $heuristic,
-            'review'    => null,
-            'breakdown' => $scored['breakdown'] ?? null,
-            'suggestions' => $scored['suggestions'] ?? [],
-        ];
+        return $result;
     }
 
     /**
@@ -265,13 +333,13 @@ trait Core_Review {
     private function grade_from_status(string $status): string {
         switch ($status) {
             case 'great':
-                return __('Excellent', 'beepbeep-ai-alt-text-generator');
+                return bbai_copy_score_excellent();
             case 'good':
-                return __('Strong', 'beepbeep-ai-alt-text-generator');
+                return bbai_copy_score_good();
             case 'review':
-                return __('Needs review', 'beepbeep-ai-alt-text-generator');
+                return bbai_copy_score_needs_improvement();
             default:
-                return __('Critical', 'beepbeep-ai-alt-text-generator');
+                return bbai_copy_score_critical();
         }
     }
 
@@ -415,7 +483,7 @@ Return JSON only:
         update_post_meta($attachment_id, '_bbai_review_model', sanitize_text_field($model));
         update_post_meta($attachment_id, '_bbai_reviewed_at', current_time('mysql'));
         update_post_meta($attachment_id, '_bbai_review_alt_hash', $hash);
-        update_post_meta($attachment_id, '_bbai_review_version', self::REVIEW_SCORING_VERSION);
+        update_post_meta($attachment_id, '_bbai_review_version', $this->review_scoring_version());
 
         return [
             'score' => $score,

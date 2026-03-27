@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: BeepBeep AI – Alt Text Generator
- * Description: Automatically generates SEO-optimized AI alt text for WordPress.
- * Version: 4.5.19
+ * Description: Bulk AI ALT text for WordPress and WooCommerce — fix missing descriptions, image SEO, and accessibility workflows.
+ * Version: 4.5.21
  * Requires at least: 6.2
  * Author: beepbeepv2
  * Author URI: https://oppti.dev
@@ -18,8 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants
-define( 'BEEPBEEP_AI_VERSION', '4.5.19' );
-define( 'BBAI_VERSION', '4.5.19' ); // Legacy alias for compatibility
+define( 'BEEPBEEP_AI_VERSION', '4.5.21' );
+define( 'BBAI_VERSION', '4.5.21' ); // Legacy alias for compatibility
 define( 'BEEPBEEP_AI_DB_VERSION', '1.0.0' );
 define( 'BEEPBEEP_AI_PLUGIN_FILE', __FILE__ );
 define( 'BBAI_PLUGIN_FILE', __FILE__ ); // Legacy alias
@@ -161,6 +161,7 @@ require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-json.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-alt-quality.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-debug.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-trial-quota.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/content/bbai-admin-copy.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-privacy.php';
 if ( class_exists( '\BeepBeepAI\AltTextGenerator\Privacy' ) ) {
 	\BeepBeepAI\AltTextGenerator\Privacy::init();
@@ -169,6 +170,8 @@ if ( class_exists( '\BeepBeepAI\AltTextGenerator\Privacy' ) ) {
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-input-validator.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-telemetry.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/automation/phase17-content-pipeline.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-queue.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-debug-log.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-seo-quality-checker.php';

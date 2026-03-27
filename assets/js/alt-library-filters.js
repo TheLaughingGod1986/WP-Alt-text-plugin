@@ -37,17 +37,48 @@
         if (!body) return null;
         let el = getEmptyEl();
         if (!el) {
-            el = document.createElement('tr');
-            el.id = EMPTY_SELECTOR.replace('#', '');
-            el.className = 'bbai-library-filter-empty';
-            el.setAttribute('role', 'status');
-            el.setAttribute('aria-live', 'polite');
-            const td = document.createElement('td');
-            td.colSpan = 7;
-            td.className = 'bbai-library-filter-empty__cell';
-            var container = document.querySelector('.bbai-library-container');
-            td.textContent = (container && container.getAttribute('data-bbai-empty-filter')) || 'No images match this filter.';
-            el.appendChild(td);
+            const container = document.querySelector('.bbai-library-container');
+            const titleText =
+                (container && container.getAttribute('data-bbai-empty-filter')) || 'No images match this filter.';
+            const hintText = (container && container.getAttribute('data-bbai-empty-filter-hint')) || '';
+
+            const stateWrap = document.createElement('div');
+            stateWrap.className = 'bbai-state bbai-state--empty bbai-state--compact bbai-library-filter-empty__state';
+            const titleEl = document.createElement('h3');
+            titleEl.className = 'bbai-state__title';
+            titleEl.textContent = titleText;
+            stateWrap.appendChild(titleEl);
+            if (hintText) {
+                const bodyEl = document.createElement('p');
+                bodyEl.className = 'bbai-state__body';
+                bodyEl.textContent = hintText;
+                stateWrap.appendChild(bodyEl);
+            }
+
+            const isTbody = body.tagName === 'TBODY';
+            if (isTbody) {
+                el = document.createElement('tr');
+                el.id = EMPTY_SELECTOR.replace('#', '');
+                el.className =
+                    'bbai-library-filter-empty bbai-table-empty bbai-table-empty--inline bbai-state-row';
+                el.setAttribute('role', 'status');
+                el.setAttribute('aria-live', 'polite');
+                const td = document.createElement('td');
+                td.colSpan = 7;
+                td.className = 'bbai-library-filter-empty__cell';
+                td.appendChild(stateWrap);
+                el.appendChild(td);
+            } else {
+                el = document.createElement('div');
+                el.id = EMPTY_SELECTOR.replace('#', '');
+                el.className = 'bbai-library-filter-empty bbai-table-empty bbai-table-empty--inline';
+                el.setAttribute('role', 'status');
+                el.setAttribute('aria-live', 'polite');
+                const cell = document.createElement('div');
+                cell.className = 'bbai-library-filter-empty__cell';
+                cell.appendChild(stateWrap);
+                el.appendChild(cell);
+            }
         }
         return el;
     }
@@ -124,7 +155,11 @@
             });
         });
 
-        applyFilter(FILTER_ALL);
+        let initial = String(container.getAttribute('data-bbai-default-filter') || FILTER_ALL).toLowerCase();
+        if (initial === 'needs_review' || initial === 'needs-review') {
+            initial = 'weak';
+        }
+        applyFilter(initial || FILTER_ALL);
     }
 
     if (document.readyState === 'loading') {

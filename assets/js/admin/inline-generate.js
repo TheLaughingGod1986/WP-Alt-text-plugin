@@ -43,9 +43,10 @@
         $modal.find('.bbai-bulk-progress__eta').text('Calculating...');
         $modal.find('.bbai-bulk-progress__bar-fill').css('width', '0%');
 
-        var intro = 'Starting inline generation for ' + normalized.length + ' image' + (normalized.length !== 1 ? 's' : '') + '...';
-        updateBulkProgressTitle('Generating Alt Text…');
-        logBulkProgressSuccess(intro);
+        updateBulkProgressTitle('Improving your images (0 / ' + normalized.length + ')');
+        if (typeof window.updateBulkProgressSubtitle === 'function') {
+            window.updateBulkProgressSubtitle('This usually takes ~5\u201310 seconds');
+        }
 
         $modal.data('batchQueue', normalized.slice(0));
         var inlineBatchSize = window.BBAI && window.BBAI.inlineBatchSize
@@ -87,6 +88,7 @@
                     successes++;
                     processed++;
                     var title = result && result.title ? result.title : ('Generated alt text for image #' + id);
+                    updateBulkProgressTitle('Improving your images (' + processed + ' / ' + total + ')');
                     updateBulkProgress(processed, total, title);
                 })
                 .catch(function(error) {
@@ -94,6 +96,7 @@
                     processed++;
                     var message = 'Image #' + id + ': ' + (error && error.message ? error.message : 'Failed to generate alt text.');
                     logBulkProgressError(message);
+                    updateBulkProgressTitle('Improving your images (' + processed + ' / ' + total + ')');
                     updateBulkProgress(processed, total);
                 })
                 .finally(function() {
@@ -110,12 +113,9 @@
     }
 
     /**
-     * Finalize inline generation and show success toast
+     * Finalize inline generation: show completion state inside the progress modal.
      */
     function finalizeInlineGeneration(successes, failures) {
-        var total = successes + failures;
-        hideBulkProgress();
-
         if (typeof refreshUsageStats === 'function') {
             refreshUsageStats();
         }
@@ -124,15 +124,21 @@
             window.bbaiRefreshDashboardCoverage();
         }
 
-        if (window.showToast && typeof window.showToast === 'function') {
-            window.showToast({
-                type: failures > 0 ? 'warning' : 'success',
-                title: failures > 0 ? 'ALT text generated with issues' : 'ALT text generated',
-                message: failures > 0
-                    ? (successes + ' image' + (successes !== 1 ? 's' : '') + ' processed, ' + failures + ' failed.')
-                    : (successes + ' image' + (successes !== 1 ? 's' : '') + ' processed successfully'),
-                duration: 4000
-            });
+        if (typeof window.showBulkProgressComplete === 'function') {
+            window.showBulkProgressComplete(successes, failures);
+        } else {
+            // Fallback if completion state function is unavailable.
+            hideBulkProgress();
+            if (window.showToast && typeof window.showToast === 'function') {
+                window.showToast({
+                    type: failures > 0 ? 'warning' : 'success',
+                    title: failures > 0 ? 'ALT text generated with issues' : 'ALT text generated',
+                    message: failures > 0
+                        ? (successes + ' image' + (successes !== 1 ? 's' : '') + ' processed, ' + failures + ' failed.')
+                        : (successes + ' image' + (successes !== 1 ? 's' : '') + ' processed successfully'),
+                    duration: 4000
+                });
+            }
         }
     }
 

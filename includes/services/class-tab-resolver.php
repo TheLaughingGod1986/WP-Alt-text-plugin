@@ -58,6 +58,8 @@ class Tab_Resolver {
             case 'bbai-settings':
             case 'bbai-debug':
                 return 'settings';
+            case 'bbai-ui-kit':
+                return 'ui-kit';
             case 'bbai':
                 return 'dashboard';
             default:

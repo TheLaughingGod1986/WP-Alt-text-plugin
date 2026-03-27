@@ -10,6 +10,7 @@
     gap: 4px;
     padding: 4px 8px;
     border-radius: var(--bbai-radius-full);
+    border: 1px solid transparent;
     font-size: var(--bbai-text-xs);
     font-weight: var(--bbai-font-semibold);
     text-transform: uppercase;
@@ -18,24 +19,34 @@
 }
 
 .bbai-quality-badge--excellent {
-    background: #ecfdf5;
-    color: #16a34a;
+    background: var(--bbai-status-score-excellent-bg, #dcfce7);
+    color: var(--bbai-status-score-excellent-fg, #14532d);
+    border: 1px solid var(--bbai-status-score-excellent-border, rgba(22, 163, 74, 0.22));
 }
 
 .bbai-quality-badge--good {
-    background: #ecfdf5;
-    color: #16a34a;
+    background: var(--bbai-status-score-good-bg, #ecfdf5);
+    color: var(--bbai-status-score-good-fg, #166534);
+    border: 1px solid var(--bbai-status-score-good-border, rgba(16, 185, 129, 0.28));
 }
 
 .bbai-quality-badge--needs-review,
 .bbai-quality-badge--fair {
-    background: #fef3c7;
-    color: #d97706;
+    background: var(--bbai-status-score-needs-improvement-bg, #fef3c7);
+    color: var(--bbai-status-score-needs-improvement-fg, #92400e);
+    border: 1px solid var(--bbai-status-score-needs-improvement-border, rgba(245, 158, 11, 0.32));
 }
 
 .bbai-quality-badge--poor {
-    background: #fdeaea;
-    color: #c02b2b;
+    background: var(--bbai-status-score-poor-bg, #ffedd5);
+    color: var(--bbai-status-score-poor-fg, #9a3412);
+    border: 1px solid var(--bbai-status-score-poor-border, rgba(234, 88, 12, 0.35));
+}
+
+.bbai-quality-badge--critical {
+    background: var(--bbai-status-score-critical-bg, #ffe4e6);
+    color: var(--bbai-status-score-critical-fg, #9f1239);
+    border: 1px solid var(--bbai-status-score-critical-border, rgba(244, 63, 94, 0.35));
 }
 
 /* Quality Hints */
@@ -125,6 +136,12 @@
     color: #ff9a9a;
 }
 
+[data-theme="dark"] .bbai-quality-badge--critical,
+.bbai-dark-mode .bbai-quality-badge--critical {
+    background: rgba(190, 18, 60, 0.28);
+    color: #fecdd3;
+}
+
 /* ── Score Breakdown (tooltip content & inline panel) ── */
 
 .bbai-score-breakdown {
@@ -186,7 +203,7 @@
 
 .bbai-score-breakdown__issue::before {
     content: "•";
-    color: #d97706;
+    color: var(--bbai-status-needs-review-accent, #d97706);
     flex-shrink: 0;
 }
 

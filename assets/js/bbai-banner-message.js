@@ -54,15 +54,20 @@
     function buildCreditSupportingLine(creditsRemaining, issueCount) {
         var credits = Math.max(0, parseInt(creditsRemaining, 10) || 0);
         var issues = Math.max(0, parseInt(issueCount, 10) || 0);
+        var creditsSegment = '';
 
-        var creditsSegment = sprintf(
-            _n(
-                '%s optimization left this cycle',
-                '%s optimizations left this cycle',
-                credits
-            ),
-            formatCount(credits)
-        );
+        if (credits <= 0) {
+            creditsSegment = __('You can still review your existing ALT text. Upgrade to continue generating.');
+        } else {
+            creditsSegment = sprintf(
+                _n(
+                    '%s credit left this month. Keep your library moving.',
+                    '%s credits left this month. Keep your library moving.',
+                    credits
+                ),
+                formatCount(credits)
+            );
+        }
 
         if (issues <= 0) {
             return creditsSegment;
@@ -100,6 +105,28 @@
      * @param {{ creditsRemaining?: number, credits_remaining?: number, issueCount?: number, issue_count?: number }} args
      * @returns {{ title: string, supportingLine: string, line1: string, line2: string }}
      */
+    /**
+     * Single active top-banner slot (strict priority). Mirrors PHP bbai_get_active_banner_slot().
+     *
+     * @param {{ lowCredits?: boolean, missingAltCount?: number, optimizedCount?: number, showMilestone?: boolean }} state
+     * @returns {'lowCredits'|'missingAlt'|'milestone'|null}
+     */
+    function getActiveBanner(state) {
+        state = state || {};
+        if (state.lowCredits) {
+            return 'lowCredits';
+        }
+        var missingAltCount = Math.max(0, parseInt(state.missingAltCount, 10) || 0);
+        if (missingAltCount > 0) {
+            return 'missingAlt';
+        }
+        var optimizedCount = Math.max(0, parseInt(state.optimizedCount, 10) || 0);
+        if (optimizedCount > 0 && state.showMilestone) {
+            return 'milestone';
+        }
+        return null;
+    }
+
     function buildBannerMessage(args) {
         args = args || {};
         var creditsRemaining = Math.max(
@@ -113,8 +140,8 @@
 
         var title =
             creditsRemaining === 0
-                ? __('You’re out of credits')
-                : __('You’re running low on credits');
+                ? __('You’ve used this month’s free allowance')
+                : __('You’re close to this month’s allowance');
 
         var supportingLine = buildCreditSupportingLine(creditsRemaining, issueCount);
 
@@ -129,4 +156,5 @@
     global.bbaiBuildBannerMessage = buildBannerMessage;
     global.bbaiBuildCreditSupportingLine = buildCreditSupportingLine;
     global.bbaiBuildIssueAttentionMessage = buildIssueAttentionMessage;
+    global.bbaiGetActiveBanner = getActiveBanner;
 })(typeof window !== 'undefined' ? window : this);

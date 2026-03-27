@@ -1041,16 +1041,17 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     height: 14px;
 }
 
+/* Donut + metric tiles — align with Phase 4 --bbai-status-* (foundation tokens) */
 #bbai-dashboard-main .bbai-status-card {
-    --bbai-status-optimized: #16a34a;
-    --bbai-status-optimized-bg: rgba(22, 163, 74, 0.05);
+    --bbai-status-optimized: var(--bbai-status-optimized-accent);
+    --bbai-status-optimized-bg: rgba(22, 163, 74, 0.06);
     --bbai-status-optimized-border: rgba(22, 163, 74, 0.14);
-    --bbai-status-weak: #f97316;
-    --bbai-status-weak-bg: rgba(249, 115, 22, 0.05);
-    --bbai-status-weak-border: rgba(249, 115, 22, 0.14);
-    --bbai-status-missing: #ef4444;
-    --bbai-status-missing-bg: rgba(239, 68, 68, 0.05);
-    --bbai-status-missing-border: rgba(239, 68, 68, 0.14);
+    --bbai-status-weak: var(--bbai-status-needs-review-accent);
+    --bbai-status-weak-bg: rgba(217, 119, 6, 0.06);
+    --bbai-status-weak-border: rgba(217, 119, 6, 0.14);
+    --bbai-status-missing: var(--bbai-status-missing-accent);
+    --bbai-status-missing-bg: rgba(244, 63, 94, 0.06);
+    --bbai-status-missing-border: rgba(244, 63, 94, 0.14);
 }
 
 #bbai-dashboard-main .bbai-status-card .bbai-card__header {
@@ -5765,8 +5766,9 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     --bbai-text-strong: #0f172a;
     --bbai-text-body: #334155;
     --bbai-text-muted: #64748b;
-    --bbai-primary: #2563eb;
-    --bbai-primary-strong: #1d4ed8;
+    /* Brand primary = action green (not blue) — drives --bbai-admin-color-primary via foundation */
+    --bbai-primary: #10b981;
+    --bbai-primary-strong: #047857;
     --bbai-success: #16a34a;
     --bbai-warning: #d97706;
     --bbai-warning-soft: #fff7ed;
@@ -5774,13 +5776,13 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     --bbai-danger-soft: #fff7f7;
     --bbai-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
     --bbai-shadow-md: 0 6px 18px rgba(15, 23, 42, 0.06);
-    --bbai-command-banner-gap: var(--section-spacing, 24px);
-    --bbai-command-banner-padding-block: var(--section-spacing, 24px);
-    --bbai-command-banner-padding-inline: var(--section-spacing, 24px);
+    --bbai-command-banner-gap: var(--section-spacing, var(--bbai-space-6));
+    --bbai-command-banner-padding-block: var(--bbai-rhythm-banner-padding-block, var(--bbai-space-6));
+    --bbai-command-banner-padding-inline: var(--bbai-rhythm-banner-padding-inline, var(--bbai-space-6));
     --bbai-command-banner-radius: 16px;
-    --bbai-command-card-padding: 22px;
-    --bbai-command-group-gap: var(--card-gap, 16px);
-    --bbai-command-row-padding: 8px;
+    --bbai-command-card-padding: var(--bbai-rhythm-card-padding, var(--bbai-space-6));
+    --bbai-command-group-gap: var(--card-gap, var(--bbai-space-4));
+    --bbai-command-row-padding: var(--bbai-rhythm-row-padding-y, var(--bbai-space-3));
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner).bbai-dashboard-section {
@@ -6740,9 +6742,9 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 @media (max-width: 782px) {
     #bbai-dashboard-main {
-        --bbai-command-banner-padding-block: 20px;
-        --bbai-command-banner-padding-inline: 20px;
-        --bbai-command-card-padding: 20px;
+        --bbai-command-banner-padding-block: var(--bbai-space-5);
+        --bbai-command-banner-padding-inline: var(--bbai-space-5);
+        --bbai-command-card-padding: var(--bbai-rhythm-card-padding-compact, var(--bbai-space-4));
     }
 
     #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) {
@@ -6849,8 +6851,9 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     --bbai-text-strong: #0f172a;
     --bbai-text-body: #334155;
     --bbai-text-muted: #64748b;
-    --bbai-primary: #2563eb;
-    --bbai-primary-strong: #1d4ed8;
+    /* Brand primary = action green (not blue) — drives --bbai-admin-color-primary via foundation */
+    --bbai-primary: #10b981;
+    --bbai-primary-strong: #047857;
     --bbai-success: #16a34a;
     --bbai-warning: #d97706;
     --bbai-danger: #dc2626;
@@ -7121,21 +7124,21 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-command-card__eyebrow {
     margin: 0 0 6px;
-    font-size: 11px;
-    font-weight: 700;
-    line-height: 1.3;
-    letter-spacing: 0.08em;
+    font-size: var(--bbai-section-label-size, 11px);
+    font-weight: var(--bbai-section-label-weight, 700);
+    line-height: var(--bbai-section-label-leading, 1.3);
+    letter-spacing: var(--bbai-section-label-tracking, 0.08em);
     text-transform: uppercase;
-    color: #7b8aa0;
+    color: var(--bbai-section-label-color, #7b8aa0);
 }
 
 #bbai-dashboard-main .bbai-command-card__title {
     margin: 0;
-    font-size: 22px;
-    font-weight: 700;
-    line-height: 1.12;
-    letter-spacing: -0.03em;
-    color: var(--bbai-text-strong);
+    font-size: var(--bbai-section-title-size, 21px);
+    font-weight: var(--bbai-section-title-weight, 600);
+    line-height: var(--bbai-section-title-leading, 25px);
+    letter-spacing: var(--bbai-section-title-tracking, -0.02em);
+    color: var(--bbai-section-title-color, var(--bbai-text-strong));
 }
 
 #bbai-dashboard-main .bbai-command-card__meta-group {
@@ -7853,6 +7856,51 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     animation: bbai-coverage-value-pulse 0.85s cubic-bezier(0.33, 1, 0.68, 1);
 }
 
+#bbai-dashboard-main .bbai-command-status__value--processing {
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+}
+
+#bbai-dashboard-main .bbai-command-status__coverage-processing {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 22em;
+}
+
+#bbai-dashboard-main .bbai-command-status__processing-spinner {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(148, 163, 184, 0.35);
+    border-top-color: var(--bbai-primary-strong, #2563eb);
+    border-radius: 50%;
+    animation: bbai-coverage-processing-spin 0.75s linear infinite;
+}
+
+@keyframes bbai-coverage-processing-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes bbai-command-donut-processing-pulse {
+    0%,
+    100% {
+        filter: brightness(1);
+    }
+
+    50% {
+        filter: brightness(1.05);
+    }
+}
+
+#bbai-dashboard-main .bbai-command-donut--processing {
+    animation: bbai-command-donut-enter 360ms ease-out both, bbai-command-donut-processing-pulse 2.4s ease-in-out infinite 360ms;
+}
+
 @media (prefers-reduced-motion: reduce) {
     #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__cta,
     #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__link,
@@ -7866,6 +7914,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     #bbai-dashboard-main .bbai-dashboard-hero-progress-fill:not(.bbai-banner__progress-fill),
     #bbai-dashboard-main .bbai-command-card__refresh-icon,
     #bbai-dashboard-main .bbai-coverage-value--pulse,
+    #bbai-dashboard-main .bbai-command-status__processing-spinner,
+    #bbai-dashboard-main .bbai-command-donut--processing,
     #bbai-dashboard-main .bbai-dashboard-hero--celebrate,
     #bbai-dashboard-main .bbai-dashboard-hero__icon--draw svg path,
     .bbai-dashboard-review-overlay--enter .bbai-dashboard-review-overlay__backdrop,

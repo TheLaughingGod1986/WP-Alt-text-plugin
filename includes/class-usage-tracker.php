@@ -1,7 +1,7 @@
 <?php
 /**
  * Usage Tracker for AltText AI
- * Caches usage data locally and handles upgrade prompts
+ * Caches normalized usage API data locally and handles upgrade prompts.
  */
 
 namespace BeepBeepAI\AltTextGenerator;
@@ -52,6 +52,136 @@ class Usage_Tracker {
 		$allowed  = ['free', 'pro', 'growth', 'agency', 'enterprise'];
 		return in_array($plan_key, $allowed, true) ? $plan_key : 'free';
 	}
+
+    /**
+     * Normalize a usage payload so callers see a consistent shape.
+     *
+     * Runtime quota source of truth is the backend usage API or a successful
+     * generation response that includes refreshed usage. Legacy quota fields
+     * should not drive plugin UI decisions.
+     *
+     * @param array $usage_data Usage payload.
+     * @return array
+     */
+    private static function normalize_usage_payload(array $usage_data): array {
+        $current_ts = (int) current_time('timestamp');
+
+        $used = 0;
+        foreach (['used'] as $used_key) {
+            if (isset($usage_data[$used_key]) && is_numeric($usage_data[$used_key])) {
+                $used = max(0, intval($usage_data[$used_key]));
+                break;
+            }
+        }
+
+        $limit = 50;
+        foreach (['limit'] as $limit_key) {
+            if (isset($usage_data[$limit_key]) && is_numeric($usage_data[$limit_key])) {
+                $limit = intval($usage_data[$limit_key]);
+                break;
+            }
+        }
+        if ($limit <= 0) {
+            $limit = 50;
+        }
+
+        $remaining = null;
+        foreach (['remaining'] as $remaining_key) {
+            if (isset($usage_data[$remaining_key]) && is_numeric($usage_data[$remaining_key])) {
+                $remaining = intval($usage_data[$remaining_key]);
+                break;
+            }
+        }
+        if (null === $remaining) {
+            $remaining = $limit - $used;
+        }
+        if ($remaining < 0) {
+            $remaining = 0;
+        }
+
+        $plan = self::normalize_plan_slug($usage_data['plan_type'] ?? $usage_data['plan'] ?? 'free');
+
+        $reset_input = $usage_data['resetDate'] ?? $usage_data['reset_date'] ?? '';
+        $reset_ts = isset($usage_data['reset_timestamp']) ? intval($usage_data['reset_timestamp']) : 0;
+        if ($reset_ts <= 0 && $reset_input) {
+            $parsed_reset = strtotime((string) $reset_input);
+            if ($parsed_reset > 0) {
+                $reset_ts = $parsed_reset;
+            }
+        }
+        if ($reset_ts <= 0) {
+            $reset_ts = strtotime('first day of next month', $current_ts);
+        }
+
+        $usage_data['source'] = $usage_data['source'] ?? 'remote_usage';
+        $usage_data['used'] = $used;
+        $usage_data['limit'] = $limit;
+        $usage_data['remaining'] = $remaining;
+        $usage_data['creditsUsed'] = $used;
+        $usage_data['creditsTotal'] = $limit;
+        $usage_data['creditsLimit'] = $limit;
+        $usage_data['creditsRemaining'] = $remaining;
+        $usage_data['plan'] = $plan;
+        $usage_data['plan_type'] = $plan;
+        $usage_data['resetDate'] = wp_date('Y-m-d', $reset_ts);
+        $usage_data['reset_date'] = date_i18n('F j, Y', $reset_ts);
+        $usage_data['reset_timestamp'] = $reset_ts;
+        $usage_data['seconds_until_reset'] = max(0, $reset_ts - $current_ts);
+        $usage_data['quota'] = [
+            'used' => $used,
+            'limit' => $limit,
+            'remaining' => $remaining,
+            'reset_date' => $usage_data['reset_date'],
+            'reset_timestamp' => $reset_ts,
+            'plan_type' => $plan,
+        ];
+
+        return $usage_data;
+    }
+
+    /**
+     * Build a usage snapshot from the current local cache only.
+     *
+     * This never makes a remote request and is safe to use as a fallback when
+     * the backend usage endpoint is unavailable.
+     *
+     * @return array
+     */
+    public static function get_local_usage_snapshot() {
+        $cached = get_transient(self::CACHE_KEY);
+        if ($cached !== false && is_array($cached)) {
+            return self::normalize_usage_payload($cached);
+        }
+
+        $free_credits_allocated = get_option('beepbeepai_free_credits_allocated', false);
+        $current_ts = (int) current_time('timestamp');
+        $reset_ts = strtotime('first day of next month', $current_ts);
+        $seconds_until_reset = max(0, $reset_ts - $current_ts);
+
+        if ($free_credits_allocated) {
+            return self::normalize_usage_payload([
+                'used'       => 0,
+                'limit'      => 50,
+                'remaining'  => 50,
+                'plan'       => 'free',
+                'resetDate'  => wp_date('Y-m-01', $reset_ts),
+                'reset_timestamp' => $reset_ts,
+                'seconds_until_reset' => $seconds_until_reset,
+                'source'     => 'local_snapshot',
+            ]);
+        }
+
+        return self::normalize_usage_payload([
+            'used'       => 0,
+            'limit'      => 0,
+            'remaining'  => 0,
+            'plan'       => 'free',
+            'resetDate'  => wp_date('Y-m-01', $reset_ts),
+            'reset_timestamp' => $reset_ts,
+            'seconds_until_reset' => $seconds_until_reset,
+            'source'     => 'local_snapshot',
+        ]);
+    }
     
     /**
      * Allocate free credits on first generation request.
@@ -90,125 +220,61 @@ class Usage_Tracker {
      */
     public static function update_usage($usage_data) {
         if (!is_array($usage_data)) { return; }
-        $used  = isset($usage_data['used']) ? max(0, intval($usage_data['used'])) : 0;
-        $limit = isset($usage_data['limit']) ? intval($usage_data['limit']) : 50;
-        if ($limit <= 0) { $limit = 50; }
-        $remaining = isset($usage_data['remaining']) ? intval($usage_data['remaining']) : ($limit - $used);
-        if ($remaining < 0) { $remaining = 0; }
-
-        $current_ts = (int) current_time('timestamp');
-        $reset_input = $usage_data['resetDate'] ?? '';
-        $reset_ts = isset($usage_data['resetTimestamp']) ? intval($usage_data['resetTimestamp']) : 0;
-        if ($reset_ts <= 0 && $reset_input) {
-            $reset_ts = strtotime($reset_input);
-        }
-        if ($reset_ts <= 0) {
-            $reset_ts = strtotime('first day of next month', $current_ts);
-        }
-        $seconds_until_reset = max(0, $reset_ts - $current_ts);
-
-        $normalized = [
-            'used'       => $used,
-            'limit'      => $limit,
-            'remaining'  => $remaining,
-            'plan'       => self::normalize_plan_slug($usage_data['plan'] ?? 'free'),
-            'resetDate'  => wp_date('Y-m-d', $reset_ts),
-            'reset_timestamp' => $reset_ts,
-            'seconds_until_reset' => $seconds_until_reset,
-        ];
-        set_transient(self::CACHE_KEY, $normalized, self::CACHE_EXPIRY);
+        $usage_data['source'] = 'remote_usage';
+        set_transient(self::CACHE_KEY, self::normalize_usage_payload($usage_data), self::CACHE_EXPIRY);
+        delete_transient('bbai_quota_cache');
     }
     
     /**
      * Get cached usage data
      */
     public static function get_cached_usage($force_refresh = false) {
-        // PRIORITY 1: Check for active license first - license overrides personal account
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
         $api_client = API_Client_V2::get_instance();
 
-        if ($api_client->has_active_license()) {
-            $license_data = $api_client->get_license_data();
-            if ($license_data && isset($license_data['organization'])) {
-                $org = $license_data['organization'];
-
-                // Parse reset date
-                $reset_ts = strtotime('first day of next month');
-                if (!empty($org['resetDate'])) {
-                    $parsed = strtotime($org['resetDate']);
-                    if ($parsed > 0) {
-                        $reset_ts = $parsed;
-                    }
-                }
-                $current_ts = (int) current_time('timestamp');
-
-                // Get plan from organization data (correct location)
-                $plan = self::normalize_plan_slug($org['plan'] ?? 'free');
-
-                // Get limit from organization data or calculate based on plan
-                $limit = isset($org['tokenLimit']) ? intval($org['tokenLimit']) :
-                         ($plan === 'free' ? 50 : ($plan === 'pro' ? 1000 : 10000));
-
-                $tokens_remaining = isset($org['tokensRemaining']) ? max(0, intval($org['tokensRemaining'])) : $limit;
-                $used = max(0, $limit - $tokens_remaining);
-
-                // Return organization quota instead of personal account
-                return [
-                    'used' => $used,
-                    'limit' => $limit,
-                    'remaining' => $tokens_remaining,
-                    'plan' => $plan,
-                    'resetDate' => wp_date('Y-m-d', $reset_ts),
-                    'reset_timestamp' => $reset_ts,
-                    'seconds_until_reset' => max(0, $reset_ts - $current_ts),
-                ];
-            }
-        }
-
-        // PRIORITY 2: If no license, fall back to personal account data
-        // If force refresh, clear cache first
         if ($force_refresh) {
             delete_transient(self::CACHE_KEY);
         }
-        
+
         $cached = get_transient(self::CACHE_KEY);
-        
-        if ($cached === false) {
-            // Check if free credits have been allocated for this site
-            $free_credits_allocated = get_option('beepbeepai_free_credits_allocated', false);
-            
-            // Default values if no cache exists
-            $reset_ts = strtotime('first day of next month');
-            
-            // Only show free credits if they've been allocated (first generation request)
-            // This prevents showing 50 credits before first use
-            if ($free_credits_allocated) {
-                $current_ts = (int) current_time('timestamp');
-                return [
-                    'used' => 0,
-                    'limit' => 50,
-                    'remaining' => 50,
-                    'plan' => 'free',
-                    'resetDate' => wp_date('Y-m-01', $reset_ts),
-                    'reset_timestamp' => $reset_ts,
-                    'seconds_until_reset' => max(0, $reset_ts - $current_ts),
-                ];
-            } else {
-                // Free credits not yet allocated - show as unavailable
-                $current_ts = (int) current_time('timestamp');
-                return [
-                    'used' => 0,
-                    'limit' => 0,
-                    'remaining' => 0,
-                    'plan' => 'free',
-                    'resetDate' => wp_date('Y-m-01', $reset_ts),
-                    'reset_timestamp' => $reset_ts,
-                    'seconds_until_reset' => max(0, $reset_ts - $current_ts),
-                ];
-            }
+        if ($cached !== false && is_array($cached) && !$force_refresh) {
+            return self::normalize_usage_payload($cached);
         }
-        
-        return $cached;
+
+        $token = '';
+        $license_key = '';
+        try {
+            $token = $api_client->get_token();
+        } catch (\Exception $e) {
+            $token = '';
+        } catch (\Error $e) {
+            $token = '';
+        }
+        try {
+            $license_key = $api_client->get_license_key();
+        } catch (\Exception $e) {
+            $license_key = '';
+        } catch (\Error $e) {
+            $license_key = '';
+        }
+
+        $has_credentialed_account = !empty($token) || !empty($license_key) || $api_client->has_active_license();
+
+        if ($has_credentialed_account) {
+            $live_usage = $api_client->get_usage();
+            if (!is_wp_error($live_usage) && is_array($live_usage) && !empty($live_usage)) {
+                if (($live_usage['source'] ?? '') !== 'local_snapshot') {
+                    self::update_usage($live_usage);
+                }
+
+                return self::normalize_usage_payload($live_usage);
+            }
+
+            return self::get_local_usage_snapshot();
+        }
+
+        // No stored auth credentials - fall back to local trial/free usage.
+        return self::get_local_usage_snapshot();
     }
     
     /**
@@ -216,6 +282,7 @@ class Usage_Tracker {
      */
     public static function clear_cache() {
         delete_transient(self::CACHE_KEY);
+        delete_transient('bbai_quota_cache');
     }
     
     /**
@@ -244,9 +311,11 @@ class Usage_Tracker {
         $usage = self::get_cached_usage($force_refresh);
         $limit = max(1, intval($usage['limit']));
         $used = max(0, intval($usage['used']));
-        if ($used > $limit) { $used = $limit; }
-        $remaining = max(0, $limit - $used);
-        $percentage_exact = $limit > 0 ? ($used / $limit) * 100 : 0;
+        $remaining = isset($usage['remaining'])
+            ? max(0, intval($usage['remaining']))
+            : max(0, $limit - $used);
+        $percentage_used = min($used, $limit);
+        $percentage_exact = $limit > 0 ? ($percentage_used / $limit) * 100 : 0;
         $percentage_exact = min(100, max(0, $percentage_exact));
         
         // Calculate days until reset
@@ -287,20 +356,38 @@ class Usage_Tracker {
         if (empty($reset_date_display)) {
             $reset_date_display = date_i18n('F j, Y', strtotime('first day of next month'));
         }
+
+        $plan_label = isset($usage['plan_label']) && is_string($usage['plan_label']) && '' !== trim($usage['plan_label'])
+            ? sanitize_text_field($usage['plan_label'])
+            : ucfirst($plan);
         
         return [
             'used' => $used,
             'limit' => $limit,
             'remaining' => $remaining,
+            'creditsUsed' => $used,
+            'creditsTotal' => $limit,
+            'creditsLimit' => $limit,
+            'creditsRemaining' => $remaining,
             'percentage' => $percentage_exact,
             'percentage_exact' => $percentage_exact,
             'percentage_display' => self::format_percentage_label($percentage_exact),
             'plan' => $plan,
-            'plan_label' => ucfirst($plan),
+            'plan_type' => $plan,
+            'plan_label' => $plan_label,
+            'resetDate' => wp_date('Y-m-d', $reset_timestamp),
             'reset_date' => $reset_date_display,
             'reset_timestamp' => $reset_timestamp,
             'days_until_reset' => $days_until_reset,
             'seconds_until_reset' => $seconds_until_reset,
+            'quota' => [
+                'used' => $used,
+                'limit' => $limit,
+                'remaining' => $remaining,
+                'reset_date' => $reset_date_display,
+                'reset_timestamp' => $reset_timestamp,
+                'plan_type' => $plan,
+            ],
             'is_free' => $plan === 'free',
             'is_pro' => $plan === 'pro',
         ];
