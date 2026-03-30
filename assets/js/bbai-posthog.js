@@ -4,7 +4,24 @@
     var cfg = window.BBAI_POSTHOG || {};
     var runtimeContext = {};
     var instanceName = cfg.instanceName || 'bbaiPosthog';
-    var clientBootstrapped = false;
+    var loaderState = window.__BBAI_POSTHOG_STATE || {};
+
+    window.__BBAI_POSTHOG_STATE = loaderState;
+    loaderState.scriptId = loaderState.scriptId || 'bbai-posthog-loader';
+    loaderState.scriptRequested = !!loaderState.scriptRequested;
+    loaderState.scriptLoaded = !!loaderState.scriptLoaded;
+    loaderState.scriptFailed = !!loaderState.scriptFailed;
+    loaderState.initStarted = !!loaderState.initStarted;
+    loaderState.ready = !!loaderState.ready;
+    loaderState.readyCallbacks = Array.isArray(loaderState.readyCallbacks) ? loaderState.readyCallbacks : [];
+    loaderState.loadCallbacks = Array.isArray(loaderState.loadCallbacks) ? loaderState.loadCallbacks : [];
+    loaderState.waitingForReady = !!loaderState.waitingForReady;
+    loaderState.readyLogSent = !!loaderState.readyLogSent;
+    loaderState.timeoutLogSent = !!loaderState.timeoutLogSent;
+    loaderState.identifyState = isObject(loaderState.identifyState) ? loaderState.identifyState : {
+        id: '',
+        propsKey: ''
+    };
 
     function isObject(value) {
         return !!value && Object.prototype.toString.call(value) === '[object Object]';
@@ -97,6 +114,20 @@
         return output;
     }
 
+    function serializeForCompare(value) {
+        if (Array.isArray(value)) {
+            return '[' + value.map(serializeForCompare).join(',') + ']';
+        }
+
+        if (!isObject(value)) {
+            return JSON.stringify(value);
+        }
+
+        return '{' + Object.keys(value).sort().map(function(key) {
+            return JSON.stringify(key) + ':' + serializeForCompare(value[key]);
+        }).join(',') + '}';
+    }
+
     function getContext() {
         return extend({}, sanitizeProperties(cfg.context || {}), runtimeContext);
     }
@@ -112,18 +143,109 @@
         return context.page || 'dashboard';
     }
 
-    function getClient() {
-        return window[instanceName] || window.posthog || null;
-    }
+    function logToConsole(level) {
+        var fn;
+        var args;
 
-    function ensureSnippet() {
-        if (window.__BBAI_POSTHOG_SNIPPET_LOADED || (window.posthog && window.posthog.__SV)) {
+        if (!window.console || typeof window.console[level] !== 'function') {
             return;
         }
 
-        window.__BBAI_POSTHOG_SNIPPET_LOADED = true;
+        args = Array.prototype.slice.call(arguments, 1);
+        args.unshift('[BBAI]');
+        fn = window.console[level];
+        fn.apply(window.console, args);
+    }
 
-        !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group identify setPersonProperties setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags resetGroups onFeatureFlags addFeatureFlagsHandler onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    function isDebugEnabled() {
+        return !!(cfg.debug || window.alttextaiDebug);
+    }
+
+    function getClient() {
+        if (instanceName !== 'posthog' && window[instanceName]) {
+            return window[instanceName];
+        }
+
+        return window.posthog || null;
+    }
+
+    function getLibraryClient() {
+        return window.posthog || null;
+    }
+
+    function getAssetUrl() {
+        var explicitUrl = cfg.assetUrl ? String(cfg.assetUrl) : '';
+        var apiHost;
+
+        if (explicitUrl) {
+            return explicitUrl;
+        }
+
+        apiHost = cfg.apiHost ? String(cfg.apiHost).replace(/\/+$/, '') : '';
+        if (!apiHost) {
+            return '';
+        }
+
+        return apiHost.replace('.i.posthog.com', '-assets.i.posthog.com') + '/static/array.js';
+    }
+
+    function hasLibraryApi(client) {
+        return !!client && typeof client.init === 'function';
+    }
+
+    function isClientReady(client) {
+        return !!client && client.__loaded === true && typeof client.capture === 'function' && !!client.config;
+    }
+
+    function isLibraryReady() {
+        return hasLibraryApi(getLibraryClient());
+    }
+
+    function syncNamedInstance(client) {
+        if (instanceName === 'posthog' || !client) {
+            return client;
+        }
+
+        window[instanceName] = client;
+        return client;
+    }
+
+    function flushReadyCallbacks(client) {
+        var callbacks = loaderState.readyCallbacks.slice(0);
+        var i;
+
+        loaderState.readyCallbacks = [];
+
+        for (i = 0; i < callbacks.length; i++) {
+            try {
+                callbacks[i](client);
+            } catch (callbackError) {
+                // Ignore callback failures.
+            }
+        }
+    }
+
+    function markReady(client) {
+        if (!isClientReady(client)) {
+            return;
+        }
+
+        syncNamedInstance(client);
+        loaderState.ready = true;
+        loaderState.scriptLoaded = true;
+        loaderState.scriptFailed = false;
+
+        if (!loaderState.readyLogSent) {
+            loaderState.readyLogSent = true;
+            logToConsole('log', 'PostHog ready', {
+                instance: instanceName,
+                loaded: client.__loaded === true,
+                hasConfig: !!client.config
+            });
+        }
+
+        registerContext();
+        flushReadyCallbacks(client);
     }
 
     function registerContext() {
@@ -139,81 +261,323 @@
         }
     }
 
-    function ensureClient() {
+    function findExistingScript(assetUrl) {
+        var scripts;
+        var i;
+
+        if (!assetUrl) {
+            return null;
+        }
+
+        scripts = document.getElementsByTagName('script');
+        for (i = 0; i < scripts.length; i++) {
+            if (scripts[i].id === loaderState.scriptId || scripts[i].src === assetUrl) {
+                return scripts[i];
+            }
+        }
+
+        return null;
+    }
+
+    function flushLoadCallbacks() {
+        var callbacks = loaderState.loadCallbacks.slice(0);
+        var i;
+
+        loaderState.loadCallbacks = [];
+
+        for (i = 0; i < callbacks.length; i++) {
+            try {
+                callbacks[i]();
+            } catch (callbackError) {
+                // Ignore callback failures.
+            }
+        }
+    }
+
+    function bindScriptEvents(script, assetUrl) {
+        if (!script || script.getAttribute('data-bbai-posthog-bound') === '1') {
+            return;
+        }
+
+        script.setAttribute('data-bbai-posthog-bound', '1');
+        script.addEventListener('load', function() {
+            loaderState.scriptLoaded = true;
+            loaderState.scriptRequested = true;
+            logToConsole('log', 'PostHog script onload', assetUrl, {
+                libraryApiReady: isLibraryReady()
+            });
+            flushLoadCallbacks();
+        });
+        script.addEventListener('error', function() {
+            loaderState.scriptFailed = true;
+            loaderState.loadCallbacks = [];
+            logToConsole('warn', 'PostHog script failed to load', assetUrl);
+        });
+    }
+
+    function ensureScriptLoaded(callback) {
+        var assetUrl = getAssetUrl();
+        var script;
+        var anchor;
+
+        if (typeof callback === 'function') {
+            loaderState.loadCallbacks.push(callback);
+        }
+
+        if (!cfg.enabled || !cfg.apiKey || !cfg.apiHost) {
+            loaderState.loadCallbacks = [];
+            return;
+        }
+
+        if (isLibraryReady()) {
+            loaderState.scriptLoaded = true;
+            flushLoadCallbacks();
+            return;
+        }
+
+        if (!assetUrl) {
+            loaderState.loadCallbacks = [];
+            logToConsole('warn', 'PostHog asset URL missing');
+            return;
+        }
+
+        script = findExistingScript(assetUrl);
+        if (script) {
+            loaderState.scriptRequested = true;
+            bindScriptEvents(script, assetUrl);
+            return;
+        }
+
+        if (loaderState.scriptRequested) {
+            return;
+        }
+
+        loaderState.scriptRequested = true;
+        loaderState.scriptFailed = false;
+
+        if (!window.posthog || (typeof window.posthog !== 'object' && typeof window.posthog !== 'function')) {
+            window.posthog = [];
+        }
+
+        logToConsole('log', 'PostHog script injection start', assetUrl);
+
+        script = document.createElement('script');
+        script.id = loaderState.scriptId;
+        script.async = true;
+        script.src = assetUrl;
+        script.setAttribute('data-bbai-posthog-loader', '1');
+        bindScriptEvents(script, assetUrl);
+
+        anchor = document.getElementsByTagName('script')[0];
+        if (anchor && anchor.parentNode) {
+            anchor.parentNode.insertBefore(script, anchor);
+        } else if (document.head) {
+            document.head.appendChild(script);
+        }
+    }
+
+    function waitForClientReady(attempts) {
+        var remaining = typeof attempts === 'number' ? attempts : 20;
+        var client = getClient();
+        var library = getLibraryClient();
+
+        if (!client && library && isClientReady(library)) {
+            syncNamedInstance(library);
+            client = getClient();
+        }
+
+        if (isClientReady(client)) {
+            loaderState.waitingForReady = false;
+            markReady(client);
+            return;
+        }
+
+        if (loaderState.waitingForReady) {
+            return;
+        }
+
+        loaderState.waitingForReady = true;
+
+        (function poll(left) {
+            var activeClient = getClient();
+            var activeLibrary = getLibraryClient();
+
+            if (!activeClient && activeLibrary && isClientReady(activeLibrary)) {
+                syncNamedInstance(activeLibrary);
+                activeClient = getClient();
+            }
+
+            if (isClientReady(activeClient)) {
+                loaderState.waitingForReady = false;
+                markReady(activeClient);
+                return;
+            }
+
+            if (left <= 0) {
+                loaderState.waitingForReady = false;
+                loaderState.readyCallbacks = [];
+                if (!loaderState.timeoutLogSent) {
+                    loaderState.timeoutLogSent = true;
+                    logToConsole('warn', 'PostHog readiness timed out', {
+                        libraryApiReady: isLibraryReady(),
+                        rootLoaded: !!(activeLibrary && activeLibrary.__loaded),
+                        rootHasConfig: !!(activeLibrary && activeLibrary.config),
+                        namedClientLoaded: !!(activeClient && activeClient.__loaded),
+                        namedClientHasConfig: !!(activeClient && activeClient.config)
+                    });
+                }
+                return;
+            }
+
+            window.setTimeout(function() {
+                poll(left - 1);
+            }, 250);
+        })(remaining);
+    }
+
+    function initPosthog(attempts) {
+        var remaining = typeof attempts === 'number' ? attempts : 20;
+        var client = getClient();
+        var library = getLibraryClient();
+
         if (!cfg.enabled || !cfg.apiKey || !cfg.apiHost) {
             return null;
         }
 
-        ensureSnippet();
+        if (isClientReady(client)) {
+            markReady(client);
+            return client;
+        }
 
-        if (!clientBootstrapped && window.posthog && typeof window.posthog.init === 'function') {
-            clientBootstrapped = true;
+        if (isClientReady(library)) {
+            syncNamedInstance(library);
+            markReady(library);
+            return getClient();
+        }
+
+        if (isLibraryReady() && library && !loaderState.initStarted) {
+            loaderState.initStarted = true;
+            logToConsole('log', 'PostHog init run', {
+                instance: 'posthog',
+                apiHost: cfg.apiHost
+            });
             try {
-                window.posthog.init(cfg.apiKey, {
+                library.init(cfg.apiKey, {
                     api_host: cfg.apiHost,
                     defaults: cfg.defaults || '2026-01-30',
                     autocapture: false,
                     capture_pageview: false,
                     capture_pageleave: false,
                     disable_session_recording: true
-                }, instanceName);
+                });
+                syncNamedInstance(library);
             } catch (error) {
-                // Ignore PostHog boot failures and no-op safely.
+                logToConsole('warn', 'PostHog init failed', error);
             }
+            waitForClientReady(remaining);
+            return getClient();
         }
 
-        registerContext();
+        ensureScriptLoaded(function() {
+            initPosthog(remaining);
+        });
 
+        waitForClientReady(remaining);
         return getClient();
+    }
+
+    function whenPosthogReady(callback, attempts) {
+        var remaining = typeof attempts === 'number' ? attempts : 20;
+        var safeCallback = typeof callback === 'function' ? callback : null;
+        var client = getClient();
+
+        if (!safeCallback) {
+            return;
+        }
+
+        if (isClientReady(client)) {
+            markReady(client);
+            safeCallback(client);
+            return;
+        }
+
+        loaderState.readyCallbacks.push(safeCallback);
+        initPosthog(remaining);
     }
 
     function track(eventName, properties) {
         var safeName = sanitizeEventName(eventName);
-        var client;
         var payload;
 
         if (!safeName) {
             return;
         }
 
-        client = ensureClient();
-        if (!client || typeof client.capture !== 'function') {
-            return;
-        }
-
         payload = extend({}, getContext(), sanitizeProperties(properties || {}));
-
-        try {
-            client.capture(safeName, payload);
-        } catch (error) {
-            // Ignore PostHog capture failures.
-        }
+        whenPosthogReady(function(client) {
+            logToConsole('log', 'bbaiTrack send', safeName, payload);
+            if (safeName === 'checkout_started' && isDebugEnabled()) {
+                logToConsole('log', 'checkout_started identity context', {
+                    identifier: loaderState.identifyState.id || '',
+                    account_id: payload.account_id || '',
+                    user_id: payload.user_id || '',
+                    license_key_present: !!payload.license_key,
+                    site_id: payload.site_id || '',
+                    site_hash: payload.site_hash || ''
+                });
+            }
+            try {
+                client.capture(safeName, payload);
+            } catch (error) {
+                // Ignore PostHog capture failures.
+            }
+        });
     }
 
     function identify(distinctId, properties) {
         var safeId = distinctId === undefined || distinctId === null ? '' : String(distinctId);
-        var client = ensureClient();
         var safeProperties = sanitizeProperties(properties || {});
 
-        if (!safeId || !client || typeof client.identify !== 'function') {
+        if (!safeId) {
             return;
         }
 
-        try {
-            client.identify(safeId);
-        } catch (error) {
-            // Ignore identify failures.
-        }
+        whenPosthogReady(function(client) {
+            var propsKey = serializeForCompare(safeProperties);
 
-        if (typeof client.setPersonProperties === 'function' && Object.keys(safeProperties).length) {
-            try {
-                client.setPersonProperties(safeProperties);
-            } catch (personError) {
-                // Ignore person property failures.
+            if (loaderState.identifyState.id === safeId && loaderState.identifyState.propsKey === propsKey) {
+                return;
             }
-        }
 
-        registerContext();
+            if (isDebugEnabled()) {
+                logToConsole('log', 'posthog identify called', {
+                    identifier: safeId,
+                    properties: safeProperties
+                });
+            }
+
+            try {
+                if (typeof client.identify === 'function') {
+                    client.identify(safeId);
+                }
+            } catch (error) {
+                // Ignore identify failures.
+            }
+
+            if (typeof client.setPersonProperties === 'function' && Object.keys(safeProperties).length) {
+                try {
+                    client.setPersonProperties(safeProperties);
+                } catch (personError) {
+                    // Ignore person property failures.
+                }
+            }
+
+            loaderState.identifyState = {
+                id: safeId,
+                propsKey: propsKey
+            };
+            registerContext();
+        });
     }
 
     function pageView(pageName, properties) {
@@ -283,40 +647,44 @@
         });
     }
 
-    function resolveIdentifyId(user) {
-        if (!isObject(user)) {
-            return '';
-        }
+    function buildIdentityContext(user) {
+        var baseContext = sanitizeProperties(cfg.context || {});
+        var source = isObject(user) ? sanitizeProperties(user) : {};
+        var sourceSite = isObject(source.site) ? source.site : {};
 
-        if (user.id) {
-            return 'user:' + String(user.id);
-        }
-        if (user._id) {
-            return 'user:' + String(user._id);
-        }
-        if (isObject(user.organization) && user.organization.id) {
-            return 'org:' + String(user.organization.id);
-        }
-        if (isObject(user.organization) && user.organization._id) {
-            return 'org:' + String(user.organization._id);
+        return sanitizeProperties({
+            account_id: source.account_id || source.id || source._id || baseContext.account_id || '',
+            user_id: source.user_id || source.id || source._id || baseContext.user_id || baseContext.account_id || '',
+            license_key: source.license_key || baseContext.license_key || '',
+            site_id: source.site_id || sourceSite.id || sourceSite._id || baseContext.site_id || '',
+            site_hash: source.site_hash || baseContext.site_hash || '',
+            email: source.email || baseContext.email || '',
+            plan: source.plan || source.plan_type || source.planSlug || baseContext.plan || baseContext.plan_type || '',
+            plan_type: source.plan_type || source.plan || source.planSlug || baseContext.plan_type || baseContext.plan || '',
+            wordpress_user_id: source.wordpress_user_id || baseContext.wordpress_user_id || '',
+            plugin_version: baseContext.plugin_version || source.plugin_version || ''
+        });
+    }
+
+    function resolveIdentifyId(user) {
+        var identity = buildIdentityContext(user);
+        var priority = ['account_id', 'user_id', 'license_key', 'site_id', 'site_hash'];
+        var i;
+
+        for (i = 0; i < priority.length; i++) {
+            if (identity[priority[i]]) {
+                return String(identity[priority[i]]);
+            }
         }
 
         return '';
     }
 
     function buildPersonProperties(user) {
-        if (!isObject(user)) {
-            return sanitizeProperties((cfg.identify && cfg.identify.person_properties) || {});
-        }
-
         return extend(
             {},
             sanitizeProperties((cfg.identify && cfg.identify.person_properties) || {}),
-            sanitizeProperties({
-                plan_type: user.plan || user.plan_type || user.planSlug || (user.organization && user.organization.plan),
-                plugin_version: getContext().plugin_version,
-                site_hash: getContext().site_hash
-            })
+            buildIdentityContext(user)
         );
     }
 
@@ -338,6 +706,7 @@
             var identifyId = resolveIdentifyId(user);
 
             updateContext({ is_logged_in: true });
+            updateContext(buildIdentityContext(user));
             updateContext(extractUsageContext(user));
 
             if (identifyId) {
@@ -347,19 +716,23 @@
     }
 
     window.bbaiAnalytics = {
-        getClient: ensureClient,
+        getClient: getClient,
+        init: initPosthog,
         getContext: getContext,
         resolveSource: resolveSource,
         updateContext: updateContext,
+        whenPosthogReady: whenPosthogReady,
         track: track,
         identify: identify,
         pageView: pageView
     };
+    window.bbaiInitPosthog = initPosthog;
+    window.bbaiWhenPosthogReady = whenPosthogReady;
     window.bbaiTrack = track;
     window.bbaiIdentify = identify;
     window.bbaiPageView = pageView;
 
-    ensureClient();
+    initPosthog();
     bindContextListeners();
 
     if (cfg.identify && cfg.identify.id) {

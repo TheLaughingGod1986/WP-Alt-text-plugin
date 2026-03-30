@@ -273,5 +273,8 @@
         bbaiAnalytics.init();
     }
 
-    window.bbaiAnalytics = bbaiAnalytics;
+    window.bbaiAnalyticsDashboard = bbaiAnalytics;
+    if (!window.bbaiAnalytics || typeof window.bbaiAnalytics.getContext !== 'function') {
+        window.bbaiAnalytics = bbaiAnalytics;
+    }
 })();

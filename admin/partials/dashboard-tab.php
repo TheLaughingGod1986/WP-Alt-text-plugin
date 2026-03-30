@@ -22,7 +22,11 @@ $bbai_has_license         = $bbai_auth['has_license']         ?? false;
 $bbai_has_registered_user = $bbai_auth['has_registered_user'] ?? false;
 
 // Ensure stats/usage are available for downstream partials.
-$bbai_stats = (isset($bbai_stats) && is_array($bbai_stats)) ? $bbai_stats : $this->get_media_stats();
+$bbai_stats = (isset($bbai_stats) && is_array($bbai_stats))
+    ? $bbai_stats
+    : (method_exists($this, 'get_dashboard_stats_payload')
+        ? $this->get_dashboard_stats_payload(false)
+        : $this->get_media_stats());
 $bbai_usage_stats = Usage_Helper::get_usage($this->api_client, $bbai_has_registered_user);
 
 // Partial paths.

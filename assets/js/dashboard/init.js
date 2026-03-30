@@ -21,7 +21,6 @@ bbaiRunWithJQuery(function($) {
         '.bbai-pro-upsell-card button',
         '.bbai-upgrade-banner button',
         '.bbai-upgrade-banner a',
-        '.bbai-hero-actions [data-cta="upgrade"]',
         '.bbai-upgrade-callout button',
         '.bbai-upgrade-callout a',
         '[data-upgrade-trigger="true"]'

@@ -615,6 +615,22 @@ body.bbai-dashboard .bbai-library-workspace .bbai-command-card--workspace .bbai-
     box-shadow: 0 3px 14px rgba(15, 23, 42, 0.048);
 }
 
+/* The plan rail is too narrow for two CTAs side-by-side, so stack them consistently. */
+#bbai-dashboard-main .bbai-command-plan__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+#bbai-dashboard-main .bbai-command-plan__actions .bbai-command-action--primary,
+#bbai-dashboard-main .bbai-command-plan__actions .bbai-command-action--secondary {
+    width: 100%;
+}
+
+#bbai-dashboard-main .bbai-command-plan__actions .bbai-command-action--tertiary {
+    align-self: flex-start;
+}
+
 .bbai-main-content,
 .bbai-sidebar {
     min-width: 0;

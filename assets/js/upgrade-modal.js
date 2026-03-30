@@ -158,6 +158,34 @@
         }
     }
 
+    function trackUpgradeIntent(payload) {
+        dispatchUpgradeEvent('bbai:analytics', mergeObjects(
+            {
+                event: 'upgrade_clicked',
+                timestamp: Date.now(),
+                source: 'upgrade-modal',
+                location: 'upgrade_modal',
+                trigger: 'open_upgrade_modal',
+                reason: 'default'
+            },
+            payload || {}
+        ));
+    }
+
+    function trackCheckoutStarted(payload) {
+        dispatchUpgradeEvent('bbai:analytics', mergeObjects(
+            {
+                event: 'checkout_started',
+                timestamp: Date.now(),
+                source: 'checkout',
+                location: 'upgrade_modal',
+                trigger: 'checkout_plan',
+                reason: 'default'
+            },
+            payload || {}
+        ));
+    }
+
     function trackUpgradeEvent(eventName, payload) {
         var detail = mergeObjects(
             {
@@ -1133,6 +1161,35 @@
         document.addEventListener('click', function(e) {
             var target = e.target.closest('[data-action="show-upgrade-modal"]');
             if (target) {
+                var bannerNode = typeof target.closest === 'function'
+                    ? target.closest('[data-bbai-primary-banner-state], [data-bbai-banner-state], .bbai-command-hero, .bbai-status-banner')
+                    : null;
+                var bannerState = bannerNode
+                    ? bbaiString(
+                        bannerNode.getAttribute('data-bbai-primary-banner-state')
+                        || bannerNode.getAttribute('data-bbai-banner-state')
+                        || bannerNode.getAttribute('data-hero-variant')
+                        || bannerNode.getAttribute('data-state')
+                    ).toLowerCase()
+                    : '';
+                var openReason = isGenerationActionControl(target) && isLockedActionControl(target)
+                    ? 'upgrade_required'
+                    : (bannerState || 'default');
+                var openLocation = bbaiString(
+                    target.getAttribute('data-bbai-upgrade-location')
+                    || target.getAttribute('data-bbai-locked-source')
+                ) || (target.closest('#bbai-feature-unlock-modal')
+                    ? 'feature_unlock_modal'
+                    : (bannerState ? bannerState + '_banner' : 'upgrade_modal'));
+
+                trackUpgradeIntent({
+                    source: openLocation,
+                    location: openLocation,
+                    trigger: 'open_upgrade_modal',
+                    reason: openReason,
+                    plan: bbaiString(window.BBAI_POSTHOG && window.BBAI_POSTHOG.context && window.BBAI_POSTHOG.context.plan_type)
+                });
+
                 e.preventDefault();
                 e.stopPropagation();
                 if (typeof e.stopImmediatePropagation === 'function') {
@@ -1156,6 +1213,14 @@
                     reason: activeRequest.reason || 'default',
                     plan: checkoutTrigger.getAttribute('data-plan') || 'unknown'
                 };
+
+                trackCheckoutStarted({
+                    source: 'checkout',
+                    location: 'upgrade_modal',
+                    trigger: checkoutPayload.plan === 'credits' ? 'buy_credits' : 'checkout_plan',
+                    reason: checkoutPayload.reason,
+                    plan: checkoutPayload.plan
+                });
 
                 trackUpgradeEvent('upgrade_cta_clicked', {
                     source: 'checkout',

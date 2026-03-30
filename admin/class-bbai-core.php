@@ -165,6 +165,188 @@ class Core {
         }
     }
 
+    /**
+     * Build the same stable identity context used by the PostHog client.
+     *
+     * @return array<string,mixed>
+     */
+    private function build_generation_posthog_identity_context(): array {
+        $usage_data = Usage_Tracker::get_stats_display();
+        $user_data = isset($this->api_client) ? $this->sanitize_api_user_data_for_localize($this->api_client->get_user_data()) : [];
+        $license_data = (isset($this->api_client) && method_exists($this->api_client, 'get_license_data'))
+            ? $this->api_client->get_license_data()
+            : [];
+        $site_hash = $this->get_posthog_site_hash();
+
+        $plan_type = sanitize_key(
+            (string) (
+                $usage_data['plan']
+                ?? $usage_data['plan_type']
+                ?? ( is_array($user_data) ? ( $user_data['planSlug'] ?? $user_data['plan'] ?? $user_data['plan_type'] ?? '' ) : '' )
+                ?? ( is_array($license_data) ? ( $license_data['organization']['plan'] ?? '' ) : '' )
+            )
+        );
+
+        if ('' === $plan_type) {
+            $plan_type = 'free';
+        }
+
+        return $this->get_posthog_identity_context(
+            is_array($user_data) ? $user_data : [],
+            is_array($license_data) ? $license_data : [],
+            $site_hash,
+            $plan_type
+        );
+    }
+
+    private function resolve_alt_generation_mode(string $source): string {
+        $source = sanitize_key($source);
+
+        if (in_array($source, ['bulk', 'bulk-regenerate'], true)) {
+            return 'bulk';
+        }
+
+        if (in_array($source, ['auto', 'upload', 'metadata', 'update', 'save', 'queue'], true)) {
+            return 'auto';
+        }
+
+        return 'single';
+    }
+
+    private function resolve_alt_generation_source_page(string $source): string {
+        $page = $this->get_telemetry_page_key();
+        if (!empty($page) && !in_array($page, ['unknown', 'other'], true)) {
+            return $page;
+        }
+
+        $mode = $this->resolve_alt_generation_mode($source);
+        if ('bulk' === $mode) {
+            return 'alt_library';
+        }
+
+        if ('auto' === $mode) {
+            return 'automation';
+        }
+
+        if ('wpcli' === sanitize_key($source)) {
+            return 'wpcli';
+        }
+
+        return 'dashboard';
+    }
+
+    /**
+     * Convert generation context into a simple analytics-friendly segment.
+     *
+     * @param array<string,mixed> $context
+     */
+    private function infer_alt_image_context(array $context): ?string {
+        if (!empty($context['product_name']) || !empty($context['product_title']) || !empty($context['price'])) {
+            return 'woocommerce_product';
+        }
+
+        if (!empty($context['post_title'])) {
+            return 'post_context';
+        }
+
+        if (!empty($context['caption'])) {
+            return 'caption_only';
+        }
+
+        if (!empty($context['title']) || !empty($context['filename'])) {
+            return 'image_only';
+        }
+
+        return null;
+    }
+
+    /**
+     * Emit a trustworthy value-delivery event only after ALT text has been persisted.
+     *
+     * @param int                 $attachment_id Attachment ID.
+     * @param string              $alt_text      Generated ALT text.
+     * @param string              $source        Generation source.
+     * @param string              $model         Model identifier.
+     * @param array<string,mixed> $context       Generation context.
+     * @param array<string,mixed> $response_meta Backend response meta.
+     */
+    private function maybe_emit_alt_generated_event(int $attachment_id, string $alt_text, string $source, string $model, array $context = [], array $response_meta = []): void {
+        $identity_context = $this->build_generation_posthog_identity_context();
+        $distinct_id = $this->resolve_posthog_identify_id($identity_context);
+        if ('' === $distinct_id) {
+            return;
+        }
+
+        $generated_at = (string) get_post_meta($attachment_id, '_bbai_generated_at', true);
+        $fingerprint = md5(implode('|', [
+            (string) $attachment_id,
+            sanitize_key($source),
+            $generated_at,
+            sanitize_text_field($model),
+            md5($alt_text),
+        ]));
+        $transient_key = 'bbai_alt_generated_' . substr($fingerprint, 0, 32);
+        if (get_transient($transient_key)) {
+            return;
+        }
+        set_transient($transient_key, 1, DAY_IN_SECONDS);
+
+        $wordpress_user_id = get_current_user_id();
+        $is_first_generation = false;
+        if ($wordpress_user_id > 0 && !get_user_meta($wordpress_user_id, 'bbai_telemetry_first_alt_at', true)) {
+            update_user_meta($wordpress_user_id, 'bbai_telemetry_first_alt_at', time());
+            $is_first_generation = true;
+        }
+
+        $properties = [
+            'account_id'          => $identity_context['account_id'] ?? '',
+            'license_key'         => $identity_context['license_key'] ?? '',
+            'site_id'             => $identity_context['site_id'] ?? '',
+            'site_hash'           => $identity_context['site_hash'] ?? '',
+            'user_id'             => $identity_context['user_id'] ?? '',
+            'plan'                => $identity_context['plan'] ?? 'free',
+            'attachment_id'       => $attachment_id,
+            'image_id'            => $attachment_id,
+            'source_page'         => $this->resolve_alt_generation_source_page($source),
+            'generation_mode'     => $this->resolve_alt_generation_mode($source),
+            'provider'            => 'openai',
+            'model'               => sanitize_text_field($model),
+            'success'             => true,
+            'plugin_version'      => defined('BEEPBEEP_AI_VERSION') ? (string) BEEPBEEP_AI_VERSION : '',
+            'wordpress_user_id'   => $wordpress_user_id > 0 ? $wordpress_user_id : null,
+            'is_first_generation' => $is_first_generation,
+            '$insert_id'          => 'alt_generated:' . $fingerprint,
+        ];
+
+        $image_context = $this->infer_alt_image_context($context);
+        if (null !== $image_context) {
+            $properties['image_context'] = $image_context;
+        }
+
+        if (isset($response_meta['generation_time_ms']) && is_numeric($response_meta['generation_time_ms'])) {
+            $properties['generation_latency_ms'] = (int) round($response_meta['generation_time_ms']);
+        }
+
+        $properties = array_filter(
+            $properties,
+            static function ($value) {
+                return null !== $value && '' !== $value;
+            }
+        );
+
+        if (function_exists('bbai_telemetry_emit')) {
+            bbai_telemetry_emit('alt_generated', $properties);
+        }
+
+        if (class_exists('\BeepBeepAI\AltTextGenerator\BBAI_Telemetry')) {
+            \BeepBeepAI\AltTextGenerator\BBAI_Telemetry::capture_posthog_event(
+                'alt_generated',
+                $distinct_id,
+                $properties
+            );
+        }
+    }
+
     public function user_can_manage(){
         return current_user_can(self::CAPABILITY) || current_user_can('manage_options');
     }
@@ -4580,14 +4762,16 @@ class Core {
         $this->generate_and_save($attachment_id, 'auto');
     }
 
-    public function generate_and_save($attachment_id, $source='manual', int $retry_count = 0, array $feedback = [], $regenerate = false){
+    public function generate_and_save($attachment_id, $source='manual', int $retry_count = 0, array $feedback = [], $regenerate = false, bool $skip_trial_gate = false){
         $opts = get_option(self::OPTION_KEY, []);
 
-        // Trial quota gate: block unauthenticated users who have exhausted their free trial.
-        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
-        $bbai_trial_check = \BeepBeepAI\AltTextGenerator\Trial_Quota::check();
-        if ( is_wp_error( $bbai_trial_check ) ) {
-            return $bbai_trial_check;
+        if ( ! $skip_trial_gate ) {
+            // Trial quota gate: block unauthenticated users who have exhausted their free trial.
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+            $bbai_trial_check = \BeepBeepAI\AltTextGenerator\Trial_Quota::check();
+            if ( is_wp_error( $bbai_trial_check ) ) {
+                return $bbai_trial_check;
+            }
         }
 
         // Allocate free credits on first generation request (one-time per site)
@@ -5170,6 +5354,14 @@ class Core {
         // Note: QA review is disabled for API proxy version (quality handled server-side)
         // Persist the generated alt text
         $this->persist_generation_result($attachment_id, $alt, $usage_summary, $source, $model, $image_strategy, $review_result);
+        $this->maybe_emit_alt_generated_event(
+            (int) $attachment_id,
+            (string) $alt,
+            (string) $source,
+            (string) $model,
+            is_array($context) ? $context : [],
+            isset($api_response['meta']) && is_array($api_response['meta']) ? $api_response['meta'] : []
+        );
 
         if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
             Debug_Log::log('info', 'Alt text updated', [
@@ -7956,6 +8148,62 @@ class Core {
     }
 
     /**
+     * Resolve the current site-wide missing ALT count for the guest trial UI.
+     *
+     * Priority:
+     * 1. Dashboard stats / cached coverage scan
+     * 2. Existing missing-attachment query
+     * 3. Direct SQL fallback
+     */
+    private function get_guest_trial_missing_alt_count(bool $force_refresh = false): int {
+        $dashboard_stats = $this->get_dashboard_stats_payload($force_refresh);
+        if (is_array($dashboard_stats)) {
+            foreach (['images_missing_alt', 'missing', 'missing_alt'] as $key) {
+                if (isset($dashboard_stats[$key]) && is_numeric($dashboard_stats[$key])) {
+                    return max(0, (int) $dashboard_stats[$key]);
+                }
+            }
+        }
+
+        $batch_size = 250;
+        $offset = 0;
+        $count_from_query = 0;
+
+        do {
+            $batch = $this->get_missing_attachment_ids($batch_size, $offset);
+            $batch_count = is_array($batch) ? count($batch) : 0;
+            $count_from_query += $batch_count;
+            $offset += $batch_count;
+        } while ($batch_count === $batch_size);
+
+        if ($count_from_query > 0) {
+            return max(0, $count_from_query);
+        }
+
+        global $wpdb;
+        if (!isset($wpdb->posts, $wpdb->postmeta)) {
+            return 0;
+        }
+
+        $image_mime_like = $wpdb->esc_like('image/') . '%';
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- final fallback when dashboard stats and query counts are unavailable
+        $missing_alt_count = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- trusted core table names, values are prepared
+                'SELECT COUNT(DISTINCT p.ID) FROM ' . $wpdb->posts . ' p LEFT JOIN ' . $wpdb->postmeta . ' m ON (p.ID = m.post_id AND m.meta_key = %s) WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s AND (m.meta_id IS NULL OR TRIM(m.meta_value) = %s)',
+                '_wp_attachment_image_alt',
+                'attachment',
+                'inherit',
+                $image_mime_like,
+                ''
+            )
+        );
+
+        return max(0, $missing_alt_count);
+    }
+
+    /**
      * AJAX handler: Get missing image IDs for trial generation.
      * Returns up to N image IDs that have no alt text, where N = trial remaining.
      */
@@ -7988,15 +8236,7 @@ class Core {
         $limit = min( $remaining, \BeepBeepAI\AltTextGenerator\Trial_Quota::get_limit() );
         $ids   = $this->get_missing_attachment_ids( $limit );
 
-        $stats             = $this->get_media_stats();
-        $missing_alt_count = 0;
-        if ( is_array( $stats ) && isset( $stats['missing_alt'] ) ) {
-            $missing_alt_count = max( 0, intval( $stats['missing_alt'] ) );
-        }
-        if ( $missing_alt_count <= 0 ) {
-            // Fallback for unexpected cache issues.
-            $missing_alt_count = count( $ids );
-        }
+        $missing_alt_count = $this->get_guest_trial_missing_alt_count(false);
 
         // Get thumbnail URLs for onboarding preview.
         $images = [];
@@ -8043,21 +8283,26 @@ class Core {
                 ];
             }
         }
-        $result         = $this->generate_and_save( $attachment_id, 'trial', 1, [], false );
+        \BeepBeepAI\AltTextGenerator\Trial_Quota::begin_claimed_generation();
+        try {
+            $result = $this->generate_and_save( $attachment_id, 'trial', 1, [], false, true );
 
-        while ( is_wp_error( $result ) && 'quota_check_mismatch' === $result->get_error_code() && $retry_attempts < $max_retries ) {
-            $retry_attempts++;
-            $retry_data = $result->get_error_data();
-            $retry_after_seconds = 0;
-            if ( is_array( $retry_data ) && isset( $retry_data['retry_after'] ) ) {
-                $retry_after_seconds = absint( $retry_data['retry_after'] );
+            while ( is_wp_error( $result ) && 'quota_check_mismatch' === $result->get_error_code() && $retry_attempts < $max_retries ) {
+                $retry_attempts++;
+                $retry_data = $result->get_error_data();
+                $retry_after_seconds = 0;
+                if ( is_array( $retry_data ) && isset( $retry_data['retry_after'] ) ) {
+                    $retry_after_seconds = absint( $retry_data['retry_after'] );
+                }
+
+                $retry_delay_us = $retry_after_seconds > 0 ? $retry_after_seconds * 1000000 : 500000;
+                $retry_delay_us = max( 250000, min( 2000000, $retry_delay_us ) );
+                usleep( $retry_delay_us );
+
+                $result = $this->generate_and_save( $attachment_id, 'trial', 1, [], false, true );
             }
-
-            $retry_delay_us = $retry_after_seconds > 0 ? $retry_after_seconds * 1000000 : 500000;
-            $retry_delay_us = max( 250000, min( 2000000, $retry_delay_us ) );
-            usleep( $retry_delay_us );
-
-            $result = $this->generate_and_save( $attachment_id, 'trial', 1, [], false );
+        } finally {
+            \BeepBeepAI\AltTextGenerator\Trial_Quota::end_claimed_generation();
         }
 
         if ( ! $quota_claimed && is_wp_error( $result ) && $claimed_slots > 0 ) {
@@ -8124,11 +8369,7 @@ class Core {
         $ids              = $this->get_missing_attachment_ids( $batch_limit );
 
         if ( empty( $ids ) ) {
-            $stats = $this->get_media_stats();
-            $missing_alt_count = 0;
-            if ( is_array( $stats ) && isset( $stats['missing_alt'] ) ) {
-                $missing_alt_count = max( 0, intval( $stats['missing_alt'] ) );
-            }
+            $missing_alt_count = $this->get_guest_trial_missing_alt_count(false);
 
             \BeepBeepAI\AltTextGenerator\Trial_Quota::release( $accepted_count );
             if ( ob_get_level() > 0 ) { ob_clean(); }
@@ -8202,11 +8443,7 @@ class Core {
             ];
         }
 
-        $stats = $this->get_media_stats();
-        $missing_alt_count = 0;
-        if ( is_array( $stats ) && isset( $stats['missing_alt'] ) ) {
-            $missing_alt_count = max( 0, intval( $stats['missing_alt'] ) );
-        }
+        $missing_alt_count = $this->get_guest_trial_missing_alt_count(true);
 
         $generated_count = count( $summary );
         $attempted_count = $generated_count + count( $errors );

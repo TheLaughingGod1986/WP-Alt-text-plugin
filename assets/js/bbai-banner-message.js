@@ -91,12 +91,35 @@
             return __('All images are optimized.');
         }
         if (n === 1) {
-            return __('1 image still needs attention.');
+            return __('1 image needs attention');
         }
         return sprintf(
-            _n('%s image still needs attention.', '%s images still need attention.', n),
+            _n('%s image needs attention', '%s images need attention', n),
             formatCount(n)
         );
+    }
+
+    /**
+     * Shared command-hero icon markup by tone.
+     * Mirrors includes/admin/command-hero.php.
+     *
+     * @param {string} tone
+     * @returns {string}
+     */
+    function getSharedCommandHeroIconMarkup(tone) {
+        if (tone === 'setup') {
+            return '<svg viewBox="0 0 24 24" fill="none" focusable="false" width="22" height="22"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8"></circle><path d="M20 20L16.2 16.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>';
+        }
+
+        if (tone === 'attention') {
+            return '<svg viewBox="0 0 24 24" fill="none" focusable="false" width="22" height="22"><path d="M12 3L21 19H3L12 3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path><path d="M12 9V13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path><circle cx="12" cy="17" r="1" fill="currentColor"></circle></svg>';
+        }
+
+        if (tone === 'paused') {
+            return '<svg viewBox="0 0 24 24" fill="none" focusable="false" width="22" height="22"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"></circle><path d="M10 9V15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path><path d="M14 9V15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>';
+        }
+
+        return '<svg viewBox="0 0 24 24" fill="none" focusable="false" width="22" height="22"><path d="M22 11.08V12A10 10 0 1 1 12 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path><path d="M22 4L12 14.01L9 11.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
     }
 
     /**
@@ -153,8 +176,241 @@
         };
     }
 
+    /**
+     * Shared top-banner state for Dashboard + ALT Library command heroes.
+     * Mirrors the common branch logic in includes/admin/banner-system.php.
+     *
+     * @param {{
+     *   totalImages?: number,
+     *   total_images?: number,
+     *   missingCount?: number,
+     *   missing_count?: number,
+     *   weakCount?: number,
+     *   weak_count?: number,
+     *   needsReviewCount?: number,
+     *   needs_review_count?: number,
+     *   creditsRemaining?: number,
+     *   credits_remaining?: number,
+     *   isPro?: boolean,
+     *   is_pro?: boolean,
+     *   lowCreditThreshold?: number,
+     *   low_credit_threshold?: number,
+     *   libraryUrl?: string,
+     *   library_url?: string,
+     *   usageUrl?: string,
+     *   usage_url?: string,
+     *   guideUrl?: string,
+     *   guide_url?: string,
+     *   settingsUrl?: string,
+     *   settings_url?: string,
+     *   needsReviewLibraryUrl?: string,
+     *   needs_review_library_url?: string
+     * }} args
+     * @returns {{
+     *   state: string,
+     *   surfaceState: string,
+     *   dashboardState: string,
+     *   tone: string,
+     *   bannerVariant: string,
+     *   pageHeroVariant: string,
+     *   attentionVariant: string|null,
+     *   headline: string,
+     *   subtext: string,
+     *   nextStep: string,
+     *   note: string,
+     *   primaryAction: Object|null,
+     *   secondaryAction: Object|null,
+     *   tertiaryAction: Object|null
+     * }}
+     */
+    function buildSharedCommandHeroState(args) {
+        args = args || {};
+
+        var totalImages = Math.max(0, parseInt(args.totalImages != null ? args.totalImages : args.total_images, 10) || 0);
+        var missingCount = Math.max(0, parseInt(args.missingCount != null ? args.missingCount : args.missing_count, 10) || 0);
+        var weakCount = Math.max(
+            0,
+            parseInt(
+                args.weakCount != null
+                    ? args.weakCount
+                    : (args.weak_count != null ? args.weak_count : args.needs_review_count),
+                10
+            ) || 0
+        );
+        var totalIssues = missingCount + weakCount;
+        var creditsRemaining = Math.max(
+            0,
+            parseInt(args.creditsRemaining != null ? args.creditsRemaining : args.credits_remaining, 10) || 0
+        );
+        var isPro = !!(args.isPro != null ? args.isPro : args.is_pro);
+        var lowCreditThreshold = Math.max(
+            0,
+            parseInt(args.lowCreditThreshold != null ? args.lowCreditThreshold : args.low_credit_threshold, 10) || 10
+        );
+        var libraryUrl = String(args.libraryUrl || args.library_url || '#');
+        var usageUrl = String(args.usageUrl || args.usage_url || '');
+        var guideUrl = String(args.guideUrl || args.guide_url || '#');
+        var settingsUrl = String(args.settingsUrl || args.settings_url || '#');
+        var needsReviewLibraryUrl = String(args.needsReviewLibraryUrl || args.needs_review_library_url || libraryUrl || '#');
+        var message;
+
+        if (creditsRemaining === 0) {
+            message = buildBannerMessage({
+                creditsRemaining: 0,
+                issueCount: totalIssues
+            });
+
+            return {
+                state: 'out_of_credits',
+                surfaceState: 'out_of_credits',
+                dashboardState: 'out-of-credits',
+                tone: 'paused',
+                bannerVariant: 'warning',
+                pageHeroVariant: 'warning',
+                attentionVariant: null,
+                headline: message.title,
+                subtext: message.supportingLine,
+                nextStep: '',
+                note: '',
+                primaryAction: {
+                    label: __('Upgrade to Growth'),
+                    action: 'show-upgrade-modal'
+                },
+                secondaryAction: usageUrl
+                    ? {
+                          label: __('Review ALT text'),
+                          href: usageUrl
+                      }
+                    : null,
+                tertiaryAction: null
+            };
+        }
+
+        if (creditsRemaining > 0 && creditsRemaining <= lowCreditThreshold) {
+            message = buildBannerMessage({
+                creditsRemaining: creditsRemaining,
+                issueCount: totalIssues
+            });
+
+            return {
+                state: 'low_credits',
+                surfaceState: 'low_credits',
+                dashboardState: 'low-credits',
+                tone: 'attention',
+                bannerVariant: 'warning',
+                pageHeroVariant: 'warning',
+                attentionVariant: null,
+                headline: message.title,
+                subtext: message.supportingLine,
+                nextStep: '',
+                note: '',
+                primaryAction: {
+                    label: __('Upgrade to Growth'),
+                    action: 'show-upgrade-modal'
+                },
+                secondaryAction: usageUrl
+                    ? {
+                          label: __('Review ALT text'),
+                          href: usageUrl
+                      }
+                    : null,
+                tertiaryAction: null
+            };
+        }
+
+        if (totalIssues > 0) {
+            return {
+                state: 'needs_attention',
+                surfaceState: missingCount > 0 ? 'missing' : 'weak',
+                dashboardState: 'incomplete',
+                tone: 'attention',
+                bannerVariant: 'warning',
+                pageHeroVariant: 'warning',
+                attentionVariant: missingCount > 0 ? (weakCount > 0 ? 'mixed' : 'missing') : 'weak',
+                headline: __('Your library needs attention'),
+                subtext: __('Some images are missing ALT text or need a stronger description.'),
+                nextStep: buildIssueAttentionMessage(totalIssues),
+                note: '',
+                primaryAction: missingCount > 0
+                    ? {
+                          label: __('Generate missing ALT text'),
+                          action: 'generate-missing',
+                          bbaiAction: 'generate_missing'
+                      }
+                    : {
+                          label: __('Review ALT text'),
+                          href: needsReviewLibraryUrl
+                      },
+                secondaryAction: libraryUrl
+                    ? {
+                          label: __('Open ALT Library'),
+                          href: libraryUrl
+                      }
+                    : null,
+                tertiaryAction: null
+            };
+        }
+
+        if (totalImages > 0) {
+            return {
+                state: 'healthy',
+                surfaceState: 'healthy',
+                dashboardState: isPro ? 'healthy-pro' : 'healthy-free',
+                tone: 'healthy',
+                bannerVariant: 'success',
+                pageHeroVariant: 'success',
+                attentionVariant: null,
+                headline: __('Your library is in great shape'),
+                subtext: __('All images are optimized and up to date.'),
+                nextStep: '',
+                note: '',
+                primaryAction: isPro
+                    ? {
+                          label: __('Enable auto-optimization'),
+                          href: settingsUrl
+                      }
+                    : {
+                          label: __('Enable auto-optimization'),
+                          action: 'show-upgrade-modal'
+                      },
+                secondaryAction: {
+                    label: __('Review ALT text'),
+                    action: 'rescan-media-library'
+                },
+                tertiaryAction: null
+            };
+        }
+
+        return {
+            state: 'first_run',
+            surfaceState: 'empty',
+            dashboardState: 'first-run',
+            tone: 'setup',
+            bannerVariant: 'success',
+            pageHeroVariant: 'neutral',
+            attentionVariant: null,
+            headline: __('Get started with your media library'),
+            subtext: __('Scan your library to find missing ALT text and improve accessibility.'),
+            nextStep: __('Start by scanning your media library.'),
+            note: '',
+            primaryAction: {
+                label: __('Review ALT text'),
+                bbaiAction: 'scan-opportunity'
+            },
+            secondaryAction: guideUrl
+                ? {
+                      label: __('Review ALT text'),
+                      href: guideUrl
+                  }
+                : null,
+            tertiaryAction: null
+        };
+    }
+
     global.bbaiBuildBannerMessage = buildBannerMessage;
     global.bbaiBuildCreditSupportingLine = buildCreditSupportingLine;
     global.bbaiBuildIssueAttentionMessage = buildIssueAttentionMessage;
+    global.bbaiBuildSharedCommandHeroState = buildSharedCommandHeroState;
+    global.bbaiGetSharedCommandHeroIconMarkup = getSharedCommandHeroIconMarkup;
     global.bbaiGetActiveBanner = getActiveBanner;
 })(typeof window !== 'undefined' ? window : this);

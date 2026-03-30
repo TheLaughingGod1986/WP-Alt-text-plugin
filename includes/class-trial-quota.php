@@ -27,6 +27,16 @@ class Trial_Quota {
 	const OPTION_PREFIX = 'bbai_trial_usage_';
 
 	/**
+	 * Request-scoped depth counter used while already-claimed trial generations run.
+	 *
+	 * Prevents downstream trial checks from blocking the exact slots that were
+	 * already claimed by the current request.
+	 *
+	 * @var int
+	 */
+	private static int $claimed_generation_depth = 0;
+
+	/**
 	 * Get the site hash used for keying trial usage.
 	 *
 	 * @return string Site fingerprint hash.
@@ -84,7 +94,40 @@ class Trial_Quota {
 	 * @return bool True if no trial generations remain.
 	 */
 	public static function is_exhausted(): bool {
+		if ( self::is_claimed_generation_active() ) {
+			return false;
+		}
+
 		return self::get_remaining() <= 0;
+	}
+
+	/**
+	 * Mark the current request as executing a previously claimed trial generation.
+	 *
+	 * @return void
+	 */
+	public static function begin_claimed_generation(): void {
+		self::$claimed_generation_depth++;
+	}
+
+	/**
+	 * Clear one claimed-generation marker for the current request.
+	 *
+	 * @return void
+	 */
+	public static function end_claimed_generation(): void {
+		if ( self::$claimed_generation_depth > 0 ) {
+			self::$claimed_generation_depth--;
+		}
+	}
+
+	/**
+	 * Whether the current request is already executing claimed trial slots.
+	 *
+	 * @return bool
+	 */
+	public static function is_claimed_generation_active(): bool {
+		return self::$claimed_generation_depth > 0;
 	}
 
 	/**
