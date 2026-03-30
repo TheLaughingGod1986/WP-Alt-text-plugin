@@ -10,8 +10,8 @@
     align-items: center;
     justify-content: flex-start;
     min-height: 70vh;
-    padding: 48px 16px 72px;
-    background: radial-gradient(120% 120% at 50% -10%, #f8f9fc 0%, #f2f4f8 55%, #f7f8fb 100%);
+    padding: 40px 16px 72px;
+    background: radial-gradient(120% 120% at 50% -10%, #f8fbff 0%, #eff4f9 55%, #f7f9fc 100%);
 }
 
 .bbai-logged-out,
@@ -21,14 +21,15 @@
 
 .bbai-logged-out__container {
     width: 100%;
-    max-width: 720px;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
 .bbai-logged-out__card {
     background: #ffffff;
     border-radius: 20px;
     padding: 40px 48px 32px;
-    text-align: center;
+    text-align: left;
     border: 1px solid #eef0f4;
     box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(15, 23, 42, 0.05);
 }

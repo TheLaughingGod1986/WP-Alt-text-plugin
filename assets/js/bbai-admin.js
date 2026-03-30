@@ -1704,10 +1704,16 @@
             }
         }
 
-        trackDashboardEvent('bbai_locked_cta_clicked', { source: source });
-
         var directUpgradeModal = trigger && trigger.getAttribute &&
             trigger.getAttribute('data-bbai-direct-upgrade-modal') === '1';
+
+        trackDashboardEvent('bbai_locked_cta_clicked', { source: source });
+        dispatchAnalyticsEvent('upgrade_clicked', {
+            source: source,
+            location: source,
+            trigger: directUpgradeModal ? 'open_upgrade_modal' : 'locked_upgrade_cta',
+            reason: reason || 'upgrade_required'
+        });
 
         var modalOpened = false;
         if (directUpgradeModal) {
@@ -3424,16 +3430,33 @@
     function getLibraryWorkspaceNavUrls() {
         var root = document.querySelector('[data-bbai-library-workspace-root]');
         if (!root) {
-            return { usageUrl: '', guideUrl: '', libraryUrl: '' };
+            return { usageUrl: '', guideUrl: '', libraryUrl: '', needsReviewLibraryUrl: '' };
         }
         return {
             usageUrl: String(root.getAttribute('data-bbai-usage-url') || ''),
             guideUrl: String(root.getAttribute('data-bbai-guide-url') || ''),
-            libraryUrl: String(root.getAttribute('data-bbai-library-url') || '')
+            libraryUrl: String(root.getAttribute('data-bbai-library-url') || ''),
+            needsReviewLibraryUrl: String(root.getAttribute('data-bbai-needs-review-library-url') || '')
         };
     }
 
     function getLibrarySurfaceIconMarkup(state) {
+        var sharedTone = 'healthy';
+
+        if (state === 'empty') {
+            sharedTone = 'setup';
+        } else if (state === 'low_credits') {
+            sharedTone = 'attention';
+        } else if (state === 'out_of_credits') {
+            sharedTone = 'paused';
+        } else if (state === 'missing' || state === 'weak') {
+            sharedTone = 'attention';
+        }
+
+        if (typeof window !== 'undefined' && typeof window.bbaiGetSharedCommandHeroIconMarkup === 'function') {
+            return window.bbaiGetSharedCommandHeroIconMarkup(sharedTone);
+        }
+
         if (state === 'empty') {
             return '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8"></circle><path d="M20 20L16.2 16.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>';
         }
@@ -3573,195 +3596,55 @@
         var primaryAction = null;
         var secondaryAction = null;
         var settingsAutoUrl = getLibraryAutomationSettingsUrl();
+        var sharedHeroState = typeof window !== 'undefined' && typeof window.bbaiBuildSharedCommandHeroState === 'function'
+            ? window.bbaiBuildSharedCommandHeroState({
+                totalImages: total,
+                missingCount: missing,
+                weakCount: weak,
+                creditsRemaining: rem,
+                isPro: quotaUi.isPro,
+                lowCreditThreshold: thresh,
+                libraryUrl: nav.libraryUrl,
+                usageUrl: nav.usageUrl,
+                guideUrl: nav.guideUrl,
+                settingsUrl: settingsAutoUrl,
+                needsReviewLibraryUrl: nav.needsReviewLibraryUrl || nav.libraryUrl || '#'
+            })
+            : null;
 
-        if (rem === 0) {
-            logicalState = 'out_of_credits';
-            surfaceShell = 'out_of_credits';
-            heroTone = 'paused';
-            pageHeroVariant = 'success';
-            bannerVariant = 'warning';
-            var cycleOutLib = typeof window !== 'undefined' && typeof window.bbaiBuildBannerMessage === 'function'
-                ? window.bbaiBuildBannerMessage({ creditsRemaining: 0, issueCount: totalIssues })
-                : null;
-            if (cycleOutLib) {
-                title = cycleOutLib.title || cycleOutLib.line1;
-                copy = cycleOutLib.supportingLine || cycleOutLib.line2;
-                nextCopy = '';
-            } else {
-                title = __('You’ve used this month’s free allowance', 'beepbeep-ai-alt-text-generator');
-                copy = __('Your existing results are still available to review. Upgrade to continue generating ALT text.', 'beepbeep-ai-alt-text-generator');
-                nextCopy =
-                    totalIssues > 0
-                        ? sprintf(
-                              _n(
-                                  '%s image still needs attention.',
-                                  '%s images still need attention.',
-                                  totalIssues,
-                                  'beepbeep-ai-alt-text-generator'
-                              ),
-                              formatDashboardNumber(totalIssues)
-                          )
-                        : '';
-            }
-            primaryAction = {
-                label: __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
-                action: 'show-upgrade-modal'
+        if (sharedHeroState) {
+            logicalState = sharedHeroState.state || 'healthy';
+            surfaceShell = sharedHeroState.surfaceState || 'healthy';
+            heroTone = sharedHeroState.tone || 'healthy';
+            pageHeroVariant = sharedHeroState.pageHeroVariant || 'success';
+            bannerVariant = sharedHeroState.bannerVariant || 'success';
+            title = sharedHeroState.headline || '';
+            copy = sharedHeroState.subtext || '';
+            nextCopy = sharedHeroState.nextStep || '';
+            note = sharedHeroState.note || '';
+            primaryAction = sharedHeroState.primaryAction;
+            secondaryAction = sharedHeroState.secondaryAction;
+
+            return {
+                state: surfaceShell,
+                logicalState: logicalState,
+                heroTone: heroTone,
+                pageHeroVariant: pageHeroVariant,
+                bannerVariant: bannerVariant,
+                title: title,
+                copy: copy,
+                nextTitle: nextTitle,
+                nextCopy: nextCopy,
+                automationCopy: automationCopy,
+                primaryAction: primaryAction,
+                secondaryAction: secondaryAction,
+                note: note,
+                progressFoot: progressFoot,
+                iconMarkup: getLibrarySurfaceIconMarkup(surfaceShell)
             };
-            secondaryAction = nav.usageUrl
-                ? { label: __('View credit usage', 'beepbeep-ai-alt-text-generator'), href: nav.usageUrl }
-                : null;
-        } else if (rem > 0 && rem <= thresh) {
-            logicalState = 'low_credits';
-            surfaceShell = 'low_credits';
-            heroTone = 'attention';
-            pageHeroVariant = 'warning';
-            bannerVariant = 'warning';
-            var cycleLowLib = typeof window !== 'undefined' && typeof window.bbaiBuildBannerMessage === 'function'
-                ? window.bbaiBuildBannerMessage({ creditsRemaining: rem, issueCount: totalIssues })
-                : null;
-            if (cycleLowLib) {
-                title = cycleLowLib.title || cycleLowLib.line1;
-                copy = cycleLowLib.supportingLine || cycleLowLib.line2;
-                nextCopy = '';
-            } else {
-                title = __('You’re close to this month’s allowance', 'beepbeep-ai-alt-text-generator');
-                copy = sprintf(
-                    _n(
-                        'You have %s credit left this month.',
-                        'You have %s credits left this month.',
-                        rem,
-                        'beepbeep-ai-alt-text-generator'
-                    ),
-                    formatDashboardNumber(rem)
-                );
-                if (totalIssues > 0) {
-                    copy +=
-                        ' ' +
-                        sprintf(
-                            _n(
-                                '%s image still needs attention.',
-                                '%s images still need attention.',
-                                totalIssues,
-                                'beepbeep-ai-alt-text-generator'
-                            ),
-                            formatDashboardNumber(totalIssues)
-                        );
-                }
-                nextCopy = __('Continue generating ALT text without interruption.', 'beepbeep-ai-alt-text-generator');
-            }
-            primaryAction = {
-                label: __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
-                action: 'show-upgrade-modal'
-            };
-            secondaryAction = nav.needsReviewLibraryUrl || nav.libraryUrl
-                ? { label: __('Review ALT text', 'beepbeep-ai-alt-text-generator'), href: (nav.needsReviewLibraryUrl || nav.libraryUrl) }
-                : null;
-        } else if (rem > thresh && totalIssues > 0) {
-            logicalState = 'needs_attention';
-            surfaceShell = missing > 0 ? 'missing' : 'weak';
-            heroTone = 'attention';
-            pageHeroVariant = 'warning';
-            bannerVariant = 'warning';
-            title = __('Your library needs attention', 'beepbeep-ai-alt-text-generator');
-            copy = __('Some images are missing ALT text or need improvement.', 'beepbeep-ai-alt-text-generator');
-            nextCopy =
-                typeof window !== 'undefined' && typeof window.bbaiBuildIssueAttentionMessage === 'function'
-                    ? window.bbaiBuildIssueAttentionMessage(totalIssues)
-                    : sprintf(
-                          _n('%s image needs attention.', '%s images need attention.', totalIssues, 'beepbeep-ai-alt-text-generator'),
-                          formatDashboardNumber(totalIssues)
-                      );
-            if (missing > 0) {
-                primaryAction = {
-                    label: __('Generate missing ALT text', 'beepbeep-ai-alt-text-generator'),
-                    action: 'generate-missing',
-                    bbaiAction: 'generate_missing'
-                };
-            } else {
-                primaryAction = {
-                    label: __('Review ALT text', 'beepbeep-ai-alt-text-generator'),
-                    href: nav.needsReviewLibraryUrl || nav.libraryUrl || '#'
-                };
-            }
-            secondaryAction = nav.libraryUrl
-                ? { label: __('Open ALT Library', 'beepbeep-ai-alt-text-generator'), href: nav.libraryUrl }
-                : null;
-        } else if (rem > thresh && total > 0) {
-            logicalState = 'healthy';
-            surfaceShell = 'healthy';
-            heroTone = 'healthy';
-            pageHeroVariant = 'success';
-            bannerVariant = 'success';
-            title = __('Your library is in great shape', 'beepbeep-ai-alt-text-generator');
-            copy = __('All images are optimized and up to date.', 'beepbeep-ai-alt-text-generator');
-            nextCopy = '';
-            note = '';
-            if (!quotaUi.isPro) {
-                primaryAction = {
-                    label: __('Enable Auto-Optimisation', 'beepbeep-ai-alt-text-generator'),
-                    action: 'show-upgrade-modal'
-                };
-            } else if (settingsAutoUrl) {
-                primaryAction = {
-                    label: __('Enable Auto-Optimisation', 'beepbeep-ai-alt-text-generator'),
-                    href: settingsAutoUrl
-                };
-            }
-            secondaryAction = {
-                label: __('Rescan media library', 'beepbeep-ai-alt-text-generator'),
-                action: 'rescan-media-library'
-            };
-        } else {
-            logicalState = 'healthy';
-            surfaceShell = 'empty';
-            heroTone = 'setup';
-            pageHeroVariant = 'neutral';
-            bannerVariant = 'success';
-            title = __('Get started with your media library', 'beepbeep-ai-alt-text-generator');
-            copy = __(
-                'Scan your library to find missing ALT text and improve accessibility faster.',
-                'beepbeep-ai-alt-text-generator'
-            );
-            nextCopy = __('Start by scanning your media library.', 'beepbeep-ai-alt-text-generator');
-            primaryAction = {
-                label: __('Scan media library', 'beepbeep-ai-alt-text-generator'),
-                bbaiAction: 'scan-opportunity'
-            };
-            secondaryAction = nav.guideUrl
-                ? { label: __('Learn how it works', 'beepbeep-ai-alt-text-generator'), href: nav.guideUrl }
-                : null;
         }
 
-        var iconKey = 'healthy';
-        if (surfaceShell === 'empty') {
-            iconKey = 'empty';
-        } else if (surfaceShell === 'missing') {
-            iconKey = 'missing';
-        } else if (surfaceShell === 'weak') {
-            iconKey = 'weak';
-        } else if (surfaceShell === 'low_credits') {
-            iconKey = 'low_credits';
-        } else if (surfaceShell === 'out_of_credits') {
-            iconKey = 'out_of_credits';
-        }
-
-        return {
-            state: surfaceShell,
-            logicalState: logicalState,
-            heroTone: heroTone,
-            pageHeroVariant: pageHeroVariant,
-            bannerVariant: bannerVariant,
-            title: title,
-            copy: copy,
-            nextTitle: nextTitle,
-            nextCopy: nextCopy,
-            automationCopy: automationCopy,
-            primaryAction: primaryAction,
-            secondaryAction: secondaryAction,
-            note: note,
-            progressFoot: progressFoot,
-            iconMarkup: getLibrarySurfaceIconMarkup(iconKey)
-        };
+        return null;
     }
 
     function updateLibraryWorkflow(payload) {
@@ -3954,6 +3837,9 @@
         }
 
         var state = getLibrarySurfaceState(payload || {});
+        if (!state) {
+            return;
+        }
         card.setAttribute('data-state', state.state);
 
         var heroSection = card.querySelector('[data-bbai-shared-command-hero="1"]');

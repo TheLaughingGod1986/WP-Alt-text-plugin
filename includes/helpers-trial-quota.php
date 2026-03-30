@@ -128,6 +128,9 @@ function bbai_increment_trial_usage( string $site_hash = '' ): void {
  * @return bool
  */
 function bbai_is_trial_exhausted( string $site_hash = '' ): bool {
+	if ( class_exists( __NAMESPACE__ . '\Trial_Quota' ) && Trial_Quota::is_claimed_generation_active() ) {
+		return false;
+	}
+
 	return bbai_get_trial_remaining( $site_hash ) <= 0;
 }
-

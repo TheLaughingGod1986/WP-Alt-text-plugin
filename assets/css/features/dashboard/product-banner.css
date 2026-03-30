@@ -118,6 +118,7 @@
     margin: 4px 0 0;
     max-width: 64ch;
     font-size: 15px;
+    font-weight: 400;
     line-height: 1.55;
     color: #4b5563;
 }
@@ -434,7 +435,6 @@ body.bbai-dashboard .bbai-command-hero-host .bbai-status-banner.bbai-banner--war
     display: flex;
     flex-direction: column;
     gap: 8px;
-    width: 100%;
 }
 
 /* CTAs — identical primary / secondary / tertiary (width: full only <768px) */
@@ -507,6 +507,11 @@ body.bbai-dashboard .bbai-command-hero-host .bbai-status-banner.bbai-banner--war
     .bbai-command-hero-host .bbai-banner .bbai-banner__cta,
     #bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__cta,
     #bbai-dashboard-main .bbai-banner .bbai-banner__cta {
+        width: 100%;
+    }
+
+    .bbai-command-hero-host .bbai-banner__secondary-actions.bbai-dashboard-hero__secondary-actions,
+    #bbai-dashboard-main .bbai-banner__secondary-actions.bbai-dashboard-hero__secondary-actions {
         width: 100%;
     }
 

@@ -346,8 +346,4 @@
     color: #5b6472;
 }
 
-/* Hero action stack: same rail as legacy .bbai-dashboard-hero-actions */
-.bbai-ui-action-stack__primary.bbai-dashboard-hero-actions__item--primary,
-.bbai-ui-hero-action-stack__primary.bbai-dashboard-hero-actions__item--primary {
-    width: 100%;
-}
+/* Shared banner action stack sizing lives in product-banner.css for Dashboard / Library / Analytics parity. */

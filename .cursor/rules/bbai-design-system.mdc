@@ -1,0 +1,33 @@
+---
+description: BeepBeep AI admin UI must use the shared design system (tokens, controls, surfaces, semantic status, tables).
+globs: admin/**/*.php,assets/css/**/*.css
+alwaysApply: false
+---
+
+# BeepBeep AI — admin design system rules
+
+When editing `admin/**` partials or enqueue-related PHP:
+
+## Use shared primitives
+
+- **Buttons:** `bbai-btn` + `bbai-btn-primary` / `bbai-btn-secondary` / `bbai-btn-sm` (see `assets/css/system/bbai-admin-controls.css`). Do not add page-only button shadows, radii, or font-weight overrides unless the change is added to the shared control layer.
+- **Form fields:** `bbai-input`, `bbai-select`, `bbai-textarea` with shared labels (`bbai-section-label`).
+- **Cards:** `bbai-card` and modifiers (`bbai-card--soft`, `bbai-card--pad-md`) from `bbai-admin-surfaces.css`.
+- **Section headings:** `bbai-section-header`, `bbai-ui-section-header`, `bbai-section-label`, `bbai-section-title`, `bbai-section-description`.
+- **Workflow colour:** badges, filters, row rails, and “health” callouts must use **`--bbai-status-*`** / `bbai-badge--*` / semantic status CSS — not one-off hex for missing vs review vs optimized.
+- **Tables:** prefer `bbai-table` and workspace row patterns from `bbai-admin-table-workspace.css` on dashboard-scoped pages.
+
+## Avoid drift
+
+- **No new inline `<style>` blocks** for layout, colour, or typography. Add or extend `assets/css/system/*.css` (or an existing feature sheet) and enqueue via `admin/traits/trait-core-assets.php`.
+- **No parallel token families** like new `--bbai-page-foo-*` in PHP; extend `bbai-admin-foundation-tokens.css` or unified tokens.
+- **Body scope:** plugin screens use `body.bbai-dashboard`; new global selectors should be scoped the same way.
+
+## References
+
+- `docs/design-system/README.md` — index and load order  
+- `docs/design-system/REFERENCE.md` — components, anti-patterns, backlog  
+
+## PHP enqueue order
+
+Do not change stylesheet dependency order in `trait-core-assets.php` without checking: foundation → controls → surfaces → semantic status → table workspace → page adoption / library polish.

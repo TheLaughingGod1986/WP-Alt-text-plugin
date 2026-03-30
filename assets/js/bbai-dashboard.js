@@ -382,7 +382,6 @@ bbaiRunWithJQuery(function($) {
         '.bbai-pro-upsell-card button',
         '.bbai-upgrade-banner button',
         '.bbai-upgrade-banner a',
-        '.bbai-hero-actions [data-cta="upgrade"]',
         '.bbai-upgrade-callout button',
         '.bbai-upgrade-callout a',
         '[data-upgrade-trigger="true"]'
@@ -506,39 +505,14 @@ bbaiRunWithJQuery(function($) {
             window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Checkout button clicked (vanilla JS handler)!');
 
             const plan = btn.getAttribute('data-plan') || btn.dataset.plan;
-            const fallbackUrl = btn.getAttribute('data-fallback-url') || btn.dataset.fallbackUrl;
+            const priceId = btn.getAttribute('data-price-id') || btn.dataset.priceId;
+            const $btn = window.jQuery ? window.jQuery(btn) : null;
 
-            // Resolve Stripe Payment Link: prefer data attribute, then localized links
-            const stripeLinks = (window.bbai_ajax && window.bbai_ajax.stripe_links) || {};
-            const resolvedLink = fallbackUrl || stripeLinks[plan] || '';
-
-            if (resolvedLink) {
-                window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Using Stripe payment link:', resolvedLink);
-                window.open(resolvedLink, '_blank', 'noopener,noreferrer');
-                if (typeof alttextaiCloseModal === 'function') {
-                    alttextaiCloseModal();
-                }
-            } else {
-                // Last resort: hardcoded Stripe Payment Links
-                let stripeUrl = '';
-                if (plan === 'pro' || plan === 'growth') {
-                    stripeUrl = 'https://buy.stripe.com/dRm28s4rc5Raf0GbY77ss02';
-                } else if (plan === 'agency') {
-                    stripeUrl = 'https://buy.stripe.com/28E14og9U0wQ19Q4vF7ss01';
-                } else if (plan === 'credits') {
-                    stripeUrl = 'https://buy.stripe.com/6oU9AUf5Q2EYaKq0fp7ss00';
-                }
-
-                if (stripeUrl) {
-                    window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Using default Stripe payment link:', stripeUrl);
-                    window.open(stripeUrl, '_blank', 'noopener,noreferrer');
-                    if (typeof alttextaiCloseModal === 'function') {
-                        alttextaiCloseModal();
-                    }
-                } else {
-                    window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] No checkout URL available!');
-                    alert(__('Unable to initiate checkout. Please try again or contact support.', 'beepbeep-ai-alt-text-generator'));
-                }
+            if ($btn && $btn.length) {
+                initiateCheckout($btn, priceId, plan);
+            } else if (!openCheckoutUrl(resolveCheckoutFallbackUrl(null, plan))) {
+                window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] No checkout URL available!');
+                alert(__('Unable to initiate checkout. Please try again or contact support.', 'beepbeep-ai-alt-text-generator'));
             }
 
             return false;
@@ -982,43 +956,7 @@ bbaiRunWithJQuery(function($) {
             
             window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Checkout plan:', plan, 'priceId:', priceId, 'fallbackUrl:', fallbackUrl);
 
-            // Resolve Stripe Payment Link: prefer data attribute, then localized links
-            const stripeLinks = (window.bbai_ajax && window.bbai_ajax.stripe_links) || {};
-            const resolvedLink = fallbackUrl || stripeLinks[plan] || '';
-
-            // Use direct Stripe Payment Links for reliable checkout
-            if (resolvedLink) {
-                window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Using Stripe payment link:', resolvedLink);
-                window.open(resolvedLink, '_blank', 'noopener,noreferrer');
-                if (typeof alttextaiCloseModal === 'function') {
-                    alttextaiCloseModal();
-                }
-            } else {
-                // If no fallback URL, try to construct one based on plan
-                let stripeUrl = '';
-                if (plan === 'pro' || plan === 'growth') {
-                    stripeUrl = 'https://buy.stripe.com/dRm28s4rc5Raf0GbY77ss02';
-                } else if (plan === 'agency') {
-                    stripeUrl = 'https://buy.stripe.com/28E14og9U0wQ19Q4vF7ss01';
-                } else if (plan === 'credits') {
-                    stripeUrl = 'https://buy.stripe.com/6oU9AUf5Q2EYaKq0fp7ss00';
-                }
-
-                if (stripeUrl) {
-                    window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Using default Stripe payment link:', stripeUrl);
-                    window.location.href = stripeUrl;
-                    if (typeof alttextaiCloseModal === 'function') {
-                        alttextaiCloseModal();
-                    }
-                } else {
-                    window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] No checkout URL available!');
-                    if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
-                        window.bbaiModal.error(__('Unable to initiate checkout. Please try again or contact support.', 'beepbeep-ai-alt-text-generator'));
-                    } else {
-                        alert(__('Unable to initiate checkout. Please try again or contact support.', 'beepbeep-ai-alt-text-generator'));
-                    }
-                }
-            }
+            initiateCheckout($btn, priceId, plan);
 
             return false;
         });
@@ -2016,16 +1954,23 @@ bbaiRunWithJQuery(function($) {
      * Initiate Stripe Checkout
      * Creates checkout session and opens in new tab
      */
-    function initiateCheckout($button, priceId, planName) {
-        if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Initiating checkout:', planName, priceId);
+    function resolveCheckoutPriceId($button, priceId, planName) {
+        const upgradePriceIds = (window.BBAI_UPGRADE && window.BBAI_UPGRADE.priceIds) || {};
+        const dashboardPriceIds = (window.BBAI_DASH && window.BBAI_DASH.checkoutPrices) || {};
 
-        // Resolve Stripe Payment Link from button data or localized config
-        const fallbackUrl = $button.attr('data-fallback-url') || '';
+        return priceId
+            || ($button && $button.attr('data-price-id'))
+            || upgradePriceIds[planName]
+            || dashboardPriceIds[planName]
+            || '';
+    }
+
+    function resolveCheckoutFallbackUrl($button, planName) {
+        const fallbackUrl = ($button && $button.attr('data-fallback-url')) || '';
         const stripeLinks = (window.bbai_ajax && window.bbai_ajax.stripe_links) || {};
         let resolvedLink = fallbackUrl || stripeLinks[planName] || '';
 
         if (!resolvedLink) {
-            // Hardcoded fallback Payment Links
             if (planName === 'pro' || planName === 'growth') {
                 resolvedLink = 'https://buy.stripe.com/dRm28s4rc5Raf0GbY77ss02';
             } else if (planName === 'agency') {
@@ -2035,9 +1980,147 @@ bbaiRunWithJQuery(function($) {
             }
         }
 
-        if (resolvedLink) {
-            if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Opening Stripe payment link:', resolvedLink);
-            window.open(resolvedLink, '_blank', 'noopener,noreferrer');
+        return resolvedLink;
+    }
+
+    function openCheckoutUrl(url) {
+        if (!url) {
+            return false;
+        }
+
+        window.open(url, '_blank', 'noopener,noreferrer');
+        if (typeof alttextaiCloseModal === 'function') {
+            alttextaiCloseModal();
+        }
+
+        return true;
+    }
+
+    function setCheckoutButtonLoading($button, isLoading) {
+        if (!$button || !$button.length) {
+            return;
+        }
+
+        if (isLoading) {
+            if (!$button.data('bbaiCheckoutLabel')) {
+                $button.data('bbaiCheckoutLabel', $button.text());
+            }
+
+            $button.prop('disabled', true)
+                .addClass('bbai-btn-loading')
+                .attr('aria-busy', 'true')
+                .text(__('Redirecting…', 'beepbeep-ai-alt-text-generator'));
+            return;
+        }
+
+        $button.prop('disabled', false)
+            .removeClass('bbai-btn-loading')
+            .attr('aria-busy', 'false')
+            .text($button.data('bbaiCheckoutLabel') || $button.text());
+    }
+
+    function getCheckoutAttributionPayload(planName) {
+        if (window.bbaiTelemetry && typeof window.bbaiTelemetry.buildCheckoutAttribution === 'function') {
+            return window.bbaiTelemetry.buildCheckoutAttribution({
+                target_plan: planName || '',
+                source: 'app'
+            });
+        }
+
+        var context = (window.bbaiAnalytics && typeof window.bbaiAnalytics.getContext === 'function')
+            ? (window.bbaiAnalytics.getContext() || {})
+            : ((window.BBAI_POSTHOG && window.BBAI_POSTHOG.context) || {});
+
+        var payload = {
+            account_id: context.account_id || '',
+            user_id: context.user_id || '',
+            license_key: context.license_key || '',
+            site_id: context.site_id || '',
+            site_hash: context.site_hash || '',
+            email: context.email || '',
+            trigger_feature: 'unknown',
+            trigger_location: 'unknown',
+            source_page: context.page || 'dashboard',
+            target_plan: planName || '',
+            current_plan: context.plan_type || context.plan || '',
+            source: 'app'
+        };
+
+        if (!payload.email) {
+            delete payload.email;
+        }
+
+        return payload;
+    }
+
+    function initiateCheckout($button, priceId, planName) {
+        if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Initiating checkout:', planName, priceId);
+
+        const ajaxUrl = window.bbai_ajax && window.bbai_ajax.ajaxurl;
+        const nonce = window.bbai_ajax && window.bbai_ajax.nonce;
+        const resolvedPriceId = resolveCheckoutPriceId($button, priceId, planName);
+        const fallbackUrl = resolveCheckoutFallbackUrl($button, planName);
+        const attributionPayload = getCheckoutAttributionPayload(planName);
+
+        if (!ajaxUrl || !nonce || !resolvedPriceId || !window.jQuery || typeof $.ajax !== 'function') {
+            if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Falling back to Stripe payment link:', fallbackUrl);
+            if (openCheckoutUrl(fallbackUrl)) {
+                return;
+            }
+        } else {
+            setCheckoutButtonLoading($button, true);
+
+            $.ajax({
+                url: ajaxUrl,
+                type: 'POST',
+                dataType: 'json',
+                data: $.extend({
+                    action: 'beepbeepai_create_checkout',
+                    nonce: nonce,
+                    price_id: resolvedPriceId,
+                    plan_id: planName || ''
+                }, attributionPayload)
+            }).done(function(response) {
+                const checkoutUrl = response && response.success && response.data ? response.data.url : '';
+
+                setCheckoutButtonLoading($button, false);
+
+                if (checkoutUrl) {
+                    if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Opening Stripe checkout session:', checkoutUrl);
+                    openCheckoutUrl(checkoutUrl);
+                    return;
+                }
+
+                if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Checkout session missing URL, falling back to payment link');
+                if (openCheckoutUrl(fallbackUrl)) {
+                    return;
+                }
+
+                if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
+                    window.bbaiModal.error(__('Unable to initiate checkout. Please try again or contact support.', 'beepbeep-ai-alt-text-generator'));
+                }
+            }).fail(function(xhr) {
+                setCheckoutButtonLoading($button, false);
+
+                if (alttextaiDebug) {
+                    window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Checkout session creation failed, falling back to payment link', {
+                        status: xhr && xhr.status,
+                        response: xhr && xhr.responseJSON ? xhr.responseJSON : null
+                    });
+                }
+
+                if (openCheckoutUrl(fallbackUrl)) {
+                    return;
+                }
+
+                const errorMessage = (xhr && xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message)
+                    || __('Unable to initiate checkout. Please try again or contact support.', 'beepbeep-ai-alt-text-generator');
+
+                if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
+                    window.bbaiModal.error(errorMessage);
+                }
+            });
+
             return;
         }
 
@@ -3835,6 +3918,10 @@ bbaiRunWithJQuery(function($) {
     }
 
     function getDashboardHeroIconMarkup(tone) {
+        if (typeof window !== 'undefined' && typeof window.bbaiGetSharedCommandHeroIconMarkup === 'function') {
+            return window.bbaiGetSharedCommandHeroIconMarkup(tone);
+        }
+
         if (tone === 'setup') {
             return '<svg viewBox="0 0 24 24" fill="none" focusable="false"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8"></circle><path d="M20 20L16.2 16.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>';
         }
@@ -3892,212 +3979,65 @@ bbaiRunWithJQuery(function($) {
             tertiaryAction: null
         };
 
-        if (isOutOfCredits) {
-            model.state = 'out-of-credits';
-            model.tone = 'paused';
-            var cycleOut = typeof window !== 'undefined' && typeof window.bbaiBuildBannerMessage === 'function'
-                ? window.bbaiBuildBannerMessage({ creditsRemaining: 0, issueCount: totalIssues })
-                : null;
-            if (cycleOut) {
-                model.headline = cycleOut.title || cycleOut.line1;
-                model.subtext = cycleOut.supportingLine || cycleOut.line2;
-                model.nextStep = '';
-            } else {
-                model.headline = __('You’ve used this month’s free allowance', 'beepbeep-ai-alt-text-generator');
-                model.subtext = __('Your existing results are still available to review. Upgrade to continue generating ALT text.', 'beepbeep-ai-alt-text-generator');
-                model.nextStep =
-                    totalIssues > 0
-                        ? sprintf(
-                              _n(
-                                  '%s image still needs attention.',
-                                  '%s images still need attention.',
-                                  totalIssues,
-                                  'beepbeep-ai-alt-text-generator'
-                              ),
-                              formatCount(totalIssues)
-                          )
-                        : '';
+        function createActionFromShared(actionConfig) {
+            if (!actionConfig || !actionConfig.label) {
+                return null;
             }
-            model.primaryAction = createAction(
-                __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
-                '',
+
+            return createAction(
+                actionConfig.label,
+                actionConfig.helper || '',
                 {
-                    action: 'show-upgrade-modal'
+                    href: actionConfig.href || '#',
+                    action: actionConfig.action || '',
+                    bbaiAction: actionConfig.bbaiAction || '',
+                    attributes: actionConfig.attributes || null
                 }
             );
-            model.secondaryAction = createAction(
-                __('Review ALT text', 'beepbeep-ai-alt-text-generator'),
-                '',
-                {
-                    href: (data && data.needsReviewLibraryUrl) || libraryUrl || '#'
-                }
-            );
-            model.tertiaryAction = null;
+        }
+
+        var sharedHeroState = typeof window !== 'undefined' && typeof window.bbaiBuildSharedCommandHeroState === 'function'
+            ? window.bbaiBuildSharedCommandHeroState({
+                totalImages: total,
+                missingCount: missing,
+                weakCount: weak,
+                creditsRemaining: creditsRemaining,
+                isPro: !!(data && data.isPremium),
+                lowCreditThreshold: thresh,
+                libraryUrl: libraryUrl,
+                usageUrl: usageUrl,
+                guideUrl: guideUrl,
+                settingsUrl: settingsUrl,
+                needsReviewLibraryUrl: (data && data.needsReviewLibraryUrl) || libraryUrl || '#'
+            })
+            : null;
+
+        if (sharedHeroState) {
+            model.state = sharedHeroState.dashboardState || 'healthy-free';
+            model.tone = sharedHeroState.tone || 'healthy';
+            model.headline = sharedHeroState.headline || '';
+            model.subtext = sharedHeroState.subtext || '';
+            model.nextStep = sharedHeroState.nextStep || '';
+            model.note = sharedHeroState.note || '';
+            model.primaryAction = createActionFromShared(sharedHeroState.primaryAction) || createAction('', '', {});
+            model.secondaryAction = createActionFromShared(sharedHeroState.secondaryAction);
+            model.tertiaryAction = createActionFromShared(sharedHeroState.tertiaryAction);
+
+            if (sharedHeroState.state === 'healthy') {
+                model.loopActions = [
+                    createAction(__('Auto-optimise future uploads', 'beepbeep-ai-alt-text-generator'), '', { href: settingsUrl }),
+                    createAction(__('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'), '', { action: 'show-upgrade-modal' })
+                ];
+                model.loopSupportLine = '';
+                model.upgradeTensionLine = data && data.isPremium
+                    ? ''
+                    : __('New uploads will stop being optimised automatically on the free plan', 'beepbeep-ai-alt-text-generator');
+            }
+
             return model;
         }
 
-        if (isLowCredits) {
-            model.state = 'low-credits';
-            model.tone = 'attention';
-            var cycleLow = typeof window !== 'undefined' && typeof window.bbaiBuildBannerMessage === 'function'
-                ? window.bbaiBuildBannerMessage({ creditsRemaining: creditsRemaining, issueCount: totalIssues })
-                : null;
-            if (cycleLow) {
-                model.headline = cycleLow.title || cycleLow.line1;
-                model.subtext = cycleLow.supportingLine || cycleLow.line2;
-                model.nextStep = '';
-            } else {
-                model.headline = __('You’re close to this month’s allowance', 'beepbeep-ai-alt-text-generator');
-                model.subtext = sprintf(
-                    _n(
-                        'You have %s credit left this month.',
-                        'You have %s credits left this month.',
-                        creditsRemaining,
-                        'beepbeep-ai-alt-text-generator'
-                    ),
-                    formatCount(creditsRemaining)
-                );
-                if (totalIssues > 0) {
-                    model.subtext +=
-                        ' ' +
-                        sprintf(
-                            _n(
-                                '%s image still needs attention.',
-                                '%s images still need attention.',
-                                totalIssues,
-                                'beepbeep-ai-alt-text-generator'
-                            ),
-                            formatCount(totalIssues)
-                        );
-                }
-                model.nextStep = __('Continue generating ALT text without interruption.', 'beepbeep-ai-alt-text-generator');
-            }
-            model.primaryAction = createAction(
-                __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
-                '',
-                {
-                    action: 'show-upgrade-modal'
-                }
-            );
-            model.secondaryAction = createAction(
-                __('Review ALT text', 'beepbeep-ai-alt-text-generator'),
-                '',
-                {
-                    href: (data && data.needsReviewLibraryUrl) || libraryUrl || '#'
-                }
-            );
-            return model;
-        }
-
-        var needsLibraryAttention = creditsRemaining > thresh && totalIssues > 0;
-
-        if (needsLibraryAttention) {
-            model.state = 'incomplete';
-            model.tone = 'attention';
-            model.headline = __('Your library needs attention', 'beepbeep-ai-alt-text-generator');
-            model.subtext = __('Some images are missing ALT text or need improvement.', 'beepbeep-ai-alt-text-generator');
-            model.nextStep =
-                typeof window !== 'undefined' && typeof window.bbaiBuildIssueAttentionMessage === 'function'
-                    ? window.bbaiBuildIssueAttentionMessage(totalIssues)
-                    : sprintf(
-                          _n('%s image needs attention.', '%s images need attention.', totalIssues, 'beepbeep-ai-alt-text-generator'),
-                          formatCount(totalIssues)
-                      );
-            if (missing > 0) {
-                model.primaryAction = createAction(
-                    __('Generate missing ALT text', 'beepbeep-ai-alt-text-generator'),
-                    '',
-                    {
-                        action: 'generate-missing',
-                        bbaiAction: 'generate_missing'
-                    }
-                );
-            } else {
-                var reviewLibUrl = (data && data.needsReviewLibraryUrl) || libraryUrl || '#';
-                model.primaryAction = createAction(
-                    __('Review ALT text', 'beepbeep-ai-alt-text-generator'),
-                    '',
-                    {
-                        href: reviewLibUrl
-                    }
-                );
-            }
-            model.secondaryAction = createAction(
-                __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
-                '',
-                {
-                    href: libraryUrl
-                }
-            );
-            return model;
-        }
-
-        if (total > 0 && totalIssues === 0) {
-            if (data && data.isPremium) {
-                model.state = 'healthy-pro';
-            } else {
-                model.state = 'healthy-free';
-            }
-            model.tone = 'healthy';
-            model.headline = __('Your library is in great shape', 'beepbeep-ai-alt-text-generator');
-            model.subtext = __('All images are optimized and up to date.', 'beepbeep-ai-alt-text-generator');
-            model.nextStep = '';
-            model.note = '';
-            if (data && data.isPremium) {
-                model.primaryAction = createAction(
-                    __('Enable Auto-Optimisation', 'beepbeep-ai-alt-text-generator'),
-                    '',
-                    {
-                        href: settingsUrl
-                    }
-                );
-            } else {
-                model.primaryAction = createAction(
-                    __('Enable Auto-Optimisation', 'beepbeep-ai-alt-text-generator'),
-                    '',
-                    {
-                        action: 'show-upgrade-modal'
-                    }
-                );
-            }
-            model.secondaryAction = createAction(
-                __('Rescan media library', 'beepbeep-ai-alt-text-generator'),
-                '',
-                {
-                    action: 'rescan-media-library'
-                }
-            );
-            model.loopActions = [
-                createAction(__('Auto-optimise future uploads', 'beepbeep-ai-alt-text-generator'), '', { href: settingsUrl }),
-                createAction(__('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'), '', { action: 'show-upgrade-modal' })
-            ];
-            model.loopSupportLine = '';
-            model.upgradeTensionLine = data && data.isPremium
-                ? ''
-                : __('New uploads will stop being optimised automatically on the free plan', 'beepbeep-ai-alt-text-generator');
-            return model;
-        }
-
-        model.state = 'first-run';
-        model.tone = 'setup';
-        model.headline = __('Get started with your media library', 'beepbeep-ai-alt-text-generator');
-        model.subtext = __('Scan your library to find missing ALT text and improve accessibility faster.', 'beepbeep-ai-alt-text-generator');
-        model.nextStep = __('Start by scanning your media library.', 'beepbeep-ai-alt-text-generator');
-        model.primaryAction = createAction(
-            __('Scan media library', 'beepbeep-ai-alt-text-generator'),
-            '',
-            {
-                bbaiAction: 'scan-opportunity'
-            }
-        );
-        model.secondaryAction = createAction(
-            __('Learn how it works', 'beepbeep-ai-alt-text-generator'),
-            '',
-            {
-                href: guideUrl
-            }
-        );
-        return model;
+        return null;
     }
 
     function formatMonthlyProgressCopy(count) {

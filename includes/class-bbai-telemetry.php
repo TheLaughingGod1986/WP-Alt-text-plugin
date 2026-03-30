@@ -23,6 +23,10 @@ class BBAI_Telemetry {
 
 	public const RING_MAX = 300;
 
+	private const POSTHOG_API_KEY = 'phc_6L7JzpjYRC8Gk4Br3YevTmjZnJsJPvoy9GK7RFdo72s';
+
+	private const POSTHOG_API_HOST = 'https://us.i.posthog.com';
+
 	/**
 	 * Whole days between the previous stored admin visit and this request, captured when touch_last_active() runs.
 	 *
@@ -115,6 +119,72 @@ class BBAI_Telemetry {
 			return (int) self::$inactive_days_at_session_start;
 		}
 		return self::days_since_last_active();
+	}
+
+	/**
+	 * Shared PostHog project API key used by the browser and server-side value events.
+	 */
+	public static function get_posthog_api_key(): string {
+		return (string) apply_filters( 'bbai_posthog_api_key', self::POSTHOG_API_KEY );
+	}
+
+	/**
+	 * Shared PostHog host for client and server-side event capture.
+	 */
+	public static function get_posthog_api_host(): string {
+		$host = (string) apply_filters( 'bbai_posthog_api_host', self::POSTHOG_API_HOST );
+		return '' !== $host ? untrailingslashit( $host ) : '';
+	}
+
+	/**
+	 * Non-blocking server-side PostHog capture for trustworthy value events.
+	 *
+	 * @param string $event_name  Event name.
+	 * @param string $distinct_id Stable PostHog distinct id.
+	 * @param array  $properties  Event properties.
+	 */
+	public static function capture_posthog_event( string $event_name, string $distinct_id, array $properties = [] ): void {
+		$event_name  = sanitize_key( $event_name );
+		$distinct_id = sanitize_text_field( $distinct_id );
+		if ( '' === $event_name || '' === $distinct_id ) {
+			return;
+		}
+
+		if ( ! apply_filters( 'bbai_posthog_server_capture_enabled', true, $event_name, $distinct_id, $properties ) ) {
+			return;
+		}
+
+		$api_key = self::get_posthog_api_key();
+		$api_host = self::get_posthog_api_host();
+		if ( '' === $api_key || '' === $api_host ) {
+			return;
+		}
+
+		$payload = wp_json_encode(
+			[
+				'api_key'     => $api_key,
+				'event'       => $event_name,
+				'distinct_id' => $distinct_id,
+				'properties'  => self::sanitize_properties( $properties ),
+			]
+		);
+
+		if ( ! is_string( $payload ) || '' === $payload ) {
+			return;
+		}
+
+		wp_remote_post(
+			$api_host . '/capture/',
+			[
+				'timeout'     => 1,
+				'blocking'    => false,
+				'headers'     => [
+					'Content-Type' => 'application/json',
+				],
+				'body'        => $payload,
+				'data_format' => 'body',
+			]
+		);
 	}
 
 	/**

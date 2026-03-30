@@ -481,8 +481,6 @@ trait Core_Assets {
             ]);
         }
 
-        wp_add_inline_style('bbai-unified', $this->get_dashboard_hero_inline_css());
-
         $saas_consistency_css = 'assets/css/features/dashboard/saas-consistency.css';
         wp_enqueue_style(
             'bbai-saas-consistency',
@@ -721,7 +719,7 @@ trait Core_Assets {
                     'bbai-admin-library-workspace-polish',
                     $base_url . $admin_library_workspace_polish_css,
                     [ 'bbai-admin-table-workspace' ],
-                    $asset_version( $admin_library_workspace_polish_css, '1.0.0' )
+                    $asset_version( $admin_library_workspace_polish_css, '1.0.1' )
                 );
             }
         }
@@ -937,87 +935,6 @@ trait Core_Assets {
     }
 
     /**
-     * Shared inline CSS injected for the dashboard hero treatment.
-     *
-     * @return string
-     */
-    private function get_dashboard_hero_inline_css(): string {
-        return <<<'CSS'
-.bbai-hero-section {
-    background: linear-gradient(to bottom, #f7fee7 0%, #ffffff 100%);
-    border-radius: 24px;
-    margin-bottom: 32px;
-    padding: 48px 40px;
-    text-align: center;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-}
-.bbai-hero-content {
-    margin-bottom: 32px;
-}
-.bbai-hero-title {
-    margin: 0 0 16px 0;
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #0f172a;
-    line-height: 1.2;
-}
-.bbai-hero-subtitle {
-    margin: 0;
-    font-size: 1.125rem;
-    color: #475569;
-    line-height: 1.6;
-    max-width: 600px;
-    margin-left: auto;
-    margin-right: auto;
-}
-.bbai-hero-actions {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 24px;
-}
-.bbai-hero-btn-primary {
-    background: #10b981;
-    color: white;
-    border: none;
-    padding: 16px 32px;
-    border-radius: 16px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s ease, box-shadow 0.2s ease;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
-}
-.bbai-hero-btn-primary:hover {
-    background: #059669;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
-}
-.bbai-hero-btn-primary:active {
-    background: #047857;
-}
-.bbai-hero-link-secondary {
-    background: transparent;
-    border: none;
-    color: #6b7280;
-    text-decoration: underline;
-    font-size: 14px;
-    cursor: pointer;
-    transition: color 0.2s ease;
-    padding: 0;
-}
-.bbai-hero-link-secondary:hover {
-    color: #14b8a6;
-}
-.bbai-hero-micro-copy {
-    font-size: 14px;
-    color: #64748b;
-    font-weight: 500;
-}
-CSS;
-    }
-
-    /**
      * Localize dashboard scripts with data
      *
      * @param array      $stats_data       Media stats
@@ -1220,6 +1137,69 @@ CSS;
     }
 
     /**
+     * Build the stable internal identity payload exposed to the PostHog client.
+     *
+     * @param array<string, mixed> $user_data    Sanitized account payload.
+     * @param array<string, mixed> $license_data Cached license payload.
+     * @param string               $site_hash    Stable site hash.
+     * @param string               $plan_type    Current plan slug.
+     * @return array<string, mixed>
+     */
+    private function get_posthog_identity_context(array $user_data, array $license_data, string $site_hash, string $plan_type): array {
+        $account_id = sanitize_text_field((string) ($user_data['id'] ?? $user_data['_id'] ?? ''));
+        $user_id    = $account_id;
+        $license_key = '';
+
+        if ( isset( $this->api_client ) && method_exists( $this->api_client, 'get_license_key' ) ) {
+            $license_key = sanitize_text_field((string) $this->api_client->get_license_key());
+        }
+
+        $site_id = '';
+        if ( isset( $license_data['site'] ) && is_array( $license_data['site'] ) ) {
+            $site_id = sanitize_text_field((string) ($license_data['site']['id'] ?? $license_data['site']['_id'] ?? ''));
+        }
+
+        $context = [
+            'account_id'          => $account_id,
+            'user_id'             => $user_id,
+            'email'               => sanitize_email((string) ($user_data['email'] ?? '')),
+            'plan'                => $plan_type,
+            'plan_type'           => $plan_type,
+            'license_key'         => $license_key,
+            'license_key_present' => '' !== $license_key,
+            'site_id'             => $site_id,
+            'site_hash'           => sanitize_key($site_hash),
+            'wordpress_user_id'   => get_current_user_id() > 0 ? absint(get_current_user_id()) : null,
+            'plugin_version'      => defined('BEEPBEEP_AI_VERSION') ? (string) BEEPBEEP_AI_VERSION : '',
+        ];
+
+        return array_filter(
+            $context,
+            static function ( $value ) {
+                return null !== $value && '' !== $value;
+            }
+        );
+    }
+
+    /**
+     * Resolve the best PostHog distinct id for an authenticated plugin account.
+     *
+     * @param array<string, mixed> $identity_context Identity payload from get_posthog_identity_context().
+     * @return string
+     */
+    private function resolve_posthog_identify_id(array $identity_context): string {
+        foreach ( ['account_id', 'user_id', 'license_key', 'site_id', 'site_hash'] as $key ) {
+            if ( empty( $identity_context[ $key ] ) ) {
+                continue;
+            }
+
+            return sanitize_text_field((string) $identity_context[ $key ]);
+        }
+
+        return '';
+    }
+
+    /**
      * Shared client bootstrap for the PostHog wrapper.
      *
      * @return array<string, mixed>
@@ -1233,6 +1213,7 @@ CSS;
             : [];
         $is_logged_in = $this->is_bbai_account_authenticated();
         $page_key     = $this->get_posthog_page_key();
+        $site_hash    = $this->get_posthog_site_hash();
 
         $plan_type = sanitize_key(
             (string) (
@@ -1278,27 +1259,13 @@ CSS;
             && isset($trial_status['remaining'])
             && (int) $trial_status['remaining'] <= 0;
 
-        $identify_id = '';
-        if ($is_logged_in) {
-            $candidate_ids = [
-                isset($user_data['id']) ? 'user:' . $user_data['id'] : '',
-                isset($user_data['_id']) ? 'user:' . $user_data['_id'] : '',
-                isset($user_data['organization']['id']) ? 'org:' . $user_data['organization']['id'] : '',
-                isset($user_data['organization']['_id']) ? 'org:' . $user_data['organization']['_id'] : '',
-                (is_array($license_data) && isset($license_data['organization']['id'])) ? 'org:' . $license_data['organization']['id'] : '',
-                (is_array($license_data) && isset($license_data['organization']['_id'])) ? 'org:' . $license_data['organization']['_id'] : '',
-                (is_array($license_data) && isset($license_data['site']['id'])) ? 'site:' . $license_data['site']['id'] : '',
-                (is_array($license_data) && isset($license_data['site']['_id'])) ? 'site:' . $license_data['site']['_id'] : '',
-            ];
-
-            foreach ($candidate_ids as $candidate_id) {
-                $candidate_id = sanitize_text_field((string) $candidate_id);
-                if ('' !== $candidate_id) {
-                    $identify_id = $candidate_id;
-                    break;
-                }
-            }
-        }
+        $identity_context = $this->get_posthog_identity_context(
+            is_array($user_data) ? $user_data : [],
+            is_array($license_data) ? $license_data : [],
+            $site_hash,
+            $plan_type
+        );
+        $identify_id = $is_logged_in ? $this->resolve_posthog_identify_id($identity_context) : '';
 
         $page_view_events = [
             'dashboard'       => 'dashboard_viewed',
@@ -1310,16 +1277,26 @@ CSS;
             'onboarding'      => 'onboarding_viewed',
         ];
 
+        $api_host = class_exists( BBAI_Telemetry::class )
+            ? BBAI_Telemetry::get_posthog_api_host()
+            : 'https://us.i.posthog.com';
+        $asset_url = str_replace('.i.posthog.com', '-assets.i.posthog.com', untrailingslashit($api_host)) . '/static/array.js';
+        $api_key = class_exists( BBAI_Telemetry::class )
+            ? BBAI_Telemetry::get_posthog_api_key()
+            : 'phc_6L7JzpjYRC8Gk4Br3YevTmjZnJsJPvoy9GK7RFdo72s';
+
         return [
             'enabled'       => true,
-            'apiKey'        => 'phc_6L7JzpjYRC8Gk4Br3YevTmjZnJsJPvoy9GK7RFdo72s',
-            'apiHost'       => 'https://us.i.posthog.com',
+            'apiKey'        => $api_key,
+            'apiHost'       => $api_host,
+            'assetUrl'      => $asset_url,
             'defaults'      => '2026-01-30',
             'instanceName'  => 'bbaiPosthog',
+            'debug'         => (defined('WP_DEBUG') && WP_DEBUG) || (defined('SCRIPT_DEBUG') && SCRIPT_DEBUG),
             'pageViewEvents' => $page_view_events,
-            'context'       => [
+            'context'       => array_merge([
                 'page'               => $page_key,
-                'site_hash'          => $this->get_posthog_site_hash(),
+                'site_hash'          => $site_hash,
                 'site_url'           => esc_url_raw(home_url('/')),
                 'is_logged_in'       => $is_logged_in,
                 'plan_type'          => $plan_type,
@@ -1331,14 +1308,15 @@ CSS;
                 'needs_review_count' => max(0, (int) ($stats_data['needs_review_count'] ?? 0)),
                 'optimized_count'    => max(0, (int) ($stats_data['optimized_count'] ?? 0)),
                 'plugin_version'     => defined('BEEPBEEP_AI_VERSION') ? (string) BEEPBEEP_AI_VERSION : '',
-            ],
+            ], $identity_context),
             'identify'      => [
                 'id'                => $identify_id,
-                'person_properties' => [
+                'person_properties' => array_merge([
                     'plan_type'      => $plan_type,
-                    'site_hash'      => $this->get_posthog_site_hash(),
+                    'plan'           => $plan_type,
+                    'site_hash'      => $site_hash,
                     'plugin_version' => defined('BEEPBEEP_AI_VERSION') ? (string) BEEPBEEP_AI_VERSION : '',
-                ],
+                ], $identity_context),
             ],
         ];
     }
@@ -1395,6 +1373,17 @@ CSS;
         $usage = Usage_Tracker::get_stats_display();
         $plan  = isset($usage['plan']) ? sanitize_key((string) $usage['plan']) : 'free';
         $plan_type = in_array($plan, ['pro', 'growth', 'agency', 'enterprise'], true) ? 'pro' : ('free' === $plan ? 'free' : 'unknown');
+        $site_hash = $this->get_posthog_site_hash();
+        $sanitized_user_data = isset($this->api_client) ? $this->sanitize_api_user_data_for_localize($this->api_client->get_user_data()) : [];
+        $license_data = (isset($this->api_client) && method_exists($this->api_client, 'get_license_data'))
+            ? $this->api_client->get_license_data()
+            : [];
+        $identity_context = $this->get_posthog_identity_context(
+            is_array($sanitized_user_data) ? $sanitized_user_data : [],
+            is_array($license_data) ? $license_data : [],
+            $site_hash,
+            $plan
+        );
 
         $uid = get_current_user_id();
         $key = '_bbai_telemetry_session_images_' . gmdate('Ymd');
@@ -1407,6 +1396,7 @@ CSS;
             'ajaxUrl'     => admin_url('admin-ajax.php'),
             'nonce'       => wp_create_nonce('beepbeepai_nonce'),
             'action'      => 'beepbeepai_telemetry',
+            'debug'       => (defined('WP_DEBUG') && WP_DEBUG) || (defined('SCRIPT_DEBUG') && SCRIPT_DEBUG),
             'context'     => [
                 'user_id'                  => $uid,
                 'plan_type'                => $plan_type,
@@ -1415,6 +1405,11 @@ CSS;
                 'page_variant'             => $this->get_posthog_page_key(),
                 'days_since_last_active'   => $days_since,
                 'images_processed_session' => $session_images,
+                'account_id'               => $identity_context['account_id'] ?? '',
+                'site_id'                  => $identity_context['site_id'] ?? '',
+                'site_hash'                => $site_hash,
+                'license_key_present'      => !empty($identity_context['license_key_present']),
+                'wordpress_user_id'        => $identity_context['wordpress_user_id'] ?? ($uid > 0 ? $uid : null),
             ],
         ];
     }
