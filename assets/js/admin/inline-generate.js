@@ -48,6 +48,11 @@
             window.updateBulkProgressSubtitle('This usually takes ~5\u201310 seconds');
         }
 
+        // Sync global job state
+        if (window.bbaiJobState) {
+            window.bbaiJobState.start('Improving your images\u2026', normalized.length);
+        }
+
         $modal.data('batchQueue', normalized.slice(0));
         var inlineBatchSize = window.BBAI && window.BBAI.inlineBatchSize
             ? Math.max(1, parseInt(window.BBAI.inlineBatchSize, 10))
@@ -90,6 +95,9 @@
                     var title = result && result.title ? result.title : ('Generated alt text for image #' + id);
                     updateBulkProgressTitle('Improving your images (' + processed + ' / ' + total + ')');
                     updateBulkProgress(processed, total, title);
+                    if (window.bbaiJobState) {
+                        window.bbaiJobState.tick({ success: true, title: title });
+                    }
                 })
                 .catch(function(error) {
                     failures++;
@@ -98,6 +106,9 @@
                     logBulkProgressError(message);
                     updateBulkProgressTitle('Improving your images (' + processed + ' / ' + total + ')');
                     updateBulkProgress(processed, total);
+                    if (window.bbaiJobState) {
+                        window.bbaiJobState.tick({ success: false, title: message });
+                    }
                 })
                 .finally(function() {
                     active--;
@@ -116,6 +127,10 @@
      * Finalize inline generation: show completion state inside the progress modal.
      */
     function finalizeInlineGeneration(successes, failures) {
+        if (window.bbaiJobState) {
+            window.bbaiJobState.complete();
+        }
+
         if (typeof refreshUsageStats === 'function') {
             refreshUsageStats();
         }

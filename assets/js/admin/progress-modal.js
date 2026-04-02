@@ -42,9 +42,14 @@
             '    <div class="bbai-bulk-progress-modal__overlay"></div>' +
             '    <div class="bbai-bulk-progress-modal__content">' +
             '        <div class="bbai-bulk-progress__header">' +
-            '            <h2 class="bbai-bulk-progress__title">Processing Images...</h2>' +
-            '            <p class="bbai-bulk-progress__helper" hidden></p>' +
-            '            <button type="button" class="bbai-bulk-progress__close" aria-label="Close">×</button>' +
+            '            <div class="bbai-bulk-progress__header-text">' +
+            '                <h2 class="bbai-bulk-progress__title">Processing Images...</h2>' +
+            '                <p class="bbai-bulk-progress__helper" hidden></p>' +
+            '            </div>' +
+            '            <div class="bbai-bulk-progress__header-actions">' +
+            '                <button type="button" class="bbai-bulk-progress__minimize" aria-label="Minimize" title="Minimize">&mdash;</button>' +
+            '                <button type="button" class="bbai-bulk-progress__close" aria-label="Close">&times;</button>' +
+            '            </div>' +
             '        </div>' +
             '        <div class="bbai-bulk-progress__body">' +
             '            <div class="bbai-bulk-progress__stats">' +
@@ -80,8 +85,14 @@
         $('body').append(modalHtml);
         var $modal = $('#bbai-bulk-progress-modal');
 
-        $modal.find('.bbai-bulk-progress__close').on('click', function() {
-            hideBulkProgress();
+        // Both minimize and close hide the modal without cancelling the job.
+        $modal.find('.bbai-bulk-progress__close, .bbai-bulk-progress__minimize').on('click', function() {
+            minimizeBulkProgress();
+        });
+
+        // Clicking overlay also minimizes (not cancel)
+        $modal.find('.bbai-bulk-progress-modal__overlay').on('click', function () {
+            minimizeBulkProgress();
         });
 
         return $modal;
@@ -250,14 +261,25 @@
     };
 
     /**
-     * Hide bulk progress bar
+     * Minimize — hides modal, job continues, widget becomes visible.
      */
-    window.hideBulkProgress = function() {
+    function minimizeBulkProgress() {
         var $modal = $('#bbai-bulk-progress-modal');
         if ($modal.length) {
             $modal.removeClass('active');
             $('body').css('overflow', '');
         }
+        if (window.bbaiJobState) {
+            window.bbaiJobState.update({ modalVisible: false });
+        }
+    }
+    window.minimizeBulkProgress = minimizeBulkProgress;
+
+    /**
+     * Hide bulk progress bar (legacy — now delegates to minimize).
+     */
+    window.hideBulkProgress = function() {
+        minimizeBulkProgress();
     };
 
 })(jQuery);

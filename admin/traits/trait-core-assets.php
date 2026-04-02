@@ -277,6 +277,39 @@ trait Core_Assets {
             'rest_root' => esc_url_raw(rest_url()),
             'nonce'     => wp_create_nonce('bbai_ajax_nonce'),
         ]);
+
+        // Background job state + floating widget
+        $bbai_job_state_js = 'assets/js/admin/job-state.js';
+        if ( file_exists( $base_path . $bbai_job_state_js ) ) {
+            wp_enqueue_script(
+                'bbai-job-state',
+                $base_url . $bbai_job_state_js,
+                [],
+                $this->get_asset_version( $bbai_job_state_js, '1.0.0', $base_path ),
+                true
+            );
+        }
+
+        $bbai_job_widget_js = 'assets/js/admin/job-widget.js';
+        if ( file_exists( $base_path . $bbai_job_widget_js ) ) {
+            wp_enqueue_script(
+                'bbai-job-widget',
+                $base_url . $bbai_job_widget_js,
+                [ 'jquery', 'bbai-job-state' ],
+                $this->get_asset_version( $bbai_job_widget_js, '1.0.0', $base_path ),
+                true
+            );
+        }
+
+        $bbai_job_widget_css = 'assets/css/components/job-widget.css';
+        if ( file_exists( $base_path . $bbai_job_widget_css ) ) {
+            wp_enqueue_style(
+                'bbai-job-widget',
+                $base_url . $bbai_job_widget_css,
+                [],
+                $this->get_asset_version( $bbai_job_widget_css, '1.0.0', $base_path )
+            );
+        }
     }
 
     /**

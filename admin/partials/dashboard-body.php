@@ -421,6 +421,30 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
     $bbai_primary_banner_state  = bbai_resolve_top_banner($bbai_banner_snapshot, BBAI_BANNER_CTX_DASHBOARD);
     $bbai_dashboard_banner_slot = bbai_get_active_banner_slot_from_state($bbai_primary_banner_state);
 
+    $bbai_dashboard_command_hero = bbai_banner_build_command_hero(
+        BBAI_BANNER_CTX_DASHBOARD,
+        $bbai_banner_snapshot,
+        [
+            'aria_label'         => __('Dashboard summary', 'beepbeep-ai-alt-text-generator'),
+            'show_hero_loop'     => true,
+            'icon_wrapper_attrs' => ['data-bbai-hero-icon' => '1'],
+            'headline_attrs'     => ['data-bbai-hero-headline' => '1'],
+            'section_data_attrs' => [
+                'data-bbai-active-banner-slot'   => (string) ( $bbai_dashboard_banner_slot ?? '' ),
+                'data-bbai-dashboard-hero'       => '1',
+                'data-bbai-banner-used'          => (string) $creditsUsed,
+                'data-bbai-banner-limit'         => (string) $creditsLimit,
+                'data-bbai-banner-remaining'     => (string) $creditsRemaining,
+                'data-bbai-banner-library-url'   => $bbai_library_url,
+                'data-bbai-banner-missing-count' => (string) $missingCount,
+                'data-bbai-banner-weak-count'    => (string) $weakCount,
+                'data-bbai-banner-days-left'     => (string) (int) ($bbai_dashboard_state['daysUntilReset'] ?? 0),
+                'data-bbai-banner-settings-url'  => $bbai_settings_url,
+            ],
+        ]
+    );
+    $bbai_dashboard_command_hero['banner_logical_state'] = $bbai_primary_banner_state;
+
     $bbai_retention_strip = null;
     if ($bbai_current_user_id) {
         bbai_retention_schedule_snapshot_update($bbai_current_user_id, $bbai_total_images);
@@ -497,10 +521,7 @@ if ($bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user) :
         <div id="bbai-limit-state-root" class="bbai-limit-state-root" hidden></div>
 
         <?php
-        $bbai_banner_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-success-banner.php';
-        if (!$bbai_onboarding_first_open && !$bbai_ftue_show_hero && file_exists($bbai_banner_partial)) {
-            include $bbai_banner_partial;
-        }
+        bbai_ui_render( 'bbai-banner', [ 'command_hero' => $bbai_dashboard_command_hero ] );
 
         if ($bbai_ftue_show_hero) {
             $bbai_ftue_phase = $bbai_ftue_pre_scan ? 'pre_scan' : 'post_scan';

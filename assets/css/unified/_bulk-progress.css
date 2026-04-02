@@ -11,8 +11,12 @@
 .bbai-bulk-progress__header-text { flex: 1; min-width: 0; }
 .bbai-bulk-progress__title { margin: 0 0 var(--bbai-space-1) 0; font-size: var(--bbai-text-xl); font-weight: var(--bbai-font-bold); color: var(--bbai-text); }
 .bbai-bulk-progress__helper { margin: 0; font-size: var(--bbai-text-sm); color: var(--bbai-text-muted); }
+.bbai-bulk-progress__header-actions { display: flex; gap: var(--bbai-space-1); flex-shrink: 0; }
+.bbai-bulk-progress__minimize,
 .bbai-bulk-progress__close { background: none; border: none; font-size: var(--bbai-text-2xl); color: var(--bbai-text-muted); cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: var(--bbai-radius); transition: all var(--bbai-transition); }
+.bbai-bulk-progress__minimize:hover,
 .bbai-bulk-progress__close:hover { background: var(--bbai-bg-secondary); color: var(--bbai-text); }
+.bbai-bulk-progress__minimize { font-weight: bold; font-size: var(--bbai-text-lg); }
 
 /* Body */
 .bbai-bulk-progress__body { padding: var(--bbai-space-6); overflow-y: auto; flex: 1; }

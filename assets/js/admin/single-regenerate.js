@@ -856,15 +856,38 @@
 
                 $altCell.html(cellHtml);
 
+                // Derive the canonical status/quality from the computed SEO score
+                var newQuality = seoQuality.badge === 'needs-work' ? 'needs-review' : seoQuality.badge;
+                var newStatus  = (seoQuality.badge === 'excellent' || seoQuality.badge === 'good') ? 'optimized' : 'weak';
+                var oldStatus  = $row.attr('data-status') || 'weak';
+
+                // Update status badge with the real new status
                 var $statusCell = $row.find('.bbai-library-cell--status span');
                 if ($statusCell.length) {
-                    $statusCell
-                        .removeClass()
-                        .addClass('bbai-status-badge bbai-status-badge--regenerated')
-                        .text('Regenerated');
+                    var badgeClass = newStatus === 'optimized' ? 'bbai-status-badge--optimized' : 'bbai-status-badge--weak';
+                    var badgeText  = newStatus === 'optimized' ? 'Optimized' : 'Needs review';
+                    $statusCell.removeClass().addClass('bbai-status-badge ' + badgeClass).text(badgeText);
                 }
 
-                $row.attr('data-status', 'regenerated');
+                // Update data attributes so client-side filters work correctly
+                $row.attr('data-status',      newStatus);
+                $row.attr('data-review-state', newStatus);
+                $row.attr('data-quality',      newQuality);
+                $row.attr('data-alt-missing',  'false');
+
+                // Adjust filter count pills
+                updateFilterCountPills(oldStatus, newStatus);
+
+                // Re-apply the active filter so the row shows/hides correctly
+                if (typeof window.bbaiApplyLibraryFilter === 'function') {
+                    var $activeBtn    = $('[data-filter].bbai-alt-review-filters__btn--active').first();
+                    var currentFilter = $activeBtn.length ? $activeBtn.attr('data-filter') : 'all';
+                    window.bbaiApplyLibraryFilter(currentFilter);
+                }
+
+                // Brief success flash on the row
+                $row.addClass('bbai-library-row--regen-flash');
+                setTimeout(function() { $row.removeClass('bbai-library-row--regen-flash'); }, 1200);
             }
         }
 
@@ -872,11 +895,38 @@
         reenableButton($btn, originalBtnText);
 
         if (typeof showNotification === 'function') {
-            showNotification('Alt text updated successfully!', 'success');
+            showNotification('ALT text regenerated', 'success');
+        } else if (window.showToast && typeof window.showToast === 'function') {
+            window.showToast('ALT text regenerated', { type: 'success' });
         }
 
         if (typeof refreshUsageStats === 'function') {
             refreshUsageStats();
+        }
+    }
+
+    /**
+     * Adjust filter pill counts when a row's status changes after regeneration.
+     *
+     * @param {string} oldStatus  Previous data-status value on the row.
+     * @param {string} newStatus  New data-status value ('optimized' | 'weak').
+     */
+    function updateFilterCountPills(oldStatus, newStatus) {
+        // 'regenerated' was a legacy wrong value — treat it as 'weak'
+        var fromFilter = (oldStatus === 'missing' || oldStatus === 'optimized') ? oldStatus : 'weak';
+        var toFilter   = newStatus;
+        if (fromFilter === toFilter) return;
+
+        var $fromPill = $('[data-filter="' + fromFilter + '"] .bbai-alt-review-filters__count');
+        if ($fromPill.length) {
+            var fromCount = parseInt($fromPill.text().replace(/[^0-9]/g, ''), 10) || 0;
+            $fromPill.text(Math.max(0, fromCount - 1));
+        }
+
+        var $toPill = $('[data-filter="' + toFilter + '"] .bbai-alt-review-filters__count');
+        if ($toPill.length) {
+            var toCount = parseInt($toPill.text().replace(/[^0-9]/g, ''), 10) || 0;
+            $toPill.text(toCount + 1);
         }
     }
 

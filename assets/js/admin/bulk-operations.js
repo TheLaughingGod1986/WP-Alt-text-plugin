@@ -50,6 +50,19 @@
             return false;
         }
 
+        // Prevent duplicate jobs
+        if (window.bbaiJobState && window.bbaiJobState.getState().running) {
+            if (window.bbaiModal) {
+                window.bbaiModal.show({
+                    type: 'info',
+                    title: 'Job in progress',
+                    message: 'ALT text generation is already running. Check progress in the floating widget.',
+                    buttons: [{ label: 'OK', type: 'primary' }]
+                });
+            }
+            return false;
+        }
+
         if (!window.bbaiHasBulkConfig) {
             window.bbaiModal.error('Configuration error. Please refresh the page and try again.');
             return false;
@@ -190,6 +203,19 @@
      */
     window.handleRegenerateAll = function(e) {
         e.preventDefault();
+
+        // Prevent duplicate jobs
+        if (window.bbaiJobState && window.bbaiJobState.getState().running) {
+            if (window.bbaiModal) {
+                window.bbaiModal.show({
+                    type: 'info',
+                    title: 'Job in progress',
+                    message: 'ALT text generation is already running. Check progress in the floating widget.',
+                    buttons: [{ label: 'OK', type: 'primary' }]
+                });
+            }
+            return false;
+        }
 
         if (!confirm('This will regenerate alt text for ALL images, replacing existing alt text. Are you sure?')) {
             return false;

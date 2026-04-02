@@ -162,6 +162,9 @@
         applyFilter(initial || FILTER_ALL);
     }
 
+    // Expose for external callers (e.g. single-regenerate.js after row status change).
+    window.bbaiApplyLibraryFilter = applyFilter;
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {

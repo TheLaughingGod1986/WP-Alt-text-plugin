@@ -7,7 +7,7 @@ Tags: alt text, image seo, accessibility, media library, woocommerce
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 4.5.22
+Stable tag: 4.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
@@ -179,6 +179,14 @@ Data sent: Name, email, subject, message, site URL, WordPress version, and plugi
 Privacy policy: https://resend.com/legal/privacy
 
 == Changelog ==
+
+= 4.6.0 =
+* Added non-blocking background processing for ALT text generation — minimize the modal and keep working while images are processed.
+* New floating progress widget shows real-time generation status, progress bar, and ETA without blocking the UI.
+* Reopen the full progress modal at any time by clicking the widget.
+* Duplicate job prevention stops accidental parallel runs.
+* Dashboard and ALT Library now share the same banner component for consistent messaging across pages.
+* Improved modal UX with dedicated minimize (—) and close (×) controls.
 
 = 4.5.22 =
 * Refined PostHog upgrade analytics so upgrade intent stays on `upgrade_clicked` and final Stripe entry is tracked separately as `checkout_started`.

@@ -4628,6 +4628,17 @@
             return false;
         }
 
+        // Prevent duplicate jobs
+        if (window.bbaiJobState && window.bbaiJobState.getState().running) {
+            window.bbaiModal.show({
+                type: 'info',
+                title: __('Job in progress', 'beepbeep-ai-alt-text-generator'),
+                message: __('ALT text generation is already running. Check progress in the floating widget.', 'beepbeep-ai-alt-text-generator'),
+                buttons: [{ label: __('OK', 'beepbeep-ai-alt-text-generator'), type: 'primary' }]
+            });
+            return false;
+        }
+
         // Check if we have necessary configuration
         if (!hasBulkConfig) {
             window.bbaiModal.error(__('Configuration error. Please refresh the page and try again.', 'beepbeep-ai-alt-text-generator'));
@@ -4939,6 +4950,17 @@
         var $btn = $(this);
 
         if ($btn.prop('disabled')) {
+            return false;
+        }
+
+        // Prevent duplicate jobs
+        if (window.bbaiJobState && window.bbaiJobState.getState().running) {
+            window.bbaiModal.show({
+                type: 'info',
+                title: __('Job in progress', 'beepbeep-ai-alt-text-generator'),
+                message: __('ALT text generation is already running. Check progress in the floating widget.', 'beepbeep-ai-alt-text-generator'),
+                buttons: [{ label: __('OK', 'beepbeep-ai-alt-text-generator'), type: 'primary' }]
+            });
             return false;
         }
 
@@ -5613,37 +5635,42 @@
             return;
         }
 
+        // Use the shared banner state builder so headline/subtext match the ALT Library banner.
+        if (typeof window.bbaiBuildSharedCommandHeroState === 'function') {
+            var sharedState = window.bbaiBuildSharedCommandHeroState({
+                missing_count: stats.images_missing_alt,
+                weak_count: stats.needs_review_count,
+                credits_used: stats.credits_used,
+                credits_limit: stats.credits_limit,
+                credits_remaining: stats.credits_remaining,
+                total_images: stats.total_images
+            });
+            if (sharedState) {
+                var headlineEl = hero.querySelector('[data-bbai-hero-headline]');
+                if (headlineEl && sharedState.headline) {
+                    headlineEl.textContent = sharedState.headline;
+                }
+                var subtextEl = hero.querySelector('[data-bbai-hero-subtext]');
+                if (subtextEl && sharedState.subtext) {
+                    subtextEl.textContent = sharedState.subtext;
+                }
+                return;
+            }
+        }
+
+        // Final fallback — matches shared banner copy as closely as possible.
         var headline;
         var subtext;
-        var nextStep;
 
         if (stats.total_images <= 0) {
             headline = __('Get started with your media library', 'beepbeep-ai-alt-text-generator');
             subtext = __('Scan your library to find images missing ALT text and generate descriptions faster.', 'beepbeep-ai-alt-text-generator');
-            nextStep = __('Start by scanning your media library.', 'beepbeep-ai-alt-text-generator');
         } else if (stats.images_missing_alt > 0 || stats.needs_review_count > 0) {
-            if (stats.images_missing_alt > 0) {
-                headline = stats.images_missing_alt === 1
-                    ? __('1 image is costing you traffic', 'beepbeep-ai-alt-text-generator')
-                    : sprintf(
-                        __('%s images are costing you traffic', 'beepbeep-ai-alt-text-generator'),
-                        formatDashboardNumber(stats.images_missing_alt)
-                    );
-                subtext = stats.images_missing_alt === 1
-                    ? __('Fix it now and recover lost traffic. One click to reach 100% optimisation.', 'beepbeep-ai-alt-text-generator')
-                    : __('Fix them now and recover lost traffic.', 'beepbeep-ai-alt-text-generator');
-                nextStep = stats.images_missing_alt === 1
-                    ? __('Fix this to reach 100% image SEO coverage.', 'beepbeep-ai-alt-text-generator')
-                    : __('Fix them to reach 100% image SEO coverage.', 'beepbeep-ai-alt-text-generator');
-            } else {
-                headline = __('Your ALT text needs a final review', 'beepbeep-ai-alt-text-generator');
-                subtext = __('Strengthen weak ALT text to protect your rankings.', 'beepbeep-ai-alt-text-generator');
-                nextStep = __('Finish your review to reach full coverage.', 'beepbeep-ai-alt-text-generator');
-            }
+            headline = __('Your library needs attention', 'beepbeep-ai-alt-text-generator');
+            subtext = __('Some images are missing ALT text or need a stronger description.', 'beepbeep-ai-alt-text-generator');
         } else {
             headline = __('Your library is optimized', 'beepbeep-ai-alt-text-generator');
             subtext = __('All current images include ALT text.', 'beepbeep-ai-alt-text-generator');
-            nextStep = __('Next step: keep future uploads covered automatically.', 'beepbeep-ai-alt-text-generator');
         }
 
         var headlineNode = hero.querySelector('[data-bbai-hero-headline]');
@@ -5654,11 +5681,6 @@
         var subtextNode = hero.querySelector('[data-bbai-hero-subtext]');
         if (subtextNode) {
             subtextNode.textContent = subtext;
-        }
-
-        var nextStepNode = hero.querySelector('[data-bbai-hero-next-step]');
-        if (nextStepNode) {
-            nextStepNode.textContent = nextStep;
         }
     }
 
@@ -11039,6 +11061,11 @@
         }
         logBulkProgressSuccess(intro);
 
+        // Sync global job state
+        if (window.bbaiJobState) {
+            window.bbaiJobState.start(progressTitle, normalized.length);
+        }
+
         $modal.data('batchQueue', normalized.slice(0));
         var inlineBatchSize = window.BBAI && window.BBAI.inlineBatchSize
             ? Math.max(1, parseInt(window.BBAI.inlineBatchSize, 10))
@@ -11092,6 +11119,9 @@
                         ? result.title
                         : sprintf(__('Generated alt text for image #%d', 'beepbeep-ai-alt-text-generator'), id);
                     updateBulkProgress(processed, total, title);
+                    if (window.bbaiJobState) {
+                        window.bbaiJobState.tick({ success: true, title: title });
+                    }
                 })
                 .catch(function(error) {
                     var errorCode = error && error.code ? String(error.code) : '';
@@ -11121,6 +11151,9 @@
                     var message = sprintf(__('Image #%d: %s', 'beepbeep-ai-alt-text-generator'), id, details);
                     logBulkProgressError(message);
                     updateBulkProgress(processed, total);
+                    if (window.bbaiJobState) {
+                        window.bbaiJobState.tick({ success: false, title: message });
+                    }
                 })
                 .finally(function() {
                     active--;
@@ -11142,6 +11175,10 @@
     }
 
     function finalizeInlineGeneration(successes, failures) {
+        if (window.bbaiJobState) {
+            window.bbaiJobState.complete();
+        }
+
         var $modal = $('#bbai-bulk-progress-modal');
         var total = successes + failures;
         var source = $modal.length ? String($modal.data('source') || 'generate-missing') : 'generate-missing';
@@ -11417,7 +11454,10 @@
             '                <h2 class="bbai-bulk-progress__title">' + escapeHtml(__('Generating ALT text...', 'beepbeep-ai-alt-text-generator')) + '</h2>' +
             '                <p class="bbai-bulk-progress__helper" aria-live="polite"></p>' +
             '            </div>' +
-            '            <button type="button" class="bbai-bulk-progress__close" aria-label="' + escapeHtml(__('Close', 'beepbeep-ai-alt-text-generator')) + '">×</button>' +
+            '            <div class="bbai-bulk-progress__header-actions">' +
+            '                <button type="button" class="bbai-bulk-progress__minimize" aria-label="' + escapeHtml(__('Minimize', 'beepbeep-ai-alt-text-generator')) + '" title="' + escapeHtml(__('Minimize', 'beepbeep-ai-alt-text-generator')) + '">&mdash;</button>' +
+            '                <button type="button" class="bbai-bulk-progress__close" aria-label="' + escapeHtml(__('Close', 'beepbeep-ai-alt-text-generator')) + '">&times;</button>' +
+            '            </div>' +
             '        </div>' +
             '        <div class="bbai-bulk-progress__body">' +
             '            <div class="bbai-bulk-progress__stats">' +
@@ -11453,9 +11493,14 @@
         $('body').append(modalHtml);
         var $modal = $('#bbai-bulk-progress-modal');
 
-        // Add close button handler
-        $modal.find('.bbai-bulk-progress__close').on('click', function() {
-            hideBulkProgress();
+        // Minimize/close — hides modal, job continues in background
+        $modal.find('.bbai-bulk-progress__close, .bbai-bulk-progress__minimize').on('click', function() {
+            minimizeBulkProgress();
+        });
+
+        // Overlay click also minimizes
+        $modal.find('.bbai-bulk-progress-modal__overlay').on('click', function() {
+            minimizeBulkProgress();
         });
 
         return $modal;
@@ -11576,6 +11621,20 @@
     /**
      * Hide bulk progress bar
      */
+    /**
+     * Minimize — hides modal but job continues. Widget becomes visible.
+     */
+    function minimizeBulkProgress() {
+        var $modal = $('#bbai-bulk-progress-modal');
+        if ($modal.length) {
+            $modal.removeClass('active');
+        }
+        clearBodyScrollLocks();
+        if (window.bbaiJobState) {
+            window.bbaiJobState.update({ modalVisible: false });
+        }
+    }
+
     function hideBulkProgress() {
         var $modal = $('#bbai-bulk-progress-modal');
         if ($modal.length) {
@@ -11583,6 +11642,9 @@
             $modal.removeClass('active');
         }
         clearBodyScrollLocks();
+        if (window.bbaiJobState) {
+            window.bbaiJobState.update({ modalVisible: false });
+        }
     }
 
     /**
