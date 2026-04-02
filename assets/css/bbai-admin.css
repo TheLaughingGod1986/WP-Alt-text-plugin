@@ -305,8 +305,10 @@
 }
 
 .bbai-modern .bbai-library-container .bbai-subtitle {
+    font-size: var(--bbai-admin-type-body, 14px);
+    line-height: 1.55;
     max-width: 720px;
-    color: #475569;
+    color: var(--bbai-admin-color-text-secondary, #475569);
 }
 
 .bbai-modern .bbai-library-actions-card {

@@ -57,20 +57,20 @@ body.beepbeep-ai_page_bbai-analytics #wpcontent {
 }
 
 .bbai-analytics-page .bbai-analytics-metric-card .bbai-stat-value {
-    font-size: 28px;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    color: #0f172a;
+    font-size: var(--bbai-text-3xl, 28px);
+    font-weight: var(--bbai-admin-type-weight-bold, 700);
+    letter-spacing: var(--bbai-tracking-tight, -0.03em);
+    color: var(--bbai-admin-color-text, #0f172a);
     margin-bottom: 6px;
     line-height: 1.05;
 }
 
 .bbai-analytics-page .bbai-analytics-metric-card .bbai-stat-label {
-    font-size: 12px;
-    font-weight: 600;
+    font-size: var(--bbai-admin-type-label, 12px);
+    font-weight: var(--bbai-admin-type-weight-semibold, 600);
     letter-spacing: 0.01em;
     text-transform: none;
-    color: #5b6472;
+    color: var(--bbai-admin-color-text-muted, #5b6472);
 }
 
 .bbai-analytics-page .bbai-analytics-metric-card--warn .bbai-stat-value {
@@ -174,38 +174,38 @@ body.beepbeep-ai_page_bbai-analytics #wpcontent {
     margin-bottom: 0;
     border-top: 1px solid #eef2f7;
     max-width: var(--bbai-card-description-max-width, 35rem);
-    font-size: var(--bbai-card-description-size, 14px);
+    font-size: var(--bbai-admin-type-body, var(--bbai-card-description-size, 14px));
     line-height: var(--bbai-card-description-leading, 1.5);
-    font-weight: 600;
-    color: #334155;
+    font-weight: var(--bbai-admin-type-weight-semibold, 600);
+    color: var(--bbai-admin-color-text-secondary, #334155);
 }
 
 /* Side rail typography (matches dashboard card title/copy rhythm) */
 .bbai-analytics-sidecard__eyebrow {
     margin: 0 0 var(--bbai-card-label-margin-bottom, 8px);
-    font-size: var(--bbai-card-label-size, 12px);
-    font-weight: var(--bbai-card-label-weight, 600);
+    font-size: var(--bbai-admin-type-label, var(--bbai-card-label-size, 12px));
+    font-weight: var(--bbai-admin-type-weight-semibold, var(--bbai-card-label-weight, 600));
     letter-spacing: var(--bbai-card-label-tracking, 0.08em);
     text-transform: uppercase;
-    color: var(--bbai-card-label-color, #7b8aa0);
+    color: var(--bbai-admin-color-text-muted, var(--bbai-card-label-color, #7b8aa0));
 }
 
 .bbai-analytics-sidecard__title {
     margin: 0 0 var(--bbai-card-title-margin-bottom, 8px);
-    font-size: var(--bbai-card-title-size, 22px);
-    font-weight: var(--bbai-card-title-weight, 600);
+    font-size: var(--bbai-admin-type-card-title, var(--bbai-card-title-size, 20px));
+    font-weight: var(--bbai-admin-type-weight-semibold, var(--bbai-card-title-weight, 600));
     line-height: var(--bbai-card-title-leading, 1.2);
-    color: var(--bbai-card-title-color, #0f172a);
-    letter-spacing: var(--bbai-card-title-tracking, -0.02em);
+    color: var(--bbai-admin-color-text, var(--bbai-card-title-color, #0f172a));
+    letter-spacing: var(--bbai-tracking-tight, var(--bbai-card-title-tracking, -0.02em));
 }
 
 .bbai-analytics-sidecard__copy {
     margin: 0 0 var(--bbai-card-description-margin-bottom, 16px);
     max-width: var(--bbai-card-description-max-width, 35rem);
-    font-size: var(--bbai-card-description-size, 14px);
-    font-weight: var(--bbai-card-description-weight, 400);
+    font-size: var(--bbai-admin-type-body, var(--bbai-card-description-size, 14px));
+    font-weight: var(--bbai-admin-type-weight-regular, var(--bbai-card-description-weight, 400));
     line-height: var(--bbai-card-description-leading, 1.5);
-    color: var(--bbai-card-description-color, #475569);
+    color: var(--bbai-admin-color-text-secondary, var(--bbai-card-description-color, #475569));
 }
 
 .bbai-analytics-sidecard__copy:last-child {
@@ -213,6 +213,10 @@ body.beepbeep-ai_page_bbai-analytics #wpcontent {
 }
 
 .bbai-analytics-sidecard__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
     margin-top: var(--bbai-cta-group-margin-top, 16px);
     margin-bottom: 0;
 }
@@ -228,10 +232,10 @@ body.beepbeep-ai_page_bbai-analytics #wpcontent {
     border-radius: var(--bbai-cta-primary-radius, 8px);
     font-size: var(--bbai-cta-primary-font-size, 14px);
     font-weight: var(--bbai-cta-primary-font-weight, 500);
-    border: 1px solid transparent;
-    background-color: var(--bbai-cta-primary-bg, #10b981);
+    border: 1px solid var(--bbai-admin-btn-primary-border);
+    background-color: var(--bbai-admin-btn-primary-bg, #10b981);
     color: #ffffff;
-    box-shadow: var(--bbai-cta-primary-shadow, 0 1px 2px rgba(15, 23, 42, 0.06));
+    box-shadow: var(--bbai-admin-btn-primary-shadow, 0 1px 2px rgba(15, 23, 42, 0.06));
     transform: translateY(0);
     transition: var(
         --bbai-cta-primary-transition,
@@ -244,9 +248,9 @@ body.beepbeep-ai_page_bbai-analytics #wpcontent {
 }
 
 .bbai-analytics-page .bbai-analytics-sidecard--automation .bbai-dashboard-hero__cta--primary:hover {
-    background-color: var(--bbai-cta-primary-bg, #10b981);
-    box-shadow: var(--bbai-cta-primary-shadow-hover, 0 3px 10px rgba(15, 23, 42, 0.1));
-    transform: translateY(-1px);
+    background-color: var(--bbai-admin-btn-primary-bg, #10b981);
+    box-shadow: var(--bbai-admin-btn-primary-shadow-hover, 0 3px 10px rgba(15, 23, 42, 0.1));
+    transform: var(--bbai-admin-btn-primary-lift, translateY(-1px));
 }
 
 .bbai-analytics-page .bbai-analytics-sidecard--automation .bbai-dashboard-hero__cta--primary:active {
@@ -270,14 +274,14 @@ body.beepbeep-ai_page_bbai-analytics #wpcontent {
 }
 
 .bbai-analytics-sidecard--plan .bbai-analytics-sidecard__title {
-    font-size: 14px;
-    font-weight: 600;
-    color: #525c6a;
+    font-size: var(--bbai-admin-type-body, 14px);
+    font-weight: var(--bbai-admin-type-weight-semibold, 600);
+    color: var(--bbai-admin-color-text-secondary, #525c6a);
 }
 
 .bbai-analytics-sidecard--plan .bbai-analytics-sidecard__copy {
-    font-size: 13px;
-    color: #5c6473;
+    font-size: var(--bbai-admin-type-meta, 13px);
+    color: var(--bbai-admin-color-text-muted, #5c6473);
     margin-bottom: var(--card-gap, 16px);
 }
 

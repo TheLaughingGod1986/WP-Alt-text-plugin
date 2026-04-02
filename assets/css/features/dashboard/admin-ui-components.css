@@ -49,9 +49,9 @@
 
 .bbai-ui-section-header__description {
     margin: 0;
-    font-size: 14px;
+    font-size: var(--bbai-admin-type-body, 14px);
     line-height: 1.55;
-    color: #64748b;
+    color: var(--bbai-admin-color-text-secondary, #64748b);
     max-width: 68ch;
 }
 
@@ -66,9 +66,9 @@
 .bbai-ui-sidebar-card__body,
 .bbai-ui-sidebar-card__text {
     margin: 0 0 14px;
-    font-size: 14px;
+    font-size: var(--bbai-admin-type-body, 14px);
     line-height: 1.55;
-    color: #475569;
+    color: var(--bbai-admin-color-text-secondary, #475569);
 }
 
 .bbai-ui-sidebar-card__title {
@@ -102,9 +102,9 @@
 .bbai-ui-notice-strip__text {
     margin: 0;
     flex: 1 1 200px;
-    font-size: 14px;
+    font-size: var(--bbai-admin-type-body, 14px);
     line-height: 1.55;
-    color: #475569;
+    color: var(--bbai-admin-color-text-secondary, #475569);
 }
 
 /* Inline row: Library usage alert + compact actions */
@@ -209,14 +209,14 @@
 
 .bbai-ui-progress-block--simple .bbai-ui-progress-block__title {
     margin: 0;
-    font-size: 14px;
+    font-size: var(--bbai-admin-type-body, 14px);
     font-weight: 600;
-    color: #0f172a;
+    color: var(--bbai-admin-color-text, #0f172a);
 }
 
 .bbai-ui-progress-block--simple .bbai-ui-progress-block__subtitle {
     margin: 0;
-    font-size: 13px;
+    font-size: var(--bbai-admin-type-meta, 13px);
     font-weight: 600;
     color: #64748b;
 }

@@ -84,6 +84,13 @@ function bbai_page_hero_library_command_hero(array $args): array
             'credits_used'        => (int) ($args['credits_used'] ?? 0),
             'credits_limit'       => max(1, (int) ($args['credits_limit'] ?? 50)),
             'usage_percent'       => (int) ($args['usage_percent'] ?? 0),
+            'auth_state'          => (string) ($args['auth_state'] ?? ''),
+            'quota_type'          => (string) ($args['quota_type'] ?? ''),
+            'quota_state'         => (string) ($args['quota_state'] ?? ''),
+            'signup_required'     => !empty($args['signup_required']),
+            'upgrade_required'    => !empty($args['upgrade_required']),
+            'free_plan_offer'     => max(0, (int) ($args['free_plan_offer'] ?? 50)),
+            'low_credit_threshold' => max(0, (int) ($args['low_credit_threshold'] ?? 0)),
             'library_url'         => (string) ($args['library_url'] ?? $lib),
             'missing_library_url' => (string) ($args['missing_library_url'] ?? add_query_arg(['page' => 'bbai-library', 'status' => 'missing'], admin_url('admin.php'))),
             'needs_review_library_url' => (string) ($args['needs_review_library_url'] ?? (function_exists('bbai_alt_library_needs_review_url') ? bbai_alt_library_needs_review_url() : add_query_arg(['page' => 'bbai-library', 'status' => 'needs_review'], admin_url('admin.php')))),
@@ -105,7 +112,20 @@ function bbai_page_hero_library_command_hero(array $args): array
             'icon_wrapper_attrs' => $surface['icon_wrapper_attrs'],
             'headline_attrs'     => $surface['headline_attrs'],
             'subtext_attrs'      => $surface['subtext_attrs'],
-            'section_data_attrs' => $surface['section_data_attrs'],
+            'section_data_attrs' => array_merge(
+                $surface['section_data_attrs'],
+                [
+                    'data-bbai-banner-used' => (string) max(0, (int) ($snap['credits_used'] ?? 0)),
+                    'data-bbai-banner-limit' => (string) max(1, (int) ($snap['credits_limit'] ?? 50)),
+                    'data-bbai-banner-remaining' => (string) max(0, (int) ($snap['credits_remaining'] ?? 0)),
+                    'data-bbai-banner-auth-state' => (string) ($snap['auth_state'] ?? ''),
+                    'data-bbai-banner-quota-type' => (string) ($snap['quota_type'] ?? ''),
+                    'data-bbai-banner-quota-state' => (string) ($snap['quota_state'] ?? ''),
+                    'data-bbai-banner-signup-required' => !empty($snap['signup_required']) ? '1' : '0',
+                    'data-bbai-banner-free-plan-offer' => (string) max(0, (int) ($snap['free_plan_offer'] ?? 50)),
+                    'data-bbai-banner-low-credit-threshold' => (string) max(0, (int) ($snap['low_credit_threshold'] ?? 0)),
+                ]
+            ),
         ]
     );
     $hero['banner_logical_state'] = bbai_banner_pick_state(BBAI_BANNER_CTX_LIBRARY, $snap);

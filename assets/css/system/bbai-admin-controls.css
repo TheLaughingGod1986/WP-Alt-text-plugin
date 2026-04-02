@@ -68,17 +68,18 @@ body.bbai-dashboard .bbai-ds-btn {
     min-height: var(--bbai-admin-size-btn-md);
     padding: var(--bbai-btn-padding-y) var(--bbai-btn-padding-x);
     margin: 0;
-    border-radius: var(--bbai-admin-radius-md);
+    border-radius: var(--bbai-admin-btn-radius);
     border: var(--bbai-admin-border-width-hairline) solid transparent;
     font-family: var(--bbai-admin-font-sans);
     font-size: var(--bbai-admin-type-body);
-    font-weight: var(--bbai-btn-font-weight);
+    font-weight: var(--bbai-admin-type-weight-semibold);
     line-height: var(--bbai-admin-type-leading-tight);
     text-decoration: none !important;
     cursor: pointer;
     white-space: nowrap;
     position: relative;
     overflow: hidden;
+    transform: translateY(0);
     transition: var(--bbai-admin-ix-transition-interactive),
         box-shadow var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease);
     box-shadow: var(--bbai-admin-shadow-control);
@@ -126,10 +127,10 @@ body.bbai-dashboard .bbai-btn--primary,
 body.bbai-dashboard .bbai-ds-btn--primary,
 body.bbai-dashboard .bbai-ui-btn--primary {
     min-height: var(--bbai-admin-size-btn-lg);
-    border-color: var(--bbai-admin-color-primary) !important;
-    background: var(--bbai-gradient-primary) !important;
+    border-color: var(--bbai-admin-btn-primary-border) !important;
+    background: var(--bbai-admin-btn-primary-bg) !important;
     color: var(--bbai-admin-color-primary-on-brand) !important;
-    box-shadow: var(--bbai-admin-shadow-control);
+    box-shadow: var(--bbai-admin-btn-primary-shadow);
     font-weight: var(--bbai-admin-type-weight-semibold);
 }
 
@@ -139,8 +140,8 @@ body.bbai-dashboard .bbai-ds-btn--primary:hover:not(:disabled):not([aria-disable
 body.bbai-dashboard .bbai-ui-btn--primary:hover:not(:disabled):not([aria-disabled='true']) {
     border-color: var(--bbai-admin-color-primary-hover) !important;
     filter: brightness(0.97);
-    box-shadow: var(--bbai-admin-shadow-control-hover);
-    transform: none;
+    box-shadow: var(--bbai-admin-btn-primary-shadow-hover);
+    transform: var(--bbai-admin-btn-primary-lift);
 }
 
 body.bbai-dashboard .bbai-btn.bbai-btn-primary:active:not(:disabled):not(.is-disabled),
@@ -158,19 +159,20 @@ body.bbai-dashboard .bbai-btn.bbai-btn-secondary,
 body.bbai-dashboard .bbai-btn--secondary,
 body.bbai-dashboard .bbai-ds-btn--secondary,
 body.bbai-dashboard .bbai-ui-btn--secondary {
-    background: var(--bbai-admin-color-bg) !important;
-    color: var(--bbai-text-secondary) !important;
-    border: var(--bbai-admin-border-subtle) !important;
+    background: var(--bbai-admin-btn-secondary-bg) !important;
+    color: var(--bbai-admin-btn-secondary-text) !important;
+    border: 1px solid var(--bbai-admin-btn-secondary-border) !important;
     box-shadow: none !important;
+    font-weight: var(--bbai-admin-type-weight-medium);
 }
 
 body.bbai-dashboard .bbai-btn.bbai-btn-secondary:hover:not(:disabled):not(.is-disabled),
 body.bbai-dashboard .bbai-btn--secondary:hover:not(:disabled):not(.is-disabled),
 body.bbai-dashboard .bbai-ds-btn--secondary:hover:not(:disabled):not([aria-disabled='true']),
 body.bbai-dashboard .bbai-ui-btn--secondary:hover:not(:disabled):not([aria-disabled='true']) {
-    background: var(--bbai-admin-color-bg-muted) !important;
-    border-color: var(--bbai-gray-300) !important;
-    color: var(--bbai-gray-700) !important;
+    background: var(--bbai-admin-btn-secondary-bg-hover) !important;
+    border-color: var(--bbai-admin-btn-secondary-border-hover) !important;
+    color: var(--bbai-admin-btn-secondary-text-hover) !important;
     transform: none;
 }
 
@@ -182,11 +184,12 @@ body.bbai-dashboard .bbai-ds-btn--ghost,
 body.bbai-dashboard .bbai-ds-btn--tertiary,
 body.bbai-dashboard .bbai-ui-btn--tertiary {
     background: transparent !important;
-    color: var(--bbai-admin-color-primary) !important;
+    color: var(--bbai-admin-btn-tertiary-text) !important;
     border-color: transparent !important;
     box-shadow: none !important;
-    padding-left: var(--bbai-admin-space-3);
-    padding-right: var(--bbai-admin-space-3);
+    min-height: auto;
+    padding: 0;
+    font-weight: var(--bbai-admin-type-weight-medium);
 }
 
 body.bbai-dashboard .bbai-btn-tertiary:hover:not(:disabled):not(.is-disabled),
@@ -195,7 +198,8 @@ body.bbai-dashboard .bbai-btn--ghost:hover:not(:disabled):not(.is-disabled),
 body.bbai-dashboard .bbai-ds-btn--ghost:hover:not(:disabled):not([aria-disabled='true']),
 body.bbai-dashboard .bbai-ds-btn--tertiary:hover:not(:disabled):not([aria-disabled='true']),
 body.bbai-dashboard .bbai-ui-btn--tertiary:hover:not(:disabled):not([aria-disabled='true']) {
-    background: var(--bbai-admin-color-primary-muted) !important;
+    background: var(--bbai-admin-btn-tertiary-bg-hover) !important;
+    color: var(--bbai-admin-btn-tertiary-text-hover) !important;
     transform: none;
 }
 
@@ -512,7 +516,7 @@ body.bbai-dashboard .bbai-toolbar__btn {
     font-size: var(--bbai-text-xs);
     font-weight: var(--bbai-admin-type-weight-semibold);
     line-height: var(--bbai-admin-type-leading-tight);
-    border-radius: var(--bbai-admin-radius-sm);
+    border-radius: var(--bbai-admin-btn-radius-sm);
     border: var(--bbai-admin-border-subtle);
     background: var(--bbai-admin-color-bg);
     color: var(--bbai-admin-color-text-secondary);
@@ -528,14 +532,17 @@ body.bbai-dashboard .bbai-toolbar__btn:hover:not(:disabled) {
 }
 
 body.bbai-dashboard .bbai-toolbar__btn--primary {
-    border-color: var(--bbai-admin-color-primary);
-    background: var(--bbai-gradient-primary);
+    border-color: var(--bbai-admin-btn-primary-border);
+    background: var(--bbai-admin-btn-primary-bg);
     color: var(--bbai-admin-color-primary-on-brand);
+    box-shadow: var(--bbai-admin-btn-primary-shadow);
 }
 
 body.bbai-dashboard .bbai-toolbar__btn--primary:hover:not(:disabled):not(.bbai-is-locked) {
     border-color: var(--bbai-admin-color-primary-hover);
     filter: brightness(0.97);
+    box-shadow: var(--bbai-admin-btn-primary-shadow-hover);
+    transform: var(--bbai-admin-btn-primary-lift);
 }
 
 body.bbai-dashboard .bbai-toolbar__btn:focus-visible,
@@ -554,7 +561,7 @@ body.bbai-dashboard .bbai-bulk-actions-toolbar__btn {
     font-family: var(--bbai-admin-font-sans);
     font-size: var(--bbai-text-xs);
     font-weight: var(--bbai-admin-type-weight-semibold);
-    border-radius: var(--bbai-admin-radius-sm);
+    border-radius: var(--bbai-admin-btn-radius-sm);
     border: var(--bbai-admin-border-subtle);
     background: var(--bbai-admin-color-bg);
     color: var(--bbai-admin-color-text-secondary);
@@ -567,13 +574,16 @@ body.bbai-dashboard .bbai-bulk-actions-toolbar__btn:hover:not(:disabled) {
 }
 
 body.bbai-dashboard .bbai-bulk-actions-toolbar__btn--primary {
-    border-color: var(--bbai-admin-color-primary);
-    background: var(--bbai-gradient-primary);
+    border-color: var(--bbai-admin-btn-primary-border);
+    background: var(--bbai-admin-btn-primary-bg);
     color: var(--bbai-admin-color-primary-on-brand);
+    box-shadow: var(--bbai-admin-btn-primary-shadow);
 }
 
 body.bbai-dashboard .bbai-bulk-actions-toolbar__btn--primary:hover:not(:disabled):not(.bbai-is-locked) {
     filter: brightness(0.97);
+    box-shadow: var(--bbai-admin-btn-primary-shadow-hover);
+    transform: var(--bbai-admin-btn-primary-lift);
 }
 
 /* Pagination as compact secondary */
@@ -644,12 +654,13 @@ body.bbai-dashboard .bbai-logged-out__panel .button.button-primary {
     padding: var(--bbai-btn-padding-lg-y) var(--bbai-btn-padding-lg-x) !important;
     font-size: var(--bbai-admin-type-body) !important;
     font-weight: var(--bbai-admin-type-weight-semibold) !important;
-    border-radius: var(--bbai-admin-radius-md) !important;
-    border: none !important;
-    background: var(--bbai-gradient-primary) !important;
+    border-radius: var(--bbai-admin-btn-radius) !important;
+    border: 1px solid var(--bbai-admin-btn-primary-border) !important;
+    background: var(--bbai-admin-btn-primary-bg) !important;
     color: var(--bbai-admin-color-primary-on-brand) !important;
-    box-shadow: var(--bbai-admin-shadow-control);
+    box-shadow: var(--bbai-admin-btn-primary-shadow);
     line-height: var(--bbai-admin-type-leading-tight) !important;
+    transition: var(--bbai-admin-ix-transition-interactive), box-shadow var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease) !important;
 }
 
 body.bbai-dashboard .bbai-dashboard-container .button.button-secondary,
@@ -657,11 +668,26 @@ body.bbai-dashboard .bbai-logged-out__panel .button.button-secondary {
     min-height: var(--bbai-admin-size-btn-md);
     padding: var(--bbai-btn-padding-y) var(--bbai-btn-padding-x) !important;
     font-size: var(--bbai-admin-type-body) !important;
-    border-radius: var(--bbai-admin-radius-md) !important;
-    border: var(--bbai-admin-border-subtle) !important;
-    background: var(--bbai-admin-color-bg) !important;
-    color: var(--bbai-text-secondary) !important;
+    font-weight: var(--bbai-admin-type-weight-medium) !important;
+    border-radius: var(--bbai-admin-btn-radius) !important;
+    border: 1px solid var(--bbai-admin-btn-secondary-border) !important;
+    background: var(--bbai-admin-btn-secondary-bg) !important;
+    color: var(--bbai-admin-btn-secondary-text) !important;
     box-shadow: none !important;
+    transition: var(--bbai-admin-ix-transition-interactive), box-shadow var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease) !important;
+}
+
+body.bbai-dashboard .bbai-dashboard-container .button.button-primary:hover:not(:disabled),
+body.bbai-dashboard .bbai-logged-out__panel .button.button-primary:hover:not(:disabled) {
+    box-shadow: var(--bbai-admin-btn-primary-shadow-hover) !important;
+    transform: var(--bbai-admin-btn-primary-lift);
+}
+
+body.bbai-dashboard .bbai-dashboard-container .button.button-secondary:hover:not(:disabled),
+body.bbai-dashboard .bbai-logged-out__panel .button.button-secondary:hover:not(:disabled) {
+    background: var(--bbai-admin-btn-secondary-bg-hover) !important;
+    border-color: var(--bbai-admin-btn-secondary-border-hover) !important;
+    color: var(--bbai-admin-btn-secondary-text-hover) !important;
 }
 
 body.bbai-dashboard .bbai-dashboard-container .button.button-primary:focus-visible,

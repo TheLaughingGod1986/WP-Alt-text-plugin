@@ -11,8 +11,14 @@ if (!defined('ABSPATH')) {
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/ui-components.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/banner-system.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/page-hero.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-usage-helper.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-dashboard-state.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
 
 use BeepBeepAI\AltTextGenerator\BBAI_Cache;
+use BeepBeepAI\AltTextGenerator\Trial_Quota;
+use BeepBeepAI\AltTextGenerator\Services\Dashboard_State;
+use BeepBeepAI\AltTextGenerator\Services\Usage_Helper;
 
 $bbai_library_template_buffer_level = ob_get_level();
 ob_start();
@@ -191,9 +197,15 @@ if ($bbai_use_library_workspace) {
 }
 
 // Get plan info
+$bbai_usage_stats = (isset($bbai_usage_stats) && is_array($bbai_usage_stats))
+    ? $bbai_usage_stats
+    : Usage_Helper::get_usage($this->api_client, (bool) ($bbai_has_connected_account ?? $bbai_has_registered_user ?? false));
 $bbai_has_license = $this->api_client->has_active_license();
 $bbai_license_data = $this->api_client->get_license_data();
-$bbai_plan_slug = 'free';
+$bbai_usage_auth_state = isset($bbai_usage_stats['auth_state']) ? strtolower((string) $bbai_usage_stats['auth_state']) : '';
+$bbai_usage_quota_type = isset($bbai_usage_stats['quota_type']) ? strtolower((string) $bbai_usage_stats['quota_type']) : '';
+$bbai_is_guest_trial = 'anonymous' === $bbai_usage_auth_state || 'trial' === $bbai_usage_quota_type || !empty($bbai_usage_stats['is_trial']);
+$bbai_plan_slug = $bbai_is_guest_trial ? 'trial' : 'free';
 
 // Try to get plan from usage_stats if available
 if (isset($bbai_usage_stats) && is_array($bbai_usage_stats) && !empty($bbai_usage_stats['plan'])) {
@@ -212,7 +224,7 @@ if ($bbai_plan_slug === 'pro') {
     $bbai_plan_slug = 'growth';
 }
 
-$bbai_is_free = ($bbai_plan_slug === 'free');
+$bbai_is_free = in_array($bbai_plan_slug, ['free', 'trial'], true);
 $bbai_is_growth = ($bbai_plan_slug === 'growth');
 $bbai_is_agency = ($bbai_plan_slug === 'agency');
 $bbai_is_pro = ($bbai_is_growth || $bbai_is_agency);
@@ -243,25 +255,6 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
 
 <div class="bbai-library-container bbai-container" data-bbai-empty-filter="<?php echo esc_attr__('No images match this filter.', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-empty-filter-hint="<?php echo esc_attr__('Try another filter or show all images.', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-library-is-pro="<?php echo $bbai_is_pro ? '1' : '0'; ?>" data-bbai-settings-url="<?php echo esc_url(admin_url('admin.php?page=bbai-settings')); ?>">
     <?php
-    // Precompute limit state for quick-actions (same logic as bulk actions block)
-    $bbai_plan = isset($bbai_usage_stats) && is_array($bbai_usage_stats) && !empty($bbai_usage_stats['plan']) ? $bbai_usage_stats['plan'] : 'free';
-    $bbai_has_quota = isset($bbai_usage_stats) && is_array($bbai_usage_stats) && isset($bbai_usage_stats['remaining']) ? (intval($bbai_usage_stats['remaining']) > 0) : false;
-    $bbai_is_premium = in_array($bbai_plan, ['pro', 'growth', 'agency'], true);
-    $bbai_out_of_credits = !$bbai_has_quota && !$bbai_is_premium;
-    $bbai_limit_reached_state = $bbai_out_of_credits;
-    $bbai_stats = isset($bbai_stats) ? $bbai_stats : ['total' => $bbai_total_images, 'with_alt' => $bbai_with_alt_count, 'missing' => $bbai_missing_count];
-
-    // No stats slot on library page — Quick Actions go straight to action cards.
-    $bbai_quick_actions_stats_slot = '';
-    ?>
-
-    <?php
-    $bbai_quick_actions_path = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/quick-actions.php';
-    if (file_exists($bbai_quick_actions_path)) {
-        include $bbai_quick_actions_path;
-    }
-    $bbai_quick_actions_stats_slot = '';
-
     // Coverage stats (unconditional - always compute)
     $bbai_cov_optimized = isset($bbai_coverage['optimized_count']) ? (int) $bbai_coverage['optimized_count'] : $bbai_with_alt_count;
     $bbai_cov_needs_review = isset($bbai_coverage['needs_review_count']) ? (int) $bbai_coverage['needs_review_count'] : 0;
@@ -272,6 +265,32 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
     $bbai_cov_review_pct = $bbai_cov_total > 0 ? round(($bbai_cov_needs_review / $bbai_cov_total) * 100) : 0;
     $bbai_cov_miss_pct = $bbai_cov_total > 0 ? round(($bbai_cov_missing / $bbai_cov_total) * 100) : 0;
     // $bbai_default_review_filter / $bbai_review_filter_from_url are set at the top of this partial.
+
+    $bbai_trial_status = $bbai_is_guest_trial ? Trial_Quota::get_status() : [];
+    $bbai_plan = isset($bbai_usage_stats) && is_array($bbai_usage_stats) && !empty($bbai_usage_stats['plan']) ? $bbai_usage_stats['plan'] : 'free';
+    $bbai_has_quota = isset($bbai_usage_stats) && is_array($bbai_usage_stats) && isset($bbai_usage_stats['remaining']) ? (intval($bbai_usage_stats['remaining']) > 0) : false;
+    $bbai_is_premium = in_array($bbai_plan, ['pro', 'growth', 'agency'], true);
+    $bbai_out_of_credits = !$bbai_has_quota && !$bbai_is_premium;
+    $bbai_product_state_model = Dashboard_State::resolve(
+        [
+            'is_guest_trial' => $bbai_is_guest_trial,
+            'is_premium'     => $bbai_is_premium,
+            'usage_stats'    => $bbai_usage_stats,
+            'trial_status'   => $bbai_trial_status,
+            'missing_count'  => $bbai_cov_missing,
+            'weak_count'     => $bbai_cov_needs_review,
+        ]
+    );
+    $bbai_limit_reached_state = !empty($bbai_product_state_model['flags']['lock_generation_actions']);
+    $bbai_stats = isset($bbai_stats) ? $bbai_stats : ['total' => $bbai_total_images, 'with_alt' => $bbai_with_alt_count, 'missing' => $bbai_missing_count];
+
+    // No stats slot on library page — Quick Actions go straight to action cards.
+    $bbai_quick_actions_stats_slot = '';
+    $bbai_quick_actions_path = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/quick-actions.php';
+    if (file_exists($bbai_quick_actions_path)) {
+        include $bbai_quick_actions_path;
+    }
+    $bbai_quick_actions_stats_slot = '';
 
     if ($bbai_use_library_workspace) {
         while (ob_get_level() > $bbai_library_template_buffer_level) {

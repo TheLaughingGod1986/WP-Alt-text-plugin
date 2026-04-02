@@ -19,7 +19,7 @@ class Trial_Quota {
 	/**
 	 * Default number of free trial images.
 	 */
-	const TRIAL_LIMIT = 3;
+	const TRIAL_LIMIT = 5;
 
 	/**
 	 * Option name prefix for trial usage counter.
@@ -35,6 +35,112 @@ class Trial_Quota {
 	 * @var int
 	 */
 	private static int $claimed_generation_depth = 0;
+
+	/**
+	 * Free signed-up plan allowance advertised from the anonymous trial.
+	 *
+	 * @return int
+	 */
+	private static function get_free_plan_offer(): int {
+		if ( ! function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_free_plan_offer' ) ) {
+			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-trial-quota.php';
+		}
+
+		return function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_free_plan_offer' )
+			? bbai_get_free_plan_offer()
+			: 50;
+	}
+
+	/**
+	 * Public wrapper for the advertised free-account monthly allowance.
+	 *
+	 * @return int
+	 */
+	public static function get_free_account_monthly_limit(): int {
+		return max( 1, self::get_free_plan_offer() );
+	}
+
+	/**
+	 * Resolve the display state for the anonymous trial.
+	 *
+	 * @return string
+	 */
+	private static function get_quota_state(): string {
+		$remaining = self::get_remaining();
+		if ( $remaining <= 0 ) {
+			return 'exhausted';
+		}
+
+		if ( ! function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_trial_near_limit_threshold' ) ) {
+			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-trial-quota.php';
+		}
+
+		$threshold = function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_trial_near_limit_threshold' )
+			? bbai_get_trial_near_limit_threshold( self::get_limit() )
+			: min( 2, max( 1, self::get_limit() - 1 ) );
+
+		return $remaining <= $threshold ? 'near_limit' : 'active';
+	}
+
+	/**
+	 * Threshold for soft signup nudges before the trial is exhausted.
+	 *
+	 * @return int
+	 */
+	public static function get_low_credit_threshold(): int {
+		if ( ! function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_trial_near_limit_threshold' ) ) {
+			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-trial-quota.php';
+		}
+
+		$threshold = function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_trial_near_limit_threshold' )
+			? bbai_get_trial_near_limit_threshold( self::get_limit() )
+			: min( 2, max( 1, self::get_limit() - 1 ) );
+
+		return max( 0, (int) $threshold );
+	}
+
+	/**
+	 * Product copy for exhausted anonymous trial flows.
+	 *
+	 * @return string
+	 */
+	public static function get_exhausted_message(): string {
+		return sprintf(
+			/* translators: 1: anonymous trial limit, 2: monthly free account allowance */
+			__( 'You’ve used your %1$d free trial generations. Create a free account to unlock %2$d generations per month.', 'beepbeep-ai-alt-text-generator' ),
+			max( 1, self::get_limit() ),
+			self::get_free_account_monthly_limit()
+		);
+	}
+
+	/**
+	 * Build the frontend-facing anonymous quota contract.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function build_contract(): array {
+		$limit           = self::get_limit();
+		$used            = self::get_used();
+		$remaining       = self::get_remaining();
+		$free_plan_offer = self::get_free_plan_offer();
+		$quota_state     = self::get_quota_state();
+
+		return [
+			'auth_state'        => 'anonymous',
+			'quota_type'        => 'trial',
+			'quota_state'       => $quota_state,
+			'credits_total'     => $limit,
+			'credits_used'      => $used,
+			'credits_remaining' => $remaining,
+			'low_credit_threshold' => self::get_low_credit_threshold(),
+			'signup_required'   => $remaining <= 0,
+			'upgrade_required'  => false,
+			'free_plan_offer'   => $free_plan_offer,
+			'plan'              => 'trial',
+			'plan_type'         => 'trial',
+			'plan_label'        => __( 'Free trial', 'beepbeep-ai-alt-text-generator' ),
+		];
+	}
 
 	/**
 	 * Get the site hash used for keying trial usage.
@@ -55,7 +161,11 @@ class Trial_Quota {
 	 * @return string Option name.
 	 */
 	private static function option_key(): string {
-		return self::OPTION_PREFIX . sanitize_key( self::get_site_hash() );
+		if ( ! function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_trial_identity_key' ) ) {
+			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-trial-quota.php';
+		}
+
+		return self::OPTION_PREFIX . sanitize_key( bbai_get_trial_identity_key( self::get_site_hash() ) );
 	}
 
 	/**
@@ -278,16 +388,23 @@ class Trial_Quota {
 			return true; // Trial generations remain.
 		}
 
+		$contract = self::build_contract();
+		$limit    = max( 1, (int) ( $contract['credits_total'] ?? self::get_limit() ) );
+
 		return new \WP_Error(
 			'bbai_trial_exhausted',
-			__( "You've used your 3 free images. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator' ),
-			[
+			self::get_exhausted_message(),
+			array_merge(
+				$contract,
+				[
 				'code'      => 'bbai_trial_exhausted',
 				'remaining' => 0,
-				'limit'     => self::get_limit(),
+				'remaining_free_images' => 0,
+				'limit'     => $limit,
 				'used'      => self::get_used(),
 				'site_hash' => self::get_site_hash(),
-			]
+				]
+			)
 		);
 	}
 
@@ -297,13 +414,28 @@ class Trial_Quota {
 	 * @return array Trial status information.
 	 */
 	public static function get_status(): array {
-		return [
-			'is_trial'  => self::is_trial_user(),
-			'limit'     => self::get_limit(),
-			'used'      => self::get_used(),
-			'remaining' => self::get_remaining(),
-			'exhausted' => self::is_exhausted(),
-		];
+		if ( ! function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_trial_identity_key' ) ) {
+			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-trial-quota.php';
+		}
+
+		$site_hash     = self::get_site_hash();
+		$anon_id       = function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_anon_id' ) ? bbai_get_anon_id() : '';
+		$identity_key  = bbai_get_trial_identity_key( $site_hash, $anon_id );
+
+		return array_merge(
+			self::build_contract(),
+			[
+			'is_trial'      => self::is_trial_user(),
+			'limit'         => self::get_limit(),
+			'used'          => self::get_used(),
+			'remaining'     => self::get_remaining(),
+			'remaining_free_images' => self::get_remaining(),
+			'exhausted'     => self::is_exhausted(),
+			'site_hash'     => $site_hash,
+			'anon_id'       => $anon_id,
+			'identity_key'  => $identity_key,
+			]
+		);
 	}
 
 	/**

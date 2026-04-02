@@ -17,7 +17,41 @@ require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/ui-components.php';
 
 // $bbai_default_review_filter, $bbai_review_filter_from_url: set in library-tab.php before this partial is included.
 
-$bbai_build_action = static function (array $config) use ($bbai_limit_reached_state) {
+$bbai_auth_state = isset($bbai_usage_stats['auth_state']) && is_string($bbai_usage_stats['auth_state']) && '' !== trim($bbai_usage_stats['auth_state'])
+    ? sanitize_key($bbai_usage_stats['auth_state'])
+    : '';
+$bbai_quota_type = isset($bbai_usage_stats['quota_type']) && is_string($bbai_usage_stats['quota_type']) && '' !== trim($bbai_usage_stats['quota_type'])
+    ? sanitize_key($bbai_usage_stats['quota_type'])
+    : '';
+$bbai_is_anonymous_trial = ('anonymous' === $bbai_auth_state) || ('trial' === $bbai_quota_type) || !empty($bbai_usage_stats['is_trial']);
+$bbai_free_plan_offer = max(0, (int) ($bbai_usage_stats['free_plan_offer'] ?? 50));
+$bbai_usage_used_seed = max(0, (int) ($bbai_usage_stats['credits_used'] ?? $bbai_usage_stats['creditsUsed'] ?? $bbai_usage_stats['used'] ?? 0));
+$bbai_usage_limit_seed = max(1, (int) ($bbai_usage_stats['credits_total'] ?? $bbai_usage_stats['creditsTotal'] ?? $bbai_usage_stats['limit'] ?? 50));
+$bbai_usage_remaining_seed = max(0, (int) ($bbai_usage_stats['credits_remaining'] ?? $bbai_usage_stats['creditsRemaining'] ?? $bbai_usage_stats['remaining'] ?? max(0, $bbai_usage_limit_seed - $bbai_usage_used_seed)));
+$bbai_low_credit_threshold = max(
+    0,
+    (int) ($bbai_usage_stats['low_credit_threshold'] ?? ($bbai_is_anonymous_trial
+        ? min(2, max(1, $bbai_usage_limit_seed - 1))
+        : BBAI_BANNER_LOW_CREDITS_THRESHOLD))
+);
+$bbai_quota_state = isset($bbai_usage_stats['quota_state']) && is_string($bbai_usage_stats['quota_state']) && '' !== trim($bbai_usage_stats['quota_state'])
+    ? sanitize_key($bbai_usage_stats['quota_state'])
+    : ($bbai_usage_remaining_seed <= 0
+        ? 'exhausted'
+        : ($bbai_usage_remaining_seed <= $bbai_low_credit_threshold
+            ? 'near_limit'
+            : 'active'));
+$bbai_signup_required = !empty($bbai_usage_stats['signup_required']) || ($bbai_is_anonymous_trial && 'exhausted' === $bbai_quota_state);
+$bbai_locked_quota_action = $bbai_is_anonymous_trial ? 'open-signup' : 'open-upgrade';
+$bbai_locked_quota_label = $bbai_is_anonymous_trial
+    ? __('Create a free account to continue', 'beepbeep-ai-alt-text-generator')
+    : __('Upgrade to continue', 'beepbeep-ai-alt-text-generator');
+$bbai_locked_auth_attr = $bbai_is_anonymous_trial ? ' data-auth-tab="register"' : '';
+$bbai_product_state_model = isset($bbai_product_state_model) && is_array($bbai_product_state_model)
+    ? $bbai_product_state_model
+    : [];
+
+$bbai_build_action = static function (array $config) use ($bbai_limit_reached_state, $bbai_locked_quota_action, $bbai_is_anonymous_trial) {
     $config = wp_parse_args(
         $config,
         [
@@ -38,11 +72,14 @@ $bbai_build_action = static function (array $config) use ($bbai_limit_reached_st
 
     $config['is_locked'] = false;
     if (!empty($config['locked']) && $bbai_limit_reached_state) {
-        $attrs .= ' data-bbai-action="open-upgrade"';
+        $attrs .= ' data-bbai-action="' . esc_attr($bbai_locked_quota_action) . '"';
         $attrs .= ' data-bbai-locked-cta="1"';
         $attrs .= ' data-bbai-lock-reason="' . esc_attr((string) $config['lock_reason']) . '"';
         $attrs .= ' data-bbai-locked-source="' . esc_attr((string) $config['lock_source']) . '"';
         $attrs .= ' aria-disabled="true"';
+        if ($bbai_is_anonymous_trial) {
+            $attrs .= ' data-auth-tab="register"';
+        }
         $config['is_locked'] = true;
     }
 
@@ -79,10 +116,21 @@ $bbai_scan_manual_action = $bbai_build_action(
     ]
 );
 
-$bbai_settings_automation_url = admin_url('admin.php?page=bbai-settings#bbai-enable-on-upload');
-$bbai_review_usage_url        = admin_url('admin.php?page=bbai-credit-usage');
+$bbai_settings_automation_url = $bbai_is_anonymous_trial
+    ? ''
+    : admin_url('admin.php?page=bbai-settings#bbai-enable-on-upload');
+$bbai_review_usage_url        = $bbai_is_anonymous_trial
+    ? admin_url('admin.php?page=bbai')
+    : admin_url('admin.php?page=bbai-credit-usage');
 
-$bbai_surface_automation_action = $bbai_is_pro
+$bbai_surface_automation_action = $bbai_is_anonymous_trial
+    ? $bbai_build_action(
+        [
+            'label' => __('Create free account', 'beepbeep-ai-alt-text-generator'),
+            'attrs' => 'data-action="show-auth-modal" data-auth-tab="register"',
+        ]
+    )
+    : ($bbai_is_pro
     ? $bbai_build_action(
         [
             'label' => bbai_copy_cta_automation_settings(),
@@ -94,7 +142,7 @@ $bbai_surface_automation_action = $bbai_is_pro
             'label' => bbai_copy_cta_enable_auto_optimization(),
             'attrs' => 'data-bbai-action="open-upgrade" data-bbai-locked-cta="1" data-bbai-lock-reason="automation" data-bbai-locked-source="library-summary-automation"',
     ]
-);
+));
 
 if ($bbai_cov_missing > 0) {
     $bbai_header_primary_action = $bbai_build_action(
@@ -213,7 +261,7 @@ if ($bbai_cov_missing > 0) {
 }
 
 $bbai_total_automated_images = max(
-    (int) ($bbai_usage_stats['used'] ?? 0),
+    (int) ($bbai_usage_stats['credits_used'] ?? $bbai_usage_stats['creditsUsed'] ?? $bbai_usage_stats['used'] ?? 0),
     $bbai_cov_optimized,
     $bbai_cov_auto
 );
@@ -223,21 +271,38 @@ $bbai_saved_time_label = sprintf(
     $bbai_saved_minutes
 );
 
-$bbai_usage_used = max(0, (int) ($bbai_usage_stats['used'] ?? 0));
-$bbai_usage_limit = max(1, (int) ($bbai_usage_stats['limit'] ?? 50));
-$bbai_usage_remaining = max(0, (int) ($bbai_usage_stats['remaining'] ?? 0));
+$bbai_usage_used = $bbai_usage_used_seed;
+$bbai_usage_limit = $bbai_usage_limit_seed;
+$bbai_usage_remaining = $bbai_usage_remaining_seed;
 $bbai_usage_pct = $bbai_usage_limit > 0 ? min(100, (int) round(($bbai_usage_used / $bbai_usage_limit) * 100)) : 0;
-$bbai_usage_line = sprintf(
-    __('%1$s of %2$s AI generations used', 'beepbeep-ai-alt-text-generator'),
-    number_format_i18n($bbai_usage_used),
-    number_format_i18n($bbai_usage_limit)
-);
-$bbai_usage_copy = $bbai_usage_remaining > 0
+$bbai_usage_line = $bbai_is_anonymous_trial
     ? sprintf(
-        _n('%s credit remaining this cycle', '%s credits remaining this cycle', $bbai_usage_remaining, 'beepbeep-ai-alt-text-generator'),
-        number_format_i18n($bbai_usage_remaining)
+        __('%1$s of %2$s free trial generations used', 'beepbeep-ai-alt-text-generator'),
+        number_format_i18n($bbai_usage_used),
+        number_format_i18n($bbai_usage_limit)
     )
-    : __('No credits remaining this cycle', 'beepbeep-ai-alt-text-generator');
+    : sprintf(
+        __('%1$s of %2$s AI generations used', 'beepbeep-ai-alt-text-generator'),
+        number_format_i18n($bbai_usage_used),
+        number_format_i18n($bbai_usage_limit)
+    );
+$bbai_usage_copy = $bbai_is_anonymous_trial
+    ? ($bbai_usage_remaining > 0
+        ? sprintf(
+            _n('%s trial generation remaining', '%s trial generations remaining', $bbai_usage_remaining, 'beepbeep-ai-alt-text-generator'),
+            number_format_i18n($bbai_usage_remaining)
+        )
+        : sprintf(
+            /* translators: %d: free account generations per month. */
+            __('Free trial complete. Create a free account to unlock %d generations per month.', 'beepbeep-ai-alt-text-generator'),
+            $bbai_free_plan_offer
+        ))
+    : ($bbai_usage_remaining > 0
+        ? sprintf(
+            _n('%s credit remaining this cycle', '%s credits remaining this cycle', $bbai_usage_remaining, 'beepbeep-ai-alt-text-generator'),
+            number_format_i18n($bbai_usage_remaining)
+        )
+        : __('No credits remaining this cycle', 'beepbeep-ai-alt-text-generator'));
 $bbai_optimized_count = $bbai_cov_optimized;
 $bbai_missing_count = $bbai_cov_missing;
 $bbai_weak_count = $bbai_cov_needs_review;
@@ -254,7 +319,7 @@ if (!$bbai_review_filter_from_url) {
 if (!in_array($bbai_default_review_filter, ['all', 'missing', 'optimized', 'weak'], true)) {
     $bbai_default_review_filter = 'all';
 }
-$bbai_is_low_credits = $bbai_credits_remaining > 0 && $bbai_credits_remaining <= BBAI_BANNER_LOW_CREDITS_THRESHOLD;
+$bbai_is_low_credits = $bbai_credits_remaining > 0 && $bbai_credits_remaining <= $bbai_low_credit_threshold;
 $bbai_is_out_of_credits = 0 === $bbai_credits_remaining;
 $bbai_has_search_query = false;
 
@@ -275,15 +340,29 @@ $bbai_command_hero = bbai_page_hero_library_command_hero(
         'missing_library_url'      => add_query_arg(['page' => 'bbai-library', 'status' => 'missing'], admin_url('admin.php')),
         'needs_review_library_url' => bbai_alt_library_needs_review_url(),
         'usage_url'                => $bbai_review_usage_url,
-        'plan_label'               => isset($bbai_usage_stats['plan_label']) ? (string) $bbai_usage_stats['plan_label'] : '',
+        'plan_label'               => $bbai_is_anonymous_trial
+            ? __('Free trial', 'beepbeep-ai-alt-text-generator')
+            : (isset($bbai_usage_stats['plan_label']) ? (string) $bbai_usage_stats['plan_label'] : ''),
+        'auth_state'               => $bbai_auth_state,
+        'quota_type'               => $bbai_quota_type,
+        'quota_state'              => $bbai_quota_state,
+        'signup_required'          => $bbai_signup_required,
+        'free_plan_offer'          => $bbai_free_plan_offer,
+        'low_credit_threshold'     => $bbai_low_credit_threshold,
         'remaining_line'           => $bbai_usage_copy,
-        'reset_timing'             => isset($bbai_usage_stats['days_until_reset'])
+        'reset_timing'             => $bbai_is_anonymous_trial
+            ? sprintf(
+                /* translators: %d: free account generations per month. */
+                __('Create a free account for %d generations per month', 'beepbeep-ai-alt-text-generator'),
+                $bbai_free_plan_offer
+            )
+            : (isset($bbai_usage_stats['days_until_reset'])
             ? sprintf(
                 /* translators: %d: days until credit reset */
                 _n('%d day until reset', '%d days until reset', (int) $bbai_usage_stats['days_until_reset'], 'beepbeep-ai-alt-text-generator'),
                 (int) $bbai_usage_stats['days_until_reset']
             )
-            : '',
+            : ''),
     ]
 );
 
@@ -294,6 +373,11 @@ if (!isset($bbai_command_hero['section_data_attrs']) || !is_array($bbai_command_
 $bbai_command_hero['wrapper_extra_class'] = trim(((string) ($bbai_command_hero['wrapper_extra_class'] ?? '')) . ' bbai-library-top-hero-host');
 $bbai_command_hero['section_extra_class'] = trim(((string) ($bbai_command_hero['section_extra_class'] ?? '')) . ' bbai-library-top-hero');
 $bbai_command_hero['section_data_attrs']['data-bbai-active-banner-slot'] = (string) ($bbai_workspace_banner_slot ?? '');
+$bbai_command_hero['section_data_attrs']['data-bbai-auth-state'] = (string) $bbai_auth_state;
+$bbai_command_hero['section_data_attrs']['data-bbai-quota-type'] = (string) $bbai_quota_type;
+$bbai_command_hero['section_data_attrs']['data-bbai-quota-state'] = (string) $bbai_quota_state;
+$bbai_command_hero['section_data_attrs']['data-bbai-signup-required'] = $bbai_signup_required ? '1' : '0';
+$bbai_command_hero['section_data_attrs']['data-bbai-free-plan-offer'] = (string) $bbai_free_plan_offer;
 
 $bbai_surface_semantic = (string) ($bbai_command_hero['semantic_state'] ?? 'healthy');
 $bbai_surface_state    = 'healthy';
@@ -393,6 +477,10 @@ $bbai_library_workspace_filter_items = [
 <div
     class="bbai-library-container bbai-library-workspace bbai-container"
     data-bbai-library-workspace-root="1"
+    data-bbai-dashboard-state-root="1"
+    data-bbai-dashboard-state="<?php echo esc_attr((string) ($bbai_product_state_model['state'] ?? '')); ?>"
+    data-bbai-dashboard-base-state="<?php echo esc_attr((string) ($bbai_product_state_model['base_state'] ?? '')); ?>"
+    data-bbai-dashboard-runtime-state="<?php echo esc_attr((string) ($bbai_product_state_model['runtime_state'] ?? 'idle')); ?>"
     data-bbai-current-page="alt-library"
     data-bbai-library-url="<?php echo esc_url(add_query_arg(['page' => 'bbai-library'], admin_url('admin.php'))); ?>"
     data-bbai-missing-library-url="<?php echo esc_url(add_query_arg(['page' => 'bbai-library', 'status' => 'missing'], admin_url('admin.php'))); ?>"
@@ -402,6 +490,22 @@ $bbai_library_workspace_filter_items = [
     data-bbai-automation-settings-url="<?php echo esc_url($bbai_settings_automation_url); ?>"
     data-bbai-empty-filter="<?php echo esc_attr__('No images match this filter.', 'beepbeep-ai-alt-text-generator'); ?>"
     data-bbai-empty-filter-hint="<?php echo esc_attr__('Try another filter or show all images.', 'beepbeep-ai-alt-text-generator'); ?>"
+    data-bbai-auth-state="<?php echo esc_attr($bbai_auth_state); ?>"
+    data-bbai-quota-type="<?php echo esc_attr($bbai_quota_type); ?>"
+    data-bbai-quota-state="<?php echo esc_attr($bbai_quota_state); ?>"
+    data-bbai-signup-required="<?php echo esc_attr($bbai_signup_required ? '1' : '0'); ?>"
+    data-bbai-free-plan-offer="<?php echo esc_attr($bbai_free_plan_offer); ?>"
+    data-bbai-low-credit-threshold="<?php echo esc_attr($bbai_low_credit_threshold); ?>"
+    data-bbai-credits-used="<?php echo esc_attr((string) $bbai_credits_used); ?>"
+    data-bbai-credits-total="<?php echo esc_attr((string) $bbai_credits_limit); ?>"
+    data-bbai-credits-remaining="<?php echo esc_attr((string) $bbai_credits_remaining); ?>"
+    data-bbai-is-guest-trial="<?php echo esc_attr($bbai_is_anonymous_trial ? '1' : '0'); ?>"
+    data-bbai-trial-limit="<?php echo esc_attr((string) ($bbai_product_state_model['trial']['limit'] ?? 0)); ?>"
+    data-bbai-trial-used="<?php echo esc_attr((string) ($bbai_product_state_model['trial']['used'] ?? 0)); ?>"
+    data-bbai-trial-remaining="<?php echo esc_attr((string) ($bbai_product_state_model['trial']['remaining'] ?? 0)); ?>"
+    data-bbai-trial-exhausted="<?php echo esc_attr(!empty($bbai_product_state_model['trial']['exhausted']) ? '1' : '0'); ?>"
+    data-bbai-locked-cta-mode="<?php echo esc_attr((string) ($bbai_product_state_model['cta']['locked_mode'] ?? '')); ?>"
+    data-bbai-free-account-monthly-limit="<?php echo esc_attr((string) ($bbai_product_state_model['trial']['monthly_free_limit'] ?? $bbai_free_plan_offer)); ?>"
     data-bbai-is-healthy="<?php echo $bbai_is_healthy ? 'true' : 'false'; ?>"
     data-bbai-is-low-credits="<?php echo $bbai_is_low_credits ? 'true' : 'false'; ?>"
     data-bbai-is-out-of-credits="<?php echo $bbai_is_out_of_credits ? 'true' : 'false'; ?>"
@@ -460,6 +564,18 @@ $bbai_library_workspace_filter_items = [
         data-bbai-free-plan-limit="<?php echo esc_attr((int) (($bbai_coverage ?? [])['free_plan_limit'] ?? 50)); ?>"
     >
         <?php bbai_ui_render('bbai-banner', [ 'command_hero' => $bbai_command_hero ]); ?>
+
+        <?php
+        if (!empty($bbai_product_state_model['flags']['show_exhausted_upgrade_wall'])) {
+            $bbai_trial_upgrade_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/trial-exhausted-upgrade-wall.php';
+            if (is_readable($bbai_trial_upgrade_partial)) {
+                $bbai_trial_upgrade_context = 'library';
+                $bbai_trial_upgrade_missing_count = $bbai_missing_count;
+                $bbai_trial_upgrade_weak_count = $bbai_weak_count;
+                include $bbai_trial_upgrade_partial;
+            }
+        }
+        ?>
 
         <div class="bbai-sr-only" aria-hidden="true">
             <span data-bbai-library-optimized><?php echo esc_html(number_format_i18n($bbai_optimized_count)); ?></span>
@@ -624,8 +740,8 @@ $bbai_library_workspace_filter_items = [
                         <span class="bbai-library-selection-bar__credits" data-bbai-selected-credits></span>
                     </div>
                     <div class="bbai-library-selection-bar__actions">
-                        <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-sm<?php echo $bbai_limit_reached_state ? ' bbai-is-locked' : ''; ?>" id="bbai-batch-generate" data-action="generate-selected" data-bbai-lock-preserve-label="1"<?php if ($bbai_limit_reached_state) : ?> data-bbai-action="open-upgrade" data-bbai-locked-cta="1" data-bbai-lock-reason="generate_missing" data-bbai-locked-source="library-selection-bar-generate" aria-disabled="true"<?php endif; ?>><?php echo esc_html(bbai_copy_cta_generate_alt()); ?></button>
-                        <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm<?php echo $bbai_limit_reached_state ? ' bbai-is-locked' : ''; ?>" id="bbai-batch-regenerate" data-action="regenerate-selected" data-bbai-lock-preserve-label="1"<?php if ($bbai_limit_reached_state) : ?> data-bbai-action="open-upgrade" data-bbai-locked-cta="1" data-bbai-lock-reason="reoptimize_all" data-bbai-locked-source="library-selection-bar-regenerate" aria-disabled="true"<?php endif; ?>><?php esc_html_e('Regenerate ALT', 'beepbeep-ai-alt-text-generator'); ?></button>
+                        <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-sm<?php echo $bbai_limit_reached_state ? ' bbai-is-locked' : ''; ?>" id="bbai-batch-generate" data-action="generate-selected" data-bbai-lock-preserve-label="1"<?php if ($bbai_limit_reached_state) : ?> data-bbai-action="<?php echo esc_attr($bbai_locked_quota_action); ?>" data-bbai-locked-cta="1" data-bbai-lock-reason="generate_missing" data-bbai-locked-source="library-selection-bar-generate" aria-disabled="true"<?php echo $bbai_locked_auth_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static escaped fragment. ?><?php endif; ?>><?php echo esc_html(bbai_copy_cta_generate_alt()); ?></button>
+                        <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm<?php echo $bbai_limit_reached_state ? ' bbai-is-locked' : ''; ?>" id="bbai-batch-regenerate" data-action="regenerate-selected" data-bbai-lock-preserve-label="1"<?php if ($bbai_limit_reached_state) : ?> data-bbai-action="<?php echo esc_attr($bbai_locked_quota_action); ?>" data-bbai-locked-cta="1" data-bbai-lock-reason="reoptimize_all" data-bbai-locked-source="library-selection-bar-regenerate" aria-disabled="true"<?php echo $bbai_locked_auth_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static escaped fragment. ?><?php endif; ?>><?php esc_html_e('Regenerate ALT', 'beepbeep-ai-alt-text-generator'); ?></button>
                         <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm" id="bbai-batch-reviewed" data-action="mark-reviewed"><?php esc_html_e('Mark as reviewed', 'beepbeep-ai-alt-text-generator'); ?></button>
                         <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm" id="bbai-batch-clear-alt" data-action="clear-alt-selected"><?php esc_html_e('Delete ALT', 'beepbeep-ai-alt-text-generator'); ?></button>
                         <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm" id="bbai-batch-export" data-action="export-alt-text"><?php esc_html_e('Export', 'beepbeep-ai-alt-text-generator'); ?></button>
@@ -895,7 +1011,7 @@ $bbai_library_workspace_filter_items = [
                                                                 data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>"
                                                                 title="<?php echo esc_attr($bbai_q1_title); ?>"
                                                                 <?php if ('regenerate-single' === $bbai_q1_action) : ?>data-bbai-lock-preserve-label="1"<?php endif; ?>
-                                                                <?php if ($bbai_limit_reached_state && 'regenerate-single' === $bbai_q1_action) : ?>data-bbai-action="open-upgrade" data-bbai-locked-cta="1" data-bbai-lock-reason="regenerate_single" data-bbai-locked-source="library-row-regenerate-quick" aria-disabled="true"<?php endif; ?>>
+                                                                <?php if ($bbai_limit_reached_state && 'regenerate-single' === $bbai_q1_action) : ?>data-bbai-action="<?php echo esc_attr($bbai_locked_quota_action); ?>" data-bbai-locked-cta="1" data-bbai-lock-reason="regenerate_single" data-bbai-locked-source="library-row-regenerate-quick" aria-disabled="true"<?php echo $bbai_locked_auth_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static escaped fragment. ?><?php endif; ?>>
                                                                 <?php echo esc_html($bbai_q1_label); ?>
                                                             </button>
                                                             <button type="button"
@@ -904,7 +1020,7 @@ $bbai_library_workspace_filter_items = [
                                                                 data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>"
                                                                 title="<?php echo esc_attr($bbai_q2_title); ?>"
                                                                 <?php if ('regenerate-single' === $bbai_q2_action) : ?>data-bbai-lock-preserve-label="1"<?php endif; ?>
-                                                                <?php if ($bbai_limit_reached_state && 'regenerate-single' === $bbai_q2_action) : ?>data-bbai-action="open-upgrade" data-bbai-locked-cta="1" data-bbai-lock-reason="regenerate_single" data-bbai-locked-source="library-row-regenerate-quick" aria-disabled="true"<?php endif; ?>>
+                                                                <?php if ($bbai_limit_reached_state && 'regenerate-single' === $bbai_q2_action) : ?>data-bbai-action="<?php echo esc_attr($bbai_locked_quota_action); ?>" data-bbai-locked-cta="1" data-bbai-lock-reason="regenerate_single" data-bbai-locked-source="library-row-regenerate-quick" aria-disabled="true"<?php echo $bbai_locked_auth_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static escaped fragment. ?><?php endif; ?>>
                                                                 <?php echo esc_html($bbai_q2_label); ?>
                                                             </button>
                                                         </div>
@@ -918,8 +1034,8 @@ $bbai_library_workspace_filter_items = [
                                                                         class="bbai-library-card__quick-action bbai-library-card__quick-action--ghost bbai-row-actions__extra<?php echo $bbai_limit_reached_state ? ' bbai-is-locked' : ''; ?>"
                                                                         data-action="phase17-improve-alt"
                                                                         data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>"
-                                                                        title="<?php echo esc_attr($bbai_limit_reached_state ? __('Upgrade to unlock AI improvements', 'beepbeep-ai-alt-text-generator') : __('Improve ALT with AI (uses one credit)', 'beepbeep-ai-alt-text-generator')); ?>"
-                                                                        <?php if ($bbai_limit_reached_state) : ?>data-bbai-action="open-upgrade" data-bbai-locked-cta="1" data-bbai-lock-reason="regenerate_single" data-bbai-locked-source="library-row-phase17-improve" aria-disabled="true"<?php endif; ?>>
+                                                                        title="<?php echo esc_attr($bbai_limit_reached_state ? $bbai_locked_quota_label : __('Improve ALT with AI (uses one credit)', 'beepbeep-ai-alt-text-generator')); ?>"
+                                                                        <?php if ($bbai_limit_reached_state) : ?>data-bbai-action="<?php echo esc_attr($bbai_locked_quota_action); ?>" data-bbai-locked-cta="1" data-bbai-lock-reason="regenerate_single" data-bbai-locked-source="library-row-phase17-improve" aria-disabled="true"<?php echo $bbai_locked_auth_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static escaped fragment. ?><?php endif; ?>>
                                                                         <?php esc_html_e('Improve ALT', 'beepbeep-ai-alt-text-generator'); ?>
                                                                     </button>
                                                                 <?php endif; ?>

@@ -225,11 +225,102 @@ body.bbai-dashboard .bbai-credit-activity-state__description {
 }
 
 /* -------------------------------------------------------------------------- */
+/* In-product exhausted trial wall                                           */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-trial-upgrade-wall {
+    display: grid;
+    gap: var(--bbai-admin-space-4);
+    border: 1px solid #f5d0a9;
+    background:
+        radial-gradient(circle at top right, rgba(249, 115, 22, 0.12), transparent 38%),
+        linear-gradient(180deg, #fffaf4 0%, #ffffff 100%);
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__main {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--bbai-admin-space-5);
+    flex-wrap: wrap;
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__copy {
+    display: grid;
+    gap: var(--bbai-admin-space-2);
+    max-width: 760px;
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__body,
+body.bbai-dashboard .bbai-trial-upgrade-wall__value,
+body.bbai-dashboard .bbai-trial-upgrade-wall__trust,
+body.bbai-dashboard .bbai-trial-upgrade-wall__summary {
+    margin: 0;
+    color: var(--bbai-admin-color-text-secondary, #526071);
+    line-height: 1.6;
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__value {
+    color: var(--bbai-admin-color-text, #11253f);
+    font-weight: 600;
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--bbai-admin-space-2);
+    align-items: center;
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(251, 146, 60, 0.22);
+    color: #8b4b17;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--bbai-admin-space-2) var(--bbai-admin-space-4);
+    align-items: center;
+    padding-top: var(--bbai-admin-space-3);
+    border-top: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__usage {
+    color: var(--bbai-admin-color-text, #11253f);
+}
+
+/* -------------------------------------------------------------------------- */
 /* Reduced motion                                                            */
 /* -------------------------------------------------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {
     body.bbai-dashboard .bbai-state {
         transition: none;
+    }
+}
+
+@media (max-width: 782px) {
+    body.bbai-dashboard .bbai-trial-upgrade-wall__main {
+        flex-direction: column;
+    }
+
+    body.bbai-dashboard .bbai-trial-upgrade-wall__actions {
+        width: 100%;
     }
 }

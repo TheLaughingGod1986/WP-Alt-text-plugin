@@ -63,6 +63,7 @@ require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-queue.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-debug-log.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-onboarding.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-auth-state.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-usage-helper.php';
 
 // Load Core class traits
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'admin/traits/trait-core-ajax-auth.php';
@@ -79,6 +80,7 @@ use BeepBeepAI\AltTextGenerator\Queue;
 use BeepBeepAI\AltTextGenerator\Debug_Log;
 use BeepBeepAI\AltTextGenerator\Usage_Tracker;
 use BeepBeepAI\AltTextGenerator\API_Client_V2;
+use BeepBeepAI\AltTextGenerator\Services\Usage_Helper;
 use BeepBeepAI\AltTextGenerator\Traits\Core_Ajax_Auth;
 use BeepBeepAI\AltTextGenerator\Traits\Core_Ajax_License;
 use BeepBeepAI\AltTextGenerator\Traits\Core_Ajax_Billing;
@@ -502,23 +504,87 @@ class Core {
      * @return array{site_hash:string,limit:int,used:int,remaining:int,should_gate:bool}
      */
     private function get_trial_status(): array {
-        if (!function_exists('\BeepBeepAI\AltTextGenerator\bbai_get_trial_site_hash')) {
-            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-trial-quota.php';
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+
+        $status = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_status();
+        $should_gate = !$this->has_connected_account_for_trial();
+        $limit = max(1, (int) ($status['credits_total'] ?? $status['limit'] ?? \BeepBeepAI\AltTextGenerator\Trial_Quota::get_limit()));
+        $used = max(0, (int) ($status['credits_used'] ?? $status['used'] ?? 0));
+        $remaining = max(0, (int) ($status['credits_remaining'] ?? $status['remaining'] ?? max(0, $limit - $used)));
+        $low_credit_threshold = max(1, (int) ($status['low_credit_threshold'] ?? \BeepBeepAI\AltTextGenerator\Trial_Quota::get_low_credit_threshold()));
+
+        $status['credits_total'] = $limit;
+        $status['limit'] = $limit;
+        $status['credits_used'] = $used;
+        $status['used'] = $used;
+        $status['credits_remaining'] = $remaining;
+        $status['remaining'] = $remaining;
+        $status['remaining_free_images'] = $remaining;
+        $status['auth_state'] = 'anonymous';
+        $status['quota_type'] = 'trial';
+        $status['quota_state'] = (string) ($status['quota_state'] ?? ($remaining <= 0 ? 'exhausted' : ($remaining <= $low_credit_threshold ? 'near_limit' : 'active')));
+        $status['signup_required'] = !empty($status['signup_required']) || $remaining <= 0;
+        $status['upgrade_required'] = false;
+        $status['is_trial'] = true;
+        $status['trial_exhausted'] = !empty($status['exhausted']) || $remaining <= 0;
+        $status['low_credit_threshold'] = $low_credit_threshold;
+        $status['trial_near_limit'] = $remaining > 0 && $remaining <= $low_credit_threshold;
+        $status['free_plan_offer'] = max(0, (int) ($status['free_plan_offer'] ?? 50));
+
+        if ( ! $should_gate ) {
+            $status['auth_state'] = 'authenticated';
+            $status['signup_required'] = false;
+            $status['upgrade_required'] = false;
+            $status['quota_state'] = 'active';
         }
 
-        $site_hash = \BeepBeepAI\AltTextGenerator\bbai_get_trial_site_hash();
-        $limit = \BeepBeepAI\AltTextGenerator\bbai_get_trial_limit();
-        $remaining = \BeepBeepAI\AltTextGenerator\bbai_get_trial_remaining($site_hash);
-        $used = max(0, $limit - $remaining);
-        $should_gate = !$this->has_connected_account_for_trial();
+        $status['should_gate'] = $should_gate;
 
-        return [
-            'site_hash' => $site_hash,
-            'limit' => $limit,
-            'used' => $used,
-            'remaining' => $remaining,
-            'should_gate' => $should_gate,
-        ];
+        return $status;
+    }
+
+    /**
+     * Build a normalized anonymous trial usage payload.
+     *
+     * @param array<string, mixed> $overrides Additional response fields.
+     * @return array<string, mixed>
+     */
+    private function get_trial_usage_payload(array $overrides = []): array {
+        $trial = $this->get_trial_status();
+
+        return array_merge($trial, [
+            'auth_state' => (string) ($trial['auth_state'] ?? 'anonymous'),
+            'quota_type' => (string) ($trial['quota_type'] ?? 'trial'),
+            'quota_state' => (string) ($trial['quota_state'] ?? 'active'),
+            'signup_required' => !empty($trial['signup_required']),
+            'upgrade_required' => false,
+            'is_trial' => true,
+            'trial_exhausted' => !empty($trial['trial_exhausted']),
+            'trial_near_limit' => !empty($trial['trial_near_limit']),
+            'credits_total' => max(1, (int) ($trial['credits_total'] ?? $trial['limit'] ?? 5)),
+            'credits_used' => max(0, (int) ($trial['credits_used'] ?? $trial['used'] ?? 0)),
+            'credits_remaining' => max(0, (int) ($trial['credits_remaining'] ?? $trial['remaining'] ?? 0)),
+            'limit' => max(1, (int) ($trial['credits_total'] ?? $trial['limit'] ?? 5)),
+            'used' => max(0, (int) ($trial['credits_used'] ?? $trial['used'] ?? 0)),
+            'remaining' => max(0, (int) ($trial['credits_remaining'] ?? $trial['remaining'] ?? 0)),
+            'remaining_free_images' => max(0, (int) ($trial['credits_remaining'] ?? $trial['remaining'] ?? 0)),
+            'free_plan_offer' => max(0, (int) ($trial['free_plan_offer'] ?? 50)),
+            'low_credit_threshold' => max(0, (int) ($trial['low_credit_threshold'] ?? 2)),
+        ], $overrides);
+    }
+
+    /**
+     * Resolve the current usage payload from the connected account or anonymous trial.
+     *
+     * @return array<string, mixed>
+     */
+    private function get_connected_usage_payload(): array {
+        $auth_state = Auth_State::resolve($this->api_client);
+
+        return Usage_Helper::get_usage(
+            $this->api_client,
+            !empty($auth_state['has_connected_account'])
+        );
     }
 
     /**
@@ -527,18 +593,27 @@ class Core {
      * @return array
      */
     private function get_trial_exhausted_payload(): array {
-        $trial = $this->get_trial_status();
+        $trial = $this->get_trial_usage_payload();
+        $limit = max(1, (int) ($trial['credits_total'] ?? $trial['limit'] ?? 5));
+        $free_plan_offer = max(0, (int) ($trial['free_plan_offer'] ?? 50));
 
-        return [
-            'message' => __("You've used your 3 free images. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator'),
+        return array_merge($trial, [
+            'message' => sprintf(
+                /* translators: 1: anonymous trial limit, 2: signed-up free plan offer. */
+                __('You’ve used your %1$d free trial generations. Create a free account to unlock %2$d generations per month.', 'beepbeep-ai-alt-text-generator'),
+                $limit,
+                $free_plan_offer
+            ),
             'code' => 'bbai_trial_exhausted',
             'remaining' => 0,
             'remaining_free_images' => 0,
             'trial_exhausted' => true,
-            'limit' => $trial['limit'],
-            'used' => $trial['used'],
-            'site_hash' => $trial['site_hash'],
-        ];
+            'limit' => $limit,
+            'used' => (int) ($trial['credits_used'] ?? $trial['used'] ?? 0),
+            'credits_remaining' => 0,
+            'signup_required' => true,
+            'quota_state' => 'exhausted',
+        ]);
     }
 
     /**
@@ -973,13 +1048,19 @@ class Core {
             exit;
         }
 
-        $success_url = admin_url('upload.php?page=bbai&checkout=success');
-        $cancel_url  = admin_url('upload.php?page=bbai&checkout=cancel');
+        $success_url = admin_url('admin.php?page=bbai&checkout=success');
+        $cancel_url  = admin_url('admin.php?page=bbai&checkout=cancel');
 
         $result = $this->api_client->create_checkout_session($price_id, $success_url, $cancel_url);
+        $resolved_checkout_url = $this->resolve_checkout_url_from_result($result, $plan_param, $price_id);
 
-        if (is_wp_error($result) || empty($result['url'])) {
-            $message = is_wp_error($result) ? $result->get_error_message() : __('Unable to start checkout. Please try again.', 'beepbeep-ai-alt-text-generator');
+        if (is_wp_error($result) || $resolved_checkout_url === '') {
+            $fallback_checkout_url = $this->get_checkout_fallback_url($plan_param, $price_id);
+            if ($fallback_checkout_url !== '') {
+                $this->redirect_to_checkout_url($fallback_checkout_url);
+            }
+
+            $message = $this->get_checkout_error_message($result);
             $query_args = [
                 'page'            => 'beepbeep-ai-alt-text-generator',
                 'checkout_error'  => rawurlencode($message),
@@ -993,8 +1074,7 @@ class Core {
         }
 
         // Redirect to Stripe checkout
-        wp_safe_redirect( $result['url'] );
-        exit;
+        $this->redirect_to_checkout_url($resolved_checkout_url);
     }
 
     /**
@@ -1064,6 +1144,151 @@ class Core {
         $bbai_plan = is_string($bbai_plan) ? sanitize_key($bbai_plan) : '';
         $price_id = $prices[$bbai_plan] ?? '';
         return apply_filters('bbai_checkout_price_id', $price_id, $bbai_plan, $prices);
+    }
+
+    /**
+     * Resolve the plan key for a Stripe price ID.
+     */
+    private function get_checkout_plan_from_price_id(string $price_id): string {
+        $normalized_price_id = sanitize_text_field($price_id);
+        if ($normalized_price_id === '') {
+            return '';
+        }
+
+        foreach ($this->get_checkout_price_ids() as $plan_id => $mapped_price_id) {
+            $plan_id = is_string($plan_id) ? sanitize_key($plan_id) : '';
+            $mapped_price_id = is_string($mapped_price_id) ? sanitize_text_field($mapped_price_id) : '';
+
+            if ($plan_id !== '' && $mapped_price_id !== '' && hash_equals($mapped_price_id, $normalized_price_id)) {
+                return $plan_id;
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * Resolve the direct Stripe checkout fallback URL for a plan or price ID.
+     */
+    private function get_checkout_fallback_url(string $plan_id = '', string $price_id = ''): string {
+        $normalized_plan_id = sanitize_key($plan_id);
+        if ($normalized_plan_id === '' && $price_id !== '') {
+            $normalized_plan_id = $this->get_checkout_plan_from_price_id($price_id);
+        }
+
+        $fallback_links = apply_filters('bbai_checkout_stripe_links', self::DEFAULT_STRIPE_LINKS);
+        if (!is_array($fallback_links) || $normalized_plan_id === '') {
+            return '';
+        }
+
+        $fallback_url = $fallback_links[$normalized_plan_id] ?? '';
+        return is_string($fallback_url) ? esc_url_raw($fallback_url) : '';
+    }
+
+    /**
+     * Detect Stripe-hosted Checkout Session URLs.
+     */
+    private function is_stripe_hosted_checkout_session_url(string $url): bool {
+        $normalized_url = esc_url_raw($url);
+        if ($normalized_url === '') {
+            return false;
+        }
+
+        $host = wp_parse_url($normalized_url, PHP_URL_HOST);
+        $path = wp_parse_url($normalized_url, PHP_URL_PATH);
+        if (!is_string($host) || !is_string($path) || $host === '' || $path === '') {
+            return false;
+        }
+
+        return strtolower($host) === 'checkout.stripe.com' && strpos($path, '/c/pay/') === 0;
+    }
+
+    /**
+     * Normalize billing API checkout results and fall back when the hosted-session payload is incomplete.
+     */
+    private function resolve_checkout_url_from_result($result, string $plan_id = '', string $price_id = ''): string {
+        if (is_wp_error($result) || !is_array($result)) {
+            return '';
+        }
+
+        $checkout_url = isset($result['url']) && is_string($result['url'])
+            ? esc_url_raw($result['url'])
+            : '';
+        if ($checkout_url === '') {
+            return '';
+        }
+
+        $session_id = isset($result['sessionId']) && is_string($result['sessionId'])
+            ? sanitize_text_field($result['sessionId'])
+            : '';
+
+        if ($this->is_stripe_hosted_checkout_session_url($checkout_url) && $session_id === '') {
+            $fallback_url = $this->get_checkout_fallback_url($plan_id, $price_id);
+            if ($fallback_url !== '') {
+                return $fallback_url;
+            }
+        }
+
+        return $checkout_url;
+    }
+
+    /**
+     * Normalize checkout failures into a user-safe message.
+     */
+    private function get_checkout_error_message($result): string {
+        if (!is_wp_error($result)) {
+            return __('Unable to create checkout session. Please try again or contact support.', 'beepbeep-ai-alt-text-generator');
+        }
+
+        $error_message = $result->get_error_message();
+        $error_code = $result->get_error_code();
+        $error_message_lower = is_string($error_message) ? strtolower($error_message) : '';
+
+        if ($error_code === 'auth_required' ||
+            $error_code === 'license_required' ||
+            $error_code === 'invalid_license' ||
+            $error_code === 'trial_backend_auth' ||
+            $error_code === 'checkout_failed' ||
+            strpos($error_message_lower, 'session') !== false ||
+            strpos($error_message_lower, 'log in') !== false ||
+            strpos($error_message_lower, 'license') !== false) {
+            return __('Unable to start hosted checkout right now. Please try again or contact support.', 'beepbeep-ai-alt-text-generator');
+        }
+
+        return is_string($error_message) && $error_message !== ''
+            ? $error_message
+            : __('Unable to create checkout session. Please try again or contact support.', 'beepbeep-ai-alt-text-generator');
+    }
+
+    /**
+     * Determine whether a checkout redirect target is an allowed Stripe host.
+     */
+    private function is_allowed_external_checkout_url(string $url): bool {
+        $host = wp_parse_url($url, PHP_URL_HOST);
+        if (!is_string($host) || $host === '') {
+            return false;
+        }
+
+        $host = strtolower($host);
+        return (bool) preg_match('/(^|\\.)stripe\\.com$/', $host);
+    }
+
+    /**
+     * Redirect to a checkout URL, allowing Stripe-hosted pages.
+     */
+    private function redirect_to_checkout_url(string $url): void {
+        $target_url = esc_url_raw($url);
+        if ($target_url === '') {
+            wp_die(esc_html__('Invalid checkout URL.', 'beepbeep-ai-alt-text-generator'));
+        }
+
+        if ($this->is_allowed_external_checkout_url($target_url)) {
+            wp_redirect($target_url);
+            exit;
+        }
+
+        wp_safe_redirect($target_url);
+        exit;
     }
 
     /**
@@ -1409,36 +1634,9 @@ class Core {
 
     public function add_settings_page() {
         $cap = current_user_can(self::CAPABILITY) ? self::CAPABILITY : 'manage_options';
-        
-        // Check authentication status (same logic as render_settings_page)
-        try {
-            $bbai_is_authenticated = $this->api_client->is_authenticated();
-            $bbai_has_license = $this->api_client->has_active_license();
-        } catch (\Exception $e) {
-            $bbai_is_authenticated = false;
-            $bbai_has_license = false;
-        } catch (\Error $e) {
-            $bbai_is_authenticated = false;
-            $bbai_has_license = false;
-        }
 
-        // Also check stored credentials
-        $bbai_stored_token = get_option('beepbeepai_jwt_token', '');
-        $bbai_has_stored_token = !empty($bbai_stored_token);
-
-        $bbai_stored_license = '';
-        try {
-            $bbai_stored_license = $this->api_client->get_license_key();
-        } catch (\Exception $e) {
-            $bbai_stored_license = '';
-        } catch (\Error $e) {
-            $bbai_stored_license = '';
-        }
-        $bbai_has_stored_license = !empty($bbai_stored_license);
-        
-        // Determine if user is registered (authenticated/licensed).
-        // We still show the top-level menu for non-authenticated users so they can access onboarding/login.
-        $bbai_has_registered_user = $bbai_is_authenticated || $bbai_has_license || $bbai_has_stored_token || $bbai_has_stored_license;
+        $bbai_auth = Auth_State::resolve($this->api_client);
+        $bbai_has_connected_account = !empty($bbai_auth['has_connected_account']);
 
         // Top-level menu uses the brand name; the first submenu is "Dashboard".
         add_menu_page(
@@ -1451,8 +1649,8 @@ class Core {
             30
         );
 
-        // Sidebar submenus are visible only for authenticated/licensed users.
-        if ($bbai_has_registered_user) {
+        // Sidebar submenus are visible only for connected accounts.
+        if ($bbai_has_connected_account) {
             // Explicit first submenu replaces the auto-generated duplicate.
             // Order matches the top header nav.
             add_submenu_page(
@@ -1509,6 +1707,17 @@ class Core {
                 self::MENU_SLUG_LIBRARY,
                 [$this, 'render_settings_page']
             );
+
+            foreach (['bbai-analytics', 'bbai-credit-usage', 'bbai-settings'] as $bbai_hidden_guest_route) {
+                add_submenu_page(
+                    '',
+                    ucfirst(str_replace(['bbai-', '-'], ['', ' '], $bbai_hidden_guest_route)),
+                    ucfirst(str_replace(['bbai-', '-'], ['', ' '], $bbai_hidden_guest_route)),
+                    $cap,
+                    $bbai_hidden_guest_route,
+                    [$this, 'render_settings_page']
+                );
+            }
 
             // Remove the auto-generated duplicate submenu under the top-level menu.
             remove_submenu_page(self::MENU_SLUG_DASHBOARD, self::MENU_SLUG_DASHBOARD);
@@ -1585,10 +1794,6 @@ class Core {
 	            wp_die(esc_html__('Unauthorized access.', 'beepbeep-ai-alt-text-generator'));
 	        }
 
-	        if (!$this->api_client->is_authenticated()) {
-	            wp_die(esc_html__('Please sign in first to upgrade.', 'beepbeep-ai-alt-text-generator'));
-	        }
-
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
         $price_id = isset($_GET['price_id']) ? sanitize_text_field(wp_unslash($_GET['price_id'])) : '';
         if (empty($price_id)) {
@@ -1599,10 +1804,15 @@ class Core {
         $cancel_url = admin_url('admin.php?page=bbai&checkout=cancel');
 
         $result = $this->api_client->create_checkout_session($price_id, $success_url, $cancel_url);
+        $resolved_checkout_url = $this->resolve_checkout_url_from_result($result, '', $price_id);
 
         if (is_wp_error($result)) {
-            $error_message = $result->get_error_message();
-            $error_message = is_string($error_message) ? sanitize_text_field($error_message) : '';
+            $fallback_checkout_url = $this->get_checkout_fallback_url('', $price_id);
+            if ($fallback_checkout_url !== '') {
+                $this->redirect_to_checkout_url($fallback_checkout_url);
+            }
+
+            $error_message = sanitize_text_field($this->get_checkout_error_message($result));
             wp_die(esc_html(sprintf(
                 /* translators: 1: error message */
                 __('Checkout error: %s', 'beepbeep-ai-alt-text-generator'),
@@ -1610,9 +1820,13 @@ class Core {
             )));
         }
 
-        if (!empty($result['url'])) {
-            wp_safe_redirect( $result['url'] );
-            exit;
+        if ($resolved_checkout_url !== '') {
+            $this->redirect_to_checkout_url($resolved_checkout_url);
+        }
+
+        $fallback_checkout_url = $this->get_checkout_fallback_url('', $price_id);
+        if ($fallback_checkout_url !== '') {
+            $this->redirect_to_checkout_url($fallback_checkout_url);
         }
 
         wp_die(esc_html__('Failed to create checkout session.', 'beepbeep-ai-alt-text-generator'));
@@ -1651,7 +1865,7 @@ class Core {
         }
 
         $bbai_auth = \BeepBeepAI\AltTextGenerator\Auth_State::resolve($this->api_client);
-        if (empty($bbai_auth['has_registered_user'])) {
+        if (empty($bbai_auth['has_connected_account'])) {
             return;
         }
 
@@ -2204,60 +2418,18 @@ class Core {
         $bbai_stats = $this->get_media_stats();
         $nonce = wp_create_nonce(self::NONCE_KEY);
         
-        // Check if there's a registered user (authenticated or has active license)
-        // Use try-catch to prevent errors from breaking the page
-	        try {
-	            $bbai_is_authenticated = $this->api_client->is_authenticated();
-	            $bbai_has_license = $this->api_client->has_active_license();
-		        } catch (\Exception $e) {
-		            // If authentication check fails, default to showing limited tabs.
-		            \bbai_debug_log(
-		                'Authentication check failed in render_settings_page',
-		                [
-		                    'error' => $e->getMessage(),
-		                ]
-		            );
-		            $bbai_is_authenticated = false;
-		            $bbai_has_license = false;
-		        } catch (\Error $e) {
-		            // Catch fatal errors too.
-		            \bbai_debug_log(
-		                'Authentication fatal error in render_settings_page',
-		                [
-		                    'error' => $e->getMessage(),
-		                ]
-		            );
-		            $bbai_is_authenticated = false;
-		            $bbai_has_license = false;
-		        }
-        
-        // Also check if user has a token stored in options (indicates they've logged in before)
-        // Token is stored in beepbeepai_jwt_token option (not in beepbeepai_settings)
-        $bbai_stored_token = get_option('beepbeepai_jwt_token', '');
-        $bbai_has_stored_token = !empty($bbai_stored_token);
-        
-        // Check for license key using the API client method (handles both new and legacy storage)
-        $bbai_stored_license = '';
-        try {
-            $bbai_stored_license = $this->api_client->get_license_key();
-        } catch (\Exception $e) {
-            $bbai_stored_license = '';
-        } catch (\Error $e) {
-            $bbai_stored_license = '';
-        }
-        $bbai_has_stored_license = !empty($bbai_stored_license);
-        
-        // Update authentication flags to include stored credentials
-        // This ensures tabs show even if current API validation fails
-        $bbai_is_authenticated = $bbai_is_authenticated || $bbai_has_stored_token;
-        $bbai_has_license = $bbai_has_license || $bbai_has_stored_license;
-        
-        // Consider user registered if authenticated, has license, or has stored credentials
-        // This ensures tabs show even if current auth check fails
-        $bbai_has_registered_user = $bbai_is_authenticated || $bbai_has_license || $bbai_has_stored_token || $bbai_has_stored_license;
-	        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
-	        $bbai_page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
-	        $bbai_page_slug = $bbai_page_input;
+	        $bbai_auth = \BeepBeepAI\AltTextGenerator\Auth_State::resolve($this->api_client);
+	        $bbai_is_authenticated = !empty($bbai_auth['is_authenticated']);
+	        $bbai_has_license = !empty($bbai_auth['has_license']);
+	        $bbai_has_stored_token = !empty($bbai_auth['has_stored_token']);
+	        $bbai_has_stored_license = !empty($bbai_auth['has_stored_license']);
+	        $bbai_has_registered_user = !empty($bbai_auth['has_registered_user']);
+            $bbai_has_connected_account = !empty($bbai_auth['has_connected_account']);
+            $bbai_is_anonymous_trial = !empty($bbai_auth['is_anonymous_trial']);
+            $bbai_auth_state = isset($bbai_auth['auth_state']) ? (string) $bbai_auth['auth_state'] : ($bbai_is_anonymous_trial ? 'anonymous' : 'authenticated');
+		        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
+		        $bbai_page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+		        $bbai_page_slug = $bbai_page_input;
 
         if ($bbai_page_slug === 'bbai-ui-kit' && ! $this->can_show_ui_kit_page()) {
             wp_die(
@@ -2273,19 +2445,39 @@ class Core {
         $bbai_help_is_active = false;
         $bbai_settings_section = 'general';
         
-        // Non-registered users: show logged-out dashboard only (no header nav tabs).
-        if (!$bbai_has_registered_user) {
-            $bbai_tabs = [];
-            if ($bbai_page_slug === 'bbai-ui-kit' && $this->can_show_ui_kit_page()) {
-                $bbai_tab = 'ui-kit';
-            } else {
-                $bbai_tab = 'dashboard';
+        // Anonymous / trial users: keep them inside the real product shell with a reduced nav.
+        if ($bbai_is_anonymous_trial) {
+            $bbai_tabs = [
+                'dashboard' => __('Dashboard', 'beepbeep-ai-alt-text-generator'),
+                'library'   => __('ALT Library', 'beepbeep-ai-alt-text-generator'),
+            ];
+            $bbai_allowed_tabs = $bbai_tabs;
+            $bbai_page_to_tab = [
+                'bbai'           => 'dashboard',
+                'bbai-library'   => 'library',
+            ];
+            $bbai_tab_aliases = [
+                'credit-usage' => 'dashboard',
+            ];
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
+            $bbai_page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : 'bbai';
+            $bbai_current_page = $bbai_page_input ?: 'bbai';
+            $tab_from_page = $bbai_page_to_tab[$bbai_current_page] ?? 'dashboard';
+            $tab_from_page = $bbai_tab_aliases[$tab_from_page] ?? $tab_from_page;
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
+            $bbai_tab_input = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : '';
+            $bbai_requested_tab = $bbai_tab_input !== '' ? $bbai_tab_input : $tab_from_page;
+            $bbai_requested_tab = $bbai_tab_aliases[$bbai_requested_tab] ?? $bbai_requested_tab;
+            $bbai_route_is_allowed = isset($bbai_page_to_tab[$bbai_current_page]) && in_array($bbai_requested_tab, array_keys($bbai_allowed_tabs), true);
+            if (!$bbai_route_is_allowed) {
+                wp_safe_redirect(admin_url('admin.php?page=bbai'));
+                exit;
             }
-
+            $bbai_tab = $bbai_requested_tab;
             $bbai_is_pro_for_admin = false;
             $bbai_is_agency_for_admin = false;
             $bbai_can_show_debug_tab = false;
-            $bbai_active_nav_tab = '';
+            $bbai_active_nav_tab = in_array($bbai_tab, ['dashboard', 'library'], true) ? $bbai_tab : '';
             $bbai_help_is_active = false;
             $bbai_settings_section = 'general';
         } else {
@@ -2442,7 +2634,7 @@ class Core {
                             <span class="bbai-logo-tagline"><?php esc_html_e('WordPress AI Tools', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </div>
                     </div>
-                    <?php if ($bbai_has_registered_user) : ?>
+                    <?php if (!empty($bbai_tabs)) : ?>
                     <nav class="bbai-nav" role="navigation" aria-label="<?php esc_attr_e('Main navigation', 'beepbeep-ai-alt-text-generator'); ?>">
                         <div class="bbai-nav__primary">
                         <?php
@@ -2468,6 +2660,7 @@ class Core {
                             </a>
                         <?php endforeach; ?>
                         </div>
+                        <?php if ($bbai_has_connected_account) : ?>
                         <a href="<?php echo esc_url(admin_url('admin.php?page=bbai-guide')); ?>" class="bbai-header-guide-link<?php echo !empty($bbai_help_is_active) ? ' active' : ''; ?>" title="<?php esc_attr_e('Help and troubleshooting', 'beepbeep-ai-alt-text-generator'); ?>"<?php echo !empty($bbai_help_is_active) ? ' aria-current="page"' : ''; ?>>
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                 <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
@@ -2475,19 +2668,13 @@ class Core {
                             </svg>
                             <span class="bbai-header-guide-text"><?php esc_html_e('Help', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </a>
+                        <?php endif; ?>
                     </nav>
                     <?php endif; ?>
                     <!-- Auth & Subscription Actions -->
                     <div class="bbai-header-actions">
                         <?php
-                        // Use stored credentials check (same as tab rendering logic)
-                        // This ensures header shows correct state even if API validation fails
-                        $bbai_has_license_api = $this->api_client->has_active_license();
-                        $is_authenticated_api = $this->api_client->is_authenticated();
-                        $bbai_has_license = $bbai_has_license_api || $bbai_has_stored_license;
-                        $bbai_is_authenticated = $is_authenticated_api || $bbai_has_stored_token;
-
-                        if ($bbai_is_authenticated || $bbai_has_license) :
+                        if ($bbai_has_connected_account) :
                             $bbai_usage_stats = Usage_Tracker::get_stats_display();
                             $bbai_account_summary = $bbai_is_authenticated ? $this->get_account_summary($bbai_usage_stats) : null;
                             $bbai_plan_slug  = $bbai_usage_stats['plan'] ?? 'free';
@@ -2524,16 +2711,30 @@ class Core {
                         <?php else : ?>
                             <?php
                             // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only routing for login fallback URL.
-                            $bbai_header_login_page = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : 'bbai';
-                            if ('' === $bbai_header_login_page || 0 !== strpos($bbai_header_login_page, 'bbai')) {
-                                $bbai_header_login_page = 'bbai';
+                            $bbai_header_auth_page = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : 'bbai';
+                            if ('' === $bbai_header_auth_page || 0 !== strpos($bbai_header_auth_page, 'bbai')) {
+                                $bbai_header_auth_page = 'bbai';
                             }
+                            $bbai_header_signup_href = add_query_arg(
+                                'bbai_open_auth',
+                                '1',
+                                admin_url('admin.php?page=' . $bbai_header_auth_page)
+                            );
                             $bbai_header_login_href = add_query_arg(
                                 'bbai_open_auth',
                                 '1',
-                                admin_url('admin.php?page=' . $bbai_header_login_page)
+                                admin_url('admin.php?page=' . $bbai_header_auth_page)
                             );
                             ?>
+                            <a
+                                href="<?php echo esc_url($bbai_header_signup_href); ?>"
+                                class="bbai-header-upgrade-btn"
+                                role="button"
+                                data-action="show-auth-modal"
+                                data-auth-tab="register"
+                            >
+                                <span><?php esc_html_e('Create free account', 'beepbeep-ai-alt-text-generator'); ?></span>
+                            </a>
                             <a
                                 href="<?php echo esc_url($bbai_header_login_href); ?>"
                                 class="bbai-header-login-btn"
@@ -2560,11 +2761,9 @@ class Core {
             // Ensure usage stats for banner when on dashboard.
             if (
                 ( $bbai_tab === 'dashboard' || $bbai_tab === 'library' || $bbai_tab === 'analytics' || $bbai_tab === 'usage' ) &&
-                ( $bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user ) &&
                 ( ! isset( $bbai_usage_stats ) || ! is_array( $bbai_usage_stats ) )
             ) {
-                require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
-                $bbai_usage_stats = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_stats_display();
+                $bbai_usage_stats = Usage_Helper::get_usage($this->api_client, (bool) $bbai_has_connected_account);
             }
             // Usage limit banner - dashboard only, when monthly limit reached.
             $bbai_banner_limit_reached = false;
@@ -2572,7 +2771,7 @@ class Core {
                 $bbai_tab === 'dashboard' &&
                 isset( $bbai_usage_stats ) &&
                 is_array( $bbai_usage_stats ) &&
-                ( $bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user )
+                $bbai_has_connected_account
             ) {
                 $bbai_banner_used = max( 0, (int) ( $bbai_usage_stats['used'] ?? 0 ) );
                 $bbai_banner_limit = max( 1, (int) ( $bbai_usage_stats['limit'] ?? 50 ) );
@@ -2595,7 +2794,7 @@ class Core {
     );
     ?>
 
-<?php elseif ($bbai_tab === 'library' && ($bbai_is_authenticated || $bbai_has_license || !$bbai_has_registered_user)) : ?>
+<?php elseif ($bbai_tab === 'library' && ($bbai_has_connected_account || $bbai_is_anonymous_trial)) : ?>
     <?php
     $bbai_library_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/library-tab.php';
     bbai_render_layout_template(
@@ -3949,8 +4148,9 @@ class Core {
             ? \BBAI_Alt_Quality_Scorer::passes_optimized_row_gates( $clean_alt, $bbai_quality_score, $bbai_breakdown, $bbai_hard_fail )
             : false;
 
-        // User approval must not promote low-quality ALT to "Optimized"; gates + score drive status only.
-        $bbai_row_optimized = $bbai_optimized_eligible && $bbai_quality_score >= 70;
+        // User approval should move a row out of the review queue, while the score badge
+        // still reflects the underlying ALT quality.
+        $bbai_row_optimized = $bbai_is_user_approved || ( $bbai_optimized_eligible && $bbai_quality_score >= 70 );
 
         if ( $bbai_row_optimized ) {
             $status       = 'optimized';
@@ -6122,27 +6322,25 @@ class Core {
 	            return;
 	        }
         
-        // Clear cache and fetch fresh data
+        // Clear cache and return the normalized usage contract for the current auth state.
         Usage_Tracker::clear_cache();
-        $usage = $this->api_client->get_usage();
-        
-	        if ($usage) {
-	            $bbai_stats = Usage_Tracker::get_stats_display();
-	            wp_send_json_success($bbai_stats);
-	        } else {
-	            if ( function_exists( 'bbai_telemetry_emit' ) ) {
-	                bbai_telemetry_emit(
-	                    'api_error',
-	                    [
-	                        'error_type'   => 'usage_fetch_failed',
-	                        'endpoint'     => 'get_usage',
-	                        'recoverable'  => true,
-	                    ]
-	                );
-	            }
-	            wp_send_json_error(['message' => __('Failed to fetch usage data', 'beepbeep-ai-alt-text-generator')]);
-	            return;
-	        }
+        $bbai_stats = $this->get_connected_usage_payload();
+
+        if (is_array($bbai_stats) && !empty($bbai_stats)) {
+            wp_send_json_success($bbai_stats);
+        }
+
+        if ( function_exists( 'bbai_telemetry_emit' ) ) {
+            bbai_telemetry_emit(
+                'api_error',
+                [
+                    'error_type'   => 'usage_fetch_failed',
+                    'endpoint'     => 'get_usage',
+                    'recoverable'  => true,
+                ]
+            );
+        }
+        wp_send_json_error(['message' => __('Failed to fetch usage data', 'beepbeep-ai-alt-text-generator')]);
     }
 
     /**
@@ -6223,7 +6421,7 @@ class Core {
             } elseif ($error_code === 'quota_check_mismatch') {
                 $user_message = __('Credits appear available but the backend reported a limit. Please try again in a moment.', 'beepbeep-ai-alt-text-generator');
             } elseif ($error_code === 'bbai_trial_exhausted') {
-                $user_message = __("You've used your 3 free images. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator');
+                $user_message = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_exhausted_message();
             } elseif ($error_code === 'limit_reached' || $error_code === 'quota_exhausted') {
                 $bbai_reset_date = null;
                 if (is_array($error_data) && isset($error_data['usage']) && is_array($error_data['usage'])) {
@@ -6941,7 +7139,7 @@ class Core {
         $batch_size = apply_filters('bbai_queue_batch_size', 3);
         $max_attempts = apply_filters('bbai_queue_max_attempts', 3);
         $bbai_trial_blocked = false;
-        $bbai_trial_message = __("You've used your 3 free images. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator');
+        $bbai_trial_message = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_exhausted_message();
 
         Queue::reset_stale(apply_filters('bbai_queue_stale_timeout', 10 * MINUTE_IN_SECONDS));
 
@@ -7703,32 +7901,38 @@ class Core {
             return;
         }
 
-        $success_url = admin_url('upload.php?page=bbai&checkout=success');
-        $cancel_url = admin_url('upload.php?page=bbai&checkout=cancel');
+        $success_url = admin_url('admin.php?page=bbai&checkout=success');
+        $cancel_url = admin_url('admin.php?page=bbai&checkout=cancel');
 
         // Create checkout session - works for both authenticated and unauthenticated users
         // If token is invalid, it will retry without token for guest checkout
         $result = $this->api_client->create_checkout_session($price_id, $success_url, $cancel_url);
+        $plan_hint = isset($_POST['plan_id']) ? sanitize_key(wp_unslash($_POST['plan_id'])) : '';
+        $resolved_checkout_url = $this->resolve_checkout_url_from_result($result, $plan_hint, $price_id);
+        $raw_checkout_url = (!is_wp_error($result) && is_array($result) && isset($result['url']) && is_string($result['url']))
+            ? esc_url_raw($result['url'])
+            : '';
+        $fallback_used = $resolved_checkout_url !== '' && $resolved_checkout_url !== $raw_checkout_url;
 
-        if (is_wp_error($result)) {
-            $error_message = $result->get_error_message();
-            $error_code = $result->get_error_code();
-            
-            // Don't show "session expired" messages for checkout - just show generic error
-            $error_message_lower = is_string($error_message) ? strtolower($error_message) : '';
-            if ($error_code === 'auth_required' ||
-                strpos($error_message_lower, 'session') !== false ||
-                strpos($error_message_lower, 'log in') !== false) {
-                $error_message = __('Unable to create checkout session. Please try again or contact support.', 'beepbeep-ai-alt-text-generator');
+        if (is_wp_error($result) || $resolved_checkout_url === '') {
+            $fallback_checkout_url = $this->get_checkout_fallback_url($plan_hint, $price_id);
+            if ($fallback_checkout_url !== '') {
+                wp_send_json_success([
+                    'url' => $fallback_checkout_url,
+                    'session_id' => '',
+                    'fallback' => true,
+                ]);
+                return;
             }
-            
-            wp_send_json_error(['message' => $error_message]);
+
+            wp_send_json_error(['message' => $this->get_checkout_error_message($result)]);
             return;
         }
 
         wp_send_json_success([
-            'url' => $result['url'] ?? '',
-            'session_id' => $result['sessionId'] ?? ''
+            'url' => $resolved_checkout_url,
+            'session_id' => $fallback_used ? '' : ($result['sessionId'] ?? ''),
+            'fallback' => $fallback_used,
         ]);
     }
 
@@ -8012,11 +8216,15 @@ class Core {
                 
                 if (is_wp_error($generation)) {
                     // Generation failed - credits should NOT be logged (handled in generate_and_save)
+                    $error_data = $generation->get_error_data();
                     $results[] = [
                         'attachment_id' => $id,
                         'success' => false,
                         'message' => $generation->get_error_message(),
                         'code'    => $generation->get_error_code(),
+                        'remaining' => is_array($error_data) && isset($error_data['remaining']) ? $error_data['remaining'] : null,
+                        'retry_after' => is_array($error_data) && isset($error_data['retry_after']) ? $error_data['retry_after'] : null,
+                        'usage' => is_array($error_data) && isset($error_data['usage']) && is_array($error_data['usage']) ? $error_data['usage'] : null,
                     ];
                 } else {
                     // Generation succeeded - credits were already logged in generate_and_save()
@@ -8253,15 +8461,20 @@ class Core {
             ];
         }
 
-        wp_send_json_success( [
-            'images'            => $images,
-            'count'             => count( $images ),
-            'missing_alt_count' => $missing_alt_count,
-            'remaining'         => $remaining,
-            'remaining_free_images' => $remaining,
-            'limit'             => \BeepBeepAI\AltTextGenerator\Trial_Quota::get_limit(),
-            'used'              => \BeepBeepAI\AltTextGenerator\Trial_Quota::get_used(),
-        ] );
+        wp_send_json_success( array_merge(
+            $this->get_trial_usage_payload(
+                [
+                    'remaining' => $remaining,
+                    'credits_remaining' => $remaining,
+                    'remaining_free_images' => $remaining,
+                ]
+            ),
+            [
+                'images'            => $images,
+                'count'             => count( $images ),
+                'missing_alt_count' => $missing_alt_count,
+            ]
+        ) );
     }
 
     /**
@@ -8448,11 +8661,26 @@ class Core {
         $generated_count = count( $summary );
         $attempted_count = $generated_count + count( $errors );
         $unused_claimed  = max( 0, $accepted_count - $generated_count );
+        $response_code   = 'success';
         if ( $unused_claimed > 0 ) {
             \BeepBeepAI\AltTextGenerator\Trial_Quota::release( $unused_claimed );
         }
         $remaining_after = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_remaining();
         $trial_exhausted = $trial_exhausted || $remaining_after <= 0;
+
+        $auth_error_codes   = [ 'auth_required', 'user_not_found', 'trial_backend_auth', 'license_required' ];
+        $all_auth_related   = ! empty( $errors );
+        $first_auth_message = '';
+        foreach ( $errors as $error_item ) {
+            $item_code = isset( $error_item['code'] ) ? (string) $error_item['code'] : '';
+            if ( ! in_array( $item_code, $auth_error_codes, true ) ) {
+                $all_auth_related = false;
+                break;
+            }
+            if ( '' === $first_auth_message && ! empty( $error_item['message'] ) ) {
+                $first_auth_message = (string) $error_item['message'];
+            }
+        }
 
         if ( $generated_count > 0 ) {
             $message = sprintf(
@@ -8466,30 +8694,44 @@ class Core {
                 $generated_count
             );
         } elseif ( $trial_exhausted ) {
-            $message = __( "You've used your 3 free images. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator' );
+            $message = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_exhausted_message();
+            $response_code = 'bbai_trial_exhausted';
+        } elseif ( $all_auth_related ) {
+            $message = '' !== $first_auth_message
+                ? $first_auth_message
+                : __( 'Create a free account to continue fixing these images.', 'beepbeep-ai-alt-text-generator' );
+            $response_code = 'trial_backend_auth';
         } else {
             $message = __( 'No images were updated. Please try again.', 'beepbeep-ai-alt-text-generator' );
+            $response_code = 'trial_generation_failed';
         }
 
         if ( ob_get_level() > 0 ) { ob_clean(); }
-        wp_send_json_success( [
-            'requested'         => $requested,
-            'accepted_count'    => $accepted_count,
-            'attempted'         => $attempted_count,
-            'generated_count'   => $generated_count,
-            'summary'           => $summary,
-            'errors'            => $errors,
-            'remaining'         => $remaining_after,
-            'remaining_free_images' => $remaining_after,
-            'used'              => \BeepBeepAI\AltTextGenerator\Trial_Quota::get_used(),
-            'limit'             => \BeepBeepAI\AltTextGenerator\Trial_Quota::get_limit(),
-            'missing_alt_count' => $missing_alt_count,
-            'no_missing_images' => false,
-            'trial_exhausted'   => $trial_exhausted,
-            'upload_url'        => admin_url( 'media-new.php' ),
-            'library_url'       => admin_url( 'admin.php?page=bbai-library' ),
-            'message'           => $message,
-        ] );
+        wp_send_json_success( array_merge(
+            $this->get_trial_usage_payload(
+                [
+                    'remaining' => $remaining_after,
+                    'credits_remaining' => $remaining_after,
+                    'remaining_free_images' => $remaining_after,
+                    'trial_exhausted' => $trial_exhausted,
+                    'quota_state' => $trial_exhausted ? 'exhausted' : ( $remaining_after <= max( 1, (int) \BeepBeepAI\AltTextGenerator\Trial_Quota::get_low_credit_threshold() ) ? 'near_limit' : 'active' ),
+                ]
+            ),
+            [
+                'requested'         => $requested,
+                'accepted_count'    => $accepted_count,
+                'attempted'         => $attempted_count,
+                'generated_count'   => $generated_count,
+                'summary'           => $summary,
+                'errors'            => $errors,
+                'missing_alt_count' => $missing_alt_count,
+                'no_missing_images' => false,
+                'upload_url'        => admin_url( 'media-new.php' ),
+                'library_url'       => admin_url( 'admin.php?page=bbai-library' ),
+                'code'              => $response_code,
+                'message'           => $message,
+            ]
+        ) );
     }
 
     /**
@@ -8569,16 +8811,25 @@ class Core {
             $trial_used      = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_used();
 
             if ( ob_get_level() > 0 ) { ob_clean(); }
-            wp_send_json_success( [
-                'attachment_id' => $attachment_id,
-                'alt_text'      => $result,
-                'title'         => get_the_title( $attachment_id ),
-                'remaining'     => $trial_remaining,
-                'remaining_free_images' => $trial_remaining,
-                'used'          => $trial_used,
-                'accepted_count' => 1,
-                'trial_exhausted' => $trial_remaining <= 0,
-            ] );
+            wp_send_json_success( array_merge(
+                $this->get_trial_usage_payload(
+                    [
+                        'remaining' => $trial_remaining,
+                        'credits_remaining' => $trial_remaining,
+                        'remaining_free_images' => $trial_remaining,
+                        'used' => $trial_used,
+                        'credits_used' => $trial_used,
+                        'trial_exhausted' => $trial_remaining <= 0,
+                        'quota_state' => $trial_remaining <= 0 ? 'exhausted' : ( $trial_remaining <= max( 1, (int) \BeepBeepAI\AltTextGenerator\Trial_Quota::get_low_credit_threshold() ) ? 'near_limit' : 'active' ),
+                    ]
+                ),
+                [
+                    'attachment_id' => $attachment_id,
+                    'alt_text'      => $result,
+                    'title'         => get_the_title( $attachment_id ),
+                    'accepted_count' => 1,
+                ]
+            ) );
         } catch ( \Exception $e ) {
             if ( ob_get_level() > 0 ) { ob_clean(); }
             wp_send_json_error( [ 'message' => $e->getMessage(), 'code' => 'generation_exception' ] );

@@ -30,6 +30,37 @@ $bbai_has_scan_results = isset($bbai_state['has_scan_results']) ? !empty($bbai_s
 $bbai_primary_action = isset($bbai_state['primary_action']) ? (string) $bbai_state['primary_action'] : 'scan';
 $bbai_remaining_credits = isset($bbai_state['credits_remaining']) ? max(0, (int) $bbai_state['credits_remaining']) : 0;
 $bbai_is_premium_plan = isset($bbai_state['is_premium']) ? !empty($bbai_state['is_premium']) : (isset($bbai_is_premium) ? !empty($bbai_is_premium) : false);
+$bbai_product_state_model = isset($bbai_product_state_model) && is_array($bbai_product_state_model)
+    ? $bbai_product_state_model
+    : [];
+$bbai_state_cta = isset($bbai_product_state_model['cta']) && is_array($bbai_product_state_model['cta'])
+    ? $bbai_product_state_model['cta']
+    : [];
+$bbai_state_copy = isset($bbai_product_state_model['copy']) && is_array($bbai_product_state_model['copy'])
+    ? $bbai_product_state_model['copy']
+    : [];
+$bbai_locked_cta_mode = isset($bbai_state_cta['locked_mode']) ? (string) $bbai_state_cta['locked_mode'] : '';
+$bbai_locked_uses_signup = 'create_account' === $bbai_locked_cta_mode;
+$bbai_locked_cta_action = $bbai_locked_uses_signup ? 'open-signup' : 'open-upgrade';
+$bbai_locked_auth_attr = $bbai_locked_uses_signup ? ' data-auth-tab="register"' : '';
+$bbai_locked_cta_label = $bbai_locked_uses_signup
+    ? (isset($bbai_state_copy['primary_cta']) ? (string) $bbai_state_copy['primary_cta'] : __('Create free account', 'beepbeep-ai-alt-text-generator'))
+    : bbai_copy_cta_upgrade_growth();
+$bbai_locked_cta_helper = $bbai_locked_uses_signup
+    ? (isset($bbai_state_copy['helper_copy']) ? (string) $bbai_state_copy['helper_copy'] : __('Create a free account to continue.', 'beepbeep-ai-alt-text-generator'))
+    : __('Buy more credits', 'beepbeep-ai-alt-text-generator');
+$bbai_locked_cta_description = $bbai_locked_uses_signup
+    ? (isset($bbai_state_copy['exhausted_body']) ? (string) $bbai_state_copy['exhausted_body'] : __('Create a free account to keep generating ALT text in your dashboard.', 'beepbeep-ai-alt-text-generator'))
+    : __('Upgrade to continue generating ALT text in your dashboard.', 'beepbeep-ai-alt-text-generator');
+$bbai_build_locked_attrs = static function (string $reason, string $source) use ($bbai_locked_cta_action, $bbai_locked_auth_attr): string {
+    return sprintf(
+        'data-bbai-action="%1$s" data-bbai-locked-cta="1" data-bbai-lock-control="1" data-bbai-lock-reason="%2$s" data-bbai-locked-source="%3$s" aria-disabled="true"%4$s',
+        esc_attr($bbai_locked_cta_action),
+        esc_attr($reason),
+        esc_attr($source),
+        $bbai_locked_auth_attr
+    );
+};
 
 if ($bbai_quick_actions_context === 'dashboard') :
     $bbai_format_credit_helper = static function (int $required, int $remaining): string {
@@ -59,9 +90,9 @@ if ($bbai_quick_actions_context === 'dashboard') :
     $bbai_generate_attrs = 'href="#" data-bbai-action="scan-opportunity"';
     $bbai_generate_is_complete = $bbai_has_scan_results && $bbai_missing <= 0;
     if ($bbai_has_scan_results && $bbai_missing > 0 && $bbai_limit_reached) {
-        $bbai_generate_label = bbai_copy_cta_upgrade_growth();
-        $bbai_generate_helper = __('Buy more credits', 'beepbeep-ai-alt-text-generator');
-        $bbai_generate_attrs = 'href="#" data-action="show-upgrade-modal"';
+        $bbai_generate_label = $bbai_locked_cta_label;
+        $bbai_generate_helper = $bbai_locked_cta_helper;
+        $bbai_generate_attrs = 'href="#" ' . $bbai_build_locked_attrs('generate_missing', 'dashboard-quick-actions-generate');
     } elseif ($bbai_has_scan_results && $bbai_missing > 0) {
         $bbai_generate_label = bbai_copy_cta_generate_missing_images();
         $bbai_generate_helper = $bbai_format_credit_helper($bbai_missing, $bbai_remaining_credits > 0 ? $bbai_remaining_credits : $bbai_missing);
@@ -77,9 +108,9 @@ if ($bbai_quick_actions_context === 'dashboard') :
     $bbai_review_attrs = 'href="#" aria-disabled="true"';
     $bbai_review_disabled = !$bbai_has_scan_results;
     if ($bbai_has_scan_results && $bbai_weak > 0 && !$bbai_has_available_credits) {
-        $bbai_review_label = bbai_copy_cta_upgrade_growth();
-        $bbai_review_helper = __('Buy more credits', 'beepbeep-ai-alt-text-generator');
-        $bbai_review_attrs = 'href="#" data-action="show-upgrade-modal"';
+        $bbai_review_label = $bbai_locked_cta_label;
+        $bbai_review_helper = $bbai_locked_cta_helper;
+        $bbai_review_attrs = 'href="#" ' . $bbai_build_locked_attrs('reoptimize_all', 'dashboard-quick-actions-review');
         $bbai_review_disabled = false;
     } elseif ($bbai_has_scan_results && $bbai_weak > 0) {
         $bbai_review_label = bbai_copy_cta_review_needs_review_filter();
@@ -93,9 +124,11 @@ if ($bbai_quick_actions_context === 'dashboard') :
         $bbai_review_disabled = false;
     }
 
-    $bbai_bulk_label = bbai_copy_cta_upgrade_growth();
-    $bbai_bulk_helper = __('Never worry about missing ALT text again.', 'beepbeep-ai-alt-text-generator');
-    $bbai_bulk_attrs = 'href="#" data-action="show-upgrade-modal"';
+    $bbai_bulk_label = $bbai_locked_cta_label;
+    $bbai_bulk_helper = $bbai_locked_uses_signup
+        ? $bbai_locked_cta_description
+        : __('Never worry about missing ALT text again.', 'beepbeep-ai-alt-text-generator');
+    $bbai_bulk_attrs = 'href="#" ' . $bbai_build_locked_attrs('automation', 'dashboard-quick-actions-bulk');
     if ($bbai_is_premium_plan) {
         if ($bbai_missing > 0) {
             $bbai_bulk_label = bbai_copy_cta_generate_missing_images();
@@ -159,9 +192,8 @@ if ($bbai_quick_actions_context === 'dashboard') :
             <button type="button"
                 class="bbai-quick-action-card bbai-quick-action-btn <?php echo $bbai_generate_locked ? 'bbai-quick-action-card--locked bbai-quick-action-btn--locked' : ($bbai_generate_disabled ? 'bbai-quick-action-btn--disabled' : ''); ?>"
                 <?php if ($bbai_generate_locked) : ?>
-                    data-action="show-upgrade-modal"
-                    data-bbai-lock-control="1"
-                    title="<?php esc_attr_e('Upgrade to process the rest automatically', 'beepbeep-ai-alt-text-generator'); ?>"
+                    <?php echo $bbai_build_locked_attrs('generate_missing', 'library-quick-actions-generate'); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static escaped fragment. ?>
+                    title="<?php echo esc_attr($bbai_locked_cta_description); ?>"
                 <?php elseif ($bbai_missing > 0) : ?>
                     data-action="generate-missing"
                 <?php else : ?>
@@ -176,8 +208,8 @@ if ($bbai_quick_actions_context === 'dashboard') :
                     </svg>
                 </div>
                 <div class="bbai-quick-action-content">
-                    <h3 class="bbai-quick-action-title"><?php echo esc_html(bbai_copy_cta_generate_missing_images()); ?></h3>
-                    <p class="bbai-quick-action-description"><?php esc_html_e('Scan your media library and generate ALT text automatically.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                    <h3 class="bbai-quick-action-title"><?php echo esc_html($bbai_generate_locked ? $bbai_locked_cta_label : bbai_copy_cta_generate_missing_images()); ?></h3>
+                    <p class="bbai-quick-action-description"><?php echo esc_html($bbai_generate_locked ? $bbai_locked_cta_description : __('Scan your media library and generate ALT text automatically.', 'beepbeep-ai-alt-text-generator')); ?></p>
                 </div>
             </button>
 

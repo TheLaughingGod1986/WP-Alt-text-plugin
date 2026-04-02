@@ -70,9 +70,12 @@
         if (!$widget) return;
 
         // Show widget when: job running but modal hidden, OR job just completed
-        var shouldShow = (state.status === 'processing' && !state.modalVisible) ||
-                         state.status === 'complete' ||
-                         state.status === 'error';
+        var shouldShow = !state.modalVisible && (
+            state.status === 'processing' ||
+            state.status === 'complete' ||
+            state.status === 'error' ||
+            state.status === 'quota'
+        );
 
         // Hide when idle or modal is visible during processing
         if (state.status === 'idle') {
@@ -80,7 +83,7 @@
             return;
         }
 
-        if (state.status === 'processing' && state.modalVisible) {
+        if (state.modalVisible) {
             $widget.prop('hidden', true);
             return;
         }
@@ -102,6 +105,17 @@
             $widget.removeClass('bbai-job-widget--processing bbai-job-widget--error')
                    .addClass('bbai-job-widget--complete');
             viewBtn.text('Review');
+        } else if (state.status === 'quota') {
+            statusEl.text('Credits exhausted');
+            $widget.find('.bbai-job-widget__progress-text').text(
+                state.successes + ' processed, ' + state.skipped + ' skipped' +
+                (state.failures > 0 ? ', ' + state.failures + ' failed' : '')
+            );
+            $widget.find('.bbai-job-widget__eta').text('');
+            $widget.find('.bbai-job-widget__bar-fill').css('width', '100%');
+            $widget.removeClass('bbai-job-widget--processing bbai-job-widget--complete')
+                   .addClass('bbai-job-widget--error');
+            viewBtn.text('View');
         } else if (state.status === 'error') {
             statusEl.text('Completed with issues');
             $widget.find('.bbai-job-widget__progress-text').text(

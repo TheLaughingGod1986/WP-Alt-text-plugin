@@ -6,22 +6,22 @@
  */
 
 :root {
-    --bbai-section-label-size: var(--bbai-card-label-size, 12px);
-    --bbai-section-label-weight: var(--bbai-card-label-weight, 600);
+    --bbai-section-label-size: var(--bbai-admin-type-label, var(--bbai-card-label-size, 12px));
+    --bbai-section-label-weight: var(--bbai-admin-type-weight-semibold, var(--bbai-card-label-weight, 600));
     --bbai-section-label-leading: var(--bbai-card-label-leading, 1.3);
     --bbai-section-label-tracking: var(--bbai-card-label-tracking, 0.08em);
-    --bbai-section-label-color: var(--bbai-card-label-color, #7b8aa0);
+    --bbai-section-label-color: var(--bbai-admin-color-text-muted, var(--bbai-card-label-color, #7b8aa0));
 
-    --bbai-section-title-size: var(--bbai-card-title-size, 22px);
-    --bbai-section-title-weight: var(--bbai-card-title-weight, 600);
-    --bbai-section-title-leading: var(--bbai-card-title-leading, 1.2);
-    --bbai-section-title-tracking: var(--bbai-card-title-tracking, -0.02em);
-    --bbai-section-title-color: var(--bbai-card-title-color, #0f172a);
+    --bbai-section-title-size: var(--bbai-admin-type-section-title, 24px);
+    --bbai-section-title-weight: var(--bbai-admin-type-weight-semibold, 600);
+    --bbai-section-title-leading: 1.15;
+    --bbai-section-title-tracking: var(--bbai-tracking-tight, -0.02em);
+    --bbai-section-title-color: var(--bbai-admin-color-text, #0f172a);
 
-    --bbai-section-meta-size: var(--bbai-card-meta-size, 12px);
-    --bbai-section-meta-weight: var(--bbai-card-meta-weight, 500);
-    --bbai-section-meta-leading: var(--bbai-card-meta-leading, 1.35);
-    --bbai-section-meta-color: var(--bbai-card-meta-color, #64748b);
+    --bbai-section-meta-size: var(--bbai-admin-type-meta, var(--bbai-card-meta-size, 13px));
+    --bbai-section-meta-weight: var(--bbai-admin-type-weight-medium, var(--bbai-card-meta-weight, 500));
+    --bbai-section-meta-leading: 1.45;
+    --bbai-section-meta-color: var(--bbai-admin-color-text-muted, var(--bbai-card-meta-color, #64748b));
 
     --bbai-section-label-title-gap: 0px;
     --bbai-section-title-content-gap: var(--bbai-rhythm-title-to-description, var(--bbai-space-2));

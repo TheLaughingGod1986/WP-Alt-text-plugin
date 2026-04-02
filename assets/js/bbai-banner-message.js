@@ -51,12 +51,33 @@
      * @param {number} issueCount
      * @returns {string}
      */
-    function buildCreditSupportingLine(creditsRemaining, issueCount) {
+    function buildCreditSupportingLine(creditsRemaining, issueCount, options) {
+        options = options || {};
         var credits = Math.max(0, parseInt(creditsRemaining, 10) || 0);
         var issues = Math.max(0, parseInt(issueCount, 10) || 0);
+        var isAnonymousTrial = !!options.isAnonymousTrial;
+        var freePlanOffer = Math.max(0, parseInt(options.freePlanOffer, 10) || 50);
         var creditsSegment = '';
 
-        if (credits <= 0) {
+        if (isAnonymousTrial) {
+            if (credits <= 0) {
+                creditsSegment = sprintf(
+                    __('Free trial complete. Create a free account to unlock %d generations per month and continue where you left off.', 'beepbeep-ai-alt-text-generator'),
+                    freePlanOffer
+                );
+            } else {
+                creditsSegment = sprintf(
+                    _n(
+                        '%1$s trial generation left. Create a free account to unlock %2$d generations per month.',
+                        '%1$s trial generations left. Create a free account to unlock %2$d generations per month.',
+                        credits,
+                        'beepbeep-ai-alt-text-generator'
+                    ),
+                    formatCount(credits),
+                    freePlanOffer
+                );
+            }
+        } else if (credits <= 0) {
             creditsSegment = __('You can still review your existing ALT text. Upgrade to continue generating.');
         } else {
             creditsSegment = sprintf(
@@ -160,13 +181,23 @@
             0,
             parseInt(args.issueCount != null ? args.issueCount : args.issue_count, 10) || 0
         );
+        var authState = String(args.authState != null ? args.authState : args.auth_state || '').toLowerCase();
+        var quotaType = String(args.quotaType != null ? args.quotaType : args.quota_type || '').toLowerCase();
+        var isAnonymousTrial = authState === 'anonymous' || quotaType === 'trial' || !!args.isTrial;
+        var freePlanOffer = Math.max(0, parseInt(args.freePlanOffer != null ? args.freePlanOffer : args.free_plan_offer, 10) || 50);
 
-        var title =
-            creditsRemaining === 0
+        var title = isAnonymousTrial
+            ? (creditsRemaining === 0
+                ? __('Free trial complete')
+                : __('Your free trial is almost used'))
+            : (creditsRemaining === 0
                 ? __('You’ve used this month’s free allowance')
-                : __('You’re close to this month’s allowance');
+                : __('You’re close to this month’s allowance'));
 
-        var supportingLine = buildCreditSupportingLine(creditsRemaining, issueCount);
+        var supportingLine = buildCreditSupportingLine(creditsRemaining, issueCount, {
+            isAnonymousTrial: isAnonymousTrial,
+            freePlanOffer: freePlanOffer
+        });
 
         return {
             title: title,
@@ -242,10 +273,21 @@
             0,
             parseInt(args.creditsRemaining != null ? args.creditsRemaining : args.credits_remaining, 10) || 0
         );
+        var creditsLimit = Math.max(
+            1,
+            parseInt(args.creditsLimit != null ? args.creditsLimit : args.credits_limit, 10) || 50
+        );
         var isPro = !!(args.isPro != null ? args.isPro : args.is_pro);
+        var authState = String(args.authState != null ? args.authState : args.auth_state || '').toLowerCase();
+        var quotaType = String(args.quotaType != null ? args.quotaType : args.quota_type || '').toLowerCase();
+        var freePlanOffer = Math.max(0, parseInt(args.freePlanOffer != null ? args.freePlanOffer : args.free_plan_offer, 10) || 50);
+        var isAnonymousTrial = authState === 'anonymous' || quotaType === 'trial' || !!args.isTrial;
+        var pageContext = String(args.pageContext || args.page_context || '').toLowerCase();
         var lowCreditThreshold = Math.max(
             0,
-            parseInt(args.lowCreditThreshold != null ? args.lowCreditThreshold : args.low_credit_threshold, 10) || 10
+            parseInt(args.lowCreditThreshold != null ? args.lowCreditThreshold : args.low_credit_threshold, 10) || (
+                isAnonymousTrial ? Math.min(2, Math.max(1, creditsLimit - 1)) : 10
+            )
         );
         var libraryUrl = String(args.libraryUrl || args.library_url || '#');
         var usageUrl = String(args.usageUrl || args.usage_url || '');
@@ -257,7 +299,10 @@
         if (creditsRemaining === 0) {
             message = buildBannerMessage({
                 creditsRemaining: 0,
-                issueCount: totalIssues
+                issueCount: totalIssues,
+                authState: authState,
+                quotaType: quotaType,
+                freePlanOffer: freePlanOffer
             });
 
             return {
@@ -272,11 +317,26 @@
                 subtext: message.supportingLine,
                 nextStep: '',
                 note: '',
-                primaryAction: {
-                    label: __('Upgrade to Growth'),
-                    action: 'show-upgrade-modal'
-                },
-                secondaryAction: usageUrl
+                primaryAction: isAnonymousTrial
+                    ? {
+                          label: __('Create free account', 'beepbeep-ai-alt-text-generator'),
+                          action: 'show-auth-modal',
+                          attributes: {
+                              'data-auth-tab': 'register'
+                          }
+                      }
+                    : {
+                          label: __('Upgrade to Growth'),
+                          action: 'show-upgrade-modal'
+                      },
+                secondaryAction: isAnonymousTrial
+                    ? (libraryUrl
+                        ? {
+                              label: __('Open ALT Library'),
+                              href: libraryUrl
+                          }
+                        : null)
+                    : usageUrl
                     ? {
                           label: __('Review ALT text'),
                           href: usageUrl
@@ -289,7 +349,10 @@
         if (creditsRemaining > 0 && creditsRemaining <= lowCreditThreshold) {
             message = buildBannerMessage({
                 creditsRemaining: creditsRemaining,
-                issueCount: totalIssues
+                issueCount: totalIssues,
+                authState: authState,
+                quotaType: quotaType,
+                freePlanOffer: freePlanOffer
             });
 
             return {
@@ -304,11 +367,26 @@
                 subtext: message.supportingLine,
                 nextStep: '',
                 note: '',
-                primaryAction: {
-                    label: __('Upgrade to Growth'),
-                    action: 'show-upgrade-modal'
-                },
-                secondaryAction: usageUrl
+                primaryAction: isAnonymousTrial
+                    ? {
+                          label: __('Create free account', 'beepbeep-ai-alt-text-generator'),
+                          action: 'show-auth-modal',
+                          attributes: {
+                              'data-auth-tab': 'register'
+                          }
+                      }
+                    : {
+                          label: __('Upgrade to Growth'),
+                          action: 'show-upgrade-modal'
+                      },
+                secondaryAction: isAnonymousTrial
+                    ? (libraryUrl
+                        ? {
+                              label: __('Open ALT Library'),
+                              href: libraryUrl
+                          }
+                        : null)
+                    : usageUrl
                     ? {
                           label: __('Review ALT text'),
                           href: usageUrl
@@ -364,7 +442,25 @@
                 subtext: __('All images are optimized and up to date.'),
                 nextStep: '',
                 note: '',
-                primaryAction: isPro
+                primaryAction: isAnonymousTrial
+                    ? (pageContext === 'library'
+                        ? {
+                              label: __('Rescan media library'),
+                              action: 'rescan-media-library'
+                          }
+                        : libraryUrl
+                        ? {
+                              label: __('Open ALT Library'),
+                              href: libraryUrl
+                          }
+                        : {
+                              label: __('Create free account'),
+                              action: 'show-auth-modal',
+                              attributes: {
+                                  'data-auth-tab': 'register'
+                              }
+                          })
+                    : isPro
                     ? {
                           label: __('Enable auto-optimization'),
                           href: settingsUrl
@@ -373,10 +469,18 @@
                           label: __('Enable auto-optimization'),
                           action: 'show-upgrade-modal'
                       },
-                secondaryAction: {
-                    label: __('Review ALT text'),
-                    action: 'rescan-media-library'
-                },
+                secondaryAction: isAnonymousTrial
+                    ? {
+                          label: __('Create free account'),
+                          action: 'show-auth-modal',
+                          attributes: {
+                              'data-auth-tab': 'register'
+                          }
+                      }
+                    : {
+                          label: __('Review ALT text'),
+                          action: 'rescan-media-library'
+                      },
                 tertiaryAction: null
             };
         }
@@ -394,12 +498,12 @@
             nextStep: __('Start by scanning your media library.'),
             note: '',
             primaryAction: {
-                label: __('Review ALT text'),
+                label: __('Scan media library'),
                 bbaiAction: 'scan-opportunity'
             },
             secondaryAction: guideUrl
                 ? {
-                      label: __('Review ALT text'),
+                      label: __('Learn how'),
                       href: guideUrl
                   }
                 : null,

@@ -198,14 +198,15 @@ trait Core_Ajax_Queue {
         }
 
         Usage_Tracker::clear_cache();
-        $usage = $this->api_client->get_usage();
+        $stats = method_exists($this, 'get_connected_usage_payload')
+            ? $this->get_connected_usage_payload()
+            : [];
 
-        if ($usage) {
-                $stats = Usage_Tracker::get_stats_display();
-                wp_send_json_success($stats);
-            } else {
-                wp_send_json_error( [ 'message' => __( 'Failed to fetch usage data', 'beepbeep-ai-alt-text-generator' ) ] );
-                return;
-            }
+        if (is_array($stats) && !empty($stats)) {
+            wp_send_json_success($stats);
+            return;
+        }
+
+        wp_send_json_error( [ 'message' => __( 'Failed to fetch usage data', 'beepbeep-ai-alt-text-generator' ) ] );
     }
 }

@@ -12,6 +12,8 @@ namespace BeepBeepAI\AltTextGenerator\Traits;
 if (!defined('ABSPATH')) { exit; }
 
 use BeepBeepAI\AltTextGenerator\BBAI_Telemetry;
+use BeepBeepAI\AltTextGenerator\Auth_State;
+use BeepBeepAI\AltTextGenerator\Services\Usage_Helper;
 use BeepBeepAI\AltTextGenerator\Usage_Tracker;
 
 trait Core_Assets {
@@ -221,7 +223,9 @@ trait Core_Assets {
 
         $checkout_prices = $this->get_checkout_price_ids();
         $l10n_common = $this->get_common_l10n();
-        $usage_data = Usage_Tracker::get_stats_display();
+        $auth_state = Auth_State::resolve($this->api_client);
+        $usage_data = Usage_Helper::get_usage($this->api_client, (bool) ($auth_state['has_connected_account'] ?? false));
+        $trial_status = method_exists($this, 'get_trial_status') ? $this->get_trial_status() : [];
 
         wp_enqueue_script('bbai-toast', $base_url . $toast_file, [], $toast_version, true);
 
@@ -258,6 +262,13 @@ trait Core_Assets {
             'initialUsage' => $usage_data,
             'usage' => $usage_data,
             'quota' => $usage_data['quota'] ?? [],
+            'trial' => $trial_status,
+            'anonymous' => [
+                'is_guest_trial' => !empty($trial_status['should_gate']),
+                'anon_cookie_name' => function_exists('\BeepBeepAI\AltTextGenerator\bbai_get_anon_cookie_name')
+                    ? \BeepBeepAI\AltTextGenerator\bbai_get_anon_cookie_name()
+                    : 'bbai_anon_id',
+            ],
             'wizard' => $this->get_setup_wizard_bootstrap(),
             'monetisation' => $this->get_monetisation_bootstrap_for_localize(),
         ]);
@@ -269,6 +280,10 @@ trait Core_Assets {
             'admin_logout_confirm' => __('Are you sure you want to log out of the admin panel?', 'beepbeep-ai-alt-text-generator'),
             'can_manage' => $this->user_can_manage(),
             'logout_redirect' => admin_url('admin.php?page=bbai'),
+            'is_guest_trial' => !empty($trial_status['should_gate']),
+            'anon_cookie_name' => function_exists('\BeepBeepAI\AltTextGenerator\bbai_get_anon_cookie_name')
+                ? \BeepBeepAI\AltTextGenerator\bbai_get_anon_cookie_name()
+                : 'bbai_anon_id',
         ]);
         wp_localize_script('bbai-admin', 'bbai_env', [
             'ajax_url'  => admin_url('admin-ajax.php'),
@@ -786,6 +801,16 @@ trait Core_Assets {
             $asset_version($modal_css, '4.3.0')
         );
 
+        $bulk_progress_refresh_css = 'assets/css/system/bbai-bulk-progress-refresh.css';
+        if ( file_exists( $base_path . $bulk_progress_refresh_css ) ) {
+            wp_enqueue_style(
+                'bbai-bulk-progress-refresh',
+                $base_url . $bulk_progress_refresh_css,
+                [ 'bbai-modal' ],
+                $asset_version( $bulk_progress_refresh_css, '1.0.0' )
+            );
+        }
+
         $stats_data = $this->get_dashboard_stats_payload();
         $usage_data = Usage_Tracker::get_stats_display();
 
@@ -976,6 +1001,11 @@ trait Core_Assets {
      * @param array $l10n_common     Common L10n strings
      */
     private function localize_dashboard_scripts(array $stats_data, array $usage_data, array $checkout_prices, array $l10n_common): void {
+        $trial_status = method_exists($this, 'get_trial_status') ? $this->get_trial_status() : [];
+        $anon_cookie_name = function_exists('\BeepBeepAI\AltTextGenerator\bbai_get_anon_cookie_name')
+            ? \BeepBeepAI\AltTextGenerator\bbai_get_anon_cookie_name()
+            : 'bbai_anon_id';
+
         wp_localize_script('bbai-debug', 'BBAI_DEBUG', [
             'restLogs' => esc_url_raw(add_query_arg('action', 'bbai_debug_logs', admin_url('admin-ajax.php'))),
             'restClear' => esc_url_raw(add_query_arg('action', 'bbai_debug_logs_clear', admin_url('admin-ajax.php'))),
@@ -1017,6 +1047,11 @@ trait Core_Assets {
             'initialUsage' => $usage_data,
             'usage'      => $usage_data,
             'quota'      => $usage_data['quota'] ?? [],
+            'trial'      => $trial_status,
+            'anonymous'  => [
+                'is_guest_trial' => !empty($trial_status['should_gate']),
+                'anon_cookie_name' => $anon_cookie_name,
+            ],
             'pendingUpgradeTriggers' => [
                 'newUpload' => $this->consume_media_upload_upgrade_trigger(),
             ],
@@ -1041,6 +1076,8 @@ trait Core_Assets {
             'can_manage' => $this->user_can_manage(),
             'logout_redirect' => admin_url('admin.php?page=bbai'),
             'stripe_links' => self::DEFAULT_STRIPE_LINKS,
+            'is_guest_trial' => !empty($trial_status['should_gate']),
+            'anon_cookie_name' => $anon_cookie_name,
         ]);
         wp_localize_script('bbai-dashboard', 'bbai_env', [
             'ajax_url'  => admin_url('admin-ajax.php'),
@@ -1056,7 +1093,7 @@ trait Core_Assets {
             $bbai_open_auth_inline_added = true;
             wp_add_inline_script(
                 'bbai-dashboard',
-                '(function(){function bbaiTryOpenAuthModal(){if(typeof window.showAuthModal==="function"){window.showAuthModal("login");return true;}if(window.authModal&&typeof window.authModal.show==="function"){window.authModal.show();if(typeof window.authModal.showLoginForm==="function"){window.authModal.showLoginForm();}return true;}return false;}function bbaiOpenAuthFromQuery(){try{var u=new URL(window.location.href);if(u.searchParams.get("bbai_open_auth")!=="1"){return;}u.searchParams.delete("bbai_open_auth");var q=u.searchParams.toString();var next=u.pathname+(q?"?"+q:"")+u.hash;window.history.replaceState({},document.title,next);if(bbaiTryOpenAuthModal()){return;}var n=0;var t=window.setInterval(function(){n+=1;if(bbaiTryOpenAuthModal()||n>40){window.clearInterval(t);}},75);}catch(e){}}if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",bbaiOpenAuthFromQuery);}else{bbaiOpenAuthFromQuery();}})();',
+                '(function(){function bbaiTryOpenAuthModal(tab){var mode=tab==="register"?"register":"login";if(typeof window.showAuthModal==="function"){window.showAuthModal(mode);return true;}if(window.authModal&&typeof window.authModal.show==="function"){window.authModal.show();if(mode==="register"&&typeof window.authModal.showRegisterForm==="function"){window.authModal.showRegisterForm();return true;}if(mode!=="register"&&typeof window.authModal.showLoginForm==="function"){window.authModal.showLoginForm();return true;}return true;}return false;}function bbaiOpenAuthFromQuery(){try{var u=new URL(window.location.href);if(u.searchParams.get("bbai_open_auth")!=="1"){return;}var tab=u.searchParams.get("bbai_auth_tab")==="register"?"register":"login";u.searchParams.delete("bbai_open_auth");u.searchParams.delete("bbai_auth_tab");var q=u.searchParams.toString();var next=u.pathname+(q?"?"+q:"")+u.hash;window.history.replaceState({},document.title,next);if(bbaiTryOpenAuthModal(tab)){return;}var n=0;var t=window.setInterval(function(){n+=1;if(bbaiTryOpenAuthModal(tab)||n>40){window.clearInterval(t);}},75);}catch(e){}}if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",bbaiOpenAuthFromQuery);}else{bbaiOpenAuthFromQuery();}})();',
                 'after'
             );
         }

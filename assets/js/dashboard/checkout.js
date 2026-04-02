@@ -105,14 +105,25 @@ function initiateCheckout($btn, priceId, plan) {
                 plan_id: plan || ''
             }
         }).done(function(response) {
-            var checkoutUrl = response && response.success && response.data ? response.data.url : '';
+            var checkoutData = response && response.success && response.data ? response.data : {};
+            var checkoutUrl = checkoutData && checkoutData.url ? checkoutData.url : '';
+            var checkoutSessionId = checkoutData && (checkoutData.session_id || checkoutData.sessionId)
+                ? String(checkoutData.session_id || checkoutData.sessionId)
+                : '';
+            var invalidHostedSession = checkoutUrl
+                && /checkout\.stripe\.com\/c\/pay\//i.test(checkoutUrl)
+                && checkoutSessionId === '';
 
             setCheckoutButtonLoading($btn, false);
 
-            if (checkoutUrl) {
+            if (checkoutUrl && !invalidHostedSession) {
                 window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Opening Stripe checkout session:', checkoutUrl);
                 openCheckoutUrl(checkoutUrl);
                 return;
+            }
+
+            if (invalidHostedSession) {
+                window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Hosted checkout response missing session ID, falling back to payment link', checkoutData);
             }
 
             if (openCheckoutUrl(fallbackUrl)) {

@@ -16,7 +16,16 @@ class Auth_State {
     * Resolve current auth/license/stored credential state.
     *
     * @param object $api_client API client instance exposing is_authenticated(), has_active_license(), get_license_key().
-    * @return array{is_authenticated:bool, has_license:bool, has_stored_token:bool, has_stored_license:bool, has_registered_user:bool}
+    * @return array{
+    *   is_authenticated:bool,
+    *   has_license:bool,
+    *   has_stored_token:bool,
+    *   has_stored_license:bool,
+    *   has_registered_user:bool,
+    *   has_connected_account:bool,
+    *   is_anonymous_trial:bool,
+    *   auth_state:string
+    * }
     */
     public static function resolve($api_client): array {
         $is_authenticated = false;
@@ -46,7 +55,8 @@ class Auth_State {
         }
 
         $stored_token = get_option('beepbeepai_jwt_token', '');
-        $has_stored_token = !empty($stored_token);
+        $legacy_token = get_option('opptibbai_jwt_token', '');
+        $has_stored_token = !empty($stored_token) || !empty($legacy_token);
 
         $stored_license = '';
         try {
@@ -63,8 +73,11 @@ class Auth_State {
             $has_license = true;
         }
 
-        // Consider registered only if WP user is logged in AND some credential exists.
-        $has_registered_user = is_user_logged_in() && ($is_authenticated || $has_license || $has_stored_token || $has_stored_license);
+        $has_connected_account = $is_authenticated || $has_license || $has_stored_token || $has_stored_license;
+        $is_anonymous_trial = !$has_connected_account;
+
+        // Keep the historical meaning of "registered user" for wp-admin rendering.
+        $has_registered_user = is_user_logged_in() && $has_connected_account;
 
         return [
             'is_authenticated'   => $is_authenticated,
@@ -72,6 +85,9 @@ class Auth_State {
             'has_stored_token'   => $has_stored_token,
             'has_stored_license' => $has_stored_license,
             'has_registered_user'=> $has_registered_user,
+            'has_connected_account' => $has_connected_account,
+            'is_anonymous_trial' => $is_anonymous_trial,
+            'auth_state' => $is_anonymous_trial ? 'anonymous' : 'authenticated',
         ];
     }
 }

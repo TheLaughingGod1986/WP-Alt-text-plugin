@@ -691,6 +691,8 @@ class API_Client_V2 {
         if ($status_code === 401 || $status_code === 403) {
             $body_str = is_string($body) ? $body : '';
             $data_array = is_array($data) ? $data : [];
+            $endpoint_str = is_string($endpoint) ? $endpoint : '';
+            $is_billing_endpoint = $endpoint_str && strpos($endpoint_str, '/billing/') !== false;
             
             // Check if response indicates license key is required
             $error_message_lower = '';
@@ -712,7 +714,7 @@ class API_Client_V2 {
             if ($is_license_error) {
                 // Check if this is a trial user — don't show license error, show trial-specific message.
                 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
-                if ( \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() && ! \BeepBeepAI\AltTextGenerator\Trial_Quota::is_exhausted() ) {
+                if ( ! $is_billing_endpoint && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() && ! \BeepBeepAI\AltTextGenerator\Trial_Quota::is_exhausted() ) {
                     // Trial user with remaining quota — backend needs to accept X-Trial-Mode header.
                     return new \WP_Error(
                         'trial_backend_auth',
@@ -1746,13 +1748,16 @@ class API_Client_V2 {
             if ( ! function_exists( '\BeepBeepAI\AltTextGenerator\bbai_is_trial_exhausted' ) ) {
                 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-trial-quota.php';
             }
+            if ( ! class_exists( '\BeepBeepAI\AltTextGenerator\Trial_Quota' ) ) {
+                require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+            }
 
             $site_hash = \BeepBeepAI\AltTextGenerator\bbai_get_trial_site_hash();
             if ( \BeepBeepAI\AltTextGenerator\bbai_is_trial_exhausted( $site_hash ) ) {
                 $limit = \BeepBeepAI\AltTextGenerator\bbai_get_trial_limit();
                 return new \WP_Error(
                     'bbai_trial_exhausted',
-                    __( "You've used your 3 free images. Create a free account to unlock 50 more credits per month.", 'beepbeep-ai-alt-text-generator' ),
+                    \BeepBeepAI\AltTextGenerator\Trial_Quota::get_exhausted_message(),
                     [
                         'code'      => 'bbai_trial_exhausted',
                         'remaining' => 0,

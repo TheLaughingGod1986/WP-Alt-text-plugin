@@ -85,21 +85,21 @@ function bbaiNormalizeUsageObject(rawUsage) {
 
     quota = usage.quota && typeof usage.quota === 'object' ? usage.quota : {};
 
-    used = bbaiReadUsageNumber(usage, ['used']);
+    used = bbaiReadUsageNumber(usage, ['credits_used', 'creditsUsed', 'used']);
     if (isNaN(used)) {
-        used = bbaiReadUsageNumber(quota, ['used']);
+        used = bbaiReadUsageNumber(quota, ['credits_used', 'creditsUsed', 'used']);
     }
     used = isNaN(used) ? 0 : Math.max(0, used);
 
-    limit = bbaiReadUsageNumber(usage, ['limit']);
+    limit = bbaiReadUsageNumber(usage, ['credits_total', 'creditsTotal', 'creditsLimit', 'limit']);
     if (isNaN(limit)) {
-        limit = bbaiReadUsageNumber(quota, ['limit']);
+        limit = bbaiReadUsageNumber(quota, ['credits_total', 'creditsTotal', 'creditsLimit', 'limit']);
     }
     limit = isNaN(limit) || limit <= 0 ? 50 : limit;
 
-    remaining = bbaiReadUsageNumber(usage, ['remaining']);
+    remaining = bbaiReadUsageNumber(usage, ['credits_remaining', 'creditsRemaining', 'remaining']);
     if (isNaN(remaining)) {
-        remaining = bbaiReadUsageNumber(quota, ['remaining']);
+        remaining = bbaiReadUsageNumber(quota, ['credits_remaining', 'creditsRemaining', 'remaining']);
     }
     if (isNaN(remaining)) {
         remaining = Math.max(0, limit - used);
@@ -128,7 +128,58 @@ function bbaiNormalizeUsageObject(rawUsage) {
         daysUntilReset = bbaiReadUsageNumber(quota, ['days_until_reset']);
     }
 
-    planType = bbaiReadUsageString(usage, ['plan_type', 'plan']) || bbaiReadUsageString(quota, ['plan_type']) || 'free';
+    planType = bbaiReadUsageString(usage, ['plan_type', 'plan']) || bbaiReadUsageString(quota, ['plan_type', 'plan']);
+    var authState = bbaiReadUsageString(usage, ['auth_state']) || bbaiReadUsageString(quota, ['auth_state']) || 'authenticated';
+    var quotaType = bbaiReadUsageString(usage, ['quota_type']) || bbaiReadUsageString(quota, ['quota_type']) || '';
+    if (!planType && (authState === 'anonymous' || quotaType === 'trial')) {
+        planType = 'trial';
+    }
+    if (!planType) {
+        planType = 'free';
+    }
+    if (!quotaType) {
+        quotaType = planType === 'trial'
+            ? 'trial'
+            : (planType === 'growth' || planType === 'pro' || planType === 'agency' || planType === 'enterprise'
+                ? 'paid'
+                : 'monthly_account');
+    }
+    var quotaState = bbaiReadUsageString(usage, ['quota_state']) || bbaiReadUsageString(quota, ['quota_state']) || '';
+    var lowCreditThreshold = bbaiReadUsageNumber(usage, ['low_credit_threshold']);
+    if (isNaN(lowCreditThreshold)) {
+        lowCreditThreshold = bbaiReadUsageNumber(quota, ['low_credit_threshold']);
+    }
+    if (isNaN(lowCreditThreshold)) {
+        lowCreditThreshold = quotaType === 'trial'
+            ? Math.min(2, Math.max(1, limit - 1))
+            : BBAI_BANNER_LOW_CREDITS_THRESHOLD;
+    }
+    if (!quotaState) {
+        if (remaining <= 0) {
+            quotaState = 'exhausted';
+        } else if (remaining <= Math.max(1, parseInt(lowCreditThreshold, 10) || 0)) {
+            quotaState = 'near_limit';
+        } else {
+            quotaState = 'active';
+        }
+    }
+    var freePlanOffer = bbaiReadUsageNumber(usage, ['free_plan_offer']);
+    if (isNaN(freePlanOffer)) {
+        freePlanOffer = bbaiReadUsageNumber(quota, ['free_plan_offer']);
+    }
+    freePlanOffer = isNaN(freePlanOffer) ? 50 : Math.max(0, parseInt(freePlanOffer, 10));
+    var signupRequired = usage.signup_required !== undefined
+        ? !!usage.signup_required
+        : (quota.signup_required !== undefined ? !!quota.signup_required : (quotaType === 'trial' && remaining <= 0));
+    var upgradeRequired = usage.upgrade_required !== undefined
+        ? !!usage.upgrade_required
+        : (quota.upgrade_required !== undefined ? !!quota.upgrade_required : (quotaType === 'trial' ? false : remaining <= 0));
+    var isTrial = usage.is_trial !== undefined
+        ? !!usage.is_trial
+        : (quota.is_trial !== undefined ? !!quota.is_trial : (quotaType === 'trial' || authState === 'anonymous'));
+    var trialExhausted = usage.trial_exhausted !== undefined
+        ? !!usage.trial_exhausted
+        : (quota.trial_exhausted !== undefined ? !!quota.trial_exhausted : (isTrial && remaining <= 0));
 
     return Object.assign({}, usage, {
         used: used,
@@ -137,11 +188,23 @@ function bbaiNormalizeUsageObject(rawUsage) {
         percentage: percentage,
         plan: planType,
         plan_type: planType,
+        auth_state: authState,
+        quota_type: quotaType,
+        quota_state: quotaState,
+        signup_required: signupRequired,
+        upgrade_required: upgradeRequired,
+        free_plan_offer: freePlanOffer,
+        is_trial: isTrial,
+        trial_exhausted: trialExhausted,
+        low_credit_threshold: Math.max(0, parseInt(lowCreditThreshold, 10) || 0),
         resetDate: resetDate || '',
         reset_date: resetDisplay || resetDate || '',
         reset_timestamp: isNaN(resetTimestamp) ? 0 : resetTimestamp,
         days_until_reset: isNaN(daysUntilReset) ? null : Math.max(0, daysUntilReset),
         daysUntilReset: isNaN(daysUntilReset) ? null : Math.max(0, daysUntilReset),
+        credits_used: used,
+        credits_total: limit,
+        credits_remaining: remaining,
         creditsUsed: used,
         creditsTotal: limit,
         creditsLimit: limit,
@@ -152,7 +215,16 @@ function bbaiNormalizeUsageObject(rawUsage) {
             remaining: remaining,
             reset_date: resetDisplay || resetDate || '',
             reset_timestamp: isNaN(resetTimestamp) ? 0 : resetTimestamp,
-            plan_type: planType
+            plan_type: planType,
+            auth_state: authState,
+            quota_type: quotaType,
+            quota_state: quotaState,
+            signup_required: signupRequired,
+            upgrade_required: upgradeRequired,
+            free_plan_offer: freePlanOffer,
+            is_trial: isTrial,
+            trial_exhausted: trialExhausted,
+            low_credit_threshold: Math.max(0, parseInt(lowCreditThreshold, 10) || 0)
         }
     });
 }
@@ -181,6 +253,16 @@ function bbaiMirrorUsageObject(rawUsage) {
 window.bbaiNormalizeAuthenticatedUsage = window.bbaiNormalizeAuthenticatedUsage || bbaiNormalizeUsageObject;
 window.bbaiMirrorAuthenticatedUsage = window.bbaiMirrorAuthenticatedUsage || bbaiMirrorUsageObject;
 
+function bbaiIsAnonymousTrialUsage(usage) {
+    if (!usage || typeof usage !== 'object') {
+        return false;
+    }
+
+    return String(usage.auth_state || '').toLowerCase() === 'anonymous' ||
+        String(usage.quota_type || '').toLowerCase() === 'trial' ||
+        !!usage.is_trial;
+}
+
 function bbaiGetUsageObject() {
     var root = document.querySelector('[data-bbai-dashboard-root="1"]');
     var rootUsage = null;
@@ -190,20 +272,25 @@ function bbaiGetUsageObject() {
         (window.BBAI_UPGRADE && window.BBAI_UPGRADE.usage) ||
         null);
 
-    if (root) {
-        var rootUsed = parseInt(root.getAttribute('data-bbai-credits-used') || '0', 10);
-        var rootLimit = parseInt(root.getAttribute('data-bbai-credits-total') || '0', 10);
-        var rootRemaining = parseInt(root.getAttribute('data-bbai-credits-remaining') || '0', 10);
+        if (root) {
+            var rootUsed = parseInt(root.getAttribute('data-bbai-credits-used') || '0', 10);
+            var rootLimit = parseInt(root.getAttribute('data-bbai-credits-total') || '0', 10);
+            var rootRemaining = parseInt(root.getAttribute('data-bbai-credits-remaining') || '0', 10);
 
-        if (!isNaN(rootUsed) || !isNaN(rootLimit) || !isNaN(rootRemaining)) {
-            rootUsage = bbaiNormalizeUsageObject({
-                used: isNaN(rootUsed) ? 0 : rootUsed,
-                limit: isNaN(rootLimit) || rootLimit <= 0 ? 50 : rootLimit,
-                remaining: isNaN(rootRemaining) ? Math.max(0, (isNaN(rootLimit) || rootLimit <= 0 ? 50 : rootLimit) - (isNaN(rootUsed) ? 0 : rootUsed)) : rootRemaining,
-                reset_line: root.getAttribute('data-bbai-credits-reset-line') || ''
-            });
+            if (!isNaN(rootUsed) || !isNaN(rootLimit) || !isNaN(rootRemaining)) {
+                rootUsage = bbaiNormalizeUsageObject({
+                    used: isNaN(rootUsed) ? 0 : rootUsed,
+                    limit: isNaN(rootLimit) || rootLimit <= 0 ? 50 : rootLimit,
+                    remaining: isNaN(rootRemaining) ? Math.max(0, (isNaN(rootLimit) || rootLimit <= 0 ? 50 : rootLimit) - (isNaN(rootUsed) ? 0 : rootUsed)) : rootRemaining,
+                    reset_line: root.getAttribute('data-bbai-credits-reset-line') || '',
+                    auth_state: root.getAttribute('data-bbai-auth-state') || '',
+                    quota_type: root.getAttribute('data-bbai-quota-type') || '',
+                    quota_state: root.getAttribute('data-bbai-quota-state') || '',
+                    signup_required: root.getAttribute('data-bbai-signup-required') === '1',
+                    free_plan_offer: root.getAttribute('data-bbai-free-plan-offer') || 50
+                });
+            }
         }
-    }
 
     if (rootUsage && globalUsage && typeof globalUsage === 'object') {
         return bbaiNormalizeUsageObject(Object.assign({}, rootUsage, globalUsage));
@@ -2081,14 +2168,25 @@ bbaiRunWithJQuery(function($) {
                     plan_id: planName || ''
                 }, attributionPayload)
             }).done(function(response) {
-                const checkoutUrl = response && response.success && response.data ? response.data.url : '';
+                const checkoutData = response && response.success && response.data ? response.data : {};
+                const checkoutUrl = checkoutData && checkoutData.url ? checkoutData.url : '';
+                const checkoutSessionId = checkoutData && (checkoutData.session_id || checkoutData.sessionId)
+                    ? String(checkoutData.session_id || checkoutData.sessionId)
+                    : '';
+                const invalidHostedSession = checkoutUrl
+                    && /checkout\.stripe\.com\/c\/pay\//i.test(checkoutUrl)
+                    && checkoutSessionId === '';
 
                 setCheckoutButtonLoading($button, false);
 
-                if (checkoutUrl) {
+                if (checkoutUrl && !invalidHostedSession) {
                     if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Opening Stripe checkout session:', checkoutUrl);
                     openCheckoutUrl(checkoutUrl);
                     return;
+                }
+
+                if (invalidHostedSession && alttextaiDebug) {
+                    window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Hosted checkout response missing session ID, falling back to payment link', checkoutData);
                 }
 
                 if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Checkout session missing URL, falling back to payment link');
@@ -3489,7 +3587,36 @@ bbaiRunWithJQuery(function($) {
         };
     }
 
+    function isAnonymousTrialState(data) {
+        return !!(data && (
+            data.isAnonymousTrial ||
+            String(data.authState || '').toLowerCase() === 'anonymous' ||
+            String(data.quotaType || '').toLowerCase() === 'trial'
+        ));
+    }
+
+    function getAnonymousTrialOffer(data) {
+        return Math.max(0, parseCount(data && data.freePlanOffer) || 50);
+    }
+
+    function getLowCreditThresholdForState(data) {
+        var explicitThreshold = parseCount(data && data.lowCreditThreshold);
+        if (explicitThreshold > 0) {
+            return explicitThreshold;
+        }
+
+        return isAnonymousTrialState(data)
+            ? Math.min(2, Math.max(1, parseCount(data && data.creditsTotal) - 1))
+            : BBAI_BANNER_LOW_CREDITS_THRESHOLD;
+    }
+
     function getPlanLabel(data) {
+        if (isAnonymousTrialState(data)) {
+            return __('Free trial', 'beepbeep-ai-alt-text-generator');
+        }
+        if (data && data.planLabel) {
+            return String(data.planLabel);
+        }
         return data && data.isPremium
             ? __('Growth plan', 'beepbeep-ai-alt-text-generator')
             : __('Free plan', 'beepbeep-ai-alt-text-generator');
@@ -3497,6 +3624,14 @@ bbaiRunWithJQuery(function($) {
 
     function getRemainingPlanLine(data) {
         var remaining = Math.max(0, parseCount(data && data.creditsRemaining));
+        if (isAnonymousTrialState(data)) {
+            return remaining > 0
+                ? sprintf(
+                    _n('%s trial generation remaining', '%s trial generations remaining', remaining, 'beepbeep-ai-alt-text-generator'),
+                    formatCount(remaining)
+                )
+                : __('No trial generations remaining', 'beepbeep-ai-alt-text-generator');
+        }
         return sprintf(
             _n('%s image left this month', '%s images left this month', remaining, 'beepbeep-ai-alt-text-generator'),
             formatCount(remaining)
@@ -3542,6 +3677,13 @@ bbaiRunWithJQuery(function($) {
     }
 
     function getPlanResetLine(data) {
+        if (isAnonymousTrialState(data)) {
+            return sprintf(
+                __('Create a free account to unlock %d generations per month', 'beepbeep-ai-alt-text-generator'),
+                getAnonymousTrialOffer(data)
+            );
+        }
+
         var daysUntilReset = parseCount(data && data.daysUntilReset);
 
         if (daysUntilReset >= 0) {
@@ -3556,6 +3698,10 @@ bbaiRunWithJQuery(function($) {
     }
 
     function getCompactPlanResetLine(data) {
+        if (isAnonymousTrialState(data)) {
+            return __('Create free account', 'beepbeep-ai-alt-text-generator');
+        }
+
         var daysUntilReset = parseCount(data && data.daysUntilReset);
 
         if (daysUntilReset >= 0) {
@@ -3584,8 +3730,45 @@ bbaiRunWithJQuery(function($) {
     function getCreditAlertCopy(data) {
         var remaining = Math.max(0, parseCount(data && data.creditsRemaining));
         var resetLine = data && data.creditsResetLine ? String(data.creditsResetLine) : '';
+        var freePlanOffer = getAnonymousTrialOffer(data);
 
         if (!data || data.isPremium) {
+            return null;
+        }
+
+        if (isAnonymousTrialState(data)) {
+            if (remaining <= 0) {
+                return {
+                    modifier: 'danger',
+                    title: __('Free trial complete', 'beepbeep-ai-alt-text-generator'),
+                    message: sprintf(
+                        __('Create a free account to unlock %d generations per month and continue where you left off.', 'beepbeep-ai-alt-text-generator'),
+                        freePlanOffer
+                    ),
+                    ctaLabel: __('Create free account', 'beepbeep-ai-alt-text-generator'),
+                    meta: resetLine
+                };
+            }
+
+            if (remaining <= getLowCreditThresholdForState(data)) {
+                return {
+                    modifier: 'warning',
+                    title: __('Your free trial is almost used', 'beepbeep-ai-alt-text-generator'),
+                    message: sprintf(
+                        _n(
+                            'You have %1$s trial generation left. Create a free account to unlock %2$d per month.',
+                            'You have %1$s trial generations left. Create a free account to unlock %2$d per month.',
+                            remaining,
+                            'beepbeep-ai-alt-text-generator'
+                        ),
+                        formatCount(remaining),
+                        freePlanOffer
+                    ),
+                    ctaLabel: __('Create free account', 'beepbeep-ai-alt-text-generator'),
+                    meta: resetLine
+                };
+            }
+
             return null;
         }
 
@@ -3623,6 +3806,81 @@ bbaiRunWithJQuery(function($) {
     function getDashboardRoot() {
         return document.querySelector('[data-bbai-dashboard-root="1"]');
     }
+
+    function getDashboardStateRoots() {
+        return Array.prototype.slice.call(document.querySelectorAll('[data-bbai-dashboard-state-root="1"]'));
+    }
+
+    function resolveDashboardDisplayState(baseState, runtimeState) {
+        if (runtimeState === 'generation_complete' || runtimeState === 'generation_failed') {
+            return runtimeState;
+        }
+
+        if (runtimeState === 'generation_running') {
+            return baseState === 'logged_out_trial_available'
+                ? 'logged_out_trial_running'
+                : 'generation_running';
+        }
+
+        return baseState || 'logged_in_free_or_paid';
+    }
+
+    function syncDashboardStateRootAttributes(update) {
+        var roots = getDashboardStateRoots();
+
+        if (!roots.length) {
+            return null;
+        }
+
+        update = update && typeof update === 'object' ? update : {};
+
+        roots.forEach(function(root) {
+            if (!root) {
+                return;
+            }
+
+            var baseState = update.baseState !== undefined
+                ? bbaiString(update.baseState)
+                : bbaiString(root.getAttribute('data-bbai-dashboard-base-state'));
+            var runtimeState = update.runtimeState !== undefined
+                ? bbaiString(update.runtimeState || 'idle')
+                : bbaiString(root.getAttribute('data-bbai-dashboard-runtime-state') || 'idle');
+
+            if (update.isGuestTrial !== undefined) {
+                root.setAttribute('data-bbai-is-guest-trial', update.isGuestTrial ? '1' : '0');
+            }
+            if (update.lockedCtaMode !== undefined) {
+                root.setAttribute('data-bbai-locked-cta-mode', bbaiString(update.lockedCtaMode));
+            }
+            if (update.freeAccountMonthlyLimit !== undefined) {
+                root.setAttribute('data-bbai-free-account-monthly-limit', String(Math.max(0, parseCount(update.freeAccountMonthlyLimit))));
+            }
+            if (update.trial && typeof update.trial === 'object') {
+                if (update.trial.limit !== undefined) {
+                    root.setAttribute('data-bbai-trial-limit', String(Math.max(0, parseCount(update.trial.limit))));
+                }
+                if (update.trial.used !== undefined) {
+                    root.setAttribute('data-bbai-trial-used', String(Math.max(0, parseCount(update.trial.used))));
+                }
+                if (update.trial.remaining !== undefined) {
+                    root.setAttribute('data-bbai-trial-remaining', String(Math.max(0, parseCount(update.trial.remaining))));
+                }
+                if (update.trial.exhausted !== undefined) {
+                    root.setAttribute('data-bbai-trial-exhausted', update.trial.exhausted ? '1' : '0');
+                }
+            }
+
+            root.setAttribute('data-bbai-dashboard-base-state', baseState);
+            root.setAttribute('data-bbai-dashboard-runtime-state', runtimeState);
+            root.setAttribute('data-bbai-dashboard-state', resolveDashboardDisplayState(baseState, runtimeState));
+        });
+
+        return roots[0];
+    }
+
+    window.bbaiSyncDashboardStateRoot = window.bbaiSyncDashboardStateRoot || function(update) {
+        return syncDashboardStateRootAttributes(update || {});
+    };
 
     function buildUsageResetCopy(daysLeft) {
         var safeDaysLeft = Math.max(0, parseCount(daysLeft));
@@ -3666,6 +3924,7 @@ bbaiRunWithJQuery(function($) {
     function getDashboardData() {
         var root = getDashboardRoot();
         var hero = document.querySelector('[data-bbai-dashboard-hero="1"]');
+        var usage = bbaiNormalizeUsageObject(bbaiGetUsageObject());
         if (!root) {
             return null;
         }
@@ -3683,15 +3942,36 @@ bbaiRunWithJQuery(function($) {
             optimized: optimized,
             total: total,
             generated: parseCount(root.getAttribute('data-bbai-generated-count')),
-            creditsUsed: parseCount(root.getAttribute('data-bbai-credits-used')),
-            creditsTotal: Math.max(1, parseCount(root.getAttribute('data-bbai-credits-total'))),
-            creditsRemaining: parseCount(root.getAttribute('data-bbai-credits-remaining')),
-            creditsResetLine: root.getAttribute('data-bbai-credits-reset-line') || '',
+            creditsUsed: usage ? parseCount(usage.used) : parseCount(root.getAttribute('data-bbai-credits-used')),
+            creditsTotal: usage ? Math.max(1, parseCount(usage.limit)) : Math.max(1, parseCount(root.getAttribute('data-bbai-credits-total'))),
+            creditsRemaining: usage ? parseCount(usage.remaining) : parseCount(root.getAttribute('data-bbai-credits-remaining')),
+            creditsResetLine: usage ? buildCreditsResetLine(usage, root.getAttribute('data-bbai-credits-reset-line') || '') : (root.getAttribute('data-bbai-credits-reset-line') || ''),
+            authState: (usage && usage.auth_state) || root.getAttribute('data-bbai-auth-state') || '',
+            quotaType: (usage && usage.quota_type) || root.getAttribute('data-bbai-quota-type') || '',
+            quotaState: (usage && usage.quota_state) || root.getAttribute('data-bbai-quota-state') || '',
+            signupRequired: (usage && usage.signup_required !== undefined)
+                ? !!usage.signup_required
+                : root.getAttribute('data-bbai-signup-required') === '1',
+            upgradeRequired: root.getAttribute('data-bbai-upgrade-required') === '1',
+            freePlanOffer: (usage && usage.free_plan_offer !== undefined)
+                ? Math.max(0, parseCount(usage.free_plan_offer) || 50)
+                : Math.max(0, parseCount(root.getAttribute('data-bbai-free-plan-offer')) || 50),
+            lowCreditThreshold: (usage && usage.low_credit_threshold !== undefined)
+                ? Math.max(0, parseCount(usage.low_credit_threshold))
+                : Math.max(0, parseCount(root.getAttribute('data-bbai-low-credit-threshold'))),
+            planLabel: (usage && usage.plan_label) || getPlanLabel({
+                isPremium: root.getAttribute('data-bbai-is-premium') === '1',
+                authState: root.getAttribute('data-bbai-auth-state') || '',
+                quotaType: root.getAttribute('data-bbai-quota-type') || ''
+            }),
+            isAnonymousTrial: usage ? bbaiIsAnonymousTrialUsage(usage) : root.getAttribute('data-bbai-auth-state') === 'anonymous' || root.getAttribute('data-bbai-quota-type') === 'trial',
             isPremium: root.getAttribute('data-bbai-is-premium') === '1',
             hasScanResults: hasScanResultsAttr === null
                 ? (total > 0 || missing > 0 || weak > 0 || optimized > 0)
                 : hasScanResultsAttr === '1',
-            daysUntilReset: hero ? parseCount(hero.getAttribute('data-bbai-banner-days-left')) : 0,
+            daysUntilReset: usage && usage.days_until_reset !== undefined
+                ? parseCount(usage.days_until_reset)
+                : (hero ? parseCount(hero.getAttribute('data-bbai-banner-days-left')) : 0),
             lastScanTs: parseCount(root.getAttribute('data-bbai-last-scan-ts')),
             libraryUrl: root.getAttribute('data-bbai-library-url') || '',
             missingLibraryUrl: root.getAttribute('data-bbai-missing-library-url') || '',
@@ -3776,8 +4056,16 @@ bbaiRunWithJQuery(function($) {
         var hero = document.querySelector('[data-bbai-dashboard-hero="1"]');
         usage = bbaiNormalizeUsageObject(usage);
         var daysUntilReset = parseInt(usage && usage.days_until_reset, 10);
+        var isAnonymousTrial;
+        var lockedCtaMode;
+        var usagePlan;
+        var isFreeTier;
+        var trialLimit;
+        var trialUsed;
+        var trialRemaining;
+        var trialExhausted;
 
-        if (!root || !usage || typeof usage !== 'object') {
+        if (!usage || typeof usage !== 'object') {
             return;
         }
 
@@ -3785,19 +4073,58 @@ bbaiRunWithJQuery(function($) {
         var limit = Math.max(1, parseCount(usage.limit || 50));
         var remaining = parseCount(usage.remaining);
 
-        root.setAttribute('data-bbai-credits-used', String(used));
-        root.setAttribute('data-bbai-credits-total', String(limit));
-        root.setAttribute('data-bbai-credits-remaining', String(remaining));
-        root.setAttribute(
-            'data-bbai-credits-reset-line',
-            buildCreditsResetLine(usage, root.getAttribute('data-bbai-credits-reset-line') || '')
-        );
+        if (root) {
+            root.setAttribute('data-bbai-credits-used', String(used));
+            root.setAttribute('data-bbai-credits-total', String(limit));
+            root.setAttribute('data-bbai-credits-remaining', String(remaining));
+            root.setAttribute('data-bbai-auth-state', String(usage.auth_state || root.getAttribute('data-bbai-auth-state') || ''));
+            root.setAttribute('data-bbai-quota-type', String(usage.quota_type || root.getAttribute('data-bbai-quota-type') || ''));
+            root.setAttribute('data-bbai-quota-state', String(usage.quota_state || root.getAttribute('data-bbai-quota-state') || ''));
+            root.setAttribute('data-bbai-signup-required', usage.signup_required ? '1' : '0');
+            root.setAttribute('data-bbai-free-plan-offer', String(Math.max(0, parseCount(usage.free_plan_offer) || 50)));
+            root.setAttribute('data-bbai-low-credit-threshold', String(Math.max(0, parseCount(usage.low_credit_threshold) || 0)));
+            if (usage.plan_label) {
+                root.setAttribute('data-bbai-plan-label', String(usage.plan_label));
+            }
+            root.setAttribute(
+                'data-bbai-credits-reset-line',
+                buildCreditsResetLine(usage, root.getAttribute('data-bbai-credits-reset-line') || '')
+            );
+        }
 
         if (hero && !isNaN(daysUntilReset)) {
             hero.setAttribute('data-bbai-banner-days-left', String(Math.max(0, daysUntilReset)));
         }
 
-        syncCoverageProcessingFlagToRoot(root);
+        isAnonymousTrial = bbaiIsAnonymousTrialUsage(usage);
+        usagePlan = bbaiString(usage.plan || usage.plan_type).toLowerCase();
+        isFreeTier = usagePlan === '' || usagePlan === 'free' || usagePlan === 'starter' || usagePlan === 'trial';
+        trialLimit = Math.max(0, parseCount(usage.limit));
+        trialUsed = Math.max(0, parseCount(usage.used));
+        trialRemaining = Math.max(0, parseCount(usage.remaining));
+        trialExhausted = !!usage.trial_exhausted || (isAnonymousTrial && trialRemaining <= 0);
+        lockedCtaMode = isAnonymousTrial
+            ? (trialExhausted ? 'create_account' : '')
+            : ((usage.upgrade_required || (usage.quota_state === 'exhausted' && isFreeTier)) ? 'upgrade' : '');
+
+        syncDashboardStateRootAttributes({
+            baseState: isAnonymousTrial
+                ? (trialExhausted ? 'logged_out_trial_exhausted' : 'logged_out_trial_available')
+                : 'logged_in_free_or_paid',
+            isGuestTrial: isAnonymousTrial,
+            lockedCtaMode: lockedCtaMode,
+            freeAccountMonthlyLimit: Math.max(0, parseCount(usage.free_plan_offer)),
+            trial: {
+                limit: trialLimit,
+                used: trialUsed,
+                remaining: trialRemaining,
+                exhausted: trialExhausted
+            }
+        });
+
+        if (root) {
+            syncCoverageProcessingFlagToRoot(root);
+        }
     }
 
     function hasCreditsAvailable(data) {
@@ -3812,6 +4139,13 @@ bbaiRunWithJQuery(function($) {
 
         if (!usage || typeof usage !== 'object') {
             return existing;
+        }
+
+        if (bbaiIsAnonymousTrialUsage(usage)) {
+            return sprintf(
+                __('Create a free account to keep your progress and unlock %d monthly generations', 'beepbeep-ai-alt-text-generator'),
+                Math.max(0, parseCount(usage.free_plan_offer) || 50)
+            );
         }
 
         resetTsRaw = usage.reset_timestamp || usage.resetTimestamp || usage.reset_ts || 0;
@@ -3947,9 +4281,9 @@ bbaiRunWithJQuery(function($) {
         var totalIssues = missing + weak;
         var creditsRemaining = Math.max(0, parseCount(data && data.creditsRemaining));
         var usagePercent = Math.min(100, Math.max(0, Math.round((parseCount(data && data.creditsUsed) / Math.max(1, parseCount(data && data.creditsTotal))) * 100)));
-        var isLowCredits = creditsRemaining > 0 && creditsRemaining <= BBAI_BANNER_LOW_CREDITS_THRESHOLD;
+        var thresh = getLowCreditThresholdForState(data);
+        var isLowCredits = creditsRemaining > 0 && creditsRemaining <= thresh;
         var isOutOfCredits = creditsRemaining === 0;
-        var thresh = BBAI_BANNER_LOW_CREDITS_THRESHOLD;
         var libraryUrl = data && data.libraryUrl ? String(data.libraryUrl) : '#';
         var usageUrl = data && data.usageUrl ? String(data.usageUrl) : '#';
         var guideUrl = data && data.guideUrl ? String(data.guideUrl) : '#';
@@ -3960,7 +4294,7 @@ bbaiRunWithJQuery(function($) {
                 label: label || '',
                 helper: helper || '',
                 href: '#',
-                removeAttributes: ['data-action', 'data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source', 'aria-describedby']
+                removeAttributes: ['data-action', 'data-bbai-action', 'data-auth-tab', 'data-bbai-regenerate-scope', 'data-bbai-generation-source', 'aria-describedby']
             }, options || {});
         }
 
@@ -4002,13 +4336,21 @@ bbaiRunWithJQuery(function($) {
                 missingCount: missing,
                 weakCount: weak,
                 creditsRemaining: creditsRemaining,
+                creditsLimit: parseCount(data && data.creditsTotal),
                 isPro: !!(data && data.isPremium),
                 lowCreditThreshold: thresh,
                 libraryUrl: libraryUrl,
                 usageUrl: usageUrl,
                 guideUrl: guideUrl,
                 settingsUrl: settingsUrl,
-                needsReviewLibraryUrl: (data && data.needsReviewLibraryUrl) || libraryUrl || '#'
+                needsReviewLibraryUrl: (data && data.needsReviewLibraryUrl) || libraryUrl || '#',
+                authState: data && data.authState,
+                quotaType: data && data.quotaType,
+                quotaState: data && data.quotaState,
+                signupRequired: data && data.signupRequired,
+                freePlanOffer: data && data.freePlanOffer,
+                isTrial: isAnonymousTrialState(data),
+                pageContext: 'dashboard'
             })
             : null;
 
@@ -4024,14 +4366,29 @@ bbaiRunWithJQuery(function($) {
             model.tertiaryAction = createActionFromShared(sharedHeroState.tertiaryAction);
 
             if (sharedHeroState.state === 'healthy') {
-                model.loopActions = [
-                    createAction(__('Auto-optimise future uploads', 'beepbeep-ai-alt-text-generator'), '', { href: settingsUrl }),
-                    createAction(__('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'), '', { action: 'show-upgrade-modal' })
-                ];
-                model.loopSupportLine = '';
-                model.upgradeTensionLine = data && data.isPremium
-                    ? ''
-                    : __('New uploads will stop being optimised automatically on the free plan', 'beepbeep-ai-alt-text-generator');
+                if (isAnonymousTrialState(data)) {
+                    model.loopActions = [
+                        createAction(__('Open ALT Library', 'beepbeep-ai-alt-text-generator'), '', { href: libraryUrl || '#' }),
+                        createAction(__('Create free account', 'beepbeep-ai-alt-text-generator'), '', {
+                            action: 'show-auth-modal',
+                            attributes: { 'data-auth-tab': 'register' }
+                        })
+                    ];
+                    model.loopSupportLine = '';
+                    model.upgradeTensionLine = sprintf(
+                        __('Create a free account to unlock %d generations per month.', 'beepbeep-ai-alt-text-generator'),
+                        getAnonymousTrialOffer(data)
+                    );
+                } else {
+                    model.loopActions = [
+                        createAction(__('Auto-optimise future uploads', 'beepbeep-ai-alt-text-generator'), '', { href: settingsUrl }),
+                        createAction(__('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'), '', { action: 'show-upgrade-modal' })
+                    ];
+                    model.loopSupportLine = '';
+                    model.upgradeTensionLine = data && data.isPremium
+                        ? ''
+                        : __('New uploads will stop being optimised automatically on the free plan', 'beepbeep-ai-alt-text-generator');
+                }
             }
 
             return model;
@@ -4473,6 +4830,9 @@ bbaiRunWithJQuery(function($) {
             }
         }
 
+        var isAnonymousTrial = isAnonymousTrialState(data);
+        var freePlanOffer = getAnonymousTrialOffer(data);
+
         if (!hasScanResults(data)) {
             setQuickButton(generateButton, {
                 label: __('Scan media library', 'beepbeep-ai-alt-text-generator'),
@@ -4483,11 +4843,19 @@ bbaiRunWithJQuery(function($) {
             });
         } else if (data.missing > 0 && !hasCreditsAvailable(data)) {
             setQuickButton(generateButton, {
-                label: __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
-                helper: __('Continue generating ALT text without interruption.', 'beepbeep-ai-alt-text-generator'),
-                action: 'show-upgrade-modal',
+                label: isAnonymousTrial
+                    ? __('Create free account', 'beepbeep-ai-alt-text-generator')
+                    : __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
+                helper: isAnonymousTrial
+                    ? sprintf(
+                        __('Unlock %d generations per month and continue where you left off.', 'beepbeep-ai-alt-text-generator'),
+                        freePlanOffer
+                    )
+                    : __('Continue generating ALT text without interruption.', 'beepbeep-ai-alt-text-generator'),
+                action: isAnonymousTrial ? 'show-auth-modal' : 'show-upgrade-modal',
                 primary: generatePrimary,
                 preserveContent: true,
+                attributes: isAnonymousTrial ? { 'data-auth-tab': 'register' } : null,
                 removeAttributes: ['data-bbai-action']
             });
         } else if (data.missing > 0) {
@@ -4530,9 +4898,14 @@ bbaiRunWithJQuery(function($) {
             });
         } else if (data.weak > 0 && !hasCreditsAvailable(data)) {
             setQuickButton(reviewButton, {
-                label: __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
-                helper: __('Your existing results are still available to review.', 'beepbeep-ai-alt-text-generator'),
-                action: 'show-upgrade-modal',
+                label: isAnonymousTrial
+                    ? __('Open ALT Library', 'beepbeep-ai-alt-text-generator')
+                    : __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
+                helper: isAnonymousTrial
+                    ? __('Your trial results are still available to review and edit.', 'beepbeep-ai-alt-text-generator')
+                    : __('Your existing results are still available to review.', 'beepbeep-ai-alt-text-generator'),
+                action: isAnonymousTrial ? '' : 'show-upgrade-modal',
+                href: isAnonymousTrial ? (data.needsReviewLibraryUrl || data.libraryUrl || '#') : '#',
                 primary: reviewPrimary,
                 preserveContent: true,
                 removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
@@ -4568,11 +4941,19 @@ bbaiRunWithJQuery(function($) {
 
         if (!data.isPremium) {
             setQuickButton(bulkButton, {
-                label: __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
-                helper: __('Never worry about missing ALT text again.', 'beepbeep-ai-alt-text-generator'),
-                action: 'show-upgrade-modal',
+                label: isAnonymousTrial
+                    ? __('Create free account', 'beepbeep-ai-alt-text-generator')
+                    : __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
+                helper: isAnonymousTrial
+                    ? sprintf(
+                        __('Save your progress and unlock %d generations per month.', 'beepbeep-ai-alt-text-generator'),
+                        freePlanOffer
+                    )
+                    : __('Never worry about missing ALT text again.', 'beepbeep-ai-alt-text-generator'),
+                action: isAnonymousTrial ? 'show-auth-modal' : 'show-upgrade-modal',
                 primary: bulkPrimary,
                 preserveContent: true,
+                attributes: isAnonymousTrial ? { 'data-auth-tab': 'register' } : null,
                 removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
             });
             return;
@@ -5675,6 +6056,12 @@ bbaiRunWithJQuery(function($) {
         var secondaryActionNode = document.querySelector('[data-bbai-plan-action-secondary]');
         var growthComparison = getGrowthPlanComparison(data);
         var planRemaining = Math.max(0, parseCount(data && data.creditsRemaining));
+        var isAnonymousTrial = isAnonymousTrialState(data);
+        var lowCreditThreshold = getLowCreditThresholdForState(data);
+        var freePlanOffer = getAnonymousTrialOffer(data);
+        var growthComparisonBlock = growthLineNode && growthLineNode.closest
+            ? growthLineNode.closest('.bbai-command-plan__comparison-block')
+            : null;
 
         if (!data) {
             return;
@@ -5685,11 +6072,17 @@ bbaiRunWithJQuery(function($) {
         }
 
         if (usageLineNode) {
-            usageLineNode.textContent = sprintf(
-                __('%1$s / %2$s used', 'beepbeep-ai-alt-text-generator'),
-                formatCount(data.creditsUsed),
-                formatCount(data.creditsTotal)
-            );
+            usageLineNode.textContent = isAnonymousTrial
+                ? sprintf(
+                    __('%1$s / %2$s free trial generations used', 'beepbeep-ai-alt-text-generator'),
+                    formatCount(data.creditsUsed),
+                    formatCount(data.creditsTotal)
+                )
+                : sprintf(
+                    __('%1$s / %2$s used', 'beepbeep-ai-alt-text-generator'),
+                    formatCount(data.creditsUsed),
+                    formatCount(data.creditsTotal)
+                );
         }
 
         if (remainingLineNode) {
@@ -5710,6 +6103,10 @@ bbaiRunWithJQuery(function($) {
             growthLineNode.textContent = growthComparison.line || '';
         }
 
+        if (growthComparisonBlock) {
+            growthComparisonBlock.hidden = !!isAnonymousTrial;
+        }
+
         if (growthProgressNode) {
             growthProgressNode.setAttribute('data-bbai-plan-growth-progress-target', String(growthComparison.percent || 0));
             animateLinearProgress(growthProgressNode, growthComparison.percent || 0, 600, 120);
@@ -5722,12 +6119,31 @@ bbaiRunWithJQuery(function($) {
         var missingCount = Math.max(0, parseCount(data && data.missing));
 
         if (upgradeNoteNode) {
-            upgradeNoteNode.hidden = data.isPremium && missingCount <= 0;
+            upgradeNoteNode.hidden = isAnonymousTrial ? false : (data.isPremium && missingCount <= 0);
         }
 
         var hasEnoughCredits = missingCount > 0 && planRemaining >= missingCount;
 
-        if (data.isPremium && missingCount > 0) {
+        if (isAnonymousTrial) {
+            if (upgradeLeadNode) {
+                upgradeLeadNode.textContent = planRemaining <= 0
+                    ? __('Free trial complete', 'beepbeep-ai-alt-text-generator')
+                    : (String(data.quotaState || '').toLowerCase() === 'near_limit'
+                        ? __('You’re close to the end of your free trial', 'beepbeep-ai-alt-text-generator')
+                        : __('Try BeepBeep AI before creating an account', 'beepbeep-ai-alt-text-generator'));
+            }
+            if (upgradeSubNode) {
+                upgradeSubNode.textContent = planRemaining <= 0
+                    ? sprintf(
+                        __('Create a free account to unlock %d generations per month and continue where you left off.', 'beepbeep-ai-alt-text-generator'),
+                        freePlanOffer
+                    )
+                    : sprintf(
+                        __('Create a free account to unlock %d generations per month whenever you’re ready.', 'beepbeep-ai-alt-text-generator'),
+                        freePlanOffer
+                    );
+            }
+        } else if (data.isPremium && missingCount > 0) {
             if (upgradeLeadNode) {
                 upgradeLeadNode.textContent = missingCount === 1
                     ? __('One fix away from complete coverage.', 'beepbeep-ai-alt-text-generator')
@@ -5758,25 +6174,47 @@ bbaiRunWithJQuery(function($) {
         }
 
         if (upgradeCtaSubNode) {
-            upgradeCtaSubNode.hidden = !!data.isPremium;
-            if (!data.isPremium) {
+            upgradeCtaSubNode.hidden = isAnonymousTrial || !!data.isPremium;
+            if (!isAnonymousTrial && !data.isPremium) {
                 upgradeCtaSubNode.textContent = __('Automatically optimise every new image', 'beepbeep-ai-alt-text-generator');
             }
         }
 
         if (lowCreditsBadgeNode) {
-            lowCreditsBadgeNode.hidden = planRemaining >= 10 || planRemaining <= 0;
+            lowCreditsBadgeNode.hidden = planRemaining > lowCreditThreshold || planRemaining <= 0;
+            lowCreditsBadgeNode.textContent = isAnonymousTrial
+                ? __('Near limit', 'beepbeep-ai-alt-text-generator')
+                : __('Low credits', 'beepbeep-ai-alt-text-generator');
         }
 
         if (primaryActionNode) {
-            if (data.isPremium) {
+            if (isAnonymousTrial) {
+                primaryActionNode.hidden = false;
+                primaryActionNode.className = 'bbai-command-action bbai-command-action--primary';
+                primaryActionNode.textContent = planRemaining <= lowCreditThreshold
+                    ? __('Create free account', 'beepbeep-ai-alt-text-generator')
+                    : __('Continue in ALT Library', 'beepbeep-ai-alt-text-generator');
+                setInteractiveControl(primaryActionNode, planRemaining <= lowCreditThreshold
+                    ? {
+                        label: __('Create free account', 'beepbeep-ai-alt-text-generator'),
+                        action: 'show-auth-modal',
+                        href: '#',
+                        attributes: { 'data-auth-tab': 'register' },
+                        removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                    }
+                    : {
+                        label: __('Continue in ALT Library', 'beepbeep-ai-alt-text-generator'),
+                        href: data.libraryUrl || '#',
+                        removeAttributes: ['data-action', 'data-bbai-action', 'data-auth-tab', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                    });
+            } else if (data.isPremium) {
                 primaryActionNode.hidden = false;
                 primaryActionNode.className = 'bbai-command-action bbai-command-action--secondary';
                 primaryActionNode.textContent = __('Review ALT text', 'beepbeep-ai-alt-text-generator');
                 setInteractiveControl(primaryActionNode, {
                     label: __('Review ALT text', 'beepbeep-ai-alt-text-generator'),
                     href: data.needsReviewLibraryUrl || data.libraryUrl || '#',
-                    removeAttributes: ['data-action', 'data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                    removeAttributes: ['data-action', 'data-bbai-action', 'data-auth-tab', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
                 });
             } else {
                 primaryActionNode.hidden = false;
@@ -5786,13 +6224,32 @@ bbaiRunWithJQuery(function($) {
                     label: __('Turn on automatic optimisation', 'beepbeep-ai-alt-text-generator'),
                     action: 'show-upgrade-modal',
                     href: '#',
-                    removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                    removeAttributes: ['data-bbai-action', 'data-auth-tab', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
                 });
             }
         }
 
         if (secondaryActionNode) {
-            if (data.isPremium) {
+            if (isAnonymousTrial) {
+                secondaryActionNode.hidden = false;
+                secondaryActionNode.className = 'bbai-command-action bbai-command-action--secondary';
+                secondaryActionNode.textContent = planRemaining <= lowCreditThreshold
+                    ? __('Open ALT Library', 'beepbeep-ai-alt-text-generator')
+                    : __('Create free account', 'beepbeep-ai-alt-text-generator');
+                setInteractiveControl(secondaryActionNode, planRemaining <= lowCreditThreshold
+                    ? {
+                        label: __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+                        href: data.libraryUrl || '#',
+                        removeAttributes: ['data-action', 'data-bbai-action', 'data-auth-tab', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                    }
+                    : {
+                        label: __('Create free account', 'beepbeep-ai-alt-text-generator'),
+                        action: 'show-auth-modal',
+                        href: '#',
+                        attributes: { 'data-auth-tab': 'register' },
+                        removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                    });
+            } else if (data.isPremium) {
                 secondaryActionNode.hidden = true;
             } else {
                 secondaryActionNode.hidden = false;
@@ -5801,7 +6258,7 @@ bbaiRunWithJQuery(function($) {
                 setInteractiveControl(secondaryActionNode, {
                     label: __('Review ALT text', 'beepbeep-ai-alt-text-generator'),
                     href: data.needsReviewLibraryUrl || data.libraryUrl || '#',
-                    removeAttributes: ['data-action', 'data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
+                    removeAttributes: ['data-action', 'data-bbai-action', 'data-auth-tab', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
                 });
             }
         }

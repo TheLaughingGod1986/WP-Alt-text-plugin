@@ -1205,12 +1205,14 @@ class REST_Controller {
 			return new \WP_Error( 'missing_client', 'API client not available.' );
 		}
 
-		$usage = $api_client->get_usage();
-		if ( is_wp_error( $usage ) ) {
-			return $usage;
-		}
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-auth-state.php';
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-usage-helper.php';
 
-		return $usage;
+		$auth_state = \BeepBeepAI\AltTextGenerator\Auth_State::resolve( $api_client );
+		return \BeepBeepAI\AltTextGenerator\Services\Usage_Helper::get_usage(
+			$api_client,
+			(bool) ( $auth_state['has_connected_account'] ?? false )
+		);
 	}
 
 	/**
@@ -1394,7 +1396,12 @@ class REST_Controller {
 	 */
 	public function handle_trial_status( \WP_REST_Request $request ) {
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
-		return rest_ensure_response( \BeepBeepAI\AltTextGenerator\Trial_Quota::get_status() );
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-trial-quota.php';
+
+		$status = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_status();
+		$status['anon_cookie_name'] = \BeepBeepAI\AltTextGenerator\bbai_get_anon_cookie_name();
+
+		return rest_ensure_response( $status );
 	}
 
 	/**

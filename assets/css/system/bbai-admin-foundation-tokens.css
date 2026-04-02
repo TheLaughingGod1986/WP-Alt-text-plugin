@@ -17,23 +17,39 @@
     --bbai-admin-font-sans: var(--bbai-font-family);
     --bbai-admin-font-mono: var(--bbai-font-family-mono);
 
-    /* Heading scale (plugin admin pages; mirrors dashboard hero + section rhythm) */
-    --bbai-admin-type-display: var(--bbai-text-4xl);
+    /* Unified admin type scale */
+    --bbai-text-xs: 12px;
+    --bbai-text-sm: 13px;
+    --bbai-text-md: 14px;
+    --bbai-text-base: var(--bbai-text-md);
+    --bbai-text-lg: 16px;
+    --bbai-text-xl: 20px;
+    --bbai-text-2xl: 24px;
+    --bbai-text-3xl: 28px;
+
+    /* Heading scale */
+    --bbai-admin-type-display: var(--bbai-text-3xl);
     --bbai-admin-type-h1: var(--bbai-text-3xl);
     --bbai-admin-type-h2: var(--bbai-text-2xl);
     --bbai-admin-type-h3: var(--bbai-text-xl);
     --bbai-admin-type-h4: var(--bbai-text-lg);
-    --bbai-admin-type-h5: var(--bbai-text-base);
+    --bbai-admin-type-h5: var(--bbai-text-md);
     --bbai-admin-type-h6: var(--bbai-text-sm);
 
+    /* Semantic hierarchy */
+    --bbai-admin-type-hero: var(--bbai-admin-type-display);
+    --bbai-admin-type-page-title: var(--bbai-admin-type-h1);
+    --bbai-admin-type-section-title: var(--bbai-admin-type-h2);
+    --bbai-admin-type-card-title: var(--bbai-admin-type-h3);
+
     /* Body */
-    --bbai-admin-type-body: var(--bbai-text-sm);
-    --bbai-admin-type-body-lg: var(--bbai-text-base);
-    --bbai-admin-type-body-sm: var(--bbai-text-xs);
+    --bbai-admin-type-body: var(--bbai-text-md);
+    --bbai-admin-type-body-lg: var(--bbai-text-lg);
+    --bbai-admin-type-body-sm: var(--bbai-text-sm);
 
     /* Labels, meta, captions (forms + table meta) */
     --bbai-admin-type-label: var(--bbai-text-xs);
-    --bbai-admin-type-meta: var(--bbai-text-xs);
+    --bbai-admin-type-meta: var(--bbai-text-sm);
     --bbai-admin-type-caption: var(--bbai-text-xs);
 
     --bbai-admin-type-label-weight: var(--bbai-font-semibold);
@@ -331,6 +347,24 @@
     --bbai-admin-shadow-dropdown: var(--bbai-shadow-dropdown);
     --bbai-admin-shadow-focus: var(--bbai-shadow-focus);
 
+    /* Button hierarchy */
+    --bbai-admin-btn-radius: var(--bbai-admin-radius-md);
+    --bbai-admin-btn-radius-sm: var(--bbai-admin-radius-sm);
+    --bbai-admin-btn-primary-bg: var(--bbai-gradient-primary);
+    --bbai-admin-btn-primary-border: var(--bbai-admin-color-primary);
+    --bbai-admin-btn-primary-shadow: 0 10px 24px rgba(16, 185, 129, 0.16);
+    --bbai-admin-btn-primary-shadow-hover: 0 14px 30px rgba(16, 185, 129, 0.2);
+    --bbai-admin-btn-primary-lift: translateY(-1px);
+    --bbai-admin-btn-secondary-bg: var(--bbai-admin-color-bg);
+    --bbai-admin-btn-secondary-bg-hover: var(--bbai-admin-color-bg-muted);
+    --bbai-admin-btn-secondary-border: rgba(148, 163, 184, 0.26);
+    --bbai-admin-btn-secondary-border-hover: rgba(148, 163, 184, 0.4);
+    --bbai-admin-btn-secondary-text: var(--bbai-admin-color-text-secondary);
+    --bbai-admin-btn-secondary-text-hover: var(--bbai-admin-color-text);
+    --bbai-admin-btn-tertiary-text: var(--bbai-admin-color-text-muted);
+    --bbai-admin-btn-tertiary-text-hover: var(--bbai-admin-color-primary-active);
+    --bbai-admin-btn-tertiary-bg-hover: rgba(16, 185, 129, 0.08);
+
     /* -------------------------------------------------------------------------
        COMPONENT SIZING — min heights for touch targets (36px default)
        ------------------------------------------------------------------------- */
@@ -370,9 +404,9 @@
     --bbai-ds-card-bg: var(--bbai-card-bg);
     --bbai-ds-card-shadow: var(--bbai-admin-shadow-card);
 
-    --bbai-ds-page-title: var(--bbai-admin-type-h1);
-    --bbai-ds-section-title: var(--bbai-admin-type-h3);
-    --bbai-ds-subsection-title: var(--bbai-admin-type-h4);
+    --bbai-ds-page-title: var(--bbai-admin-type-page-title);
+    --bbai-ds-section-title: var(--bbai-admin-type-section-title);
+    --bbai-ds-subsection-title: var(--bbai-admin-type-card-title);
     --bbai-ds-label: var(--bbai-admin-type-label);
     --bbai-ds-body: var(--bbai-admin-type-body);
     --bbai-ds-body-lg: var(--bbai-admin-type-body-lg);

@@ -239,6 +239,55 @@ body.bbai-dashboard .bbai-ds-stack--lg {
     gap: var(--bbai-space-5);
 }
 
+/* -------------------------------------------------------------------------- */
+/* Typography utilities + shared page/card aliases                            */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-heading-xl,
+body.bbai-dashboard .bbai-page-title {
+    font-size: var(--bbai-admin-type-page-title);
+    font-weight: var(--bbai-font-bold);
+    line-height: 1.1;
+    letter-spacing: var(--bbai-tracking-tight);
+    color: var(--bbai-text-primary);
+}
+
+body.bbai-dashboard .bbai-heading-lg {
+    font-size: var(--bbai-admin-type-section-title);
+    font-weight: var(--bbai-font-semibold);
+    line-height: 1.15;
+    letter-spacing: var(--bbai-tracking-tight);
+    color: var(--bbai-text-primary);
+}
+
+body.bbai-dashboard .bbai-heading-md,
+body.bbai-dashboard .bbai-card-title {
+    font-size: var(--bbai-admin-type-card-title);
+    font-weight: var(--bbai-font-semibold);
+    line-height: 1.2;
+    letter-spacing: var(--bbai-tracking-tight);
+    color: var(--bbai-text-primary);
+}
+
+body.bbai-dashboard .bbai-text-body,
+body.bbai-dashboard .bbai-page-subtitle,
+body.bbai-dashboard .bbai-card-subtitle,
+body.bbai-dashboard .bbai-subtitle {
+    font-size: var(--bbai-admin-type-body);
+    font-weight: var(--bbai-font-normal);
+    line-height: 1.55;
+    color: var(--bbai-text-secondary);
+}
+
+body.bbai-dashboard .bbai-text-muted,
+body.bbai-dashboard .bbai-card-meta,
+body.bbai-dashboard .bbai-section-meta {
+    font-size: var(--bbai-admin-type-meta);
+    font-weight: var(--bbai-font-medium);
+    line-height: 1.5;
+    color: var(--bbai-text-muted);
+}
+
 /* Page title scale helper (Settings, Usage, etc.) */
 body.bbai-dashboard .bbai-ds-page-title {
     margin: 0 0 var(--bbai-space-2);

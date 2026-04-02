@@ -20,7 +20,8 @@
         percentage: 0,
         successes: 0,
         failures: 0,
-        status: 'idle',       // idle | processing | complete | error
+        skipped: 0,
+        status: 'idle',       // idle | processing | complete | error | quota
         label: '',
         startTime: null,
         eta: '',
@@ -68,6 +69,7 @@
             percentage: 0,
             successes: 0,
             failures: 0,
+            skipped: 0,
             status: 'processing',
             label: label || 'Processing images\u2026',
             startTime: Date.now(),
@@ -113,17 +115,22 @@
     /**
      * Mark job as complete.
      */
-    function complete() {
+    function complete(opts) {
+        opts = opts || {};
         update({
             running: false,
-            status: state.failures > 0 ? 'error' : 'complete',
+            successes: opts.successes !== undefined ? Math.max(0, parseInt(opts.successes, 10) || 0) : state.successes,
+            failures: opts.failures !== undefined ? Math.max(0, parseInt(opts.failures, 10) || 0) : state.failures,
+            skipped: opts.skipped !== undefined ? Math.max(0, parseInt(opts.skipped, 10) || 0) : state.skipped,
+            status: opts.status || (state.failures > 0 ? 'error' : 'complete'),
             percentage: 100,
-            eta: ''
+            eta: '',
+            progress: state.total
         });
 
         // Auto-dismiss widget after 8 seconds
         autoDismissTimer = setTimeout(function () {
-            if (!state.running && (state.status === 'complete' || state.status === 'error')) {
+            if (!state.running && (state.status === 'complete' || state.status === 'error' || state.status === 'quota')) {
                 reset();
             }
         }, 8000);
@@ -144,6 +151,7 @@
             percentage: 0,
             successes: 0,
             failures: 0,
+            skipped: 0,
             status: 'idle',
             label: '',
             startTime: null,

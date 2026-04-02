@@ -134,6 +134,13 @@ function bbai_banner_snapshot_from_dashboard_state(array $d): array
         'is_out_of_credits' => !empty($d['isOutOfCredits']),
         'has_ever_generated_alt' => !empty($d['hasEverGeneratedAlt']),
         'optimized_count'   => max(0, (int) ($d['optimizedCount'] ?? 0)),
+        'auth_state'        => (string) ($d['authState'] ?? ''),
+        'quota_type'        => (string) ($d['quotaType'] ?? ''),
+        'quota_state'       => (string) ($d['quotaState'] ?? ''),
+        'signup_required'   => !empty($d['signupRequired']),
+        'upgrade_required'  => !empty($d['upgradeRequired']),
+        'free_plan_offer'   => max(0, (int) ($d['freePlanOffer'] ?? 50)),
+        'low_credit_threshold' => max(0, (int) ($d['lowCreditThreshold'] ?? 0)),
         'plan_label'        => (string) ($d['planLabel'] ?? ''),
         'remaining_line'    => (string) ($d['remainingLine'] ?? ''),
         'reset_timing'      => (string) ($d['resetTiming'] ?? ''),
@@ -169,6 +176,13 @@ function bbai_banner_snapshot_merge(array $overrides): array
         'is_out_of_credits'   => false,
         'has_ever_generated_alt' => false,
         'optimized_count'     => 0,
+        'auth_state'          => '',
+        'quota_type'          => '',
+        'quota_state'         => '',
+        'signup_required'     => false,
+        'upgrade_required'    => false,
+        'free_plan_offer'     => 50,
+        'low_credit_threshold' => 0,
         'plan_label'          => '',
         'remaining_line'      => '',
         'reset_timing'        => '',
@@ -235,6 +249,19 @@ function bbai_banner_build_credit_supporting_line(int $credits_remaining, int $i
 }
 
 /**
+ * Whether the snapshot represents an anonymous trial user.
+ *
+ * @param array<string, mixed> $input
+ */
+function bbai_banner_is_anonymous_trial_contract(array $input): bool
+{
+    $auth_state = strtolower(trim((string) ($input['auth_state'] ?? '')));
+    $quota_type = strtolower(trim((string) ($input['quota_type'] ?? '')));
+
+    return 'anonymous' === $auth_state || 'trial' === $quota_type;
+}
+
+/**
  * Normalize snapshot or inline counts for the global banner resolver.
  *
  * @param array<string, mixed> $input
@@ -245,7 +272,14 @@ function bbai_banner_build_credit_supporting_line(int $credits_remaining, int $i
  *   credits_remaining:int,
  *   credits_limit:int,
  *   low_credit_threshold:int,
- *   total_issues:int
+ *   total_issues:int,
+ *   auth_state:string,
+ *   quota_type:string,
+ *   quota_state:string,
+ *   signup_required:bool,
+ *   upgrade_required:bool,
+ *   free_plan_offer:int,
+ *   is_anonymous_trial:bool
  * }
  */
 function bbai_banner_normalize_banner_data(array $input): array
@@ -255,8 +289,22 @@ function bbai_banner_normalize_banner_data(array $input): array
     $total         = max(0, (int) ($input['total_images'] ?? 0));
     $rem           = max(0, (int) ($input['credits_remaining'] ?? 0));
     $limit         = max(1, (int) ($input['credits_limit'] ?? $input['credit_limit'] ?? 50));
-    $thresh        = max(0, (int) apply_filters('bbai_banner_low_credits_threshold', BBAI_BANNER_LOW_CREDITS_THRESHOLD));
+    $thresh_input  = isset($input['low_credit_threshold']) ? (int) $input['low_credit_threshold'] : null;
     $total_issues  = $missing + $needs_review;
+    $auth_state    = trim((string) ($input['auth_state'] ?? ''));
+    $quota_type    = trim((string) ($input['quota_type'] ?? ''));
+    $quota_state   = trim((string) ($input['quota_state'] ?? ''));
+    $signup_required = !empty($input['signup_required']);
+    $upgrade_required = !empty($input['upgrade_required']);
+    $free_plan_offer = max(0, (int) ($input['free_plan_offer'] ?? 50));
+    $is_anonymous_trial = bbai_banner_is_anonymous_trial_contract($input);
+    $thresh = null !== $thresh_input && $thresh_input > 0
+        ? $thresh_input
+        : ($is_anonymous_trial
+            ? ( function_exists('\BeepBeepAI\AltTextGenerator\bbai_get_trial_near_limit_threshold')
+                ? max(1, (int) \BeepBeepAI\AltTextGenerator\bbai_get_trial_near_limit_threshold($limit))
+                : min(2, max(1, $limit - 1)) )
+            : max(0, (int) apply_filters('bbai_banner_low_credits_threshold', BBAI_BANNER_LOW_CREDITS_THRESHOLD)));
 
     return [
         'missing_count'        => $missing,
@@ -266,6 +314,13 @@ function bbai_banner_normalize_banner_data(array $input): array
         'credits_limit'        => $limit,
         'low_credit_threshold' => $thresh,
         'total_issues'         => $total_issues,
+        'auth_state'           => $auth_state,
+        'quota_type'           => $quota_type,
+        'quota_state'          => $quota_state,
+        'signup_required'      => $signup_required,
+        'upgrade_required'     => $upgrade_required,
+        'free_plan_offer'      => $free_plan_offer,
+        'is_anonymous_trial'   => $is_anonymous_trial,
     ];
 }
 
@@ -455,14 +510,24 @@ function bbai_banner_get_content(string $state, array $data): array
     $needs_review = $d['needs_review_count'];
     $total        = $d['total_images'];
     $issues       = $d['total_issues'];
+    $is_anonymous_trial = !empty($d['is_anonymous_trial']);
+    $free_plan_offer = max(0, (int) ($d['free_plan_offer'] ?? 50));
 
     switch ($state) {
         case BBAI_BANNER_STATE_OUT_OF_CREDITS:
             return [
                 'state'                   => $state,
                 'needs_attention_variant' => null,
-                'title'                   => bbai_copy_banner_out_of_credits_title(),
-                'body'                    => bbai_banner_build_credit_supporting_line(0, $issues),
+                'title'                   => $is_anonymous_trial
+                    ? __('Free trial complete', 'beepbeep-ai-alt-text-generator')
+                    : bbai_copy_banner_out_of_credits_title(),
+                'body'                    => $is_anonymous_trial
+                    ? sprintf(
+                        /* translators: %d: free signed-up plan offer. */
+                        __('Create a free account to unlock %d generations per month and continue where you left off.', 'beepbeep-ai-alt-text-generator'),
+                        $free_plan_offer
+                    )
+                    : bbai_banner_build_credit_supporting_line(0, $issues),
                 'status_line'             => '',
                 'show_progress'           => false,
             ];
@@ -471,8 +536,22 @@ function bbai_banner_get_content(string $state, array $data): array
             return [
                 'state'                   => $state,
                 'needs_attention_variant' => null,
-                'title'                   => bbai_copy_banner_low_credits_title(),
-                'body'                    => bbai_banner_build_credit_supporting_line($rem, $issues),
+                'title'                   => $is_anonymous_trial
+                    ? __('Your free trial is almost used', 'beepbeep-ai-alt-text-generator')
+                    : bbai_copy_banner_low_credits_title(),
+                'body'                    => $is_anonymous_trial
+                    ? sprintf(
+                        /* translators: 1: remaining trial generations, 2: free signed-up plan offer. */
+                        _n(
+                            '%1$s free trial generation left. Create a free account to unlock %2$d per month.',
+                            '%1$s free trial generations left. Create a free account to unlock %2$d per month.',
+                            $rem,
+                            'beepbeep-ai-alt-text-generator'
+                        ),
+                        number_format_i18n($rem),
+                        $free_plan_offer
+                    )
+                    : bbai_banner_build_credit_supporting_line($rem, $issues),
                 'status_line'             => '',
                 'show_progress'           => true,
             ];
@@ -588,11 +667,18 @@ function bbai_banner_get_banner_state_from_snapshot(array $s, string $page_conte
         'needs_review_count' => max(0, (int) ($s['needs_review_count'] ?? $s['weak_count'] ?? 0)),
         'total_images'       => max(0, (int) ($s['total_images'] ?? 0)),
         'credits_limit'      => max(1, (int) ($s['credits_limit'] ?? 50)),
+        'auth_state'         => (string) ($s['auth_state'] ?? ''),
+        'quota_type'         => (string) ($s['quota_type'] ?? ''),
+        'quota_state'        => (string) ($s['quota_state'] ?? ''),
+        'signup_required'    => !empty($s['signup_required']),
+        'upgrade_required'   => !empty($s['upgrade_required']),
+        'free_plan_offer'    => max(0, (int) ($s['free_plan_offer'] ?? 50)),
+        'low_credit_threshold' => max(0, (int) ($s['low_credit_threshold'] ?? 0)),
     ];
     $merged = array_merge($s, $payload);
     $state  = bbai_get_primary_banner_state($merged, $page_context);
 
-    return array_merge(bbai_banner_get_content($state, $payload), ['state' => $state]);
+    return array_merge(bbai_banner_get_content($state, $merged), ['state' => $state]);
 }
 
 /**
@@ -759,6 +845,9 @@ function bbai_banner_get_config(string $page_context, array $s, array $opts = []
 {
     $bs    = bbai_banner_get_banner_state_from_snapshot($s, $page_context);
     $state = (string) $bs['state'];
+    $normalized = bbai_banner_normalize_banner_data($s);
+    $is_anonymous_trial = !empty($normalized['is_anonymous_trial']);
+    $free_plan_offer = max(0, (int) ($normalized['free_plan_offer'] ?? 50));
 
     $used    = max(0, (int) ($s['credits_used'] ?? 0));
     $limit   = max(1, (int) ($s['credits_limit'] ?? 50));
@@ -768,15 +857,30 @@ function bbai_banner_get_config(string $page_context, array $s, array $opts = []
     $usage_url    = (string) ($s['usage_url'] ?? admin_url('admin.php?page=bbai-credit-usage'));
     $guide_url    = (string) ($s['guide_url'] ?? admin_url('admin.php?page=bbai-guide'));
 
-    $progress_aria = sprintf(
-        /* translators: 1: percent used, 2: credits used, 3: credit limit */
-        __('%1$s%% used — %2$s of %3$s credits this cycle.', 'beepbeep-ai-alt-text-generator'),
-        (string) number_format_i18n($pct),
-        (string) number_format_i18n($used),
-        (string) number_format_i18n($limit)
-    );
+    $progress_aria = $is_anonymous_trial
+        ? sprintf(
+            /* translators: 1: percent used, 2: used trial generations, 3: total trial generations. */
+            __('%1$s%% of the free trial used — %2$s of %3$s generations.', 'beepbeep-ai-alt-text-generator'),
+            (string) number_format_i18n($pct),
+            (string) number_format_i18n($used),
+            (string) number_format_i18n($limit)
+        )
+        : sprintf(
+            /* translators: 1: percent used, 2: credits used, 3: credit limit */
+            __('%1$s%% used — %2$s of %3$s credits this cycle.', 'beepbeep-ai-alt-text-generator'),
+            (string) number_format_i18n($pct),
+            (string) number_format_i18n($used),
+            (string) number_format_i18n($limit)
+        );
 
     $upgrade_growth = bbai_copy_cta_upgrade_growth();
+    $signup_action = [
+        'label'      => __('Create free account', 'beepbeep-ai-alt-text-generator'),
+        'attributes' => [
+            'data-action'   => 'show-auth-modal',
+            'data-auth-tab' => 'register',
+        ],
+    ];
     $review_usage   = [
         'label'      => bbai_copy_cta_review_usage(),
         'href'       => $usage_url,
@@ -822,6 +926,22 @@ function bbai_banner_get_config(string $page_context, array $s, array $opts = []
                         'attributes' => [],
                     ],
                     'show_hero_loop'   => $default_loop,
+                ]);
+            }
+
+            if ($is_anonymous_trial) {
+                return array_merge($base, [
+                    'semantic_state'   => 'healthy',
+                    'tone'             => 'healthy',
+                    'banner_variant'   => 'success',
+                    'title'            => (string) $bs['title'],
+                    'body'             => (string) $bs['body'],
+                    'status_line'      => (string) $bs['status_line'],
+                    'show_progress'    => false,
+                    'primary_action'   => BBAI_BANNER_CTX_LIBRARY === $page_context
+                        ? bbai_banner_action_scan_manual($page_context)
+                        : bbai_banner_action_open_library($page_context, $library_url),
+                    'secondary_action' => $signup_action,
                 ]);
             }
 
@@ -884,8 +1004,10 @@ function bbai_banner_get_config(string $page_context, array $s, array $opts = []
                 'status_line'             => (string) $bs['status_line'],
                 'show_progress'           => true,
                 'progress_aria_valuetext' => $progress_aria,
-                'primary_action'          => bbai_banner_action_upgrade_modal($upgrade_growth),
-                'secondary_action'        => $review_usage,
+                'primary_action'          => $is_anonymous_trial ? $signup_action : bbai_banner_action_upgrade_modal($upgrade_growth),
+                'secondary_action'        => $is_anonymous_trial
+                    ? bbai_banner_action_open_library($page_context, $library_url)
+                    : $review_usage,
                 'show_hero_loop'          => false,
             ]);
 
@@ -898,8 +1020,19 @@ function bbai_banner_get_config(string $page_context, array $s, array $opts = []
                 'body'             => (string) $bs['body'],
                 'status_line'      => (string) $bs['status_line'],
                 'show_progress'    => false,
-                'primary_action'   => bbai_banner_action_upgrade_modal($upgrade_growth),
-                'secondary_action' => $review_usage,
+                'primary_action'   => $is_anonymous_trial
+                    ? [
+                        'label'      => sprintf(
+                            /* translators: %d: free signed-up plan offer. */
+                            __('Create free account for %d/month', 'beepbeep-ai-alt-text-generator'),
+                            $free_plan_offer
+                        ),
+                        'attributes' => $signup_action['attributes'],
+                    ]
+                    : bbai_banner_action_upgrade_modal($upgrade_growth),
+                'secondary_action' => $is_anonymous_trial
+                    ? bbai_banner_action_open_library($page_context, $library_url)
+                    : $review_usage,
                 'show_hero_loop'   => false,
             ]);
 

@@ -6,26 +6,26 @@
  */
 
 :root {
-    --bbai-card-label-size: 12px;
-    --bbai-card-label-weight: 600;
+    --bbai-card-label-size: var(--bbai-admin-type-label, 12px);
+    --bbai-card-label-weight: var(--bbai-admin-type-weight-semibold, 600);
     --bbai-card-label-leading: 1.3;
     --bbai-card-label-tracking: 0.08em;
     --bbai-card-label-margin-bottom: var(--bbai-rhythm-label-to-title, var(--bbai-space-2));
-    --bbai-card-label-color: #7b8aa0;
+    --bbai-card-label-color: var(--bbai-admin-color-text-muted, #7b8aa0);
 
-    --bbai-card-title-size: 22px;
-    --bbai-card-title-weight: 600;
+    --bbai-card-title-size: var(--bbai-admin-type-card-title, 20px);
+    --bbai-card-title-weight: var(--bbai-admin-type-weight-semibold, 600);
     --bbai-card-title-leading: 1.2;
     --bbai-card-title-margin-bottom: var(--bbai-rhythm-title-to-description, var(--bbai-space-2));
     --bbai-card-title-tracking: -0.02em;
-    --bbai-card-title-color: #0f172a;
+    --bbai-card-title-color: var(--bbai-admin-color-text, #0f172a);
 
-    --bbai-card-description-size: 14px;
-    --bbai-card-description-weight: 400;
+    --bbai-card-description-size: var(--bbai-admin-type-body, 14px);
+    --bbai-card-description-weight: var(--bbai-admin-type-weight-regular, 400);
     --bbai-card-description-leading: 1.5;
     --bbai-card-description-margin-bottom: var(--bbai-rhythm-description-to-content, var(--bbai-space-4));
     --bbai-card-description-max-width: 35rem;
-    --bbai-card-description-color: #475569;
+    --bbai-card-description-color: var(--bbai-admin-color-text-secondary, #475569);
 
     --bbai-card-section-gap: var(--bbai-rhythm-section-gap, var(--bbai-space-4));
     --bbai-card-chips-margin-top: var(--bbai-space-3);
@@ -34,10 +34,10 @@
     --bbai-card-padding-y-header: var(--bbai-rhythm-card-header-padding-y, var(--bbai-space-4));
     --bbai-card-padding-y-body: var(--bbai-rhythm-card-body-padding-y, var(--bbai-space-4));
 
-    --bbai-card-meta-size: 12px;
-    --bbai-card-meta-weight: 500;
+    --bbai-card-meta-size: var(--bbai-admin-type-meta, 13px);
+    --bbai-card-meta-weight: var(--bbai-admin-type-weight-medium, 500);
     --bbai-card-meta-leading: 1.35;
-    --bbai-card-meta-color: #64748b;
+    --bbai-card-meta-color: var(--bbai-admin-color-text-muted, #64748b);
 
     --bbai-command-card-padding: var(--bbai-rhythm-card-padding, var(--bbai-space-6));
 }

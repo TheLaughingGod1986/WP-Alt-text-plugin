@@ -58,6 +58,26 @@ class BbAIAuthModal {
         return fallback || 'modal';
     }
 
+    getPostAuthRedirectUrl() {
+        try {
+            const currentUrl = new URL(window.location.href);
+            const currentPage = String(currentUrl.searchParams.get('page') || '').toLowerCase();
+
+            if (currentPage && currentPage.indexOf('bbai') === 0) {
+                currentUrl.searchParams.delete('bbai_open_auth');
+                currentUrl.searchParams.delete('bbai_auth_tab');
+                currentUrl.searchParams.delete('checkout');
+                currentUrl.searchParams.delete('checkout_error');
+                return currentUrl.toString();
+            }
+        } catch (error) {
+            // Fall through to the static fallback below.
+        }
+
+        const adminUrl = window.bbai_ajax?.admin_url || 'admin.php';
+        return `${adminUrl}?page=bbai`;
+    }
+
     checkResetPasswordParams() {
         // Check if URL contains reset token and email params
         const urlParams = new URLSearchParams(window.location.search);
@@ -577,16 +597,10 @@ class BbAIAuthModal {
                     // Force update authentication state
                     window.bbai_ajax.is_authenticated = true;
                 }
-                
-                // Reload and ensure we're on the dashboard tab
+
+                const redirectUrl = this.getPostAuthRedirectUrl();
                 setTimeout(() => {
-                    const currentUrl = new URL(window.location.href);
-                    // Ensure we're on the dashboard tab
-                    currentUrl.searchParams.set('tab', 'dashboard');
-                    currentUrl.searchParams.delete('checkout');
-                    currentUrl.searchParams.delete('checkout_error');
-                    // Force a full reload to refresh authentication state
-                    window.location.href = currentUrl.toString();
+                    window.location.href = redirectUrl;
                 }, 800);
             } else {
                 // WordPress AJAX error response - message is in data.data.message
@@ -686,9 +700,9 @@ class BbAIAuthModal {
                 this.hide();
                 this.showSuccess('Account created successfully! Welcome to SEO AI Alt Text.');
 
-                // Reload page to refresh authentication state
+                const redirectUrl = this.getPostAuthRedirectUrl();
                 setTimeout(() => {
-                    window.location.reload();
+                    window.location.href = redirectUrl;
                 }, 1500);
             } else {
                 // WordPress AJAX error response - message is in data.data.message

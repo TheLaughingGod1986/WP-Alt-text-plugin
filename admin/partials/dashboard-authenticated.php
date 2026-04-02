@@ -8,30 +8,18 @@ use BeepBeepAI\AltTextGenerator\Usage_Tracker;
 ?>
 <div class="bbai-clean-dashboard" data-stats='<?php echo esc_attr(wp_json_encode($bbai_stats)); ?>'>
                 <?php
-                // Check for stored credentials (token or license) to determine if user is registered
-                // This is more reliable than is_authenticated() which validates via API
-                $bbai_stored_token = get_option('beepbeepai_jwt_token', '');
-                $bbai_has_stored_token = !empty($bbai_stored_token);
-                $bbai_stored_license = '';
-                try {
-                    $bbai_stored_license = $this->api_client->get_license_key();
-                } catch (Exception $e) {
-                    $bbai_stored_license = '';
-                } catch (Error $e) {
-                    $bbai_stored_license = '';
-                }
-                $bbai_has_stored_license = !empty($bbai_stored_license);
-                $bbai_has_registered_user = ($bbai_has_registered_user ?? false) || $bbai_has_stored_token || $bbai_has_stored_license;
+                $bbai_has_connected_account = (bool) ($bbai_has_connected_account ?? $bbai_has_registered_user ?? false);
+                $bbai_is_authenticated = (bool) ($bbai_is_authenticated ?? false);
                 
                 // Reuse preloaded usage when present to avoid duplicate API calls.
                 if (!isset($bbai_usage_stats) || !is_array($bbai_usage_stats)) {
                     require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-usage-helper.php';
-                    $bbai_usage_stats = Usage_Helper::get_usage($this->api_client, $bbai_has_registered_user);
+                    $bbai_usage_stats = Usage_Helper::get_usage($this->api_client, $bbai_has_connected_account);
                 }
                 if (!class_exists('\BeepBeepAI\AltTextGenerator\Usage_Tracker')) {
                     require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
                 }
-                $bbai_account_summary = $this->api_client->is_authenticated() ? $this->get_account_summary($bbai_usage_stats) : null;
+                $bbai_account_summary = $bbai_is_authenticated ? $this->get_account_summary($bbai_usage_stats) : null;
                 
                 // Get raw values directly from the stats array - same calculation method as Settings tab
                 $bbai_dashboard_used = max(0, intval($bbai_usage_stats['used'] ?? 0));
