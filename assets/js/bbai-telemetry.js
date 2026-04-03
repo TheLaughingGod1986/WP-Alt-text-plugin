@@ -1082,6 +1082,14 @@
             track('checkout_started', buildUpgradeIntentProps(node, extraProps || {}));
         }
 
+        $(document).on('click', '[data-bbai-analytics-upgrade]', function() {
+            var name = ($(this).attr('data-bbai-analytics-upgrade') || '').trim();
+            if (!name) {
+                return;
+            }
+            track(name, buildUpgradeIntentProps(this, { upgrade_path_event: name }));
+        });
+
         function findFallbackUpgradeTarget(startNode) {
             var target = startNode && typeof startNode.closest === 'function' ? startNode : null;
             var i;

@@ -139,6 +139,7 @@ function bbai_banner_snapshot_from_dashboard_state(array $d): array
         'quota_state'       => (string) ($d['quotaState'] ?? ''),
         'signup_required'   => !empty($d['signupRequired']),
         'upgrade_required'  => !empty($d['upgradeRequired']),
+        'is_trial'          => !empty($d['isTrial']),
         'free_plan_offer'   => max(0, (int) ($d['freePlanOffer'] ?? 50)),
         'low_credit_threshold' => max(0, (int) ($d['lowCreditThreshold'] ?? 0)),
         'plan_label'        => (string) ($d['planLabel'] ?? ''),
@@ -152,6 +153,8 @@ function bbai_banner_snapshot_from_dashboard_state(array $d): array
         'guide_url'         => (string) ($d['guideUrl'] ?? admin_url('admin.php?page=bbai-guide')),
         'billing_portal_url' => '',
         'upgrade_url'       => '',
+        'has_connected_account' => !empty($d['hasConnectedAccount']),
+        'plan_slug'         => strtolower((string) ($d['planSlug'] ?? 'free')),
     ];
 }
 
@@ -181,6 +184,7 @@ function bbai_banner_snapshot_merge(array $overrides): array
         'quota_state'         => '',
         'signup_required'     => false,
         'upgrade_required'    => false,
+        'is_trial'            => false,
         'free_plan_offer'     => 50,
         'low_credit_threshold' => 0,
         'plan_label'          => '',
@@ -194,6 +198,8 @@ function bbai_banner_snapshot_merge(array $overrides): array
         'guide_url'           => admin_url('admin.php?page=bbai-guide'),
         'billing_portal_url'  => '',
         'upgrade_url'         => '',
+        'has_connected_account' => true,
+        'plan_slug'           => 'free',
     ];
 
     return array_merge($defaults, $overrides);
@@ -258,7 +264,7 @@ function bbai_banner_is_anonymous_trial_contract(array $input): bool
     $auth_state = strtolower(trim((string) ($input['auth_state'] ?? '')));
     $quota_type = strtolower(trim((string) ($input['quota_type'] ?? '')));
 
-    return 'anonymous' === $auth_state || 'trial' === $quota_type;
+    return 'anonymous' === $auth_state || 'trial' === $quota_type || !empty($input['is_trial']);
 }
 
 /**
@@ -382,6 +388,9 @@ function bbai_resolve_top_banner(array $snapshot, string $page_context = ''): st
  */
 function bbai_get_active_banner_slot_from_state(string $state): ?string
 {
+    if ('' !== $state && 0 === strpos($state, 'plan_')) {
+        return null;
+    }
     if (BBAI_BANNER_STATE_OUT_OF_CREDITS === $state || BBAI_BANNER_STATE_LOW_CREDITS === $state) {
         return 'lowCredits';
     }
@@ -819,6 +828,31 @@ function bbai_banner_action_open_library(string $page_context, string $library_u
 }
 
 /**
+ * Credit-pressure hero CTAs (low / out): single ladder via Upgrade_Path_Resolver.
+ *
+ * @return array{0:?array<string,mixed>,1:?array<string,mixed>}
+ */
+function bbai_banner_upgrade_credit_actions(string $page_context, array $s): array
+{
+    if (!class_exists(\BeepBeepAI\AltTextGenerator\Services\Upgrade_Path_Resolver::class, false)) {
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-upgrade-path-resolver.php';
+    }
+
+    [$primary, $secondary] = \BeepBeepAI\AltTextGenerator\Services\Upgrade_Path_Resolver::credit_banner_actions($s, $page_context);
+
+    if (BBAI_BANNER_CTX_LIBRARY === $page_context) {
+        if (is_array($primary) && isset($primary['attributes']) && is_array($primary['attributes'])) {
+            $primary['attributes'] = bbai_banner_merge_library_attrs($primary['attributes']);
+        }
+        if (is_array($secondary) && isset($secondary['attributes']) && is_array($secondary['attributes'])) {
+            $secondary['attributes'] = bbai_banner_merge_library_attrs($secondary['attributes']);
+        }
+    }
+
+    return [$primary, $secondary];
+}
+
+/**
  * Single source of truth for banner content, CTAs, progress visibility, and tone.
  * Copy comes only from bbai_banner_get_banner_state_from_snapshot() — no page overrides.
  *
@@ -843,6 +877,10 @@ function bbai_banner_action_open_library(string $page_context, string $library_u
  */
 function bbai_banner_get_config(string $page_context, array $s, array $opts = []): array
 {
+    if (!function_exists('bbai_copy_cta_upgrade_growth')) {
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/content/bbai-admin-copy.php';
+    }
+
     $bs    = bbai_banner_get_banner_state_from_snapshot($s, $page_context);
     $state = (string) $bs['state'];
     $normalized = bbai_banner_normalize_banner_data($s);
@@ -873,18 +911,22 @@ function bbai_banner_get_config(string $page_context, array $s, array $opts = []
             (string) number_format_i18n($limit)
         );
 
-    $upgrade_growth = bbai_copy_cta_upgrade_growth();
     $signup_action = [
-        'label'      => __('Create free account', 'beepbeep-ai-alt-text-generator'),
+        'label'      => function_exists('bbai_copy_cta_create_free_account') ? bbai_copy_cta_create_free_account() : __('Create free account', 'beepbeep-ai-alt-text-generator'),
         'attributes' => [
-            'data-action'   => 'show-auth-modal',
-            'data-auth-tab' => 'register',
+            'data-action'                 => 'show-auth-modal',
+            'data-auth-tab'               => 'register',
+            'data-bbai-analytics-upgrade' => 'trial_create_account_clicked',
         ],
     ];
-    $review_usage   = [
-        'label'      => bbai_copy_cta_review_usage(),
-        'href'       => $usage_url,
-        'attributes' => [],
+    $needs_review_library_href = (string) ( $s['needs_review_library_url'] ?? '' );
+    if ( '' === $needs_review_library_href ) {
+        $needs_review_library_href = bbai_alt_library_needs_review_url();
+    }
+    $review_alt_in_library = [
+        'label'        => bbai_copy_cta_review_usage(),
+        'href'         => $needs_review_library_href,
+        'attributes'   => [],
     ];
 
     $default_loop = BBAI_BANNER_CTX_DASHBOARD === $page_context
@@ -995,6 +1037,28 @@ function bbai_banner_get_config(string $page_context, array $s, array $opts = []
             ]);
 
         case BBAI_BANNER_STATE_LOW_CREDITS:
+            if ($is_anonymous_trial) {
+                $primary_anon_low = BBAI_BANNER_CTX_LIBRARY === $page_context
+                    ? bbai_banner_action_scan_manual($page_context)
+                    : bbai_banner_action_open_library($page_context, $library_url);
+
+                return array_merge($base, [
+                    'semantic_state'          => 'low_credits',
+                    'tone'                    => 'attention',
+                    'banner_variant'          => 'warning',
+                    'title'                   => (string) $bs['title'],
+                    'body'                    => (string) $bs['body'],
+                    'status_line'             => (string) $bs['status_line'],
+                    'show_progress'           => true,
+                    'progress_aria_valuetext' => $progress_aria,
+                    'primary_action'          => $primary_anon_low,
+                    'secondary_action'        => $signup_action,
+                    'show_hero_loop'          => false,
+                ]);
+            }
+
+            [$low_primary, $low_secondary] = bbai_banner_upgrade_credit_actions($page_context, $s);
+
             return array_merge($base, [
                 'semantic_state'          => 'low_credits',
                 'tone'                    => 'attention',
@@ -1004,14 +1068,14 @@ function bbai_banner_get_config(string $page_context, array $s, array $opts = []
                 'status_line'             => (string) $bs['status_line'],
                 'show_progress'           => true,
                 'progress_aria_valuetext' => $progress_aria,
-                'primary_action'          => $is_anonymous_trial ? $signup_action : bbai_banner_action_upgrade_modal($upgrade_growth),
-                'secondary_action'        => $is_anonymous_trial
-                    ? bbai_banner_action_open_library($page_context, $library_url)
-                    : $review_usage,
+                'primary_action'          => $low_primary,
+                'secondary_action'        => $low_secondary,
                 'show_hero_loop'          => false,
             ]);
 
         case BBAI_BANNER_STATE_OUT_OF_CREDITS:
+            [$out_primary, $out_secondary] = bbai_banner_upgrade_credit_actions($page_context, $s);
+
             return array_merge($base, [
                 'semantic_state'   => 'out_of_credits',
                 'tone'             => 'paused',
@@ -1020,19 +1084,8 @@ function bbai_banner_get_config(string $page_context, array $s, array $opts = []
                 'body'             => (string) $bs['body'],
                 'status_line'      => (string) $bs['status_line'],
                 'show_progress'    => false,
-                'primary_action'   => $is_anonymous_trial
-                    ? [
-                        'label'      => sprintf(
-                            /* translators: %d: free signed-up plan offer. */
-                            __('Create free account for %d/month', 'beepbeep-ai-alt-text-generator'),
-                            $free_plan_offer
-                        ),
-                        'attributes' => $signup_action['attributes'],
-                    ]
-                    : bbai_banner_action_upgrade_modal($upgrade_growth),
-                'secondary_action' => $is_anonymous_trial
-                    ? bbai_banner_action_open_library($page_context, $library_url)
-                    : $review_usage,
+                'primary_action'   => $out_primary,
+                'secondary_action' => $out_secondary,
                 'show_hero_loop'   => false,
             ]);
 
@@ -1198,6 +1251,7 @@ function bbai_banner_build_command_hero(string $page_context, array $s, array $o
         'icon_wrapper_attrs'       => isset($opts['icon_wrapper_attrs']) && is_array($opts['icon_wrapper_attrs']) ? $opts['icon_wrapper_attrs'] : [],
         'headline_attrs'           => isset($opts['headline_attrs']) && is_array($opts['headline_attrs']) ? $opts['headline_attrs'] : [],
         'subtext_attrs'            => isset($opts['subtext_attrs']) && is_array($opts['subtext_attrs']) ? $opts['subtext_attrs'] : [],
+        'banner_logical_state'     => $state,
     ];
 
     if ('' === $hero['page_hero_variant']) {

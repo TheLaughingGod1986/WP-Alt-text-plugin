@@ -219,7 +219,7 @@ trait Core_Assets {
         $toast_file = $this->get_asset_path($js_base, 'toast', $use_debug_assets, 'js', $base_path);
         $toast_version = $this->get_asset_version($toast_file, '1.0.0', $base_path);
         $admin_file = $this->get_asset_path($js_base, 'bbai-admin', $use_debug_assets, 'js', $base_path);
-        $admin_version = $this->get_asset_version($admin_file, '3.0.3', $base_path);
+        $admin_version = $this->get_asset_version($admin_file, '3.0.6', $base_path);
 
         $checkout_prices = $this->get_checkout_price_ids();
         $l10n_common = $this->get_common_l10n();
@@ -362,16 +362,16 @@ trait Core_Assets {
         $admin_css = $this->get_asset_path($css_base, 'bbai-admin', $use_debug_assets, 'css', $base_path);
         $contact_modal_css = $this->get_asset_path($css_base, 'bbai-contact-modal', $use_debug_assets, 'css', $base_path);
 
-        // Unified CSS bundle (with fallback if minified missing)
-        $unified_css = $use_debug_assets ? 'assets/css/unified.css' : 'assets/css/unified.min.css';
+        // Unified CSS bundle (prefer non-minified for static analysis / Plugin Check; min fallback only if needed)
+        $unified_css = 'assets/css/unified.css';
         if ( ! file_exists( $base_path . $unified_css ) ) {
-            $unified_css = $use_debug_assets ? 'assets/css/unified.min.css' : 'assets/css/unified.css';
+            $unified_css = 'assets/css/unified.min.css';
         }
         wp_enqueue_style(
             'bbai-unified',
             $base_url . $unified_css,
             [],
-            $asset_version( $unified_css, '6.0.14' )
+            $asset_version( $unified_css, '6.0.15' )
         );
 
         $admin_foundation_tokens_css = 'assets/css/system/bbai-admin-foundation-tokens.css';
@@ -380,14 +380,14 @@ trait Core_Assets {
                 'bbai-admin-foundation-tokens',
                 $base_url . $admin_foundation_tokens_css,
                 [ 'bbai-unified' ],
-                $asset_version( $admin_foundation_tokens_css, '1.0.1' )
+                $asset_version( $admin_foundation_tokens_css, '1.0.2' )
             );
         }
 
-        // Modern bundle CSS (with fallback)
-        $modern_css = 'assets/css/modern.bundle.min.css';
+        // Modern bundle CSS (prefer non-minified for static analysis / Plugin Check)
+        $modern_css = 'assets/css/modern.bundle.css';
         if ( ! file_exists( $base_path . $modern_css ) ) {
-            $modern_css = 'assets/css/modern.bundle.css';
+            $modern_css = 'assets/css/modern.bundle.min.css';
         }
         wp_enqueue_style(
             'bbai-modern',
@@ -408,7 +408,7 @@ trait Core_Assets {
             'bbai-dashboard-status-card-refresh',
             $base_url . $status_card_css,
             [ 'bbai-modern', 'bbai-admin-wizard' ],
-            $asset_version( $status_card_css, '1.1.9' )
+            $asset_version( $status_card_css, '1.2.4' )
         );
 
         $command_hero_host_css = 'assets/css/features/dashboard/command-hero-host.css';
@@ -534,7 +534,7 @@ trait Core_Assets {
             'bbai-saas-consistency',
             $base_url . $saas_consistency_css,
             [ 'bbai-upgrade-modal-refresh' ],
-            $asset_version($saas_consistency_css, '1.0.22')
+            $asset_version($saas_consistency_css, '1.0.26')
         );
 
         $product_banner_css = 'assets/css/features/dashboard/product-banner.css';
@@ -542,7 +542,7 @@ trait Core_Assets {
             'bbai-product-banner',
             $base_url . $product_banner_css,
             [ 'bbai-saas-consistency' ],
-            $asset_version($product_banner_css, '1.0.17')
+            $asset_version($product_banner_css, '1.0.21')
         );
 
         $page_hero_css = 'assets/css/features/dashboard/page-hero.css';
@@ -558,7 +558,7 @@ trait Core_Assets {
             'bbai-admin-ui-components',
             $base_url . $admin_ui_components_css,
             [ 'bbai-page-hero' ],
-            $asset_version($admin_ui_components_css, '1.0.3')
+            $asset_version($admin_ui_components_css, '1.0.4')
         );
 
         $micro_motion_css = 'assets/css/features/dashboard/micro-motion.css';
@@ -566,7 +566,7 @@ trait Core_Assets {
             'bbai-admin-micro-motion',
             $base_url . $micro_motion_css,
             [ 'bbai-admin-ui-components' ],
-            $asset_version($micro_motion_css, '1.0.1')
+            $asset_version($micro_motion_css, '1.0.2')
         );
 
         if ($this->is_analytics_tab()) {
@@ -645,7 +645,7 @@ trait Core_Assets {
                 'bbai-admin-product-states',
                 $base_url . $admin_product_states_css,
                 array_values( array_unique( $admin_ps_deps ) ),
-                $asset_version( $admin_product_states_css, '1.0.0' )
+                $asset_version( $admin_product_states_css, '1.0.5' )
             );
         }
 
@@ -767,9 +767,30 @@ trait Core_Assets {
                     'bbai-admin-library-workspace-polish',
                     $base_url . $admin_library_workspace_polish_css,
                     [ 'bbai-admin-table-workspace' ],
-                    $asset_version( $admin_library_workspace_polish_css, '1.0.1' )
+                    $asset_version( $admin_library_workspace_polish_css, '1.0.4' )
                 );
             }
+        }
+
+        $admin_button_system_css = 'assets/css/system/bbai-admin-button-system.css';
+        if ( file_exists( $base_path . $admin_button_system_css ) ) {
+            $admin_button_system_deps = [ 'bbai-saas-consistency' ];
+            $admin_library_polish_path = 'assets/css/system/bbai-admin-library-workspace-polish.css';
+            $admin_table_ws_path       = 'assets/css/system/bbai-admin-table-workspace.css';
+            if (
+                file_exists( $base_path . $admin_table_ws_path )
+                && file_exists( $base_path . $admin_library_polish_path )
+            ) {
+                $admin_button_system_deps = [ 'bbai-admin-library-workspace-polish' ];
+            } elseif ( file_exists( $base_path . $admin_table_ws_path ) ) {
+                $admin_button_system_deps = [ 'bbai-admin-table-workspace' ];
+            }
+            wp_enqueue_style(
+                'bbai-admin-button-system',
+                $base_url . $admin_button_system_css,
+                $admin_button_system_deps,
+                $asset_version( $admin_button_system_css, '1.0.0' )
+            );
         }
 
         $ui_kit_preview_css = 'assets/css/system/bbai-ui-kit-preview.css';
@@ -817,8 +838,8 @@ trait Core_Assets {
         wp_enqueue_script(
             'bbai-dashboard',
             $base_url . $dashboard_js,
-            ['jquery', 'wp-api-fetch', 'wp-i18n', 'bbai-toast', 'bbai-banner-message', 'bbai-telemetry'],
-            $asset_version($dashboard_js, '3.0.2'),
+            ['jquery', 'wp-api-fetch', 'wp-i18n', 'bbai-toast', 'bbai-banner-message', 'bbai-telemetry', 'bbai-admin'],
+            $asset_version($dashboard_js, '3.0.4'),
             true
         );
 
@@ -1030,6 +1051,50 @@ trait Core_Assets {
             ],
         ]);
 
+        if (!class_exists(\BeepBeepAI\AltTextGenerator\Services\Upgrade_Path_Resolver::class, false)) {
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-upgrade-path-resolver.php';
+        }
+        if (!class_exists(\BeepBeepAI\AltTextGenerator\Auth_State::class, false)) {
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-auth-state.php';
+        }
+        $bbai_auth_upgrade_path = \BeepBeepAI\AltTextGenerator\Auth_State::resolve($this->api_client);
+        $bbai_has_connected_upgrade_path = !empty($bbai_auth_upgrade_path['has_connected_account']);
+        // Trial ladder (free account signup) when site is not linked to SaaS — not only when Trial_Quota::should_gate.
+        $bbai_upgrade_path_guest = !empty($trial_status['should_gate']) || !$bbai_has_connected_upgrade_path;
+        $bbai_upgrade_plan_slug = $bbai_upgrade_path_guest
+            ? 'free'
+            : strtolower((string)($usage_data['plan'] ?? $usage_data['plan_type'] ?? 'free'));
+        $bbai_upgrade_path_model = \BeepBeepAI\AltTextGenerator\Services\Upgrade_Path_Resolver::resolve([
+            'is_guest_trial' => $bbai_upgrade_path_guest,
+            'plan_slug' => $bbai_upgrade_plan_slug,
+        ]);
+
+        if (!class_exists(\BeepBeepAI\AltTextGenerator\Services\Upgrade_Cta_Resolver::class, false)) {
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-upgrade-cta-resolver.php';
+        }
+        $bbai_plan_slug_cta = $bbai_upgrade_path_guest
+            ? 'free'
+            : strtolower((string) ($usage_data['plan'] ?? $usage_data['plan_type'] ?? 'free'));
+        if ('pro' === $bbai_plan_slug_cta) {
+            $bbai_plan_slug_cta = 'growth';
+        }
+        $bbai_rem_cta = null;
+        if (isset($usage_data['remaining'])) {
+            $bbai_rem_cta = (int) $usage_data['remaining'];
+        } elseif (isset($usage_data['credits_remaining'])) {
+            $bbai_rem_cta = (int) $usage_data['credits_remaining'];
+        }
+        $bbai_quota_exhausted_cta = false;
+        if ($bbai_has_connected_upgrade_path && in_array($bbai_plan_slug_cta, ['free', 'trial'], true) && null !== $bbai_rem_cta && $bbai_rem_cta <= 0) {
+            $bbai_quota_exhausted_cta = true;
+        }
+        $bbai_upgrade_cta_ui = \BeepBeepAI\AltTextGenerator\Services\Upgrade_Cta_Resolver::for_localize_script([
+            'has_connected_account' => $bbai_has_connected_upgrade_path,
+            'plan_slug'             => $bbai_plan_slug_cta,
+            'credits_remaining'     => $bbai_rem_cta,
+            'quota_exhausted'       => $bbai_quota_exhausted_cta,
+        ]);
+
         $bbai_dash_data = [
             'nonce'       => wp_create_nonce('wp_rest'),
             'rest'        => esc_url_raw(rest_url('bbai/v1/generate/')),
@@ -1042,14 +1107,17 @@ trait Core_Assets {
             'restPlans'   => esc_url_raw(rest_url('bbai/v1/plans')),
             'upgradeUrl'  => esc_url(Usage_Tracker::get_upgrade_url()),
             'billingPortalUrl' => esc_url(Usage_Tracker::get_billing_portal_url()),
+            'usageAdminUrl' => esc_url_raw(admin_url('admin.php?page=bbai-credit-usage')),
             'checkoutPrices' => $checkout_prices,
             'stats'       => $stats_data,
             'initialUsage' => $usage_data,
             'usage'      => $usage_data,
             'quota'      => $usage_data['quota'] ?? [],
             'trial'      => $trial_status,
+            'upgradePath' => $bbai_upgrade_path_model,
+            'upgradeCtaUi' => $bbai_upgrade_cta_ui,
             'anonymous'  => [
-                'is_guest_trial' => !empty($trial_status['should_gate']),
+                'is_guest_trial' => $bbai_upgrade_path_guest,
                 'anon_cookie_name' => $anon_cookie_name,
             ],
             'pendingUpgradeTriggers' => [
@@ -1076,7 +1144,7 @@ trait Core_Assets {
             'can_manage' => $this->user_can_manage(),
             'logout_redirect' => admin_url('admin.php?page=bbai'),
             'stripe_links' => self::DEFAULT_STRIPE_LINKS,
-            'is_guest_trial' => !empty($trial_status['should_gate']),
+            'is_guest_trial' => $bbai_upgrade_path_guest,
             'anon_cookie_name' => $anon_cookie_name,
         ]);
         wp_localize_script('bbai-dashboard', 'bbai_env', [

@@ -10,6 +10,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (!function_exists('bbai_copy_cta_upgrade_growth')) {
+    require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/content/bbai-admin-copy.php';
+}
+
 $bbai_library_url = add_query_arg(['page' => 'bbai-library'], admin_url('admin.php'));
 $bbai_library_optimized_url = add_query_arg(['page' => 'bbai-library', 'status' => 'optimized'], admin_url('admin.php'));
 $bbai_library_missing_url = add_query_arg(['page' => 'bbai-library', 'status' => 'missing'], admin_url('admin.php'));
@@ -40,25 +44,56 @@ $bbai_state_copy = isset($bbai_product_state_model['copy']) && is_array($bbai_pr
     ? $bbai_product_state_model['copy']
     : [];
 $bbai_locked_cta_mode = isset($bbai_state_cta['locked_mode']) ? (string) $bbai_state_cta['locked_mode'] : '';
-$bbai_locked_uses_signup = 'create_account' === $bbai_locked_cta_mode;
-$bbai_locked_cta_action = $bbai_locked_uses_signup ? 'open-signup' : 'open-upgrade';
+$bbai_locked_uses_signup       = 'create_account' === $bbai_locked_cta_mode;
+$bbai_locked_uses_manage       = 'manage_plan' === $bbai_locked_cta_mode;
+$bbai_locked_uses_agency_step  = 'upgrade_agency' === $bbai_locked_cta_mode;
+$bbai_locked_uses_growth_step  = 'upgrade_growth' === $bbai_locked_cta_mode;
+$bbai_locked_cta_action = $bbai_locked_uses_signup
+    ? 'open-signup'
+    : ($bbai_locked_uses_manage ? 'open-usage' : 'open-upgrade');
 $bbai_locked_auth_attr = $bbai_locked_uses_signup ? ' data-auth-tab="register"' : '';
-$bbai_locked_cta_label = $bbai_locked_uses_signup
-    ? (isset($bbai_state_copy['primary_cta']) ? (string) $bbai_state_copy['primary_cta'] : __('Create free account', 'beepbeep-ai-alt-text-generator'))
-    : bbai_copy_cta_upgrade_growth();
+$bbai_locked_variant_attr = '';
+if ($bbai_locked_uses_agency_step) {
+    $bbai_locked_variant_attr = ' data-bbai-pricing-variant="agency"';
+} elseif ($bbai_locked_uses_growth_step) {
+    $bbai_locked_variant_attr = ' data-bbai-pricing-variant="growth"';
+}
+if ($bbai_locked_uses_signup) {
+    $bbai_locked_variant_attr .= ' data-bbai-analytics-upgrade="trial_create_account_clicked"';
+} elseif ($bbai_locked_uses_agency_step) {
+    $bbai_locked_variant_attr .= ' data-bbai-analytics-upgrade="growth_upgrade_agency_clicked"';
+} elseif ($bbai_locked_uses_growth_step) {
+    $bbai_locked_variant_attr .= ' data-bbai-analytics-upgrade="free_upgrade_growth_clicked"';
+} elseif ($bbai_locked_uses_manage) {
+    $bbai_locked_variant_attr .= ' data-bbai-analytics-upgrade="agency_manage_usage_clicked"';
+}
+if ($bbai_locked_uses_signup) {
+    $bbai_locked_cta_label = isset($bbai_state_copy['primary_cta']) ? (string) $bbai_state_copy['primary_cta'] : __('Create free account', 'beepbeep-ai-alt-text-generator');
+} elseif ($bbai_locked_uses_manage) {
+    $bbai_locked_cta_label = __('Usage & billing', 'beepbeep-ai-alt-text-generator');
+} elseif ($bbai_locked_uses_agency_step) {
+    $bbai_locked_cta_label = function_exists('bbai_copy_cta_upgrade_agency') ? bbai_copy_cta_upgrade_agency() : __('Upgrade to Agency', 'beepbeep-ai-alt-text-generator');
+} else {
+    $bbai_locked_cta_label = bbai_copy_cta_upgrade_growth();
+}
 $bbai_locked_cta_helper = $bbai_locked_uses_signup
     ? (isset($bbai_state_copy['helper_copy']) ? (string) $bbai_state_copy['helper_copy'] : __('Create a free account to continue.', 'beepbeep-ai-alt-text-generator'))
-    : __('Buy more credits', 'beepbeep-ai-alt-text-generator');
+    : ($bbai_locked_uses_manage
+        ? __('Open usage and billing to manage your plan or buy more credits.', 'beepbeep-ai-alt-text-generator')
+        : __('Buy more credits', 'beepbeep-ai-alt-text-generator'));
 $bbai_locked_cta_description = $bbai_locked_uses_signup
     ? (isset($bbai_state_copy['exhausted_body']) ? (string) $bbai_state_copy['exhausted_body'] : __('Create a free account to keep generating ALT text in your dashboard.', 'beepbeep-ai-alt-text-generator'))
-    : __('Upgrade to continue generating ALT text in your dashboard.', 'beepbeep-ai-alt-text-generator');
-$bbai_build_locked_attrs = static function (string $reason, string $source) use ($bbai_locked_cta_action, $bbai_locked_auth_attr): string {
+    : ($bbai_locked_uses_manage
+        ? __('You are at the top standard plan — manage billing or contact support for more capacity.', 'beepbeep-ai-alt-text-generator')
+        : __('Upgrade to continue generating ALT text in your dashboard.', 'beepbeep-ai-alt-text-generator'));
+$bbai_build_locked_attrs = static function (string $reason, string $source) use ($bbai_locked_cta_action, $bbai_locked_auth_attr, $bbai_locked_variant_attr): string {
     return sprintf(
-        'data-bbai-action="%1$s" data-bbai-locked-cta="1" data-bbai-lock-control="1" data-bbai-lock-reason="%2$s" data-bbai-locked-source="%3$s" aria-disabled="true"%4$s',
+        'data-bbai-action="%1$s" data-bbai-locked-cta="1" data-bbai-lock-control="1" data-bbai-lock-reason="%2$s" data-bbai-locked-source="%3$s" aria-disabled="true"%4$s%5$s',
         esc_attr($bbai_locked_cta_action),
         esc_attr($reason),
         esc_attr($source),
-        $bbai_locked_auth_attr
+        $bbai_locked_auth_attr,
+        $bbai_locked_variant_attr
     );
 };
 
@@ -66,12 +101,14 @@ if ($bbai_quick_actions_context === 'dashboard') :
     $bbai_format_credit_helper = static function (int $required, int $remaining): string {
         if ($remaining >= $required) {
             return sprintf(
+                /* translators: %s: number of credits used by the action. */
                 _n('Uses %s credit', 'Uses %s credits', $required, 'beepbeep-ai-alt-text-generator'),
                 number_format_i18n($required)
             );
         }
 
         return sprintf(
+            /* translators: %s: number of credits currently available. */
             _n('%s credit available now', '%s credits available now', $remaining, 'beepbeep-ai-alt-text-generator'),
             number_format_i18n($remaining)
         );

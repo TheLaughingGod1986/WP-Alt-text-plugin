@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace BeepBeep\AltText\Services;
+namespace BeepBeepAI\AltText\Services;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use BeepBeep\AltText\Core\Event_Bus;
+use BeepBeepAI\AltText\Core\Event_Bus;
 
 /**
  * Authentication Service
@@ -15,7 +15,7 @@ use BeepBeep\AltText\Core\Event_Bus;
  * Handles user authentication, registration, and session management.
  * Extracted from monolithic BbAI_Core class for better separation of concerns.
  *
- * @package BeepBeep\AltText\Services
+ * @package BeepBeepAI\AltText\Services
  * @since   5.0.0
  */
 class Authentication_Service {

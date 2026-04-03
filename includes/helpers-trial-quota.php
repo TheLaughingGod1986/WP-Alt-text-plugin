@@ -90,15 +90,15 @@ function bbai_normalize_anon_id( $anon_id ): string {
  * @return string
  */
 function bbai_get_request_anon_id(): string {
-	$request_value = '';
+		$request_value = filter_input( INPUT_POST, 'anon_id', FILTER_UNSAFE_RAW );
+		if ( ! is_string( $request_value ) || '' === $request_value ) {
+			$request_value = filter_input( INPUT_GET, 'anon_id', FILTER_UNSAFE_RAW );
+		}
+		if ( ! is_string( $request_value ) || '' === $request_value ) {
+			$request_value = filter_input( INPUT_SERVER, 'HTTP_X_BBAI_ANON_ID', FILTER_UNSAFE_RAW );
+		}
 
-	if ( isset( $_REQUEST['anon_id'] ) ) {
-		$request_value = wp_unslash( $_REQUEST['anon_id'] );
-	} elseif ( isset( $_SERVER['HTTP_X_BBAI_ANON_ID'] ) ) {
-		$request_value = wp_unslash( $_SERVER['HTTP_X_BBAI_ANON_ID'] );
-	}
-
-	return bbai_normalize_anon_id( $request_value );
+		return bbai_normalize_anon_id( is_string( $request_value ) ? sanitize_text_field( $request_value ) : '' );
 }
 
 /**
@@ -107,12 +107,13 @@ function bbai_get_request_anon_id(): string {
  * @return string
  */
 function bbai_get_cookie_anon_id(): string {
-	$cookie_name = bbai_get_anon_cookie_name();
-	if ( empty( $_COOKIE[ $cookie_name ] ) ) {
-		return '';
-	}
+		$cookie_name = bbai_get_anon_cookie_name();
+		$cookie_value = filter_input( INPUT_COOKIE, $cookie_name, FILTER_UNSAFE_RAW );
+		if ( ! is_string( $cookie_value ) || '' === $cookie_value ) {
+			return '';
+		}
 
-	return bbai_normalize_anon_id( wp_unslash( $_COOKIE[ $cookie_name ] ) );
+		return bbai_normalize_anon_id( sanitize_text_field( $cookie_value ) );
 }
 
 /**

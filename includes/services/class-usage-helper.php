@@ -5,6 +5,7 @@
 
 namespace BeepBeepAI\AltTextGenerator\Services;
 
+use BeepBeepAI\AltTextGenerator\Trial_Quota;
 use BeepBeepAI\AltTextGenerator\Usage_Tracker;
 use Exception;
 use Error;
@@ -14,6 +15,88 @@ if (!defined('ABSPATH')) {
 }
 
 class Usage_Helper {
+	/**
+	 * Resolve the current anonymous-trial credit limit.
+	 *
+	 * @return int
+	 */
+	private static function get_trial_limit(): int {
+		if ( ! class_exists( Trial_Quota::class ) ) {
+			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+		}
+
+		return max( 1, (int) Trial_Quota::get_limit() );
+	}
+
+	/**
+	 * Infer the anonymous-trial contract when a payload reports trial-sized quota
+	 * but omits or mislabels the auth/quota fields.
+	 *
+	 * @param array<string, mixed> $live_usage Live usage payload.
+	 * @param array<string, mixed> $quota      Nested quota payload.
+	 * @param int                  $limit      Normalized credit limit.
+	 * @param string               $plan       Normalized plan slug.
+	 * @param string               $auth_state Reported auth state.
+	 * @param string               $quota_type Reported quota type.
+	 * @return bool
+	 */
+	private static function should_infer_anonymous_trial( array $live_usage, array $quota, int $limit, string $plan, string $auth_state, string $quota_type ): bool {
+		$plan = strtolower( trim( $plan ) );
+		$auth_state = strtolower( trim( $auth_state ) );
+		$quota_type = strtolower( trim( $quota_type ) );
+
+		if ( 'anonymous' === $auth_state || 'trial' === $quota_type || in_array( $plan, [ 'trial', 'anonymous_trial' ], true ) ) {
+			return true;
+		}
+
+		$is_trial = isset( $live_usage['is_trial'] )
+			? (bool) $live_usage['is_trial']
+			: ! empty( $quota['is_trial'] );
+		if ( $is_trial ) {
+			return true;
+		}
+
+		if ( in_array( $plan, [ 'pro', 'growth', 'agency', 'enterprise' ], true ) || 'paid' === $quota_type ) {
+			return false;
+		}
+
+		$source = strtolower( trim( (string) ( $live_usage['source'] ?? '' ) ) );
+		if ( 'anonymous_trial' === $source ) {
+			return true;
+		}
+
+		$has_reset_signal = false;
+		foreach ( [ 'resetDate', 'reset_date' ] as $key ) {
+			$usage_value = isset( $live_usage[ $key ] ) ? trim( (string) $live_usage[ $key ] ) : '';
+			$quota_value = isset( $quota[ $key ] ) ? trim( (string) $quota[ $key ] ) : '';
+			if ( '' !== $usage_value || '' !== $quota_value ) {
+				$has_reset_signal = true;
+				break;
+			}
+		}
+
+		if ( ! $has_reset_signal ) {
+			foreach ( [ 'reset_timestamp', 'resetTimestamp', 'reset_ts', 'days_until_reset', 'daysUntilReset' ] as $key ) {
+				if (
+					( array_key_exists( $key, $live_usage ) && is_numeric( $live_usage[ $key ] ) )
+					|| ( array_key_exists( $key, $quota ) && is_numeric( $quota[ $key ] ) )
+				) {
+					$has_reset_signal = true;
+					break;
+				}
+			}
+		}
+
+		$upgrade_required = isset( $live_usage['upgrade_required'] )
+			? (bool) $live_usage['upgrade_required']
+			: ! empty( $quota['upgrade_required'] );
+		if ( $upgrade_required ) {
+			return false;
+		}
+
+		return $limit > 0 && $limit <= self::get_trial_limit() && ! $has_reset_signal;
+	}
+
 	/**
 	 * Resolve quota state for a usage payload.
 	 *
@@ -143,6 +226,11 @@ class Usage_Helper {
             $usage_stats = self::normalize_usage($usage_stats, $live_usage);
         }
 
+        // Trial gating applies even when can_fetch is true (e.g. stray JWT or wrong connected flag).
+        if ( class_exists( Trial_Quota::class ) && Trial_Quota::is_trial_user() ) {
+            return self::get_guest_trial_usage();
+        }
+
         if (!$can_fetch) {
             return self::get_guest_trial_usage();
         }
@@ -241,6 +329,15 @@ class Usage_Helper {
             $plan = (string) ($usage_stats['plan_type'] ?? ($usage_stats['plan'] ?? 'free'));
         }
 
+        $inferred_trial = self::should_infer_anonymous_trial($live_usage, $quota, $limit, $plan, $auth_state, $quota_type);
+        if ($inferred_trial) {
+            $auth_state = 'anonymous';
+            $quota_type = 'trial';
+            if ('' === $plan || in_array($plan, ['free', 'trial', 'anonymous_trial'], true)) {
+                $plan = 'trial';
+            }
+        }
+
         $usage_stats['source'] = $live_usage['source'] ?? 'remote_usage';
         $usage_stats['plan'] = $plan;
         $usage_stats['plan_type'] = $plan;
@@ -275,7 +372,7 @@ class Usage_Helper {
         $usage_stats['free_plan_offer'] = max(0, (int) ($live_usage['free_plan_offer'] ?? $usage_stats['free_plan_offer'] ?? 50));
         $usage_stats['is_trial'] = isset($live_usage['is_trial'])
             ? (bool) $live_usage['is_trial']
-            : ('trial' === $plan || 'trial' === $quota_type || 'anonymous' === $auth_state);
+            : ('trial' === $plan || 'trial' === $quota_type || 'anonymous' === $auth_state || $inferred_trial);
         $usage_stats['trial_exhausted'] = isset($live_usage['trial_exhausted'])
             ? (bool) $live_usage['trial_exhausted']
             : ($usage_stats['is_trial'] && $remaining <= 0);

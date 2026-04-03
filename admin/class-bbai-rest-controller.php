@@ -81,6 +81,23 @@ class REST_Controller {
 
 		register_rest_route(
 			'bbai/v1',
+			'/attachment-alt/(?P<id>\d+)',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ $this, 'handle_read_attachment_alt' ],
+				'permission_callback' => [ $this, 'can_edit_attachment' ],
+				'args'                => [
+					'id' => [
+						'required'          => true,
+						'sanitize_callback' => 'absint',
+						'validate_callback' => [ __CLASS__, 'validate_positive_int_arg' ],
+					],
+				],
+			]
+		);
+
+		register_rest_route(
+			'bbai/v1',
 			'/review/(?P<id>\d+)',
 			[
 				'methods'             => 'POST',
@@ -822,6 +839,34 @@ class REST_Controller {
 				[ 'status' => 500 ] 
 			);
 		}
+	}
+
+	/**
+	 * Read persisted ALT text for an attachment (post meta), for UI refresh fallbacks.
+	 *
+	 * @param \WP_REST_Request $request REST request instance.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function handle_read_attachment_alt( \WP_REST_Request $request ) {
+		$id = absint( $request->get_param( 'id' ) );
+		if ( $id <= 0 ) {
+			return new \WP_Error(
+				'invalid_attachment',
+				__( 'Invalid attachment ID.', 'beepbeep-ai-alt-text-generator' ),
+				[ 'status' => 400 ]
+			);
+		}
+
+		$alt = (string) get_post_meta( $id, '_wp_attachment_image_alt', true );
+
+		return rest_ensure_response(
+			[
+				'id'       => $id,
+				'alt'      => $alt,
+				'alt_text' => $alt,
+				'altText'  => $alt,
+			]
+		);
 	}
 
 	/**

@@ -20,12 +20,20 @@ rm -f "$OUTPUT_ZIP"
 
 rsync -a \
     --exclude '.git/' \
+    --exclude '.gitattributes' \
+    --exclude '.claude/' \
+    --exclude '.cursor/' \
+    --exclude '.playwright-cli/' \
     --exclude '.vscode/' \
     --exclude 'build/' \
+    --exclude 'docs/' \
+    --exclude 'output/' \
     --exclude 'scripts/' \
-    --exclude '.gitignore' \
-    --exclude '.gitattributes' \
-    --exclude '.distignore' \
+    --exclude 'sync-to-wpenv.bash' \
+    --exclude 'gitignore' \
+    --exclude 'tests/' \
+    --exclude 'login-helper.js' \
+    --exclude 'wp-login.js' \
     --exclude '.DS_Store' \
     --exclude '*/.DS_Store' \
     --exclude 'assets/img/screenshots/' \

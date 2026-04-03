@@ -202,19 +202,29 @@ $bbai_usage_stats = (isset($bbai_usage_stats) && is_array($bbai_usage_stats))
     : Usage_Helper::get_usage($this->api_client, (bool) ($bbai_has_connected_account ?? $bbai_has_registered_user ?? false));
 $bbai_has_license = $this->api_client->has_active_license();
 $bbai_license_data = $this->api_client->get_license_data();
+
+$bbai_has_connected_account = (bool) ($bbai_has_connected_account ?? $bbai_has_registered_user ?? false);
 $bbai_usage_auth_state = isset($bbai_usage_stats['auth_state']) ? strtolower((string) $bbai_usage_stats['auth_state']) : '';
 $bbai_usage_quota_type = isset($bbai_usage_stats['quota_type']) ? strtolower((string) $bbai_usage_stats['quota_type']) : '';
+
+// Guest shell when there is no SaaS account (same idea as dashboard-body.php): usage can lag as "authenticated" + paid plan.
+if (!$bbai_has_connected_account && is_array($bbai_usage_stats)) {
+    $bbai_usage_stats['auth_state'] = 'anonymous';
+    $bbai_usage_stats['quota_type'] = 'trial';
+    $bbai_usage_auth_state = 'anonymous';
+    $bbai_usage_quota_type = 'trial';
+}
+
 $bbai_is_guest_trial = 'anonymous' === $bbai_usage_auth_state || 'trial' === $bbai_usage_quota_type || !empty($bbai_usage_stats['is_trial']);
 $bbai_plan_slug = $bbai_is_guest_trial ? 'trial' : 'free';
 
-// Try to get plan from usage_stats if available
-if (isset($bbai_usage_stats) && is_array($bbai_usage_stats) && !empty($bbai_usage_stats['plan'])) {
-    $bbai_plan_slug = strtolower($bbai_usage_stats['plan']);
+if ($bbai_has_connected_account && isset($bbai_usage_stats) && is_array($bbai_usage_stats) && !empty($bbai_usage_stats['plan'])) {
+    $bbai_plan_slug = strtolower((string) $bbai_usage_stats['plan']);
 }
 
-if ($bbai_has_license && $bbai_license_data && isset($bbai_license_data['organization']) && is_array($bbai_license_data['organization'])) {
-    $bbai_license_plan = !empty($bbai_license_data['organization']['plan']) ? strtolower($bbai_license_data['organization']['plan']) : 'free';
-    if ($bbai_license_plan !== 'free') {
+if ($bbai_has_connected_account && $bbai_has_license && $bbai_license_data && isset($bbai_license_data['organization']) && is_array($bbai_license_data['organization'])) {
+    $bbai_license_plan = !empty($bbai_license_data['organization']['plan']) ? strtolower((string) $bbai_license_data['organization']['plan']) : 'free';
+    if ('free' !== $bbai_license_plan) {
         $bbai_plan_slug = $bbai_license_plan;
     }
 }
@@ -268,13 +278,21 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
 
     $bbai_trial_status = $bbai_is_guest_trial ? Trial_Quota::get_status() : [];
     $bbai_plan = isset($bbai_usage_stats) && is_array($bbai_usage_stats) && !empty($bbai_usage_stats['plan']) ? $bbai_usage_stats['plan'] : 'free';
-    $bbai_has_quota = isset($bbai_usage_stats) && is_array($bbai_usage_stats) && isset($bbai_usage_stats['remaining']) ? (intval($bbai_usage_stats['remaining']) > 0) : false;
+    $bbai_has_quota = false;
+    if (isset($bbai_usage_stats) && is_array($bbai_usage_stats)) {
+        if (isset($bbai_usage_stats['remaining'])) {
+            $bbai_has_quota = intval($bbai_usage_stats['remaining']) > 0;
+        } elseif (isset($bbai_usage_stats['credits_remaining'])) {
+            $bbai_has_quota = intval($bbai_usage_stats['credits_remaining']) > 0;
+        }
+    }
     $bbai_is_premium = in_array($bbai_plan, ['pro', 'growth', 'agency'], true);
     $bbai_out_of_credits = !$bbai_has_quota && !$bbai_is_premium;
     $bbai_product_state_model = Dashboard_State::resolve(
         [
             'is_guest_trial' => $bbai_is_guest_trial,
             'is_premium'     => $bbai_is_premium,
+            'plan_slug'      => strtolower((string) $bbai_plan),
             'usage_stats'    => $bbai_usage_stats,
             'trial_status'   => $bbai_trial_status,
             'missing_count'  => $bbai_cov_missing,
@@ -308,7 +326,11 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
         <div class="bbai-library-summary-card__head">
             <div>
                 <p class="bbai-library-summary-card__eyebrow"><?php echo esc_html(bbai_copy_section_library_progress()); ?></p>
-                <h2 class="bbai-library-summary-card__title"><span data-bbai-library-progress-label><?php echo esc_html(sprintf(__('%s%% optimized', 'beepbeep-ai-alt-text-generator'), number_format_i18n($bbai_cov_opt_pct))); ?></span></h2>
+                <h2 class="bbai-library-summary-card__title"><span data-bbai-library-progress-label><?php echo esc_html(sprintf(
+                    /* translators: %s: optimization percentage. */
+                    __('%s%% optimized', 'beepbeep-ai-alt-text-generator'),
+                    number_format_i18n($bbai_cov_opt_pct)
+                )); ?></span></h2>
                 <p class="bbai-library-summary-card__copy"><?php echo esc_html(bbai_copy_helper_queue_missing_then_review()); ?></p>
             </div>
             <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm" data-action="rescan-media-library">
@@ -338,7 +360,11 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
         </div>
         <div class="bbai-library-summary-card__foot">
             <span><?php esc_html_e('Pagination and lazy-loaded thumbnails keep larger libraries responsive.', 'beepbeep-ai-alt-text-generator'); ?></span>
-            <strong data-bbai-coverage-score-inline><?php echo esc_html(sprintf(__('%s%% optimized', 'beepbeep-ai-alt-text-generator'), number_format_i18n($bbai_cov_opt_pct))); ?></strong>
+            <strong data-bbai-coverage-score-inline><?php echo esc_html(sprintf(
+                /* translators: %s: optimization percentage. */
+                __('%s%% optimized', 'beepbeep-ai-alt-text-generator'),
+                number_format_i18n($bbai_cov_opt_pct)
+            )); ?></strong>
         </div>
     </div>
 
@@ -428,12 +454,29 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
         <?php
         // Check if user can generate (same logic as dashboard).
         $bbai_plan = isset($bbai_usage_stats) && is_array($bbai_usage_stats) && !empty($bbai_usage_stats['plan']) ? $bbai_usage_stats['plan'] : 'free';
-        $bbai_has_quota = isset($bbai_usage_stats) && is_array($bbai_usage_stats) && isset($bbai_usage_stats['remaining']) ? (intval($bbai_usage_stats['remaining']) > 0) : false;
+        $bbai_has_quota = false;
+        if (isset($bbai_usage_stats) && is_array($bbai_usage_stats)) {
+            if (isset($bbai_usage_stats['remaining'])) {
+                $bbai_has_quota = intval($bbai_usage_stats['remaining']) > 0;
+            } elseif (isset($bbai_usage_stats['credits_remaining'])) {
+                $bbai_has_quota = intval($bbai_usage_stats['credits_remaining']) > 0;
+            }
+        }
         $bbai_is_premium = in_array($bbai_plan, ['pro', 'growth', 'agency'], true);
         $bbai_can_generate = $bbai_has_quota || $bbai_is_premium;
-        $bbai_remaining_credits = isset($bbai_usage_stats) && is_array($bbai_usage_stats) ? intval($bbai_usage_stats['remaining'] ?? 0) : 0;
-        $bbai_used_credits = isset($bbai_usage_stats) && is_array($bbai_usage_stats) ? intval($bbai_usage_stats['used'] ?? 0) : 0;
-        $bbai_limit_credits = isset($bbai_usage_stats) && is_array($bbai_usage_stats) ? intval($bbai_usage_stats['limit'] ?? 0) : 0;
+        $bbai_remaining_credits = 0;
+        $bbai_used_credits      = 0;
+        $bbai_limit_credits     = 0;
+        if (isset($bbai_usage_stats) && is_array($bbai_usage_stats)) {
+            $bbai_used_credits  = max(0, (int) ($bbai_usage_stats['credits_used'] ?? $bbai_usage_stats['creditsUsed'] ?? $bbai_usage_stats['used'] ?? 0));
+            $bbai_limit_credits = max(0, (int) ($bbai_usage_stats['credits_total'] ?? $bbai_usage_stats['creditsTotal'] ?? $bbai_usage_stats['limit'] ?? 0));
+            $bbai_credits_remaining_raw = $bbai_usage_stats['credits_remaining'] ?? $bbai_usage_stats['creditsRemaining'] ?? $bbai_usage_stats['remaining'] ?? null;
+            if (null !== $bbai_credits_remaining_raw && '' !== $bbai_credits_remaining_raw) {
+                $bbai_remaining_credits = max(0, (int) $bbai_credits_remaining_raw);
+            } elseif ($bbai_limit_credits > 0) {
+                $bbai_remaining_credits = max(0, $bbai_limit_credits - $bbai_used_credits);
+            }
+        }
         $bbai_usage_limit_hit = ($bbai_limit_credits > 0 && $bbai_used_credits >= $bbai_limit_credits);
         $bbai_out_of_credits = ($bbai_remaining_credits <= 0 || $bbai_usage_limit_hit);
         $bbai_limit_reached_state = !$bbai_is_premium && $bbai_out_of_credits;
@@ -728,11 +771,31 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
                                         $bbai_quality_score
                                     );
                                     $bbai_tooltip_lines[] = '';
-                                    $bbai_tooltip_lines[] = sprintf(__('Descriptiveness: %d', 'beepbeep-ai-alt-text-generator'), $bbai_breakdown['descriptiveness']);
-                                    $bbai_tooltip_lines[] = sprintf(__('Relevance: %d', 'beepbeep-ai-alt-text-generator'), $bbai_breakdown['relevance']);
-                                    $bbai_tooltip_lines[] = sprintf(__('Accessibility: %d', 'beepbeep-ai-alt-text-generator'), $bbai_breakdown['accessibility']);
-                                    $bbai_tooltip_lines[] = sprintf(__('SEO: %d', 'beepbeep-ai-alt-text-generator'), $bbai_breakdown['seo']);
-                                    $bbai_tooltip_lines[] = sprintf(__('Conciseness: %d', 'beepbeep-ai-alt-text-generator'), $bbai_breakdown['conciseness']);
+                                    $bbai_tooltip_lines[] = sprintf(
+                                        /* translators: %d: descriptiveness score out of 100. */
+                                        __('Descriptiveness: %d', 'beepbeep-ai-alt-text-generator'),
+                                        $bbai_breakdown['descriptiveness']
+                                    );
+                                    $bbai_tooltip_lines[] = sprintf(
+                                        /* translators: %d: relevance score out of 100. */
+                                        __('Relevance: %d', 'beepbeep-ai-alt-text-generator'),
+                                        $bbai_breakdown['relevance']
+                                    );
+                                    $bbai_tooltip_lines[] = sprintf(
+                                        /* translators: %d: accessibility score out of 100. */
+                                        __('Accessibility: %d', 'beepbeep-ai-alt-text-generator'),
+                                        $bbai_breakdown['accessibility']
+                                    );
+                                    $bbai_tooltip_lines[] = sprintf(
+                                        /* translators: %d: SEO score out of 100. */
+                                        __('SEO: %d', 'beepbeep-ai-alt-text-generator'),
+                                        $bbai_breakdown['seo']
+                                    );
+                                    $bbai_tooltip_lines[] = sprintf(
+                                        /* translators: %d: conciseness score out of 100. */
+                                        __('Conciseness: %d', 'beepbeep-ai-alt-text-generator'),
+                                        $bbai_breakdown['conciseness']
+                                    );
                                     if (!empty($bbai_analysis['issues'])) {
                                         $bbai_tooltip_lines[] = '';
                                         foreach (array_slice($bbai_analysis['issues'], 0, 3) as $bbai_issue_line) {

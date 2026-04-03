@@ -25,55 +25,55 @@ if (!function_exists('bbai_copy_td')) {
 
     function bbai_copy_filter_all(): string
     {
-        return __('All', bbai_copy_td());
+        return __('All', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_status_missing(): string
     {
-        return __('Missing', bbai_copy_td());
+        return __('Missing', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_status_needs_review(): string
     {
-        return __('Needs review', bbai_copy_td());
+        return __('Needs review', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_status_optimized(): string
     {
-        return __('Optimized', bbai_copy_td());
+        return __('Optimized', 'beepbeep-ai-alt-text-generator');
     }
 
     /* --- Score tier labels (quality column / pills) ---------------------- */
 
     function bbai_copy_score_excellent(): string
     {
-        return __('Excellent', bbai_copy_td());
+        return __('Excellent', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_score_good(): string
     {
-        return __('Good', bbai_copy_td());
+        return __('Good', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_score_needs_improvement(): string
     {
-        return __('Needs improvement', bbai_copy_td());
+        return __('Needs improvement', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_score_poor(): string
     {
-        return __('Poor', bbai_copy_td());
+        return __('Poor', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_score_critical(): string
     {
-        return __('Critical', bbai_copy_td());
+        return __('Critical', 'beepbeep-ai-alt-text-generator');
     }
 
     /** Score band label (~70–89): not the same as workflow “Needs review”. */
     function bbai_copy_score_band_review(): string
     {
-        return __('Review', bbai_copy_td());
+        return __('Review', 'beepbeep-ai-alt-text-generator');
     }
 
     /** Low score band; use workflow term, not “Weak”. */
@@ -86,7 +86,7 @@ if (!function_exists('bbai_copy_td')) {
 
     function bbai_copy_attention_all_optimized(): string
     {
-        return __('All images are optimized.', bbai_copy_td());
+        return __('All images are optimized.', 'beepbeep-ai-alt-text-generator');
     }
 
     /**
@@ -101,12 +101,12 @@ if (!function_exists('bbai_copy_td')) {
         }
 
         if (1 === $issue_count) {
-            return __('1 image needs attention', bbai_copy_td());
+            return __('1 image needs attention', 'beepbeep-ai-alt-text-generator');
         }
 
         return sprintf(
             /* translators: %s: formatted count (2+) */
-            _n('%s image needs attention', '%s images need attention', $issue_count, bbai_copy_td()),
+            _n('%s image needs attention', '%s images need attention', $issue_count, 'beepbeep-ai-alt-text-generator'),
             number_format_i18n($issue_count)
         );
     }
@@ -120,7 +120,7 @@ if (!function_exists('bbai_copy_td')) {
 
         return sprintf(
             /* translators: %s: formatted image count */
-            _n('%s image is missing ALT text', '%s images are missing ALT text', $missing, bbai_copy_td()),
+            _n('%s image is missing ALT text', '%s images are missing ALT text', $missing, 'beepbeep-ai-alt-text-generator'),
             number_format_i18n($missing)
         );
     }
@@ -134,7 +134,7 @@ if (!function_exists('bbai_copy_td')) {
 
         return sprintf(
             /* translators: %s: formatted image count */
-            _n('%s image needs review', '%s images need review', $count, bbai_copy_td()),
+            _n('%s image needs review', '%s images need review', $count, 'beepbeep-ai-alt-text-generator'),
             number_format_i18n($count)
         );
     }
@@ -143,150 +143,165 @@ if (!function_exists('bbai_copy_td')) {
 
     function bbai_copy_cta_scan_media_library(): string
     {
-        return __('Review ALT text', bbai_copy_td());
+        return __('Review ALT text', 'beepbeep-ai-alt-text-generator');
     }
 
     /** Primary CTA on first-run scan surfaces (onboarding hero, etc.). */
     function bbai_copy_cta_start_scanning(): string
     {
-        return __('Start scanning', bbai_copy_td());
+        return __('Start scanning', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_cta_rescan_media_library(): string
     {
-        return __('Review ALT text', bbai_copy_td());
+        return __('Review ALT text', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_cta_open_alt_library(): string
     {
-        return __('Open ALT Library', bbai_copy_td());
+        return __('Open ALT Library', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_cta_fix_missing_alt(): string
     {
-        return __('Generate missing ALT text', bbai_copy_td());
+        return __('Generate missing ALT text', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_cta_improve_alt(): string
     {
-        return __('Review ALT text', bbai_copy_td());
+        return __('Review ALT text', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_cta_generate_missing_images(): string
     {
-        return __('Generate missing ALT text', bbai_copy_td());
+        return __('Generate missing ALT text', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_cta_generate_alt(): string
     {
-        return __('Generate missing ALT text', bbai_copy_td());
+        return __('Generate missing ALT text', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_cta_review_optimized_images(): string
     {
-        return __('Review ALT text', bbai_copy_td());
+        return __('Review ALT text', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_cta_automation_settings(): string
     {
-        return __('Automation settings', bbai_copy_td());
+        return __('Automation settings', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_cta_review_needs_review_filter(): string
     {
-        return __('Review ALT text', bbai_copy_td());
+        return __('Review ALT text', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_cta_review_usage(): string
     {
-        return __('Review ALT text', bbai_copy_td());
+        return __('Review ALT text', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_cta_upgrade_growth(): string
     {
-        return __('Upgrade to Growth', bbai_copy_td());
+        return __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator');
+    }
+
+    function bbai_copy_cta_upgrade_agency(): string
+    {
+        return __('Upgrade to Agency', 'beepbeep-ai-alt-text-generator');
+    }
+
+    function bbai_copy_cta_view_plans(): string
+    {
+        return __('View plans', 'beepbeep-ai-alt-text-generator');
+    }
+
+    function bbai_copy_cta_create_free_account(): string
+    {
+        return __('Create free account', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_cta_learn_how(): string
     {
-        return __('Review ALT text', bbai_copy_td());
+        return __('Review ALT text', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_cta_enable_auto_optimization(): string
     {
-        return __('Enable auto-optimization', bbai_copy_td());
+        return __('Enable auto-optimization', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_cta_scan_new_uploads(): string
     {
-        return __('Review ALT text', bbai_copy_td());
+        return __('Review ALT text', 'beepbeep-ai-alt-text-generator');
     }
 
     /* --- Section patterns -------------------------------------------------- */
 
     function bbai_copy_section_next_task(): string
     {
-        return __('Next task', bbai_copy_td());
+        return __('Next task', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_section_library_progress(): string
     {
-        return __('ALT optimization progress', bbai_copy_td());
+        return __('ALT optimization progress', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_section_healthy_library(): string
     {
-        return __('Healthy library', bbai_copy_td());
+        return __('Healthy library', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_library_all_optimized_title(): string
     {
-        return __('All images are optimized', bbai_copy_td());
+        return __('All images are optimized', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_helper_queue_missing_then_review(): string
     {
-        return __('Fix missing ALT first, then review descriptions that need improvement.', bbai_copy_td());
+        return __('Fix missing ALT first, then review descriptions that need improvement.', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_helper_generate_then_review(): string
     {
-        return __('Generate missing ALT text, then review descriptions that need improvement.', bbai_copy_td());
+        return __('Generate missing ALT text, then review descriptions that need improvement.', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_helper_healthy_keep_coverage(): string
     {
-        return __('Run occasional scans or enable auto-optimization to keep coverage current.', bbai_copy_td());
+        return __('Run occasional scans or enable auto-optimization to keep coverage current.', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_helper_needs_review_actions(): string
     {
-        return __('Approve ALT you accept, or regenerate to refine descriptions in the review queue.', bbai_copy_td());
+        return __('Approve ALT you accept, or regenerate to refine descriptions in the review queue.', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_helper_finish_review_queue(): string
     {
-        return __('Approve or regenerate ALT to clear the review queue.', bbai_copy_td());
+        return __('Approve or regenerate ALT to clear the review queue.', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_section_descriptions_can_improve(): string
     {
-        return __('Descriptions can be improved', bbai_copy_td());
+        return __('Descriptions can be improved', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_section_all_images_current(): string
     {
-        return __('All images are current', bbai_copy_td());
+        return __('All images are current', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_library_fully_optimized_title(): string
     {
-        return __('ALT Library is fully optimized', bbai_copy_td());
+        return __('ALT Library is fully optimized', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_queue_clear_title(): string
     {
-        return __('Queue clear', bbai_copy_td());
+        return __('Queue clear', 'beepbeep-ai-alt-text-generator');
     }
 
     /**
@@ -298,14 +313,14 @@ if (!function_exists('bbai_copy_td')) {
 
         return sprintf(
             /* translators: %s: formatted count */
-            _n('%s item needs review', '%s items need review', $count, bbai_copy_td()),
+            _n('%s item needs review', '%s items need review', $count, 'beepbeep-ai-alt-text-generator'),
             number_format_i18n($count)
         );
     }
 
     function bbai_copy_quota_monthly_limit_title(): string
     {
-        return __('This month’s free allowance is used', bbai_copy_td());
+        return __('This month’s free allowance is used', 'beepbeep-ai-alt-text-generator');
     }
 
     /**
@@ -321,7 +336,7 @@ if (!function_exists('bbai_copy_td')) {
                 'You optimized %s image this month.',
                 'You optimized %s images this month.',
                 $used,
-                bbai_copy_td()
+                'beepbeep-ai-alt-text-generator'
             ),
             number_format_i18n($used)
         );
@@ -331,47 +346,47 @@ if (!function_exists('bbai_copy_td')) {
 
     function bbai_copy_banner_out_of_credits_title(): string
     {
-        return __('You’ve used this month’s free allowance', bbai_copy_td());
+        return __('You’ve used this month’s free allowance', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_banner_low_credits_title(): string
     {
-        return __('You’re close to this month’s allowance', bbai_copy_td());
+        return __('You’re close to this month’s allowance', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_banner_needs_attention_title(): string
     {
-        return __('Your library needs attention', bbai_copy_td());
+        return __('Your library needs attention', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_banner_needs_attention_body(): string
     {
-        return __('Some images are missing ALT text or need a stronger description.', bbai_copy_td());
+        return __('Some images are missing ALT text or need a stronger description.', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_banner_healthy_title(): string
     {
-        return __('Your library is in great shape', bbai_copy_td());
+        return __('Your library is in great shape', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_banner_healthy_body(): string
     {
-        return __('All images are optimized and up to date.', bbai_copy_td());
+        return __('All images are optimized and up to date.', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_banner_first_run_title(): string
     {
-        return __('Get started with your media library', bbai_copy_td());
+        return __('Get started with your media library', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_banner_first_run_body(): string
     {
-        return __('Scan your library to find missing ALT text and improve accessibility.', bbai_copy_td());
+        return __('Scan your library to find missing ALT text and improve accessibility.', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_banner_first_run_status(): string
     {
-        return __('Start by scanning your media library.', bbai_copy_td());
+        return __('Start by scanning your media library.', 'beepbeep-ai-alt-text-generator');
     }
 }
 

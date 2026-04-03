@@ -1,3 +1,5 @@
+# Git exclude patterns (this file is not named ".gitignore" so WordPress Plugin Check does not flag a hidden file).
+# After clone, run once: ./scripts/bootstrap-git-excludes.bash
 .DS_Store
 **/.DS_Store
 # macOS AppleDouble / resource fork metadata (never commit)

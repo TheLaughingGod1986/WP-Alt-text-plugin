@@ -1,0 +1,196 @@
+/**
+ * BeepBeep AI — unified admin button system
+ *
+ * Single visual language for .bbai-btn + row/banner/modal actions.
+ * Loads after saas-consistency + library polish so tokens win over one-offs.
+ *
+ * Modifier aliases (optional in markup, equivalent to legacy classes):
+ *   .bbai-btn--primary   ↔ .bbai-btn-primary
+ *   .bbai-btn--secondary ↔ .bbai-btn-secondary
+ *   .bbai-btn--tertiary, .bbai-btn--ghost ↔ .bbai-btn-tertiary, .bbai-btn-ghost
+ *   .bbai-btn--sm       ↔ .bbai-btn-sm
+ *   .bbai-btn--full     ↔ .bbai-btn-block
+ *
+ * @package BeepBeep_AI
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Core .bbai-btn — dimensions, flex centering, radius                         */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-btn,
+.wrap.bbai-wrap .bbai-btn {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-height: var(--bbai-btn-height);
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    padding-left: var(--bbai-btn-padding-x) !important;
+    padding-right: var(--bbai-btn-padding-x) !important;
+    line-height: var(--bbai-btn-line-height);
+    border-radius: var(--bbai-btn-radius) !important;
+    font-size: var(--bbai-btn-font-size);
+    font-weight: var(--bbai-btn-font-weight);
+    gap: var(--bbai-btn-gap);
+    transition: var(--bbai-btn-transition);
+}
+
+body.bbai-dashboard .bbai-btn-sm,
+body.bbai-dashboard .bbai-btn.bbai-btn--sm,
+.wrap.bbai-wrap .bbai-btn-sm,
+.wrap.bbai-wrap .bbai-btn.bbai-btn--sm {
+    min-height: var(--bbai-btn-height-sm);
+    min-width: 0;
+    padding: 8px 16px !important;
+    font-size: var(--bbai-btn-font-size-sm) !important;
+    border-radius: var(--bbai-btn-radius) !important;
+    line-height: var(--bbai-btn-line-height);
+}
+
+body.bbai-dashboard .bbai-btn-primary,
+body.bbai-dashboard .bbai-btn.bbai-btn-primary,
+body.bbai-dashboard .bbai-btn.bbai-btn--primary,
+.wrap.bbai-wrap .bbai-btn-primary,
+.wrap.bbai-wrap .bbai-btn.bbai-btn-primary,
+.wrap.bbai-wrap .bbai-btn.bbai-btn--primary {
+    min-height: var(--bbai-btn-height);
+    font-weight: var(--bbai-btn-font-weight-primary) !important;
+    padding-left: var(--bbai-btn-padding-x-compact) !important;
+    padding-right: var(--bbai-btn-padding-x-compact) !important;
+}
+
+body.bbai-dashboard .bbai-btn-primary.bbai-btn-sm,
+body.bbai-dashboard .bbai-btn.bbai-btn-primary.bbai-btn-sm,
+body.bbai-dashboard .bbai-btn.bbai-btn--primary.bbai-btn-sm,
+.wrap.bbai-wrap .bbai-btn-primary.bbai-btn-sm,
+.wrap.bbai-wrap .bbai-btn.bbai-btn-primary.bbai-btn-sm,
+.wrap.bbai-wrap .bbai-btn.bbai-btn--primary.bbai-btn-sm {
+    min-height: var(--bbai-btn-height-sm);
+}
+
+/* Secondary: same hit-area as primary when paired; medium weight (not 400) */
+body.bbai-dashboard .bbai-btn-secondary:not(.bbai-btn-sm),
+body.bbai-dashboard .bbai-btn.bbai-btn-secondary:not(.bbai-btn-sm),
+body.bbai-dashboard .bbai-btn.bbai-btn--secondary:not(.bbai-btn-sm):not(.bbai-btn--sm),
+.wrap.bbai-wrap .bbai-btn-secondary:not(.bbai-btn-sm),
+.wrap.bbai-wrap .bbai-btn.bbai-btn-secondary:not(.bbai-btn-sm),
+.wrap.bbai-wrap .bbai-btn.bbai-btn--secondary:not(.bbai-btn-sm):not(.bbai-btn--sm) {
+    min-height: var(--bbai-btn-height);
+    font-weight: var(--bbai-btn-font-weight-secondary) !important;
+    padding-left: var(--bbai-btn-padding-x-compact) !important;
+    padding-right: var(--bbai-btn-padding-x-compact) !important;
+}
+
+body.bbai-dashboard .bbai-btn-tertiary,
+body.bbai-dashboard .bbai-btn-ghost,
+body.bbai-dashboard .bbai-btn.bbai-btn--tertiary,
+body.bbai-dashboard .bbai-btn.bbai-btn--ghost,
+.wrap.bbai-wrap .bbai-btn-tertiary,
+.wrap.bbai-wrap .bbai-btn-ghost,
+.wrap.bbai-wrap .bbai-btn.bbai-btn--tertiary,
+.wrap.bbai-wrap .bbai-btn.bbai-btn--ghost {
+    min-height: 0;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    line-height: var(--bbai-btn-line-height);
+}
+
+body.bbai-dashboard .bbai-btn-block,
+body.bbai-dashboard .bbai-btn.bbai-btn--full,
+.wrap.bbai-wrap .bbai-btn-block,
+.wrap.bbai-wrap .bbai-btn.bbai-btn--full {
+    width: 100%;
+    justify-content: center;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Button groups — consistent rhythm                                           */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-btn-group:not(.bbai-btn-group--segmented),
+.wrap.bbai-wrap .bbai-btn-group:not(.bbai-btn-group--segmented) {
+    gap: var(--bbai-btn-group-gap);
+    align-items: center;
+}
+
+body.bbai-dashboard .bbai-ui-button-group:not(.bbai-ui-button-group--segmented),
+.wrap.bbai-wrap .bbai-ui-button-group:not(.bbai-ui-button-group--segmented) {
+    gap: var(--bbai-btn-group-gap);
+    align-items: center;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Banner / hero CTA primitives (classes from ui-button.php)                   */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__cta,
+body.bbai-dashboard .bbai-command-hero-host .bbai-banner .bbai-banner__cta,
+body.bbai-dashboard .bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__link--secondary,
+body.bbai-dashboard .bbai-command-hero-host .bbai-banner .bbai-banner__link--secondary,
+.wrap.bbai-wrap .bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__cta,
+.wrap.bbai-wrap .bbai-command-hero-host .bbai-banner .bbai-banner__cta,
+.wrap.bbai-wrap .bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__link--secondary,
+.wrap.bbai-wrap .bbai-command-hero-host .bbai-banner .bbai-banner__link--secondary {
+    line-height: var(--bbai-btn-line-height);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Library row + table actions                                                */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-row-action-btn,
+.wrap.bbai-wrap .bbai-row-action-btn {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-height: var(--bbai-btn-height-sm);
+    padding: 8px 14px !important;
+    line-height: var(--bbai-btn-line-height);
+    border-radius: var(--bbai-btn-radius) !important;
+    font-size: var(--bbai-btn-font-size-sm);
+    font-weight: var(--bbai-btn-font-weight-secondary);
+    gap: 6px;
+}
+
+body.bbai-dashboard .bbai-library-workspace .bbai-library-card__quick-action,
+.wrap.bbai-wrap .bbai-library-workspace .bbai-library-card__quick-action {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-height: var(--bbai-btn-height-sm);
+    line-height: var(--bbai-btn-line-height);
+    border-radius: var(--bbai-btn-radius) !important;
+    font-size: var(--bbai-btn-font-size-sm);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Library chrome: drop duplicate radius/height overrides                       */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-library-page-actions .bbai-btn,
+body.bbai-dashboard .bbai-library-summary-actions .bbai-btn,
+body.bbai-dashboard .bbai-library-task-banner__actions .bbai-btn,
+body.bbai-dashboard .bbai-library-sidebar-card .bbai-btn,
+body.bbai-dashboard .bbai-library-selection-bar .bbai-btn,
+body.bbai-dashboard .bbai-library-missing-bulk-bar .bbai-btn,
+.wrap.bbai-wrap .bbai-library-page-actions .bbai-btn,
+.wrap.bbai-wrap .bbai-library-summary-actions .bbai-btn,
+.wrap.bbai-wrap .bbai-library-task-banner__actions .bbai-btn,
+.wrap.bbai-wrap .bbai-library-sidebar-card .bbai-btn,
+.wrap.bbai-wrap .bbai-library-selection-bar .bbai-btn,
+.wrap.bbai-wrap .bbai-library-missing-bulk-bar .bbai-btn {
+    min-height: var(--bbai-btn-height-sm);
+    border-radius: var(--bbai-btn-radius) !important;
+}
+
+body.bbai-dashboard .bbai-library-selection-bar .bbai-btn-primary,
+body.bbai-dashboard .bbai-library-missing-bulk-bar .bbai-btn-primary,
+.wrap.bbai-wrap .bbai-library-selection-bar .bbai-btn-primary,
+.wrap.bbai-wrap .bbai-library-missing-bulk-bar .bbai-btn-primary {
+    min-height: var(--bbai-btn-height-sm);
+}

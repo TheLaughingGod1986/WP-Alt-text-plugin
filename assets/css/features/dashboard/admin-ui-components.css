@@ -181,7 +181,7 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
+    gap: var(--bbai-btn-group-gap, var(--bbai-space-2-5, 10px));
 }
 
 .bbai-ui-button-group--vertical,

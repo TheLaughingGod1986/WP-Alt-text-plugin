@@ -21,7 +21,7 @@ npx playwright install
 | `BBAI_E2E_BASE_URL` | Yes for CI | e.g. `http://127.0.0.1:8888` |
 | `BBAI_E2E_STORAGE_STATE` | Recommended | Path to `storageState.json` after WP login (see below) |
 
-Copy `tests/e2e/.env.example` to `.env` and adjust (Playwright does not load `.env` by default — export vars or use `dotenv` in config; the provided config reads `process.env`).
+Copy `tests/e2e/env.e2e.example` to `.env` and adjust (Playwright does not load `.env` by default — export vars or use `dotenv` in config; the provided config reads `process.env`).
 
 ### Auth storage state (one-time)
 

@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace BeepBeep\AltText\Controllers;
+namespace BeepBeepAI\AltText\Controllers;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use BeepBeep\AltText\Services\Authentication_Service;
+use BeepBeepAI\AltText\Services\Authentication_Service;
 
 /**
  * Authentication Controller
@@ -15,7 +15,7 @@ use BeepBeep\AltText\Services\Authentication_Service;
  * Handles HTTP requests for authentication operations.
  * Thin controller layer that delegates to AuthenticationService.
  *
- * @package BeepBeep\AltText\Controllers
+ * @package BeepBeepAI\AltText\Controllers
  * @since   5.0.0
  */
 class Auth_Controller {

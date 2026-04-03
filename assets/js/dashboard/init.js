@@ -97,6 +97,31 @@ bbaiRunWithJQuery(function($) {
     }
 
     /**
+     * Open pricing modal via canonical upgrade-modal.js when possible.
+     * Avoids inline display:!important that closeUpgradeModal() could not override.
+     */
+    function openUpgradeModalPreferred() {
+        if (typeof window.bbaiOpenUpgradeModal === 'function') {
+            try {
+                if (window.bbaiOpenUpgradeModal('default', { source: 'dashboard-init', triggerKey: 'manual' })) {
+                    return true;
+                }
+            } catch (err) {
+                if (alttextaiDebug && window.BBAI_LOG) {
+                    window.BBAI_LOG.warn('[AltText AI] bbaiOpenUpgradeModal failed', err);
+                }
+            }
+        }
+        if (typeof window.alttextaiShowModal === 'function' && window.alttextaiShowModal()) {
+            return true;
+        }
+        if (typeof alttextaiShowModal === 'function' && alttextaiShowModal()) {
+            return true;
+        }
+        return showUpgradeModal();
+    }
+
+    /**
      * Bind fallback upgrade triggers
      */
     function bindFallbackUpgradeTriggers() {
@@ -110,7 +135,7 @@ bbaiRunWithJQuery(function($) {
 
             if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Fallback upgrade trigger clicked');
 
-            if (!showUpgradeModal()) {
+            if (!openUpgradeModalPreferred()) {
                 if (typeof window.openPricingModal === 'function') {
                     window.openPricingModal('enterprise');
                 }
@@ -187,7 +212,7 @@ bbaiRunWithJQuery(function($) {
 
                 if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Direct upgrade handler fired for:', selector);
 
-                if (!showUpgradeModal()) {
+                if (!openUpgradeModalPreferred()) {
                     if (typeof window.openPricingModal === 'function') {
                         window.openPricingModal('enterprise');
                     }
@@ -367,24 +392,9 @@ bbaiRunWithJQuery(function($) {
 
             window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Upgrade button clicked in dashboard init');
 
-            // Try direct modal opening first (most reliable)
-            if (showUpgradeModal()) {
-                window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Modal opened via showUpgradeModal()');
+            if (openUpgradeModalPreferred()) {
+                window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Modal opened via openUpgradeModalPreferred()');
                 return false;
-            }
-
-            // Try alttextaiShowModal (from dashboard bundle)
-            if (typeof window.alttextaiShowModal === 'function') {
-                window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Trying window.alttextaiShowModal()');
-                if (window.alttextaiShowModal()) {
-                    return false;
-                }
-            }
-            if (typeof alttextaiShowModal === 'function') {
-                window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Trying alttextaiShowModal()');
-                if (alttextaiShowModal()) {
-                    return false;
-                }
             }
 
             // Try pricing modal bridge

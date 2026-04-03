@@ -1,9 +1,0 @@
-.gitignore export-ignore
-.gitattributes export-ignore
-.distignore export-ignore
-.vscode export-ignore
-build export-ignore
-scripts export-ignore
-assets/img/screenshots export-ignore
-.DS_Store export-ignore
-**/.DS_Store export-ignore

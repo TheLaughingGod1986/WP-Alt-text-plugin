@@ -5,7 +5,7 @@
  * Initializes the v5.0 service-oriented architecture.
  * Sets up DI container, registers services, and wires AJAX routes.
  *
- * @package BeepBeep\AltText
+ * @package BeepBeepAI\AltText
  * @since   5.0.0
  */
 
@@ -16,9 +16,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use BeepBeep\AltText\Core\Container;
-use BeepBeep\AltText\Core\Service_Provider;
-use BeepBeep\AltText\Core\Router;
+use BeepBeepAI\AltText\Core\Container;
+use BeepBeepAI\AltText\Core\Service_Provider;
+use BeepBeepAI\AltText\Core\Router;
 
 /**
  * Initialize v5.0 architecture.

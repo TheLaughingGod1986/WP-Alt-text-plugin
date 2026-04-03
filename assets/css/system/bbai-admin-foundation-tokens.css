@@ -348,7 +348,8 @@
     --bbai-admin-shadow-focus: var(--bbai-shadow-focus);
 
     /* Button hierarchy */
-    --bbai-admin-btn-radius: var(--bbai-admin-radius-md);
+    --bbai-admin-btn-radius: var(--bbai-btn-radius);
+    /* Compact toolbar / pagination — slightly tighter than default CTAs */
     --bbai-admin-btn-radius-sm: var(--bbai-admin-radius-sm);
     --bbai-admin-btn-primary-bg: var(--bbai-gradient-primary);
     --bbai-admin-btn-primary-border: var(--bbai-admin-color-primary);
@@ -396,6 +397,30 @@
     --bbai-ds-control-radius: var(--bbai-admin-radius-md);
     --bbai-ds-control-font: var(--bbai-admin-type-body);
     --bbai-ds-icon-btn-size: var(--bbai-admin-size-icon-button);
+
+    /* -------------------------------------------------------------------------
+       Unified button system (consumed by bbai-admin-button-system.css + .bbai-btn)
+       Aligns card/banner/modal/table actions to one scale.
+       ------------------------------------------------------------------------- */
+    --bbai-btn-height: var(--bbai-cta-primary-min-height, 40px);
+    --bbai-btn-height-sm: 36px;
+    --bbai-btn-padding-x: 20px;
+    --bbai-btn-padding-x-compact: var(--bbai-cta-primary-padding-x, 16px);
+    --bbai-btn-radius: var(--bbai-cta-primary-radius, 8px);
+    --bbai-btn-font-size: var(--bbai-cta-primary-font-size, 14px);
+    --bbai-btn-font-size-sm: 13px;
+    --bbai-btn-font-weight: var(--bbai-font-semibold);
+    --bbai-btn-font-weight-primary: var(--bbai-cta-primary-font-weight, 500);
+    --bbai-btn-font-weight-secondary: var(--bbai-font-medium);
+    --bbai-btn-line-height: 1.25;
+    --bbai-btn-gap: var(--bbai-space-2);
+    --bbai-btn-group-gap: var(--bbai-space-2-5);
+    --bbai-btn-transition:
+        color var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease),
+        background-color var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease),
+        border-color var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease),
+        box-shadow var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease),
+        transform var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease);
 
     --bbai-ds-card-padding: var(--bbai-admin-space-inset-card);
     --bbai-ds-card-padding-sm: var(--bbai-admin-space-inset-card-sm);

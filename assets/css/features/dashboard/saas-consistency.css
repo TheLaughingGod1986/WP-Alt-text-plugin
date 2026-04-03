@@ -2,6 +2,15 @@
  * Shared across Dashboard, Library, Analytics, Usage, Settings.
  */
 
+/* Mint success shell: same as .bbai-banner--success command hero (plan banner + pair cards + library workspace). */
+body.bbai-dashboard {
+    --bbai-command-hero-success-border: #e8f0ec;
+    --bbai-command-hero-success-bg: radial-gradient(circle at top right, rgba(22, 163, 74, 0.048), transparent 36%),
+        linear-gradient(135deg, #fdfffe 0%, #f9fcfa 50%, #ffffff 100%);
+    --bbai-command-hero-success-shadow-rest: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --bbai-command-hero-success-shadow-hover: 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
 /*
  * WordPress admin shell — plugin screens only (body.bbai-dashboard via filter_admin_body_class).
  * Removes core .wrap / #wpbody-content constraints so the product owns horizontal canvas.
@@ -374,7 +383,8 @@ body.bbai-dashboard .bbai-table-scroll {
     background: #ffffff !important;
     border: 1px solid rgba(148, 163, 184, 0.11) !important;
     color: #7b8898 !important;
-    font-weight: 400 !important;
+    /* Aligned with --bbai-btn-font-weight-secondary (medium, not book) */
+    font-weight: var(--bbai-font-medium, 500) !important;
     box-shadow: none !important;
     transform: none;
     transition:
@@ -593,7 +603,21 @@ body.bbai-dashboard .bbai-library-workspace .bbai-command-card--workspace .bbai-
 #bbai-dashboard-main .bbai-dashboard-command__grid {
     grid-template-columns: minmax(0, 1.7fr) minmax(260px, 0.95fr);
     gap: var(--section-spacing, var(--bbai-space-6));
-    align-items: start;
+    /* Stretch so Library status + Plan / trial cards share one height (identical outer banners). */
+    align-items: stretch;
+}
+
+/*
+ * Coverage + Plan / trial: same mint surface + border + shadow as .bbai-banner--success plan hero.
+ * Excludes coverage-complete (stronger green celebration shell).
+ */
+#bbai-dashboard-main
+    .bbai-dashboard-command__grid
+    > .bbai-dashboard-card.bbai-command-card:not(.bbai-command-card--coverage-complete) {
+    background: var(--bbai-command-hero-success-bg);
+    border: 1px solid var(--bbai-command-hero-success-border);
+    border-radius: 16px;
+    box-shadow: var(--bbai-command-hero-success-shadow-rest);
 }
 
 /* Keep CTA hierarchy visually consistent between Dashboard and Library action surfaces. */
@@ -602,17 +626,6 @@ body.bbai-dashboard .bbai-library-workspace .bbai-command-card--workspace .bbai-
     min-height: var(--bbai-control-height-lg, 44px);
     border-radius: var(--bbai-radius-md, 10px);
     font-weight: 600;
-}
-
-#bbai-dashboard-main .bbai-command-card--plan.bbai-product-rail-surface {
-    background: #fafbfc;
-    border-color: rgba(241, 245, 249, 0.95);
-    box-shadow: 0 1px 10px rgba(15, 23, 42, 0.032);
-}
-
-#bbai-dashboard-main .bbai-command-card--plan.bbai-product-rail-surface:hover {
-    border-color: #eef2f7;
-    box-shadow: 0 3px 14px rgba(15, 23, 42, 0.048);
 }
 
 /* The plan rail is too narrow for two CTAs side-by-side, so stack them consistently. */

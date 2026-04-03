@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace BeepBeep\AltText\Core;
+namespace BeepBeepAI\AltText\Core;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Simple DI container for managing service instantiation and dependencies.
  * Supports both factory and singleton patterns.
  *
- * @package BeepBeep\AltText\Core
+ * @package BeepBeepAI\AltText\Core
  * @since   5.0.0
  */
 class Container {

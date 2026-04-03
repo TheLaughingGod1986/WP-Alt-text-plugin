@@ -15,6 +15,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+if ( ! class_exists( Upgrade_Path_Resolver::class, false ) ) {
+	require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-upgrade-path-resolver.php';
+}
+
 class Dashboard_State {
 	const STATE_LOGGED_OUT_TRIAL_AVAILABLE = 'logged_out_trial_available';
 	const STATE_LOGGED_OUT_TRIAL_RUNNING   = 'logged_out_trial_running';
@@ -46,9 +50,31 @@ class Dashboard_State {
 		$generate_available = $is_guest_trial
 			? ! $trial_status['exhausted']
 			: ( $is_premium || $usage_stats['remaining'] > 0 );
-		$locked_cta_mode = $is_guest_trial && $trial_status['exhausted']
-			? 'create_account'
-			: ( ! $generate_available && ! $is_premium ? 'upgrade' : '' );
+
+		$plan_slug_for_ladder = $is_guest_trial
+			? 'free'
+			: strtolower( (string) ( $args['plan_slug'] ?? $usage_stats['plan'] ?? 'free' ) );
+
+		$upgrade_path = Upgrade_Path_Resolver::resolve(
+			[
+				'is_guest_trial' => $is_guest_trial,
+				'plan_slug'      => $plan_slug_for_ladder,
+			]
+		);
+
+		// One locked monetisation mode: matches upgrade ladder (no generic "upgrade").
+		$locked_cta_mode = '';
+		if ( $is_guest_trial && $trial_status['exhausted'] ) {
+			$locked_cta_mode = 'create_account';
+		} elseif ( ! $generate_available ) {
+			if ( Upgrade_Path_Resolver::STEP_AGENCY === $upgrade_path['step'] ) {
+				$locked_cta_mode = 'manage_plan';
+			} elseif ( Upgrade_Path_Resolver::STEP_GROWTH === $upgrade_path['step'] ) {
+				$locked_cta_mode = 'upgrade_agency';
+			} elseif ( ! $is_premium ) {
+				$locked_cta_mode = 'upgrade_growth';
+			}
+		}
 
 		return [
 			'state'            => $resolved_state,
@@ -85,6 +111,7 @@ class Dashboard_State {
 				),
 				'locked_mode'  => $locked_cta_mode,
 			],
+			'upgrade_path'     => $upgrade_path,
 			'copy'             => self::build_copy( $trial_status ),
 		];
 	}
@@ -105,9 +132,6 @@ class Dashboard_State {
 		$remaining = isset( $trial_status['remaining'] )
 			? max( 0, (int) $trial_status['remaining'] )
 			: max( 0, $limit - $used );
-		$exhausted = isset( $trial_status['exhausted'] )
-			? (bool) $trial_status['exhausted']
-			: $remaining <= 0;
 
 		return [
 			'is_trial'           => array_key_exists( 'is_trial', $trial_status ) ? ! empty( $trial_status['is_trial'] ) : true,
@@ -115,7 +139,7 @@ class Dashboard_State {
 			'limit'              => $limit,
 			'used'               => $used,
 			'remaining'          => $remaining,
-			'exhausted'          => $exhausted || $remaining <= 0,
+			'exhausted'          => $remaining <= 0,
 			'site_hash'          => sanitize_key( (string) ( $trial_status['site_hash'] ?? '' ) ),
 			'anon_id'            => sanitize_text_field( (string) ( $trial_status['anon_id'] ?? '' ) ),
 			'identity_key'       => sanitize_key( (string) ( $trial_status['identity_key'] ?? '' ) ),
@@ -139,10 +163,28 @@ class Dashboard_State {
 			$remaining = max( 0, (int) $trial_status['remaining'] );
 			$plan      = 'anonymous_trial';
 		} else {
-			$used      = max( 0, (int) ( $usage_stats['used'] ?? 0 ) );
-			$limit     = max( 1, (int) ( $usage_stats['limit'] ?? 50 ) );
-			$remaining = max( 0, (int) ( $usage_stats['remaining'] ?? 0 ) );
-			$plan      = sanitize_key( (string) ( $usage_stats['plan'] ?? $usage_stats['plan_type'] ?? 'free' ) );
+			$used = max( 0, (int) ( $usage_stats['credits_used'] ?? $usage_stats['creditsUsed'] ?? $usage_stats['used'] ?? 0 ) );
+			$limit = 50;
+			foreach (
+				[
+					$usage_stats['credits_total'] ?? null,
+					$usage_stats['creditsTotal'] ?? null,
+					$usage_stats['creditsLimit'] ?? null,
+					$usage_stats['limit'] ?? null,
+				] as $candidate
+			) {
+				if ( null !== $candidate && '' !== $candidate && (int) $candidate > 0 ) {
+					$limit = max( 1, (int) $candidate );
+					break;
+				}
+			}
+			$remaining_candidate = $usage_stats['credits_remaining'] ?? $usage_stats['creditsRemaining'] ?? $usage_stats['remaining'] ?? null;
+			if ( null !== $remaining_candidate && '' !== $remaining_candidate ) {
+				$remaining = max( 0, (int) $remaining_candidate );
+			} else {
+				$remaining = max( 0, $limit - $used );
+			}
+			$plan = sanitize_key( (string) ( $usage_stats['plan'] ?? $usage_stats['plan_type'] ?? 'free' ) );
 		}
 
 		return [

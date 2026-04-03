@@ -27,14 +27,18 @@
         var remaining = usageStats && (usageStats.remaining !== undefined) ? parseInt(usageStats.remaining, 10) : null;
         var plan = usageStats && usageStats.plan ? usageStats.plan.toLowerCase() : 'free';
         var isPremium = plan === 'pro' || plan === 'agency';
-        var isOutOfCredits = remaining !== null && remaining !== undefined && remaining === 0;
+        var domShowsRemaining = typeof window.bbaiGuestTrialShowsRemainingCredits === 'function' &&
+            window.bbaiGuestTrialShowsRemainingCredits();
+        var hasCredits = (remaining !== null && remaining !== undefined && !isNaN(remaining) && remaining > 0) ||
+            domShowsRemaining;
+        var isOutOfCredits = !hasCredits && remaining !== null && remaining !== undefined && !isNaN(remaining) && remaining === 0;
 
         return {
             usageStats: usageStats,
             remaining: remaining,
             isPremium: isPremium,
             isOutOfCredits: isOutOfCredits,
-            hasCredits: remaining !== null && remaining !== undefined && remaining > 0
+            hasCredits: hasCredits
         };
     }
 
@@ -82,9 +86,13 @@
             return false;
         }
 
-        // Check trial exhaustion first
         var trialData = window.BBAI_DASH && window.BBAI_DASH.trial;
-        if (trialData && trialData.is_trial && trialData.exhausted) {
+        if (
+            trialData &&
+            trialData.is_trial &&
+            trialData.exhausted &&
+            !(typeof window.bbaiGuestTrialShowsRemainingCredits === 'function' && window.bbaiGuestTrialShowsRemainingCredits())
+        ) {
             window.bbaiHandleTrialExhausted({
                 message: 'You\'ve used your free trial generations. Create a free account to continue.',
                 code: 'bbai_trial_exhausted'
@@ -235,14 +243,24 @@
 
         var usage = checkUsageBeforeOperation();
 
-        // Check trial exhaustion first
-        var trialDataRegen = window.BBAI_DASH && window.BBAI_DASH.trial;
-        if (trialDataRegen && trialDataRegen.is_trial && trialDataRegen.exhausted) {
-            window.bbaiHandleTrialExhausted({
-                message: 'You\'ve used your free trial generations. Create a free account to continue.',
-                code: 'bbai_trial_exhausted'
-            });
-            return false;
+        if (usage.hasCredits) {
+            // proceed below
+        } else if (!usage.usageStats) {
+            // proceed below
+        } else {
+            var trialDataRegen = window.BBAI_DASH && window.BBAI_DASH.trial;
+            if (
+                trialDataRegen &&
+                trialDataRegen.is_trial &&
+                trialDataRegen.exhausted &&
+                !(typeof window.bbaiGuestTrialShowsRemainingCredits === 'function' && window.bbaiGuestTrialShowsRemainingCredits())
+            ) {
+                window.bbaiHandleTrialExhausted({
+                    message: 'You\'ve used your free trial generations. Create a free account to continue.',
+                    code: 'bbai_trial_exhausted'
+                });
+                return false;
+            }
         }
 
         if (!usage.isPremium && usage.isOutOfCredits) {

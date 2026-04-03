@@ -527,7 +527,13 @@
                 window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Upgrade button clicked (capture handler)');
                 e.preventDefault();
                 e.stopPropagation();
-                openPricingModal('enterprise');
+                var variantAttr = trigger.getAttribute('data-bbai-pricing-variant');
+                var variant = variantAttr && String(variantAttr).trim()
+                    ? String(variantAttr).trim().toLowerCase()
+                    : (window.BBAI_DASH && window.BBAI_DASH.upgradePath && window.BBAI_DASH.upgradePath.pricing_variant
+                        ? String(window.BBAI_DASH.upgradePath.pricing_variant).toLowerCase()
+                        : 'growth');
+                openPricingModal(variant);
             }, true);
 
             document.addEventListener('click', function(e) {

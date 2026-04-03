@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace BeepBeep\AltText\Core;
+namespace BeepBeepAI\AltText\Core;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Handles routing for AJAX requests and REST API endpoints.
  * Routes requests to appropriate controllers.
  *
- * @package BeepBeep\AltText\Core
+ * @package BeepBeepAI\AltText\Core
  * @since   5.0.0
  */
 class Router {

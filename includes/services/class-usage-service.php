@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace BeepBeep\AltText\Services;
+namespace BeepBeepAI\AltText\Services;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Handles usage tracking, quota management, and threshold notifications.
  * Extracted from monolithic BbAI_Core class for better separation of concerns.
  *
- * @package BeepBeep\AltText\Services
+ * @package BeepBeepAI\AltText\Services
  * @since   5.0.0
  */
 class Usage_Service {

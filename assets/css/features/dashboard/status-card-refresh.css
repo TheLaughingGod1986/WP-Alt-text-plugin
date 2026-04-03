@@ -6512,7 +6512,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     position: relative;
     margin: 0 -10px;
     padding: var(--bbai-command-row-padding) 10px;
-    min-height: 42px;
+    min-height: 44px;
     border-radius: 12px;
     text-align: left;
     font: inherit;
@@ -6544,7 +6544,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: inline-flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 10px;
+    gap: 8px;
     margin-left: auto;
 }
 
@@ -7269,7 +7269,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-command-status__summary {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
 }
 
 #bbai-dashboard-main .bbai-command-breakdown {
@@ -7277,8 +7277,9 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin: 0 -8px;
-    padding: 8px 10px;
+    margin: 0 -10px;
+    padding: var(--bbai-command-row-padding) 10px;
+    min-height: 44px;
     border-top: 1px solid var(--bbai-divider);
     border-radius: 14px;
     background: transparent;
@@ -7355,6 +7356,114 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     opacity: 1;
     transform: translateX(0);
     color: var(--bbai-text-strong);
+}
+
+#bbai-dashboard-main .bbai-command-breakdown--missing-actionable {
+    background: linear-gradient(90deg, rgba(244, 63, 94, 0.05) 0%, rgba(244, 63, 94, 0.015) 58%, rgba(244, 63, 94, 0) 100%);
+    box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.12);
+    transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
+    /* Slightly more vertical inset than plain rows so the tint does not crowd the label. */
+    padding-top: calc(var(--bbai-command-row-padding) + 4px);
+    padding-bottom: calc(var(--bbai-command-row-padding) + 4px);
+    min-height: 48px;
+}
+
+#bbai-dashboard-main .bbai-command-breakdown--missing-actionable .bbai-command-breakdown__value {
+    color: #be123c;
+}
+
+#bbai-dashboard-main .bbai-command-breakdown--missing-actionable .bbai-command-breakdown__arrow {
+    opacity: 0.72;
+    color: #be123c;
+}
+
+#bbai-dashboard-main .bbai-command-breakdown--missing-actionable:hover .bbai-command-breakdown__arrow,
+#bbai-dashboard-main .bbai-command-breakdown--missing-actionable:focus-visible .bbai-command-breakdown__arrow,
+#bbai-dashboard-main .bbai-command-breakdown--missing-actionable.is-active .bbai-command-breakdown__arrow,
+#bbai-dashboard-main .bbai-command-breakdown--missing-actionable.is-pressed .bbai-command-breakdown__arrow {
+    opacity: 1;
+    transform: translateX(0);
+    color: #be123c;
+}
+
+#bbai-dashboard-main .bbai-command-breakdown--missing-actionable:hover,
+#bbai-dashboard-main .bbai-command-breakdown--missing-actionable.is-active {
+    background: linear-gradient(90deg, rgba(244, 63, 94, 0.08) 0%, rgba(244, 63, 94, 0.03) 60%, rgba(244, 63, 94, 0) 100%);
+    box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.18);
+}
+
+#bbai-dashboard-main .bbai-command-breakdown--missing-actionable:focus-visible {
+    outline: none;
+    background: linear-gradient(90deg, rgba(244, 63, 94, 0.08) 0%, rgba(244, 63, 94, 0.03) 60%, rgba(244, 63, 94, 0) 100%);
+    box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.22), 0 0 0 3px rgba(244, 63, 94, 0.14);
+}
+
+#bbai-dashboard-main .bbai-command-breakdown--missing-actionable.is-pressed {
+    background: linear-gradient(90deg, rgba(244, 63, 94, 0.09) 0%, rgba(244, 63, 94, 0.04) 60%, rgba(244, 63, 94, 0) 100%);
+    box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.2);
+}
+
+/* One-shot legacy hook (JS removes after attention cycle); prefer .bbai-dashboard-missing-attention */
+#bbai-dashboard-main .bbai-command-breakdown--missing-cue {
+    animation: none;
+}
+
+/**
+ * Short attention pulse on the missing-row status dot (~3s total, then stops).
+ */
+@keyframes bbai-missing-status-dot-pulse {
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45);
+    }
+    50% {
+        transform: scale(1.22);
+        opacity: 1;
+        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+    }
+}
+
+/* Pulse as soon as HTML paints (data attr from filter-group); JS-added .missing-actionable keeps parity after hydrate. */
+#bbai-dashboard-main [data-bbai-missing-row-pulse="1"] .bbai-command-breakdown__label::before,
+#bbai-dashboard-main .bbai-command-breakdown--missing-actionable.bbai-command-breakdown--missing .bbai-command-breakdown__label::before {
+    animation: bbai-missing-status-dot-pulse 1s ease-in-out 3;
+    transform-origin: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #bbai-dashboard-main [data-bbai-missing-row-pulse="1"] .bbai-command-breakdown__label::before,
+    #bbai-dashboard-main .bbai-command-breakdown--missing-actionable.bbai-command-breakdown--missing .bbai-command-breakdown__label::before {
+        animation: none;
+    }
+}
+
+/**
+ * Dashboard only: gentle attention on the "Missing" coverage row (one 3s cycle; JS strips class at 3s).
+ * transition:none: base row uses transition on background/box-shadow; without this, keyframes barely move.
+ */
+#bbai-dashboard-main [data-bbai-status-segment="missing"].bbai-dashboard-missing-attention.bbai-command-breakdown--missing-actionable {
+    animation: bbai-dashboard-missing-attention 3s ease-in-out 1;
+    transition: none;
+}
+
+@keyframes bbai-dashboard-missing-attention {
+    0%,
+    100% {
+        background: linear-gradient(90deg, rgba(244, 63, 94, 0.05) 0%, rgba(244, 63, 94, 0.015) 58%, rgba(244, 63, 94, 0) 100%);
+        box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.12);
+    }
+    50% {
+        background: linear-gradient(90deg, rgba(244, 63, 94, 0.088) 0%, rgba(244, 63, 94, 0.03) 60%, rgba(244, 63, 94, 0) 100%);
+        box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.2), 0 10px 32px -24px rgba(190, 24, 60, 0.28);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #bbai-dashboard-main .bbai-dashboard-missing-attention {
+        animation: none !important;
+    }
 }
 
 #bbai-dashboard-main .bbai-command-status__detail {
@@ -7773,13 +7882,6 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 /* Dashboard conversion: coverage motivation, plan urgency, completion state */
-#bbai-dashboard-main .bbai-command-card__header--with-badge {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-}
-
 #bbai-dashboard-main .bbai-command-plan__low-credits-badge {
     flex-shrink: 0;
     font-size: 11px;

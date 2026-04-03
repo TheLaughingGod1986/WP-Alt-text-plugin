@@ -159,17 +159,19 @@
     }
 
     function trackUpgradeIntent(payload) {
-        dispatchUpgradeEvent('bbai:analytics', mergeObjects(
-            {
-                event: 'upgrade_clicked',
-                timestamp: Date.now(),
-                source: 'upgrade-modal',
-                location: 'upgrade_modal',
-                trigger: 'open_upgrade_modal',
-                reason: 'default'
-            },
-            payload || {}
-        ));
+        var base = {
+            event: 'upgrade_clicked',
+            timestamp: Date.now(),
+            source: 'upgrade-modal',
+            location: 'upgrade_modal',
+            trigger: 'open_upgrade_modal',
+            reason: 'default'
+        };
+        var p = payload || {};
+        if (p.event) {
+            base.event = p.event;
+        }
+        dispatchUpgradeEvent('bbai:analytics', mergeObjects(base, p));
     }
 
     function trackCheckoutStarted(payload) {
@@ -658,6 +660,20 @@
             return;
         }
 
+        var ctaUiCtx = window.BBAI_DASH && window.BBAI_DASH.upgradeCtaUi;
+        var modalModeAttr = bbaiString(modal.getAttribute('data-bbai-upgrade-modal-mode'));
+        // Logged-out / guest: never apply locked or quota variants — they mention paid upgrades.
+        if ((ctaUiCtx && !ctaUiCtx.hasConnectedAccount) || modalModeAttr === 'signup_first') {
+            modal.setAttribute('data-bbai-upgrade-context', 'signup_first');
+            setModalNodeText(copy.nodes.title, bbaiString(ctaUiCtx && ctaUiCtx.modalTitleDefault) || copy.defaults.title);
+            setModalNodeText(copy.nodes.subtitle, bbaiString(ctaUiCtx && ctaUiCtx.modalSubtitleDefault) || copy.defaults.subtitle);
+            setModalNodeText(copy.nodes.eyebrow, copy.defaults.eyebrow);
+            setModalNodeText(copy.nodes.decisionTitle, bbaiString(ctaUiCtx && ctaUiCtx.primaryLabel) || copy.defaults.decisionTitle);
+            setModalNodeText(copy.nodes.decisionDesc, bbaiString(ctaUiCtx && ctaUiCtx.tooltipLocked) || copy.defaults.decisionDesc);
+            setModalNodeText(copy.nodes.note, copy.defaults.note);
+            return;
+        }
+
         var isLockedContext = typeof reason === 'string' && reason !== '' && reason !== 'default';
         var baseVariant = isLockedContext ? copy.locked : copy.defaults;
         var variant = getAutomaticPromptVariant(reason, context, baseVariant);
@@ -1085,6 +1101,15 @@
             trigger: triggerKey,
             reason: request.reason || 'default'
         });
+        var ctaUiOpen = window.BBAI_DASH && window.BBAI_DASH.upgradeCtaUi;
+        if (ctaUiOpen && !ctaUiOpen.hasConnectedAccount) {
+            trackUpgradeEvent('pricing_viewed_logged_out', {
+                source: request.context && request.context.source ? request.context.source : 'upgrade-modal',
+                trigger: triggerKey,
+                reason: request.reason || 'default',
+                modalMode: ctaUiOpen.modalMode || 'signup_first'
+            });
+        }
         dispatchUpgradeEvent('bbai:upgrade-modal-opened', { request: request });
 
         return true;
@@ -1122,11 +1147,15 @@
             modal.classList.remove('is-visible');
             modal.setAttribute('aria-hidden', 'true');
             setUpgradeModalScrollLock(false);
-            modal.style.display = 'none';
             modal.removeAttribute('style');
+            modal.style.display = 'none';
             if (content) {
                 content.removeAttribute('style');
             }
+        }
+
+        if (typeof window.bbaiEnsureDashboardMainVisible === 'function') {
+            window.bbaiEnsureDashboardMainVisible();
         }
 
         if (upgradeModalState.keyHandlerBound) {
@@ -1182,13 +1211,25 @@
                     ? 'feature_unlock_modal'
                     : (bannerState ? bannerState + '_banner' : 'upgrade_modal'));
 
-                trackUpgradeIntent({
-                    source: openLocation,
-                    location: openLocation,
-                    trigger: 'open_upgrade_modal',
-                    reason: openReason,
-                    plan: bbaiString(window.BBAI_POSTHOG && window.BBAI_POSTHOG.context && window.BBAI_POSTHOG.context.plan_type)
-                });
+                var ctaUiBtn = window.BBAI_DASH && window.BBAI_DASH.upgradeCtaUi;
+                if (ctaUiBtn && !ctaUiBtn.hasConnectedAccount) {
+                    trackUpgradeIntent({
+                        event: (ctaUiBtn.analytics && ctaUiBtn.analytics.secondary) ? ctaUiBtn.analytics.secondary : 'pricing_viewed_logged_out',
+                        source: openLocation,
+                        location: openLocation,
+                        trigger: 'pricing_viewed_logged_out',
+                        reason: openReason,
+                        plan: bbaiString(window.BBAI_POSTHOG && window.BBAI_POSTHOG.context && window.BBAI_POSTHOG.context.plan_type)
+                    });
+                } else {
+                    trackUpgradeIntent({
+                        source: openLocation,
+                        location: openLocation,
+                        trigger: 'open_upgrade_modal',
+                        reason: openReason,
+                        plan: bbaiString(window.BBAI_POSTHOG && window.BBAI_POSTHOG.context && window.BBAI_POSTHOG.context.plan_type)
+                    });
+                }
 
                 e.preventDefault();
                 e.stopPropagation();
@@ -1206,6 +1247,21 @@
         document.addEventListener('click', function(e) {
             var checkoutTrigger = e.target && e.target.closest('[data-action="checkout-plan"]');
             if (checkoutTrigger) {
+                var ctaUiCo = window.BBAI_DASH && window.BBAI_DASH.upgradeCtaUi;
+                if (ctaUiCo && !ctaUiCo.hasConnectedAccount) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof e.stopImmediatePropagation === 'function') {
+                        e.stopImmediatePropagation();
+                    }
+                    trackUpgradeEvent('checkout_blocked_signup_first', {
+                        plan: checkoutTrigger.getAttribute('data-plan') || 'unknown'
+                    });
+                    if (typeof window.openAuthSignupModal === 'function') {
+                        window.openAuthSignupModal();
+                    }
+                    return;
+                }
                 var activeRequest = upgradeModalState.activeRequest || { reason: 'default', context: {} };
                 var storage = getSessionStorageSafe();
                 var checkoutPayload = {

@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace BeepBeep\AltText\Services;
+namespace BeepBeepAI\AltText\Services;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use BeepBeep\AltText\Core\Event_Bus;
+use BeepBeepAI\AltText\Core\Event_Bus;
 
 /**
  * Generation Service
@@ -15,7 +15,7 @@ use BeepBeep\AltText\Core\Event_Bus;
  * Handles alt text generation for media attachments.
  * Provides clean interface for single, inline, and batch generation.
  *
- * @package BeepBeep\AltText\Services
+ * @package BeepBeepAI\AltText\Services
  * @since   5.0.0
  */
 class Generation_Service {
@@ -110,7 +110,10 @@ class Generation_Service {
 
 		// Check quota limits.
 		if ( ! $has_license && ( ! defined( 'WP_LOCAL_DEV' ) || ! WP_LOCAL_DEV ) ) {
-			if ( $this->api_client->has_reached_limit() ) {
+			if (
+				\BeepBeepAI\AltTextGenerator\Trial_Quota::get_remaining() <= 0
+				&& $this->api_client->has_reached_limit()
+			) {
 				$usage = $this->api_client->get_usage();
 				if ( is_wp_error( $usage ) ) {
 					$usage = class_exists( '\BbAI_Usage_Tracker' )

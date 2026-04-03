@@ -126,13 +126,6 @@ if (!$bbai_has_trend_data) {
     $bbai_trend_direction = 'stable';
 }
 
-$bbai_numbered_images = static function(int $count, string $single, string $plural) : string {
-    return sprintf(
-        _n($single, $plural, $count, 'beepbeep-ai-alt-text-generator'),
-        number_format_i18n($count)
-    );
-};
-
 $bbai_format_time_saved_value = static function(int $minutes) : string {
     if ($minutes <= 0) {
         return __('~2 hours saved', 'beepbeep-ai-alt-text-generator');
@@ -156,6 +149,7 @@ $bbai_format_time_saved_value = static function(int $minutes) : string {
     }
 
     return sprintf(
+        /* translators: %s: number of hours saved. */
         _n('~%s hour saved', '~%s hours saved', $hours, 'beepbeep-ai-alt-text-generator'),
         number_format_i18n($hours)
     );
@@ -337,37 +331,41 @@ if (0 === $bbai_total_images) {
     $bbai_coverage_kpi_description = __('All library images now include descriptive ALT text.', 'beepbeep-ai-alt-text-generator');
     $bbai_coverage_kpi_meta = __('Keep new uploads covered to maintain accessibility.', 'beepbeep-ai-alt-text-generator');
 } elseif ($bbai_missing_count > 0) {
-    $bbai_coverage_kpi_description = $bbai_numbered_images(
-        $bbai_missing_count,
-        '%s image is still missing ALT text.',
-        '%s images are still missing ALT text.'
+    $bbai_coverage_kpi_description = sprintf(
+        /* translators: %s: number of images still missing ALT text. */
+        _n('%s image is still missing ALT text.', '%s images are still missing ALT text.', $bbai_missing_count, 'beepbeep-ai-alt-text-generator'),
+        number_format_i18n($bbai_missing_count)
     );
     $bbai_coverage_kpi_meta = $bbai_weak_count > 0
-        ? $bbai_numbered_images($bbai_weak_count, '%s description still needs review.', '%s descriptions still need review.')
+        ? sprintf(
+            /* translators: %s: number of descriptions still needing review. */
+            _n('%s description still needs review.', '%s descriptions still need review.', $bbai_weak_count, 'beepbeep-ai-alt-text-generator'),
+            number_format_i18n($bbai_weak_count)
+        )
         : __('Closing those gaps will deliver the next accessibility lift.', 'beepbeep-ai-alt-text-generator');
 } else {
-    $bbai_coverage_kpi_description = $bbai_numbered_images(
-        $bbai_weak_count,
-        '%s description still needs review.',
-        '%s descriptions still need review.'
+    $bbai_coverage_kpi_description = sprintf(
+        /* translators: %s: number of descriptions still needing review. */
+        _n('%s description still needs review.', '%s descriptions still need review.', $bbai_weak_count, 'beepbeep-ai-alt-text-generator'),
+        number_format_i18n($bbai_weak_count)
     );
     $bbai_coverage_kpi_meta = __('Coverage is strong, but refining weaker descriptions will improve quality.', 'beepbeep-ai-alt-text-generator');
 }
 
-$bbai_images_kpi_value = $bbai_numbered_images(
-    $bbai_images_optimized_count,
-    '%s image optimized',
-    '%s images optimized'
+$bbai_images_kpi_value = sprintf(
+    /* translators: %s: number of optimized images. */
+    _n('%s image optimized', '%s images optimized', $bbai_images_optimized_count, 'beepbeep-ai-alt-text-generator'),
+    number_format_i18n($bbai_images_optimized_count)
 );
 $bbai_images_kpi_description = $bbai_images_optimized_count > 0
     ? __('Generated or improved across your media library.', 'beepbeep-ai-alt-text-generator')
     : __('No images have been optimized yet.', 'beepbeep-ai-alt-text-generator');
 
 if ($bbai_images_optimized_count > 0 && $bbai_missing_count > 0) {
-    $bbai_images_kpi_meta = $bbai_numbered_images(
-        $bbai_missing_count,
-        '%s image still has no ALT text.',
-        '%s images still have no ALT text.'
+    $bbai_images_kpi_meta = sprintf(
+        /* translators: %s: number of images still missing ALT text. */
+        _n('%s image still has no ALT text.', '%s images still have no ALT text.', $bbai_missing_count, 'beepbeep-ai-alt-text-generator'),
+        number_format_i18n($bbai_missing_count)
     );
 } elseif ($bbai_images_optimized_count > 0) {
     $bbai_images_kpi_meta = __('Your optimized library is building proof of value over time.', 'beepbeep-ai-alt-text-generator');
@@ -396,6 +394,7 @@ if (0 === $bbai_total_images || !$bbai_has_trend_data) {
     $bbai_trend_sentence = __('Scan to start tracking coverage here.', 'beepbeep-ai-alt-text-generator');
 } elseif ('improving' === $bbai_trend_direction) {
     $bbai_trend_sentence = sprintf(
+        /* translators: %s: number of coverage points improved this period. */
         _n(
             'Coverage up %s point this period.',
             'Coverage up %s points this period.',
@@ -429,10 +428,10 @@ $bbai_analytics_guidance_line = __('New uploads can introduce missing ALT. Turn 
 if (0 === $bbai_total_images) {
     $bbai_analytics_guidance_line = __('Scan your library to chart coverage and time saved.', 'beepbeep-ai-alt-text-generator');
 } elseif ($bbai_missing_count > 0) {
-    $bbai_analytics_guidance_line = $bbai_numbered_images(
-        $bbai_missing_count,
-        '%s image still needs ALT — scan first.',
-        '%s images still need ALT — scan first.'
+    $bbai_analytics_guidance_line = sprintf(
+        /* translators: %s: number of images still needing ALT text. */
+        _n('%s image still needs ALT — scan first.', '%s images still need ALT — scan first.', $bbai_missing_count, 'beepbeep-ai-alt-text-generator'),
+        number_format_i18n($bbai_missing_count)
     );
 } elseif ($bbai_weak_count > 0) {
     $bbai_analytics_guidance_line = __('Some descriptions need a pass — review in the ALT Library.', 'beepbeep-ai-alt-text-generator');

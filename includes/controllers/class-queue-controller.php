@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace BeepBeep\AltText\Controllers;
+namespace BeepBeepAI\AltText\Controllers;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use BeepBeep\AltText\Services\Queue_Service;
+use BeepBeepAI\AltText\Services\Queue_Service;
 
 /**
  * Queue Controller
@@ -15,7 +15,7 @@ use BeepBeep\AltText\Services\Queue_Service;
  * Handles HTTP requests for queue operations.
  * Thin controller layer that delegates to QueueService.
  *
- * @package BeepBeep\AltText\Controllers
+ * @package BeepBeepAI\AltText\Controllers
  * @since   5.0.0
  */
 class Queue_Controller {

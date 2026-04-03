@@ -2,6 +2,10 @@
  * Buttons - Premium SaaS Design
  * Refined interactions, accessible focus states, polished feel
  *
+ * Canonical tokens: --bbai-btn-* (bbai-admin-foundation-tokens.css).
+ * Optional BEM modifiers: .bbai-btn--primary | --secondary | --tertiary | --sm | --full
+ * (see bbai-admin-button-system.css for shell overrides).
+ *
  * @package BeepBeep_AI
  * @since 8.0.0
  */
@@ -14,13 +18,13 @@
     display: inline-flex !important;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: var(--bbai-btn-gap, 8px);
     padding: 10px 20px !important; /* Consistent base padding */
-    font-size: 14px;
-    font-weight: 600;
+    font-size: var(--bbai-btn-font-size, 14px);
+    font-weight: var(--bbai-btn-font-weight, 600);
     font-family: inherit;
-    line-height: 1.5;
-    border-radius: 8px;
+    line-height: var(--bbai-btn-line-height, 1.25);
+    border-radius: var(--bbai-btn-radius, 8px);
     border: 1px solid transparent;
     cursor: pointer;
     text-decoration: none !important;
@@ -65,8 +69,9 @@
    PRIMARY BUTTON - Main CTA
    ============================================ */
 
-.bbai-btn-primary {
-    min-height: var(--bbai-cta-primary-min-height, 40px);
+.bbai-btn-primary,
+.bbai-btn.bbai-btn--primary {
+    min-height: var(--bbai-btn-height, var(--bbai-cta-primary-min-height, 40px));
     padding-left: var(--bbai-cta-primary-padding-x, 16px) !important;
     padding-right: var(--bbai-cta-primary-padding-x, 16px) !important;
     min-width: var(--bbai-cta-primary-min-width, 220px);
@@ -83,29 +88,34 @@
     transition: var(--bbai-cta-primary-transition, all 0.15s ease);
 }
 
-.bbai-btn-primary::before {
+.bbai-btn-primary::before,
+.bbai-btn.bbai-btn--primary::before {
     display: none;
 }
 
-.bbai-btn-primary:hover:not(:disabled) {
+.bbai-btn-primary:hover:not(:disabled),
+.bbai-btn.bbai-btn--primary:hover:not(:disabled) {
     background: var(--bbai-cta-primary-bg-hover, #059669) !important;
     border-color: var(--bbai-cta-primary-bg-hover, #059669) !important;
     transform: translateY(-1px);
     box-shadow: var(--bbai-cta-primary-shadow-hover, 0 3px 10px rgba(15, 23, 42, 0.1));
 }
 
-.bbai-btn-primary:hover:not(:disabled)::before {
+.bbai-btn-primary:hover:not(:disabled)::before,
+.bbai-btn.bbai-btn--primary:hover:not(:disabled)::before {
     display: none;
 }
 
-.bbai-btn-primary:active:not(:disabled) {
+.bbai-btn-primary:active:not(:disabled),
+.bbai-btn.bbai-btn--primary:active:not(:disabled) {
     background: var(--bbai-cta-primary-bg-active, #047857) !important;
     border-color: var(--bbai-cta-primary-bg-active, #047857) !important;
     transform: translateY(0) scale(0.98);
     box-shadow: var(--bbai-cta-primary-shadow, 0 1px 2px rgba(15, 23, 42, 0.06));
 }
 
-.bbai-btn-primary:focus-visible {
+.bbai-btn-primary:focus-visible,
+.bbai-btn.bbai-btn--primary:focus-visible {
     outline: 2px solid #ffffff;
     outline-offset: 2px;
     transform: translateY(0);
@@ -114,16 +124,19 @@
 
 /* Compact primary (toolbar / tables) — same colours, no min-width lock */
 .bbai-btn.bbai-btn-primary.bbai-btn-sm,
-.bbai-btn-primary.bbai-btn-sm {
+.bbai-btn-primary.bbai-btn-sm,
+.bbai-btn.bbai-btn--primary.bbai-btn-sm,
+.bbai-btn.bbai-btn--primary.bbai-btn--sm {
     min-width: 0;
-    min-height: 36px;
+    min-height: var(--bbai-btn-height-sm, 36px);
 }
 
 /* ============================================
    SECONDARY BUTTON - Outlined
    ============================================ */
 
-.bbai-btn-secondary {
+.bbai-btn-secondary,
+.bbai-btn.bbai-btn--secondary {
     background: #ffffff !important;
     color: #64748b !important;
     border: 1px solid #e8ecf0 !important;
@@ -131,7 +144,8 @@
     transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
 }
 
-.bbai-btn-secondary:hover:not(:disabled) {
+.bbai-btn-secondary:hover:not(:disabled),
+.bbai-btn.bbai-btn--secondary:hover:not(:disabled) {
     background: #f8fafc !important;
     border-color: #dce3e9 !important;
     color: #475569 !important;
@@ -139,7 +153,8 @@
     box-shadow: none !important;
 }
 
-.bbai-btn-secondary:active:not(:disabled) {
+.bbai-btn-secondary:active:not(:disabled),
+.bbai-btn.bbai-btn--secondary:active:not(:disabled) {
     transform: none;
     background: #f1f5f9 !important;
 }
@@ -149,7 +164,9 @@
    ============================================ */
 
 .bbai-btn-tertiary,
-.bbai-btn-ghost {
+.bbai-btn-ghost,
+.bbai-btn.bbai-btn--tertiary,
+.bbai-btn.bbai-btn--ghost {
     background: transparent;
     color: var(--bbai-text-secondary);
     border-color: transparent;
@@ -157,7 +174,9 @@
 }
 
 .bbai-btn-tertiary:hover:not(:disabled),
-.bbai-btn-ghost:hover:not(:disabled) {
+.bbai-btn-ghost:hover:not(:disabled),
+.bbai-btn.bbai-btn--tertiary:hover:not(:disabled),
+.bbai-btn.bbai-btn--ghost:hover:not(:disabled) {
     color: var(--bbai-primary);
     background: var(--bbai-primary-soft);
 }
@@ -265,10 +284,11 @@
    BUTTON SIZES
    ============================================ */
 
-.bbai-btn-sm {
+.bbai-btn-sm,
+.bbai-btn.bbai-btn--sm {
     padding: 8px 16px !important; /* Consistent small padding */
-    font-size: 13px !important;
-    border-radius: 6px !important;
+    font-size: var(--bbai-btn-font-size-sm, 13px) !important;
+    border-radius: var(--bbai-btn-radius, 8px) !important;
 }
 
 .bbai-btn-lg {
@@ -285,7 +305,8 @@
 }
 
 /* Full width */
-.bbai-btn-block {
+.bbai-btn-block,
+.bbai-btn.bbai-btn--full {
     width: 100%;
 }
 
@@ -504,8 +525,9 @@
 
 .bbai-btn-group {
     display: flex;
-    gap: var(--bbai-space-2);
+    gap: var(--bbai-btn-group-gap, var(--bbai-space-2-5));
     flex-wrap: wrap;
+    align-items: center;
 }
 
 .bbai-btn-group--center {

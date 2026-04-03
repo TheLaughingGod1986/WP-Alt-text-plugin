@@ -13,17 +13,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $bbai_coverage = isset( $bbai_coverage ) && is_array( $bbai_coverage ) ? $bbai_coverage : [];
 
-$total_images = max( 0, (int) ( $bbai_coverage['total_images'] ?? 0 ) );
-$missing = max( 0, (int) ( $bbai_coverage['images_missing_alt'] ?? 0 ) );
-$weak = max( 0, (int) ( $bbai_coverage['needs_review_count'] ?? 0 ) );
-$filename_only = max( 0, (int) ( $bbai_coverage['filename_only_count'] ?? 0 ) );
-$duplicate = max( 0, (int) ( $bbai_coverage['duplicate_alt_count'] ?? 0 ) );
+$bbai_total_images = max( 0, (int) ( $bbai_coverage['total_images'] ?? 0 ) );
+$bbai_missing_images = max( 0, (int) ( $bbai_coverage['images_missing_alt'] ?? 0 ) );
+$bbai_weak_images = max( 0, (int) ( $bbai_coverage['needs_review_count'] ?? 0 ) );
+$bbai_filename_only_count = max( 0, (int) ( $bbai_coverage['filename_only_count'] ?? 0 ) );
+$bbai_duplicate_alt_count = max( 0, (int) ( $bbai_coverage['duplicate_alt_count'] ?? 0 ) );
 $bbai_library_url = add_query_arg( [ 'page' => 'bbai-library' ], admin_url( 'admin.php' ) );
 
-$bbai_has_scanned = $total_images > 0;
-$bbai_show_optimized_guide = $bbai_has_scanned && 0 === $missing && 0 === $weak && 0 === $filename_only && 0 === $duplicate;
+$bbai_has_scanned = $bbai_total_images > 0;
+$bbai_show_optimized_guide = $bbai_has_scanned && 0 === $bbai_missing_images && 0 === $bbai_weak_images && 0 === $bbai_filename_only_count && 0 === $bbai_duplicate_alt_count;
 $bbai_default_summary = __( 'Follow this simple workflow to use BeepBeep AI:', 'beepbeep-ai-alt-text-generator' );
-$bbai_generate_disabled = 0 === $missing;
+$bbai_generate_disabled = 0 === $bbai_missing_images;
 $bbai_workflow_steps = [
     [
         'icon_class'   => 'dashicons-search',

@@ -148,6 +148,25 @@ class Usage_Tracker {
      * @return array
      */
     public static function get_local_usage_snapshot() {
+        // Anonymous trial must win over the usage transient. A stale `remote_usage` payload
+        // (e.g. legacy fake 50 credits) otherwise masks Trial_Quota and breaks UI vs server.
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+        if ( class_exists( '\BeepBeepAI\AltTextGenerator\Trial_Quota' ) && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() ) {
+            $limit     = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_limit();
+            $used      = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_used();
+            $remaining = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_remaining();
+
+            return self::normalize_usage_payload(
+                [
+                    'used'      => $used,
+                    'limit'     => $limit,
+                    'remaining' => $remaining,
+                    'plan'      => 'trial',
+                    'source'    => 'local_trial_snapshot',
+                ]
+            );
+        }
+
         $cached = get_transient(self::CACHE_KEY);
         if ($cached !== false && is_array($cached)) {
             return self::normalize_usage_payload($cached);
@@ -230,10 +249,16 @@ class Usage_Tracker {
      */
     public static function get_cached_usage($force_refresh = false) {
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
         $api_client = API_Client_V2::get_instance();
 
         if ($force_refresh) {
             delete_transient(self::CACHE_KEY);
+        }
+
+        // Anonymous trial: never trust bbai_usage_cache; it may hold legacy remote/free rows.
+        if ( class_exists( '\BeepBeepAI\AltTextGenerator\Trial_Quota' ) && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() ) {
+            return self::get_local_usage_snapshot();
         }
 
         $cached = get_transient(self::CACHE_KEY);

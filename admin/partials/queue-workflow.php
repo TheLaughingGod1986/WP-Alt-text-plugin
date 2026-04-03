@@ -43,6 +43,7 @@ $bbai_wf_steps = [
         'icon'   => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>',
         'title'  => bbai_copy_cta_scan_media_library(),
         'metric' => sprintf(
+            /* translators: %s: number of scanned images. */
             _n( '%s image scanned', '%s images scanned', max( 1, $bbai_wf_total ), 'beepbeep-ai-alt-text-generator' ),
             number_format_i18n( $bbai_wf_total )
         ),
@@ -55,6 +56,7 @@ $bbai_wf_steps = [
         'icon'   => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
         'title'  => bbai_copy_cta_generate_missing_images(),
         'metric' => sprintf(
+            /* translators: %s: number of images missing ALT text. */
             _n( '%s image missing ALT', '%s images missing ALT', max( 1, $bbai_wf_missing ), 'beepbeep-ai-alt-text-generator' ),
             number_format_i18n( $bbai_wf_missing )
         ),
@@ -69,6 +71,7 @@ $bbai_wf_steps = [
         'icon'   => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>',
         'title'  => bbai_copy_cta_improve_alt(),
         'metric' => sprintf(
+            /* translators: %s: number of images that need review. */
             _n( '%s image needs review', '%s images need review', max( 1, $bbai_wf_weak ), 'beepbeep-ai-alt-text-generator' ),
             number_format_i18n( $bbai_wf_weak )
         ),
@@ -81,6 +84,7 @@ $bbai_wf_steps = [
         'icon'   => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>',
         'title'  => __( 'Complete', 'beepbeep-ai-alt-text-generator' ),
         'metric' => sprintf(
+            /* translators: %s: optimization percentage. */
             __( '%s%% optimized', 'beepbeep-ai-alt-text-generator' ),
             number_format_i18n( $bbai_wf_pct )
         ),

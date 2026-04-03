@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace BeepBeep\AltText\Controllers;
+namespace BeepBeepAI\AltText\Controllers;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use BeepBeep\AltText\Services\License_Service;
+use BeepBeepAI\AltText\Services\License_Service;
 
 /**
  * License Controller
@@ -15,7 +15,7 @@ use BeepBeep\AltText\Services\License_Service;
  * Handles HTTP requests for license operations.
  * Thin controller layer that delegates to LicenseService.
  *
- * @package BeepBeep\AltText\Controllers
+ * @package BeepBeepAI\AltText\Controllers
  * @since   5.0.0
  */
 class License_Controller {

@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace BeepBeep\AltText\Controllers;
+namespace BeepBeepAI\AltText\Controllers;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use BeepBeep\AltText\Services\Generation_Service;
+use BeepBeepAI\AltText\Services\Generation_Service;
 
 /**
  * Generation Controller
@@ -15,7 +15,7 @@ use BeepBeep\AltText\Services\Generation_Service;
  * Handles HTTP requests for alt text generation operations.
  * Thin controller layer that delegates to GenerationService.
  *
- * @package BeepBeep\AltText\Controllers
+ * @package BeepBeepAI\AltText\Controllers
  * @since   5.0.0
  */
 class Generation_Controller {

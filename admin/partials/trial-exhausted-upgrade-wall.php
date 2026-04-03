@@ -35,18 +35,21 @@ $bbai_trial_remaining_work  = $bbai_trial_missing_count + $bbai_trial_weak_count
 $bbai_trial_metrics = [];
 if ( $bbai_trial_remaining_work > 0 ) {
 	$bbai_trial_metrics[] = sprintf(
+		/* translators: %s: number of images that still need attention. */
 		_n( '%s image still needs attention', '%s images still need attention', $bbai_trial_remaining_work, 'beepbeep-ai-alt-text-generator' ),
 		number_format_i18n( $bbai_trial_remaining_work )
 	);
 }
 if ( $bbai_trial_missing_count > 0 ) {
 	$bbai_trial_metrics[] = sprintf(
+		/* translators: %s: number of images still missing ALT text. */
 		_n( '%s image still missing ALT text', '%s images still missing ALT text', $bbai_trial_missing_count, 'beepbeep-ai-alt-text-generator' ),
 		number_format_i18n( $bbai_trial_missing_count )
 	);
 }
 if ( $bbai_trial_weak_count > 0 ) {
 	$bbai_trial_metrics[] = sprintf(
+		/* translators: %s: number of images ready for review. */
 		_n( '%s image ready for review', '%s images ready for review', $bbai_trial_weak_count, 'beepbeep-ai-alt-text-generator' ),
 		number_format_i18n( $bbai_trial_weak_count )
 	);
@@ -77,21 +80,29 @@ if ( $bbai_trial_weak_count > 0 ) {
 				class="bbai-command-action bbai-command-action--primary bbai-btn bbai-btn-primary"
 				data-action="show-auth-modal"
 				data-auth-tab="register"
+				data-bbai-analytics-upgrade="trial_create_account_clicked"
 				data-bbai-trial-wall-primary="1"
 			><?php echo esc_html( $bbai_trial_copy['primary_cta'] ?? __( 'Create free account', 'beepbeep-ai-alt-text-generator' ) ); ?></a>
 			<a
 				href="#"
 				class="bbai-command-action bbai-command-action--secondary bbai-btn bbai-btn-secondary"
 				data-action="show-upgrade-modal"
+				data-bbai-pricing-variant="browse"
+				data-bbai-analytics-upgrade="pricing_viewed_from_trial"
 				data-bbai-trial-wall-secondary="1"
 			><?php echo esc_html( $bbai_trial_copy['secondary_cta'] ?? __( 'View plans', 'beepbeep-ai-alt-text-generator' ) ); ?></a>
 		</div>
 	</div>
 
 	<div class="bbai-trial-upgrade-wall__meta">
-		<strong class="bbai-trial-upgrade-wall__usage"><?php echo esc_html( $bbai_trial_copy['usage_line'] ?? '' ); ?></strong>
-		<?php if ( ! empty( $bbai_trial_metrics ) ) : ?>
-			<p class="bbai-trial-upgrade-wall__summary"><?php echo esc_html( implode( ' • ', $bbai_trial_metrics ) ); ?></p>
-		<?php endif; ?>
+		<p class="bbai-trial-upgrade-wall__meta-line">
+			<strong class="bbai-trial-upgrade-wall__usage"><?php echo esc_html( $bbai_trial_copy['usage_line'] ?? '' ); ?></strong>
+			<?php if ( ! empty( $bbai_trial_metrics ) ) : ?>
+				<?php foreach ( $bbai_trial_metrics as $bbai_metric_line ) : ?>
+					<span class="bbai-trial-upgrade-wall__meta-dot" aria-hidden="true">·</span>
+					<span class="bbai-trial-upgrade-wall__metric"><?php echo esc_html( (string) $bbai_metric_line ); ?></span>
+				<?php endforeach; ?>
+			<?php endif; ?>
+		</p>
 	</div>
 </section>

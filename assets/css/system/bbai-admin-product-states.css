@@ -230,11 +230,21 @@ body.bbai-dashboard .bbai-credit-activity-state__description {
 
 body.bbai-dashboard .bbai-trial-upgrade-wall {
     display: grid;
-    gap: var(--bbai-admin-space-4);
+    /* Tighter than space-5: trust line + usage meta should read as one footer stack */
+    gap: var(--bbai-admin-space-3);
     border: 1px solid #f5d0a9;
     background:
         radial-gradient(circle at top right, rgba(249, 115, 22, 0.12), transparent 38%),
         linear-gradient(180deg, #fffaf4 0%, #ffffff 100%);
+}
+
+/* Extra top inset only; bottom matches normal cards so the block is not “heavy” at the bottom. */
+/* Bottom margin: this section sits outside .bbai-dashboard-command / .bbai-top-section-stack, so it does not get that stack’s gap — match section spacing to the row below. */
+#bbai-dashboard-main .bbai-trial-upgrade-wall.bbai-command-card {
+    margin-bottom: var(--section-spacing, var(--bbai-admin-space-6));
+    padding-top: calc(var(--bbai-command-card-padding, var(--bbai-admin-space-6)) + var(--bbai-admin-space-2));
+    padding-bottom: var(--bbai-command-card-padding, var(--bbai-admin-space-6));
+    padding-inline: var(--bbai-command-card-padding, var(--bbai-admin-space-6));
 }
 
 body.bbai-dashboard .bbai-trial-upgrade-wall__main {
@@ -243,18 +253,29 @@ body.bbai-dashboard .bbai-trial-upgrade-wall__main {
     justify-content: space-between;
     gap: var(--bbai-admin-space-5);
     flex-wrap: wrap;
+    min-width: 0;
 }
 
 body.bbai-dashboard .bbai-trial-upgrade-wall__copy {
     display: grid;
-    gap: var(--bbai-admin-space-2);
-    max-width: 760px;
+    gap: var(--bbai-admin-space-3);
+    max-width: min(760px, 100%);
+    min-width: 0;
+    flex: 1 1 280px;
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__copy > .bbai-command-card__eyebrow {
+    margin-bottom: 0;
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__copy > .bbai-command-card__title {
+    margin-top: calc(var(--bbai-admin-space-1) * -1);
+    margin-bottom: 0;
 }
 
 body.bbai-dashboard .bbai-trial-upgrade-wall__body,
 body.bbai-dashboard .bbai-trial-upgrade-wall__value,
-body.bbai-dashboard .bbai-trial-upgrade-wall__trust,
-body.bbai-dashboard .bbai-trial-upgrade-wall__summary {
+body.bbai-dashboard .bbai-trial-upgrade-wall__trust {
     margin: 0;
     color: var(--bbai-admin-color-text-secondary, #526071);
     line-height: 1.6;
@@ -265,11 +286,18 @@ body.bbai-dashboard .bbai-trial-upgrade-wall__value {
     font-weight: 600;
 }
 
+body.bbai-dashboard .bbai-trial-upgrade-wall__trust {
+    margin-top: 0;
+}
+
 body.bbai-dashboard .bbai-trial-upgrade-wall__actions {
     display: flex;
     flex-wrap: wrap;
     gap: var(--bbai-admin-space-2);
     align-items: center;
+    flex-shrink: 0;
+    /* flex-start: if buttons are taller than copy, do not leave a dead band under the trust line */
+    align-self: flex-start;
 }
 
 body.bbai-dashboard .bbai-trial-upgrade-wall__pills {
@@ -293,16 +321,107 @@ body.bbai-dashboard .bbai-trial-upgrade-wall__pill {
 }
 
 body.bbai-dashboard .bbai-trial-upgrade-wall__meta {
+    padding-top: var(--bbai-admin-space-3);
+    padding-bottom: var(--bbai-admin-space-2);
+    margin-top: 0;
+    border-top: 1px solid rgba(148, 163, 184, 0.18);
+    min-width: 0;
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__meta-line {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--bbai-admin-space-2) var(--bbai-admin-space-4);
-    align-items: center;
-    padding-top: var(--bbai-admin-space-3);
-    border-top: 1px solid rgba(148, 163, 184, 0.18);
+    align-items: baseline;
+    column-gap: 0.4em;
+    row-gap: 0.35em;
+    margin: 0;
+    font-size: var(--bbai-admin-type-body, 14px);
+    line-height: 1.55;
+    color: var(--bbai-admin-color-text-secondary, #526071);
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__meta-dot {
+    color: var(--bbai-admin-color-text-muted, #94a3b8);
+    font-weight: 700;
+    user-select: none;
+    flex: 0 0 auto;
 }
 
 body.bbai-dashboard .bbai-trial-upgrade-wall__usage {
     color: var(--bbai-admin-color-text, #11253f);
+    font-weight: 600;
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__metric {
+    font-weight: 400;
+    color: inherit;
+}
+
+/*
+ * Side-by-side command cards (Library status + Plan / trial usage): identical header grid,
+ * label→title rhythm, and stretched card bodies so both “banners” match.
+ */
+#bbai-dashboard-main .bbai-dashboard-command__grid > .bbai-command-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+#bbai-dashboard-main .bbai-dashboard-command__grid > .bbai-command-card > .bbai-command-card__header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(168px, max-content);
+    align-items: start;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+#bbai-dashboard-main .bbai-dashboard-command__grid > .bbai-command-card > .bbai-command-card__header > div:first-child {
+    min-width: 0;
+}
+
+#bbai-dashboard-main .bbai-dashboard-command__grid > .bbai-command-card .bbai-command-card__meta-group {
+    justify-self: end;
+    width: 100%;
+    justify-content: flex-end;
+}
+
+#bbai-dashboard-main .bbai-dashboard-command__grid > .bbai-command-card--plan .bbai-command-card__meta-group--plan-trailing {
+    min-width: 168px;
+    min-height: 28px;
+    box-sizing: border-box;
+}
+
+#bbai-dashboard-main .bbai-dashboard-command__grid > .bbai-command-card .bbai-command-card__title {
+    font-size: var(--bbai-card-title-size, var(--bbai-admin-type-card-title, 20px));
+    font-weight: var(--bbai-card-title-weight, var(--bbai-admin-type-weight-semibold, 600));
+    line-height: var(--bbai-card-title-leading, 1.2);
+    letter-spacing: var(--bbai-card-title-tracking, -0.02em);
+}
+
+#bbai-dashboard-main .bbai-dashboard-command__grid > .bbai-command-card .bbai-command-card__eyebrow {
+    margin-bottom: var(--bbai-card-label-margin-bottom, var(--bbai-space-2));
+}
+
+#bbai-dashboard-main .bbai-dashboard-command__grid > .bbai-command-card--status .bbai-command-status,
+#bbai-dashboard-main .bbai-dashboard-command__grid > .bbai-command-card--plan .bbai-command-plan {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+@media (max-width: 480px) {
+    #bbai-dashboard-main .bbai-dashboard-command__grid > .bbai-command-card > .bbai-command-card__header {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    #bbai-dashboard-main .bbai-dashboard-command__grid > .bbai-command-card .bbai-command-card__meta-group {
+        justify-self: start;
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    #bbai-dashboard-main .bbai-dashboard-command__grid > .bbai-command-card--plan .bbai-command-card__meta-group--plan-trailing {
+        min-width: 0;
+    }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -321,6 +440,12 @@ body.bbai-dashboard .bbai-trial-upgrade-wall__usage {
     }
 
     body.bbai-dashboard .bbai-trial-upgrade-wall__actions {
+        align-self: stretch;
         width: 100%;
+    }
+
+    #bbai-dashboard-main .bbai-trial-upgrade-wall.bbai-command-card {
+        padding-top: calc(var(--bbai-command-card-padding, var(--bbai-admin-space-4)) + var(--bbai-admin-space-2));
+        padding-bottom: var(--bbai-command-card-padding, var(--bbai-admin-space-4));
     }
 }

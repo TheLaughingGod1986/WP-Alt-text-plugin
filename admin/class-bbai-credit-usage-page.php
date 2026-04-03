@@ -621,8 +621,8 @@ class Credit_Usage_Page {
 		}
 
 		return [
-			'from' => date( 'Y-m-d H:i:s', $start_ts ),
-			'to'   => date( 'Y-m-d H:i:s', $now_ts ),
+			'from' => gmdate( 'Y-m-d H:i:s', $start_ts ),
+			'to'   => gmdate( 'Y-m-d H:i:s', $now_ts ),
 		];
 	}
 

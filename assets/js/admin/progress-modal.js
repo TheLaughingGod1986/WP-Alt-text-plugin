@@ -47,7 +47,6 @@
             '                <p class="bbai-bulk-progress__helper" hidden></p>' +
             '            </div>' +
             '            <div class="bbai-bulk-progress__header-actions">' +
-            '                <button type="button" class="bbai-bulk-progress__minimize" aria-label="Minimize" title="Minimize">&mdash;</button>' +
             '                <button type="button" class="bbai-bulk-progress__close" aria-label="Close">&times;</button>' +
             '            </div>' +
             '        </div>' +
@@ -85,8 +84,8 @@
         $('body').append(modalHtml);
         var $modal = $('#bbai-bulk-progress-modal');
 
-        // Both minimize and close hide the modal without cancelling the job.
-        $modal.find('.bbai-bulk-progress__close, .bbai-bulk-progress__minimize').on('click', function() {
+        // Close hides the modal without cancelling the job.
+        $modal.find('.bbai-bulk-progress__close').on('click', function() {
             minimizeBulkProgress();
         });
 

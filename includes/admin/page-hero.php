@@ -56,81 +56,143 @@ function bbai_page_hero_resolve_variant(string $tone, string $semantic_state, st
 function bbai_page_hero_library_command_hero(array $args): array
 {
     require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/banner-system.php';
-
-    $attn = bbai_get_attention_counts();
-    $total = max(
-        max(0, (int) ($args['cov_total'] ?? 0)),
-        $attn['total_images'],
-        $attn['missing'] + $attn['needs_review'] + $attn['optimized_count']
-    );
-    $missing = $attn['missing'];
-    $weak    = $attn['needs_review'];
-    $is_pro   = !empty($args['is_pro']);
-    $settings = trim((string) ($args['settings_automation_url'] ?? admin_url('admin.php?page=bbai-settings#bbai-enable-on-upload')));
+    require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/plan-top-banner.php';
 
     $lib     = admin_url('admin.php?page=bbai-library');
     $surface = bbai_banner_library_surface_attr_opts();
+    $auth    = strtolower(trim((string) ($args['auth_state'] ?? '')));
+    $quota   = strtolower(trim((string) ($args['quota_type'] ?? '')));
+    $guest   = 'anonymous' === $auth || 'trial' === $quota || !empty($args['is_trial']) || !empty($args['is_guest_trial']);
 
-    $snap = bbai_banner_snapshot_merge(
+    $plan_input = [
+        'has_connected_account' => array_key_exists('has_connected_account', $args)
+            ? !empty($args['has_connected_account'])
+            : !$guest,
+        'is_guest_trial'        => $guest,
+        'is_anonymous_trial'    => $guest,
+        'plan_slug'             => strtolower((string) ($args['plan_slug'] ?? 'free')),
+        'is_agency'             => !empty($args['is_agency']),
+        'free_plan_offer'       => max(0, (int) ($args['free_plan_offer'] ?? 50)),
+        'usage_url'             => (string) ($args['usage_url'] ?? admin_url('admin.php?page=bbai-credit-usage')),
+        'billing_portal_url'    => (string) ($args['billing_portal_url'] ?? ''),
+        'settings_url'          => trim((string) ($args['settings_automation_url'] ?? admin_url('admin.php?page=bbai-settings#bbai-enable-on-upload'))),
+    ];
+
+    $section_base = array_merge(
+        $surface['section_data_attrs'],
         [
-            'missing_count'       => $missing,
-            'weak_count'          => $weak,
-            'total_images'        => $total,
-            'is_pro_plan'         => $is_pro,
-            'is_first_run'        => $total <= 0,
-            'is_low_credits'      => !empty($args['is_low_credits']),
-            'is_out_of_credits'   => !empty($args['is_out_of_credits']),
-            'credits_remaining'   => (int) ($args['credits_remaining'] ?? 0),
-            'credits_used'        => (int) ($args['credits_used'] ?? 0),
-            'credits_limit'       => max(1, (int) ($args['credits_limit'] ?? 50)),
-            'usage_percent'       => (int) ($args['usage_percent'] ?? 0),
-            'auth_state'          => (string) ($args['auth_state'] ?? ''),
-            'quota_type'          => (string) ($args['quota_type'] ?? ''),
-            'quota_state'         => (string) ($args['quota_state'] ?? ''),
-            'signup_required'     => !empty($args['signup_required']),
-            'upgrade_required'    => !empty($args['upgrade_required']),
-            'free_plan_offer'     => max(0, (int) ($args['free_plan_offer'] ?? 50)),
-            'low_credit_threshold' => max(0, (int) ($args['low_credit_threshold'] ?? 0)),
-            'library_url'         => (string) ($args['library_url'] ?? $lib),
-            'missing_library_url' => (string) ($args['missing_library_url'] ?? add_query_arg(['page' => 'bbai-library', 'status' => 'missing'], admin_url('admin.php'))),
-            'needs_review_library_url' => (string) ($args['needs_review_library_url'] ?? (function_exists('bbai_alt_library_needs_review_url') ? bbai_alt_library_needs_review_url() : add_query_arg(['page' => 'bbai-library', 'status' => 'needs_review'], admin_url('admin.php')))),
-            'usage_url'           => (string) ($args['usage_url'] ?? admin_url('admin.php?page=bbai-credit-usage')),
-            'settings_url'        => $settings,
-            'guide_url'           => (string) ($args['guide_url'] ?? admin_url('admin.php?page=bbai-guide')),
-            'plan_label'          => (string) ($args['plan_label'] ?? ''),
-            'remaining_line'      => (string) ($args['remaining_line'] ?? ''),
-            'reset_timing'        => (string) ($args['reset_timing'] ?? ''),
+            'data-bbai-banner-used' => (string) max(0, (int) ($args['credits_used'] ?? 0)),
+            'data-bbai-banner-limit' => (string) max(1, (int) ($args['credits_limit'] ?? 50)),
+            'data-bbai-banner-remaining' => (string) max(0, (int) ($args['credits_remaining'] ?? 0)),
+            'data-bbai-banner-auth-state' => (string) ($args['auth_state'] ?? ''),
+            'data-bbai-banner-quota-type' => (string) ($args['quota_type'] ?? ''),
+            'data-bbai-banner-quota-state' => (string) ($args['quota_state'] ?? ''),
+            'data-bbai-banner-signup-required' => !empty($args['signup_required']) ? '1' : '0',
+            'data-bbai-banner-free-plan-offer' => (string) max(0, (int) ($args['free_plan_offer'] ?? 50)),
+            'data-bbai-banner-low-credit-threshold' => (string) max(0, (int) ($args['low_credit_threshold'] ?? 0)),
+            'data-bbai-banner-library-url' => (string) ($args['library_url'] ?? $lib),
         ]
     );
 
-    $hero = bbai_banner_build_command_hero(
+    $cov_total   = max(0, (int) ($args['cov_total'] ?? 0));
+    $cov_missing = max(0, (int) ($args['cov_missing'] ?? 0));
+    $cov_weak    = max(0, (int) ($args['cov_needs_review'] ?? 0));
+    $optimized   = isset($args['optimized_count'])
+        ? max(0, (int) $args['optimized_count'])
+        : max(0, $cov_total - $cov_missing - $cov_weak);
+    $credits_used = max(0, (int) ($args['credits_used'] ?? 0));
+    $has_connected = array_key_exists('has_connected_account', $args)
+        ? !empty($args['has_connected_account'])
+        : !$guest;
+    $has_ever = !empty($args['has_ever_generated_alt']) || $optimized > 0 || $credits_used > 0;
+    $total_images = $cov_total > 0 ? $cov_total : ($cov_missing + $cov_weak + $optimized);
+
+    $snap_overrides = [
+        'missing_count'          => $cov_missing,
+        'weak_count'             => $cov_weak,
+        'total_images'           => $total_images,
+        'credits_used'           => $credits_used,
+        'credits_limit'          => max(1, (int) ($args['credits_limit'] ?? 50)),
+        'credits_remaining'      => max(0, (int) ($args['credits_remaining'] ?? 0)),
+        'usage_percent'          => min(100, max(0, (int) ($args['usage_percent'] ?? 0))),
+        'is_pro_plan'            => !empty($args['is_pro']),
+        'is_low_credits'         => !empty($args['is_low_credits']),
+        'is_out_of_credits'      => !empty($args['is_out_of_credits']),
+        'has_ever_generated_alt' => $has_ever,
+        'optimized_count'        => $optimized,
+        'auth_state'             => (string) ($args['auth_state'] ?? ''),
+        'quota_type'             => (string) ($args['quota_type'] ?? ''),
+        'quota_state'            => (string) ($args['quota_state'] ?? ''),
+        'signup_required'        => !empty($args['signup_required']),
+        'upgrade_required'       => !empty($args['upgrade_required']),
+        'is_trial'               => $guest,
+        'free_plan_offer'        => max(0, (int) ($args['free_plan_offer'] ?? 50)),
+        'low_credit_threshold'   => max(0, (int) ($args['low_credit_threshold'] ?? 0)),
+        'plan_slug'              => strtolower((string) ($args['plan_slug'] ?? 'free')),
+        'plan_label'             => (string) ($args['plan_label'] ?? ''),
+        'remaining_line'         => (string) ($args['remaining_line'] ?? ''),
+        'reset_timing'           => (string) ($args['reset_timing'] ?? ''),
+        'has_connected_account'  => $has_connected,
+        'library_url'            => (string) ($args['library_url'] ?? $lib),
+        'usage_url'              => (string) ($args['usage_url'] ?? admin_url('admin.php?page=bbai-credit-usage')),
+        'settings_url'           => trim((string) ($args['settings_automation_url'] ?? admin_url('admin.php?page=bbai-settings#bbai-enable-on-upload'))),
+        'guide_url'              => (string) ($args['guide_url'] ?? admin_url('admin.php?page=bbai-guide')),
+    ];
+    $billing_arg = trim((string) ($args['billing_portal_url'] ?? ''));
+    if ('' !== $billing_arg) {
+        $snap_overrides['billing_portal_url'] = $billing_arg;
+    }
+    foreach (['missing_library_url', 'needs_review_library_url'] as $url_key) {
+        if (!empty($args[$url_key])) {
+            $snap_overrides[$url_key] = (string) $args[$url_key];
+        }
+    }
+
+    $snap = bbai_banner_snapshot_merge($snap_overrides);
+
+    $lib_priority = bbai_get_primary_banner_state($snap, BBAI_BANNER_CTX_LIBRARY);
+
+    if (BBAI_BANNER_STATE_NONE !== $lib_priority) {
+        $lib_page_var = 'neutral';
+        if (BBAI_BANNER_STATE_HEALTHY === $lib_priority || BBAI_BANNER_STATE_FIRST_SUCCESS === $lib_priority) {
+            $lib_page_var = 'success';
+        } elseif (in_array(
+            $lib_priority,
+            [
+                BBAI_BANNER_STATE_NEEDS_ATTENTION,
+                BBAI_BANNER_STATE_LOW_CREDITS,
+                BBAI_BANNER_STATE_OUT_OF_CREDITS,
+            ],
+            true
+        )) {
+            $lib_page_var = 'warning';
+        }
+
+        return bbai_banner_build_command_hero(
+            BBAI_BANNER_CTX_LIBRARY,
+            $snap,
+            [
+                'page_hero_variant'   => $lib_page_var,
+                'aria_label'          => __('ALT Library', 'beepbeep-ai-alt-text-generator'),
+                'icon_wrapper_attrs'  => $surface['icon_wrapper_attrs'],
+                'headline_attrs'      => $surface['headline_attrs'],
+                'subtext_attrs'       => $surface['subtext_attrs'],
+                'section_data_attrs'  => $section_base,
+            ]
+        );
+    }
+
+    return bbai_plan_top_banner_build_command_hero(
         BBAI_BANNER_CTX_LIBRARY,
-        $snap,
+        $plan_input,
         [
             'aria_label'         => __('ALT Library', 'beepbeep-ai-alt-text-generator'),
-            'show_hero_loop'     => false,
             'icon_wrapper_attrs' => $surface['icon_wrapper_attrs'],
             'headline_attrs'     => $surface['headline_attrs'],
             'subtext_attrs'      => $surface['subtext_attrs'],
-            'section_data_attrs' => array_merge(
-                $surface['section_data_attrs'],
-                [
-                    'data-bbai-banner-used' => (string) max(0, (int) ($snap['credits_used'] ?? 0)),
-                    'data-bbai-banner-limit' => (string) max(1, (int) ($snap['credits_limit'] ?? 50)),
-                    'data-bbai-banner-remaining' => (string) max(0, (int) ($snap['credits_remaining'] ?? 0)),
-                    'data-bbai-banner-auth-state' => (string) ($snap['auth_state'] ?? ''),
-                    'data-bbai-banner-quota-type' => (string) ($snap['quota_type'] ?? ''),
-                    'data-bbai-banner-quota-state' => (string) ($snap['quota_state'] ?? ''),
-                    'data-bbai-banner-signup-required' => !empty($snap['signup_required']) ? '1' : '0',
-                    'data-bbai-banner-free-plan-offer' => (string) max(0, (int) ($snap['free_plan_offer'] ?? 50)),
-                    'data-bbai-banner-low-credit-threshold' => (string) max(0, (int) ($snap['low_credit_threshold'] ?? 0)),
-                ]
-            ),
+            'section_data_attrs' => $section_base,
         ]
     );
-    $hero['banner_logical_state'] = bbai_banner_pick_state(BBAI_BANNER_CTX_LIBRARY, $snap);
-
-    return $hero;
 }
 
 /**

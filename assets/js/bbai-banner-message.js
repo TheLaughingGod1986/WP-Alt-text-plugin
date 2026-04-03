@@ -183,7 +183,7 @@
         );
         var authState = String(args.authState != null ? args.authState : args.auth_state || '').toLowerCase();
         var quotaType = String(args.quotaType != null ? args.quotaType : args.quota_type || '').toLowerCase();
-        var isAnonymousTrial = authState === 'anonymous' || quotaType === 'trial' || !!args.isTrial;
+        var isAnonymousTrial = authState === 'anonymous' || quotaType === 'trial' || !!args.isTrial || !!args.isGuestTrial;
         var freePlanOffer = Math.max(0, parseInt(args.freePlanOffer != null ? args.freePlanOffer : args.free_plan_offer, 10) || 50);
 
         var title = isAnonymousTrial
@@ -281,7 +281,7 @@
         var authState = String(args.authState != null ? args.authState : args.auth_state || '').toLowerCase();
         var quotaType = String(args.quotaType != null ? args.quotaType : args.quota_type || '').toLowerCase();
         var freePlanOffer = Math.max(0, parseInt(args.freePlanOffer != null ? args.freePlanOffer : args.free_plan_offer, 10) || 50);
-        var isAnonymousTrial = authState === 'anonymous' || quotaType === 'trial' || !!args.isTrial;
+        var isAnonymousTrial = authState === 'anonymous' || quotaType === 'trial' || !!args.isTrial || !!args.isGuestTrial;
         var pageContext = String(args.pageContext || args.page_context || '').toLowerCase();
         var lowCreditThreshold = Math.max(
             0,
@@ -302,7 +302,8 @@
                 issueCount: totalIssues,
                 authState: authState,
                 quotaType: quotaType,
-                freePlanOffer: freePlanOffer
+                freePlanOffer: freePlanOffer,
+                isTrial: isAnonymousTrial
             });
 
             return {
@@ -336,10 +337,15 @@
                               href: libraryUrl
                           }
                         : null)
-                    : usageUrl
+                    : needsReviewLibraryUrl && needsReviewLibraryUrl !== '#'
                     ? {
                           label: __('Review ALT text'),
-                          href: usageUrl
+                          href: needsReviewLibraryUrl
+                      }
+                    : libraryUrl && libraryUrl !== '#'
+                    ? {
+                          label: __('Review ALT text'),
+                          href: libraryUrl
                       }
                     : null,
                 tertiaryAction: null
@@ -352,7 +358,8 @@
                 issueCount: totalIssues,
                 authState: authState,
                 quotaType: quotaType,
-                freePlanOffer: freePlanOffer
+                freePlanOffer: freePlanOffer,
+                isTrial: isAnonymousTrial
             });
 
             return {
@@ -386,10 +393,15 @@
                               href: libraryUrl
                           }
                         : null)
-                    : usageUrl
+                    : needsReviewLibraryUrl && needsReviewLibraryUrl !== '#'
                     ? {
                           label: __('Review ALT text'),
-                          href: usageUrl
+                          href: needsReviewLibraryUrl
+                      }
+                    : libraryUrl && libraryUrl !== '#'
+                    ? {
+                          label: __('Review ALT text'),
+                          href: libraryUrl
                       }
                     : null,
                 tertiaryAction: null
@@ -397,6 +409,11 @@
         }
 
         if (totalIssues > 0) {
+            var onLibraryPage = pageContext === 'library';
+            var missingHeadline = sprintf(
+                _n('%s image missing ALT text', '%s images missing ALT text', missingCount),
+                formatCount(missingCount)
+            );
             return {
                 state: 'needs_attention',
                 surfaceState: missingCount > 0 ? 'missing' : 'weak',
@@ -405,13 +422,16 @@
                 bannerVariant: 'warning',
                 pageHeroVariant: 'warning',
                 attentionVariant: missingCount > 0 ? (weakCount > 0 ? 'mixed' : 'missing') : 'weak',
-                headline: __('Your library needs attention'),
-                subtext: __('Some images are missing ALT text or need a stronger description.'),
-                nextStep: buildIssueAttentionMessage(totalIssues),
+                headline: missingCount > 0 && onLibraryPage ? missingHeadline : __('Your library needs attention'),
+                subtext:
+                    missingCount > 0 && onLibraryPage
+                        ? __('Generate descriptions for every image that still needs ALT text.')
+                        : __('Some images are missing ALT text or need a stronger description.'),
+                nextStep: onLibraryPage && missingCount > 0 ? '' : buildIssueAttentionMessage(totalIssues),
                 note: '',
                 primaryAction: missingCount > 0
                     ? {
-                          label: __('Generate missing ALT text'),
+                          label: onLibraryPage ? __('Optimize all missing') : __('Generate missing ALT text'),
                           action: 'generate-missing',
                           bbaiAction: 'generate_missing'
                       }
@@ -419,12 +439,15 @@
                           label: __('Review ALT text'),
                           href: needsReviewLibraryUrl
                       },
-                secondaryAction: libraryUrl
-                    ? {
-                          label: __('Open ALT Library'),
-                          href: libraryUrl
-                      }
-                    : null,
+                secondaryAction:
+                    onLibraryPage && missingCount > 0
+                        ? null
+                        : libraryUrl
+                          ? {
+                                label: __('Open ALT Library'),
+                                href: libraryUrl
+                            }
+                          : null,
                 tertiaryAction: null
             };
         }

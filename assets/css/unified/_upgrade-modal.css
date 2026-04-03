@@ -27,6 +27,12 @@
     visibility: visible;
 }
 
+/* After close, do not leave a fullscreen flex layer (conflicts with generic .bbai-modal-backdrop rules that use display:flex while "invisible"). */
+#bbai-upgrade-modal.bbai-modal-backdrop:not(.active):not(.is-visible) {
+    display: none !important;
+    pointer-events: none;
+}
+
 .bbai-upgrade-modal__content {
     background: var(--bbai-bg);
     border-radius: var(--bbai-radius-xl);

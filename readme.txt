@@ -1,4 +1,4 @@
-=== BeepBeep AI – AI Alt Text Generator for WordPress & WooCommerce ===
+=== BeepBeep AI – Alt Text Generator ===
 Plugin Name: BeepBeep AI – Alt Text Generator
 Contributors: beepbeepv2
 Plugin URI: https://oppti.dev/beepbeep-ai-alt-text-generator
@@ -7,7 +7,7 @@ Tags: alt text, image seo, accessibility, media library, woocommerce
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 4.6.0
+Stable tag: 4.6.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
@@ -179,6 +179,9 @@ Data sent: Name, email, subject, message, site URL, WordPress version, and plugi
 Privacy policy: https://resend.com/legal/privacy
 
 == Changelog ==
+
+= 4.6.1 =
+* Dashboard and ALT Library top hero now use the same credit and attention priority banner as Analytics (for example when a connected Free plan has used its monthly allowance), instead of only the plan-growth strip.
 
 = 4.6.0 =
 * Added non-blocking background processing for ALT text generation — minimize the modal and keep working while images are processed.

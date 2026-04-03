@@ -1,10 +1,10 @@
 #!/bin/bash
 # Auto-sync plugin files to wp-env on change.
-# Usage: ./sync-to-wpenv.sh
+# Usage: ./sync-to-wpenv.bash
 
 SRC="/Users/ben/code/web/WP-Alt-text-plugin/"
 DEST="/Users/ben/.wp-env/06fe8883b07a5e21412cec8c726b075e/WordPress/wp-content/plugins/beepbeep-ai-alt-text-generator/"
-EXCLUDE="--exclude=.git --exclude=.claude --exclude=.cursor --exclude=node_modules --exclude=sync-to-wpenv.sh"
+EXCLUDE="--exclude=.git --exclude=.gitattributes --exclude=.claude --exclude=.cursor --exclude=node_modules --exclude=sync-to-wpenv.bash"
 
 echo "Watching $SRC for changes..."
 echo "Syncing to $DEST"

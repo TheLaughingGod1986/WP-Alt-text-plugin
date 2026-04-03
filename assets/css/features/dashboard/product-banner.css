@@ -437,11 +437,15 @@ body.bbai-dashboard .bbai-command-hero-host .bbai-status-banner.bbai-banner--war
     gap: 8px;
 }
 
-/* CTAs — identical primary / secondary / tertiary (width: full only <768px) */
+/* CTAs — filled primary + outline secondary share the same flex box model (tertiary is text-link only). */
 .bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__cta,
 .bbai-command-hero-host .bbai-banner .bbai-banner__cta,
+.bbai-command-hero-host .bbai-banner .bbai-dashboard-hero__link--secondary,
+.bbai-command-hero-host .bbai-banner .bbai-banner__link--secondary,
 #bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__cta,
-#bbai-dashboard-main .bbai-banner .bbai-banner__cta {
+#bbai-dashboard-main .bbai-banner .bbai-banner__cta,
+#bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__link--secondary,
+#bbai-dashboard-main .bbai-banner .bbai-banner__link--secondary {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -588,8 +592,6 @@ body.bbai-dashboard .bbai-command-hero-host .bbai-status-banner.bbai-banner--war
 .bbai-command-hero-host .bbai-banner .bbai-banner__link--secondary,
 #bbai-dashboard-main .bbai-banner .bbai-dashboard-hero__link--secondary,
 #bbai-dashboard-main .bbai-banner .bbai-banner__link--secondary {
-    min-height: var(--bbai-cta-primary-min-height, 40px);
-    padding: 0 var(--bbai-cta-primary-padding-x, 16px);
     border-radius: var(--bbai-cta-primary-radius, 8px);
     border: 1px solid rgba(148, 163, 184, 0.55);
     background: #ffffff;
@@ -689,16 +691,15 @@ body.bbai-dashboard .bbai-command-hero-host .bbai-status-banner.bbai-banner--war
 
 .bbai-command-hero-host .bbai-banner--success.bbai-dashboard-hero--command,
 #bbai-dashboard-main .bbai-banner--success.bbai-dashboard-hero--command {
-    border-color: #e8f0ec;
-    background:
-        radial-gradient(circle at top right, rgba(22, 163, 74, 0.048), transparent 36%),
-        linear-gradient(135deg, #fdfffe 0%, #f9fcfa 50%, #ffffff 100%);
+    border-color: var(--bbai-command-hero-success-border, #e8f0ec);
+    /* Token defined on body.bbai-dashboard (saas-consistency.css); matches dashboard pair cards + library workspace */
+    background: var(--bbai-command-hero-success-bg);
 }
 
 .bbai-command-hero-host .bbai-banner--success.bbai-dashboard-hero--command:hover,
 #bbai-dashboard-main .bbai-banner--success.bbai-dashboard-hero--command:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+    box-shadow: var(--bbai-command-hero-success-shadow-hover, 0 4px 14px rgba(15, 23, 42, 0.06));
 }
 
 .bbai-command-hero-host .bbai-banner--warning.bbai-dashboard-hero--command,
@@ -735,6 +736,29 @@ body.bbai-dashboard .bbai-command-hero-host .bbai-status-banner.bbai-banner--war
 .bbai-banner--success.bbai-dashboard-hero--command .bbai-banner__icon {
     color: #15803d;
     background: rgba(22, 163, 74, 0.1);
+}
+
+/* Unified plan top banner: circular green check (Dashboard + Library reference layout). */
+.bbai-command-hero-host .bbai-banner--success.bbai-dashboard-hero--command[data-bbai-top-banner-mode='plan'] .bbai-banner__icon.bbai-dashboard-hero__icon,
+#bbai-dashboard-main .bbai-banner--success.bbai-dashboard-hero--command[data-bbai-top-banner-mode='plan'] .bbai-banner__icon.bbai-dashboard-hero__icon {
+    width: 40px;
+    max-width: 40px;
+    height: 40px;
+    max-height: 40px;
+    flex: 0 0 40px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: linear-gradient(145deg, #34d399 0%, #16a34a 100%);
+    color: #ffffff;
+    box-shadow:
+        0 1px 2px rgba(22, 101, 52, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.bbai-command-hero-host .bbai-banner--success.bbai-dashboard-hero--command[data-bbai-top-banner-mode='plan'] .bbai-banner__icon.bbai-dashboard-hero__icon svg,
+#bbai-dashboard-main .bbai-banner--success.bbai-dashboard-hero--command[data-bbai-top-banner-mode='plan'] .bbai-banner__icon.bbai-dashboard-hero__icon svg {
+    width: 20px;
+    height: 20px;
 }
 
 .bbai-banner--warning.bbai-dashboard-hero--command[data-tone='attention'] .bbai-banner__icon {
@@ -845,3 +869,37 @@ body.bbai-dashboard .bbai-command-hero-host .bbai-status-banner.bbai-banner--war
             0 0 0 0 rgba(34, 197, 94, 0);
     }
 }
+
+/* ALT Library workspace: plan top banner matches Dashboard (full-width card, icon + copy left, stacked CTAs right). */
+body.bbai-dashboard .bbai-library-workspace .bbai-library-top-hero-host.bbai-command-hero-host.bbai-hero-full,
+body.bbai-dashboard .bbai-library-workspace .bbai-library-top-hero-host.bbai-hero-full {
+    width: 100%;
+    max-width: none;
+}
+
+body.bbai-dashboard .bbai-library-workspace .bbai-status-banner.bbai-library-top-hero.bbai-banner--success,
+body.bbai-dashboard .bbai-library-workspace .bbai-status-banner.bbai-library-top-hero.bbai-banner--warning {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+body.bbai-dashboard .bbai-library-workspace .bbai-library-top-hero .bbai-banner__layout.bbai-dashboard-hero__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 20px 28px;
+}
+
+@media (max-width: 1023px) {
+    body.bbai-dashboard .bbai-library-workspace .bbai-library-top-hero .bbai-banner__layout.bbai-dashboard-hero__layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Same inset as dashboard command cards / library workspace (tighter 11px felt “off” vs cards). */
+#bbai-dashboard-main .bbai-banner.bbai-dashboard-hero--command,
+body.bbai-dashboard .bbai-library-workspace .bbai-status-banner.bbai-dashboard-hero--command {
+    padding: var(--bbai-command-card-padding, var(--bbai-space-6));
+}
+
+/* Library workspace shell: see bbai-admin-library-workspace-polish.css (loads after this sheet). */

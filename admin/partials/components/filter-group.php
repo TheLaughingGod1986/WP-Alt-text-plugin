@@ -62,18 +62,18 @@ if ($bbai_fg_mode === 'navigate') {
         'aria-label' => $bbai_fg_label,
     ]);
 } else {
-    $nav_attrs = [
+    $bbai_nav_attrs = [
         'class' => implode(' ', $bbai_fg_classes),
         'role' => 'group',
         'aria-label' => $bbai_fg_label,
     ];
     if ($bbai_fg_id !== '') {
-        $nav_attrs['id'] = $bbai_fg_id;
+        $bbai_nav_attrs['id'] = $bbai_fg_id;
     }
     if ($bbai_fg_default !== '') {
-        $nav_attrs['data-bbai-default-filter'] = $bbai_fg_default;
+        $bbai_nav_attrs['data-bbai-default-filter'] = $bbai_fg_default;
     }
-    $bbai_open('div', $nav_attrs);
+    $bbai_open('div', $bbai_nav_attrs);
 }
 
 foreach ($bbai_fg_items as $bbai_item) {
@@ -132,6 +132,11 @@ foreach ($bbai_fg_items as $bbai_item) {
 
         if ($bbai_status_url !== '') {
             $bbai_anchor_attrs['data-bbai-status-url'] = esc_url($bbai_status_url);
+        }
+
+        // Dashboard coverage row: finite ~3s dot pulse on first paint (bbai-dashboard.js adds row attention in sync).
+        if ('missing' === $bbai_seg && $bbai_count > 0) {
+            $bbai_anchor_attrs['data-bbai-missing-row-pulse'] = '1';
         }
 
         $bbai_open('a', $bbai_anchor_attrs);

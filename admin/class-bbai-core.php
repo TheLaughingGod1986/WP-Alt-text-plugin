@@ -544,6 +544,16 @@ class Core {
     }
 
     /**
+     * Whether the site still has local anonymous trial generations left.
+     * When true, skip SaaS monthly-cache preflight so stale usage does not block trial UX.
+     */
+    private function has_local_trial_generation_slots(): bool {
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+
+        return \BeepBeepAI\AltTextGenerator\Trial_Quota::get_remaining() > 0;
+    }
+
+    /**
      * Build a normalized anonymous trial usage payload.
      *
      * @param array<string, mixed> $overrides Additional response fields.
@@ -1276,20 +1286,30 @@ class Core {
     /**
      * Redirect to a checkout URL, allowing Stripe-hosted pages.
      */
-    private function redirect_to_checkout_url(string $url): void {
-        $target_url = esc_url_raw($url);
-        if ($target_url === '') {
-            wp_die(esc_html__('Invalid checkout URL.', 'beepbeep-ai-alt-text-generator'));
-        }
+	private function redirect_to_checkout_url(string $url): void {
+	        $target_url = esc_url_raw($url);
+	        if ($target_url === '') {
+	            wp_die(esc_html__('Invalid checkout URL.', 'beepbeep-ai-alt-text-generator'));
+	        }
 
-        if ($this->is_allowed_external_checkout_url($target_url)) {
-            wp_redirect($target_url);
-            exit;
-        }
+	        if ($this->is_allowed_external_checkout_url($target_url)) {
+	            $checkout_host = wp_parse_url($target_url, PHP_URL_HOST);
+	            if (is_string($checkout_host) && '' !== $checkout_host) {
+	                $allow_checkout_host = static function(array $hosts) use ($checkout_host): array {
+	                    $hosts[] = $checkout_host;
+	                    return array_values(array_unique($hosts));
+	                };
 
-        wp_safe_redirect($target_url);
-        exit;
-    }
+	                add_filter('allowed_redirect_hosts', $allow_checkout_host);
+	                wp_safe_redirect($target_url);
+	                remove_filter('allowed_redirect_hosts', $allow_checkout_host);
+	                exit;
+	            }
+	        }
+
+	        wp_safe_redirect($target_url);
+	        exit;
+	    }
 
     /**
      * Surface checkout success/error notices in WP Admin
@@ -2424,7 +2444,7 @@ class Core {
 	        $bbai_has_stored_token = !empty($bbai_auth['has_stored_token']);
 	        $bbai_has_stored_license = !empty($bbai_auth['has_stored_license']);
 	        $bbai_has_registered_user = !empty($bbai_auth['has_registered_user']);
-            $bbai_has_connected_account = !empty($bbai_auth['has_connected_account']);
+	        $bbai_has_connected_account = !empty($bbai_auth['has_connected_account']);
             $bbai_is_anonymous_trial = !empty($bbai_auth['is_anonymous_trial']);
             $bbai_auth_state = isset($bbai_auth['auth_state']) ? (string) $bbai_auth['auth_state'] : ($bbai_is_anonymous_trial ? 'anonymous' : 'authenticated');
 		        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
@@ -4808,6 +4828,258 @@ class Core {
     }
 
     /**
+     * ALT copy for loopback/local stub generation (no SaaS call). Aims for full sentences
+     * instead of raw filenames or generic filler. Override via filter `bbai_local_stub_alt_text`.
+     *
+     * @param int                  $attachment_id Attachment ID.
+     * @param array<string, mixed> $context       From build_generation_context_for_attachment().
+     */
+    private function build_local_stub_alt_text(int $attachment_id, array $context): string {
+        $filename  = isset($context['filename']) ? (string) $context['filename'] : '';
+        $base_raw  = $filename !== '' ? (string) pathinfo($filename, PATHINFO_FILENAME) : '';
+        $title     = isset($context['title']) ? trim((string) $context['title']) : '';
+        $fn_lower  = strtolower($filename);
+        $base_lower = strtolower($base_raw);
+
+        $title_is_filename = $title !== '' && $base_raw !== '' && strcasecmp($title, $base_raw) === 0;
+
+        // UI captures — describe what’s on screen, not the file name.
+        if (preg_match('/screenshot|screen[-_]?grab|screencap|screencapture|ui[-_]?mock/i', $fn_lower)) {
+            return __('Screenshot of a web application interface showing navigation, main content panels, and status or metric summaries.', 'beepbeep-ai-alt-text-generator');
+        }
+
+        $hyphen_count   = substr_count($base_raw, '-') + substr_count($base_raw, '_');
+        $looks_like_slug = $hyphen_count >= 3
+            || preg_match('/^\d+[-_]/', $base_raw)
+            || strlen($base_raw) > 28;
+
+        // Long address-like or stock slugs: never paste the slug as ALT.
+        if ($looks_like_slug || $title_is_filename) {
+            if (preg_match('/kitchen|bathroom|bedroom|living\s*room|interior|cabinet|countertop/i', $base_lower . ' ' . strtolower($title))) {
+                return __('Interior photograph of a kitchen with cabinetry, countertops, appliances, and daylight entering through a window.', 'beepbeep-ai-alt-text-generator');
+            }
+            if (preg_match('/exterior|facade|street|building|garden|outdoor/i', $base_lower . ' ' . strtolower($title))) {
+                return __('Exterior photograph showing building forms, materials, and surrounding context under natural light.', 'beepbeep-ai-alt-text-generator');
+            }
+
+            return __('Photograph of an indoor or outdoor scene with visible architecture, surfaces, and lighting; subject is centered in the frame.', 'beepbeep-ai-alt-text-generator');
+        }
+
+        if ($title !== '' && !$title_is_filename) {
+            return sprintf(
+                /* translators: %s: image title from the media library */
+                __('Photograph related to: %s', 'beepbeep-ai-alt-text-generator'),
+                sanitize_text_field($title)
+            );
+        }
+
+        $humanized = $base_raw !== '' ? sanitize_text_field(str_replace(['-', '_'], ' ', $base_raw)) : '';
+        if ($humanized !== '' && strlen($humanized) >= 8 && $hyphen_count < 3) {
+            return sprintf(
+                /* translators: %s: short label derived from the file name */
+                __('Image depicting: %s', 'beepbeep-ai-alt-text-generator'),
+                $humanized
+            );
+        }
+
+        return sprintf(
+            /* translators: %d: attachment ID */
+            __('Still image from media library attachment %d, suitable for a concise visual description.', 'beepbeep-ai-alt-text-generator'),
+            $attachment_id
+        );
+    }
+
+    /**
+     * API key for OpenAI Chat Completions (vision) when generating ALT directly from this site.
+     * Set OPENAI_API_KEY or BBAI_OPENAI_API_KEY in wp-config, option bbai_openai_api_key, or filter bbai_openai_api_key.
+     */
+    private function resolve_openai_api_key_for_direct_generation(): string {
+        if ( defined( 'OPENAI_API_KEY' ) && is_string( OPENAI_API_KEY ) && OPENAI_API_KEY !== '' ) {
+            return trim( OPENAI_API_KEY );
+        }
+        if ( defined( 'BBAI_OPENAI_API_KEY' ) && is_string( BBAI_OPENAI_API_KEY ) && BBAI_OPENAI_API_KEY !== '' ) {
+            return trim( BBAI_OPENAI_API_KEY );
+        }
+        $opt = get_option( 'bbai_openai_api_key', '' );
+        if ( is_string( $opt ) && $opt !== '' ) {
+            return trim( $opt );
+        }
+
+        return (string) apply_filters( 'bbai_openai_api_key', '' );
+    }
+
+    /**
+     * Call OpenAI vision model with the attachment bytes (preferred) or public URL.
+     *
+     * @param array<string, mixed> $context Attachment context from build_generation_context_for_attachment().
+     * @return array{alt:string,usage:array<string,int>,model:string}|\WP_Error
+     */
+    private function generate_alt_text_via_openai_vision( int $attachment_id, array $context, string $model, string $api_key ) {
+        $model = sanitize_text_field( $model );
+        if ( $model === '' ) {
+            $model = 'gpt-4o';
+        }
+
+        $image_payload = null;
+        $inline = $this->build_inline_image_payload( $attachment_id );
+        if ( ! is_wp_error( $inline ) && isset( $inline['payload'] ) ) {
+            $image_payload = $inline['payload'];
+        } else {
+            $url = wp_get_attachment_url( $attachment_id );
+            if ( $url ) {
+                $image_payload = [
+                    'type'      => 'image_url',
+                    'image_url' => [ 'url' => $url ],
+                ];
+            }
+        }
+
+        if ( ! $image_payload ) {
+            return new \WP_Error(
+                'openai_vision_no_image',
+                __( 'Could not load image data for OpenAI vision.', 'beepbeep-ai-alt-text-generator' )
+            );
+        }
+
+        $hints = [];
+        if ( ! empty( $context['title'] ) ) {
+            /* translators: %s: media title */
+            $hints[] = sprintf( __( 'Media library title (may be inaccurate): %s', 'beepbeep-ai-alt-text-generator' ), (string) $context['title'] );
+        }
+        if ( ! empty( $context['filename'] ) ) {
+            /* translators: %s: file name */
+            $hints[] = sprintf( __( 'Filename (do not copy verbatim): %s', 'beepbeep-ai-alt-text-generator' ), (string) $context['filename'] );
+        }
+        $hint_block = $hints ? implode( "\n", $hints ) . "\n\n" : '';
+
+        $instruction = $hint_block
+            . __( 'You are writing HTML alt text for screen readers. Look at the image.', 'beepbeep-ai-alt-text-generator' )
+            . ' '
+            . __( 'Reply with ONLY the alt text: one clear sentence (two if needed), at most 200 characters.', 'beepbeep-ai-alt-text-generator' )
+            . ' '
+            . __( 'Describe the main subject, setting, important colors or materials, and any visible text.', 'beepbeep-ai-alt-text-generator' )
+            . ' '
+            . __( 'Do not start with "Image of", "Picture of", or "Photo of". Do not use quotation marks.', 'beepbeep-ai-alt-text-generator' );
+
+        $user_content = [
+            [ 'type' => 'text', 'text' => $instruction ],
+            $image_payload,
+        ];
+
+        $body = [
+            'model'       => $model,
+            'messages'    => [
+                [
+                    'role'    => 'system',
+                    'content' => __( 'You output only plain alternative text for images. No markdown, no JSON, no preamble.', 'beepbeep-ai-alt-text-generator' ),
+                ],
+                [
+                    'role'    => 'user',
+                    'content' => $user_content,
+                ],
+            ],
+            'temperature' => 0.25,
+            'max_tokens'  => 220,
+        ];
+
+        $response = wp_remote_post(
+            'https://api.openai.com/v1/chat/completions',
+            [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $api_key,
+                    'Content-Type'  => 'application/json',
+                ],
+                'timeout' => 90,
+                'body'    => wp_json_encode( $body ),
+            ]
+        );
+
+        if ( is_wp_error( $response ) ) {
+            return $response;
+        }
+
+        $code = wp_remote_retrieve_response_code( $response );
+        $raw  = wp_remote_retrieve_body( $response );
+        if ( ! function_exists( 'bbai_json_decode_array' ) && defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) ) {
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-json.php';
+        }
+        $data = function_exists( 'bbai_json_decode_array' ) ? bbai_json_decode_array( $raw ) : null;
+        $data = is_array( $data ) ? $data : [];
+
+        if ( $code >= 300 || empty( $data['choices'][0]['message']['content'] ) ) {
+            $msg = isset( $data['error']['message'] ) ? (string) $data['error']['message'] : ( $raw !== '' ? $raw : __( 'OpenAI request failed.', 'beepbeep-ai-alt-text-generator' ) );
+
+            return new \WP_Error( 'openai_vision_http', $this->redact_api_token( $msg ), [ 'status' => $code ] );
+        }
+
+        $content = trim( (string) $data['choices'][0]['message']['content'] );
+        $content = trim( $content, " \t\n\r\0\x0B\"'" );
+        $content = preg_replace( '/\s+/u', ' ', $content );
+        if ( $content === '' ) {
+            return new \WP_Error( 'openai_vision_empty', __( 'OpenAI returned no alt text.', 'beepbeep-ai-alt-text-generator' ) );
+        }
+        if ( strlen( $content ) > 420 ) {
+            $content = substr( $content, 0, 417 ) . '…';
+        }
+
+        $usage = [ 'prompt' => 0, 'completion' => 0, 'total' => 0 ];
+        if ( ! empty( $data['usage'] ) && is_array( $data['usage'] ) ) {
+            $usage['prompt']     = isset( $data['usage']['prompt_tokens'] ) ? (int) $data['usage']['prompt_tokens'] : 0;
+            $usage['completion'] = isset( $data['usage']['completion_tokens'] ) ? (int) $data['usage']['completion_tokens'] : 0;
+            $usage['total']      = isset( $data['usage']['total_tokens'] ) ? (int) $data['usage']['total_tokens'] : $usage['prompt'] + $usage['completion'];
+        }
+
+        return [
+            'alt'   => $content,
+            'usage' => $usage,
+            'model' => $model,
+        ];
+    }
+
+    /**
+     * Map local quality scorer output to persist_generation_result review shape.
+     *
+     * @param array<string, mixed> $usage_summary Prompt/completion/total token counts.
+     * @return array<string, mixed>
+     */
+    private function build_review_payload_from_openai_alt( string $alt, int $attachment_id, string $model_used, array $usage_summary ): array {
+        $review_result = [
+            'score'   => 60,
+            'status'  => 'weak',
+            'grade'   => 'C',
+            'summary' => __( 'Generated with OpenAI vision on this site.', 'beepbeep-ai-alt-text-generator' ),
+            'issues'  => [],
+            'model'   => sanitize_text_field( $model_used ),
+            'usage'   => $usage_summary,
+        ];
+
+        if ( class_exists( 'BBAI_Alt_Quality_Scorer' ) ) {
+            $ctx    = $this->build_generation_context_for_attachment( $attachment_id );
+            $scored = \BBAI_Alt_Quality_Scorer::score( $alt, $ctx );
+            $lib    = isset( $scored['status'] ) ? (string) $scored['status'] : 'needs_review';
+            $status = 'weak';
+            if ( $lib === 'optimized' ) {
+                $status = 'good';
+            } elseif ( $lib === 'missing' ) {
+                $status = 'critical';
+            }
+            $review_result['score']   = (int) ( $scored['score'] ?? 60 );
+            $review_result['status']  = $status;
+            $review_result['grade']   = isset( $scored['grade'] ) ? (string) $scored['grade'] : $review_result['grade'];
+            $review_result['summary'] = ! empty( $scored['suggestions'][0] ) ? sanitize_text_field( (string) $scored['suggestions'][0] ) : $review_result['summary'];
+            if ( ! empty( $scored['issues'] ) && is_array( $scored['issues'] ) ) {
+                foreach ( array_slice( $scored['issues'], 0, 6 ) as $issue ) {
+                    if ( is_string( $issue ) && $issue !== '' ) {
+                        $review_result['issues'][] = sanitize_text_field( $issue );
+                    }
+                }
+            }
+        }
+
+        return $review_result;
+    }
+
+    /**
      * Build API generation context for an attachment.
      *
      * Includes optional WooCommerce product context when enabled.
@@ -4955,7 +5227,11 @@ class Core {
         $existing = get_post_meta($attachment_id, '_wp_attachment_image_alt', true);
         if ($existing && empty($opts['force_overwrite'])) return;
         // Respect monthly limit and surface upgrade prompt as admin notice
-        if ($this->api_client->has_reached_limit()){
+        if (
+            ( ! defined( 'WP_LOCAL_DEV' ) || ! WP_LOCAL_DEV )
+            && ! $this->has_local_trial_generation_slots()
+            && $this->api_client->has_reached_limit()
+        ) {
             set_transient('beepbeepai_limit_notice', 1, MINUTE_IN_SECONDS * 10);
             return;
         }
@@ -5007,7 +5283,7 @@ class Core {
             // has_reached_limit() already includes proper cache checking and fallback logic
             // This prevents false "quota exhausted" errors from stale cache data
             try {
-                if ($this->api_client->has_reached_limit()) {
+                if ( ! $this->has_local_trial_generation_slots() && $this->api_client->has_reached_limit() ) {
                     // Get usage data for the error response
                     $usage = $this->api_client->get_usage();
                     if (is_wp_error($usage)) {
@@ -5068,6 +5344,94 @@ class Core {
 
         $context = $this->build_generation_context_for_attachment((int) $attachment_id);
 
+        $local_or_dev_stub = ( defined( 'BEEPBEEP_AI_LOCAL_ALT_STUB' ) && BEEPBEEP_AI_LOCAL_ALT_STUB )
+            || ( defined( 'WP_LOCAL_DEV' ) && WP_LOCAL_DEV );
+
+        $openai_key = $this->resolve_openai_api_key_for_direct_generation();
+        $use_openai_direct = $openai_key !== '' && apply_filters(
+            'bbai_use_openai_direct_generation',
+            $local_or_dev_stub,
+            (int) $attachment_id,
+            $source,
+            $context
+        );
+
+        // OpenAI vision on this server (loopback by default): model sees the image bytes / URL.
+        if ( $use_openai_direct ) {
+            $vision_model = apply_filters( 'bbai_openai_vision_model', $opts['openai_vision_model'] ?? 'gpt-4o', (int) $attachment_id, $opts );
+            $vision_out   = $this->generate_alt_text_via_openai_vision( (int) $attachment_id, $context, (string) $vision_model, (string) $openai_key );
+            if ( ! is_wp_error( $vision_out ) && is_array( $vision_out ) && ! empty( $vision_out['alt'] ) ) {
+                $alt_text      = trim( (string) $vision_out['alt'] );
+                $usage_vision  = isset( $vision_out['usage'] ) && is_array( $vision_out['usage'] ) ? $vision_out['usage'] : [ 'prompt' => 0, 'completion' => 0, 'total' => 0 ];
+                $vision_model_used = isset( $vision_out['model'] ) ? (string) $vision_out['model'] : (string) $vision_model;
+                $review_vision = $this->build_review_payload_from_openai_alt( $alt_text, (int) $attachment_id, $vision_model_used, $usage_vision );
+                $this->persist_generation_result(
+                    (int) $attachment_id,
+                    $alt_text,
+                    $usage_vision,
+                    $source,
+                    $vision_model_used,
+                    'inline',
+                    $review_vision
+                );
+                $this->maybe_emit_alt_generated_event(
+                    (int) $attachment_id,
+                    $alt_text,
+                    (string) $source,
+                    $vision_model_used,
+                    is_array( $context ) ? $context : [],
+                    [ 'openai_direct' => true ]
+                );
+                if ( class_exists( '\BeepBeepAI\AltTextGenerator\Trial_Quota' ) && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() && 'trial' !== $source ) {
+                    \BeepBeepAI\AltTextGenerator\Trial_Quota::increment();
+                }
+
+                return $alt_text;
+            }
+        }
+
+        // Loopback / explicit local dev: text-only stub if OpenAI is unavailable or failed.
+        if ( $local_or_dev_stub ) {
+            $stub_alt = (string) apply_filters(
+                'bbai_local_stub_alt_text',
+                $this->build_local_stub_alt_text( (int) $attachment_id, $context ),
+                (int) $attachment_id,
+                $context
+            );
+            $usage_stub = [ 'prompt' => 0, 'completion' => 0, 'total' => 0 ];
+            $review_stub = [
+                'score'   => 55,
+                'status'  => 'weak',
+                'grade'   => 'C',
+                'summary' => __( 'Local stub score for development.', 'beepbeep-ai-alt-text-generator' ),
+                'issues'  => [],
+                'model'   => 'local-dev',
+                'usage'   => $usage_stub,
+            ];
+            $this->persist_generation_result(
+                (int) $attachment_id,
+                $stub_alt,
+                $usage_stub,
+                $source,
+                $model,
+                'api-proxy',
+                $review_stub
+            );
+            $this->maybe_emit_alt_generated_event(
+                (int) $attachment_id,
+                (string) $stub_alt,
+                (string) $source,
+                (string) $model,
+                is_array( $context ) ? $context : [],
+                []
+            );
+            if ( class_exists( '\BeepBeepAI\AltTextGenerator\Trial_Quota' ) && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() && 'trial' !== $source ) {
+                \BeepBeepAI\AltTextGenerator\Trial_Quota::increment();
+            }
+
+            return $stub_alt;
+        }
+
         // Always call the real API to generate actual alt text
         // (Mock mode disabled - we want real AI-generated descriptions)
         $api_response = $this->api_client->generate_alt_text($attachment_id, $context, $regenerate);
@@ -5104,6 +5468,8 @@ class Core {
                 strpos( $error_message_lower, 'monthly limit' ) !== false ||
                 strpos( $error_message_lower, 'monthly quota' ) !== false ||
                 strpos( $error_message_lower, 'limit reached' ) !== false ||
+                strpos( $error_message_lower, 'credit limit' ) !== false ||
+                strpos( $error_message_lower, 'not enough credits' ) !== false ||
                 in_array( $status_code, [ 402, 429 ], true )
             );
             
@@ -5112,41 +5478,63 @@ class Core {
                 // This is from our cache validation - suggest retry but still return the error
                 // The frontend should handle retry based on the error code
             } elseif ($is_quota_error) {
-                // Check cached usage before accepting the backend's quota error
-                require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
-                $cached_usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_local_usage_snapshot();
-                
-                if (is_array($cached_usage) && isset($cached_usage['remaining']) && is_numeric($cached_usage['remaining']) && $cached_usage['remaining'] > 0) {
-                    // Cached usage shows credits available - backend error might be incorrect
-                    // Clear cache and do a fresh check to see actual status
-                    \BeepBeepAI\AltTextGenerator\Usage_Tracker::clear_cache();
-                    $fresh_usage = $this->api_client->get_usage();
-                    
-                    if (!is_wp_error($fresh_usage) && is_array($fresh_usage) && isset($fresh_usage['remaining']) && is_numeric($fresh_usage['remaining']) && $fresh_usage['remaining'] > 0) {
-                        // Fresh API check shows credits available - backend quota error was wrong
-                        // Update cache and return a retry error instead of blocking
-                        \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($fresh_usage);
-                        
-                        if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-                            Debug_Log::log('warning', 'Backend reported quota exhausted but cache and fresh API check show credits available', [
-                                'attachment_id' => $attachment_id,
-                                'cached_remaining' => $cached_usage['remaining'],
-                                'api_remaining' => $fresh_usage['remaining'],
-                                'backend_error' => $error_message,
-                                'error_code' => $error_code,
-                            ], 'generation');
+                // Anonymous trial: backend often returns 402/quota before local trial is exhausted.
+                // Retry a few times so partial batches can consume real trial slots.
+                require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+                $bbai_local_trial_remaining = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_remaining();
+                $bbai_guest_trial_budget      = ! $this->api_client->has_active_license() && $bbai_local_trial_remaining > 0;
+                $bbai_trialish                = \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() || $bbai_guest_trial_budget;
+                if ( $bbai_trialish && $bbai_local_trial_remaining > 0 ) {
+                    $bbai_trial_api_retries = 2;
+                    while ( $bbai_trial_api_retries-- > 0 && is_wp_error( $api_response ) ) {
+                        usleep( 450000 );
+                        $api_response = $this->api_client->generate_alt_text( $attachment_id, $context, $regenerate );
+                    }
+                }
+                if ( is_wp_error( $api_response ) ) {
+                    // Same as API client: guest trial budget — never SaaS/cache "mismatch" vs local counters.
+                    $bbai_skip_quota_mismatch = \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user()
+                        || $bbai_guest_trial_budget;
+
+                    if ( ! $bbai_skip_quota_mismatch ) {
+                        // Check cached usage before accepting the backend's quota error
+                        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+                        $cached_usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_local_usage_snapshot();
+
+                        if ( is_array( $cached_usage ) && isset( $cached_usage['remaining'] ) && is_numeric( $cached_usage['remaining'] ) && $cached_usage['remaining'] > 0 ) {
+                            // Cached usage shows credits available - backend error might be incorrect
+                            // Clear cache and do a fresh check to see actual status
+                            \BeepBeepAI\AltTextGenerator\Usage_Tracker::clear_cache();
+                            $fresh_usage = $this->api_client->get_usage();
+
+                            if ( ! is_wp_error( $fresh_usage ) && is_array( $fresh_usage ) && isset( $fresh_usage['remaining'] ) && is_numeric( $fresh_usage['remaining'] ) && $fresh_usage['remaining'] > 0 ) {
+                                // Fresh API check shows credits available - backend quota error was wrong
+                                // Update cache and return a retry error instead of blocking
+                                \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage( $fresh_usage );
+
+                                if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+                                    Debug_Log::log( 'warning', 'Backend reported quota exhausted but cache and fresh API check show credits available', [
+                                        'attachment_id'      => $attachment_id,
+                                        'cached_remaining'   => $cached_usage['remaining'],
+                                        'api_remaining'      => $fresh_usage['remaining'],
+                                        'backend_error'      => $error_message,
+                                        'error_code'         => $error_code,
+                                    ], 'generation' );
+                                }
+
+                                // Return a retry error instead of blocking
+                                return new \WP_Error(
+                                    'quota_check_mismatch',
+                                    __( 'Backend reported quota limit, but credits appear available. Please try again in a moment.', 'beepbeep-ai-alt-text-generator' ),
+                                    [ 'code' => 'quota_check_mismatch', 'retry_after' => 3, 'usage' => $fresh_usage ]
+                                );
+                            }
                         }
-                        
-                        // Return a retry error instead of blocking
-                        return new \WP_Error(
-                            'quota_check_mismatch',
-                            __('Backend reported quota limit, but credits appear available. Please try again in a moment.', 'beepbeep-ai-alt-text-generator'),
-                            ['code' => 'quota_check_mismatch', 'retry_after' => 3, 'usage' => $fresh_usage]
-                        );
                     }
                 }
             }
             
+            if ( is_wp_error( $api_response ) ) {
             if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
                 // Get error data for detailed logging
                 // Sanitize error message to prevent exposing sensitive API information
@@ -5192,6 +5580,7 @@ class Core {
                 );
             }
             return $api_response;
+            }
         }
 
         // The api_response is $response['data'] from generate_alt_text()
@@ -6279,10 +6668,10 @@ class Core {
             return;
         }
 
-        $raw = isset( $_POST['events'] ) ? wp_unslash( $_POST['events'] ) : '';
-        if ( ! is_string( $raw ) || '' === $raw ) {
-            wp_send_json_success( [ 'recorded' => 0 ] );
-            return;
+	        $raw = filter_input( INPUT_POST, 'events', FILTER_UNSAFE_RAW );
+	        if ( ! is_string( $raw ) || '' === $raw ) {
+	            wp_send_json_success( [ 'recorded' => 0 ] );
+	            return;
         }
 
         $decoded = json_decode( $raw, true );
@@ -6385,7 +6774,7 @@ class Core {
         // Check if user has reached their limit (skip in local dev mode and for license accounts)
         // Use has_reached_limit() which includes cached usage fallback for better reliability
         if (!$bbai_has_license && (!defined('WP_LOCAL_DEV') || !WP_LOCAL_DEV)) {
-            if ($this->api_client->has_reached_limit()) {
+            if ( ! $this->has_local_trial_generation_slots() && $this->api_client->has_reached_limit() ) {
                 // Get usage data for the error response (prefer cached if API failed)
                 $usage = $this->api_client->get_usage();
                 if (is_wp_error($usage)) {
@@ -6402,8 +6791,22 @@ class Core {
                 return;
             }
         }
-        
-        $result = $this->generate_and_save($attachment_id, 'ajax', 1, [], true);
+
+        $result = null;
+        if ( \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() ) {
+            $bbai_claimed_single = \BeepBeepAI\AltTextGenerator\Trial_Quota::claim( 1 );
+            if ( $bbai_claimed_single <= 0 ) {
+                wp_send_json_error( $this->get_trial_exhausted_payload() );
+                return;
+            }
+            $bbai_trial_generation = $this->generate_trial_single_with_retry( $attachment_id, true, true );
+            $result                = $bbai_trial_generation['result'];
+            if ( is_wp_error( $result ) ) {
+                \BeepBeepAI\AltTextGenerator\Trial_Quota::release( 1 );
+            }
+        } else {
+            $result = $this->generate_and_save($attachment_id, 'ajax', 1, [], true);
+        }
 
         if (is_wp_error($result)) {
             $error_code = $result->get_error_code();
@@ -6572,18 +6975,33 @@ class Core {
             \BeepBeepAI\AltTextGenerator\BBAI_Telemetry::bump_session_images_processed( 1 );
         }
 
+        $alt_for_json = is_string( $result ) ? $result : (string) $result;
+        $alt_for_json = trim( $alt_for_json );
+        if ( '' === $alt_for_json ) {
+            if ( \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() ) {
+                \BeepBeepAI\AltTextGenerator\Trial_Quota::release( 1 );
+            }
+            wp_send_json_error(
+                [
+                    'message' => __( 'The generator did not return usable ALT text. Please try again.', 'beepbeep-ai-alt-text-generator' ),
+                    'code'    => 'missing_alt_text',
+                ]
+            );
+            return;
+        }
+
         wp_send_json_success([
             'message'        => __('Alt text generated successfully.', 'beepbeep-ai-alt-text-generator'),
-            'alt_text'       => $result,
-            'altText'        => $result, // Also include camelCase for compatibility
+            'alt_text'       => $alt_for_json,
+            'altText'        => $alt_for_json, // Also include camelCase for compatibility
             'attachment_id'  => $attachment_id,
             'request_key'    => $request_key,
             'usage'          => $updated_usage ?: null, // Include updated usage in response
             'meta'           => $response_meta,
             'stats'          => $response_stats,
             'data'           => [
-                'alt_text' => $result,
-                'altText'  => $result,
+                'alt_text' => $alt_for_json,
+                'altText'  => $alt_for_json,
                 'request_key' => $request_key,
                 'usage'    => $updated_usage ?: null,
                 'meta'     => $response_meta,
@@ -6865,7 +7283,12 @@ class Core {
         }
 
         $has_license = $this->api_client->has_active_license();
-        if (!$has_license && (!defined('WP_LOCAL_DEV') || !WP_LOCAL_DEV) && $this->api_client->has_reached_limit()) {
+        if (
+            ! $has_license
+            && ( ! defined( 'WP_LOCAL_DEV' ) || ! WP_LOCAL_DEV )
+            && ! $this->has_local_trial_generation_slots()
+            && $this->api_client->has_reached_limit()
+        ) {
             $usage = $this->api_client->get_usage();
             return new \WP_Error(
                 'limit_reached',
@@ -8170,7 +8593,20 @@ class Core {
             return;
         }
 
-        $attachment_ids = isset($_POST['attachment_ids']) && is_array($_POST['attachment_ids']) ? array_map('absint', wp_unslash($_POST['attachment_ids'])) : [];
+        $attachment_ids = array();
+        if ( isset( $_POST['attachment_ids'] ) ) {
+            if ( is_array( $_POST['attachment_ids'] ) ) {
+                $attachment_ids = array_map( 'absint', wp_unslash( $_POST['attachment_ids'] ) );
+            } else {
+                $raw_json = sanitize_text_field( wp_unslash( $_POST['attachment_ids'] ) );
+                if ( '' !== $raw_json ) {
+                    $decoded = json_decode( $raw_json, true );
+                    if ( is_array( $decoded ) ) {
+                        $attachment_ids = array_map( 'absint', $decoded );
+                    }
+                }
+            }
+        }
         if (empty($attachment_ids)) {
             wp_send_json_error(['message' => __('No attachment IDs provided.', 'beepbeep-ai-alt-text-generator')]);
             return;
@@ -8198,12 +8634,23 @@ class Core {
         // Clearing queue entries here ensures each image is generated once per action.
         Queue::clear_for_attachments($ids);
 
+        $trial_snapshot_before = null;
+        if ( class_exists( '\BeepBeepAI\AltTextGenerator\Trial_Quota' ) && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() ) {
+            $tb = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_status();
+            $trial_snapshot_before = [
+                'trial_limit'              => (int) ( $tb['limit'] ?? 0 ),
+                'trial_used_before'        => (int) ( $tb['used'] ?? 0 ),
+                'trial_remaining_before'   => (int) ( $tb['remaining'] ?? 0 ),
+            ];
+        }
+
         $results = [];
         foreach ($ids as $id) {
             if (!$this->is_image($id)) {
                 $results[] = [
                     'attachment_id' => $id,
                     'success' => false,
+                    'code'    => 'bbai_not_an_image',
                     'message' => __('Attachment is not an image.', 'beepbeep-ai-alt-text-generator'),
                 ];
                 continue;
@@ -8281,6 +8728,74 @@ class Core {
         Usage_Tracker::clear_cache();
         $this->invalidate_stats_cache();
 
+        $trial_snapshot_after = null;
+        if ( class_exists( '\BeepBeepAI\AltTextGenerator\Trial_Quota' ) && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() ) {
+            $ta = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_status();
+            $trial_snapshot_after = [
+                'trial_used_after'      => (int) ( $ta['used'] ?? 0 ),
+                'trial_remaining_after' => (int) ( $ta['remaining'] ?? 0 ),
+                'trial_exhausted_after' => ! empty( $ta['exhausted'] ),
+            ];
+        }
+
+        $requested_count        = count( $ids );
+        $processed_count        = 0;
+        $failed_count           = 0;
+        $skipped_due_to_limit   = 0;
+        $updated_images         = [];
+        $processable_count      = 0;
+
+        foreach ( $results as $row ) {
+            if ( ! is_array( $row ) ) {
+                continue;
+            }
+            $row_code = isset( $row['code'] ) ? (string) $row['code'] : '';
+            if ( 'bbai_not_an_image' === $row_code ) {
+                continue;
+            }
+            ++$processable_count;
+            if ( ! empty( $row['success'] ) ) {
+                ++$processed_count;
+                $att_id = isset( $row['attachment_id'] ) ? (int) $row['attachment_id'] : 0;
+                if ( $att_id > 0 ) {
+                    $updated_images[] = [
+                        'id'       => $att_id,
+                        'src'      => (string) wp_get_attachment_url( $att_id ),
+                        'alt_text' => isset( $row['alt_text'] ) ? (string) $row['alt_text'] : '',
+                    ];
+                }
+            } elseif ( $this->inline_generation_result_is_limit_skip( $row ) ) {
+                ++$skipped_due_to_limit;
+            } else {
+                ++$failed_count;
+            }
+        }
+
+        $generation_meta = [
+            'requested_count'      => $requested_count,
+            'processable_count'    => $processable_count,
+            'processed_count'      => $processed_count,
+            'failed_count'         => $failed_count,
+            'skipped_due_to_limit' => $skipped_due_to_limit,
+            'updated_images'       => $updated_images,
+        ];
+
+        if ( is_array( $trial_snapshot_before ) ) {
+            $generation_meta = array_merge( $generation_meta, $trial_snapshot_before );
+        } else {
+            $generation_meta['trial_limit']            = null;
+            $generation_meta['trial_used_before']      = null;
+            $generation_meta['trial_remaining_before'] = null;
+        }
+
+        if ( is_array( $trial_snapshot_after ) ) {
+            $generation_meta = array_merge( $generation_meta, $trial_snapshot_after );
+        } else {
+            $generation_meta['trial_used_after']      = null;
+            $generation_meta['trial_remaining_after'] = null;
+            $generation_meta['trial_exhausted_after']  = null;
+        }
+
         // Ensure headers haven't been sent (which would break JSON response)
         if (headers_sent($file, $line)) {
             // Headers already sent - this is a critical error
@@ -8344,15 +8859,41 @@ class Core {
             }
         }
 
-        wp_send_json_success([
-            'results' => $results,
-        ]);
+        wp_send_json_success(
+            array_merge(
+                [
+                    'results' => $results,
+                ],
+                $generation_meta
+            )
+        );
         
         // This line should never be reached (wp_send_json_success exits)
         // But included for safety
         if (ob_get_level() > 0) {
             ob_end_clean();
         }
+    }
+
+    /**
+     * Whether an inline generation row failed only because of quota / trial limits (not a hard error).
+     *
+     * @param array<string,mixed> $row Single result row from ajax_inline_generate.
+     */
+    private function inline_generation_result_is_limit_skip( array $row ): bool {
+        if ( ! empty( $row['success'] ) ) {
+            return false;
+        }
+        $code = isset( $row['code'] ) ? (string) $row['code'] : '';
+        $limit_codes = [
+            'limit_reached',
+            'quota_exhausted',
+            'bbai_trial_exhausted',
+            'quota_exceeded',
+            'insufficient_credits',
+        ];
+
+        return in_array( $code, $limit_codes, true );
     }
 
     /**
@@ -8483,7 +9024,7 @@ class Core {
      * @param int $attachment_id Attachment ID.
      * @return array{result:mixed,retry_attempts:int}
      */
-    private function generate_trial_single_with_retry( int $attachment_id, bool $quota_claimed = false ): array {
+    private function generate_trial_single_with_retry( int $attachment_id, bool $quota_claimed = false, bool $regenerate = false ): array {
         $retry_attempts = 0;
         $max_retries    = 2;
         $claimed_slots  = 0;
@@ -8498,7 +9039,7 @@ class Core {
         }
         \BeepBeepAI\AltTextGenerator\Trial_Quota::begin_claimed_generation();
         try {
-            $result = $this->generate_and_save( $attachment_id, 'trial', 1, [], false, true );
+            $result = $this->generate_and_save( $attachment_id, 'trial', 1, [], $regenerate, true );
 
             while ( is_wp_error( $result ) && 'quota_check_mismatch' === $result->get_error_code() && $retry_attempts < $max_retries ) {
                 $retry_attempts++;
@@ -8512,7 +9053,7 @@ class Core {
                 $retry_delay_us = max( 250000, min( 2000000, $retry_delay_us ) );
                 usleep( $retry_delay_us );
 
-                $result = $this->generate_and_save( $attachment_id, 'trial', 1, [], false, true );
+                $result = $this->generate_and_save( $attachment_id, 'trial', 1, [], $regenerate, true );
             }
         } finally {
             \BeepBeepAI\AltTextGenerator\Trial_Quota::end_claimed_generation();
@@ -9437,9 +9978,17 @@ class Core {
     private function extract_alt_text_from_array(array $data, &$source = null): string {
         $keys = ['altText', 'alt_text', 'alttext', 'alt', 'description', 'text'];
         foreach ($keys as $key) {
-            if (isset($data[$key]) && is_string($data[$key])) {
+            if (! isset( $data[ $key ] ) ) {
+                continue;
+            }
+            $raw = $data[ $key ];
+            if ( is_string( $raw ) ) {
                 $source = $key;
-                return $this->normalize_alt_text($data[$key], $source);
+                return $this->normalize_alt_text( $raw, $source );
+            }
+            if ( is_int( $raw ) || is_float( $raw ) ) {
+                $source = $key;
+                return $this->normalize_alt_text( (string) $raw, $source );
             }
         }
         return '';

@@ -20,6 +20,13 @@ const bbaiRunWithJQuery = (function() {
 
 const BBAI_STATS_SYNC_KEY = 'bbai-dashboard-stats-sync';
 
+/**
+ * Must live in this outer scope: bbaiNormalizeUsageObject() runs before the jQuery IIFE below executes.
+ *
+ * @see BBAI_BANNER_LOW_CREDITS_THRESHOLD in includes/admin/banner-system.php
+ */
+var BBAI_BANNER_LOW_CREDITS_THRESHOLD = 10;
+
 function bbaiString(value) {
     return value === undefined || value === null ? '' : String(value);
 }
@@ -85,6 +92,56 @@ function bbaiNormalizeUsageObject(rawUsage) {
 
     quota = usage.quota && typeof usage.quota === 'object' ? usage.quota : {};
 
+    function getTrialLimitValue() {
+        var explicitLimit = bbaiReadUsageNumber(usage, ['trial_limit', 'trialLimit']);
+        var quotaLimit = bbaiReadUsageNumber(quota, ['trial_limit', 'trialLimit']);
+        var root = document.querySelector('[data-bbai-dashboard-root="1"]');
+        var rootLimit = root ? parseInt(root.getAttribute('data-bbai-trial-limit') || '', 10) : NaN;
+
+        if (!isNaN(explicitLimit) && explicitLimit > 0) {
+            return explicitLimit;
+        }
+        if (!isNaN(quotaLimit) && quotaLimit > 0) {
+            return quotaLimit;
+        }
+        if (!isNaN(rootLimit) && rootLimit > 0) {
+            return rootLimit;
+        }
+
+        return 5;
+    }
+
+    function hasResetSignal() {
+        var timestampUsage = bbaiReadUsageNumber(usage, ['reset_timestamp', 'resetTimestamp', 'reset_ts', 'days_until_reset', 'daysUntilReset']);
+        var timestampQuota = bbaiReadUsageNumber(quota, ['reset_timestamp', 'resetTimestamp', 'reset_ts', 'days_until_reset', 'daysUntilReset']);
+        var resetUsage = bbaiReadUsageString(usage, ['resetDate', 'reset_date']);
+        var resetQuota = bbaiReadUsageString(quota, ['resetDate', 'reset_date']);
+
+        return (!!resetUsage || !!resetQuota || !isNaN(timestampUsage) || !isNaN(timestampQuota));
+    }
+
+    function shouldInferAnonymousTrial(limitValue, planValue, authValue, quotaValue) {
+        var normalizedPlan = bbaiString(planValue).toLowerCase();
+        var normalizedAuth = bbaiString(authValue).toLowerCase();
+        var normalizedQuota = bbaiString(quotaValue).toLowerCase();
+        var source = bbaiString(usage.source).toLowerCase();
+        var isTrialFlag = usage.is_trial !== undefined ? !!usage.is_trial : !!quota.is_trial;
+        var isPaidPlan = normalizedPlan === 'growth' || normalizedPlan === 'pro' || normalizedPlan === 'agency' || normalizedPlan === 'enterprise';
+        var upgradeRequired = usage.upgrade_required !== undefined ? !!usage.upgrade_required : !!quota.upgrade_required;
+
+        if (normalizedAuth === 'anonymous' || normalizedQuota === 'trial' || normalizedPlan === 'trial' || normalizedPlan === 'anonymous_trial') {
+            return true;
+        }
+        if (isTrialFlag || source === 'anonymous_trial') {
+            return true;
+        }
+        if (isPaidPlan || normalizedQuota === 'paid' || upgradeRequired) {
+            return false;
+        }
+
+        return limitValue > 0 && limitValue <= getTrialLimitValue() && !hasResetSignal();
+    }
+
     used = bbaiReadUsageNumber(usage, ['credits_used', 'creditsUsed', 'used']);
     if (isNaN(used)) {
         used = bbaiReadUsageNumber(quota, ['credits_used', 'creditsUsed', 'used']);
@@ -131,6 +188,14 @@ function bbaiNormalizeUsageObject(rawUsage) {
     planType = bbaiReadUsageString(usage, ['plan_type', 'plan']) || bbaiReadUsageString(quota, ['plan_type', 'plan']);
     var authState = bbaiReadUsageString(usage, ['auth_state']) || bbaiReadUsageString(quota, ['auth_state']) || 'authenticated';
     var quotaType = bbaiReadUsageString(usage, ['quota_type']) || bbaiReadUsageString(quota, ['quota_type']) || '';
+    var inferredTrial = shouldInferAnonymousTrial(limit, planType, authState, quotaType);
+    if (inferredTrial) {
+        authState = 'anonymous';
+        quotaType = 'trial';
+        if (!planType || planType === 'free' || planType === 'anonymous_trial') {
+            planType = 'trial';
+        }
+    }
     if (!planType && (authState === 'anonymous' || quotaType === 'trial')) {
         planType = 'trial';
     }
@@ -176,7 +241,7 @@ function bbaiNormalizeUsageObject(rawUsage) {
         : (quota.upgrade_required !== undefined ? !!quota.upgrade_required : (quotaType === 'trial' ? false : remaining <= 0));
     var isTrial = usage.is_trial !== undefined
         ? !!usage.is_trial
-        : (quota.is_trial !== undefined ? !!quota.is_trial : (quotaType === 'trial' || authState === 'anonymous'));
+        : (quota.is_trial !== undefined ? !!quota.is_trial : (quotaType === 'trial' || authState === 'anonymous' || inferredTrial));
     var trialExhausted = usage.trial_exhausted !== undefined
         ? !!usage.trial_exhausted
         : (quota.trial_exhausted !== undefined ? !!quota.trial_exhausted : (isTrial && remaining <= 0));
@@ -292,11 +357,21 @@ function bbaiGetUsageObject() {
             }
         }
 
-    if (rootUsage && globalUsage && typeof globalUsage === 'object') {
-        return bbaiNormalizeUsageObject(Object.assign({}, rootUsage, globalUsage));
+    var merged = rootUsage && globalUsage && typeof globalUsage === 'object'
+        ? bbaiNormalizeUsageObject(Object.assign({}, rootUsage, globalUsage))
+        : (rootUsage || globalUsage);
+
+    if (root && merged && typeof merged === 'object' && root.getAttribute('data-bbai-is-guest-trial') === '1') {
+        merged = bbaiNormalizeUsageObject(
+            Object.assign({}, merged, {
+                auth_state: 'anonymous',
+                quota_type: 'trial',
+                is_trial: true
+            })
+        );
     }
 
-    return rootUsage || globalUsage;
+    return merged;
 }
 
 function bbaiGetUsageFromDom() {
@@ -684,19 +759,32 @@ bbaiRunWithJQuery(function($) {
             e.stopPropagation();
             
             window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Upgrade CTA clicked via jQuery handler', this);
-            
-            // Direct fallback - show the modal directly (most reliable method)
-            const modal = document.getElementById('bbai-upgrade-modal');
+
+            if (typeof window.bbaiOpenUpgradeModal === 'function') {
+                try {
+                    if (window.bbaiOpenUpgradeModal('default', { source: 'dashboard-jquery', triggerKey: 'manual' })) {
+                        return false;
+                    }
+                } catch (err) {
+                    if (typeof alttextaiDebug !== 'undefined' && alttextaiDebug && window.BBAI_LOG) {
+                        window.BBAI_LOG.warn('[AltText AI] bbaiOpenUpgradeModal failed (jQuery handler)', err);
+                    }
+                }
+            }
+
+            if (typeof alttextaiShowModal === 'function' && alttextaiShowModal()) {
+                return false;
+            }
+
+            const modal = findUpgradeModalElement();
             if (modal) {
-                window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Found modal, showing directly');
+                window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Fallback: showing modal with legacy inline styles');
                 modal.removeAttribute('style');
                 modal.style.cssText = 'display: flex !important; z-index: 999999 !important; position: fixed !important; inset: 0 !important; background-color: rgba(0,0,0,0.6) !important; align-items: center !important; justify-content: center !important; overflow-y: auto !important;';
-                modal.classList.add('active'); // Required for content to become visible (opacity: 1)
+                modal.classList.add('active');
                 modal.classList.add('is-visible');
                 modal.setAttribute('aria-hidden', 'false');
                 bbaiSetUpgradeModalScrollLock(true);
-
-                // Also ensure modal content is visible
                 const modalContent = modal.querySelector('.bbai-upgrade-modal__content');
                 if (modalContent) {
                     modalContent.style.cssText = 'opacity: 1 !important; transform: translateY(0) scale(1) !important;';
@@ -704,10 +792,7 @@ bbaiRunWithJQuery(function($) {
                 return false;
             }
 
-            // Prefer the server-rendered modal before optional bridge wrappers.
-            if (typeof window.bbaiOpenUpgradeModal === 'function') {
-                window.bbaiOpenUpgradeModal();
-            } else if (typeof window.openPricingModal === 'function') {
+            if (typeof window.openPricingModal === 'function') {
                 window.openPricingModal('enterprise');
             } else if (typeof bbaiApp !== 'undefined' && typeof bbaiApp.showModal === 'function') {
                 // Fallback to old modal
@@ -2381,6 +2466,17 @@ function bbaiSetUpgradeModalScrollLock(isLocked) {
 // Global functions for modal - make it very robust (legacy support)
 function alttextaiShowModal() {
     window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] alttextaiShowModal() called');
+    if (typeof window.bbaiOpenUpgradeModal === 'function') {
+        try {
+            if (window.bbaiOpenUpgradeModal('default', { source: 'alttextaiShowModal', triggerKey: 'manual' })) {
+                return true;
+            }
+        } catch (err) {
+            if (typeof alttextaiDebug !== 'undefined' && alttextaiDebug && window.BBAI_LOG) {
+                window.BBAI_LOG.warn('[AltText AI] bbaiOpenUpgradeModal failed', err);
+            }
+        }
+    }
     const modal = findUpgradeModalElement();
     
     if (!modal) {
@@ -2480,21 +2576,21 @@ window.testUpgradeModal = function() {
 function alttextaiCloseModal() {
     const modal = findUpgradeModalElement();
     if (modal) {
-        // Remove active class to trigger CSS transition
         modal.classList.remove('active');
         modal.classList.remove('is-visible');
-        
-        // Wait for animation to complete before hiding
-        setTimeout(function() {
-            modal.style.display = 'none';
-            modal.setAttribute('aria-hidden', 'true');
-        }, 300); // Match animation duration
-        
-        // Restore body scroll
+        modal.setAttribute('aria-hidden', 'true');
+        const modalContent = modal.querySelector('.bbai-upgrade-modal__content');
+        if (modalContent) {
+            modalContent.removeAttribute('style');
+        }
+        modal.style.display = 'none';
         bbaiSetUpgradeModalScrollLock(false);
         if (typeof window.bbaiResetUpgradeModalContext === 'function') {
             window.bbaiResetUpgradeModalContext();
         }
+    }
+    if (typeof window.bbaiEnsureDashboardMainVisible === 'function') {
+        window.bbaiEnsureDashboardMainVisible();
     }
 }
 
@@ -2511,6 +2607,17 @@ window.alttextaiCloseModal = alttextaiCloseModal;
     
     // Function to show modal directly with aggressive approach
     function showModalDirectly() {
+        if (typeof window.bbaiOpenUpgradeModal === 'function') {
+            try {
+                if (window.bbaiOpenUpgradeModal('default', { source: 'showModalDirectly', triggerKey: 'manual' })) {
+                    return true;
+                }
+            } catch (err) {
+                if (typeof alttextaiDebug !== 'undefined' && alttextaiDebug && window.BBAI_LOG) {
+                    window.BBAI_LOG.warn('[AltText AI] bbaiOpenUpgradeModal failed in showModalDirectly', err);
+                }
+            }
+        }
         const modal = findUpgradeModalElement();
         if (!modal) {
             window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Upgrade modal not found in DOM');
@@ -3519,9 +3626,9 @@ bbaiRunWithJQuery(function($) {
             return value;
         });
     };
-    /** @see BBAI_BANNER_LOW_CREDITS_THRESHOLD in includes/admin/banner-system.php */
-    var BBAI_BANNER_LOW_CREDITS_THRESHOLD = 10;
     var feedbackTimeout = null;
+    var lastScanRelativeTickerId = null;
+    var lastScanRelativeTickerVisibilityHooked = false;
 
     function parseCount(value) {
         var parsed = parseInt(value, 10);
@@ -3588,11 +3695,18 @@ bbaiRunWithJQuery(function($) {
     }
 
     function isAnonymousTrialState(data) {
-        return !!(data && (
+        if (!data || typeof data !== 'object') {
+            return false;
+        }
+        if (data.root && typeof data.root.getAttribute === 'function' &&
+                data.root.getAttribute('data-bbai-is-guest-trial') === '1') {
+            return true;
+        }
+        return !!(
             data.isAnonymousTrial ||
             String(data.authState || '').toLowerCase() === 'anonymous' ||
             String(data.quotaType || '').toLowerCase() === 'trial'
-        ));
+        );
     }
 
     function getAnonymousTrialOffer(data) {
@@ -3934,6 +4048,7 @@ bbaiRunWithJQuery(function($) {
         var optimized = parseCount(root.getAttribute('data-bbai-optimized-count'));
         var total = parseCount(root.getAttribute('data-bbai-total-count'));
         var hasScanResultsAttr = root.getAttribute('data-bbai-has-scan-results');
+        var domGuestTrial = root.getAttribute('data-bbai-is-guest-trial') === '1';
 
         return {
             root: root,
@@ -3946,8 +4061,12 @@ bbaiRunWithJQuery(function($) {
             creditsTotal: usage ? Math.max(1, parseCount(usage.limit)) : Math.max(1, parseCount(root.getAttribute('data-bbai-credits-total'))),
             creditsRemaining: usage ? parseCount(usage.remaining) : parseCount(root.getAttribute('data-bbai-credits-remaining')),
             creditsResetLine: usage ? buildCreditsResetLine(usage, root.getAttribute('data-bbai-credits-reset-line') || '') : (root.getAttribute('data-bbai-credits-reset-line') || ''),
-            authState: (usage && usage.auth_state) || root.getAttribute('data-bbai-auth-state') || '',
-            quotaType: (usage && usage.quota_type) || root.getAttribute('data-bbai-quota-type') || '',
+            authState: domGuestTrial
+                ? 'anonymous'
+                : ((usage && usage.auth_state) || root.getAttribute('data-bbai-auth-state') || ''),
+            quotaType: domGuestTrial
+                ? 'trial'
+                : ((usage && usage.quota_type) || root.getAttribute('data-bbai-quota-type') || ''),
             quotaState: (usage && usage.quota_state) || root.getAttribute('data-bbai-quota-state') || '',
             signupRequired: (usage && usage.signup_required !== undefined)
                 ? !!usage.signup_required
@@ -3964,7 +4083,9 @@ bbaiRunWithJQuery(function($) {
                 authState: root.getAttribute('data-bbai-auth-state') || '',
                 quotaType: root.getAttribute('data-bbai-quota-type') || ''
             }),
-            isAnonymousTrial: usage ? bbaiIsAnonymousTrialUsage(usage) : root.getAttribute('data-bbai-auth-state') === 'anonymous' || root.getAttribute('data-bbai-quota-type') === 'trial',
+            isAnonymousTrial: domGuestTrial || (usage
+                ? bbaiIsAnonymousTrialUsage(usage)
+                : root.getAttribute('data-bbai-auth-state') === 'anonymous' || root.getAttribute('data-bbai-quota-type') === 'trial'),
             isPremium: root.getAttribute('data-bbai-is-premium') === '1',
             hasScanResults: hasScanResultsAttr === null
                 ? (total > 0 || missing > 0 || weak > 0 || optimized > 0)
@@ -4073,12 +4194,12 @@ bbaiRunWithJQuery(function($) {
         var limit = Math.max(1, parseCount(usage.limit || 50));
         var remaining = parseCount(usage.remaining);
 
+        var domGuestTrial = root && root.getAttribute('data-bbai-is-guest-trial') === '1';
+
         if (root) {
             root.setAttribute('data-bbai-credits-used', String(used));
             root.setAttribute('data-bbai-credits-total', String(limit));
             root.setAttribute('data-bbai-credits-remaining', String(remaining));
-            root.setAttribute('data-bbai-auth-state', String(usage.auth_state || root.getAttribute('data-bbai-auth-state') || ''));
-            root.setAttribute('data-bbai-quota-type', String(usage.quota_type || root.getAttribute('data-bbai-quota-type') || ''));
             root.setAttribute('data-bbai-quota-state', String(usage.quota_state || root.getAttribute('data-bbai-quota-state') || ''));
             root.setAttribute('data-bbai-signup-required', usage.signup_required ? '1' : '0');
             root.setAttribute('data-bbai-free-plan-offer', String(Math.max(0, parseCount(usage.free_plan_offer) || 50)));
@@ -4096,16 +4217,44 @@ bbaiRunWithJQuery(function($) {
             hero.setAttribute('data-bbai-banner-days-left', String(Math.max(0, daysUntilReset)));
         }
 
-        isAnonymousTrial = bbaiIsAnonymousTrialUsage(usage);
+        isAnonymousTrial = bbaiIsAnonymousTrialUsage(usage) || domGuestTrial;
+
+        if (root) {
+            if (isAnonymousTrial) {
+                root.setAttribute('data-bbai-auth-state', 'anonymous');
+                root.setAttribute('data-bbai-quota-type', 'trial');
+            } else {
+                root.setAttribute('data-bbai-auth-state', String(usage.auth_state || root.getAttribute('data-bbai-auth-state') || ''));
+                root.setAttribute('data-bbai-quota-type', String(usage.quota_type || root.getAttribute('data-bbai-quota-type') || ''));
+            }
+        }
+
         usagePlan = bbaiString(usage.plan || usage.plan_type).toLowerCase();
         isFreeTier = usagePlan === '' || usagePlan === 'free' || usagePlan === 'starter' || usagePlan === 'trial';
         trialLimit = Math.max(0, parseCount(usage.limit));
         trialUsed = Math.max(0, parseCount(usage.used));
         trialRemaining = Math.max(0, parseCount(usage.remaining));
         trialExhausted = !!usage.trial_exhausted || (isAnonymousTrial && trialRemaining <= 0);
-        lockedCtaMode = isAnonymousTrial
-            ? (trialExhausted ? 'create_account' : '')
-            : ((usage.upgrade_required || (usage.quota_state === 'exhausted' && isFreeTier)) ? 'upgrade' : '');
+        if (isAnonymousTrial) {
+            lockedCtaMode = trialExhausted ? 'create_account' : '';
+        } else {
+            var exhaustedIn = !!(usage.upgrade_required || usage.quota_state === 'exhausted');
+            var growthLike = usagePlan === 'growth' || usagePlan === 'pro';
+            var agencyLike = usagePlan === 'agency';
+            if (exhaustedIn) {
+                if (agencyLike) {
+                    lockedCtaMode = 'manage_plan';
+                } else if (growthLike) {
+                    lockedCtaMode = 'upgrade_agency';
+                } else if (isFreeTier) {
+                    lockedCtaMode = 'upgrade_growth';
+                } else {
+                    lockedCtaMode = 'upgrade_growth';
+                }
+            } else {
+                lockedCtaMode = '';
+            }
+        }
 
         syncDashboardStateRootAttributes({
             baseState: isAnonymousTrial
@@ -4203,8 +4352,16 @@ bbaiRunWithJQuery(function($) {
         hours = Math.floor(diffMs / 3600000);
         days = Math.floor(diffMs / 86400000);
 
-        if (minutes < 1) {
+        if (diffMs < 1000) {
             return __('Last scan just now', 'beepbeep-ai-alt-text-generator');
+        }
+
+        if (minutes < 1) {
+            var seconds = Math.floor(diffMs / 1000);
+            return sprintf(
+                __('Last scan %s ago', 'beepbeep-ai-alt-text-generator'),
+                sprintf(_n('%d second', '%d seconds', seconds, 'beepbeep-ai-alt-text-generator'), seconds)
+            );
         }
         if (minutes < 60) {
             return sprintf(
@@ -4237,6 +4394,61 @@ bbaiRunWithJQuery(function($) {
         } catch (error) {
             return '';
         }
+    }
+
+    function updateStatusCardLastScanDisplay() {
+        var root = getDashboardRoot();
+        var metaNode = document.querySelector('[data-bbai-dashboard-status-card="1"] [data-bbai-status-last-scan]');
+        var ts;
+        var copy;
+
+        if (!root || !metaNode) {
+            return;
+        }
+
+        ts = parseCount(root.getAttribute('data-bbai-last-scan-ts'));
+        copy = formatLastScanCopy(ts);
+        metaNode.textContent = copy;
+        metaNode.hidden = !copy;
+    }
+
+    function stopLastScanRelativeTicker() {
+        if (lastScanRelativeTickerId !== null) {
+            window.clearInterval(lastScanRelativeTickerId);
+            lastScanRelativeTickerId = null;
+        }
+    }
+
+    function startLastScanRelativeTicker() {
+        var metaNode = document.querySelector('[data-bbai-dashboard-status-card="1"] [data-bbai-status-last-scan]');
+
+        if (!metaNode) {
+            stopLastScanRelativeTicker();
+            return;
+        }
+
+        stopLastScanRelativeTicker();
+        updateStatusCardLastScanDisplay();
+        lastScanRelativeTickerId = window.setInterval(updateStatusCardLastScanDisplay, 5000);
+    }
+
+    function ensureLastScanRelativeTicker() {
+        if (!lastScanRelativeTickerVisibilityHooked && typeof document.addEventListener === 'function') {
+            lastScanRelativeTickerVisibilityHooked = true;
+            document.addEventListener('visibilitychange', function() {
+                if (document.hidden) {
+                    stopLastScanRelativeTicker();
+                } else {
+                    startLastScanRelativeTicker();
+                }
+            });
+        }
+
+        if (typeof document.hidden !== 'undefined' && document.hidden) {
+            return;
+        }
+
+        startLastScanRelativeTicker();
     }
 
     function hasScanResults(data) {
@@ -4350,6 +4562,7 @@ bbaiRunWithJQuery(function($) {
                 signupRequired: data && data.signupRequired,
                 freePlanOffer: data && data.freePlanOffer,
                 isTrial: isAnonymousTrialState(data),
+                isGuestTrial: data && data.root && data.root.getAttribute('data-bbai-is-guest-trial') === '1',
                 pageContext: 'dashboard'
             })
             : null;
@@ -4629,6 +4842,10 @@ bbaiRunWithJQuery(function($) {
     function renderHero(data) {
         var hero = document.querySelector('[data-bbai-dashboard-hero="1"]');
         if (!hero || !data) {
+            return;
+        }
+
+        if (hero.getAttribute('data-bbai-top-banner-mode') === 'plan') {
             return;
         }
 
@@ -5201,7 +5418,18 @@ bbaiRunWithJQuery(function($) {
         donutNode.classList.remove('bbai-command-donut--processing');
 
         if (donutNode.getAttribute('data-bbai-donut-intro-animating') === '1') {
-            return;
+            introRaf = donutNode.getAttribute('data-bbai-donut-intro-raf');
+            if (!introRaf) {
+                donutNode.removeAttribute('data-bbai-donut-intro-animating');
+                donutNode.setAttribute('data-bbai-donut-intro-played', '1');
+            } else if (activeSegment) {
+                window.cancelAnimationFrame(parseInt(introRaf, 10));
+                donutNode.removeAttribute('data-bbai-donut-intro-raf');
+                donutNode.removeAttribute('data-bbai-donut-intro-animating');
+                donutNode.setAttribute('data-bbai-donut-intro-played', '1');
+            } else {
+                return;
+            }
         }
 
         reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -5324,6 +5552,151 @@ bbaiRunWithJQuery(function($) {
         }
     }
 
+    function prefersReducedMotion() {
+        return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    }
+
+    function getStatusCardMissingRow(statusCard) {
+        return statusCard ? statusCard.querySelector('[data-bbai-status-segment="missing"]') : null;
+    }
+
+    function getMissingStatusRowLabel(count) {
+        return parseCount(count) > 0
+            ? __('Missing · Needs ALT', 'beepbeep-ai-alt-text-generator')
+            : __('Missing', 'beepbeep-ai-alt-text-generator');
+    }
+
+    function isMissingStatusRowActionable(data, statusCoverage) {
+        return !!(
+            data &&
+            statusCoverage &&
+            statusCoverage.missing > 0 &&
+            getPrimaryAction(data) === 'generate_missing'
+        );
+    }
+
+    /**
+     * Visual emphasis + attention animation: any real missing ALT count with a meaningful scan.
+     * Stricter than nothing — avoids animating empty / pre-scan / processing placeholder states.
+     * (Aria "actionable" wording still uses isMissingStatusRowActionable + credits / primary CTA.)
+     */
+    function shouldEmphasizeMissingStatusRow(data, statusCoverage) {
+        return !!(
+            data &&
+            statusCoverage &&
+            statusCoverage.missing > 0 &&
+            statusCoverage.total > 0 &&
+            hasScanResults(data) &&
+            !isCoverageProcessingActive(data, statusCoverage)
+        );
+    }
+
+    function clearDashboardMissingAttentionTimer(statusCard) {
+        if (statusCard && statusCard._bbaiMissingAttentionTimer) {
+            window.clearTimeout(statusCard._bbaiMissingAttentionTimer);
+            statusCard._bbaiMissingAttentionTimer = null;
+        }
+    }
+
+    function getMissingStatusRowAriaLabel(count, isActionable) {
+        var safeCount = Math.max(0, parseCount(count));
+
+        if (safeCount <= 0) {
+            return __('View images missing ALT text in ALT Library', 'beepbeep-ai-alt-text-generator');
+        }
+
+        return isActionable
+            ? sprintf(
+                _n(
+                    'Open %s image that needs ALT text in ALT Library',
+                    'Open %s images that need ALT text in ALT Library',
+                    safeCount,
+                    'beepbeep-ai-alt-text-generator'
+                ),
+                formatCount(safeCount)
+            )
+            : sprintf(
+                _n(
+                    'View %s image missing ALT text in ALT Library',
+                    'View %s images missing ALT text in ALT Library',
+                    safeCount,
+                    'beepbeep-ai-alt-text-generator'
+                ),
+                formatCount(safeCount)
+            );
+    }
+
+    function hasDismissedMissingStatusCueForSession() {
+        try {
+            return sessionStorage.getItem('bbai_status_missing_row_clicked') === '1';
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function dismissMissingStatusCueForSession() {
+        try {
+            sessionStorage.setItem('bbai_status_missing_row_clicked', '1');
+        } catch (error) {
+            // Storage access can be blocked.
+        }
+    }
+
+    function applyMissingStatusRowState(statusCard, data, statusCoverage) {
+        var missingRow = getStatusCardMissingRow(statusCard);
+        var labelNode;
+        var missingCount;
+        var emphasize;
+        var actionableStrict;
+
+        if (!missingRow) {
+            return;
+        }
+
+        labelNode = missingRow.querySelector('.bbai-command-breakdown__label');
+        missingCount = statusCoverage ? Math.max(0, parseCount(statusCoverage.missing)) : 0;
+        emphasize = shouldEmphasizeMissingStatusRow(data, statusCoverage);
+        actionableStrict = isMissingStatusRowActionable(data, statusCoverage);
+
+        if (labelNode) {
+            labelNode.textContent = getMissingStatusRowLabel(missingCount);
+        }
+
+        missingRow.classList.toggle('bbai-command-breakdown--missing-actionable', emphasize);
+        missingRow.setAttribute('aria-label', getMissingStatusRowAriaLabel(missingCount, actionableStrict));
+
+        if (!emphasize) {
+            clearDashboardMissingAttentionTimer(statusCard);
+            missingRow.classList.remove('bbai-dashboard-missing-attention', 'bbai-command-breakdown--missing-cue');
+            statusCard.removeAttribute('data-bbai-missing-attention-complete');
+            return;
+        }
+
+        if (prefersReducedMotion() || hasDismissedMissingStatusCueForSession()) {
+            return;
+        }
+
+        if (statusCard._bbaiMissingAttentionTimer) {
+            return;
+        }
+
+        if (statusCard.getAttribute('data-bbai-missing-attention-complete') === '1') {
+            return;
+        }
+
+        missingRow.classList.remove('bbai-dashboard-missing-attention', 'bbai-command-breakdown--missing-cue');
+        missingRow.offsetWidth;
+        missingRow.classList.add('bbai-dashboard-missing-attention');
+
+        statusCard._bbaiMissingAttentionTimer = window.setTimeout(function() {
+            if (missingRow && document.body && document.body.contains(missingRow)) {
+                missingRow.classList.remove('bbai-dashboard-missing-attention', 'bbai-command-breakdown--missing-cue');
+            }
+            statusCard._bbaiMissingAttentionTimer = null;
+            statusCard.setAttribute('data-bbai-missing-attention-complete', '1');
+        }, 3000);
+    }
+
     function setStatusCardRefreshLoading(button, isLoading) {
         if (!button) {
             return;
@@ -5362,13 +5735,46 @@ bbaiRunWithJQuery(function($) {
         }
     }
 
-    function handleStatusCardRefresh(event) {
-        var button = event && event.currentTarget ? event.currentTarget : null;
+    var bbaiStatusCardRefreshDelegated = false;
+
+    function ensureStatusCardRefreshClickDelegated() {
+        if (bbaiStatusCardRefreshDelegated) {
+            return;
+        }
+        bbaiStatusCardRefreshDelegated = true;
+
+        document.addEventListener('click', function(event) {
+            var btn = event.target && typeof event.target.closest === 'function'
+                ? event.target.closest('[data-bbai-status-refresh]')
+                : null;
+            if (!btn) {
+                return;
+            }
+            var dashMain = document.getElementById('bbai-dashboard-main');
+            if (!dashMain || !dashMain.contains(btn)) {
+                return;
+            }
+            handleStatusCardRefresh(event, btn);
+        });
+    }
+
+    function handleStatusCardRefresh(event, refreshButtonOverride) {
+        var button = refreshButtonOverride || null;
+        if (!button && event && event.currentTarget && event.currentTarget.hasAttribute &&
+                event.currentTarget.hasAttribute('data-bbai-status-refresh')) {
+            button = event.currentTarget;
+        }
+        if (!button && event && event.target && typeof event.target.closest === 'function') {
+            button = event.target.closest('[data-bbai-status-refresh]');
+        }
         var request;
         var fallbackMessage = __('Unable to refresh the library scan right now.', 'beepbeep-ai-alt-text-generator');
 
         if (event && typeof event.preventDefault === 'function') {
             event.preventDefault();
+        }
+        if (event && typeof event.stopPropagation === 'function') {
+            event.stopPropagation();
         }
 
         if (!button || button.classList.contains('is-loading')) {
@@ -5426,51 +5832,37 @@ bbaiRunWithJQuery(function($) {
             if (targetUrl) {
                 row.setAttribute('href', targetUrl);
             }
-        });
 
-        statusCard.addEventListener('mouseover', function(event) {
-            var row = event.target && typeof event.target.closest === 'function'
-                ? event.target.closest('[data-bbai-status-row]')
-                : null;
+            row.addEventListener('mouseenter', function() {
+                setStatusCardActiveSegment(statusCard, row.getAttribute('data-bbai-status-segment') || '');
+            });
 
-            if (!row || !statusCard.contains(row)) {
-                return;
-            }
+            row.addEventListener('mouseleave', function(event) {
+                var related = event.relatedTarget;
+                var nextRow = related && related.nodeType === 1 && typeof related.closest === 'function'
+                    ? related.closest('[data-bbai-status-row]')
+                    : null;
 
-            setStatusCardActiveSegment(statusCard, row.getAttribute('data-bbai-status-segment') || '');
-        });
+                if (nextRow && statusCard.contains(nextRow)) {
+                    setStatusCardActiveSegment(statusCard, nextRow.getAttribute('data-bbai-status-segment') || '');
+                    return;
+                }
 
-        statusCard.addEventListener('mouseout', function(event) {
-            var row = event.target && typeof event.target.closest === 'function'
-                ? event.target.closest('[data-bbai-status-row]')
-                : null;
-            var relatedRow = event.relatedTarget && typeof event.relatedTarget.closest === 'function'
-                ? event.relatedTarget.closest('[data-bbai-status-row]')
-                : null;
+                if (
+                    document.activeElement &&
+                    typeof document.activeElement.closest === 'function' &&
+                    statusCard.contains(document.activeElement) &&
+                    document.activeElement.closest('[data-bbai-status-row]')
+                ) {
+                    setStatusCardActiveSegment(
+                        statusCard,
+                        document.activeElement.closest('[data-bbai-status-row]').getAttribute('data-bbai-status-segment') || ''
+                    );
+                    return;
+                }
 
-            if (!row || !statusCard.contains(row)) {
-                return;
-            }
-
-            if (relatedRow && statusCard.contains(relatedRow)) {
-                setStatusCardActiveSegment(statusCard, relatedRow.getAttribute('data-bbai-status-segment') || '');
-                return;
-            }
-
-            if (
-                document.activeElement &&
-                typeof document.activeElement.closest === 'function' &&
-                statusCard.contains(document.activeElement) &&
-                document.activeElement.closest('[data-bbai-status-row]')
-            ) {
-                setStatusCardActiveSegment(
-                    statusCard,
-                    document.activeElement.closest('[data-bbai-status-row]').getAttribute('data-bbai-status-segment') || ''
-                );
-                return;
-            }
-
-            setStatusCardActiveSegment(statusCard, '');
+                setStatusCardActiveSegment(statusCard, '');
+            });
         });
 
         statusCard.addEventListener('focusin', function(event) {
@@ -5525,6 +5917,15 @@ bbaiRunWithJQuery(function($) {
             }
 
             event.preventDefault();
+            if (
+                String(row.getAttribute('data-bbai-status-segment') || '') === 'missing' &&
+                row.classList.contains('bbai-command-breakdown--missing-actionable')
+            ) {
+                dismissMissingStatusCueForSession();
+                clearDashboardMissingAttentionTimer(statusCard);
+                row.classList.remove('bbai-dashboard-missing-attention', 'bbai-command-breakdown--missing-cue');
+                statusCard.setAttribute('data-bbai-missing-attention-complete', '1');
+            }
             targetUrl = resolveStatusCardRowUrl(row);
             if (!targetUrl) {
                 return;
@@ -5542,9 +5943,7 @@ bbaiRunWithJQuery(function($) {
             }, 220);
         });
 
-        if (refreshButton) {
-            refreshButton.addEventListener('click', handleStatusCardRefresh);
-        }
+        ensureStatusCardRefreshClickDelegated();
     }
 
     function renderStatusCard(data) {
@@ -5556,6 +5955,7 @@ bbaiRunWithJQuery(function($) {
         var coverageProcessing = isCoverageProcessingActive(data, statusCoverage);
         var statusCard = document.querySelector('[data-bbai-dashboard-status-card="1"]');
         if (!statusCard) {
+            stopLastScanRelativeTicker();
             return;
         }
 
@@ -5646,6 +6046,8 @@ bbaiRunWithJQuery(function($) {
             metrics[key].textContent = formatCount(value);
         });
 
+        applyMissingStatusRowState(statusCard, data, statusCoverage);
+
         if (coverageValue) {
             coverageValue.textContent = formatCount(statusCoverage.coverage);
             if (!isNaN(prevCoverage) && statusCoverage.coverage > prevCoverage) {
@@ -5684,6 +6086,8 @@ bbaiRunWithJQuery(function($) {
         } catch (e) {
             // noop — storage blocked
         }
+
+        ensureLastScanRelativeTicker();
 
         applyStatusCardDonutState(statusCard, statusCoverage);
     }
@@ -6039,21 +6443,24 @@ bbaiRunWithJQuery(function($) {
     }
 
     function renderUpgradeContext(data) {
-        var planLabelNode = document.querySelector('[data-bbai-plan-label]');
-        var usageLineNode = document.querySelector('[data-bbai-plan-usage-line]');
-        var remainingLineNode = document.querySelector('[data-bbai-plan-usage-remaining]');
-        var resetLineNode = document.querySelector('[data-bbai-plan-usage-reset]');
-        var usageProgressNode = document.querySelector('[data-bbai-plan-usage-progress]');
-        var growthLineNode = document.querySelector('[data-bbai-plan-growth-line]');
-        var growthProgressNode = document.querySelector('[data-bbai-plan-growth-progress]');
-        var growthPercentNode = document.querySelector('[data-bbai-plan-growth-percent-label]');
-        var upgradeNoteNode = document.querySelector('[data-bbai-plan-upgrade-note]');
+        // Must scope to dashboard root: #bbai-dashboard-main also carries data-bbai-plan-label on the container
+        // for hydration. document.querySelector would match that node first; setting .textContent wipes the UI.
+        var scope = getDashboardRoot() || document;
+        var planLabelNode = scope.querySelector('[data-bbai-plan-label]');
+        var usageLineNode = scope.querySelector('[data-bbai-plan-usage-line]');
+        var remainingLineNode = scope.querySelector('[data-bbai-plan-usage-remaining]');
+        var resetLineNode = scope.querySelector('[data-bbai-plan-usage-reset]');
+        var usageProgressNode = scope.querySelector('[data-bbai-plan-usage-progress]');
+        var growthLineNode = scope.querySelector('[data-bbai-plan-growth-line]');
+        var growthProgressNode = scope.querySelector('[data-bbai-plan-growth-progress]');
+        var growthPercentNode = scope.querySelector('[data-bbai-plan-growth-percent-label]');
+        var upgradeNoteNode = scope.querySelector('[data-bbai-plan-upgrade-note]');
         var upgradeLeadNode = upgradeNoteNode ? upgradeNoteNode.querySelector('[data-bbai-plan-upgrade-lead]') : null;
         var upgradeSubNode = upgradeNoteNode ? upgradeNoteNode.querySelector('[data-bbai-plan-upgrade-sub]') : null;
-        var upgradeCtaSubNode = document.querySelector('[data-bbai-plan-upgrade-cta-sub]');
-        var lowCreditsBadgeNode = document.querySelector('[data-bbai-plan-low-credits-badge]');
-        var primaryActionNode = document.querySelector('[data-bbai-plan-action-primary]');
-        var secondaryActionNode = document.querySelector('[data-bbai-plan-action-secondary]');
+        var upgradeCtaSubNode = scope.querySelector('[data-bbai-plan-upgrade-cta-sub]');
+        var lowCreditsBadgeNode = scope.querySelector('[data-bbai-plan-low-credits-badge]');
+        var primaryActionNode = scope.querySelector('[data-bbai-plan-action-primary]');
+        var secondaryActionNode = scope.querySelector('[data-bbai-plan-action-secondary]');
         var growthComparison = getGrowthPlanComparison(data);
         var planRemaining = Math.max(0, parseCount(data && data.creditsRemaining));
         var isAnonymousTrial = isAnonymousTrialState(data);
@@ -6557,12 +6964,30 @@ bbaiRunWithJQuery(function($) {
             return;
         }
 
-        bindDashboardActionTracking();
-        bindStatusCardInteractions();
-        renderHero(data);
-        renderStatusCard(data);
-        renderUpgradeContext(data);
-        renderDashboardReviewPrompt(data);
+        function runStep(stepName, callback) {
+            try {
+                callback();
+            } catch (error) {
+                if (window.BBAI_LOG && typeof window.BBAI_LOG.warn === 'function') {
+                    window.BBAI_LOG.warn('[AltText AI] Dashboard render step failed: ' + stepName, error);
+                }
+            }
+        }
+
+        runStep('action-tracking', bindDashboardActionTracking);
+        runStep('hero', function() {
+            renderHero(data);
+        });
+        runStep('status-card', function() {
+            renderStatusCard(data);
+        });
+        runStep('status-card-bindings', bindStatusCardInteractions);
+        runStep('upgrade-context', function() {
+            renderUpgradeContext(data);
+        });
+        runStep('review-prompt', function() {
+            renderDashboardReviewPrompt(data);
+        });
     }
 
     window.bbaiGetDashboardData = getDashboardData;
@@ -6806,6 +7231,7 @@ bbaiRunWithJQuery(function($) {
     });
 
     $(document).ready(function() {
+        ensureStatusCardRefreshClickDelegated();
         syncAndRender(
             (window.BBAI_DASH && window.BBAI_DASH.stats) || (window.BBAI && window.BBAI.stats) || null,
             bbaiGetUsageObject()

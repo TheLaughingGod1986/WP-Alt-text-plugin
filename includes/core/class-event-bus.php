@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace BeepBeep\AltText\Core;
+namespace BeepBeepAI\AltText\Core;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Implements publish-subscribe pattern for decoupled event-driven architecture.
  * Allows components to communicate without direct dependencies.
  *
- * @package BeepBeep\AltText\Core
+ * @package BeepBeepAI\AltText\Core
  * @since   5.0.0
  */
 class Event_Bus {

@@ -332,7 +332,11 @@ $bbai_ins_chips = isset($bbai_usage_insights['chips']) && is_array($bbai_usage_i
                                                 data-href="<?php echo esc_url($bbai_related_url); ?>"
                                                 tabindex="0"
                                                 role="link"
-                                                aria-label="<?php echo esc_attr(sprintf(__('Open %s', 'beepbeep-ai-alt-text-generator'), $bbai_related_label ?: __('related item', 'beepbeep-ai-alt-text-generator'))); ?>"
+                                                aria-label="<?php echo esc_attr(sprintf(
+                                                    /* translators: %s: related item label. */
+                                                    __('Open %s', 'beepbeep-ai-alt-text-generator'),
+                                                    $bbai_related_label ?: __('related item', 'beepbeep-ai-alt-text-generator')
+                                                )); ?>"
                                             <?php endif; ?>
                                         >
                                             <td>

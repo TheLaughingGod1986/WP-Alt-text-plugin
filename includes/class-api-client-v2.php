@@ -1439,22 +1439,10 @@ class API_Client_V2 {
         $license_key = $this->get_license_key();
 
         if (empty($token) && empty($license_key)) {
-            // Not authenticated - return default free usage without hitting API
-            return [
-                'used' => 0,
-                'remaining' => 50,
-                'limit' => 50,
-                'creditsUsed' => 0,
-                'creditsRemaining' => 50,
-                'creditsTotal' => 50,
-                'creditsLimit' => 50,
-                'plan' => 'free',
-                'plan_type' => 'free',
-                'resetDate' => '',
-                'reset_date' => '',
-                'source' => 'local_snapshot',
-                'authenticated' => false,
-            ];
+            // Not authenticated: never invent 50 "free" credits here — that breaks quota handling
+            // (generate_alt_text compares fresh get_usage() vs backend errors; trial users must see Trial_Quota).
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+            return \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_local_usage_snapshot();
         }
 
         $has_license   = $this->has_active_license();
@@ -1637,6 +1625,22 @@ class API_Client_V2 {
      */
     public function has_reached_limit() {
         if ($this->has_active_license()) {
+            return false;
+        }
+
+        // Anonymous trial is enforced by Trial_Quota (local). Do not use monthly/API
+        // usage cache here — it often shows 0 for guests and blocks despite trial left.
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+        if ( \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() ) {
+            return \BeepBeepAI\AltTextGenerator\Trial_Quota::is_exhausted();
+        }
+
+        // Stale stored credentials can make is_trial_user() false while the site still has local trial slots.
+        // Only skip SaaS preflight for callers who are not API-authenticated (true guest path).
+        if (
+            ! $this->is_authenticated()
+            && \BeepBeepAI\AltTextGenerator\Trial_Quota::get_remaining() > 0
+        ) {
             return false;
         }
 
@@ -2067,44 +2071,60 @@ class API_Client_V2 {
             // DO NOT update usage from error responses - credits should only be deducted on success
             // The backend may have consumed credits during the failed attempt, but we shouldn't record it
             // Usage will be refreshed on successful generation
-            
-            // Before blocking, check cached usage - backend might be incorrectly reporting quota exhausted
+
             require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
-            $cached_usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
-            
-            // If cached usage shows credits available, verify with fresh API check
-            if (is_array($cached_usage) && isset($cached_usage['remaining']) && is_numeric($cached_usage['remaining']) && $cached_usage['remaining'] > 0) {
-                // Cached shows credits available - backend error might be incorrect
-                // Do a fresh check to see actual status
-                $fresh_usage = $this->get_usage();
-                
-                if (!is_wp_error($fresh_usage) && is_array($fresh_usage) && isset($fresh_usage['remaining']) && is_numeric($fresh_usage['remaining']) && $fresh_usage['remaining'] > 0) {
-                    // Fresh API check shows credits available - backend 429 was incorrect
-                    // Update cache with fresh data and return a retry error instead of blocking
-                    \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($fresh_usage);
-                    
-                    if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-                        \BeepBeepAI\AltTextGenerator\Debug_Log::log('warning', 'Backend returned quota response but cache and fresh API check show credits available', [
-                            'status_code' => $quota_status_code,
-                            'backend_code' => $quota_error_data['code'] ?? null,
-                            'cached_remaining' => $cached_usage['remaining'],
-                            'api_remaining' => $fresh_usage['remaining'],
-                            'backend_error' => $quota_error_data['error'] ?? $quota_error_data['message'] ?? 'Monthly limit reached',
-                        ], 'api');
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+            $is_anonymous_trial = class_exists( '\BeepBeepAI\AltTextGenerator\Trial_Quota' )
+                && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user();
+            // Stale JWT / option drift can make is_trial_user() false while local trial counters still show
+            // remaining generations — same UI as guest trial. Never emit quota_check_mismatch in that case.
+            $local_trial_remaining = class_exists( '\BeepBeepAI\AltTextGenerator\Trial_Quota' )
+                ? \BeepBeepAI\AltTextGenerator\Trial_Quota::get_remaining()
+                : 0;
+            $guest_trial_budget = ! $has_license && $local_trial_remaining > 0;
+            $skip_quota_mismatch_branch = $is_anonymous_trial || $guest_trial_budget;
+
+            // Anonymous trial: local Trial_Quota and unauthenticated get_usage() both read the same local
+            // counters, so the "mismatch" branch below would always fire while the API still returns 402/429.
+            // Treat the generation response as authoritative and surface a normal limit error instead.
+            if ( ! $skip_quota_mismatch_branch ) {
+                // Before blocking, check cached usage - backend might be incorrectly reporting quota exhausted
+                $cached_usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage( false );
+
+                // If cached usage shows credits available, verify with fresh API check
+                if ( is_array( $cached_usage ) && isset( $cached_usage['remaining'] ) && is_numeric( $cached_usage['remaining'] ) && $cached_usage['remaining'] > 0 ) {
+                    // Cached shows credits available - backend error might be incorrect
+                    // Do a fresh check to see actual status
+                    $fresh_usage = $this->get_usage();
+
+                    if ( ! is_wp_error( $fresh_usage ) && is_array( $fresh_usage ) && isset( $fresh_usage['remaining'] ) && is_numeric( $fresh_usage['remaining'] ) && $fresh_usage['remaining'] > 0 ) {
+                        // Fresh API check shows credits available - backend 429 was incorrect
+                        // Update cache with fresh data and return a retry error instead of blocking
+                        \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage( $fresh_usage );
+
+                        if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+                            \BeepBeepAI\AltTextGenerator\Debug_Log::log( 'warning', 'Backend returned quota response but cache and fresh API check show credits available', [
+                                'status_code'    => $quota_status_code,
+                                'backend_code'   => $quota_error_data['code'] ?? null,
+                                'cached_remaining' => $cached_usage['remaining'],
+                                'api_remaining'  => $fresh_usage['remaining'],
+                                'backend_error'  => $quota_error_data['error'] ?? $quota_error_data['message'] ?? 'Monthly limit reached',
+                            ], 'api' );
+                        }
+
+                        // Return a retry error instead of blocking completely
+                        return new \WP_Error(
+                            'quota_check_mismatch',
+                            __( 'Backend reported quota limit, but credits appear available. Please try again in a moment.', 'beepbeep-ai-alt-text-generator' ),
+                            [ 'usage' => $fresh_usage, 'retry_after' => 3 ]
+                        );
+                    } elseif ( ! is_wp_error( $fresh_usage ) && is_array( $fresh_usage ) && isset( $fresh_usage['remaining'] ) && is_numeric( $fresh_usage['remaining'] ) && $fresh_usage['remaining'] === 0 ) {
+                        // Fresh API check confirms 0 credits - backend was correct, update cache
+                        \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage( $fresh_usage );
                     }
-                    
-                    // Return a retry error instead of blocking completely
-                    return new \WP_Error(
-                        'quota_check_mismatch',
-                        __('Backend reported quota limit, but credits appear available. Please try again in a moment.', 'beepbeep-ai-alt-text-generator'),
-                        ['usage' => $fresh_usage, 'retry_after' => 3]
-                    );
-                } elseif (!is_wp_error($fresh_usage) && is_array($fresh_usage) && isset($fresh_usage['remaining']) && is_numeric($fresh_usage['remaining']) && $fresh_usage['remaining'] === 0) {
-                    // Fresh API check confirms 0 credits - backend was correct, update cache
-                    \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($fresh_usage);
                 }
             }
-            
+
             // Cached usage confirms no credits OR fresh check also shows exhausted
             return new \WP_Error(
                 'limit_reached',
