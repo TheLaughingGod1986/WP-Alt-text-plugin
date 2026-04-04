@@ -8571,6 +8571,534 @@ class Core {
     }
 
     /**
+     * Whether the current site should use POST /api/jobs for bulk (connected account, not anonymous trial).
+     */
+    public function should_use_licensed_bulk_jobs_api(): bool {
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+        return ! \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user();
+    }
+
+    /**
+     * Resolve attachment ID from a job item or result row.
+     *
+     * @param array<string, mixed> $row Backend item/result.
+     */
+    private function resolve_job_row_attachment_id(array $row): int {
+        foreach (['attachment_id', 'attachmentId', 'image_id', 'imageId', 'id'] as $key) {
+            if (! isset($row[ $key ])) {
+                continue;
+            }
+            $v = $row[ $key ];
+            if (is_numeric($v)) {
+                return max(0, (int) $v);
+            }
+            if (is_string($v) && is_numeric(trim($v))) {
+                return max(0, (int) trim($v));
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Normalize a job item into the same shape Core::generate_and_save expects from the alt-text API.
+     *
+     * @param array<string, mixed> $item Job item from GET /api/jobs/:id.
+     * @return array<string, mixed>
+     */
+    private function normalize_job_item_to_api_response(array $item): array {
+        $base = $item;
+        if (isset($item['result']) && is_array($item['result'])) {
+            $base = array_merge($item, $item['result']);
+        }
+        return $base;
+    }
+
+    /**
+     * Persist one completed job item to WordPress (meta, credits, review) if not already applied for this job.
+     *
+     * @param string               $job_id Job id (dedupe key).
+     * @param int                  $attachment_id Attachment ID.
+     * @param array<string, mixed> $item   Raw job item.
+     * @param string               $source Generation source key for analytics/meta.
+     * @param bool                 $regenerate Regenerate flag.
+     * @return bool True if this poll applied new data to the attachment.
+     */
+    private function persist_bulk_job_item_if_needed(string $job_id, int $attachment_id, array $item, string $source, bool $regenerate): bool {
+        $cache_key = 'bbai_job_applied_' . md5($job_id);
+        $applied = get_transient($cache_key);
+        $applied = is_array($applied) ? $applied : [];
+        if (! empty($applied[ (string) $attachment_id ])) {
+            return false;
+        }
+
+        $status = isset($item['status']) ? strtolower((string) $item['status']) : '';
+        if ($status !== '' && ! in_array($status, ['completed', 'complete', 'success', 'succeeded'], true)) {
+            return false;
+        }
+
+        $api_response = $this->normalize_job_item_to_api_response($item);
+        $alt_src = null;
+        $alt_text = $this->extract_alt_text_from_response($api_response, $alt_src);
+        if ($alt_text === '') {
+            return false;
+        }
+
+        $opts = get_option(self::OPTION_KEY, []);
+        $model = isset($api_response['meta']['modelUsed']) ? sanitize_text_field((string) $api_response['meta']['modelUsed']) : ($opts['model'] ?? 'gpt-4o');
+        $existing_alt = get_post_meta($attachment_id, '_wp_attachment_image_alt', true);
+        if (! $regenerate && $existing_alt && strcasecmp(trim($alt_text), trim((string) $existing_alt)) === 0) {
+            $applied[ (string) $attachment_id ] = 1;
+            set_transient($cache_key, $applied, 6 * HOUR_IN_SECONDS);
+            return false;
+        }
+
+        $bbai_has_license = $this->api_client->has_active_license();
+        if ($bbai_has_license && ! empty($api_response['organization'])) {
+            $existing_license = $this->api_client->get_license_data() ?? [];
+            $updated_license  = $existing_license;
+            $updated_license['organization'] = array_merge(
+                $existing_license['organization'] ?? [],
+                $api_response['organization']
+            );
+            if (! empty($api_response['site'])) {
+                $updated_license['site'] = $api_response['site'];
+            }
+            $updated_license['updated_at'] = current_time('mysql');
+            $this->api_client->set_license_data($updated_license);
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+            \BeepBeepAI\AltTextGenerator\Usage_Tracker::clear_cache();
+        }
+
+        $bbai_usage_data = [];
+        if (isset($api_response['credits_used'])) {
+            $bbai_usage_data['used'] = intval($api_response['credits_used']);
+        }
+        if (isset($api_response['credits_remaining'])) {
+            $bbai_usage_data['remaining'] = intval($api_response['credits_remaining']);
+        }
+        if (isset($api_response['total_limit'])) {
+            $bbai_usage_data['limit'] = intval($api_response['total_limit']);
+        } elseif (isset($api_response['limit'])) {
+            $bbai_usage_data['limit'] = intval($api_response['limit']);
+        } elseif (isset($bbai_usage_data['used'], $bbai_usage_data['remaining'])) {
+            $bbai_usage_data['limit'] = $bbai_usage_data['used'] + $bbai_usage_data['remaining'];
+        }
+        if (! empty($api_response['usage']) && is_array($api_response['usage'])) {
+            if (isset($api_response['usage']['prompt_tokens'])) {
+                $bbai_usage_data['prompt_tokens'] = intval($api_response['usage']['prompt_tokens']);
+            }
+            if (isset($api_response['usage']['completion_tokens'])) {
+                $bbai_usage_data['completion_tokens'] = intval($api_response['usage']['completion_tokens']);
+            }
+            if (isset($api_response['usage']['total_tokens'])) {
+                $bbai_usage_data['total_tokens'] = intval($api_response['usage']['total_tokens']);
+            }
+        }
+        if (! empty($bbai_usage_data) && (isset($bbai_usage_data['used']) || isset($bbai_usage_data['remaining']))) {
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+            \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($bbai_usage_data);
+        }
+
+        if ($bbai_has_license && ! empty($bbai_usage_data)) {
+            $existing_license = $this->api_client->get_license_data() ?? [];
+            $updated_license  = $existing_license ?: [];
+            $organization     = $updated_license['organization'] ?? [];
+            if (isset($bbai_usage_data['limit'])) {
+                $organization['limit'] = intval($bbai_usage_data['limit']);
+            }
+            if (isset($bbai_usage_data['used'])) {
+                $organization['used'] = max(0, intval($bbai_usage_data['used']));
+            }
+            if (isset($bbai_usage_data['remaining'])) {
+                $organization['remaining'] = max(0, intval($bbai_usage_data['remaining']));
+            }
+            $updated_license['organization'] = $organization;
+            $updated_license['updated_at'] = current_time('mysql');
+            $this->api_client->set_license_data($updated_license);
+        }
+
+        $usage_summary = $api_response['tokens'] ?? $api_response['usage'] ?? ['prompt' => 0, 'completion' => 0, 'total' => 0];
+        $usage_summary = is_array($usage_summary) ? $usage_summary : ['prompt' => 0, 'completion' => 0, 'total' => 0];
+        $result_usage = [
+            'prompt' => intval($usage_summary['prompt_tokens'] ?? $usage_summary['prompt'] ?? 0),
+            'completion' => intval($usage_summary['completion_tokens'] ?? $usage_summary['completion'] ?? 0),
+            'total' => intval($usage_summary['total_tokens'] ?? $usage_summary['total'] ?? 0),
+        ];
+
+        $user_id = get_current_user_id();
+        if ($user_id <= 0) {
+            $user_id = 0;
+        }
+
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-credit-usage-logger.php';
+        $credits_used = 1;
+        $token_cost = null;
+        if (isset($usage_summary['cost']) && is_numeric($usage_summary['cost'])) {
+            $token_cost = floatval($usage_summary['cost']);
+        }
+        $model_used = isset($usage_summary['model']) ? sanitize_text_field((string) $usage_summary['model']) : $model;
+        \BeepBeepAI\AltTextGenerator\Credit_Usage_Logger::log_usage(
+            $attachment_id,
+            $user_id,
+            $credits_used,
+            $token_cost,
+            $model_used,
+            $source
+        );
+
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/usage/class-usage-helpers.php';
+        $action_type = $regenerate ? 'regenerate' : (strpos($source, 'regenerate') !== false ? 'bulk' : 'bulk');
+        $tokens_used = $result_usage['total'] > 0 ? $result_usage['total'] : 1;
+        $usage_ctx = [
+            'image_id' => $attachment_id,
+            'post_id'  => null,
+        ];
+        $attachment = get_post($attachment_id);
+        if ($attachment && $attachment->post_parent > 0) {
+            $usage_ctx['post_id'] = $attachment->post_parent;
+        }
+        \BeepBeepAI\AltTextGenerator\Usage\record_usage_event($user_id, $tokens_used, $action_type, $usage_ctx);
+
+        $this->record_usage($result_usage);
+
+        if ($bbai_has_license) {
+            $this->refresh_license_usage_snapshot();
+        }
+
+        $review_result = null;
+        if (! empty($api_response['review']) && is_array($api_response['review'])) {
+            $review = $api_response['review'];
+            $issues = [];
+            if (! empty($review['issues']) && is_array($review['issues'])) {
+                foreach ($review['issues'] as $issue) {
+                    if (is_string($issue) && $issue !== '') {
+                        $issues[] = sanitize_text_field($issue);
+                    }
+                }
+            }
+            $review_usage = [
+                'prompt' => intval($review['usage']['prompt_tokens'] ?? 0),
+                'completion' => intval($review['usage']['completion_tokens'] ?? 0),
+                'total' => intval($review['usage']['total_tokens'] ?? 0),
+            ];
+            $review_result = [
+                'score' => intval($review['score'] ?? 0),
+                'status' => sanitize_key($review['status'] ?? ''),
+                'grade' => sanitize_text_field($review['grade'] ?? ''),
+                'summary' => isset($review['summary']) ? sanitize_text_field($review['summary']) : '',
+                'issues' => $issues,
+                'model' => sanitize_text_field($review['model'] ?? ''),
+                'usage' => $review_usage,
+            ];
+        }
+
+        $api_response['alt_text'] = $alt_text;
+        $this->persist_generation_result($attachment_id, $alt_text, $result_usage, $source, $model, 'api-proxy', $review_result);
+        $gen_ctx = $this->build_generation_context_for_attachment($attachment_id);
+        $this->maybe_emit_alt_generated_event(
+            (int) $attachment_id,
+            (string) $alt_text,
+            (string) $source,
+            (string) $model,
+            is_array($gen_ctx) ? $gen_ctx : [],
+            isset($api_response['meta']) && is_array($api_response['meta']) ? $api_response['meta'] : []
+        );
+
+        $applied[ (string) $attachment_id ] = 1;
+        set_transient($cache_key, $applied, 6 * HOUR_IN_SECONDS);
+
+        return true;
+    }
+
+    /**
+     * Apply organization / usage snapshot from the root job object when the backend sends aggregate quota there.
+     *
+     * @param array<string, mixed> $job Root job payload.
+     */
+    private function maybe_hydrate_usage_from_job_root(array $job): void {
+        if (! $this->api_client->has_active_license()) {
+            return;
+        }
+        $org = $job['organization'] ?? null;
+        if (! is_array($org) || empty($org)) {
+            return;
+        }
+        $existing_license = $this->api_client->get_license_data() ?? [];
+        $updated = $existing_license;
+        $updated['organization'] = array_merge($existing_license['organization'] ?? [], $org);
+        $updated['updated_at'] = current_time('mysql');
+        $this->api_client->set_license_data($updated);
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+        $snap = [];
+        if (isset($org['used'])) {
+            $snap['used'] = intval($org['used']);
+        }
+        if (isset($org['remaining'])) {
+            $snap['remaining'] = intval($org['remaining']);
+        }
+        if (isset($org['limit'])) {
+            $snap['limit'] = intval($org['limit']);
+        }
+        if (! empty($snap)) {
+            \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($snap);
+        }
+    }
+
+    /**
+     * AJAX: start licensed bulk job (POST /api/jobs once).
+     */
+    public function ajax_bulk_job_start() {
+        if (ob_get_level() === 0) {
+            ob_start();
+        } else {
+            ob_clean();
+        }
+
+        $action = 'beepbeepai_nonce';
+        if (! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'] ?? '')), $action)) {
+            wp_send_json_error(['message' => __('Invalid nonce.', 'beepbeep-ai-alt-text-generator')], 403);
+            return;
+        }
+        if (! $this->user_can_manage()) {
+            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            return;
+        }
+
+        if (! $this->should_use_licensed_bulk_jobs_api()) {
+            wp_send_json_error(
+                [
+                    'message' => __('Bulk job API is only available for connected accounts.', 'beepbeep-ai-alt-text-generator'),
+                    'code'    => 'bbai_jobs_not_eligible',
+                ],
+                400
+            );
+            return;
+        }
+
+        $attachment_ids = [];
+        if (isset($_POST['attachment_ids'])) {
+            if (is_array($_POST['attachment_ids'])) {
+                $attachment_ids = array_map('absint', wp_unslash($_POST['attachment_ids']));
+            } else {
+                $raw_json = sanitize_text_field(wp_unslash($_POST['attachment_ids']));
+                if ($raw_json !== '') {
+                    $decoded = json_decode($raw_json, true);
+                    if (is_array($decoded)) {
+                        $attachment_ids = array_map('absint', $decoded);
+                    }
+                }
+            }
+        }
+        $attachment_ids = array_values(array_filter(array_unique($attachment_ids), static function ($id) {
+            return $id > 0;
+        }));
+
+        if (empty($attachment_ids)) {
+            wp_send_json_error(['message' => __('No attachment IDs provided.', 'beepbeep-ai-alt-text-generator')]);
+            return;
+        }
+
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+        if (\BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_exhausted()) {
+            wp_send_json_error($this->get_trial_exhausted_payload());
+            return;
+        }
+
+        $regenerate = ! empty($_POST['regenerate']) && (string) $_POST['regenerate'] !== '0' && (string) $_POST['regenerate'] !== 'false';
+        $generation_source = isset($_POST['generation_source']) ? sanitize_key((string) wp_unslash($_POST['generation_source'])) : 'bulk';
+
+        Queue::clear_for_attachments($attachment_ids);
+
+        $job_items = [];
+        $preflight_errors = [];
+
+        foreach ($attachment_ids as $id) {
+            if (! $this->is_image($id)) {
+                $preflight_errors[] = [
+                    'attachment_id' => $id,
+                    'code'          => 'bbai_not_an_image',
+                    'message'       => __('Attachment is not an image.', 'beepbeep-ai-alt-text-generator'),
+                ];
+                continue;
+            }
+            $context = $this->build_generation_context_for_attachment($id);
+            $unit = $this->api_client->build_alt_text_job_item($id, is_array($context) ? $context : [], $regenerate);
+            if (is_wp_error($unit)) {
+                $preflight_errors[] = [
+                    'attachment_id' => $id,
+                    'code'          => $unit->get_error_code(),
+                    'message'       => $unit->get_error_message(),
+                ];
+                continue;
+            }
+            $job_items[] = $unit;
+        }
+
+        if (empty($job_items)) {
+            wp_send_json_error(
+                [
+                    'message' => __('No valid images could be queued for generation.', 'beepbeep-ai-alt-text-generator'),
+                    'preflight_errors' => $preflight_errors,
+                ],
+                400
+            );
+            return;
+        }
+
+        $created = $this->api_client->create_alt_text_bulk_job($job_items);
+        if (is_wp_error($created)) {
+            wp_send_json_error(
+                [
+                    'message' => $created->get_error_message(),
+                    'code'    => $created->get_error_code(),
+                    'data'    => $created->get_error_data(),
+                ],
+                400
+            );
+            return;
+        }
+
+        $job_id = $created['jobId'] ?? $created['job_id'] ?? $created['id'] ?? '';
+        $job_id = is_string($job_id) ? $job_id : (is_scalar($job_id) ? (string) $job_id : '');
+        if ($job_id === '') {
+            wp_send_json_error(['message' => __('Job created but no job id was returned.', 'beepbeep-ai-alt-text-generator')], 500);
+            return;
+        }
+
+        $owner_key = 'bbai_job_owner_' . md5($job_id);
+        set_transient($owner_key, get_current_user_id(), DAY_IN_SECONDS);
+
+        $meta_key = 'bbai_job_meta_' . md5($job_id);
+        set_transient(
+            $meta_key,
+            [
+                'source'     => $generation_source,
+                'regenerate' => $regenerate,
+                'requested'  => count($attachment_ids),
+                'queued'     => count($job_items),
+            ],
+            DAY_IN_SECONDS
+        );
+
+        if (ob_get_level() > 0) {
+            ob_clean();
+        }
+
+        wp_send_json_success(
+            [
+                'job'              => $created,
+                'job_id'           => $job_id,
+                'poll_url'         => $created['pollUrl'] ?? $created['poll_url'] ?? '',
+                'preflight_errors' => $preflight_errors,
+                'requested_count'  => count($attachment_ids),
+                'queued_count'     => count($job_items),
+            ]
+        );
+    }
+
+    /**
+     * AJAX: poll licensed bulk job and persist newly completed items.
+     */
+    public function ajax_bulk_job_poll() {
+        if (ob_get_level() === 0) {
+            ob_start();
+        } else {
+            ob_clean();
+        }
+
+        $action = 'beepbeepai_nonce';
+        if (! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'] ?? '')), $action)) {
+            wp_send_json_error(['message' => __('Invalid nonce.', 'beepbeep-ai-alt-text-generator')], 403);
+            return;
+        }
+        if (! $this->user_can_manage()) {
+            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            return;
+        }
+
+        if (! $this->should_use_licensed_bulk_jobs_api()) {
+            wp_send_json_error(['message' => __('Not eligible.', 'beepbeep-ai-alt-text-generator'), 'code' => 'bbai_jobs_not_eligible'], 400);
+            return;
+        }
+
+        $job_id = isset($_POST['job_id']) ? sanitize_text_field(wp_unslash($_POST['job_id'])) : '';
+        $job_id = trim($job_id);
+        if ($job_id === '') {
+            wp_send_json_error(['message' => __('Missing job id.', 'beepbeep-ai-alt-text-generator')], 400);
+            return;
+        }
+
+        $owner_key = 'bbai_job_owner_' . md5($job_id);
+        $owner = get_transient($owner_key);
+        if ($owner === false || (int) $owner !== (int) get_current_user_id()) {
+            wp_send_json_error(['message' => __('This job cannot be accessed.', 'beepbeep-ai-alt-text-generator'), 'code' => 'bbai_job_forbidden'], 403);
+            return;
+        }
+
+        $meta_key = 'bbai_job_meta_' . md5($job_id);
+        $job_meta = get_transient($meta_key);
+        $job_meta = is_array($job_meta) ? $job_meta : [];
+        $source = isset($job_meta['source']) ? sanitize_key((string) $job_meta['source']) : 'bulk';
+        $regenerate = ! empty($job_meta['regenerate']);
+
+        $job = $this->api_client->get_alt_text_job_status($job_id);
+        if (is_wp_error($job)) {
+            wp_send_json_error(
+                [
+                    'message' => $job->get_error_message(),
+                    'code'    => $job->get_error_code(),
+                ],
+                400
+            );
+            return;
+        }
+
+        $this->maybe_hydrate_usage_from_job_root($job);
+
+        $items = $job['items'] ?? [];
+        if (! is_array($items) || empty($items)) {
+            $results = $job['results'] ?? [];
+            if (is_array($results) && ! empty($results)) {
+                $items = $results;
+            }
+        }
+
+        $updated_images = [];
+        if (is_array($items)) {
+            foreach ($items as $item) {
+                if (! is_array($item)) {
+                    continue;
+                }
+                $aid = $this->resolve_job_row_attachment_id($item);
+                if ($aid <= 0) {
+                    continue;
+                }
+                if ($this->persist_bulk_job_item_if_needed($job_id, $aid, $item, $source, $regenerate)) {
+                    $updated_images[] = [
+                        'id'       => $aid,
+                        'src'      => (string) wp_get_attachment_url($aid),
+                        'alt_text' => (string) get_post_meta($aid, '_wp_attachment_image_alt', true),
+                    ];
+                }
+            }
+        }
+
+        Usage_Tracker::clear_cache();
+        $this->invalidate_stats_cache();
+
+        if (ob_get_level() > 0) {
+            ob_clean();
+        }
+
+        wp_send_json_success(
+            [
+                'job'            => $job,
+                'updated_images' => $updated_images,
+            ]
+        );
+    }
+
+    /**
      * AJAX handler: Inline generation for selected attachment IDs (used by progress modal)
      */
     public function ajax_inline_generate() {

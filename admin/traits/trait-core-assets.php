@@ -241,7 +241,20 @@ trait Core_Assets {
             true
         );
 
-        wp_enqueue_script('bbai-admin', $base_url . $admin_file, ['jquery', 'wp-i18n', 'bbai-toast', 'bbai-banner-message', 'bbai-telemetry'], $admin_version, true);
+        $bbai_admin_script_deps = ['jquery', 'wp-i18n', 'bbai-toast', 'bbai-banner-message', 'bbai-telemetry'];
+        $bbai_licensed_bulk_client = 'assets/js/admin/bbai-licensed-bulk-job-client.js';
+        if ( is_readable( $base_path . $bbai_licensed_bulk_client ) ) {
+            wp_enqueue_script(
+                'bbai-licensed-bulk-job-client',
+                $base_url . $bbai_licensed_bulk_client,
+                ['jquery'],
+                $this->get_asset_version( $bbai_licensed_bulk_client, '1.0.0', $base_path ),
+                true
+            );
+            $bbai_admin_script_deps[] = 'bbai-licensed-bulk-job-client';
+        }
+
+        wp_enqueue_script('bbai-admin', $base_url . $admin_file, $bbai_admin_script_deps, $admin_version, true);
         wp_localize_script('bbai-admin', 'BBAI', [
             'nonce'     => wp_create_nonce('wp_rest'),
             'rest'      => esc_url_raw(rest_url('bbai/v1/')),
@@ -281,6 +294,7 @@ trait Core_Assets {
             'can_manage' => $this->user_can_manage(),
             'logout_redirect' => admin_url('admin.php?page=bbai'),
             'is_guest_trial' => !empty($trial_status['should_gate']),
+            'use_licensed_bulk_jobs' => method_exists($this, 'should_use_licensed_bulk_jobs_api') && $this->should_use_licensed_bulk_jobs_api(),
             'anon_cookie_name' => function_exists('\BeepBeepAI\AltTextGenerator\bbai_get_anon_cookie_name')
                 ? \BeepBeepAI\AltTextGenerator\bbai_get_anon_cookie_name()
                 : 'bbai_anon_id',
@@ -1145,6 +1159,7 @@ trait Core_Assets {
             'logout_redirect' => admin_url('admin.php?page=bbai'),
             'stripe_links' => self::DEFAULT_STRIPE_LINKS,
             'is_guest_trial' => $bbai_upgrade_path_guest,
+            'use_licensed_bulk_jobs' => method_exists($this, 'should_use_licensed_bulk_jobs_api') && $this->should_use_licensed_bulk_jobs_api(),
             'anon_cookie_name' => $anon_cookie_name,
         ]);
         wp_localize_script('bbai-dashboard', 'bbai_env', [

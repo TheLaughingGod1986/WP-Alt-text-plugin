@@ -13758,10 +13758,16 @@
             return parts.join(' ');
         }
 
+        var finished = state.processed + state.failed;
+        if (finished === 0 && state.skipped === 0) {
+            return __('Preparing images…', 'beepbeep-ai-alt-text-generator');
+        }
+
         return sprintf(
-            __('%1$s of %2$s completed', 'beepbeep-ai-alt-text-generator'),
-            formatDashboardNumber(state.current),
-            formatDashboardNumber(state.total)
+            __('%1$s of %2$s finished — %3$s left', 'beepbeep-ai-alt-text-generator'),
+            formatDashboardNumber(finished),
+            formatDashboardNumber(state.total),
+            formatDashboardNumber(state.pending)
         );
     }
 
@@ -13907,8 +13913,215 @@
         $log.scrollTop($log[0].scrollHeight);
     }
 
+    function markBulkLibraryRowsQueued(ids) {
+        if (!ids || !ids.length) {
+            return;
+        }
+        ids.forEach(function(rawId) {
+            var id = parseInt(rawId, 10);
+            if (!id) {
+                return;
+            }
+            var row = document.querySelector('.bbai-library-row[data-attachment-id="' + id + '"]');
+            if (row) {
+                row.classList.add('bbai-library-row--bulk-queued');
+            }
+        });
+    }
+
+    function clearBulkLibraryRowGenerationUi(ids) {
+        if (!ids || !ids.length) {
+            return;
+        }
+        ids.forEach(function(rawId) {
+            var id = parseInt(rawId, 10);
+            if (!id) {
+                return;
+            }
+            var row = document.querySelector('.bbai-library-row[data-attachment-id="' + id + '"]');
+            if (row) {
+                row.classList.remove(
+                    'bbai-library-row--bulk-queued',
+                    'bbai-library-row--bulk-failed',
+                    'bbai-library-row--processing'
+                );
+            }
+        });
+        var progressBar = document.querySelector('[data-bbai-library-progressbar]');
+        if (progressBar) {
+            progressBar.classList.remove('bbai-library-progressbar--busy');
+        }
+    }
+
+    function useLicensedBulkJobsApi() {
+        return !!(window.bbaiLicensedBulkJobClient && window.bbaiLicensedBulkJobClient.isEligible());
+    }
+
+    function stopLicensedBulkJobPolling($modal) {
+        if (window.bbaiLicensedBulkJobClient && window.bbaiLicensedBulkJobClient.stopPolling) {
+            window.bbaiLicensedBulkJobClient.stopPolling($modal);
+        }
+    }
+
+    /**
+     * Licensed bulk: delegates to bbai-licensed-bulk-job-client.js (POST /api/jobs + poll).
+     */
+    function startLicensedBulkJobFlow(normalizedIds, source) {
+        var $modal = $('#bbai-bulk-progress-modal');
+        var C = window.bbaiLicensedBulkJobClient;
+        if (!$modal.length || !normalizedIds || !normalizedIds.length) {
+            return;
+        }
+        if (!C || typeof C.run !== 'function') {
+            processInlineGenerationQueue(normalizedIds, 1);
+            return;
+        }
+
+        $modal.removeData('bbaiBulkJobMinimizedForLongRun');
+
+        var total = normalizedIds.length;
+        var src = String(source || 'generate-missing');
+
+        C.run({
+            $modal: $modal,
+            attachmentIds: normalizedIds,
+            source: src,
+            strings: {
+                startingGeneration: __('Starting generation…', 'beepbeep-ai-alt-text-generator'),
+                sendingBatch: __('Sending batch to the server…', 'beepbeep-ai-alt-text-generator'),
+                couldNotStart: __('Could not start bulk generation.', 'beepbeep-ai-alt-text-generator'),
+                startTimeout: __(
+                    'Starting the batch timed out. Please try again with fewer images or check your connection.',
+                    'beepbeep-ai-alt-text-generator'
+                ),
+                noJobId: __('No job id returned.', 'beepbeep-ai-alt-text-generator'),
+                jobStartedProcessing: __('Generation job started — processing images…', 'beepbeep-ai-alt-text-generator'),
+                batchAccepted: __('Batch accepted. Processing on the server…', 'beepbeep-ai-alt-text-generator')
+            },
+            formatImageError: function(pid, msg) {
+                return sprintf(__('Image #%d: %s', 'beepbeep-ai-alt-text-generator'), pid, msg);
+            },
+            armStallHint: function() {
+                var stallT = window.setTimeout(function() {
+                    var st = getBulkProgressState($modal);
+                    if (st.complete) {
+                        return;
+                    }
+                    logBulkProgressSuccess(
+                        __(
+                            'Still starting… Generation will continue. You can minimize this window and keep using the ALT Library.',
+                            'beepbeep-ai-alt-text-generator'
+                        )
+                    );
+                }, 35000);
+                $modal.data('bbaiBulkStallTimer', stallT);
+            },
+            clearStallHint: function() {
+                var stallClear = $modal.data('bbaiBulkStallTimer');
+                if (stallClear) {
+                    clearTimeout(stallClear);
+                }
+                $modal.removeData('bbaiBulkStallTimer');
+            },
+            onLogSuccess: logBulkProgressSuccess,
+            onLogError: logBulkProgressError,
+            onTitle: updateBulkProgressTitle,
+            onNotEligibleFallback: function(ids) {
+                processInlineGenerationQueue(ids, 1);
+            },
+            onFatalNoAjax: function() {
+                logBulkProgressError(__('AJAX endpoint unavailable.', 'beepbeep-ai-alt-text-generator'));
+                finalizeInlineGeneration(0, 0, 0, null);
+            },
+            onPollStarted: function(payload) {
+                dispatchAnalyticsEvent('bulk_generation_poll_started', {
+                    source: getAnalyticsPageSource(),
+                    generation_mode: src,
+                    job_id: payload.jobId,
+                    requested_count: payload.requested_count
+                });
+            },
+            onFirstItemCompleted: function(payload) {
+                dispatchAnalyticsEvent('bulk_generation_first_item_completed', {
+                    source: getAnalyticsPageSource(),
+                    generation_mode: src,
+                    job_id: payload.jobId
+                });
+            },
+            onProgressSeen: function() {
+                dispatchAnalyticsEvent(
+                    'bulk_generation_progress_seen',
+                    buildBulkProgressAnalyticsPayload(getBulkProgressState($modal))
+                );
+            },
+            applyUpdatedImages: applyUpdatedImagesFromEnvelope,
+            syncRowFromItemAlt: function(id, alt) {
+                syncLibraryRowAfterGeneration(id, alt, { meta: null, usage: null });
+            },
+            maybeMinimizeLongRun: function() {
+                if (typeof minimizeBulkProgress === 'function') {
+                    minimizeBulkProgress('long_running_job');
+                }
+            },
+            syncModalProgress: function(ctx) {
+                var job = ctx.job;
+                var jobState = ctx.jobState;
+                var totalN = ctx.total;
+                var finishedSlots = ctx.finishedSlots;
+                var terminal = ctx.terminal;
+                var backendPct = ctx.backendPercent;
+
+                var failedN = jobState.failures - (ctx.preFailed || 0);
+                if (failedN < 0) {
+                    failedN = 0;
+                }
+
+                var titleMsg;
+                if (terminal) {
+                    titleMsg = __('Finishing up…', 'beepbeep-ai-alt-text-generator');
+                } else if (jobState.successes + failedN === 0) {
+                    titleMsg = __('Preparing images…', 'beepbeep-ai-alt-text-generator');
+                } else {
+                    var activeIdx = Math.min(totalN, jobState.successes + failedN + 1);
+                    titleMsg = sprintf(
+                        __('Generating image %1$d of %2$d…', 'beepbeep-ai-alt-text-generator'),
+                        activeIdx,
+                        totalN
+                    );
+                }
+
+                var st = syncBulkProgressState($modal, {
+                    total: totalN,
+                    processed: jobState.successes,
+                    failed: jobState.failures,
+                    skipped: 0,
+                    source: src,
+                    activeTitle: titleMsg,
+                    quotaBlocked: false,
+                    quotaError: null,
+                    complete: false
+                });
+                updateBulkProgressTitle(titleMsg);
+                updateBulkProgress(finishedSlots, totalN, null, {
+                    backendPercent: backendPct
+                });
+
+                if (window.bbaiJobState) {
+                    window.bbaiJobState.update({
+                        progress: st.current,
+                        label: titleMsg
+                    });
+                }
+            },
+            finalize: function(successes, failures, skipped) {
+                finalizeInlineGeneration(successes, failures, skipped, null);
+            }
+        });
+    }
+
     /**
      * Begin inline generation after queue completes.
+     * Connected accounts: licensed bulk job client (POST /api/jobs + poll). Guest trial: sequential inline_generate per image.
      */
     function startInlineGeneration(idList, source) {
         if (!idList || !idList.length || !hasBulkConfig) {
@@ -13936,15 +14149,22 @@
             requested_count: normalized.length
         });
 
-        var progressTitle = source === 'fix-all-issues'
-            ? __('Optimizing ALT text...', 'beepbeep-ai-alt-text-generator')
-            : __('Generating ALT text...', 'beepbeep-ai-alt-text-generator');
+        dispatchAnalyticsEvent('bulk_generation_started', {
+            source: getAnalyticsPageSource(),
+            generation_mode: source || 'generate-missing',
+            requested_count: normalized.length,
+            strategy: useLicensedBulkJobsApi() ? 'api_jobs' : 'sequential_per_image'
+        });
+
+        markBulkLibraryRowsQueued(normalized);
+
+        var progressTitle = __('Preparing images…', 'beepbeep-ai-alt-text-generator');
         var modalState;
         var intro = source === 'fix-all-issues'
             ? sprintf(
                 _n(
-                    'Starting automatic optimization for %d image...',
-                    'Starting automatic optimization for %d images...',
+                    'Preparing automatic optimization for %d image…',
+                    'Preparing automatic optimization for %d images…',
                     normalized.length,
                     'beepbeep-ai-alt-text-generator'
                 ),
@@ -13952,8 +14172,8 @@
             )
             : sprintf(
                 _n(
-                    'Starting inline generation for %d image...',
-                    'Starting inline generation for %d images...',
+                    'Preparing %d image for generation…',
+                    'Preparing %d images for generation…',
                     normalized.length,
                     'beepbeep-ai-alt-text-generator'
                 ),
@@ -13988,7 +14208,13 @@
         }
 
         $modal.data('batchQueue', normalized.slice(0));
-        runInlineGenerateBatch(normalized, source || 'generate-missing');
+
+        if (useLicensedBulkJobsApi()) {
+            startLicensedBulkJobFlow(normalized, source || 'generate-missing');
+            return;
+        }
+
+        processInlineGenerationQueue(normalized, 1);
     }
 
     /**
@@ -14009,15 +14235,56 @@
         var quotaError = null;
         var quotaLimitTracked = false;
         var partialQuotaTracked = false;
+        var progressSeenTracked = false;
 
-        function syncState() {
+        function clearStalledWatch() {
+            var t = $modal.data('bbaiBulkStallTimer');
+            if (t) {
+                clearTimeout(t);
+            }
+            $modal.removeData('bbaiBulkStallTimer');
+        }
+
+        function armStalledWatch() {
+            clearStalledWatch();
+            var timerId = window.setTimeout(function() {
+                if (blockedByQuota) {
+                    return;
+                }
+                if (successes + failures > 0) {
+                    return;
+                }
+                var st = getBulkProgressState($modal);
+                if (st.complete) {
+                    return;
+                }
+                logBulkProgressSuccess(
+                    __('Still starting… Generation will continue. You can minimize this window and keep using the ALT Library.', 'beepbeep-ai-alt-text-generator')
+                );
+                dispatchAnalyticsEvent(
+                    'bulk_generation_stalled_fallback_shown',
+                    buildBulkProgressAnalyticsPayload(st)
+                );
+            }, 40000);
+            $modal.data('bbaiBulkStallTimer', timerId);
+        }
+
+        armStalledWatch();
+
+        function syncState(activeTitleOverride) {
+            var prev = getBulkProgressState($modal);
+            var fallbackTitle = getBulkProgressDefaultTitle(String($modal.data('source') || 'generate-missing'));
+            var nextTitle = prev.activeTitle || fallbackTitle;
+            if (activeTitleOverride !== undefined && activeTitleOverride !== null && activeTitleOverride !== '') {
+                nextTitle = activeTitleOverride;
+            }
             return syncBulkProgressState($modal, {
                 total: total,
                 processed: successes,
                 failed: failures,
                 skipped: skipped,
                 source: String($modal.data('source') || 'generate-missing'),
-                activeTitle: getBulkProgressDefaultTitle(String($modal.data('source') || 'generate-missing')),
+                activeTitle: nextTitle,
                 quotaBlocked: blockedByQuota,
                 quotaError: quotaError,
                 complete: false
@@ -14028,6 +14295,7 @@
             var unstartedCount = queue.length;
             var state;
 
+            clearStalledWatch();
             blockedByQuota = true;
             quotaError = mapGenerationErrorToUi(error || { code: 'quota_exhausted' });
             skipped += 1 + unstartedCount;
@@ -14083,6 +14351,28 @@
             var id = queue.shift();
             active++;
 
+            var rowEl = document.querySelector('.bbai-library-row[data-attachment-id="' + id + '"]');
+            if (rowEl) {
+                rowEl.classList.remove('bbai-library-row--bulk-queued');
+                if (typeof window.bbaiSetRowProcessing === 'function') {
+                    window.bbaiSetRowProcessing(rowEl);
+                } else {
+                    rowEl.classList.add('bbai-library-row--processing');
+                }
+            }
+
+            var ordinal = successes + failures + skipped + 1;
+            var generatingTitle = sprintf(
+                __('Generating ALT text for image %1$d of %2$d…', 'beepbeep-ai-alt-text-generator'),
+                ordinal,
+                total
+            );
+            syncState(generatingTitle);
+            updateBulkProgressTitle(generatingTitle);
+            if (window.bbaiJobState) {
+                window.bbaiJobState.update({ label: generatingTitle });
+            }
+
             generateAltTextForId(id)
                 .then(function(result) {
                     successes++;
@@ -14090,10 +14380,21 @@
                     var title = result && result.title
                         ? result.title
                         : sprintf(__('Generated alt text for image #%d', 'beepbeep-ai-alt-text-generator'), id);
+                    if (!progressSeenTracked) {
+                        progressSeenTracked = true;
+                        clearStalledWatch();
+                        dispatchAnalyticsEvent(
+                            'bulk_generation_progress_seen',
+                            buildBulkProgressAnalyticsPayload(getBulkProgressState($modal))
+                        );
+                    }
                     var state = syncState();
                     updateBulkProgress(state.current, state.total, title);
                     if (window.bbaiJobState) {
                         window.bbaiJobState.tick({ success: true, title: title });
+                    }
+                    if (rowEl && typeof window.bbaiSetRowDone === 'function') {
+                        window.bbaiSetRowDone(rowEl);
                     }
                 })
                 .catch(function(error) {
@@ -14106,6 +14407,14 @@
                     }
 
                     failures++;
+                    if (!progressSeenTracked) {
+                        progressSeenTracked = true;
+                        clearStalledWatch();
+                        dispatchAnalyticsEvent(
+                            'bulk_generation_progress_seen',
+                            buildBulkProgressAnalyticsPayload(getBulkProgressState($modal))
+                        );
+                    }
                     var mappedError = mapGenerationErrorToUi(error);
                     var state = syncState();
                     var message = sprintf(__('Image #%d: %s', 'beepbeep-ai-alt-text-generator'), id, mappedError.rowMessage);
@@ -14113,6 +14422,15 @@
                     updateBulkProgress(state.current, state.total);
                     if (window.bbaiJobState) {
                         window.bbaiJobState.tick({ success: false, title: message });
+                    }
+                    if (rowEl) {
+                        rowEl.classList.remove('bbai-library-row--processing', 'bbai-library-row--bulk-queued');
+                        rowEl.classList.add('bbai-library-row--bulk-failed');
+                        window.setTimeout(function() {
+                            if (rowEl) {
+                                rowEl.classList.remove('bbai-library-row--bulk-failed');
+                            }
+                        }, 8000);
                     }
                 })
                 .finally(function() {
@@ -14136,6 +14454,18 @@
 
     function finalizeInlineGeneration(successes, failures, skipped, quotaError) {
         var $modal = $('#bbai-bulk-progress-modal');
+        if ($modal.length) {
+            stopLicensedBulkJobPolling($modal);
+            var stallT = $modal.data('bbaiBulkStallTimer');
+            if (stallT) {
+                clearTimeout(stallT);
+            }
+            $modal.removeData('bbaiBulkStallTimer');
+            var batchIds = $modal.data('batchQueue');
+            if (batchIds && batchIds.length) {
+                clearBulkLibraryRowGenerationUi(batchIds);
+            }
+        }
         var prior = getBulkProgressState($modal);
         var state = syncBulkProgressState($modal, {
             processed: successes,
@@ -14173,7 +14503,13 @@
         }
 
         if (!quotaError) {
-            dispatchAnalyticsEvent('batch_generation_completed', buildBulkProgressAnalyticsPayload(state));
+            var completedPayload = buildBulkProgressAnalyticsPayload(state);
+            dispatchAnalyticsEvent('batch_generation_completed', completedPayload);
+            dispatchAnalyticsEvent('bulk_generation_completed', completedPayload);
+        }
+
+        if (!quotaError && successes > 0 && failures > 0) {
+            dispatchAnalyticsEvent('bulk_generation_partial_failure', buildBulkProgressAnalyticsPayload(state));
         }
 
         if (!quotaError && successes > 0) {
@@ -14566,176 +14902,6 @@
     }
 
     /**
-     * Single request: all attachment IDs; counts and trial state come from response.data only.
-     */
-    function runInlineGenerateBatch(ids, source) {
-        var ajaxUrl = (window.bbai_ajax && (window.bbai_ajax.ajax_url || window.bbai_ajax.ajaxurl)) || '';
-        var nonceValue = (window.bbai_ajax && window.bbai_ajax.nonce) || '';
-        var $modal = $('#bbai-bulk-progress-modal');
-
-        if (!ajaxUrl || !ids || !ids.length) {
-            return;
-        }
-
-        var timeoutMs = Math.min(600000, Math.max(90000, ids.length * 40000));
-
-        $.ajax({
-            url: ajaxUrl,
-            method: 'POST',
-            dataType: 'json',
-            timeout: timeoutMs,
-            data: {
-                action: 'beepbeepai_inline_generate',
-                attachment_ids: JSON.stringify(ids),
-                nonce: nonceValue
-            }
-        })
-            .done(function(response) {
-                console.log('[BBAI] Generation result', response && response.data ? response.data : response);
-
-                if (response && response.success && response.data) {
-                    var d = response.data;
-                    var proc = readInlineGenerationInt(d, 'processed_count');
-                    var procable = readInlineGenerationInt(d, 'processable_count');
-                    var failed = readInlineGenerationInt(d, 'failed_count');
-                    var skippedLim = readInlineGenerationInt(d, 'skipped_due_to_limit');
-                    var trialExhausted = !!d.trial_exhausted_after;
-
-                    if (proc === null) {
-                        proc = 0;
-                    }
-                    if (procable === null) {
-                        procable = ids.length;
-                    }
-                    if (failed === null) {
-                        failed = 0;
-                    }
-                    if (skippedLim === null) {
-                        skippedLim = 0;
-                    }
-
-                    applyUpdatedImagesFromEnvelope(d.updated_images);
-
-                    applyInlineGenerationTrialMetaToUi(d);
-
-                    if (typeof window.alttextai_refresh_usage === 'function') {
-                        window.alttextai_refresh_usage();
-                    }
-
-                    var pseudoQuota = null;
-                    if (trialExhausted && (skippedLim > 0 || proc < procable)) {
-                        pseudoQuota = mapGenerationErrorToUi({
-                            code: 'bbai_trial_exhausted',
-                            message: __('Trial credit limit reached.', 'beepbeep-ai-alt-text-generator'),
-                            usage: getUsageSnapshot(null)
-                        });
-                    }
-
-                    finalizeInlineGenerationFromBatchEnvelope({
-                        processed: proc,
-                        failed: failed,
-                        skipped: skippedLim,
-                        total: procable,
-                        trialExhaustedAfter: trialExhausted,
-                        quotaError: pseudoQuota,
-                        source: source || 'generate-missing'
-                    });
-
-                    return;
-                }
-
-                var errMsg = __('Generation failed.', 'beepbeep-ai-alt-text-generator');
-                var errCode = 'api_error';
-                var errUsage = null;
-                var errRem = null;
-                if (response && response.data) {
-                    if (response.data.message) {
-                        errMsg = response.data.message;
-                    }
-                    if (response.data.code) {
-                        errCode = response.data.code;
-                    }
-                    errUsage = response.data.usage || null;
-                    if (response.data.trial_remaining_after !== undefined && response.data.trial_remaining_after !== null) {
-                        errRem = parseInt(response.data.trial_remaining_after, 10);
-                    } else if (response.data.remaining !== undefined) {
-                        errRem = parseInt(response.data.remaining, 10);
-                    }
-                }
-
-                logBulkProgressError(errMsg);
-                finalizeInlineGenerationFromBatchEnvelope({
-                    processed: 0,
-                    failed: 1,
-                    skipped: 0,
-                    total: Math.max(1, ids.length),
-                    trialExhaustedAfter: false,
-                    quotaError: mapGenerationErrorToUi({ code: errCode, message: errMsg, usage: errUsage, remaining: errRem }),
-                    source: source || 'generate-missing'
-                });
-            })
-            .fail(function(xhr) {
-                var errMsg = __('Request failed', 'beepbeep-ai-alt-text-generator');
-                var errData = xhr && xhr.responseJSON && xhr.responseJSON.data ? xhr.responseJSON.data : null;
-                if (errData && errData.message) {
-                    errMsg = errData.message;
-                }
-                console.log('[BBAI] Generation result', xhr && xhr.responseJSON ? xhr.responseJSON : xhr);
-                logBulkProgressError(errMsg);
-                finalizeInlineGenerationFromBatchEnvelope({
-                    processed: 0,
-                    failed: 1,
-                    skipped: 0,
-                    total: Math.max(1, ids.length),
-                    trialExhaustedAfter: false,
-                    quotaError: mapGenerationErrorToUi({
-                        code: (errData && errData.code) || 'request_failed',
-                        message: errMsg,
-                        usage: errData && errData.usage ? errData.usage : null
-                    }),
-                    source: source || 'generate-missing'
-                });
-            });
-    }
-
-    function finalizeInlineGenerationFromBatchEnvelope(opts) {
-        var $modal = $('#bbai-bulk-progress-modal');
-        var processed = Math.max(0, parseInt(opts && opts.processed, 10) || 0);
-        var failed = Math.max(0, parseInt(opts && opts.failed, 10) || 0);
-        var skipped = Math.max(0, parseInt(opts && opts.skipped, 10) || 0);
-        var total = Math.max(0, parseInt(opts && opts.total, 10) || 0);
-        var trialExhaustedAfter = !!(opts && opts.trialExhaustedAfter);
-        var quotaError = opts && opts.quotaError ? opts.quotaError : null;
-        var source = opts && opts.source ? opts.source : 'generate-missing';
-
-        if (!$modal.length) {
-            return;
-        }
-
-        $modal.data('source', source);
-        syncBulkProgressState($modal, {
-            total: total,
-            processed: processed,
-            failed: failed,
-            skipped: skipped,
-            trialExhaustedAfter: trialExhaustedAfter,
-            quotaBlocked: !!quotaError,
-            quotaError: quotaError,
-            complete: true,
-            source: source
-        });
-
-        if (skipped > 0) {
-            logBulkProgressQuotaSkip(
-                skipped,
-                __('credit limit reached', 'beepbeep-ai-alt-text-generator')
-            );
-        }
-
-        finalizeInlineGeneration(processed, failed, skipped, quotaError);
-    }
-
-    /**
      * Show bulk progress modal with detailed tracking
      */
     function showBulkProgress(label, total, current) {
@@ -14779,6 +14945,8 @@
     function startBulkProgressHelperRotation($modal) {
         stopBulkProgressHelperRotation($modal);
         var helpers = [
+            __('Preparing images…', 'beepbeep-ai-alt-text-generator'),
+            __('Starting generation…', 'beepbeep-ai-alt-text-generator'),
             __('Analyzing image content', 'beepbeep-ai-alt-text-generator'),
             __('Writing accessible descriptions', 'beepbeep-ai-alt-text-generator'),
             __('Optimizing for SEO', 'beepbeep-ai-alt-text-generator')
@@ -14819,6 +14987,9 @@
             '                <p class="bbai-bulk-progress__helper" aria-live="polite" hidden></p>' +
             '            </div>' +
             '            <div class="bbai-bulk-progress__header-actions">' +
+            '                <button type="button" class="button bbai-bulk-progress__minimize" data-bbai-bulk-progress-minimize="1">' +
+            escapeHtml(__('Continue in background', 'beepbeep-ai-alt-text-generator')) +
+            '</button>' +
             '                <button type="button" class="bbai-bulk-progress__close" aria-label="' + escapeHtml(__('Close', 'beepbeep-ai-alt-text-generator')) + '">&times;</button>' +
             '            </div>' +
             '        </div>' +
@@ -14889,12 +15060,16 @@
 
         // Close — hides modal, job continues in background
         $modal.find('.bbai-bulk-progress__close').on('click', function() {
-            minimizeBulkProgress();
+            minimizeBulkProgress('close');
+        });
+
+        $modal.on('click', '[data-bbai-bulk-progress-minimize]', function() {
+            minimizeBulkProgress('explicit_button');
         });
 
         // Overlay click also minimizes
         $modal.find('.bbai-bulk-progress-modal__overlay').on('click', function() {
-            minimizeBulkProgress();
+            minimizeBulkProgress('overlay');
         });
 
         $modal.on('click', '[data-bbai-bulk-progress-cta]', function() {
@@ -14909,19 +15084,19 @@
             );
 
             if (ctaConfig.action === 'signup') {
-                minimizeBulkProgress();
+                minimizeBulkProgress('quota_cta');
                 openAuthSignupModal();
                 return;
             }
 
             if (ctaConfig.action === 'upgrade') {
-                minimizeBulkProgress();
+                minimizeBulkProgress('quota_cta');
                 openUpgradeModal(ctaConfig.usage || getUsageSnapshot(null));
                 return;
             }
 
             if (ctaConfig.libraryUrl) {
-                minimizeBulkProgress();
+                minimizeBulkProgress('quota_cta');
                 window.location.href = ctaConfig.libraryUrl;
             }
         });
@@ -14929,7 +15104,7 @@
         $modal.on('click', '[data-bbai-bulk-progress-library]', function() {
             var ctaConfig = getBulkProgressQuotaCtaConfig(getBulkProgressState($modal));
             if (ctaConfig.libraryUrl) {
-                minimizeBulkProgress();
+                minimizeBulkProgress('quota_cta');
                 window.location.href = ctaConfig.libraryUrl;
             }
         });
@@ -14940,17 +15115,24 @@
     /**
      * Update bulk progress bar with detailed stats
      */
-    function updateBulkProgress(current, total, imageTitle) {
+    function updateBulkProgress(current, total, imageTitle, progressOptions) {
+        progressOptions = progressOptions || {};
         var $modal = $('#bbai-bulk-progress-modal');
         if (!$modal.length) return;
 
-        var percentage = total > 0 ? Math.round((current / total) * 100) : 0;
+        var backendPercent = progressOptions.backendPercent;
+        var percentage;
+        if (typeof backendPercent === 'number' && !isNaN(backendPercent) && backendPercent >= 0) {
+            percentage = Math.min(100, Math.round(backendPercent));
+        } else {
+            percentage = total > 0 ? Math.round((current / total) * 100) : 0;
+        }
         var startTime = $modal.data('startTime') || Date.now();
         var elapsed = (Date.now() - startTime) / 1000; // seconds
 
-        // Calculate ETA
+        // Calculate ETA (avoid vague "Calculating…" while nothing has finished yet)
         var bulkState = getBulkProgressState($modal);
-        var eta = __('Calculating...', 'beepbeep-ai-alt-text-generator');
+        var eta = __('Waiting for first image…', 'beepbeep-ai-alt-text-generator');
         if (bulkState.complete && bulkState.quotaBlocked) {
             eta = __('Stopped', 'beepbeep-ai-alt-text-generator');
         } else if (total > 0 && current >= total) {
@@ -15095,7 +15277,7 @@
     /**
      * Minimize — hides modal but job continues. Widget becomes visible.
      */
-    function minimizeBulkProgress() {
+    function minimizeBulkProgress(minimizeVia) {
         var $modal = $('#bbai-bulk-progress-modal');
         if ($modal.length) {
             $modal.removeClass('active');
@@ -15104,6 +15286,12 @@
         ensureBbaiDashboardMainVisible();
         if (window.bbaiJobState) {
             window.bbaiJobState.update({ modalVisible: false });
+        }
+        if ($modal.length && window.bbaiJobState && window.bbaiJobState.getState().running) {
+            dispatchAnalyticsEvent('bulk_generation_minimized', {
+                source: getAnalyticsPageSource(),
+                via: minimizeVia || 'unknown'
+            });
         }
         dismissGuestTrialBulkJobChrome();
     }

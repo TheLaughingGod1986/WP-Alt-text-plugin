@@ -2969,6 +2969,168 @@ class API_Client_V2 {
             'period_end' => $data['period_end'] ?? null,
         ];
     }
+
+    /**
+     * Build one job item payload for POST /api/jobs (same image/context shape as single /api/alt-text).
+     *
+     * @param int                  $image_id   Attachment ID.
+     * @param array<string, mixed> $context    From Core::build_generation_context_for_attachment().
+     * @param bool                 $regenerate Whether to bypass cache / force regeneration.
+     * @return array<string, mixed>|\WP_Error Item for the `items` array, or error.
+     */
+    public function build_alt_text_job_item(int $image_id, array $context, bool $regenerate = false) {
+        $image_url = wp_get_attachment_url($image_id);
+        $title     = get_the_title($image_id);
+        $caption   = wp_get_attachment_caption($image_id);
+        $filename  = $image_url ? wp_basename(wp_parse_url($image_url, PHP_URL_PATH)) : '';
+
+        $image_payload = $this->prepare_image_payload($image_id, $image_url, $title, $caption, $filename);
+
+        if (isset($image_payload['_error']) && $image_payload['_error'] === 'image_too_large') {
+            return new \WP_Error(
+                'image_too_large',
+                $image_payload['_error_message'] ?? __('Image file is too large.', 'beepbeep-ai-alt-text-generator'),
+                ['image_id' => $image_id]
+            );
+        }
+        if (isset($image_payload['_error']) && $image_payload['_error'] === 'image_too_small') {
+            return new \WP_Error(
+                'image_too_small',
+                $image_payload['_error_message'] ?? __('Image file is too small or invalid.', 'beepbeep-ai-alt-text-generator'),
+                ['image_id' => $image_id]
+            );
+        }
+        if (isset($image_payload['_error']) && $image_payload['_error'] === 'missing_image_data') {
+            return new \WP_Error(
+                'missing_image_data',
+                $image_payload['_error_message'] ?? __('Image data is missing.', 'beepbeep-ai-alt-text-generator'),
+                ['image_id' => $image_id]
+            );
+        }
+
+        $backend_context = [];
+        if (!empty($context['post_title'])) {
+            $backend_context['pageTitle'] = $context['post_title'];
+        }
+        if (!empty($context['title'])) {
+            $backend_context['title'] = $context['title'];
+        }
+        if (!empty($context['caption'])) {
+            $backend_context['caption'] = $context['caption'];
+        }
+
+        $image = [];
+        if (!empty($image_payload['image_base64'])) {
+            $image['base64'] = $image_payload['image_base64'];
+            $image['image_base64'] = $image_payload['image_base64'];
+        }
+        if (!empty($image_payload['image_url'])) {
+            $image['url'] = $image_payload['image_url'];
+        }
+        if (!empty($image_payload['width'])) {
+            $image['width'] = intval($image_payload['width']);
+        }
+        if (!empty($image_payload['height'])) {
+            $image['height'] = intval($image_payload['height']);
+        }
+        if (!empty($image_payload['mime_type'])) {
+            $image['mime_type'] = $image_payload['mime_type'];
+        }
+        if (!empty($image_payload['filename'])) {
+            $image['filename'] = $image_payload['filename'];
+        }
+
+        return [
+            'attachment_id' => $image_id,
+            'attachmentId'  => (string) $image_id,
+            'image_id'      => (string) $image_id,
+            'image'         => $image,
+            'context'       => $backend_context,
+            'regenerate'    => $regenerate ? true : false,
+        ];
+    }
+
+    /**
+     * Create a licensed bulk alt-text job (POST /api/jobs).
+     *
+     * @param array<int, array<string, mixed>> $job_items Items from build_alt_text_job_item().
+     * @return array<string, mixed>|\WP_Error Created job envelope (jobId, pollUrl, status, …).
+     */
+    public function create_alt_text_bulk_job(array $job_items) {
+        if (empty($job_items)) {
+            return new \WP_Error('bbai_job_empty', __('No images to process.', 'beepbeep-ai-alt-text-generator'));
+        }
+
+        $payload = [
+            'type'  => 'alt_text',
+            'items' => array_values($job_items),
+        ];
+        $payload = apply_filters('bbai_create_alt_text_job_payload', $payload, $job_items);
+
+        $timeout = (int) apply_filters('bbai_create_alt_text_job_timeout', 180);
+        $timeout = max(60, $timeout);
+
+        $response = $this->make_request('api/jobs', 'POST', $payload, $timeout, false, []);
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        if (empty($response['success'])) {
+            $error_data = isset($response['data']) && is_array($response['data']) ? $response['data'] : [];
+            $message = $error_data['message'] ?? $error_data['error'] ?? __('Failed to start bulk generation job.', 'beepbeep-ai-alt-text-generator');
+            return new \WP_Error(
+                'bbai_job_create_failed',
+                is_string($message) ? $message : __('Failed to start bulk generation job.', 'beepbeep-ai-alt-text-generator'),
+                [
+                    'status_code' => $response['status_code'] ?? 0,
+                    'api_response' => $error_data,
+                ]
+            );
+        }
+
+        $data = isset($response['data']) && is_array($response['data']) ? $response['data'] : [];
+        return $data;
+    }
+
+    /**
+     * Poll bulk job status (GET /api/jobs/:jobId).
+     *
+     * @param string $job_id Job identifier from create response.
+     * @return array<string, mixed>|\WP_Error Job payload from backend.
+     */
+    public function get_alt_text_job_status(string $job_id) {
+        $job_id = trim($job_id);
+        if ($job_id === '') {
+            return new \WP_Error('bbai_job_invalid_id', __('Invalid job id.', 'beepbeep-ai-alt-text-generator'));
+        }
+
+        $timeout = (int) apply_filters('bbai_poll_alt_text_job_timeout', 45);
+        $timeout = max(15, $timeout);
+
+        $endpoint = 'api/jobs/' . rawurlencode($job_id);
+        $response = $this->make_request($endpoint, 'GET', null, $timeout, false, []);
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        if (empty($response['success'])) {
+            $error_data = isset($response['data']) && is_array($response['data']) ? $response['data'] : [];
+            $message = $error_data['message'] ?? $error_data['error'] ?? __('Failed to load job status.', 'beepbeep-ai-alt-text-generator');
+            return new \WP_Error(
+                'bbai_job_poll_failed',
+                is_string($message) ? $message : __('Failed to load job status.', 'beepbeep-ai-alt-text-generator'),
+                [
+                    'status_code' => $response['status_code'] ?? 0,
+                    'api_response' => $error_data,
+                ]
+            );
+        }
+
+        $data = isset($response['data']) && is_array($response['data']) ? $response['data'] : [];
+        return $data;
+    }
 }
 
 if (!class_exists('BbAI_API_Client_V2')) {

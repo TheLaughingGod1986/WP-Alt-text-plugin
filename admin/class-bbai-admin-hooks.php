@@ -113,6 +113,8 @@ class Admin_Hooks {
 			'beepbeepai_reset_password'         => 'ajax_reset_password',
 			'beepbeepai_get_subscription_info'  => 'ajax_get_subscription_info',
 			'beepbeepai_inline_generate'        => 'ajax_inline_generate',
+			'beepbeepai_bulk_job_start'         => 'ajax_bulk_job_start',
+			'beepbeepai_bulk_job_poll'          => 'ajax_bulk_job_poll',
 			'beepbeepai_get_attachment_ids'     => 'ajax_get_attachment_ids',
 			'beepbeepai_activate_license'       => 'ajax_activate_license',
 			'beepbeepai_deactivate_license'     => 'ajax_deactivate_license',

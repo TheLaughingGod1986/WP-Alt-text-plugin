@@ -108,7 +108,7 @@
         var startTime = $modal.data('startTime') || Date.now();
         var elapsed = (Date.now() - startTime) / 1000;
 
-        var eta = 'Calculating...';
+        var eta = 'Waiting for first image…';
         if (current > 0 && elapsed > 0) {
             var avgTimePerImage = elapsed / current;
             var remaining = total - current;

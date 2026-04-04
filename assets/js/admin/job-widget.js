@@ -127,7 +127,7 @@
                    .addClass('bbai-job-widget--error');
             viewBtn.text('View');
         } else {
-            statusEl.text('Generating ALT text\u2026');
+            statusEl.text(state.label || 'Generating ALT text\u2026');
             $widget.find('.bbai-job-widget__progress-text').text(
                 state.progress + ' / ' + state.total
             );
