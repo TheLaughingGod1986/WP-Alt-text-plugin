@@ -191,16 +191,16 @@ $bbai_locked_decision_note = $bbai_credit_pack_description;
 
 // Logged-out / no SaaS link: pricing modal must prioritise account creation, never Growth checkout copy.
 if ( $bbai_modal_signup_first ) {
-	$r                            = $bbai_upgrade_cta_resolved;
-	$bbai_modal_title             = $r['modal_title_default'];
-	$bbai_modal_subtitle          = $r['modal_subtitle_default'];
-	$bbai_locked_modal_title      = $r['modal_title_default'];
-	$bbai_locked_modal_subtitle   = $r['modal_subtitle_default'];
-	$bbai_primary_button_label    = $r['modal_primary_label'];
+	$bbai_modal_copy              = $bbai_upgrade_cta_resolved;
+	$bbai_modal_title             = $bbai_modal_copy['modal_title_default'];
+	$bbai_modal_subtitle          = $bbai_modal_copy['modal_subtitle_default'];
+	$bbai_locked_modal_title      = $bbai_modal_copy['modal_title_default'];
+	$bbai_locked_modal_subtitle   = $bbai_modal_copy['modal_subtitle_default'];
+	$bbai_primary_button_label    = $bbai_modal_copy['modal_primary_label'];
 	$bbai_primary_price           = '';
 	$bbai_decision_eyebrow        = __( 'Next step', 'beepbeep-ai-alt-text-generator' );
-	$bbai_decision_title          = $r['primary_label'];
-	$bbai_decision_copy           = $r['tooltip_locked'];
+	$bbai_decision_title          = $bbai_modal_copy['primary_label'];
+	$bbai_decision_copy           = $bbai_modal_copy['tooltip_locked'];
 	$bbai_limit_label             = __( 'Get started', 'beepbeep-ai-alt-text-generator' );
 	$bbai_locked_decision_eyebrow = $bbai_decision_eyebrow;
 	$bbai_locked_decision_title   = $bbai_decision_title;

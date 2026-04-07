@@ -13,6 +13,8 @@ if (!defined('ABSPATH')) {
 ?>
 <?php
 $bbai_usage_surface = isset($usage_surface) && is_array($usage_surface) ? $usage_surface : [];
+$bbai_user_details = isset($user_details) && is_array($user_details) ? $user_details : null;
+$bbai_backend_user_activity = isset($backend_user_activity) && is_array($backend_user_activity) ? $backend_user_activity : [];
 $bbai_used          = (int) ($bbai_usage_surface['creditsUsed']      ?? ($current_usage['used']      ?? 0));
 $bbai_limit         = max(1, (int) ($bbai_usage_surface['creditsLimit'] ?? ($current_usage['limit'] ?? 50)));
 $bbai_remaining     = (int) ($bbai_usage_surface['creditsRemaining'] ?? ($current_usage['remaining'] ?? 0));
@@ -409,7 +411,7 @@ $bbai_ins_chips = isset($bbai_usage_insights['chips']) && is_array($bbai_usage_i
                 <dt><?php esc_html_e('Cycle reset', 'beepbeep-ai-alt-text-generator'); ?></dt>
                 <dd><?php echo '' !== $bbai_summary_reset_copy ? esc_html($bbai_summary_reset_copy) : esc_html('—'); ?></dd>
             </div>
-            <?php if (!empty($backend_user_activity['period_start']) && !empty($backend_user_activity['period_end'])) : ?>
+            <?php if (!empty($bbai_backend_user_activity['period_start']) && !empty($bbai_backend_user_activity['period_end'])) : ?>
                 <div class="bbai-usage-billing__item">
                     <dt><?php esc_html_e('Reporting period', 'beepbeep-ai-alt-text-generator'); ?></dt>
                     <dd>
@@ -417,8 +419,8 @@ $bbai_ins_chips = isset($bbai_usage_insights['chips']) && is_array($bbai_usage_i
                         printf(
                             /* translators: 1: period start date, 2: period end date */
                             esc_html__('%1$s – %2$s', 'beepbeep-ai-alt-text-generator'),
-                            esc_html(date_i18n(get_option('date_format'), strtotime($backend_user_activity['period_start']))),
-                            esc_html(date_i18n(get_option('date_format'), strtotime($backend_user_activity['period_end'])))
+                            esc_html(date_i18n(get_option('date_format'), strtotime($bbai_backend_user_activity['period_start']))),
+                            esc_html(date_i18n(get_option('date_format'), strtotime($bbai_backend_user_activity['period_end'])))
                         );
                         ?>
                     </dd>
@@ -448,19 +450,19 @@ $bbai_ins_chips = isset($bbai_usage_insights['chips']) && is_array($bbai_usage_i
         <?php endif; ?>
     </section>
 
-    <?php if ($view === 'user_detail' && $user_details) : ?>
+    <?php if ($view === 'user_detail' && $bbai_user_details) : ?>
     <div class="bbai-usage-supplemental">
         <div class="bbai-card bbai-user-details-card">
             <h2 class="bbai-card-title"><?php esc_html_e('User details', 'beepbeep-ai-alt-text-generator'); ?></h2>
-            <p><strong><?php esc_html_e('Name:', 'beepbeep-ai-alt-text-generator'); ?></strong> <?php echo esc_html($user_details['name'] ?? ''); ?></p>
-            <p><strong><?php esc_html_e('Email:', 'beepbeep-ai-alt-text-generator'); ?></strong> <?php echo esc_html($user_details['email'] ?? ''); ?></p>
-            <p><strong><?php esc_html_e('Total credits used:', 'beepbeep-ai-alt-text-generator'); ?></strong> <?php echo esc_html(number_format_i18n($user_details['total_credits'] ?? 0)); ?></p>
-            <p><strong><?php esc_html_e('Images processed:', 'beepbeep-ai-alt-text-generator'); ?></strong> <?php echo esc_html(number_format_i18n($user_details['images_processed'] ?? 0)); ?></p>
+            <p><strong><?php esc_html_e('Name:', 'beepbeep-ai-alt-text-generator'); ?></strong> <?php echo esc_html($bbai_user_details['name'] ?? ''); ?></p>
+            <p><strong><?php esc_html_e('Email:', 'beepbeep-ai-alt-text-generator'); ?></strong> <?php echo esc_html($bbai_user_details['email'] ?? ''); ?></p>
+            <p><strong><?php esc_html_e('Total credits used:', 'beepbeep-ai-alt-text-generator'); ?></strong> <?php echo esc_html(number_format_i18n($bbai_user_details['total_credits'] ?? 0)); ?></p>
+            <p><strong><?php esc_html_e('Images processed:', 'beepbeep-ai-alt-text-generator'); ?></strong> <?php echo esc_html(number_format_i18n($bbai_user_details['images_processed'] ?? 0)); ?></p>
         </div>
     </div>
     <?php endif; ?>
 
-    <?php if ($view === 'summary' && !empty($backend_user_activity['users'])) : ?>
+    <?php if ($view === 'summary' && !empty($bbai_backend_user_activity['users'])) : ?>
     <section class="bbai-usage-contributors" aria-labelledby="bbai-usage-contributors-heading">
         <h2 id="bbai-usage-contributors-heading" class="bbai-usage-contributors__title bbai-section-title"><?php esc_html_e('Top contributors', 'beepbeep-ai-alt-text-generator'); ?></h2>
         <p class="bbai-usage-contributors__lead bbai-ui-section-header__description"><?php esc_html_e('Users who consumed the most credits in the current reporting period.', 'beepbeep-ai-alt-text-generator'); ?></p>
@@ -477,7 +479,7 @@ $bbai_ins_chips = isset($bbai_usage_insights['chips']) && is_array($bbai_usage_i
             <tbody>
                 <?php
                 $bbai_rank = 1;
-                foreach ($backend_user_activity['users'] as $bbai_hero) :
+                foreach ($bbai_backend_user_activity['users'] as $bbai_hero) :
                     $bbai_hero_name  = $bbai_hero['display_name'] ?? $bbai_hero['user_name'] ?? $bbai_hero['name'] ?? $bbai_hero['user_email'] ?? $bbai_hero['email'] ?? __('Unknown user', 'beepbeep-ai-alt-text-generator');
                     $bbai_hero_email = $bbai_hero['user_email'] ?? $bbai_hero['email'] ?? '';
                     ?>

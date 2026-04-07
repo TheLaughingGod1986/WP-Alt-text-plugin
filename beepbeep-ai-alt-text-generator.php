@@ -250,10 +250,12 @@ add_action( 'admin_post_bbai_debug_export', 'beepbeepai_handle_debug_export_admi
 /**
  * Register the activation hook.
  */
-function beepbeepai_activate_current_site() {
-	require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-activator.php';
-	\BeepBeepAI\AltTextGenerator\Activator::activate();
-	\BeepBeepAI\AltTextGenerator\DB_Schema::install();
+if ( ! function_exists( 'beepbeepai_activate_current_site' ) ) {
+	function beepbeepai_activate_current_site() {
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-activator.php';
+		\BeepBeepAI\AltTextGenerator\Activator::activate();
+		\BeepBeepAI\AltTextGenerator\DB_Schema::install();
+	}
 }
 
 /**
@@ -261,34 +263,38 @@ function beepbeepai_activate_current_site() {
  *
  * @param bool $network_wide Whether the plugin was network-activated.
  */
-function beepbeepai_activate( $network_wide = false ) {
-	if ( is_multisite() && $network_wide ) {
-		$current_blog_id = get_current_blog_id();
-		$site_ids        = get_sites(
-			[
-				'fields' => 'ids',
-				'number' => 0,
-			]
-		);
+if ( ! function_exists( 'beepbeepai_activate' ) ) {
+	function beepbeepai_activate( $network_wide = false ) {
+		if ( is_multisite() && $network_wide ) {
+			$current_blog_id = get_current_blog_id();
+			$site_ids        = get_sites(
+				[
+					'fields' => 'ids',
+					'number' => 0,
+				]
+			);
 
-		foreach ( $site_ids as $site_id ) {
-			switch_to_blog( (int) $site_id );
-			beepbeepai_activate_current_site();
+			foreach ( $site_ids as $site_id ) {
+				switch_to_blog( (int) $site_id );
+				beepbeepai_activate_current_site();
+			}
+
+			switch_to_blog( $current_blog_id );
+			return;
 		}
 
-		switch_to_blog( $current_blog_id );
-		return;
+		beepbeepai_activate_current_site();
 	}
-
-	beepbeepai_activate_current_site();
 }
 
 /**
  * Register the deactivation hook.
  */
-function beepbeepai_deactivate_current_site() {
-	require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-deactivator.php';
-	\BeepBeepAI\AltTextGenerator\Deactivator::deactivate();
+if ( ! function_exists( 'beepbeepai_deactivate_current_site' ) ) {
+	function beepbeepai_deactivate_current_site() {
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-deactivator.php';
+		\BeepBeepAI\AltTextGenerator\Deactivator::deactivate();
+	}
 }
 
 /**
@@ -296,26 +302,28 @@ function beepbeepai_deactivate_current_site() {
  *
  * @param bool $network_wide Whether the plugin was network-deactivated.
  */
-function beepbeepai_deactivate( $network_wide = false ) {
-	if ( is_multisite() && $network_wide ) {
-		$current_blog_id = get_current_blog_id();
-		$site_ids        = get_sites(
-			[
-				'fields' => 'ids',
-				'number' => 0,
-			]
-		);
+if ( ! function_exists( 'beepbeepai_deactivate' ) ) {
+	function beepbeepai_deactivate( $network_wide = false ) {
+		if ( is_multisite() && $network_wide ) {
+			$current_blog_id = get_current_blog_id();
+			$site_ids        = get_sites(
+				[
+					'fields' => 'ids',
+					'number' => 0,
+				]
+			);
 
-		foreach ( $site_ids as $site_id ) {
-			switch_to_blog( (int) $site_id );
-			beepbeepai_deactivate_current_site();
+			foreach ( $site_ids as $site_id ) {
+				switch_to_blog( (int) $site_id );
+				beepbeepai_deactivate_current_site();
+			}
+
+			switch_to_blog( $current_blog_id );
+			return;
 		}
 
-		switch_to_blog( $current_blog_id );
-		return;
+		beepbeepai_deactivate_current_site();
 	}
-
-	beepbeepai_deactivate_current_site();
 }
 
 /**
