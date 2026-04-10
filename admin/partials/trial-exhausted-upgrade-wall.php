@@ -82,7 +82,7 @@ if ( $bbai_trial_weak_count > 0 ) {
 				data-auth-tab="register"
 				data-bbai-analytics-upgrade="trial_create_account_clicked"
 				data-bbai-trial-wall-primary="1"
-			><?php echo esc_html( $bbai_trial_copy['primary_cta'] ?? __( 'Create free account', 'beepbeep-ai-alt-text-generator' ) ); ?></a>
+				><?php echo esc_html( $bbai_trial_copy['primary_cta'] ?? __( 'Fix remaining images for free', 'beepbeep-ai-alt-text-generator' ) ); ?></a>
 			<a
 				href="#"
 				class="bbai-command-action bbai-command-action--secondary bbai-btn bbai-btn-secondary"

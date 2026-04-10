@@ -423,32 +423,51 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
     bbai_ui_render('bbai-banner', ['command_hero' => $bbai_command_hero]);
     ?>
 
-    <div id="bbai-review-filter-tabs" class="bbai-alt-review-filters" data-bbai-default-filter="<?php echo esc_attr($bbai_default_review_filter); ?>">
-        <button type="button"
-                class="bbai-filter-pill bbai-filter-pill--missing bbai-alt-review-filters__btn <?php echo $bbai_default_review_filter === 'missing' ? 'bbai-alt-review-filters__btn--active' : ''; ?> <?php echo $bbai_cov_missing > 0 ? 'bbai-alt-review-filters__btn--problem' : ''; ?>"
-                data-filter="missing"
-                data-bbai-filter-label="<?php echo esc_attr(bbai_copy_status_missing()); ?>">
-            <?php echo esc_html(bbai_copy_status_missing()); ?> (<?php echo esc_html(number_format_i18n($bbai_cov_missing)); ?>)
-        </button>
-        <button type="button"
-                class="bbai-filter-pill bbai-filter-pill--needs-review bbai-alt-review-filters__btn <?php echo $bbai_default_review_filter === 'weak' ? 'bbai-alt-review-filters__btn--active' : ''; ?> <?php echo $bbai_cov_needs_review > 0 ? 'bbai-alt-review-filters__btn--problem' : ''; ?>"
-                data-filter="weak"
-                data-bbai-filter-label="<?php echo esc_attr(bbai_copy_status_needs_review()); ?>">
-            <?php echo esc_html(bbai_copy_status_needs_review()); ?> (<?php echo esc_html(number_format_i18n($bbai_cov_needs_review)); ?>)
-        </button>
-        <button type="button"
-                class="bbai-filter-pill bbai-filter-pill--all bbai-alt-review-filters__btn <?php echo $bbai_default_review_filter === 'all' ? 'bbai-alt-review-filters__btn--active' : ''; ?>"
-                data-filter="all"
-                data-bbai-filter-label="<?php echo esc_attr(bbai_copy_filter_all()); ?>">
-            <?php echo esc_html(bbai_copy_filter_all()); ?> (<?php echo esc_html(number_format_i18n($bbai_cov_total)); ?>)
-        </button>
-        <button type="button"
-                class="bbai-filter-pill bbai-filter-pill--optimized bbai-alt-review-filters__btn <?php echo $bbai_default_review_filter === 'optimized' ? 'bbai-alt-review-filters__btn--active' : ''; ?>"
-                data-filter="optimized"
-                data-bbai-filter-label="<?php echo esc_attr(bbai_copy_status_optimized()); ?>">
-            <?php echo esc_html(bbai_copy_status_optimized()); ?> (<?php echo esc_html(number_format_i18n($bbai_cov_optimized)); ?>)
-        </button>
-    </div>
+    <?php
+    $bbai_library_filter_items = [
+        [
+            'key' => 'all',
+            'label' => bbai_copy_filter_all(),
+            'count' => (int) $bbai_cov_total,
+            'active' => 'all' === $bbai_default_review_filter,
+            'filter_label_attr' => bbai_copy_filter_all(),
+        ],
+        [
+            'key' => 'missing',
+            'label' => bbai_copy_status_missing(),
+            'count' => (int) $bbai_cov_missing,
+            'active' => 'missing' === $bbai_default_review_filter,
+            'filter_label_attr' => bbai_copy_status_missing(),
+            'attention' => $bbai_cov_missing > 0,
+        ],
+        [
+            'key' => 'weak',
+            'label' => bbai_copy_status_needs_review(),
+            'count' => (int) $bbai_cov_needs_review,
+            'active' => 'weak' === $bbai_default_review_filter,
+            'filter_label_attr' => bbai_copy_status_needs_review(),
+            'attention' => $bbai_cov_needs_review > 0,
+        ],
+        [
+            'key' => 'optimized',
+            'label' => bbai_copy_status_optimized(),
+            'count' => (int) $bbai_cov_optimized,
+            'active' => 'optimized' === $bbai_default_review_filter,
+            'filter_label_attr' => bbai_copy_status_optimized(),
+        ],
+    ];
+
+    bbai_ui_render(
+        'filter-group',
+        [
+            'id' => 'bbai-review-filter-tabs',
+            'aria_label' => __('Filter images by status', 'beepbeep-ai-alt-text-generator'),
+            'interaction_mode' => 'filter',
+            'default_filter' => $bbai_default_review_filter,
+            'items' => $bbai_library_filter_items,
+        ]
+    );
+    ?>
 
     <?php if ($bbai_total_images > 0) : ?>
         <?php

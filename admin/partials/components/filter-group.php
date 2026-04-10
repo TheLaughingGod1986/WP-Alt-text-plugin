@@ -1,20 +1,21 @@
 <?php
 /**
- * Shared dataset filter group — horizontal (ALT Library) or vertical (dashboard → library).
+ * Shared status filter group.
  *
  * @package BeepBeep_AI
  *
  * Expected $bbai_ui keys:
- * - variant: 'horizontal' | 'vertical'
+ * - variant: 'horizontal' (default)
+ * - size: 'standard' | 'compact'
  * - interaction_mode: 'filter' | 'navigate'
- * - id, aria_label, default_filter (filter mode), root_class (extra classes on root)
+ * - id, aria_label, default_filter (filter mode), root_class, root_attrs
  * - items: arrays with:
- *   - key: 'all'|'optimized'|'weak'|'missing' (semantic / CSS)
- *   - data_filter: optional library filter value (default: key, use 'weak' for needs review)
- *   - label, count (int, optional), active (bool, filter mode)
- *   - filter_label_attr: optional data-bbai-filter-label
- *   - attention: bool (missing/weak emphasis in library)
- *   Navigate-only: href, item_aria_label, status_segment, status_filter, status_url, metric_key (dashboard JS)
+ *   - key: 'all'|'optimized'|'weak'|'missing'
+ *   - label, count (int, optional), active (bool)
+ *   - attention, locked, disabled (bool, optional)
+ *   - data_filter, filter_label_attr (filter mode)
+ *   - href, item_aria_label, status_segment, status_filter, status_url, metric_key (navigate mode)
+ *   - extra_class, attrs, label_attrs, count_attrs
  */
 
 if (!defined('ABSPATH')) {
@@ -22,18 +23,22 @@ if (!defined('ABSPATH')) {
 }
 
 $bbai_ui = isset($bbai_ui) && is_array($bbai_ui) ? $bbai_ui : [];
-$bbai_fg_variant = (($bbai_ui['variant'] ?? 'horizontal') === 'vertical') ? 'vertical' : 'horizontal';
+$bbai_fg_variant = 'horizontal';
 $bbai_fg_mode = (($bbai_ui['interaction_mode'] ?? $bbai_ui['mode'] ?? 'filter') === 'navigate') ? 'navigate' : 'filter';
+$bbai_fg_size = (($bbai_ui['size'] ?? 'standard') === 'compact') ? 'compact' : 'standard';
 $bbai_fg_items = isset($bbai_ui['items']) && is_array($bbai_ui['items']) ? $bbai_ui['items'] : [];
 $bbai_fg_id = trim((string) ($bbai_ui['id'] ?? ''));
 $bbai_fg_aria = trim((string) ($bbai_ui['aria_label'] ?? ''));
 $bbai_fg_default = (string) ($bbai_ui['default_filter'] ?? '');
 $bbai_fg_root_class = trim((string) ($bbai_ui['root_class'] ?? ''));
+$bbai_fg_root_attrs = isset($bbai_ui['root_attrs']) && is_array($bbai_ui['root_attrs']) ? $bbai_ui['root_attrs'] : [];
 
 $bbai_fg_classes = array_filter([
     'bbai-filter-group',
+    'bbai-filter-group--status',
     'bbai-filter-group--' . $bbai_fg_variant,
     'bbai-filter-group--' . $bbai_fg_mode,
+    'bbai-filter-group--' . $bbai_fg_size,
     $bbai_fg_root_class,
 ]);
 
@@ -42,6 +47,18 @@ $bbai_fg_label = $bbai_fg_aria !== '' ? $bbai_fg_aria : (
         ? __('Open filtered views in ALT Library', 'beepbeep-ai-alt-text-generator')
         : __('Filter images by state', 'beepbeep-ai-alt-text-generator')
 );
+
+$bbai_merge_attrs = static function (array $base, array $extra): array {
+    foreach ($extra as $key => $value) {
+        if ($key === 'class') {
+            $base['class'] = trim((string) ($base['class'] ?? '') . ' ' . (string) $value);
+            continue;
+        }
+        $base[$key] = $value;
+    }
+
+    return $base;
+};
 
 $bbai_open = static function (string $tag, array $attrs): void {
     $parts = [];
@@ -52,29 +69,29 @@ $bbai_open = static function (string $tag, array $attrs): void {
         $parts[] = sprintf('%s="%s"', $k, esc_attr(is_bool($v) ? ($v ? 'true' : 'false') : (string) $v));
     }
     // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Attributes escaped above.
-    echo '<' . $tag . ( $parts ? ' ' . implode(' ', $parts) : '' ) . '>';
+    echo '<' . $tag . ($parts ? ' ' . implode(' ', $parts) : '') . '>';
 };
 
-if ($bbai_fg_mode === 'navigate') {
-    $bbai_open('nav', [
-        'class' => implode(' ', $bbai_fg_classes),
-        'id' => $bbai_fg_id !== '' ? $bbai_fg_id : null,
-        'aria-label' => $bbai_fg_label,
-    ]);
-} else {
-    $bbai_nav_attrs = [
-        'class' => implode(' ', $bbai_fg_classes),
-        'role' => 'group',
-        'aria-label' => $bbai_fg_label,
-    ];
-    if ($bbai_fg_id !== '') {
-        $bbai_nav_attrs['id'] = $bbai_fg_id;
-    }
-    if ($bbai_fg_default !== '') {
-        $bbai_nav_attrs['data-bbai-default-filter'] = $bbai_fg_default;
-    }
-    $bbai_open('div', $bbai_nav_attrs);
+$bbai_root_tag = $bbai_fg_mode === 'navigate' ? 'nav' : 'div';
+$bbai_root_attrs = [
+    'class' => implode(' ', $bbai_fg_classes),
+    'aria-label' => $bbai_fg_label,
+];
+
+if ($bbai_fg_mode === 'filter') {
+    $bbai_root_attrs['role'] = 'group';
 }
+
+if ($bbai_fg_id !== '') {
+    $bbai_root_attrs['id'] = $bbai_fg_id;
+}
+
+if ($bbai_fg_default !== '') {
+    $bbai_root_attrs['data-bbai-default-filter'] = $bbai_fg_default;
+}
+
+$bbai_root_attrs = $bbai_merge_attrs($bbai_root_attrs, $bbai_fg_root_attrs);
+$bbai_open($bbai_root_tag, $bbai_root_attrs);
 
 foreach ($bbai_fg_items as $bbai_item) {
     if (!is_array($bbai_item)) {
@@ -91,101 +108,142 @@ foreach ($bbai_fg_items as $bbai_item) {
         $bbai_slug = 'all';
     }
 
+    $bbai_label = (string) ($bbai_item['label'] ?? '');
+    $bbai_count = array_key_exists('count', $bbai_item) ? (int) $bbai_item['count'] : 0;
+    $bbai_active = !empty($bbai_item['active']);
+    $bbai_attention = !empty($bbai_item['attention']) || !empty($bbai_item['problem']);
+    $bbai_locked = !empty($bbai_item['locked']);
+    $bbai_disabled = !empty($bbai_item['disabled']);
+    $bbai_extra_class = trim((string) ($bbai_item['extra_class'] ?? ''));
+    $bbai_item_attrs = isset($bbai_item['attrs']) && is_array($bbai_item['attrs']) ? $bbai_item['attrs'] : [];
+    $bbai_label_attrs = isset($bbai_item['label_attrs']) && is_array($bbai_item['label_attrs']) ? $bbai_item['label_attrs'] : [];
+    $bbai_count_attrs = isset($bbai_item['count_attrs']) && is_array($bbai_item['count_attrs']) ? $bbai_item['count_attrs'] : [];
+
+    $bbai_item_classes = array_filter([
+        'bbai-filter-group__item',
+        'bbai-filter-group__item--' . $bbai_fg_mode,
+        'bbai-filter-group__item--status-' . $bbai_slug,
+        $bbai_active ? 'bbai-filter-group__item--active' : '',
+        $bbai_attention ? 'bbai-filter-group__item--attention' : '',
+        $bbai_locked ? 'bbai-filter-group__item--locked' : '',
+        $bbai_disabled ? 'bbai-filter-group__item--disabled' : '',
+        $bbai_extra_class,
+    ]);
+
     if ($bbai_fg_mode === 'navigate') {
         $bbai_href = isset($bbai_item['href']) ? (string) $bbai_item['href'] : '';
-        $bbai_item_aria = isset($bbai_item['item_aria_label']) ? (string) $bbai_item['item_aria_label'] : '';
+        $bbai_item_aria = isset($bbai_item['item_aria_label']) ? (string) $bbai_item['item_aria_label'] : $bbai_label;
+        $bbai_seg = array_key_exists('status_segment', $bbai_item)
+            ? (string) $bbai_item['status_segment']
+            : ($bbai_key === 'all' ? 'all' : $bbai_key);
         $bbai_filt_default = '';
         if ($bbai_key === 'weak') {
             $bbai_filt_default = 'needs_review';
         } elseif ($bbai_key !== 'all') {
             $bbai_filt_default = $bbai_key;
         }
-        $bbai_seg = array_key_exists('status_segment', $bbai_item)
-            ? (string) $bbai_item['status_segment']
-            : ($bbai_key === 'all' ? '' : $bbai_key);
         $bbai_filt = array_key_exists('status_filter', $bbai_item) ? (string) $bbai_item['status_filter'] : $bbai_filt_default;
         $bbai_status_url = isset($bbai_item['status_url']) ? (string) $bbai_item['status_url'] : $bbai_href;
         $bbai_metric = isset($bbai_item['metric_key']) ? (string) $bbai_item['metric_key'] : $bbai_key;
-        $bbai_count = array_key_exists('count', $bbai_item) ? (int) $bbai_item['count'] : 0;
-
-        $bbai_link_classes = array_filter([
-            'bbai-filter-group__item',
-            'bbai-filter-group__item--vertical',
-            'bbai-command-breakdown',
-            'bbai-command-breakdown--' . $bbai_slug,
-        ]);
-
-        $bbai_anchor_attrs = [
-            'class' => implode(' ', $bbai_link_classes),
-            'href' => $bbai_href !== '' ? esc_url($bbai_href) : esc_url(admin_url('admin.php?page=bbai-library')),
+        $bbai_tag = (!$bbai_disabled && !$bbai_locked && $bbai_href !== '') ? 'a' : 'button';
+        $bbai_attrs = [
+            'class' => implode(' ', $bbai_item_classes),
             'data-bbai-status-row' => '1',
-            'aria-label' => $bbai_item_aria !== '' ? $bbai_item_aria : $bbai_item['label'],
+            'data-bbai-status-segment' => $bbai_seg,
+            'aria-label' => $bbai_item_aria,
         ];
 
-        if ($bbai_seg !== '') {
-            $bbai_anchor_attrs['data-bbai-status-segment'] = $bbai_seg;
+        if ($bbai_tag === 'a') {
+            $bbai_attrs['href'] = esc_url($bbai_href);
+        } else {
+            $bbai_attrs['type'] = 'button';
         }
 
         if ($bbai_filt !== '') {
-            $bbai_anchor_attrs['data-bbai-status-filter'] = $bbai_filt;
+            $bbai_attrs['data-bbai-status-filter'] = $bbai_filt;
         }
 
         if ($bbai_status_url !== '') {
-            $bbai_anchor_attrs['data-bbai-status-url'] = esc_url($bbai_status_url);
+            $bbai_attrs['data-bbai-status-url'] = esc_url($bbai_status_url);
         }
 
-        // Dashboard coverage row: finite ~3s dot pulse on first paint (bbai-dashboard.js adds row attention in sync).
+        if ($bbai_active) {
+            $bbai_attrs['aria-current'] = 'true';
+        }
+
+        if ($bbai_locked) {
+            $bbai_attrs['aria-disabled'] = 'true';
+        }
+
+        if ($bbai_disabled) {
+            $bbai_attrs['disabled'] = 'disabled';
+            $bbai_attrs['aria-disabled'] = 'true';
+        }
+
         if ('missing' === $bbai_seg && $bbai_count > 0) {
-            $bbai_anchor_attrs['data-bbai-missing-row-pulse'] = '1';
+            $bbai_attrs['data-bbai-missing-row-pulse'] = '1';
         }
 
-        $bbai_open('a', $bbai_anchor_attrs);
+        $bbai_attrs = $bbai_merge_attrs($bbai_attrs, $bbai_item_attrs);
+        $bbai_count_attrs = $bbai_merge_attrs(
+            [
+                'class' => 'bbai-filter-group__count',
+                'data-bbai-status-metric' => $bbai_metric,
+            ],
+            $bbai_count_attrs
+        );
+
+        $bbai_open($bbai_tag, $bbai_attrs);
         ?>
-        <span class="bbai-command-breakdown__label"><?php echo esc_html((string) ($bbai_item['label'] ?? '')); ?></span>
-        <span class="bbai-command-breakdown__meta">
-            <span class="bbai-command-breakdown__value" data-bbai-status-metric="<?php echo esc_attr($bbai_metric); ?>"><?php echo esc_html(number_format_i18n($bbai_count)); ?></span>
-            <span class="bbai-command-breakdown__arrow" aria-hidden="true">→</span>
+        <span class="bbai-filter-group__status-dot" aria-hidden="true"></span>
+        <?php $bbai_open('span', $bbai_merge_attrs(['class' => 'bbai-filter-group__label'], $bbai_label_attrs)); ?>
+        <?php echo esc_html($bbai_label); ?>
         </span>
-        </a>
+        <?php $bbai_open('span', $bbai_count_attrs); ?>
+        <?php echo esc_html(number_format_i18n($bbai_count)); ?>
+        </span>
+        </<?php echo esc_html($bbai_tag); ?>>
         <?php
         continue;
     }
 
-    // Filter mode (library).
     $bbai_df = isset($bbai_item['data_filter']) ? sanitize_key((string) $bbai_item['data_filter']) : $bbai_key;
-    $bbai_active = !empty($bbai_item['active']);
-    $bbai_attention = !empty($bbai_item['attention']);
-    $bbai_fl = isset($bbai_item['filter_label_attr']) ? (string) $bbai_item['filter_label_attr'] : (string) ($bbai_item['label'] ?? '');
-    // Use array_key_exists so 0 is kept; isset() is false when count is null.
-    $bbai_count_f = array_key_exists('count', $bbai_item) ? (int) $bbai_item['count'] : 0;
-
-    $bbai_btn_classes = array_filter([
-        'bbai-filter-group__item',
-        'bbai-filter-group__item--horizontal',
-        'bbai-filter-group__item--status-' . $bbai_slug,
-        $bbai_active ? 'bbai-filter-group__item--active' : '',
-        $bbai_attention ? 'bbai-filter-group__item--attention' : '',
-    ]);
-
-    $bbai_btn_attrs = [
+    $bbai_fl = isset($bbai_item['filter_label_attr']) ? (string) $bbai_item['filter_label_attr'] : $bbai_label;
+    $bbai_attrs = [
         'type' => 'button',
-        'class' => trim(implode(' ', $bbai_btn_classes)),
+        'class' => implode(' ', $bbai_item_classes),
         'data-filter' => $bbai_df,
         'data-bbai-filter-label' => $bbai_fl,
         'aria-pressed' => $bbai_active ? 'true' : 'false',
     ];
 
     if ($bbai_active) {
-        $bbai_btn_attrs['aria-current'] = 'true';
+        $bbai_attrs['aria-current'] = 'true';
     }
 
-    $bbai_open('button', $bbai_btn_attrs);
+    if ($bbai_locked) {
+        $bbai_attrs['aria-disabled'] = 'true';
+    }
+
+    if ($bbai_disabled) {
+        $bbai_attrs['disabled'] = 'disabled';
+        $bbai_attrs['aria-disabled'] = 'true';
+    }
+
+    $bbai_attrs = $bbai_merge_attrs($bbai_attrs, $bbai_item_attrs);
+    $bbai_count_attrs = $bbai_merge_attrs(['class' => 'bbai-filter-group__count'], $bbai_count_attrs);
+
+    $bbai_open('button', $bbai_attrs);
     ?>
     <span class="bbai-filter-group__status-dot" aria-hidden="true"></span>
-    <span class="bbai-filter-group__label"><?php echo esc_html((string) ($bbai_item['label'] ?? '')); ?></span>
-    <span class="bbai-filter-group__count"><?php echo esc_html(number_format_i18n($bbai_count_f)); ?></span>
+    <?php $bbai_open('span', $bbai_merge_attrs(['class' => 'bbai-filter-group__label'], $bbai_label_attrs)); ?>
+    <?php echo esc_html($bbai_label); ?>
+    </span>
+    <?php $bbai_open('span', $bbai_count_attrs); ?>
+    <?php echo esc_html(number_format_i18n($bbai_count)); ?>
+    </span>
     </button>
     <?php
 }
 
-echo $bbai_fg_mode === 'navigate' ? '</nav>' : '</div>';
+echo '</' . $bbai_root_tag . '>';

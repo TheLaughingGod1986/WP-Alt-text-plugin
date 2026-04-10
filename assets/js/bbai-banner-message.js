@@ -320,7 +320,7 @@
                 note: '',
                 primaryAction: isAnonymousTrial
                     ? {
-                          label: __('Create free account', 'beepbeep-ai-alt-text-generator'),
+                          label: __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator'),
                           action: 'show-auth-modal',
                           attributes: {
                               'data-auth-tab': 'register'
@@ -376,7 +376,7 @@
                 note: '',
                 primaryAction: isAnonymousTrial
                     ? {
-                          label: __('Create free account', 'beepbeep-ai-alt-text-generator'),
+                          label: __('Continue fixing images', 'beepbeep-ai-alt-text-generator'),
                           action: 'show-auth-modal',
                           attributes: {
                               'data-auth-tab': 'register'
@@ -477,7 +477,7 @@
                               href: libraryUrl
                           }
                         : {
-                              label: __('Create free account'),
+                              label: __('Continue fixing images'),
                               action: 'show-auth-modal',
                               attributes: {
                                   'data-auth-tab': 'register'
@@ -494,7 +494,7 @@
                       },
                 secondaryAction: isAnonymousTrial
                     ? {
-                          label: __('Create free account'),
+                          label: __('Continue fixing images'),
                           action: 'show-auth-modal',
                           attributes: {
                               'data-auth-tab': 'register'

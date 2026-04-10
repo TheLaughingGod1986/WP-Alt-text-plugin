@@ -74,31 +74,20 @@
      */
     window.bbaiHandleTrialExhausted = function(errorData) {
         var message = (errorData && errorData.message) || 'You\'ve used your free trial generations. Create a free account to continue.';
+        var opened = false;
 
-        // Try to show auth modal with register tab
-        if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
+        if (typeof window.showAuthModal === 'function') {
+            window.showAuthModal('register');
+            opened = true;
+        } else if (window.authModal && typeof window.authModal.show === 'function') {
             window.authModal.show();
             if (typeof window.authModal.showRegisterForm === 'function') {
                 window.authModal.showRegisterForm();
             }
-        } else {
-            // Fallback: click any auth trigger with register tab
-            var authBtn = document.querySelector('[data-action="show-auth-modal"][data-auth-tab="register"]') ||
-                          document.querySelector('[data-action="show-auth-modal"]');
-            if (authBtn) {
-                authBtn.click();
-            } else {
-                // Final fallback: dispatch event
-                if (typeof CustomEvent === 'function') {
-                    document.dispatchEvent(new CustomEvent('bbai:show-auth', {
-                        detail: { mode: 'register' },
-                        bubbles: true
-                    }));
-                }
-            }
+            opened = true;
         }
 
-        if (typeof showNotification === 'function') {
+        if (opened && typeof showNotification === 'function') {
             showNotification(message, 'warning');
         }
     };

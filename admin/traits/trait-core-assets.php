@@ -254,6 +254,17 @@ trait Core_Assets {
             $bbai_admin_script_deps[] = 'bbai-licensed-bulk-job-client';
         }
 
+        $bbai_micro_motion = 'assets/js/admin/micro-motion.js';
+        if ( is_readable( $base_path . $bbai_micro_motion ) ) {
+            wp_enqueue_script(
+                'bbai-micro-motion',
+                $base_url . $bbai_micro_motion,
+                [],
+                $this->get_asset_version( $bbai_micro_motion, '1.0.0', $base_path ),
+                true
+            );
+        }
+
         wp_enqueue_script('bbai-admin', $base_url . $admin_file, $bbai_admin_script_deps, $admin_version, true);
         wp_localize_script('bbai-admin', 'BBAI', [
             'nonce'     => wp_create_nonce('wp_rest'),
@@ -326,6 +337,17 @@ trait Core_Assets {
                 $base_url . $bbai_job_widget_js,
                 [ 'jquery', 'bbai-job-state' ],
                 $this->get_asset_version( $bbai_job_widget_js, '1.0.0', $base_path ),
+                true
+            );
+        }
+
+        $bbai_funnel_state_js = 'assets/js/admin/funnel-state.js';
+        if ( file_exists( $base_path . $bbai_funnel_state_js ) ) {
+            wp_enqueue_script(
+                'bbai-funnel-state',
+                $base_url . $bbai_funnel_state_js,
+                [ 'bbai-admin' ],
+                $this->get_asset_version( $bbai_funnel_state_js, '1.0.0', $base_path ),
                 true
             );
         }
@@ -449,25 +471,32 @@ trait Core_Assets {
             $asset_version( $queue_workflow_css, '1.0.0' )
         );
 
-        $activation_ftue_css = 'assets/css/features/dashboard/dashboard-activation-ftue.css';
-        if ( file_exists( $base_path . $activation_ftue_css ) ) {
+        $funnel_hero_css = 'assets/css/features/dashboard/funnel-hero.css';
+        if ( file_exists( $base_path . $funnel_hero_css ) ) {
             wp_enqueue_style(
-                'bbai-dashboard-activation-ftue',
-                $base_url . $activation_ftue_css,
+                'bbai-funnel-hero',
+                $base_url . $funnel_hero_css,
                 [ 'bbai-queue-workflow' ],
-                $asset_version( $activation_ftue_css, '1.1.0' )
+                $asset_version( $funnel_hero_css, '1.0.0' )
+            );
+        }
+
+        $usage_strip_css = 'assets/css/features/dashboard/usage-strip.css';
+        if ( file_exists( $base_path . $usage_strip_css ) ) {
+            wp_enqueue_style(
+                'bbai-usage-strip',
+                $base_url . $usage_strip_css,
+                [ 'bbai-funnel-hero' ],
+                $asset_version( $usage_strip_css, '1.0.0' )
             );
         }
 
         $retention_strip_css = 'assets/css/features/dashboard/dashboard-retention-strip.css';
         if ( file_exists( $base_path . $retention_strip_css ) ) {
-            $retention_dep = file_exists( $base_path . $activation_ftue_css )
-                ? 'bbai-dashboard-activation-ftue'
-                : 'bbai-queue-workflow';
             wp_enqueue_style(
                 'bbai-dashboard-retention-strip',
                 $base_url . $retention_strip_css,
-                [ $retention_dep ],
+                [ 'bbai-queue-workflow' ],
                 $asset_version( $retention_strip_css, '1.0.1' )
             );
         }
@@ -480,68 +509,7 @@ trait Core_Assets {
             $asset_version( $upgrade_modal_refresh_css, '1.0.2' )
         );
 
-        if ($this->is_onboarding_page()) {
-            $onboarding_css = 'assets/css/onboarding.css';
-            $onboarding_js  = 'assets/js/onboarding.js';
-
-            wp_enqueue_style(
-                'bbai-onboarding',
-                $base_url . $onboarding_css,
-                ['bbai-unified', 'bbai-modern'],
-                $asset_version($onboarding_css, '1.0.1')
-            );
-
-            wp_enqueue_script(
-                'bbai-onboarding',
-                $base_url . $onboarding_js,
-                ['jquery', 'wp-i18n'],
-                $asset_version($onboarding_js, '1.0.1'),
-                true
-            );
-
-            $is_onboarding_completed = class_exists('\BeepBeepAI\AltTextGenerator\Onboarding')
-                ? \BeepBeepAI\AltTextGenerator\Onboarding::is_completed()
-                : false;
-
-            wp_localize_script('bbai-onboarding', 'bbai_env', [
-                'ajax_url'  => admin_url('admin-ajax.php'),
-                'admin_url' => admin_url(),
-                'upload_url'=> admin_url('upload.php'),
-                'rest_root' => esc_url_raw(rest_url()),
-                'nonce'     => wp_create_nonce('bbai_ajax_nonce'),
-            ]);
-
-            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only onboarding step for localized strings.
-            $bbai_onboarding_step_param = isset($_GET['step']) ? absint(wp_unslash($_GET['step'])) : 1;
-            if ($bbai_onboarding_step_param < 1 || $bbai_onboarding_step_param > 3) {
-                $bbai_onboarding_step_param = 1;
-            }
-
-            wp_localize_script('bbai-onboarding', 'bbaiOnboarding', [
-                'ajaxUrl'               => admin_url('admin-ajax.php'),
-                'nonce'                 => wp_create_nonce('bbai_onboarding'),
-                'queueStatsNonce'       => wp_create_nonce('beepbeepai_nonce'),
-                'dashboardUrl'          => admin_url('admin.php?page=bbai'),
-                'libraryUrl'            => admin_url('admin.php?page=' . self::MENU_SLUG_LIBRARY),
-                'step3Url'              => admin_url('admin.php?page=bbai-onboarding&step=3'),
-                'currentStep'           => $bbai_onboarding_step_param,
-                'isAuthenticated'       => bbai_is_authenticated(),
-                'isOnboardingCompleted' => $is_onboarding_completed,
-                'strings'               => [
-                    'scanStart'      => __('Starting your scan...', 'beepbeep-ai-alt-text-generator'),
-                    'generateStart'  => __('Starting generation...', 'beepbeep-ai-alt-text-generator'),
-                    'scanQueued'     => __('Scan queued.', 'beepbeep-ai-alt-text-generator'),
-                    'scanFailed'     => __('Unable to start the scan. Please try again.', 'beepbeep-ai-alt-text-generator'),
-                    'generateFailed' => __('Unable to start generation. Please try again.', 'beepbeep-ai-alt-text-generator'),
-                    'skipFailed'     => __('Unable to skip onboarding. Please try again.', 'beepbeep-ai-alt-text-generator'),
-                    'scanLabel'      => __('Scanning...', 'beepbeep-ai-alt-text-generator'),
-                    'generateLabel'  => __('Generating...', 'beepbeep-ai-alt-text-generator'),
-                    'skipLabel'      => __('Skipping...', 'beepbeep-ai-alt-text-generator'),
-                    'statsLoading'   => __('Loading...', 'beepbeep-ai-alt-text-generator'),
-                    'statsFailed'    => __('Unable to load stats.', 'beepbeep-ai-alt-text-generator'),
-                ],
-            ]);
-        }
+        // Legacy onboarding page assets removed.
 
         $saas_consistency_css = 'assets/css/features/dashboard/saas-consistency.css';
         wp_enqueue_style(

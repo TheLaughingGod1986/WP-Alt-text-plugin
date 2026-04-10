@@ -132,11 +132,11 @@
                     // Show custom modal with options to go to library or regenerate all
                     window.bbaiModal.show({
                         type: 'info',
-                        title: __('No Missing Alt Text', 'beepbeep-ai-alt-text-generator'),
-                        message: __('All images in your library already have alt text. You can generate alt text for individual images in the ALT Library, or regenerate all alt text to update existing ones.', 'beepbeep-ai-alt-text-generator'),
+                        title: __('No missing ALT text', 'beepbeep-ai-alt-text-generator'),
+                        message: __('All your images already have ALT text. You can improve them or regenerate descriptions anytime.', 'beepbeep-ai-alt-text-generator'),
                         buttons: [
                             {
-                                text: __('Go to ALT Library', 'beepbeep-ai-alt-text-generator'),
+                                text: __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
                                 primary: true,
                                 action: function() {
                                     window.bbaiModal.close();
@@ -146,7 +146,7 @@
                                 }
                             },
                             {
-                                text: __('Regenerate All Alt Text', 'beepbeep-ai-alt-text-generator'),
+                                text: __('Regenerate ALT text', 'beepbeep-ai-alt-text-generator'),
                                 primary: false,
                                 action: function() {
                                     window.bbaiModal.close();

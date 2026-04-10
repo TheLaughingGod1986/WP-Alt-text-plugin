@@ -39,7 +39,7 @@ class Admin_Hooks {
 		add_action( 'admin_menu', [ $this->core, 'add_settings_page' ] );
 		add_action( 'admin_menu', [ __CLASS__, 'register_credit_usage_page' ] );
 		add_action( 'admin_init', [ $this->core, 'register_settings' ] );
-		add_action( 'admin_init', [ $this->core, 'maybe_redirect_to_onboarding' ] );
+		// Legacy onboarding redirect removed — dashboard is the single entry point.
 		add_action( 'admin_init', [ __CLASS__, 'maybe_clear_usage_cache' ] );
 		add_action( 'add_attachment', [ $this->core, 'handle_media_change' ], 5 );
 		add_action( 'delete_attachment', [ $this->core, 'handle_media_change' ], 5 );
@@ -124,10 +124,7 @@ class Admin_Hooks {
 			'beepbeepai_admin_logout'           => 'ajax_admin_logout',
 			'beepbeepai_logout'                 => 'ajax_logout',
 			'beepbeepai_dismiss_api_notice'   => 'ajax_dismiss_api_notice',
-			'bbai_check_onboarding'            => 'ajax_check_onboarding',
-			'bbai_complete_onboarding'         => 'ajax_complete_onboarding',
 			'bbai_start_scan'                  => 'ajax_start_scan',
-			'bbai_onboarding_skip'             => 'ajax_onboarding_skip',
 			'bbai_check_milestone'             => 'ajax_check_milestone',
 			'bbai_track_milestone'             => 'ajax_track_milestone',
 			'bbai_export_analytics'            => 'ajax_export_analytics',

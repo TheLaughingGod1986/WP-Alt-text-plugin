@@ -256,7 +256,9 @@ bbaiRunWithJQuery(function($) {
                 var authModal = document.getElementById('alttext-auth-modal');
                 if (authModal) {
                     authModal.style.display = 'block';
-                    authModal.setAttribute('aria-hidden', 'false');
+                    authModal.removeAttribute('aria-hidden');
+                    authModal.setAttribute('data-bbai-auth-modal-visible', '1');
+                    document.body.classList.add('bbai-auth-modal-open');
                     document.body.style.overflow = 'hidden';
                 } else {
                     window.bbaiModal.warning('Please log in first to manage your subscription.');

@@ -880,7 +880,7 @@
 
                 // Re-apply the active filter so the row shows/hides correctly
                 if (typeof window.bbaiApplyLibraryFilter === 'function') {
-                    var $activeBtn    = $('[data-filter].bbai-alt-review-filters__btn--active').first();
+                    var $activeBtn    = $('[data-filter].bbai-filter-group__item--active').first();
                     var currentFilter = $activeBtn.length ? $activeBtn.attr('data-filter') : 'all';
                     window.bbaiApplyLibraryFilter(currentFilter);
                 }
@@ -917,13 +917,13 @@
         var toFilter   = newStatus;
         if (fromFilter === toFilter) return;
 
-        var $fromPill = $('[data-filter="' + fromFilter + '"] .bbai-alt-review-filters__count');
+        var $fromPill = $('[data-filter="' + fromFilter + '"] .bbai-filter-group__count');
         if ($fromPill.length) {
             var fromCount = parseInt($fromPill.text().replace(/[^0-9]/g, ''), 10) || 0;
             $fromPill.text(Math.max(0, fromCount - 1));
         }
 
-        var $toPill = $('[data-filter="' + toFilter + '"] .bbai-alt-review-filters__count');
+        var $toPill = $('[data-filter="' + toFilter + '"] .bbai-filter-group__count');
         if ($toPill.length) {
             var toCount = parseInt($toPill.text().replace(/[^0-9]/g, ''), 10) || 0;
             $toPill.text(toCount + 1);

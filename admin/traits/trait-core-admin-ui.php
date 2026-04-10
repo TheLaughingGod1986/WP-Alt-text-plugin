@@ -161,15 +161,6 @@ trait Core_Admin_UI {
 	            [$this, 'handle_checkout_redirect']
 	        );
 	        
-	        // Hidden onboarding/guide page (accessible but not shown in menu)
-	        add_submenu_page(
-	            '', // No parent = hidden from menu
-                __('Getting Started', 'beepbeep-ai-alt-text-generator'),
-                __('Getting Started', 'beepbeep-ai-alt-text-generator'),
-                $cap,
-                self::MENU_SLUG_ONBOARDING,
-                [$this, 'render_bbai_onboarding_step2']
-        );
 	    }
 
 	    public function handle_checkout_redirect() {
@@ -215,56 +206,11 @@ trait Core_Admin_UI {
         wp_die(esc_html__('Failed to create checkout session.', 'beepbeep-ai-alt-text-generator'));
     }
 
+    /**
+     * Legacy onboarding redirect removed — dashboard is the single entry point.
+     */
     public function maybe_redirect_to_onboarding(): void {
-        if (!is_admin() || !is_user_logged_in()) {
-            return;
-        }
-
-        if (function_exists('is_network_admin') && is_network_admin()) {
-            return;
-        }
-
-        if (wp_doing_ajax() || wp_doing_cron() || (defined('REST_REQUEST') && REST_REQUEST)) {
-            return;
-        }
-
-        if (!$this->user_can_manage()) {
-            return;
-        }
-
-	        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
-	        $bbai_page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
-	        $bbai_current_page = $bbai_page_input;
-	        $is_onboarding_page = ($bbai_current_page === 'bbai-onboarding');
-        $is_plugin_page = (!empty($bbai_current_page) && strpos($bbai_current_page, 'bbai') === 0);
-
-        // Never hijack unrelated wp-admin pages. Keep onboarding redirect scoped to plugin screens.
-        if (!$is_plugin_page) {
-            return;
-        }
-
-        if (!class_exists('\BeepBeepAI\AltTextGenerator\Auth_State') || !class_exists('\BeepBeepAI\AltTextGenerator\Onboarding')) {
-            return;
-        }
-
-        $bbai_auth = \BeepBeepAI\AltTextGenerator\Auth_State::resolve($this->api_client);
-        if (empty($bbai_auth['has_registered_user'])) {
-            return;
-        }
-
-        $completed = \BeepBeepAI\AltTextGenerator\Onboarding::is_completed();
-
-        if ($completed) {
-            // Allow onboarding pages to be viewed even if completed (user may want to revisit the guide)
-            // and don't force redirects once setup is done.
-            return;
-        }
-
-        // Redirect only from the dashboard entrypoint, not every wp-admin page.
-        if (!$is_onboarding_page && $bbai_current_page === self::MENU_SLUG_DASHBOARD) {
-            wp_safe_redirect(admin_url('admin.php?page=bbai-onboarding'));
-            exit;
-        }
+        // No-op: kept as stub because admin_init hook references this method.
     }
 
     public function register_settings() {
@@ -317,475 +263,18 @@ trait Core_Admin_UI {
     }
 
     /**
-     * Render Step 1 of onboarding - Welcome page
+     * Legacy onboarding step renderers removed — dashboard is the single entry point.
+     * Methods kept as stubs in case external code references them.
      */
-    private function render_bbai_onboarding_step1() {
-        $dashboard_url = admin_url('admin.php?page=bbai');
-        $step2_url = admin_url('admin.php?page=bbai-onboarding&step=2');
-        ?>
-        <div class="wrap bbai-wrap bbai-modern bbai-onboarding">
-            <div class="bbai-header">
-                <div class="bbai-header-content">
-                    <a class="bbai-logo" href="<?php echo esc_url($dashboard_url); ?>">
-                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" class="bbai-logo-icon" aria-hidden="true">
-                            <rect width="40" height="40" rx="10" fill="url(#logo-gradient-s1)"/>
-                            <circle cx="20" cy="20" r="8" fill="white" opacity="0.15"/>
-                            <path d="M20 12L20.8 15.2L24 16L20.8 16.8L20 20L19.2 16.8L16 16L19.2 15.2L20 12Z" fill="white"/>
-                            <path d="M28 22L28.6 24.2L30.8 24.8L28.6 25.4L28 28L27.4 25.4L25.2 24.8L27.4 24.2L28 22Z" fill="white" opacity="0.8"/>
-                            <path d="M12 26L12.4 27.4L13.8 27.8L12.4 28.2L12 30L11.6 28.2L10.2 27.8L11.6 27.4L12 26Z" fill="white" opacity="0.6"/>
-                            <rect x="14" y="18" width="12" height="8" rx="1" stroke="white" stroke-width="1.5" fill="none"/>
-                            <defs>
-                                <linearGradient id="logo-gradient-s1" x1="0" y1="0" x2="40" y2="40">
-                                    <stop stop-color="#14b8a6"/>
-                                    <stop offset="1" stop-color="#10b981"/>
-                                </linearGradient>
-                            </defs>
-                        </svg>
-                        <div class="bbai-logo-content">
-                            <span class="bbai-logo-text"><?php esc_html_e('BeepBeep AI – Alt Text Generator', 'beepbeep-ai-alt-text-generator'); ?></span>
-                            <span class="bbai-logo-tagline"><?php esc_html_e('AI-Powered Alt Text Generator', 'beepbeep-ai-alt-text-generator'); ?></span>
-                        </div>
-                    </a>
-                    <nav class="bbai-nav" role="navigation" aria-label="<?php esc_attr_e('Main navigation', 'beepbeep-ai-alt-text-generator'); ?>">
-                        <a class="bbai-nav-link active" href="<?php echo esc_url(admin_url('admin.php?page=bbai-onboarding')); ?>">
-                            <?php esc_html_e('Getting started', 'beepbeep-ai-alt-text-generator'); ?>
-                        </a>
-                    </nav>
-                </div>
-            </div>
-            <div class="bbai-container">
-                <div class="bbai-page-header bbai-mb-6">
-                    <div class="bbai-page-header-content">
-                        <h1 class="bbai-page-title"><?php esc_html_e('Scan your media library', 'beepbeep-ai-alt-text-generator'); ?></h1>
-                        <p class="bbai-page-subtitle"><?php esc_html_e('BeepBeep AI will scan your WordPress media library and find images missing alt text.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                    </div>
-                    <div class="bbai-page-header-actions">
-                        <div class="bbai-onboarding-progress">
-                            <span class="bbai-onboarding-progress-text"><?php esc_html_e('Step 1 of 3', 'beepbeep-ai-alt-text-generator'); ?></span>
-                            <span class="bbai-badge bbai-badge--getting-started"><?php esc_html_e('Scan', 'beepbeep-ai-alt-text-generator'); ?></span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bbai-card bbai-card--large bbai-onboarding-hero bbai-mb-6">
-                    <div class="bbai-card-body">
-                        <h2 class="bbai-card-title"><?php esc_html_e('Scan your media library', 'beepbeep-ai-alt-text-generator'); ?></h2>
-                        <p class="bbai-card-subtitle"><?php esc_html_e('BeepBeep AI will scan your WordPress media library and find images missing alt text.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        <div class="bbai-onboarding-divider" aria-hidden="true"></div>
-
-                        <div class="bbai-onboarding-features bbai-mt-4">
-                            <div class="bbai-feature-item">
-                                <span class="bbai-feature-icon">✓</span>
-                                <div class="bbai-feature-content">
-                                    <strong><?php esc_html_e('Step 1: Scan all uploads', 'beepbeep-ai-alt-text-generator'); ?></strong>
-                                    <p><?php esc_html_e('Find images in your media library that need alt text.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                                </div>
-                            </div>
-                            <div class="bbai-feature-item">
-                                <span class="bbai-feature-icon">✓</span>
-                                <div class="bbai-feature-content">
-                                    <strong><?php echo esc_html(bbai_copy_cta_generate_missing_images()); ?></strong>
-                                    <p><?php esc_html_e('Create clear alt text for each image missing it.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                                </div>
-                            </div>
-                            <div class="bbai-feature-item">
-                                <span class="bbai-feature-icon">✓</span>
-                                <div class="bbai-feature-content">
-                                    <strong><?php esc_html_e('Step 3: Review ALT text', 'beepbeep-ai-alt-text-generator'); ?></strong>
-                                    <p><?php esc_html_e('Review the generated results before publishing.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="bbai-btn-group bbai-mt-6">
-                            <a href="<?php echo esc_url($step2_url); ?>" class="bbai-btn bbai-btn-primary">
-                                <?php echo esc_html(bbai_copy_cta_scan_media_library()); ?>
-                            </a>
-                            <button type="button" class="bbai-btn bbai-btn-secondary" data-bbai-onboarding-action="skip">
-                                <?php esc_html_e('Skip setup', 'beepbeep-ai-alt-text-generator'); ?>
-                            </button>
-                        </div>
-                        <div class="bbai-onboarding-status" role="status" aria-live="polite"></div>
-                    </div>
-                </div>
-
-                <div class="bbai-grid bbai-grid-3 bbai-mb-6">
-                    <div class="bbai-card bbai-card--compact bbai-onboarding-step-card">
-                        <div class="bbai-card-body">
-                            <span class="bbai-onboarding-step-icon bbai-onboarding-step-icon--active" aria-hidden="true">
-                                <span class="bbai-step-number">1</span>
-                            </span>
-                            <p class="bbai-onboarding-step-text"><?php esc_html_e('Scan your media library', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        </div>
-                    </div>
-                    <div class="bbai-card bbai-card--compact bbai-onboarding-step-card">
-                        <div class="bbai-card-body">
-                            <span class="bbai-onboarding-step-icon" aria-hidden="true">
-                                <span class="bbai-step-number">2</span>
-                            </span>
-                            <p class="bbai-onboarding-step-text"><?php echo esc_html(bbai_copy_cta_generate_missing_images()); ?></p>
-                        </div>
-                    </div>
-                    <div class="bbai-card bbai-card--compact bbai-onboarding-step-card">
-                        <div class="bbai-card-body">
-                            <span class="bbai-onboarding-step-icon" aria-hidden="true">
-                                <span class="bbai-step-number">3</span>
-                            </span>
-                            <p class="bbai-onboarding-step-text"><?php esc_html_e('Review ALT text', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <?php
-    }
-
+    private function render_bbai_onboarding_step1() {}
     public function render_bbai_onboarding_step2() {
-        if (!$this->user_can_manage()) {
-            wp_die(esc_html__('Unauthorized access.', 'beepbeep-ai-alt-text-generator'));
-        }
-
-	        // Route based on step query param (default to step 1)
-	        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
-	        $step = isset($_GET['step']) ? absint(wp_unslash($_GET['step'])) : 1;
-
-        if ($step === 1) {
-            $this->render_bbai_onboarding_step1();
-            return;
-        }
-
-        if ($step === 3) {
-            $this->render_bbai_onboarding_step3();
-            return;
-        }
-
-        // Step 2 continues below
-
-        $dashboard_url = admin_url('admin.php?page=bbai');
-        $upgrade_url = class_exists('\BeepBeepAI\AltTextGenerator\Usage_Tracker')
-            ? \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_upgrade_url()
-            : $dashboard_url;
-        ?>
-        <div class="wrap bbai-wrap bbai-modern bbai-onboarding">
-            <div class="bbai-header">
-                <div class="bbai-header-content">
-                    <a class="bbai-logo" href="<?php echo esc_url($dashboard_url); ?>">
-                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" class="bbai-logo-icon" aria-hidden="true">
-                            <rect width="40" height="40" rx="10" fill="url(#logo-gradient)"/>
-                            <circle cx="20" cy="20" r="8" fill="white" opacity="0.15"/>
-                            <path d="M20 12L20.8 15.2L24 16L20.8 16.8L20 20L19.2 16.8L16 16L19.2 15.2L20 12Z" fill="white"/>
-                            <path d="M28 22L28.6 24.2L30.8 24.8L28.6 25.4L28 28L27.4 25.4L25.2 24.8L27.4 24.2L28 22Z" fill="white" opacity="0.8"/>
-                            <path d="M12 26L12.4 27.4L13.8 27.8L12.4 28.2L12 30L11.6 28.2L10.2 27.8L11.6 27.4L12 26Z" fill="white" opacity="0.6"/>
-                            <rect x="14" y="18" width="12" height="8" rx="1" stroke="white" stroke-width="1.5" fill="none"/>
-                            <defs>
-                                <linearGradient id="logo-gradient" x1="0" y1="0" x2="40" y2="40">
-                                    <stop stop-color="#14b8a6"/>
-                                    <stop offset="1" stop-color="#10b981"/>
-                                </linearGradient>
-                            </defs>
-                        </svg>
-                        <div class="bbai-logo-content">
-                            <span class="bbai-logo-text"><?php esc_html_e('BeepBeep AI – Alt Text Generator', 'beepbeep-ai-alt-text-generator'); ?></span>
-                            <span class="bbai-logo-tagline"><?php esc_html_e('WordPress AI Tools', 'beepbeep-ai-alt-text-generator'); ?></span>
-                        </div>
-                    </a>
-                    <nav class="bbai-nav" role="navigation" aria-label="<?php esc_attr_e('Main navigation', 'beepbeep-ai-alt-text-generator'); ?>">
-                        <?php
-                        // Only show Dashboard tab if onboarding is completed
-                        if (\BeepBeepAI\AltTextGenerator\Onboarding::is_completed()) :
-                        ?>
-                            <a class="bbai-nav-link" href="<?php echo esc_url($dashboard_url); ?>">
-                                <?php esc_html_e('Dashboard', 'beepbeep-ai-alt-text-generator'); ?>
-                            </a>
-                        <?php endif; ?>
-                        <a class="bbai-nav-link active" href="<?php echo esc_url(admin_url('admin.php?page=bbai-onboarding')); ?>">
-                            <?php esc_html_e('Getting started', 'beepbeep-ai-alt-text-generator'); ?>
-                        </a>
-                    </nav>
-                </div>
-            </div>
-            <div class="bbai-container">
-                <div class="bbai-page-header bbai-mb-6">
-                    <div class="bbai-page-header-content">
-                        <h1 class="bbai-page-title"><?php echo esc_html(bbai_copy_cta_generate_missing_images()); ?></h1>
-                        <p class="bbai-page-subtitle"><?php esc_html_e('Scan your media library and generate alt text for images that are missing it.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                    </div>
-                    <div class="bbai-page-header-actions">
-                        <div class="bbai-onboarding-progress">
-                            <span class="bbai-onboarding-progress-text"><?php esc_html_e('Step 2 of 3', 'beepbeep-ai-alt-text-generator'); ?></span>
-                            <span class="bbai-badge bbai-badge--getting-started"><?php esc_html_e('Generate', 'beepbeep-ai-alt-text-generator'); ?></span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bbai-card bbai-card--large bbai-onboarding-hero bbai-mb-6">
-                    <div class="bbai-card-body">
-                        <h2 class="bbai-card-title"><?php echo esc_html(bbai_copy_cta_generate_missing_images()); ?></h2>
-                        <p class="bbai-card-subtitle"><?php esc_html_e('BeepBeep AI will scan your WordPress media library and find images missing alt text.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        <div class="bbai-onboarding-divider" aria-hidden="true"></div>
-                        <div class="bbai-btn-group bbai-mt-4">
-                            <button type="button" class="bbai-btn bbai-btn-primary" data-bbai-onboarding-action="start-scan">
-                                <?php echo esc_html(bbai_copy_cta_scan_media_library()); ?>
-                            </button>
-                            <button type="button" class="bbai-btn bbai-btn-secondary" data-bbai-onboarding-action="skip">
-                                <?php esc_html_e('Skip setup', 'beepbeep-ai-alt-text-generator'); ?>
-                            </button>
-                        </div>
-                        <div class="bbai-onboarding-scan-meta bbai-mt-4" data-bbai-scan-meta hidden>
-                            <p class="bbai-onboarding-scan-count" data-bbai-scan-count><?php esc_html_e('Scanning 0 images', 'beepbeep-ai-alt-text-generator'); ?></p>
-                            <p class="bbai-onboarding-scan-time" data-bbai-scan-time><?php esc_html_e('Estimated time: ~0 seconds', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        </div>
-                        <div class="bbai-onboarding-scan-progress bbai-mt-3" data-bbai-scan-progress hidden>
-                            <div class="bbai-onboarding-scan-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="<?php esc_attr_e('Scan progress', 'beepbeep-ai-alt-text-generator'); ?>">
-                                <span class="bbai-onboarding-scan-progress-fill" data-bbai-scan-progress-fill style="width: 0%;"></span>
-                            </div>
-                            <p class="bbai-onboarding-scan-progress-text" data-bbai-scan-progress-text><?php esc_html_e('Preparing scan...', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        </div>
-                        <p class="bbai-onboarding-reassurance"><?php esc_html_e('Only images without alt text are processed. Review everything before publishing.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        <p class="bbai-onboarding-helper"><?php esc_html_e('Initial scan processes up to 500 images. You can adjust this later.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        <div class="bbai-onboarding-status" role="status" aria-live="polite"></div>
-                    </div>
-                </div>
-
-                <div class="bbai-mb-6">
-                    <h2 class="bbai-section-title"><?php esc_html_e('How it works', 'beepbeep-ai-alt-text-generator'); ?></h2>
-                    <div class="bbai-grid bbai-grid-3 bbai-gap-4">
-                        <div class="bbai-card bbai-card--compact bbai-onboarding-step-card">
-                            <div class="bbai-card-body">
-                                <span class="bbai-onboarding-step-icon" aria-hidden="true">
-                                    <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                                        <circle cx="11" cy="11" r="6" fill="none" stroke="currentColor" stroke-width="2" />
-                                        <path d="M20 20l-4.2-4.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                                    </svg>
-                                </span>
-                                <h3 class="bbai-card-title"><?php esc_html_e('Scan your library', 'beepbeep-ai-alt-text-generator'); ?></h3>
-                                <p class="bbai-onboarding-step-text"><?php esc_html_e('Find images missing alt text in your library.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                            </div>
-                        </div>
-                        <div class="bbai-card bbai-card--compact bbai-onboarding-step-card">
-                            <div class="bbai-card-body">
-                                <span class="bbai-onboarding-step-icon" aria-hidden="true">
-                                    <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                                        <path d="M12 3l1.6 3.6L17 8l-3.4 1.4L12 13l-1.6-3.6L7 8l3.4-1.4L12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-                                    </svg>
-                                </span>
-                                <h3 class="bbai-card-title"><?php echo esc_html(bbai_copy_cta_generate_missing_images()); ?></h3>
-                                <p class="bbai-onboarding-step-text"><?php esc_html_e('Generate clear, SEO-ready alt text.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                            </div>
-                        </div>
-                        <div class="bbai-card bbai-card--compact bbai-onboarding-step-card">
-                            <div class="bbai-card-body">
-                                <span class="bbai-onboarding-step-icon" aria-hidden="true">
-                                    <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                                        <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2" />
-                                        <path d="M8.5 12.5l2.5 2.5 4.5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                    </svg>
-                                </span>
-                                <h3 class="bbai-card-title"><?php esc_html_e('Review and publish', 'beepbeep-ai-alt-text-generator'); ?></h3>
-                                <p class="bbai-onboarding-step-text"><?php esc_html_e('Review and publish when you are ready.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bbai-card bbai-card--compact bbai-onboarding-upsell">
-                    <div class="bbai-card-body bbai-onboarding-upsell-body">
-                        <div>
-                            <h3 class="bbai-card-title"><?php esc_html_e('Want faster processing?', 'beepbeep-ai-alt-text-generator'); ?></h3>
-                            <p class="bbai-card-subtitle"><?php esc_html_e('Upgrade to Growth for priority queue and bulk optimisation across your full media library.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        </div>
-                        <button type="button" class="bbai-btn bbai-btn-outline-primary" data-action="show-upgrade-modal" data-upgrade-trigger="true">
-                            <?php esc_html_e('View plans & pricing', 'beepbeep-ai-alt-text-generator'); ?>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <?php
-        // Include upgrade modal for "View plans & pricing" button
-        $bbai_checkout_prices = $this->get_checkout_price_ids();
-        include BEEPBEEP_AI_PLUGIN_DIR . 'templates/upgrade-modal.php';
+        // Redirect to dashboard instead of showing legacy onboarding.
+        wp_safe_redirect( admin_url( 'admin.php?page=bbai' ) );
+        exit;
     }
-
-    /**
-     * Render Onboarding Step 3 - Review ready screen
-     * Shown after scan started or skip, marks onboarding completed on view.
-     */
     public function render_bbai_onboarding_step3() {
-        if (!$this->user_can_manage()) {
-            wp_die(esc_html__('Unauthorized access.', 'beepbeep-ai-alt-text-generator'));
-        }
-
-        // Note: Onboarding completion is now triggered via AJAX when queue finishes
-        // (pending + processing === 0). This prevents premature completion while work is running.
-        // The JS calls bbai_complete_onboarding when stats show queue is empty.
-
-        $dashboard_url = admin_url('admin.php?page=bbai');
-        $library_url = admin_url('admin.php?page=' . self::MENU_SLUG_LIBRARY);
-        $bbai_is_authenticated = bbai_is_authenticated();
-
-        // Mark onboarding complete as soon as Step 3 is reached to prevent redirect loops.
-        if ($bbai_is_authenticated && class_exists('\BeepBeepAI\AltTextGenerator\Onboarding')) {
-            \BeepBeepAI\AltTextGenerator\Onboarding::mark_completed();
-            \BeepBeepAI\AltTextGenerator\Onboarding::update_last_seen();
-        }
-        ?>
-        <div class="wrap bbai-wrap bbai-modern bbai-onboarding bbai-onboarding-step3">
-            <div class="bbai-header">
-                <div class="bbai-header-content">
-                    <a class="bbai-logo" href="<?php echo esc_url($dashboard_url); ?>">
-                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" class="bbai-logo-icon" aria-hidden="true">
-                            <rect width="40" height="40" rx="10" fill="url(#logo-gradient-s3)"/>
-                            <circle cx="20" cy="20" r="8" fill="white" opacity="0.15"/>
-                            <path d="M20 12L20.8 15.2L24 16L20.8 16.8L20 20L19.2 16.8L16 16L19.2 15.2L20 12Z" fill="white"/>
-                            <path d="M28 22L28.6 24.2L30.8 24.8L28.6 25.4L28 28L27.4 25.4L25.2 24.8L27.4 24.2L28 22Z" fill="white" opacity="0.8"/>
-                            <path d="M12 26L12.4 27.4L13.8 27.8L12.4 28.2L12 30L11.6 28.2L10.2 27.8L11.6 27.4L12 26Z" fill="white" opacity="0.6"/>
-                            <rect x="14" y="18" width="12" height="8" rx="1" stroke="white" stroke-width="1.5" fill="none"/>
-                            <defs>
-                                <linearGradient id="logo-gradient-s3" x1="0" y1="0" x2="40" y2="40">
-                                    <stop stop-color="#14b8a6"/>
-                                    <stop offset="1" stop-color="#10b981"/>
-                                </linearGradient>
-                            </defs>
-                        </svg>
-                        <div class="bbai-logo-content">
-                            <span class="bbai-logo-text"><?php esc_html_e('BeepBeep AI – Alt Text Generator', 'beepbeep-ai-alt-text-generator'); ?></span>
-                            <span class="bbai-logo-tagline"><?php esc_html_e('WordPress AI Tools', 'beepbeep-ai-alt-text-generator'); ?></span>
-                        </div>
-                    </a>
-                    <nav class="bbai-nav" role="navigation" aria-label="<?php esc_attr_e('Main navigation', 'beepbeep-ai-alt-text-generator'); ?>">
-                        <?php
-                        // Only show Dashboard tab if onboarding is completed
-                        if (\BeepBeepAI\AltTextGenerator\Onboarding::is_completed()) :
-                        ?>
-                            <a class="bbai-nav-link" href="<?php echo esc_url($dashboard_url); ?>">
-                                <?php esc_html_e('Dashboard', 'beepbeep-ai-alt-text-generator'); ?>
-                            </a>
-                        <?php endif; ?>
-                        <a class="bbai-nav-link active" href="<?php echo esc_url(admin_url('admin.php?page=bbai-onboarding')); ?>">
-                            <?php esc_html_e('Getting started', 'beepbeep-ai-alt-text-generator'); ?>
-                        </a>
-                    </nav>
-                </div>
-            </div>
-            <div class="bbai-container">
-                <div class="bbai-page-header bbai-mb-6">
-                    <div class="bbai-page-header-content">
-                        <h1 class="bbai-page-title"><?php esc_html_e('Review ALT text', 'beepbeep-ai-alt-text-generator'); ?></h1>
-                        <p class="bbai-page-subtitle"><?php esc_html_e('Alt text is generating in the background. Review your first results as they arrive.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                    </div>
-                    <div class="bbai-page-header-actions">
-                        <div class="bbai-onboarding-progress">
-                            <span class="bbai-onboarding-progress-text"><?php esc_html_e('Step 3 of 3', 'beepbeep-ai-alt-text-generator'); ?></span>
-                            <span class="bbai-badge bbai-badge--getting-started"><?php esc_html_e('Setup complete', 'beepbeep-ai-alt-text-generator'); ?></span>
-                        </div>
-                    </div>
-                </div>
-
-                <?php if (!$bbai_is_authenticated) : ?>
-                <!-- Unauthenticated state: Show sign-in CTA -->
-                <div class="bbai-card bbai-card--large bbai-onboarding-hero bbai-mb-6">
-                    <div class="bbai-card-body">
-                        <h2 class="bbai-card-title"><?php esc_html_e('Sign in to start generating', 'beepbeep-ai-alt-text-generator'); ?></h2>
-                        <p class="bbai-card-subtitle"><?php esc_html_e('Sign in to start generating and reviewing alt text.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        <div class="bbai-onboarding-divider" aria-hidden="true"></div>
-                        <div class="bbai-btn-group bbai-mt-4">
-                            <button type="button" class="bbai-btn bbai-btn-primary" data-action="show-auth-modal" data-auth-tab="login">
-                                <?php esc_html_e('Sign in', 'beepbeep-ai-alt-text-generator'); ?>
-                            </button>
-                            <button type="button" class="bbai-btn bbai-btn-outline-primary" data-action="show-upgrade-modal" data-upgrade-trigger="true">
-                                <?php esc_html_e('View plans & pricing', 'beepbeep-ai-alt-text-generator'); ?>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <?php else : ?>
-                <!-- Authenticated state: Show queue stats and CTAs -->
-                <div class="bbai-card bbai-card--large bbai-onboarding-hero bbai-mb-6">
-                    <div class="bbai-card-body">
-                        <h2 class="bbai-card-title"><?php esc_html_e('Review ALT text', 'beepbeep-ai-alt-text-generator'); ?></h2>
-                        <p class="bbai-card-subtitle"><?php esc_html_e('Your images are being processed. Check the stats below and start reviewing when ready.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        <div class="bbai-onboarding-divider" aria-hidden="true"></div>
-
-                        <!-- KPI Stats Row -->
-                        <div class="bbai-onboarding-kpi-row bbai-mt-4" data-bbai-step3-stats>
-                            <div class="bbai-onboarding-kpi">
-                                <span class="bbai-onboarding-kpi-label"><?php esc_html_e('In queue', 'beepbeep-ai-alt-text-generator'); ?></span>
-                                <span class="bbai-onboarding-kpi-value" data-stat="queued">
-                                    <span class="bbai-onboarding-kpi-loading">&hellip;</span>
-                                </span>
-                            </div>
-                            <div class="bbai-onboarding-kpi">
-                                <span class="bbai-onboarding-kpi-label"><?php esc_html_e('Processed', 'beepbeep-ai-alt-text-generator'); ?></span>
-                                <span class="bbai-onboarding-kpi-value" data-stat="processed">
-                                    <span class="bbai-onboarding-kpi-loading">&hellip;</span>
-                                </span>
-                            </div>
-                            <div class="bbai-onboarding-kpi bbai-onboarding-kpi--errors" data-stat-errors-wrapper style="display: none;">
-                                <span class="bbai-onboarding-kpi-label"><?php esc_html_e('Errors', 'beepbeep-ai-alt-text-generator'); ?></span>
-                                <span class="bbai-onboarding-kpi-value" data-stat="errors">0</span>
-                            </div>
-                        </div>
-
-                        <div class="bbai-btn-group bbai-mt-4">
-                            <a href="<?php echo esc_url($library_url); ?>" class="bbai-btn bbai-btn-primary">
-                                <?php esc_html_e('Open ALT Library', 'beepbeep-ai-alt-text-generator'); ?>
-                            </a>
-                            <a href="<?php echo esc_url($dashboard_url); ?>" class="bbai-btn bbai-btn-secondary">
-                                <?php esc_html_e('Go to Dashboard', 'beepbeep-ai-alt-text-generator'); ?>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                <?php endif; ?>
-
-                <div class="bbai-card bbai-card--compact bbai-mb-6">
-                    <div class="bbai-card-body">
-                        <h3 class="bbai-card-title"><?php esc_html_e('Example result', 'beepbeep-ai-alt-text-generator'); ?></h3>
-                        <div class="bbai-onboarding-result-example">
-                            <div class="bbai-onboarding-result-example__item">
-                                <p class="bbai-onboarding-result-example__label"><?php esc_html_e('Before', 'beepbeep-ai-alt-text-generator'); ?></p>
-                                <p class="bbai-onboarding-result-example__filename">image.jpg</p>
-                                <p class="bbai-onboarding-result-example__alt"><?php esc_html_e('ALT: empty', 'beepbeep-ai-alt-text-generator'); ?></p>
-                            </div>
-                            <div class="bbai-onboarding-result-example__item bbai-onboarding-result-example__item--after">
-                                <p class="bbai-onboarding-result-example__label"><?php esc_html_e('After', 'beepbeep-ai-alt-text-generator'); ?></p>
-                                <p class="bbai-onboarding-result-example__generated"><?php esc_html_e('Generated alt text example', 'beepbeep-ai-alt-text-generator'); ?></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- What happens next card -->
-                <div class="bbai-card bbai-card--compact bbai-mb-6">
-                    <div class="bbai-card-body">
-                        <h3 class="bbai-card-title"><?php esc_html_e('What happens next', 'beepbeep-ai-alt-text-generator'); ?></h3>
-                        <ul class="bbai-onboarding-next-steps">
-                            <li><?php esc_html_e('We generate drafts for images missing alt text.', 'beepbeep-ai-alt-text-generator'); ?></li>
-                            <li><?php esc_html_e('You review and edit anything before publishing.', 'beepbeep-ai-alt-text-generator'); ?></li>
-                            <li><?php esc_html_e('You can re-run scans anytime from the Dashboard.', 'beepbeep-ai-alt-text-generator'); ?></li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Upsell banner -->
-                <div class="bbai-card bbai-card--compact bbai-onboarding-upsell">
-                    <div class="bbai-card-body bbai-onboarding-upsell-body">
-                        <div>
-                            <h3 class="bbai-card-title"><?php esc_html_e('Want faster processing?', 'beepbeep-ai-alt-text-generator'); ?></h3>
-                            <p class="bbai-card-subtitle"><?php esc_html_e('Upgrade to Growth for priority queue and bulk optimisation across your full media library.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                        </div>
-                        <button type="button" class="bbai-btn bbai-btn-outline-primary" data-action="show-upgrade-modal" data-upgrade-trigger="true">
-                            <?php esc_html_e('View plans & pricing', 'beepbeep-ai-alt-text-generator'); ?>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <?php
-        // Include upgrade modal for "View plans & pricing" button
-        $bbai_checkout_prices = $this->get_checkout_price_ids();
-        include BEEPBEEP_AI_PLUGIN_DIR . 'templates/upgrade-modal.php';
+        wp_safe_redirect( admin_url( 'admin.php?page=bbai' ) );
+        exit;
     }
 
     public function render_settings_page() {
@@ -859,9 +348,11 @@ trait Core_Admin_UI {
         $bbai_help_is_active = false;
         $bbai_settings_section = 'general';
         
-        // Non-registered users: show logged-out dashboard only (no header nav tabs).
+        // Non-registered users: show Dashboard only (other tabs appear after login).
         if (!$bbai_has_registered_user) {
-            $bbai_tabs = [];
+            $bbai_tabs = [
+                'dashboard' => __('Dashboard', 'beepbeep-ai-alt-text-generator'),
+            ];
             $bbai_tab = 'dashboard';
 
             $bbai_is_pro_for_admin = false;
@@ -1015,7 +506,6 @@ trait Core_Admin_UI {
                             <span class="bbai-logo-tagline"><?php esc_html_e('WordPress AI Tools', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </div>
                     </div>
-                    <?php if ($bbai_has_registered_user) : ?>
                     <nav class="bbai-nav" role="navigation" aria-label="<?php esc_attr_e('Main navigation', 'beepbeep-ai-alt-text-generator'); ?>">
                         <div class="bbai-nav__primary">
                         <?php
@@ -1049,7 +539,6 @@ trait Core_Admin_UI {
                             <span class="bbai-header-guide-text"><?php esc_html_e('Help', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </a>
                     </nav>
-                    <?php endif; ?>
                     <!-- Auth & Subscription Actions -->
                     <div class="bbai-header-actions">
                         <?php
@@ -1095,32 +584,6 @@ trait Core_Admin_UI {
                                 <?php endif; ?>
                             </div>
                         <?php else : ?>
-                            <?php
-                            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only routing for login fallback URL.
-                            $bbai_header_login_page = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : 'bbai';
-                            if ('' === $bbai_header_login_page || 0 !== strpos($bbai_header_login_page, 'bbai')) {
-                                $bbai_header_login_page = 'bbai';
-                            }
-                            $bbai_header_login_href = add_query_arg(
-                                'bbai_open_auth',
-                                '1',
-                                admin_url('admin.php?page=' . $bbai_header_login_page)
-                            );
-                            ?>
-                            <a
-                                href="<?php echo esc_url($bbai_header_login_href); ?>"
-                                class="bbai-header-login-btn"
-                                role="button"
-                                data-action="show-auth-modal"
-                                data-auth-tab="login"
-                            >
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
-                                    <path d="M10 14H13C13.5523 14 14 13.5523 14 13V3C14 2.44772 13.5523 2 13 2H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                                    <path d="M5 11L2 8L5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                    <path d="M2 8H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                                </svg>
-                                <span><?php esc_html_e('Login', 'beepbeep-ai-alt-text-generator'); ?></span>
-                            </a>
                         <?php endif; ?>
                 </div>
                 </div>

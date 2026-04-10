@@ -385,6 +385,7 @@ class Core {
 
         // Check for migration on admin init
         add_action('admin_init', [__CLASS__, 'maybe_run_migration'], 5);
+        add_action('admin_init', [$this, 'maybe_guard_library_access'], 20);
         // One-time legacy cache key cleanup (consolidate to bbai_usage_cache / bbai_quota_cache)
         add_action('init', [__CLASS__, 'maybe_clean_legacy_cache_keys'], 1);
         // One-time legacy settings options cleanup (after migration to bbai_settings)
@@ -496,6 +497,62 @@ class Core {
         }
 
         return false;
+    }
+
+    /**
+     * Whether the current site can access the ALT Library workspace.
+     *
+     * @return bool
+     */
+    private function current_user_can_access_library(): bool {
+        $auth_state = Auth_State::resolve($this->api_client);
+
+        return ! empty($auth_state['has_connected_account']);
+    }
+
+    /**
+     * Whether the current admin request targets the ALT Library route.
+     *
+     * @return bool
+     */
+    private function is_library_page_request(): bool {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing only.
+        $page = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing only.
+        $tab = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : '';
+
+        if ($page === self::MENU_SLUG_LIBRARY) {
+            return true;
+        }
+
+        return $tab === 'library';
+    }
+
+    /**
+     * Redirect anonymous users away from ALT Library before any screen renders.
+     *
+     * @return void
+     */
+    public function maybe_guard_library_access(): void {
+        if (!is_admin() || !$this->is_library_page_request()) {
+            return;
+        }
+
+        if ($this->current_user_can_access_library()) {
+            return;
+        }
+
+        $redirect_url = add_query_arg(
+            [
+                'page' => self::MENU_SLUG_DASHBOARD,
+                'upgrade' => 'required',
+                'bbai_show_library_gate' => '1',
+            ],
+            admin_url('admin.php')
+        );
+
+        wp_safe_redirect($redirect_url);
+        exit;
     }
 
     /**
@@ -1718,7 +1775,7 @@ class Core {
                 [$this, 'render_settings_page']
             );
         } else {
-            // Keep trial link destinations routable without exposing sidebar navigation.
+            // Keep guarded routes routable for redirects without exposing sidebar navigation.
             add_submenu_page(
                 '',
                 __('ALT Library', 'beepbeep-ai-alt-text-generator'),
@@ -1793,15 +1850,6 @@ class Core {
 	            [$this, 'handle_checkout_redirect']
 	        );
 	        
-	        // Hidden onboarding/guide page (accessible but not shown in menu)
-	        add_submenu_page(
-	            '', // No parent = hidden from menu
-                __('Getting Started', 'beepbeep-ai-alt-text-generator'),
-                __('Getting Started', 'beepbeep-ai-alt-text-generator'),
-                $cap,
-                self::MENU_SLUG_ONBOARDING,
-                [$this, 'render_bbai_onboarding_step2']
-        );
 	    }
 
 	    public function handle_checkout_redirect() {
@@ -1852,56 +1900,11 @@ class Core {
         wp_die(esc_html__('Failed to create checkout session.', 'beepbeep-ai-alt-text-generator'));
     }
 
+    /**
+     * Legacy onboarding redirect removed — dashboard is the single entry point.
+     */
     public function maybe_redirect_to_onboarding(): void {
-        if (!is_admin() || !is_user_logged_in()) {
-            return;
-        }
-
-        if (function_exists('is_network_admin') && is_network_admin()) {
-            return;
-        }
-
-        if (wp_doing_ajax() || wp_doing_cron() || (defined('REST_REQUEST') && REST_REQUEST)) {
-            return;
-        }
-
-        if (!$this->user_can_manage()) {
-            return;
-        }
-
-	        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
-	        $bbai_page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
-	        $bbai_current_page = $bbai_page_input;
-	        $is_onboarding_page = ($bbai_current_page === 'bbai-onboarding');
-        $is_plugin_page = (!empty($bbai_current_page) && strpos($bbai_current_page, 'bbai') === 0);
-
-        // Never hijack unrelated wp-admin pages. Keep onboarding redirect scoped to plugin screens.
-        if (!$is_plugin_page) {
-            return;
-        }
-
-        if (!class_exists('\BeepBeepAI\AltTextGenerator\Auth_State') || !class_exists('\BeepBeepAI\AltTextGenerator\Onboarding')) {
-            return;
-        }
-
-        $bbai_auth = \BeepBeepAI\AltTextGenerator\Auth_State::resolve($this->api_client);
-        if (empty($bbai_auth['has_connected_account'])) {
-            return;
-        }
-
-        $completed = \BeepBeepAI\AltTextGenerator\Onboarding::is_completed();
-
-        if ($completed) {
-            // Allow onboarding pages to be viewed even if completed (user may want to revisit the guide)
-            // and don't force redirects once setup is done.
-            return;
-        }
-
-        // Redirect only from the dashboard entrypoint, not every wp-admin page.
-        if (!$is_onboarding_page && $bbai_current_page === self::MENU_SLUG_DASHBOARD) {
-            wp_safe_redirect(admin_url('admin.php?page=bbai-onboarding'));
-            exit;
-        }
+        // No-op.
     }
 
     public function register_settings() {
@@ -2459,6 +2462,9 @@ class Core {
             );
         }
         
+        $bbai_guest_trial_remaining = 0;
+        $bbai_guest_can_access_library = false;
+
         // Primary nav is limited to the product workflow. Utility routes stay accessible but hidden.
         $bbai_tabs = [];
         $bbai_active_nav_tab = '';
@@ -2467,11 +2473,23 @@ class Core {
         
         // Anonymous / trial users: keep them inside the real product shell with a reduced nav.
         if ($bbai_is_anonymous_trial) {
-            $bbai_tabs = [
+            $bbai_guest_usage = Usage_Helper::get_usage($this->api_client, false);
+            if (!is_array($bbai_guest_usage)) {
+                $bbai_guest_usage = [];
+            }
+            $bbai_guest_trial_remaining = max(
+                0,
+                (int) (
+                    $bbai_guest_usage['credits_remaining']
+                    ?? $bbai_guest_usage['creditsRemaining']
+                    ?? $bbai_guest_usage['remaining']
+                    ?? 0
+                )
+            );
+            $bbai_tabs = [];
+            $bbai_allowed_tabs = [
                 'dashboard' => __('Dashboard', 'beepbeep-ai-alt-text-generator'),
-                'library'   => __('ALT Library', 'beepbeep-ai-alt-text-generator'),
             ];
-            $bbai_allowed_tabs = $bbai_tabs;
             $bbai_page_to_tab = [
                 'bbai'           => 'dashboard',
                 'bbai-library'   => 'library',
@@ -2490,14 +2508,24 @@ class Core {
             $bbai_requested_tab = $bbai_tab_aliases[$bbai_requested_tab] ?? $bbai_requested_tab;
             $bbai_route_is_allowed = isset($bbai_page_to_tab[$bbai_current_page]) && in_array($bbai_requested_tab, array_keys($bbai_allowed_tabs), true);
             if (!$bbai_route_is_allowed) {
-                wp_safe_redirect(admin_url('admin.php?page=bbai'));
+                $bbai_guest_redirect_url = admin_url('admin.php?page=bbai');
+                if ($bbai_current_page === 'bbai-library' || $bbai_requested_tab === 'library') {
+                    $bbai_guest_redirect_url = add_query_arg(
+                        [
+                            'upgrade' => 'required',
+                            'bbai_show_library_gate' => '1',
+                        ],
+                        $bbai_guest_redirect_url
+                    );
+                }
+                wp_safe_redirect($bbai_guest_redirect_url);
                 exit;
             }
             $bbai_tab = $bbai_requested_tab;
             $bbai_is_pro_for_admin = false;
             $bbai_is_agency_for_admin = false;
             $bbai_can_show_debug_tab = false;
-            $bbai_active_nav_tab = in_array($bbai_tab, ['dashboard', 'library'], true) ? $bbai_tab : '';
+            $bbai_active_nav_tab = ('dashboard' === $bbai_tab) ? 'dashboard' : '';
             $bbai_help_is_active = false;
             $bbai_settings_section = 'general';
         } else {
@@ -2627,10 +2655,26 @@ class Core {
         $bbai_export_url = wp_nonce_url(admin_url('admin-post.php?action=beepbeepai_usage_export'), 'bbai_usage_export');
         $bbai_audit_rows = $bbai_stats['audit'] ?? [];
         $bbai_debug_bootstrap = $this->get_debug_bootstrap();
+        $bbai_header_trial_credits_line = '';
+        $bbai_header_trial_credits_class = '';
+        if ($bbai_is_anonymous_trial) {
+            $bbai_header_trial_credits_line = sprintf(
+                /* translators: %s: remaining free generations. */
+                _n('%s free generation left', '%s free generations left', $bbai_guest_trial_remaining, 'beepbeep-ai-alt-text-generator'),
+                number_format_i18n($bbai_guest_trial_remaining)
+            );
+            if ($bbai_guest_trial_remaining <= 0) {
+                $bbai_header_trial_credits_class = ' bbai-header-trial-credits--exhausted';
+            } elseif ($bbai_guest_trial_remaining <= 2) {
+                $bbai_header_trial_credits_class = ' bbai-header-trial-credits--low';
+            } else {
+                $bbai_header_trial_credits_class = ' bbai-header-trial-credits--default';
+            }
+        }
         ?>
         <div class="wrap bbai-wrap bbai-modern">
             <!-- Dark Header -->
-            <div class="bbai-header">
+            <div class="bbai-header<?php echo $bbai_is_anonymous_trial ? ' bbai-header--trial-funnel' : ''; ?>">
                 <div class="bbai-header-content">
                     <div class="bbai-logo">
                         <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" class="bbai-logo-icon">
@@ -2729,46 +2773,11 @@ class Core {
                                 <?php endif; ?>
                             </div>
                         <?php else : ?>
-                            <?php
-                            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only routing for login fallback URL.
-                            $bbai_header_auth_page = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : 'bbai';
-                            if ('' === $bbai_header_auth_page || 0 !== strpos($bbai_header_auth_page, 'bbai')) {
-                                $bbai_header_auth_page = 'bbai';
-                            }
-                            $bbai_header_signup_href = add_query_arg(
-                                'bbai_open_auth',
-                                '1',
-                                admin_url('admin.php?page=' . $bbai_header_auth_page)
-                            );
-                            $bbai_header_login_href = add_query_arg(
-                                'bbai_open_auth',
-                                '1',
-                                admin_url('admin.php?page=' . $bbai_header_auth_page)
-                            );
-                            ?>
-                            <a
-                                href="<?php echo esc_url($bbai_header_signup_href); ?>"
-                                class="bbai-header-upgrade-btn"
-                                role="button"
-                                data-action="show-auth-modal"
-                                data-auth-tab="register"
-                            >
-                                <span><?php esc_html_e('Create free account', 'beepbeep-ai-alt-text-generator'); ?></span>
-                            </a>
-                            <a
-                                href="<?php echo esc_url($bbai_header_login_href); ?>"
-                                class="bbai-header-login-btn"
-                                role="button"
-                                data-action="show-auth-modal"
-                                data-auth-tab="login"
-                            >
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
-                                    <path d="M10 14H13C13.5523 14 14 13.5523 14 13V3C14 2.44772 13.5523 2 13 2H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                                    <path d="M5 11L2 8L5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                    <path d="M2 8H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                                </svg>
-                                <span><?php esc_html_e('Login', 'beepbeep-ai-alt-text-generator'); ?></span>
-                            </a>
+                                <?php if ($bbai_is_anonymous_trial && '' !== $bbai_header_trial_credits_line) : ?>
+                                <span class="bbai-header-trial-credits<?php echo esc_attr($bbai_header_trial_credits_class); ?>">
+                                    <?php echo esc_html($bbai_header_trial_credits_line); ?>
+                                </span>
+                            <?php endif; ?>
                         <?php endif; ?>
                 </div>
                 </div>
@@ -2814,7 +2823,7 @@ class Core {
     );
     ?>
 
-<?php elseif ($bbai_tab === 'library' && ($bbai_has_connected_account || $bbai_is_anonymous_trial)) : ?>
+<?php elseif ($bbai_tab === 'library' && $bbai_has_connected_account) : ?>
     <?php
     $bbai_library_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/library-tab.php';
     bbai_render_layout_template(
@@ -4268,6 +4277,221 @@ class Core {
 	        ));
 	        return array_map('intval', (array) $rows);
 	    }
+
+    /**
+     * Build a compact list of recent, representative trial images for the dashboard preview.
+     *
+     * @param int $limit Maximum number of rows to return.
+     * @return array<int, array<string, mixed>>
+     */
+    private function get_trial_dashboard_preview_rows(int $limit = 3): array {
+        $limit = max(1, $limit);
+        $seed_limit = max($limit * 4, 12);
+
+        $candidate_ids = array_values(
+            array_unique(
+                array_filter(
+                    array_map(
+                        'intval',
+                        array_merge(
+                            $this->get_missing_attachment_ids(max($limit, 3), 0),
+                            $this->get_needs_review_attachment_ids(max($limit, 3), 0),
+                            $this->get_all_attachment_ids($seed_limit, 0)
+                        )
+                    )
+                )
+            )
+        );
+
+        if (empty($candidate_ids)) {
+            return [];
+        }
+
+        $buckets = [
+            'missing'   => [],
+            'weak'      => [],
+            'optimized' => [],
+        ];
+
+        foreach ($candidate_ids as $attachment_id) {
+            $row = $this->build_trial_dashboard_preview_row_payload((int) $attachment_id);
+            if (!$row) {
+                continue;
+            }
+
+            $status = isset($row['status']) ? (string) $row['status'] : 'missing';
+            if (!isset($buckets[$status])) {
+                $buckets[$status] = [];
+            }
+
+            $buckets[$status][] = $row;
+        }
+
+        $selected = [];
+        $selected_ids = [];
+
+        foreach (['missing', 'weak', 'optimized'] as $bucket_key) {
+            if (count($selected) >= $limit || empty($buckets[$bucket_key])) {
+                continue;
+            }
+
+            $first = $buckets[$bucket_key][0];
+            $attachment_id = isset($first['attachment_id']) ? (int) $first['attachment_id'] : 0;
+            if ($attachment_id <= 0 || isset($selected_ids[$attachment_id])) {
+                continue;
+            }
+
+            $selected[] = $first;
+            $selected_ids[$attachment_id] = true;
+        }
+
+        foreach (['missing', 'weak', 'optimized'] as $bucket_key) {
+            foreach ($buckets[$bucket_key] as $row) {
+                if (count($selected) >= $limit) {
+                    break 2;
+                }
+
+                $attachment_id = isset($row['attachment_id']) ? (int) $row['attachment_id'] : 0;
+                if ($attachment_id <= 0 || isset($selected_ids[$attachment_id])) {
+                    continue;
+                }
+
+                $selected[] = $row;
+                $selected_ids[$attachment_id] = true;
+            }
+        }
+
+        return array_slice($selected, 0, $limit);
+    }
+
+    /**
+     * Build the server-rendered payload for a dashboard trial preview row.
+     *
+     * @param int $attachment_id Attachment identifier.
+     * @return array<string, mixed>|null
+     */
+    private function build_trial_dashboard_preview_row_payload(int $attachment_id): ?array {
+        $attachment_id = (int) $attachment_id;
+        if ($attachment_id <= 0) {
+            return null;
+        }
+
+        $image = get_post($attachment_id);
+        if (!$image || 'attachment' !== $image->post_type) {
+            return null;
+        }
+
+        $mime_type = (string) get_post_mime_type($attachment_id);
+        if (0 !== strpos($mime_type, 'image/')) {
+            return null;
+        }
+
+        $raw_alt = get_post_meta($attachment_id, '_wp_attachment_image_alt', true);
+        $clean_alt = is_string($raw_alt) ? trim($raw_alt) : '';
+        $row_state = $this->get_library_workspace_row_state(
+            (object) [
+                'ID'       => $attachment_id,
+                'alt_text' => $clean_alt,
+            ]
+        );
+
+        $status = isset($row_state['status']) ? sanitize_key((string) $row_state['status']) : 'missing';
+        if (!in_array($status, ['missing', 'weak', 'optimized'], true)) {
+            $status = 'missing';
+        }
+
+        $status_label = isset($row_state['status_label']) ? (string) $row_state['status_label'] : __('Missing', 'beepbeep-ai-alt-text-generator');
+        $quality_class = isset($row_state['quality_class']) ? sanitize_html_class((string) $row_state['quality_class']) : 'poor';
+        $quality_label = isset($row_state['quality_label']) ? (string) $row_state['quality_label'] : __('Weak', 'beepbeep-ai-alt-text-generator');
+        $quality_score = isset($row_state['quality_score']) ? max(0, min(100, (int) $row_state['quality_score'])) : 0;
+        $score_tier = isset($row_state['score_tier']) ? sanitize_html_class((string) $row_state['score_tier']) : ($status === 'optimized' ? 'good' : ($status === 'weak' ? 'review' : 'missing'));
+        $is_user_approved = !empty($row_state['user_approved']);
+        $has_alt = !empty($row_state['has_alt']);
+        $clean_alt = isset($row_state['clean_alt']) ? trim((string) $row_state['clean_alt']) : $clean_alt;
+
+        $file_path = (string) get_attached_file($attachment_id);
+        $modal_image_url = (string) wp_get_attachment_image_url($attachment_id, 'large');
+        if ('' === $modal_image_url) {
+            $modal_image_url = (string) wp_get_attachment_url($attachment_id);
+        }
+
+        $thumb_url = wp_get_attachment_image_src($attachment_id, 'thumbnail');
+        $thumb_src = (is_array($thumb_url) && !empty($thumb_url[0])) ? (string) $thumb_url[0] : '';
+        if ('' === $thumb_src) {
+            $thumb_src = $modal_image_url;
+        }
+
+        $display_filename = '';
+        if ('' !== $file_path) {
+            $display_filename = wp_basename($file_path);
+        } elseif ('' !== $modal_image_url) {
+            $display_filename = wp_basename((string) wp_parse_url($modal_image_url, PHP_URL_PATH));
+        }
+        if ('' === $display_filename) {
+            $display_filename = sprintf(
+                /* translators: %d: attachment id. */
+                __('Image %d', 'beepbeep-ai-alt-text-generator'),
+                $attachment_id
+            );
+        }
+
+        $file_type = wp_check_filetype($display_filename);
+        $type_label = !empty($file_type['ext']) ? strtoupper((string) $file_type['ext']) : strtoupper(str_replace('image/', '', $mime_type));
+
+        $metadata = wp_get_attachment_metadata($attachment_id);
+        $meta_parts = [];
+        if ('' !== $type_label) {
+            $meta_parts[] = $type_label;
+        }
+        if (is_array($metadata) && !empty($metadata['width']) && !empty($metadata['height'])) {
+            $meta_parts[] = absint($metadata['width']) . '×' . absint($metadata['height']);
+        }
+
+        $updated_ts = (int) get_post_modified_time('U', true, $attachment_id);
+        $created_ts = (int) get_post_time('U', true, $attachment_id);
+        $last_updated = __('Unknown', 'beepbeep-ai-alt-text-generator');
+        if ($updated_ts > 0) {
+            $current_ts = (int) current_time('timestamp', true);
+            $last_updated = sprintf(
+                /* translators: %s: relative time. */
+                __('%s ago', 'beepbeep-ai-alt-text-generator'),
+                human_time_diff($updated_ts, max($updated_ts, $current_ts))
+            );
+        }
+
+        $quality_tooltip = $status === 'missing'
+            ? __('Generate ALT text to improve accessibility and image SEO.', 'beepbeep-ai-alt-text-generator')
+            : sprintf(
+                /* translators: %s: quality score. */
+                __('ALT quality score: %s/100', 'beepbeep-ai-alt-text-generator'),
+                number_format_i18n($quality_score)
+            );
+
+        return [
+            'attachment_id'      => $attachment_id,
+            'status'             => $status,
+            'status_label'       => $status_label,
+            'quality_class'      => $quality_class,
+            'quality_label'      => $quality_label,
+            'quality_score'      => $quality_score,
+            'quality_tooltip'    => $quality_tooltip,
+            'score_tier'         => $score_tier,
+            'row_state_rank'     => ('missing' === $status ? 0 : ('weak' === $status ? 1 : 2)),
+            'user_approved'      => $is_user_approved,
+            'has_alt'            => $has_alt,
+            'clean_alt'          => $clean_alt,
+            'image_title'        => get_the_title($attachment_id),
+            'image_url'          => $modal_image_url,
+            'thumb_url'          => $thumb_src,
+            'display_filename'   => $display_filename,
+            'filename_sort'      => function_exists('mb_strtolower') ? mb_strtolower($display_filename) : strtolower($display_filename),
+            'file_meta'          => implode(' • ', $meta_parts),
+            'file_size_bytes'    => ('' !== $file_path && file_exists($file_path)) ? (int) filesize($file_path) : 0,
+            'last_updated'       => $last_updated,
+            'created_ts'         => $created_ts,
+            'updated_ts'         => $updated_ts,
+        ];
+    }
 
 	    private function get_usage_rows($limit = 10, $include_all = false){
 	        global $wpdb;
@@ -6220,26 +6444,10 @@ class Core {
      * Uses site option so it shows only once for all users.
      */
     /**
-     * Check onboarding status
+     * Legacy onboarding AJAX handler — always returns completed.
      */
     public function ajax_check_onboarding() {
-        $action = "beepbeepai_nonce";
-        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
-            wp_send_json_error(["message" => __("Invalid nonce.", "beepbeep-ai-alt-text-generator")], 403);
-            return;
-        }
-
-        if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Permission denied.', 'beepbeep-ai-alt-text-generator')]);
-            return;
-        }
-
-        $completed = false;
-        if (class_exists('\BeepBeepAI\AltTextGenerator\Onboarding')) {
-            $completed = \BeepBeepAI\AltTextGenerator\Onboarding::is_completed();
-        }
-
-        wp_send_json_success(['completed' => $completed]);
+        wp_send_json_success(['completed' => true]);
     }
 
     /**
@@ -6304,35 +6512,10 @@ class Core {
     }
 
     /**
-     * Complete onboarding
+     * Legacy onboarding completion handler — no-op.
      */
     public function ajax_complete_onboarding() {
-        $action = "beepbeepai_nonce";
-        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
-            wp_send_json_error(["message" => __("Invalid nonce.", "beepbeep-ai-alt-text-generator")], 403);
-            return;
-        }
-
-        if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Permission denied.', 'beepbeep-ai-alt-text-generator')]);
-            return;
-        }
-
-        // Only mark completed if user is authenticated with BeepBeep
-        if (!bbai_is_authenticated()) {
-            wp_send_json_error(['message' => __('Authentication required.', 'beepbeep-ai-alt-text-generator')]);
-            return;
-        }
-
-        if (class_exists('\BeepBeepAI\AltTextGenerator\Onboarding')) {
-            // Idempotent: safe to call multiple times
-            \BeepBeepAI\AltTextGenerator\Onboarding::mark_completed();
-            \BeepBeepAI\AltTextGenerator\Onboarding::update_last_seen();
-            wp_send_json_success(['message' => __('Onboarding completed.', 'beepbeep-ai-alt-text-generator')]);
-        } else {
-            wp_send_json_error(['message' => __('Onboarding class not found.', 'beepbeep-ai-alt-text-generator')]);
-            return;
-        }
+        wp_send_json_success(['message' => __('Onboarding completed.', 'beepbeep-ai-alt-text-generator')]);
     }
 
     /**
@@ -6355,112 +6538,22 @@ class Core {
     }
 
     /**
-     * Start onboarding scan (queue missing images).
+     * Legacy onboarding scan — redirects to dashboard.
      */
     public function ajax_start_scan() {
-        $action = "bbai_onboarding";
-        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
-            wp_send_json_error(["message" => __("Invalid nonce.", "beepbeep-ai-alt-text-generator")], 403);
-            return;
-        }
-
-        if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Permission denied.', 'beepbeep-ai-alt-text-generator')]);
-            return;
-        }
-
-        $limit = apply_filters('bbai_onboarding_scan_limit', 500);
-        $limit = max(1, min(500, absint($limit)));
-
-        $ids = $this->get_missing_attachment_ids($limit);
-        if (empty($ids)) {
-            // No images need alt text - still proceed to Step 3 for full onboarding experience
-            // Onboarding will be marked complete when Step 3 is viewed
-            $step3_url = admin_url('admin.php?page=bbai-onboarding&step=3');
-            if ( function_exists( 'bbai_telemetry_emit' ) ) {
-                $bbai_uid = get_current_user_id();
-                if ( $bbai_uid && ! get_user_meta( $bbai_uid, 'bbai_telemetry_first_scan', true ) ) {
-                    update_user_meta( $bbai_uid, 'bbai_telemetry_first_scan', time() );
-                    bbai_telemetry_emit(
-                        'first_scan_triggered',
-                        [
-                            'queued'             => 0,
-                            'total_candidates'   => 0,
-                            'library_pre_empty' => true,
-                        ]
-                    );
-                }
-            }
-            wp_send_json_success([
-                'message' => __('Your media library is already optimized! All images have alt text.', 'beepbeep-ai-alt-text-generator'),
-                'queued'  => 0,
-                'total'   => 0,
-                'redirect' => $step3_url,
-            ]);
-        }
-
-        $queued = Queue::enqueue_many($ids, 'onboarding');
-        if ($queued > 0) {
-            Queue::schedule_processing();
-        }
-
-        // Note: We no longer mark completed here - Step 3 will mark it when viewed
-        // This ensures user always sees Step 3 at least once
-
-        // Redirect to Step 3 review screen
-        $step3_url = admin_url('admin.php?page=bbai-onboarding&step=3');
-
-        if ( function_exists( 'bbai_telemetry_emit' ) ) {
-            $bbai_uid = get_current_user_id();
-            if ( $bbai_uid && ! get_user_meta( $bbai_uid, 'bbai_telemetry_first_scan', true ) ) {
-                update_user_meta( $bbai_uid, 'bbai_telemetry_first_scan', time() );
-                bbai_telemetry_emit(
-                    'first_scan_triggered',
-                    [
-                        'queued'           => (int) $queued,
-                        'total_candidates' => count( $ids ),
-                    ]
-                );
-            }
-        }
-
         wp_send_json_success([
-            'message' => sprintf(
-                /* translators: 1: number of images queued */
-                _n('%d image queued for processing.', '%d images queued for processing.', $queued, 'beepbeep-ai-alt-text-generator'),
-                intval($queued)
-            ),
-            'queued'   => intval($queued),
-            'total'    => count($ids),
-            'redirect' => $step3_url,
+            'message'  => __('Redirecting to dashboard.', 'beepbeep-ai-alt-text-generator'),
+            'redirect' => admin_url('admin.php?page=bbai'),
         ]);
     }
 
     /**
-     * Skip onboarding step and redirect to Step 3.
-     * Note: Onboarding is marked completed when Step 3 is viewed, not here.
+     * Legacy onboarding skip — redirects to dashboard.
      */
     public function ajax_onboarding_skip() {
-        $action = "bbai_onboarding";
-        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
-            wp_send_json_error(["message" => __("Invalid nonce.", "beepbeep-ai-alt-text-generator")], 403);
-            return;
-        }
-
-        if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Permission denied.', 'beepbeep-ai-alt-text-generator')]);
-            return;
-        }
-
-        // Note: We no longer mark completed here - Step 3 will mark it when viewed
-        // This ensures user always sees Step 3 at least once
-
-        // Redirect to Step 3 review screen so user learns where to review
-        $step3_url = admin_url('admin.php?page=bbai-onboarding&step=3');
-
         wp_send_json_success([
-            'message'  => __('Onboarding skipped.', 'beepbeep-ai-alt-text-generator'),
-            'redirect' => $step3_url,
+            'message'  => __('Redirecting to dashboard.', 'beepbeep-ai-alt-text-generator'),
+            'redirect' => admin_url('admin.php?page=bbai'),
         ]);
     }
 

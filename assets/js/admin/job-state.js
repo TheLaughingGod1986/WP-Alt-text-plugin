@@ -23,6 +23,7 @@
         skipped: 0,
         status: 'idle',       // idle | processing | complete | error | quota
         label: '',
+        mode: '',
         startTime: null,
         eta: '',
         modalVisible: false,
@@ -57,7 +58,7 @@
     /**
      * Start a new job.
      */
-    function start(label, total) {
+    function start(label, total, mode) {
         if (autoDismissTimer) {
             clearTimeout(autoDismissTimer);
             autoDismissTimer = null;
@@ -72,6 +73,7 @@
             skipped: 0,
             status: 'processing',
             label: label || 'Processing images\u2026',
+            mode: mode || '',
             startTime: Date.now(),
             eta: '',
             modalVisible: true,
@@ -154,6 +156,7 @@
             skipped: 0,
             status: 'idle',
             label: '',
+            mode: '',
             startTime: null,
             eta: '',
             modalVisible: false,

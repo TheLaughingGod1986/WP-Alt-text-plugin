@@ -96,9 +96,9 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-hero {
     margin-bottom: var(--section-spacing, 24px);
     min-height: 128px;
-    padding: 18px 20px;
-    border: 1px solid #dfe8f6;
-    border-radius: 16px;
+    padding: 16px 24px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
     background: linear-gradient(135deg, #f7fbff 0%, #eef4ff 58%, #ffffff 100%);
     box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
 }
@@ -180,9 +180,9 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding: 22px;
+    padding: 24px;
     border: 1px solid #eef1f5;
-    border-radius: 14px;
+    border-radius: 12px;
     background: #ffffff;
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
     transform: translateY(0);
@@ -197,7 +197,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-dashboard-card .bbai-card__header {
-    margin-bottom: 12px;
+    margin-bottom: 16px;
 }
 
 #bbai-dashboard-main .bbai-dashboard-card .bbai-card__title,
@@ -258,7 +258,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-hero__heading-row {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
+    gap: 8px;
     min-width: 0;
 }
 
@@ -288,7 +288,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-hero-heading {
     margin: 0;
     font-size: 20px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.15;
     letter-spacing: -0.02em;
     color: #111827;
@@ -296,7 +296,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-dashboard-hero__subtext,
 #bbai-dashboard-main .bbai-dashboard-hero-subtext {
-    margin: 6px 0 0;
+    margin: 4px 0 0;
     max-width: 640px;
     font-size: 14px;
     font-weight: 500;
@@ -306,7 +306,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-dashboard-hero__usage-block {
     display: grid;
-    gap: 6px;
+    gap: 4px;
     width: 100%;
     max-width: 600px;
     min-width: 0;
@@ -316,8 +316,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    gap: 14px 16px;
-    margin-top: 10px;
+    gap: 16px;
+    margin-top: 8px;
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero__helper {
@@ -332,7 +332,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 6px;
+    gap: 4px;
     margin: 0;
     font-size: 13px;
     font-weight: 600;
@@ -399,7 +399,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     flex-direction: column;
     justify-content: flex-end;
     align-items: stretch;
-    gap: 5px;
+    gap: 4px;
     flex: 0 0 auto;
     width: 184px;
     max-width: 184px;
@@ -414,7 +414,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 6px 10px;
+    gap: 4px 8px;
     margin-top: 8px;
     min-height: 18px;
 }
@@ -424,8 +424,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     align-items: center;
     justify-content: center;
     min-height: 40px;
-    padding: 10px 16px;
-    border-radius: 10px;
+    padding: 8px 16px;
+    border-radius: 8px;
     font-size: 13px;
     font-weight: 600;
     line-height: 1.15;
@@ -518,8 +518,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-dashboard-quick-actions {
-    margin-top: 10px;
-    margin-bottom: 20px;
+    margin-top: 8px;
+    margin-bottom: 24px;
 }
 
 #bbai-dashboard-main .bbai-dashboard-quick-actions__row {
@@ -578,12 +578,23 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-dashboard-feedback {
-    margin-top: 14px;
-    padding: 12px 14px;
+    margin-top: 16px;
+    padding: 8px 16px;
     border-radius: 12px;
     font-size: 13px;
     font-weight: 600;
     line-height: 1.45;
+}
+
+#bbai-dashboard-main .bbai-dashboard-feedback__title,
+#bbai-dashboard-main .bbai-dashboard-feedback__detail {
+    display: block;
+}
+
+#bbai-dashboard-main .bbai-dashboard-feedback__detail {
+    margin-top: 2px;
+    font-weight: 500;
+    opacity: 0.9;
 }
 
 #bbai-dashboard-main .bbai-dashboard-feedback--success {
@@ -614,7 +625,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-modal-overlay.bbai-dashboard-generator-modal .bbai-modal-content {
-    padding: 28px;
+    padding: 32px;
     text-align: left;
 }
 
@@ -637,9 +648,9 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-modal-overlay.bbai-dashboard-generator-modal .bbai-dashboard-generator-modal__summary {
-    margin-bottom: 14px;
-    padding: 18px 20px;
-    border-radius: 16px;
+    margin-bottom: 16px;
+    padding: 16px 24px;
+    border-radius: 12px;
     border: 1px solid #dbe7f3;
     background: linear-gradient(180deg, #f8fbff 0%, #f3f7fb 100%);
 }
@@ -658,11 +669,11 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-modal-overlay.bbai-dashboard-generator-modal .bbai-dashboard-generator-modal__summary-line + .bbai-dashboard-generator-modal__summary-line {
-    margin-top: 6px;
+    margin-top: 4px;
 }
 
 #bbai-modal-overlay.bbai-dashboard-generator-modal .bbai-dashboard-generator-modal__summary-note {
-    margin: 10px 0 0;
+    margin: 8px 0 0;
     font-size: 13px;
     line-height: 1.5;
     color: #92400e;
@@ -702,8 +713,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-modal-overlay.bbai-dashboard-generator-modal .bbai-dashboard-generator-modal__options {
     display: grid;
-    gap: 10px;
-    margin-top: 14px;
+    gap: 8px;
+    margin-top: 16px;
 }
 
 #bbai-modal-overlay.bbai-dashboard-generator-modal .bbai-dashboard-generator-modal__options[hidden] {
@@ -713,8 +724,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-modal-overlay.bbai-dashboard-generator-modal .bbai-dashboard-generator-modal__option {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
+    gap: 8px;
+    padding: 16px;
     border: 1px solid #e5e7eb;
     border-radius: 12px;
     background: #ffffff;
@@ -807,9 +818,9 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 .bbai-dashboard-scan-modal__dialog {
     position: relative;
     width: min(460px, 100%);
-    padding: 28px 28px 22px;
+    padding: 32px 32px 24px;
     border: 1px solid rgba(226, 232, 240, 0.92);
-    border-radius: 20px;
+    border-radius: 16px;
     background: #ffffff;
     box-shadow: 0 30px 70px rgba(15, 23, 42, 0.22);
     color: #111827;
@@ -840,7 +851,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 .bbai-dashboard-scan-modal__state {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
 }
 
 .bbai-dashboard-scan-modal__icon {
@@ -849,11 +860,11 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     justify-content: center;
     width: 52px;
     height: 52px;
-    border-radius: 16px;
+    border-radius: 12px;
     background: #eef2ff;
     color: #3b82f6;
     font-size: 24px;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 .bbai-dashboard-scan-modal__icon--loading {
@@ -878,7 +889,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 .bbai-dashboard-scan-modal__title {
     margin: 0;
     font-size: 26px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.1;
     letter-spacing: -0.03em;
     color: #0f172a;
@@ -895,7 +906,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 .bbai-dashboard-scan-modal__result {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
     margin-top: 8px;
 }
 
@@ -908,7 +919,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 .bbai-dashboard-scan-modal__loading {
     padding: 16px 18px;
     border: 1px solid rgba(191, 219, 254, 0.9);
-    border-radius: 14px;
+    border-radius: 12px;
     background: linear-gradient(180deg, rgba(239, 246, 255, 0.92), rgba(248, 250, 252, 0.98));
 }
 
@@ -928,16 +939,16 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 .bbai-dashboard-scan-modal__stats {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    gap: 8px;
 }
 
 .bbai-dashboard-scan-modal__stat {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 14px 16px;
+    gap: 4px;
+    padding: 16px;
     border: 1px solid #e5e7eb;
-    border-radius: 14px;
+    border-radius: 12px;
     background: #f8fafc;
 }
 
@@ -950,7 +961,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 .bbai-dashboard-scan-modal__stat-value {
     font-size: 16px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.35;
     color: #111827;
 }
@@ -966,14 +977,14 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
-    gap: 12px;
-    margin-top: 20px;
+    gap: 8px;
+    margin-top: 24px;
 }
 
 .bbai-dashboard-scan-modal__button {
     min-width: 132px;
     min-height: 44px;
-    padding: 11px 18px;
+    padding: 8px 16px;
     border-radius: 12px;
     font-size: 14px;
     font-weight: 600;
@@ -1134,7 +1145,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-status-card .bbai-donut-value {
     display: block;
     font-size: 48px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 0.92;
     letter-spacing: -0.05em;
     color: #111827;
@@ -1143,7 +1154,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-status-card .bbai-progress-donut-percent,
 #bbai-dashboard-main .bbai-status-card .bbai-donut-percent {
     margin-left: 0;
-    margin-top: 7px;
+    margin-top: 8px;
     font-size: 18px;
     font-weight: 600;
     line-height: 1;
@@ -1165,7 +1176,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-status-summary {
     width: 100%;
-    margin: 6px auto 0 !important;
+    margin: 4px auto 0 !important;
     text-align: center !important;
 }
 
@@ -1203,7 +1214,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-status-metrics {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
+    gap: 8px;
     width: 100%;
     max-width: 100%;
     margin: 16px auto 0;
@@ -1231,7 +1242,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-status-metric__value,
 #bbai-dashboard-main .bbai-status-stat-number {
     font-size: 24px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1;
     letter-spacing: -0.03em;
     color: #111827;
@@ -1243,7 +1254,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 4px;
     font-size: 12px;
     font-weight: 500;
     line-height: 1.3;
@@ -1297,8 +1308,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     width: 100%;
     max-width: none !important;
     margin: 16px auto 22px;
-    padding: 10px 12px;
-    border-radius: 10px;
+    padding: 8px 16px;
+    border-radius: 8px;
     text-align: center;
 }
 
@@ -1336,7 +1347,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-status-insight__guidance {
-    margin: 6px 0 0;
+    margin: 4px 0 0;
     font-size: 12px;
     font-weight: 600;
     line-height: 1.45;
@@ -1357,7 +1368,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 4px;
     margin-top: 8px;
     font-size: 13px;
     font-weight: 600;
@@ -1373,14 +1384,14 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     align-items: center;
     justify-content: center;
     flex-wrap: wrap;
-    gap: 12px 16px;
+    gap: 8px 16px;
     margin-top: 8px;
 }
 
 #bbai-dashboard-main .bbai-status-insight__action--button {
     min-height: 40px;
-    padding: 10px 16px;
-    border-radius: 10px;
+    padding: 8px 16px;
+    border-radius: 8px;
     background: #10b981 !important;
     border: none;
     color: #ffffff !important;
@@ -1423,7 +1434,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     border: 1px solid rgba(249, 115, 22, 0.26);
     background: rgba(249, 115, 22, 0.05) !important;
     color: #b45309;
-    border-radius: 10px;
+    border-radius: 8px;
 }
 
 #bbai-dashboard-main .bbai-status-insight--warning .bbai-status-insight__message,
@@ -1456,7 +1467,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     width: 100%;
     max-width: none;
     margin: 0;
-    padding: 14px;
+    padding: 16px;
     border: 1px solid #eef1f5;
     border-radius: 12px;
     background: #f9fafb;
@@ -1487,7 +1498,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-plan-usage__section-title {
     margin: 0 0 6px;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.3;
     letter-spacing: 0.02em;
     color: #1f2937;
@@ -1527,7 +1538,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-plan-usage__progress--growth {
-    margin-top: 6px;
+    margin-top: 4px;
     margin-bottom: 0;
     background: linear-gradient(90deg, #ecfdf5, #f0fdf4);
     border: 1px solid #dcfce7;
@@ -1590,7 +1601,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-plan-usage__divider {
-    margin: 14px 0;
+    margin: 16px 0;
     border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 
@@ -1602,7 +1613,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-plan-usage__steps {
     margin: 0;
-    padding-left: 18px;
+    padding-left: 16px;
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -1665,7 +1676,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-plan-usage__price {
     margin: 0 0 6px;
     font-size: 22px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.15;
     color: #1f2937;
 }
@@ -1751,7 +1762,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-inline-upgrade-trigger:focus-visible {
     outline: 2px solid #4f46e5;
     outline-offset: 3px;
-    border-radius: 6px;
+    border-radius: 8px;
 }
 
 #bbai-dashboard-main .bbai-upgrade-card {
@@ -1759,7 +1770,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding: 22px !important;
+    padding: 24px !important;
     background: #ffffff !important;
     border-color: #e5e7eb !important;
     box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05) !important;
@@ -1785,7 +1796,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-upgrade-card .bbai-card__header {
     position: static;
-    margin-bottom: 12px;
+    margin-bottom: 16px;
     padding-bottom: 0;
     border-bottom: 0;
 }
@@ -1805,7 +1816,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-upgrade-price {
     margin: 0 0 6px;
     font-size: 22px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.15;
     letter-spacing: -0.02em;
     color: #111827;
@@ -1829,7 +1840,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
     min-height: auto;
     justify-content: flex-start;
 }
@@ -1837,7 +1848,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-upgrade-card__section {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
     padding-top: 0;
     border-top: 0;
 }
@@ -1853,7 +1864,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-upgrade-card .bbai-feature-list,
 #bbai-dashboard-main .bbai-upgrade-features {
     display: grid;
-    gap: 12px;
+    gap: 8px;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -1862,7 +1873,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-upgrade-card .bbai-feature-list li {
     display: flex;
     align-items: flex-start;
-    gap: 10px;
+    gap: 8px;
     margin: 0;
     font-size: 14px;
     font-weight: 500;
@@ -1883,13 +1894,13 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     box-shadow: 0 6px 16px rgba(79, 70, 229, 0.16);
     color: #ffffff;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 #bbai-dashboard-main .bbai-upgrade-value {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     padding-top: 2px;
 }
 
@@ -1906,7 +1917,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-upgrade-value__line strong,
 #bbai-dashboard-main .bbai-upgrade-value__support strong {
-    font-weight: 700;
+    font-weight: 600;
     color: #111827;
 }
 
@@ -1921,7 +1932,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     padding-top: 16px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     align-items: flex-start;
     border-top: 1px solid #eef1f5;
 }
@@ -1945,7 +1956,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-upgrade-meters {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 16px;
     margin: 0 0 4px;
 }
 
@@ -1967,7 +1978,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-meter-value {
-    font-weight: 700;
+    font-weight: 600;
     color: #111827;
 }
 
@@ -2022,8 +2033,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     justify-content: center;
     min-height: 40px !important;
     margin: 0;
-    padding: 10px 18px !important;
-    border-radius: 10px !important;
+    padding: 8px 16px !important;
+    border-radius: 8px !important;
     box-shadow: none !important;
     font-size: 14px !important;
     font-weight: 600 !important;
@@ -2093,7 +2104,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-workflow-step {
     display: flex;
-    gap: 18px;
+    gap: 16px;
     margin: 0;
     padding: 16px 0;
     border-top: 1px solid #f1f5f9;
@@ -2148,7 +2159,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-workflow-step__btn {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     align-self: flex-start;
     margin-top: 0;
     min-height: 36px;
@@ -2225,8 +2236,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-opportunity-scanner__loading {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
+    gap: 8px;
+    padding: 16px;
     border: 1px solid #e5edfb;
     border-radius: 12px;
     background: #f8fbff;
@@ -2272,9 +2283,9 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-opportunity-scanner__label {
-    margin: 12px 0 0;
+    margin: 16px 0 0;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.3;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -2284,7 +2295,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-opportunity-scanner__steps {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
     margin: 8px 0 0;
     padding: 0;
     list-style: none;
@@ -2293,7 +2304,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-opportunity-scanner__step {
     display: grid;
     grid-template-columns: 32px minmax(0, 1fr);
-    gap: 10px;
+    gap: 8px;
     align-items: flex-start;
 }
 
@@ -2303,7 +2314,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     justify-content: center;
     width: 32px;
     height: 32px;
-    border-radius: 10px;
+    border-radius: 8px;
     background: rgba(79, 70, 229, 0.08);
     color: #4f46e5;
     font-size: 16px;
@@ -2317,7 +2328,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-opportunity-scanner__step-content {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 2px 10px;
+    gap: 2px 8px;
     align-items: start;
     min-width: 0;
 }
@@ -2345,7 +2356,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     align-self: start;
     margin-top: 0;
     min-height: auto;
-    padding: 6px 12px;
+    padding: 4px 8px;
     border-radius: 8px;
     font-size: 13px;
     line-height: 1;
@@ -2385,8 +2396,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px 22px;
-    padding: 18px 22px;
+    gap: 16px 24px;
+    padding: 16px 24px;
     border: 1px solid #eef0f3;
     border-radius: 12px;
     background: #ffffff;
@@ -2405,7 +2416,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-review-prompt-card__content {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 4px;
 }
 
 #bbai-dashboard-main .bbai-review-prompt-card__content {
@@ -2457,9 +2468,9 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     align-items: center;
     justify-content: center;
     min-height: 40px;
-    padding: 10px 15px;
+    padding: 8px 16px;
     border: 1px solid #dbeafe;
-    border-radius: 10px;
+    border-radius: 8px;
     background: #ffffff;
     color: #2563eb;
     font-size: 13px;
@@ -2505,7 +2516,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-accessibility-impact__metrics {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
+    gap: 16px;
 }
 
 #bbai-dashboard-main .bbai-accessibility-impact__metric {
@@ -2538,7 +2549,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-accessibility-impact__metric-value strong {
     font-size: 28px;
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: -0.02em;
 }
 
@@ -2552,7 +2563,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-accessibility-impact__preview {
     padding: 16px;
     border: 1px solid #e9e5ff;
-    border-radius: 14px;
+    border-radius: 12px;
     background: linear-gradient(180deg, #fcfcff 0%, #f7f5ff 100%);
 }
 
@@ -2567,7 +2578,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-accessibility-impact__actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
 }
 
 #bbai-dashboard-main .bbai-accessibility-impact__action {
@@ -2582,7 +2593,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     justify-content: flex-start;
     gap: 0;
     min-height: 136px;
-    padding: 18px;
+    padding: 16px;
     border-radius: 12px;
     border: 1px solid #eef0f3;
     background: #ffffff;
@@ -2631,7 +2642,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     margin: 0;
     min-height: 20px;
     font-size: 32px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.2;
     letter-spacing: -0.02em;
     color: #111827;
@@ -2668,7 +2679,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 4px;
     min-height: 30px;
     text-transform: none;
     letter-spacing: 0.01em;
@@ -2686,7 +2697,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     background: #f8fafc;
     color: #64748b;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1;
     cursor: help;
 }
@@ -2728,7 +2739,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     #bbai-dashboard-main .bbai-dashboard-hero__usage-row {
         display: grid;
         grid-template-columns: 1fr;
-        gap: 12px;
+        gap: 8px;
     }
 
     #bbai-dashboard-main .bbai-dashboard-hero-actions {
@@ -2740,18 +2751,18 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
     #bbai-dashboard-main .bbai-dashboard-hero-actions__links {
         align-items: flex-start;
-        gap: 6px 8px;
+        gap: 4px 8px;
     }
 
     #bbai-dashboard-main .bbai-dashboard-hero,
     #bbai-dashboard-main .bbai-dashboard-card,
     #bbai-dashboard-main .bbai-stat-card {
-        padding: 18px 20px;
+        padding: 16px 24px;
     }
 
     #bbai-dashboard-main .bbai-metric-card,
     #bbai-dashboard-main .bbai-stat-card.bbai-metric-card {
-        padding: 18px;
+        padding: 16px;
     }
 
     #bbai-dashboard-main .bbai-plan-usage__price {
@@ -2783,7 +2794,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
     #bbai-dashboard-main .bbai-status-metrics,
     #bbai-dashboard-main .bbai-opportunity-scanner__steps {
-        gap: 12px;
+        gap: 8px;
     }
 }
 
@@ -2864,7 +2875,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     #bbai-dashboard-main .bbai-opportunity-scanner__step-button {
         grid-column: 1;
         grid-row: auto;
-        margin-top: 6px;
+        margin-top: 4px;
         justify-self: start;
     }
 }
@@ -2877,7 +2888,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     #bbai-dashboard-main .bbai-dashboard-hero,
     #bbai-dashboard-main .bbai-dashboard-card,
     #bbai-dashboard-main .bbai-stat-card {
-        padding: 18px;
+        padding: 16px;
     }
 
     #bbai-dashboard-main .bbai-dashboard-header__title {
@@ -2918,7 +2929,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     }
 
     #bbai-dashboard-main .bbai-status-metric {
-        padding: 14px;
+        padding: 16px;
     }
 
     #bbai-dashboard-main .bbai-status-insight__action,
@@ -2942,7 +2953,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 .bbai-dashboard-scan-modal__dialog {
     width: min(520px, 100%);
     max-width: 680px;
-    padding: 28px 28px 24px;
+    padding: 32px 32px 24px;
 }
 
 .bbai-dashboard-scan-modal__close:focus-visible {
@@ -2954,7 +2965,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 .bbai-dashboard-scan-modal__state {
-    gap: 14px;
+    gap: 16px;
 }
 
 .bbai-dashboard-scan-modal__description {
@@ -2970,7 +2981,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 .bbai-dashboard-scan-modal__loading-meta {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 .bbai-dashboard-scan-modal__loading-progress {
@@ -2995,7 +3006,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 .bbai-dashboard-scan-modal__loading-stats {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px 12px;
+    gap: 8px 16px;
 }
 
 .bbai-dashboard-scan-modal__loading-stat {
@@ -3022,7 +3033,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 .bbai-dashboard-scan-modal__metrics {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
 }
 
 .bbai-dashboard-scan-modal__metrics[hidden] {
@@ -3033,7 +3044,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 12px;
+    padding: 8px 16px;
     border: 1px solid #e5e7eb;
     border-radius: 12px;
     background: #f8fafc;
@@ -3042,7 +3053,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 .bbai-dashboard-scan-modal__metric-value {
     font-size: 15px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1;
     color: #0f172a;
 }
@@ -3055,7 +3066,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 .bbai-dashboard-scan-modal__footer {
     justify-content: flex-start;
-    gap: 10px;
+    gap: 8px;
     margin-top: 24px;
 }
 
@@ -3121,7 +3132,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     overflow: hidden;
     margin: 0 0 24px;
     min-height: 0;
-    padding: 20px clamp(20px, 2.2vw, 30px);
+    padding: 24px clamp(16px, 2.2vw, 32px);
     border: 1px solid rgba(199, 213, 227, 0.78);
     border-radius: 26px;
     background:
@@ -3143,11 +3154,11 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 18px;
-    margin-bottom: 18px;
-    padding: 14px 16px;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding: 16px;
     border: 1px solid var(--bbai-ui-line);
-    border-radius: 16px;
+    border-radius: 12px;
     background: var(--bbai-ui-surface);
 }
 
@@ -3171,7 +3182,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-alert__title {
     margin: 0;
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.35;
     color: var(--bbai-ui-ink);
 }
@@ -3202,7 +3213,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     background: var(--bbai-ui-ink);
     color: #ffffff;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1;
     text-decoration: none;
     cursor: pointer;
@@ -3220,7 +3231,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-hero-copy {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero-inner {
@@ -3232,7 +3243,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-hero__layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
-    gap: 20px 32px;
+    gap: 24px 32px;
     align-items: start;
 }
 
@@ -3244,7 +3255,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero__status-badge {
@@ -3256,7 +3267,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     background: rgba(180, 83, 9, 0.12);
     color: var(--bbai-ui-warning);
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1;
     letter-spacing: 0.02em;
 }
@@ -3271,7 +3282,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-hero__heading-row {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero__icon {
@@ -3281,7 +3292,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     flex: 0 0 auto;
     width: 44px;
     height: 44px;
-    border-radius: 14px;
+    border-radius: 12px;
     background: var(--bbai-ui-success-soft);
     color: var(--bbai-ui-success);
     box-shadow: inset 0 0 0 1px rgba(21, 128, 61, 0.12);
@@ -3318,7 +3329,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-hero-heading {
     margin: 0;
     font-size: clamp(22px, 2.4vw, 30px);
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.06;
     letter-spacing: -0.04em;
     color: var(--bbai-ui-ink);
@@ -3345,7 +3356,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 8px 10px;
+    gap: 8px;
     margin: 0;
     font-size: 12px;
     line-height: 1.5;
@@ -3361,7 +3372,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     background: rgba(37, 99, 235, 0.08);
     color: var(--bbai-ui-brand-strong);
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }
@@ -3376,7 +3387,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-hero__usage-block {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     max-width: 680px;
     padding-top: 2px;
 }
@@ -3384,7 +3395,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-hero__usage {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px 10px;
+    gap: 8px;
     align-items: center;
     margin: 0;
     font-size: 13px;
@@ -3423,7 +3434,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     flex-direction: column;
     align-items: stretch;
     justify-self: end;
-    gap: 12px;
+    gap: 8px;
     width: min(100%, 320px);
     min-width: 0;
 }
@@ -3431,7 +3442,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-hero-actions__item {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 4px;
     align-items: stretch;
 }
 
@@ -3443,7 +3454,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     padding: 0 16px;
     border-radius: 12px;
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1;
     text-decoration: none;
     transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
@@ -3503,7 +3514,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: 12px;
+    gap: 8px;
 }
 
 #bbai-dashboard-main .bbai-status-card__scan-meta,
@@ -3516,7 +3527,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-status-card__body {
-    gap: 18px;
+    gap: 16px;
 }
 
 #bbai-dashboard-main .bbai-status-summary {
@@ -3528,7 +3539,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-status-summary__line--primary {
     margin: 0;
     font-size: 16px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.4;
     color: var(--bbai-ui-ink);
 }
@@ -3544,7 +3555,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     margin: 2px 0 0;
     padding: 16px 18px;
     border: 1px solid var(--bbai-ui-line);
-    border-radius: 18px;
+    border-radius: 16px;
     background: var(--bbai-ui-surface-soft) !important;
     text-align: left;
 }
@@ -3567,12 +3578,12 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-status-insight__message {
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.45;
 }
 
 #bbai-dashboard-main .bbai-status-insight__guidance {
-    margin-top: 6px;
+    margin-top: 4px;
     font-size: 13px;
     font-weight: 500;
     line-height: 1.6;
@@ -3588,8 +3599,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-status-insight__actions {
     justify-content: flex-start;
-    gap: 10px 14px;
-    margin-top: 14px;
+    gap: 8px 16px;
+    margin-top: 16px;
 }
 
 #bbai-dashboard-main .bbai-status-insight__action {
@@ -3637,10 +3648,10 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-plan-usage {
     display: grid;
     grid-template-columns: minmax(0, 0.95fr) 1px minmax(0, 1fr) 1px minmax(0, 1.08fr);
-    gap: 18px;
-    padding: 20px;
-    border: 1px solid #e4edf6;
-    border-radius: 20px;
+    gap: 16px;
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
     background: linear-gradient(180deg, #fbfdff 0%, #f7fafc 100%);
 }
 
@@ -3649,7 +3660,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-plan-usage__upgrade {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
     min-width: 0;
 }
 
@@ -3657,13 +3668,13 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 12px;
+    gap: 8px;
 }
 
 #bbai-dashboard-main .bbai-plan-usage__eyebrow {
     margin: 0 0 4px;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.2;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -3673,7 +3684,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-plan-usage__label {
     margin: 0;
     font-size: 18px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.2;
     color: var(--bbai-ui-ink);
 }
@@ -3686,7 +3697,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     border-radius: 999px;
     border: 1px solid transparent;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -3706,7 +3717,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-plan-usage__line {
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.55;
     color: var(--bbai-ui-ink);
 }
@@ -3743,16 +3754,16 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-plan-usage__automation {
-    padding: 18px;
+    padding: 16px;
     border: 1px solid rgba(37, 99, 235, 0.1);
-    border-radius: 18px;
+    border-radius: 16px;
     background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
 }
 
 #bbai-dashboard-main .bbai-plan-usage__section-title {
     margin: 0;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.2;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -3762,7 +3773,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-plan-usage__automation-title {
     margin: 0;
     font-size: 18px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.25;
     color: var(--bbai-ui-ink);
 }
@@ -3782,7 +3793,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-plan-usage__automation-toggle {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     padding: 8px 10px;
     border: 1px solid rgba(15, 23, 42, 0.08);
     border-radius: 999px;
@@ -3819,15 +3830,15 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-plan-usage__automation-status {
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.3;
     color: var(--bbai-ui-ink);
 }
 
 #bbai-dashboard-main .bbai-plan-usage__upgrade {
-    padding: 18px;
+    padding: 16px;
     border: 1px solid rgba(15, 23, 42, 0.06);
-    border-radius: 20px;
+    border-radius: 12px;
     background: linear-gradient(160deg, #0f172a 0%, #1e293b 100%);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
@@ -3846,14 +3857,14 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-plan-usage__price {
     margin: 0;
     font-size: 24px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.1;
     color: #ffffff;
 }
 
 #bbai-dashboard-main .bbai-plan-usage__growth-copy {
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.55;
     color: #ffffff;
 }
@@ -3881,7 +3892,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-upgrade-benefits {
     display: grid;
-    gap: 10px;
+    gap: 8px;
     margin: 2px 0 0;
     padding: 0;
     list-style: none;
@@ -3890,7 +3901,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-upgrade-benefits__item {
     display: grid;
     grid-template-columns: 34px minmax(0, 1fr);
-    gap: 12px;
+    gap: 8px;
     align-items: start;
 }
 
@@ -3914,7 +3925,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-upgrade-benefits__title {
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.4;
 }
 
@@ -3939,7 +3950,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-plan-usage__actions {
-    gap: 10px;
+    gap: 8px;
     margin-top: auto;
 }
 
@@ -3959,8 +3970,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-automation-card {
-    border-color: #dce6f1;
-    border-radius: 20px;
+    border-color: #e2e8f0;
+    border-radius: 12px;
     background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
     box-shadow: var(--bbai-ui-shadow);
 }
@@ -3973,7 +3984,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-automation-card__eyebrow {
     margin: 0 0 8px;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.2;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -3993,7 +4004,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     gap: 16px;
     padding: 16px 18px;
     border: 1px solid rgba(37, 99, 235, 0.1);
-    border-radius: 18px;
+    border-radius: 16px;
     background: #ffffff;
 }
 
@@ -4006,7 +4017,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-automation-card__toggle-title {
     margin: 0;
     font-size: 15px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.4;
     color: var(--bbai-ui-ink);
 }
@@ -4021,8 +4032,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-automation-card__toggle {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 7px 10px;
+    gap: 8px;
+    padding: 8px;
     border: 1px solid rgba(15, 23, 42, 0.08);
     border-radius: 999px;
     background: #f8fafc;
@@ -4058,14 +4069,14 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-automation-card__toggle-label {
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.3;
     color: var(--bbai-ui-ink);
 }
 
 #bbai-dashboard-main .bbai-automation-card__list {
     display: grid;
-    gap: 10px;
+    gap: 8px;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -4073,7 +4084,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-automation-card__list li {
     position: relative;
-    padding-left: 18px;
+    padding-left: 16px;
     font-size: 13px;
     line-height: 1.65;
     color: var(--bbai-ui-text);
@@ -4091,9 +4102,9 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-upgrade-value {
-    padding: 14px 16px;
+    padding: 16px;
     border: 1px solid rgba(15, 23, 42, 0.07);
-    border-radius: 16px;
+    border-radius: 12px;
     background: rgba(255, 255, 255, 0.82);
 }
 
@@ -4113,7 +4124,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
+    gap: 8px;
     padding-top: 16px;
     border-top: 1px solid rgba(15, 23, 42, 0.07);
 }
@@ -4131,15 +4142,15 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-workflow-steps {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
 }
 
 #bbai-dashboard-main .bbai-workflow-step {
     display: grid;
     grid-template-columns: 44px minmax(0, 1fr);
-    gap: 14px;
+    gap: 16px;
     align-items: start;
-    padding: 14px 0;
+    padding: 16px 0;
 }
 
 #bbai-dashboard-main .bbai-workflow-step + .bbai-workflow-step {
@@ -4153,7 +4164,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     width: 44px;
     height: 44px;
     margin: 0;
-    border-radius: 14px;
+    border-radius: 12px;
     background: linear-gradient(180deg, #eef5ff 0%, #f8fbff 100%);
     color: var(--bbai-ui-brand-strong);
 }
@@ -4167,7 +4178,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-workflow-step__title {
     margin: 0;
     font-size: 15px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.35;
     color: var(--bbai-ui-ink);
 }
@@ -4190,8 +4201,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-dashboard-stats-wrap {
-    margin-top: 20px;
-    padding-top: 20px;
+    margin-top: 24px;
+    padding-top: 24px;
     border-top: 1px solid rgba(148, 163, 184, 0.18);
 }
 
@@ -4204,7 +4215,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-metric-card {
     align-items: flex-start;
     justify-content: flex-start;
-    gap: 10px;
+    gap: 8px;
     min-height: 0;
     text-align: left;
 }
@@ -4212,7 +4223,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-stat-card__icon {
     width: 42px;
     height: 42px;
-    border-radius: 14px;
+    border-radius: 12px;
     background: linear-gradient(180deg, #eef5ff 0%, #f8fbff 100%);
     color: var(--bbai-ui-brand-strong);
 }
@@ -4228,7 +4239,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-accessibility-impact-card .bbai-card__header {
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 #bbai-dashboard-main .bbai-accessibility-impact-card .bbai-card__body {
@@ -4238,7 +4249,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-accessibility-impact__eyebrow {
     margin: 0 0 6px;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.2;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -4250,7 +4261,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 8px;
     width: 100%;
 }
 
@@ -4258,7 +4269,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     width: min(100%, 560px);
     margin: 0 auto;
     text-align: center;
@@ -4273,9 +4284,9 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-accessibility-impact__badge-card {
     position: relative;
     width: min(100%, 360px);
-    padding: 18px 22px 16px;
+    padding: 16px 24px;
     border: 1px solid rgba(22, 163, 74, 0.18);
-    border-radius: 20px;
+    border-radius: 12px;
     background:
         radial-gradient(circle at top right, rgba(74, 222, 128, 0.2), transparent 34%),
         linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(244, 252, 246, 0.96) 100%);
@@ -4285,7 +4296,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-accessibility-impact__badge-label {
     margin: 0 0 8px;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: #15803d;
@@ -4295,7 +4306,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    gap: 3px;
+    gap: 4px;
     margin: 0;
     font-size: 24px;
     line-height: 1;
@@ -4304,21 +4315,21 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-accessibility-impact__badge-score strong {
     font-size: clamp(42px, 6vw, 54px);
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: -0.04em;
 }
 
 #bbai-dashboard-main .bbai-accessibility-impact__badge-score span {
-    margin-top: 6px;
+    margin-top: 4px;
     font-size: 24px;
-    font-weight: 700;
+    font-weight: 600;
     color: #15803d;
 }
 
 #bbai-dashboard-main .bbai-accessibility-impact__badge-divider {
     width: 100%;
     height: 1px;
-    margin: 14px 0 12px;
+    margin: 16px 0 12px;
     background: linear-gradient(90deg, transparent 0%, rgba(21, 128, 61, 0.24) 16%, rgba(21, 128, 61, 0.24) 84%, transparent 100%);
 }
 
@@ -4338,12 +4349,12 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-accessibility-impact__badge-metric strong {
     font-size: 22px;
-    font-weight: 700;
+    font-weight: 600;
     color: #0f172a;
 }
 
 #bbai-dashboard-main .bbai-accessibility-impact__badge-powered {
-    margin: 14px 0 0;
+    margin: 16px 0 0;
     font-size: 12px;
     font-weight: 600;
     color: #166534;
@@ -4390,7 +4401,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-accessibility-impact__action--secondary {
     position: relative;
-    margin-left: 12px;
+    margin-left: 16px;
     padding: 0 0 0 12px;
     border: 0;
     background: transparent;
@@ -4428,9 +4439,9 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-accessibility-impact__preview {
     width: min(100%, 460px);
-    padding: 12px;
+    padding: 16px;
     border: 1px solid rgba(22, 163, 74, 0.16);
-    border-radius: 18px;
+    border-radius: 16px;
     background: rgba(255, 255, 255, 0.78);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
 }
@@ -4439,14 +4450,14 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: block;
     width: 100%;
     height: auto;
-    border-radius: 16px;
+    border-radius: 12px;
 }
 
 #bbai-dashboard-main .bbai-review-prompt-card__body {
-    gap: 14px 20px;
+    gap: 16px 24px;
     padding: 16px 18px;
     border: 1px solid rgba(148, 163, 184, 0.18);
-    border-radius: 16px;
+    border-radius: 12px;
     background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
     box-shadow: none;
 }
@@ -4531,7 +4542,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     #bbai-dashboard-main .bbai-dashboard-hero,
     #bbai-dashboard-main .bbai-dashboard-card,
     #bbai-dashboard-main .bbai-stat-card {
-        padding: 20px;
+        padding: 24px;
     }
 
     #bbai-dashboard-main .bbai-dashboard-alert {
@@ -4594,39 +4605,39 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     }
 
     #bbai-dashboard-main .bbai-accessibility-impact__badge-card {
-        padding: 18px 18px 16px;
+        padding: 16px;
     }
 
     #bbai-dashboard-main .bbai-accessibility-impact__badge-metric {
-        gap: 12px;
+        gap: 8px;
     }
 
     #bbai-dashboard-main .bbai-accessibility-impact__actions {
-        row-gap: 10px;
+        row-gap: 8px;
     }
 
     #bbai-dashboard-main .bbai-accessibility-impact__action--secondary {
-        margin-left: 10px;
-        padding-left: 10px;
+        margin-left: 8px;
+        padding-left: 8px;
     }
 }
 
 #bbai-dashboard-main .bbai-dashboard-row--2.bbai-guided-workflow-section {
     grid-template-columns: minmax(0, 1fr) !important;
-    gap: 14px;
+    gap: 16px;
 }
 
 #bbai-dashboard-main .bbai-guided-workflow {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     padding: 0 2px;
 }
 
 #bbai-dashboard-main .bbai-guided-workflow__eyebrow {
     margin: 0;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.2;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -4637,8 +4648,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     position: relative;
     width: auto;
     margin: 0 -32px 26px;
-    padding: 22px 0 20px;
-    background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+    padding: 24px 0;
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
     border-bottom: 1px solid #e5e7eb;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
@@ -4681,13 +4692,13 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     flex: 1 1 auto;
     flex-direction: column;
     align-items: flex-start;
-    gap: 6px;
+    gap: 4px;
     min-width: 0;
 }
 
 #bbai-dashboard-main .bbai-hero .bbai-dashboard-hero__heading-row {
     align-items: flex-start;
-    gap: 14px;
+    gap: 16px;
     margin: 0;
 }
 
@@ -4727,7 +4738,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-hero .bbai-dashboard-hero-heading {
     margin: 0 0 6px;
     font-size: 22px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.08;
     letter-spacing: -0.03em;
     color: #0f172a;
@@ -4754,14 +4765,14 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-hero .bbai-dashboard-hero__usage-block {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     width: 100%;
     max-width: 680px;
-    padding-top: 6px;
+    padding-top: 4px;
 }
 
 #bbai-dashboard-main .bbai-hero .bbai-dashboard-hero__usage {
-    gap: 8px 10px;
+    gap: 8px;
     margin: 0;
     font-size: 13px;
     line-height: 1.45;
@@ -4805,7 +4816,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     flex: 0 0 min(100%, 320px);
     flex-direction: column;
     align-items: flex-end;
-    gap: 10px;
+    gap: 8px;
     width: min(100%, 320px);
     min-width: 0;
 }
@@ -4814,7 +4825,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: flex;
     width: 100%;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 #bbai-dashboard-main .bbai-hero .bbai-dashboard-hero-actions__item {
@@ -4827,9 +4838,9 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     min-height: 40px;
     justify-content: flex-start;
     padding: 0 16px;
-    border-radius: 10px;
+    border-radius: 8px;
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.2;
     text-align: left;
     transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
@@ -4901,7 +4912,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     #bbai-dashboard-main .bbai-hero-full {
         margin-right: -24px;
         margin-left: -24px;
-        padding: 20px 0 18px;
+        padding: 24px 0 16px;
     }
 
     #bbai-dashboard-main .bbai-hero-inner {
@@ -4916,7 +4927,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 @media (max-width: 640px) {
     #bbai-dashboard-main .bbai-hero .bbai-dashboard-hero__heading-row {
-        gap: 12px;
+        gap: 8px;
     }
 
     #bbai-dashboard-main .bbai-hero .bbai-dashboard-hero__icon {
@@ -4937,7 +4948,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-guided-workflow__grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 20px;
+    gap: 24px;
 }
 
 #bbai-dashboard-main .bbai-actions-card,
@@ -4947,13 +4958,13 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-actions-card .bbai-card__header,
 #bbai-dashboard-main .bbai-automation-card .bbai-card__header {
-    margin-bottom: 14px;
+    margin-bottom: 16px;
 }
 
 #bbai-dashboard-main .bbai-workflow-card__eyebrow {
     margin: 0 0 8px;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.2;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -4962,7 +4973,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-workflow-card .bbai-card__title,
 #bbai-dashboard-main .bbai-automation-card .bbai-card__title {
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 #bbai-dashboard-main .bbai-workflow-card__desc,
@@ -4976,8 +4987,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-workflow-step {
     grid-template-columns: 40px minmax(0, 1fr);
-    gap: 12px;
-    padding: 14px 0;
+    gap: 8px;
+    padding: 16px 0;
 }
 
 #bbai-dashboard-main .bbai-workflow-step__icon {
@@ -4987,7 +4998,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-workflow-step__content {
-    gap: 6px;
+    gap: 4px;
 }
 
 #bbai-dashboard-main .bbai-workflow-step__desc {
@@ -4997,11 +5008,11 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-automation-card__status-row {
     display: grid;
     grid-template-columns: 36px minmax(0, 1fr);
-    gap: 12px;
+    gap: 8px;
     align-items: start;
-    padding: 15px 16px;
+    padding: 16px;
     border: 1px solid rgba(15, 23, 42, 0.08);
-    border-radius: 16px;
+    border-radius: 12px;
     background: rgba(255, 255, 255, 0.92);
 }
 
@@ -5026,7 +5037,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-automation-card__status-row--locked .bbai-automation-card__status-indicator {
-    background: #eef2f7;
+    background: #f1f5f9;
     color: #475569;
 }
 
@@ -5038,7 +5049,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-automation-card__status-copy {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     min-width: 0;
 }
 
@@ -5046,13 +5057,13 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 8px 10px;
+    gap: 8px;
 }
 
 #bbai-dashboard-main .bbai-automation-card__status-title {
     margin: 0;
     font-size: 15px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.4;
     color: var(--bbai-ui-ink);
 }
@@ -5064,7 +5075,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     padding: 0 10px;
     border-radius: 999px;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1;
     letter-spacing: 0.02em;
 }
@@ -5089,7 +5100,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-automation-card__list {
-    gap: 10px;
+    gap: 8px;
 }
 
 #bbai-dashboard-main .bbai-automation-card__list li {
@@ -5103,12 +5114,12 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-upgrade-value {
-    padding: 12px 14px;
+    padding: 8px 16px;
 }
 
 #bbai-dashboard-main .bbai-upgrade-bottom {
     gap: 8px;
-    padding-top: 14px;
+    padding-top: 16px;
 }
 
 #bbai-dashboard-main .bbai-upgrade-card .bbai-upgrade-compare-link,
@@ -5127,7 +5138,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     #bbai-dashboard-main .bbai-guided-workflow {
         flex-direction: column;
         align-items: flex-start;
-        gap: 6px;
+        gap: 4px;
     }
 
     #bbai-dashboard-main .bbai-automation-card__status-row {
@@ -5162,7 +5173,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) {
     margin: 0;
-    padding: 28px 30px;
+    padding: 32px;
     border: 1px solid #dce7f5;
     border-radius: 24px;
     background:
@@ -5202,14 +5213,14 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero-copy {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     min-width: 0;
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__heading-row {
     display: flex;
     align-items: flex-start;
-    gap: 14px;
+    gap: 16px;
     margin: 0;
 }
 
@@ -5220,7 +5231,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     width: 46px;
     height: 46px;
     flex: 0 0 46px;
-    border-radius: 14px;
+    border-radius: 12px;
     background: rgba(37, 99, 235, 0.1);
     color: #1d4ed8;
 }
@@ -5248,7 +5259,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__headline {
     margin: 0;
     font-size: 31px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.05;
     letter-spacing: -0.04em;
     color: #0f172a;
@@ -5283,14 +5294,14 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__usage-block {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     margin-top: 4px;
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__usage {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
     margin: 0;
     font-size: 13px;
     line-height: 1.4;
@@ -5309,12 +5320,12 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__usage-pill {
-    font-weight: 700;
+    font-weight: 600;
     color: #1e3a8a;
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__usage-primary {
-    font-weight: 700;
+    font-weight: 600;
     color: #0f172a;
 }
 
@@ -5347,7 +5358,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero-actions {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
     align-items: stretch;
     min-width: 0;
 }
@@ -5359,16 +5370,16 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     align-items: center;
     justify-content: center;
     min-height: 44px;
-    border-radius: 12px;
+    border-radius: 8px;
     text-decoration: none;
     font-size: 14px;
     font-weight: 600;
-    transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__cta--primary,
 #bbai-dashboard-main .bbai-command-action--primary {
-    padding: 0 18px;
+    padding: 0 24px;
     border: 1px solid transparent;
     background: #10b981;
     color: #ffffff;
@@ -5394,7 +5405,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__secondary-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px 12px;
+    gap: 8px 16px;
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__link,
@@ -5403,8 +5414,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-command-action--tertiary {
     justify-content: flex-start;
     min-height: 36px;
-    padding: 0 14px;
-    border: 1px solid #dbe5f1;
+    padding: 0 16px;
+    border: 1px solid #e2e8f0;
     background: #ffffff;
     color: #1f2937;
     box-shadow: none;
@@ -5429,21 +5440,62 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-command {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 16px;
 }
 
 #bbai-dashboard-main .bbai-dashboard-command__grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px;
+    gap: 16px;
+}
+
+/* State-driven layout: status card spans full width and becomes secondary when no issues */
+#bbai-dashboard-main[data-bbai-ui-state="NOT_SCANNED"] .bbai-command-card--status .bbai-command-status__summary,
+#bbai-dashboard-main[data-bbai-ui-state="NOT_SCANNED"] .bbai-command-card--status [data-bbai-status-summary-detail] {
+    display: none;
+}
+
+#bbai-dashboard-main[data-bbai-ui-state="COMPLETE"] .bbai-command-card--plan {
+    opacity: 0.85;
+}
+
+/* LIMIT_REACHED: plan card gets visual emphasis */
+#bbai-dashboard-main[data-bbai-ui-state="LIMIT_REACHED"] .bbai-command-card--plan {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.15), 0 4px 12px rgba(245, 158, 11, 0.08);
+}
+
+#bbai-dashboard-main[data-bbai-ui-state="LIMIT_REACHED"] .bbai-command-card--plan.bbai-command-card--limit-active {
+    order: -1;
+    grid-column: 1 / -1;
+}
+
+/* SCANNING state: pulse the donut */
+#bbai-dashboard-main[data-bbai-ui-state="SCANNING"] [data-bbai-status-donut] {
+    animation: bbai-donut-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes bbai-donut-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
+}
+
+/* FIXING state: subtle pulse on status value */
+#bbai-dashboard-main[data-bbai-ui-state="FIXING"] [data-bbai-status-coverage-value] {
+    animation: bbai-value-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes bbai-value-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
 }
 
 #bbai-dashboard-main .bbai-command-card {
     padding: 24px;
-    border: 1px solid #e6edf5;
-    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
     background: #ffffff;
-    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
 }
 
 #bbai-dashboard-main .bbai-command-card__header {
@@ -5451,15 +5503,15 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     align-items: flex-start;
     justify-content: space-between;
     gap: 16px;
-    margin-bottom: 18px;
+    margin-bottom: 16px;
 }
 
 #bbai-dashboard-main .bbai-command-card__eyebrow,
 #bbai-dashboard-main .bbai-dashboard-alert-card__eyebrow {
-    margin: 0 0 6px;
+    margin: 0 0 4px;
     font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
+    font-weight: 600;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     color: #64748b;
 }
@@ -5467,10 +5519,10 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-command-card__title,
 #bbai-dashboard-main .bbai-dashboard-alert-card__title {
     margin: 0;
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 26px;
+    letter-spacing: -0.01em;
     color: #0f172a;
 }
 
@@ -5491,7 +5543,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-command-status__overview {
     display: grid;
     grid-template-columns: 96px minmax(0, 1fr);
-    gap: 18px;
+    gap: 16px;
     align-items: center;
 }
 
@@ -5515,30 +5567,30 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-command-status__content {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
     min-width: 0;
 }
 
 #bbai-dashboard-main .bbai-command-status__label {
     margin: 0;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 500;
     color: #64748b;
 }
 
 #bbai-dashboard-main .bbai-command-status__value {
     margin: 0;
-    font-size: 34px;
-    font-weight: 700;
+    font-size: 32px;
+    font-weight: 600;
     line-height: 1;
-    letter-spacing: -0.05em;
+    letter-spacing: -0.03em;
     color: #0f172a;
 }
 
 #bbai-dashboard-main .bbai-command-meter {
-    height: 10px;
+    height: 6px;
     border-radius: 999px;
-    background: #edf2f7;
+    background: #f1f5f9;
     overflow: hidden;
 }
 
@@ -5572,9 +5624,9 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    padding: 10px 0;
-    border-bottom: 1px solid #edf2f7;
+    gap: 16px;
+    padding: 8px 0;
+    border-bottom: 1px solid #e2e8f0;
 }
 
 #bbai-dashboard-main .bbai-command-breakdown:last-child {
@@ -5592,7 +5644,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-command-breakdown__value,
 #bbai-dashboard-main .bbai-command-plan__value {
     font-size: 16px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.2;
     color: #0f172a;
 }
@@ -5616,7 +5668,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-command-plan {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
 }
 
 #bbai-dashboard-main .bbai-command-plan__row {
@@ -5629,8 +5681,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-command-plan__actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 5px;
+    gap: 8px;
+    margin-top: 0;
 }
 
 #bbai-dashboard-main .bbai-command-plan__comparison {
@@ -5644,10 +5696,10 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 18px;
-    padding: 20px 24px;
+    gap: 16px;
+    padding: 24px;
     border: 1px solid #f3dcc0;
-    border-radius: 20px;
+    border-radius: 12px;
     background: linear-gradient(145deg, #fffdfa 0%, #fff6eb 100%);
 }
 
@@ -5659,27 +5711,27 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-alert-card__copy {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     min-width: 0;
 }
 
 #bbai-dashboard-main .bbai-dashboard-alert-card__message {
     margin: 0;
     font-size: 14px;
-    line-height: 1.55;
+    line-height: 22px;
     color: #475569;
 }
 
 #bbai-dashboard-main .bbai-dashboard-alert-card__actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
     justify-content: flex-end;
 }
 
 #bbai-dashboard-main .bbai-dashboard-feedback {
-    padding: 12px 14px;
-    border-radius: 14px;
+    padding: 12px 16px;
+    border-radius: 8px;
     background: #eff6ff;
     color: #1d4ed8;
     font-size: 13px;
@@ -5700,8 +5752,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 @media (max-width: 782px) {
     #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) {
-        padding: 24px 20px;
-        border-radius: 20px;
+        padding: 24px 16px;
+        border-radius: 12px;
     }
 
     #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__headline {
@@ -5709,12 +5761,12 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     }
 
     #bbai-dashboard-main .bbai-command-card {
-        padding: 20px;
+        padding: 24px;
     }
 
     #bbai-dashboard-main .bbai-command-status__overview {
         grid-template-columns: 84px minmax(0, 1fr);
-        gap: 14px;
+        gap: 16px;
     }
 
     #bbai-dashboard-main .bbai-dashboard-alert-card {
@@ -5760,7 +5812,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     --bbai-surface-soft: #f8fafc;
     --bbai-surface-warm: #fffaf3;
     --bbai-surface-warm-soft: #fff7ed;
-    --bbai-border-soft: #eef2f7;
+    --bbai-border-soft: #f1f5f9;
     --bbai-border-muted: #e5e7eb;
     --bbai-divider: #f1f5f9;
     --bbai-text-strong: #0f172a;
@@ -5844,7 +5896,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__heading-row {
-    gap: 14px;
+    gap: 16px;
     align-items: flex-start;
 }
 
@@ -5852,7 +5904,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     width: 48px;
     height: 48px;
     flex: 0 0 48px;
-    border-radius: 14px;
+    border-radius: 12px;
     border: 1px solid rgba(148, 163, 184, 0.12);
     background: rgba(255, 255, 255, 0.84);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
@@ -5892,7 +5944,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__next-step {
-    margin-top: 6px;
+    margin-top: 4px;
     font-size: 15px;
     font-weight: 600;
     line-height: 1.5;
@@ -5900,12 +5952,12 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__usage-block {
-    gap: 10px;
-    margin-top: 12px;
+    gap: 8px;
+    margin-top: 16px;
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__usage {
-    gap: 8px 12px;
+    gap: 8px 16px;
     font-size: 13px;
     line-height: 1.5;
     color: var(--bbai-text-body);
@@ -5914,10 +5966,10 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__usage-pill {
     min-height: 28px;
     padding: 0 10px;
-    border: 1px solid #dbe5f1;
+    border: 1px solid #e2e8f0;
     background: rgba(255, 255, 255, 0.9);
     color: #1e3a8a;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__usage-primary,
@@ -5964,7 +6016,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner)[data-bbai-success-state="1"] .bbai-dashboard-hero__next-step {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     margin-top: 4px;
     padding: 4px 12px 4px 8px;
     border-radius: 999px;
@@ -6016,8 +6068,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-dashboard-hero__loop {
     display: grid;
-    gap: 6px;
-    margin-top: 6px;
+    gap: 4px;
+    margin-top: 4px;
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero__loop-label {
@@ -6032,7 +6084,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-hero__loop-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px 10px;
+    gap: 4px 8px;
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero__loop-link {
@@ -6080,7 +6132,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero-actions {
-    gap: 12px;
+    gap: 8px;
     width: min(100%, 360px);
     max-width: none;
     margin-left: auto;
@@ -6096,7 +6148,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__secondary-actions {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
     width: 100%;
 }
 
@@ -6216,12 +6268,10 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-command-card {
     padding: var(--bbai-command-card-padding);
-    border: 1px solid #eef2f7;
-    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
     background: var(--bbai-surface);
     box-shadow: var(--bbai-shadow-sm);
-    transform: translateY(0);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 #bbai-dashboard-main .bbai-command-card__header {
@@ -6229,12 +6279,12 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     align-items: flex-start;
     justify-content: space-between;
     gap: 16px;
-    margin-bottom: 18px;
+    margin-bottom: 16px;
 }
 
 #bbai-dashboard-main .bbai-command-card__eyebrow,
 #bbai-dashboard-main .bbai-dashboard-alert-card__eyebrow {
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     color: var(--bbai-text-muted);
 }
 
@@ -6348,7 +6398,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-command-status__overview {
     display: grid;
     grid-template-columns: 128px minmax(0, 1fr);
-    gap: 18px;
+    gap: 16px;
     align-items: center;
 }
 
@@ -6390,7 +6440,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-command-status__value-group {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
 }
 
 #bbai-dashboard-main .bbai-command-status__value {
@@ -6426,7 +6476,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 8px;
     margin: 0;
     padding: var(--bbai-command-row-padding) 0;
     border: 0;
@@ -6449,7 +6499,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-command-breakdown__label {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
+    gap: 8px;
     font-size: 13px;
     font-weight: 500;
     line-height: 1.45;
@@ -6488,7 +6538,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-command-breakdown__value,
 #bbai-dashboard-main .bbai-command-plan__value {
     font-size: 15px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.4;
     font-variant-numeric: tabular-nums;
     color: var(--bbai-text-strong);
@@ -6586,7 +6636,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-command-plan {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
 }
 
 #bbai-dashboard-main .bbai-command-plan__rows {
@@ -6611,7 +6661,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-command-plan__usage {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
     padding-top: 4px;
 }
 
@@ -6640,7 +6690,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-command-plan__comparison-visual {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
 }
 
 #bbai-dashboard-main .bbai-command-plan__comparison-label {
@@ -6669,12 +6719,12 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-command-plan__actions {
-    gap: 10px;
-    margin-top: 5px;
+    gap: 8px;
+    margin-top: 4px;
 }
 
 #bbai-dashboard-main .bbai-dashboard-alert-card {
-    gap: 18px;
+    gap: 16px;
     padding: var(--bbai-command-banner-padding-block) var(--bbai-command-banner-padding-inline);
     border: 1px solid #f0dec9;
     border-radius: var(--bbai-command-banner-radius);
@@ -6715,12 +6765,12 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-alert-card__actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
 }
 
 
 #bbai-dashboard-main .bbai-dashboard-feedback {
-    border-radius: 14px;
+    border-radius: 12px;
     box-shadow: var(--bbai-shadow-sm);
 }
 
@@ -6799,7 +6849,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
     #bbai-dashboard-main .bbai-command-status__overview {
         grid-template-columns: minmax(0, 1fr);
-        gap: 14px;
+        gap: 16px;
     }
 
     #bbai-dashboard-main .bbai-command-donut {
@@ -6845,9 +6895,9 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     --bbai-surface-soft: #f8fafc;
     --bbai-surface-warm: #fffaf4;
     --bbai-surface-warm-soft: #fff7ee;
-    --bbai-border-soft: #eef2f7;
+    --bbai-border-soft: #f1f5f9;
     --bbai-border-muted: #e5ebf3;
-    --bbai-divider: #edf2f7;
+    --bbai-divider: #f1f5f9;
     --bbai-text-strong: #0f172a;
     --bbai-text-body: #334155;
     --bbai-text-muted: #64748b;
@@ -6876,7 +6926,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) {
     padding: 24px;
     border: 1px solid #ece4d7;
-    border-radius: 16px;
+    border-radius: 12px;
     background:
         radial-gradient(circle at top right, rgba(217, 119, 6, 0.055), transparent 34%),
         linear-gradient(155deg, #fffdf8 0%, #fff7ed 57%, #ffffff 100%);
@@ -6914,19 +6964,19 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(264px, 312px);
-    gap: 24px 28px;
+    gap: 24px 32px;
     align-items: center;
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__heading-row {
-    gap: 12px;
+    gap: 8px;
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__icon {
     width: 46px;
     height: 46px;
     flex: 0 0 46px;
-    border-radius: 14px;
+    border-radius: 12px;
     border: 1px solid rgba(148, 163, 184, 0.14);
     background: rgba(255, 255, 255, 0.84);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.76);
@@ -6957,13 +7007,13 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__usage-block {
-    margin-top: 12px;
+    margin-top: 16px;
     gap: 8px;
     max-width: 620px;
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__usage {
-    gap: 6px 12px;
+    gap: 4px 16px;
     font-size: var(--bbai-admin-type-meta, 13px);
     line-height: 1.5;
     color: var(--bbai-text-body);
@@ -7004,11 +7054,11 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero-actions {
     width: min(100%, 312px);
     max-width: none;
-    gap: 12px;
+    gap: 8px;
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__secondary-actions {
-    gap: 10px;
+    gap: 8px;
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__cta,
@@ -7109,16 +7159,14 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-command-card,
 #bbai-dashboard-main .bbai-dashboard-alert-card {
-    border-radius: 16px;
+    border-radius: 12px;
 }
 
 #bbai-dashboard-main .bbai-command-card {
-    padding: 22px;
+    padding: 24px;
     border: 1px solid var(--bbai-border-soft);
     background: var(--bbai-surface);
     box-shadow: var(--bbai-shadow-sm);
-    transform: translateY(0);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 #bbai-dashboard-main .bbai-command-card__header {
@@ -7147,7 +7195,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-command-card__meta-group {
-    gap: 6px;
+    gap: 4px;
 }
 
 #bbai-dashboard-main .bbai-command-card__meta {
@@ -7196,7 +7244,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-command-status {
-    gap: 18px;
+    gap: 16px;
 }
 
 #bbai-dashboard-main .bbai-command-status__overview {
@@ -7228,13 +7276,13 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-command-status__content {
-    gap: 6px;
+    gap: 4px;
 }
 
 #bbai-dashboard-main .bbai-command-status__label {
     margin: 0;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.35;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -7242,13 +7290,13 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-command-status__value-group {
-    gap: 6px;
+    gap: 4px;
 }
 
 #bbai-dashboard-main .bbai-command-status__value {
     margin: 0;
     font-size: 46px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 0.95;
     letter-spacing: -0.05em;
     color: var(--bbai-text-strong);
@@ -7276,12 +7324,12 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 8px;
     margin: 0 -10px;
     padding: var(--bbai-command-row-padding) 10px;
     min-height: 44px;
     border-top: 1px solid var(--bbai-divider);
-    border-radius: 14px;
+    border-radius: 12px;
     background: transparent;
     color: inherit;
     text-decoration: none;
@@ -7297,7 +7345,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-command-breakdown:focus-visible,
 #bbai-dashboard-main .bbai-command-breakdown.is-active {
     background: #f8fbff;
-    box-shadow: inset 0 0 0 1px #e6edf5;
+    box-shadow: inset 0 0 0 1px #e2e8f0;
 }
 
 #bbai-dashboard-main .bbai-command-breakdown.is-pressed {
@@ -7328,7 +7376,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-command-breakdown__value,
 #bbai-dashboard-main .bbai-command-plan__value {
     font-size: 15px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.4;
     color: var(--bbai-text-strong);
 }
@@ -7504,7 +7552,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-command-plan__usage {
-    gap: 14px;
+    gap: 16px;
 }
 
 #bbai-dashboard-main .bbai-command-meter--plan {
@@ -7525,19 +7573,19 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-command-plan__comparison-visual {
-    gap: 6px;
+    gap: 4px;
 }
 
 #bbai-dashboard-main .bbai-command-plan__comparison-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
+    gap: 8px;
 }
 
 #bbai-dashboard-main .bbai-command-plan__comparison-label {
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.3;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -7546,7 +7594,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-command-plan__comparison-value {
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.3;
     color: #7b8aa0;
 }
@@ -7572,7 +7620,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-alert-card__actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
 }
 
 #bbai-dashboard-main .bbai-dashboard-alert-card {
@@ -7580,8 +7628,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 18px;
-    padding: 22px 24px;
+    gap: 16px;
+    padding: 24px;
     border: 1px solid #efe2cf;
     background:
         radial-gradient(circle at top right, rgba(217, 119, 6, 0.05), transparent 36%),
@@ -7608,7 +7656,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-alert-card__title {
     margin: 0;
     font-size: 24px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.1;
     letter-spacing: -0.03em;
     color: var(--bbai-text-strong);
@@ -7645,8 +7693,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     z-index: 1;
     width: 100%;
     max-width: 380px;
-    padding: 28px 24px 24px;
-    border-radius: 16px;
+    padding: 32px 24px 24px;
+    border-radius: 12px;
     background: #ffffff;
     box-shadow:
         0 24px 48px rgba(15, 23, 42, 0.12),
@@ -7657,7 +7705,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 .bbai-dashboard-review-overlay__headline {
     margin: 0 0 6px;
     font-size: 16px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.4;
     color: var(--bbai-ui-ink, #1f2937);
 }
@@ -7679,8 +7727,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 .bbai-dashboard-review-overlay__actions {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin-bottom: 14px;
+    gap: 8px;
+    margin-bottom: 16px;
 }
 
 .bbai-dashboard-review-overlay__cta {
@@ -7688,9 +7736,9 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     align-items: center;
     justify-content: center;
     min-height: 40px;
-    padding: 10px 20px;
+    padding: 8px 24px;
     border: none;
-    border-radius: 10px;
+    border-radius: 8px;
     background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
     color: #ffffff;
     font-size: 14px;
@@ -7712,7 +7760,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 .bbai-dashboard-review-overlay__later {
-    padding: 6px 12px;
+    padding: 4px 8px;
     border: none;
     background: none;
     color: var(--bbai-text-muted, #94a3b8);
@@ -7822,7 +7870,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner),
     #bbai-dashboard-main .bbai-command-card,
     #bbai-dashboard-main .bbai-dashboard-alert-card {
-        padding: 20px;
+        padding: 24px;
     }
 
     #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__headline {
@@ -7859,7 +7907,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
     #bbai-dashboard-main .bbai-command-status__overview {
         grid-template-columns: minmax(0, 1fr);
-        gap: 14px;
+        gap: 16px;
     }
 
     #bbai-dashboard-main .bbai-command-donut {
@@ -7924,7 +7972,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 #bbai-dashboard-main .bbai-command-status__coverage-badge {
     display: inline-block;
-    margin-top: 6px;
+    margin-top: 4px;
     font-size: 12px;
     font-weight: 500;
     line-height: 1.35;
@@ -7973,7 +8021,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-command-status__coverage-processing {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     max-width: 22em;
 }
 
@@ -8039,13 +8087,13 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 
 /* 1,2,7. Spacing polish and action alignment for success state */
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner)[data-bbai-success-state="1"] .bbai-dashboard-hero__subtext {
-    margin-top: 6px;
+    margin-top: 4px;
 }
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner)[data-bbai-success-state="1"] .bbai-dashboard-hero__usage-block {
     margin-top: 8px;
 }
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner)[data-bbai-success-state="1"] .bbai-dashboard-hero-progress {
-    padding-top: 18px;
+    padding-top: 16px;
 }
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner)[data-bbai-success-state="1"] .bbai-dashboard-hero-progress-track {
     position: relative;
@@ -8061,7 +8109,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     color: #64748b;
 }
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner)[data-bbai-success-state="1"] .bbai-dashboard-hero__note {
-    margin-top: 6px;
+    margin-top: 4px;
     font-size: 12px;
     font-weight: 500;
     color: #2f6f54;
@@ -8085,7 +8133,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-dashboard-hero__loop-link {
     min-height: 30px;
     padding: 0 10px;
-    border-radius: 10px;
+    border-radius: 8px;
     font-size: 12px;
     transition: all 0.14s ease;
 }
@@ -8162,7 +8210,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     font-weight: 500;
 }
 #bbai-dashboard-main .bbai-command-plan__cta-sub {
-    margin: 9px 0 0;
+    margin: 8px 0 0;
     font-size: 12px;
     line-height: 1.45;
     color: #475569;
@@ -8172,6 +8220,351 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 /* 7.3 Secondary: no lift — subtle border/background only (overrides any stray lift) */
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__link--secondary:hover {
     transform: none;
+}
+
+/* Dashboard mount loading */
+@keyframes bbai-dashboard-loading-dot {
+    0%,
+    80%,
+    100% {
+        transform: translateY(0);
+        opacity: 0.38;
+    }
+    40% {
+        transform: translateY(-5px);
+        opacity: 1;
+    }
+}
+
+[data-bbai-dashboard-hero="1"].bbai-dashboard-loading-surface,
+#bbai-dashboard-main .bbai-dashboard-loading-surface {
+    position: relative;
+    overflow: hidden;
+}
+
+[data-bbai-dashboard-hero="1"].bbai-dashboard-loading-surface > :not(.bbai-dashboard-loading-skeleton),
+#bbai-dashboard-main .bbai-dashboard-loading-surface > :not(.bbai-dashboard-loading-skeleton) {
+    transition: opacity 150ms ease, filter 150ms ease;
+}
+
+[data-bbai-dashboard-hero="1"].bbai-dashboard-loading-surface.is-loading > :not(.bbai-dashboard-loading-skeleton),
+#bbai-dashboard-main .bbai-dashboard-loading-surface.is-loading > :not(.bbai-dashboard-loading-skeleton) {
+    opacity: 0.22;
+    filter: saturate(0.82);
+}
+
+[data-bbai-dashboard-hero="1"].bbai-dashboard-loading-surface.is-loaded > :not(.bbai-dashboard-loading-skeleton),
+#bbai-dashboard-main .bbai-dashboard-loading-surface.is-loaded > :not(.bbai-dashboard-loading-skeleton) {
+    opacity: 1;
+    filter: none;
+}
+
+[data-bbai-dashboard-hero="1"] .bbai-dashboard-loading-skeleton,
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    height: 100%;
+    padding: 24px;
+    opacity: 0;
+    transform: scale(0.985);
+    pointer-events: none;
+    transition: opacity 150ms ease, transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+[data-bbai-dashboard-hero="1"] .bbai-dashboard-loading-skeleton--hero,
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton--hero {
+    align-items: center;
+    padding: 24px;
+}
+
+[data-bbai-dashboard-hero="1"] .bbai-dashboard-loading-skeleton--status,
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton--status,
+[data-bbai-dashboard-hero="1"] .bbai-dashboard-loading-skeleton--usage,
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton--usage {
+    padding: 24px;
+}
+
+[data-bbai-dashboard-hero="1"].bbai-dashboard-loading-surface.is-loading .bbai-dashboard-loading-skeleton,
+#bbai-dashboard-main .bbai-dashboard-loading-surface.is-loading .bbai-dashboard-loading-skeleton {
+    opacity: 1;
+    transform: scale(1);
+}
+
+[data-bbai-dashboard-hero="1"].bbai-dashboard-loading-surface.is-loaded .bbai-dashboard-loading-skeleton,
+#bbai-dashboard-main .bbai-dashboard-loading-surface.is-loaded .bbai-dashboard-loading-skeleton {
+    opacity: 0;
+    transform: scale(1);
+}
+
+[data-bbai-dashboard-hero="1"] .bbai-dashboard-loading-skeleton__stack,
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: min(100%, 460px);
+}
+
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__stack--usage {
+    width: 100%;
+}
+
+[data-bbai-dashboard-hero="1"] .bbai-dashboard-loading-skeleton__line,
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__line,
+[data-bbai-dashboard-hero="1"] .bbai-dashboard-loading-skeleton__button,
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__button,
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__donut,
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__list-item,
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__progress-fill {
+    display: block;
+}
+
+[data-bbai-dashboard-hero="1"] .bbai-dashboard-loading-skeleton__line--eyebrow,
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__line--eyebrow {
+    width: 108px;
+    height: 12px;
+    border-radius: 999px;
+}
+
+[data-bbai-dashboard-hero="1"] .bbai-dashboard-loading-skeleton__line--title,
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__line--title {
+    width: min(100%, 360px);
+    height: 30px;
+    border-radius: 14px;
+}
+
+[data-bbai-dashboard-hero="1"] .bbai-dashboard-loading-skeleton__line--title-short,
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__line--title-short {
+    width: min(78%, 280px);
+    height: 30px;
+    border-radius: 14px;
+}
+
+[data-bbai-dashboard-hero="1"] .bbai-dashboard-loading-skeleton__line--body,
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__line--body {
+    width: min(100%, 420px);
+    height: 14px;
+    border-radius: 999px;
+}
+
+[data-bbai-dashboard-hero="1"] .bbai-dashboard-loading-skeleton__line--body-short,
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__line--body-short {
+    width: min(72%, 280px);
+    height: 14px;
+    border-radius: 999px;
+}
+
+[data-bbai-dashboard-hero="1"] .bbai-dashboard-loading-skeleton__button,
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__button {
+    width: 156px;
+    height: 40px;
+    margin-top: 4px;
+    border-radius: 10px;
+}
+
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__button--wide {
+    width: 180px;
+}
+
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__status-layout {
+    display: grid;
+    grid-template-columns: 116px minmax(0, 1fr);
+    gap: 20px;
+    align-items: center;
+    width: 100%;
+}
+
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__donut-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__donut {
+    position: relative;
+    width: 112px;
+    height: 112px;
+    border-radius: 999px;
+}
+
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__donut::after {
+    content: '';
+    position: absolute;
+    inset: 18px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.94);
+}
+
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__status-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__line--metric {
+    width: min(52%, 172px);
+    height: 38px;
+    border-radius: 14px;
+}
+
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__list {
+    display: grid;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__list-item {
+    width: 100%;
+    height: 38px;
+    border-radius: 12px;
+}
+
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__usage-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__line--label {
+    width: 78px;
+    height: 12px;
+    border-radius: 999px;
+}
+
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__line--value {
+    width: 96px;
+    height: 18px;
+    border-radius: 999px;
+}
+
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__line--value-wide {
+    width: 148px;
+    height: 18px;
+    border-radius: 999px;
+}
+
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__progress {
+    width: 100%;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(226, 232, 240, 0.66);
+    overflow: hidden;
+}
+
+#bbai-dashboard-main .bbai-dashboard-loading-skeleton__progress-fill {
+    width: 72%;
+    height: 100%;
+    border-radius: inherit;
+}
+
+.bbai-dashboard-loading-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(15, 23, 42, 0.28);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: opacity 200ms ease, visibility 0s linear 200ms;
+}
+
+.bbai-dashboard-loading-overlay.is-visible,
+.bbai-dashboard-loading-overlay.is-exiting {
+    visibility: visible;
+    transition-delay: 0s;
+}
+
+.bbai-dashboard-loading-overlay.is-visible {
+    opacity: 1;
+}
+
+.bbai-dashboard-loading-overlay.is-exiting {
+    opacity: 0;
+}
+
+.bbai-dashboard-loading-overlay__panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    min-width: min(100%, 320px);
+    max-width: 360px;
+    padding: 20px 22px;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    border-radius: 16px;
+    background: rgba(15, 23, 42, 0.78);
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
+    color: #f8fafc;
+    text-align: center;
+    transform: scale(0.98);
+    transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 150ms ease;
+}
+
+.bbai-dashboard-loading-overlay.is-visible .bbai-dashboard-loading-overlay__panel {
+    transform: scale(1);
+}
+
+.bbai-dashboard-loading-overlay__dots {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.bbai-dashboard-loading-overlay__dots span {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.92);
+    animation: bbai-dashboard-loading-dot 900ms ease-in-out infinite;
+}
+
+.bbai-dashboard-loading-overlay__dots span:nth-child(2) {
+    animation-delay: 120ms;
+}
+
+.bbai-dashboard-loading-overlay__dots span:nth-child(3) {
+    animation-delay: 240ms;
+}
+
+.bbai-dashboard-loading-overlay__title,
+.bbai-dashboard-loading-overlay__subtext {
+    margin: 0;
+}
+
+.bbai-dashboard-loading-overlay__title {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.25;
+    color: #ffffff;
+}
+
+.bbai-dashboard-loading-overlay__subtext {
+    font-size: 13px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.78);
+}
+
+@media (max-width: 782px) {
+    #bbai-dashboard-main .bbai-dashboard-loading-skeleton__status-layout {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 16px;
+    }
+
+    #bbai-dashboard-main .bbai-dashboard-loading-skeleton__donut-wrap {
+        justify-content: flex-start;
+    }
 }
 
 /* Reduce motion compatibility */
@@ -8199,5 +8592,17 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     #bbai-dashboard-main .bbai-command-action--primary:hover,
     #bbai-dashboard-main .bbai-command-action--primary:active {
         transform: none !important;
+    }
+
+    .bbai-dashboard-loading-overlay,
+    .bbai-dashboard-loading-overlay__panel,
+    [data-bbai-dashboard-hero="1"] .bbai-dashboard-loading-skeleton,
+    #bbai-dashboard-main .bbai-dashboard-loading-skeleton {
+        transition: none !important;
+    }
+
+    .bbai-dashboard-loading-overlay__dots span,
+    .bbai-skeleton {
+        animation: none !important;
     }
 }

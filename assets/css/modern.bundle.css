@@ -972,6 +972,7 @@ body.media_page_bbai #wpwrap {
     line-height: 1.4;
 }
 
+.bbai-header-signup-btn,
 .bbai-header-upgrade-btn,
 .bbai-header-manage-btn {
     padding: 6px 14px;
@@ -986,6 +987,7 @@ body.media_page_bbai #wpwrap {
     white-space: nowrap;
 }
 
+.bbai-header-signup-btn:hover,
 .bbai-header-upgrade-btn:hover {
     background: #059669;
     transform: translateY(-1px);
@@ -1067,6 +1069,7 @@ body.media_page_bbai #wpwrap {
         font-size: 12px;
     }
 
+    .bbai-header-signup-btn,
     .bbai-header-upgrade-btn,
     .bbai-header-manage-btn,
     .bbai-header-disconnect-btn {

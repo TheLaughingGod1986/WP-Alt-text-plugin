@@ -153,7 +153,7 @@ $bbai_review_usage_url        = $bbai_is_anonymous_trial
 $bbai_surface_automation_action = $bbai_is_anonymous_trial
     ? $bbai_build_action(
         [
-            'label' => __('Create free account', 'beepbeep-ai-alt-text-generator'),
+            'label' => __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator'),
             'attrs' => 'data-action="show-auth-modal" data-auth-tab="register"',
         ]
     )
@@ -335,6 +335,18 @@ $bbai_usage_copy = $bbai_is_anonymous_trial
             number_format_i18n($bbai_usage_remaining)
         )
         : __('No credits remaining this cycle', 'beepbeep-ai-alt-text-generator'));
+$bbai_trial_banner_remaining_line = sprintf(
+    /* translators: %s: number of remaining trial generations. */
+    _n('%s generation remaining', '%s generations remaining', $bbai_usage_remaining, 'beepbeep-ai-alt-text-generator'),
+    number_format_i18n($bbai_usage_remaining)
+);
+$bbai_trial_banner_signup_url = add_query_arg(
+    [
+        'page'           => 'bbai-library',
+        'bbai_open_auth' => '1',
+    ],
+    admin_url('admin.php')
+);
 $bbai_optimized_count = $bbai_cov_optimized;
 $bbai_missing_count = $bbai_cov_missing;
 $bbai_weak_count = $bbai_cov_needs_review;
@@ -489,7 +501,6 @@ $bbai_library_workspace_filter_items = [
         'count'             => $bbai_table_filter_counts['all'],
         'active'            => $bbai_default_review_filter === 'all',
         'filter_label_attr' => __('All', 'beepbeep-ai-alt-text-generator'),
-        'problem'           => false,
     ],
     [
         'key'               => 'missing',
@@ -497,7 +508,7 @@ $bbai_library_workspace_filter_items = [
         'count'             => $bbai_table_filter_counts['missing'],
         'active'            => $bbai_default_review_filter === 'missing',
         'filter_label_attr' => __('Missing', 'beepbeep-ai-alt-text-generator'),
-        'problem'           => $bbai_table_filter_counts['missing'] > 0,
+        'attention'         => $bbai_table_filter_counts['missing'] > 0,
     ],
     [
         'key'               => 'weak',
@@ -505,7 +516,7 @@ $bbai_library_workspace_filter_items = [
         'count'             => $bbai_table_filter_counts['weak'],
         'active'            => $bbai_default_review_filter === 'weak',
         'filter_label_attr' => __('Needs review', 'beepbeep-ai-alt-text-generator'),
-        'problem'           => $bbai_table_filter_counts['weak'] > 0,
+        'attention'         => $bbai_table_filter_counts['weak'] > 0,
     ],
     [
         'key'               => 'optimized',
@@ -513,7 +524,6 @@ $bbai_library_workspace_filter_items = [
         'count'             => $bbai_table_filter_counts['optimized'],
         'active'            => $bbai_default_review_filter === 'optimized',
         'filter_label_attr' => __('Optimized', 'beepbeep-ai-alt-text-generator'),
-        'problem'           => false,
     ],
 ];
 ?>
@@ -618,6 +628,28 @@ $bbai_library_workspace_filter_items = [
                 </div>
     </div>
 
+    <?php if ($bbai_is_anonymous_trial) : ?>
+    <section class="bbai-library-trial-banner" data-bbai-library-trial-banner role="status" aria-live="polite">
+        <div class="bbai-library-trial-banner__copy">
+            <p class="bbai-library-trial-banner__eyebrow"><?php esc_html_e("You're using free trial credits", 'beepbeep-ai-alt-text-generator'); ?></p>
+            <p class="bbai-library-trial-banner__remaining" data-bbai-library-trial-remaining-line><?php echo esc_html($bbai_trial_banner_remaining_line); ?></p>
+        </div>
+        <a
+            href="<?php echo esc_url($bbai_trial_banner_signup_url); ?>"
+            class="bbai-library-trial-banner__cta"
+            data-action="show-auth-modal"
+            data-auth-tab="register"
+        ><?php esc_html_e('Fix remaining images for free', 'beepbeep-ai-alt-text-generator'); ?></a>
+    </section>
+    <?php endif; ?>
+
+    <section class="bbai-library-generation-feedback" data-bbai-library-generation-feedback data-state="success" hidden>
+        <div class="bbai-library-generation-feedback__copy" role="status" aria-live="polite" aria-atomic="true">
+            <p class="bbai-library-generation-feedback__summary" data-bbai-library-generation-feedback-title></p>
+            <p class="bbai-library-generation-feedback__detail" data-bbai-library-generation-feedback-detail hidden></p>
+        </div>
+    </section>
+
     <section class="bbai-library-scan-feedback" data-bbai-scan-feedback-banner data-state="attention" hidden>
         <div class="bbai-library-scan-feedback__copy" role="status" aria-live="polite" aria-atomic="true">
             <p class="bbai-library-scan-feedback__eyebrow"><?php esc_html_e('Scan complete', 'beepbeep-ai-alt-text-generator'); ?></p>
@@ -667,60 +699,19 @@ $bbai_library_workspace_filter_items = [
         </header>
 
         <div class="bbai-library-workspace-card__filter-toolbar">
-            <div
-                id="bbai-review-filter-tabs"
-                class="bbai-alt-review-filters bbai-library-workspace-card__filters"
-                role="group"
-                aria-label="<?php esc_attr_e('Filter images by status', 'beepbeep-ai-alt-text-generator'); ?>"
-                data-bbai-default-filter="<?php echo esc_attr($bbai_default_review_filter); ?>"
-            >
-                <div class="bbai-alt-review-filters__list">
-                    <?php foreach ($bbai_library_workspace_filter_items as $bbai_filt_item) : ?>
-                        <?php
-                        if (!is_array($bbai_filt_item)) {
-                            continue;
-                        }
-                        $bbai_fk          = isset($bbai_filt_item['key']) ? (string) $bbai_filt_item['key'] : '';
-                        $bbai_data_filter = ('weak' === $bbai_fk) ? 'weak' : $bbai_fk;
-                        if ('' === $bbai_data_filter) {
-                            continue;
-                        }
-                        $bbai_f_active  = !empty($bbai_filt_item['active']);
-                        $bbai_f_problem = !empty($bbai_filt_item['problem']);
-                        $bbai_f_count   = isset($bbai_filt_item['count']) ? (int) $bbai_filt_item['count'] : 0;
-                        $bbai_f_label   = isset($bbai_filt_item['label']) ? (string) $bbai_filt_item['label'] : '';
-                        $bbai_fl_attr   = isset($bbai_filt_item['filter_label_attr']) ? (string) $bbai_filt_item['filter_label_attr'] : $bbai_f_label;
-                        $bbai_btn_class = 'bbai-filter-pill bbai-alt-review-filters__btn';
-                        if ('all' === $bbai_data_filter) {
-                            $bbai_btn_class .= ' bbai-filter-pill--all';
-                        } elseif ('missing' === $bbai_data_filter) {
-                            $bbai_btn_class .= ' bbai-filter-pill--missing';
-                        } elseif ('weak' === $bbai_data_filter) {
-                            $bbai_btn_class .= ' bbai-filter-pill--needs-review';
-                        } elseif ('optimized' === $bbai_data_filter) {
-                            $bbai_btn_class .= ' bbai-filter-pill--optimized';
-                        }
-                        if ($bbai_f_active) {
-                            $bbai_btn_class .= ' bbai-alt-review-filters__btn--active';
-                        }
-                        if ($bbai_f_problem) {
-                            $bbai_btn_class .= ' bbai-alt-review-filters__btn--problem';
-                        }
-                        ?>
-                        <button
-                            type="button"
-                            class="<?php echo esc_attr($bbai_btn_class); ?>"
-                            data-filter="<?php echo esc_attr($bbai_data_filter); ?>"
-                            data-bbai-filter-label="<?php echo esc_attr($bbai_fl_attr); ?>"
-                            aria-pressed="<?php echo $bbai_f_active ? 'true' : 'false'; ?>"
-                            <?php echo $bbai_f_active ? ' aria-current="true"' : ''; ?>
-                        >
-                            <span class="bbai-alt-review-filters__label"><?php echo esc_html($bbai_f_label); ?></span>
-                            <span class="bbai-alt-review-filters__count"><?php echo esc_html(number_format_i18n($bbai_f_count)); ?></span>
-                        </button>
-                    <?php endforeach; ?>
-                </div>
-            </div>
+            <?php
+            bbai_ui_render(
+                'filter-group',
+                [
+                    'id' => 'bbai-review-filter-tabs',
+                    'aria_label' => __('Filter images by status', 'beepbeep-ai-alt-text-generator'),
+                    'interaction_mode' => 'filter',
+                    'default_filter' => $bbai_default_review_filter,
+                    'root_class' => 'bbai-library-workspace-card__filters',
+                    'items' => $bbai_library_workspace_filter_items,
+                ]
+            );
+            ?>
         </div>
 
         <div

@@ -13,7 +13,7 @@
 
     function sourceUsesRegenerate(source) {
         var s = String(source || '');
-        return s.indexOf('regenerate') !== -1 || s === 'bulk-regenerate';
+        return s.indexOf('regenerate') !== -1 || s === 'bulk-regenerate' || s === 'fix-all-issues';
     }
 
     function stopPolling($modal) {

@@ -21,6 +21,10 @@ function showAuthBanner() {
         var authModal = document.getElementById('alttext-auth-modal');
         if (authModal) {
             authModal.style.display = 'block';
+            authModal.removeAttribute('aria-hidden');
+            authModal.setAttribute('data-bbai-auth-modal-visible', '1');
+            document.body.classList.add('bbai-auth-modal-open');
+            document.body.style.overflow = 'hidden';
         } else {
             if (window.bbaiModal) {
                 window.bbaiModal.error('Authentication system not available. Please refresh the page.');
@@ -56,7 +60,20 @@ function showAuthLogin() {
  * Show auth modal with specific tab
  */
 function showAuthModal(tab) {
+    var analyticsSource = 'dashboard';
+
     if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Showing auth modal, tab:', tab);
+    if (window.bbaiAnalytics && typeof window.bbaiAnalytics.resolveSource === 'function') {
+        analyticsSource = window.bbaiAnalytics.resolveSource(document.activeElement);
+    }
+    if (typeof emitDashboardAnalyticsEvent === 'function') {
+        emitDashboardAnalyticsEvent(
+            tab === 'register' ? 'signup_cta_clicked' : 'login_modal_opened',
+            {
+                source: analyticsSource
+            }
+        );
+    }
 
     if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
         window.authModal.show();

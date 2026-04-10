@@ -137,9 +137,13 @@
         btns.forEach(function (btn) {
             const btnFilter = btn.getAttribute('data-filter');
             const isActive = btnFilter === filter || (filter === 'weak' && btnFilter === 'needs-review');
-            btn.classList.toggle('bbai-alt-review-filters__btn--active', isActive);
             btn.classList.toggle('bbai-filter-group__item--active', isActive);
             btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            if (isActive) {
+                btn.setAttribute('aria-current', 'true');
+            } else {
+                btn.removeAttribute('aria-current');
+            }
         });
     }
 

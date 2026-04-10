@@ -68,7 +68,7 @@ if ($bbai_locked_uses_signup) {
     $bbai_locked_variant_attr .= ' data-bbai-analytics-upgrade="agency_manage_usage_clicked"';
 }
 if ($bbai_locked_uses_signup) {
-    $bbai_locked_cta_label = isset($bbai_state_copy['primary_cta']) ? (string) $bbai_state_copy['primary_cta'] : __('Create free account', 'beepbeep-ai-alt-text-generator');
+    $bbai_locked_cta_label = isset($bbai_state_copy['primary_cta']) ? (string) $bbai_state_copy['primary_cta'] : __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator');
 } elseif ($bbai_locked_uses_manage) {
     $bbai_locked_cta_label = __('Usage & billing', 'beepbeep-ai-alt-text-generator');
 } elseif ($bbai_locked_uses_agency_step) {

@@ -1,0 +1,347 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - navigation "Main menu":
+      - link "Skip to main content" [ref=e3] [cursor=pointer]:
+        - /url: "#wpbody-content"
+      - link "Skip to toolbar" [ref=e4] [cursor=pointer]:
+        - /url: "#wp-toolbar"
+      - list [ref=e7]:
+        - listitem [ref=e8]:
+          - link "Dashboard" [ref=e9] [cursor=pointer]:
+            - /url: index.php
+            - generic [ref=e10]: 
+            - generic [ref=e11]: Dashboard
+          - list [ref=e12]:
+            - listitem [ref=e13]:
+              - link "Home" [ref=e14] [cursor=pointer]:
+                - /url: index.php
+            - listitem [ref=e15]:
+              - link "Updates" [ref=e16] [cursor=pointer]:
+                - /url: update-core.php
+        - listitem [ref=e17]
+        - listitem [ref=e19]:
+          - link "Posts" [ref=e20] [cursor=pointer]:
+            - /url: edit.php
+            - generic [ref=e21]: 
+            - generic [ref=e22]: Posts
+          - list [ref=e23]:
+            - listitem [ref=e24]:
+              - link "All Posts" [ref=e25] [cursor=pointer]:
+                - /url: edit.php
+            - listitem [ref=e26]:
+              - link "Add Post" [ref=e27] [cursor=pointer]:
+                - /url: post-new.php
+            - listitem [ref=e28]:
+              - link "Categories" [ref=e29] [cursor=pointer]:
+                - /url: edit-tags.php?taxonomy=category
+            - listitem [ref=e30]:
+              - link "Tags" [ref=e31] [cursor=pointer]:
+                - /url: edit-tags.php?taxonomy=post_tag
+        - listitem [ref=e32]:
+          - link "Media" [ref=e33] [cursor=pointer]:
+            - /url: upload.php
+            - generic [ref=e34]: 
+            - generic [ref=e35]: Media
+          - list [ref=e36]:
+            - listitem [ref=e37]:
+              - link "Library" [ref=e38] [cursor=pointer]:
+                - /url: upload.php
+            - listitem [ref=e39]:
+              - link "Add Media File" [ref=e40] [cursor=pointer]:
+                - /url: media-new.php
+        - listitem [ref=e41]:
+          - link "Pages" [ref=e42] [cursor=pointer]:
+            - /url: edit.php?post_type=page
+            - generic [ref=e43]: 
+            - generic [ref=e44]: Pages
+          - list [ref=e45]:
+            - listitem [ref=e46]:
+              - link "All Pages" [ref=e47] [cursor=pointer]:
+                - /url: edit.php?post_type=page
+            - listitem [ref=e48]:
+              - link "Add Page" [ref=e49] [cursor=pointer]:
+                - /url: post-new.php?post_type=page
+        - listitem [ref=e50]:
+          - link "Comments" [ref=e51] [cursor=pointer]:
+            - /url: edit-comments.php
+            - generic [ref=e52]: 
+            - generic [ref=e53]: Comments
+        - listitem [ref=e54]:
+          - link "BeepBeep AI" [ref=e55] [cursor=pointer]:
+            - /url: admin.php?page=bbai
+            - generic [ref=e56]: 
+            - generic [ref=e57]: BeepBeep AI
+        - listitem [ref=e58]
+        - listitem [ref=e60]:
+          - link "Appearance" [ref=e61] [cursor=pointer]:
+            - /url: themes.php
+            - generic [ref=e62]: 
+            - generic [ref=e63]: Appearance
+          - list [ref=e64]:
+            - listitem [ref=e65]:
+              - link "Themes" [ref=e66] [cursor=pointer]:
+                - /url: themes.php
+            - listitem [ref=e67]:
+              - link "Editor" [ref=e68] [cursor=pointer]:
+                - /url: site-editor.php
+        - listitem [ref=e69]:
+          - link "Plugins" [ref=e70] [cursor=pointer]:
+            - /url: plugins.php
+            - generic [ref=e71]: 
+            - generic [ref=e72]: Plugins
+          - list [ref=e73]:
+            - listitem [ref=e74]:
+              - link "Installed Plugins" [ref=e75] [cursor=pointer]:
+                - /url: plugins.php
+            - listitem [ref=e76]:
+              - link "Add Plugin" [ref=e77] [cursor=pointer]:
+                - /url: plugin-install.php
+        - listitem [ref=e78]:
+          - link "Users" [ref=e79] [cursor=pointer]:
+            - /url: users.php
+            - generic [ref=e80]: 
+            - generic [ref=e81]: Users
+          - list [ref=e82]:
+            - listitem [ref=e83]:
+              - link "All Users" [ref=e84] [cursor=pointer]:
+                - /url: users.php
+            - listitem [ref=e85]:
+              - link "Add User" [ref=e86] [cursor=pointer]:
+                - /url: user-new.php
+            - listitem [ref=e87]:
+              - link "Profile" [ref=e88] [cursor=pointer]:
+                - /url: profile.php
+        - listitem [ref=e89]:
+          - link "Tools" [ref=e90] [cursor=pointer]:
+            - /url: tools.php
+            - generic [ref=e91]: 
+            - generic [ref=e92]: Tools
+          - list [ref=e93]:
+            - listitem [ref=e94]:
+              - link "Available Tools" [ref=e95] [cursor=pointer]:
+                - /url: tools.php
+            - listitem [ref=e96]:
+              - link "Import" [ref=e97] [cursor=pointer]:
+                - /url: import.php
+            - listitem [ref=e98]:
+              - link "Export" [ref=e99] [cursor=pointer]:
+                - /url: export.php
+            - listitem [ref=e100]:
+              - link "Site Health" [ref=e101] [cursor=pointer]:
+                - /url: site-health.php
+            - listitem [ref=e102]:
+              - link "Export Personal Data" [ref=e103] [cursor=pointer]:
+                - /url: export-personal-data.php
+            - listitem [ref=e104]:
+              - link "Erase Personal Data" [ref=e105] [cursor=pointer]:
+                - /url: erase-personal-data.php
+            - listitem [ref=e106]:
+              - link "Plugin Check" [ref=e107] [cursor=pointer]:
+                - /url: tools.php?page=plugin-check
+            - listitem [ref=e108]:
+              - link "Plugin Check Namer" [ref=e109] [cursor=pointer]:
+                - /url: tools.php?page=plugin-check-namer
+            - listitem [ref=e110]:
+              - link "Theme File Editor" [ref=e111] [cursor=pointer]:
+                - /url: theme-editor.php
+            - listitem [ref=e112]:
+              - link "Plugin File Editor" [ref=e113] [cursor=pointer]:
+                - /url: plugin-editor.php
+        - listitem [ref=e114]:
+          - link "Settings" [ref=e115] [cursor=pointer]:
+            - /url: options-general.php
+            - generic [ref=e116]: 
+            - generic [ref=e117]: Settings
+          - list [ref=e118]:
+            - listitem [ref=e119]:
+              - link "General" [ref=e120] [cursor=pointer]:
+                - /url: options-general.php
+            - listitem [ref=e121]:
+              - link "Writing" [ref=e122] [cursor=pointer]:
+                - /url: options-writing.php
+            - listitem [ref=e123]:
+              - link "Reading" [ref=e124] [cursor=pointer]:
+                - /url: options-reading.php
+            - listitem [ref=e125]:
+              - link "Discussion" [ref=e126] [cursor=pointer]:
+                - /url: options-discussion.php
+            - listitem [ref=e127]:
+              - link "Media" [ref=e128] [cursor=pointer]:
+                - /url: options-media.php
+            - listitem [ref=e129]:
+              - link "Permalinks" [ref=e130] [cursor=pointer]:
+                - /url: options-permalink.php
+            - listitem [ref=e131]:
+              - link "Privacy" [ref=e132] [cursor=pointer]:
+                - /url: options-privacy.php
+        - listitem [ref=e133]:
+          - button "Collapse Main menu" [expanded] [ref=e134] [cursor=pointer]:
+            - generic [ref=e136]: Collapse Menu
+    - generic:
+      - generic [ref=e137]:
+        - navigation "Toolbar":
+          - menu:
+            - group [ref=e138]:
+              - menuitem "About WordPress" [ref=e139] [cursor=pointer]:
+                - generic [ref=e141]: About WordPress
+            - group [ref=e142]:
+              - menuitem "WP-Alt-text-plugin" [ref=e143] [cursor=pointer]
+            - group [ref=e144]:
+              - menuitem "0 Comments in moderation" [ref=e145] [cursor=pointer]:
+                - generic [ref=e147]: "0"
+                - generic [ref=e148]: 0 Comments in moderation
+            - group [ref=e149]:
+              - menuitem "New" [ref=e150] [cursor=pointer]:
+                - generic [ref=e152]: New
+          - menu [ref=e153]:
+            - group [ref=e154]:
+              - menuitem "Howdy, admin" [ref=e155] [cursor=pointer]
+      - main:
+        - generic [ref=e156]:
+          - generic [ref=e157]:
+            - generic [ref=e159]:
+              - generic [ref=e160]:
+                - img [ref=e161]
+                - generic [ref=e169]: BeepBeep AI – Alt Text Generator
+              - generic [ref=e170]:
+                - generic [ref=e171]: 0 free generations left
+                - button "Create free account" [ref=e172] [cursor=pointer]:
+                  - generic [ref=e173]: Create free account
+                - button "Login" [ref=e174] [cursor=pointer]:
+                  - img [ref=e175]
+                  - generic [ref=e178]: Login
+            - generic [ref=e183]:
+              - region "You’ve used all 5 free generations" [ref=e184]:
+                - generic [ref=e185]:
+                  - generic [ref=e186]:
+                    - generic [ref=e187]:
+                      - generic [ref=e192]: "9"
+                      - paragraph [ref=e194]: 9 images missing ALT text
+                    - generic [ref=e195]:
+                      - heading "You’ve used all 5 free generations" [level=1] [ref=e196]
+                      - paragraph [ref=e197]: Continue fixing your remaining images and unlock full access.
+                      - generic [ref=e198]:
+                        - generic [ref=e199]:
+                          - link "Create free account" [ref=e200] [cursor=pointer]:
+                            - /url: "#"
+                          - link "Login" [ref=e201] [cursor=pointer]:
+                            - /url: "#"
+                        - paragraph [ref=e202]: 50 free generations/month • Full library access • Bulk optimise
+                  - region "Image status" [ref=e204]:
+                    - heading "Image status" [level=2] [ref=e205]
+                    - group "Review images filtered by status" [ref=e206]:
+                      - button "All 15" [ref=e207] [cursor=pointer]:
+                        - generic [ref=e209]: All
+                        - generic [ref=e210]: "15"
+                      - button "View 9 images missing ALT text in ALT Library" [pressed] [ref=e211] [cursor=pointer]:
+                        - generic [ref=e213]: Missing
+                        - generic [ref=e214]: "9"
+                      - button "Needs review 6" [ref=e215] [cursor=pointer]:
+                        - generic [ref=e217]: Needs review
+                        - generic [ref=e218]: "6"
+                      - button "Optimized 0" [ref=e219] [cursor=pointer]:
+                        - generic [ref=e221]: Optimized
+                        - generic [ref=e222]: "0"
+              - generic [ref=e223]:
+                - region "Unlock your full ALT library" [ref=e224]:
+                  - generic [ref=e225]:
+                    - heading "Unlock your full ALT library" [level=2] [ref=e226]
+                    - paragraph [ref=e227]: Create a free account to review, edit, and optimise all your images.
+                  - generic [ref=e228]:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic: Missing
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic: Needs review
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic: Optimized
+                    - generic [ref=e229]:
+                      - heading "Create a free account to continue" [level=3] [ref=e230]
+                      - paragraph [ref=e231]: Unlock full ALT Library access and 50 generations per month
+                      - generic [ref=e232]:
+                        - button "Create free account" [ref=e233] [cursor=pointer]
+                        - button "Login" [ref=e234] [cursor=pointer]
+                      - list "Unlocked value" [ref=e235]:
+                        - listitem [ref=e236]:
+                          - generic [ref=e237]: ✓
+                          - generic [ref=e238]: Review and edit ALT text
+                        - listitem [ref=e239]:
+                          - generic [ref=e240]: ✓
+                          - generic [ref=e241]: Bulk optimise your media library
+                        - listitem [ref=e242]:
+                          - generic [ref=e243]: ✓
+                          - generic [ref=e244]: 50 generations per month
+                - generic "Core value" [ref=e245]:
+                  - generic [ref=e246]:
+                    - generic [ref=e247]: ✓
+                    - generic [ref=e248]: Improves image SEO
+                  - generic [ref=e249]:
+                    - generic [ref=e250]: ✓
+                    - generic [ref=e251]: Improves accessibility
+                  - generic [ref=e252]:
+                    - generic [ref=e253]: ✓
+                    - generic [ref=e254]: Saves manual work
+              - dialog "Keep optimizing your images" [ref=e265]:
+                - generic [ref=e266]:
+                  - heading "Keep optimizing your images" [level=2] [ref=e267]
+                  - button "Close" [ref=e268] [cursor=pointer]:
+                    - generic [ref=e269]: ×
+                - generic [ref=e270]:
+                  - paragraph [ref=e271]: You’ve already improved your SEO. Create a free account to continue.
+                  - list "Free account benefits" [ref=e272]:
+                    - listitem [ref=e273]: ✓ 50 free generations per month
+                    - listitem [ref=e274]: ✓ Review and manage your ALT text
+                    - listitem [ref=e275]: ✓ Bulk optimise your media library
+                  - paragraph [ref=e276]: Free account required to unlock full library access
+                - generic [ref=e277]:
+                  - button "Create free account" [active] [ref=e278] [cursor=pointer]
+                  - button "Login" [ref=e279] [cursor=pointer]
+          - contentinfo [ref=e255]:
+            - paragraph [ref=e256]:
+              - generic [ref=e257]:
+                - text: Thank you for creating with
+                - link "WordPress" [ref=e258] [cursor=pointer]:
+                  - /url: https://wordpress.org/
+                - text: .
+            - paragraph [ref=e259]: Version 6.9.4
+          - button "Help" [ref=e261] [cursor=pointer]
+  - text: "* * * * * * * *"
+  - dialog "Keyboard Shortcuts":
+    - generic:
+      - generic:
+        - heading "Keyboard Shortcuts" [level=2]
+        - button "Close":
+          - img
+      - generic:
+        - generic:
+          - generic: Generate missing alt text
+          - generic:
+            - generic: G
+        - generic:
+          - generic: Regenerate all alt text
+          - generic:
+            - generic: R
+        - generic:
+          - generic: Open upgrade modal
+          - generic:
+            - generic: U
+        - generic:
+          - generic: Show keyboard shortcuts
+          - generic:
+            - generic: "?"
+        - generic:
+          - generic: Close modals
+          - generic:
+            - generic: Esc
+        - generic:
+          - generic: Quick actions menu
+          - generic:
+            - generic: Ctrl
+            - generic: +
+            - generic: K

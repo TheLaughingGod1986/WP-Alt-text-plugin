@@ -20,6 +20,118 @@ const bbaiRunWithJQuery = (function() {
 
 const BBAI_STATS_SYNC_KEY = 'bbai-dashboard-stats-sync';
 
+function bbaiGetLockedTrialCtaLabelFromRoot() {
+    var root = document.querySelector('[data-bbai-dashboard-root="1"]');
+    var missing = root ? parseInt(root.getAttribute('data-bbai-missing-count') || '0', 10) || 0 : 0;
+    var weak = root ? parseInt(root.getAttribute('data-bbai-weak-count') || '0', 10) || 0 : 0;
+
+    return (missing + weak) > 0 ? 'Fix remaining images for free' : 'Continue fixing images';
+}
+
+function bbaiSetDashboardAuthTriggerLoading(trigger) {
+    if (!trigger || trigger.getAttribute('data-bbai-auth-loading') === '1') {
+        return false;
+    }
+
+    trigger.setAttribute('data-bbai-auth-loading', '1');
+    trigger.setAttribute('aria-busy', 'true');
+    trigger.setAttribute('data-bbai-original-label', trigger.getAttribute('data-bbai-original-label') || (trigger.textContent || '').trim());
+    trigger.classList.add('is-loading', 'is-opening');
+
+    if ('disabled' in trigger) {
+        trigger.disabled = true;
+    }
+
+    trigger.innerHTML = '<span class="bbai-dashboard-auth-label">Opening...</span><span class="bbai-dashboard-auth-spinner" aria-hidden="true"></span>';
+
+    return true;
+}
+
+function bbaiResetDashboardAuthTriggerLoading(trigger) {
+    var originalLabel;
+
+    if (!trigger || trigger.getAttribute('data-bbai-auth-loading') !== '1') {
+        return;
+    }
+
+    originalLabel = trigger.getAttribute('data-bbai-original-label') || bbaiGetLockedTrialCtaLabelFromRoot();
+    trigger.textContent = originalLabel;
+    trigger.removeAttribute('data-bbai-auth-loading');
+    trigger.removeAttribute('aria-busy');
+    trigger.classList.remove('is-loading', 'is-opening');
+
+    if ('disabled' in trigger) {
+        trigger.disabled = false;
+    }
+}
+
+function bbaiOpenDashboardAuthDirect(trigger) {
+    var tab = trigger && trigger.getAttribute && trigger.getAttribute('data-auth-tab') === 'login'
+        ? 'login'
+        : 'register';
+
+    if (window.authModal && typeof window.authModal.show === 'function') {
+        window.authModal.show();
+        if (tab === 'login' && typeof window.authModal.showLoginForm === 'function') {
+            window.authModal.showLoginForm();
+        } else if (typeof window.authModal.showRegisterForm === 'function') {
+            window.authModal.showRegisterForm();
+        }
+        return true;
+    }
+
+    if (typeof window.showAuthModal === 'function') {
+        window.showAuthModal(tab);
+        return true;
+    }
+
+    if (typeof showAuthModal === 'function') {
+        showAuthModal(tab);
+        return true;
+    }
+
+    return false;
+}
+
+function bbaiInterceptDashboardAuthTriggers() {
+    document.addEventListener('click', function(event) {
+        var target = event.target && event.target.nodeType === 1
+            ? event.target
+            : (event.target && event.target.parentElement ? event.target.parentElement : null);
+        var trigger;
+
+        if (!target || typeof target.closest !== 'function') {
+            return;
+        }
+
+        trigger = target.closest('[data-action="show-dashboard-auth"]');
+        if (trigger) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+                event.stopImmediatePropagation();
+            }
+
+            if (trigger.getAttribute('data-bbai-auth-loading') === '1') {
+                return;
+            }
+
+            bbaiSetDashboardAuthTriggerLoading(trigger);
+            if (!bbaiOpenDashboardAuthDirect(trigger)) {
+                bbaiResetDashboardAuthTriggerLoading(trigger);
+                return;
+            }
+
+            window.setTimeout(function() {
+                bbaiResetDashboardAuthTriggerLoading(trigger);
+            }, 800);
+            return;
+        }
+    }, true);
+}
+
+bbaiInterceptDashboardAuthTriggers();
+
 /**
  * Must live in this outer scope: bbaiNormalizeUsageObject() runs before the jQuery IIFE below executes.
  *
@@ -867,6 +979,9 @@ bbaiRunWithJQuery(function($) {
                     const authModal = document.getElementById('alttext-auth-modal');
                     if (authModal) {
                         authModal.style.display = 'block';
+                        authModal.removeAttribute('aria-hidden');
+                        authModal.setAttribute('data-bbai-auth-modal-visible', '1');
+                        document.body.classList.add('bbai-auth-modal-open');
                         document.body.style.overflow = 'hidden';
                     } else {
                         window.bbaiModal.warning(__('Please log in first to manage your subscription.', 'beepbeep-ai-alt-text-generator'));
@@ -912,6 +1027,9 @@ bbaiRunWithJQuery(function($) {
                     const authModal = document.getElementById('alttext-auth-modal');
                     if (authModal) {
                         authModal.style.display = 'block';
+                        authModal.removeAttribute('aria-hidden');
+                        authModal.setAttribute('data-bbai-auth-modal-visible', '1');
+                        document.body.classList.add('bbai-auth-modal-open');
                         document.body.style.overflow = 'hidden';
                     } else {
                         window.bbaiModal.warning(__('Please log in first to manage your subscription.', 'beepbeep-ai-alt-text-generator'));
@@ -995,7 +1113,9 @@ bbaiRunWithJQuery(function($) {
                     const authModal = document.getElementById('alttext-auth-modal');
                     if (authModal) {
                         authModal.style.display = 'block';
-                        authModal.setAttribute('aria-hidden', 'false');
+                        authModal.removeAttribute('aria-hidden');
+                        authModal.setAttribute('data-bbai-auth-modal-visible', '1');
+                        document.body.classList.add('bbai-auth-modal-open');
                         document.body.style.overflow = 'hidden';
                         
                         // Try to show login form
@@ -1952,7 +2072,9 @@ bbaiRunWithJQuery(function($) {
                 const authModal = document.getElementById('alttext-auth-modal');
                 if (authModal) {
                     authModal.style.display = 'block';
-                    authModal.setAttribute('aria-hidden', 'false');
+                    authModal.removeAttribute('aria-hidden');
+                    authModal.setAttribute('data-bbai-auth-modal-visible', '1');
+                    document.body.classList.add('bbai-auth-modal-open');
                     document.body.style.overflow = 'hidden';
                     
                     // Try to show login form
@@ -2067,7 +2189,9 @@ bbaiRunWithJQuery(function($) {
                             const authModal = document.getElementById('alttext-auth-modal');
                             if (authModal) {
                                 authModal.style.display = 'block';
-                                authModal.setAttribute('aria-hidden', 'false');
+                                authModal.removeAttribute('aria-hidden');
+                                authModal.setAttribute('data-bbai-auth-modal-visible', '1');
+                                document.body.classList.add('bbai-auth-modal-open');
                                 document.body.style.overflow = 'hidden';
                                 const loginForm = document.getElementById('login-form');
                                 const registerForm = document.getElementById('register-form');
@@ -2748,6 +2872,10 @@ function showAuthBanner() {
 	        if (authModal) {
 	            if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Showing auth modal directly');
 	            authModal.style.display = 'block';
+	            authModal.removeAttribute('aria-hidden');
+	            authModal.setAttribute('data-bbai-auth-modal-visible', '1');
+	            document.body.classList.add('bbai-auth-modal-open');
+	            document.body.style.overflow = 'hidden';
 	        } else {
 	            if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Auth modal not found');
 	            window.bbaiModal.error(__('Authentication system not available. Please refresh the page.', 'beepbeep-ai-alt-text-generator'));
@@ -2781,15 +2909,20 @@ function showAuthLogin() {
 }
 
 function showAuthModal(tab) {
+    var analyticsSource = 'dashboard';
+
     if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Showing auth modal, tab:', tab);
-    emitDashboardAnalyticsEvent(
-        tab === 'register' ? 'signup_cta_clicked' : 'login_modal_opened',
-        {
-            source: window.bbaiAnalytics && typeof window.bbaiAnalytics.resolveSource === 'function'
-                ? window.bbaiAnalytics.resolveSource(document.activeElement)
-                : 'dashboard'
-        }
-    );
+    if (window.bbaiAnalytics && typeof window.bbaiAnalytics.resolveSource === 'function') {
+        analyticsSource = window.bbaiAnalytics.resolveSource(document.activeElement);
+    }
+    if (typeof emitDashboardAnalyticsEvent === 'function') {
+        emitDashboardAnalyticsEvent(
+            tab === 'register' ? 'signup_cta_clicked' : 'login_modal_opened',
+            {
+                source: analyticsSource
+            }
+        );
+    }
     
     // Try to show auth modal with specific tab
     if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
@@ -3629,6 +3762,7 @@ bbaiRunWithJQuery(function($) {
     var feedbackTimeout = null;
     var lastScanRelativeTickerId = null;
     var lastScanRelativeTickerVisibilityHooked = false;
+    var dashboardMountLoadingController = null;
 
     function parseCount(value) {
         var parsed = parseInt(value, 10);
@@ -3784,7 +3918,7 @@ bbaiRunWithJQuery(function($) {
                 ? __('1 fix to go', 'beepbeep-ai-alt-text-generator')
                 : sprintf(__('%s fixes to go', 'beepbeep-ai-alt-text-generator'), formatCount(statusCoverage.missing));
         } else if (cov < 80) {
-            motivation = __('Visibility at risk', 'beepbeep-ai-alt-text-generator');
+            motivation = __('Add ALT text to improve visibility', 'beepbeep-ai-alt-text-generator');
         }
 
         return { motivation: motivation, badge: badge };
@@ -3813,7 +3947,7 @@ bbaiRunWithJQuery(function($) {
 
     function getCompactPlanResetLine(data) {
         if (isAnonymousTrialState(data)) {
-            return __('Create free account', 'beepbeep-ai-alt-text-generator');
+            return __('Continue fixing images', 'beepbeep-ai-alt-text-generator');
         }
 
         var daysUntilReset = parseCount(data && data.daysUntilReset);
@@ -3859,7 +3993,7 @@ bbaiRunWithJQuery(function($) {
                         __('Create a free account to unlock %d generations per month and continue where you left off.', 'beepbeep-ai-alt-text-generator'),
                         freePlanOffer
                     ),
-                    ctaLabel: __('Create free account', 'beepbeep-ai-alt-text-generator'),
+                    ctaLabel: __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator'),
                     meta: resetLine
                 };
             }
@@ -3878,7 +4012,7 @@ bbaiRunWithJQuery(function($) {
                         formatCount(remaining),
                         freePlanOffer
                     ),
-                    ctaLabel: __('Create free account', 'beepbeep-ai-alt-text-generator'),
+                    ctaLabel: __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator'),
                     meta: resetLine
                 };
             }
@@ -4103,6 +4237,55 @@ bbaiRunWithJQuery(function($) {
         };
     }
 
+    function dashboardCanAccessLibrary(data) {
+        return !!(
+            data &&
+            data.root &&
+            data.root.getAttribute('data-bbai-has-connected-account') === '1'
+        );
+    }
+
+    function buildDashboardReviewUrl(baseUrl) {
+        var rawUrl = String(baseUrl || '').split('#')[0] || '#';
+        var nextUrl;
+
+        try {
+            nextUrl = new URL(rawUrl, window.location.href);
+        } catch (error) {
+            return rawUrl;
+        }
+
+        nextUrl.searchParams.set('bbai_focus', 'first-review');
+        nextUrl.hash = 'bbai-alt-table';
+
+        return nextUrl.toString();
+    }
+
+    function resolveDashboardReviewUrl(trigger, data) {
+        var segment = trigger
+            ? String(trigger.getAttribute('data-bbai-review-segment') || trigger.getAttribute('data-bbai-status-segment') || 'all')
+            : 'all';
+        var baseUrl = '';
+
+        if (!data) {
+            return '#';
+        }
+
+        if (segment === 'missing') {
+            baseUrl = String(data.missingLibraryUrl || data.libraryUrl || '');
+        } else if (segment === 'weak' || segment === 'needs_review') {
+            baseUrl = String(data.needsReviewLibraryUrl || data.libraryUrl || '');
+        } else {
+            baseUrl = String(data.libraryUrl || '');
+        }
+
+        return buildDashboardReviewUrl(baseUrl);
+    }
+
+	function openDashboardLockedGate(trigger) {
+	    return bbaiOpenDashboardAuthDirect(trigger);
+	}
+
     function syncStatsToRoot(stats) {
         var root = getDashboardRoot();
         if (!root || !stats || typeof stats !== 'object') {
@@ -4151,6 +4334,8 @@ bbaiRunWithJQuery(function($) {
         root.setAttribute('data-bbai-generated-count', String(generated));
         root.setAttribute('data-bbai-has-scan-results', hasScanResults ? '1' : '0');
         root.setAttribute('data-bbai-last-scan-ts', String(lastScanTs));
+        root.setAttribute('data-bbai-actionable-state', missing > 0 ? 'missing' : (weak > 0 ? 'review' : 'complete'));
+        root.setAttribute('data-bbai-actionable-count', String(Math.max(0, missing + weak)));
         syncCoverageProcessingFlagToRoot(root);
     }
 
@@ -4578,12 +4763,12 @@ bbaiRunWithJQuery(function($) {
             model.secondaryAction = createActionFromShared(sharedHeroState.secondaryAction);
             model.tertiaryAction = createActionFromShared(sharedHeroState.tertiaryAction);
 
-            if (sharedHeroState.state === 'healthy') {
-                if (isAnonymousTrialState(data)) {
-                    model.loopActions = [
-                        createAction(__('Open ALT Library', 'beepbeep-ai-alt-text-generator'), '', { href: libraryUrl || '#' }),
-                        createAction(__('Create free account', 'beepbeep-ai-alt-text-generator'), '', {
-                            action: 'show-auth-modal',
+                if (sharedHeroState.state === 'healthy') {
+                    if (isAnonymousTrialState(data)) {
+                        model.loopActions = [
+                            createAction(__('Open ALT Library', 'beepbeep-ai-alt-text-generator'), '', { href: libraryUrl || '#' }),
+                            createAction(__('Fix remaining images for free', 'beepbeep-ai-alt-text-generator'), '', {
+                            action: 'show-dashboard-auth',
                             attributes: { 'data-auth-tab': 'register' }
                         })
                     ];
@@ -5061,7 +5246,7 @@ bbaiRunWithJQuery(function($) {
         } else if (data.missing > 0 && !hasCreditsAvailable(data)) {
             setQuickButton(generateButton, {
                 label: isAnonymousTrial
-                    ? __('Create free account', 'beepbeep-ai-alt-text-generator')
+                    ? __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator')
                     : __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
                 helper: isAnonymousTrial
                     ? sprintf(
@@ -5069,7 +5254,7 @@ bbaiRunWithJQuery(function($) {
                         freePlanOffer
                     )
                     : __('Continue generating ALT text without interruption.', 'beepbeep-ai-alt-text-generator'),
-                action: isAnonymousTrial ? 'show-auth-modal' : 'show-upgrade-modal',
+                action: isAnonymousTrial ? 'show-dashboard-auth' : 'show-upgrade-modal',
                 primary: generatePrimary,
                 preserveContent: true,
                 attributes: isAnonymousTrial ? { 'data-auth-tab': 'register' } : null,
@@ -5159,7 +5344,7 @@ bbaiRunWithJQuery(function($) {
         if (!data.isPremium) {
             setQuickButton(bulkButton, {
                 label: isAnonymousTrial
-                    ? __('Create free account', 'beepbeep-ai-alt-text-generator')
+                    ? __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator')
                     : __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
                 helper: isAnonymousTrial
                     ? sprintf(
@@ -5167,7 +5352,7 @@ bbaiRunWithJQuery(function($) {
                         freePlanOffer
                     )
                     : __('Never worry about missing ALT text again.', 'beepbeep-ai-alt-text-generator'),
-                action: isAnonymousTrial ? 'show-auth-modal' : 'show-upgrade-modal',
+                action: isAnonymousTrial ? 'show-dashboard-auth' : 'show-upgrade-modal',
                 primary: bulkPrimary,
                 preserveContent: true,
                 attributes: isAnonymousTrial ? { 'data-auth-tab': 'register' } : null,
@@ -5453,12 +5638,36 @@ bbaiRunWithJQuery(function($) {
         }
     }
 
-    function setStatusCardActiveSegment(statusCard, segmentKey) {
+    function getStatusCardSelectedSegment(statusCard) {
+        if (!statusCard) {
+            return '';
+        }
+
+        return String(
+            statusCard.getAttribute('data-bbai-status-selected-segment') ||
+            statusCard.getAttribute('data-bbai-status-active-segment') ||
+            ''
+        );
+    }
+
+    function setStatusCardActiveSegment(statusCard, segmentKey, persistSelection) {
         var activeSegment = String(segmentKey || '');
         var dashboardData;
 
         if (!statusCard) {
             return;
+        }
+
+        if (persistSelection) {
+            if (activeSegment) {
+                statusCard.setAttribute('data-bbai-status-selected-segment', activeSegment);
+            } else {
+                statusCard.removeAttribute('data-bbai-status-selected-segment');
+            }
+        }
+
+        if (!activeSegment) {
+            activeSegment = getStatusCardSelectedSegment(statusCard);
         }
 
         if (activeSegment) {
@@ -5468,6 +5677,10 @@ bbaiRunWithJQuery(function($) {
         }
 
         Array.prototype.forEach.call(statusCard.querySelectorAll('[data-bbai-status-row]'), function(row) {
+            row.classList.toggle(
+                'bbai-filter-group__item--active',
+                !!activeSegment && String(row.getAttribute('data-bbai-status-segment') || '') === activeSegment
+            );
             row.classList.toggle(
                 'is-active',
                 !!activeSegment && String(row.getAttribute('data-bbai-status-segment') || '') === activeSegment
@@ -5545,7 +5758,13 @@ bbaiRunWithJQuery(function($) {
     }
 
     function navigateToStatusCardFilter(row) {
+        var dashboardData = getDashboardData();
         var targetUrl = resolveStatusCardRowUrl(row);
+
+        if (dashboardData && !dashboardCanAccessLibrary(dashboardData)) {
+            openDashboardLockedGate(row);
+            return;
+        }
 
         if (targetUrl) {
             window.location.assign(targetUrl);
@@ -5561,9 +5780,7 @@ bbaiRunWithJQuery(function($) {
     }
 
     function getMissingStatusRowLabel(count) {
-        return parseCount(count) > 0
-            ? __('Missing · Needs ALT', 'beepbeep-ai-alt-text-generator')
-            : __('Missing', 'beepbeep-ai-alt-text-generator');
+        return __('Missing', 'beepbeep-ai-alt-text-generator');
     }
 
     function isMissingStatusRowActionable(data, statusCoverage) {
@@ -5653,7 +5870,7 @@ bbaiRunWithJQuery(function($) {
             return;
         }
 
-        labelNode = missingRow.querySelector('.bbai-command-breakdown__label');
+        labelNode = missingRow.querySelector('.bbai-filter-group__label');
         missingCount = statusCoverage ? Math.max(0, parseCount(statusCoverage.missing)) : 0;
         emphasize = shouldEmphasizeMissingStatusRow(data, statusCoverage);
         actionableStrict = isMissingStatusRowActionable(data, statusCoverage);
@@ -5662,12 +5879,12 @@ bbaiRunWithJQuery(function($) {
             labelNode.textContent = getMissingStatusRowLabel(missingCount);
         }
 
-        missingRow.classList.toggle('bbai-command-breakdown--missing-actionable', emphasize);
+        missingRow.classList.toggle('bbai-filter-group__item--actionable', emphasize);
         missingRow.setAttribute('aria-label', getMissingStatusRowAriaLabel(missingCount, actionableStrict));
 
         if (!emphasize) {
             clearDashboardMissingAttentionTimer(statusCard);
-            missingRow.classList.remove('bbai-dashboard-missing-attention', 'bbai-command-breakdown--missing-cue');
+            missingRow.classList.remove('bbai-dashboard-missing-attention');
             statusCard.removeAttribute('data-bbai-missing-attention-complete');
             return;
         }
@@ -5684,13 +5901,13 @@ bbaiRunWithJQuery(function($) {
             return;
         }
 
-        missingRow.classList.remove('bbai-dashboard-missing-attention', 'bbai-command-breakdown--missing-cue');
+        missingRow.classList.remove('bbai-dashboard-missing-attention');
         missingRow.offsetWidth;
         missingRow.classList.add('bbai-dashboard-missing-attention');
 
         statusCard._bbaiMissingAttentionTimer = window.setTimeout(function() {
             if (missingRow && document.body && document.body.contains(missingRow)) {
-                missingRow.classList.remove('bbai-dashboard-missing-attention', 'bbai-command-breakdown--missing-cue');
+                missingRow.classList.remove('bbai-dashboard-missing-attention');
             }
             statusCard._bbaiMissingAttentionTimer = null;
             statusCard.setAttribute('data-bbai-missing-attention-complete', '1');
@@ -5861,7 +6078,7 @@ bbaiRunWithJQuery(function($) {
                     return;
                 }
 
-                setStatusCardActiveSegment(statusCard, '');
+                setStatusCardActiveSegment(statusCard, '', false);
             });
         });
 
@@ -5889,7 +6106,7 @@ bbaiRunWithJQuery(function($) {
                 }
 
                 if (!statusCard.matches(':hover')) {
-                    setStatusCardActiveSegment(statusCard, '');
+                    setStatusCardActiveSegment(statusCard, '', false);
                 }
             }, 0);
         });
@@ -5901,7 +6118,15 @@ bbaiRunWithJQuery(function($) {
             var targetUrl;
             var isModifiedClick;
 
+            if (event.defaultPrevented) {
+                return;
+            }
+
             if (!row || !statusCard.contains(row)) {
+                return;
+            }
+
+            if (row.hasAttribute('data-bbai-dashboard-status-pill')) {
                 return;
             }
 
@@ -5919,11 +6144,11 @@ bbaiRunWithJQuery(function($) {
             event.preventDefault();
             if (
                 String(row.getAttribute('data-bbai-status-segment') || '') === 'missing' &&
-                row.classList.contains('bbai-command-breakdown--missing-actionable')
+                row.classList.contains('bbai-filter-group__item--actionable')
             ) {
                 dismissMissingStatusCueForSession();
                 clearDashboardMissingAttentionTimer(statusCard);
-                row.classList.remove('bbai-dashboard-missing-attention', 'bbai-command-breakdown--missing-cue');
+                row.classList.remove('bbai-dashboard-missing-attention');
                 statusCard.setAttribute('data-bbai-missing-attention-complete', '1');
             }
             targetUrl = resolveStatusCardRowUrl(row);
@@ -5931,7 +6156,7 @@ bbaiRunWithJQuery(function($) {
                 return;
             }
 
-            setStatusCardActiveSegment(statusCard, row.getAttribute('data-bbai-status-segment') || '');
+            setStatusCardActiveSegment(statusCard, row.getAttribute('data-bbai-status-segment') || '', true);
             row.classList.add('is-pressed');
 
             window.setTimeout(function() {
@@ -6599,12 +6824,12 @@ bbaiRunWithJQuery(function($) {
                 primaryActionNode.hidden = false;
                 primaryActionNode.className = 'bbai-command-action bbai-command-action--primary';
                 primaryActionNode.textContent = planRemaining <= lowCreditThreshold
-                    ? __('Create free account', 'beepbeep-ai-alt-text-generator')
+                    ? __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator')
                     : __('Continue in ALT Library', 'beepbeep-ai-alt-text-generator');
                 setInteractiveControl(primaryActionNode, planRemaining <= lowCreditThreshold
                     ? {
-                        label: __('Create free account', 'beepbeep-ai-alt-text-generator'),
-                        action: 'show-auth-modal',
+                        label: __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator'),
+                        action: 'show-dashboard-auth',
                         href: '#',
                         attributes: { 'data-auth-tab': 'register' },
                         removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
@@ -6642,7 +6867,7 @@ bbaiRunWithJQuery(function($) {
                 secondaryActionNode.className = 'bbai-command-action bbai-command-action--secondary';
                 secondaryActionNode.textContent = planRemaining <= lowCreditThreshold
                     ? __('Open ALT Library', 'beepbeep-ai-alt-text-generator')
-                    : __('Create free account', 'beepbeep-ai-alt-text-generator');
+                    : __('Continue fixing images', 'beepbeep-ai-alt-text-generator');
                 setInteractiveControl(secondaryActionNode, planRemaining <= lowCreditThreshold
                     ? {
                         label: __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
@@ -6650,8 +6875,8 @@ bbaiRunWithJQuery(function($) {
                         removeAttributes: ['data-action', 'data-bbai-action', 'data-auth-tab', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
                     }
                     : {
-                        label: __('Create free account', 'beepbeep-ai-alt-text-generator'),
-                        action: 'show-auth-modal',
+                        label: __('Continue fixing images', 'beepbeep-ai-alt-text-generator'),
+                        action: 'show-dashboard-auth',
                         href: '#',
                         attributes: { 'data-auth-tab': 'register' },
                         removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
@@ -6958,11 +7183,91 @@ bbaiRunWithJQuery(function($) {
         }, REVIEW_DELAY_MS);
     }
 
+    /**
+     * State machine: single source of truth for the dashboard UI mode.
+     * Every render path must branch on this value — no generic fallback.
+     */
+    function getDashboardState(data) {
+        if (!data) {
+            return 'NOT_SCANNED';
+        }
+
+        var root = data.root;
+        var runtimeState = root ? (root.getAttribute('data-bbai-dashboard-runtime-state') || 'idle') : 'idle';
+
+        if (runtimeState === 'generation_running') {
+            return 'FIXING';
+        }
+
+        var missing = Math.max(0, parseCount(data.missing));
+        var weak = Math.max(0, parseCount(data.weak));
+        var total = Math.max(0, parseCount(data.total));
+        var creditsRemaining = Math.max(0, parseCount(data.creditsRemaining));
+
+        if (!hasScanResults(data)) {
+            return 'NOT_SCANNED';
+        }
+
+        if (isCoverageProcessingActive(data, getStatusCoverageData(data))) {
+            return 'SCANNING';
+        }
+
+        if (creditsRemaining === 0) {
+            return 'LIMIT_REACHED';
+        }
+
+        if (missing > 0 || weak > 0) {
+            return 'SCANNED_HAS_ISSUES';
+        }
+
+        if (total > 0) {
+            return 'COMPLETE';
+        }
+
+        return 'NOT_SCANNED';
+    }
+
+    /**
+     * Apply state-driven visibility to dashboard sections.
+     * The hero + action CTA always lead; status/usage cards are secondary.
+     */
+    function applyDashboardStateVisibility(state, data) {
+        var root = getDashboardRoot();
+        if (!root) {
+            return;
+        }
+
+        root.setAttribute('data-bbai-ui-state', state);
+
+        var primaryCard = root.querySelector('[data-bbai-dashboard-primary-action-card]');
+        var statusCard = root.querySelector('[data-bbai-dashboard-status-card="1"]');
+        var planCard = root.querySelector('.bbai-command-card--plan');
+
+        // Primary action card: show only when there are actionable issues
+        if (primaryCard) {
+            primaryCard.hidden = state !== 'SCANNED_HAS_ISSUES';
+        }
+
+        // Plan card upgrade note: only prominent in LIMIT_REACHED
+        if (planCard) {
+            var upgradeNote = planCard.querySelector('[data-bbai-plan-upgrade-note]');
+            var ctaSub = planCard.querySelector('[data-bbai-plan-upgrade-cta-sub]');
+            if (state === 'LIMIT_REACHED') {
+                planCard.classList.add('bbai-command-card--limit-active');
+                if (upgradeNote) { upgradeNote.hidden = false; }
+            } else {
+                planCard.classList.remove('bbai-command-card--limit-active');
+            }
+        }
+    }
+
     function renderDashboardState() {
         var data = getDashboardData();
         if (!data) {
             return;
         }
+
+        var state = getDashboardState(data);
 
         function runStep(stepName, callback) {
             try {
@@ -6974,6 +7279,9 @@ bbaiRunWithJQuery(function($) {
             }
         }
 
+        runStep('state-visibility', function() {
+            applyDashboardStateVisibility(state, data);
+        });
         runStep('action-tracking', bindDashboardActionTracking);
         runStep('hero', function() {
             renderHero(data);
@@ -6991,6 +7299,9 @@ bbaiRunWithJQuery(function($) {
     }
 
     window.bbaiGetDashboardData = getDashboardData;
+    window.bbaiGetDashboardState = function() {
+        return getDashboardState(getDashboardData());
+    };
     window.bbaiRenderDashboardHero = function(dataOverride) {
         renderHero(dataOverride || getDashboardData());
     };
@@ -7071,13 +7382,27 @@ bbaiRunWithJQuery(function($) {
 
     function showDashboardFeedback(detail) {
         var feedbackNode = document.querySelector('[data-bbai-dashboard-feedback]');
+        var titleNode;
+        var detailNode;
         if (!feedbackNode || !detail || !detail.message) {
             return;
         }
 
         feedbackNode.hidden = false;
-        feedbackNode.textContent = detail.message;
         feedbackNode.className = 'bbai-dashboard-feedback bbai-dashboard-feedback--' + (detail.type || 'info');
+        feedbackNode.textContent = '';
+
+        titleNode = document.createElement('div');
+        titleNode.className = 'bbai-dashboard-feedback__title';
+        titleNode.textContent = detail.message;
+        feedbackNode.appendChild(titleNode);
+
+        if (detail.detail) {
+            detailNode = document.createElement('div');
+            detailNode.className = 'bbai-dashboard-feedback__detail';
+            detailNode.textContent = detail.detail;
+            feedbackNode.appendChild(detailNode);
+        }
 
         if (feedbackTimeout) {
             window.clearTimeout(feedbackTimeout);
@@ -7098,6 +7423,427 @@ bbaiRunWithJQuery(function($) {
             syncUsageToRoot(usage);
         }
         renderDashboardState();
+    }
+
+    function DashboardLoadingOverlay() {
+        this.hideTimerId = 0;
+        this.node = document.createElement('div');
+        this.node.className = 'bbai-dashboard-loading-overlay';
+        this.node.setAttribute('data-bbai-dashboard-loading-overlay', '1');
+        this.node.setAttribute('aria-hidden', 'true');
+        this.node.innerHTML =
+            '<div class="bbai-dashboard-loading-overlay__panel" role="status" aria-live="polite">' +
+                '<div class="bbai-dashboard-loading-overlay__dots" aria-hidden="true">' +
+                    '<span></span><span></span><span></span>' +
+                '</div>' +
+                '<p class="bbai-dashboard-loading-overlay__title">' + escapeDashboardHtml(__('Loading your dashboard…', 'beepbeep-ai-alt-text-generator')) + '</p>' +
+                '<p class="bbai-dashboard-loading-overlay__subtext">' + escapeDashboardHtml(__('Fetching your images and usage', 'beepbeep-ai-alt-text-generator')) + '</p>' +
+            '</div>';
+    }
+
+    DashboardLoadingOverlay.prototype.mount = function() {
+        if (!document.body || this.node.parentNode) {
+            return;
+        }
+
+        document.body.appendChild(this.node);
+    };
+
+    DashboardLoadingOverlay.prototype.show = function() {
+        this.mount();
+        this.node.setAttribute('aria-hidden', 'false');
+        this.node.classList.remove('is-exiting');
+        this.node.classList.add('is-visible');
+    };
+
+    DashboardLoadingOverlay.prototype.hide = function(callback) {
+        var overlay = this;
+
+        if (overlay.hideTimerId) {
+            window.clearTimeout(overlay.hideTimerId);
+            overlay.hideTimerId = 0;
+        }
+
+        if (!overlay.node.parentNode) {
+            if (typeof callback === 'function') {
+                callback();
+            }
+            return;
+        }
+
+        if (!overlay.node.classList.contains('is-visible') && !overlay.node.classList.contains('is-exiting')) {
+            overlay.node.setAttribute('aria-hidden', 'true');
+            if (typeof callback === 'function') {
+                callback();
+            }
+            return;
+        }
+
+        overlay.node.classList.remove('is-visible');
+        overlay.node.classList.add('is-exiting');
+        overlay.hideTimerId = window.setTimeout(function() {
+            overlay.node.classList.remove('is-exiting');
+            overlay.node.setAttribute('aria-hidden', 'true');
+            overlay.hideTimerId = 0;
+            if (typeof callback === 'function') {
+                callback();
+            }
+        }, 150);
+    };
+
+    DashboardLoadingOverlay.prototype.destroy = function() {
+        if (this.hideTimerId) {
+            window.clearTimeout(this.hideTimerId);
+            this.hideTimerId = 0;
+        }
+
+        if (this.node.parentNode) {
+            this.node.parentNode.removeChild(this.node);
+        }
+    };
+
+    window.DashboardLoadingOverlay = window.DashboardLoadingOverlay || DashboardLoadingOverlay;
+
+    function getDashboardLoadingSurfaceMarkup(type) {
+        if (type === 'hero') {
+            return '' +
+                '<div class="bbai-dashboard-loading-skeleton__stack">' +
+                    '<span class="bbai-skeleton bbai-dashboard-loading-skeleton__line bbai-dashboard-loading-skeleton__line--eyebrow"></span>' +
+                    '<span class="bbai-skeleton bbai-dashboard-loading-skeleton__line bbai-dashboard-loading-skeleton__line--title"></span>' +
+                    '<span class="bbai-skeleton bbai-dashboard-loading-skeleton__line bbai-dashboard-loading-skeleton__line--title-short"></span>' +
+                    '<span class="bbai-skeleton bbai-dashboard-loading-skeleton__line bbai-dashboard-loading-skeleton__line--body"></span>' +
+                    '<span class="bbai-skeleton bbai-dashboard-loading-skeleton__line bbai-dashboard-loading-skeleton__line--body-short"></span>' +
+                    '<span class="bbai-skeleton bbai-dashboard-loading-skeleton__button"></span>' +
+                '</div>';
+        }
+
+        if (type === 'status') {
+            return '' +
+                '<div class="bbai-dashboard-loading-skeleton__status-layout">' +
+                    '<div class="bbai-dashboard-loading-skeleton__donut-wrap">' +
+                        '<span class="bbai-skeleton bbai-dashboard-loading-skeleton__donut"></span>' +
+                    '</div>' +
+                    '<div class="bbai-dashboard-loading-skeleton__status-copy">' +
+                        '<span class="bbai-skeleton bbai-dashboard-loading-skeleton__line bbai-dashboard-loading-skeleton__line--eyebrow"></span>' +
+                        '<span class="bbai-skeleton bbai-dashboard-loading-skeleton__line bbai-dashboard-loading-skeleton__line--metric"></span>' +
+                        '<span class="bbai-skeleton bbai-dashboard-loading-skeleton__line bbai-dashboard-loading-skeleton__line--body"></span>' +
+                        '<div class="bbai-dashboard-loading-skeleton__list">' +
+                            '<span class="bbai-skeleton bbai-dashboard-loading-skeleton__list-item"></span>' +
+                            '<span class="bbai-skeleton bbai-dashboard-loading-skeleton__list-item"></span>' +
+                            '<span class="bbai-skeleton bbai-dashboard-loading-skeleton__list-item"></span>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+        }
+
+        return '' +
+            '<div class="bbai-dashboard-loading-skeleton__stack bbai-dashboard-loading-skeleton__stack--usage">' +
+                '<div class="bbai-dashboard-loading-skeleton__usage-row">' +
+                    '<span class="bbai-skeleton bbai-dashboard-loading-skeleton__line bbai-dashboard-loading-skeleton__line--label"></span>' +
+                    '<span class="bbai-skeleton bbai-dashboard-loading-skeleton__line bbai-dashboard-loading-skeleton__line--value"></span>' +
+                '</div>' +
+                '<div class="bbai-dashboard-loading-skeleton__usage-row">' +
+                    '<span class="bbai-skeleton bbai-dashboard-loading-skeleton__line bbai-dashboard-loading-skeleton__line--label"></span>' +
+                    '<span class="bbai-skeleton bbai-dashboard-loading-skeleton__line bbai-dashboard-loading-skeleton__line--value-wide"></span>' +
+                '</div>' +
+                '<div class="bbai-dashboard-loading-skeleton__progress">' +
+                    '<span class="bbai-skeleton bbai-dashboard-loading-skeleton__progress-fill"></span>' +
+                '</div>' +
+                '<span class="bbai-skeleton bbai-dashboard-loading-skeleton__line bbai-dashboard-loading-skeleton__line--body"></span>' +
+                '<span class="bbai-skeleton bbai-dashboard-loading-skeleton__button bbai-dashboard-loading-skeleton__button--wide"></span>' +
+            '</div>';
+    }
+
+    function ensureDashboardLoadingSurface(node, type) {
+        var skeletonNode;
+
+        if (!node) {
+            return null;
+        }
+
+        node.classList.add('bbai-dashboard-loading-surface');
+        node.setAttribute('data-bbai-dashboard-loading-surface', type);
+
+        skeletonNode = node.querySelector('.bbai-dashboard-loading-skeleton');
+        if (!skeletonNode) {
+            skeletonNode = document.createElement('div');
+            skeletonNode.className = 'bbai-dashboard-loading-skeleton bbai-dashboard-loading-skeleton--' + type;
+            skeletonNode.setAttribute('aria-hidden', 'true');
+            skeletonNode.innerHTML = getDashboardLoadingSurfaceMarkup(type);
+            node.appendChild(skeletonNode);
+        }
+
+        return skeletonNode;
+    }
+
+    function getDashboardLoadingSurfaces(root) {
+        var surfaces = [];
+        var heroNode = document.querySelector('[data-bbai-dashboard-hero="1"]');
+        var statusNode = root ? root.querySelector('[data-bbai-dashboard-status-card="1"]') : null;
+        var usageNode = root ? root.querySelector('.bbai-command-card--plan') : null;
+
+        if (heroNode) {
+            surfaces.push({ node: heroNode, type: 'hero' });
+        }
+        if (statusNode) {
+            surfaces.push({ node: statusNode, type: 'status' });
+        }
+        if (usageNode) {
+            surfaces.push({ node: usageNode, type: 'usage' });
+        }
+
+        return surfaces;
+    }
+
+    function setDashboardLoadingSurfacesState(controller, phase) {
+        if (!controller || !Array.isArray(controller.surfaces)) {
+            return;
+        }
+
+        controller.surfaces.forEach(function(surface) {
+            if (!surface || !surface.node) {
+                return;
+            }
+
+            ensureDashboardLoadingSurface(surface.node, surface.type);
+            surface.node.classList.remove('is-loading', 'is-loaded');
+
+            if (phase === 'loading' || phase === 'loaded') {
+                surface.node.classList.add('is-' + phase);
+            }
+        });
+    }
+
+    function normalizeDashboardLoadingStatsPayload(rawStats) {
+        var payload = rawStats && rawStats.data && typeof rawStats.data === 'object'
+            ? rawStats.data
+            : (rawStats && typeof rawStats === 'object' ? rawStats : {});
+        var normalized = $.extend({}, payload);
+        var total = payload.total_images !== undefined ? parseCount(payload.total_images) : parseCount(payload.total);
+        var withAlt = payload.images_with_alt !== undefined ? parseCount(payload.images_with_alt) : parseCount(payload.with_alt);
+        var missing = payload.images_missing_alt !== undefined ? parseCount(payload.images_missing_alt) : parseCount(payload.missing);
+        var weak = payload.needs_review_count !== undefined ? parseCount(payload.needs_review_count) : parseCount(payload.weak);
+        var optimized = payload.optimized_count !== undefined
+            ? parseCount(payload.optimized_count)
+            : Math.max(0, withAlt - weak);
+
+        normalized.total_images = total;
+        normalized.total = total;
+        normalized.images_with_alt = withAlt;
+        normalized.with_alt = withAlt;
+        normalized.images_missing_alt = missing;
+        normalized.missing = missing;
+        normalized.needs_review_count = weak;
+        normalized.weak = weak;
+        normalized.optimized_count = optimized;
+        normalized.coverage_percent = payload.coverage_percent !== undefined
+            ? parseCount(payload.coverage_percent)
+            : (total > 0 ? Math.round((optimized / total) * 100) : 0);
+
+        return normalized;
+    }
+
+    function getDashboardLoadingRestConfig() {
+        return window.BBAI_DASH || window.BBAI || {};
+    }
+
+    function fetchDashboardUsageSnapshot() {
+        var deferred = $.Deferred();
+        var config = getDashboardLoadingRestConfig();
+        var usageUrl = config && config.restUsage ? String(config.restUsage) : '';
+        var nonce = config && config.nonce ? String(config.nonce) : '';
+
+        if (!usageUrl || !nonce) {
+            deferred.reject(new Error('usage_endpoint_unavailable'));
+            return deferred.promise();
+        }
+
+        $.ajax({
+            url: usageUrl,
+            method: 'GET',
+            dataType: 'json',
+            headers: {
+                'X-WP-Nonce': nonce
+            },
+            timeout: 10000
+        })
+        .done(function(response) {
+            deferred.resolve(response);
+        })
+        .fail(function(xhr, status, error) {
+            deferred.reject(error || status || xhr);
+        });
+
+        return deferred.promise();
+    }
+
+    function fetchDashboardStatsSnapshot() {
+        var deferred = $.Deferred();
+        var config = getDashboardLoadingRestConfig();
+        var statsUrl = config && config.restStats ? String(config.restStats) : '';
+        var nonce = config && config.nonce ? String(config.nonce) : '';
+        var requestUrl;
+
+        if (!statsUrl || !nonce) {
+            deferred.reject(new Error('stats_endpoint_unavailable'));
+            return deferred.promise();
+        }
+
+        requestUrl = statsUrl + (statsUrl.indexOf('?') === -1 ? '?' : '&') + 'fresh=1';
+
+        $.ajax({
+            url: requestUrl,
+            method: 'GET',
+            dataType: 'json',
+            headers: {
+                'X-WP-Nonce': nonce
+            },
+            timeout: 12000
+        })
+        .done(function(response) {
+            deferred.resolve(normalizeDashboardLoadingStatsPayload(response));
+        })
+        .fail(function(xhr, status, error) {
+            deferred.reject(error || status || xhr);
+        });
+
+        return deferred.promise();
+    }
+
+    function applyDashboardMountStats(statsPayload) {
+        var normalizedStats = normalizeDashboardLoadingStatsPayload(statsPayload);
+
+        if (window.BBAI_DASH) {
+            window.BBAI_DASH.stats = $.extend({}, window.BBAI_DASH.stats || {}, normalizedStats);
+        }
+        if (window.BBAI) {
+            window.BBAI.stats = $.extend({}, window.BBAI.stats || {}, normalizedStats);
+        }
+
+        $(document).trigger('bbai:stats-updated', [{ stats: normalizedStats }]);
+    }
+
+    function applyDashboardMountUsage(usagePayload) {
+        if (typeof window.alttextai_refresh_usage === 'function') {
+            window.alttextai_refresh_usage(usagePayload);
+            return;
+        }
+
+        bbaiMirrorUsageObject(usagePayload);
+        syncAndRender(null, usagePayload);
+    }
+
+    function maybeFinishDashboardMountLoading(controller) {
+        var overlayVisibleFor = 0;
+        var remainingOverlayDelay = 0;
+
+        if (!controller || controller.completed || controller.pending.stats || controller.pending.usage) {
+            return;
+        }
+
+        controller.completed = true;
+        controller.root.removeAttribute('data-bbai-dashboard-loading');
+        controller.root.removeAttribute('aria-busy');
+
+        if (controller.overlayTimerId) {
+            window.clearTimeout(controller.overlayTimerId);
+            controller.overlayTimerId = 0;
+        }
+
+        setDashboardLoadingSurfacesState(controller, 'loaded');
+        window.setTimeout(function() {
+            if (!controller || !Array.isArray(controller.surfaces)) {
+                return;
+            }
+
+            controller.surfaces.forEach(function(surface) {
+                if (surface && surface.node) {
+                    surface.node.classList.remove('is-loaded');
+                }
+            });
+        }, 180);
+
+        if (controller.overlayVisibleAt > 0) {
+            overlayVisibleFor = Date.now() - controller.overlayVisibleAt;
+            remainingOverlayDelay = Math.max(0, controller.minimumOverlayVisibleMs - overlayVisibleFor);
+        }
+
+        window.setTimeout(function() {
+            controller.overlay.hide(function() {
+                controller.overlay.destroy();
+                if (dashboardMountLoadingController === controller) {
+                    dashboardMountLoadingController = null;
+                }
+            });
+        }, remainingOverlayDelay);
+    }
+
+    function startDashboardMountLoading() {
+        var root = getDashboardRoot();
+        var overlayDelayMs = 300;
+
+        if (!root || dashboardMountLoadingController) {
+            return;
+        }
+
+        dashboardMountLoadingController = {
+            root: root,
+            overlay: new DashboardLoadingOverlay(),
+            overlayTimerId: 0,
+            overlayVisibleAt: 0,
+            minimumOverlayVisibleMs: 180,
+            completed: false,
+            pending: {
+                stats: true,
+                usage: true
+            },
+            surfaces: getDashboardLoadingSurfaces(root)
+        };
+
+        root.setAttribute('data-bbai-dashboard-loading', '1');
+        root.setAttribute('aria-busy', 'true');
+        setDashboardLoadingSurfacesState(dashboardMountLoadingController, 'loading');
+
+        dashboardMountLoadingController.overlayTimerId = window.setTimeout(function() {
+            if (!dashboardMountLoadingController || dashboardMountLoadingController.completed) {
+                return;
+            }
+
+            dashboardMountLoadingController.overlayVisibleAt = Date.now();
+            dashboardMountLoadingController.overlay.show();
+        }, overlayDelayMs);
+
+        fetchDashboardStatsSnapshot()
+            .done(function(statsPayload) {
+                applyDashboardMountStats(statsPayload);
+            })
+            .fail(function(error) {
+                window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Dashboard mount stats refresh failed.', error);
+            })
+            .always(function() {
+                if (!dashboardMountLoadingController) {
+                    return;
+                }
+
+                dashboardMountLoadingController.pending.stats = false;
+                maybeFinishDashboardMountLoading(dashboardMountLoadingController);
+            });
+
+        fetchDashboardUsageSnapshot()
+            .done(function(usagePayload) {
+                applyDashboardMountUsage(usagePayload);
+            })
+            .fail(function(error) {
+                window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Dashboard mount usage refresh failed.', error);
+            })
+            .always(function() {
+                if (!dashboardMountLoadingController) {
+                    return;
+                }
+
+                dashboardMountLoadingController.pending.usage = false;
+                maybeFinishDashboardMountLoading(dashboardMountLoadingController);
+            });
     }
 
     $(document).on('click', '[data-bbai-quick-action].is-disabled, [data-bbai-workflow-generate-cta].is-disabled', function(event) {
@@ -7188,6 +7934,44 @@ bbaiRunWithJQuery(function($) {
         }
     });
 
+    document.addEventListener('click', function(event) {
+        var eventTarget;
+        var reviewTrigger;
+        var libraryLink;
+        var data;
+        var reviewUrl;
+
+        if (event.defaultPrevented) {
+            return;
+        }
+
+        eventTarget = event.target && event.target.nodeType === 1 ? event.target : event.target.parentElement;
+        if (!eventTarget || typeof eventTarget.closest !== 'function') {
+            return;
+        }
+
+        reviewTrigger = eventTarget.closest('[data-action="review-dashboard-results"]');
+        libraryLink = reviewTrigger ? null : eventTarget.closest('a[href*="page=bbai-library"]');
+        if (!reviewTrigger && !libraryLink) {
+            return;
+        }
+
+        data = getDashboardData();
+        if (!data || dashboardCanAccessLibrary(data)) {
+            if (reviewTrigger) {
+                reviewUrl = resolveDashboardReviewUrl(reviewTrigger, data);
+                if (reviewUrl) {
+                    event.preventDefault();
+                    window.location.assign(reviewUrl);
+                }
+            }
+            return;
+        }
+
+        event.preventDefault();
+        openDashboardLockedGate(reviewTrigger || libraryLink);
+    });
+
     document.addEventListener('bbai:dashboard-feedback', function(event) {
         if (event && event.detail) {
             showDashboardFeedback(event.detail);
@@ -7232,6 +8016,7 @@ bbaiRunWithJQuery(function($) {
 
     $(document).ready(function() {
         ensureStatusCardRefreshClickDelegated();
+        startDashboardMountLoading();
         syncAndRender(
             (window.BBAI_DASH && window.BBAI_DASH.stats) || (window.BBAI && window.BBAI.stats) || null,
             bbaiGetUsageObject()

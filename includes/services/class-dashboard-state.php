@@ -29,6 +29,18 @@ class Dashboard_State {
 	const STATE_GENERATION_FAILED          = 'generation_failed';
 	const RUNTIME_IDLE                     = 'idle';
 
+	// Funnel states — single linear journey from signup → conversion.
+	const FUNNEL_NOT_SCANNED   = 'not_scanned';
+	const FUNNEL_SCANNING      = 'scanning';
+	const FUNNEL_HAS_ISSUES    = 'has_issues';
+	const FUNNEL_FIXING        = 'fixing';
+	const FUNNEL_COMPLETE      = 'complete';
+	const FUNNEL_LIMIT_REACHED = 'limit_reached';
+
+	const ACTIONABLE_STATE_MISSING  = 'missing';
+	const ACTIONABLE_STATE_REVIEW   = 'review';
+	const ACTIONABLE_STATE_COMPLETE = 'complete';
+
 	/**
 	 * Resolve the current product state model.
 	 *
@@ -43,7 +55,9 @@ class Dashboard_State {
 		$runtime_state  = self::normalize_runtime_state( $args['runtime_state'] ?? self::RUNTIME_IDLE );
 		$missing_count  = max( 0, (int) ( $args['missing_count'] ?? 0 ) );
 		$weak_count     = max( 0, (int) ( $args['weak_count'] ?? 0 ) );
-		$actionable     = ( $missing_count + $weak_count ) > 0;
+		$total_count    = max( 0, (int) ( $args['total_count'] ?? 0 ) );
+		$actionable_model = self::resolve_actionable_state( $missing_count, $weak_count, $total_count );
+		$actionable       = $actionable_model['actionable_count'] > 0;
 		$base_state     = self::resolve_base_state( $is_guest_trial, $trial_status );
 		$resolved_state = self::resolve_display_state( $base_state, $runtime_state );
 
@@ -91,6 +105,7 @@ class Dashboard_State {
 			],
 			'trial'            => $trial_status,
 			'usage'            => $usage_stats,
+			'actionable'       => $actionable_model,
 			'flags'            => [
 				'is_guest_trial'             => $is_guest_trial,
 				'is_premium'                 => $is_premium,
@@ -104,15 +119,44 @@ class Dashboard_State {
 			'cta'              => [
 				'primary_mode' => self::resolve_primary_cta_mode(
 					$base_state,
+					(string) $actionable_model['state'],
 					$actionable,
-					$missing_count,
-					$weak_count,
 					$generate_available
 				),
 				'locked_mode'  => $locked_cta_mode,
 			],
 			'upgrade_path'     => $upgrade_path,
 			'copy'             => self::build_copy( $trial_status ),
+		];
+	}
+
+	/**
+	 * Resolve the single actionable state for dashboard UI.
+	 *
+	 * @param int $missing_count Missing ALT count.
+	 * @param int $weak_count Needs-review count.
+	 * @param int $total_count Total image count.
+	 * @return array<string, int|string>
+	 */
+	public static function resolve_actionable_state( int $missing_count, int $weak_count, int $total_count = 0 ): array {
+		$missing_count    = max( 0, $missing_count );
+		$weak_count       = max( 0, $weak_count );
+		$total_count      = max( 0, $total_count );
+		$actionable_count = $missing_count + $weak_count;
+		$state            = self::ACTIONABLE_STATE_COMPLETE;
+
+		if ( $missing_count > 0 ) {
+			$state = self::ACTIONABLE_STATE_MISSING;
+		} elseif ( $weak_count > 0 ) {
+			$state = self::ACTIONABLE_STATE_REVIEW;
+		}
+
+		return [
+			'state'            => $state,
+			'actionable_count' => $actionable_count,
+			'missing_count'    => $missing_count,
+			'review_count'     => $weak_count,
+			'total_count'      => $total_count,
 		];
 	}
 
@@ -265,28 +309,81 @@ class Dashboard_State {
 	 * Resolve the current primary CTA mode.
 	 *
 	 * @param string $base_state Durable base state.
+	 * @param string $actionable_state Actionable state key.
 	 * @param bool   $actionable Whether the page has actionable images.
-	 * @param int    $missing_count Missing count.
-	 * @param int    $weak_count Needs-review count.
 	 * @param bool   $generate_available Whether generation is currently available.
 	 * @return string
 	 */
-	private static function resolve_primary_cta_mode( string $base_state, bool $actionable, int $missing_count, int $weak_count, bool $generate_available ): string {
+	private static function resolve_primary_cta_mode( string $base_state, string $actionable_state, bool $actionable, bool $generate_available ): string {
 		if ( self::STATE_LOGGED_OUT_TRIAL_EXHAUSTED === $base_state ) {
 			return 'create_account';
 		}
 
 		if ( $generate_available && $actionable ) {
-			if ( $missing_count > 0 ) {
+			if ( self::ACTIONABLE_STATE_MISSING === $actionable_state ) {
 				return 'generate';
 			}
 
-			if ( $weak_count > 0 ) {
+			if ( self::ACTIONABLE_STATE_REVIEW === $actionable_state ) {
 				return 'reoptimize';
 			}
 		}
 
 		return 'review';
+	}
+
+	/**
+	 * Resolve the funnel state from the full product state model.
+	 *
+	 * Maps the existing base_state + runtime_state + flags into one of six
+	 * linear funnel states that drive hero, donut, and CTA rendering.
+	 *
+	 * @param array<string, mixed> $model Resolved product state model from resolve().
+	 * @return string One of the FUNNEL_* constants.
+	 */
+	public static function resolve_funnel_state( array $model ): string {
+		$runtime   = $model['runtime_state'] ?? self::RUNTIME_IDLE;
+		$flags     = $model['flags'] ?? [];
+		$usage     = $model['usage'] ?? [];
+		$remaining = (int) ( $usage['remaining'] ?? 0 );
+
+		// Credits exhausted — monetisation moment takes priority.
+		if ( ! empty( $flags['lock_generation_actions'] ) || $remaining <= 0 ) {
+			// Only show limit_reached if user has actually used the product.
+			$has_scan = ! empty( $model['_has_scan_history'] );
+			if ( $has_scan || (int) ( $usage['used'] ?? 0 ) > 0 ) {
+				return self::FUNNEL_LIMIT_REACHED;
+			}
+		}
+
+		// Generation running — fixing state.
+		if ( self::STATE_GENERATION_RUNNING === $runtime
+			|| self::STATE_LOGGED_OUT_TRIAL_RUNNING === ( $model['state'] ?? '' )
+		) {
+			return self::FUNNEL_FIXING;
+		}
+
+		// No scan history — first experience.
+		if ( empty( $model['_has_scan_history'] ) ) {
+			return self::FUNNEL_NOT_SCANNED;
+		}
+
+		$missing = (int) ( $model['_missing_count'] ?? 0 );
+		$weak    = (int) ( $model['_weak_count'] ?? 0 );
+		$total   = (int) ( $model['_total_images'] ?? 0 );
+
+		// All images optimized.
+		if ( $total > 0 && $missing === 0 && $weak === 0 ) {
+			return self::FUNNEL_COMPLETE;
+		}
+
+		// Has issues to fix.
+		if ( $missing > 0 || $weak > 0 ) {
+			return self::FUNNEL_HAS_ISSUES;
+		}
+
+		// Fallback: no images at all — treat as not scanned.
+		return self::FUNNEL_NOT_SCANNED;
 	}
 
 	/**

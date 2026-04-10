@@ -7,6 +7,8 @@ class BbAIAuthModal {
     constructor() {
         this.apiUrl = this.getApiUrl();
         this.token = this.getStoredToken();
+        this.conversionTitle = 'Create your free account to continue';
+        this.conversionSubtitle = 'Continue fixing your remaining images and unlock full access';
         // Cache DOM elements for better performance
         this.modalElement = null;
         this.formElements = {};
@@ -56,6 +58,69 @@ class BbAIAuthModal {
         }
 
         return fallback || 'modal';
+    }
+
+    setHeaderCopy(title, subtitle) {
+        if (!this.modalElement) {
+            return;
+        }
+
+        const titleNode = this.modalElement.querySelector('#alttext-auth-modal-title');
+        const subtitleNode = this.modalElement.querySelector('#alttext-auth-modal-desc');
+
+        if (titleNode && title) {
+            titleNode.textContent = title;
+        }
+
+        if (subtitleNode && subtitle) {
+            subtitleNode.textContent = subtitle;
+        }
+    }
+
+    setConversionHeaderCopy() {
+        this.setHeaderCopy(this.conversionTitle, this.conversionSubtitle);
+
+        const contextNode = this.modalElement ? this.modalElement.querySelector('#alttext-auth-modal-context') : null;
+        const context = this.getConversionContext();
+
+        if (!contextNode) {
+            return;
+        }
+
+        if (context) {
+            contextNode.textContent = context;
+            contextNode.hidden = false;
+        } else {
+            contextNode.textContent = '';
+            contextNode.hidden = true;
+        }
+    }
+
+    focusField(selector) {
+        if (!this.modalElement || !selector) {
+            return;
+        }
+
+        const field = this.modalElement.querySelector(selector);
+
+        if (field && typeof field.focus === 'function') {
+            window.setTimeout(() => field.focus(), 0);
+        }
+    }
+
+    getConversionContext() {
+        const root = document.querySelector('[data-bbai-dashboard-root="1"]');
+        const missing = root ? parseInt(root.getAttribute('data-bbai-missing-count') || '0', 10) || 0 : 0;
+
+        if (missing === 1) {
+            return 'You\'re 1 image away from full optimisation';
+        }
+
+        if (missing > 1) {
+            return 'You\'re ' + missing.toLocaleString() + ' images away from full optimisation';
+        }
+
+        return '';
     }
 
     getPostAuthRedirectUrl() {
@@ -165,8 +230,9 @@ class BbAIAuthModal {
                             <button class="alttext-auth-modal__close" type="button" aria-label="Close dialog">&times;</button>
                         
                         <div class="alttext-auth-modal__header">
-                            <h2 class="alttext-auth-modal__title" id="alttext-auth-modal-title">BeepBeep AI Account</h2>
-                            <p class="alttext-auth-modal__subtitle" id="alttext-auth-modal-desc">Sign in to sync your subscription, usage quota, and account preferences.</p>
+                            <h2 class="alttext-auth-modal__title" id="alttext-auth-modal-title">Create your free account to continue</h2>
+                            <p class="alttext-auth-modal__subtitle" id="alttext-auth-modal-desc">Continue fixing your remaining images and unlock full access</p>
+                            <p class="alttext-auth-modal__context" id="alttext-auth-modal-context" hidden></p>
                         </div>
                         
                         <div class="alttext-auth-modal__body">
@@ -480,7 +546,14 @@ class BbAIAuthModal {
 
     show() {
         if (this.modalElement) {
+            if (this.modalElement.parentElement !== document.body) {
+                document.body.appendChild(this.modalElement);
+            }
+
             this.modalElement.style.display = 'block';
+            this.modalElement.removeAttribute('aria-hidden');
+            this.modalElement.setAttribute('data-bbai-auth-modal-visible', '1');
+            document.body.classList.add('bbai-auth-modal-open');
             document.body.style.overflow = 'hidden';
             this.enablePasswordFields();
             
@@ -495,25 +568,32 @@ class BbAIAuthModal {
     hide() {
         if (this.modalElement) {
             this.modalElement.style.display = 'none';
+            this.modalElement.setAttribute('aria-hidden', 'true');
+            this.modalElement.removeAttribute('data-bbai-auth-modal-visible');
+            document.body.classList.remove('bbai-auth-modal-open');
             document.body.style.overflow = '';
             this.resetPasswordFields();
         }
     }
 
     showLoginForm() {
+        this.setConversionHeaderCopy();
         // Use cached form elements
         if (this.formElements.login) this.formElements.login.style.display = 'block';
         if (this.formElements.register) this.formElements.register.style.display = 'none';
         if (this.formElements.forgotPassword) this.formElements.forgotPassword.style.display = 'none';
         if (this.formElements.resetPassword) this.formElements.resetPassword.style.display = 'none';
+        this.focusField('#login-email');
     }
 
     showRegisterForm() {
+        this.setConversionHeaderCopy();
         // Use cached form elements
         if (this.formElements.login) this.formElements.login.style.display = 'none';
         if (this.formElements.register) this.formElements.register.style.display = 'block';
         if (this.formElements.forgotPassword) this.formElements.forgotPassword.style.display = 'none';
         if (this.formElements.resetPassword) this.formElements.resetPassword.style.display = 'none';
+        this.focusField('#register-email');
     }
 
     showForgotPasswordForm() {
@@ -1117,6 +1197,17 @@ class BbAIAuthModal {
 
 // Initialize when DOM is ready
 function initAuthModal() {
+    var existingAuthModal = window.authModal || window.AltTextAuthModal || (typeof bbaiApp !== 'undefined' && bbaiApp.authModal ? bbaiApp.authModal : null);
+
+    if (existingAuthModal && typeof existingAuthModal.show === 'function') {
+        window.AltTextAuthModal = existingAuthModal;
+        if (typeof bbaiApp !== 'undefined') {
+            bbaiApp.authModal = existingAuthModal;
+        }
+        window.authModal = existingAuthModal;
+        return;
+    }
+
     // Create instance and add to bbaiApp namespace
     var authModalInstance = new BbAIAuthModal();
     window.AltTextAuthModal = authModalInstance; // Legacy support
