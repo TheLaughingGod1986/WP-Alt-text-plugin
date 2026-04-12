@@ -2128,17 +2128,22 @@
 
 	function openAuthSignupModal() {
 	    if (typeof showAuthModal === 'function') {
-	        showAuthModal('register');
+	        showAuthModal('register', 'fix');
 	        return;
         }
         if (typeof window.showAuthModal === 'function') {
-            window.showAuthModal('register');
+            window.showAuthModal('register', 'fix');
             return;
         }
         if (window.authModal && typeof window.authModal.show === 'function') {
-            window.authModal.show();
+            if (typeof window.authModal.setModalContext === 'function') {
+                window.authModal.setModalContext('fix');
+            }
+            window.authModal.show({
+                context: 'fix'
+            });
             if (typeof window.authModal.showRegisterForm === 'function') {
-                window.authModal.showRegisterForm();
+                window.authModal.showRegisterForm('fix');
             }
             return;
         }

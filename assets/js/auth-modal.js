@@ -7,8 +7,33 @@ class BbAIAuthModal {
     constructor() {
         this.apiUrl = this.getApiUrl();
         this.token = this.getStoredToken();
-        this.conversionTitle = 'Create your free account to continue';
-        this.conversionSubtitle = 'Continue fixing your remaining images and unlock full access';
+        this.modalContext = 'fix';
+        this.authStep = 'intro';
+        this.modalContent = {
+            fix: {
+                title: 'Continue fixing your images',
+                subtitle: 'Create a free account to continue fixing your {remainingImages} and unlock full access.',
+                progress: 'You\'re {imageCount} away from full optimisation',
+                cta: 'Create free account'
+            },
+            tabs: {
+                title: 'Fix your missing ALT text',
+                subtitle: 'Create a free account to review and fix your images.',
+                progress: 'You\'re {imageCount} away from full optimisation',
+                cta: 'Create free account'
+            },
+            library: {
+                title: 'Unlock your full ALT library',
+                subtitle: 'Create a free account to access your full image library and bulk optimise.',
+                progress: 'You\'re {imageCount} away from full optimisation',
+                cta: 'Create free account'
+            },
+            login: {
+                title: 'Welcome back',
+                subtitle: 'Log in to continue where you left off.',
+                cta: 'Login'
+            }
+        };
         // Cache DOM elements for better performance
         this.modalElement = null;
         this.formElements = {};
@@ -77,11 +102,121 @@ class BbAIAuthModal {
         }
     }
 
+    normalizeModalContext(context) {
+        const value = String(context || '').toLowerCase();
+
+        if (
+            value === 'filter'
+            || value === 'tabs'
+            || value === 'tab'
+            || value === 'all'
+            || value === 'missing'
+            || value === 'review'
+            || value === 'weak'
+            || value === 'needs_review'
+            || value === 'needs-review'
+            || value === 'optimized'
+            || value === 'optimised'
+        ) {
+            return 'tabs';
+        }
+
+        if (
+            value === 'library'
+            || value === 'locked-library'
+            || value === 'locked_library'
+            || value === 'full-library'
+            || value === 'full_library'
+        ) {
+            return 'library';
+        }
+
+        return this.modalContent[value] ? value : 'fix';
+    }
+
+    getRemainingImageCount() {
+        const root = document.querySelector('[data-bbai-dashboard-root="1"], [data-bbai-library-workspace-root="1"], [data-bbai-dashboard-state-root="1"]');
+        const missing = root ? parseInt(root.getAttribute('data-bbai-missing-count') || '0', 10) || 0 : 0;
+        const weak = root ? parseInt(root.getAttribute('data-bbai-weak-count') || '0', 10) || 0 : 0;
+        const actionable = root ? parseInt(root.getAttribute('data-bbai-actionable-count') || '0', 10) || 0 : 0;
+
+        return Math.max(0, missing || actionable || (missing + weak));
+    }
+
+    interpolateModalCopy(copy) {
+        const count = this.getRemainingImageCount();
+        const imageCountText = count > 0
+            ? count.toLocaleString() + (count === 1 ? ' image' : ' images')
+            : 'images';
+        const remainingImageText = count > 0
+            ? 'remaining ' + imageCountText
+            : 'remaining images';
+
+        return String(copy || '')
+            .replace('{remainingImages}', remainingImageText)
+            .replace('{imageCount}', imageCountText)
+            .replace('{count}', count > 0 ? count.toLocaleString() : '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+    }
+
+    setModalContext(context) {
+        this.modalContext = this.normalizeModalContext(context);
+
+        if (this.modalElement) {
+            this.modalElement.setAttribute('data-bbai-modal-context', this.modalContext);
+        }
+
+        return this.modalContext;
+    }
+
+    getModalContent(context) {
+        const normalizedContext = this.normalizeModalContext(context || this.modalContext);
+        const content = this.modalContent[normalizedContext] || this.modalContent.fix;
+
+        return {
+            context: normalizedContext,
+            title: content.title,
+            subtitle: this.interpolateModalCopy(content.subtitle),
+            progress: this.getRemainingImageCount() > 0 ? this.interpolateModalCopy(content.progress) : '',
+            cta: content.cta
+        };
+    }
+
+    setSubmitButtonText(formId, label) {
+        const form = document.getElementById(formId);
+        const button = form ? form.querySelector('button[type="submit"]') : null;
+        const text = button ? button.querySelector('.alttext-btn__text') : null;
+
+        if (!button || !text || !label) {
+            return;
+        }
+
+        text.textContent = label;
+        button.setAttribute('aria-label', label);
+    }
+
+    setIntroButtonText(label) {
+        const button = this.modalElement ? this.modalElement.querySelector('#alttext-auth-start-register') : null;
+
+        if (!button || !label) {
+            return;
+        }
+
+        button.textContent = label;
+        button.setAttribute('aria-label', label);
+    }
+
     setConversionHeaderCopy() {
-        this.setHeaderCopy(this.conversionTitle, this.conversionSubtitle);
+        const content = this.getModalContent();
+        const registerContent = this.modalContext === 'login' ? this.getModalContent('fix') : content;
+        this.setHeaderCopy(content.title, content.subtitle);
+        this.setIntroButtonText(registerContent.cta);
+        this.setSubmitButtonText('register-form', registerContent.cta);
+        this.setSubmitButtonText('login-form', this.modalContent.login.cta);
 
         const contextNode = this.modalElement ? this.modalElement.querySelector('#alttext-auth-modal-context') : null;
-        const context = this.getConversionContext();
+        const context = this.modalContext === 'login' ? '' : content.progress;
 
         if (!contextNode) {
             return;
@@ -123,6 +258,34 @@ class BbAIAuthModal {
         return '';
     }
 
+    setAuthStep(step) {
+        this.authStep = step === 'form' ? 'form' : 'intro';
+
+        if (!this.modalElement) {
+            return;
+        }
+
+        const introStep = this.modalElement.querySelector('#alttext-auth-value-step');
+        const formStep = this.modalElement.querySelector('#alttext-auth-form-step');
+
+        this.modalElement.setAttribute('data-bbai-auth-step', this.authStep);
+
+        if (introStep) {
+            introStep.hidden = this.authStep !== 'intro';
+        }
+
+        if (formStep) {
+            formStep.hidden = this.authStep !== 'form';
+        }
+    }
+
+    hideAllForms() {
+        if (this.formElements.login) this.formElements.login.style.display = 'none';
+        if (this.formElements.register) this.formElements.register.style.display = 'none';
+        if (this.formElements.forgotPassword) this.formElements.forgotPassword.style.display = 'none';
+        if (this.formElements.resetPassword) this.formElements.resetPassword.style.display = 'none';
+    }
+
     getPostAuthRedirectUrl() {
         try {
             const currentUrl = new URL(window.location.href);
@@ -131,6 +294,7 @@ class BbAIAuthModal {
             if (currentPage && currentPage.indexOf('bbai') === 0) {
                 currentUrl.searchParams.delete('bbai_open_auth');
                 currentUrl.searchParams.delete('bbai_auth_tab');
+                currentUrl.searchParams.delete('bbai_auth_context');
                 currentUrl.searchParams.delete('checkout');
                 currentUrl.searchParams.delete('checkout_error');
                 return currentUrl.toString();
@@ -230,12 +394,25 @@ class BbAIAuthModal {
                             <button class="alttext-auth-modal__close" type="button" aria-label="Close dialog">&times;</button>
                         
                         <div class="alttext-auth-modal__header">
-                            <h2 class="alttext-auth-modal__title" id="alttext-auth-modal-title">Create your free account to continue</h2>
-                            <p class="alttext-auth-modal__subtitle" id="alttext-auth-modal-desc">Continue fixing your remaining images and unlock full access</p>
+                            <h2 class="alttext-auth-modal__title" id="alttext-auth-modal-title">Continue fixing your images</h2>
+                            <p class="alttext-auth-modal__subtitle" id="alttext-auth-modal-desc">Create a free account to continue fixing your remaining images and unlock full access.</p>
                             <p class="alttext-auth-modal__context" id="alttext-auth-modal-context" hidden></p>
                         </div>
                         
                         <div class="alttext-auth-modal__body">
+                            <div id="alttext-auth-value-step" class="alttext-auth-modal__value-step">
+                                <ul class="alttext-auth-modal__value-list" aria-label="Account benefits">
+                                    <li>Review and edit ALT text</li>
+                                    <li>Bulk optimise your media library</li>
+                                    <li>50 generations per month</li>
+                                </ul>
+                                <div class="alttext-auth-modal__intro-actions">
+                                    <button type="button" id="alttext-auth-start-register" class="alttext-btn alttext-btn--primary alttext-auth-modal__intro-cta" aria-label="Create free account">Create free account</button>
+                                    <button type="button" id="alttext-auth-intro-login" class="alttext-auth-modal__secondary-cta">Already have an account? Sign in</button>
+                                </div>
+                            </div>
+
+                            <div id="alttext-auth-form-step" class="alttext-auth-modal__form-step" hidden>
                             <!-- Login Form -->
                             <div id="alttext-login-form" class="alttext-auth-form">
                                 <form id="login-form" autocomplete="off" aria-label="Sign in to your BeepBeep AI account">
@@ -283,7 +460,7 @@ class BbAIAuthModal {
                                         <input type="text" id="register-confirm" name="confirmPassword" data-password-field="true" data-password-autocomplete="new-password" autocomplete="off" inputmode="text" required aria-required="true">
                                     </div>
                                     <button type="submit" class="alttext-btn alttext-btn--primary" aria-label="Create account">
-                                        <span class="alttext-btn__text">Create Account</span>
+                                        <span class="alttext-btn__text">Create free account</span>
                                         <span class="alttext-btn__spinner" style="display: none;" aria-hidden="true">⏳</span>
                                     </button>
                                 </form>
@@ -295,7 +472,7 @@ class BbAIAuthModal {
                             <!-- Forgot Password Form -->
                             <div id="alttext-forgot-password-form" class="alttext-auth-form" style="display: none;">
                                 <h3>Reset Password</h3>
-                                <p class="alttext-forgot-password-info" id="alttext-auth-modal-desc">Enter your email address and we'll send you a link to reset your password.</p>
+                                <p class="alttext-forgot-password-info">Enter your email address and we'll send you a link to reset your password.</p>
                                 <form id="forgot-password-form" autocomplete="on" aria-label="Request password reset">
                                     <div class="alttext-form-group">
                                         <label for="forgot-email">Email</label>
@@ -349,6 +526,7 @@ class BbAIAuthModal {
                                     <a href="#" id="show-login-from-reset" aria-label="Switch to sign in form">Back to sign in</a>
                                 </p>
                             </div>
+                            </div>
                         </div>
                         
                         <!-- Growth Upsell Strip -->
@@ -370,7 +548,7 @@ class BbAIAuthModal {
         document.addEventListener('click', function(e) {
             // Global CTA triggers (works even if dashboard script fails)
             const target = e.target;
-            let authTrigger = target.closest('[data-action="show-auth-modal"]');
+            let authTrigger = target.closest('[data-action="show-auth-modal"], [data-action="show-dashboard-auth"]');
             
             // Also check for ID-based triggers (for hero section buttons)
             if (!authTrigger) {
@@ -395,11 +573,13 @@ class BbAIAuthModal {
                     self.emitAnalyticsEvent('login_modal_opened', { source: source });
                 }
 
-                self.show();
+                self.show({
+                    context: authTrigger.getAttribute('data-bbai-modal-context') || requestedTab
+                });
                 if (requestedTab === 'register') {
-                    self.showRegisterForm();
+                    self.showRegisterForm(authTrigger.getAttribute('data-bbai-modal-context') || 'fix');
                 } else {
-                    self.showLoginForm();
+                    self.showLoginForm('login');
                 }
                 return;
             }
@@ -419,18 +599,33 @@ class BbAIAuthModal {
             }
 
             // Form switching links
+            if (e.target.id === 'alttext-auth-start-register' || e.target.closest('#alttext-auth-start-register')) {
+                e.preventDefault();
+                e.stopPropagation();
+                self.emitAnalyticsEvent('signup_intro_cta_clicked', { source: 'modal' });
+                self.showRegisterForm(self.modalContext || 'fix', { forceForm: true });
+                return;
+            }
+
+            if (e.target.id === 'alttext-auth-intro-login' || e.target.closest('#alttext-auth-intro-login')) {
+                e.preventDefault();
+                e.stopPropagation();
+                self.showLoginForm('login');
+                return;
+            }
+
             if (e.target.id === 'show-register' || e.target.closest('#show-register')) {
                 e.preventDefault();
                 e.stopPropagation();
                 self.emitAnalyticsEvent('signup_cta_clicked', { source: 'modal' });
-                self.showRegisterForm();
+                self.showRegisterForm('fix', { forceForm: true });
                 return;
             }
 
             if (e.target.id === 'show-login' || e.target.closest('#show-login')) {
                 e.preventDefault();
                 e.stopPropagation();
-                self.showLoginForm();
+                self.showLoginForm('login');
                 return;
             }
 
@@ -445,14 +640,14 @@ class BbAIAuthModal {
             if (e.target.id === 'show-login-from-forgot' || e.target.closest('#show-login-from-forgot')) {
                 e.preventDefault();
                 e.stopPropagation();
-                self.showLoginForm();
+                self.showLoginForm('login');
                 return;
             }
 
             if (e.target.id === 'show-login-from-reset' || e.target.closest('#show-login-from-reset')) {
                 e.preventDefault();
                 e.stopPropagation();
-                self.showLoginForm();
+                self.showLoginForm('login');
                 return;
             }
         }, true); // Use capture phase
@@ -496,13 +691,17 @@ class BbAIAuthModal {
             
             // Focus trapping: keep focus within modal when open
             if (self.modalElement && self.modalElement.style.display === 'block') {
-                const focusableElements = self.modalElement.querySelectorAll(
+                const focusableElements = Array.prototype.slice.call(self.modalElement.querySelectorAll(
                     'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-                );
+                )).filter(function(element) {
+                    return !element.disabled
+                        && !element.closest('[hidden]')
+                        && element.offsetParent !== null;
+                });
                 const firstElement = focusableElements[0];
                 const lastElement = focusableElements[focusableElements.length - 1];
                 
-                if (e.key === 'Tab') {
+                if (e.key === 'Tab' && firstElement && lastElement) {
                     if (e.shiftKey && document.activeElement === firstElement) {
                         e.preventDefault();
                         lastElement.focus();
@@ -544,8 +743,16 @@ class BbAIAuthModal {
         });
     }
 
-    show() {
+    show(options) {
+        const requestedContext = typeof options === 'string'
+            ? options
+            : (options && options.context ? options.context : '');
+
         if (this.modalElement) {
+            if (requestedContext) {
+                this.setModalContext(requestedContext);
+            }
+
             if (this.modalElement.parentElement !== document.body) {
                 document.body.appendChild(this.modalElement);
             }
@@ -576,8 +783,10 @@ class BbAIAuthModal {
         }
     }
 
-    showLoginForm() {
+    showLoginForm(context) {
+        this.setModalContext(context || 'login');
         this.setConversionHeaderCopy();
+        this.setAuthStep('form');
         // Use cached form elements
         if (this.formElements.login) this.formElements.login.style.display = 'block';
         if (this.formElements.register) this.formElements.register.style.display = 'none';
@@ -586,8 +795,22 @@ class BbAIAuthModal {
         this.focusField('#login-email');
     }
 
-    showRegisterForm() {
+    showRegisterForm(context, options) {
+        if (context) {
+            this.setModalContext(context);
+        } else if (this.modalContext === 'login') {
+            this.setModalContext('fix');
+        } else {
+            this.setModalContext(this.modalContext || 'fix');
+        }
         this.setConversionHeaderCopy();
+        if (!options || options.forceForm !== true) {
+            this.setAuthStep('intro');
+            this.hideAllForms();
+            this.focusField('#alttext-auth-start-register');
+            return;
+        }
+        this.setAuthStep('form');
         // Use cached form elements
         if (this.formElements.login) this.formElements.login.style.display = 'none';
         if (this.formElements.register) this.formElements.register.style.display = 'block';
@@ -597,6 +820,7 @@ class BbAIAuthModal {
     }
 
     showForgotPasswordForm() {
+        this.setAuthStep('form');
         // Use cached form elements
         if (this.formElements.login) this.formElements.login.style.display = 'none';
         if (this.formElements.register) this.formElements.register.style.display = 'none';
@@ -605,6 +829,7 @@ class BbAIAuthModal {
     }
 
     showResetPasswordForm(email, token) {
+        this.setAuthStep('form');
         // Use cached form elements
         if (this.formElements.login) this.formElements.login.style.display = 'none';
         if (this.formElements.register) this.formElements.register.style.display = 'none';

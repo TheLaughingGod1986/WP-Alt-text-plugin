@@ -77,12 +77,17 @@
         var opened = false;
 
         if (typeof window.showAuthModal === 'function') {
-            window.showAuthModal('register');
+            window.showAuthModal('register', 'fix');
             opened = true;
         } else if (window.authModal && typeof window.authModal.show === 'function') {
-            window.authModal.show();
+            if (typeof window.authModal.setModalContext === 'function') {
+                window.authModal.setModalContext('fix');
+            }
+            window.authModal.show({
+                context: 'fix'
+            });
             if (typeof window.authModal.showRegisterForm === 'function') {
-                window.authModal.showRegisterForm();
+                window.authModal.showRegisterForm('fix');
             }
             opened = true;
         }

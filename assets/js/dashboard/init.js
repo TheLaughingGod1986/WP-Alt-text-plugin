@@ -246,12 +246,17 @@ bbaiRunWithJQuery(function($) {
             localStorage.setItem('bbai_open_portal_after_login', 'true');
 
             if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
-                window.authModal.show();
+                if (typeof window.authModal.setModalContext === 'function') {
+                    window.authModal.setModalContext('login');
+                }
+                window.authModal.show({
+                    context: 'login'
+                });
                 if (typeof window.authModal.showLoginForm === 'function') {
-                    window.authModal.showLoginForm();
+                    window.authModal.showLoginForm('login');
                 }
             } else if (typeof showAuthModal === 'function') {
-                showAuthModal('login');
+                showAuthModal('login', 'login');
             } else {
                 var authModal = document.getElementById('alttext-auth-modal');
                 if (authModal) {
@@ -453,8 +458,9 @@ bbaiRunWithJQuery(function($) {
         $(document).on('click', '[data-action="show-auth-modal"]', function(e) {
             e.preventDefault();
             var authTab = $(this).attr('data-auth-tab') || 'login';
+            var modalContext = $(this).attr('data-bbai-modal-context') || (authTab === 'login' ? 'login' : 'fix');
             if (typeof showAuthModal === 'function') {
-                showAuthModal(authTab);
+                showAuthModal(authTab, modalContext);
             }
         });
 
@@ -468,7 +474,7 @@ bbaiRunWithJQuery(function($) {
             } else {
                 localStorage.setItem('bbai_open_portal_after_login', 'true');
                 if (typeof showAuthModal === 'function') {
-                    showAuthModal('login');
+                    showAuthModal('login', 'login');
                 }
             }
         });

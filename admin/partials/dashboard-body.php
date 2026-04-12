@@ -479,17 +479,18 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
         $bbai_status_detail = '';
     }
 
-	    if ($bbai_is_anonymous_trial) {
-	        $bbai_trial_signup_action = $bbai_build_action(
-	            ('exhausted' === $bbai_quota_state)
-	                ? __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator')
-	                : __('Continue fixing images', 'beepbeep-ai-alt-text-generator'),
-	            [
-	                'action' => 'show-dashboard-auth',
-	                'aria_label' => __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator'),
+		    if ($bbai_is_anonymous_trial) {
+		        $bbai_trial_signup_action = $bbai_build_action(
+		            ('exhausted' === $bbai_quota_state)
+		                ? __('Fix your remaining images', 'beepbeep-ai-alt-text-generator')
+		                : __('Continue fixing images', 'beepbeep-ai-alt-text-generator'),
+		            [
+		                'action' => 'show-dashboard-auth',
+		                'aria_label' => __('Fix your remaining images', 'beepbeep-ai-alt-text-generator'),
 	                'extra_attrs' => [
 	                    'data-auth-tab'               => 'register',
 	                    'data-bbai-analytics-upgrade' => 'trial_create_account_clicked',
+	                    'data-bbai-modal-context'     => 'fix',
 	                ],
             ]
         );

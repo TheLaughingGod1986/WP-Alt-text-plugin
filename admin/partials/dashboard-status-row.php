@@ -49,6 +49,7 @@ $bbai_status_items = [
         'attrs' => [
             'data-bbai-dashboard-status-pill' => '1',
             'data-bbai-status-segment' => 'all',
+            'data-bbai-modal-context' => 'tabs',
         ],
         'count_attrs' => [
             'data-bbai-dashboard-status-count' => 'all',
@@ -68,6 +69,7 @@ $bbai_status_items = [
         'attrs' => [
             'data-bbai-dashboard-status-pill' => '1',
             'data-bbai-status-segment' => 'missing',
+            'data-bbai-modal-context' => 'tabs',
         ],
         'count_attrs' => [
             'data-bbai-dashboard-status-count' => 'missing',
@@ -87,6 +89,7 @@ $bbai_status_items = [
         'attrs' => [
             'data-bbai-dashboard-status-pill' => '1',
             'data-bbai-status-segment' => 'weak',
+            'data-bbai-modal-context' => 'tabs',
         ],
         'count_attrs' => [
             'data-bbai-dashboard-status-count' => 'weak',
@@ -106,6 +109,7 @@ $bbai_status_items = [
         'attrs' => [
             'data-bbai-dashboard-status-pill' => '1',
             'data-bbai-status-segment' => 'optimized',
+            'data-bbai-modal-context' => 'tabs',
         ],
         'count_attrs' => [
             'data-bbai-dashboard-status-count' => 'optimized',

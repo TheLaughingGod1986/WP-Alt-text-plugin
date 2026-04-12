@@ -102,13 +102,15 @@ $bbai_trial_preview_generation_locked = max( 0, (int) ( $bbai_state_credits_rema
                 $bbai_primary_label = __( 'Done', 'beepbeep-ai-alt-text-generator' );
                 $bbai_primary_class = 'bbai-dashboard-trial-preview__action bbai-dashboard-trial-preview__action--done';
                 $bbai_primary_title = __( 'Preview this ALT text', 'beepbeep-ai-alt-text-generator' );
+                $bbai_primary_modal_context = 'optimized';
 
-	                if ( 'missing' === $bbai_status ) {
-	                    if ( $bbai_trial_preview_generation_locked ) {
-	                        $bbai_primary_action = 'show-dashboard-auth';
-	                        $bbai_primary_label = __( 'Continue fixing images', 'beepbeep-ai-alt-text-generator' );
+                if ( 'missing' === $bbai_status ) {
+                    if ( $bbai_trial_preview_generation_locked ) {
+                        $bbai_primary_action = 'show-dashboard-auth';
+                        $bbai_primary_label = __( 'Continue fixing images', 'beepbeep-ai-alt-text-generator' );
                         $bbai_primary_class = 'bbai-dashboard-trial-preview__action bbai-dashboard-trial-preview__action--locked';
                         $bbai_primary_title = __( 'Continue fixing images and unlock full access', 'beepbeep-ai-alt-text-generator' );
+                        $bbai_primary_modal_context = 'fix';
                     } else {
                         $bbai_primary_action = 'regenerate-single';
                         $bbai_primary_label = __( 'Fix', 'beepbeep-ai-alt-text-generator' );
@@ -119,6 +121,7 @@ $bbai_trial_preview_generation_locked = max( 0, (int) ( $bbai_state_credits_rema
                     $bbai_primary_label = __( 'Review', 'beepbeep-ai-alt-text-generator' );
                     $bbai_primary_class = 'bbai-dashboard-trial-preview__action bbai-dashboard-trial-preview__action--review';
                     $bbai_primary_title = __( 'Review generated ALT text', 'beepbeep-ai-alt-text-generator' );
+                    $bbai_primary_modal_context = 'review';
                 }
                 ?>
                 <article
@@ -219,6 +222,7 @@ $bbai_trial_preview_generation_locked = max( 0, (int) ( $bbai_state_credits_rema
                                     class="<?php echo esc_attr( $bbai_primary_class ); ?>"
                                     data-action="<?php echo esc_attr( $bbai_primary_action ); ?>"
                                     data-attachment-id="<?php echo esc_attr( $bbai_attachment_id ); ?>"
+                                    <?php echo 'show-dashboard-auth' === $bbai_primary_action ? 'data-bbai-modal-context="' . esc_attr( $bbai_primary_modal_context ) . '"' : ''; ?>
                                     title="<?php echo esc_attr( $bbai_primary_title ); ?>"
                                 >
                                     <?php echo esc_html( $bbai_primary_label ); ?>

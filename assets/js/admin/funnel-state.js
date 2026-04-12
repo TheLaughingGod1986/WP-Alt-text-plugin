@@ -366,6 +366,32 @@
             : formatCount(total) + ' images ready to review';
     }
 
+    function buildHeroStatusLabel(state, actionable) {
+        var actionModel = actionable || {};
+
+        if (state === HERO_STATES.NOT_SCANNED) {
+            return 'Alt text progress';
+        }
+
+        if (state === HERO_STATES.SCANNING) {
+            return 'Scanning library';
+        }
+
+        if (state === HERO_STATES.SCANNED_CLEAN) {
+            return '100% optimised';
+        }
+
+        if (actionModel.key === ACTIONABLE_STATES.REVIEW) {
+            return actionModel.reviewCount === 1
+                ? '1 image to review'
+                : formatCount(Math.max(1, actionModel.reviewCount)) + ' images to review';
+        }
+
+        return actionModel.actionableCount === 1
+            ? '1 image to fix'
+            : formatCount(Math.max(1, actionModel.actionableCount)) + ' images to fix';
+    }
+
     function formatLastScanLine(timestamp) {
         var seconds = parseCount(timestamp);
         var now;
@@ -436,18 +462,53 @@
         };
     }
 
-    function openAuthModal(tab) {
+    function getModalContextForStatusSegment(segment) {
+        return 'filter';
+    }
+
+    function getModalContextFromTrigger(trigger, fallback) {
+        var explicitContext = trigger && trigger.getAttribute
+            ? String(trigger.getAttribute('data-bbai-modal-context') || '')
+            : '';
+        var segment;
+
+        if (explicitContext) {
+            return explicitContext;
+        }
+
+        if (trigger && trigger.getAttribute && trigger.getAttribute('data-auth-tab') === 'login') {
+            return 'login';
+        }
+
+        segment = trigger && trigger.getAttribute
+            ? String(trigger.getAttribute('data-bbai-status-segment') || trigger.getAttribute('data-bbai-review-segment') || '')
+            : '';
+
+        if (segment) {
+            return getModalContextForStatusSegment(segment);
+        }
+
+        return fallback || 'fix';
+    }
+
+    function openAuthModal(tab, modalContext) {
         var mode = tab === 'register' ? 'register' : 'login';
+        var context = modalContext || (mode === 'login' ? 'login' : 'fix');
         var nextUrl;
 
         if (window.authModal && typeof window.authModal.show === 'function') {
             try {
-                window.authModal.show();
+                if (typeof window.authModal.setModalContext === 'function') {
+                    window.authModal.setModalContext(context);
+                }
+                window.authModal.show({
+                    context: context
+                });
 
                 if (mode === 'register' && typeof window.authModal.showRegisterForm === 'function') {
-                    window.authModal.showRegisterForm();
+                    window.authModal.showRegisterForm(context);
                 } else if (mode !== 'register' && typeof window.authModal.showLoginForm === 'function') {
-                    window.authModal.showLoginForm();
+                    window.authModal.showLoginForm('login');
                 }
 
                 return true;
@@ -458,7 +519,7 @@
 
         if (typeof window.showAuthModal === 'function') {
             try {
-                window.showAuthModal(mode);
+                window.showAuthModal(mode, context);
                 return true;
             } catch (error) {
                 // Fall through to URL-based fallback.
@@ -469,6 +530,7 @@
             nextUrl = new URL(window.location.href);
             nextUrl.searchParams.set('bbai_open_auth', '1');
             nextUrl.searchParams.set('bbai_auth_tab', mode);
+            nextUrl.searchParams.set('bbai_auth_context', context);
             window.location.assign(nextUrl.toString());
             return true;
         } catch (error) {
@@ -485,13 +547,18 @@
     function openUpgradeModal(trigger, options) {
         var root = getRoot();
         var source = options && options.source ? String(options.source) : 'dashboard';
+        var modalContext = options && options.context ? String(options.context) : getModalContextFromTrigger(trigger);
         var context = {
             source: source,
+            modalContext: modalContext,
             trigger: trigger || document.activeElement || null
         };
 
         if (!root || !canAccessLibrary(root)) {
-            return openAuthModal(trigger && trigger.getAttribute && trigger.getAttribute('data-auth-tab') === 'login' ? 'login' : 'register');
+            return openAuthModal(
+                trigger && trigger.getAttribute && trigger.getAttribute('data-auth-tab') === 'login' ? 'login' : 'register',
+                modalContext
+            );
         }
 
         if (typeof window.bbaiOpenUpgradeModal === 'function') {
@@ -531,7 +598,10 @@
             return true;
         }
 
-        return openAuthModal(trigger && trigger.getAttribute && trigger.getAttribute('data-auth-tab') === 'login' ? 'login' : 'register');
+        return openAuthModal(
+            trigger && trigger.getAttribute && trigger.getAttribute('data-auth-tab') === 'login' ? 'login' : 'register',
+            getModalContextFromTrigger(trigger)
+        );
     }
 
     function buildReviewImagesUrl(url) {
@@ -614,12 +684,13 @@
         };
     }
 
-function buildUnlockAction(root) {
-	    if (isGuestTrialUser(root)) {
-	        return buildAction(getLockedTrialCtaLabel(root), {
-	            action: 'show-dashboard-auth',
-	            authTab: 'register',
-	            analytics: 'hero_continue_optimizing_signup'
+    function buildUnlockAction(root) {
+        if (isGuestTrialUser(root)) {
+            return buildAction(getLockedTrialCtaLabel(root), {
+                action: 'show-dashboard-auth',
+                authTab: 'register',
+                analytics: 'hero_continue_optimizing_signup',
+                modalContext: 'fix'
             });
         }
 
@@ -628,11 +699,12 @@ function buildUnlockAction(root) {
         });
     }
 
-	function buildLoginAction() {
-	    return buildAction('Login', {
-	        action: 'show-dashboard-auth',
-	        authTab: 'login',
-	        analytics: 'hero_exhausted_trial_login'
+    function buildLoginAction() {
+        return buildAction('Already have an account? Sign in', {
+            action: 'show-dashboard-auth',
+            authTab: 'login',
+            analytics: 'hero_exhausted_trial_login',
+            modalContext: 'login'
         });
     }
 
@@ -713,6 +785,7 @@ function buildUnlockAction(root) {
             bbaiAction: action.bbaiAction || '',
             authTab: action.authTab || '',
             analytics: action.analytics || '',
+            modalContext: action.modalContext || '',
             disabled: !!action.disabled,
             ariaBusy: !!action.ariaBusy,
             fixDashboard: !!action.fixDashboard,
@@ -723,9 +796,17 @@ function buildUnlockAction(root) {
 
     function getLockedTrialCtaLabel(root) {
         var counts = getCounts(root);
-        return (counts.missing + counts.weak) > 0
-            ? 'Fix remaining images for free'
-            : 'Continue fixing images';
+        var remaining = Math.max(0, counts.missing || (counts.missing + counts.weak));
+
+        if (remaining === 1) {
+            return 'Fix 1 remaining image for free';
+        }
+
+        if (remaining > 1) {
+            return 'Fix ' + formatCount(remaining) + ' remaining images for free';
+        }
+
+        return 'Continue fixing images';
     }
 
     function getLockedTrialCtaContext(root, missingCount) {
@@ -749,11 +830,12 @@ function buildUnlockAction(root) {
         var isGuestTrial = root.getAttribute('data-bbai-is-guest-trial') === '1';
         var quotaState = String(root.getAttribute('data-bbai-quota-state') || '');
 
-	    if (mode === 'create_account' || (mode === '' && isGuestTrial && quotaState === 'exhausted')) {
-	        return buildAction(getLockedTrialCtaLabel(root), {
-	            action: 'show-dashboard-auth',
-	            authTab: 'register',
-	            analytics: 'hero_create_account_exhausted'
+        if (mode === 'create_account' || (mode === '' && isGuestTrial && quotaState === 'exhausted')) {
+            return buildAction(getLockedTrialCtaLabel(root), {
+                action: 'show-dashboard-auth',
+                authTab: 'register',
+                analytics: 'hero_create_account_exhausted',
+                modalContext: 'fix'
             });
         }
 
@@ -769,11 +851,12 @@ function buildUnlockAction(root) {
     function buildFixPrimaryAction(root, actionableCount) {
         var quotaState = String(root && root.getAttribute('data-bbai-quota-state') || '');
 
-	    if (isGuestTrialUser(root) && getTrialCreditsRemaining(root) <= 0) {
-	        return buildAction(getLockedTrialCtaLabel(root), {
-	            action: 'show-dashboard-auth',
-	            authTab: 'register',
-	            analytics: 'hero_fix_all_images_signup'
+        if (isGuestTrialUser(root) && getTrialCreditsRemaining(root) <= 0) {
+            return buildAction(getLockedTrialCtaLabel(root), {
+                action: 'show-dashboard-auth',
+                authTab: 'register',
+                analytics: 'hero_fix_all_images_signup',
+                modalContext: 'fix'
             });
         }
 
@@ -791,11 +874,12 @@ function buildUnlockAction(root) {
     }
 
     function buildReviewPrimaryAction(root) {
-	    if (isGuestTrialUser(root) && getTrialCreditsRemaining(root) <= 0) {
-	        return buildAction(getLockedTrialCtaLabel(root), {
-	            action: 'show-dashboard-auth',
-	            authTab: 'register',
-	            analytics: 'hero_review_images_signup'
+        if (isGuestTrialUser(root) && getTrialCreditsRemaining(root) <= 0) {
+            return buildAction(getLockedTrialCtaLabel(root), {
+                action: 'show-dashboard-auth',
+                authTab: 'register',
+                analytics: 'hero_review_images_signup',
+                modalContext: 'fix'
             });
         }
 
@@ -844,6 +928,7 @@ function buildUnlockAction(root) {
     function buildExhaustedTrialHeroModel(root, counts) {
         var credits = getCreditsModel(root);
         var missingCount = Math.max(0, counts && typeof counts.missing === 'number' ? counts.missing : 0);
+        var remainingCount = Math.max(0, missingCount || (counts.missing + counts.weak));
         var limit = getCreditFunnelState(root).limit;
         var title = 'You\u2019ve used all ' + formatCount(limit) + ' free generations';
         var statusLabel = missingCount === 1
@@ -861,7 +946,7 @@ function buildUnlockAction(root) {
             description: 'Continue fixing your remaining images and unlock full access.',
             primaryAction: buildUnlockAction(root),
             secondaryAction: buildLoginAction(),
-            ctaContext: getLockedTrialCtaContext(root, missingCount),
+            ctaContext: getLockedTrialCtaContext(root, remainingCount),
             supportLine: '50 free generations/month • Full library access • Bulk optimise',
             showCredits: false,
             showConversionPrompt: false,
@@ -886,10 +971,11 @@ function buildUnlockAction(root) {
         var donutLabel = actionable.key === ACTIONABLE_STATES.MISSING
             ? 'TO FIX'
             : (actionable.key === ACTIONABLE_STATES.REVIEW ? 'TO REVIEW' : 'OPTIMIZED');
+        var heroStatusLabel = buildHeroStatusLabel(state, actionable);
 
         if (state === HERO_STATES.NOT_SCANNED) {
             return {
-                statusLabel: '',
+                statusLabel: heroStatusLabel,
                 statusDetail: '',
                 donutValue: '0%',
                 donutLabel: 'OPTIMIZED',
@@ -907,7 +993,7 @@ function buildUnlockAction(root) {
 
         if (state === HERO_STATES.SCANNING) {
             return {
-                statusLabel: '',
+                statusLabel: heroStatusLabel,
                 statusDetail: '',
                 donutValue: '0',
                 donutLabel: 'TO FIX',
@@ -923,7 +1009,7 @@ function buildUnlockAction(root) {
 
         if (generationBusy) {
             return {
-                statusLabel: '',
+                statusLabel: heroStatusLabel,
                 statusDetail: '',
                 donutValue: donutValue,
                 donutLabel: donutLabel,
@@ -945,7 +1031,7 @@ function buildUnlockAction(root) {
 
         if (state === HERO_STATES.SCANNED_HAS_ISSUES && actionable.key === ACTIONABLE_STATES.REVIEW) {
             return {
-                statusLabel: '',
+                statusLabel: heroStatusLabel,
                 statusDetail: '',
                 donutValue: donutValue,
                 donutLabel: donutLabel,
@@ -967,7 +1053,7 @@ function buildUnlockAction(root) {
 
         if (state === HERO_STATES.SCANNED_HAS_ISSUES && isGuestTrialUser(root) && getTrialCreditsRemaining(root) <= 0) {
             return {
-                statusLabel: '',
+                statusLabel: heroStatusLabel,
                 statusDetail: '',
                 donutValue: donutValue,
                 donutLabel: donutLabel,
@@ -987,7 +1073,7 @@ function buildUnlockAction(root) {
 
         if (state === HERO_STATES.SCANNED_HAS_ISSUES && String(root.getAttribute('data-bbai-quota-state') || '') === 'exhausted') {
             return {
-                statusLabel: '',
+                statusLabel: heroStatusLabel,
                 statusDetail: '',
                 donutValue: donutValue,
                 donutLabel: donutLabel,
@@ -1007,7 +1093,7 @@ function buildUnlockAction(root) {
 
         if (state === HERO_STATES.SCANNED_HAS_ISSUES) {
             return {
-                statusLabel: '',
+                statusLabel: heroStatusLabel,
                 statusDetail: '',
                 donutValue: donutValue,
                 donutLabel: donutLabel,
@@ -1026,7 +1112,7 @@ function buildUnlockAction(root) {
         }
 
         return {
-            statusLabel: '',
+            statusLabel: heroStatusLabel,
             statusDetail: '',
             donutValue: donutValue,
             donutLabel: 'OPTIMIZED',
@@ -1056,6 +1142,7 @@ function buildUnlockAction(root) {
             node.removeAttribute('data-bbai-action');
             node.removeAttribute('data-auth-tab');
             node.removeAttribute('data-bbai-analytics-upgrade');
+            node.removeAttribute('data-bbai-modal-context');
             node.removeAttribute('data-bbai-fix-dashboard');
             node.removeAttribute('data-bbai-review-dashboard');
             node.removeAttribute('data-bbai-review-segment');
@@ -1071,6 +1158,7 @@ function buildUnlockAction(root) {
         node.removeAttribute('data-bbai-action');
         node.removeAttribute('data-auth-tab');
         node.removeAttribute('data-bbai-analytics-upgrade');
+        node.removeAttribute('data-bbai-modal-context');
         node.removeAttribute('data-bbai-fix-dashboard');
         node.removeAttribute('data-bbai-review-dashboard');
         node.removeAttribute('data-bbai-review-segment');
@@ -1088,6 +1176,9 @@ function buildUnlockAction(root) {
         }
         if (model.analytics) {
             node.setAttribute('data-bbai-analytics-upgrade', model.analytics);
+        }
+        if (model.modalContext) {
+            node.setAttribute('data-bbai-modal-context', model.modalContext);
         }
         if (model.fixDashboard) {
             node.setAttribute('data-bbai-fix-dashboard', '1');
@@ -1569,7 +1660,10 @@ function buildUnlockAction(root) {
 
             if (isUpgradeModalLocked(root)) {
                 event.preventDefault();
-                openUpgradeModal(item, { source: 'dashboard-status-pill' });
+                openUpgradeModal(item, {
+                    source: 'dashboard-status-pill',
+                    context: getModalContextForStatusSegment(segment)
+                });
                 return;
             }
 
@@ -1587,7 +1681,10 @@ function buildUnlockAction(root) {
 
             if (!canAccessLibrary(root)) {
                 event.preventDefault();
-                openUpgradeModal(item, { source: 'dashboard-status-pill' });
+                openUpgradeModal(item, {
+                    source: 'dashboard-status-pill',
+                    context: getModalContextForStatusSegment(segment)
+                });
                 return;
             }
 
@@ -1655,7 +1752,10 @@ function buildUnlockAction(root) {
 	            if (typeof event.stopImmediatePropagation === 'function') {
 	                event.stopImmediatePropagation();
 	            }
-	            openAuthModal(trigger.getAttribute('data-auth-tab') === 'login' ? 'login' : 'register');
+	            openAuthModal(
+                    trigger.getAttribute('data-auth-tab') === 'login' ? 'login' : 'register',
+                    getModalContextFromTrigger(trigger)
+                );
 	            return;
 	        }
 
@@ -1690,7 +1790,10 @@ function buildUnlockAction(root) {
 	            if (typeof event.stopImmediatePropagation === 'function') {
 	                event.stopImmediatePropagation();
 	            }
-	            openAuthModal(lockedTrigger.getAttribute('data-auth-tab') === 'login' ? 'login' : 'register');
+	            openAuthModal(
+                    lockedTrigger.getAttribute('data-auth-tab') === 'login' ? 'login' : 'register',
+                    getModalContextFromTrigger(lockedTrigger)
+                );
 	            return;
 	        }
 

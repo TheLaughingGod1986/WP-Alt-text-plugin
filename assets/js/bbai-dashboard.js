@@ -28,6 +28,37 @@ function bbaiGetLockedTrialCtaLabelFromRoot() {
     return (missing + weak) > 0 ? 'Fix remaining images for free' : 'Continue fixing images';
 }
 
+function bbaiResolveDashboardAuthContext(trigger) {
+    var context = trigger && trigger.getAttribute ? String(trigger.getAttribute('data-bbai-modal-context') || '') : '';
+    var segment;
+
+    if (context) {
+        return context;
+    }
+
+    if (trigger && trigger.getAttribute && trigger.getAttribute('data-auth-tab') === 'login') {
+        return 'login';
+    }
+
+    segment = trigger && trigger.getAttribute
+        ? String(trigger.getAttribute('data-bbai-status-segment') || trigger.getAttribute('data-bbai-review-segment') || '')
+        : '';
+
+    if (segment === 'missing') {
+        return 'missing';
+    }
+
+    if (segment === 'weak' || segment === 'needs_review') {
+        return 'review';
+    }
+
+    if (segment === 'optimized' || segment === 'optimised') {
+        return 'optimized';
+    }
+
+    return 'fix';
+}
+
 function bbaiSetDashboardAuthTriggerLoading(trigger) {
     if (!trigger || trigger.getAttribute('data-bbai-auth-loading') === '1') {
         return false;
@@ -69,24 +100,30 @@ function bbaiOpenDashboardAuthDirect(trigger) {
     var tab = trigger && trigger.getAttribute && trigger.getAttribute('data-auth-tab') === 'login'
         ? 'login'
         : 'register';
+    var context = bbaiResolveDashboardAuthContext(trigger);
 
     if (window.authModal && typeof window.authModal.show === 'function') {
-        window.authModal.show();
+        if (typeof window.authModal.setModalContext === 'function') {
+            window.authModal.setModalContext(context);
+        }
+        window.authModal.show({
+            context: context
+        });
         if (tab === 'login' && typeof window.authModal.showLoginForm === 'function') {
-            window.authModal.showLoginForm();
+            window.authModal.showLoginForm('login');
         } else if (typeof window.authModal.showRegisterForm === 'function') {
-            window.authModal.showRegisterForm();
+            window.authModal.showRegisterForm(context);
         }
         return true;
     }
 
     if (typeof window.showAuthModal === 'function') {
-        window.showAuthModal(tab);
+        window.showAuthModal(tab, context);
         return true;
     }
 
     if (typeof showAuthModal === 'function') {
-        showAuthModal(tab);
+        showAuthModal(tab, context);
         return true;
     }
 
@@ -2908,8 +2945,9 @@ function showAuthLogin() {
     showAuthBanner();
 }
 
-function showAuthModal(tab) {
+function showAuthModal(tab, modalContext) {
     var analyticsSource = 'dashboard';
+    var context = modalContext || (tab === 'login' ? 'login' : 'fix');
 
     if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Showing auth modal, tab:', tab);
     if (window.bbaiAnalytics && typeof window.bbaiAnalytics.resolveSource === 'function') {
@@ -2927,13 +2965,18 @@ function showAuthModal(tab) {
     // Try to show auth modal with specific tab
     if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
         if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Using authModal.show()');
-        window.authModal.show();
+        if (typeof window.authModal.setModalContext === 'function') {
+            window.authModal.setModalContext(context);
+        }
+        window.authModal.show({
+            context: context
+        });
         
         // Switch to the appropriate form
         if (tab === 'register' && typeof window.authModal.showRegisterForm === 'function') {
-            window.authModal.showRegisterForm();
+            window.authModal.showRegisterForm(context);
         } else if (typeof window.authModal.showLoginForm === 'function') {
-            window.authModal.showLoginForm();
+            window.authModal.showLoginForm('login');
         }
         return;
     }
@@ -4691,7 +4734,7 @@ bbaiRunWithJQuery(function($) {
                 label: label || '',
                 helper: helper || '',
                 href: '#',
-                removeAttributes: ['data-action', 'data-bbai-action', 'data-auth-tab', 'data-bbai-regenerate-scope', 'data-bbai-generation-source', 'aria-describedby']
+                removeAttributes: ['data-action', 'data-bbai-action', 'data-auth-tab', 'data-bbai-modal-context', 'data-bbai-regenerate-scope', 'data-bbai-generation-source', 'aria-describedby']
             }, options || {});
         }
 
@@ -4769,7 +4812,7 @@ bbaiRunWithJQuery(function($) {
                             createAction(__('Open ALT Library', 'beepbeep-ai-alt-text-generator'), '', { href: libraryUrl || '#' }),
                             createAction(__('Fix remaining images for free', 'beepbeep-ai-alt-text-generator'), '', {
                             action: 'show-dashboard-auth',
-                            attributes: { 'data-auth-tab': 'register' }
+                            attributes: { 'data-auth-tab': 'register', 'data-bbai-modal-context': 'fix' }
                         })
                     ];
                     model.loopSupportLine = '';
@@ -4980,7 +5023,7 @@ bbaiRunWithJQuery(function($) {
             node.removeAttribute('data-bbai-action');
         }
 
-        ['data-bbai-regenerate-scope', 'data-bbai-generation-source'].forEach(function(attributeName) {
+        ['data-bbai-regenerate-scope', 'data-bbai-generation-source', 'data-bbai-modal-context'].forEach(function(attributeName) {
             if (!config.attributes || !Object.prototype.hasOwnProperty.call(config.attributes, attributeName)) {
                 node.removeAttribute(attributeName);
             }
@@ -5257,7 +5300,7 @@ bbaiRunWithJQuery(function($) {
                 action: isAnonymousTrial ? 'show-dashboard-auth' : 'show-upgrade-modal',
                 primary: generatePrimary,
                 preserveContent: true,
-                attributes: isAnonymousTrial ? { 'data-auth-tab': 'register' } : null,
+                attributes: isAnonymousTrial ? { 'data-auth-tab': 'register', 'data-bbai-modal-context': 'missing' } : null,
                 removeAttributes: ['data-bbai-action']
             });
         } else if (data.missing > 0) {
@@ -5355,7 +5398,7 @@ bbaiRunWithJQuery(function($) {
                 action: isAnonymousTrial ? 'show-dashboard-auth' : 'show-upgrade-modal',
                 primary: bulkPrimary,
                 preserveContent: true,
-                attributes: isAnonymousTrial ? { 'data-auth-tab': 'register' } : null,
+                attributes: isAnonymousTrial ? { 'data-auth-tab': 'register', 'data-bbai-modal-context': 'fix' } : null,
                 removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
             });
             return;
@@ -6831,7 +6874,7 @@ bbaiRunWithJQuery(function($) {
                         label: __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator'),
                         action: 'show-dashboard-auth',
                         href: '#',
-                        attributes: { 'data-auth-tab': 'register' },
+	                        attributes: { 'data-auth-tab': 'register', 'data-bbai-modal-context': 'fix' },
                         removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
                     }
                     : {
@@ -6878,7 +6921,7 @@ bbaiRunWithJQuery(function($) {
                         label: __('Continue fixing images', 'beepbeep-ai-alt-text-generator'),
                         action: 'show-dashboard-auth',
                         href: '#',
-                        attributes: { 'data-auth-tab': 'register' },
+	                        attributes: { 'data-auth-tab': 'register', 'data-bbai-modal-context': 'fix' },
                         removeAttributes: ['data-bbai-action', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
                     });
             } else if (data.isPremium) {

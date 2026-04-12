@@ -78,9 +78,10 @@ if ( $bbai_trial_weak_count > 0 ) {
 			<a
 				href="#"
 				class="bbai-command-action bbai-command-action--primary bbai-btn bbai-btn-primary"
-				data-action="show-auth-modal"
-				data-auth-tab="register"
-				data-bbai-analytics-upgrade="trial_create_account_clicked"
+					data-action="show-auth-modal"
+					data-auth-tab="register"
+					data-bbai-modal-context="fix"
+					data-bbai-analytics-upgrade="trial_create_account_clicked"
 				data-bbai-trial-wall-primary="1"
 				><?php echo esc_html( $bbai_trial_copy['primary_cta'] ?? __( 'Fix remaining images for free', 'beepbeep-ai-alt-text-generator' ) ); ?></a>
 			<a

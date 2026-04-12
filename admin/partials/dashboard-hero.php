@@ -59,10 +59,11 @@ $bbai_build_action = static function ( string $label = '', array $config = [] ):
             'action'      => '',
             'bbai_action' => '',
             'auth_tab'    => '',
-            'analytics'   => '',
-            'disabled'    => false,
-            'aria_busy'   => false,
-            'fix_dashboard' => false,
+            'analytics'      => '',
+            'modal_context'  => '',
+            'disabled'       => false,
+            'aria_busy'      => false,
+            'fix_dashboard'  => false,
             'review_dashboard' => false,
             'review_segment' => '',
             'hidden'      => '' === $label,
@@ -90,6 +91,9 @@ $bbai_render_action = static function ( array $action, string $class_name, strin
         <?php endif; ?>
         <?php if ( '' !== (string) ( $action['analytics'] ?? '' ) ) : ?>
             data-bbai-analytics-upgrade="<?php echo esc_attr( (string) $action['analytics'] ); ?>"
+        <?php endif; ?>
+        <?php if ( '' !== (string) ( $action['modal_context'] ?? '' ) ) : ?>
+            data-bbai-modal-context="<?php echo esc_attr( (string) $action['modal_context'] ); ?>"
         <?php endif; ?>
         <?php if ( ! empty( $action['fix_dashboard'] ) ) : ?>
             data-bbai-fix-dashboard="1"
@@ -138,14 +142,19 @@ $bbai_actionable_state = isset( $bbai_actionable_state_model['state'] ) ? saniti
 $bbai_actionable_count = isset( $bbai_actionable_state_model['actionable_count'] )
     ? max( 0, (int) $bbai_actionable_state_model['actionable_count'] )
     : max( 0, $bbai_state_missing_count + $bbai_state_weak_count );
-$bbai_locked_trial_cta_label = $bbai_actionable_count > 0
-    ? __( 'Fix remaining images for free', 'beepbeep-ai-alt-text-generator' )
-    : __( 'Continue fixing images', 'beepbeep-ai-alt-text-generator' );
-$bbai_locked_trial_cta_context = $bbai_state_missing_count > 0
+$bbai_locked_trial_remaining_count = $bbai_state_missing_count > 0 ? $bbai_state_missing_count : $bbai_actionable_count;
+$bbai_locked_trial_cta_label = $bbai_locked_trial_remaining_count > 0
     ? sprintf(
-        /* translators: %s: missing ALT text image count. */
-        _n( 'You’re %s image away from full optimisation', 'You’re %s images away from full optimisation', $bbai_state_missing_count, 'beepbeep-ai-alt-text-generator' ),
-        number_format_i18n( $bbai_state_missing_count )
+        /* translators: %s: remaining image count. */
+        _n( 'Fix your %s remaining image', 'Fix your %s remaining images', $bbai_locked_trial_remaining_count, 'beepbeep-ai-alt-text-generator' ),
+        number_format_i18n( $bbai_locked_trial_remaining_count )
+    )
+    : __( 'Continue fixing images', 'beepbeep-ai-alt-text-generator' );
+$bbai_locked_trial_cta_context = $bbai_locked_trial_remaining_count > 0
+    ? sprintf(
+        /* translators: %s: remaining image count. */
+        _n( 'You’re %s image away from full optimisation', 'You’re %s images away from full optimisation', $bbai_locked_trial_remaining_count, 'beepbeep-ai-alt-text-generator' ),
+        number_format_i18n( $bbai_locked_trial_remaining_count )
     )
     : __( 'Continue fixing images and unlock full access', 'beepbeep-ai-alt-text-generator' );
 $bbai_review_count = isset( $bbai_actionable_state_model['review_count'] )
@@ -188,16 +197,17 @@ $bbai_build_unlock_action = static function () use (
     $bbai_is_guest_trial_user,
     $bbai_locked_trial_cta_label
 ): array {
-	if ( $bbai_is_guest_trial_user ) {
-	    return $bbai_build_action(
-	        $bbai_locked_trial_cta_label,
-	        [
-	            'action'    => 'show-dashboard-auth',
-	            'auth_tab'  => 'register',
-	            'analytics' => 'hero_continue_optimizing_signup',
-	            'hidden'    => false,
-	        ]
-	    );
+    if ( $bbai_is_guest_trial_user ) {
+        return $bbai_build_action(
+            $bbai_locked_trial_cta_label,
+            [
+                'action'        => 'show-dashboard-auth',
+                'auth_tab'      => 'register',
+                'analytics'     => 'hero_continue_optimizing_signup',
+                'modal_context' => 'fix',
+                'hidden'        => false,
+            ]
+        );
     }
 
     return $bbai_build_action(
@@ -208,16 +218,17 @@ $bbai_build_unlock_action = static function () use (
         ]
     );
 };
-	$bbai_build_login_action = static function () use ( $bbai_build_action ): array {
-	    return $bbai_build_action(
-	        __( 'Login', 'beepbeep-ai-alt-text-generator' ),
-	        [
-	            'action'    => 'show-dashboard-auth',
-	            'auth_tab'  => 'login',
-	            'analytics' => 'hero_exhausted_trial_login',
-	            'hidden'    => false,
-	        ]
-	    );
+$bbai_build_login_action = static function () use ( $bbai_build_action ): array {
+    return $bbai_build_action(
+        __( 'Already have an account? Sign in', 'beepbeep-ai-alt-text-generator' ),
+        [
+            'action'        => 'show-dashboard-auth',
+            'auth_tab'      => 'login',
+            'analytics'     => 'hero_exhausted_trial_login',
+            'modal_context' => 'login',
+            'hidden'        => false,
+        ]
+    );
 };
 
 if ( $bbai_is_guest_trial_user ) {
@@ -315,16 +326,17 @@ $bbai_build_fix_action = static function () use (
     $bbai_actionable_count,
     $bbai_locked_trial_cta_label
 ): array {
-	if ( $bbai_is_guest_trial_user && (int) $bbai_state_credits_remaining <= 0 ) {
-	    return $bbai_build_action(
-	        $bbai_locked_trial_cta_label,
-	        [
-	            'action'      => 'show-dashboard-auth',
-	            'auth_tab'    => 'register',
-	            'analytics'   => 'hero_fix_all_images_signup',
-	            'hidden'      => false,
-	        ]
-	    );
+    if ( $bbai_is_guest_trial_user && (int) $bbai_state_credits_remaining <= 0 ) {
+        return $bbai_build_action(
+            $bbai_locked_trial_cta_label,
+            [
+                'action'        => 'show-dashboard-auth',
+                'auth_tab'      => 'register',
+                'analytics'     => 'hero_fix_all_images_signup',
+                'modal_context' => 'fix',
+                'hidden'        => false,
+            ]
+        );
     }
 
     if ( $bbai_actionable_count > 0 && Dashboard_State::FUNNEL_LIMIT_REACHED === $bbai_hero_funnel && '' !== $bbai_locked_cta_mode ) {
@@ -355,16 +367,17 @@ $bbai_build_review_action = static function () use (
     $bbai_is_guest_trial_user,
     $bbai_locked_trial_cta_label
 ): array {
-	if ( $bbai_is_guest_trial_user && $bbai_state_credits_remaining <= 0 ) {
-	    return $bbai_build_action(
-	        $bbai_locked_trial_cta_label,
-	        [
-	            'action'    => 'show-dashboard-auth',
-	            'auth_tab'  => 'register',
-	            'analytics' => 'hero_review_images_signup',
-	            'hidden'    => false,
-	        ]
-	    );
+    if ( $bbai_is_guest_trial_user && $bbai_state_credits_remaining <= 0 ) {
+        return $bbai_build_action(
+            $bbai_locked_trial_cta_label,
+            [
+                'action'        => 'show-dashboard-auth',
+                'auth_tab'      => 'register',
+                'analytics'     => 'hero_review_images_signup',
+                'modal_context' => 'fix',
+                'hidden'        => false,
+            ]
+        );
     }
 
     if ( empty( $bbai_has_connected_account ) ) {
@@ -446,7 +459,7 @@ $bbai_donut_center_label = __( 'OPTIMIZED', 'beepbeep-ai-alt-text-generator' );
 $bbai_donut_tone         = 'neutral';
 $bbai_title              = __( 'Scan your images in seconds', 'beepbeep-ai-alt-text-generator' );
 $bbai_description        = $bbai_fix_description;
-$bbai_status_label       = '';
+$bbai_status_label       = __( 'Alt text progress', 'beepbeep-ai-alt-text-generator' );
 $bbai_status_detail      = '';
 $bbai_support_line       = '';
 $bbai_cta_context        = '';
@@ -465,6 +478,7 @@ if ( 'scanning' === $bbai_hero_state ) {
     $bbai_donut_tone         = 'scanning';
     $bbai_title              = __( 'Scanning your images', 'beepbeep-ai-alt-text-generator' );
     $bbai_description        = $bbai_fix_description;
+    $bbai_status_label       = __( 'Scanning library', 'beepbeep-ai-alt-text-generator' );
     $bbai_primary_action     = $bbai_build_action(
         __( 'Scanning images...', 'beepbeep-ai-alt-text-generator' ),
         [
@@ -483,6 +497,17 @@ if ( 'scanning' === $bbai_hero_state ) {
         ? __( 'TO REVIEW', 'beepbeep-ai-alt-text-generator' )
         : __( 'TO FIX', 'beepbeep-ai-alt-text-generator' );
     $bbai_donut_tone         = Dashboard_State::FUNNEL_FIXING === $bbai_hero_funnel ? 'scanning' : 'problem';
+    $bbai_status_label       = Dashboard_State::ACTIONABLE_STATE_REVIEW === $bbai_actionable_state
+        ? sprintf(
+            /* translators: %s: number of images to review. */
+            _n( '%s image to review', '%s images to review', max( 1, $bbai_review_count ), 'beepbeep-ai-alt-text-generator' ),
+            number_format_i18n( max( 1, $bbai_review_count ) )
+        )
+        : sprintf(
+            /* translators: %s: number of images to fix. */
+            _n( '%s image to fix', '%s images to fix', max( 1, $bbai_actionable_count ), 'beepbeep-ai-alt-text-generator' ),
+            number_format_i18n( max( 1, $bbai_actionable_count ) )
+        );
 
     if ( Dashboard_State::FUNNEL_FIXING === $bbai_hero_funnel ) {
         $bbai_title          = $bbai_busy_title;
@@ -522,6 +547,7 @@ if ( 'scanning' === $bbai_hero_state ) {
     $bbai_donut_tone         = 'healthy';
     $bbai_title              = __( 'Your images are fully optimised', 'beepbeep-ai-alt-text-generator' );
     $bbai_description        = __( 'Your latest ALT text is ready to view and review.', 'beepbeep-ai-alt-text-generator' );
+    $bbai_status_label       = __( '100% optimised', 'beepbeep-ai-alt-text-generator' );
     $bbai_primary_action     = $bbai_build_complete_action();
 }
 
@@ -578,22 +604,6 @@ if ( $bbai_is_exhausted_trial_checkpoint && 'scanning' !== $bbai_hero_state ) {
                         </span>
                     </div>
                 </div>
-                <div
-                    class="bbai-dashboard-hero-action__status-copy"
-                    data-bbai-hero-status-block
-                    <?php echo ( '' !== $bbai_status_label || '' !== $bbai_status_detail ) ? '' : 'hidden'; ?>
-                >
-                    <p class="bbai-dashboard-hero-action__status-label" data-bbai-hero-status-label>
-                        <?php echo esc_html( $bbai_status_label ); ?>
-                    </p>
-                    <p
-                        class="bbai-dashboard-hero-action__status-detail"
-                        data-bbai-hero-status-detail
-                        <?php echo '' !== $bbai_status_detail ? '' : 'hidden'; ?>
-                    >
-                        <?php echo esc_html( $bbai_status_detail ); ?>
-                    </p>
-                </div>
             </div>
 
             <div class="bbai-dashboard-hero-action__content">
@@ -601,104 +611,131 @@ if ( $bbai_is_exhausted_trial_checkpoint && 'scanning' !== $bbai_hero_state ) {
                     <?php echo esc_html( $bbai_title ); ?>
                 </h1>
 
-                <p class="bbai-dashboard-hero-action__description" data-bbai-funnel-hero-desc>
-                    <?php echo esc_html( $bbai_description ); ?>
-                </p>
+                <div class="bbai-dashboard-hero-action__content-flow">
+                    <p class="bbai-dashboard-hero-action__description" data-bbai-funnel-hero-desc>
+                        <?php echo esc_html( $bbai_description ); ?>
+                    </p>
 
-                <div class="bbai-dashboard-hero-action__cta-group" data-bbai-funnel-hero-cta-group>
                     <p
-                        class="bbai-dashboard-hero-action__cta-context"
+                        class="bbai-dashboard-hero-action__progress-line bbai-dashboard-hero-action__cta-context"
                         data-bbai-funnel-hero-cta-context
                         <?php echo '' !== $bbai_cta_context ? '' : 'hidden'; ?>
                     >
                         <?php echo esc_html( $bbai_cta_context ); ?>
                     </p>
 
-                    <div class="bbai-dashboard-hero-action__actions">
-                        <?php
-                        $bbai_render_action(
-                            $bbai_primary_action,
-                            'bbai-command-action bbai-command-action--primary bbai-btn bbai-btn-primary bbai-dashboard-hero-action__cta bbai-dashboard-hero-action__cta--primary',
-                            'data-bbai-funnel-hero-cta data-bbai-funnel-hero-cta-primary data-bbai-funnel-hero-primary'
-                        );
-                        $bbai_render_action(
-                            $bbai_secondary_action,
-                            'bbai-command-action bbai-command-action--secondary bbai-btn bbai-btn-secondary bbai-dashboard-hero-action__cta bbai-dashboard-hero-action__cta--secondary',
-                            'data-bbai-funnel-hero-cta data-bbai-funnel-hero-cta-secondary data-bbai-funnel-hero-secondary'
-                        );
-                        ?>
-                    </div>
-
-                    <p
-                        class="bbai-dashboard-hero-action__support"
-                        data-bbai-funnel-hero-support
-                        <?php echo '' !== $bbai_support_line ? '' : 'hidden'; ?>
-                    >
-                        <?php echo esc_html( $bbai_support_line ); ?>
-                    </p>
-                </div>
-
-                <?php if ( ! $bbai_is_exhausted_trial_checkpoint ) : ?>
-                    <?php
-                    $bbai_hero_credits_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-credits-block.php';
-                    if ( is_readable( $bbai_hero_credits_partial ) ) {
-                        include $bbai_hero_credits_partial;
-                    }
-                    ?>
-
-                    <section
-                        class="bbai-dashboard-conversion-prompt bbai-dashboard-conversion-prompt--<?php echo esc_attr( $bbai_conversion_prompt_tone ); ?>"
-                        data-bbai-hero-conversion-prompt
-                        data-bbai-hero-conversion-tone="<?php echo esc_attr( $bbai_conversion_prompt_tone ); ?>"
-                        <?php echo $bbai_conversion_prompt_visible ? '' : 'hidden'; ?>
-                    >
-                        <div class="bbai-dashboard-conversion-prompt__copy-wrap">
-                            <p class="bbai-dashboard-conversion-prompt__title" data-bbai-hero-conversion-title>
-                                <?php echo esc_html( $bbai_conversion_prompt_title ); ?>
-                            </p>
-                            <p class="bbai-dashboard-conversion-prompt__copy" data-bbai-hero-conversion-copy>
-                                <?php echo esc_html( $bbai_conversion_prompt_copy ); ?>
-                            </p>
-                            <p
-                                class="bbai-dashboard-conversion-prompt__note"
-                                data-bbai-hero-conversion-note
-                                <?php echo '' !== $bbai_conversion_prompt_note ? '' : 'hidden'; ?>
-                            >
-                                <?php echo esc_html( $bbai_conversion_prompt_note ); ?>
-                            </p>
-                        </div>
-                        <div
-                            class="bbai-dashboard-conversion-prompt__actions"
-                            data-bbai-hero-conversion-actions
-                            <?php echo ! empty( $bbai_conversion_prompt_action['label'] ) ? '' : 'hidden'; ?>
-                        >
+                    <div class="bbai-dashboard-hero-action__cta-group" data-bbai-funnel-hero-cta-group>
+                        <div class="bbai-dashboard-hero-action__actions">
                             <?php
                             $bbai_render_action(
-                                $bbai_conversion_prompt_action,
-                                'bbai-btn bbai-btn-secondary bbai-dashboard-conversion-prompt__cta',
-                                'data-bbai-hero-conversion-cta'
+                                $bbai_primary_action,
+                                'bbai-command-action bbai-command-action--primary bbai-btn bbai-btn-primary bbai-dashboard-hero-action__cta bbai-dashboard-hero-action__cta--primary',
+                                'data-bbai-funnel-hero-cta data-bbai-funnel-hero-cta-primary data-bbai-funnel-hero-primary'
                             );
                             ?>
                         </div>
-                    </section>
+                    </div>
+                </div>
+            </div>
 
-                    <ul class="bbai-dashboard-hero-action__microcopy" data-bbai-hero-microcopy aria-label="<?php esc_attr_e( 'Why use automatic fixes', 'beepbeep-ai-alt-text-generator' ); ?>">
-                        <li class="bbai-dashboard-hero-action__microcopy-item">
-                            <span class="bbai-dashboard-hero-action__microcopy-icon" aria-hidden="true">&#10003;</span>
-                            <span><?php esc_html_e( 'Takes ~5 seconds', 'beepbeep-ai-alt-text-generator' ); ?></span>
-                        </li>
-                        <li class="bbai-dashboard-hero-action__microcopy-item">
-                            <span class="bbai-dashboard-hero-action__microcopy-icon" aria-hidden="true">&#10003;</span>
-                            <span><?php esc_html_e( 'No manual work', 'beepbeep-ai-alt-text-generator' ); ?></span>
-                        </li>
-                        <li class="bbai-dashboard-hero-action__microcopy-item">
-                            <span class="bbai-dashboard-hero-action__microcopy-icon" aria-hidden="true">&#10003;</span>
-                            <span><?php esc_html_e( 'Improves SEO instantly', 'beepbeep-ai-alt-text-generator' ); ?></span>
-                        </li>
-                    </ul>
-                <?php endif; ?>
+            <div
+                class="bbai-dashboard-hero-action__status-copy"
+                data-bbai-hero-status-block
+                <?php echo ( '' !== $bbai_status_label || '' !== $bbai_status_detail ) ? '' : 'hidden'; ?>
+            >
+                <p class="bbai-dashboard-hero-action__status-label" data-bbai-hero-status-label>
+                    <?php echo esc_html( $bbai_status_label ); ?>
+                </p>
+                <p
+                    class="bbai-dashboard-hero-action__status-detail"
+                    data-bbai-hero-status-detail
+                    <?php echo '' !== $bbai_status_detail ? '' : 'hidden'; ?>
+                >
+                    <?php echo esc_html( $bbai_status_detail ); ?>
+                </p>
+            </div>
+
+            <div class="bbai-dashboard-hero-action__secondary">
+                <div class="bbai-dashboard-hero-action__secondary-actions">
+                    <?php
+                    $bbai_render_action(
+                        $bbai_secondary_action,
+                        'bbai-command-action bbai-command-action--secondary bbai-btn bbai-btn-secondary bbai-dashboard-hero-action__cta bbai-dashboard-hero-action__cta--secondary',
+                        'data-bbai-funnel-hero-cta data-bbai-funnel-hero-cta-secondary data-bbai-funnel-hero-secondary'
+                    );
+                    ?>
+                </div>
+                <p
+                    class="bbai-dashboard-hero-action__support"
+                    data-bbai-funnel-hero-support
+                    <?php echo '' !== $bbai_support_line ? '' : 'hidden'; ?>
+                >
+                    <?php echo esc_html( $bbai_support_line ); ?>
+                </p>
             </div>
         </div>
+
+        <?php if ( ! $bbai_is_exhausted_trial_checkpoint ) : ?>
+            <div class="bbai-dashboard-hero-action__extras">
+                <?php
+                $bbai_hero_credits_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-credits-block.php';
+                if ( is_readable( $bbai_hero_credits_partial ) ) {
+                    include $bbai_hero_credits_partial;
+                }
+                ?>
+
+                <section
+                    class="bbai-dashboard-conversion-prompt bbai-dashboard-conversion-prompt--<?php echo esc_attr( $bbai_conversion_prompt_tone ); ?>"
+                    data-bbai-hero-conversion-prompt
+                    data-bbai-hero-conversion-tone="<?php echo esc_attr( $bbai_conversion_prompt_tone ); ?>"
+                    <?php echo $bbai_conversion_prompt_visible ? '' : 'hidden'; ?>
+                >
+                    <div class="bbai-dashboard-conversion-prompt__copy-wrap">
+                        <p class="bbai-dashboard-conversion-prompt__title" data-bbai-hero-conversion-title>
+                            <?php echo esc_html( $bbai_conversion_prompt_title ); ?>
+                        </p>
+                        <p class="bbai-dashboard-conversion-prompt__copy" data-bbai-hero-conversion-copy>
+                            <?php echo esc_html( $bbai_conversion_prompt_copy ); ?>
+                        </p>
+                        <p
+                            class="bbai-dashboard-conversion-prompt__note"
+                            data-bbai-hero-conversion-note
+                            <?php echo '' !== $bbai_conversion_prompt_note ? '' : 'hidden'; ?>
+                        >
+                            <?php echo esc_html( $bbai_conversion_prompt_note ); ?>
+                        </p>
+                    </div>
+                    <div
+                        class="bbai-dashboard-conversion-prompt__actions"
+                        data-bbai-hero-conversion-actions
+                        <?php echo ! empty( $bbai_conversion_prompt_action['label'] ) ? '' : 'hidden'; ?>
+                    >
+                        <?php
+                        $bbai_render_action(
+                            $bbai_conversion_prompt_action,
+                            'bbai-btn bbai-btn-secondary bbai-dashboard-conversion-prompt__cta',
+                            'data-bbai-hero-conversion-cta'
+                        );
+                        ?>
+                    </div>
+                </section>
+
+                <ul class="bbai-dashboard-hero-action__microcopy" data-bbai-hero-microcopy aria-label="<?php esc_attr_e( 'Why use automatic fixes', 'beepbeep-ai-alt-text-generator' ); ?>">
+                    <li class="bbai-dashboard-hero-action__microcopy-item">
+                        <span class="bbai-dashboard-hero-action__microcopy-icon" aria-hidden="true">&#10003;</span>
+                        <span><?php esc_html_e( 'Takes ~5 seconds', 'beepbeep-ai-alt-text-generator' ); ?></span>
+                    </li>
+                    <li class="bbai-dashboard-hero-action__microcopy-item">
+                        <span class="bbai-dashboard-hero-action__microcopy-icon" aria-hidden="true">&#10003;</span>
+                        <span><?php esc_html_e( 'No manual work', 'beepbeep-ai-alt-text-generator' ); ?></span>
+                    </li>
+                    <li class="bbai-dashboard-hero-action__microcopy-item">
+                        <span class="bbai-dashboard-hero-action__microcopy-icon" aria-hidden="true">&#10003;</span>
+                        <span><?php esc_html_e( 'Improves SEO instantly', 'beepbeep-ai-alt-text-generator' ); ?></span>
+                    </li>
+                </ul>
+            </div>
+        <?php endif; ?>
 
         <div class="bbai-dashboard-hero-action__footer">
             <?php

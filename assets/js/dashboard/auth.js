@@ -59,8 +59,9 @@ function showAuthLogin() {
 /**
  * Show auth modal with specific tab
  */
-function showAuthModal(tab) {
+function showAuthModal(tab, modalContext) {
     var analyticsSource = 'dashboard';
+    var context = modalContext || (tab === 'login' ? 'login' : 'fix');
 
     if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Showing auth modal, tab:', tab);
     if (window.bbaiAnalytics && typeof window.bbaiAnalytics.resolveSource === 'function') {
@@ -76,12 +77,17 @@ function showAuthModal(tab) {
     }
 
     if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
-        window.authModal.show();
+        if (typeof window.authModal.setModalContext === 'function') {
+            window.authModal.setModalContext(context);
+        }
+        window.authModal.show({
+            context: context
+        });
 
         if (tab === 'register' && typeof window.authModal.showRegisterForm === 'function') {
-            window.authModal.showRegisterForm();
+            window.authModal.showRegisterForm(context);
         } else if (typeof window.authModal.showLoginForm === 'function') {
-            window.authModal.showLoginForm();
+            window.authModal.showLoginForm('login');
         }
         return;
     }

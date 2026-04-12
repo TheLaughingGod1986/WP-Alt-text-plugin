@@ -20,6 +20,19 @@ if ( empty( $bbai_is_anonymous_trial ) || ! empty( $bbai_has_connected_account )
 }
 
 $bbai_is_exhausted_trial_checkpoint = max( 0, (int) ( $bbai_state_credits_remaining ?? 0 ) ) <= 0;
+$bbai_locked_preview_remaining_count = max( 0, (int) ( $bbai_state_missing_count ?? 0 ) );
+$bbai_locked_preview_overlay_copy = $bbai_locked_preview_remaining_count > 0
+    ? sprintf(
+        /* translators: %s: number of remaining images. */
+        _n(
+            'Create a free account to keep fixing your %s remaining image, review every ALT result, and unlock 50 generations per month.',
+            'Create a free account to keep fixing your %s remaining images, review every ALT result, and unlock 50 generations per month.',
+            $bbai_locked_preview_remaining_count,
+            'beepbeep-ai-alt-text-generator'
+        ),
+        number_format_i18n( $bbai_locked_preview_remaining_count )
+    )
+    : __( 'Create a free account to review every ALT result and unlock 50 generations per month.', 'beepbeep-ai-alt-text-generator' );
 $bbai_locked_preview_rows = [
     [
         'status' => __( 'Missing', 'beepbeep-ai-alt-text-generator' ),
@@ -79,10 +92,10 @@ $bbai_locked_preview_rows = [
             <div class="bbai-dashboard-locked-preview__overlay">
                 <div class="bbai-dashboard-locked-preview__overlay-card">
                     <h3 class="bbai-dashboard-locked-preview__overlay-title">
-                        <?php esc_html_e( 'You’re one step away from finishing your optimisation', 'beepbeep-ai-alt-text-generator' ); ?>
+                        <?php esc_html_e( 'Unlock your full ALT library', 'beepbeep-ai-alt-text-generator' ); ?>
                     </h3>
                     <p class="bbai-dashboard-locked-preview__overlay-copy">
-                        <?php esc_html_e( 'Review, edit, and optimise your library once you’re signed in.', 'beepbeep-ai-alt-text-generator' ); ?>
+                        <?php echo esc_html( $bbai_locked_preview_overlay_copy ); ?>
                     </p>
 
                     <div class="bbai-dashboard-locked-preview__actions">
@@ -91,17 +104,22 @@ $bbai_locked_preview_rows = [
                             class="bbai-btn bbai-btn-primary bbai-dashboard-locked-preview__cta bbai-dashboard-locked-preview__cta--primary"
                             data-action="show-dashboard-auth"
                             data-auth-tab="register"
+                            data-bbai-modal-context="library"
                         >
-                            <?php esc_html_e( 'Fix remaining images for free', 'beepbeep-ai-alt-text-generator' ); ?>
+                            <?php esc_html_e( 'Unlock full ALT library', 'beepbeep-ai-alt-text-generator' ); ?>
                         </button>
-                        <button
-                            type="button"
-                            class="bbai-btn bbai-btn-secondary bbai-dashboard-locked-preview__cta bbai-dashboard-locked-preview__cta--secondary"
-                            data-action="show-dashboard-auth"
-                            data-auth-tab="login"
-                        >
-                            <?php esc_html_e( 'Login', 'beepbeep-ai-alt-text-generator' ); ?>
-                        </button>
+                        <p class="bbai-dashboard-locked-preview__signin">
+                            <?php esc_html_e( 'Already have an account?', 'beepbeep-ai-alt-text-generator' ); ?>
+                            <a
+                                href="#"
+                                class="bbai-dashboard-locked-preview__signin-link"
+                                data-action="show-dashboard-auth"
+                                data-auth-tab="login"
+                                data-bbai-modal-context="login"
+                            >
+                                <?php esc_html_e( 'Sign in', 'beepbeep-ai-alt-text-generator' ); ?>
+                            </a>
+                        </p>
                     </div>
 
                     <ul class="bbai-dashboard-locked-preview__benefits" aria-label="<?php esc_attr_e( 'Unlocked value', 'beepbeep-ai-alt-text-generator' ); ?>">

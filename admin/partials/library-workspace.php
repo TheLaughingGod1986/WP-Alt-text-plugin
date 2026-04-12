@@ -52,7 +52,7 @@ $bbai_locked_cta_mode_ws = isset($bbai_product_state_model['cta']['locked_mode']
 if ('create_account' === $bbai_locked_cta_mode_ws) {
     $bbai_locked_quota_action = 'open-signup';
     $bbai_locked_quota_label  = __('Create a free account to continue', 'beepbeep-ai-alt-text-generator');
-    $bbai_locked_auth_attr    = ' data-auth-tab="register"';
+    $bbai_locked_auth_attr    = ' data-auth-tab="register" data-bbai-modal-context="library"';
 } elseif ('manage_plan' === $bbai_locked_cta_mode_ws) {
     $bbai_locked_quota_action = 'open-usage';
     $bbai_locked_quota_label  = __('Usage & billing', 'beepbeep-ai-alt-text-generator');
@@ -70,7 +70,7 @@ if ('create_account' === $bbai_locked_cta_mode_ws) {
     $bbai_locked_quota_label  = $bbai_is_anonymous_trial
         ? __('Create a free account to continue', 'beepbeep-ai-alt-text-generator')
         : __('Upgrade to continue', 'beepbeep-ai-alt-text-generator');
-    $bbai_locked_auth_attr = $bbai_is_anonymous_trial ? ' data-auth-tab="register"' : '';
+    $bbai_locked_auth_attr = $bbai_is_anonymous_trial ? ' data-auth-tab="register" data-bbai-modal-context="library"' : '';
 }
 
 $bbai_build_action = static function (array $config) use ($bbai_limit_reached_state, $bbai_locked_quota_action, $bbai_is_anonymous_trial, $bbai_locked_cta_mode_ws) {
@@ -101,6 +101,7 @@ $bbai_build_action = static function (array $config) use ($bbai_limit_reached_st
         $attrs .= ' aria-disabled="true"';
         if ($bbai_is_anonymous_trial) {
             $attrs .= ' data-auth-tab="register"';
+            $attrs .= ' data-bbai-modal-context="library"';
         }
         if ('upgrade_agency' === $bbai_locked_cta_mode_ws) {
             $attrs .= ' data-bbai-pricing-variant="agency"';
@@ -151,12 +152,12 @@ $bbai_review_usage_url        = $bbai_is_anonymous_trial
     : admin_url('admin.php?page=bbai-credit-usage');
 
 $bbai_surface_automation_action = $bbai_is_anonymous_trial
-    ? $bbai_build_action(
-        [
-            'label' => __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator'),
-            'attrs' => 'data-action="show-auth-modal" data-auth-tab="register"',
-        ]
-    )
+		    ? $bbai_build_action(
+		        [
+		            'label' => __('Unlock full ALT library', 'beepbeep-ai-alt-text-generator'),
+		            'attrs' => 'data-action="show-auth-modal" data-auth-tab="register" data-bbai-modal-context="library"',
+		        ]
+		    )
     : ($bbai_is_pro
     ? $bbai_build_action(
         [
@@ -341,12 +342,14 @@ $bbai_trial_banner_remaining_line = sprintf(
     number_format_i18n($bbai_usage_remaining)
 );
 $bbai_trial_banner_signup_url = add_query_arg(
-    [
-        'page'           => 'bbai-library',
-        'bbai_open_auth' => '1',
-    ],
-    admin_url('admin.php')
-);
+	    [
+	        'page'           => 'bbai-library',
+	        'bbai_open_auth' => '1',
+	        'bbai_auth_tab'  => 'register',
+	        'bbai_auth_context' => 'library',
+	    ],
+	    admin_url('admin.php')
+	);
 $bbai_optimized_count = $bbai_cov_optimized;
 $bbai_missing_count = $bbai_cov_missing;
 $bbai_weak_count = $bbai_cov_needs_review;
@@ -637,9 +640,10 @@ $bbai_library_workspace_filter_items = [
         <a
             href="<?php echo esc_url($bbai_trial_banner_signup_url); ?>"
             class="bbai-library-trial-banner__cta"
-            data-action="show-auth-modal"
-            data-auth-tab="register"
-        ><?php esc_html_e('Fix remaining images for free', 'beepbeep-ai-alt-text-generator'); ?></a>
+		            data-action="show-auth-modal"
+		            data-auth-tab="register"
+		            data-bbai-modal-context="library"
+		        ><?php esc_html_e('Unlock full ALT library', 'beepbeep-ai-alt-text-generator'); ?></a>
     </section>
     <?php endif; ?>
 
