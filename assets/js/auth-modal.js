@@ -8,6 +8,7 @@ class BbAIAuthModal {
         this.apiUrl = this.getApiUrl();
         this.token = this.getStoredToken();
         this.modalContext = 'fix';
+        this.signupContext = 'fix';
         this.authStep = 'intro';
         this.modalContent = {
             fix: {
@@ -163,11 +164,45 @@ class BbAIAuthModal {
     setModalContext(context) {
         this.modalContext = this.normalizeModalContext(context);
 
+        if (this.modalContext !== 'login') {
+            this.signupContext = this.modalContext;
+        }
+
         if (this.modalElement) {
             this.modalElement.setAttribute('data-bbai-modal-context', this.modalContext);
         }
 
         return this.modalContext;
+    }
+
+    getModalContextFromTrigger(trigger, requestedTab) {
+        const explicit = trigger && trigger.getAttribute
+            ? trigger.getAttribute('data-bbai-modal-context')
+            : '';
+        const source = trigger && trigger.getAttribute
+            ? String(trigger.getAttribute('data-bbai-locked-source') || '')
+            : '';
+        const segment = trigger && trigger.getAttribute
+            ? String(trigger.getAttribute('data-bbai-status-segment') || trigger.getAttribute('data-bbai-review-segment') || '')
+            : '';
+
+        if (explicit) {
+            return explicit;
+        }
+
+        if (requestedTab === 'login') {
+            return 'login';
+        }
+
+        if (source.toLowerCase().indexOf('library') !== -1 || (trigger && trigger.closest && trigger.closest('[data-bbai-library-workspace-root="1"], .bbai-library-container'))) {
+            return 'library';
+        }
+
+        if (segment) {
+            return 'tabs';
+        }
+
+        return 'fix';
     }
 
     getModalContent(context) {
@@ -565,6 +600,7 @@ class BbAIAuthModal {
                 const requestedTab = authTrigger.getAttribute('data-auth-tab') || authTrigger.dataset?.authTab || 
                                    (authTrigger.id === 'bbai-show-auth-login-btn' ? 'login' : 'register');
                 const source = self.resolveSource(authTrigger, 'dashboard');
+                const modalContext = self.getModalContextFromTrigger(authTrigger, requestedTab);
 
                 if (requestedTab === 'register') {
                     self.emitAnalyticsEvent('signup_cta_clicked', { source: source });
@@ -574,10 +610,10 @@ class BbAIAuthModal {
                 }
 
                 self.show({
-                    context: authTrigger.getAttribute('data-bbai-modal-context') || requestedTab
+                    context: modalContext
                 });
                 if (requestedTab === 'register') {
-                    self.showRegisterForm(authTrigger.getAttribute('data-bbai-modal-context') || 'fix');
+                    self.showRegisterForm(modalContext);
                 } else {
                     self.showLoginForm('login');
                 }
@@ -603,7 +639,7 @@ class BbAIAuthModal {
                 e.preventDefault();
                 e.stopPropagation();
                 self.emitAnalyticsEvent('signup_intro_cta_clicked', { source: 'modal' });
-                self.showRegisterForm(self.modalContext || 'fix', { forceForm: true });
+                self.showRegisterForm(self.signupContext || self.modalContext || 'fix', { forceForm: true });
                 return;
             }
 
@@ -618,7 +654,7 @@ class BbAIAuthModal {
                 e.preventDefault();
                 e.stopPropagation();
                 self.emitAnalyticsEvent('signup_cta_clicked', { source: 'modal' });
-                self.showRegisterForm('fix', { forceForm: true });
+                self.showRegisterForm(self.signupContext || 'fix', { forceForm: true });
                 return;
             }
 
@@ -751,6 +787,15 @@ class BbAIAuthModal {
         if (this.modalElement) {
             if (requestedContext) {
                 this.setModalContext(requestedContext);
+            } else if (this.modalContext === 'login') {
+                this.setModalContext(this.signupContext || 'fix');
+            }
+
+            this.setConversionHeaderCopy();
+
+            if (!requestedContext && this.authStep === 'form') {
+                this.setAuthStep('intro');
+                this.hideAllForms();
             }
 
             if (this.modalElement.parentElement !== document.body) {
@@ -799,7 +844,7 @@ class BbAIAuthModal {
         if (context) {
             this.setModalContext(context);
         } else if (this.modalContext === 'login') {
-            this.setModalContext('fix');
+            this.setModalContext(this.signupContext || 'fix');
         } else {
             this.setModalContext(this.modalContext || 'fix');
         }

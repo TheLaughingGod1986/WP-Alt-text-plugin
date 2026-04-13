@@ -143,20 +143,18 @@ $bbai_actionable_count = isset( $bbai_actionable_state_model['actionable_count']
     ? max( 0, (int) $bbai_actionable_state_model['actionable_count'] )
     : max( 0, $bbai_state_missing_count + $bbai_state_weak_count );
 $bbai_locked_trial_remaining_count = $bbai_state_missing_count > 0 ? $bbai_state_missing_count : $bbai_actionable_count;
-$bbai_locked_trial_cta_label = $bbai_locked_trial_remaining_count > 0
-    ? sprintf(
-        /* translators: %s: remaining image count. */
-        _n( 'Fix your %s remaining image', 'Fix your %s remaining images', $bbai_locked_trial_remaining_count, 'beepbeep-ai-alt-text-generator' ),
-        number_format_i18n( $bbai_locked_trial_remaining_count )
-    )
-    : __( 'Continue fixing images', 'beepbeep-ai-alt-text-generator' );
+$bbai_locked_trial_cta_label = sprintf(
+    /* translators: %s: remaining image count. */
+    __( 'Fix your %s remaining images', 'beepbeep-ai-alt-text-generator' ),
+    number_format_i18n( max( 0, $bbai_locked_trial_remaining_count ) )
+);
 $bbai_locked_trial_cta_context = $bbai_locked_trial_remaining_count > 0
     ? sprintf(
         /* translators: %s: remaining image count. */
         _n( 'You’re %s image away from full optimisation', 'You’re %s images away from full optimisation', $bbai_locked_trial_remaining_count, 'beepbeep-ai-alt-text-generator' ),
         number_format_i18n( $bbai_locked_trial_remaining_count )
     )
-    : __( 'Continue fixing images and unlock full access', 'beepbeep-ai-alt-text-generator' );
+    : __( 'Continue fixing your images and unlock full access', 'beepbeep-ai-alt-text-generator' );
 $bbai_review_count = isset( $bbai_actionable_state_model['review_count'] )
     ? max( 0, (int) $bbai_actionable_state_model['review_count'] )
     : $bbai_state_weak_count;
@@ -564,12 +562,8 @@ if ( $bbai_is_exhausted_trial_checkpoint && 'scanning' !== $bbai_hero_state ) {
     $bbai_primary_action     = $bbai_build_unlock_action();
     $bbai_secondary_action   = $bbai_build_login_action();
     $bbai_cta_context        = $bbai_locked_trial_cta_context;
-    $bbai_status_label       = sprintf(
-        /* translators: %s: number of images missing ALT text. */
-        _n( '%s image missing ALT text', '%s images missing ALT text', $bbai_state_missing_count, 'beepbeep-ai-alt-text-generator' ),
-        number_format_i18n( max( 0, $bbai_state_missing_count ) )
-    );
-    $bbai_support_line       = __( '50 free generations/month • Full library access • Bulk optimise', 'beepbeep-ai-alt-text-generator' );
+    $bbai_status_label       = '';
+    $bbai_support_line       = __( 'No credit card required', 'beepbeep-ai-alt-text-generator' );
 }
 ?>
 <section

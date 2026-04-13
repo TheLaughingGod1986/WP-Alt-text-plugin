@@ -463,7 +463,7 @@
     }
 
     function getModalContextForStatusSegment(segment) {
-        return 'filter';
+        return 'tabs';
     }
 
     function getModalContextFromTrigger(trigger, fallback) {
@@ -798,15 +798,7 @@
         var counts = getCounts(root);
         var remaining = Math.max(0, counts.missing || (counts.missing + counts.weak));
 
-        if (remaining === 1) {
-            return 'Fix 1 remaining image for free';
-        }
-
-        if (remaining > 1) {
-            return 'Fix ' + formatCount(remaining) + ' remaining images for free';
-        }
-
-        return 'Continue fixing images';
+        return 'Fix your ' + formatCount(remaining) + ' remaining images';
     }
 
     function getLockedTrialCtaContext(root, missingCount) {
@@ -822,7 +814,7 @@
             return 'You\u2019re ' + formatCount(count) + ' images away from full optimisation';
         }
 
-        return 'Continue fixing images and unlock full access';
+        return 'Continue fixing your images and unlock full access';
     }
 
     function resolveLockedAction(root) {
@@ -931,12 +923,8 @@
         var remainingCount = Math.max(0, missingCount || (counts.missing + counts.weak));
         var limit = getCreditFunnelState(root).limit;
         var title = 'You\u2019ve used all ' + formatCount(limit) + ' free generations';
-        var statusLabel = missingCount === 1
-            ? '1 image missing ALT text'
-            : formatCount(missingCount) + ' images missing ALT text';
-
         return {
-            statusLabel: statusLabel,
+            statusLabel: '',
             statusDetail: '',
             donutValue: formatCount(missingCount),
             donutLabel: '',
@@ -947,7 +935,7 @@
             primaryAction: buildUnlockAction(root),
             secondaryAction: buildLoginAction(),
             ctaContext: getLockedTrialCtaContext(root, remainingCount),
-            supportLine: '50 free generations/month • Full library access • Bulk optimise',
+            supportLine: 'No credit card required',
             showCredits: false,
             showConversionPrompt: false,
             showMicrocopy: false,

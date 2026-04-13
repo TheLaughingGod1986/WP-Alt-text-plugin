@@ -33,6 +33,12 @@ $bbai_locked_preview_overlay_copy = $bbai_locked_preview_remaining_count > 0
         number_format_i18n( $bbai_locked_preview_remaining_count )
     )
     : __( 'Create a free account to review every ALT result and unlock 50 generations per month.', 'beepbeep-ai-alt-text-generator' );
+$bbai_locked_preview_trust_line = __( 'No credit card required', 'beepbeep-ai-alt-text-generator' );
+$bbai_locked_preview_cta_label = sprintf(
+    /* translators: %s: remaining image count. */
+    __( 'Fix your %s remaining images', 'beepbeep-ai-alt-text-generator' ),
+    number_format_i18n( $bbai_locked_preview_remaining_count )
+);
 $bbai_locked_preview_rows = [
     [
         'status' => __( 'Missing', 'beepbeep-ai-alt-text-generator' ),
@@ -106,7 +112,7 @@ $bbai_locked_preview_rows = [
                             data-auth-tab="register"
                             data-bbai-modal-context="library"
                         >
-                            <?php esc_html_e( 'Unlock full ALT library', 'beepbeep-ai-alt-text-generator' ); ?>
+                            <?php echo esc_html( $bbai_locked_preview_cta_label ); ?>
                         </button>
                         <p class="bbai-dashboard-locked-preview__signin">
                             <?php esc_html_e( 'Already have an account?', 'beepbeep-ai-alt-text-generator' ); ?>
@@ -119,6 +125,9 @@ $bbai_locked_preview_rows = [
                             >
                                 <?php esc_html_e( 'Sign in', 'beepbeep-ai-alt-text-generator' ); ?>
                             </a>
+                        </p>
+                        <p class="bbai-dashboard-locked-preview__trust">
+                            <?php echo esc_html( $bbai_locked_preview_trust_line ); ?>
                         </p>
                     </div>
 

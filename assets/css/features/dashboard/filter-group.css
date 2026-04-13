@@ -301,9 +301,9 @@
 
 #bbai-dashboard-main .bbai-dashboard-status-card__filters {
     width: 100%;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid #eef2f7;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(148, 163, 184, 0.12);
 }
 
 #bbai-dashboard-main .bbai-dashboard-status-card--hero .bbai-filter-group__item {

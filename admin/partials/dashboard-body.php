@@ -480,13 +480,20 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
     }
 
 		    if ($bbai_is_anonymous_trial) {
+		        $bbai_trial_remaining_count = max( 0, (int) ( $bbai_missing_count ?? 0 ) );
+		        if ( $bbai_trial_remaining_count <= 0 ) {
+		            $bbai_trial_remaining_count = max( 0, (int) ( ( $bbai_missing_count ?? 0 ) + ( $bbai_weak_count ?? 0 ) ) );
+		        }
+		        $bbai_trial_signup_cta = sprintf(
+		            /* translators: %s: remaining image count. */
+		            __( 'Fix your %s remaining images', 'beepbeep-ai-alt-text-generator' ),
+		            number_format_i18n( $bbai_trial_remaining_count )
+		        );
 		        $bbai_trial_signup_action = $bbai_build_action(
-		            ('exhausted' === $bbai_quota_state)
-		                ? __('Fix your remaining images', 'beepbeep-ai-alt-text-generator')
-		                : __('Continue fixing images', 'beepbeep-ai-alt-text-generator'),
+		            $bbai_trial_signup_cta,
 		            [
 		                'action' => 'show-dashboard-auth',
-		                'aria_label' => __('Fix your remaining images', 'beepbeep-ai-alt-text-generator'),
+		                'aria_label' => $bbai_trial_signup_cta,
 	                'extra_attrs' => [
 	                    'data-auth-tab'               => 'register',
 	                    'data-bbai-analytics-upgrade' => 'trial_create_account_clicked',

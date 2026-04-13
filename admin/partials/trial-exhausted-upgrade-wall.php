@@ -31,6 +31,11 @@ $bbai_trial_snapshot        = isset( $bbai_product_state_model['trial'] ) && is_
 $bbai_trial_missing_count   = isset( $bbai_trial_upgrade_missing_count ) ? max( 0, (int) $bbai_trial_upgrade_missing_count ) : 0;
 $bbai_trial_weak_count      = isset( $bbai_trial_upgrade_weak_count ) ? max( 0, (int) $bbai_trial_upgrade_weak_count ) : 0;
 $bbai_trial_remaining_work  = $bbai_trial_missing_count + $bbai_trial_weak_count;
+$bbai_trial_primary_cta_label = sprintf(
+	/* translators: %s: remaining image count. */
+	__( 'Fix your %s remaining images', 'beepbeep-ai-alt-text-generator' ),
+	number_format_i18n( $bbai_trial_remaining_work )
+);
 
 $bbai_trial_metrics = [];
 if ( $bbai_trial_remaining_work > 0 ) {
@@ -83,7 +88,7 @@ if ( $bbai_trial_weak_count > 0 ) {
 					data-bbai-modal-context="fix"
 					data-bbai-analytics-upgrade="trial_create_account_clicked"
 				data-bbai-trial-wall-primary="1"
-				><?php echo esc_html( $bbai_trial_copy['primary_cta'] ?? __( 'Fix remaining images for free', 'beepbeep-ai-alt-text-generator' ) ); ?></a>
+				><?php echo esc_html( $bbai_trial_primary_cta_label ); ?></a>
 			<a
 				href="#"
 				class="bbai-command-action bbai-command-action--secondary bbai-btn bbai-btn-secondary"

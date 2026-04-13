@@ -24,8 +24,9 @@ function bbaiGetLockedTrialCtaLabelFromRoot() {
     var root = document.querySelector('[data-bbai-dashboard-root="1"]');
     var missing = root ? parseInt(root.getAttribute('data-bbai-missing-count') || '0', 10) || 0 : 0;
     var weak = root ? parseInt(root.getAttribute('data-bbai-weak-count') || '0', 10) || 0 : 0;
+    var count = missing || (missing + weak);
 
-    return (missing + weak) > 0 ? 'Fix remaining images for free' : 'Continue fixing images';
+    return 'Fix your ' + count.toLocaleString() + ' remaining images';
 }
 
 function bbaiResolveDashboardAuthContext(trigger) {
@@ -45,15 +46,15 @@ function bbaiResolveDashboardAuthContext(trigger) {
         : '';
 
     if (segment === 'missing') {
-        return 'missing';
+        return 'tabs';
     }
 
     if (segment === 'weak' || segment === 'needs_review') {
-        return 'review';
+        return 'tabs';
     }
 
     if (segment === 'optimized' || segment === 'optimised') {
-        return 'optimized';
+        return 'tabs';
     }
 
     return 'fix';
@@ -3990,7 +3991,7 @@ bbaiRunWithJQuery(function($) {
 
     function getCompactPlanResetLine(data) {
         if (isAnonymousTrialState(data)) {
-            return __('Continue fixing images', 'beepbeep-ai-alt-text-generator');
+            return __('Continue fixing your images', 'beepbeep-ai-alt-text-generator');
         }
 
         var daysUntilReset = parseCount(data && data.daysUntilReset);
@@ -4036,7 +4037,7 @@ bbaiRunWithJQuery(function($) {
                         __('Create a free account to unlock %d generations per month and continue where you left off.', 'beepbeep-ai-alt-text-generator'),
                         freePlanOffer
                     ),
-                    ctaLabel: __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator'),
+                    ctaLabel: __('Fix your remaining images', 'beepbeep-ai-alt-text-generator'),
                     meta: resetLine
                 };
             }
@@ -4055,7 +4056,7 @@ bbaiRunWithJQuery(function($) {
                         formatCount(remaining),
                         freePlanOffer
                     ),
-                    ctaLabel: __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator'),
+                    ctaLabel: __('Fix your remaining images', 'beepbeep-ai-alt-text-generator'),
                     meta: resetLine
                 };
             }
@@ -4810,7 +4811,7 @@ bbaiRunWithJQuery(function($) {
                     if (isAnonymousTrialState(data)) {
                         model.loopActions = [
                             createAction(__('Open ALT Library', 'beepbeep-ai-alt-text-generator'), '', { href: libraryUrl || '#' }),
-                            createAction(__('Fix remaining images for free', 'beepbeep-ai-alt-text-generator'), '', {
+                            createAction(__('Fix your remaining images', 'beepbeep-ai-alt-text-generator'), '', {
                             action: 'show-dashboard-auth',
                             attributes: { 'data-auth-tab': 'register', 'data-bbai-modal-context': 'fix' }
                         })
@@ -5289,7 +5290,7 @@ bbaiRunWithJQuery(function($) {
         } else if (data.missing > 0 && !hasCreditsAvailable(data)) {
             setQuickButton(generateButton, {
                 label: isAnonymousTrial
-                    ? __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator')
+                    ? __('Fix your remaining images', 'beepbeep-ai-alt-text-generator')
                     : __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
                 helper: isAnonymousTrial
                     ? sprintf(
@@ -5387,7 +5388,7 @@ bbaiRunWithJQuery(function($) {
         if (!data.isPremium) {
             setQuickButton(bulkButton, {
                 label: isAnonymousTrial
-                    ? __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator')
+                    ? __('Fix your remaining images', 'beepbeep-ai-alt-text-generator')
                     : __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
                 helper: isAnonymousTrial
                     ? sprintf(
@@ -6867,11 +6868,11 @@ bbaiRunWithJQuery(function($) {
                 primaryActionNode.hidden = false;
                 primaryActionNode.className = 'bbai-command-action bbai-command-action--primary';
                 primaryActionNode.textContent = planRemaining <= lowCreditThreshold
-                    ? __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator')
+                    ? __('Fix your remaining images', 'beepbeep-ai-alt-text-generator')
                     : __('Continue in ALT Library', 'beepbeep-ai-alt-text-generator');
                 setInteractiveControl(primaryActionNode, planRemaining <= lowCreditThreshold
                     ? {
-                        label: __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator'),
+                        label: __('Fix your remaining images', 'beepbeep-ai-alt-text-generator'),
                         action: 'show-dashboard-auth',
                         href: '#',
 	                        attributes: { 'data-auth-tab': 'register', 'data-bbai-modal-context': 'fix' },
@@ -6910,7 +6911,7 @@ bbaiRunWithJQuery(function($) {
                 secondaryActionNode.className = 'bbai-command-action bbai-command-action--secondary';
                 secondaryActionNode.textContent = planRemaining <= lowCreditThreshold
                     ? __('Open ALT Library', 'beepbeep-ai-alt-text-generator')
-                    : __('Continue fixing images', 'beepbeep-ai-alt-text-generator');
+                    : __('Continue fixing your images', 'beepbeep-ai-alt-text-generator');
                 setInteractiveControl(secondaryActionNode, planRemaining <= lowCreditThreshold
                     ? {
                         label: __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
@@ -6918,7 +6919,7 @@ bbaiRunWithJQuery(function($) {
                         removeAttributes: ['data-action', 'data-bbai-action', 'data-auth-tab', 'data-bbai-regenerate-scope', 'data-bbai-generation-source']
                     }
                     : {
-                        label: __('Continue fixing images', 'beepbeep-ai-alt-text-generator'),
+                        label: __('Continue fixing your images', 'beepbeep-ai-alt-text-generator'),
                         action: 'show-dashboard-auth',
                         href: '#',
 	                        attributes: { 'data-auth-tab': 'register', 'data-bbai-modal-context': 'fix' },

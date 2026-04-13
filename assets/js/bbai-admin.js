@@ -745,6 +745,7 @@
 
     function buildLockedCtaAttributes(reason, source, options) {
         var mode = (options && options.mode) || getLockedCtaMode();
+        var modalContext = getLockedSourceModalContext(source);
         var attributes = [
             'data-bbai-action="' + escapeLibraryAttr(getLockedCtaAction(mode)) + '"',
             'data-bbai-locked-cta="1"',
@@ -760,6 +761,7 @@
         }
         if (mode === 'create_account') {
             attributes.push('data-auth-tab="register"');
+            attributes.push('data-bbai-modal-context="' + escapeLibraryAttr(modalContext) + '"');
         }
 
         return ' ' + attributes.join(' ');
@@ -782,8 +784,10 @@
 
         if (mode === 'create_account') {
             element.setAttribute('data-auth-tab', 'register');
+            element.setAttribute('data-bbai-modal-context', getSignupModalContext(element));
         } else {
             element.removeAttribute('data-auth-tab');
+            element.removeAttribute('data-bbai-modal-context');
         }
 
         if (mode === 'upgrade_agency') {
@@ -992,6 +996,28 @@
         return trigger.getAttribute('data-bbai-locked-source') || 'dashboard';
     }
 
+    function getLockedSourceModalContext(source) {
+        var value = String(source || '').toLowerCase();
+
+        return value.indexOf('library') !== -1 ? 'library' : 'fix';
+    }
+
+    function getSignupModalContext(trigger) {
+        var explicit = trigger && trigger.getAttribute
+            ? String(trigger.getAttribute('data-bbai-modal-context') || '')
+            : '';
+
+        if (explicit) {
+            return explicit;
+        }
+
+        if (trigger && trigger.closest && trigger.closest('[data-bbai-library-workspace-root="1"], .bbai-library-container')) {
+            return 'library';
+        }
+
+        return getLockedSourceModalContext(getLockedCtaSource(trigger));
+    }
+
     function dispatchAnalyticsEvent(eventName, payload) {
         try {
             document.dispatchEvent(new CustomEvent('bbai:analytics', {
@@ -1163,7 +1189,7 @@
                 return __('Create a free account to unlock AI regenerations', 'beepbeep-ai-alt-text-generator');
             }
 
-            return __('Continue fixing images', 'beepbeep-ai-alt-text-generator');
+            return __('Continue fixing your images', 'beepbeep-ai-alt-text-generator');
         }
 
         if (normalizedReason === 'generate_missing' || normalizedReason === 'generate-missing') {
@@ -2126,24 +2152,26 @@
         bbaiLockedModalState.lastTrigger = null;
     }
 
-	function openAuthSignupModal() {
+	function openAuthSignupModal(trigger) {
+        var modalContext = getSignupModalContext(trigger);
+
 	    if (typeof showAuthModal === 'function') {
-	        showAuthModal('register', 'fix');
+	        showAuthModal('register', modalContext);
 	        return;
         }
         if (typeof window.showAuthModal === 'function') {
-            window.showAuthModal('register', 'fix');
+            window.showAuthModal('register', modalContext);
             return;
         }
         if (window.authModal && typeof window.authModal.show === 'function') {
             if (typeof window.authModal.setModalContext === 'function') {
-                window.authModal.setModalContext('fix');
+                window.authModal.setModalContext(modalContext);
             }
             window.authModal.show({
-                context: 'fix'
+                context: modalContext
             });
             if (typeof window.authModal.showRegisterForm === 'function') {
-                window.authModal.showRegisterForm('fix');
+                window.authModal.showRegisterForm(modalContext);
             }
             return;
         }
@@ -2159,6 +2187,7 @@
 
             currentUrl.searchParams.set('bbai_open_auth', '1');
             currentUrl.searchParams.set('bbai_auth_tab', 'register');
+            currentUrl.searchParams.set('bbai_auth_context', modalContext);
             currentUrl.searchParams.delete('checkout');
             currentUrl.searchParams.delete('checkout_error');
             window.location.href = currentUrl.toString();
@@ -2168,7 +2197,7 @@
         }
 
         var adminUrl = (window.bbai_ajax && window.bbai_ajax.admin_url) || 'admin.php';
-        window.location.href = adminUrl + '?page=bbai&bbai_open_auth=1&bbai_auth_tab=register';
+        window.location.href = adminUrl + '?page=bbai&bbai_open_auth=1&bbai_auth_tab=register&bbai_auth_context=' + encodeURIComponent(modalContext);
     }
 
     function normalizeLimitErrorData(errorData) {
@@ -2553,7 +2582,7 @@
                 trigger: bbaiActEarly === 'open-signup' ? 'locked_cta_open_signup' : 'dashboard_state_create_account',
                 reason: reasonSignupEarly || 'trial_exhausted'
             });
-            openAuthSignupModal();
+            openAuthSignupModal(trigger);
             return false;
         }
 
@@ -2598,7 +2627,7 @@
                 });
                 return false;
             }
-            openAuthSignupModal();
+            openAuthSignupModal(trigger);
             return false;
         }
 
@@ -2716,7 +2745,7 @@
                     ),
                     buttons: [
                         {
-                            text: __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator'),
+                            text: __('Fix your remaining images', 'beepbeep-ai-alt-text-generator'),
                             primary: true,
                             action: function() {
                                 window.bbaiModal.close();
@@ -6397,7 +6426,7 @@
                     message: __('All your images already have ALT text. You can improve them or regenerate descriptions anytime.', 'beepbeep-ai-alt-text-generator'),
                     buttons: [
                         {
-                            text: hasConnectedAccount ? __('Open ALT Library', 'beepbeep-ai-alt-text-generator') : __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator'),
+                            text: hasConnectedAccount ? __('Open ALT Library', 'beepbeep-ai-alt-text-generator') : __('Fix your remaining images', 'beepbeep-ai-alt-text-generator'),
                             primary: true,
                             action: function() {
                                 window.bbaiModal.close();
@@ -6583,7 +6612,7 @@
                                     },
                                     {
                                         text: isAnonymousTrialLimit
-                                            ? __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator')
+                                            ? __('Fix your remaining images', 'beepbeep-ai-alt-text-generator')
                                             : __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
                                         primary: false,
                                         action: function() {
@@ -6933,7 +6962,7 @@
                                     },
                                     {
                                         text: isAnonymousTrialLimit
-                                            ? __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator')
+                                            ? __('Fix your remaining images', 'beepbeep-ai-alt-text-generator')
                                             : __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
                                         primary: false,
                                         action: function() {
@@ -7574,7 +7603,7 @@
             model.primaryAction = buildLibraryWorkflowAccountAction(
                 isTrial ? 'signup' : 'upgrade',
                 isTrial
-                    ? __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator')
+                    ? __('Fix your remaining images', 'beepbeep-ai-alt-text-generator')
                     : sprintf(
                         __('Upgrade to finish all %s', 'beepbeep-ai-alt-text-generator'),
                         missingLabel
@@ -9110,8 +9139,8 @@
             secondaryHtml = '<a href="' + escapeHtml(settingsUrl) + '" class="' + clsS + '">' +
                 escapeHtml(__('Enable auto-optimization', 'beepbeep-ai-alt-text-generator')) + '</a>';
         } else if (isAnonymousTrial) {
-            secondaryHtml = '<button type="button" class="' + clsS + '" data-action="show-auth-modal" data-auth-tab="register">' +
-                escapeHtml(__('Continue fixing images', 'beepbeep-ai-alt-text-generator')) + '</button>';
+            secondaryHtml = '<button type="button" class="' + clsS + '" data-action="show-auth-modal" data-auth-tab="register" data-bbai-modal-context="fix">' +
+                escapeHtml(__('Continue fixing your images', 'beepbeep-ai-alt-text-generator')) + '</button>';
         } else {
             secondaryHtml = '<button type="button" class="' + clsS + '" data-action="show-upgrade-modal">' +
                 escapeHtml(__('Enable auto-optimization', 'beepbeep-ai-alt-text-generator')) + '</button>';
@@ -11423,8 +11452,8 @@
 
 	        if (state === 'missing') {
 	            if (isOutOfCreditsFromUsage()) {
-	                label = __('Continue fixing images', 'beepbeep-ai-alt-text-generator');
-	                title = __('Continue fixing images and unlock full access.', 'beepbeep-ai-alt-text-generator');
+	                label = __('Continue fixing your images', 'beepbeep-ai-alt-text-generator');
+	                title = __('Continue fixing your images and unlock full access.', 'beepbeep-ai-alt-text-generator');
 	                classNames = 'bbai-dashboard-trial-preview__action bbai-dashboard-trial-preview__action--locked';
 	                action = 'show-dashboard-auth';
 	            } else {
@@ -12209,7 +12238,7 @@
                 if (previewSignupLock) {
                     previewRegenButton.setAttribute('data-auth-tab', 'register');
                     previewRegenButton.setAttribute('title', __('Free trial complete. Create a free account to continue regenerating ALT text.', 'beepbeep-ai-alt-text-generator'));
-                    previewRegenButton.textContent = __('Continue fixing images', 'beepbeep-ai-alt-text-generator');
+                    previewRegenButton.textContent = __('Continue fixing your images', 'beepbeep-ai-alt-text-generator');
                 } else {
                     previewRegenButton.removeAttribute('data-auth-tab');
                     previewRegenButton.setAttribute('title', __('Upgrade required to regenerate ALT text for this image.', 'beepbeep-ai-alt-text-generator'));
@@ -12532,7 +12561,7 @@
             if (isLibraryProPlan()) {
                 automationCtaHost.innerHTML = '<a href="' + escapeHtml(getLibraryAutomationSettingsUrl()) + '" class="bbai-btn bbai-btn-secondary bbai-btn-sm">' + escapeHtml(__('Open automation settings', 'beepbeep-ai-alt-text-generator')) + '</a>';
             } else if (getQuotaState().isAnonymousTrial) {
-                automationCtaHost.innerHTML = '<button type="button" class="bbai-btn bbai-btn-primary bbai-btn-sm" data-action="show-auth-modal" data-auth-tab="register">' + escapeHtml(__('Continue fixing images', 'beepbeep-ai-alt-text-generator')) + '</button>';
+                automationCtaHost.innerHTML = '<button type="button" class="bbai-btn bbai-btn-primary bbai-btn-sm" data-action="show-auth-modal" data-auth-tab="register" data-bbai-modal-context="library">' + escapeHtml(__('Continue fixing your images', 'beepbeep-ai-alt-text-generator')) + '</button>';
             } else {
                 automationCtaHost.innerHTML = '<button type="button" class="bbai-btn bbai-btn-primary bbai-btn-sm" data-bbai-action="open-upgrade" data-bbai-locked-cta="1" data-bbai-lock-reason="automation" data-bbai-locked-source="library-edit-modal-automation">' + escapeHtml(__('Enable automatic optimisation', 'beepbeep-ai-alt-text-generator')) + '</button>';
             }
@@ -14361,7 +14390,7 @@
 
             return {
                 primary: {
-                    label: __('Fix remaining images for free', 'beepbeep-ai-alt-text-generator'),
+                    label: __('Fix your remaining images', 'beepbeep-ai-alt-text-generator'),
                     action: 'signup'
                 },
                 secondary: {

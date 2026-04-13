@@ -721,6 +721,12 @@ function bbai_banner_pick_state(string $page_context, array $s): string
 function bbai_banner_merge_library_attrs(array $attrs): array
 {
     $attrs['data-bbai-library-surface-action'] = '1';
+    if (
+        ( isset( $attrs['data-action'] ) && 'show-auth-modal' === (string) $attrs['data-action'] )
+        || ( isset( $attrs['data-auth-tab'] ) && 'register' === (string) $attrs['data-auth-tab'] )
+    ) {
+        $attrs['data-bbai-modal-context'] = 'library';
+    }
 
     return $attrs;
 }

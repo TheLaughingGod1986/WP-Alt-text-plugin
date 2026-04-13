@@ -106,10 +106,15 @@ $bbai_trial_preview_generation_locked = max( 0, (int) ( $bbai_state_credits_rema
 
                 if ( 'missing' === $bbai_status ) {
                     if ( $bbai_trial_preview_generation_locked ) {
+                        $bbai_trial_preview_remaining_count = isset( $bbai_state_missing_count ) ? max( 0, (int) $bbai_state_missing_count ) : 0;
                         $bbai_primary_action = 'show-dashboard-auth';
-                        $bbai_primary_label = __( 'Continue fixing images', 'beepbeep-ai-alt-text-generator' );
+                        $bbai_primary_label = sprintf(
+                            /* translators: %s: remaining image count. */
+                            __( 'Fix your %s remaining images', 'beepbeep-ai-alt-text-generator' ),
+                            number_format_i18n( $bbai_trial_preview_remaining_count )
+                        );
                         $bbai_primary_class = 'bbai-dashboard-trial-preview__action bbai-dashboard-trial-preview__action--locked';
-                        $bbai_primary_title = __( 'Continue fixing images and unlock full access', 'beepbeep-ai-alt-text-generator' );
+                        $bbai_primary_title = $bbai_primary_label;
                         $bbai_primary_modal_context = 'fix';
                     } else {
                         $bbai_primary_action = 'regenerate-single';
