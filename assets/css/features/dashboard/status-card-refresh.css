@@ -9,7 +9,8 @@
     box-sizing: border-box;
 }
 
-body.toplevel_page_bbai #wpcontent,
+/* Only remove #wpcontent left-padding when sidebar is hidden (connected users) */
+body.toplevel_page_bbai.bbai-dashboard--connected #wpcontent,
 body.beepbeep-ai_page_bbai-library #wpcontent,
 body.beepbeep-ai_page_bbai-analytics #wpcontent,
 body.beepbeep-ai_page_bbai-credit-usage #wpcontent,
@@ -20,7 +21,7 @@ body.beepbeep-ai_page_bbai-agency-overview #wpcontent {
     padding-left: 0;
 }
 
-body.toplevel_page_bbai #wpbody-content,
+body.toplevel_page_bbai.bbai-dashboard--connected #wpbody-content,
 body.beepbeep-ai_page_bbai-library #wpbody-content,
 body.beepbeep-ai_page_bbai-analytics #wpbody-content,
 body.beepbeep-ai_page_bbai-credit-usage #wpbody-content,
@@ -31,7 +32,7 @@ body.beepbeep-ai_page_bbai-agency-overview #wpbody-content {
     padding: 0;
 }
 
-body.toplevel_page_bbai .wrap,
+body.toplevel_page_bbai.bbai-dashboard--connected .wrap,
 body.beepbeep-ai_page_bbai-library .wrap,
 body.beepbeep-ai_page_bbai-analytics .wrap,
 body.beepbeep-ai_page_bbai-credit-usage .wrap,
@@ -7785,6 +7786,47 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 .bbai-dashboard-review-overlay__feedback:hover {
     color: var(--bbai-ui-ink, #1f2937);
     text-decoration: underline;
+}
+
+.bbai-dashboard-review-overlay__close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    color: var(--bbai-text-muted, #94a3b8);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.bbai-dashboard-review-overlay__close:hover {
+    background: var(--bbai-bg-subtle, #f1f5f9);
+    color: var(--bbai-ui-ink, #1f2937);
+}
+
+.bbai-dashboard-review-overlay__already-reviewed {
+    display: block;
+    margin: 0 auto;
+    padding: 4px 8px;
+    border: none;
+    background: none;
+    color: var(--bbai-text-muted, #94a3b8);
+    font-size: 12px;
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+.bbai-dashboard-review-overlay__already-reviewed:hover {
+    color: var(--bbai-ui-ink, #1f2937);
 }
 
 .bbai-dashboard-review-overlay--enter .bbai-dashboard-review-overlay__backdrop {

@@ -1,0 +1,54 @@
+/**
+ * Dashboard Responsive Styles
+ * Mobile and tablet breakpoints
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+@media (max-width: 768px) {
+    .bbai-dashboard__microcards {
+        grid-template-columns: 1fr;
+    }
+
+    .bbai-action-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .bbai-achievements-container {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+
+    .bbai-toast-container {
+        right: var(--bbai-spacing-md);
+        left: var(--bbai-spacing-md);
+        max-width: none;
+    }
+
+    .bbai-gamification-header {
+        padding: var(--bbai-spacing-md);
+    }
+
+    .bbai-coverage-card__percentage {
+        font-size: 3rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .bbai-microcard {
+        padding: var(--bbai-spacing-md);
+    }
+
+    .bbai-microcard__value {
+        font-size: 1.5rem;
+    }
+
+    .bbai-action-card {
+        padding: var(--bbai-spacing-md);
+    }
+
+    .bbai-level-badge {
+        font-size: 1rem;
+        padding: var(--bbai-spacing-xs) var(--bbai-spacing-sm);
+    }
+}

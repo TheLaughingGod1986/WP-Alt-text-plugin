@@ -99,6 +99,166 @@ trait Core_Assets {
     }
 
     /**
+     * Enqueue a tiny no-src bridge for account/admin logout controls.
+     *
+     * The main dashboard bundles own this behavior when present, but this
+     * keeps logout functional if a bundle is unavailable or loaded late.
+     */
+    private function enqueue_logout_bridge_script(): void {
+        $handle = 'bbai-logout-bridge';
+
+        wp_register_script($handle, '', [], BEEPBEEP_AI_VERSION, true);
+        wp_enqueue_script($handle);
+        wp_localize_script($handle, 'bbaiLogoutBridgeData', [
+            'ajax_url'             => admin_url('admin-ajax.php'),
+            'nonce'                => wp_create_nonce('beepbeepai_nonce'),
+            'logout_action'        => 'beepbeepai_logout',
+            'admin_logout_action'  => 'beepbeepai_admin_logout',
+            'logout_redirect'      => admin_url('admin.php?page=bbai'),
+            'admin_logout_redirect' => add_query_arg(['tab' => 'admin'], admin_url('upload.php?page=bbai')),
+            'admin_logout_confirm' => __('Are you sure you want to log out of the admin panel?', 'beepbeep-ai-alt-text-generator'),
+            'logout_failed'        => __('Logout failed. Please try again.', 'beepbeep-ai-alt-text-generator'),
+            'network_error'        => __('Network error. Please try again.', 'beepbeep-ai-alt-text-generator'),
+        ]);
+
+        wp_add_inline_script(
+            $handle,
+            <<<'JS'
+(function() {
+    'use strict';
+
+    if (window.bbaiLogoutBridgeReady) {
+        return;
+    }
+    window.bbaiLogoutBridgeReady = true;
+
+    function getConfig() {
+        var bridge = window.bbaiLogoutBridgeData || {};
+        var legacy = window.bbai_ajax || {};
+        return {
+            ajaxUrl: bridge.ajax_url || legacy.ajax_url || legacy.ajaxurl || '',
+            nonce: bridge.nonce || legacy.nonce || '',
+            logoutAction: bridge.logout_action || 'beepbeepai_logout',
+            adminLogoutAction: bridge.admin_logout_action || 'beepbeepai_admin_logout',
+            logoutRedirect: bridge.logout_redirect || legacy.logout_redirect || window.location.href,
+            adminLogoutRedirect: bridge.admin_logout_redirect || window.location.href,
+            adminLogoutConfirm: bridge.admin_logout_confirm || legacy.admin_logout_confirm || 'Are you sure you want to log out of the admin panel?',
+            logoutFailed: bridge.logout_failed || 'Logout failed. Please try again.',
+            networkError: bridge.network_error || 'Network error. Please try again.'
+        };
+    }
+
+    function clearClientAuthState() {
+        try {
+            if (window.localStorage) {
+                window.localStorage.removeItem('alttextai_token');
+                window.localStorage.removeItem('bbai_subscription_cache');
+            }
+        } catch (error) {
+            /* Ignore storage access errors. */
+        }
+    }
+
+    function setBusy(button, busy) {
+        if (!button) {
+            return;
+        }
+        button.disabled = !!busy;
+        button.classList.toggle('is-loading', !!busy);
+        button.classList.toggle('bbai-btn-loading', !!busy);
+        button.setAttribute('aria-busy', busy ? 'true' : 'false');
+    }
+
+    function redirectFromResponse(payload, fallbackUrl) {
+        var data = payload && payload.data && typeof payload.data === 'object' ? payload.data : {};
+        var redirect = data.redirect || payload.redirect || fallbackUrl || window.location.href;
+        window.location.href = redirect;
+    }
+
+    function showError(message) {
+        if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
+            window.bbaiModal.error(message);
+            return;
+        }
+        window.alert(message);
+    }
+
+    function postLogout(action, config) {
+        var body = new window.URLSearchParams();
+        body.append('action', action);
+        body.append('nonce', config.nonce);
+
+        return window.fetch(config.ajaxUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            },
+            body: body.toString()
+        }).then(function(response) {
+            return response.json().catch(function() {
+                return {};
+            });
+        });
+    }
+
+    function handleLogoutClick(button, isAdminLogout) {
+        var config = getConfig();
+        var fallbackRedirect = isAdminLogout ? config.adminLogoutRedirect : config.logoutRedirect;
+        var action = isAdminLogout ? config.adminLogoutAction : config.logoutAction;
+
+        if (isAdminLogout && !window.confirm(config.adminLogoutConfirm)) {
+            return;
+        }
+
+        clearClientAuthState();
+
+        if (!config.ajaxUrl || !config.nonce) {
+            window.location.href = fallbackRedirect;
+            return;
+        }
+
+        setBusy(button, true);
+
+        postLogout(action, config).then(function(payload) {
+            if (payload && payload.success === false) {
+                var data = payload.data && typeof payload.data === 'object' ? payload.data : {};
+                throw new Error(data.message || config.logoutFailed);
+            }
+            redirectFromResponse(payload || {}, fallbackRedirect);
+        }).catch(function(error) {
+            setBusy(button, false);
+            showError(error && error.message ? error.message : config.networkError);
+        });
+    }
+
+    document.addEventListener('click', function(event) {
+        var target = event.target;
+        var button = target && target.closest ? target.closest('[data-action="logout"], #bbai-admin-logout-btn') : null;
+
+        if (!button || button.disabled) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        if (typeof event.stopImmediatePropagation === 'function') {
+            event.stopImmediatePropagation();
+        }
+
+        handleLogoutClick(button, button.id === 'bbai-admin-logout-btn');
+    }, true);
+
+    window.handleLogout = window.handleLogout || function() {
+        handleLogoutClick(document.querySelector('[data-action="logout"]'), false);
+    };
+})();
+JS,
+            'after'
+        );
+    }
+
+    /**
      * Check if current hook is a BeepBeep AI admin page
      *
      * @param string $hook WordPress admin hook
@@ -227,19 +387,25 @@ trait Core_Assets {
         $usage_data = Usage_Helper::get_usage($this->api_client, (bool) ($auth_state['has_connected_account'] ?? false));
         $trial_status = method_exists($this, 'get_trial_status') ? $this->get_trial_status() : [];
 
-        wp_enqueue_script('bbai-toast', $base_url . $toast_file, [], $toast_version, true);
+        if ( file_exists( $base_path . $toast_file ) ) {
+            wp_enqueue_script('bbai-toast', $base_url . $toast_file, [], $toast_version, true);
+        } else {
+            wp_register_script( 'bbai-toast', '', [], BEEPBEEP_AI_VERSION, true );
+        }
 
         $bbai_banner_message_js = 'assets/js/bbai-banner-message.js';
-        $bbai_banner_message_ver = file_exists($base_path . $bbai_banner_message_js)
-            ? (string) filemtime($base_path . $bbai_banner_message_js)
-            : '1.0.0';
-        wp_enqueue_script(
-            'bbai-banner-message',
-            $base_url . $bbai_banner_message_js,
-            ['wp-i18n'],
-            $bbai_banner_message_ver,
-            true
-        );
+        if ( file_exists( $base_path . $bbai_banner_message_js ) ) {
+            $bbai_banner_message_ver = (string) filemtime($base_path . $bbai_banner_message_js);
+            wp_enqueue_script(
+                'bbai-banner-message',
+                $base_url . $bbai_banner_message_js,
+                ['wp-i18n'],
+                $bbai_banner_message_ver,
+                true
+            );
+        } else {
+            wp_register_script( 'bbai-banner-message', '', [], BEEPBEEP_AI_VERSION, true );
+        }
 
         $bbai_admin_script_deps = ['jquery', 'wp-i18n', 'bbai-toast', 'bbai-banner-message', 'bbai-telemetry'];
         $bbai_licensed_bulk_client = 'assets/js/admin/bbai-licensed-bulk-job-client.js';
@@ -265,7 +431,11 @@ trait Core_Assets {
             );
         }
 
-        wp_enqueue_script('bbai-admin', $base_url . $admin_file, $bbai_admin_script_deps, $admin_version, true);
+        if ( file_exists( $base_path . $admin_file ) ) {
+            wp_enqueue_script('bbai-admin', $base_url . $admin_file, $bbai_admin_script_deps, $admin_version, true);
+        } else {
+            wp_register_script( 'bbai-admin', '', [], BEEPBEEP_AI_VERSION, true );
+        }
         wp_localize_script('bbai-admin', 'BBAI', [
             'nonce'     => wp_create_nonce('wp_rest'),
             'rest'      => esc_url_raw(rest_url('bbai/v1/')),
@@ -817,40 +987,51 @@ trait Core_Assets {
         $stats_data = $this->get_dashboard_stats_payload();
         $usage_data = Usage_Tracker::get_stats_display();
 
-        wp_enqueue_script(
-            'bbai-dashboard',
-            $base_url . $dashboard_js,
-            ['jquery', 'wp-api-fetch', 'wp-i18n', 'bbai-toast', 'bbai-banner-message', 'bbai-telemetry', 'bbai-admin'],
-            $asset_version($dashboard_js, '3.0.4'),
-            true
-        );
+        if ( file_exists( $base_path . $dashboard_js ) ) {
+            wp_enqueue_script(
+                'bbai-dashboard',
+                $base_url . $dashboard_js,
+                ['jquery', 'wp-api-fetch', 'wp-i18n', 'bbai-toast', 'bbai-banner-message', 'bbai-telemetry', 'bbai-admin'],
+                $asset_version($dashboard_js, '3.0.4'),
+                true
+            );
+        } else {
+            // Register an empty stub so dependent scripts don't break WP's dependency resolver.
+            wp_register_script( 'bbai-dashboard', '', [], BEEPBEEP_AI_VERSION, true );
+        }
 
-        wp_enqueue_script(
-            'bbai-analytics',
-            $base_url . $analytics_js,
-            ['jquery', 'bbai-dashboard'],
-            $asset_version($analytics_js, '1.1.1'),
-            true
-        );
+        if ( file_exists( $base_path . $analytics_js ) ) {
+            wp_enqueue_script(
+                'bbai-analytics',
+                $base_url . $analytics_js,
+                ['jquery', 'bbai-dashboard'],
+                $asset_version($analytics_js, '1.1.1'),
+                true
+            );
+        }
 
-        wp_enqueue_script(
-            'bbai-upgrade',
-            $base_url . $upgrade_js,
-            ['jquery', 'bbai-telemetry'],
-            $asset_version($upgrade_js, '3.1.0'),
-            true
-        );
+        if ( file_exists( $base_path . $upgrade_js ) ) {
+            wp_enqueue_script(
+                'bbai-upgrade',
+                $base_url . $upgrade_js,
+                ['jquery', 'bbai-telemetry'],
+                $asset_version($upgrade_js, '3.1.0'),
+                true
+            );
+        }
 
-        // Auth modal JS (after bbai-dashboard so bbai_ajax / showAuthModal exist; avoids race on first paint).
-        wp_enqueue_script(
-            'bbai-auth',
-            $base_url . $auth_js,
-            ['jquery', 'wp-i18n', 'bbai-dashboard'],
-            $asset_version($auth_js, '4.0.1'),
-            true
-        );
+        // Auth modal JS — only enqueue when the file exists.
+        if ( file_exists( $base_path . $auth_js ) ) {
+            wp_enqueue_script(
+                'bbai-auth',
+                $base_url . $auth_js,
+                ['jquery', 'wp-i18n', 'bbai-dashboard'],
+                $asset_version($auth_js, '4.0.1'),
+                true
+            );
+        }
 
-        if (!$this->is_dashboard_tab()) {
+        if ( ! $this->is_dashboard_tab() && file_exists( $base_path . $admin_panel_js ) ) {
             wp_enqueue_script(
                 'bbai-admin-panel',
                 $base_url . $admin_panel_js,
@@ -860,13 +1041,15 @@ trait Core_Assets {
             );
         }
 
-        wp_enqueue_script(
-            'bbai-dashboard-scripts',
-            $base_url . $dashboard_scripts_js,
-            ['jquery', 'bbai-dashboard'],
-            $asset_version($dashboard_scripts_js, '1.0.0'),
-            true
-        );
+        if ( file_exists( $base_path . $dashboard_scripts_js ) ) {
+            wp_enqueue_script(
+                'bbai-dashboard-scripts',
+                $base_url . $dashboard_scripts_js,
+                ['jquery', 'bbai-dashboard'],
+                $asset_version($dashboard_scripts_js, '1.0.0'),
+                true
+            );
+        }
 
         $phase17_assistant_js  = 'assets/js/bbai-phase17-assistant.js';
         $phase17_assistant_css = 'assets/css/features/automation/phase17-assistant.css';
@@ -911,13 +1094,18 @@ trait Core_Assets {
             );
         }
 
-        wp_enqueue_script(
-            'bbai-logger',
-            $base_url . $logger_js,
-            [],
-            $asset_version($logger_js, '4.3.0'),
-            true
-        );
+        if ( file_exists( $base_path . $logger_js ) ) {
+            wp_enqueue_script(
+                'bbai-logger',
+                $base_url . $logger_js,
+                [],
+                $asset_version($logger_js, '4.3.0'),
+                true
+            );
+        } else {
+            // Stub so bbai-modal's dependency on bbai-logger doesn't cause a broken enqueue.
+            wp_register_script( 'bbai-logger', '', [], BEEPBEEP_AI_VERSION, true );
+        }
 
         wp_enqueue_style(
             'bbai-tooltips',
@@ -926,21 +1114,25 @@ trait Core_Assets {
             $asset_version($tooltips_css, '4.3.0')
         );
 
-        wp_enqueue_script(
-            'bbai-tooltips',
-            $base_url . $tooltips_js,
-            ['jquery', 'wp-i18n'],
-            $asset_version($tooltips_js, '4.3.0'),
-            true
-        );
+        if ( file_exists( $base_path . $tooltips_js ) ) {
+            wp_enqueue_script(
+                'bbai-tooltips',
+                $base_url . $tooltips_js,
+                ['jquery', 'wp-i18n'],
+                $asset_version($tooltips_js, '4.3.0'),
+                true
+            );
+        }
 
-        wp_enqueue_script(
-            'bbai-modal',
-            $base_url . $modal_js,
-            ['jquery', 'bbai-logger', 'wp-i18n'],
-            $asset_version($modal_js, '4.3.0'),
-            true
-        );
+        if ( file_exists( $base_path . $modal_js ) ) {
+            wp_enqueue_script(
+                'bbai-modal',
+                $base_url . $modal_js,
+                ['jquery', 'bbai-logger', 'wp-i18n'],
+                $asset_version($modal_js, '4.3.0'),
+                true
+            );
+        }
 
         $pricing_bridge_path = 'admin/components/pricing-modal-bridge.js';
         $pricing_bridge_full_path = $base_path . $pricing_bridge_path;
@@ -964,21 +1156,25 @@ trait Core_Assets {
             );
         }
 
-        wp_enqueue_script(
-            'bbai-debug',
-            $base_url . $debug_js,
-            ['jquery'],
-            $asset_version($debug_js, '1.0.0'),
-            true
-        );
+        if ( file_exists( $base_path . $debug_js ) ) {
+            wp_enqueue_script(
+                'bbai-debug',
+                $base_url . $debug_js,
+                ['jquery'],
+                $asset_version($debug_js, '1.0.0'),
+                true
+            );
+        }
 
-        wp_enqueue_script(
-            'bbai-contact-modal',
-            $base_url . $contact_modal_js,
-            ['jquery', 'wp-i18n'],
-            $asset_version($contact_modal_js, '1.0.0'),
-            true
-        );
+        if ( file_exists( $base_path . $contact_modal_js ) ) {
+            wp_enqueue_script(
+                'bbai-contact-modal',
+                $base_url . $contact_modal_js,
+                ['jquery', 'wp-i18n'],
+                $asset_version($contact_modal_js, '1.0.0'),
+                true
+            );
+        }
 
         wp_enqueue_style(
             'bbai-contact-modal',
@@ -991,6 +1187,68 @@ trait Core_Assets {
             'wp_version' => get_bloginfo('version'),
             'plugin_version' => BEEPBEEP_AI_VERSION,
         ]);
+
+        $this->enqueue_logout_bridge_script();
+
+        // Logged-in dashboard controller: optional enhancement (polling / client re-render).
+        // Dashboard is PHP-first; enable with: add_filter( 'bbai_enqueue_logged_in_dashboard_controller', '__return_true' );
+        $bbai_li_controller_js = 'assets/js/admin/logged-in-dashboard-controller.js';
+        if ( file_exists( $base_path . $bbai_li_controller_js ) && $this->is_dashboard_tab() && apply_filters( 'bbai_enqueue_logged_in_dashboard_controller', false ) ) {
+            wp_enqueue_script(
+                'bbai-logged-in-dashboard',
+                $base_url . $bbai_li_controller_js,
+                [ 'bbai-admin', 'bbai-dashboard' ],
+                $asset_version( $bbai_li_controller_js, '1.0.0' ),
+                true
+            );
+        }
+
+        // Logged-in dashboard state CSS.
+        $bbai_li_css = 'assets/css/features/dashboard/logged-in-state.css';
+        if ( file_exists( $base_path . $bbai_li_css ) ) {
+            wp_enqueue_style(
+                'bbai-logged-in-state',
+                $base_url . $bbai_li_css,
+                [ 'bbai-section-header' ],
+                $asset_version( $bbai_li_css, '1.0.0' )
+            );
+        }
+
+        // Inline CTA fallback handler — runs when the full modal JS bundle is absent.
+        // Handles show-dashboard-auth and show-upgrade-modal with graceful navigation fallbacks.
+        $bbai_signup_url  = esc_url_raw( 'https://app.beepbeep.ai/register' );
+        $bbai_login_url   = esc_url_raw( 'https://app.beepbeep.ai/login' );
+        $bbai_upgrade_url = esc_url_raw( \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_upgrade_url() );
+        $bbai_cta_inline = implode( "\n", [
+            '(function(){',
+            '    var signupUrl  = ' . wp_json_encode( $bbai_signup_url )  . ';',
+            '    var loginUrl   = ' . wp_json_encode( $bbai_login_url )   . ';',
+            '    var upgradeUrl = ' . wp_json_encode( $bbai_upgrade_url ) . ';',
+            '    if (!window.BBAI_LOG) {',
+            '        window.BBAI_LOG = { log: function(){}, warn: function(){}, error: function(){}, info: function(){} };',
+            '    }',
+            '    function handleDashboardCta(e) {',
+            '        var el = e.target.closest("[data-action]");',
+            '        if (!el) return;',
+            '        var action = el.getAttribute("data-action");',
+            '        if (action === "show-dashboard-auth") {',
+            '            if (typeof window.bbaiShowDashboardAuth === "function") return;',
+            '            e.preventDefault();',
+            '            var tab = el.getAttribute("data-auth-tab") || "register";',
+            '            window.location.href = (tab === "login") ? loginUrl : signupUrl;',
+            '            return;',
+            '        }',
+            '        if (action === "show-upgrade-modal") {',
+            '            if (typeof window.showUpgradeModal === "function") return;',
+            '            e.preventDefault();',
+            '            window.location.href = upgradeUrl;',
+            '        }',
+            '    }',
+            '    document.addEventListener("click", handleDashboardCta);',
+            '})();',
+        ] );
+        // Attach to wp-i18n which is always enqueued on plugin admin pages.
+        wp_add_inline_script( 'wp-i18n', $bbai_cta_inline );
 
         $this->localize_dashboard_scripts($stats_data, $usage_data, $checkout_prices, $l10n_common);
     }
@@ -1450,6 +1708,8 @@ trait Core_Assets {
         $path = $base_path . $rel;
 
         if (!is_readable($path)) {
+            // Stub so bbai-telemetry's dependency on bbai-posthog doesn't break WP's resolver.
+            wp_register_script( 'bbai-posthog', '', [], BEEPBEEP_AI_VERSION, true );
             return;
         }
 
@@ -1471,6 +1731,8 @@ trait Core_Assets {
         $rel  = 'assets/js/bbai-telemetry.js';
         $path = $base_path . $rel;
         if (! is_readable($path)) {
+            // Stub so bbai-admin's dependency on bbai-telemetry doesn't break WP's resolver.
+            wp_register_script( 'bbai-telemetry', '', [], BEEPBEEP_AI_VERSION, true );
             return;
         }
 

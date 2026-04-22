@@ -310,13 +310,21 @@ if ( $bbai_is_exhausted_credit_state ) {
     $bbai_conversion_prompt_action = $bbai_build_unlock_action();
 }
 
+$bbai_is_logged_in_dashboard = ! $bbai_is_guest_trial_user && ! empty( $bbai_has_connected_account );
+
 $bbai_busy_title          = sprintf(
     /* translators: %s: number of images currently being processed. */
-    _n( 'Fixing %s image...', 'Fixing %s images...', max( 1, $bbai_actionable_count ), 'beepbeep-ai-alt-text-generator' ),
+    _n(
+        'Generating ALT text for %s image…',
+        'Generating ALT text for %s images…',
+        max( 1, $bbai_actionable_count ),
+        'beepbeep-ai-alt-text-generator'
+    ),
     number_format_i18n( max( 1, $bbai_actionable_count ) )
 );
 $bbai_build_fix_action = static function () use (
     $bbai_build_action,
+    $bbai_is_logged_in_dashboard,
     $bbai_is_guest_trial_user,
     $bbai_state_credits_remaining,
     $bbai_hero_funnel,
@@ -348,7 +356,9 @@ $bbai_build_fix_action = static function () use (
     }
 
     return $bbai_build_action(
-        __( 'Fix all images', 'beepbeep-ai-alt-text-generator' ),
+        $bbai_is_logged_in_dashboard
+            ? __( 'Generate ALT text for all images', 'beepbeep-ai-alt-text-generator' )
+            : __( 'Fix all images', 'beepbeep-ai-alt-text-generator' ),
         [
             'action'        => 'generate-missing',
             'bbai_action'   => 'generate_missing',
@@ -436,6 +446,17 @@ if ( Dashboard_State::FUNNEL_SCANNING === $bbai_hero_funnel ) {
         : 'scanned_clean';
 }
 
+$bbai_logged_in_hero_state = $bbai_hero_state;
+if ( $bbai_is_logged_in_dashboard ) {
+    if ( 'scanned_has_issues' === $bbai_hero_state ) {
+        $bbai_logged_in_hero_state = 'logged_in_has_issues';
+    } elseif ( 'scanned_clean' === $bbai_hero_state ) {
+        $bbai_logged_in_hero_state = 'logged_in_clean';
+    } elseif ( 'not_scanned' === $bbai_hero_state ) {
+        $bbai_logged_in_hero_state = 'dashboard_active';
+    }
+}
+
 $bbai_donut_background = 'conic-gradient(#d7dee8 0deg 360deg)';
 if ( 'scanned_has_issues' === $bbai_hero_state || 'scanned_clean' === $bbai_hero_state ) {
     if ( 'scanned_clean' === $bbai_hero_state ) {
@@ -511,7 +532,7 @@ if ( 'scanning' === $bbai_hero_state ) {
         $bbai_title          = $bbai_busy_title;
         $bbai_description    = $bbai_fix_description;
         $bbai_primary_action = $bbai_build_action(
-            __( 'Fixing images...', 'beepbeep-ai-alt-text-generator' ),
+            __( 'Generating ALT text…', 'beepbeep-ai-alt-text-generator' ),
             [
                 'disabled'  => true,
                 'aria_busy' => true,
@@ -535,8 +556,22 @@ if ( 'scanning' === $bbai_hero_state ) {
         $bbai_description    = __( 'Unlock full ALT optimisation to continue from the dashboard.', 'beepbeep-ai-alt-text-generator' );
         $bbai_primary_action = $bbai_build_fix_action();
     } else {
-        $bbai_title          = $bbai_format_fix_title( $bbai_actionable_count );
-        $bbai_description    = $bbai_fix_description;
+        if ( $bbai_is_logged_in_dashboard && $bbai_state_missing_count > 0 ) {
+            $bbai_title = sprintf(
+                /* translators: %s: number of images missing ALT text. */
+                _n( '%s image needs ALT text', '%s images need ALT text', $bbai_state_missing_count, 'beepbeep-ai-alt-text-generator' ),
+                number_format_i18n( $bbai_state_missing_count )
+            );
+            $bbai_description = __( 'Generate SEO-friendly ALT text for your remaining images.', 'beepbeep-ai-alt-text-generator' );
+            $bbai_cta_context = sprintf(
+                /* translators: %s: number of images that need ALT text. */
+                __( 'Ready to generate ALT text for %s images', 'beepbeep-ai-alt-text-generator' ),
+                number_format_i18n( $bbai_state_missing_count )
+            );
+        } else {
+            $bbai_title       = $bbai_format_fix_title( $bbai_actionable_count );
+            $bbai_description = $bbai_fix_description;
+        }
         $bbai_primary_action = $bbai_build_fix_action();
     }
 } elseif ( 'scanned_clean' === $bbai_hero_state ) {
@@ -569,8 +604,8 @@ if ( $bbai_is_exhausted_trial_checkpoint && 'scanning' !== $bbai_hero_state ) {
 <section
     class="bbai-funnel-hero bbai-funnel-hero--hero-card<?php echo $bbai_is_exhausted_trial_checkpoint ? ' bbai-funnel-hero--trial-exhausted' : ''; ?>"
     data-bbai-funnel-hero
-    data-bbai-funnel-hero-state="<?php echo esc_attr( $bbai_hero_state ); ?>"
-    data-bbai-hero-ui-state="<?php echo esc_attr( $bbai_hero_state ); ?>"
+    data-bbai-funnel-hero-state="<?php echo esc_attr( $bbai_logged_in_hero_state ); ?>"
+    data-bbai-hero-ui-state="<?php echo esc_attr( $bbai_logged_in_hero_state ); ?>"
     aria-labelledby="bbai-funnel-hero-title"
 >
     <div class="bbai-dashboard-hero-action<?php echo $bbai_is_exhausted_trial_checkpoint ? ' bbai-dashboard-hero-action--exhausted-trial' : ''; ?>" data-bbai-dashboard-hero-action>
@@ -678,41 +713,43 @@ if ( $bbai_is_exhausted_trial_checkpoint && 'scanning' !== $bbai_hero_state ) {
                 }
                 ?>
 
-                <section
-                    class="bbai-dashboard-conversion-prompt bbai-dashboard-conversion-prompt--<?php echo esc_attr( $bbai_conversion_prompt_tone ); ?>"
-                    data-bbai-hero-conversion-prompt
-                    data-bbai-hero-conversion-tone="<?php echo esc_attr( $bbai_conversion_prompt_tone ); ?>"
-                    <?php echo $bbai_conversion_prompt_visible ? '' : 'hidden'; ?>
-                >
-                    <div class="bbai-dashboard-conversion-prompt__copy-wrap">
-                        <p class="bbai-dashboard-conversion-prompt__title" data-bbai-hero-conversion-title>
-                            <?php echo esc_html( $bbai_conversion_prompt_title ); ?>
-                        </p>
-                        <p class="bbai-dashboard-conversion-prompt__copy" data-bbai-hero-conversion-copy>
-                            <?php echo esc_html( $bbai_conversion_prompt_copy ); ?>
-                        </p>
-                        <p
-                            class="bbai-dashboard-conversion-prompt__note"
-                            data-bbai-hero-conversion-note
-                            <?php echo '' !== $bbai_conversion_prompt_note ? '' : 'hidden'; ?>
+                    <?php if ( ! $bbai_is_logged_in_dashboard ) : ?>
+                        <section
+                            class="bbai-dashboard-conversion-prompt bbai-dashboard-conversion-prompt--<?php echo esc_attr( $bbai_conversion_prompt_tone ); ?>"
+                            data-bbai-hero-conversion-prompt
+                            data-bbai-hero-conversion-tone="<?php echo esc_attr( $bbai_conversion_prompt_tone ); ?>"
+                            <?php echo $bbai_conversion_prompt_visible ? '' : 'hidden'; ?>
                         >
-                            <?php echo esc_html( $bbai_conversion_prompt_note ); ?>
-                        </p>
-                    </div>
-                    <div
-                        class="bbai-dashboard-conversion-prompt__actions"
-                        data-bbai-hero-conversion-actions
-                        <?php echo ! empty( $bbai_conversion_prompt_action['label'] ) ? '' : 'hidden'; ?>
-                    >
-                        <?php
-                        $bbai_render_action(
-                            $bbai_conversion_prompt_action,
-                            'bbai-btn bbai-btn-secondary bbai-dashboard-conversion-prompt__cta',
-                            'data-bbai-hero-conversion-cta'
-                        );
-                        ?>
-                    </div>
-                </section>
+                            <div class="bbai-dashboard-conversion-prompt__copy-wrap">
+                                <p class="bbai-dashboard-conversion-prompt__title" data-bbai-hero-conversion-title>
+                                    <?php echo esc_html( $bbai_conversion_prompt_title ); ?>
+                                </p>
+                                <p class="bbai-dashboard-conversion-prompt__copy" data-bbai-hero-conversion-copy>
+                                    <?php echo esc_html( $bbai_conversion_prompt_copy ); ?>
+                                </p>
+                                <p
+                                    class="bbai-dashboard-conversion-prompt__note"
+                                    data-bbai-hero-conversion-note
+                                    <?php echo '' !== $bbai_conversion_prompt_note ? '' : 'hidden'; ?>
+                                >
+                                    <?php echo esc_html( $bbai_conversion_prompt_note ); ?>
+                                </p>
+                            </div>
+                            <div
+                                class="bbai-dashboard-conversion-prompt__actions"
+                                data-bbai-hero-conversion-actions
+                                <?php echo ! empty( $bbai_conversion_prompt_action['label'] ) ? '' : 'hidden'; ?>
+                            >
+                                <?php
+                                $bbai_render_action(
+                                    $bbai_conversion_prompt_action,
+                                    'bbai-btn bbai-btn-secondary bbai-dashboard-conversion-prompt__cta',
+                                    'data-bbai-hero-conversion-cta'
+                                );
+                                ?>
+                            </div>
+                        </section>
+                    <?php endif; ?>
 
                 <ul class="bbai-dashboard-hero-action__microcopy" data-bbai-hero-microcopy aria-label="<?php esc_attr_e( 'Why use automatic fixes', 'beepbeep-ai-alt-text-generator' ); ?>">
                     <li class="bbai-dashboard-hero-action__microcopy-item">

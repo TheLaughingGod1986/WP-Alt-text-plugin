@@ -1,0 +1,123 @@
+/**
+ * Library Table Styles
+ * Alt text library table and quality badges
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+.bbai-library-table {
+    width: 100%;
+    background: white;
+    border-radius: var(--bbai-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--bbai-shadow-md);
+}
+
+.bbai-library-table thead {
+    background: var(--bbai-gradient-1);
+    color: white;
+}
+
+.bbai-library-table th {
+    padding: var(--bbai-spacing-md) var(--bbai-spacing-lg);
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.bbai-library-table td {
+    padding: var(--bbai-spacing-md) var(--bbai-spacing-lg);
+    border-bottom: 1px solid var(--bbai-light-gray);
+}
+
+.bbai-library-table tbody tr {
+    transition: var(--bbai-transition);
+}
+
+.bbai-library-table tbody tr:hover {
+    background: linear-gradient(90deg, #f6f9fc 0%, #ffffff 100%);
+    transform: scale(1.01);
+    box-shadow: var(--bbai-shadow-sm);
+}
+
+/* Quality Badges */
+.bbai-quality-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--bbai-spacing-xs) var(--bbai-spacing-md);
+    border-radius: var(--bbai-radius-full);
+    font-weight: 700;
+    font-size: 0.75rem;
+}
+
+.bbai-quality-badge.excellent {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    color: white;
+}
+
+.bbai-quality-badge.good {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+}
+
+.bbai-quality-badge.fair {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    color: white;
+}
+
+.bbai-quality-badge.poor {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+
+/* Alt Text Cell Content */
+.bbai-alt-text-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.bbai-alt-text-preview {
+    line-height: 1.5;
+    color: var(--bbai-text-primary);
+    font-size: 13px;
+}
+
+.bbai-alt-text-missing {
+    color: var(--bbai-text-muted);
+    font-style: italic;
+    font-size: 13px;
+}
+
+/* Metrics Row */
+.bbai-alt-text-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.bbai-meta-separator {
+    color: #d1d5db;
+    font-size: 8px;
+    line-height: 1;
+}
+
+.bbai-library-cell--alt-text {
+    vertical-align: top;
+}
+
+/* Legacy Wrapper */
+.bbai-library-alt-text-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bbai-space-1);
+}
+
+.bbai-library-alt-text {
+    line-height: 1.5;
+    color: var(--bbai-text-primary);
+}

@@ -1,0 +1,1236 @@
+/**
+ * Dashboard Redesign - Premium SaaS Design System
+ * Matches React + Tailwind component specifications exactly
+ */
+
+/* ============================================
+   DASHBOARD OVERVIEW CONTAINER
+   ============================================ */
+
+.bbai-dashboard-overview {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    margin-bottom: 18px;
+}
+
+@media (min-width: 1024px) {
+    .bbai-dashboard-overview {
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+    }
+}
+
+/* ============================================
+   STATUS SUMMARY (TOP)
+   ============================================ */
+
+.bbai-dashboard-status-summary {
+    display: block;
+    padding: 26px 28px 22px;
+    margin: 0 0 18px;
+    border-radius: 20px;
+    border: 1px solid #dbe3ef;
+    background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.06);
+}
+
+.bbai-dashboard-status-summary__title {
+    margin: 0 0 10px;
+    color: #0f172a;
+    font-size: 50px;
+    line-height: 1.18;
+    font-weight: 700;
+}
+
+.bbai-dashboard-status-summary__subtitle {
+    margin: 0;
+    color: #334155;
+    font-size: 20px;
+    line-height: 1.5;
+}
+
+.bbai-dashboard-status-summary__divider {
+    margin: 16px 0 14px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.bbai-dashboard-status-summary__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.bbai-dashboard-status-summary__credits {
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #475569;
+    font-size: 17px;
+    line-height: 1.45;
+    font-weight: 500;
+}
+
+.bbai-dashboard-status-summary__button {
+    min-width: 230px;
+    min-height: 52px;
+    border-radius: 18px !important;
+    font-size: 34px;
+    font-weight: 700 !important;
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.28);
+}
+
+.bbai-dashboard-status-summary__button--upgrade {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important;
+    border-color: #0284c7 !important;
+}
+
+/* ============================================
+   USAGE CARD (White Card)
+   ============================================ */
+
+.bbai-usage-card-redesign {
+    border-radius: 20px;
+    background: #ffffff;
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 8px 30px rgba(15, 23, 42, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+/* Badge - FREE badge with purple gradient */
+.bbai-usage-card-redesign .bbai-badge--free,
+.bbai-usage-card-redesign .bbai-badge-free {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%) !important;
+    padding: 6px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #ffffff !important;
+    width: fit-content;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+/* Title */
+.bbai-usage-card-redesign .bbai-card-title {
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #111827;
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .bbai-usage-card-redesign .bbai-card-title {
+        font-size: 22px;
+    }
+}
+
+/* Circular Progress */
+.bbai-usage-card-redesign .bbai-circular-progress-wrapper {
+    display: flex;
+    justify-content: center;
+}
+
+.bbai-alt-status-chart {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 16px 0;
+}
+
+.bbai-usage-card-redesign .bbai-circular-progress-container {
+    position: relative;
+    height: 224px;
+    width: 224px;
+    margin: 0 auto;
+}
+
+.bbai-usage-card-redesign .bbai-circular-progress-svg {
+    height: 100%;
+    width: 100%;
+    transform: rotate(-90deg);
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.bbai-usage-card-redesign .bbai-circular-progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+    z-index: 1;
+}
+
+.bbai-usage-card-redesign .bbai-circular-progress-percent {
+    font-size: 50px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1;
+    margin: 0;
+    text-align: center;
+}
+
+.bbai-usage-card-redesign .bbai-circular-progress-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+    margin-top: 6px;
+    text-align: center;
+}
+
+/* Usage Count */
+.bbai-usage-card-redesign .bbai-usage-count {
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.6;
+    color: #374151;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.bbai-usage-card-redesign .bbai-usage-count-main {
+    font-weight: 600;
+}
+
+.bbai-usage-card-redesign .bbai-usage-count-sub {
+    font-size: 13px;
+    line-height: 1.4;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+/* ============================================
+   Adaptive Usage Ring Colors
+   ============================================ */
+
+.bbai-usage-ring {
+    transition: stroke 0.6s ease, stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bbai-usage-ring--healthy {
+    stroke: #10B981;
+}
+
+.bbai-usage-ring--warning {
+    stroke: #F59E0B;
+}
+
+.bbai-usage-ring--danger {
+    stroke: #EF4444;
+}
+
+.bbai-usage-ring--critical {
+    stroke: #EF4444;
+    animation: bbai-pulse-ring 1.5s ease-in-out infinite;
+}
+
+@keyframes bbai-pulse-ring {
+    0%, 100% {
+        opacity: 1;
+        filter: drop-shadow(0 0 0 rgba(239, 68, 68, 0));
+    }
+    50% {
+        opacity: 0.85;
+        filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.5));
+    }
+}
+
+/* Reset Date */
+.bbai-usage-card-redesign .bbai-reset-date {
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.6;
+    color: rgba(0, 0, 0, 0.6);
+    margin: 0;
+}
+
+.bbai-usage-card-redesign .bbai-usage-social-proof {
+    text-align: center;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #6b7280;
+    margin: 0;
+}
+
+/* Upgrade CTA Button */
+.bbai-usage-card-redesign .bbai-upgrade-cta-green {
+    width: 100%;
+    border-radius: 12px;
+    background: linear-gradient(to right, #079D52, #17C67A);
+    padding: 16px 24px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #ffffff;
+    box-shadow: 0 4px 16px rgba(5, 150, 105, 0.4);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.bbai-usage-card-redesign .bbai-upgrade-cta-green:hover {
+    box-shadow: 0 6px 20px rgba(5, 150, 105, 0.5);
+    transform: translateY(-2px);
+}
+
+.bbai-usage-card-redesign .bbai-upgrade-cta-green:focus {
+    outline: none;
+    box-shadow: 0 4px 16px rgba(5, 150, 105, 0.4), 0 0 0 4px rgba(16, 185, 129, 0.3);
+}
+
+.bbai-usage-card-redesign .bbai-upgrade-cta-green:active {
+    transform: translateY(0);
+}
+
+/* Action Buttons Grid */
+.bbai-usage-card-redesign .bbai-action-buttons-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    border-top: 1px solid #f3f4f6;
+    padding-top: 24px;
+}
+
+.bbai-usage-card-redesign .bbai-action-item {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+}
+
+.bbai-usage-card-redesign .bbai-action-item .bbai-action-btn {
+    width: 100%;
+}
+
+.bbai-usage-card-redesign .bbai-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 999px;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 48px;
+}
+
+.bbai-usage-card-redesign .bbai-action-btn-primary {
+    background: linear-gradient(to right, #6366F1, #8B5CF6) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    border: none !important;
+}
+
+.bbai-usage-card-redesign .bbai-action-btn-primary:hover:not(:disabled) {
+    background: linear-gradient(to right, #4F46E5, #7C3AED) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.5);
+    transform: translateY(-2px);
+}
+
+.bbai-usage-card-redesign .bbai-action-btn-primary:focus {
+    outline: none;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4), 0 0 0 4px rgba(99, 102, 241, 0.3);
+}
+
+.bbai-usage-card-redesign .bbai-action-btn-primary:disabled,
+.bbai-usage-card-redesign .bbai-action-btn-primary.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: var(--bbai-gray-300, #d1d5db) !important;
+    color: var(--bbai-gray-500, #6b7280) !important;
+    box-shadow: none !important;
+    pointer-events: none !important;
+}
+
+.bbai-usage-card-redesign .bbai-action-btn-secondary {
+    background: linear-gradient(to right, #F59E0B, #F97316) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+    border: none !important;
+}
+
+.bbai-usage-card-redesign .bbai-action-btn-secondary:hover:not(:disabled) {
+    background: linear-gradient(to right, #D97706, #EA580C) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.5);
+    transform: translateY(-2px);
+}
+
+.bbai-usage-card-redesign .bbai-action-btn-secondary:focus {
+    outline: none;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4), 0 0 0 4px rgba(245, 158, 11, 0.3);
+}
+
+.bbai-usage-card-redesign .bbai-action-btn-secondary:disabled,
+.bbai-usage-card-redesign .bbai-action-btn-secondary.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: var(--bbai-gray-300, #d1d5db) !important;
+    color: var(--bbai-gray-500, #6b7280) !important;
+    box-shadow: none !important;
+    pointer-events: none !important;
+}
+
+.bbai-usage-card-redesign .bbai-action-btn-tertiary {
+    background: #f8fafc;
+    color: #334155;
+    border: 1px solid #d6dde8;
+    box-shadow: none;
+    text-decoration: none;
+}
+
+.bbai-usage-card-redesign .bbai-action-btn-tertiary:hover {
+    background: #f1f5f9;
+    border-color: #c8d3e2;
+    color: #1e293b;
+    transform: translateY(-1px);
+}
+
+.bbai-usage-card-redesign .bbai-action-btn-tertiary:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+}
+
+/* Stats Tiles */
+.bbai-usage-card-redesign .bbai-stats-tiles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding-top: 16px;
+}
+
+.bbai-usage-card-redesign .bbai-stat-tile {
+    border-radius: 8px;
+    border: 1px solid #f3f4f6;
+    background: #f9fafb;
+    padding: 12px;
+    text-align: center;
+}
+
+.bbai-usage-card-redesign .bbai-stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1;
+}
+
+.bbai-usage-card-redesign .bbai-stat-label {
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+}
+
+.bbai-usage-card-redesign .bbai-stat-sublabel {
+    margin-top: 2px;
+    font-size: 10px;
+    color: #9ca3af;
+}
+
+/* Footer Text */
+.bbai-usage-card-redesign .bbai-footer-text {
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.6;
+    color: rgba(0, 0, 0, 0.6);
+    margin: 0;
+}
+
+/* ============================================
+   UPGRADE GROWTH CARD (Blue Gradient)
+   ============================================ */
+
+.bbai-upgrade-growth-card {
+    border-radius: 20px;
+    background: linear-gradient(to bottom right, #3C84FF, #54A8FF, #7CDDFF);
+    padding: 24px;
+    box-shadow: 0 4px 35px rgba(0, 0, 0, 0.07);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 24px;
+    color: #ffffff; /* Default text color for card content */
+}
+
+.bbai-upgrade-card .bbai-upgrade-card-body {
+    flex: 1;
+}
+
+.bbai-upgrade-card .bbai-upgrade-card-footer {
+    margin-top: auto;
+}
+
+/* Full width variant for bottom CTA */
+.bbai-bottom-upsell-cta .bbai-upgrade-growth-card {
+    width: 100%;
+    max-width: 100%;
+    padding: 24px;
+}
+
+.bbai-bottom-upsell-cta .bbai-upgrade-card__grid {
+    grid-template-columns: 2fr 280px;
+}
+
+.bbai-bottom-upsell-cta .bbai-upgrade-card__usage {
+    width: 280px;
+    min-width: 280px;
+}
+
+/* Badge - GROWTH badge - white background with dark text for visibility on blue card */
+.bbai-upgrade-growth-card .bbai-badge--growth,
+.bbai-upgrade-growth-card .bbai-badge-growth,
+.bbai-upgrade-growth-card .bbai-badge.bbai-badge--growth,
+.bbai-upgrade-growth-card span.bbai-badge--growth,
+.bbai-upgrade-growth-card .flex .bbai-badge--growth {
+    display: inline-flex !important;
+    align-items: center;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(4px);
+    padding: 6px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #111827 !important;
+    width: fit-content;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Ensure text color is applied with maximum specificity - target all possible nested elements and text nodes */
+.bbai-upgrade-growth-card .bbai-badge--growth,
+.bbai-upgrade-growth-card .bbai-badge-growth,
+.bbai-upgrade-growth-card .bbai-badge.bbai-badge--growth,
+.bbai-upgrade-growth-card span.bbai-badge--growth,
+.bbai-upgrade-growth-card .flex .bbai-badge--growth,
+.bbai-upgrade-growth-card .bbai-badge--growth *,
+.bbai-upgrade-growth-card .bbai-badge-growth *,
+.bbai-upgrade-growth-card .bbai-badge.bbai-badge--growth *,
+.bbai-upgrade-growth-card span.bbai-badge--growth * {
+    color: #111827 !important;
+}
+
+/* Title */
+.bbai-upgrade-growth-card .bbai-card-title {
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #ffffff;
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .bbai-upgrade-growth-card .bbai-card-title {
+        font-size: 22px;
+    }
+}
+
+/* Subtitle */
+.bbai-upgrade-growth-card .bbai-card-subtitle {
+    font-size: 15px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0 0 12px 0;
+}
+
+.bbai-upgrade-growth-card .bbai-upgrade-usage-context,
+.bbai-upgrade-growth-card .bbai-upgrade-unlock-context {
+    font-size: 14px;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.bbai-upgrade-growth-card .bbai-upgrade-usage-context {
+    margin: 0 0 10px 0;
+}
+
+.bbai-upgrade-growth-card .bbai-upgrade-unlock-context {
+    margin: 0 0 18px 0;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+/* Benefit List */
+.bbai-upgrade-growth-card .bbai-benefits-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 18px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.bbai-upgrade-growth-card .bbai-benefit-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.bbai-upgrade-growth-card .bbai-benefit-icon {
+    margin-top: 2px;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.bbai-upgrade-growth-card .bbai-benefit-icon svg {
+    height: 14px;
+    width: 14px;
+    color: #ffffff;
+}
+
+.bbai-upgrade-growth-card .bbai-benefit-text {
+    font-size: 15px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* CTA Section */
+.bbai-upgrade-growth-card .bbai-cta-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 8px;
+    margin-top: auto;
+}
+
+.bbai-upgrade-growth-card .bbai-upgrade-recommend-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    align-self: flex-start;
+    margin: 0 0 2px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: #ffffff;
+    font-size: 12px;
+    line-height: 1.3;
+    font-weight: 600;
+}
+
+.bbai-dashboard-kpi-row {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* Out-of-credits CTAs are intentionally non-interactive and clearly locked. */
+.bbai-usage-card-redesign .bbai-action-btn.is-locked,
+.bbai-usage-card-redesign .bbai-action-btn.is-locked[aria-disabled="true"] {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+    opacity: 0.75 !important;
+    filter: saturate(0.12);
+}
+
+.bbai-usage-card-redesign .bbai-action-btn.is-locked.is-locked--hard {
+    background: #e5e7eb !important;
+    color: #6b7280 !important;
+    border-color: #d1d5db !important;
+    box-shadow: none !important;
+}
+
+.bbai-usage-card-redesign .bbai-action-btn.is-locked.is-locked--soft {
+    background: #e5e7eb !important;
+    color: #6b7280 !important;
+    border-color: #d1d5db !important;
+    box-shadow: none !important;
+}
+
+.bbai-usage-card-redesign .bbai-action-btn.is-locked:hover,
+.bbai-usage-card-redesign .bbai-action-btn.is-locked:focus-visible {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* True no-op disabled state for \"nothing to generate\" (not lock-upgrade). */
+.bbai-usage-card-redesign .bbai-action-btn.disabled[aria-disabled="true"] {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+}
+
+/* Primary CTA Button */
+.bbai-upgrade-growth-card .bbai-cta-primary {
+    width: 100%;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #111827;
+    padding: 14px 22px;
+    font-size: 15px;
+    font-weight: 600;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.bbai-upgrade-growth-card .bbai-cta-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.18);
+}
+
+.bbai-upgrade-growth-card .bbai-cta-primary:focus {
+    outline: none;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), 0 0 0 4px rgba(255, 255, 255, 0.5);
+}
+
+.bbai-upgrade-growth-card .bbai-cta-primary:active {
+    transform: translateY(0) scale(1);
+}
+
+/* Microcopy */
+.bbai-upgrade-growth-card .bbai-cta-microcopy {
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+}
+
+.bbai-upgrade-growth-card .bbai-cta-subtext {
+    margin: -4px 0 0;
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.bbai-upgrade-growth-card .bbai-cta-microcopy-line {
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.22);
+    margin: 2px auto 0;
+    width: 72%;
+}
+
+/* KPI row matching screenshot split layout */
+.bbai-dashboard-kpi-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+    margin-top: 18px;
+}
+
+.bbai-dashboard-kpi-card {
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    padding: 18px;
+}
+
+.bbai-dashboard-kpi-split {
+    display: grid;
+    grid-template-columns: 1fr 1px 1fr;
+    gap: 14px;
+    align-items: stretch;
+}
+
+.bbai-dashboard-kpi-divider {
+    background: #e2e8f0;
+}
+
+.bbai-dashboard-kpi-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 188px;
+    text-align: center;
+    gap: 8px;
+}
+
+.bbai-dashboard-kpi-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: #eef2f9;
+    color: #3b82f6;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bbai-dashboard-kpi-value {
+    font-size: 54px;
+    line-height: 1.05;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.bbai-dashboard-kpi-value span {
+    font-size: 24px;
+    font-weight: 500;
+}
+
+.bbai-dashboard-kpi-label {
+    font-size: 15px;
+    color: #475569;
+}
+
+/* Compare Plans Link */
+.bbai-upgrade-growth-card .bbai-compare-link {
+    display: block;
+    text-align: center;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: color 0.2s ease;
+    border-radius: 4px;
+}
+
+.bbai-upgrade-growth-card .bbai-compare-link:hover {
+    color: #ffffff;
+}
+
+.bbai-upgrade-growth-card .bbai-compare-link:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+}
+
+/* ============================================
+   DASHBOARD STATE LAYOUT (DEDUPED)
+   ============================================ */
+
+.bbai-dashboard-shell #bbai-dashboard-main {
+    display: grid;
+    gap: 16px;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-action-bar {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid #dbe3ef;
+    background: #f8fbff;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-action-bar__metrics {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+    flex: 1;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-action-bar__headline {
+    margin: 0;
+    color: #0f172a;
+    font-size: 14px;
+    line-height: 1.35;
+    font-weight: 700;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-action-bar__meta {
+    margin: 0;
+    color: #334155;
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-action-bar__meta strong {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-action-bar__cta {
+    min-width: 230px;
+    min-height: 42px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.25;
+    padding: 10px 14px;
+    border-radius: 10px;
+    overflow-wrap: anywhere;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-action-bar__cta--upgrade {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    border-color: #0284c7;
+}
+
+.bbai-dashboard-shell .bbai-main-content-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: 16px;
+}
+
+.bbai-dashboard-shell .bbai-main-content-grid__work {
+    display: grid;
+    gap: 14px;
+    align-content: start;
+}
+
+.bbai-dashboard-shell .bbai-status-card,
+.bbai-dashboard-shell .bbai-actions-card {
+    gap: 14px;
+}
+
+.bbai-dashboard-shell .bbai-actions-card .bbai-action-buttons-grid {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.bbai-dashboard-shell .bbai-actions-card .bbai-action-btn {
+    white-space: normal;
+    line-height: 1.25;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+.bbai-dashboard-shell .bbai-actions-card .bbai-actions-card-helper {
+    margin: -2px 0 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #64748b;
+}
+
+.bbai-dashboard-shell .bbai-actions-card .bbai-action-btn.disabled[aria-disabled="true"] {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+}
+
+.bbai-dashboard-shell .bbai-status-card .bbai-usage-count {
+    font-size: 14px;
+}
+
+.bbai-dashboard-shell .bbai-status-card .bbai-circular-progress-label {
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.bbai-dashboard-shell .bbai-upgrade-growth-card {
+    gap: 16px;
+}
+
+.bbai-dashboard-shell .bbai-upgrade-growth-card .bbai-cta-primary {
+    white-space: normal;
+    line-height: 1.25;
+    min-height: 46px;
+    padding: 12px 16px;
+    overflow-wrap: anywhere;
+}
+
+.bbai-dashboard-shell .bbai-upgrade-compare-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    padding: 10px 0 2px;
+}
+
+.bbai-dashboard-shell .bbai-upgrade-compare-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    align-items: center;
+    text-align: center;
+}
+
+.bbai-dashboard-shell .bbai-upgrade-compare-item span {
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 11px;
+    line-height: 1.2;
+}
+
+.bbai-dashboard-shell .bbai-upgrade-compare-item strong {
+    color: #ffffff;
+    font-size: 13px;
+    line-height: 1.2;
+    font-weight: 700;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-stat-card {
+    border: 1px solid var(--bbai-border);
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: var(--bbai-shadow-xs);
+    padding: 18px 16px;
+    text-align: center;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-stat-card__value {
+    margin: 0 0 6px;
+    color: #0f172a;
+    font-size: 34px;
+    line-height: 1.1;
+    font-weight: 700;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-stat-card__value span {
+    font-size: 22px;
+    font-weight: 500;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-stat-card__value--activity {
+    font-size: 28px;
+    line-height: 1.2;
+}
+
+.bbai-dashboard-shell .bbai-dashboard-stat-card__title {
+    margin: 0;
+    color: #475569;
+    font-size: 14px;
+    line-height: 1.3;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1023px) {
+    .bbai-dashboard-overview {
+        gap: 20px;
+    }
+
+    .bbai-usage-card-redesign,
+    .bbai-upgrade-growth-card {
+        padding: 20px;
+        gap: 20px;
+    }
+
+    .bbai-dashboard-status-summary {
+        padding: 18px;
+    }
+
+    .bbai-dashboard-status-summary__title {
+        font-size: 38px;
+    }
+
+    .bbai-dashboard-status-summary__subtitle {
+        font-size: 17px;
+    }
+
+    .bbai-dashboard-status-summary__meta {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .bbai-dashboard-status-summary__button {
+        width: 100%;
+        min-width: 0;
+        font-size: 20px;
+    }
+
+    .bbai-dashboard-kpi-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .bbai-dashboard-shell .bbai-main-content-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .bbai-dashboard-shell .bbai-dashboard-stats-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .bbai-usage-card-redesign .bbai-circular-progress-container {
+        height: 196px;
+        width: 196px;
+    }
+
+    .bbai-usage-card-redesign .bbai-action-buttons-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .bbai-usage-card-redesign .bbai-stats-tiles {
+        grid-template-columns: 1fr;
+    }
+
+    .bbai-dashboard-kpi-split {
+        grid-template-columns: 1fr;
+    }
+
+    .bbai-dashboard-kpi-divider {
+        height: 1px;
+    }
+
+    .bbai-dashboard-kpi-item {
+        min-height: 150px;
+    }
+
+    .bbai-dashboard-shell .bbai-dashboard-action-bar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .bbai-dashboard-shell .bbai-dashboard-action-bar__metrics {
+        width: 100%;
+        gap: 4px;
+    }
+
+    .bbai-dashboard-shell .bbai-dashboard-action-bar__cta {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .bbai-dashboard-shell .bbai-upgrade-compare-row,
+    .bbai-dashboard-shell .bbai-dashboard-stats-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================
+   LIMIT-REACHED STATE
+   ============================================ */
+
+.bbai-limit-state-root {
+    margin: 0 0 24px;
+}
+
+.bbai-limit-state-root[hidden] {
+    display: none !important;
+}
+
+.bbai-limit-state-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px;
+    border-radius: 16px;
+    border: 1px solid #dbe3ee;
+    background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.bbai-limit-state-title {
+    margin: 0;
+    color: #0f172a;
+    font-size: 22px;
+    line-height: 1.25;
+    font-weight: 700;
+}
+
+.bbai-limit-state-subtitle {
+    margin: 0;
+    color: #475569;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.bbai-limit-state-next {
+    margin-top: 14px;
+    padding: 14px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.bbai-limit-state-next-title {
+    margin: 0 0 10px;
+    color: #1e293b;
+    font-size: 14px;
+    line-height: 1.4;
+    font-weight: 600;
+}
+
+.bbai-limit-state-loading,
+.bbai-limit-state-empty {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.bbai-limit-state-preview-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bbai-limit-state-preview-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 32px;
+}
+
+.bbai-limit-state-preview-thumb {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid #dbe3ee;
+    flex-shrink: 0;
+}
+
+.bbai-limit-state-preview-name {
+    color: #334155;
+    font-size: 13px;
+    line-height: 1.35;
+    font-weight: 500;
+    word-break: break-word;
+}
+
+.bbai-upgrade-required-action {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    opacity: 1 !important;
+    background: #e2e8f0 !important;
+    color: #334155 !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.bbai-upgrade-required-action:hover,
+.bbai-upgrade-required-action:focus-visible {
+    background: #cfd8e3 !important;
+    color: #1e293b !important;
+    border-color: #b9c5d4 !important;
+}
+
+/* Hide legacy inline banner variant only */
+.bbai-quota-exhausted-banner {
+    display: none !important;
+}

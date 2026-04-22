@@ -1,0 +1,35 @@
+[     103ms] [LOG] JQMIGRATE: Migrate is installed, version 3.4.1 @ http://localhost:8888/wp-admin/load-scripts.php?c=0&load%5Bchunk_0%5D=clipboard,jquery-core,jquery-migrate,zxcvbn-async,wp-hooks&ver=6.9.4:6
+[   18296ms] [LOG] JQMIGRATE: Migrate is installed, version 3.4.1 @ http://localhost:8888/wp-admin/load-scripts.php?c=0&load%5Bchunk_0%5D=clipboard,jquery-core,jquery-migrate,zxcvbn-async,wp-hooks&ver=6.9.4:6
+[   18550ms] [LOG] JQMIGRATE: Migrate is installed, version 3.4.1 @ http://localhost:8888/wp-admin/load-scripts.php?c=0&load%5Bchunk_0%5D=jquery-core,jquery-migrate,utils&ver=6.9.4:4
+[   22806ms] [LOG] JQMIGRATE: Migrate is installed, version 3.4.1 @ http://localhost:8888/wp-admin/load-scripts.php?c=0&load%5Bchunk_0%5D=jquery-core,jquery-migrate,utils&ver=6.9.4:4
+[   23038ms] Unexpected token '<'
+[   23038ms] Unexpected token '<'
+[   23038ms] Unexpected token '<'
+[   23038ms] Unexpected token '<'
+[   23038ms] Unexpected token '<'
+[   23038ms] Unexpected token '<'
+[   23038ms] Unexpected token '<'
+[  162133ms] [LOG] JQMIGRATE: Migrate is installed, version 3.4.1 @ http://localhost:8888/wp-admin/load-scripts.php?c=0&load%5Bchunk_0%5D=jquery-core,jquery-migrate,utils&ver=6.9.4:4
+[  162288ms] Unexpected token '<'
+[  162318ms] Unexpected token '<'
+[  162318ms] Unexpected token '<'
+[  162318ms] Unexpected token '<'
+[  162324ms] Unexpected token '<'
+[  162324ms] Unexpected token '<'
+[  162340ms] Unexpected token '<'
+[  171024ms] [LOG] JQMIGRATE: Migrate is installed, version 3.4.1 @ http://localhost:8888/wp-admin/load-scripts.php?c=0&load%5Bchunk_0%5D=jquery-core,jquery-migrate,utils&ver=6.9.4:4
+[  171121ms] Unexpected token '<'
+[  171121ms] Unexpected token '<'
+[  171125ms] Unexpected token '<'
+[  171130ms] Unexpected token '<'
+[  171130ms] Unexpected token '<'
+[  171130ms] Unexpected token '<'
+[  171142ms] Unexpected token '<'
+[  239001ms] [LOG] JQMIGRATE: Migrate is installed, version 3.4.1 @ http://localhost:8888/wp-admin/load-scripts.php?c=0&load%5Bchunk_0%5D=jquery-core,jquery-migrate,utils&ver=6.9.4:4
+[  239105ms] Unexpected token '<'
+[  239105ms] Unexpected token '<'
+[  239106ms] Unexpected token '<'
+[  239109ms] Unexpected token '<'
+[  239112ms] Unexpected token '<'
+[  239113ms] Unexpected token '<'
+[  239129ms] Unexpected token '<'

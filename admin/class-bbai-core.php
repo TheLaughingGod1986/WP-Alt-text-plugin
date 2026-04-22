@@ -1706,6 +1706,11 @@ class Core {
         if ( 'bbai-ui-kit' === $page ) {
             $bbai_body .= ' bbai-ui-kit-page';
         }
+        // Add connected-account modifier so full-width header CSS only fires for authenticated users.
+        $bbai_fc_auth = Auth_State::resolve( $this->api_client );
+        if ( ! empty( $bbai_fc_auth['has_connected_account'] ) ) {
+            $bbai_body .= ' bbai-dashboard--connected';
+        }
         return trim( $classes . ' ' . $bbai_body );
     }
 
@@ -4493,6 +4498,39 @@ class Core {
         ];
     }
 
+    /**
+     * Build library-card row payloads for the connected-user dashboard (same shape as trial preview rows).
+     *
+     * @param array<int,int|string> $attachment_ids Attachment IDs in display order.
+     * @param int                   $limit          Maximum rows to return.
+     * @return array<int, array<string, mixed>>
+     */
+    public function get_connected_dashboard_card_rows_from_ids(array $attachment_ids, int $limit = 30): array {
+        $limit = max(1, min(100, $limit));
+        $out   = [];
+        $seen  = [];
+
+        foreach ($attachment_ids as $raw_id) {
+            if (count($out) >= $limit) {
+                break;
+            }
+
+            $id = (int) $raw_id;
+            if ($id <= 0 || isset($seen[$id])) {
+                continue;
+            }
+
+            $seen[$id] = true;
+            $row       = $this->build_trial_dashboard_preview_row_payload($id);
+
+            if ($row) {
+                $out[] = $row;
+            }
+        }
+
+        return $out;
+    }
+
 	    private function get_usage_rows($limit = 10, $include_all = false){
 	        global $wpdb;
 	        $limit = max(1, intval($limit));
@@ -6574,13 +6612,41 @@ class Core {
         wp_send_json_success(['message' => __('Notice dismissed', 'beepbeep-ai-alt-text-generator')]);
     }
 
+    public function ajax_review_prompt_action() {
+        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'beepbeepai_nonce' ) ) {
+            wp_send_json_error( [ 'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ) ], 403 );
+            return;
+        }
+        if ( ! $this->user_can_manage() ) {
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ) ] );
+            return;
+        }
+
+        $allowed  = [ 'shown', 'leave_review', 'already_reviewed', 'remind_later', 'dismiss' ];
+        $action   = sanitize_key( wp_unslash( $_POST['review_action'] ?? '' ) );
+        if ( ! in_array( $action, $allowed, true ) ) {
+            wp_send_json_error( [ 'message' => __( 'Invalid action.', 'beepbeep-ai-alt-text-generator' ) ] );
+            return;
+        }
+
+        $rps_path = BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-review-prompt-service.php';
+        if ( ! class_exists( \BeepBeepAI\AltTextGenerator\Services\Review_Prompt_Service::class ) && is_readable( $rps_path ) ) {
+            require_once $rps_path;
+        }
+        if ( class_exists( \BeepBeepAI\AltTextGenerator\Services\Review_Prompt_Service::class ) ) {
+            \BeepBeepAI\AltTextGenerator\Services\Review_Prompt_Service::record_action( $action );
+        }
+
+        wp_send_json_success();
+    }
+
     public function ajax_dismiss_upgrade() {
         $action = "beepbeepai_nonce";
         if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
             wp_send_json_error(["message" => __("Invalid nonce.", "beepbeep-ai-alt-text-generator")], 403);
             return;
         }
-        
+
 	        if (!$this->user_can_manage()) {
 	            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
 	            return;
@@ -7219,6 +7285,19 @@ class Core {
                         ]
                     );
                 }
+
+                // Record generation session for review-prompt eligibility tracking.
+                if ( class_exists( \BeepBeepAI\AltTextGenerator\Services\Review_Prompt_Service::class ) ) {
+                    \BeepBeepAI\AltTextGenerator\Services\Review_Prompt_Service::record_generation_session();
+                } else {
+                    $rps_path = BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-review-prompt-service.php';
+                    if ( is_readable( $rps_path ) ) {
+                        require_once $rps_path;
+                        \BeepBeepAI\AltTextGenerator\Services\Review_Prompt_Service::record_generation_session();
+                    }
+                }
+
+                $job_state = $this->get_generation_job_state_for_site( $this->get_generation_site_hash() );
                 
                 wp_send_json_success([
                     'message' => sprintf(
@@ -7229,6 +7308,9 @@ class Core {
                     'queued' => $queued,
                     'total' => count($ids),
                     'scheduled' => !$skip_schedule,
+                    'job_state' => $job_state['state'],
+                    'job_status' => $job_state['status'],
+                    'active_job' => $job_state['job'],
                 ]);
             } else {
                 // For regeneration, if nothing was queued, it might mean they're already completed
@@ -7652,6 +7734,8 @@ class Core {
     }
 
     public function process_queue() {
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+
         $batch_size = apply_filters('bbai_queue_batch_size', 3);
         $max_attempts = apply_filters('bbai_queue_max_attempts', 3);
         $bbai_trial_blocked = false;
@@ -8664,11 +8748,545 @@ class Core {
     }
 
     /**
-     * Whether the current site should use POST /api/jobs for bulk (connected account, not anonymous trial).
+     * Whether the current site should use the licensed POST /api/jobs bulk flow.
      */
     public function should_use_licensed_bulk_jobs_api(): bool {
-        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
-        return ! \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user();
+        return isset( $this->api_client )
+            && method_exists( $this->api_client, 'has_active_license' )
+            && $this->api_client->has_active_license();
+    }
+
+    /**
+     * User meta key: last started licensed bulk job id (GET /api/jobs/:id).
+     */
+    private const ACTIVE_LICENSED_JOB_META = 'bbai_active_licensed_job_id';
+
+    /**
+     * TTL for licensed-job owner/meta transients (refreshed on each poll / dashboard read).
+     */
+    private const LICENSED_JOB_TRANSIENT_TTL = 604800; // 7 days.
+
+    private const GENERATION_JOB_STATE_IDLE       = 'IDLE';
+    private const GENERATION_JOB_STATE_QUEUED     = 'QUEUED';
+    private const GENERATION_JOB_STATE_PROCESSING = 'PROCESSING';
+    private const GENERATION_JOB_STATE_COMPLETED  = 'COMPLETED';
+    private const GENERATION_JOB_STATE_FAILED     = 'FAILED';
+
+    /**
+     * Local queue rows that sit longer than these windows are no longer credible
+     * evidence of an active dashboard generation job.
+     */
+    private const WP_QUEUE_QUEUED_STALE_TIMEOUT     = 900; // 15 minutes.
+    private const WP_QUEUE_PROCESSING_STALE_TIMEOUT = 600; // 10 minutes.
+
+    /**
+     * Active generation job for the logged-in dashboard / REST resolver.
+     *
+     * Uses the licensed bulk job API when a job was started via ajax_bulk_job_start (user meta + transients),
+     * otherwise falls back to the local wp_bbai_queue table.
+     *
+     * PROCESSING is only exposed when a current, non-stale backend job can be
+     * resolved for this site. Stale options, old pending rows, and optimistic
+     * click state are deliberately ignored.
+     *
+     * @return array{
+     *   status: string,
+     *   state: string,
+     *   active: bool,
+     *   pausable: bool,
+     *   done: int,
+     *   total: int,
+     *   eta_seconds: int|null,
+     *   error: string|null
+     * }|null Null when no active job.
+     */
+    public function get_active_job_status(): ?array {
+        return $this->get_active_generation_job_for_site( $this->get_generation_site_hash() );
+    }
+
+    public function get_generation_site_hash(): string {
+        $blog_id = function_exists( 'get_current_blog_id' ) ? (int) get_current_blog_id() : 0;
+        $home    = function_exists( 'home_url' ) ? (string) home_url( '/' ) : '';
+
+        return md5( $blog_id . '|' . strtolower( $home ) );
+    }
+
+    public function is_active_generation_job_for_site( ?string $site_hash = null ): bool {
+        return null !== $this->get_active_generation_job_for_site( $site_hash );
+    }
+
+    /**
+     * Resolve a real active generation job for the current site/user context.
+     *
+     * @return array<string, int|string|bool|null>|null
+     */
+    public function get_active_generation_job_for_site( ?string $site_hash = null ): ?array {
+        if ( ! $this->user_can_manage() ) {
+            return null;
+        }
+
+        $user_id = get_current_user_id();
+        if ( $user_id <= 0 ) {
+            return null;
+        }
+
+        $current_site_hash = $this->get_generation_site_hash();
+        $site_hash         = is_string( $site_hash ) && '' !== $site_hash ? $site_hash : $current_site_hash;
+        if ( ! hash_equals( $current_site_hash, $site_hash ) ) {
+            return null;
+        }
+
+        if ( $this->should_use_licensed_bulk_jobs_api() ) {
+            $licensed = $this->get_active_licensed_bulk_job_status_for_user( $user_id );
+            if ( null !== $licensed ) {
+                return $this->normalize_active_generation_job_payload( $licensed, $current_site_hash, 'licensed_bulk' );
+            }
+        }
+
+        return $this->get_active_wp_queue_job_status( $current_site_hash );
+    }
+
+    /**
+     * @return array{state:string,status:string,active:bool,job:array<string,mixed>|null}
+     */
+    public function get_generation_job_state_for_site( ?string $site_hash = null ): array {
+        $job = $this->get_active_generation_job_for_site( $site_hash );
+        if ( null === $job ) {
+            return [
+                'state'  => self::GENERATION_JOB_STATE_IDLE,
+                'status' => 'idle',
+                'active' => false,
+                'job'    => null,
+            ];
+        }
+
+        $status = $this->normalize_generation_job_status( (string) ( $job['status'] ?? '' ) );
+
+        return [
+            'state'  => 'queued' === $status ? self::GENERATION_JOB_STATE_QUEUED : self::GENERATION_JOB_STATE_PROCESSING,
+            'status' => $status,
+            'active' => true,
+            'job'    => $job,
+        ];
+    }
+
+    /**
+     * Latest UTC Unix timestamp for a queue row marked completed, or null.
+     */
+    public function get_last_job_completed_at(): ?int {
+        if ( ! $this->user_can_manage() ) {
+            return null;
+        }
+
+        global $wpdb;
+        $table = Queue::table();
+        $table = esc_sql( $table );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $mysql = $wpdb->get_var(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                "SELECT MAX(completed_at) FROM `{$table}` WHERE status = %s AND completed_at IS NOT NULL",
+                'completed'
+            )
+        );
+
+        if ( ! is_string( $mysql ) || $mysql === '' ) {
+            return null;
+        }
+
+        $ts = mysql2date( 'U', $mysql, true );
+        $ts = is_numeric( $ts ) ? (int) $ts : 0;
+
+        return $ts > 0 ? $ts : null;
+    }
+
+    /**
+     * @return array<string, int|string|bool|null>|null
+     */
+    private function get_active_wp_queue_job_status( string $site_hash ): ?array {
+        $this->recover_stale_wp_queue_jobs();
+
+        // Force fresh DB reads — cached stats can lag behind actual queue state
+        // and falsely report pending/processing rows that have since completed.
+        BBAI_Cache::delete( 'queue', 'stats' );
+
+        global $wpdb;
+        $table = esc_sql( Queue::table() );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $pending = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                "SELECT COUNT(*) FROM `{$table}` WHERE status = %s",
+                'pending'
+            )
+        );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $processing = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                "SELECT COUNT(*) FROM `{$table}` WHERE status = %s",
+                'processing'
+            )
+        );
+
+        if ( $pending <= 0 && $processing <= 0 ) {
+            return null;
+        }
+
+        $scheduled_at = wp_next_scheduled( Queue::CRON_HOOK );
+
+        if ( $processing > 0 ) {
+            return $this->normalize_active_generation_job_payload(
+                [
+                    'status'       => 'processing',
+                    'done'         => 0,
+                    'total'        => $pending + $processing,
+                    'eta_seconds'  => null,
+                    'error'        => null,
+                    'pausable'     => false,
+                    'scheduled_at' => is_numeric( $scheduled_at ) ? (int) $scheduled_at : null,
+                ],
+                $site_hash,
+                'wp_queue'
+            );
+        }
+
+        // Pending rows alone are only an active QUEUED job if WordPress has a
+        // scheduled queue worker. Orphan pending rows are data to recover from,
+        // not proof that generation is running.
+        if ( $pending > 0 && false !== $scheduled_at ) {
+            return $this->normalize_active_generation_job_payload(
+                [
+                    'status'       => 'queued',
+                    'done'         => 0,
+                    'total'        => $pending,
+                    'eta_seconds'  => null,
+                    'error'        => null,
+                    'pausable'     => false,
+                    'scheduled_at' => (int) $scheduled_at,
+                ],
+                $site_hash,
+                'wp_queue'
+            );
+        }
+
+        return null;
+    }
+
+    private function recover_stale_wp_queue_jobs(): void {
+        global $wpdb;
+
+        $queued_timeout = max(
+            60,
+            (int) apply_filters( 'bbai_queue_queued_stale_timeout', self::WP_QUEUE_QUEUED_STALE_TIMEOUT )
+        );
+        $processing_timeout = max(
+            60,
+            (int) apply_filters( 'bbai_queue_processing_stale_timeout', self::WP_QUEUE_PROCESSING_STALE_TIMEOUT )
+        );
+
+        $queued_threshold     = gmdate( 'Y-m-d H:i:s', time() - $queued_timeout );
+        $processing_threshold = gmdate( 'Y-m-d H:i:s', time() - $processing_timeout );
+        $table                = esc_sql( Queue::table() );
+        $stale_message        = __( 'Generation job expired before the backend confirmed progress.', 'beepbeep-ai-alt-text-generator' );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $processing_updated = $wpdb->query(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                "UPDATE `{$table}` SET status = %s, locked_at = NULL, last_error = %s WHERE status = %s AND ( ( locked_at IS NOT NULL AND locked_at < %s ) OR ( locked_at IS NULL AND enqueued_at < %s ) )",
+                'failed',
+                $stale_message,
+                'processing',
+                $processing_threshold,
+                $processing_threshold
+            )
+        );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $queued_updated = $wpdb->query(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                "UPDATE `{$table}` SET status = %s, locked_at = NULL, last_error = %s WHERE status = %s AND enqueued_at < %s",
+                'failed',
+                $stale_message,
+                'pending',
+                $queued_threshold
+            )
+        );
+
+        if ( (int) $processing_updated > 0 || (int) $queued_updated > 0 ) {
+            BBAI_Cache::bump( 'queue' );
+        }
+    }
+
+    private function normalize_generation_job_status( string $status ): string {
+        $status = strtolower( trim( $status ) );
+
+        if ( in_array( $status, [ 'queued', 'queue', 'pending', 'scheduled', 'waiting', 'paused', 'pause', 'pending_user' ], true ) ) {
+            return 'queued';
+        }
+
+        if ( in_array( $status, [ 'processing', 'running', 'in_progress', 'started', 'working' ], true ) ) {
+            return 'processing';
+        }
+
+        if ( in_array( $status, [ 'complete', 'completed', 'success', 'succeeded' ], true ) ) {
+            return 'completed';
+        }
+
+        if ( in_array( $status, [ 'failed', 'error', 'cancelled', 'canceled', 'stale', 'expired' ], true ) ) {
+            return 'failed';
+        }
+
+        return 'idle';
+    }
+
+    private function is_active_generation_job_status( string $status ): bool {
+        return in_array( $this->normalize_generation_job_status( $status ), [ 'queued', 'processing' ], true );
+    }
+
+    /**
+     * @param array<string,mixed> $job
+     * @return array<string, int|string|bool|null>|null
+     */
+    private function normalize_active_generation_job_payload( array $job, string $site_hash, string $source ): ?array {
+        $status = $this->normalize_generation_job_status( (string) ( $job['status'] ?? $job['state'] ?? '' ) );
+        if ( ! $this->is_active_generation_job_status( $status ) ) {
+            return null;
+        }
+
+        $total = max( 1, (int) ( $job['total'] ?? 1 ) );
+        $done  = max( 0, min( (int) ( $job['done'] ?? 0 ), $total ) );
+
+        return [
+            'status'       => $status,
+            'state'        => 'queued' === $status ? self::GENERATION_JOB_STATE_QUEUED : self::GENERATION_JOB_STATE_PROCESSING,
+            'active'       => true,
+            'site_hash'    => $site_hash,
+            'source'       => $source,
+            'pausable'     => false,
+            'done'         => $done,
+            'total'        => $total,
+            'eta_seconds'  => isset( $job['eta_seconds'] ) && is_numeric( $job['eta_seconds'] ) ? max( 0, (int) $job['eta_seconds'] ) : null,
+            'error'        => isset( $job['error'] ) ? sanitize_text_field( (string) $job['error'] ) : null,
+            'scheduled_at' => isset( $job['scheduled_at'] ) && is_numeric( $job['scheduled_at'] ) ? (int) $job['scheduled_at'] : null,
+        ];
+    }
+
+    /**
+     * Maximum age (seconds) for a licensed job before we consider it stale.
+     * If a job has been tracked longer than this without reaching a terminal state,
+     * clear it so the dashboard doesn't stay stuck in PROCESSING.
+     */
+    private const LICENSED_JOB_STALE_TIMEOUT = 1800; // 30 minutes.
+
+    /**
+     * Maximum time (seconds) a licensed job can show zero progress before being treated as stale.
+     */
+    private const LICENSED_JOB_NO_PROGRESS_TIMEOUT = 900; // 15 minutes.
+
+    /**
+     * Poll-backed licensed job status for the current user.
+     *
+     * @return array<string, int|string|null>|null Null if none, finished, stale, or unreachable.
+     */
+    private function get_active_licensed_bulk_job_status_for_user( int $user_id ): ?array {
+        $job_id = get_user_meta( $user_id, self::ACTIVE_LICENSED_JOB_META, true );
+        $job_id = is_string( $job_id ) ? trim( $job_id ) : '';
+        if ( $job_id === '' ) {
+            return null;
+        }
+
+        $owner_key = 'bbai_job_owner_' . md5( $job_id );
+        $owner     = get_transient( $owner_key );
+        if ( false === $owner || (int) $owner !== $user_id ) {
+            delete_user_meta( $user_id, self::ACTIVE_LICENSED_JOB_META );
+
+            return null;
+        }
+
+        $meta_key = 'bbai_job_meta_' . md5( $job_id );
+        $job_meta = get_transient( $meta_key );
+        $job_meta = is_array( $job_meta ) ? $job_meta : [];
+
+        // ── Staleness guard: absolute timeout ────────────────────────────────
+        // If the job has been tracked for longer than LICENSED_JOB_STALE_TIMEOUT
+        // without reaching a terminal state, treat it as stale.
+        $started_at = (int) ( $job_meta['started_at'] ?? 0 );
+        if ( $started_at > 0 && ( time() - $started_at ) > self::LICENSED_JOB_STALE_TIMEOUT ) {
+            $this->clear_active_licensed_job_for_user( $user_id, $job_id );
+
+            return null;
+        }
+
+        if ( ! $this->api_client ) {
+            return null;
+        }
+
+        $remote = $this->api_client->get_alt_text_job_status( $job_id );
+        if ( is_wp_error( $remote ) ) {
+            if ( 'bbai_job_invalid_id' === $remote->get_error_code() ) {
+                $this->clear_active_licensed_job_for_user( $user_id, $job_id );
+            }
+
+            return null;
+        }
+
+        if ( $this->is_api_job_status_terminal( $remote ) ) {
+            $this->clear_active_licensed_job_for_user( $user_id, $job_id );
+
+            return null;
+        }
+
+        $mapped = $this->map_remote_job_to_dashboard_job( $remote, $job_meta );
+
+        // ── Staleness guard: no progress ─────────────────────────────────────
+        // If the done count hasn't changed for NO_PROGRESS_TIMEOUT seconds,
+        // the job is stuck. Clear it instead of showing fake PROCESSING.
+        $progress_key   = 'bbai_job_progress_' . md5( $job_id );
+        $last_progress  = get_transient( $progress_key );
+        $current_done   = (int) $mapped['done'];
+
+        if ( false === $last_progress ) {
+            // First check: record current progress.
+            set_transient( $progress_key, [ 'done' => $current_done, 'ts' => time() ], self::LICENSED_JOB_TRANSIENT_TTL );
+        } else {
+            $last_progress = is_array( $last_progress ) ? $last_progress : [];
+            $last_done     = (int) ( $last_progress['done'] ?? 0 );
+            $last_ts       = (int) ( $last_progress['ts'] ?? 0 );
+
+            if ( $current_done > $last_done ) {
+                // Progress was made — reset the timer.
+                set_transient( $progress_key, [ 'done' => $current_done, 'ts' => time() ], self::LICENSED_JOB_TRANSIENT_TTL );
+            } elseif ( $last_ts > 0 && ( time() - $last_ts ) > self::LICENSED_JOB_NO_PROGRESS_TIMEOUT ) {
+                // No progress for too long — treat as stale.
+                $this->clear_active_licensed_job_for_user( $user_id, $job_id );
+                delete_transient( $progress_key );
+
+                return null;
+            }
+        }
+
+        // Keep owner/meta transients alive while the job runs (avoids DAY_IN_SECONDS expiry mid-job).
+        set_transient( $owner_key, $user_id, self::LICENSED_JOB_TRANSIENT_TTL );
+        if ( ! empty( $job_meta ) ) {
+            set_transient( $meta_key, $job_meta, self::LICENSED_JOB_TRANSIENT_TTL );
+        }
+
+        return $mapped;
+    }
+
+    /**
+     * @param array<string, mixed> $job Root job payload from GET /api/jobs/:id.
+     */
+    private function is_api_job_status_terminal( array $job ): bool {
+        $s = isset( $job['status'] ) ? strtolower( (string) $job['status'] ) : '';
+        if ( $s === '' && isset( $job['state'] ) ) {
+            $s = strtolower( (string) $job['state'] );
+        }
+
+        return in_array(
+            $s,
+            [ 'complete', 'completed', 'failed', 'error', 'cancelled', 'canceled' ],
+            true
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $job      Remote job payload.
+     * @param array<string, mixed> $job_meta Transient from ajax_bulk_job_start.
+     * @return array<string, int|string|null>
+     */
+    private function map_remote_job_to_dashboard_job( array $job, array $job_meta ): array {
+        $items = $job['items'] ?? [];
+        if ( ! is_array( $items ) || empty( $items ) ) {
+            $results = $job['results'] ?? [];
+            $items     = is_array( $results ) ? $results : [];
+        }
+
+        $counts = $this->count_job_items_by_phase( $items );
+        $done   = (int) $counts['completed'];
+        $total  = (int) ( $job_meta['queued'] ?? 0 );
+        if ( $total <= 0 && is_array( $items ) && ! empty( $items ) ) {
+            $total = count( $items );
+        }
+        if ( $total <= 0 ) {
+            $total = max( 1, $done + (int) $counts['pending_like'] + (int) $counts['failed'] );
+        }
+
+        $root_status = isset( $job['status'] ) ? strtolower( (string) $job['status'] ) : '';
+        if ( $root_status === '' && isset( $job['state'] ) ) {
+            $root_status = strtolower( (string) $job['state'] );
+        }
+
+        $status = $this->normalize_generation_job_status( $root_status );
+        if ( ! $this->is_active_generation_job_status( $status ) ) {
+            $status = 'processing';
+        }
+
+        $eta_seconds = null;
+        if ( isset( $job['etaSeconds'] ) && is_numeric( $job['etaSeconds'] ) ) {
+            $eta_seconds = max( 0, (int) $job['etaSeconds'] );
+        } elseif ( isset( $job['eta_seconds'] ) && is_numeric( $job['eta_seconds'] ) ) {
+            $eta_seconds = max( 0, (int) $job['eta_seconds'] );
+        }
+
+        return [
+            'status'      => $status,
+            'state'       => 'queued' === $status ? self::GENERATION_JOB_STATE_QUEUED : self::GENERATION_JOB_STATE_PROCESSING,
+            'active'      => true,
+            'pausable'    => false,
+            'done'        => min( $done, $total ),
+            'total'       => max( 1, $total ),
+            'eta_seconds' => $eta_seconds,
+            'error'       => null,
+        ];
+    }
+
+    /**
+     * @param list<array<string, mixed>> $items
+     * @return array{completed: int, failed: int, pending_like: int}
+     */
+    private function count_job_items_by_phase( array $items ): array {
+        $completed    = 0;
+        $failed       = 0;
+        $pending_like = 0;
+
+        foreach ( $items as $item ) {
+            if ( ! is_array( $item ) ) {
+                continue;
+            }
+            $raw = $item['stage'] ?? $item['status'] ?? $item['state'] ?? '';
+            $ph  = strtolower( (string) $raw );
+            if ( in_array( $ph, [ 'completed', 'complete', 'success', 'succeeded' ], true ) ) {
+                ++$completed;
+            } elseif ( in_array( $ph, [ 'failed', 'error' ], true ) ) {
+                ++$failed;
+            } else {
+                ++$pending_like;
+            }
+        }
+
+        return [
+            'completed'    => $completed,
+            'failed'       => $failed,
+            'pending_like' => $pending_like,
+        ];
+    }
+
+    /**
+     * Remove user meta and transients for a finished or invalid licensed job.
+     */
+    private function clear_active_licensed_job_for_user( int $user_id, string $job_id ): void {
+        $stored = get_user_meta( $user_id, self::ACTIVE_LICENSED_JOB_META, true );
+        if ( (string) $stored === $job_id ) {
+            delete_user_meta( $user_id, self::ACTIVE_LICENSED_JOB_META );
+        }
+        delete_transient( 'bbai_job_owner_' . md5( $job_id ) );
+        delete_transient( 'bbai_job_meta_' . md5( $job_id ) );
+        delete_transient( 'bbai_job_progress_' . md5( $job_id ) );
     }
 
     /**
@@ -9059,7 +9677,7 @@ class Core {
         }
 
         $owner_key = 'bbai_job_owner_' . md5($job_id);
-        set_transient($owner_key, get_current_user_id(), DAY_IN_SECONDS);
+        set_transient($owner_key, get_current_user_id(), self::LICENSED_JOB_TRANSIENT_TTL);
 
         $meta_key = 'bbai_job_meta_' . md5($job_id);
         set_transient(
@@ -9069,9 +9687,12 @@ class Core {
                 'regenerate' => $regenerate,
                 'requested'  => count($attachment_ids),
                 'queued'     => count($job_items),
+                'started_at' => time(),
             ],
-            DAY_IN_SECONDS
+            self::LICENSED_JOB_TRANSIENT_TTL
         );
+
+        update_user_meta( (int) get_current_user_id(), self::ACTIVE_LICENSED_JOB_META, $job_id );
 
         if (ob_get_level() > 0) {
             ob_clean();
@@ -9146,6 +9767,12 @@ class Core {
             return;
         }
 
+        $uid_poll = (int) get_current_user_id();
+        set_transient($owner_key, $uid_poll, self::LICENSED_JOB_TRANSIENT_TTL);
+        if (! empty($job_meta)) {
+            set_transient($meta_key, $job_meta, self::LICENSED_JOB_TRANSIENT_TTL);
+        }
+
         $this->maybe_hydrate_usage_from_job_root($job);
 
         $items = $job['items'] ?? [];
@@ -9178,6 +9805,10 @@ class Core {
 
         Usage_Tracker::clear_cache();
         $this->invalidate_stats_cache();
+
+        if ( $this->is_api_job_status_terminal( $job ) ) {
+            $this->clear_active_licensed_job_for_user( (int) get_current_user_id(), $job_id );
+        }
 
         if (ob_get_level() > 0) {
             ob_clean();

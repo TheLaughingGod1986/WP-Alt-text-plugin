@@ -74,4 +74,12 @@ if ( ! in_array( $bbai_hero_credits_state, [ 'default', 'low', 'exhausted' ], tr
             <?php echo esc_html( $bbai_hero_credits_upgrade_label ); ?>
         </a>
     </div>
+
+    <?php if ( ! empty( $bbai_is_logged_in_dashboard ) ) : ?>
+        <p
+            class="bbai-dashboard-credits__activity"
+            data-bbai-hero-generation-activity
+            hidden
+        ></p>
+    <?php endif; ?>
 </section>

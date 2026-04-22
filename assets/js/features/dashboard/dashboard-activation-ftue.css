@@ -1,0 +1,257 @@
+/**
+ * Phase 13 — Dashboard activation / FTUE surfaces (scoped to dashboard shell).
+ */
+
+body.bbai-dashboard .bbai-activation-ftue {
+    margin: 0 0 var(--bbai-space-6, 1.5rem);
+    padding: var(--bbai-space-8, 2rem) var(--bbai-space-6, 1.5rem);
+    border-radius: var(--bbai-radius-xl, 1rem);
+    border: 1px solid var(--bbai-border, #e2e8f0);
+    background: linear-gradient(135deg, var(--bbai-bg-secondary, #f8fafc) 0%, #fff 55%, #f0f9ff 100%);
+    box-shadow: var(--bbai-shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.06));
+}
+
+body.bbai-dashboard .bbai-activation-ftue__title {
+    margin: 0 0 var(--bbai-space-2, 0.5rem);
+    font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+    letter-spacing: -0.02em;
+}
+
+body.bbai-dashboard .bbai-activation-ftue__lead {
+    margin: 0 0 var(--bbai-space-5, 1.25rem);
+    max-width: 40rem;
+    font-size: var(--bbai-text-base, 1rem);
+    line-height: var(--bbai-leading-relaxed, 1.6);
+    color: var(--bbai-text-secondary, #475569);
+}
+
+body.bbai-dashboard .bbai-activation-ftue__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--bbai-space-3, 0.75rem);
+    align-items: center;
+    margin-bottom: var(--bbai-space-3, 0.75rem);
+}
+
+body.bbai-dashboard .bbai-activation-ftue__hint {
+    margin: 0;
+    font-size: var(--bbai-text-sm, 0.875rem);
+    color: var(--bbai-text-muted, #64748b);
+    max-width: 36rem;
+}
+
+body.bbai-dashboard .bbai-activation-ftue__urgent {
+    margin: 0 0 var(--bbai-space-4, 1rem);
+    padding: var(--bbai-space-3, 0.75rem) var(--bbai-space-4, 1rem);
+    border-radius: var(--bbai-radius-lg, 0.75rem);
+    border: 1px solid #fed7aa;
+    background: #fffbeb;
+    color: #9a3412;
+    font-size: var(--bbai-text-sm, 0.875rem);
+    line-height: 1.5;
+}
+
+body.bbai-dashboard .bbai-activation-ftue__urgent strong {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: var(--bbai-text-base, 1rem);
+    color: #7c2d12;
+}
+
+body.bbai-dashboard .bbai-activation-ftue__convert {
+    margin: var(--bbai-space-5, 1.25rem) 0 0;
+    padding-top: var(--bbai-space-4, 1rem);
+    border-top: 1px dashed var(--bbai-border, #e2e8f0);
+    font-size: var(--bbai-text-sm, 0.875rem);
+    color: var(--bbai-text-secondary, #475569);
+    max-width: 42rem;
+}
+
+body.bbai-dashboard .bbai-activation-ftue__convert .bbai-link-btn {
+    margin-left: 0.35rem;
+    font-weight: 600;
+}
+
+/* Hide operational command grid until first ALT generation (pre- and post-scan onboarding). */
+body.bbai-dashboard .bbai-dashboard--onboarding-first-open .bbai-dashboard-command {
+    display: none !important;
+}
+
+/* Activation-first onboarding page (pre-scan hero + education; post-scan next-step panel). */
+body.bbai-dashboard .bbai-onboarding-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bbai-space-6, 1.5rem);
+    margin-bottom: var(--bbai-space-2, 0.5rem);
+}
+
+body.bbai-dashboard .bbai-onboarding-dashboard__hero-panel {
+    margin: 0;
+    padding: var(--bbai-space-8, 2rem) var(--bbai-space-6, 1.5rem);
+    border-radius: var(--bbai-radius-xl, 1rem);
+    border: 1px solid var(--bbai-border, #e2e8f0);
+    background: linear-gradient(135deg, var(--bbai-bg-secondary, #f8fafc) 0%, #fff 55%, #f0f9ff 100%);
+    box-shadow: var(--bbai-shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.06));
+}
+
+body.bbai-dashboard .bbai-onboarding-dashboard__hero-title {
+    margin: 0 0 var(--bbai-space-2, 0.5rem);
+    font-size: clamp(1.35rem, 2.5vw, 1.85rem);
+    letter-spacing: -0.02em;
+}
+
+body.bbai-dashboard .bbai-onboarding-dashboard__hero-lead {
+    margin: 0 0 var(--bbai-space-5, 1.25rem);
+    max-width: 40rem;
+    font-size: var(--bbai-text-base, 1rem);
+    line-height: var(--bbai-leading-relaxed, 1.6);
+    color: var(--bbai-text-secondary, #475569);
+}
+
+body.bbai-dashboard .bbai-onboarding-dashboard__hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--bbai-space-3, 0.75rem);
+    align-items: center;
+}
+
+body.bbai-dashboard .bbai-onboarding-dashboard__block {
+    margin: 0;
+}
+
+body.bbai-dashboard .bbai-onboarding-dashboard__block-title {
+    margin: 0 0 var(--bbai-space-3, 0.75rem);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: var(--bbai-text-xs, 0.75rem);
+    color: var(--bbai-text-muted, #64748b);
+}
+
+body.bbai-dashboard .bbai-onboarding-dashboard__steps {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: var(--bbai-space-3, 0.75rem);
+}
+
+@media (min-width: 960px) {
+    body.bbai-dashboard .bbai-onboarding-dashboard__steps:not(.bbai-onboarding-dashboard__steps--post) {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+body.bbai-dashboard .bbai-onboarding-dashboard__step {
+    display: flex;
+    gap: var(--bbai-space-3, 0.75rem);
+    align-items: flex-start;
+    margin: 0;
+    padding: var(--bbai-space-4, 1rem);
+    border-radius: var(--bbai-radius-lg, 0.75rem);
+    border: 1px solid var(--bbai-border, #e2e8f0);
+    background: var(--bbai-bg-primary, #fff);
+}
+
+body.bbai-dashboard .bbai-onboarding-dashboard__step--done {
+    border-color: color-mix(in srgb, var(--bbai-status-success-fg, #15803d) 22%, var(--bbai-border, #e2e8f0));
+    background: color-mix(in srgb, var(--bbai-status-success-bg, #f0fdf4) 65%, var(--bbai-bg-primary, #fff));
+}
+
+body.bbai-dashboard .bbai-onboarding-dashboard__step-index {
+    flex: 0 0 2rem;
+    width: 2rem;
+    height: 2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--bbai-radius-md, 0.5rem);
+    font-size: var(--bbai-text-sm, 0.875rem);
+    font-weight: 600;
+    background: var(--bbai-bg-secondary, #f8fafc);
+    color: var(--bbai-text-secondary, #475569);
+}
+
+body.bbai-dashboard .bbai-onboarding-dashboard__step--done .bbai-onboarding-dashboard__step-index {
+    background: var(--bbai-status-success-bg, #f0fdf4);
+    color: var(--bbai-status-success-fg, #15803d);
+}
+
+body.bbai-dashboard .bbai-onboarding-dashboard__step-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+body.bbai-dashboard .bbai-onboarding-dashboard__step-title {
+    font-size: var(--bbai-text-sm, 0.875rem);
+    color: var(--bbai-text-primary, #0f172a);
+}
+
+body.bbai-dashboard .bbai-onboarding-dashboard__step-text {
+    font-size: var(--bbai-text-sm, 0.875rem);
+    line-height: 1.5;
+    color: var(--bbai-text-muted, #64748b);
+}
+
+body.bbai-dashboard .bbai-onboarding-dashboard__why-grid {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: var(--bbai-space-3, 0.75rem);
+}
+
+@media (min-width: 900px) {
+    body.bbai-dashboard .bbai-onboarding-dashboard__why-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+body.bbai-dashboard .bbai-onboarding-dashboard__why-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bbai-space-2, 0.5rem);
+}
+
+body.bbai-dashboard .bbai-onboarding-dashboard__why-item strong {
+    font-size: var(--bbai-text-sm, 0.875rem);
+    color: var(--bbai-text-primary, #0f172a);
+}
+
+body.bbai-dashboard .bbai-onboarding-dashboard__why-item span {
+    font-size: var(--bbai-text-sm, 0.875rem);
+    line-height: 1.5;
+    color: var(--bbai-text-secondary, #475569);
+}
+
+body.bbai-dashboard .bbai-onboarding-dashboard__trust {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--bbai-space-2, 0.5rem);
+    align-items: center;
+    padding-top: var(--bbai-space-1, 0.25rem);
+}
+
+body.bbai-dashboard .bbai-onboarding-dashboard__trust-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.65rem;
+    border-radius: 999px;
+    font-size: var(--bbai-text-xs, 0.75rem);
+    font-weight: 500;
+    color: var(--bbai-text-secondary, #475569);
+    background: var(--bbai-bg-secondary, #f8fafc);
+    border: 1px solid var(--bbai-border, #e2e8f0);
+}
+
+/* Post-scan activation panel sits inside onboarding stack */
+body.bbai-dashboard .bbai-onboarding-dashboard__activation-panel.bbai-activation-ftue {
+    margin-bottom: 0;
+}
+
+body.bbai-dashboard .bbai-dashboard-feedback--onboarding {
+    margin-top: var(--bbai-space-2, 0.5rem);
+}
+
+/* First-win milestone: compact strip (.bbai-first-win-strip in bbai-admin-surface-taxonomy.css) */

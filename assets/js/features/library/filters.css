@@ -1,0 +1,83 @@
+/**
+ * Library Filters Component
+ * Filter buttons and search wrapper
+ *
+ * Legacy `.bbai-filter-btn` — prefer `bbai-filter-pill` / `#bbai-review-filter-tabs` (status tokens).
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   SEARCH WRAPPER
+   ================================================== */
+
+.bbai-search-wrapper {
+    position: relative;
+}
+
+/* ==================================================
+   FILTER BUTTONS
+   ================================================== */
+
+.bbai-filter-btn {
+    padding: var(--bbai-space-2, 8px) var(--bbai-space-4, 16px);
+    border: 1px solid var(--bbai-border, #e5e7eb);
+    background: var(--bbai-bg-primary, #ffffff);
+    color: var(--bbai-text-secondary, #374151);
+    border-radius: var(--bbai-radius, 8px);
+    font-size: var(--bbai-text-sm, 14px);
+    font-weight: var(--bbai-font-semibold, 600);
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+    white-space: nowrap;
+}
+
+.bbai-filter-btn:hover {
+    background: var(--bbai-bg-secondary, #f9fafb) !important;
+    border-color: var(--bbai-gray-300, #d1d5db) !important;
+}
+
+.bbai-filter-btn.active {
+    background: var(--bbai-primary-soft, rgba(16, 185, 129, 0.12)) !important;
+    border-color: var(--bbai-primary, #10b981) !important;
+    color: var(--bbai-primary-dark, #047857) !important;
+}
+
+/* ==================================================
+   FILTERS CONTAINER
+   ================================================== */
+
+.bbai-filters {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 768px) {
+    .bbai-search-wrapper {
+        min-width: 100%;
+    }
+
+    .bbai-filters {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .bbai-filter-btn {
+        flex: 1 1 calc(50% - 4px);
+        min-width: 140px;
+    }
+}
+
+@media (max-width: 640px) {
+    .bbai-filter-btn {
+        font-size: 13px !important;
+        padding: 7px 12px !important;
+    }
+}

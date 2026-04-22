@@ -31,12 +31,19 @@
     --bbai-funnel-hero-content-flow-width: 520px;
     --bbai-funnel-hero-donut-size: 154px;
     --bbai-funnel-hero-donut-stroke: 12px;
-    --bbai-funnel-hero-title-to-subtitle: 12px;
+    --bbai-funnel-hero-title-to-subtitle: 8px;
     --bbai-funnel-hero-subtitle-to-progress: 8px;
-    --bbai-funnel-hero-subtitle-to-cta: 12px;
+    --bbai-funnel-hero-subtitle-to-cta: 8px;
     --bbai-funnel-hero-progress-to-cta: 8px;
     --bbai-funnel-hero-secondary-gap: 5px;
     --bbai-funnel-hero-support-to-meta: 6px;
+}
+
+/* Anonymous trial: constrain dashboard width and add breathing room */
+body:not(.bbai-dashboard--connected) .bbai-dashboard-shell #bbai-dashboard-main {
+    max-width: 1100px !important;
+    margin: 0 auto !important;
+    padding: 24px 24px 40px !important;
 }
 
 .bbai-funnel-hero {
@@ -229,9 +236,9 @@
 .bbai-dashboard-hero-action__donut .bbai-command-donut__center-value {
     display: block;
     max-width: none;
-    font-size: 42px;
+    font-size: 36px;
     line-height: 1;
-    font-weight: 800;
+    font-weight: 700;
     letter-spacing: 0;
     font-variant-numeric: tabular-nums;
     transition: color 0.2s ease;
@@ -282,11 +289,13 @@
 }
 
 [data-bbai-funnel-hero-state="scanned_has_issues"] .bbai-dashboard-hero-action__donut.bbai-command-donut--problem,
+[data-bbai-funnel-hero-state="logged_in_has_issues"] .bbai-dashboard-hero-action__donut.bbai-command-donut--problem,
 .bbai-funnel-hero--trial-exhausted .bbai-dashboard-hero-action__donut.bbai-command-donut--problem {
     animation: bbai-dashboard-hero-missing-pulse 1.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.12s 1 both;
 }
 
 #bbai-dashboard-main[data-bbai-ui-state="SCANNING"] [data-bbai-funnel-hero-state="scanned_has_issues"] .bbai-dashboard-hero-action__donut.bbai-command-donut--problem,
+#bbai-dashboard-main[data-bbai-ui-state="SCANNING"] [data-bbai-funnel-hero-state="logged_in_has_issues"] .bbai-dashboard-hero-action__donut.bbai-command-donut--problem,
 #bbai-dashboard-main[data-bbai-ui-state="SCANNING"] .bbai-funnel-hero--trial-exhausted .bbai-dashboard-hero-action__donut.bbai-command-donut--problem {
     animation: bbai-dashboard-hero-missing-pulse 1.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.12s 1 both;
 }
@@ -538,6 +547,10 @@
     padding-left: calc(var(--bbai-funnel-hero-donut-column-width) + var(--bbai-funnel-hero-column-gap));
 }
 
+#bbai-dashboard-main[data-bbai-has-connected-account="1"][data-bbai-is-guest-trial="0"] .bbai-dashboard-hero-action__extras {
+    margin-top: 10px;
+}
+
 #bbai-dashboard-main .bbai-dashboard-hero-action__cta--primary:hover:not(:disabled):not(.is-loading),
 #bbai-dashboard-main .bbai-dashboard-locked-preview__cta--primary:hover:not(:disabled):not(.is-loading) {
     background: var(--bbai-admin-color-primary-hover, #059669);
@@ -713,6 +726,14 @@
     align-items: center;
 }
 
+.bbai-dashboard-credits__activity {
+    margin: 2px 0 0;
+    font-size: 13px;
+    line-height: 1.5;
+    font-weight: 600;
+    color: #475569;
+}
+
 .bbai-dashboard-credits__usage,
 .bbai-dashboard-credits__comparison,
 .bbai-dashboard-credits__upgrade {
@@ -883,56 +904,56 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    min-height: 36px;
-    padding: 0 12px 0 10px;
-    border: 1px solid rgba(148, 163, 184, 0.22);
+    gap: 6px;
+    min-height: 32px;
+    padding: 0 10px 0 8px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.045);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
-    font-size: 13px;
+    background: rgba(255, 255, 255, 0.035);
+    box-shadow: none;
+    font-size: 12px;
     line-height: 1;
-    font-weight: 600;
+    font-weight: 500;
     letter-spacing: 0;
-    color: rgba(248, 250, 252, 0.92);
+    color: rgba(248, 250, 252, 0.72);
     white-space: nowrap;
 }
 
 .bbai-header-trial-credits::before {
     content: "";
-    width: 7px;
-    height: 7px;
+    width: 6px;
+    height: 6px;
     border-radius: 999px;
     background: #34d399;
-    box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.1);
+    box-shadow: none;
     flex-shrink: 0;
 }
 
 .bbai-header-trial-credits--default {
-    border-color: rgba(52, 211, 153, 0.18);
-    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(52, 211, 153, 0.14);
+    background: rgba(16, 185, 129, 0.07);
 }
 
 .bbai-header-trial-credits--low {
-    border-color: rgba(251, 191, 36, 0.2);
-    background: rgba(245, 158, 11, 0.1);
-    color: rgba(255, 251, 235, 0.95);
+    border-color: rgba(251, 191, 36, 0.16);
+    background: rgba(245, 158, 11, 0.07);
+    color: rgba(255, 251, 235, 0.72);
 }
 
 .bbai-header-trial-credits--low::before {
     background: #fbbf24;
-    box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.12);
+    box-shadow: none;
 }
 
 .bbai-header-trial-credits--exhausted {
-    border-color: rgba(251, 113, 133, 0.22);
-    background: rgba(251, 113, 133, 0.09);
-    color: rgba(255, 241, 242, 0.94);
+    border-color: rgba(251, 113, 133, 0.16);
+    background: rgba(251, 113, 133, 0.06);
+    color: rgba(255, 241, 242, 0.68);
 }
 
 .bbai-header-trial-credits--exhausted::before {
     background: #fb7185;
-    box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.1);
+    box-shadow: none;
 }
 
 .bbai-header--trial-funnel .bbai-header-upgrade-btn,
@@ -1203,11 +1224,11 @@
     display: grid;
     gap: 0;
     justify-items: center;
-    padding: 24px 26px;
+    padding: 20px 22px;
     border-radius: 8px;
     border: 1px solid rgba(226, 232, 240, 0.92);
     background: rgba(255, 255, 255, 0.98);
-    box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12), 0 4px 10px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.10), 0 8px 16px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
     text-align: center;
     pointer-events: auto;
 }
@@ -1218,7 +1239,7 @@
     font-weight: 700;
     letter-spacing: 0;
     color: #0f172a;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 .bbai-dashboard-locked-preview__overlay-copy {
@@ -1226,7 +1247,7 @@
     font-size: 13px;
     line-height: 1.45;
     color: #475569;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .bbai-dashboard-locked-preview__actions {
@@ -1234,7 +1255,7 @@
     justify-items: center;
     gap: 8px;
     width: 100%;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .bbai-dashboard-locked-preview__cta {
@@ -1804,7 +1825,7 @@
     }
 
     .bbai-dashboard-hero-action__donut .bbai-command-donut__center-value {
-        font-size: 34px;
+        font-size: 30px;
     }
 
     #bbai-dashboard-main .bbai-dashboard-hero-action__title {

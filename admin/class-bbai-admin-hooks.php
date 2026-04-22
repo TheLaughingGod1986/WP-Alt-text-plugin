@@ -105,6 +105,7 @@ class Admin_Hooks {
 			'beepbeepai_register'               => 'ajax_register',
 			'beepbeepai_login'                  => 'ajax_login',
 			'beepbeepai_logout'                 => 'ajax_logout',
+			'bbai_logout'                       => 'ajax_logout',
 			'beepbeepai_disconnect_account'     => 'ajax_disconnect_account',
 			'beepbeepai_get_user_info'          => 'ajax_get_user_info',
 			'beepbeepai_create_checkout'        => 'ajax_create_checkout',
@@ -122,6 +123,7 @@ class Admin_Hooks {
 			'beepbeepai_disconnect_license_site' => 'ajax_disconnect_license_site',
 			'beepbeepai_admin_login'            => 'ajax_admin_login',
 			'beepbeepai_admin_logout'           => 'ajax_admin_logout',
+			'bbai_admin_logout'                 => 'ajax_admin_logout',
 			'beepbeepai_logout'                 => 'ajax_logout',
 			'beepbeepai_dismiss_api_notice'   => 'ajax_dismiss_api_notice',
 			'bbai_start_scan'                  => 'ajax_start_scan',
@@ -147,6 +149,7 @@ class Admin_Hooks {
 			'bbai_apply_alt_batch'            => 'ajax_apply_alt_batch',
 			'bbai_complete_setup_wizard'      => 'ajax_complete_setup_wizard',
 			'bbai_set_woocommerce_context'    => 'ajax_set_woocommerce_context',
+			'bbai_review_prompt_action'       => 'ajax_review_prompt_action',
 		];
 
 		foreach ( $ajax_actions as $action => $callback ) {

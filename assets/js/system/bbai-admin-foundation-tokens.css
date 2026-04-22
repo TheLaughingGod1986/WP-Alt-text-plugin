@@ -1,0 +1,459 @@
+/**
+ * BeepBeep AI — Admin foundation tokens (CSS custom properties only)
+ *
+ * Depends on variables from assets/css/unified.css (inlined _tokens.css).
+ * Naming: --bbai-admin-* = canonical admin semantic layer; --bbai-ds-* = aliases for existing DS primitives.
+ *
+ * Usage (when you adopt in components):
+ * - Prefer --bbai-admin-* for new work; use --bbai-* from unified for raw scale values.
+ * - Do not hard-code hex/radius in feature CSS; map through these tokens.
+ */
+
+:root {
+    /* -------------------------------------------------------------------------
+       TYPOGRAPHY — family, scale, weights, line-height (aligned with Dashboard)
+       ------------------------------------------------------------------------- */
+
+    --bbai-admin-font-sans: var(--bbai-font-family);
+    --bbai-admin-font-mono: var(--bbai-font-family-mono);
+
+    /* Unified admin type scale */
+    --bbai-text-xs: 12px;
+    --bbai-text-sm: 13px;
+    --bbai-text-md: 14px;
+    --bbai-text-base: var(--bbai-text-md);
+    --bbai-text-lg: 16px;
+    --bbai-text-xl: 20px;
+    --bbai-text-2xl: 24px;
+    --bbai-text-3xl: 28px;
+
+    /* Heading scale */
+    --bbai-admin-type-display: var(--bbai-text-3xl);
+    --bbai-admin-type-h1: var(--bbai-text-3xl);
+    --bbai-admin-type-h2: var(--bbai-text-2xl);
+    --bbai-admin-type-h3: var(--bbai-text-xl);
+    --bbai-admin-type-h4: var(--bbai-text-lg);
+    --bbai-admin-type-h5: var(--bbai-text-md);
+    --bbai-admin-type-h6: var(--bbai-text-sm);
+
+    /* Semantic hierarchy */
+    --bbai-admin-type-hero: var(--bbai-admin-type-display);
+    --bbai-admin-type-page-title: var(--bbai-admin-type-h1);
+    --bbai-admin-type-section-title: var(--bbai-admin-type-h2);
+    --bbai-admin-type-card-title: var(--bbai-admin-type-h3);
+
+    /* Body */
+    --bbai-admin-type-body: var(--bbai-text-md);
+    --bbai-admin-type-body-lg: var(--bbai-text-lg);
+    --bbai-admin-type-body-sm: var(--bbai-text-sm);
+
+    /* Labels, meta, captions (forms + table meta) */
+    --bbai-admin-type-label: var(--bbai-text-xs);
+    --bbai-admin-type-meta: var(--bbai-text-sm);
+    --bbai-admin-type-caption: var(--bbai-text-xs);
+
+    --bbai-admin-type-label-weight: var(--bbai-font-semibold);
+    --bbai-admin-type-label-tracking: var(--bbai-tracking-wide);
+    --bbai-admin-type-label-transform: uppercase;
+
+    --bbai-admin-type-weight-regular: var(--bbai-font-normal);
+    --bbai-admin-type-weight-medium: var(--bbai-font-medium);
+    --bbai-admin-type-weight-semibold: var(--bbai-font-semibold);
+    --bbai-admin-type-weight-bold: var(--bbai-font-bold);
+
+    --bbai-admin-type-leading-tight: var(--bbai-leading-tight);
+    --bbai-admin-type-leading-snug: var(--bbai-leading-snug);
+    --bbai-admin-type-leading-normal: var(--bbai-leading-normal);
+    --bbai-admin-type-leading-relaxed: var(--bbai-leading-relaxed);
+
+    /* -------------------------------------------------------------------------
+       SPACING — 4px grid; use for padding, gap, margin
+       Maps: 4, 8, 12, 16, 20, 24, 32, 40, 48, 64…
+       ------------------------------------------------------------------------- */
+
+    --bbai-admin-space-0: var(--bbai-space-0);
+    --bbai-admin-space-1: var(--bbai-space-1);
+    --bbai-admin-space-2: var(--bbai-space-2);
+    --bbai-admin-space-3: var(--bbai-space-3);
+    --bbai-admin-space-4: var(--bbai-space-4);
+    --bbai-admin-space-5: var(--bbai-space-5);
+    --bbai-admin-space-6: var(--bbai-space-6);
+    --bbai-admin-space-8: var(--bbai-space-8);
+    --bbai-admin-space-10: var(--bbai-space-10);
+    --bbai-admin-space-12: var(--bbai-space-12);
+    --bbai-admin-space-16: var(--bbai-space-16);
+    --bbai-admin-space-20: var(--bbai-space-20);
+
+    /* Semantic spacing (shell rhythm; same as unified --page-padding-top / section-spacing) */
+    --bbai-admin-space-page-pad-y: var(--page-padding-top);
+    --bbai-admin-space-section: var(--section-spacing);
+    --bbai-admin-space-card-gap: var(--card-gap);
+    --bbai-admin-space-inset-card: var(--bbai-card-padding);
+    --bbai-admin-space-inset-card-sm: var(--bbai-card-padding-sm);
+    --bbai-admin-space-inset-card-lg: var(--bbai-card-padding-lg);
+
+    /* Rhythm aliases (spacing-only; defined on :root in unified.css) */
+    --bbai-admin-rhythm-card-padding: var(--bbai-rhythm-card-padding, var(--bbai-space-6));
+    --bbai-admin-rhythm-card-compact: var(--bbai-rhythm-card-padding-compact, var(--bbai-space-4));
+    --bbai-admin-rhythm-form-field-gap: var(--bbai-rhythm-form-field-gap, var(--bbai-space-4));
+    --bbai-admin-rhythm-chip-gap: var(--bbai-rhythm-chip-gap, var(--bbai-space-2));
+
+    /* -------------------------------------------------------------------------
+       COLORS — brand, neutrals, semantic (ALT / row states), interaction
+       ------------------------------------------------------------------------- */
+
+    /* Solid primary controls (.bbai-btn-primary): use green --bbai-primary from unified tokens; do not override to blue on dashboard shells */
+    --bbai-admin-color-primary: var(--bbai-primary);
+    --bbai-admin-color-primary-hover: var(--bbai-primary-hover);
+    --bbai-admin-color-primary-active: var(--bbai-primary-dark);
+    --bbai-admin-color-primary-muted: var(--bbai-primary-soft);
+    --bbai-admin-color-primary-on-brand: var(--bbai-text-inverse);
+
+    --bbai-admin-color-text: var(--bbai-text-primary);
+    --bbai-admin-color-text-secondary: var(--bbai-text-secondary);
+    --bbai-admin-color-text-muted: var(--bbai-text-muted);
+    --bbai-admin-color-text-disabled: var(--bbai-text-light);
+
+    --bbai-admin-color-bg: var(--bbai-bg-primary);
+    --bbai-admin-color-bg-muted: var(--bbai-bg-secondary);
+    --bbai-admin-color-bg-subtle: var(--bbai-bg-tertiary);
+    --bbai-admin-color-bg-page: var(--bbai-bg-page);
+
+    --bbai-admin-color-border: var(--bbai-border);
+    --bbai-admin-color-border-strong: var(--bbai-border-secondary);
+    --bbai-admin-color-border-focus: var(--bbai-border-focus);
+
+    /* Semantic: success = optimized / positive coverage */
+    --bbai-admin-semantic-success-fg: var(--bbai-success-dark);
+    --bbai-admin-semantic-success-bg: var(--bbai-success-bg);
+    --bbai-admin-semantic-success-border: var(--bbai-success-light);
+    --bbai-admin-semantic-success-accent: var(--bbai-success);
+
+    /* Semantic: warning = needs review */
+    --bbai-admin-semantic-warning-fg: var(--bbai-warning-dark);
+    --bbai-admin-semantic-warning-bg: var(--bbai-warning-bg);
+    --bbai-admin-semantic-warning-border: var(--bbai-warning-light);
+    --bbai-admin-semantic-warning-accent: var(--bbai-warning);
+
+    /* Semantic: error = missing / failed */
+    --bbai-admin-semantic-error-fg: var(--bbai-error);
+    --bbai-admin-semantic-error-bg: var(--bbai-error-bg);
+    --bbai-admin-semantic-error-border: var(--bbai-error-light);
+    --bbai-admin-semantic-error-accent: var(--bbai-error);
+
+    /* Neutral chip / inactive row meta */
+    --bbai-admin-semantic-neutral-fg: var(--bbai-text-secondary);
+    --bbai-admin-semantic-neutral-bg: var(--bbai-bg-secondary);
+    --bbai-admin-semantic-neutral-border: var(--bbai-border);
+
+    /* Info (secondary callouts, not “missing”) */
+    --bbai-admin-semantic-info-fg: var(--bbai-info-dark);
+    --bbai-admin-semantic-info-bg: var(--bbai-info-bg);
+    --bbai-admin-semantic-info-border: var(--bbai-info-light);
+
+    /* -------------------------------------------------------------------------
+       Phase 4 — Semantic workflow status (filters, badges, row rail, scores)
+       Canonical: --bbai-status-*  (single language across admin UI)
+       Legacy “weak” = needs_review (data-filter still uses weak)
+       ------------------------------------------------------------------------- */
+
+    --bbai-status-neutral-indicator: #94a3b8;
+
+    --bbai-status-missing-fg: #9f1239;
+    --bbai-status-missing-bg: rgba(255, 241, 242, 0.78);
+    --bbai-status-missing-border: rgba(244, 63, 94, 0.32);
+    --bbai-status-missing-accent: #e11d48;
+    --bbai-status-missing-active-bg: #be123c;
+    --bbai-status-missing-active-border: #881337;
+    --bbai-status-missing-count-fg: #9f1239;
+    --bbai-status-missing-row-bg: #ffffff;
+    --bbai-status-missing-rail: rgba(225, 29, 72, 0.3);
+    --bbai-status-missing-rail-strong: rgba(225, 29, 72, 0.48);
+
+    --bbai-status-needs-review-fg: #92400e;
+    --bbai-status-needs-review-bg: rgba(255, 251, 235, 0.82);
+    --bbai-status-needs-review-border: rgba(245, 158, 11, 0.34);
+    --bbai-status-needs-review-accent: #d97706;
+    --bbai-status-needs-review-active-bg: #b45309;
+    --bbai-status-needs-review-active-border: #78350f;
+    --bbai-status-needs-review-count-fg: #92400e;
+    --bbai-status-needs-review-row-bg: rgba(255, 251, 235, 0.68);
+    --bbai-status-needs-review-rail: rgba(217, 119, 6, 0.46);
+    --bbai-status-needs-review-rail-strong: rgba(217, 119, 6, 0.64);
+
+    --bbai-status-optimized-fg: #166534;
+    --bbai-status-optimized-bg: rgba(240, 253, 244, 0.82);
+    --bbai-status-optimized-border: rgba(34, 197, 94, 0.3);
+    --bbai-status-optimized-accent: #16a34a;
+    --bbai-status-optimized-active-bg: #15803d;
+    --bbai-status-optimized-active-border: #14532d;
+    --bbai-status-optimized-count-fg: #166534;
+    --bbai-status-optimized-row-bg: rgba(240, 253, 244, 0.58);
+    --bbai-status-optimized-rail: rgba(22, 163, 74, 0.48);
+    --bbai-status-optimized-rail-strong: rgba(22, 163, 74, 0.66);
+
+    /* Filter “All” — neutral slate (distinct from state hues) */
+    --bbai-status-filter-all-active-bg: #0f172a;
+    --bbai-status-filter-all-active-fg: #ffffff;
+    --bbai-status-filter-all-inactive-bg: #ffffff;
+    --bbai-status-filter-all-inactive-border: #e2e8f0;
+    --bbai-status-filter-all-inactive-fg: #334155;
+    --bbai-status-filter-all-count-fg: #0f172a;
+
+    /* Row structural rail */
+    --bbai-status-row-rail-width: 3px;
+    --bbai-status-row-rail-radius: 2px;
+    --bbai-status-row-content-inset: 14px;
+
+    /* Phase 9 — interaction motion (canonical; semantic filters + controls consume) */
+    --bbai-admin-ix-duration: 150ms;
+    --bbai-admin-ix-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+    /* Shared count chip / focus (filter toolbars) */
+    --bbai-status-filter-count-surface: #ffffff;
+    --bbai-status-filter-count-border-muted: rgba(15, 23, 42, 0.08);
+    --bbai-status-filter-count-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    --bbai-status-filter-focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px rgba(37, 99, 235, 0.55);
+    --bbai-status-filter-hover-lift: 0 1px 3px rgba(15, 23, 42, 0.07);
+    --bbai-status-filter-transition-duration: var(--bbai-admin-ix-duration);
+    --bbai-status-filter-transition-ease: var(--bbai-admin-ix-ease);
+
+    /* Score tiers (aligned with optimized / review / missing severity) */
+    --bbai-status-score-excellent-bg: #dcfce7;
+    --bbai-status-score-excellent-fg: #14532d;
+    --bbai-status-score-excellent-border: rgba(22, 163, 74, 0.22);
+
+    --bbai-status-score-good-bg: #ecfdf5;
+    --bbai-status-score-good-fg: #166534;
+    --bbai-status-score-good-border: rgba(16, 185, 129, 0.28);
+
+    --bbai-status-score-needs-improvement-bg: #fef3c7;
+    --bbai-status-score-needs-improvement-fg: #92400e;
+    --bbai-status-score-needs-improvement-border: rgba(245, 158, 11, 0.32);
+
+    --bbai-status-score-poor-bg: #ffedd5;
+    --bbai-status-score-poor-fg: #9a3412;
+    --bbai-status-score-poor-border: rgba(234, 88, 12, 0.35);
+
+    --bbai-status-score-critical-bg: #ffe4e6;
+    --bbai-status-score-critical-fg: #9f1239;
+    --bbai-status-score-critical-border: rgba(244, 63, 94, 0.35);
+
+    --bbai-status-score-bar-high: var(--bbai-status-optimized-accent);
+    --bbai-status-score-bar-mid: var(--bbai-status-needs-review-accent);
+    --bbai-status-score-bar-low: var(--bbai-status-missing-accent);
+
+    /* Legacy aliases (existing components use “weak” / “opt”) */
+    --bbai-status-weak-fg: var(--bbai-status-needs-review-fg);
+    --bbai-status-weak-bg: var(--bbai-status-needs-review-bg);
+    --bbai-status-weak-border: var(--bbai-status-needs-review-border);
+    --bbai-status-weak-accent: var(--bbai-status-needs-review-accent);
+    --bbai-status-weak-active-bg: var(--bbai-status-needs-review-active-bg);
+    --bbai-status-weak-active-border: var(--bbai-status-needs-review-active-border);
+    --bbai-status-weak-count-fg: var(--bbai-status-needs-review-count-fg);
+    --bbai-status-weak-row-bg: var(--bbai-status-needs-review-row-bg);
+    --bbai-status-weak-rail: var(--bbai-status-needs-review-rail);
+    --bbai-status-weak-rail-strong: var(--bbai-status-needs-review-rail-strong);
+
+    --bbai-status-opt-fg: var(--bbai-status-optimized-fg);
+    --bbai-status-opt-bg: var(--bbai-status-optimized-bg);
+    --bbai-status-opt-border: var(--bbai-status-optimized-border);
+    --bbai-status-opt-accent: var(--bbai-status-optimized-accent);
+    --bbai-status-opt-active-bg: var(--bbai-status-optimized-active-bg);
+    --bbai-status-opt-active-border: var(--bbai-status-optimized-active-border);
+    --bbai-status-opt-count-fg: var(--bbai-status-optimized-count-fg);
+    --bbai-status-opt-row-bg: var(--bbai-status-optimized-row-bg);
+    --bbai-status-opt-rail: var(--bbai-status-optimized-rail);
+    --bbai-status-opt-rail-strong: var(--bbai-status-optimized-rail-strong);
+
+    /* Dot indicators (filter pills, filter-group) */
+    --bbai-status-missing-dot: var(--bbai-status-missing-accent);
+    --bbai-status-needs-review-dot: var(--bbai-status-needs-review-accent);
+    --bbai-status-optimized-dot: var(--bbai-status-optimized-accent);
+
+    /* -------------------------------------------------------------------------
+       Phase 5 — Tables / workspace rows (density + column rhythm)
+       ------------------------------------------------------------------------- */
+
+    --bbai-admin-table-row-pad-y: var(--bbai-space-2);
+    --bbai-admin-table-row-pad-x: var(--bbai-space-3);
+    --bbai-admin-table-row-gap-x: var(--bbai-space-3);
+    --bbai-admin-table-row-gap-y: var(--bbai-space-1);
+    --bbai-admin-table-border: 1px solid var(--bbai-border);
+    --bbai-admin-table-header-bg: var(--bbai-bg-secondary);
+    --bbai-admin-table-cell-pad-y: var(--bbai-space-2);
+    --bbai-admin-table-cell-pad-x: var(--bbai-space-3);
+    --bbai-admin-table-actions-col-min: 112px;
+    --bbai-admin-table-actions-col-max: 152px;
+    --bbai-admin-table-actions-col-min-lg: 118px;
+    --bbai-admin-table-actions-col-max-lg: 160px;
+    --bbai-admin-table-meta-color: var(--bbai-text-muted);
+    --bbai-admin-table-hover-bg: var(--bbai-bg-secondary);
+
+    /* Interactive surfaces (buttons, pills) */
+    --bbai-admin-interaction-hover-overlay: rgba(15, 23, 42, 0.04);
+    --bbai-admin-interaction-active-overlay: rgba(15, 23, 42, 0.08);
+    --bbai-admin-interaction-disabled-opacity: 0.5;
+
+    /* Phase 9 — pressed, loading, shared transitions (bbai-admin-interactions.css) */
+    --bbai-admin-ix-transition-interactive:
+        background-color var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease),
+        border-color var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease),
+        color var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease),
+        box-shadow var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease),
+        filter var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease),
+        opacity var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease);
+    --bbai-admin-ix-loading-opacity: 0.88;
+    --bbai-admin-ix-spinner-size: 1rem;
+    --bbai-admin-ix-filter-press: brightness(0.96);
+    --bbai-admin-ix-filter-press-primary: brightness(0.93);
+    --bbai-admin-ix-filter-press-on-dark: brightness(1.08);
+    --bbai-admin-ix-hover-lift-shadow: 0 1px 3px rgba(15, 23, 42, 0.07);
+    --bbai-admin-ix-row-ack-bg: rgba(220, 252, 231, 0.65);
+
+    /* -------------------------------------------------------------------------
+       RADIUS — controls, cards, pills
+       ------------------------------------------------------------------------- */
+
+    --bbai-admin-radius-xs: var(--bbai-radius-sm);
+    --bbai-admin-radius-sm: var(--bbai-radius);
+    --bbai-admin-radius-md: var(--bbai-radius-md);
+    --bbai-admin-radius-lg: var(--bbai-radius-lg);
+    --bbai-admin-radius-xl: var(--bbai-radius-xl);
+    --bbai-admin-radius-pill: var(--bbai-radius-full);
+
+    --bbai-admin-radius-card: var(--bbai-card-radius);
+    --bbai-admin-radius-button: var(--bbai-btn-radius);
+    --bbai-admin-radius-input: var(--bbai-input-radius);
+
+    /* -------------------------------------------------------------------------
+       BORDERS — default, subtle, strong (complete border values)
+       ------------------------------------------------------------------------- */
+
+    --bbai-admin-border-width-hairline: 1px;
+    --bbai-admin-border-default: var(--bbai-admin-border-width-hairline) solid var(--bbai-admin-color-border);
+    --bbai-admin-border-subtle: var(--bbai-admin-border-width-hairline) solid var(--bbai-gray-200);
+    --bbai-admin-border-strong: var(--bbai-admin-border-width-hairline) solid var(--bbai-admin-color-border-strong);
+    --bbai-admin-border-focus-ring: var(--bbai-focus-ring);
+
+    /* -------------------------------------------------------------------------
+       SHADOWS — cards, elevated hover
+       ------------------------------------------------------------------------- */
+
+    --bbai-admin-shadow-card: var(--bbai-shadow-card);
+    --bbai-admin-shadow-card-hover: var(--bbai-shadow-card-hover);
+    --bbai-admin-shadow-control: var(--bbai-shadow-button);
+    --bbai-admin-shadow-control-hover: var(--bbai-shadow-button-hover);
+    --bbai-admin-shadow-dropdown: var(--bbai-shadow-dropdown);
+    --bbai-admin-shadow-focus: var(--bbai-shadow-focus);
+
+    /* Button hierarchy */
+    --bbai-admin-btn-radius: var(--bbai-btn-radius);
+    /* Compact toolbar / pagination — slightly tighter than default CTAs */
+    --bbai-admin-btn-radius-sm: var(--bbai-admin-radius-sm);
+    --bbai-admin-btn-primary-bg: var(--bbai-gradient-primary);
+    --bbai-admin-btn-primary-border: var(--bbai-admin-color-primary);
+    --bbai-admin-btn-primary-shadow: 0 10px 24px rgba(16, 185, 129, 0.16);
+    --bbai-admin-btn-primary-shadow-hover: 0 14px 30px rgba(16, 185, 129, 0.2);
+    --bbai-admin-btn-primary-lift: translateY(-1px);
+    --bbai-admin-btn-secondary-bg: var(--bbai-admin-color-bg);
+    --bbai-admin-btn-secondary-bg-hover: var(--bbai-admin-color-bg-muted);
+    --bbai-admin-btn-secondary-border: rgba(148, 163, 184, 0.26);
+    --bbai-admin-btn-secondary-border-hover: rgba(148, 163, 184, 0.4);
+    --bbai-admin-btn-secondary-text: var(--bbai-admin-color-text-secondary);
+    --bbai-admin-btn-secondary-text-hover: var(--bbai-admin-color-text);
+    --bbai-admin-btn-tertiary-text: var(--bbai-admin-color-text-muted);
+    --bbai-admin-btn-tertiary-text-hover: var(--bbai-admin-color-primary-active);
+    --bbai-admin-btn-tertiary-bg-hover: rgba(16, 185, 129, 0.08);
+
+    /* -------------------------------------------------------------------------
+       COMPONENT SIZING — min heights for touch targets (36px default)
+       ------------------------------------------------------------------------- */
+
+    --bbai-admin-size-btn-sm: 2rem;
+    --bbai-admin-size-btn-md: 2.25rem;
+    --bbai-admin-size-btn-lg: 2.5rem;
+    --bbai-admin-size-input-min-height: var(--bbai-admin-size-btn-md);
+    --bbai-admin-size-icon-button: var(--bbai-admin-size-btn-md);
+    --bbai-admin-size-touch-target-min: 2.25rem;
+
+    /* -------------------------------------------------------------------------
+       MOTION (for interaction tokens; components consume later)
+       ------------------------------------------------------------------------- */
+
+    --bbai-admin-motion-fast: var(--bbai-transition-fast);
+    --bbai-admin-motion-base: var(--bbai-transition-base);
+    --bbai-admin-motion-ease: var(--bbai-ease-out);
+    --bbai-admin-motion-ease-premium: var(--bbai-admin-ix-ease);
+    --bbai-admin-transition-color: var(--bbai-transition-colors);
+
+    /* -------------------------------------------------------------------------
+       DS PRIMITIVE ALIASES (keep bbai-admin-design-system.css selectors unchanged)
+       ------------------------------------------------------------------------- */
+
+    --bbai-ds-control-height: var(--bbai-admin-size-btn-md);
+    --bbai-ds-control-height-sm: var(--bbai-admin-size-btn-sm);
+    --bbai-ds-control-height-lg: var(--bbai-admin-size-btn-lg);
+    --bbai-ds-control-radius: var(--bbai-admin-radius-md);
+    --bbai-ds-control-font: var(--bbai-admin-type-body);
+    --bbai-ds-icon-btn-size: var(--bbai-admin-size-icon-button);
+
+    /* -------------------------------------------------------------------------
+       Unified button system (consumed by bbai-admin-button-system.css + .bbai-btn)
+       Aligns card/banner/modal/table actions to one scale.
+       ------------------------------------------------------------------------- */
+    --bbai-btn-height: var(--bbai-cta-primary-min-height, 40px);
+    --bbai-btn-height-sm: 36px;
+    --bbai-btn-padding-x: 20px;
+    --bbai-btn-padding-x-compact: var(--bbai-cta-primary-padding-x, 16px);
+    --bbai-btn-radius: var(--bbai-cta-primary-radius, 8px);
+    --bbai-btn-font-size: var(--bbai-cta-primary-font-size, 14px);
+    --bbai-btn-font-size-sm: 13px;
+    --bbai-btn-font-weight: var(--bbai-font-semibold);
+    --bbai-btn-font-weight-primary: var(--bbai-cta-primary-font-weight, 500);
+    --bbai-btn-font-weight-secondary: var(--bbai-font-medium);
+    --bbai-btn-line-height: 1.25;
+    --bbai-btn-gap: var(--bbai-space-2);
+    --bbai-btn-group-gap: var(--bbai-space-2-5);
+    --bbai-btn-transition:
+        color var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease),
+        background-color var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease),
+        border-color var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease),
+        box-shadow var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease),
+        transform var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease);
+
+    --bbai-ds-card-padding: var(--bbai-admin-space-inset-card);
+    --bbai-ds-card-padding-sm: var(--bbai-admin-space-inset-card-sm);
+    --bbai-ds-card-radius: var(--bbai-admin-radius-card);
+    --bbai-ds-card-border: var(--bbai-admin-border-default);
+    --bbai-ds-card-bg: var(--bbai-card-bg);
+    --bbai-ds-card-shadow: var(--bbai-admin-shadow-card);
+
+    --bbai-ds-page-title: var(--bbai-admin-type-page-title);
+    --bbai-ds-section-title: var(--bbai-admin-type-section-title);
+    --bbai-ds-subsection-title: var(--bbai-admin-type-card-title);
+    --bbai-ds-label: var(--bbai-admin-type-label);
+    --bbai-ds-body: var(--bbai-admin-type-body);
+    --bbai-ds-body-lg: var(--bbai-admin-type-body-lg);
+
+    --bbai-ds-status-success-fg: var(--bbai-admin-semantic-success-fg);
+    --bbai-ds-status-success-bg: var(--bbai-admin-semantic-success-bg);
+    --bbai-ds-status-success-border: var(--bbai-admin-semantic-success-border);
+    --bbai-ds-status-warning-fg: var(--bbai-admin-semantic-warning-fg);
+    --bbai-ds-status-warning-bg: var(--bbai-admin-semantic-warning-bg);
+    --bbai-ds-status-warning-border: var(--bbai-admin-semantic-warning-border);
+    --bbai-ds-status-error-fg: var(--bbai-admin-semantic-error-fg);
+    --bbai-ds-status-error-bg: var(--bbai-admin-semantic-error-bg);
+    --bbai-ds-status-error-border: var(--bbai-admin-semantic-error-border);
+    --bbai-ds-status-info-fg: var(--bbai-admin-semantic-info-fg);
+    --bbai-ds-status-info-bg: var(--bbai-admin-semantic-info-bg);
+    --bbai-ds-status-info-border: var(--bbai-admin-semantic-info-border);
+    --bbai-ds-status-neutral-fg: var(--bbai-admin-semantic-neutral-fg);
+    --bbai-ds-status-neutral-bg: var(--bbai-admin-semantic-neutral-bg);
+    --bbai-ds-status-neutral-border: var(--bbai-admin-semantic-neutral-border);
+
+    --bbai-ds-focus-outline: 2px solid var(--bbai-focus-ring-color);
+    --bbai-ds-focus-offset: var(--bbai-focus-ring-offset, 2px);
+    --bbai-ds-transition: var(--bbai-admin-ix-transition-interactive);
+    --bbai-ds-transition-opacity: opacity var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease);
+}

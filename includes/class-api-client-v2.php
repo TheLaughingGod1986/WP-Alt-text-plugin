@@ -1515,6 +1515,87 @@ class API_Client_V2 {
     }
 
     /**
+     * Get the canonical logged-in dashboard state truth payload from the backend.
+     *
+     * Frontend dashboard state should resolve from this endpoint first. Keep a
+     * second endpoint candidate for compatibility while the backend rollout
+     * settles.
+     *
+     * @return array|\WP_Error
+     */
+    public function get_dashboard_state_truth() {
+        $fixture = get_option('bbai_e2e_dashboard_state_truth_fixture', null);
+        if (is_string($fixture) && '' !== trim($fixture)) {
+            $decoded = json_decode($fixture, true);
+            if (is_array($decoded) && !empty($decoded['state'])) {
+                $this->log_api_event('info', 'Using dashboard state truth fixture', [
+                    'state' => (string) $decoded['state'],
+                ]);
+                return $decoded;
+            }
+        } elseif (is_array($fixture) && !empty($fixture['state'])) {
+            $this->log_api_event('info', 'Using dashboard state truth fixture', [
+                'state' => (string) $fixture['state'],
+            ]);
+            return $fixture;
+        }
+
+        $token = $this->get_token();
+        $license_key = $this->get_license_key();
+
+        if (empty($token) && empty($license_key)) {
+            return new \WP_Error(
+                'not_authenticated',
+                __('Authentication required to load dashboard state.', 'beepbeep-ai-alt-text-generator')
+            );
+        }
+
+        $candidates = [
+            '/dashboard/state-truth',
+            '/api/dashboard/state-truth',
+        ];
+        $last_error = null;
+
+        foreach ($candidates as $endpoint) {
+            $response = $this->request_with_retry($endpoint, 'GET', null, 2, false, [
+                'X-BBAI-Client' => 'wp-plugin-dashboard',
+            ]);
+
+            if (is_wp_error($response)) {
+                $last_error = $response;
+                $this->log_api_event('warning', 'Dashboard state truth request failed', [
+                    'endpoint' => $endpoint,
+                    'error_code' => $response->get_error_code(),
+                    'message' => $response->get_error_message(),
+                ]);
+                continue;
+            }
+
+            $backend_response = is_array($response) ? ($response['data'] ?? $response) : $response;
+            $payload = is_array($backend_response) ? ($backend_response['data'] ?? $backend_response) : [];
+
+            if (is_array($payload) && !empty($payload['state'])) {
+                return $payload;
+            }
+
+            $last_error = new \WP_Error(
+                'invalid_dashboard_state_truth',
+                __('Dashboard state truth payload was invalid.', 'beepbeep-ai-alt-text-generator')
+            );
+            $this->log_api_event('warning', 'Dashboard state truth payload invalid', [
+                'endpoint' => $endpoint,
+                'has_state' => is_array($payload) && !empty($payload['state']),
+                'keys' => is_array($payload) ? array_keys($payload) : [],
+            ]);
+        }
+
+        return $last_error ?: new \WP_Error(
+            'dashboard_state_truth_unavailable',
+            __('Dashboard state truth is currently unavailable.', 'beepbeep-ai-alt-text-generator')
+        );
+    }
+
+    /**
      * Convert stored license data into a usage payload
      */
     private function format_license_usage_from_cache($license_data) {

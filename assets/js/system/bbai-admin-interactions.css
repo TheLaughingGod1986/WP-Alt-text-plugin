@@ -1,0 +1,235 @@
+/**
+ * BeepBeep AI — Phase 9: shared interaction system
+ *
+ * Unified motion, loading, pressed states, row feedback, and reduced-motion.
+ * Tokens: bbai-admin-foundation-tokens.css (--bbai-admin-ix-*).
+ * Primitives: bbai-admin-controls.css (buttons, fields, links).
+ *
+ * @package BeepBeep_AI
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Motion primitives                                                          */
+/* -------------------------------------------------------------------------- */
+
+@keyframes bbai-ix-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes bbai-ix-row-ack {
+    0% {
+        background-color: var(--bbai-admin-ix-row-ack-bg);
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
+@keyframes bbai-ix-settle-in {
+    from {
+        opacity: 0.88;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Loading — inline spinners (matches .bbai-btn__spinner markup)               */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-btn__spinner,
+body.bbai-dashboard .bbai-btn .bbai-btn__spinner {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+body.bbai-dashboard .bbai-btn.is-loading .bbai-btn__spinner,
+body.bbai-dashboard .bbai-btn[aria-busy='true'] .bbai-btn__spinner,
+body.bbai-dashboard .bbai-ds-btn.is-loading .bbai-btn__spinner,
+body.bbai-dashboard .bbai-ds-btn[aria-busy='true'] .bbai-btn__spinner {
+    display: inline-flex;
+}
+
+body.bbai-dashboard .bbai-btn.is-loading .bbai-btn__spinner svg,
+body.bbai-dashboard .bbai-btn[aria-busy='true'] .bbai-btn__spinner svg,
+body.bbai-dashboard .bbai-ds-btn[aria-busy='true'] .bbai-btn__spinner svg {
+    width: var(--bbai-admin-ix-spinner-size);
+    height: var(--bbai-admin-ix-spinner-size);
+    animation: bbai-ix-spin 0.7s linear infinite;
+}
+
+body.bbai-dashboard .bbai-btn.is-loading .bbai-btn__text,
+body.bbai-dashboard .bbai-btn[aria-busy='true'] .bbai-btn__text {
+    opacity: 0.92;
+}
+
+/* Standalone spinner for row/toolbar slots */
+body.bbai-dashboard .bbai-ix-spinner {
+    display: inline-block;
+    width: var(--bbai-admin-ix-spinner-size);
+    height: var(--bbai-admin-ix-spinner-size);
+    border: 2px solid var(--bbai-admin-color-border);
+    border-top-color: var(--bbai-admin-color-primary);
+    border-radius: 50%;
+    animation: bbai-ix-spin 0.65s linear infinite;
+    vertical-align: middle;
+}
+
+body.bbai-dashboard .bbai-ix-spinner--sm {
+    width: 0.875rem;
+    height: 0.875rem;
+    border-width: 1.5px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Icon buttons — pressed (no scale; same language as text buttons)          */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-btn--icon:active:not(:disabled):not([aria-disabled='true']),
+body.bbai-dashboard .bbai-ds-icon-btn:active:not(:disabled):not([aria-disabled='true']),
+body.bbai-dashboard .bbai-toolbar__icon-btn:active:not(:disabled):not([aria-disabled='true']) {
+    filter: var(--bbai-admin-ix-filter-press);
+}
+
+body.bbai-dashboard .bbai-btn--icon[aria-busy='true'],
+body.bbai-dashboard .bbai-ds-icon-btn[aria-busy='true'],
+body.bbai-dashboard .bbai-toolbar__icon-btn[aria-busy='true'] {
+    opacity: var(--bbai-admin-ix-loading-opacity);
+    cursor: progress;
+    pointer-events: none;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Toolbar + bulk — pressed                                                   */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-toolbar__btn:active:not(:disabled),
+body.bbai-dashboard .bbai-bulk-actions-toolbar__btn:active:not(:disabled) {
+    filter: var(--bbai-admin-ix-filter-press);
+}
+
+body.bbai-dashboard .bbai-toolbar__btn--primary:active:not(:disabled):not(.bbai-is-locked),
+body.bbai-dashboard .bbai-bulk-actions-toolbar__btn--primary:active:not(:disabled):not(.bbai-is-locked) {
+    filter: var(--bbai-admin-ix-filter-press-primary);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Pagination — hover lift + press (transition from bbai-admin-controls)     */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard a.bbai-pagination-btn:hover:not(.bbai-pagination-btn--disabled):not(.bbai-pagination-btn--current),
+body.bbai-dashboard button.bbai-pagination-btn:hover:not(.bbai-pagination-btn--disabled):not(.bbai-pagination-btn--current) {
+    box-shadow: var(--bbai-admin-ix-hover-lift-shadow);
+}
+
+body.bbai-dashboard a.bbai-pagination-btn:active:not(.bbai-pagination-btn--disabled):not(.bbai-pagination-btn--current),
+body.bbai-dashboard button.bbai-pagination-btn:active:not(.bbai-pagination-btn--disabled):not(.bbai-pagination-btn--current) {
+    filter: var(--bbai-admin-ix-filter-press);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Design-system filter pills — pressed                                      */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-ds-filter-pill:active {
+    filter: var(--bbai-admin-ix-filter-press);
+}
+
+body.bbai-dashboard .bbai-ds-filter-pill[aria-pressed='true']:active,
+body.bbai-dashboard .bbai-ds-filter-pill--active:active {
+    filter: var(--bbai-admin-ix-filter-press-on-dark);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Semantic filter pills — pressed (shared with alt-review toolbar)           */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-filter-pill:active,
+body.bbai-dashboard .bbai-alt-review-filters__btn:active {
+    filter: var(--bbai-admin-ix-filter-press);
+}
+
+body.bbai-dashboard .bbai-alt-review-filters__btn--active:active,
+body.bbai-dashboard .bbai-filter-pill--active:active {
+    filter: var(--bbai-admin-ix-filter-press-on-dark);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Links — keyboard focus parity + light press                                 */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-link-btn:active:not(:disabled),
+body.bbai-dashboard .bbai-link-sm:active:not(:disabled) {
+    filter: var(--bbai-admin-ix-filter-press);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Section / surface loading (opt-in class for async regions)                 */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-ix-surface-loading {
+    pointer-events: none;
+    opacity: var(--bbai-admin-ix-loading-opacity);
+    transition: opacity var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease);
+}
+
+body.bbai-dashboard .bbai-ix-content-settle {
+    animation: bbai-ix-settle-in var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease) 1;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Row success acknowledgment (add class briefly from JS after save)          */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-table tbody tr.bbai-ix-row-ack > td,
+body.bbai-dashboard .bbai-library-table tbody tr.bbai-ix-row-ack > td {
+    animation: bbai-ix-row-ack 1.25s var(--bbai-admin-ix-ease) 1;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Reduced motion                                                             */
+/* -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+    body.bbai-dashboard .bbai-btn,
+    body.bbai-dashboard .bbai-ds-btn,
+    body.bbai-dashboard .bbai-btn--icon,
+    body.bbai-dashboard .bbai-ds-icon-btn,
+    body.bbai-dashboard .bbai-toolbar__icon-btn,
+    body.bbai-dashboard .bbai-toolbar__btn,
+    body.bbai-dashboard .bbai-bulk-actions-toolbar__btn,
+    body.bbai-dashboard .bbai-input,
+    body.bbai-dashboard .bbai-textarea,
+    body.bbai-dashboard .bbai-select,
+    body.bbai-dashboard .bbai-ds-input,
+    body.bbai-dashboard .bbai-ds-textarea,
+    body.bbai-dashboard .bbai-ds-select,
+    body.bbai-dashboard .bbai-ds-filter-pill,
+    body.bbai-dashboard .bbai-filter-pill,
+    body.bbai-dashboard .bbai-alt-review-filters__btn,
+    body.bbai-dashboard a.bbai-pagination-btn,
+    body.bbai-dashboard button.bbai-pagination-btn {
+        transition-duration: 0.01ms !important;
+        transition-delay: 0s !important;
+    }
+
+    body.bbai-dashboard .bbai-btn__spinner svg,
+    body.bbai-dashboard .bbai-ds-btn[aria-busy='true'] .bbai-btn__spinner svg,
+    body.bbai-dashboard .bbai-ix-spinner,
+    body.bbai-dashboard .bbai-row-action-spinner {
+        animation: none !important;
+    }
+
+    body.bbai-dashboard .bbai-ix-content-settle,
+    body.bbai-dashboard .bbai-table tbody tr.bbai-ix-row-ack > td,
+    body.bbai-dashboard .bbai-library-table tbody tr.bbai-ix-row-ack > td {
+        animation: none !important;
+    }
+}

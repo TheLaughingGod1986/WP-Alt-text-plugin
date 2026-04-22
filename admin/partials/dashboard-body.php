@@ -880,6 +880,93 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
             ? 'bbai-command-action bbai-command-action--tertiary'
             : 'bbai-command-action bbai-command-action--secondary';
     }
+    $bbai_li_state      = null;
+    $bbai_li_truth_boot = null;
+    if ( ! empty( $bbai_has_connected_account ) ) {
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-logged-in-dashboard-resolver.php';
+
+        $bbai_li_plan_ctx = [
+            'is_pro'    => ! empty( $bbai_state_is_pro_plan ),
+            'plan_slug' => (string) ( $bbai_plan_slug_ladder ?? 'free' ),
+            'user_type' => ! empty( $bbai_state_is_pro_plan ) ? 'pro' : 'free',
+        ];
+
+        if (
+            isset( $this, $this->api_client )
+            && is_object( $this->api_client )
+            && method_exists( $this->api_client, 'get_dashboard_state_truth' )
+        ) {
+            $bbai_li_truth_candidate = $this->api_client->get_dashboard_state_truth();
+            if ( is_array( $bbai_li_truth_candidate ) && [] !== $bbai_li_truth_candidate ) {
+                $bbai_li_truth_boot = $bbai_li_truth_candidate;
+                $bbai_li_state = \BeepBeepAI\AltTextGenerator\Services\Logged_In_Dashboard_Resolver::resolve_from_truth(
+                    $bbai_li_truth_boot,
+                    $bbai_li_plan_ctx
+                );
+            }
+        }
+
+        if ( ! is_array( $bbai_li_state ) ) {
+            $bbai_li_job_for_ctx = [];
+            if ( isset( $this ) && is_object( $this ) && method_exists( $this, 'get_active_job_status' ) ) {
+                $bbai_li_raw_job = $this->get_active_job_status();
+                if ( is_array( $bbai_li_raw_job ) && [] !== $bbai_li_raw_job ) {
+                    $bbai_li_job_for_ctx = $bbai_li_raw_job;
+                }
+            }
+
+            $bbai_li_last_run_for_ctx = null;
+            if ( isset( $this ) && is_object( $this ) && method_exists( $this, 'get_last_job_completed_at' ) ) {
+                $bbai_li_last_ts = $this->get_last_job_completed_at();
+                if ( $bbai_li_last_ts ) {
+                    $bbai_li_last_run_for_ctx = is_numeric( $bbai_li_last_ts ) ? gmdate( 'c', (int) $bbai_li_last_ts ) : (string) $bbai_li_last_ts;
+                }
+            }
+
+            $bbai_li_system_error = [];
+            if ( ! bbai_is_authenticated() ) {
+                $bbai_li_system_error = [ 'code' => 'NO_API_KEY', 'message' => __( 'API key not connected. Open settings to continue.', 'beepbeep-ai-alt-text-generator' ) ];
+            }
+
+            $bbai_li_ctx = \BeepBeepAI\AltTextGenerator\Services\Logged_In_Dashboard_Resolver::build_ctx(
+                $bbai_usage_stats,
+                [
+                    'total_images'  => $bbai_state_total_images,
+                    'missing'       => $bbai_state_missing_count,
+                    'weak'          => $bbai_state_weak_count,
+                    'optimized'     => $bbai_state_optimized_count,
+                    'failed'        => 0,
+                ],
+                $bbai_li_job_for_ctx,
+                $bbai_li_system_error,
+                $bbai_li_last_run_for_ctx ?: ( $bbai_last_scan_timestamp > 0 ? gmdate( 'c', $bbai_last_scan_timestamp ) : null ),
+                $bbai_li_plan_ctx
+            );
+
+            $bbai_li_state = \BeepBeepAI\AltTextGenerator\Services\Logged_In_Dashboard_Resolver::resolve( $bbai_li_ctx );
+        }
+    }
+
+    $bbai_dashboard_root_missing_count   = $bbai_state_missing_count;
+    $bbai_dashboard_root_weak_count      = $bbai_state_weak_count;
+    $bbai_dashboard_root_optimized_count = $bbai_state_optimized_count;
+    $bbai_dashboard_root_total_count     = $bbai_state_total_images;
+    $bbai_dashboard_root_credits_used    = $bbai_state_credits_used;
+    $bbai_dashboard_root_credits_total   = $bbai_state_credits_limit;
+    $bbai_dashboard_root_credits_left    = $bbai_state_credits_remaining;
+
+    if ( is_array( $bbai_li_truth_boot ) ) {
+        $bbai_li_truth_counts  = is_array( $bbai_li_truth_boot['counts'] ?? null ) ? $bbai_li_truth_boot['counts'] : [];
+        $bbai_li_truth_credits = is_array( $bbai_li_truth_boot['credits'] ?? null ) ? $bbai_li_truth_boot['credits'] : [];
+
+        $bbai_dashboard_root_missing_count = (int) ( $bbai_li_truth_counts['missing'] ?? $bbai_li_truth_counts['missing_alt'] ?? $bbai_li_truth_counts['missingAlt'] ?? $bbai_dashboard_root_missing_count );
+        $bbai_dashboard_root_weak_count = (int) ( $bbai_li_truth_counts['review'] ?? $bbai_li_truth_counts['needs_review'] ?? $bbai_li_truth_counts['needsReview'] ?? $bbai_li_truth_counts['weak'] ?? $bbai_dashboard_root_weak_count );
+        $bbai_dashboard_root_optimized_count = (int) ( $bbai_li_truth_counts['optimized'] ?? $bbai_li_truth_counts['complete'] ?? $bbai_dashboard_root_optimized_count );
+        $bbai_dashboard_root_total_count = (int) ( $bbai_li_truth_counts['total'] ?? $bbai_li_truth_counts['total_images'] ?? $bbai_li_truth_counts['totalImages'] ?? $bbai_dashboard_root_total_count );
+        $bbai_dashboard_root_credits_used = (int) ( $bbai_li_truth_credits['used'] ?? $bbai_li_truth_credits['credits_used'] ?? $bbai_li_truth_credits['creditsUsed'] ?? $bbai_dashboard_root_credits_used );
+        $bbai_dashboard_root_credits_total = (int) ( $bbai_li_truth_credits['total'] ?? $bbai_li_truth_credits['limit'] ?? $bbai_li_truth_credits['credits_total'] ?? $bbai_li_truth_credits['creditsTotal'] ?? $bbai_dashboard_root_credits_total );
+        $bbai_dashboard_root_credits_left = (int) ( $bbai_li_truth_credits['remaining'] ?? $bbai_li_truth_credits['credits_remaining'] ?? $bbai_li_truth_credits['creditsRemaining'] ?? $bbai_dashboard_root_credits_left );
+    }
     ?>
 
     <div
@@ -892,16 +979,16 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
         data-bbai-dashboard-base-state="<?php echo esc_attr((string) ($bbai_product_state_model['base_state'] ?? '')); ?>"
         data-bbai-dashboard-runtime-state="<?php echo esc_attr((string) ($bbai_product_state_model['runtime_state'] ?? 'idle')); ?>"
         data-bbai-funnel-state="<?php echo esc_attr( $bbai_funnel_state ); ?>"
-        data-bbai-missing-count="<?php echo esc_attr($bbai_state_missing_count); ?>"
-        data-bbai-weak-count="<?php echo esc_attr($bbai_state_weak_count); ?>"
-        data-bbai-optimized-count="<?php echo esc_attr($bbai_state_optimized_count); ?>"
-        data-bbai-total-count="<?php echo esc_attr($bbai_state_total_images); ?>"
+        data-bbai-missing-count="<?php echo esc_attr($bbai_dashboard_root_missing_count); ?>"
+        data-bbai-weak-count="<?php echo esc_attr($bbai_dashboard_root_weak_count); ?>"
+        data-bbai-optimized-count="<?php echo esc_attr($bbai_dashboard_root_optimized_count); ?>"
+        data-bbai-total-count="<?php echo esc_attr($bbai_dashboard_root_total_count); ?>"
         data-bbai-actionable-state="<?php echo esc_attr((string) ($bbai_actionable_state_model['state'] ?? Dashboard_State::ACTIONABLE_STATE_COMPLETE)); ?>"
         data-bbai-actionable-count="<?php echo esc_attr((string) ($bbai_actionable_state_model['actionable_count'] ?? 0)); ?>"
-        data-bbai-generated-count="<?php echo esc_attr(max(0, (int) ($bbai_stats['generated'] ?? $bbai_state_optimized_count))); ?>"
-        data-bbai-credits-used="<?php echo esc_attr($bbai_state_credits_used); ?>"
-        data-bbai-credits-total="<?php echo esc_attr($bbai_state_credits_limit); ?>"
-        data-bbai-credits-remaining="<?php echo esc_attr($bbai_state_credits_remaining); ?>"
+        data-bbai-generated-count="<?php echo esc_attr(max(0, (int) $bbai_dashboard_root_optimized_count)); ?>"
+        data-bbai-credits-used="<?php echo esc_attr($bbai_dashboard_root_credits_used); ?>"
+        data-bbai-credits-total="<?php echo esc_attr($bbai_dashboard_root_credits_total); ?>"
+        data-bbai-credits-remaining="<?php echo esc_attr($bbai_dashboard_root_credits_left); ?>"
         data-bbai-credits-reset-line="<?php echo esc_attr($bbai_credits_reset_line); ?>"
         data-bbai-auth-state="<?php echo esc_attr($bbai_auth_state); ?>"
         data-bbai-quota-type="<?php echo esc_attr($bbai_quota_type); ?>"
@@ -942,17 +1029,31 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
         $bbai_is_exhausted_trial_checkpoint = ! empty( $bbai_is_anonymous_trial )
             && empty( $bbai_has_connected_account )
             && ! empty( $bbai_product_state_model['trial']['exhausted'] );
-        $bbai_show_before_after = ! $bbai_is_exhausted_trial_checkpoint;
+        $bbai_show_before_after = ! $bbai_is_exhausted_trial_checkpoint && empty( $bbai_has_connected_account );
 
-        $bbai_hero_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-hero.php';
-        if ( is_readable( $bbai_hero_partial ) ) {
-            include $bbai_hero_partial;
+        // Guest / anonymous trial users: render the funnel hero design.
+        // Connected account users: render the logged-in dashboard resolver.
+        if ( empty( $bbai_has_connected_account ) ) {
+            $bbai_hero_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-hero.php';
+            if ( is_readable( $bbai_hero_partial ) ) {
+                include $bbai_hero_partial;
+            }
+        } else {
+            $bbai_li_page_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-logged-in-page.php';
+            if ( is_readable( $bbai_li_page_partial ) ) {
+                if ( isset( $this ) && is_object( $this ) ) {
+                    require $bbai_li_page_partial;
+                } else {
+                    echo '<div class="notice notice-error"><p>' . esc_html__( 'Dashboard could not load (missing context).', 'beepbeep-ai-alt-text-generator' ) . '</p></div>';
+                }
+            }
         }
 
         ?>
         <div class="bbai-dashboard-feedback" data-bbai-dashboard-feedback hidden aria-live="polite" role="status"></div>
         <?php
 
+        // Anonymous trial sections: preview rows + locked library teaser.
         if ( ! empty( $bbai_is_anonymous_trial ) && empty( $bbai_has_connected_account ) ) {
             $bbai_trial_preview_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-trial-library-preview.php';
             if ( is_readable( $bbai_trial_preview_partial ) ) {
@@ -969,7 +1070,22 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
         if ( $bbai_show_before_after && is_readable( $bbai_before_after_partial ) ) {
             include $bbai_before_after_partial;
         }
-	        ?>
+
+        // Build BBAI_REVIEW_PROMPT localized data.
+        $bbai_rps_path = BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-review-prompt-service.php';
+        if ( ! class_exists( \BeepBeepAI\AltTextGenerator\Services\Review_Prompt_Service::class ) && is_readable( $bbai_rps_path ) ) {
+            require_once $bbai_rps_path;
+        }
+        $bbai_review_prompt_data = [];
+        if ( class_exists( \BeepBeepAI\AltTextGenerator\Services\Review_Prompt_Service::class ) ) {
+            $bbai_review_prompt_data = \BeepBeepAI\AltTextGenerator\Services\Review_Prompt_Service::get_localized_data( [
+                'total'     => $bbai_total_images,
+                'optimised' => $bbai_optimized_count,
+            ] );
+        }
+        ?>
+
+        <script>window.BBAI_REVIEW_PROMPT = <?php echo wp_json_encode( $bbai_review_prompt_data ); ?>;</script>
 
         <div class="bbai-dashboard-command" hidden>
 
@@ -979,14 +1095,23 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
                 data-bbai-review-url="<?php echo esc_url($bbai_review_prompt_url); ?>"
                 role="dialog"
                 aria-modal="true"
-                aria-label="<?php esc_attr_e('Review request', 'beepbeep-ai-alt-text-generator'); ?>"
+                aria-labelledby="bbai-review-prompt-title"
                 hidden
             >
                 <div class="bbai-dashboard-review-overlay__backdrop" data-bbai-review-backdrop></div>
                 <div class="bbai-dashboard-review-overlay__dialog" data-bbai-review-dialog>
-                    <p class="bbai-dashboard-review-overlay__headline" data-bbai-review-headline><?php esc_html_e('⭐ Enjoying BeepBeep AI?', 'beepbeep-ai-alt-text-generator'); ?></p>
-                    <p class="bbai-dashboard-review-overlay__copy" data-bbai-review-copy><?php esc_html_e('You’ve fully optimised your images. If BeepBeep AI helped, a quick review would mean a lot.', 'beepbeep-ai-alt-text-generator'); ?></p>
-                    <p class="bbai-dashboard-review-overlay__aside"><?php esc_html_e('It helps more WordPress users discover the plugin.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                    <button
+                        type="button"
+                        class="bbai-dashboard-review-overlay__close"
+                        data-bbai-review-action="dismiss"
+                        aria-label="<?php esc_attr_e( 'Close', 'beepbeep-ai-alt-text-generator' ); ?>"
+                    >&#215;</button>
+                    <p
+                        id="bbai-review-prompt-title"
+                        class="bbai-dashboard-review-overlay__headline"
+                        data-bbai-review-headline
+                    ><?php esc_html_e( 'Enjoying BeepBeep AI?', 'beepbeep-ai-alt-text-generator' ); ?></p>
+                    <p class="bbai-dashboard-review-overlay__copy" data-bbai-review-copy><?php esc_html_e( 'You\'ve already optimised a good chunk of your library. If BeepBeep AI has saved you time, a quick WordPress.org review really helps.', 'beepbeep-ai-alt-text-generator' ); ?></p>
                     <div class="bbai-dashboard-review-overlay__actions">
                         <a
                             href="<?php echo esc_url($bbai_review_prompt_url); ?>"
@@ -994,19 +1119,18 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
                             rel="noopener noreferrer"
                             class="bbai-dashboard-review-overlay__cta"
                             data-bbai-review-action="leave"
-                        ><?php esc_html_e('Leave a quick review', 'beepbeep-ai-alt-text-generator'); ?></a>
+                        ><?php esc_html_e( 'Leave a review', 'beepbeep-ai-alt-text-generator' ); ?></a>
                         <button
                             type="button"
                             class="bbai-dashboard-review-overlay__later"
-                            data-bbai-review-action="later"
-                        ><?php esc_html_e('Maybe later', 'beepbeep-ai-alt-text-generator'); ?></button>
+                            data-bbai-review-action="remind-later"
+                        ><?php esc_html_e( 'Remind me later', 'beepbeep-ai-alt-text-generator' ); ?></button>
                     </div>
-                    <a
-                        href="https://wordpress.org/support/plugin/beepbeep-ai-alt-text-generator/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="bbai-dashboard-review-overlay__feedback"
-                    ><?php esc_html_e('Send feedback instead', 'beepbeep-ai-alt-text-generator'); ?></a>
+                    <button
+                        type="button"
+                        class="bbai-dashboard-review-overlay__already-reviewed"
+                        data-bbai-review-action="already-reviewed"
+                    ><?php esc_html_e( 'I already left a review', 'beepbeep-ai-alt-text-generator' ); ?></button>
                 </div>
             </div>
 

@@ -4330,9 +4330,18 @@ bbaiRunWithJQuery(function($) {
 	    return bbaiOpenDashboardAuthDirect(trigger);
 	}
 
+    function hasTruthDrivenLoggedInDashboard(root) {
+        var dashboard = document.querySelector('[data-bbai-logged-in-dashboard][data-bbai-li-ssr="1"]');
+        return !!(root && dashboard);
+    }
+
     function syncStatsToRoot(stats) {
         var root = getDashboardRoot();
         if (!root || !stats || typeof stats !== 'object') {
+            return;
+        }
+
+        if (hasTruthDrivenLoggedInDashboard(root)) {
             return;
         }
 
@@ -4416,6 +4425,10 @@ bbaiRunWithJQuery(function($) {
         var trialExhausted;
 
         if (!usage || typeof usage !== 'object') {
+            return;
+        }
+
+        if (hasTruthDrivenLoggedInDashboard(root)) {
             return;
         }
 
@@ -6996,33 +7009,22 @@ bbaiRunWithJQuery(function($) {
         return coverage.coverage >= 100 || (coverage.missing === 0 && coverage.weak === 0);
     }
 
-    function shouldShowDashboardReviewPrompt(data) {
-        var now = Date.now();
-        var successTimestamp = getStoredNumber(LAST_SUCCESS_TIMESTAMP_KEY);
-        var snoozedUntil = getStoredNumber(REVIEW_SNOOZE_UNTIL_KEY);
-        var actionCount = getStoredNumber(USER_ACTION_COUNT_KEY);
-        var coverage = getStatusCoverageData(data);
+    function shouldShowDashboardReviewPrompt() {
+        return !!(window.BBAI_REVIEW_PROMPT && window.BBAI_REVIEW_PROMPT.shouldShow);
+    }
 
-        if (!data || !isSuccessState(data) || coverage.coverage < 100) {
-            return false;
+    function persistReviewAction(reviewAction) {
+        var cfg = window.BBAI_REVIEW_PROMPT;
+        if (!cfg || !cfg.ajaxUrl || !cfg.nonce) {
+            return;
         }
-        if (!successTimestamp) {
-            return false;
-        }
-        if (getStoredBoolean(REVIEW_COMPLETED_KEY)) {
-            return false;
-        }
-        if (snoozedUntil && now < snoozedUntil) {
-            return false;
-        }
-        if (getStoredBoolean(REVIEW_PROMPT_SHOWN_KEY)) {
-            return false;
-        }
-        if (actionCount < 1 && Math.max(0, parseCount(data.generated)) < 1) {
-            return false;
-        }
-
-        return true;
+        var body = new URLSearchParams();
+        body.append('action', 'bbai_review_prompt_action');
+        body.append('nonce', cfg.nonce);
+        body.append('review_action', reviewAction);
+        fetch(cfg.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: body }).catch(function() {});
+        // Optimistically update client-side shouldShow so the modal won't re-appear on same page.
+        cfg.shouldShow = false;
     }
 
     function bindDashboardActionTracking() {
@@ -7134,7 +7136,7 @@ bbaiRunWithJQuery(function($) {
         }
     }
 
-    function dismissReviewModal(promptNode, reason) {
+    function dismissReviewModal(promptNode) {
         if (promptNode.hidden) {
             return;
         }
@@ -7145,11 +7147,6 @@ bbaiRunWithJQuery(function($) {
             promptNode.removeAttribute('data-bbai-review-revealed');
             document.body.style.overflow = '';
         }, 260);
-        if (reason === 'later') {
-            setStoredValue(REVIEW_SNOOZE_UNTIL_KEY, Date.now() + REVIEW_SNOOZE_MS);
-            setStoredValue(REVIEW_PROMPT_SHOWN_KEY, 'false');
-            emitDashboardAnalyticsEvent('review_dismissed', { source: 'dashboard_success_loop' });
-        }
     }
 
     function bindReviewPromptActions(promptNode) {
@@ -7163,20 +7160,35 @@ bbaiRunWithJQuery(function($) {
             if (actionEl) {
                 var action = actionEl.getAttribute('data-bbai-review-action');
                 if (action === 'leave') {
-                    setStoredValue(REVIEW_COMPLETED_KEY, 'true');
-                    setStoredValue(REVIEW_PROMPT_SHOWN_KEY, 'true');
-                    emitDashboardAnalyticsEvent('review_clicked', { source: 'dashboard_success_loop' });
-                    dismissReviewModal(promptNode, 'leave');
+                    persistReviewAction('leave_review');
+                    emitDashboardAnalyticsEvent('review_prompt_leave_review_clicked', { source: 'dashboard' });
+                    dismissReviewModal(promptNode);
                     return;
                 }
-                if (action === 'later') {
-                    dismissReviewModal(promptNode, 'later');
+                if (action === 'remind-later') {
+                    persistReviewAction('remind_later');
+                    emitDashboardAnalyticsEvent('review_prompt_remind_later_clicked', { source: 'dashboard' });
+                    dismissReviewModal(promptNode);
+                    return;
+                }
+                if (action === 'already-reviewed') {
+                    persistReviewAction('already_reviewed');
+                    emitDashboardAnalyticsEvent('review_prompt_already_left_clicked', { source: 'dashboard' });
+                    dismissReviewModal(promptNode);
+                    return;
+                }
+                if (action === 'dismiss') {
+                    persistReviewAction('dismiss');
+                    emitDashboardAnalyticsEvent('review_prompt_dismissed', { source: 'dashboard' });
+                    dismissReviewModal(promptNode);
                     return;
                 }
             }
 
             if (e.target.closest('[data-bbai-review-backdrop]')) {
-                dismissReviewModal(promptNode, 'later');
+                persistReviewAction('dismiss');
+                emitDashboardAnalyticsEvent('review_prompt_dismissed', { source: 'dashboard', trigger: 'backdrop' });
+                dismissReviewModal(promptNode);
             }
         });
 
@@ -7184,11 +7196,13 @@ bbaiRunWithJQuery(function($) {
             if (event.key !== 'Escape' || promptNode.hidden) {
                 return;
             }
-            dismissReviewModal(promptNode, 'later');
+            persistReviewAction('dismiss');
+            emitDashboardAnalyticsEvent('review_prompt_dismissed', { source: 'dashboard', trigger: 'escape' });
+            dismissReviewModal(promptNode);
         });
     }
 
-    function renderDashboardReviewPrompt(data) {
+    function renderDashboardReviewPrompt() {
         var promptNode = document.querySelector('[data-bbai-dashboard-review-prompt]');
 
         if (!promptNode) {
@@ -7197,7 +7211,7 @@ bbaiRunWithJQuery(function($) {
 
         bindReviewPromptActions(promptNode);
 
-        if (!shouldShowDashboardReviewPrompt(data)) {
+        if (!shouldShowDashboardReviewPrompt()) {
             promptNode.hidden = true;
             promptNode.removeAttribute('data-bbai-review-revealed');
             return;
@@ -7209,7 +7223,7 @@ bbaiRunWithJQuery(function($) {
 
         promptNode.setAttribute('data-bbai-review-revealed', '1');
         window.setTimeout(function() {
-            if (!shouldShowDashboardReviewPrompt(data)) {
+            if (!shouldShowDashboardReviewPrompt()) {
                 promptNode.removeAttribute('data-bbai-review-revealed');
                 return;
             }
@@ -7217,8 +7231,8 @@ bbaiRunWithJQuery(function($) {
             document.body.style.overflow = 'hidden';
             promptNode.classList.remove('bbai-dashboard-review-overlay--exit');
             promptNode.classList.add('bbai-dashboard-review-overlay--enter');
-            setStoredValue(REVIEW_PROMPT_SHOWN_KEY, 'true');
-            emitDashboardAnalyticsEvent('review_prompt_shown', { source: 'dashboard_success_loop' });
+            persistReviewAction('shown');
+            emitDashboardAnalyticsEvent('review_prompt_shown', { source: 'dashboard' });
 
             var focusTarget = promptNode.querySelector('[data-bbai-review-action="leave"]');
             if (focusTarget) {
@@ -7338,7 +7352,7 @@ bbaiRunWithJQuery(function($) {
             renderUpgradeContext(data);
         });
         runStep('review-prompt', function() {
-            renderDashboardReviewPrompt(data);
+            renderDashboardReviewPrompt();
         });
     }
 
@@ -7827,6 +7841,10 @@ bbaiRunWithJQuery(function($) {
         var overlayDelayMs = 300;
 
         if (!root || dashboardMountLoadingController) {
+            return;
+        }
+
+        if (hasTruthDrivenLoggedInDashboard(root)) {
             return;
         }
 

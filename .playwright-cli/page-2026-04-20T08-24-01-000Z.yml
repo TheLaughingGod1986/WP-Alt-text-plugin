@@ -1,0 +1,142 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - text:           
+    - generic:
+      - generic [ref=e3]:
+        - navigation "Toolbar":
+          - menu:
+            - group [ref=e4]:
+              - menuitem "About WordPress" [ref=e5] [cursor=pointer]:
+                - generic [ref=e7]: About WordPress
+            - group [ref=e8]:
+              - menuitem "BeepBeep AI Local" [ref=e9] [cursor=pointer]
+            - group [ref=e10]:
+              - menuitem "0 Comments in moderation" [ref=e11] [cursor=pointer]:
+                - generic [ref=e13]: "0"
+                - generic [ref=e14]: 0 Comments in moderation
+            - group [ref=e15]:
+              - menuitem "New" [ref=e16] [cursor=pointer]:
+                - generic [ref=e18]: New
+          - menu [ref=e19]:
+            - group [ref=e20]:
+              - menuitem "Howdy, admin" [ref=e21] [cursor=pointer]
+      - main:
+        - generic [ref=e22]:
+          - generic [ref=e23]:
+            - generic [ref=e25]:
+              - generic [ref=e26]:
+                - img [ref=e27]
+                - generic [ref=e35]: BeepBeep AI – Alt Text Generator
+              - navigation "Main navigation" [ref=e36]:
+                - generic [ref=e37]:
+                  - link "Dashboard" [ref=e38] [cursor=pointer]:
+                    - /url: http://localhost:8888/wp-admin/admin.php?page=bbai
+                  - link "ALT Library" [ref=e39] [cursor=pointer]:
+                    - /url: http://localhost:8888/wp-admin/admin.php?page=bbai-library
+                  - link "Analytics" [ref=e40] [cursor=pointer]:
+                    - /url: http://localhost:8888/wp-admin/admin.php?page=bbai-analytics
+                  - link "Usage" [ref=e41] [cursor=pointer]:
+                    - /url: http://localhost:8888/wp-admin/admin.php?page=bbai-credit-usage
+                  - link "Settings" [ref=e42] [cursor=pointer]:
+                    - /url: http://localhost:8888/wp-admin/admin.php?page=bbai-settings
+                - link "Help" [ref=e43] [cursor=pointer]:
+                  - /url: http://localhost:8888/wp-admin/admin.php?page=bbai-guide
+                  - img [ref=e44]
+                  - generic [ref=e47]: Help
+              - generic [ref=e49]:
+                - generic [ref=e50]: ben@gmail.coms
+                - generic [ref=e51]: Free
+            - generic [ref=e55]:
+              - generic:
+                - region "Logged-in dashboard":
+                  - generic:
+                    - generic "7 images are missing ALT text":
+                      - button "Generate missing ALT text":
+                        - generic:
+                          - generic "0 of 7 images have ALT text":
+                            - generic:
+                              - generic: "7"
+                          - paragraph: 7 images need ALT
+                          - paragraph: Click to generate
+                      - generic:
+                        - generic: Action needed
+                        - heading "7 images are missing ALT text" [level=1]
+                        - paragraph: Generate ALT text now to improve accessibility & search visibility.
+                        - generic:
+                          - link "Generate missing ALT text":
+                            - /url: "#"
+                          - link "Open ALT Library":
+                            - /url: http://localhost:8888/wp-admin/admin.php?page=bbai-library
+                        - generic "Status summary":
+                          - generic:
+                            - term: Missing
+                            - definition: "7"
+                          - generic:
+                            - term: To review
+                            - definition: "0"
+                          - generic:
+                            - term: Credits
+                            - definition: 0 / 50
+                        - list "Workflow steps":
+                          - listitem: Generate
+                          - listitem: Review
+                          - listitem: Done
+                    - complementary "Upgrade suggestion":
+                      - generic:
+                        - generic:
+                          - img
+                        - generic:
+                          - heading "Upgrade to BeepBeep Pro" [level=2]
+                          - paragraph: Manage API keys, unlock faster bulk actions, and priority support.
+                      - generic:
+                        - button "Upgrade to Pro"
+                  - generic:
+                    - generic: 7 images need ALT text
+                    - generic: Last run just now
+          - contentinfo [ref=e56]:
+            - paragraph [ref=e57]:
+              - generic [ref=e58]:
+                - text: Thank you for creating with
+                - link "WordPress" [ref=e59] [cursor=pointer]:
+                  - /url: https://wordpress.org/
+                - text: .
+            - paragraph [ref=e60]: Version 6.9.4
+          - button "Help" [ref=e62] [cursor=pointer]
+  - text: "* * * * * * * *"
+  - dialog "Keyboard Shortcuts":
+    - generic:
+      - generic:
+        - heading "Keyboard Shortcuts" [level=2]
+        - button "Close":
+          - img
+      - generic:
+        - generic:
+          - generic: Generate missing alt text
+          - generic:
+            - generic: G
+        - generic:
+          - generic: Regenerate all alt text
+          - generic:
+            - generic: R
+        - generic:
+          - generic: Open upgrade modal
+          - generic:
+            - generic: U
+        - generic:
+          - generic: Show keyboard shortcuts
+          - generic:
+            - generic: "?"
+        - generic:
+          - generic: Close modals
+          - generic:
+            - generic: Esc
+        - generic:
+          - generic: Quick actions menu
+          - generic:
+            - generic: Ctrl
+            - generic: +
+            - generic: K
+  - generic:
+    - status:
+      - paragraph: Loading your dashboard…
+      - paragraph: Fetching your images and usage

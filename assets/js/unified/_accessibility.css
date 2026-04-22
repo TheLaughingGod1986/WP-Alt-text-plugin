@@ -1,0 +1,128 @@
+/**
+ * Accessibility Enhancements
+ * ARIA labels, focus management, keyboard navigation, high contrast mode
+ */
+
+/* Focus Management */
+.bbai-focus-trap {
+    position: relative;
+}
+
+.bbai-focus-trap:focus-within {
+    outline: 2px solid var(--bbai-primary);
+    outline-offset: 2px;
+}
+
+/* Skip to Content Link */
+.bbai-skip-link {
+    position: absolute;
+    top: -100px;
+    left: 0;
+    background: var(--bbai-primary);
+    color: white;
+    padding: var(--bbai-space-3) var(--bbai-space-4);
+    text-decoration: none;
+    z-index: 100000;
+    border-radius: 0 0 var(--bbai-radius) 0;
+}
+
+.bbai-skip-link:focus {
+    top: 0;
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .bbai-btn,
+    .bbai-card,
+    .bbai-input {
+        border-width: 2px;
+    }
+
+    .bbai-btn-primary {
+        border: 2px solid var(--bbai-primary);
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Screen Reader Only */
+.bbai-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Focus Visible */
+.bbai-btn:focus-visible,
+.bbai-link:focus-visible,
+.bbai-input:focus-visible {
+    outline: 3px solid var(--bbai-primary);
+    outline-offset: 2px;
+}
+
+/* ARIA Live Regions */
+.bbai-live-region {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Keyboard Navigation Indicators */
+.bbai-keyboard-nav .bbai-btn:focus,
+.bbai-keyboard-nav .bbai-link:focus {
+    outline: 3px solid var(--bbai-primary);
+    outline-offset: 2px;
+}
+
+/* High Contrast Toggle */
+.bbai-high-contrast {
+    --bbai-text: #000000;
+    --bbai-text-muted: #333333;
+    --bbai-bg: #ffffff;
+    --bbai-gray-50: #f5f5f5;
+    --bbai-gray-100: #e0e0e0;
+    --bbai-gray-200: #cccccc;
+    --bbai-primary: #0066cc;
+    --bbai-primary-hover: #0052a3;
+    --bbai-success: #006600;
+    --bbai-error: #cc0000;
+    --bbai-warning: #cc6600;
+}
+
+.bbai-high-contrast .bbai-btn,
+.bbai-high-contrast .bbai-card {
+    border-width: 2px;
+}
+
+.bbai-high-contrast .bbai-btn-primary {
+    background: var(--bbai-primary);
+    border-color: var(--bbai-primary);
+    color: white;
+}
+
+/* Dark Mode Accessibility */
+[data-theme="dark"] .bbai-btn:focus-visible,
+.bbai-dark-mode .bbai-btn:focus-visible {
+    outline-color: var(--bbai-primary-light);
+}

@@ -9382,15 +9382,9 @@ h1.bbai-heading,
    Remove WordPress admin spacing for BeepBeep dashboard page only
    Scoped to body.toplevel_page_bbai so other admin pages are unaffected
    ========================================================================== */
-body.toplevel_page_bbai #wpcontent {
-    padding-left: 0;
-}
 
-body.toplevel_page_bbai #wpbody-content {
-    padding: 0;
-}
-
-body.toplevel_page_bbai .wrap {
+/* Anonymous trial: let WP's own layout handle positioning, just remove excess wrap padding */
+body.toplevel_page_bbai:not(.bbai-dashboard--connected) .wrap.bbai-wrap {
     margin: 0;
     padding: 0;
     max-width: none;
@@ -13248,7 +13242,7 @@ a.bbai-header-login-btn:focus-visible {
 .alttext-forgot-password-link:hover { opacity: 0.7; }
 
 /* Button */
-.alttext-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; min-width: min(100%, 280px); max-width: 100%; padding: 0 18px; border: none; border-radius: 8px; font-size: 14px; font-weight: var(--bbai-font-semibold); line-height: 1.15; cursor: pointer; transition: all var(--bbai-transition-fast); width: auto; margin: 0 auto 12px; box-sizing: border-box; }
+.alttext-btn { display: flex; align-items: center; justify-content: center; min-height: 40px; min-width: min(100%, 280px); max-width: 100%; padding: 0 18px; border: none; border-radius: 8px; font-size: 14px; font-weight: var(--bbai-font-semibold); line-height: 1.15; cursor: pointer; transition: all var(--bbai-transition-fast); width: auto; margin: 0 auto 12px; box-sizing: border-box; }
 .alttext-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .alttext-btn--primary { background: var(--bbai-primary); color: white; }
 .alttext-btn--primary:hover:not(:disabled) { background: var(--bbai-primary-hover); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08); }
@@ -15102,6 +15096,7 @@ button[disabled][data-bbai-tooltip] {
 
 .bbai-toast-message {
     font-size: var(--bbai-text-sm);
+    font-weight: 600;
     line-height: 1.5;
     color: var(--bbai-text);
     margin-bottom: var(--bbai-space-2);

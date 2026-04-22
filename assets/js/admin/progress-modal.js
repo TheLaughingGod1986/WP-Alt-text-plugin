@@ -217,10 +217,26 @@
     /**
      * Show completion state inside the progress modal.
      * Replaces the live-progress body with a success summary and CTAs.
+     * All messaging derives from the canonical window.bbaiGenerationResult object.
+     *
+     * @param {number} successes Images generated successfully.
+     * @param {number} failures  Images that failed.
+     * @param {number} total     Total images attempted.
      */
-    window.showBulkProgressComplete = function(successes, failures) {
+    window.showBulkProgressComplete = function(successes, failures, total) {
         var $modal = $('#bbai-bulk-progress-modal');
         if (!$modal.length) return;
+
+        // Mark modal as completed so minimizeBulkProgress knows to reload.
+        $modal.data('bbaiComplete', true);
+
+        total = total || (successes + failures);
+        var result = window.bbaiGenerationResult || {
+            status:    failures > 0 ? (successes > 0 ? 'partial' : 'error') : (successes > 0 ? 'success' : 'no_changes'),
+            attempted: total,
+            updated:   successes,
+            failed:    failures,
+        };
 
         var adminBase = (window.bbai_ajax && window.bbai_ajax.admin_url) ||
             (window.bbai_env && window.bbai_env.admin_url) || '';
@@ -235,18 +251,41 @@
             ? adminBase + 'admin.php?page=bbai-library&status=needs_review&filter=needs-review#bbai-review-filter-tabs'
             : 'admin.php?page=bbai-library&status=needs_review&filter=needs-review#bbai-review-filter-tabs';
 
-        var titleText    = failures > 0 ? 'Images processed with some issues' : 'All images improved \uD83C\uDF89';
-        var messageText  = failures > 0
-            ? (successes + ' succeeded, ' + failures + ' failed. Review your ALT text in the library.')
-            : 'Review and publish your ALT text';
+        // ── Derive messaging from the single result object ───────────────────
+        var titleText, messageText, primaryLabel, primaryUrl;
+
+        if (result.status === 'success') {
+            var n = result.updated;
+            titleText    = n === 1 ? '1 image updated successfully' : n + ' images updated successfully';
+            messageText  = 'Your ALT text is ready to review in the library.';
+            primaryLabel = 'View results';
+            primaryUrl   = reviewResultsUrl;
+        } else if (result.status === 'partial') {
+            titleText    = result.updated + ' of ' + result.attempted + ' images updated';
+            messageText  = result.failed + ' image' + (result.failed !== 1 ? 's' : '') + ' could not be processed. Check the library for details.';
+            primaryLabel = 'Review results';
+            primaryUrl   = reviewResultsUrl;
+        } else if (result.status === 'no_changes') {
+            titleText    = 'No new images required updates';
+            messageText  = 'Your library is already up to date.';
+            primaryLabel = 'View library';
+            primaryUrl   = libraryUrl;
+        } else {
+            // error
+            titleText    = 'Generation completed with issues';
+            messageText  = 'Some images could not be processed. Check the library for details.';
+            primaryLabel = 'View library';
+            primaryUrl   = libraryUrl;
+        }
+        // ─────────────────────────────────────────────────────────────────────
 
         var completionHtml =
             '<div class="bbai-bulk-progress__complete">' +
             '    <p class="bbai-bulk-progress__complete-title">' + titleText + '</p>' +
             '    <p class="bbai-bulk-progress__complete-message">' + messageText + '</p>' +
             '    <div class="bbai-bulk-progress__complete-actions">' +
-            '        <a href="' + reviewResultsUrl + '" class="button button-primary bbai-bulk-progress__complete-review">Review ALT text</a>' +
-            '        <a href="' + libraryUrl + '" class="button bbai-bulk-progress__complete-library">Open ALT Library</a>' +
+            '        <a href="' + primaryUrl + '" class="button button-primary bbai-bulk-progress__complete-review">' + primaryLabel + '</a>' +
+            '        <a href="' + libraryUrl + '" class="button bbai-bulk-progress__complete-library">Open library</a>' +
             '    </div>' +
             '</div>';
 
@@ -254,16 +293,32 @@
         $modal.find('.bbai-bulk-progress__helper').prop('hidden', true);
         $modal.find('.bbai-bulk-progress__body').html(completionHtml);
 
-        $modal.find('.bbai-bulk-progress__complete-review').on('click', function() {
-            window.hideBulkProgress();
-        });
+        // Navigating via a CTA reloads naturally (full page navigation).
+        // No extra click handler needed — the hrefs handle it.
     };
 
     /**
-     * Minimize — hides modal, job continues, widget becomes visible.
+     * Minimize or dismiss the bulk progress modal.
+     *
+     * During generation: hides the modal so the job continues behind the scenes
+     * and the job-widget becomes visible (existing behaviour).
+     *
+     * After generation is complete: reloads the page so the SSR dashboard
+     * renders the correct final state (ALL_CLEAR / NEEDS_REVIEW / etc.).
+     * This is the only reliable way to keep the logged-in hero consistent —
+     * it is server-rendered and has no in-page update path.
      */
     function minimizeBulkProgress() {
         var $modal = $('#bbai-bulk-progress-modal');
+        var isComplete = $modal.length && !!$modal.data('bbaiComplete');
+
+        if (isComplete) {
+            // Generation finished — reload so the SSR dashboard shows the real state.
+            window.location.reload();
+            return;
+        }
+
+        // Still in progress — just hide the modal.
         if ($modal.length) {
             $modal.removeClass('active');
             $('body').css('overflow', '');

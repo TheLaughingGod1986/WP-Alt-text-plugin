@@ -511,7 +511,7 @@ function bbai_banner_resolve_state(array $data): string
  *   show_progress:bool
  * }
  */
-function bbai_banner_get_content(string $state, array $data): array
+function bbai_banner_get_content(string $state, array $data, string $page_context = ''): array
 {
     $d            = bbai_banner_normalize_banner_data($data);
     $rem          = $d['credits_remaining'];
@@ -574,14 +574,77 @@ function bbai_banner_get_content(string $state, array $data): array
                 $variant = 'weak';
             }
 
-            $status = bbai_banner_build_issue_attention_message($issues);
+            // Context-aware body: each page gets copy relevant to what it does.
+            if (BBAI_BANNER_CTX_USAGE === $page_context) {
+                // Credits page — orient to the billing action, not the library.
+                $attention_body = $missing > 0
+                    ? sprintf(
+                        /* translators: %s: number of images missing ALT text */
+                        _n(
+                            '%s image still needs ALT text. Add credits to continue generating.',
+                            '%s images still need ALT text. Add credits to continue generating.',
+                            $missing,
+                            'beepbeep-ai-alt-text-generator'
+                        ),
+                        number_format_i18n($missing)
+                    )
+                    : __('You have images waiting for review. Add credits to keep your library up to date.', 'beepbeep-ai-alt-text-generator');
+            } elseif (BBAI_BANNER_CTX_ANALYTICS === $page_context) {
+                // Analytics is read-only — orient toward the library, not an action.
+                $attention_body = $missing > 0
+                    ? sprintf(
+                        /* translators: %s: number of images missing ALT text */
+                        _n(
+                            '%s image is missing ALT text. Head to your library to generate it.',
+                            '%s images are missing ALT text. Head to your library to generate them.',
+                            $missing,
+                            'beepbeep-ai-alt-text-generator'
+                        ),
+                        number_format_i18n($missing)
+                    )
+                    : __('Some images are awaiting review. Open your library to approve the generated ALT text.', 'beepbeep-ai-alt-text-generator');
+            } elseif (BBAI_BANNER_CTX_LIBRARY === $page_context) {
+                // Library — user is already here; be specific and direct.
+                if ('mixed' === $variant) {
+                    $attention_body = sprintf(
+                        /* translators: 1: missing count, 2: needs-review count */
+                        __('%1$s missing ALT text · %2$s awaiting review. Use the filters below to work through them.', 'beepbeep-ai-alt-text-generator'),
+                        number_format_i18n($missing),
+                        number_format_i18n($needs_review)
+                    );
+                } elseif ('missing' === $variant) {
+                    $attention_body = sprintf(
+                        /* translators: %s: missing count */
+                        _n(
+                            '%s image is missing ALT text. Generate it now to improve accessibility and SEO.',
+                            '%s images are missing ALT text. Generate them now to improve accessibility and SEO.',
+                            $missing,
+                            'beepbeep-ai-alt-text-generator'
+                        ),
+                        number_format_i18n($missing)
+                    );
+                } else {
+                    $attention_body = sprintf(
+                        /* translators: %s: needs-review count */
+                        _n(
+                            '%s image has generated ALT text waiting for your approval.',
+                            '%s images have generated ALT text waiting for your approval.',
+                            $needs_review,
+                            'beepbeep-ai-alt-text-generator'
+                        ),
+                        number_format_i18n($needs_review)
+                    );
+                }
+            } else {
+                $attention_body = bbai_copy_banner_needs_attention_body();
+            }
 
             return [
                 'state'                   => $state,
                 'needs_attention_variant' => $variant,
                 'title'                   => bbai_copy_banner_needs_attention_title(),
-                'body'                    => bbai_copy_banner_needs_attention_body(),
-                'status_line'             => $status,
+                'body'                    => $attention_body,
+                'status_line'             => '',
                 'show_progress'           => false,
             ];
 
@@ -687,7 +750,7 @@ function bbai_banner_get_banner_state_from_snapshot(array $s, string $page_conte
     $merged = array_merge($s, $payload);
     $state  = bbai_get_primary_banner_state($merged, $page_context);
 
-    return array_merge(bbai_banner_get_content($state, $merged), ['state' => $state]);
+    return array_merge(bbai_banner_get_content($state, $merged, $page_context), ['state' => $state]);
 }
 
 /**

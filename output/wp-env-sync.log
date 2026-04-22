@@ -1,0 +1,2738 @@
+Watching /Users/ben/code/web/WP-Alt-text-plugin/ for changes...
+Syncing to /Users/ben/.wp-env/06fe8883b07a5e21412cec8c726b075e/WordPress/wp-content/plugins/beepbeep-ai-alt-text-generator/
+Press Ctrl+C to stop.
+
+
+sent 34274 bytes  received 42 bytes  1626350 bytes/sec
+total size is 12760897  speedup is 371.86
+.playwright-cli/console-2026-04-16T21-59-28-323Z.log
+.playwright-cli/page-2026-04-16T21-59-28-453Z.yml
+output/wp-env-sync.log
+sent 35919 bytes  received 98 bytes  1026125 bytes/sec
+total size is 12762287  speedup is 354.34
+--- synced at 22:59:29 ---
+Transfer starting: 570 files
+.playwright-cli/console-2026-04-16T21-59-28-323Z.log
+output/wp-env-sync.log
+sent 35211 bytes  received 64 bytes  1351532 bytes/sec
+total size is 12762720  speedup is 361.81
+--- synced at 22:59:37 ---
+.playwright-cli/
+.playwright-cli/page-2026-04-16T21-59-37-962Z.yml
+output/wp-env-sync.log
+sent 60621 bytes  received 70 bytes  2518298 bytes/sec
+total size is 12788442  speedup is 210.71
+--- synced at 22:59:38 ---
+.playwright-cli/console-2026-04-16T21-59-42-307Z.log
+.playwright-cli/page-2026-04-16T21-59-42-437Z.yml
+output/wp-env-sync.log
+sent 36831 bytes  received 92 bytes  1414674 bytes/sec
+total size is 12789948  speedup is 346.40
+--- synced at 22:59:43 ---
+.playwright-cli/
+.playwright-cli/console-2026-04-16T21-59-56-787Z.log
+output/wp-env-sync.log
+sent 36029 bytes  received 70 bytes  1284661 bytes/sec
+total size is 12790407  speedup is 354.31
+--- synced at 22:59:56 ---
+Transfer starting: 575 files
+.playwright-cli/page-2026-04-16T21-59-56-934Z.yml
+output/wp-env-sync.log
+sent 37188 bytes  received 64 bytes  1374612 bytes/sec
+total size is 12791707  speedup is 343.38
+--- synced at 22:59:57 ---
+Transfer starting: 575 files
+.playwright-cli/console-2026-04-16T21-59-56-787Z.log
+output/wp-env-sync.log
+sent 36932 bytes  received 64 bytes  1417471 bytes/sec
+total size is 12792325  speedup is 345.78
+--- synced at 23:00:16 ---
+Transfer starting: 575 files
+.playwright-cli/console-2026-04-16T21-59-56-787Z.log
+output/wp-env-sync.log
+sent 37344 bytes  received 64 bytes  666809 bytes/sec
+total size is 12792737  speedup is 341.98
+--- synced at 23:00:19 ---
+Transfer starting: 575 files
+.playwright-cli/console-2026-04-16T21-59-56-787Z.log
+output/wp-env-sync.log
+sent 37810 bytes  received 64 bytes  944488 bytes/sec
+total size is 12793203  speedup is 337.78
+--- synced at 23:00:20 ---
+includes/services/
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 98073 bytes  received 70 bytes  3492633 bytes/sec
+total size is 12793935  speedup is 130.36
+--- synced at 23:01:08 ---
+includes/services/
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 98730 bytes  received 70 bytes  3516014 bytes/sec
+total size is 12794592  speedup is 129.50
+--- synced at 23:01:16 ---
+includes/services/
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 99060 bytes  received 70 bytes  3798084 bytes/sec
+total size is 12794922  speedup is 129.07
+--- synced at 23:01:23 ---
+includes/services/
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 101326 bytes  received 70 bytes  3608398 bytes/sec
+total size is 12797188  speedup is 126.21
+--- synced at 23:01:46 ---
+includes/services/
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 185233 bytes  received 92 bytes  5279914 bytes/sec
+total size is 12805283  speedup is 69.10
+--- synced at 23:02:04 ---
+Transfer starting: 575 files
+admin/class-bbai-admin-hooks.php
+output/wp-env-sync.log
+sent 47398 bytes  received 64 bytes  1478566 bytes/sec
+total size is 12805626  speedup is 269.81
+--- synced at 23:02:09 ---
+Transfer starting: 575 files
+admin/partials/
+admin/partials/dashboard-body.php
+sent 93635 bytes  received 48 bytes  3012315 bytes/sec
+total size is 12806437  speedup is 136.70
+--- synced at 23:02:30 ---
+Transfer starting: 575 files
+.playwright-cli/console-2026-04-16T21-59-56-787Z.log
+output/wp-env-sync.log
+sent 39953 bytes  received 64 bytes  1078625 bytes/sec
+total size is 12806823  speedup is 320.03
+--- synced at 23:02:39 ---
+Transfer starting: 575 files
+.playwright-cli/console-2026-04-16T21-59-56-787Z.log
+output/wp-env-sync.log
+sent 40216 bytes  received 64 bytes  1338205 bytes/sec
+total size is 12807290  speedup is 317.96
+--- synced at 23:02:40 ---
+admin/partials/
+admin/partials/dashboard-body.php
+output/wp-env-sync.log
+sent 97168 bytes  received 70 bytes  3341512 bytes/sec
+total size is 12806640  speedup is 131.70
+--- synced at 23:02:45 ---
+Transfer starting: 575 files
+.playwright-cli/console-2026-04-16T21-59-56-787Z.log
+output/wp-env-sync.log
+sent 41063 bytes  received 64 bytes  1638525 bytes/sec
+total size is 12807258  speedup is 311.41
+--- synced at 23:02:48 ---
+Transfer starting: 575 files
+admin/partials/
+admin/partials/dashboard-body.php
+sent 92729 bytes  received 48 bytes  3082292 bytes/sec
+total size is 12807460  speedup is 138.05
+--- synced at 23:03:15 ---
+Transfer starting: 575 files
+.playwright-cli/console-2026-04-16T21-59-56-787Z.log
+sent 36875 bytes  received 42 bytes  1598138 bytes/sec
+total size is 12808084  speedup is 346.94
+--- synced at 23:03:56 ---
+Transfer starting: 575 files
+admin/traits/trait-core-assets.php
+output/wp-env-sync.log
+sent 121820 bytes  received 64 bytes  5276363 bytes/sec
+total size is 12808291  speedup is 105.09
+--- synced at 23:04:15 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/dashboard-current.png
+sent 61827 bytes  received 70 bytes  1815161 bytes/sec
+total size is 12830211  speedup is 207.28
+--- synced at 23:05:23 ---
+Transfer starting: 576 files
+output/wp-env-sync.log
+output/playwright/dashboard-current.png
+sent 120071 bytes  received 64 bytes  3991196 bytes/sec
+total size is 12888453  speedup is 107.28
+--- synced at 23:06:34 ---
+Transfer starting: 576 files
+admin/partials/dashboard-logged-in-page.php
+output/wp-env-sync.log
+sent 53189 bytes  received 64 bytes  1435390 bytes/sec
+total size is 12890061  speedup is 242.05
+--- synced at 23:10:55 ---
+Transfer starting: 576 files
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 106171 bytes  received 64 bytes  2942797 bytes/sec
+total size is 12904880  speedup is 121.47
+--- synced at 23:12:54 ---
+Transfer starting: 576 files
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 106388 bytes  received 64 bytes  3658144 bytes/sec
+total size is 12905097  speedup is 121.23
+--- synced at 23:13:01 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 108373 bytes  received 70 bytes  3003961 bytes/sec
+total size is 12907072  speedup is 119.02
+--- synced at 23:15:05 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/dashboard-reference-attempt.png
+sent 212084 bytes  received 70 bytes  7290515 bytes/sec
+total size is 13077846  speedup is 61.64
+--- synced at 23:16:54 ---
+Transfer starting: 577 files
+output/wp-env-sync.log
+output/playwright/dashboard-reference-attempt.png
+sent 224604 bytes  received 64 bytes  7995302 bytes/sec
+total size is 13090372  speedup is 58.27
+--- synced at 23:17:48 ---
+Transfer starting: 577 files
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 107299 bytes  received 64 bytes  3689450 bytes/sec
+total size is 13090652  speedup is 121.93
+--- synced at 23:20:20 ---
+Transfer starting: 577 files
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 107293 bytes  received 64 bytes  3689243 bytes/sec
+total size is 13090646  speedup is 121.94
+--- synced at 23:20:27 ---
+Transfer starting: 577 files
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 109858 bytes  received 64 bytes  3651893 bytes/sec
+total size is 13091158  speedup is 119.09
+--- synced at 23:21:30 ---
+Transfer starting: 577 files
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 110120 bytes  received 64 bytes  3328821 bytes/sec
+total size is 13091420  speedup is 118.81
+--- synced at 23:22:05 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/dashboard-reference-final.png
+sent 209104 bytes  received 70 bytes  7188109 bytes/sec
+total size is 13257776  speedup is 63.38
+--- synced at 23:22:43 ---
+Transfer starting: 578 files
+output/wp-env-sync.log
+output/playwright/dashboard-reference-final.png
+sent 209375 bytes  received 64 bytes  7197216 bytes/sec
+total size is 13258053  speedup is 63.30
+--- synced at 23:24:48 ---
+Transfer starting: 578 files
+output/wp-env-sync.log
+output/playwright/dashboard-reference-final.png
+sent 234846 bytes  received 64 bytes  7553376 bytes/sec
+total size is 13283524  speedup is 56.55
+--- synced at 23:26:25 ---
+Transfer starting: 578 files
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 111537 bytes  received 64 bytes  3835085 bytes/sec
+total size is 13284204  speedup is 119.03
+--- synced at 23:27:08 ---
+Transfer starting: 578 files
+output/wp-env-sync.log
+output/playwright/dashboard-reference-final.png
+sent 233657 bytes  received 64 bytes  8031649 bytes/sec
+total size is 13282791  speedup is 56.83
+--- synced at 23:27:41 ---
+Transfer starting: 578 files
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 112187 bytes  received 64 bytes  3109445 bytes/sec
+total size is 13283214  speedup is 118.33
+--- synced at 23:29:50 ---
+Transfer starting: 578 files
+output/wp-env-sync.log
+output/playwright/dashboard-reference-final.png
+sent 234369 bytes  received 64 bytes  7538038 bytes/sec
+total size is 13283702  speedup is 56.66
+--- synced at 23:30:25 ---
+Transfer starting: 578 files
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 113586 bytes  received 64 bytes  3905498 bytes/sec
+total size is 13284874  speedup is 116.89
+--- synced at 23:33:19 ---
+Transfer starting: 578 files
+output/wp-env-sync.log
+output/playwright/dashboard-reference-final.png
+sent 236303 bytes  received 64 bytes  7852724 bytes/sec
+total size is 13286584  speedup is 56.21
+--- synced at 23:33:55 ---
+Transfer starting: 578 files
+admin/partials/
+admin/partials/dashboard-body.php
+sent 93288 bytes  received 48 bytes  2515795 bytes/sec
+total size is 13287157  speedup is 142.36
+--- synced at 15:57:55 ---
+Transfer starting: 578 files
+admin/
+admin/class-bbai-core.php
+sent 542219 bytes  received 48 bytes  11273742 bytes/sec
+total size is 13287662  speedup is 24.50
+--- synced at 16:15:19 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 114466 bytes  received 70 bytes  3358826 bytes/sec
+total size is 13287882  speedup is 116.01
+--- synced at 16:15:28 ---
+deleting admin/logged-in-state.css
+admin/
+output/wp-env-sync.log
+sent 45543 bytes  received 48 bytes  1298888 bytes/sec
+total size is 13288111  speedup is 291.46
+--- synced at 18:28:28 ---
+assets/css/
+assets/css/unified.css
+output/wp-env-sync.log
+sent 483035 bytes  received 70 bytes  10479501 bytes/sec
+total size is 13288403  speedup is 27.51
+--- synced at 21:03:52 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/status-card-refresh.css
+output/wp-env-sync.log
+sent 281230 bytes  received 70 bytes  9345514 bytes/sec
+total size is 13288695  speedup is 47.24
+--- synced at 21:04:16 ---
+deleting assets/css/status-card-refresh.css
+assets/css/
+output/wp-env-sync.log
+sent 46147 bytes  received 48 bytes  1395619 bytes/sec
+total size is 13288927  speedup is 287.67
+--- synced at 21:32:29 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/funnel-hero.css
+output/wp-env-sync.log
+sent 99353 bytes  received 70 bytes  2754099 bytes/sec
+total size is 13289383  speedup is 133.67
+--- synced at 12:21:47 ---
+assets/css/
+assets/css/unified.css
+output/wp-env-sync.log
+sent 484184 bytes  received 70 bytes  13414238 bytes/sec
+total size is 13289914  speedup is 27.44
+--- synced at 12:31:37 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/status-card-refresh.css
+output/wp-env-sync.log
+sent 282124 bytes  received 70 bytes  12768959 bytes/sec
+total size is 13290149  speedup is 47.10
+--- synced at 12:31:50 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/funnel-hero.css
+output/wp-env-sync.log
+sent 100001 bytes  received 70 bytes  3438865 bytes/sec
+total size is 13290390  speedup is 132.81
+--- synced at 12:31:56 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 116389 bytes  received 70 bytes  5269638 bytes/sec
+total size is 13290637  speedup is 114.12
+--- synced at 12:32:08 ---
+Transfer starting: 578 files
+output/wp-env-sync.log
+sent 47438 bytes  received 42 bytes  1315235 bytes/sec
+total size is 13290866  speedup is 279.93
+--- synced at 12:40:35 ---
+admin/traits/
+admin/traits/trait-core-assets.php
+output/wp-env-sync.log
+sent 130338 bytes  received 70 bytes  4481374 bytes/sec
+total size is 13291731  speedup is 101.92
+--- synced at 12:43:10 ---
+admin/traits/
+admin/traits/trait-core-assets.php
+output/wp-env-sync.log
+sent 131013 bytes  received 70 bytes  5674588 bytes/sec
+total size is 13292406  speedup is 101.40
+--- synced at 12:43:18 ---
+admin/traits/
+admin/traits/trait-core-assets.php
+output/wp-env-sync.log
+sent 131404 bytes  received 70 bytes  4678790 bytes/sec
+total size is 13292797  speedup is 101.11
+--- synced at 12:43:26 ---
+admin/traits/
+admin/traits/trait-core-assets.php
+output/wp-env-sync.log
+sent 131906 bytes  received 70 bytes  3463937 bytes/sec
+total size is 13293299  speedup is 100.73
+--- synced at 12:43:34 ---
+admin/traits/
+admin/traits/trait-core-assets.php
+output/wp-env-sync.log
+sent 132274 bytes  received 70 bytes  4883542 bytes/sec
+total size is 13293667  speedup is 100.45
+--- synced at 12:43:40 ---
+admin/traits/
+admin/traits/trait-core-assets.php
+output/wp-env-sync.log
+sent 134454 bytes  received 70 bytes  4963985 bytes/sec
+total size is 13295847  speedup is 98.84
+--- synced at 12:44:04 ---
+admin/traits/
+admin/traits/trait-core-assets.php
+output/wp-env-sync.log
+sent 134747 bytes  received 70 bytes  4974797 bytes/sec
+total size is 13296140  speedup is 98.62
+--- synced at 12:44:14 ---
+admin/traits/
+admin/traits/trait-core-assets.php
+output/wp-env-sync.log
+sent 135031 bytes  received 70 bytes  4985276 bytes/sec
+total size is 13296424  speedup is 98.42
+--- synced at 12:44:33 ---
+admin/traits/
+admin/traits/trait-core-assets.php
+output/wp-env-sync.log
+sent 135408 bytes  received 70 bytes  3752853 bytes/sec
+total size is 13296801  speedup is 98.15
+--- synced at 13:18:24 ---
+admin/traits/
+admin/traits/trait-core-assets.php
+output/wp-env-sync.log
+sent 135785 bytes  received 70 bytes  5013099 bytes/sec
+total size is 13297178  speedup is 97.88
+--- synced at 13:18:29 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/dashboard-offcenter-before.png
+sent 278965 bytes  received 70 bytes  8182844 bytes/sec
+total size is 13526611  speedup is 48.48
+--- synced at 20:21:49 ---
+Transfer starting: 579 files
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 119085 bytes  received 64 bytes  3711806 bytes/sec
+total size is 13526870  speedup is 113.53
+--- synced at 20:23:06 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/dashboard-centered-after.png
+sent 280084 bytes  received 70 bytes  9008167 bytes/sec
+total size is 13756936  speedup is 49.10
+--- synced at 20:23:38 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/dashboard-nav-current.png
+sent 280365 bytes  received 70 bytes  7172250 bytes/sec
+total size is 13986988  speedup is 49.88
+--- synced at 20:25:48 ---
+Transfer starting: 581 files
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 120093 bytes  received 64 bytes  3991926 bytes/sec
+total size is 13987417  speedup is 116.41
+--- synced at 20:27:01 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/dashboard-nav-aligned.png
+sent 281055 bytes  received 70 bytes  9660652 bytes/sec
+total size is 14217668  speedup is 50.57
+--- synced at 20:27:36 ---
+assets/js/dashboard/upgrade-modal.js
+assets/js/dashboard/utils.js
+output/wp-env-sync.log
+sent 2490762 bytes  received 1474 bytes  46067208 bytes/sec
+total size is 16650741  speedup is 6.68
+--- synced at 20:44:20 ---
+Transfer starting: 648 files
+output/wp-env-sync.log
+sent 54939 bytes  received 42 bytes  2605734 bytes/sec
+total size is 16650957  speedup is 302.85
+--- synced at 20:44:20 ---
+Transfer starting: 648 files
+output/wp-env-sync.log
+sent 55115 bytes  received 42 bytes  2387748 bytes/sec
+total size is 16651133  speedup is 301.89
+--- synced at 20:44:20 ---
+Transfer starting: 648 files
+assets/css/features/dashboard/
+assets/css/features/dashboard/funnel-hero.css
+sent 91614 bytes  received 48 bytes  1866843 bytes/sec
+total size is 16651310  speedup is 181.66
+--- synced at 21:10:23 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/funnel-hero.css
+output/wp-env-sync.log
+sent 108539 bytes  received 70 bytes  3094273 bytes/sec
+total size is 16651540  speedup is 153.32
+--- synced at 21:10:30 ---
+Transfer starting: 648 files
+assets/css/features/dashboard/
+assets/css/features/dashboard/funnel-hero.css
+sent 91612 bytes  received 48 bytes  3045182 bytes/sec
+total size is 16651763  speedup is 181.67
+--- synced at 21:10:38 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1282923 bytes/sec
+total size is 16651956  speedup is 431.22
+--- synced at 21:10:48 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1241672 bytes/sec
+total size is 16652080  speedup is 431.22
+--- synced at 21:10:55 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1132434 bytes/sec
+total size is 16652176  speedup is 431.22
+--- synced at 21:11:04 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/funnel-hero.css
+output/wp-env-sync.log
+sent 109326 bytes  received 70 bytes  3208093 bytes/sec
+total size is 16652327  speedup is 152.22
+--- synced at 21:16:32 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/funnel-hero.css
+output/wp-env-sync.log
+sent 109551 bytes  received 70 bytes  3641893 bytes/sec
+total size is 16652552  speedup is 151.91
+--- synced at 21:16:37 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1202990 bytes/sec
+total size is 16652777  speedup is 431.24
+--- synced at 21:16:47 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1241672 bytes/sec
+total size is 16652964  speedup is 431.25
+--- synced at 21:16:53 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1241672 bytes/sec
+total size is 16653918  speedup is 431.27
+--- synced at 21:28:27 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1241672 bytes/sec
+total size is 16654610  speedup is 431.29
+--- synced at 21:28:33 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1166646 bytes/sec
+total size is 16656453  speedup is 431.34
+--- synced at 21:29:02 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1241672 bytes/sec
+total size is 16655216  speedup is 431.30
+--- synced at 21:29:10 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1202990 bytes/sec
+total size is 16656137  speedup is 431.33
+--- synced at 21:29:22 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+output/
+sent 108837 bytes  received 54 bytes  3193284 bytes/sec
+total size is 16656314  speedup is 152.96
+--- synced at 21:29:30 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1202990 bytes/sec
+total size is 16656698  speedup is 431.34
+--- synced at 21:29:48 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1166646 bytes/sec
+total size is 16656902  speedup is 431.35
+--- synced at 21:32:01 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1202990 bytes/sec
+total size is 16657342  speedup is 431.36
+--- synced at 21:32:08 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1202990 bytes/sec
+total size is 16656681  speedup is 431.34
+--- synced at 21:32:35 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1202990 bytes/sec
+total size is 16656760  speedup is 431.34
+--- synced at 21:39:00 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1202990 bytes/sec
+total size is 16657777  speedup is 431.37
+--- synced at 21:39:10 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1282923 bytes/sec
+total size is 16668188  speedup is 431.64
+--- synced at 21:39:54 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1241672 bytes/sec
+total size is 16668608  speedup is 431.65
+--- synced at 21:40:13 ---
+assets/css/unified/
+assets/css/unified/_toast.css
+output/wp-env-sync.log
+sent 63815 bytes  received 70 bytes  2273487 bytes/sec
+total size is 16668783  speedup is 260.92
+--- synced at 21:40:17 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1202990 bytes/sec
+total size is 16669002  speedup is 431.66
+--- synced at 21:41:14 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1166646 bytes/sec
+total size is 16669155  speedup is 431.66
+--- synced at 21:46:59 ---
+Transfer starting: 648 files
+assets/js/admin/
+sent 38602 bytes  received 26 bytes  1167009 bytes/sec
+total size is 16669315  speedup is 431.53
+--- synced at 21:48:55 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1202990 bytes/sec
+total size is 16670061  speedup is 431.69
+--- synced at 21:49:07 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1282923 bytes/sec
+total size is 16672317  speedup is 431.75
+--- synced at 21:49:37 ---
+Transfer starting: 648 files
+assets/js/admin/
+assets/js/admin/progress-modal.js
+sent 53593 bytes  received 48 bytes  1724790 bytes/sec
+total size is 16673210  speedup is 310.83
+--- synced at 21:49:49 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1132434 bytes/sec
+total size is 16674461  speedup is 431.80
+--- synced at 21:54:35 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1166646 bytes/sec
+total size is 16674938  speedup is 431.81
+--- synced at 21:54:42 ---
+Transfer starting: 648 files
+output/wp-env-sync.log
+sent 60883 bytes  received 42 bytes  1413573 bytes/sec
+total size is 16675091  speedup is 273.70
+--- synced at 21:58:22 ---
+Transfer starting: 648 files
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 143091 bytes  received 64 bytes  3174168 bytes/sec
+total size is 16676037  speedup is 116.49
+--- synced at 22:02:11 ---
+Transfer starting: 648 files
+sent 38596 bytes  received 20 bytes  1479540 bytes/sec
+total size is 16676557  speedup is 431.86
+--- synced at 22:02:22 ---
+Transfer starting: 648 files
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 143937 bytes  received 64 bytes  4784086 bytes/sec
+total size is 16676883  speedup is 115.81
+--- synced at 22:02:36 ---
+Transfer starting: 648 files
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 144350 bytes  received 64 bytes  3350672 bytes/sec
+total size is 16677296  speedup is 115.48
+--- synced at 22:03:18 ---
+Transfer starting: 648 files
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 144577 bytes  received 64 bytes  3279841 bytes/sec
+total size is 16677523  speedup is 115.30
+--- synced at 22:03:41 ---
+Transfer starting: 649 files
+sent 38664 bytes  received 20 bytes  1482145 bytes/sec
+total size is 16843728  speedup is 435.42
+--- synced at 22:07:52 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/nav-donut-needs-review.png
+sent 251321 bytes  received 70 bytes  10015577 bytes/sec
+total size is 17032720  speedup is 67.75
+--- synced at 22:07:56 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/nav-donut-all-clear.png
+sent 247240 bytes  received 70 bytes  6017274 bytes/sec
+total size is 17217412  speedup is 69.62
+--- synced at 22:08:02 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/nav-donut-actual-missing-alt-settled.png
+sent 167648 bytes  received 70 bytes  4182493 bytes/sec
+total size is 17322225  speedup is 103.28
+--- synced at 22:16:17 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/nav-donut-actual-needs-review-settled.png
+sent 245055 bytes  received 70 bytes  9391762 bytes/sec
+total size is 17504145  speedup is 71.41
+--- synced at 22:16:22 ---
+Transfer starting: 654 files
+sent 39047 bytes  received 20 bytes  1180271 bytes/sec
+total size is 17679769  speedup is 452.55
+--- synced at 22:16:29 ---
+Transfer starting: 654 files
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 146589 bytes  received 64 bytes  3483444 bytes/sec
+total size is 17680078  speedup is 120.56
+--- synced at 22:17:04 ---
+Transfer starting: 655 files
+sent 39117 bytes  received 20 bytes  1219221 bytes/sec
+total size is 17784910  speedup is 454.43
+--- synced at 22:18:09 ---
+Transfer starting: 656 files
+sent 39192 bytes  received 20 bytes  1347491 bytes/sec
+total size is 17968228  speedup is 458.23
+--- synced at 22:18:14 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/nav-donut-all-clear-final.png
+sent 239969 bytes  received 70 bytes  9563306 bytes/sec
+total size is 18143779  speedup is 75.59
+--- synced at 22:18:21 ---
+Transfer starting: 657 files
+sent 39264 bytes  received 20 bytes  1305116 bytes/sec
+total size is 18143824  speedup is 461.86
+--- synced at 22:20:56 ---
+Transfer starting: 657 files
+sent 39264 bytes  received 20 bytes  1223800 bytes/sec
+total size is 18144061  speedup is 461.87
+--- synced at 22:21:05 ---
+Transfer starting: 658 files
+sent 39338 bytes  received 20 bytes  1226105 bytes/sec
+total size is 18246028  speedup is 463.59
+--- synced at 22:22:16 ---
+Transfer starting: 659 files
+sent 39417 bytes  received 20 bytes  1571195 bytes/sec
+total size is 18430840  speedup is 467.35
+--- synced at 22:22:21 ---
+Transfer starting: 660 files
+sent 39493 bytes  received 20 bytes  1193746 bytes/sec
+total size is 18606457  speedup is 470.89
+--- synced at 22:22:28 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 148660 bytes  received 70 bytes  2800941 bytes/sec
+total size is 18606633  speedup is 125.10
+--- synced at 09:02:58 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 148889 bytes  received 70 bytes  4243846 bytes/sec
+total size is 18606862  speedup is 124.91
+--- synced at 09:03:02 ---
+Transfer starting: 660 files
+sent 39493 bytes  received 20 bytes  1270514 bytes/sec
+total size is 18607091  speedup is 470.91
+--- synced at 09:03:07 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+output/
+sent 122482 bytes  received 54 bytes  3302857 bytes/sec
+total size is 18607274  speedup is 151.85
+--- synced at 09:03:19 ---
+Transfer starting: 660 files
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+sent 122751 bytes  received 48 bytes  3309946 bytes/sec
+total size is 18607763  speedup is 151.53
+--- synced at 09:03:27 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 150234 bytes  received 70 bytes  4540906 bytes/sec
+total size is 18608207  speedup is 123.80
+--- synced at 09:03:41 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/generation-click-debug.png
+sent 244509 bytes  received 70 bytes  4520868 bytes/sec
+total size is 18785808  speedup is 76.81
+--- synced at 09:11:56 ---
+Transfer starting: 661 files
+sent 39562 bytes  received 20 bytes  1195830 bytes/sec
+total size is 18784513  speedup is 474.57
+--- synced at 09:14:02 ---
+Transfer starting: 661 files
+assets/js/bbai-admin.js
+output/
+sent 839363 bytes  received 48 bytes  12509850 bytes/sec
+total size is 18784690  speedup is 22.38
+--- synced at 09:14:09 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/generation-click-fixed.png
+sent 169643 bytes  received 70 bytes  3937656 bytes/sec
+total size is 18886771  speedup is 111.29
+--- synced at 09:16:46 ---
+Transfer starting: 662 files
+admin/partials/dashboard-logged-in-hero.php
+output/wp-env-sync.log
+sent 92976 bytes  received 64 bytes  1975371 bytes/sec
+total size is 18887318  speedup is 203.00
+--- synced at 09:19:01 ---
+Transfer starting: 664 files
+sent 39782 bytes  received 20 bytes  1202477 bytes/sec
+total size is 18888830  speedup is 474.57
+--- synced at 09:22:38 ---
+.playwright-cli/
+.playwright-cli/page-2026-04-20T08-23-33-201Z.yml
+output/wp-env-sync.log
+sent 69656 bytes  received 70 bytes  1449604 bytes/sec
+total size is 18890093  speedup is 270.92
+--- synced at 09:23:34 ---
+.playwright-cli/console-2026-04-20T08-22-37-084Z.log
+.playwright-cli/page-2026-04-20T08-24-01-000Z.yml
+output/
+sent 48461 bytes  received 82 bytes  781690 bytes/sec
+total size is 18898519  speedup is 389.32
+--- synced at 09:24:01 ---
+Transfer starting: 666 files
+output/wp-env-sync.log
+sent 69016 bytes  received 42 bytes  1812545 bytes/sec
+total size is 18898753  speedup is 273.66
+--- synced at 09:24:02 ---
+Transfer starting: 666 files
+sent 39930 bytes  received 20 bytes  1244548 bytes/sec
+total size is 18901044  speedup is 473.12
+--- synced at 09:25:42 ---
+Transfer starting: 666 files
+admin/partials/dashboard-logged-in-hero.php
+output/wp-env-sync.log
+sent 94398 bytes  received 64 bytes  1923869 bytes/sec
+total size is 18901170  speedup is 200.09
+--- synced at 09:26:41 ---
+.playwright-cli/console-2026-04-20T08-27-32-430Z.log
+.playwright-cli/page-2026-04-20T08-27-32-632Z.yml
+output/wp-env-sync.log
+sent 71106 bytes  received 92 bytes  1651925 bytes/sec
+total size is 18902682  speedup is 265.49
+--- synced at 09:27:33 ---
+Transfer starting: 668 files
+sent 40081 bytes  received 20 bytes  1175982 bytes/sec
+total size is 18905047  speedup is 471.44
+--- synced at 09:27:58 ---
+Transfer starting: 668 files
+sent 40081 bytes  received 20 bytes  869869 bytes/sec
+total size is 18907315  speedup is 471.49
+--- synced at 09:28:01 ---
+Transfer starting: 668 files
+sent 40081 bytes  received 20 bytes  1249252 bytes/sec
+total size is 18909582  speedup is 471.55
+--- synced at 09:28:33 ---
+Transfer starting: 668 files
+sent 40081 bytes  received 20 bytes  1142478 bytes/sec
+total size is 18911850  speedup is 471.61
+--- synced at 09:29:23 ---
+Transfer starting: 668 files
+.playwright-cli/console-2026-04-20T08-27-32-430Z.log
+output/wp-env-sync.log
+sent 81407 bytes  received 64 bytes  1767266 bytes/sec
+total size is 18914118  speedup is 232.16
+--- synced at 09:29:57 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/generation-click-fixed-final.png
+sent 171072 bytes  received 70 bytes  3970812 bytes/sec
+total size is 19014474  speedup is 111.10
+--- synced at 09:30:31 ---
+Transfer starting: 669 files
+sent 40156 bytes  received 20 bytes  1251588 bytes/sec
+total size is 19015534  speedup is 473.31
+--- synced at 09:38:31 ---
+Transfer starting: 669 files
+sent 40156 bytes  received 20 bytes  1334750 bytes/sec
+total size is 19015701  speedup is 473.31
+--- synced at 09:38:42 ---
+Transfer starting: 669 files
+sent 40156 bytes  received 20 bytes  1178181 bytes/sec
+total size is 19015827  speedup is 473.31
+--- synced at 09:38:54 ---
+.playwright-cli/console-2026-04-20T08-40-19-689Z.log
+.playwright-cli/page-2026-04-20T08-40-19-949Z.yml
+output/wp-env-sync.log
+sent 73099 bytes  received 92 bytes  1553949 bytes/sec
+total size is 19017272  speedup is 259.83
+--- synced at 09:40:21 ---
+Transfer starting: 671 files
+sent 40307 bytes  received 20 bytes  1182609 bytes/sec
+total size is 19019637  speedup is 471.64
+--- synced at 09:40:47 ---
+Transfer starting: 671 files
+sent 40307 bytes  received 20 bytes  1435124 bytes/sec
+total size is 19021905  speedup is 471.69
+--- synced at 09:40:50 ---
+Transfer starting: 671 files
+sent 40307 bytes  received 20 bytes  1256292 bytes/sec
+total size is 19023004  speedup is 471.72
+--- synced at 09:41:19 ---
+Transfer starting: 671 files
+sent 40307 bytes  received 20 bytes  1148917 bytes/sec
+total size is 19023419  speedup is 471.73
+--- synced at 09:41:22 ---
+Transfer starting: 671 files
+sent 40307 bytes  received 20 bytes  1182609 bytes/sec
+total size is 19023834  speedup is 471.74
+--- synced at 09:41:25 ---
+Transfer starting: 671 files
+sent 40307 bytes  received 20 bytes  774030 bytes/sec
+total size is 19024249  speedup is 471.75
+--- synced at 09:41:28 ---
+Transfer starting: 671 files
+sent 40307 bytes  received 20 bytes  1182609 bytes/sec
+total size is 19024663  speedup is 471.76
+--- synced at 09:41:31 ---
+Transfer starting: 671 files
+sent 40307 bytes  received 20 bytes  1117091 bytes/sec
+total size is 19025078  speedup is 471.77
+--- synced at 09:41:35 ---
+Transfer starting: 671 files
+.playwright-cli/console-2026-04-20T08-40-19-689Z.log
+sent 48363 bytes  received 42 bytes  1663402 bytes/sec
+total size is 19026546  speedup is 393.07
+--- synced at 09:41:38 ---
+Transfer starting: 671 files
+sent 40307 bytes  received 20 bytes  1256292 bytes/sec
+total size is 19026264  speedup is 471.80
+--- synced at 09:44:41 ---
+Transfer starting: 671 files
+sent 40307 bytes  received 20 bytes  1296688 bytes/sec
+total size is 19028532  speedup is 471.86
+--- synced at 09:45:51 ---
+Transfer starting: 671 files
+.playwright-cli/console-2026-04-20T08-40-19-689Z.log
+output/wp-env-sync.log
+sent 84553 bytes  received 64 bytes  2220918 bytes/sec
+total size is 19029369  speedup is 224.89
+--- synced at 09:45:52 ---
+Transfer starting: 671 files
+.playwright-cli/console-2026-04-20T08-40-19-689Z.log
+output/wp-env-sync.log
+sent 85044 bytes  received 64 bytes  2122394 bytes/sec
+total size is 19029860  speedup is 223.60
+--- synced at 09:45:53 ---
+Transfer starting: 671 files
+sent 40307 bytes  received 20 bytes  1148917 bytes/sec
+total size is 19030351  speedup is 471.90
+--- synced at 09:45:56 ---
+Transfer starting: 671 files
+sent 40307 bytes  received 20 bytes  1218338 bytes/sec
+total size is 19030766  speedup is 471.91
+--- synced at 09:46:00 ---
+Transfer starting: 671 files
+sent 40307 bytes  received 20 bytes  1218338 bytes/sec
+total size is 19031181  speedup is 471.92
+--- synced at 09:46:03 ---
+Transfer starting: 671 files
+sent 40307 bytes  received 20 bytes  1058451 bytes/sec
+total size is 19031596  speedup is 471.93
+--- synced at 09:46:07 ---
+Transfer starting: 671 files
+sent 40307 bytes  received 20 bytes  1182609 bytes/sec
+total size is 19032011  speedup is 471.94
+--- synced at 09:46:10 ---
+Transfer starting: 671 files
+.playwright-cli/console-2026-04-20T08-40-19-689Z.log
+sent 54049 bytes  received 42 bytes  1457978 bytes/sec
+total size is 19033479  speedup is 351.88
+--- synced at 09:46:13 ---
+Transfer starting: 671 files
+.playwright-cli/console-2026-04-20T08-40-19-689Z.log
+output/
+sent 55815 bytes  received 48 bytes  1013847 bytes/sec
+total size is 19033868  speedup is 340.72
+--- synced at 09:46:25 ---
+Transfer starting: 671 files
+.playwright-cli/console-2026-04-20T08-40-19-689Z.log
+output/wp-env-sync.log
+sent 91198 bytes  received 64 bytes  2275860 bytes/sec
+total size is 19036014  speedup is 208.59
+--- synced at 09:46:26 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/generation-click-working-review-state.png
+sent 243909 bytes  received 70 bytes  6084264 bytes/sec
+total size is 19204426  speedup is 78.71
+--- synced at 09:46:49 ---
+Transfer starting: 672 files
+sent 40391 bytes  received 20 bytes  1151310 bytes/sec
+total size is 19208788  speedup is 475.34
+--- synced at 09:56:08 ---
+Transfer starting: 672 files
+sent 40391 bytes  received 20 bytes  1220876 bytes/sec
+total size is 19209353  speedup is 475.35
+--- synced at 09:56:17 ---
+Transfer starting: 672 files
+sent 40391 bytes  received 20 bytes  1258909 bytes/sec
+total size is 19212031  speedup is 475.42
+--- synced at 09:56:43 ---
+.playwright-cli/console-2026-04-20T08-57-27-947Z.log
+.playwright-cli/page-2026-04-20T08-57-28-143Z.yml
+output/wp-env-sync.log
+sent 77880 bytes  received 92 bytes  1621039 bytes/sec
+total size is 19213476  speedup is 246.42
+--- synced at 09:57:29 ---
+Transfer starting: 674 files
+sent 40542 bytes  received 20 bytes  1155612 bytes/sec
+total size is 19215841  speedup is 473.74
+--- synced at 09:57:56 ---
+Transfer starting: 674 files
+.playwright-cli/console-2026-04-20T08-57-27-947Z.log
+sent 45027 bytes  received 42 bytes  1449163 bytes/sec
+total size is 19218109  speedup is 426.42
+--- synced at 09:57:59 ---
+Transfer starting: 674 files
+.playwright-cli/console-2026-04-20T08-57-27-947Z.log
+sent 45711 bytes  received 42 bytes  1061554 bytes/sec
+total size is 19218999  speedup is 420.06
+--- synced at 09:58:28 ---
+.playwright-cli/console-2026-04-20T08-59-05-173Z.log
+.playwright-cli/page-2026-04-20T08-59-05-403Z.yml
+output/wp-env-sync.log
+sent 78846 bytes  received 92 bytes  1607698 bytes/sec
+total size is 19220497  speedup is 243.49
+--- synced at 09:59:06 ---
+Transfer starting: 676 files
+sent 40693 bytes  received 20 bytes  1193929 bytes/sec
+total size is 19222862  speedup is 472.16
+--- synced at 09:59:30 ---
+Transfer starting: 676 files
+sent 40693 bytes  received 20 bytes  1268317 bytes/sec
+total size is 19225130  speedup is 472.21
+--- synced at 09:59:33 ---
+Transfer starting: 676 files
+sent 40693 bytes  received 20 bytes  1229999 bytes/sec
+total size is 19227398  speedup is 472.27
+--- synced at 10:00:43 ---
+Transfer starting: 676 files
+sent 40693 bytes  received 20 bytes  484102 bytes/sec
+total size is 19228235  speedup is 472.29
+--- synced at 10:00:45 ---
+Transfer starting: 678 files
+sent 40844 bytes  received 20 bytes  1273021 bytes/sec
+total size is 19229679  speedup is 470.58
+--- synced at 10:01:16 ---
+Transfer starting: 678 files
+sent 40844 bytes  received 20 bytes  1164216 bytes/sec
+total size is 19231947  speedup is 470.63
+--- synced at 10:01:39 ---
+Transfer starting: 678 files
+.playwright-cli/console-2026-04-20T09-01-15-310Z.log
+output/wp-env-sync.log
+sent 83259 bytes  received 64 bytes  1732286 bytes/sec
+total size is 19232283  speedup is 230.82
+--- synced at 10:01:43 ---
+Transfer starting: 678 files
+output/wp-env-sync.log
+sent 79003 bytes  received 42 bytes  1877553 bytes/sec
+total size is 19234444  speedup is 243.34
+--- synced at 10:01:44 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/generation-running-log-midrun.png
+sent 213301 bytes  received 92 bytes  4436444 bytes/sec
+total size is 19364117  speedup is 90.74
+--- synced at 10:02:09 ---
+Transfer starting: 679 files
+sent 40920 bytes  received 20 bytes  1236858 bytes/sec
+total size is 19364597  speedup is 473.00
+--- synced at 10:02:13 ---
+Transfer starting: 679 files
+sent 40920 bytes  received 20 bytes  1275389 bytes/sec
+total size is 19365012  speedup is 473.01
+--- synced at 10:02:16 ---
+Transfer starting: 679 files
+sent 40920 bytes  received 20 bytes  1316398 bytes/sec
+total size is 19365427  speedup is 473.02
+--- synced at 10:02:20 ---
+Transfer starting: 679 files
+sent 40920 bytes  received 20 bytes  1360132 bytes/sec
+total size is 19365842  speedup is 473.03
+--- synced at 10:02:23 ---
+Transfer starting: 679 files
+sent 40920 bytes  received 20 bytes  1316398 bytes/sec
+total size is 19366257  speedup is 473.04
+--- synced at 10:02:26 ---
+Transfer starting: 679 files
+.playwright-cli/console-2026-04-20T09-01-15-310Z.log
+sent 48976 bytes  received 42 bytes  1576141 bytes/sec
+total size is 19367725  speedup is 395.11
+--- synced at 10:02:29 ---
+Transfer starting: 679 files
+.playwright-cli/console-2026-04-20T09-01-15-310Z.log
+sent 51091 bytes  received 42 bytes  1378247 bytes/sec
+total size is 19370046  speedup is 378.82
+--- synced at 10:02:41 ---
+Transfer starting: 679 files
+assets/js/bbai-admin.js
+sent 845509 bytes  received 42 bytes  18341670 bytes/sec
+total size is 19370986  speedup is 22.91
+--- synced at 10:06:00 ---
+.playwright-cli/console-2026-04-20T09-06-46-513Z.log
+.playwright-cli/page-2026-04-20T09-06-46-690Z.yml
+output/wp-env-sync.log
+sent 82369 bytes  received 92 bytes  1750764 bytes/sec
+total size is 19372456  speedup is 234.93
+--- synced at 10:06:47 ---
+Transfer starting: 681 files
+.playwright-cli/console-2026-04-20T09-06-46-513Z.log
+output/wp-env-sync.log
+sent 83599 bytes  received 64 bytes  1814815 bytes/sec
+total size is 19374821  speedup is 231.58
+--- synced at 10:07:47 ---
+Transfer starting: 681 files
+sent 41071 bytes  received 20 bytes  1280093 bytes/sec
+total size is 19377165  speedup is 471.57
+--- synced at 10:07:58 ---
+Transfer starting: 681 files
+sent 41071 bytes  received 20 bytes  1241419 bytes/sec
+total size is 19378002  speedup is 471.59
+--- synced at 10:08:02 ---
+Transfer starting: 681 files
+sent 41071 bytes  received 20 bytes  1280093 bytes/sec
+total size is 19378417  speedup is 471.60
+--- synced at 10:08:05 ---
+Transfer starting: 682 files
+output/playwright/
+output/playwright/generation-running-log-visible.png
+sent 443374 bytes  received 48 bytes  11952075 bytes/sec
+total size is 19780958  speedup is 44.61
+--- synced at 10:08:08 ---
+Transfer starting: 682 files
+sent 41148 bytes  received 20 bytes  1282492 bytes/sec
+total size is 19781446  speedup is 480.51
+--- synced at 10:08:11 ---
+Transfer starting: 682 files
+sent 41148 bytes  received 20 bytes  1243746 bytes/sec
+total size is 19781861  speedup is 480.52
+--- synced at 10:08:14 ---
+Transfer starting: 682 files
+sent 41148 bytes  received 20 bytes  1207272 bytes/sec
+total size is 19782276  speedup is 480.53
+--- synced at 10:08:17 ---
+Transfer starting: 682 files
+sent 41148 bytes  received 20 bytes  1282492 bytes/sec
+total size is 19782691  speedup is 480.54
+--- synced at 10:08:21 ---
+Transfer starting: 682 files
+.playwright-cli/console-2026-04-20T09-06-46-513Z.log
+sent 49204 bytes  received 42 bytes  1116689 bytes/sec
+total size is 19784159  speedup is 401.74
+--- synced at 10:08:24 ---
+Transfer starting: 682 files
+deleting .playwright-cli/.console-2026-04-20T09-06-46-513Z.log.2gmrFHSdS2
+.playwright-cli/console-2026-04-20T09-06-46-513Z.log
+sent 51319 bytes  received 42 bytes  1313580 bytes/sec
+total size is 19784548  speedup is 385.21
+--- synced at 10:08:36 ---
+Transfer starting: 682 files
+output/wp-env-sync.log
+sent 83318 bytes  received 42 bytes  2078802 bytes/sec
+total size is 19786760  speedup is 237.37
+--- synced at 10:08:37 ---
+Transfer starting: 682 files
+sent 41148 bytes  received 20 bytes  1243746 bytes/sec
+total size is 19787314  speedup is 480.65
+--- synced at 10:10:05 ---
+Transfer starting: 682 files
+sent 41148 bytes  received 20 bytes  1243746 bytes/sec
+total size is 19789582  speedup is 480.70
+--- synced at 10:10:55 ---
+Transfer starting: 682 files
+sent 41148 bytes  received 20 bytes  1243746 bytes/sec
+total size is 19790419  speedup is 480.72
+--- synced at 10:10:58 ---
+Transfer starting: 682 files
+sent 41148 bytes  received 20 bytes  1282492 bytes/sec
+total size is 19790834  speedup is 480.73
+--- synced at 10:11:01 ---
+Transfer starting: 683 files
+output/playwright/
+output/playwright/generation-running-log-visible-fixed.png
+sent 442256 bytes  received 48 bytes  12970791 bytes/sec
+total size is 20192174  speedup is 45.65
+--- synced at 10:11:05 ---
+Transfer starting: 683 files
+sent 41231 bytes  received 20 bytes  1246253 bytes/sec
+total size is 20192668  speedup is 489.51
+--- synced at 10:11:08 ---
+Transfer starting: 683 files
+sent 41231 bytes  received 20 bytes  1209706 bytes/sec
+total size is 20193083  speedup is 489.52
+--- synced at 10:11:11 ---
+Transfer starting: 683 files
+.playwright-cli/console-2026-04-20T09-06-46-513Z.log
+output/wp-env-sync.log
+sent 99007 bytes  received 64 bytes  2410486 bytes/sec
+total size is 20193498  speedup is 203.83
+--- synced at 10:11:13 ---
+Transfer starting: 683 files
+.playwright-cli/console-2026-04-20T09-06-46-513Z.log
+sent 55773 bytes  received 42 bytes  1636803 bytes/sec
+total size is 20193989  speedup is 361.80
+--- synced at 10:11:16 ---
+Transfer starting: 683 files
+sent 41231 bytes  received 20 bytes  1326398 bytes/sec
+total size is 20194457  speedup is 489.55
+--- synced at 10:11:19 ---
+Transfer starting: 683 files
+sent 41231 bytes  received 20 bytes  1522177 bytes/sec
+total size is 20195663  speedup is 489.58
+--- synced at 10:11:20 ---
+Transfer starting: 683 files
+.playwright-cli/console-2026-04-20T09-06-46-513Z.log
+output/wp-env-sync.log
+sent 103440 bytes  received 64 bytes  1614726 bytes/sec
+total size is 20195999  speedup is 195.12
+--- synced at 10:11:32 ---
+Transfer starting: 683 files
+.playwright-cli/console-2026-04-20T09-06-46-513Z.log
+output/wp-env-sync.log
+sent 103670 bytes  received 64 bytes  2406821 bytes/sec
+total size is 20198161  speedup is 194.71
+--- synced at 10:11:33 ---
+Transfer starting: 683 files
+sent 41231 bytes  received 20 bytes  1285077 bytes/sec
+total size is 20200506  speedup is 489.70
+--- synced at 10:12:50 ---
+Transfer starting: 683 files
+.playwright-cli/console-2026-04-20T09-06-46-513Z.log
+output/wp-env-sync.log
+sent 106852 bytes  received 64 bytes  2961662 bytes/sec
+total size is 20201343  speedup is 188.95
+--- synced at 10:12:51 ---
+Transfer starting: 683 files
+sent 41231 bytes  received 20 bytes  1055012 bytes/sec
+total size is 20201835  speedup is 489.73
+--- synced at 10:12:54 ---
+Transfer starting: 683 files
+.playwright-cli/console-2026-04-20T09-06-46-513Z.log
+output/wp-env-sync.log
+sent 107759 bytes  received 64 bytes  2561116 bytes/sec
+total size is 20202250  speedup is 187.36
+--- synced at 10:12:57 ---
+Transfer starting: 683 files
+.playwright-cli/console-2026-04-20T09-06-46-513Z.log
+output/wp-env-sync.log
+sent 108251 bytes  received 64 bytes  1772749 bytes/sec
+total size is 20202742  speedup is 186.52
+--- synced at 10:13:01 ---
+Transfer starting: 683 files
+sent 41231 bytes  received 20 bytes  1082703 bytes/sec
+total size is 20203234  speedup is 489.76
+--- synced at 10:13:04 ---
+Transfer starting: 683 files
+sent 41231 bytes  received 20 bytes  1326398 bytes/sec
+total size is 20203649  speedup is 489.77
+--- synced at 10:13:07 ---
+Transfer starting: 683 files
+.playwright-cli/console-2026-04-20T09-06-46-513Z.log
+output/wp-env-sync.log
+sent 109573 bytes  received 64 bytes  2604204 bytes/sec
+total size is 20204064  speedup is 184.28
+--- synced at 10:13:10 ---
+Transfer starting: 683 files
+sent 41231 bytes  received 20 bytes  1326398 bytes/sec
+total size is 20204556  speedup is 489.80
+--- synced at 10:13:13 ---
+Transfer starting: 683 files
+sent 41231 bytes  received 20 bytes  1111886 bytes/sec
+total size is 20205762  speedup is 489.82
+--- synced at 10:13:14 ---
+Transfer starting: 683 files
+sent 41231 bytes  received 20 bytes  1055012 bytes/sec
+total size is 20208030  speedup is 489.88
+--- synced at 10:13:26 ---
+Transfer starting: 683 files
+assets/css/system/bbai-bulk-progress-refresh.css
+output/wp-env-sync.log
+sent 93602 bytes  received 64 bytes  1988662 bytes/sec
+total size is 20208313  speedup is 215.75
+--- synced at 10:14:20 ---
+Transfer starting: 683 files
+sent 41231 bytes  received 20 bytes  1285077 bytes/sec
+total size is 20210653  speedup is 489.94
+--- synced at 10:15:10 ---
+Transfer starting: 683 files
+.playwright-cli/console-2026-04-20T09-06-46-513Z.log
+output/wp-env-sync.log
+sent 116869 bytes  received 64 bytes  2990613 bytes/sec
+total size is 20211490  speedup is 172.85
+--- synced at 10:15:12 ---
+.playwright-cli/console-2026-04-20T09-06-46-513Z.log
+output/
+output/wp-env-sync.log
+sent 117367 bytes  received 70 bytes  2662970 bytes/sec
+total size is 20211982  speedup is 172.11
+--- synced at 10:15:15 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/generation-running-log-visible-fixed2.png
+sent 462996 bytes  received 70 bytes  12827313 bytes/sec
+total size is 20586271  speedup is 44.46
+--- synced at 10:15:16 ---
+Transfer starting: 684 files
+sent 41315 bytes  received 20 bytes  1248791 bytes/sec
+total size is 20586760  speedup is 498.05
+--- synced at 10:15:19 ---
+Transfer starting: 684 files
+sent 41315 bytes  received 20 bytes  1212170 bytes/sec
+total size is 20587175  speedup is 498.06
+--- synced at 10:15:22 ---
+Transfer starting: 684 files
+sent 41315 bytes  received 20 bytes  1212170 bytes/sec
+total size is 20587590  speedup is 498.07
+--- synced at 10:15:25 ---
+Transfer starting: 684 files
+sent 41315 bytes  received 20 bytes  1248791 bytes/sec
+total size is 20588005  speedup is 498.08
+--- synced at 10:15:28 ---
+Transfer starting: 684 files
+sent 41315 bytes  received 20 bytes  981828 bytes/sec
+total size is 20588420  speedup is 498.09
+--- synced at 10:15:31 ---
+Transfer starting: 684 files
+.playwright-cli/console-2026-04-20T09-06-46-513Z.log
+sent 72774 bytes  received 42 bytes  2199879 bytes/sec
+total size is 20589887  speedup is 282.77
+--- synced at 10:15:34 ---
+Transfer starting: 684 files
+.playwright-cli/console-2026-04-20T09-06-46-513Z.log
+sent 74893 bytes  received 42 bytes  1226432 bytes/sec
+total size is 20590276  speedup is 274.78
+--- synced at 10:15:46 ---
+Transfer starting: 684 files
+output/wp-env-sync.log
+sent 90223 bytes  received 42 bytes  2500415 bytes/sec
+total size is 20592414  speedup is 228.13
+--- synced at 10:15:47 ---
+Transfer starting: 684 files
+sent 41315 bytes  received 20 bytes  1248791 bytes/sec
+total size is 20592953  speedup is 498.20
+--- synced at 10:16:38 ---
+Transfer starting: 684 files
+sent 41315 bytes  received 20 bytes  1145013 bytes/sec
+total size is 20595221  speedup is 498.25
+--- synced at 10:17:28 ---
+Transfer starting: 684 files
+.playwright-cli/console-2026-04-20T09-06-46-513Z.log
+output/wp-env-sync.log
+sent 127082 bytes  received 64 bytes  3427115 bytes/sec
+total size is 20596058  speedup is 161.99
+--- synced at 10:17:30 ---
+Transfer starting: 685 files
+output/playwright/
+output/playwright/generation-running-log-visible-final.png
+sent 415539 bytes  received 48 bytes  12187302 bytes/sec
+total size is 20970595  speedup is 50.46
+--- synced at 10:17:33 ---
+Transfer starting: 685 files
+sent 41398 bytes  received 20 bytes  1251299 bytes/sec
+total size is 20971089  speedup is 506.33
+--- synced at 10:17:37 ---
+Transfer starting: 685 files
+sent 41398 bytes  received 20 bytes  1087086 bytes/sec
+total size is 20971504  speedup is 506.34
+--- synced at 10:17:40 ---
+Transfer starting: 685 files
+sent 41398 bytes  received 20 bytes  1251299 bytes/sec
+total size is 20971919  speedup is 506.35
+--- synced at 10:17:43 ---
+Transfer starting: 685 files
+sent 41398 bytes  received 20 bytes  1376013 bytes/sec
+total size is 20972334  speedup is 506.36
+--- synced at 10:17:46 ---
+Transfer starting: 685 files
+sent 41398 bytes  received 20 bytes  1251299 bytes/sec
+total size is 20972749  speedup is 506.37
+--- synced at 10:17:49 ---
+Transfer starting: 685 files
+.playwright-cli/console-2026-04-20T09-06-46-513Z.log
+sent 80662 bytes  received 42 bytes  2773333 bytes/sec
+total size is 20974217  speedup is 259.89
+--- synced at 10:17:52 ---
+Transfer starting: 685 files
+assets/css/system/bbai-bulk-progress-refresh.css
+sent 47534 bytes  received 42 bytes  516568 bytes/sec
+total size is 20974513  speedup is 440.86
+--- synced at 10:17:54 ---
+Transfer starting: 685 files
+sent 41398 bytes  received 20 bytes  1376013 bytes/sec
+total size is 20976829  speedup is 506.47
+--- synced at 10:18:05 ---
+Transfer starting: 685 files
+.playwright-cli/console-2026-04-20T09-06-46-513Z.log
+sent 84892 bytes  received 42 bytes  1695289 bytes/sec
+total size is 20979097  speedup is 247.00
+--- synced at 10:18:42 ---
+Transfer starting: 685 files
+sent 41398 bytes  received 20 bytes  1214604 bytes/sec
+total size is 20979987  speedup is 506.54
+--- synced at 10:18:45 ---
+Transfer starting: 686 files
+output/playwright/
+output/playwright/generation-running-log-visible-final2.png
+sent 437926 bytes  received 48 bytes  9500520 bytes/sec
+total size is 21376746  speedup is 48.81
+--- synced at 10:18:48 ---
+Transfer starting: 686 files
+sent 41482 bytes  received 20 bytes  1182393 bytes/sec
+total size is 21377240  speedup is 515.09
+--- synced at 10:18:51 ---
+Transfer starting: 686 files
+sent 41482 bytes  received 20 bytes  1253836 bytes/sec
+total size is 21377655  speedup is 515.10
+--- synced at 10:18:54 ---
+Transfer starting: 686 files
+sent 41482 bytes  received 20 bytes  1149639 bytes/sec
+total size is 21378070  speedup is 515.11
+--- synced at 10:18:57 ---
+Transfer starting: 686 files
+sent 41482 bytes  received 20 bytes  1217067 bytes/sec
+total size is 21378485  speedup is 515.12
+--- synced at 10:19:00 ---
+Transfer starting: 686 files
+sent 41482 bytes  received 20 bytes  1253836 bytes/sec
+total size is 21378900  speedup is 515.13
+--- synced at 10:19:03 ---
+Transfer starting: 686 files
+.playwright-cli/console-2026-04-20T09-06-46-513Z.log
+sent 88547 bytes  received 42 bytes  2676404 bytes/sec
+total size is 21380368  speedup is 241.34
+--- synced at 10:19:07 ---
+Transfer starting: 686 files
+sent 41482 bytes  received 20 bytes  1009781 bytes/sec
+total size is 21382689  speedup is 515.22
+--- synced at 10:19:20 ---
+Transfer starting: 686 files
+output/wp-env-sync.log
+sent 94374 bytes  received 42 bytes  1745212 bytes/sec
+total size is 21382842  speedup is 226.47
+--- synced at 12:05:34 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 178096 bytes  received 70 bytes  4443042 bytes/sec
+total size is 21383097  speedup is 120.02
+--- synced at 12:06:07 ---
+Transfer starting: 686 files
+sent 41482 bytes  received 20 bytes  1531439 bytes/sec
+total size is 21383326  speedup is 515.24
+--- synced at 12:06:16 ---
+Transfer starting: 686 files
+sent 41482 bytes  received 20 bytes  1426185 bytes/sec
+total size is 21383479  speedup is 515.24
+--- synced at 12:06:21 ---
+Transfer starting: 686 files
+sent 41482 bytes  received 20 bytes  1531439 bytes/sec
+total size is 21383638  speedup is 515.24
+--- synced at 12:06:26 ---
+Transfer starting: 686 files
+sent 41482 bytes  received 20 bytes  1253836 bytes/sec
+total size is 21383791  speedup is 515.25
+--- synced at 12:06:44 ---
+Transfer starting: 686 files
+sent 41482 bytes  received 20 bytes  1531439 bytes/sec
+total size is 21383954  speedup is 515.25
+--- synced at 12:07:10 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 179106 bytes  received 70 bytes  4157215 bytes/sec
+total size is 21384107  speedup is 119.35
+--- synced at 12:07:14 ---
+Transfer starting: 686 files
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+sent 125044 bytes  received 48 bytes  1343630 bytes/sec
+total size is 21384336  speedup is 170.95
+--- synced at 12:07:19 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 179570 bytes  received 70 bytes  4594373 bytes/sec
+total size is 21384571  speedup is 119.04
+--- synced at 12:07:25 ---
+Transfer starting: 686 files
+sent 41482 bytes  received 20 bytes  1426185 bytes/sec
+total size is 21384826  speedup is 515.27
+--- synced at 12:38:54 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 179974 bytes  received 70 bytes  3046429 bytes/sec
+total size is 21384975  speedup is 118.78
+--- synced at 13:01:13 ---
+Transfer starting: 686 files
+sent 41482 bytes  received 20 bytes  1590114 bytes/sec
+total size is 21385261  speedup is 515.28
+--- synced at 13:04:05 ---
+Transfer starting: 686 files
+sent 41482 bytes  received 20 bytes  1590114 bytes/sec
+total size is 21385435  speedup is 515.29
+--- synced at 13:04:09 ---
+Transfer starting: 686 files
+sent 41482 bytes  received 20 bytes  1531439 bytes/sec
+total size is 21385627  speedup is 515.29
+--- synced at 13:04:15 ---
+Transfer starting: 686 files
+sent 41482 bytes  received 20 bytes  394881 bytes/sec
+total size is 21385760  speedup is 515.29
+--- synced at 13:04:21 ---
+Transfer starting: 686 files
+sent 41482 bytes  received 20 bytes  1378803 bytes/sec
+total size is 21385952  speedup is 515.30
+--- synced at 13:08:04 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 181125 bytes  received 70 bytes  1341191 bytes/sec
+total size is 21386126  speedup is 118.03
+--- synced at 13:17:37 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 180768 bytes  received 70 bytes  3405612 bytes/sec
+total size is 21385769  speedup is 118.26
+--- synced at 13:23:55 ---
+assets/css/
+assets/css/unified.css
+output/wp-env-sync.log
+sent 535286 bytes  received 70 bytes  6008484 bytes/sec
+total size is 21385805  speedup is 39.95
+--- synced at 13:24:02 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 181144 bytes  received 70 bytes  3930889 bytes/sec
+total size is 21385952  speedup is 118.01
+--- synced at 13:24:27 ---
+Transfer starting: 686 files
+sent 41482 bytes  received 20 bytes  1590114 bytes/sec
+total size is 21386181  speedup is 515.30
+--- synced at 13:27:22 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 176868 bytes  received 70 bytes  4202802 bytes/sec
+total size is 21381676  speedup is 120.84
+--- synced at 13:28:20 ---
+assets/css/
+assets/css/unified.css
+output/wp-env-sync.log
+sent 535878 bytes  received 70 bytes  16191782 bytes/sec
+total size is 21381704  speedup is 39.90
+--- synced at 13:28:25 ---
+Transfer starting: 686 files
+sent 41482 bytes  received 20 bytes  1590114 bytes/sec
+total size is 21381887  speedup is 515.20
+--- synced at 13:48:17 ---
+includes/services/
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 164010 bytes  received 70 bytes  3149328 bytes/sec
+total size is 21382738  speedup is 130.32
+--- synced at 13:52:52 ---
+includes/services/
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 163752 bytes  received 70 bytes  3553622 bytes/sec
+total size is 21382480  speedup is 130.52
+--- synced at 13:53:36 ---
+Transfer starting: 686 files
+sent 41482 bytes  received 20 bytes  1531439 bytes/sec
+total size is 21382708  speedup is 515.22
+--- synced at 13:53:43 ---
+admin/partials/
+admin/partials/dashboard-logged-in-hero.php
+output/wp-env-sync.log
+sent 125485 bytes  received 70 bytes  3681964 bytes/sec
+total size is 21382870  speedup is 170.31
+--- synced at 13:53:50 ---
+Transfer starting: 686 files
+sent 41482 bytes  received 20 bytes  1590114 bytes/sec
+total size is 21382969  speedup is 515.23
+--- synced at 13:54:21 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 177980 bytes  received 70 bytes  4799191 bytes/sec
+total size is 21382707  speedup is 120.09
+--- synced at 13:54:31 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 179165 bytes  received 70 bytes  5763183 bytes/sec
+total size is 21383892  speedup is 119.31
+--- synced at 13:55:24 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 179740 bytes  received 70 bytes  7163745 bytes/sec
+total size is 21384467  speedup is 118.93
+--- synced at 13:55:36 ---
+includes/services/
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 165385 bytes  received 70 bytes  6105350 bytes/sec
+total size is 21384904  speedup is 129.25
+--- synced at 13:56:10 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 180295 bytes  received 70 bytes  6655535 bytes/sec
+total size is 21385230  speedup is 118.57
+--- synced at 13:56:18 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 180542 bytes  received 70 bytes  6000398 bytes/sec
+total size is 21385477  speedup is 118.41
+--- synced at 13:56:32 ---
+Transfer starting: 686 files
+includes/services/class-logged-in-dashboard-resolver.php
+sent 106503 bytes  received 42 bytes  2530760 bytes/sec
+total size is 21385967  speedup is 200.72
+--- synced at 15:21:15 ---
+Transfer starting: 686 files
+admin/partials/dashboard-logged-in-hero.php
+output/wp-env-sync.log
+sent 128516 bytes  received 64 bytes  3561772 bytes/sec
+total size is 21387274  speedup is 166.33
+--- synced at 15:21:31 ---
+Transfer starting: 686 files
+admin/partials/dashboard-logged-in-hero.php
+output/wp-env-sync.log
+sent 128965 bytes  received 64 bytes  4433986 bytes/sec
+total size is 21387723  speedup is 165.76
+--- synced at 15:22:15 ---
+.playwright-cli/console-2026-04-20T14-23-29-654Z.log
+.playwright-cli/page-2026-04-20T14-23-29-962Z.yml
+output/wp-env-sync.log
+sent 103495 bytes  received 92 bytes  2649283 bytes/sec
+total size is 21389236  speedup is 206.49
+--- synced at 15:23:31 ---
+Transfer starting: 688 files
+.playwright-cli/console-2026-04-20T14-23-29-654Z.log
+output/wp-env-sync.log
+sent 104726 bytes  received 64 bytes  2091616 bytes/sec
+total size is 21391602  speedup is 204.14
+--- synced at 15:24:13 ---
+Transfer starting: 688 files
+.playwright-cli/console-2026-04-20T14-23-29-654Z.log
+output/wp-env-sync.log
+sent 106722 bytes  received 64 bytes  3326666 bytes/sec
+total size is 21393598  speedup is 200.34
+--- synced at 15:25:38 ---
+.playwright-cli/
+.playwright-cli/page-2026-04-20T14-25-59-578Z.png
+output/wp-env-sync.log
+sent 339180 bytes  received 70 bytes  11270764 bytes/sec
+total size is 21630038  speedup is 63.76
+--- synced at 15:26:01 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/tap-to-review-library.png
+sent 740252 bytes  received 70 bytes  23062990 bytes/sec
+total size is 22267204  speedup is 30.08
+--- synced at 15:26:12 ---
+.playwright-cli/console-2026-04-20T14-26-36-803Z.log
+.playwright-cli/page-2026-04-20T14-26-49-502Z.yml
+output/wp-env-sync.log
+sent 119880 bytes  received 92 bytes  4269466 bytes/sec
+total size is 22283662  speedup is 185.74
+--- synced at 15:26:50 ---
+Transfer starting: 692 files
+.playwright-cli/console-2026-04-20T14-26-36-803Z.log
+output/wp-env-sync.log
+sent 107713 bytes  received 64 bytes  3703676 bytes/sec
+total size is 22285679  speedup is 206.78
+--- synced at 15:27:13 ---
+Transfer starting: 692 files
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+sent 121415 bytes  received 48 bytes  2885106 bytes/sec
+total size is 22285928  speedup is 183.48
+--- synced at 17:24:39 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 183816 bytes  received 70 bytes  6109169 bytes/sec
+total size is 22286239  speedup is 121.20
+--- synced at 17:24:53 ---
+Transfer starting: 692 files
+admin/partials/dashboard-logged-in-page.php
+sent 54708 bytes  received 42 bytes  1760450 bytes/sec
+total size is 22286360  speedup is 407.06
+--- synced at 17:26:39 ---
+Transfer starting: 692 files
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 185430 bytes  received 64 bytes  4868608 bytes/sec
+total size is 22287751  speedup is 120.15
+--- synced at 17:27:17 ---
+Transfer starting: 692 files
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 185812 bytes  received 64 bytes  6175282 bytes/sec
+total size is 22288133  speedup is 119.91
+--- synced at 17:27:36 ---
+Transfer starting: 692 files
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 186165 bytes  received 64 bytes  4531119 bytes/sec
+total size is 22288486  speedup is 119.68
+--- synced at 17:27:44 ---
+.playwright-cli/console-2026-04-20T16-28-11-529Z.log
+.playwright-cli/page-2026-04-20T16-28-11-721Z.yml
+output/wp-env-sync.log
+sent 106899 bytes  received 92 bytes  3137565 bytes/sec
+total size is 22290005  speedup is 208.34
+--- synced at 17:28:13 ---
+Transfer starting: 694 files
+.playwright-cli/console-2026-04-20T16-28-11-529Z.log
+output/wp-env-sync.log
+sent 106224 bytes  received 64 bytes  3417620 bytes/sec
+total size is 22290465  speedup is 209.72
+--- synced at 17:28:33 ---
+Transfer starting: 694 files
+.playwright-cli/console-2026-04-20T16-28-11-529Z.log
+output/wp-env-sync.log
+sent 108569 bytes  received 64 bytes  3185718 bytes/sec
+total size is 22292810  speedup is 205.21
+--- synced at 17:29:07 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 187423 bytes  received 70 bytes  5341680 bytes/sec
+total size is 22293203  speedup is 118.90
+--- synced at 17:30:46 ---
+Transfer starting: 694 files
+assets/css/features/dashboard/logged-in-state.css
+sent 124690 bytes  received 42 bytes  3362048 bytes/sec
+total size is 22294848  speedup is 178.74
+--- synced at 17:31:17 ---
+.playwright-cli/console-2026-04-20T16-28-11-529Z.log
+.playwright-cli/page-2026-04-20T16-31-44-739Z.yml
+output/wp-env-sync.log
+sent 125551 bytes  received 92 bytes  3057007 bytes/sec
+total size is 22311245  speedup is 177.58
+--- synced at 17:31:46 ---
+Transfer starting: 695 files
+.playwright-cli/console-2026-04-20T16-28-11-529Z.log
+output/wp-env-sync.log
+sent 113787 bytes  received 64 bytes  3153767 bytes/sec
+total size is 22313611  speedup is 195.99
+--- synced at 17:32:35 ---
+Transfer starting: 695 files
+.playwright-cli/console-2026-04-20T16-28-11-529Z.log
+output/wp-env-sync.log
+sent 116132 bytes  received 64 bytes  3736205 bytes/sec
+total size is 22315956  speedup is 192.05
+--- synced at 17:32:53 ---
+Transfer starting: 695 files
+.playwright-cli/console-2026-04-20T16-28-11-529Z.log
+output/wp-env-sync.log
+sent 118477 bytes  received 64 bytes  3377236 bytes/sec
+total size is 22318301  speedup is 188.27
+--- synced at 17:33:10 ---
+Transfer starting: 695 files
+.playwright-cli/console-2026-04-20T16-28-11-529Z.log
+output/wp-env-sync.log
+sent 120822 bytes  received 64 bytes  3014613 bytes/sec
+total size is 22320646  speedup is 184.64
+--- synced at 17:33:29 ---
+Transfer starting: 695 files
+.playwright-cli/console-2026-04-20T16-28-11-529Z.log
+output/wp-env-sync.log
+sent 123171 bytes  received 64 bytes  3839096 bytes/sec
+total size is 22322991  speedup is 181.14
+--- synced at 17:33:47 ---
+Transfer starting: 695 files
+.playwright-cli/console-2026-04-20T16-28-11-529Z.log
+output/wp-env-sync.log
+sent 125516 bytes  received 64 bytes  3478670 bytes/sec
+total size is 22325336  speedup is 177.78
+--- synced at 17:34:04 ---
+.playwright-cli/console-2026-04-20T16-28-11-529Z.log
+.playwright-cli/page-2026-04-20T16-37-01-135Z.yml
+output/wp-env-sync.log
+sent 142052 bytes  received 92 bytes  2894989 bytes/sec
+total size is 22341746  speedup is 157.18
+--- synced at 17:37:02 ---
+.playwright-cli/console-2026-04-20T16-28-11-529Z.log
+.playwright-cli/page-2026-04-20T16-38-37-231Z.yml
+output/wp-env-sync.log
+sent 144487 bytes  received 92 bytes  3278435 bytes/sec
+total size is 22358172  speedup is 154.64
+--- synced at 17:38:38 ---
+.playwright-cli/console-2026-04-20T16-28-11-529Z.log
+.playwright-cli/page-2026-04-20T16-40-18-194Z.yml
+output/wp-env-sync.log
+sent 146942 bytes  received 92 bytes  4442114 bytes/sec
+total size is 22374613  speedup is 152.17
+--- synced at 17:40:19 ---
+Transfer starting: 698 files
+.playwright-cli/console-2026-04-20T16-28-11-529Z.log
+output/wp-env-sync.log
+sent 134832 bytes  received 64 bytes  3540577 bytes/sec
+total size is 22376630  speedup is 165.88
+--- synced at 17:42:02 ---
+Transfer starting: 698 files
+.playwright-cli/console-2026-04-20T16-28-11-529Z.log
+output/wp-env-sync.log
+sent 137177 bytes  received 64 bytes  4412893 bytes/sec
+total size is 22377043  speedup is 163.05
+--- synced at 17:42:14 ---
+Transfer starting: 698 files
+output/wp-env-sync.log
+sent 109797 bytes  received 42 bytes  3531800 bytes/sec
+total size is 22379205  speedup is 203.75
+--- synced at 17:42:15 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/final-polish-dashboard-review.png
+sent 396780 bytes  received 70 bytes  11989425 bytes/sec
+total size is 22666028  speedup is 57.11
+--- synced at 17:42:25 ---
+admin/
+admin/class-bbai-core.php
+output/wp-env-sync.log
+sent 620340 bytes  received 70 bytes  9832171 bytes/sec
+total size is 22668866  speedup is 36.54
+--- synced at 18:53:53 ---
+admin/
+admin/class-bbai-core.php
+output/wp-env-sync.log
+sent 620560 bytes  received 70 bytes  19334267 bytes/sec
+total size is 22669086  speedup is 36.53
+--- synced at 18:54:05 ---
+admin/
+admin/class-bbai-core.php
+output/wp-env-sync.log
+sent 620808 bytes  received 70 bytes  17688831 bytes/sec
+total size is 22669334  speedup is 36.51
+--- synced at 18:54:15 ---
+admin/
+admin/class-bbai-core.php
+output/wp-env-sync.log
+sent 621200 bytes  received 70 bytes  17209695 bytes/sec
+total size is 22669726  speedup is 36.49
+--- synced at 18:54:39 ---
+Transfer starting: 699 files
+admin/class-bbai-core.php
+sent 555782 bytes  received 42 bytes  10467495 bytes/sec
+total size is 22672857  speedup is 40.79
+--- synced at 20:17:11 ---
+Transfer starting: 699 files
+admin/class-bbai-core.php
+output/wp-env-sync.log
+sent 624783 bytes  received 64 bytes  16842237 bytes/sec
+total size is 22673315  speedup is 36.29
+--- synced at 20:17:23 ---
+Transfer starting: 699 files
+admin/class-bbai-core.php
+output/wp-env-sync.log
+sent 630056 bytes  received 64 bytes  18478592 bytes/sec
+total size is 22678588  speedup is 35.99
+--- synced at 20:18:14 ---
+Transfer starting: 699 files
+admin/class-bbai-core.php
+output/wp-env-sync.log
+sent 630488 bytes  received 64 bytes  18491260 bytes/sec
+total size is 22679020  speedup is 35.97
+--- synced at 20:18:26 ---
+Transfer starting: 699 files
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 176754 bytes  received 64 bytes  5341933 bytes/sec
+total size is 22679175  speedup is 128.26
+--- synced at 20:18:56 ---
+Transfer starting: 699 files
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 176005 bytes  received 64 bytes  5485015 bytes/sec
+total size is 22678426  speedup is 128.80
+--- synced at 20:19:27 ---
+Transfer starting: 699 files
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 176193 bytes  received 64 bytes  3664386 bytes/sec
+total size is 22678614  speedup is 128.67
+--- synced at 20:19:40 ---
+Transfer starting: 699 files
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 176784 bytes  received 64 bytes  5038404 bytes/sec
+total size is 22679205  speedup is 128.24
+--- synced at 20:19:57 ---
+Transfer starting: 699 files
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 178059 bytes  received 64 bytes  2654590 bytes/sec
+total size is 22680480  speedup is 127.33
+--- synced at 20:20:09 ---
+Transfer starting: 699 files
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 178339 bytes  received 64 bytes  3869913 bytes/sec
+total size is 22680760  speedup is 127.13
+--- synced at 20:20:19 ---
+Transfer starting: 699 files
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 178552 bytes  received 64 bytes  5396253 bytes/sec
+total size is 22680973  speedup is 126.98
+--- synced at 20:20:27 ---
+Transfer starting: 699 files
+admin/partials/dashboard-logged-in-hero.php
+output/wp-env-sync.log
+sent 140821 bytes  received 64 bytes  4013817 bytes/sec
+total size is 22681377  speedup is 160.99
+--- synced at 20:20:37 ---
+Transfer starting: 699 files
+assets/js/bbai-admin.js
+output/wp-env-sync.log
+sent 920044 bytes  received 64 bytes  24149816 bytes/sec
+total size is 22683413  speedup is 24.65
+--- synced at 20:21:01 ---
+Transfer starting: 699 files
+assets/js/bbai-admin.js
+output/wp-env-sync.log
+sent 920273 bytes  received 64 bytes  22392627 bytes/sec
+total size is 22683642  speedup is 24.65
+--- synced at 20:21:16 ---
+Transfer starting: 699 files
+assets/js/bbai-admin.js
+output/wp-env-sync.log
+sent 920956 bytes  received 64 bytes  24825336 bytes/sec
+total size is 22684325  speedup is 24.63
+--- synced at 20:21:43 ---
+Transfer starting: 699 files
+assets/js/bbai-admin.js
+output/wp-env-sync.log
+sent 921339 bytes  received 64 bytes  27020615 bytes/sec
+total size is 22684708  speedup is 24.62
+--- synced at 20:22:02 ---
+Transfer starting: 699 files
+assets/js/bbai-admin.js
+output/wp-env-sync.log
+sent 921852 bytes  received 64 bytes  24849487 bytes/sec
+total size is 22685221  speedup is 24.61
+--- synced at 20:22:19 ---
+Transfer starting: 699 files
+assets/js/bbai-admin.js
+output/wp-env-sync.log
+sent 922057 bytes  received 64 bytes  25543518 bytes/sec
+total size is 22685426  speedup is 24.60
+--- synced at 20:23:21 ---
+Transfer starting: 699 files
+assets/js/bbai-admin.js
+output/wp-env-sync.log
+sent 922565 bytes  received 64 bytes  24868706 bytes/sec
+total size is 22685934  speedup is 24.59
+--- synced at 20:23:52 ---
+Transfer starting: 699 files
+assets/js/bbai-admin.js
+output/wp-env-sync.log
+sent 922863 bytes  received 64 bytes  27882990 bytes/sec
+total size is 22686232  speedup is 24.58
+--- synced at 20:24:05 ---
+Transfer starting: 699 files
+admin/class-bbai-rest-controller.php
+output/wp-env-sync.log
+sent 167755 bytes  received 64 bytes  4921378 bytes/sec
+total size is 22686722  speedup is 135.19
+--- synced at 20:24:28 ---
+Transfer starting: 699 files
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 180957 bytes  received 64 bytes  5308533 bytes/sec
+total size is 22687064  speedup is 125.33
+--- synced at 20:24:54 ---
+Transfer starting: 700 files
+output/playwright/
+output/playwright/state-integrity-no-active.png
+sent 168842 bytes  received 48 bytes  5102416 bytes/sec
+total size is 22813555  speedup is 135.08
+--- synced at 20:32:04 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/state-integrity-active-queued.png
+sent 319852 bytes  received 70 bytes  9114586 bytes/sec
+total size is 23017487  speedup is 71.95
+--- synced at 20:33:29 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/state-integrity-click-start-confirm.png
+sent 314946 bytes  received 70 bytes  8974814 bytes/sec
+total size is 23216210  speedup is 73.70
+--- synced at 20:34:55 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/state-integrity-completed.png
+sent 241397 bytes  received 70 bytes  5602482 bytes/sec
+total size is 23341106  speedup is 96.66
+--- synced at 20:36:10 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/state-integrity-stale-recovered.png
+sent 241506 bytes  received 70 bytes  7298368 bytes/sec
+total size is 23465809  speedup is 97.14
+--- synced at 20:38:18 ---
+Transfer starting: 704 files
+admin/class-bbai-core.php
+output/wp-env-sync.log
+sent 636164 bytes  received 64 bytes  18657712 bytes/sec
+total size is 23466110  speedup is 36.88
+--- synced at 20:38:54 ---
+Transfer starting: 704 files
+includes/services/class-logged-in-dashboard-resolver.php
+sent 108749 bytes  received 42 bytes  2524153 bytes/sec
+total size is 23466734  speedup is 215.70
+--- synced at 21:15:27 ---
+Transfer starting: 704 files
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 185364 bytes  received 64 bytes  4866876 bytes/sec
+total size is 23468802  speedup is 126.57
+--- synced at 21:15:55 ---
+Transfer starting: 704 files
+admin/class-bbai-rest-controller.php
+output/wp-env-sync.log
+sent 172801 bytes  received 64 bytes  5558360 bytes/sec
+total size is 23471509  speedup is 135.78
+--- synced at 21:16:02 ---
+Transfer starting: 704 files
+assets/js/bbai-admin.js
+output/wp-env-sync.log
+sent 925900 bytes  received 64 bytes  24303517 bytes/sec
+total size is 23471772  speedup is 25.35
+--- synced at 21:16:10 ---
+Transfer starting: 704 files
+assets/js/bbai-admin.js
+output/wp-env-sync.log
+sent 926518 bytes  received 64 bytes  26398347 bytes/sec
+total size is 23472390  speedup is 25.33
+--- synced at 21:16:21 ---
+Transfer starting: 704 files
+admin/partials/dashboard-logged-in-hero.php
+output/wp-env-sync.log
+sent 146074 bytes  received 64 bytes  4163475 bytes/sec
+total size is 23472826  speedup is 160.62
+--- synced at 21:16:24 ---
+Transfer starting: 704 files
+admin/partials/dashboard-logged-in-hero.php
+output/wp-env-sync.log
+sent 147129 bytes  received 64 bytes  3670648 bytes/sec
+total size is 23473881  speedup is 159.48
+--- synced at 21:16:48 ---
+Transfer starting: 704 files
+admin/partials/dashboard-logged-in-hero.php
+output/wp-env-sync.log
+sent 147350 bytes  received 64 bytes  2537246 bytes/sec
+total size is 23474102  speedup is 159.24
+--- synced at 21:16:51 ---
+Transfer starting: 704 files
+admin/partials/dashboard-logged-in-page.php
+output/wp-env-sync.log
+sent 132570 bytes  received 64 bytes  2451645 bytes/sec
+total size is 23475011  speedup is 176.99
+--- synced at 21:17:04 ---
+Transfer starting: 704 files
+admin/partials/dashboard-logged-in-surface.php
+output/wp-env-sync.log
+sent 124309 bytes  received 64 bytes  2342241 bytes/sec
+total size is 23475320  speedup is 188.75
+--- synced at 21:17:08 ---
+Transfer starting: 704 files
+admin/partials/dashboard-li-surface-activity-log.php
+output/wp-env-sync.log
+sent 123603 bytes  received 64 bytes  3245853 bytes/sec
+total size is 23476615  speedup is 189.84
+--- synced at 21:17:39 ---
+Transfer starting: 704 files
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 202336 bytes  received 64 bytes  3424703 bytes/sec
+total size is 23476793  speedup is 115.99
+--- synced at 21:17:45 ---
+Transfer starting: 704 files
+output/wp-env-sync.log
+sent 120002 bytes  received 42 bytes  3626706 bytes/sec
+total size is 23477020  speedup is 195.57
+--- synced at 21:17:45 ---
+Transfer starting: 704 files
+assets/js/bbai-admin.js
+output/wp-env-sync.log
+sent 946850 bytes  received 64 bytes  22492019 bytes/sec
+total size is 23495582  speedup is 24.81
+--- synced at 21:17:51 ---
+Transfer starting: 704 files
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 188064 bytes  received 64 bytes  5516950 bytes/sec
+total size is 23495690  speedup is 124.89
+--- synced at 21:17:52 ---
+Transfer starting: 704 files
+assets/js/bbai-admin.js
+output/wp-env-sync.log
+sent 947467 bytes  received 64 bytes  26247396 bytes/sec
+total size is 23496106  speedup is 24.80
+--- synced at 21:18:02 ---
+Transfer starting: 704 files
+admin/partials/dashboard-li-surface-activity-log.php
+output/wp-env-sync.log
+sent 124963 bytes  received 64 bytes  3777250 bytes/sec
+total size is 23496397  speedup is 187.93
+--- synced at 21:18:04 ---
+Transfer starting: 704 files
+admin/partials/dashboard-logged-in-hero.php
+output/wp-env-sync.log
+sent 149944 bytes  received 64 bytes  4531963 bytes/sec
+total size is 23497055  speedup is 156.64
+--- synced at 21:18:14 ---
+Transfer starting: 704 files
+admin/class-bbai-rest-controller.php
+output/wp-env-sync.log
+sent 176219 bytes  received 64 bytes  5325770 bytes/sec
+total size is 23497249  speedup is 133.29
+--- synced at 21:19:24 ---
+.playwright-cli/page-2026-04-20T20-19-40-029Z.yml
+admin/class-bbai-rest-controller.php
+output/wp-env-sync.log
+sent 177972 bytes  received 114 bytes  5726237 bytes/sec
+total size is 23498753  speedup is 131.95
+--- synced at 21:19:41 ---
+Transfer starting: 706 files
+assets/js/bbai-admin.js
+output/wp-env-sync.log
+sent 948886 bytes  received 64 bytes  25578167 bytes/sec
+total size is 23499155  speedup is 24.76
+--- synced at 21:19:54 ---
+Transfer starting: 706 files
+.playwright-cli/console-2026-04-20T20-19-39-830Z.log
+output/wp-env-sync.log
+sent 122506 bytes  received 64 bytes  3492022 bytes/sec
+total size is 23499539  speedup is 191.72
+--- synced at 21:19:57 ---
+.playwright-cli/
+.playwright-cli/page-2026-04-20T20-19-58-190Z.yml
+output/wp-env-sync.log
+sent 146382 bytes  received 70 bytes  4294780 bytes/sec
+total size is 23523727  speedup is 160.62
+--- synced at 21:19:58 ---
+.playwright-cli/console-2026-04-20T20-20-06-129Z.log
+.playwright-cli/page-2026-04-20T20-20-20-989Z.yml
+output/wp-env-sync.log
+sent 139798 bytes  received 92 bytes  3875069 bytes/sec
+total size is 23540904  speedup is 168.28
+--- synced at 21:20:21 ---
+Transfer starting: 710 files
+sent 43279 bytes  received 20 bytes  1658965 bytes/sec
+total size is 23557200  speedup is 544.06
+--- synced at 21:21:16 ---
+Transfer starting: 710 files
+admin/partials/dashboard-logged-in-hero.php
+output/wp-env-sync.log
+sent 152114 bytes  received 64 bytes  3614679 bytes/sec
+total size is 23557352  speedup is 154.80
+--- synced at 21:21:44 ---
+.playwright-cli/console-2026-04-20T20-20-06-129Z.log
+.playwright-cli/page-2026-04-20T20-22-01-739Z.yml
+output/
+sent 63792 bytes  received 76 bytes  1721509 bytes/sec
+total size is 23573678  speedup is 369.10
+--- synced at 21:22:02 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/state-integrity-processing-validation.png
+sent 243698 bytes  received 70 bytes  5655870 bytes/sec
+total size is 23693717  speedup is 97.20
+--- synced at 21:22:33 ---
+Transfer starting: 713 files
+sent 43511 bytes  received 20 bytes  1549145 bytes/sec
+total size is 23711059  speedup is 544.69
+--- synced at 21:22:55 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/state-integrity-queued-validation.png
+sent 305126 bytes  received 70 bytes  9220422 bytes/sec
+total size is 23891903  speedup is 78.28
+--- synced at 21:23:10 ---
+Transfer starting: 716 files
+sent 43742 bytes  received 20 bytes  1557366 bytes/sec
+total size is 23893417  speedup is 545.99
+--- synced at 21:24:05 ---
+Transfer starting: 716 files
+sent 43742 bytes  received 20 bytes  1503848 bytes/sec
+total size is 23893791  speedup is 545.99
+--- synced at 21:24:28 ---
+Transfer starting: 716 files
+.playwright-cli/console-2026-04-20T20-24-04-181Z.log
+output/wp-env-sync.log
+sent 127412 bytes  received 64 bytes  2826518 bytes/sec
+total size is 23896059  speedup is 187.46
+--- synced at 21:24:54 ---
+Transfer starting: 716 files
+output/wp-env-sync.log
+output/playwright/state-integrity-queued-validation.png
+sent 237899 bytes  received 64 bytes  5276341 bytes/sec
+total size is 23828167  speedup is 100.13
+--- synced at 21:25:13 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/approve-all-dashboard-success.png
+sent 248923 bytes  received 70 bytes  4518929 bytes/sec
+total size is 23951678  speedup is 96.19
+--- synced at 21:28:08 ---
+Transfer starting: 718 files
+sent 43900 bytes  received 20 bytes  1459136 bytes/sec
+total size is 24339580  speedup is 554.18
+--- synced at 21:29:23 ---
+assets/js/bbai-dashboard.js
+assets/js/admin/funnel-state.js
+output/wp-env-sync.log
+sent 1389402 bytes  received 130 bytes  17133563 bytes/sec
+total size is 24339733  speedup is 17.52
+--- synced at 21:43:20 ---
+Transfer starting: 718 files
+output/wp-env-sync.log
+sent 126244 bytes  received 42 bytes  2334306 bytes/sec
+total size is 24339943  speedup is 192.74
+--- synced at 07:06:17 ---
+Transfer starting: 718 files
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 194449 bytes  received 64 bytes  4312926 bytes/sec
+total size is 24340243  speedup is 125.13
+--- synced at 08:47:49 ---
+Transfer starting: 718 files
+admin/partials/dashboard-logged-in-hero.php
+output/wp-env-sync.log
+sent 155573 bytes  received 64 bytes  4702024 bytes/sec
+total size is 24340497  speedup is 156.39
+--- synced at 08:48:56 ---
+Transfer starting: 718 files
+admin/partials/dashboard-logged-in-hero.php
+output/wp-env-sync.log
+sent 155940 bytes  received 64 bytes  5360962 bytes/sec
+total size is 24340864  speedup is 156.03
+--- synced at 08:49:01 ---
+Transfer starting: 718 files
+admin/partials/dashboard-logged-in-hero.php
+output/wp-env-sync.log
+sent 158741 bytes  received 64 bytes  4947196 bytes/sec
+total size is 24343665  speedup is 153.29
+--- synced at 08:49:29 ---
+Transfer starting: 718 files
+admin/partials/dashboard-logged-in-page.php
+output/wp-env-sync.log
+sent 141012 bytes  received 64 bytes  4262114 bytes/sec
+total size is 24344110  speedup is 172.56
+--- synced at 08:50:19 ---
+Transfer starting: 718 files
+admin/partials/dashboard-li-surface-activity-log.php
+output/wp-env-sync.log
+sent 131711 bytes  received 64 bytes  3206204 bytes/sec
+total size is 24344355  speedup is 184.74
+--- synced at 08:50:26 ---
+Transfer starting: 718 files
+assets/js/bbai-admin.js
+output/wp-env-sync.log
+sent 955104 bytes  received 64 bytes  12551484 bytes/sec
+total size is 24344901  speedup is 25.49
+--- synced at 08:50:40 ---
+Transfer starting: 718 files
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 211081 bytes  received 64 bytes  5848891 bytes/sec
+total size is 24345652  speedup is 115.30
+--- synced at 08:51:06 ---
+Transfer starting: 718 files
+assets/css/features/dashboard/logged-in-state.css
+output/wp-env-sync.log
+sent 211417 bytes  received 64 bytes  6389154 bytes/sec
+total size is 24345988  speedup is 115.12
+--- synced at 08:51:13 ---
+Transfer starting: 719 files
+output/playwright/
+output/playwright/queued-debug-page.png
+sent 66195 bytes  received 48 bytes  1651945 bytes/sec
+total size is 24368394  speedup is 367.86
+--- synced at 08:59:29 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/queued-debug-dashboard.png
+sent 272677 bytes  received 70 bytes  5554928 bytes/sec
+total size is 24512446  speedup is 89.87
+--- synced at 09:01:51 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/queued-state-dashboard.png
+sent 273004 bytes  received 70 bytes  8249969 bytes/sec
+total size is 24656544  speedup is 90.29
+--- synced at 09:02:28 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/queued-state-library.png
+sent 597407 bytes  received 70 bytes  16550609 bytes/sec
+total size is 25124727  speedup is 42.05
+--- synced at 09:02:43 ---
+deleting output/playwright/queued-debug-dashboard.png
+output/wp-env-sync.log
+output/playwright/
+sent 129410 bytes  received 48 bytes  3397847 bytes/sec
+total size is 24958918  speedup is 192.80
+--- synced at 09:04:01 ---
+Transfer starting: 720 files
+admin/class-bbai-core.php
+output/wp-env-sync.log
+sent 648616 bytes  received 64 bytes  7043213 bytes/sec
+total size is 24959139  speedup is 38.48
+--- synced at 09:15:20 ---
+includes/services/
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 198208 bytes  received 70 bytes  4496099 bytes/sec
+total size is 24959688  speedup is 125.88
+--- synced at 15:30:06 ---
+admin/partials/
+admin/partials/dashboard-body.php
+output/wp-env-sync.log
+sent 188841 bytes  received 70 bytes  6074308 bytes/sec
+total size is 24960168  speedup is 132.13
+--- synced at 15:30:37 ---
+includes/services/
+includes/services/class-review-prompt-service.php
+output/wp-env-sync.log
+sent 139173 bytes  received 70 bytes  2956326 bytes/sec
+total size is 24969164  speedup is 179.32
+--- synced at 17:06:36 ---
+admin/
+admin/class-bbai-admin-hooks.php
+output/wp-env-sync.log
+sent 139927 bytes  received 70 bytes  4501511 bytes/sec
+total size is 24969450  speedup is 178.36
+--- synced at 17:06:44 ---
+admin/
+admin/class-bbai-core.php
+output/wp-env-sync.log
+sent 650420 bytes  received 70 bytes  16636572 bytes/sec
+total size is 24970333  speedup is 38.39
+--- synced at 17:06:59 ---
+admin/
+admin/class-bbai-core.php
+output/wp-env-sync.log
+sent 651982 bytes  received 70 bytes  19699456 bytes/sec
+total size is 24971895  speedup is 38.30
+--- synced at 17:09:06 ---
+admin/partials/
+admin/partials/dashboard-body.php
+output/wp-env-sync.log
+sent 190728 bytes  received 70 bytes  4879744 bytes/sec
+total size is 24972924  speedup is 130.89
+--- synced at 17:09:52 ---
+assets/js/
+assets/js/bbai-dashboard.js
+output/wp-env-sync.log
+sent 472444 bytes  received 70 bytes  14720062 bytes/sec
+total size is 24972943  speedup is 52.85
+--- synced at 17:10:20 ---
+assets/js/
+assets/js/bbai-dashboard.js
+output/wp-env-sync.log
+sent 473344 bytes  received 70 bytes  14302537 bytes/sec
+total size is 24973843  speedup is 52.75
+--- synced at 17:10:33 ---
+assets/js/
+assets/js/bbai-dashboard.js
+output/wp-env-sync.log
+sent 473487 bytes  received 70 bytes  13491652 bytes/sec
+total size is 24973986  speedup is 52.74
+--- synced at 17:10:42 ---
+assets/js/
+assets/js/bbai-dashboard.js
+output/wp-env-sync.log
+sent 473670 bytes  received 70 bytes  14312386 bytes/sec
+total size is 24974169  speedup is 52.72
+--- synced at 17:10:47 ---
+assets/css/features/dashboard/
+assets/css/features/dashboard/status-card-refresh.css
+output/wp-env-sync.log
+sent 368372 bytes  received 70 bytes  9188079 bytes/sec
+total size is 24975319  speedup is 67.79
+--- synced at 17:11:10 ---
+includes/class-api-client-v2.php
+includes/services/class-review-prompt-service.php
+output/wp-env-sync.log
+sent 1458577 bytes  received 196 bytes  28547416 bytes/sec
+total size is 24978067  speedup is 17.12
+--- synced at 09:21:18 ---
+Transfer starting: 721 files
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 210732 bytes  received 64 bytes  6181700 bytes/sec
+total size is 24988156  speedup is 118.54
+--- synced at 09:22:23 ---
+Transfer starting: 721 files
+admin/class-bbai-rest-controller.php
+output/wp-env-sync.log
+sent 187944 bytes  received 64 bytes  5513431 bytes/sec
+total size is 24988648  speedup is 132.91
+--- synced at 09:22:32 ---
+Transfer starting: 721 files
+admin/class-bbai-rest-controller.php
+output/wp-env-sync.log
+sent 193782 bytes  received 64 bytes  5684633 bytes/sec
+total size is 24994486  speedup is 128.94
+--- synced at 09:23:40 ---
+Transfer starting: 721 files
+admin/partials/dashboard-body.php
+output/wp-env-sync.log
+sent 196054 bytes  received 64 bytes  5925015 bytes/sec
+total size is 24997959  speedup is 127.46
+--- synced at 09:24:49 ---
+Transfer starting: 721 files
+admin/partials/dashboard-logged-in-page.php
+output/wp-env-sync.log
+sent 147559 bytes  received 64 bytes  4205783 bytes/sec
+total size is 24998661  speedup is 169.34
+--- synced at 09:25:21 ---
+Transfer starting: 721 files
+admin/partials/dashboard-logged-in-hero.php
+output/wp-env-sync.log
+sent 170058 bytes  received 64 bytes  4988914 bytes/sec
+total size is 25003697  speedup is 146.98
+--- synced at 09:26:54 ---
+Transfer starting: 721 files
+admin/partials/dashboard-logged-in-hero.php
+output/wp-env-sync.log
+sent 170470 bytes  received 64 bytes  5000997 bytes/sec
+total size is 25004109  speedup is 146.62
+--- synced at 09:27:11 ---
+Transfer starting: 721 files
+admin/partials/dashboard-logged-in-hero.php
+output/wp-env-sync.log
+sent 170683 bytes  received 64 bytes  5490257 bytes/sec
+total size is 25004322  speedup is 146.44
+--- synced at 09:27:16 ---
+Transfer starting: 721 files
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 212489 bytes  received 64 bytes  6233225 bytes/sec
+total size is 25004543  speedup is 117.64
+--- synced at 09:27:43 ---
+Transfer starting: 721 files
+admin/partials/dashboard-body.php
+output/wp-env-sync.log
+sent 197362 bytes  received 64 bytes  5789618 bytes/sec
+total size is 25004756  speedup is 126.65
+--- synced at 09:28:00 ---
+Transfer starting: 721 files
+admin/partials/dashboard-body.php
+output/wp-env-sync.log
+sent 197535 bytes  received 64 bytes  5794692 bytes/sec
+total size is 25004929  speedup is 126.54
+--- synced at 09:28:44 ---
+Transfer starting: 721 files
+includes/services/class-logged-in-dashboard-resolver.php
+output/wp-env-sync.log
+sent 213174 bytes  received 64 bytes  4625553 bytes/sec
+total size is 25005169  speedup is 117.26
+--- synced at 09:34:52 ---
+Transfer starting: 722 files
+output/playwright/
+output/playwright/e2e-dashboard-current.png
+sent 164991 bytes  received 48 bytes  5141401 bytes/sec
+total size is 25126152  speedup is 152.24
+--- synced at 09:48:20 ---
+output/wp-env-sync.log
+output/playwright/
+output/playwright/e2e-generate-transition.png
+sent 254995 bytes  received 70 bytes  7945950 bytes/sec
+total size is 25245797  speedup is 98.98
+--- synced at 09:49:15 ---
+Transfer starting: 723 files
+includes/class-api-client-v2.php
+output/wp-env-sync.log
+sent 285687 bytes  received 64 bytes  8379794 bytes/sec
+total size is 25246741  speedup is 88.35
+--- synced at 09:51:23 ---
+Transfer starting: 723 files
+admin/partials/dashboard-logged-in-hero.php
+sent 81054 bytes  received 42 bytes  2378181 bytes/sec
+total size is 25247110  speedup is 311.32
+--- synced at 09:53:05 ---
+Transfer starting: 724 files
+tests/e2e/
+tests/e2e/dashboard-state-truth.spec.ts
+sent 57804 bytes  received 48 bytes  1747794 bytes/sec
+total size is 25260747  speedup is 436.64
+--- synced at 09:57:09 ---
+tests/e2e/
+tests/e2e/test-results/
+tests/e2e/test-results/.playwright-artifacts-0/
+sent 136525 bytes  received 60 bytes  5441633 bytes/sec
+total size is 25260951  speedup is 184.95
+--- synced at 09:57:21 ---
+output/wp-env-sync.log
+tests/e2e/test-results/.playwright-artifacts-0/
+tests/e2e/test-results/.playwright-artifacts-0/traces/
+sent 136805 bytes  received 54 bytes  4870427 bytes/sec
+total size is 25261159  speedup is 184.58
+--- synced at 09:57:23 ---
+tests/e2e/test-results/dashboard-state-truth-Dash-f2d4d-ned-without-processing-copy-chromium/
+tests/e2e/test-results/dashboard-state-truth-Dash-f2d4d-ned-without-processing-copy-chromium/error-context.md
+tests/e2e/test-results/dashboard-state-truth-Dash-f2d4d-ned-without-processing-copy-chromium/test-failed-1.png
+sent 917210 bytes  received 204 bytes  17953307 bytes/sec
+total size is 26040508  speedup is 28.38
+--- synced at 09:57:32 ---
+Transfer starting: 734 files
+output/wp-env-sync.log
+tests/e2e/dashboard-state-truth.spec.ts
+sent 151848 bytes  received 64 bytes  3987191 bytes/sec
+total size is 26041152  speedup is 171.42
+--- synced at 09:58:12 ---
+deleting tests/e2e/test-results/.last-run.json
+deleting tests/e2e/test-results/
+output/wp-env-sync.log
+sent 137881 bytes  received 42 bytes  4434823 bytes/sec
+total size is 25918966  speedup is 187.92
+--- synced at 09:58:22 ---
+tests/e2e/test-results/
+tests/e2e/test-results/.playwright-artifacts-0/
+tests/e2e/test-results/.playwright-artifacts-0/traces/
+sent 138323 bytes  received 60 bytes  4755429 bytes/sec
+total size is 25919194  speedup is 187.30
+--- synced at 09:58:23 ---
+output/wp-env-sync.log
+tests/e2e/test-results/.playwright-artifacts-0/
+tests/e2e/test-results/.playwright-artifacts-0/9fb07cfd8f9852ac52ecfc7ebc0ba507.png
+sent 246494 bytes  received 70 bytes  7928102 bytes/sec
+total size is 26027211  speedup is 105.56
+--- synced at 09:58:37 ---
+output/wp-env-sync.log
+tests/e2e/test-results/.playwright-artifacts-0/
+tests/e2e/test-results/.playwright-artifacts-0/7bf7779e3cefd65e5392b764f9f4a7f7.png
+sent 245612 bytes  received 70 bytes  6283427 bytes/sec
+total size is 26133986  speedup is 106.37
+--- synced at 09:58:50 ---
+output/wp-env-sync.log
+tests/e2e/test-results/
+tests/e2e/test-results/dashboard-state-truth-Dash-15149-nts-and-state-specific-CTAs-chromium/
+sent 139462 bytes  received 54 bytes  3974814 bytes/sec
+total size is 26134266  speedup is 187.32
+--- synced at 09:59:02 ---
+tests/e2e/test-results/dashboard-state-truth-Dash-15149-nts-and-state-specific-CTAs-chromium/
+tests/e2e/test-results/dashboard-state-truth-Dash-15149-nts-and-state-specific-CTAs-chromium/error-context.md
+tests/e2e/test-results/dashboard-state-truth-Dash-15149-nts-and-state-specific-CTAs-chromium/test-failed-1.png
+sent 935970 bytes  received 204 bytes  25233800 bytes/sec
+total size is 26059471  speedup is 27.84
+--- synced at 09:59:03 ---
+Transfer starting: 734 files
+assets/js/bbai-dashboard.js
+output/wp-env-sync.log
+sent 482393 bytes  received 64 bytes  13004231 bytes/sec
+total size is 26060367  speedup is 54.02
+--- synced at 10:02:11 ---
+tests/e2e/test-results/
+tests/e2e/test-results/.playwright-artifacts-0/
+tests/e2e/test-results/.playwright-artifacts-0/traces/
+sent 44907 bytes  received 44 bytes  1400342 bytes/sec
+total size is 25930921  speedup is 576.87
+--- synced at 10:03:00 ---
+output/wp-env-sync.log
+tests/e2e/test-results/.playwright-artifacts-0/
+tests/e2e/test-results/.playwright-artifacts-0/b9724ae90f36e44a721d7d3f9f14912a.png
+sent 248261 bytes  received 70 bytes  7736168 bytes/sec
+total size is 26038981  speedup is 104.86
+--- synced at 10:03:12 ---
+output/wp-env-sync.log
+tests/e2e/test-results/.playwright-artifacts-0/
+tests/e2e/test-results/.playwright-artifacts-0/6f296d0b505db9837871230df8f6bb7d.png
+sent 247385 bytes  received 70 bytes  8503608 bytes/sec
+total size is 26145806  speedup is 105.66
+--- synced at 10:03:25 ---
+output/wp-env-sync.log
+tests/e2e/test-results/.playwright-artifacts-0/
+tests/e2e/test-results/.playwright-artifacts-0/d8f91741d60c36f9e33fb05a3173e6ca.png
+sent 310056 bytes  received 70 bytes  9661246 bytes/sec
+total size is 26314906  speedup is 84.85
+--- synced at 10:03:42 ---
+output/wp-env-sync.log
+tests/e2e/test-results/.playwright-artifacts-0/
+rsync(45064): error: /Users/ben/code/web/WP-Alt-text-plugin/tests/e2e/test-results/.playwright-artifacts-0/b014bffbbeeb083d5caf2fd347ab1d3e.png: open (2) in /Users/ben/code/web/WP-Alt-text-plugin: No such file or directory
+sent 141557 bytes  received 70 bytes  4278761 bytes/sec
+total size is 26429737  speedup is 186.62
+--- synced at 10:03:54 ---
+tests/e2e/playwright-report/index.html
+tests/e2e/test-results/
+tests/e2e/test-results/.last-run.json
+sent 675754 bytes  received 104 bytes  16053634 bytes/sec
+total size is 25800576  speedup is 38.17
+--- synced at 10:03:55 ---
+Transfer starting: 728 files
+admin/partials/dashboard-logged-in-hero.php
+output/wp-env-sync.log
+sent 178213 bytes  received 64 bytes  5553800 bytes/sec
+total size is 25800792  speedup is 144.72
+--- synced at 10:07:02 ---
+tests/e2e/
+tests/e2e/test-results/
+tests/e2e/test-results/.playwright-artifacts-0/
+sent 44563 bytes  received 38 bytes  1270683 bytes/sec
+total size is 25800968  speedup is 578.48
+--- synced at 10:07:49 ---
+output/wp-env-sync.log
+tests/e2e/test-results/.playwright-artifacts-0/
+tests/e2e/test-results/.playwright-artifacts-0/traces/
+sent 141945 bytes  received 54 bytes  5053345 bytes/sec
+total size is 25801175  speedup is 181.70
+--- synced at 10:07:50 ---
+output/wp-env-sync.log
+tests/e2e/test-results/.playwright-artifacts-0/
+tests/e2e/test-results/.playwright-artifacts-0/5dffaad875bb1690d3cf2bfbcd76f4d3.png
+sent 250152 bytes  received 70 bytes  7128831 bytes/sec
+total size is 25909222  speedup is 103.54
+--- synced at 10:08:02 ---
+output/wp-env-sync.log
+tests/e2e/test-results/.playwright-artifacts-0/
+tests/e2e/test-results/.playwright-artifacts-0/d4a92427a0fe96d372f9a54d8332d077.png
+sent 249288 bytes  received 70 bytes  7312551 bytes/sec
+total size is 26016046  speedup is 104.33
+--- synced at 10:08:15 ---
+output/wp-env-sync.log
+tests/e2e/test-results/.playwright-artifacts-0/
+tests/e2e/test-results/.playwright-artifacts-0/edbc061ed91f4beeb3c2ab134992648a.png
+sent 311960 bytes  received 70 bytes  3710225 bytes/sec
+total size is 26185146  speedup is 83.92
+--- synced at 10:08:33 ---
+output/wp-env-sync.log
+tests/e2e/test-results/.playwright-artifacts-0/
+rsync(45837): error: /Users/ben/code/web/WP-Alt-text-plugin/tests/e2e/test-results/.playwright-artifacts-0/d8cd53b63a2601a564461de26c4b5513.png: open (2) in /Users/ben/code/web/WP-Alt-text-plugin: No such file or directory
+sent 143465 bytes  received 70 bytes  4615273 bytes/sec
+total size is 26299977  speedup is 183.23
+--- synced at 10:08:45 ---
+tests/e2e/playwright-report/index.html
+tests/e2e/test-results/
+tests/e2e/test-results/.last-run.json
+sent 677902 bytes  received 104 bytes  19316410 bytes/sec
+total size is 25802709  speedup is 38.06
+--- synced at 10:08:46 ---
+Transfer starting: 728 files
+assets/js/bbai-admin.js
+output/wp-env-sync.log
+sent 971645 bytes  received 64 bytes  20630764 bytes/sec
+total size is 25803660  speedup is 26.55
+--- synced at 10:28:31 ---
+Transfer starting: 728 files
+assets/js/bbai-admin.js
+output/wp-env-sync.log
+sent 973392 bytes  received 64 bytes  23122470 bytes/sec
+total size is 25805407  speedup is 26.51
+--- synced at 10:29:14 ---
+Transfer starting: 728 files
+admin/partials/dashboard-logged-in-hero.php
+output/wp-env-sync.log
+sent 216158 bytes  received 64 bytes  6532386 bytes/sec
+total size is 25840979  speedup is 119.51
+--- synced at 10:36:28 ---
+Transfer starting: 728 files
+admin/partials/dashboard-logged-in-hero.php
+output/wp-env-sync.log
+sent 216707 bytes  received 64 bytes  6356920 bytes/sec
+total size is 25841528  speedup is 119.21
+--- synced at 10:37:04 ---
+Transfer starting: 728 files
+admin/partials/dashboard-logged-in-hero.php
+output/wp-env-sync.log
+sent 217925 bytes  received 64 bytes  6038476 bytes/sec
+total size is 25842746  speedup is 118.55
+--- synced at 10:38:10 ---
+Transfer starting: 728 files
+admin/partials/dashboard-logged-in-hero.php
+output/wp-env-sync.log
+sent 218049 bytes  received 64 bytes  6214045 bytes/sec
+total size is 25842870  speedup is 118.48
+--- synced at 10:38:28 ---
+Transfer starting: 728 files
+output/wp-env-sync.log
+tests/e2e/dashboard-state-truth.spec.ts
+sent 169415 bytes  received 64 bytes  4828461 bytes/sec
+total size is 25853945  speedup is 152.55
+--- synced at 10:40:39 ---
+tests/e2e/
+tests/e2e/test-results/
+tests/e2e/test-results/.playwright-artifacts-0/
+sent 44563 bytes  received 38 bytes  1270683 bytes/sec
+total size is 25854117  speedup is 579.68
+--- synced at 10:41:08 ---
+output/wp-env-sync.log
+tests/e2e/test-results/.playwright-artifacts-0/
+tests/e2e/test-results/.playwright-artifacts-0/traces/
+sent 145395 bytes  received 54 bytes  4531121 bytes/sec
+total size is 25854324  speedup is 177.76
+--- synced at 10:41:09 ---
+output/wp-env-sync.log
+tests/e2e/test-results/.playwright-artifacts-0/
+tests/e2e/test-results/.playwright-artifacts-0/8d1c045840e34110c81d25aee8356a60.png
+sent 253573 bytes  received 70 bytes  6657296 bytes/sec
+total size is 25962342  speedup is 102.36
+--- synced at 10:41:25 ---
+output/wp-env-sync.log
+tests/e2e/test-results/.playwright-artifacts-0/
+tests/e2e/test-results/.playwright-artifacts-0/12c994df31e6d18263330aa71ff90fa9.png
+sent 252738 bytes  received 70 bytes  7202507 bytes/sec
+total size is 26069166  speedup is 103.12
+--- synced at 10:41:37 ---
+output/wp-env-sync.log
+tests/e2e/test-results/.playwright-artifacts-0/
+tests/e2e/test-results/.playwright-artifacts-0/f8659e143c1aece30c37b477fd3951fb.png
+sent 315410 bytes  received 70 bytes  9531117 bytes/sec
+total size is 26238266  speedup is 83.17
+--- synced at 10:41:53 ---
+output/wp-env-sync.log
+tests/e2e/test-results/.playwright-artifacts-0/
+tests/e2e/test-results/.playwright-artifacts-0/b8ff224f6bd89b649a3493a44aae26dd.png
+sent 251607 bytes  received 70 bytes  8956476 bytes/sec
+total size is 26343183  speedup is 104.67
+--- synced at 10:42:03 ---
+output/wp-env-sync.log
+tests/e2e/test-results/.playwright-artifacts-0/
+tests/e2e/test-results/.playwright-artifacts-0/2c059326c929484a89bdf4d0ae87b00b.png
+sent 261788 bytes  received 70 bytes  9662656 bytes/sec
+total size is 26457894  speedup is 101.04
+--- synced at 10:42:14 ---
+output/wp-env-sync.log
+tests/e2e/test-results/.playwright-artifacts-0/
+tests/e2e/test-results/.playwright-artifacts-0/b5315ac7ad124cfdc5566ca7b2cb1ba2.png
+sent 258237 bytes  received 70 bytes  7359173 bytes/sec
+total size is 26568666  speedup is 102.86
+--- synced at 10:42:40 ---
+output/wp-env-sync.log
+tests/e2e/test-results/.playwright-artifacts-0/
+tests/e2e/test-results/.playwright-artifacts-0/f5da90271229f52d86dc336109e534b7.png
+sent 331762 bytes  received 70 bytes  12713869 bytes/sec
+total size is 26752567  speedup is 80.62
+--- synced at 10:42:50 ---
+output/wp-env-sync.log
+tests/e2e/test-results/.playwright-artifacts-0/
+tests/e2e/test-results/.playwright-artifacts-0/514a54cd84a05fdab0a0e140a26900a3.png
+sent 258256 bytes  received 70 bytes  7804410 bytes/sec
+total size is 26862582  speedup is 103.99
+--- synced at 10:43:10 ---
+output/wp-env-sync.log
+tests/e2e/test-results/.playwright-artifacts-0/
+rsync(48822): error: /Users/ben/code/web/WP-Alt-text-plugin/tests/e2e/test-results/.playwright-artifacts-0/fad484a4ed49df8cfa71948f39ec3b96.png: open (2) in /Users/ben/code/web/WP-Alt-text-plugin: No such file or directory
+sent 148851 bytes  received 70 bytes  4242763 bytes/sec
+total size is 26977414  speedup is 181.15
+--- synced at 10:43:22 ---
+tests/e2e/playwright-report/index.html
+tests/e2e/test-results/
+tests/e2e/test-results/.last-run.json
+sent 686860 bytes  received 104 bytes  17569411 bytes/sec
+total size is 25861390  speedup is 37.65
+--- synced at 10:43:23 ---

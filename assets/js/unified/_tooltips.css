@@ -1,0 +1,322 @@
+/**
+ * Tooltip System
+ * Reusable tooltips with data-bbai-tooltip attribute
+ */
+
+/* Tooltip Container - only apply help cursor to non-interactive elements */
+[data-bbai-tooltip]:not(button):not(a):not(.bbai-btn):not([role="button"]) {
+    position: relative;
+    cursor: help;
+}
+
+/* Buttons with tooltips should keep their natural cursor and display */
+button[data-bbai-tooltip],
+a[data-bbai-tooltip],
+.bbai-btn[data-bbai-tooltip],
+[role="button"][data-bbai-tooltip] {
+    /* Don't override button styling */
+}
+
+/* Ensure disabled buttons with tooltips can still receive pointer events for tooltip display */
+button[data-bbai-tooltip]:disabled,
+button[disabled][data-bbai-tooltip] {
+    pointer-events: auto;
+    cursor: not-allowed;
+}
+
+/* Tooltip Base */
+.bbai-tooltip {
+    position: absolute;
+    z-index: 10000;
+    padding: 8px 12px;
+    background: var(--bbai-gray-900);
+    color: white;
+    font-size: var(--bbai-text-sm);
+    line-height: 1.5;
+    border-radius: var(--bbai-radius);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-width: 280px;
+    word-wrap: break-word;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity var(--bbai-transition-fast) var(--bbai-ease-out),
+                transform var(--bbai-transition-fast) var(--bbai-ease-out);
+    white-space: normal;
+}
+
+.bbai-tooltip.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Tooltip Arrow */
+.bbai-tooltip::before {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    border: 6px solid transparent;
+}
+
+/* Tooltip Positions */
+.bbai-tooltip--top {
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(-4px);
+}
+
+.bbai-tooltip--top::before {
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-top-color: var(--bbai-gray-900);
+}
+
+.bbai-tooltip--top.show {
+    transform: translateX(-50%) translateY(0);
+}
+
+.bbai-tooltip--bottom {
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+}
+
+.bbai-tooltip--bottom::before {
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-bottom-color: var(--bbai-gray-900);
+}
+
+.bbai-tooltip--bottom.show {
+    transform: translateX(-50%) translateY(0);
+}
+
+.bbai-tooltip--left {
+    right: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%) translateX(4px);
+}
+
+.bbai-tooltip--left::before {
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    border-left-color: var(--bbai-gray-900);
+}
+
+.bbai-tooltip--left.show {
+    transform: translateY(-50%) translateX(0);
+}
+
+.bbai-tooltip--right {
+    left: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%) translateX(-4px);
+}
+
+.bbai-tooltip--right::before {
+    right: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    border-right-color: var(--bbai-gray-900);
+}
+
+.bbai-tooltip--right.show {
+    transform: translateY(-50%) translateX(0);
+}
+
+/* Help Icon */
+.bbai-help-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    margin-left: 4px;
+    color: var(--bbai-text-muted);
+    cursor: help;
+    vertical-align: middle;
+    transition: color var(--bbai-transition-fast);
+}
+
+.bbai-help-icon:hover {
+    color: var(--bbai-primary);
+}
+
+.bbai-help-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* Tooltip with Rich Content */
+.bbai-tooltip--rich {
+    max-width: 320px;
+    padding: 12px;
+}
+
+.bbai-tooltip--rich .bbai-tooltip-title {
+    font-weight: var(--bbai-font-semibold);
+    margin-bottom: 6px;
+    color: white;
+}
+
+.bbai-tooltip--rich .bbai-tooltip-content {
+    font-size: var(--bbai-text-xs);
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Dark Mode Support */
+[data-theme="dark"] .bbai-tooltip,
+.bbai-dark-mode .bbai-tooltip {
+    background: var(--bbai-gray-800);
+    color: var(--bbai-gray-100);
+}
+
+[data-theme="dark"] .bbai-tooltip--top::before,
+.bbai-dark-mode .bbai-tooltip--top::before {
+    border-top-color: var(--bbai-gray-800);
+}
+
+[data-theme="dark"] .bbai-tooltip--bottom::before,
+.bbai-dark-mode .bbai-tooltip--bottom::before {
+    border-bottom-color: var(--bbai-gray-800);
+}
+
+[data-theme="dark"] .bbai-tooltip--left::before,
+.bbai-dark-mode .bbai-tooltip--left::before {
+    border-left-color: var(--bbai-gray-800);
+}
+
+[data-theme="dark"] .bbai-tooltip--right::before,
+.bbai-dark-mode .bbai-tooltip--right::before {
+    border-right-color: var(--bbai-gray-800);
+}
+
+/* Keyboard Shortcut Cheat Sheet Modal */
+.bbai-shortcuts-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--bbai-transition-base);
+}
+
+.bbai-shortcuts-modal.show {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.bbai-shortcuts-modal-content {
+    background: white;
+    border-radius: var(--bbai-radius-xl);
+    padding: var(--bbai-space-8);
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    transform: scale(0.95);
+    transition: transform var(--bbai-transition-base);
+}
+
+.bbai-shortcuts-modal.show .bbai-shortcuts-modal-content {
+    transform: scale(1);
+}
+
+.bbai-shortcuts-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--bbai-space-6);
+}
+
+.bbai-shortcuts-title {
+    font-size: var(--bbai-text-2xl);
+    font-weight: var(--bbai-font-bold);
+    color: var(--bbai-text);
+}
+
+.bbai-shortcuts-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: var(--bbai-text-muted);
+    transition: color var(--bbai-transition-fast);
+}
+
+.bbai-shortcuts-close:hover {
+    color: var(--bbai-text);
+}
+
+.bbai-shortcuts-list {
+    display: grid;
+    gap: var(--bbai-space-4);
+}
+
+.bbai-shortcut-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--bbai-space-3);
+    background: var(--bbai-gray-50);
+    border-radius: var(--bbai-radius);
+    transition: background var(--bbai-transition-fast);
+}
+
+.bbai-shortcut-item:hover {
+    background: var(--bbai-gray-100);
+}
+
+.bbai-shortcut-description {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text);
+}
+
+.bbai-shortcut-keys {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.bbai-shortcut-key {
+    padding: 4px 8px;
+    background: white;
+    border: 1px solid var(--bbai-gray-300);
+    border-radius: 4px;
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    font-family: monospace;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.bbai-shortcut-key--plus {
+    color: var(--bbai-text-muted);
+    font-size: var(--bbai-text-sm);
+    padding: 0 4px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .bbai-tooltip {
+        max-width: 240px;
+        font-size: var(--bbai-text-xs);
+    }
+
+    .bbai-shortcuts-modal-content {
+        padding: var(--bbai-space-6);
+    }
+}

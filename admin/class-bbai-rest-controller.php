@@ -125,6 +125,16 @@ class REST_Controller {
 
 		register_rest_route(
 			'bbai/v1',
+			'/approve-all-alt-text',
+			[
+				'methods'             => 'POST',
+				'callback'            => [ $this, 'handle_approve_all_alt_text' ],
+				'permission_callback' => [ $this, 'can_edit_media' ],
+			]
+		);
+
+		register_rest_route(
+			'bbai/v1',
 			'/alt/clear',
 			[
 				'methods'             => 'POST',
@@ -189,6 +199,29 @@ class REST_Controller {
 						'sanitize_callback' => [ __CLASS__, 'sanitize_bool_arg' ],
 					],
 				],
+			]
+		);
+
+		// Logged-in dashboard state endpoint.
+		// Returns a single resolved DashboardState object for authenticated users.
+		// This is the polling target used by the logged-in dashboard controller.
+		register_rest_route(
+			'bbai/v1',
+			'/dashboard',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ $this, 'handle_logged_in_dashboard' ],
+				'permission_callback' => [ $this, 'can_edit_media' ],
+			]
+		);
+
+		register_rest_route(
+			'bbai/v1',
+			'/dashboard/state-truth',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ $this, 'handle_logged_in_dashboard_state_truth' ],
+				'permission_callback' => [ $this, 'can_edit_media' ],
 			]
 		);
 
@@ -1050,6 +1083,59 @@ class REST_Controller {
 	}
 
 	/**
+	 * Approve every attachment currently waiting for review.
+	 *
+	 * @param \WP_REST_Request $request REST request instance.
+	 * @return array|\WP_Error
+	 */
+	public function handle_approve_all_alt_text( \WP_REST_Request $request ) {
+		$ids = [];
+		if ( method_exists( $this->core, 'get_needs_review_attachment_ids' ) ) {
+			$ids = $this->core->get_needs_review_attachment_ids( PHP_INT_MAX, 0 );
+		}
+
+		$ids = array_values(
+			array_filter(
+				array_unique( array_map( 'absint', (array) $ids ) ),
+				static function ( int $attachment_id ): bool {
+					return $attachment_id > 0 && current_user_can( 'edit_post', $attachment_id );
+				}
+			)
+		);
+
+		$result = [
+			'approved_ids'   => [],
+			'approved_count' => 0,
+			'approved_at'    => '',
+		];
+
+		if ( ! empty( $ids ) ) {
+			$result = $this->core->mark_attachments_reviewed( $ids );
+		}
+
+		$approved_count = (int) ( $result['approved_count'] ?? 0 );
+		if ( $approved_count > 0 && function_exists( 'bbai_telemetry_emit' ) ) {
+			bbai_telemetry_emit(
+				'alt_marked_reviewed',
+				[
+					'approved_count' => $approved_count,
+					'scope'          => 'approve_all',
+				]
+			);
+		}
+
+		$stats = $this->core->get_dashboard_stats_payload( true );
+
+		return [
+			'approved_ids'    => $result['approved_ids'] ?? [],
+			'approved_count'  => $approved_count,
+			'approved_at'     => $result['approved_at'] ?? '',
+			'stats'           => $stats,
+			'dashboard_state' => $this->get_logged_in_dashboard_state_response_data( $request ),
+		];
+	}
+
+	/**
 	 * Meta keys to remove when clearing ALT (review snapshot + approval).
 	 *
 	 * @return array<int, string>
@@ -1135,6 +1221,8 @@ class REST_Controller {
 		$include_preview_raw = $request->get_param( 'include_preview' );
 		$include_preview = filter_var( $include_preview_raw, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
 		$preview_limit = max( 1, min( 5, absint( $request->get_param( 'preview_limit' ) ?: 5 ) ) );
+		$include_items_raw = $request->get_param( 'include_items' );
+		$include_items = filter_var( $include_items_raw, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
 
 		if ( 'all' === $scope ) {
 			$ids = $this->core->get_all_attachment_ids( $per_page, $offset );
@@ -1151,6 +1239,19 @@ class REST_Controller {
 				'page'     => $page,
 			],
 		];
+
+		// include_items=true: return rich attachment rows for each ID in this page.
+		// Used by MissingAltTable and ReviewQueue dashboard surfaces.
+		if ( true === $include_items ) {
+			$items = [];
+			foreach ( $ids as $id ) {
+				$id = absint( $id );
+				if ( $id > 0 ) {
+					$items[] = $this->build_attachment_preview_item( $id );
+				}
+			}
+			$response['items'] = $items;
+		}
 
 		if ( true === $include_preview && 'missing' === $scope ) {
 			$stats = $this->core->get_media_stats();
@@ -1239,6 +1340,252 @@ class REST_Controller {
 	}
 
 	/**
+	 * Return the fully-resolved logged-in dashboard state object.
+	 *
+	 * This is the single polling target for the logged-in dashboard controller.
+	 * All hero, donut, pill, usage-bar, and surface rendering must come from this.
+	 *
+	 * @param \WP_REST_Request $request REST request instance.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function handle_logged_in_dashboard( \WP_REST_Request $request ) {
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-logged-in-dashboard-resolver.php';
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-usage-helper.php';
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-auth-state.php';
+
+		$truth = $this->get_logged_in_dashboard_state_truth_payload();
+		if ( is_array( $truth ) ) {
+			return rest_ensure_response(
+				\BeepBeepAI\AltTextGenerator\Services\Logged_In_Dashboard_Resolver::resolve_from_truth(
+					$truth,
+					$this->get_logged_in_dashboard_plan_context()
+				)
+			);
+		}
+
+		$ctx = \BeepBeepAI\AltTextGenerator\Services\Logged_In_Dashboard_Resolver::build_ctx(
+			[],
+			[],
+			[],
+			[ 'code' => 'NO_API_KEY', 'message' => __( 'API key not connected. Open settings to continue.', 'beepbeep-ai-alt-text-generator' ) ]
+		);
+
+		return rest_ensure_response(
+			\BeepBeepAI\AltTextGenerator\Services\Logged_In_Dashboard_Resolver::resolve( $ctx )
+		);
+	}
+
+	/**
+	 * Return the canonical dashboard truth payload used by the logged-in UI.
+	 *
+	 * @param \WP_REST_Request $request REST request instance.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function handle_logged_in_dashboard_state_truth( \WP_REST_Request $request ) {
+		$truth = $this->get_logged_in_dashboard_state_truth_payload();
+		if ( ! is_array( $truth ) ) {
+			return new \WP_Error(
+				'dashboard_state_truth_unavailable',
+				__( 'Dashboard state truth is currently unavailable.', 'beepbeep-ai-alt-text-generator' ),
+				[ 'status' => 503 ]
+			);
+		}
+
+		return rest_ensure_response( $truth );
+	}
+
+	/**
+	 * Fetch backend dashboard truth with a local fallback so the dashboard never
+	 * hard-fails when the backend endpoint is temporarily unavailable.
+	 *
+	 * @return array<string,mixed>|null
+	 */
+	private function get_logged_in_dashboard_state_truth_payload(): ?array {
+		$api_client = $this->core->get_api_client();
+		if ( $api_client && method_exists( $api_client, 'get_dashboard_state_truth' ) ) {
+			$truth = $api_client->get_dashboard_state_truth();
+			if ( is_array( $truth ) && [] !== $truth ) {
+				return $truth;
+			}
+		}
+
+		return $this->build_logged_in_dashboard_state_truth_fallback();
+	}
+
+	/**
+	 * Build the lightweight plan context used when mapping truth into the
+	 * existing hero/donut/CTA UI contract.
+	 *
+	 * @return array<string,mixed>
+	 */
+	private function get_logged_in_dashboard_plan_context(): array {
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-usage-helper.php';
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-auth-state.php';
+
+		$api_client = $this->core->get_api_client();
+		if ( ! $api_client ) {
+			return [
+				'is_pro'    => false,
+				'plan_slug' => 'free',
+				'user_type' => 'free',
+			];
+		}
+
+		$auth_state            = \BeepBeepAI\AltTextGenerator\Auth_State::resolve( $api_client );
+		$has_connected_account = (bool) ( $auth_state['has_connected_account'] ?? false );
+		$usage_stats           = \BeepBeepAI\AltTextGenerator\Services\Usage_Helper::get_usage(
+			$api_client,
+			$has_connected_account
+		);
+		$plan_slug             = strtolower(
+			(string) ( $usage_stats['plan_type'] ?? $usage_stats['plan'] ?? $auth_state['plan_slug'] ?? 'free' )
+		);
+		$is_pro                = in_array( $plan_slug, [ 'pro', 'growth', 'agency' ], true )
+			|| ! empty( $usage_stats['is_pro'] )
+			|| ! empty( $auth_state['is_pro'] );
+
+		return [
+			'is_pro'    => $is_pro,
+			'plan_slug' => '' !== $plan_slug ? $plan_slug : 'free',
+			'user_type' => $is_pro ? 'pro' : 'free',
+		];
+	}
+
+	/**
+	 * Build a conservative local truth payload when the backend truth endpoint
+	 * cannot be reached. This preserves the existing backend fallbacks without
+	 * inventing an optimistic processing state on the client.
+	 *
+	 * @return array<string,mixed>
+	 */
+	private function build_logged_in_dashboard_state_truth_fallback(): array {
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-logged-in-dashboard-resolver.php';
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-usage-helper.php';
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-auth-state.php';
+
+		$api_client = $this->core->get_api_client();
+		$plan_ctx   = $this->get_logged_in_dashboard_plan_context();
+
+		$auth_state            = $api_client
+			? \BeepBeepAI\AltTextGenerator\Auth_State::resolve( $api_client )
+			: [];
+		$has_connected_account = (bool) ( $auth_state['has_connected_account'] ?? false );
+		$usage_stats           = $api_client
+			? \BeepBeepAI\AltTextGenerator\Services\Usage_Helper::get_usage( $api_client, $has_connected_account )
+			: [];
+		$stats_payload         = $this->core->get_dashboard_stats_payload( false );
+		$coverage              = [
+			'total_images' => (int) ( $stats_payload['total_images'] ?? $stats_payload['total'] ?? 0 ),
+			'missing'      => (int) ( $stats_payload['images_missing_alt'] ?? $stats_payload['missing'] ?? 0 ),
+			'weak'         => (int) ( $stats_payload['needs_review_count'] ?? $stats_payload['needs_review'] ?? $stats_payload['weak'] ?? 0 ),
+			'optimized'    => (int) ( $stats_payload['optimized_count'] ?? $stats_payload['optimized'] ?? 0 ),
+			'failed'       => (int) ( $stats_payload['failed'] ?? 0 ),
+		];
+		$job_data              = [];
+		if ( method_exists( $this->core, 'get_active_job_status' ) ) {
+			$raw_job = $this->core->get_active_job_status();
+			if ( is_array( $raw_job ) && [] !== $raw_job ) {
+				$job_data = $raw_job;
+			}
+		}
+
+		$last_run_at = null;
+		if ( method_exists( $this->core, 'get_last_job_completed_at' ) ) {
+			$ts = $this->core->get_last_job_completed_at();
+			if ( $ts ) {
+				$last_run_at = is_numeric( $ts ) ? gmdate( 'c', (int) $ts ) : (string) $ts;
+			}
+		}
+
+		$ctx   = \BeepBeepAI\AltTextGenerator\Services\Logged_In_Dashboard_Resolver::build_ctx(
+			is_array( $usage_stats ) ? $usage_stats : [],
+			$coverage,
+			$job_data,
+			[],
+			$last_run_at,
+			$plan_ctx
+		);
+		$state = \BeepBeepAI\AltTextGenerator\Services\Logged_In_Dashboard_Resolver::compute_state_id( $ctx );
+		$used  = max( 0, (int) ( $ctx['credits']['used'] ?? 0 ) );
+		$total = max( 1, (int) ( $ctx['credits']['total'] ?? 1 ) );
+		$job   = ! empty( $ctx['job'] ) && is_array( $ctx['job'] ) ? $ctx['job'] : null;
+
+		return [
+			'state'             => $state,
+			'counts'            => [
+				'missing'      => (int) ( $ctx['counts']['missing'] ?? 0 ),
+				'review'       => (int) ( $ctx['counts']['review'] ?? 0 ),
+				'needs_review' => (int) ( $ctx['counts']['review'] ?? 0 ),
+				'optimized'    => (int) ( $ctx['counts']['complete'] ?? 0 ),
+				'complete'     => (int) ( $ctx['counts']['complete'] ?? 0 ),
+				'failed'       => (int) ( $ctx['counts']['failed'] ?? 0 ),
+				'total'        => (int) ( $ctx['mediaCount'] ?? 0 ),
+			],
+			'job'               => $job ? [
+				'active'          => ! empty( $job['active'] ),
+				'pausable'        => ! empty( $job['pausable'] ),
+				'status'          => (string) ( $job['status'] ?? '' ),
+				'done'            => (int) ( $job['done'] ?? 0 ),
+				'total'           => (int) ( $job['total'] ?? 0 ),
+				'eta_seconds'     => isset( $job['eta_seconds'] ) && is_numeric( $job['eta_seconds'] ) ? (int) $job['eta_seconds'] : null,
+				'error'           => isset( $job['error'] ) ? (string) $job['error'] : null,
+				'last_checked_at' => null,
+			] : [
+				'active'          => false,
+				'pausable'        => false,
+				'status'          => 'idle',
+				'done'            => 0,
+				'total'           => 0,
+				'eta_seconds'     => null,
+				'error'           => null,
+				'last_checked_at' => null,
+			],
+			'credits'           => [
+				'used'      => $used,
+				'total'     => $total,
+				'remaining' => max( 0, $total - $used ),
+				'plan'      => (string) ( $plan_ctx['plan_slug'] ?? 'free' ),
+				'plan_slug' => (string) ( $plan_ctx['plan_slug'] ?? 'free' ),
+				'is_pro'    => ! empty( $plan_ctx['is_pro'] ),
+			],
+			'site'              => [
+				'site_hash'             => $api_client && method_exists( $api_client, 'get_site_id' ) ? (string) $api_client->get_site_id() : '',
+				'has_connected_account' => $has_connected_account,
+			],
+			'resolution_sources' => [
+				'state'   => 'plugin_fallback',
+				'counts'  => 'dashboard_stats_payload',
+				'job'     => 'active_generation_job_store',
+				'credits' => 'usage_helper',
+				'site'    => 'site_identifier',
+			],
+			'last_run_at'       => $last_run_at,
+			'fallback'          => true,
+		];
+	}
+
+	/**
+	 * Resolve logged-in dashboard state data for action responses.
+	 *
+	 * @param \WP_REST_Request $request REST request instance.
+	 * @return array<string,mixed>|null
+	 */
+	private function get_logged_in_dashboard_state_response_data( \WP_REST_Request $request ): ?array {
+		try {
+			$response = $this->handle_logged_in_dashboard( $request );
+		} catch ( \Throwable $e ) {
+			return null;
+		}
+
+		if ( $response instanceof \WP_REST_Response ) {
+			$data = $response->get_data();
+			return is_array( $data ) ? $data : null;
+		}
+
+		return is_array( $response ) ? $response : null;
+	}
+
+	/**
 	 * Return usage metrics from backend.
 	 *
 	 * @param \WP_REST_Request $request REST request instance.
@@ -1282,11 +1629,18 @@ class REST_Controller {
 		$stats    = Queue::get_stats();
 		$recent   = Queue::get_recent( apply_filters( 'bbai_queue_recent_limit', 10 ) );
 		$failures = Queue::get_recent_failures( apply_filters( 'bbai_queue_fail_limit', 5 ) );
+		$active   = null;
+
+		if ( method_exists( $this->core, 'get_active_generation_job_for_site' ) ) {
+			$active = $this->core->get_active_generation_job_for_site();
+		}
 
 		return [
-			'stats'    => $stats,
-			'recent'   => array_map( [ $this, 'sanitize_job_row' ], $recent ),
-			'failures' => array_map( [ $this, 'sanitize_job_row' ], $failures ),
+			'stats'      => $stats,
+			'job_state'  => is_array( $active ) ? ( $active['state'] ?? 'PROCESSING' ) : 'IDLE',
+			'active_job' => $active,
+			'recent'     => array_map( [ $this, 'sanitize_job_row' ], $recent ),
+			'failures'   => array_map( [ $this, 'sanitize_job_row' ], $failures ),
 		];
 	}
 

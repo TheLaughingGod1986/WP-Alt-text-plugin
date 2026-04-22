@@ -1,0 +1,249 @@
+/**
+ * Forms - Premium SaaS Design
+ * Refined inputs, polished focus states, accessible design
+ *
+ * @package BeepBeep_AI
+ * @since 8.0.0
+ */
+
+/* ============================================
+   FORM GROUP
+   ============================================ */
+
+.bbai-form-group {
+    margin-bottom: var(--bbai-space-5);
+}
+
+.bbai-form-group:last-child {
+    margin-bottom: 0;
+}
+
+/* ============================================
+   LABELS
+   ============================================ */
+
+.bbai-label {
+    display: block;
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-medium);
+    color: var(--bbai-text);
+    margin-bottom: var(--bbai-space-2);
+}
+
+.bbai-label--required::after {
+    content: '*';
+    color: var(--bbai-error);
+    margin-left: var(--bbai-space-1);
+}
+
+/* ============================================
+   BASE INPUT STYLES
+   ============================================ */
+
+.bbai-input,
+.bbai-select,
+.bbai-textarea {
+    display: block;
+    width: 100%;
+    padding: 12px 14px; /* Consistent input padding */
+    font-size: 14px;
+    font-family: inherit;
+    line-height: 1.5;
+    color: var(--bbai-text);
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: 8px; /* Consistent input radius */
+    transition: border-color var(--bbai-transition-fast) var(--bbai-ease-out),
+                box-shadow var(--bbai-transition-fast) var(--bbai-ease-out);
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.bbai-input:hover:not(:disabled):not(:focus),
+.bbai-select:hover:not(:disabled):not(:focus),
+.bbai-textarea:hover:not(:disabled):not(:focus) {
+    border-color: var(--bbai-gray-400);
+}
+
+.bbai-input:focus,
+.bbai-select:focus,
+.bbai-textarea:focus {
+    outline: none;
+    border-color: var(--bbai-primary);
+    box-shadow: var(--bbai-shadow-focus);
+}
+
+.bbai-input::placeholder,
+.bbai-textarea::placeholder {
+    color: var(--bbai-gray-400);
+}
+
+.bbai-input:disabled,
+.bbai-select:disabled,
+.bbai-textarea:disabled {
+    background: var(--bbai-gray-100);
+    border-color: var(--bbai-gray-200);
+    color: var(--bbai-text-muted);
+    cursor: not-allowed;
+}
+
+/* ============================================
+   TEXTAREA
+   ============================================ */
+
+.bbai-textarea {
+    min-height: 100px;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+/* ============================================
+   SELECT
+   ============================================ */
+
+.bbai-select {
+    padding-right: var(--bbai-space-10);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right var(--bbai-space-3) center;
+    background-repeat: no-repeat;
+    background-size: 16px;
+    cursor: pointer;
+}
+
+.bbai-select:focus {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2310B981' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+}
+
+/* ============================================
+   VALIDATION STATES
+   ============================================ */
+
+.bbai-input--error,
+.bbai-select--error,
+.bbai-textarea--error {
+    border-color: var(--bbai-error);
+}
+
+.bbai-input--error:focus,
+.bbai-select--error:focus,
+.bbai-textarea--error:focus {
+    border-color: var(--bbai-error);
+    box-shadow: var(--bbai-shadow-focus-error);
+}
+
+/* ============================================
+   HELPER TEXT
+   ============================================ */
+
+.bbai-hint {
+    font-size: var(--bbai-text-xs);
+    color: var(--bbai-text-muted);
+    margin-top: var(--bbai-space-1);
+    line-height: 1.4;
+}
+
+.bbai-hint--error {
+    color: var(--bbai-error);
+}
+
+/* ============================================
+   TOGGLE SWITCH
+   ============================================ */
+
+.bbai-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    gap: var(--bbai-space-3);
+}
+
+.bbai-toggle-input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.bbai-toggle-slider {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: var(--bbai-gray-300);
+    border-radius: var(--bbai-radius-full);
+    transition: background var(--bbai-transition-fast) var(--bbai-ease-out);
+    flex-shrink: 0;
+}
+
+.bbai-toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    top: 3px;
+    left: 3px;
+    transition: transform var(--bbai-transition-fast) var(--bbai-ease-spring);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.bbai-toggle-input:checked + .bbai-toggle-slider {
+    background: var(--bbai-primary);
+}
+
+.bbai-toggle-input:checked + .bbai-toggle-slider::before {
+    transform: translateX(20px);
+}
+
+.bbai-toggle-input:focus-visible + .bbai-toggle-slider {
+    outline: 2px solid var(--bbai-primary);
+    outline-offset: 2px;
+}
+
+.bbai-toggle-input:disabled + .bbai-toggle-slider {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.bbai-toggle-label {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text);
+    user-select: none;
+}
+
+/* ============================================
+   CHECKBOX & RADIO
+   ============================================ */
+
+.bbai-checkbox-wrapper,
+.bbai-radio-wrapper {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: var(--bbai-space-2);
+    cursor: pointer;
+}
+
+.bbai-checkbox,
+.bbai-radio {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--bbai-primary);
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.bbai-checkbox:focus-visible,
+.bbai-radio:focus-visible {
+    outline: 2px solid var(--bbai-primary);
+    outline-offset: 2px;
+}
+
+.bbai-checkbox-label,
+.bbai-radio-label {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text);
+    user-select: none;
+    line-height: 1.4;
+}

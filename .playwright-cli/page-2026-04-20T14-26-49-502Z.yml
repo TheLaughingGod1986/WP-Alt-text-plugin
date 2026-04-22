@@ -1,0 +1,325 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation "Main menu":
+      - link "Skip to main content" [ref=e3] [cursor=pointer]:
+        - /url: "#wpbody-content"
+      - link "Skip to toolbar" [ref=e4] [cursor=pointer]:
+        - /url: "#wp-toolbar"
+      - list [ref=e7]:
+        - listitem [ref=e8]:
+          - link "Dashboard" [ref=e9] [cursor=pointer]:
+            - /url: index.php
+            - generic [ref=e10]: 
+            - generic [ref=e11]: Dashboard
+          - list [ref=e12]:
+            - listitem [ref=e13]:
+              - link "Home" [ref=e14] [cursor=pointer]:
+                - /url: index.php
+            - listitem [ref=e15]:
+              - link "Updates" [ref=e16] [cursor=pointer]:
+                - /url: update-core.php
+        - listitem [ref=e17]
+        - listitem [ref=e19]:
+          - link "Posts" [ref=e20] [cursor=pointer]:
+            - /url: edit.php
+            - generic [ref=e21]: 
+            - generic [ref=e22]: Posts
+          - list [ref=e23]:
+            - listitem [ref=e24]:
+              - link "All Posts" [ref=e25] [cursor=pointer]:
+                - /url: edit.php
+            - listitem [ref=e26]:
+              - link "Add Post" [ref=e27] [cursor=pointer]:
+                - /url: post-new.php
+            - listitem [ref=e28]:
+              - link "Categories" [ref=e29] [cursor=pointer]:
+                - /url: edit-tags.php?taxonomy=category
+            - listitem [ref=e30]:
+              - link "Tags" [ref=e31] [cursor=pointer]:
+                - /url: edit-tags.php?taxonomy=post_tag
+        - listitem [ref=e32]:
+          - link "Media" [ref=e33] [cursor=pointer]:
+            - /url: upload.php
+            - generic [ref=e34]: 
+            - generic [ref=e35]: Media
+          - list [ref=e36]:
+            - listitem [ref=e37]:
+              - link "Library" [ref=e38] [cursor=pointer]:
+                - /url: upload.php
+            - listitem [ref=e39]:
+              - link "Add Media File" [ref=e40] [cursor=pointer]:
+                - /url: media-new.php
+        - listitem [ref=e41]:
+          - link "Pages" [ref=e42] [cursor=pointer]:
+            - /url: edit.php?post_type=page
+            - generic [ref=e43]: 
+            - generic [ref=e44]: Pages
+          - list [ref=e45]:
+            - listitem [ref=e46]:
+              - link "All Pages" [ref=e47] [cursor=pointer]:
+                - /url: edit.php?post_type=page
+            - listitem [ref=e48]:
+              - link "Add Page" [ref=e49] [cursor=pointer]:
+                - /url: post-new.php?post_type=page
+        - listitem [ref=e50]:
+          - link "Comments" [ref=e51] [cursor=pointer]:
+            - /url: edit-comments.php
+            - generic [ref=e52]: 
+            - generic [ref=e53]: Comments
+        - listitem [ref=e54]:
+          - link "BeepBeep AI" [ref=e55] [cursor=pointer]:
+            - /url: admin.php?page=bbai
+            - generic [ref=e56]: 
+            - generic [ref=e57]: BeepBeep AI
+          - list [ref=e58]:
+            - listitem [ref=e59]:
+              - link "Dashboard" [ref=e60] [cursor=pointer]:
+                - /url: admin.php?page=bbai
+            - listitem [ref=e61]:
+              - link "ALT Library" [ref=e62] [cursor=pointer]:
+                - /url: admin.php?page=bbai-library
+            - listitem [ref=e63]:
+              - link "Analytics" [ref=e64] [cursor=pointer]:
+                - /url: admin.php?page=bbai-analytics
+            - listitem [ref=e65]:
+              - link "Usage" [ref=e66] [cursor=pointer]:
+                - /url: admin.php?page=bbai-credit-usage
+            - listitem [ref=e67]:
+              - link "Settings" [ref=e68] [cursor=pointer]:
+                - /url: admin.php?page=bbai-settings
+        - listitem [ref=e69]
+        - listitem [ref=e71]:
+          - link "Appearance" [ref=e72] [cursor=pointer]:
+            - /url: themes.php
+            - generic [ref=e73]: 
+            - generic [ref=e74]: Appearance
+          - list [ref=e75]:
+            - listitem [ref=e76]:
+              - link "Themes" [ref=e77] [cursor=pointer]:
+                - /url: themes.php
+            - listitem [ref=e78]:
+              - link "Editor" [ref=e79] [cursor=pointer]:
+                - /url: site-editor.php
+        - listitem [ref=e80]:
+          - link "Plugins" [ref=e81] [cursor=pointer]:
+            - /url: plugins.php
+            - generic [ref=e82]: 
+            - generic [ref=e83]: Plugins
+          - list [ref=e84]:
+            - listitem [ref=e85]:
+              - link "Installed Plugins" [ref=e86] [cursor=pointer]:
+                - /url: plugins.php
+            - listitem [ref=e87]:
+              - link "Add Plugin" [ref=e88] [cursor=pointer]:
+                - /url: plugin-install.php
+        - listitem [ref=e89]:
+          - link "Users" [ref=e90] [cursor=pointer]:
+            - /url: users.php
+            - generic [ref=e91]: 
+            - generic [ref=e92]: Users
+          - list [ref=e93]:
+            - listitem [ref=e94]:
+              - link "All Users" [ref=e95] [cursor=pointer]:
+                - /url: users.php
+            - listitem [ref=e96]:
+              - link "Add User" [ref=e97] [cursor=pointer]:
+                - /url: user-new.php
+            - listitem [ref=e98]:
+              - link "Profile" [ref=e99] [cursor=pointer]:
+                - /url: profile.php
+        - listitem [ref=e100]:
+          - link "Tools" [ref=e101] [cursor=pointer]:
+            - /url: tools.php
+            - generic [ref=e102]: 
+            - generic [ref=e103]: Tools
+          - list [ref=e104]:
+            - listitem [ref=e105]:
+              - link "Available Tools" [ref=e106] [cursor=pointer]:
+                - /url: tools.php
+            - listitem [ref=e107]:
+              - link "Import" [ref=e108] [cursor=pointer]:
+                - /url: import.php
+            - listitem [ref=e109]:
+              - link "Export" [ref=e110] [cursor=pointer]:
+                - /url: export.php
+            - listitem [ref=e111]:
+              - link "Site Health" [ref=e112] [cursor=pointer]:
+                - /url: site-health.php
+            - listitem [ref=e113]:
+              - link "Export Personal Data" [ref=e114] [cursor=pointer]:
+                - /url: export-personal-data.php
+            - listitem [ref=e115]:
+              - link "Erase Personal Data" [ref=e116] [cursor=pointer]:
+                - /url: erase-personal-data.php
+            - listitem [ref=e117]:
+              - link "Theme File Editor" [ref=e118] [cursor=pointer]:
+                - /url: theme-editor.php
+            - listitem [ref=e119]:
+              - link "Plugin File Editor" [ref=e120] [cursor=pointer]:
+                - /url: plugin-editor.php
+        - listitem [ref=e121]:
+          - link "Settings" [ref=e122] [cursor=pointer]:
+            - /url: options-general.php
+            - generic [ref=e123]: 
+            - generic [ref=e124]: Settings
+          - list [ref=e125]:
+            - listitem [ref=e126]:
+              - link "General" [ref=e127] [cursor=pointer]:
+                - /url: options-general.php
+            - listitem [ref=e128]:
+              - link "Writing" [ref=e129] [cursor=pointer]:
+                - /url: options-writing.php
+            - listitem [ref=e130]:
+              - link "Reading" [ref=e131] [cursor=pointer]:
+                - /url: options-reading.php
+            - listitem [ref=e132]:
+              - link "Discussion" [ref=e133] [cursor=pointer]:
+                - /url: options-discussion.php
+            - listitem [ref=e134]:
+              - link "Media" [ref=e135] [cursor=pointer]:
+                - /url: options-media.php
+            - listitem [ref=e136]:
+              - link "Permalinks" [ref=e137] [cursor=pointer]:
+                - /url: options-permalink.php
+            - listitem [ref=e138]:
+              - link "Privacy" [ref=e139] [cursor=pointer]:
+                - /url: options-privacy.php
+        - listitem [ref=e140]:
+          - button "Collapse Main menu" [expanded] [ref=e141] [cursor=pointer]:
+            - generic [ref=e143]: Collapse Menu
+    - generic:
+      - generic [ref=e144]:
+        - navigation "Toolbar":
+          - menu:
+            - group [ref=e145]:
+              - menuitem "About WordPress" [ref=e146] [cursor=pointer]:
+                - generic [ref=e148]: About WordPress
+            - group [ref=e149]:
+              - menuitem "BeepBeep AI Local" [ref=e150] [cursor=pointer]
+            - group [ref=e151]:
+              - menuitem "0 Comments in moderation" [ref=e152] [cursor=pointer]:
+                - generic [ref=e154]: "0"
+                - generic [ref=e155]: 0 Comments in moderation
+            - group [ref=e156]:
+              - menuitem "New" [ref=e157] [cursor=pointer]:
+                - generic [ref=e159]: New
+          - menu [ref=e160]:
+            - group [ref=e161]:
+              - menuitem "Howdy, admin" [ref=e162] [cursor=pointer]
+      - main:
+        - generic [ref=e163]:
+          - generic [ref=e164]:
+            - generic [ref=e166]:
+              - generic [ref=e167]:
+                - img [ref=e168]
+                - generic [ref=e176]: BeepBeep AI – Alt Text Generator
+              - navigation "Main navigation" [ref=e177]:
+                - generic [ref=e178]:
+                  - link "Dashboard" [ref=e179] [cursor=pointer]:
+                    - /url: http://localhost:8888/wp-admin/admin.php?page=bbai
+                  - link "ALT Library" [ref=e180] [cursor=pointer]:
+                    - /url: http://localhost:8888/wp-admin/admin.php?page=bbai-library
+                  - link "Analytics" [ref=e181] [cursor=pointer]:
+                    - /url: http://localhost:8888/wp-admin/admin.php?page=bbai-analytics
+                  - link "Usage" [ref=e182] [cursor=pointer]:
+                    - /url: http://localhost:8888/wp-admin/admin.php?page=bbai-credit-usage
+                  - link "Settings" [ref=e183] [cursor=pointer]:
+                    - /url: http://localhost:8888/wp-admin/admin.php?page=bbai-settings
+                - link "Help" [ref=e184] [cursor=pointer]:
+                  - /url: http://localhost:8888/wp-admin/admin.php?page=bbai-guide
+                  - img [ref=e185]
+                  - generic [ref=e188]: Help
+              - generic [ref=e190]:
+                - generic [ref=e191]: ben@gmail.coms
+                - generic [ref=e192]: Free
+            - generic [ref=e196]:
+              - generic:
+                - region "Logged-in dashboard":
+                  - generic:
+                    - generic "7 images are ready to approve":
+                      - button "Review in ALT Library":
+                        - generic:
+                          - generic "7 images need review":
+                            - generic:
+                              - generic: "7"
+                          - paragraph: 7 ready for review
+                          - paragraph: Open review queue
+                      - generic:
+                        - generic: Review ready
+                        - heading "7 images are ready to approve" [level=1]
+                        - paragraph: ALT text has been generated and is waiting for your sign-off before it goes live.
+                        - generic:
+                          - link "Approve all":
+                            - /url: "#"
+                          - link "Review in ALT Library":
+                            - /url: http://localhost:8888/wp-admin/admin.php?page=bbai-library&status=needs_review&filter=needs-review#bbai-review-filter-tabs
+                        - generic "Status summary":
+                          - generic:
+                            - term: Missing
+                            - definition: "0"
+                          - generic:
+                            - term: To review
+                            - definition: "7"
+                          - generic:
+                            - term: Credits
+                            - definition: 0 / 50
+                        - list "Workflow steps":
+                          - listitem: Generate
+                          - listitem: Review
+                          - listitem: Done
+                  - complementary "Upgrade suggestion":
+                    - generic:
+                      - generic:
+                        - img
+                      - generic:
+                        - heading "Upgrade to BeepBeep Pro" [level=2]
+                        - paragraph: Manage API keys, unlock faster bulk actions, and priority support.
+                    - generic:
+                      - button "Upgrade to Pro"
+                  - generic:
+                    - generic: 7 images ready for review
+                    - generic: Approve to improve quality
+                    - generic: Last run 1 minute ago
+          - contentinfo [ref=e197]:
+            - paragraph [ref=e198]:
+              - generic [ref=e199]:
+                - text: Thank you for creating with
+                - link "WordPress" [ref=e200] [cursor=pointer]:
+                  - /url: https://wordpress.org/
+                - text: .
+            - paragraph [ref=e201]: Version 6.9.4
+          - button "Help" [ref=e203] [cursor=pointer]
+  - text: "* * * * * * * *"
+  - dialog "Keyboard Shortcuts":
+    - generic:
+      - generic:
+        - heading "Keyboard Shortcuts" [level=2]
+        - button "Close":
+          - img
+      - generic:
+        - generic:
+          - generic: Generate missing alt text
+          - generic:
+            - generic: G
+        - generic:
+          - generic: Regenerate all alt text
+          - generic:
+            - generic: R
+        - generic:
+          - generic: Open upgrade modal
+          - generic:
+            - generic: U
+        - generic:
+          - generic: Show keyboard shortcuts
+          - generic:
+            - generic: "?"
+        - generic:
+          - generic: Close modals
+          - generic:
+            - generic: Esc
+        - generic:
+          - generic: Quick actions menu
+          - generic:
+            - generic: Ctrl
+            - generic: +
+            - generic: K

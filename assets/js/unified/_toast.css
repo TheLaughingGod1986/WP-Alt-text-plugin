@@ -1,0 +1,203 @@
+/**
+ * Toast Notification System
+ * Accessible, branded toast notifications
+ */
+
+/* Toast Container */
+.bbai-toast-container {
+    position: fixed;
+    top: var(--bbai-space-6);
+    right: var(--bbai-space-6);
+    z-index: 100000;
+    display: flex;
+    flex-direction: column;
+    gap: var(--bbai-space-3);
+    max-width: 400px;
+    width: 100%;
+    pointer-events: none;
+}
+
+/* Toast Base */
+.bbai-toast {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--bbai-space-3);
+    padding: var(--bbai-space-4);
+    background: white;
+    border-radius: var(--bbai-radius-lg);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    border-left: 4px solid var(--bbai-gray-300);
+    min-width: 300px;
+    max-width: 100%;
+    opacity: 0;
+    transform: translateX(400px);
+    transition: all var(--bbai-transition-base) var(--bbai-ease-out);
+    pointer-events: all;
+    position: relative;
+}
+
+.bbai-toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.bbai-toast.hide {
+    opacity: 0;
+    transform: translateX(400px);
+}
+
+/* Toast Types */
+.bbai-toast--success {
+    border-left-color: var(--bbai-success);
+    background: linear-gradient(to right, #f0fdf4 0%, white 8%);
+}
+
+.bbai-toast--error {
+    border-left-color: var(--bbai-error);
+    background: linear-gradient(to right, #fef2f2 0%, white 8%);
+}
+
+.bbai-toast--warning {
+    border-left-color: #f59e0b;
+    background: linear-gradient(to right, #fffbeb 0%, white 8%);
+}
+
+.bbai-toast--info {
+    border-left-color: var(--bbai-primary);
+    background: linear-gradient(to right, #ecfdf5 0%, white 8%);
+}
+
+/* Toast Icon */
+.bbai-toast-icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+}
+
+.bbai-toast--success .bbai-toast-icon {
+    color: var(--bbai-success);
+}
+
+.bbai-toast--error .bbai-toast-icon {
+    color: var(--bbai-error);
+}
+
+.bbai-toast--warning .bbai-toast-icon {
+    color: #f59e0b;
+}
+
+.bbai-toast--info .bbai-toast-icon {
+    color: var(--bbai-primary);
+}
+
+/* Toast Content */
+.bbai-toast-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.bbai-toast-message {
+    font-size: var(--bbai-text-sm);
+    line-height: 1.5;
+    color: var(--bbai-text);
+    margin-bottom: var(--bbai-space-2);
+}
+
+.bbai-toast-action {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--bbai-primary);
+    color: white;
+    border: none;
+    border-radius: var(--bbai-radius);
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-semibold);
+    cursor: pointer;
+    transition: background var(--bbai-transition-fast);
+    margin-top: var(--bbai-space-2);
+}
+
+.bbai-toast-action:hover {
+    background: var(--bbai-primary-hover);
+}
+
+/* Toast Close Button */
+.bbai-toast-close {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: var(--bbai-text-muted);
+    transition: color var(--bbai-transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--bbai-radius);
+}
+
+.bbai-toast-close:hover {
+    color: var(--bbai-text);
+    background: var(--bbai-gray-100);
+}
+
+/* Stacking Animation */
+.bbai-toast-container .bbai-toast:nth-child(n+2) {
+    margin-top: calc(var(--bbai-space-3) * -1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .bbai-toast-container {
+        top: var(--bbai-space-4);
+        right: var(--bbai-space-4);
+        left: var(--bbai-space-4);
+        max-width: none;
+    }
+
+    .bbai-toast {
+        min-width: auto;
+        width: 100%;
+    }
+
+    .bbai-toast {
+        transform: translateY(-100px);
+    }
+
+    .bbai-toast.show {
+        transform: translateY(0);
+    }
+
+    .bbai-toast.hide {
+        transform: translateY(-100px);
+    }
+}
+
+/* Dark Mode */
+[data-theme="dark"] .bbai-toast,
+.bbai-dark-mode .bbai-toast {
+    background: var(--bbai-gray-800);
+    color: var(--bbai-gray-100);
+}
+
+[data-theme="dark"] .bbai-toast-message,
+.bbai-dark-mode .bbai-toast-message {
+    color: var(--bbai-gray-100);
+}
+
+[data-theme="dark"] .bbai-toast-close,
+.bbai-dark-mode .bbai-toast-close {
+    color: var(--bbai-gray-400);
+}
+
+[data-theme="dark"] .bbai-toast-close:hover,
+.bbai-dark-mode .bbai-toast-close:hover {
+    color: var(--bbai-gray-200);
+    background: var(--bbai-gray-700);
+}

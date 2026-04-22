@@ -1,0 +1,520 @@
+/**
+ * Modal Component
+ * Base modal structure and variants
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* ==================================================
+   MODAL OVERLAY (Variant 1)
+   ================================================== */
+
+.bbai-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999999;
+    opacity: 0;
+    transition: var(--bbai-transition);
+    padding: 24px;
+    backdrop-filter: blur(4px);
+}
+
+.bbai-modal-overlay.is-visible {
+    opacity: 1;
+}
+
+/* ==================================================
+   MODAL CONTAINER (Variant 1)
+   ================================================== */
+
+.bbai-modal {
+    background: var(--bbai-white);
+    border-radius: var(--bbai-radius-xl);
+    padding: 28px;
+    max-width: 520px;
+    width: 100%;
+    box-shadow: var(--bbai-shadow-modal);
+    position: relative;
+    transform: translateY(16px);
+    transition: var(--bbai-transition-transform);
+}
+
+.bbai-modal-overlay.is-visible .bbai-modal {
+    transform: translateY(0);
+}
+
+/* ==================================================
+   MODAL FULL SCREEN (Variant 2)
+   ================================================== */
+
+.bbai-modal--fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.bbai-modal__overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.bbai-modal__content {
+    position: relative;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ==================================================
+   MODAL HEADER
+   ================================================== */
+
+.bbai-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.bbai-modal__title {
+    margin: 0 0 8px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.bbai-modal__subtitle {
+    margin: 0 0 18px;
+    color: var(--bbai-gray-500);
+    font-size: var(--bbai-text-sm);
+}
+
+/* ==================================================
+   MODAL CLOSE BUTTON
+   ================================================== */
+
+.bbai-modal__close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+    z-index: 10;
+    line-height: 1;
+}
+
+.bbai-modal__close:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+/* ==================================================
+   MODAL BODY
+   ================================================== */
+
+.bbai-modal__body {
+    padding: 2rem;
+}
+
+/* ==================================================
+   MODAL ELEMENTS
+   ================================================== */
+
+.bbai-modal__label {
+    display: block;
+    font-weight: var(--bbai-font-semibold);
+    margin-bottom: 8px;
+    color: var(--bbai-gray-700);
+}
+
+.bbai-modal__textarea {
+    width: 100%;
+    min-height: 110px;
+    border-radius: 10px;
+    border: 1px solid var(--bbai-gray-300);
+    font-size: var(--bbai-text-base);
+    padding: 12px 14px;
+    resize: vertical;
+    color: var(--bbai-gray-800);
+    background: var(--bbai-gray-50);
+    margin-bottom: 18px;
+    font-family: inherit;
+}
+
+.bbai-modal__textarea:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: var(--bbai-input-focus-ring);
+}
+
+.bbai-modal__notice {
+    background: var(--bbai-warning-light);
+    border: 1px solid #fcd34d;
+    color: #92400e;
+    padding: 10px 12px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    font-size: 13px;
+}
+
+.bbai-modal__actions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.bbai-modal__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.bbai-modal__issues {
+    margin: 0;
+    padding-left: 18px;
+    color: #b45309;
+    font-size: var(--bbai-text-sm);
+}
+
+.bbai-modal__issues li + li {
+    margin-top: 4px;
+}
+
+/* ==================================================
+   MODAL FOOTER
+   ================================================== */
+
+.bbai-modal-footer {
+    text-align: center;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.bbai-modal-urgency {
+    margin-bottom: 1rem;
+}
+
+.bbai-modal-note {
+    margin: 0;
+    color: #dc2626;
+    font-size: 1rem;
+    font-weight: 600;
+    background: #fef2f2;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px solid #fecaca;
+}
+
+.bbai-modal-guarantee {
+    margin-top: 1rem;
+}
+
+/* ==================================================
+   MODAL ANIMATIONS
+   ================================================== */
+
+.bbai-modal-fade-in {
+    animation: bbai-modal-fade-in 0.2s ease-out;
+}
+
+@keyframes bbai-modal-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.bbai-modal-slide-up {
+    animation: bbai-modal-slide-up 0.3s ease-out;
+}
+
+@keyframes bbai-modal-slide-up {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* ==================================================
+   RESPONSIVE
+   ================================================== */
+
+@media (max-width: 768px) {
+    .bbai-modal {
+        padding: 20px;
+        max-width: 100%;
+    }
+
+    .bbai-modal__content {
+        width: 95%;
+        max-height: 95vh;
+    }
+
+    .bbai-modal__header,
+    .bbai-modal__body {
+        padding: 1.25rem 1.5rem;
+    }
+
+    .bbai-modal__title {
+        font-size: 1.25rem;
+    }
+
+    .bbai-modal-overlay {
+        padding: 16px;
+    }
+}
+
+/* ==================================================
+   REGENERATE MODAL
+   Modal for regenerating alt text with preview
+   ================================================== */
+
+.bbai-regenerate-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 999999;
+    align-items: center;
+    justify-content: center;
+    animation: bbai-modal-fade-in 0.2s ease-out;
+}
+
+.bbai-regenerate-modal.active {
+    display: flex;
+}
+
+.bbai-regenerate-modal__content {
+    background: white;
+    border-radius: 12px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: bbai-modal-slide-up 0.3s ease-out;
+}
+
+.bbai-regenerate-modal__header {
+    padding: 24px 24px 16px 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.bbai-regenerate-modal__title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 8px 0;
+}
+
+.bbai-regenerate-modal__subtitle {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.bbai-regenerate-modal__body {
+    padding: 24px;
+}
+
+.bbai-regenerate-modal__image-preview {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding: 16px;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+.bbai-regenerate-modal__thumbnail {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+.bbai-regenerate-modal__image-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.bbai-regenerate-modal__image-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 4px 0;
+}
+
+.bbai-regenerate-modal__image-meta {
+    font-size: 12px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.bbai-regenerate-modal__loading {
+    display: none;
+    text-align: center;
+    padding: 32px 0;
+}
+
+.bbai-regenerate-modal__loading.active {
+    display: block;
+}
+
+.bbai-regenerate-modal__spinner {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e5e7eb;
+    border-top-color: #6366f1;
+    border-radius: 50%;
+    animation: bbai-spin 0.8s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes bbai-spin {
+    to { transform: rotate(360deg); }
+}
+
+.bbai-regenerate-modal__loading-text {
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.bbai-regenerate-modal__result {
+    display: none;
+}
+
+.bbai-regenerate-modal__result.active {
+    display: block;
+}
+
+.bbai-regenerate-modal__alt-text-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 8px 0;
+}
+
+.bbai-regenerate-modal__alt-text {
+    padding: 16px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #1f2937;
+    margin: 0 0 16px 0;
+    min-height: 80px;
+}
+
+.bbai-regenerate-modal__footer {
+    padding: 16px 24px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.bbai-regenerate-modal__btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    outline: none;
+}
+
+.bbai-regenerate-modal__btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.bbai-regenerate-modal__btn--cancel {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.bbai-regenerate-modal__btn--cancel:hover:not(:disabled) {
+    background: #e5e7eb;
+}
+
+.bbai-regenerate-modal__btn--accept {
+    background: #6366f1;
+    color: white;
+}
+
+.bbai-regenerate-modal__btn--accept:hover:not(:disabled) {
+    background: #4f46e5;
+}
+
+.bbai-regenerate-modal__error {
+    display: none;
+    padding: 12px 16px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    color: #dc2626;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+.bbai-regenerate-modal__error.active {
+    display: block;
+}

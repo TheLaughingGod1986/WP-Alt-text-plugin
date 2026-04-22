@@ -28,6 +28,7 @@
     var bbaiLibraryPreviewModalState = {
         lastTrigger: null
     };
+    var bbaiDashboardApproveAllInFlight = false;
     var bbaiLibraryEditModal = null;
     var bbaiLibraryEditModalState = {
         lastTrigger: null,
@@ -623,9 +624,51 @@
         });
     }
 
+    var bbaiDashboardBackendGenerationActive = false;
+
+    function normalizeBackendGenerationStatus(status) {
+        status = String(status || '').toLowerCase();
+        if (status === 'queued' || status === 'queue' || status === 'pending' || status === 'scheduled' || status === 'waiting') {
+            return 'queued';
+        }
+        if (status === 'processing' || status === 'running' || status === 'in_progress' || status === 'started' || status === 'working') {
+            return 'processing';
+        }
+        return status;
+    }
+
+    function responseHasActiveBackendGenerationJob(responseData) {
+        var job = responseData && (responseData.active_job || responseData.job || null);
+        var status = job
+            ? normalizeBackendGenerationStatus(job.status || job.state || '')
+            : normalizeBackendGenerationStatus(responseData && (responseData.job_status || responseData.job_state));
+
+        if (status !== 'queued' && status !== 'processing') {
+            return false;
+        }
+
+        return !job || job.active === undefined || job.active === true || job.active === '1' || job.active === 1;
+    }
+
+    function syncDashboardRuntimeStateFromBackendJob(responseData) {
+        bbaiDashboardBackendGenerationActive = responseHasActiveBackendGenerationJob(responseData);
+        setDashboardRuntimeState(bbaiDashboardBackendGenerationActive ? 'generation_running' : 'idle');
+        return bbaiDashboardBackendGenerationActive;
+    }
+
     function setDashboardRuntimeState(runtimeState) {
+        var nextRuntimeState = runtimeState || 'idle';
+
+        if (nextRuntimeState === 'generation_running' && !bbaiDashboardBackendGenerationActive) {
+            nextRuntimeState = 'generation_starting';
+        }
+
+        if (nextRuntimeState !== 'generation_running') {
+            bbaiDashboardBackendGenerationActive = false;
+        }
+
         syncDashboardStateRoots({
-            runtimeState: runtimeState || 'idle'
+            runtimeState: nextRuntimeState
         });
     }
 
@@ -4311,7 +4354,7 @@
             || normalizedStats.optimized_count > 0
             || normalizedStats.images_missing_alt > 0
             || normalizedStats.needs_review_count > 0;
-        var lastScanTs = root ? parseCount(root.getAttribute('data-bbai-last-scan-ts')) : 0;
+        var lastScanTs = root ? (parseOptionalNonNegativeInt(root.getAttribute('data-bbai-last-scan-ts')) || 0) : 0;
 
         if (normalizedStats.scanned_at !== undefined) {
             lastScanTs = Math.max(0, parseInt(normalizedStats.scanned_at, 10) || 0);
@@ -6223,10 +6266,11 @@
                 showBulkProgress(__('Preparing fixes...', 'beepbeep-ai-alt-text-generator'), ids.length, 0);
                 setBulkProgressHelperText(getBulkOptimizationProcessingLabel(ids.length));
 
-                queueImages(ids, 'bulk-regenerate', { skipSchedule: true }, function(success, queued, error, processedIds) {
+                queueImages(ids, 'bulk-regenerate', { skipSchedule: true }, function(success, queued, error, processedIds, responseData) {
                     restoreBusyState();
 
                     if (success && queued > 0) {
+                        syncDashboardRuntimeStateFromBackendJob(responseData);
                         updateBulkProgressTitle(__('Successfully Queued!', 'beepbeep-ai-alt-text-generator'));
                         logBulkProgressSuccess(sprintf(
                             _n(
@@ -6242,6 +6286,7 @@
                     }
 
                     if (success && queued === 0) {
+                        syncDashboardRuntimeStateFromBackendJob(responseData);
                         updateBulkProgressTitle(__('Already Queued', 'beepbeep-ai-alt-text-generator'));
                         logBulkProgressSuccess(__('All matching images are already in queue or processing', 'beepbeep-ai-alt-text-generator'));
                         startInlineGeneration(processedIds || ids, 'fix-all-issues');
@@ -6360,7 +6405,7 @@
         }
 
         if ($btn.attr('data-bbai-fix-dashboard') === '1') {
-            setDashboardRuntimeState('generation_running');
+            setDashboardRuntimeState('generation_starting');
             return runDashboardFixAllIssues(this, usageStats);
         }
 
@@ -6368,7 +6413,7 @@
         return false;
 
         function continueWithGeneration() {
-            setDashboardRuntimeState('generation_running');
+            setDashboardRuntimeState('generation_starting');
             var restoreGenerateBusyState = setBusyStateForControls('[data-action="generate-missing"], [data-bbai-action="generate_missing"]', __('Generating...', 'beepbeep-ai-alt-text-generator'));
 
             // Get list of images missing alt text (REST with admin-ajax fallback)
@@ -6498,10 +6543,11 @@
             showBulkProgress(__('Preparing bulk run...', 'beepbeep-ai-alt-text-generator'), count, 0);
 
             // Queue all images
-            queueImages(ids, 'bulk', { skipSchedule: true }, function(success, queued, error, processedIds) {
+            queueImages(ids, 'bulk', { skipSchedule: true }, function(success, queued, error, processedIds, responseData) {
                 restoreGenerateBusyState();
 
 	                if (success && queued > 0) {
+                        syncDashboardRuntimeStateFromBackendJob(responseData);
 	                    // Update modal to show success and keep it open
 	                    updateBulkProgressTitle(__('Successfully Queued!', 'beepbeep-ai-alt-text-generator'));
 	                    logBulkProgressSuccess(sprintf(_n('Successfully queued %d image for processing', 'Successfully queued %d images for processing', queued, 'beepbeep-ai-alt-text-generator'), queued));
@@ -6520,8 +6566,9 @@
 
                     startInlineGeneration(processedIds || ids, 'generate-missing');
 
-                    // Don't hide modal - let user close it manually or monitor progress
+	                    // Don't hide modal - let user close it manually or monitor progress
 	                } else if (success && queued === 0) {
+                        syncDashboardRuntimeStateFromBackendJob(responseData);
 	                    updateBulkProgressTitle(__('Already Queued', 'beepbeep-ai-alt-text-generator'));
 	                    logBulkProgressSuccess(__('All images are already in queue or processing', 'beepbeep-ai-alt-text-generator'));
 	                    startInlineGeneration(processedIds || ids, 'generate-missing');
@@ -6592,11 +6639,12 @@
                                             $btn.text(__('Loading...', 'beepbeep-ai-alt-text-generator'));
                                             showBulkProgress(sprintf(_n('Queueing %d image...', 'Queueing %d images...', remainingCount, 'beepbeep-ai-alt-text-generator'), remainingCount), remainingCount, 0);
 
-                                            queueImages(limitedIds, 'bulk', { skipSchedule: true }, function(success, queued, queueError, processedLimited) {
+                                            queueImages(limitedIds, 'bulk', { skipSchedule: true }, function(success, queued, queueError, processedLimited, limitedResponseData) {
                                                 $btn.prop('disabled', false);
                                                 $btn.text(originalText);
 
                                                 if (success && queued > 0) {
+                                                    syncDashboardRuntimeStateFromBackendJob(limitedResponseData);
                                                     updateBulkProgressTitle(__('Successfully Queued!', 'beepbeep-ai-alt-text-generator'));
                                                     logBulkProgressSuccess(sprintf(_n('Queued %d image using remaining credits', 'Queued %d images using remaining credits', queued, 'beepbeep-ai-alt-text-generator'), queued));
                                                     startInlineGeneration(processedLimited || limitedIds, 'bulk');
@@ -6815,7 +6863,7 @@
         return false;
 
         function proceedWithRegeneration() {
-        setDashboardRuntimeState('generation_running');
+        setDashboardRuntimeState('generation_starting');
         // Get list of target images (REST with admin-ajax fallback)
         fetchBulkImageIds(regenerateScope, 500)
         .done(function(response) {
@@ -6836,10 +6884,11 @@
                     showBulkProgress(preparingMessage, count, 0);
 
             // Queue the requested image set
-            queueImages(ids, 'bulk-regenerate', { skipSchedule: true }, function(success, queued, error, processedIds) {
+            queueImages(ids, 'bulk-regenerate', { skipSchedule: true }, function(success, queued, error, processedIds, responseData) {
                 restoreRegenerateBusyState();
 
 		                if (success && queued > 0) {
+                            syncDashboardRuntimeStateFromBackendJob(responseData);
 		                    // Update modal to show success and keep it open
 		                    updateBulkProgressTitle(__('Successfully Queued!', 'beepbeep-ai-alt-text-generator'));
 		                    logBulkProgressSuccess(
@@ -6868,8 +6917,9 @@
 
 	                    startInlineGeneration(processedIds || ids, isWeakOnlyRun ? 'regenerate-weak' : 'regenerate-all');
 
-	                    // Don't hide modal - let user close it manually or monitor progress
+		                    // Don't hide modal - let user close it manually or monitor progress
 		                } else if (success && queued === 0) {
+                            syncDashboardRuntimeStateFromBackendJob(responseData);
 		                    updateBulkProgressTitle(__('Already Queued', 'beepbeep-ai-alt-text-generator'));
 		                    logBulkProgressSuccess(
                                 isWeakOnlyRun
@@ -6943,10 +6993,11 @@
                                             restoreRegenerateBusyState = setBusyStateForControls('[data-action="regenerate-all"], [data-bbai-action="reoptimize_all"]', __('Improving...', 'beepbeep-ai-alt-text-generator'));
                                             showBulkProgress(sprintf(_n('Queueing %d image for regeneration...', 'Queueing %d images for regeneration...', remainingCount, 'beepbeep-ai-alt-text-generator'), remainingCount), remainingCount, 0);
 
-                                            queueImages(limitedIds, 'bulk-regenerate', { skipSchedule: true }, function(success, queued, queueError, processedLimited) {
+                                            queueImages(limitedIds, 'bulk-regenerate', { skipSchedule: true }, function(success, queued, queueError, processedLimited, limitedResponseData) {
                                                 restoreRegenerateBusyState();
 
                                                 if (success && queued > 0) {
+                                                    syncDashboardRuntimeStateFromBackendJob(limitedResponseData);
                                                     updateBulkProgressTitle(__('Successfully Queued!', 'beepbeep-ai-alt-text-generator'));
                                                     logBulkProgressSuccess(sprintf(_n('Queued %d image using remaining credits', 'Queued %d images using remaining credits', queued, 'beepbeep-ai-alt-text-generator'), queued));
                                                     startInlineGeneration(processedLimited || limitedIds, 'regenerate-all');
@@ -7080,10 +7131,11 @@
                 showBulkProgress(__('Optimizing ALT text...', 'beepbeep-ai-alt-text-generator'), count, 0);
                 setBulkProgressHelperText(getBulkOptimizationProcessingLabel(count));
 
-                queueImages(ids, 'bulk-regenerate', { skipSchedule: true }, function(success, queued, error, processedIds) {
+                queueImages(ids, 'bulk-regenerate', { skipSchedule: true }, function(success, queued, error, processedIds, responseData) {
                     restoreBusyState();
 
                     if (success && queued > 0) {
+                        syncDashboardRuntimeStateFromBackendJob(responseData);
                         updateBulkProgressTitle(__('Successfully Queued!', 'beepbeep-ai-alt-text-generator'));
                         logBulkProgressSuccess(sprintf(
                             _n(
@@ -7099,6 +7151,7 @@
                     }
 
                     if (success && queued === 0) {
+                        syncDashboardRuntimeStateFromBackendJob(responseData);
                         updateBulkProgressTitle(__('Already Queued', 'beepbeep-ai-alt-text-generator'));
                         logBulkProgressSuccess(__('All matching images are already in queue or processing', 'beepbeep-ai-alt-text-generator'));
                         startInlineGeneration(processedIds || ids, 'fix-all-issues');
@@ -8548,8 +8601,9 @@
                         return;
                     }
 
-                    queueImages(normalizedIds, getGeneratorQueueSource(activeScope, normalizedIds), { skipSchedule: true }, function(success, queued, error, processedIds) {
+                    queueImages(normalizedIds, getGeneratorQueueSource(activeScope, normalizedIds), { skipSchedule: true }, function(success, queued, error, processedIds, responseData) {
                         if (success || (error && error.code === 'already_queued')) {
+                            syncDashboardRuntimeStateFromBackendJob(responseData);
                             runSilentInlineGeneration(processedIds || normalizedIds, getGeneratorCompletionSource(activeScope), {
                                 onBeforeComplete: function() {
                                     setGeneratorBusyState(false);
@@ -9560,7 +9614,7 @@
         }
 
         setLibraryRowActionLoading(trigger, busyLabel);
-        setDashboardRuntimeState('generation_running');
+        setDashboardRuntimeState('generation_starting');
         if (originalAltHtml) {
             var busyMarkup =
                 '<div class="bbai-library-reviewing">' +
@@ -9798,7 +9852,7 @@
         $modal.find('.bbai-regenerate-modal__loading').addClass('active');
         $modal.find('.bbai-regenerate-modal__result').removeClass('active');
         $modal.find('.bbai-regenerate-modal__error').removeClass('active');
-        setDashboardRuntimeState('generation_running');
+        setDashboardRuntimeState('generation_starting');
 
         // Disable accept button during loading
         $modal.find('.bbai-regenerate-modal__btn--accept').prop('disabled', true);
@@ -10256,6 +10310,20 @@
 
     function getLibraryReviewBatchEndpoint() {
         return (config.restRoot || '') + 'bbai/v1/review';
+    }
+
+    function getDashboardApproveAllEndpoint() {
+        var root = (
+            config.restRoot ||
+            (window.BBAI && window.BBAI.restRoot) ||
+            (window.wpApiSettings && window.wpApiSettings.root) ||
+            ''
+        );
+        root = String(root || '');
+        if (!root) {
+            return '';
+        }
+        return root.replace(/\/?$/, '/') + 'bbai/v1/approve-all-alt-text';
     }
 
     function getLibraryAltClearBatchEndpoint() {
@@ -13524,7 +13592,7 @@
         var $btn = $(trigger);
         var originalText = $btn.text();
         $btn.prop('disabled', true).text(__('Loading...', 'beepbeep-ai-alt-text-generator'));
-        setDashboardRuntimeState('generation_running');
+        setDashboardRuntimeState('generation_starting');
 
         showBulkProgress(
             sprintf(
@@ -13535,10 +13603,11 @@
             0
         );
 
-        queueImages(ids, 'bulk', { skipSchedule: true }, function(success, queued, error, processedIds) {
+        queueImages(ids, 'bulk', { skipSchedule: true }, function(success, queued, error, processedIds, responseData) {
             $btn.prop('disabled', false).text(originalText);
 
             if (success && queued > 0) {
+                syncDashboardRuntimeStateFromBackendJob(responseData);
                 updateBulkProgressTitle(__('Successfully Queued!', 'beepbeep-ai-alt-text-generator'));
                 logBulkProgressSuccess(
                     sprintf(
@@ -13551,6 +13620,7 @@
             }
 
             if (success && queued === 0) {
+                syncDashboardRuntimeStateFromBackendJob(responseData);
                 updateBulkProgressTitle(__('Already Queued', 'beepbeep-ai-alt-text-generator'));
                 logBulkProgressSuccess(__('Selected images are already queued or processing.', 'beepbeep-ai-alt-text-generator'));
                 startInlineGeneration(processedIds || ids, 'bulk');
@@ -13595,7 +13665,7 @@
         var $btn = $(trigger);
         var originalText = $btn.text();
         $btn.prop('disabled', true).text(__('Loading...', 'beepbeep-ai-alt-text-generator'));
-        setDashboardRuntimeState('generation_running');
+        setDashboardRuntimeState('generation_starting');
 
         showBulkProgress(
             sprintf(
@@ -13606,10 +13676,11 @@
             0
         );
 
-        queueImages(ids, 'bulk-regenerate', { skipSchedule: true }, function(success, queued, error, processedIds) {
+        queueImages(ids, 'bulk-regenerate', { skipSchedule: true }, function(success, queued, error, processedIds, responseData) {
             $btn.prop('disabled', false).text(originalText);
 
             if (success && queued > 0) {
+                syncDashboardRuntimeStateFromBackendJob(responseData);
                 updateBulkProgressTitle(__('Successfully Queued!', 'beepbeep-ai-alt-text-generator'));
                 logBulkProgressSuccess(
                     sprintf(
@@ -13622,6 +13693,7 @@
             }
 
             if (success && queued === 0) {
+                syncDashboardRuntimeStateFromBackendJob(responseData);
                 updateBulkProgressTitle(__('Already Queued', 'beepbeep-ai-alt-text-generator'));
                 logBulkProgressSuccess(__('Selected images are already queued or processing.', 'beepbeep-ai-alt-text-generator'));
                 startInlineGeneration(processedIds || ids, 'bulk-regenerate');
@@ -13638,6 +13710,548 @@
             setDashboardRuntimeState('generation_failed');
             logBulkProgressError(message);
         });
+    }
+
+    function notifyApproveAllFeedback(type, message) {
+        if (!message) {
+            return;
+        }
+
+        if (window.bbaiPushToast && typeof window.bbaiPushToast === 'function') {
+            window.bbaiPushToast(type || 'info', message, { duration: 4500 });
+            return;
+        }
+
+        notifyLibraryFeedback(type || 'info', message);
+    }
+
+    function getApproveAllErrorMessage(xhr) {
+        var message = __('Unable to approve these images right now.', 'beepbeep-ai-alt-text-generator');
+        if (xhr && xhr.responseJSON) {
+            if (xhr.responseJSON.message) {
+                message = xhr.responseJSON.message;
+            } else if (xhr.responseJSON.data && xhr.responseJSON.data.message) {
+                message = xhr.responseJSON.data.message;
+            }
+        }
+        return message;
+    }
+
+    function getLoggedInHeroTone(color) {
+        var map = {
+            blue: 'scanning',
+            green: 'healthy',
+            amber: 'problem',
+            gray: 'neutral'
+        };
+        return map[color] || 'neutral';
+    }
+
+    function removeClassesWithPrefix(node, prefix) {
+        if (!node || !node.classList) {
+            return;
+        }
+        Array.prototype.slice.call(node.classList).forEach(function(className) {
+            if (className.indexOf(prefix) === 0) {
+                node.classList.remove(className);
+            }
+        });
+    }
+
+    function buildLoggedInDonutBackground(segments) {
+        var seg = segments && typeof segments === 'object' ? segments : {};
+        var optimized = Math.max(0, parseInt(seg.optimized, 10) || 0);
+        var weak = Math.max(0, parseInt(seg.weak, 10) || 0);
+        var missing = Math.max(0, parseInt(seg.missing, 10) || 0);
+        var total = Math.max(1, parseInt(seg.total, 10) || optimized + weak + missing || 1);
+        var optEnd;
+        var weakEnd;
+        var missEnd;
+
+        if (optimized + weak + missing === 0) {
+            return 'conic-gradient(#e2e8f0 0deg 360deg)';
+        }
+
+        if (optimized >= total) {
+            return 'conic-gradient(#22c55e 0deg 360deg)';
+        }
+
+        optEnd = Math.round((360 * optimized / total) * 1000) / 1000;
+        weakEnd = Math.round(Math.min(360, optEnd + (360 * weak / total)) * 1000) / 1000;
+        missEnd = Math.round(Math.min(360, weakEnd + (360 * missing / total)) * 1000) / 1000;
+
+        return 'conic-gradient(#22c55e 0deg ' + optEnd + 'deg, #f59e0b ' + optEnd + 'deg ' + weakEnd + 'deg, #ef4444 ' + weakEnd + 'deg ' + missEnd + 'deg, #e2e8f0 ' + missEnd + 'deg 360deg)';
+    }
+
+    function getLoggedInDonutSubLabel(stateId, donut) {
+        var segments = donut && donut.segments && typeof donut.segments === 'object' ? donut.segments : {};
+        var missing = Math.max(0, parseInt(segments.missing, 10) || 0);
+        var weak = Math.max(0, parseInt(segments.weak, 10) || 0);
+
+        if (stateId === 'QUEUED') {
+            return String((donut && donut.center_sub_label) || __('queued images', 'beepbeep-ai-alt-text-generator'));
+        }
+        if (stateId === 'PROCESSING') {
+            return __('generating now', 'beepbeep-ai-alt-text-generator');
+        }
+        if (stateId === 'ALL_CLEAR') {
+            return __('all optimised', 'beepbeep-ai-alt-text-generator');
+        }
+        if (missing > 0) {
+            return sprintf(
+                _n('%s image needs ALT', '%s images need ALT', missing, 'beepbeep-ai-alt-text-generator'),
+                formatDashboardNumber(missing)
+            );
+        }
+        if (weak > 0) {
+            return sprintf(
+                _n('%s ready for review', '%s ready for review', weak, 'beepbeep-ai-alt-text-generator'),
+                formatDashboardNumber(weak)
+            );
+        }
+
+        return String((donut && donut.center_sub_label) || '');
+    }
+
+    function getLoggedInDonutMeta(stateId) {
+        if (stateId === 'QUEUED') {
+            return __('Queued automatically', 'beepbeep-ai-alt-text-generator');
+        }
+        if (stateId === 'PROCESSING') {
+            return __('This may take a few minutes', 'beepbeep-ai-alt-text-generator');
+        }
+        if (stateId === 'ALL_CLEAR') {
+            return __('Library fully optimised', 'beepbeep-ai-alt-text-generator');
+        }
+        if (stateId === 'NEEDS_REVIEW') {
+            return __('Open review queue', 'beepbeep-ai-alt-text-generator');
+        }
+        if (stateId === 'MISSING_ALT' || stateId === 'QUOTA_EXHAUSTED') {
+            return __('Click to generate', 'beepbeep-ai-alt-text-generator');
+        }
+        return '';
+    }
+
+    function renderLoggedInHeroSummary(hero, summary) {
+        var summaryNode = hero.querySelector('.bbai-li-summary');
+        if (!summaryNode) {
+            return;
+        }
+
+        if (!Array.isArray(summary) || !summary.length) {
+            summaryNode.hidden = true;
+            summaryNode.innerHTML = '';
+            return;
+        }
+
+        summaryNode.hidden = false;
+        summaryNode.innerHTML = summary.map(function(item) {
+            var label = item && item.label ? String(item.label) : '';
+            var value = item && item.value !== undefined ? String(item.value) : '';
+            var mod = item && item.mod ? String(item.mod).replace(/[^a-z0-9_-]/gi, '') : 'muted';
+            if (!label || !value) {
+                return '';
+            }
+            return '<div class="bbai-li-summary__item bbai-li-summary__item--' + escapeHtml(mod) + '">' +
+                '<dt class="bbai-li-summary__label">' + escapeHtml(label) + '</dt>' +
+                '<dd class="bbai-li-summary__value">' + escapeHtml(value) + '</dd>' +
+            '</div>';
+        }).join('');
+    }
+
+    function updateLoggedInHeroProgress(hero, stateId) {
+        var wrap = hero.querySelector('.bbai-li-progress-steps');
+        var steps;
+        var activeStep = 1;
+
+        if (!wrap) {
+            return;
+        }
+
+        if (stateId === 'NEEDS_REVIEW') {
+            activeStep = 2;
+        } else if (stateId === 'ALL_CLEAR') {
+            activeStep = 3;
+        } else if (stateId === 'QUEUED' || stateId === 'QUOTA_EXHAUSTED' || stateId === 'ERROR' || stateId === 'NO_IMAGES') {
+            activeStep = 0;
+        }
+
+        wrap.hidden = activeStep <= 0;
+        steps = wrap.querySelectorAll('.bbai-li-progress-steps__step');
+        Array.prototype.forEach.call(steps, function(step, index) {
+            var stepNumber = index + 1;
+            removeClassesWithPrefix(step, 'bbai-li-progress-steps__step--');
+            if (activeStep <= 0) {
+                step.classList.add('bbai-li-progress-steps__step--idle');
+            } else if (stepNumber < activeStep) {
+                step.classList.add('bbai-li-progress-steps__step--done');
+            } else if (stepNumber === activeStep) {
+                step.classList.add('bbai-li-progress-steps__step--active');
+                if (stateId === 'ALL_CLEAR') {
+                    step.classList.add('bbai-li-progress-steps__step--done');
+                }
+            } else {
+                step.classList.add('bbai-li-progress-steps__step--idle');
+            }
+        });
+    }
+
+    function ensureLoggedInHeroBadgeNode(hero) {
+        var badge;
+        var headline;
+
+        if (!hero) {
+            return null;
+        }
+
+        badge = hero.querySelector('.bbai-li-state-badge');
+        if (badge) {
+            return badge;
+        }
+
+        headline = hero.querySelector('[data-bbai-li-hero-headline="1"]');
+        if (!headline || !headline.parentNode) {
+            return null;
+        }
+
+        badge = document.createElement('span');
+        badge.className = 'bbai-li-state-badge bbai-li-state-badge--gray';
+        badge.setAttribute('aria-hidden', 'true');
+        headline.parentNode.insertBefore(badge, headline);
+
+        return badge;
+    }
+
+    function ensureLoggedInHeroCtaNode(hero, selector, className, attrName) {
+        var row;
+        var node;
+
+        if (!hero) {
+            return null;
+        }
+
+        node = hero.querySelector(selector);
+        if (node) {
+            return node;
+        }
+
+        row = hero.querySelector('.bbai-li-cta-row');
+        if (!row) {
+            return null;
+        }
+
+        node = document.createElement('a');
+        node.className = className;
+        node.setAttribute(attrName, '1');
+        row.appendChild(node);
+
+        return node;
+    }
+
+    function configureLoggedInHeroCta(node, cta, isPrimary) {
+        if (!node) {
+            return;
+        }
+
+        node.removeAttribute('aria-busy');
+        node.removeAttribute('disabled');
+        node.classList.remove('is-loading');
+        node.removeAttribute('data-bbai-busy-original-html');
+        node.removeAttribute('data-bbai-busy-original-disabled');
+        node.removeAttribute('data-original-label');
+
+        if (!cta || !cta.label) {
+            node.hidden = true;
+            node.setAttribute('aria-hidden', 'true');
+            node.setAttribute('aria-disabled', 'true');
+            return;
+        }
+
+        node.hidden = false;
+        node.removeAttribute('aria-hidden');
+        node.removeAttribute('aria-disabled');
+        node.removeAttribute('aria-busy');
+        node.removeAttribute('disabled');
+        node.classList.remove('is-loading');
+        node.removeAttribute('data-bbai-busy-original-html');
+        node.removeAttribute('data-bbai-busy-original-disabled');
+        node.textContent = String(cta.label);
+        node.setAttribute('href', cta.href || '#');
+
+        if (isPrimary) {
+            node.setAttribute('data-bbai-li-action', cta.action || '');
+            node.setAttribute('data-busy-label', cta.busy_label || __('Working...', 'beepbeep-ai-alt-text-generator'));
+            if (cta.action === 'generate-missing') {
+                node.setAttribute('data-bbai-action', 'generate_missing');
+            } else {
+                node.removeAttribute('data-bbai-action');
+            }
+        } else {
+            node.setAttribute('data-action', cta.action || '');
+        }
+    }
+
+    function updateLoggedInHeroBadge(hero, badgeData) {
+        var badge = ensureLoggedInHeroBadgeNode(hero);
+        if (!badge || !badgeData || !badgeData.text) {
+            if (badge) {
+                badge.hidden = true;
+            }
+            return;
+        }
+
+        badge.hidden = false;
+        removeClassesWithPrefix(badge, 'bbai-li-state-badge--');
+        badge.classList.add('bbai-li-state-badge--' + String(badgeData.mod || 'gray').replace(/[^a-z0-9_-]/gi, ''));
+        badge.textContent = String(badgeData.text);
+    }
+
+    function updateLoggedInHeroDonut(hero, stateData) {
+        var stateId = String(stateData && stateData.state ? stateData.state : '');
+        var donut = stateData && stateData.donut && typeof stateData.donut === 'object' ? stateData.donut : {};
+        var heroData = stateData && stateData.hero && typeof stateData.hero === 'object' ? stateData.hero : {};
+        var donutNode = hero.querySelector('[data-bbai-li-donut="1"]');
+        var valueNode = hero.querySelector('[data-bbai-li-donut-label="1"]');
+        var subNode = hero.querySelector('[data-bbai-li-donut-sub="1"]');
+        var metaNode = hero.querySelector('.bbai-li-donut__meta');
+        var donutCard = hero.querySelector('.bbai-li-card--donut');
+        var color = String(donut.color || 'gray');
+        var tone = getLoggedInHeroTone(color);
+        var primary = heroData.primary_cta || null;
+        var secondary = heroData.secondary_cta || null;
+        var clickable = (
+            (stateId === 'MISSING_ALT' && primary && primary.label) ||
+            stateId === 'NEEDS_REVIEW' ||
+            (stateId === 'PROCESSING' && primary && primary.label)
+        );
+        var actionLabel = stateId === 'NEEDS_REVIEW' && secondary && secondary.label
+            ? secondary.label
+            : (primary && primary.label ? primary.label : __('Take action', 'beepbeep-ai-alt-text-generator'));
+        var metaText;
+
+        if (donutNode) {
+            removeClassesWithPrefix(donutNode, 'bbai-command-donut--');
+            donutNode.classList.add('bbai-command-donut--' + tone);
+            donutNode.classList.toggle('bbai-li-donut--animated', !!donut.animated);
+            donutNode.setAttribute('data-bbai-li-donut-pct', String(Math.max(0, Math.min(100, parseInt(donut.pct, 10) || 0))));
+            donutNode.setAttribute('data-bbai-li-donut-color', color);
+            donutNode.setAttribute('aria-label', String(donut.aria_label || ''));
+            donutNode.style.background = buildLoggedInDonutBackground(donut.segments || {});
+        }
+
+        if (valueNode) {
+            removeClassesWithPrefix(valueNode, 'bbai-li-donut__value--');
+            valueNode.classList.add('bbai-li-donut__value--' + tone);
+            valueNode.textContent = String(donut.center_label || '');
+        }
+
+        if (subNode) {
+            subNode.textContent = getLoggedInDonutSubLabel(stateId, donut);
+            subNode.hidden = !subNode.textContent;
+        }
+
+        metaText = getLoggedInDonutMeta(stateId);
+        if (metaNode) {
+            metaNode.textContent = metaText;
+            metaNode.hidden = !metaText;
+        }
+
+        if (donutCard) {
+            donutCard.classList.toggle('bbai-li-card--donut-clickable', !!clickable);
+            if (clickable) {
+                donutCard.setAttribute('role', 'button');
+                donutCard.setAttribute('tabindex', '0');
+                donutCard.setAttribute('data-bbai-li-donut-card-trigger', '1');
+                donutCard.setAttribute('aria-label', String(actionLabel || ''));
+            } else {
+                donutCard.removeAttribute('role');
+                donutCard.removeAttribute('tabindex');
+                donutCard.removeAttribute('data-bbai-li-donut-card-trigger');
+                donutCard.removeAttribute('aria-label');
+            }
+        }
+    }
+
+    function clearLoggedInReviewSurface(stateId) {
+        if (stateId === 'NEEDS_REVIEW') {
+            return;
+        }
+
+        Array.prototype.forEach.call(document.querySelectorAll('[data-bbai-li-surface="ReviewQueue"]'), function(surface) {
+            var table = surface.querySelector('.bbai-li-image-table__table');
+            var body = surface.querySelector('[data-bbai-li-table-body]');
+            var loading = surface.querySelector('[data-bbai-li-table-loading]');
+            var empty = surface.querySelector('.bbai-li-image-table__empty');
+            var approveCta = surface.querySelector('[data-action="approve-all"]');
+
+            if (body) {
+                body.innerHTML = '';
+            }
+            if (table) {
+                table.hidden = true;
+            }
+            if (loading) {
+                loading.hidden = true;
+            }
+            if (!empty) {
+                empty = document.createElement('p');
+                empty.className = 'bbai-li-image-table__empty';
+                if (table && table.parentNode) {
+                    table.parentNode.insertBefore(empty, table);
+                } else {
+                    surface.appendChild(empty);
+                }
+            }
+            empty.hidden = false;
+            empty.textContent = __('No images in the review queue.', 'beepbeep-ai-alt-text-generator');
+            if (approveCta) {
+                approveCta.hidden = true;
+                approveCta.setAttribute('aria-disabled', 'true');
+            }
+        });
+    }
+
+    function applyLoggedInDashboardStatePayload(stateData) {
+        var hero = document.querySelector('[data-bbai-li-hero="1"]');
+        var dashboard = document.querySelector('[data-bbai-logged-in-dashboard]');
+        var stateId = String(stateData && stateData.state ? stateData.state : '');
+        var heroData = stateData && stateData.hero && typeof stateData.hero === 'object' ? stateData.hero : {};
+        var headlineNode;
+        var supportNode;
+        var primaryCta;
+        var secondaryCta;
+
+        if (!hero || !stateId) {
+            return;
+        }
+
+        if (dashboard) {
+            dashboard.setAttribute('data-state', stateId);
+            try {
+                dashboard.setAttribute('data-bbai-li-initial-state', JSON.stringify(stateData));
+            } catch (error) {}
+        }
+
+        hero.setAttribute('data-bbai-li-state', stateId);
+        hero.setAttribute('data-bbai-li-variant', String(heroData.variant || 'default'));
+
+        updateLoggedInHeroBadge(hero, heroData.badge || null);
+
+        headlineNode = hero.querySelector('[data-bbai-li-hero-headline="1"]');
+        if (headlineNode && heroData.headline) {
+            headlineNode.textContent = String(heroData.headline);
+        }
+
+        supportNode = hero.querySelector('[data-bbai-li-hero-support="1"]');
+        if (supportNode && heroData.support) {
+            supportNode.textContent = String(heroData.support);
+        }
+
+        primaryCta = ensureLoggedInHeroCtaNode(
+            hero,
+            '[data-bbai-li-primary-cta]',
+            'bbai-li-btn-primary bbai-btn bbai-btn-primary',
+            'data-bbai-li-primary-cta'
+        );
+        secondaryCta = ensureLoggedInHeroCtaNode(
+            hero,
+            '[data-bbai-li-secondary-cta]',
+            'bbai-li-btn-secondary bbai-btn bbai-btn-secondary',
+            'data-bbai-li-secondary-cta'
+        );
+        configureLoggedInHeroCta(primaryCta, heroData.primary_cta || null, true);
+        configureLoggedInHeroCta(secondaryCta, heroData.secondary_cta || null, false);
+        renderLoggedInHeroSummary(hero, heroData.summary || []);
+        updateLoggedInHeroDonut(hero, stateData);
+        updateLoggedInHeroProgress(hero, stateId);
+        clearLoggedInReviewSurface(stateId);
+    }
+
+    function runDashboardApproveAll(trigger, e) {
+        var endpoint;
+        var nonce;
+        var restoreBusyState = null;
+
+        if (e && typeof e.preventDefault === 'function') {
+            e.preventDefault();
+        }
+        if (e && typeof e.stopPropagation === 'function') {
+            e.stopPropagation();
+        }
+        if (e && typeof e.stopImmediatePropagation === 'function') {
+            e.stopImmediatePropagation();
+        }
+
+        if (bbaiDashboardApproveAllInFlight) {
+            return false;
+        }
+
+        endpoint = getDashboardApproveAllEndpoint();
+        nonce = getLibraryRestNonce();
+        if (!endpoint || !nonce) {
+            notifyApproveAllFeedback('error', __('Unable to approve these images right now.', 'beepbeep-ai-alt-text-generator'));
+            return false;
+        }
+
+        bbaiDashboardApproveAllInFlight = true;
+        restoreBusyState = setBusyStateForControls(
+            '[data-bbai-li-action="approve-all"], [data-action="approve-all"]',
+            __('Approving...', 'beepbeep-ai-alt-text-generator')
+        );
+
+        $.ajax({
+            url: endpoint,
+            method: 'POST',
+            contentType: 'application/json',
+            headers: {
+                'X-WP-Nonce': nonce
+            },
+            data: JSON.stringify({}),
+            processData: false
+        })
+            .done(function(response) {
+                var payload = getNormalizedResponsePayload(response);
+                var approvedIds = Array.isArray(payload && payload.approved_ids) ? payload.approved_ids : [];
+                var approvedCount = Math.max(0, parseInt(payload && payload.approved_count, 10) || approvedIds.length || 0);
+                var statsPayload = payload && payload.stats && typeof payload.stats === 'object' ? payload.stats : null;
+                var dashboardState = payload && payload.dashboard_state && typeof payload.dashboard_state === 'object'
+                    ? payload.dashboard_state
+                    : null;
+
+                if (typeof restoreBusyState === 'function') {
+                    restoreBusyState();
+                    restoreBusyState = null;
+                }
+
+                if (statsPayload) {
+                    applyDashboardCoveragePayload(statsPayload);
+                }
+
+                if (dashboardState) {
+                    applyLoggedInDashboardStatePayload(dashboardState);
+                }
+
+                notifyApproveAllFeedback(
+                    approvedCount > 0 ? 'success' : 'info',
+                    approvedCount > 0
+                        ? sprintf(
+                            _n('%d image approved', '%d images approved', approvedCount, 'beepbeep-ai-alt-text-generator'),
+                            approvedCount
+                        )
+                        : __('No images needed approval.', 'beepbeep-ai-alt-text-generator')
+                );
+            })
+            .fail(function(xhr) {
+                notifyApproveAllFeedback('error', getApproveAllErrorMessage(xhr));
+            })
+            .always(function() {
+                bbaiDashboardApproveAllInFlight = false;
+                if (typeof restoreBusyState === 'function') {
+                    restoreBusyState();
+                }
+            });
+
+        return false;
     }
 
     function runBulkMarkReviewed(trigger) {
@@ -13978,11 +14592,11 @@
                 queued = responseData.queued || 0;
 
                 if (queued > 0) {
-                    callback(true, queued, null, ids.slice(0));
+                    callback(true, queued, null, ids.slice(0), responseData);
                 } else {
                     window.BBAI_LOG && window.BBAI_LOG.warn('[AI Alt Text] No images were queued. Response:', response);
                     // Still might be success if 0 queued but they were already in queue
-                    callback(true, queued, null, ids.slice(0));
+                    callback(true, queued, null, ids.slice(0), responseData);
                 }
             } else {
                 // Error response from server
@@ -14261,7 +14875,7 @@
 
     function buildBulkProgressHeaderTitle(state) {
         if (isBulkProgressCompleteState(state)) {
-            return getBulkProgressCompletionPresentation(state).title;
+            return buildBulkProgressSuccessTitleText(state);
         }
 
         return state && state.activeTitle
@@ -14329,6 +14943,24 @@
         return escapeHtml(template).replace(
             '%s',
             '<span data-bbai-bulk-progress-success-count>0</span>'
+        );
+    }
+
+    function buildBulkProgressSuccessTitleText(stateOrCount) {
+        var safeCount = Math.max(0, parseInt(stateOrCount && typeof stateOrCount === 'object' ? stateOrCount.processed : stateOrCount, 10) || 0);
+
+        if (safeCount <= 0) {
+            return __('All images optimized', 'beepbeep-ai-alt-text-generator');
+        }
+
+        return sprintf(
+            _n(
+                '%s image optimized',
+                '%s images optimized',
+                safeCount,
+                'beepbeep-ai-alt-text-generator'
+            ),
+            formatDashboardNumber(safeCount)
         );
     }
 
@@ -14518,39 +15150,12 @@
 
     function animateBulkProgressNumber(node, targetValue) {
         var finalValue = Math.max(0, parseInt(targetValue, 10) || 0);
-        var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        var startedAt = null;
-        var duration = 520;
 
         if (!node) {
             return;
         }
 
-        if (prefersReducedMotion || typeof window.requestAnimationFrame !== 'function') {
-            node.textContent = formatDashboardNumber(finalValue);
-            return;
-        }
-
-        node.textContent = '0';
-
-        function step(timestamp) {
-            var progress;
-            var value;
-
-            if (startedAt === null) {
-                startedAt = timestamp;
-            }
-
-            progress = Math.min(1, (timestamp - startedAt) / duration);
-            value = Math.round(finalValue * progress);
-            node.textContent = formatDashboardNumber(value);
-
-            if (progress < 1) {
-                window.requestAnimationFrame(step);
-            }
-        }
-
-        window.requestAnimationFrame(step);
+        node.textContent = formatDashboardNumber(finalValue);
     }
 
     function animateBulkProgressCompletion($modal, state) {
@@ -14678,6 +15283,8 @@
         var $helper;
         var $meterLabel;
         var $barContainer;
+        var $logContainer;
+        var $logCount;
         var $complete;
         var $completeTitle;
         var $completeSubtitle;
@@ -14726,6 +15333,15 @@
         }
         if ($barContainer.length) {
             $barContainer.prop('hidden', false);
+        }
+
+        $logContainer = $modal.find('[data-bbai-bulk-progress-log-container]');
+        if ($logContainer.length) {
+            $logContainer.prop('hidden', isComplete);
+        }
+        $logCount = $modal.find('[data-bbai-bulk-progress-log-count]');
+        if ($logCount.length) {
+            $logCount.text(formatBulkProgressLogDoneLabel(state));
         }
 
         $complete = $modal.find('[data-bbai-bulk-progress-complete]');
@@ -15391,6 +16007,45 @@
         }
         setDashboardRuntimeState(nextRuntimeState);
 
+        // Build canonical result object so all post-generation UI reads one source of truth.
+        var _resultStatus;
+        if (quotaError) {
+            _resultStatus = failures > 0 ? 'error' : (successes > 0 ? 'partial' : 'no_changes');
+        } else if (failures > 0 && successes === 0) {
+            _resultStatus = 'error';
+        } else if (failures > 0) {
+            _resultStatus = 'partial';
+        } else if (successes === 0) {
+            _resultStatus = 'no_changes';
+        } else {
+            _resultStatus = 'success';
+        }
+        window.bbaiGenerationResult = {
+            status:    _resultStatus,
+            attempted: total,
+            updated:   successes,
+            failed:    failures,
+            skipped:   skipped || 0,
+            unchanged: Math.max(0, total - successes - failures - (skipped || 0))
+        };
+
+        // Mark the modal as complete so minimizeBulkProgress() knows to reload the SSR dashboard.
+        if ($modal.length) {
+            $modal.data('bbaiComplete', true);
+        }
+
+        if (
+            !quotaError &&
+            (successes > 0 || failures > 0) &&
+            source === 'generate-missing' &&
+            !getLibraryWorkspaceRoot() &&
+            document.querySelector('[data-bbai-li-hero="1"]')
+        ) {
+            window.setTimeout(function() {
+                window.location.reload();
+            }, 1200);
+        }
+
         if (window.bbaiJobState) {
             window.bbaiJobState.complete({
                 status: quotaError ? 'quota' : (failures > 0 ? 'error' : 'complete'),
@@ -15816,6 +16471,7 @@
         // Initialize progress tracking
         $modal.data('startTime', Date.now());
         $modal.removeData('bbaiBulkCompleteAnimationKey');
+        resetBulkProgressLog($modal);
 
         // Update initial state
         updateBulkProgressStatusNote($modal, '', '');
@@ -15872,6 +16528,89 @@
         $modal.find('.bbai-bulk-progress__helper').text('').prop('hidden', true);
     }
 
+    function formatBulkProgressLogDoneLabel(state) {
+        var current = Math.max(0, parseInt(state && state.current, 10) || 0);
+        var total = Math.max(0, parseInt(state && state.total, 10) || 0);
+
+        if (total <= 0) {
+            return __('Waiting for images', 'beepbeep-ai-alt-text-generator');
+        }
+
+        return sprintf(
+            __('%1$s of %2$s done', 'beepbeep-ai-alt-text-generator'),
+            formatDashboardNumber(current),
+            formatDashboardNumber(total)
+        );
+    }
+
+    function resetBulkProgressLog($modal) {
+        var $log;
+
+        if (!$modal || !$modal.length) {
+            return;
+        }
+
+        $modal.removeData('bbaiBulkLogSeen');
+        $log = $modal.find('[data-bbai-bulk-progress-log]');
+        if (!$log.length) {
+            return;
+        }
+
+        $log.empty().append(
+            '<div class="bbai-bulk-progress__log-empty" data-bbai-bulk-progress-log-empty>' +
+            escapeHtml(__('Completed images will appear here as they finish.', 'beepbeep-ai-alt-text-generator')) +
+            '</div>'
+        );
+        $modal.find('[data-bbai-bulk-progress-log-count]').text(
+            __('Waiting for images', 'beepbeep-ai-alt-text-generator')
+        );
+    }
+
+    function appendBulkProgressLogEntry($modal, type, message, options) {
+        var $log;
+        var seen;
+        var key;
+        var tone;
+        var icon;
+        var timestamp;
+        var entryHtml;
+
+        options = options || {};
+
+        if (!$modal || !$modal.length || !message) {
+            return;
+        }
+
+        $log = $modal.find('[data-bbai-bulk-progress-log]');
+        if (!$log.length) {
+            return;
+        }
+
+        tone = type === 'error' ? 'error' : (type === 'warning' ? 'warning' : 'success');
+        if (options.dedupe) {
+            key = tone + ':' + String(message);
+            seen = $modal.data('bbaiBulkLogSeen') || {};
+            if (seen[key]) {
+                return;
+            }
+            seen[key] = true;
+            $modal.data('bbaiBulkLogSeen', seen);
+        }
+
+        icon = tone === 'error' ? '!' : '✓';
+        timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        entryHtml =
+            '<div class="bbai-bulk-progress__log-entry bbai-bulk-progress__log-entry--' + tone + '" role="listitem">' +
+            '    <span class="bbai-bulk-progress__log-icon" aria-hidden="true">' + escapeHtml(icon) + '</span>' +
+            '    <span class="bbai-bulk-progress__log-text">' + escapeHtml(message) + '</span>' +
+            '    <span class="bbai-bulk-progress__log-time">' + escapeHtml(timestamp) + '</span>' +
+            '</div>';
+
+        $log.find('[data-bbai-bulk-progress-log-empty]').remove();
+        $log.append(entryHtml);
+        $log.scrollTop($log.prop('scrollHeight'));
+    }
+
     /**
      * Create bulk progress modal HTML
      */
@@ -15896,6 +16635,13 @@
             '                <div class="bbai-bulk-progress__bar">' +
             '                    <div class="bbai-bulk-progress__bar-fill" style="width: 0%"></div>' +
             '                </div>' +
+            '            </div>' +
+            '            <div class="bbai-bulk-progress__log-container" data-bbai-bulk-progress-log-container>' +
+            '                <div class="bbai-bulk-progress__log-heading">' +
+            '                    <h3 class="bbai-bulk-progress__log-title">' + escapeHtml(__('Running log', 'beepbeep-ai-alt-text-generator')) + '</h3>' +
+            '                    <span class="bbai-bulk-progress__log-count" data-bbai-bulk-progress-log-count>' + escapeHtml(__('Waiting for images', 'beepbeep-ai-alt-text-generator')) + '</span>' +
+            '                </div>' +
+            '                <div class="bbai-bulk-progress__log" data-bbai-bulk-progress-log role="list" aria-live="polite"></div>' +
             '            </div>' +
             '            <p class="bbai-bulk-progress__status-note" data-bbai-bulk-progress-note hidden></p>' +
             '            <div class="bbai-bulk-progress__complete" data-bbai-bulk-progress-complete hidden>' +
@@ -15967,6 +16713,11 @@
         }
 
         if (imageTitle && !isBulkProgressCompleteState(bulkState)) {
+            appendBulkProgressLogEntry(
+                $modal,
+                'success',
+                sprintf(__('Done: %s', 'beepbeep-ai-alt-text-generator'), imageTitle)
+            );
             updateBulkProgressStatusNote($modal, '', '');
         }
 
@@ -15980,9 +16731,13 @@
      */
     function logBulkProgressError(errorMessage) {
         var $modal = $('#bbai-bulk-progress-modal');
-        void errorMessage;
         if (!$modal.length) return;
 
+        appendBulkProgressLogEntry(
+            $modal,
+            'error',
+            errorMessage || __('An image could not be processed.', 'beepbeep-ai-alt-text-generator')
+        );
         updateBulkProgressStatusNote(
             $modal,
             __('Some images may still need a manual review.', 'beepbeep-ai-alt-text-generator'),
@@ -15994,7 +16749,15 @@
      * Add success log entry
      */
     function logBulkProgressSuccess(successMessage) {
-        void successMessage;
+        var $modal = $('#bbai-bulk-progress-modal');
+        if (!$modal.length) return;
+
+        appendBulkProgressLogEntry(
+            $modal,
+            'success',
+            successMessage || __('Generation step completed.', 'beepbeep-ai-alt-text-generator'),
+            { dedupe: true }
+        );
     }
 
     /**
@@ -16056,6 +16819,14 @@
      */
     function minimizeBulkProgress(minimizeVia) {
         var $modal = $('#bbai-bulk-progress-modal');
+
+        // If generation has finished, reload so the SSR dashboard renders the real final state.
+        // The SSR hero has no in-page update path — a reload is the only reliable approach.
+        if ($modal.length && !!$modal.data('bbaiComplete')) {
+            window.location.reload();
+            return;
+        }
+
         if ($modal.length) {
             $modal.removeClass('active');
         }
@@ -17306,9 +18077,11 @@
     window.bbaiSetupWizard = bbaiSetupWizard;
 
     // Expose bulk handlers for non-jQuery fallback bindings.
+    window.bbaiApplyLoggedInDashboardStatePayload = applyLoggedInDashboardStatePayload;
     window.bbaiHandleGenerateMissing = handleGenerateMissing;
     window.bbaiHandleRegenerateAll = handleRegenerateAll;
     window.bbaiHandleRegenerateSingle = handleRegenerateSingle;
+    window.bbaiApproveAllNeedsReview = runDashboardApproveAll;
     window.handleGenerateMissing = handleGenerateMissing;
     window.handleRegenerateAll = handleRegenerateAll;
     window.handleRegenerateSingle = handleRegenerateSingle;
@@ -17743,6 +18516,11 @@
                 e.preventDefault();
             }
             runBulkMarkReviewed(trigger);
+            return;
+        }
+
+        if (action === 'approve-all') {
+            runDashboardApproveAll(trigger, e);
             return;
         }
 

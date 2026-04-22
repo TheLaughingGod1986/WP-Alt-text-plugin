@@ -1,0 +1,79 @@
+/**
+ * Top-of-page surface taxonomy: primary banner vs compact status strip vs cards.
+ * Banners use .bbai-banner (product-banner.css). Strips use .bbai-status-strip.
+ *
+ * @package BeepBeep_AI
+ */
+
+/* ── Compact status strip (subordinate to primary banner; not a second hero) ─ */
+/* Retention uses .bbai-retention-strip for its own chrome — exclude from neutral shell */
+body.bbai-dashboard .bbai-status-strip:not(.bbai-retention-strip) {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 0 var(--card-gap, var(--bbai-space-4));
+    padding: var(--bbai-rhythm-strip-padding-block, var(--bbai-space-3)) var(--bbai-rhythm-strip-padding-inline, var(--bbai-space-4));
+    border-radius: 10px;
+    border: 1px solid var(--bbai-border-muted, #e5e7eb);
+    background: var(--bbai-surface-soft, #f8fafc);
+    box-shadow: none;
+}
+
+body.bbai-dashboard .bbai-status-strip__main {
+    min-width: 0;
+}
+
+body.bbai-dashboard .bbai-status-strip__eyebrow {
+    margin: 0 0 2px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+body.bbai-dashboard .bbai-status-strip__title {
+    margin: 0 0 var(--bbai-space-1);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: #0f172a;
+}
+
+body.bbai-dashboard .bbai-status-strip__text {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #475569;
+}
+
+body.bbai-dashboard .bbai-status-strip__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--bbai-rhythm-strip-stack-gap, var(--bbai-space-2));
+    margin-top: var(--bbai-rhythm-strip-actions-margin-top, var(--bbai-space-3));
+}
+
+body.bbai-dashboard .bbai-status-strip__actions--row {
+    flex-direction: row;
+    justify-content: flex-start;
+}
+
+/* First-win milestone — compact strip, not a second command hero */
+body.bbai-dashboard .bbai-first-win-strip {
+    border-color: #cfe9d8;
+    background: linear-gradient(135deg, #f7fff9 0%, #f4fbf7 100%);
+}
+
+body.bbai-dashboard .bbai-first-win-strip .bbai-btn {
+    min-height: 34px;
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+/* Retention: same vertical rhythm as other strips, lighter than a second banner */
+body.bbai-dashboard .bbai-retention-strip {
+    margin-bottom: var(--card-gap, var(--bbai-space-4));
+    box-shadow: none;
+}

@@ -77,7 +77,7 @@
 
         function processNext() {
             if (!queue.length && active === 0) {
-                finalizeInlineGeneration(successes, failures);
+                finalizeInlineGeneration(successes, failures, total);
                 return;
             }
 
@@ -124,9 +124,37 @@
     }
 
     /**
-     * Finalize inline generation: show completion state inside the progress modal.
+     * Finalize inline generation: build the canonical result object, store it
+     * globally, then hand off to the completion UI.
+     *
+     * @param {number} successes Images that generated successfully.
+     * @param {number} failures  Images that failed.
+     * @param {number} total     Total images attempted.
      */
-    function finalizeInlineGeneration(successes, failures) {
+    function finalizeInlineGeneration(successes, failures, total) {
+        total = total || (successes + failures);
+
+        // ── Single source of truth for all post-generation UI ────────────────
+        var status;
+        if (failures > 0 && successes === 0) {
+            status = 'error';
+        } else if (failures > 0) {
+            status = 'partial';
+        } else if (successes === 0) {
+            status = 'no_changes';
+        } else {
+            status = 'success';
+        }
+
+        window.bbaiGenerationResult = {
+            status:    status,
+            attempted: total,
+            updated:   successes,
+            failed:    failures,
+            unchanged: Math.max(0, total - successes - failures),
+        };
+        // ─────────────────────────────────────────────────────────────────────
+
         if (window.bbaiJobState) {
             window.bbaiJobState.complete();
         }
@@ -140,20 +168,10 @@
         }
 
         if (typeof window.showBulkProgressComplete === 'function') {
-            window.showBulkProgressComplete(successes, failures);
+            window.showBulkProgressComplete(successes, failures, total);
         } else {
-            // Fallback if completion state function is unavailable.
-            hideBulkProgress();
-            if (window.showToast && typeof window.showToast === 'function') {
-                window.showToast({
-                    type: failures > 0 ? 'warning' : 'success',
-                    title: failures > 0 ? 'ALT text generated with issues' : 'ALT text generated',
-                    message: failures > 0
-                        ? (successes + ' image' + (successes !== 1 ? 's' : '') + ' processed, ' + failures + ' failed.')
-                        : (successes + ' image' + (successes !== 1 ? 's' : '') + ' processed successfully'),
-                    duration: 4000
-                });
-            }
+            // Fallback: reload so the SSR dashboard reflects the final state.
+            window.location.reload();
         }
     }
 

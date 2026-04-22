@@ -1,0 +1,349 @@
+/**
+ * Shared admin UI primitives (Analytics, Library, Usage, Dashboard).
+ * Companion to admin/partials/components/*.php — keep page-specific CSS minimal.
+ */
+
+/* ── Page shell vertical rhythm ─────────────────────────────────────────── */
+.bbai-ui-page-shell > * + * {
+    margin-top: var(--section-spacing, 24px);
+}
+
+.bbai-ui-page-shell > .bbai-ui-metrics-grid + .bbai-analytics-post-metrics,
+.bbai-ui-page-shell > .bbai-ui-metrics-grid + .bbai-ui-notice-stack {
+    margin-top: var(--card-gap, 16px);
+}
+
+/* ── Workspace grid alignment ─────────────────────────────────────────── */
+.bbai-ui-workspace-grid {
+    align-items: start;
+}
+
+@media (max-width: 960px) {
+    .bbai-ui-workspace-grid .bbai-main-content {
+        min-width: 0;
+    }
+}
+
+/* ── Section header (layout) ───────────────────────────────────────────── */
+.bbai-ui-section-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px 20px;
+}
+
+.bbai-ui-section-header__text {
+    flex: 1 1 240px;
+    min-width: 0;
+}
+
+/* Typography for eyebrow/title: assets/css/features/dashboard/bbai-section-header.css (.bbai-section-label, .bbai-section-title) */
+.bbai-ui-section-header__eyebrow {
+    margin: 0 0 6px;
+}
+
+.bbai-ui-section-header__title {
+    margin: 0 0 8px;
+}
+
+.bbai-ui-section-header__description {
+    margin: 0;
+    font-size: var(--bbai-admin-type-body, 14px);
+    line-height: 1.55;
+    color: var(--bbai-admin-color-text-secondary, #64748b);
+    max-width: 68ch;
+}
+
+.bbai-ui-section-header__actions {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ── Sidebar card body unification (meta + copy share rhythm) ─────────── */
+.bbai-ui-sidebar-card__body,
+.bbai-ui-sidebar-card__text {
+    margin: 0 0 14px;
+    font-size: var(--bbai-admin-type-body, 14px);
+    line-height: 1.55;
+    color: var(--bbai-admin-color-text-secondary, #475569);
+}
+
+.bbai-ui-sidebar-card__title {
+    margin: 0 0 10px;
+}
+
+.bbai-ui-sidebar-card__foot {
+    margin-top: 4px;
+}
+
+/* ── Notice stack + strip ─────────────────────────────────────────────── */
+.bbai-ui-notice-stack {
+    display: grid;
+    gap: 10px;
+    max-width: 68ch;
+    padding: 0 2px;
+}
+
+.bbai-ui-notice-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 10px 14px;
+    margin: 0;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.bbai-ui-notice-strip__text {
+    margin: 0;
+    flex: 1 1 200px;
+    font-size: var(--bbai-admin-type-body, 14px);
+    line-height: 1.55;
+    color: var(--bbai-admin-color-text-secondary, #475569);
+}
+
+/* Inline row: Library usage alert + compact actions */
+.bbai-ui-notice-strip--layout-inline {
+    display: block;
+}
+
+.bbai-ui-notice-strip__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+    justify-content: space-between;
+}
+
+.bbai-ui-notice-strip--layout-inline .bbai-ui-notice-strip__text {
+    flex: 1 1 220px;
+}
+
+.bbai-ui-notice-strip--layout-inline .bbai-ui-notice-strip__action {
+    flex: 0 0 auto;
+}
+
+.bbai-ui-notice-strip--neutral {
+    border-color: rgba(226, 232, 240, 0.95);
+    background: #f8fafc;
+}
+
+.bbai-ui-notice-strip--info {
+    border-color: rgba(147, 197, 253, 0.55);
+    background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
+}
+
+.bbai-ui-notice-strip--info .bbai-ui-notice-strip__text {
+    color: #334155;
+}
+
+.bbai-ui-notice-strip--warning {
+    border-color: rgba(253, 230, 138, 0.85);
+    background: linear-gradient(135deg, #fffbeb 0%, #fffdf8 100%);
+}
+
+.bbai-ui-notice-strip--warning .bbai-ui-notice-strip__text {
+    color: #78350f;
+}
+
+.bbai-ui-notice-strip--success {
+    border-color: rgba(167, 243, 208, 0.85);
+    background: linear-gradient(135deg, #ecfdf5 0%, #f8fafc 100%);
+}
+
+.bbai-ui-notice-strip--success .bbai-ui-notice-strip__text {
+    color: #14532d;
+}
+
+.bbai-ui-notice-strip__action .bbai-btn-sm,
+.bbai-ui-notice-strip__action .bbai-link-btn,
+.bbai-ui-notice-strip__action .bbai-ui-btn {
+    flex-shrink: 0;
+}
+
+.bbai-ui-notice-strip:focus-within {
+    outline: 2px solid rgba(59, 130, 246, 0.35);
+    outline-offset: 2px;
+}
+
+/* Align library usage alert with strip system (JS may reset className; base rules stay on .bbai-library-usage-alert in library CSS) */
+.bbai-library-usage-alert.bbai-library-usage-alert--inline.bbai-library-usage-alert--unified {
+    border-radius: 12px;
+}
+
+/* ── Button group ─────────────────────────────────────────────────────── */
+.bbai-ui-button-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--bbai-btn-group-gap, var(--bbai-space-2-5, 10px));
+}
+
+.bbai-ui-button-group--vertical,
+.bbai-ui-button-group--stack {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.bbai-ui-button-group--stack .bbai-btn,
+.bbai-ui-button-group--stack .bbai-dashboard-hero__cta,
+.bbai-ui-button-group--stack .bbai-dashboard-hero__link {
+    width: 100%;
+    justify-content: center;
+}
+
+/* ── Simple progress block ─────────────────────────────────────────────── */
+.bbai-ui-progress-block--simple .bbai-ui-progress-block__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px 12px;
+    margin-bottom: 10px;
+}
+
+.bbai-ui-progress-block--simple .bbai-ui-progress-block__title {
+    margin: 0;
+    font-size: var(--bbai-admin-type-body, 14px);
+    font-weight: 600;
+    color: var(--bbai-admin-color-text, #0f172a);
+}
+
+.bbai-ui-progress-block--simple .bbai-ui-progress-block__subtitle {
+    margin: 0;
+    font-size: var(--bbai-admin-type-meta, 13px);
+    font-weight: 600;
+    color: #64748b;
+}
+
+.bbai-ui-progress-block--simple .bbai-ui-progress-block__track {
+    height: 8px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+}
+
+.bbai-ui-progress-block--simple .bbai-ui-progress-block__fill {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.35s ease;
+}
+
+.bbai-ui-progress-block__fill--neutral {
+    background: linear-gradient(90deg, #94a3b8, #cbd5e1);
+}
+
+.bbai-ui-progress-block__fill--success {
+    background: linear-gradient(90deg, #22c55e, #4ade80);
+}
+
+.bbai-ui-progress-block__fill--warning {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.bbai-ui-progress-block__fill--info {
+    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+}
+
+.bbai-ui-progress-block--simple .bbai-ui-progress-block__helper {
+    margin: 10px 0 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #64748b;
+}
+
+/* Library multi-segment block: breathing room */
+.bbai-ui-progress-block--library.bbai-lib-core-card__progress-block {
+    margin-top: 4px;
+}
+
+/* ── State block ───────────────────────────────────────────────────────── */
+.bbai-ui-state-block {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 14px 16px;
+    padding: 18px 20px;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+}
+
+.bbai-ui-state-block__icon {
+    flex: 0 0 auto;
+    line-height: 0;
+}
+
+.bbai-ui-state-block__body {
+    flex: 1 1 200px;
+    min-width: 0;
+}
+
+.bbai-ui-state-block__title {
+    margin: 0 0 6px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.bbai-ui-state-block__description {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.55;
+    color: #64748b;
+}
+
+.bbai-ui-state-block__actions {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.bbai-ui-state-block--warning {
+    border-color: rgba(253, 230, 138, 0.85);
+    background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
+}
+
+.bbai-ui-state-block--success {
+    border-color: rgba(167, 243, 208, 0.85);
+    background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%);
+}
+
+.bbai-ui-state-block--info {
+    border-color: rgba(147, 197, 253, 0.55);
+    background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+}
+
+/* ── Stat group (composed stat-cards) ─────────────────────────────────── */
+.bbai-ui-stat-group--compact:not(.bbai-ui-stat-group--band) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: var(--card-gap, 16px);
+}
+
+.bbai-ui-stat-card--compact.bbai-dashboard-surface-card {
+    padding: 16px 18px;
+}
+
+.bbai-ui-stat-group--compact .bbai-ui-stat-card--compact .bbai-ui-stat-card__value {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    color: #0f172a;
+}
+
+.bbai-ui-stat-group--compact .bbai-ui-stat-card--compact .bbai-ui-stat-card__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #5b6472;
+}
+
+/* Shared banner action stack sizing lives in product-banner.css for Dashboard / Library / Analytics parity. */
