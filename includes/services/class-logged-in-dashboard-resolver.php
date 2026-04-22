@@ -454,12 +454,10 @@ class Logged_In_Dashboard_Resolver {
 						_n( '%s image is queued', '%s images are queued', $queued_total, 'beepbeep-ai-alt-text-generator' ),
 						number_format_i18n( $queued_total )
 					),
-					'support'       => __( 'We\'ll start generating these automatically — or kick it off now.', 'beepbeep-ai-alt-text-generator' ),
+					'support'       => __( 'Your next batch is lined up. Start it now or leave it queued for automatic processing.', 'beepbeep-ai-alt-text-generator' ),
 					'variant'       => 'queued',
 					'primary_cta'   => [
-						'label'      => 1 === $queued_total
-							? __( 'Generate queued image', 'beepbeep-ai-alt-text-generator' )
-							: __( 'Generate queued images', 'beepbeep-ai-alt-text-generator' ),
+						'label'      => __( 'Start generating now', 'beepbeep-ai-alt-text-generator' ),
 						'busy_label' => __( 'Starting generation…', 'beepbeep-ai-alt-text-generator' ),
 						'action'     => 'generate-missing',
 					],
@@ -618,7 +616,7 @@ class Logged_In_Dashboard_Resolver {
 							),
 						'variant'       => 'default',
 						'primary_cta'   => [
-							'label'  => __( 'Create free account', 'beepbeep-ai-alt-text-generator' ),
+							'label'  => __( 'Create free account to continue', 'beepbeep-ai-alt-text-generator' ),
 							'action' => 'navigate',
 							'href'   => '' !== $signup_url ? $signup_url : admin_url( 'admin.php?page=bbai-settings' ),
 						],
@@ -642,8 +640,8 @@ class Logged_In_Dashboard_Resolver {
 					: sprintf(
 						/* translators: %s: number of images still missing ALT text */
 						_n(
-							'%s image remaining — add credits to continue generating.',
-							'%s images remaining — add credits to continue generating.',
+							'Add credits to keep going — %s image still needs ALT text.',
+							'Add credits to keep going — %s images still need ALT text.',
 							$missing,
 							'beepbeep-ai-alt-text-generator'
 						),
@@ -687,20 +685,20 @@ class Logged_In_Dashboard_Resolver {
 					? sprintf(
 						/* translators: %s: number of images ready to approve */
 						_n(
-							'AI has generated a suggestion for %s image — just confirm it to publish.',
-							'AI has generated suggestions for %s images — just confirm them to publish.',
+							'AI has prepared a suggestion for %s image — approve everything now or open the queue for a closer pass.',
+							'AI has prepared suggestions for %s images — approve everything now or open the queue for a closer pass.',
 							$review,
 							'beepbeep-ai-alt-text-generator'
 						),
 						number_format_i18n( $review )
 					)
-					: __( 'ALT text has been generated and is waiting for your sign-off before it goes live.', 'beepbeep-ai-alt-text-generator' );
+					: __( 'ALT text is ready for a quick review before it goes live.', 'beepbeep-ai-alt-text-generator' );
 
 				return [
 					'badge'         => [ 'text' => __( 'Review ready', 'beepbeep-ai-alt-text-generator' ), 'mod' => 'blue' ],
 					'headline'      => sprintf(
 						/* translators: %s: number of images needing review */
-						_n( '%s image is ready to approve', '%s images are ready to approve', $review, 'beepbeep-ai-alt-text-generator' ),
+						_n( '%s image is ready for review', '%s images are ready for review', $review, 'beepbeep-ai-alt-text-generator' ),
 						number_format_i18n( $review )
 					),
 					'support'       => $review_support,
@@ -711,7 +709,7 @@ class Logged_In_Dashboard_Resolver {
 						'action'      => 'approve-all',
 					],
 					'secondary_cta' => [
-						'label'  => __( 'Review in ALT Library', 'beepbeep-ai-alt-text-generator' ),
+						'label'  => __( 'Open review queue', 'beepbeep-ai-alt-text-generator' ),
 						'action' => 'navigate',
 						'href'   => $review_library_href,
 					],
@@ -726,12 +724,16 @@ class Logged_In_Dashboard_Resolver {
 					$trial_limit = (int) ( $ctx['trial_limit'] ?? 0 );
 					$trial_used  = (int) ( $ctx['trial_used'] ?? 0 );
 					$trial_left  = max( 0, $trial_limit - $trial_used );
-					$missing_support = $trial_limit > 0
+					$missing_support = $trial_left > 0
 						? sprintf(
-							/* translators: 1: free generation limit, 2: missing count */
-							__( 'Try it free — generate up to %1$s images at no cost. You have %2$s images missing ALT text.', 'beepbeep-ai-alt-text-generator' ),
-							number_format_i18n( $trial_limit ),
-							number_format_i18n( $missing )
+							/* translators: %s: free generations remaining */
+							_n(
+								'Use your remaining %s free generation to start improving accessibility now.',
+								'Use your remaining %s free generations to start improving accessibility now.',
+								$trial_left,
+								'beepbeep-ai-alt-text-generator'
+							),
+							number_format_i18n( $trial_left )
 						)
 						: __( 'Generate ALT text now to improve accessibility and search visibility.', 'beepbeep-ai-alt-text-generator' );
 
@@ -771,7 +773,7 @@ class Logged_In_Dashboard_Resolver {
 						number_format_i18n( $complete ),
 						number_format_i18n( $missing )
 					)
-					: __( 'Generate ALT text now to improve accessibility & search visibility.', 'beepbeep-ai-alt-text-generator' );
+					: __( 'Generate the missing ALT text now to keep your library accessible, searchable, and up to date.', 'beepbeep-ai-alt-text-generator' );
 
 				return [
 					'badge'         => [ 'text' => __( 'Action needed', 'beepbeep-ai-alt-text-generator' ), 'mod' => 'amber' ],
@@ -845,14 +847,14 @@ class Logged_In_Dashboard_Resolver {
 					'support'       => $all_clear_support,
 					'variant'       => 'success',
 					'primary_cta'   => [
+						'label'       => __( 'Re-scan library', 'beepbeep-ai-alt-text-generator' ),
+						'busy_label'  => __( 'Scanning…', 'beepbeep-ai-alt-text-generator' ),
+						'action'      => 'rescan-media-library',
+					],
+					'secondary_cta' => [
 						'label'  => __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' ),
 						'action' => 'navigate',
 						'href'   => admin_url( 'admin.php?page=bbai-library' ),
-					],
-					'secondary_cta' => [
-						'label'       => __( 'Re-scan library', 'beepbeep-ai-alt-text-generator' ),
-						'busy_label'  => __( 'Scanning…', 'beepbeep-ai-alt-text-generator' ),
-						'action'      => 'rescan',
 					],
 					// Positive summary: pro users see optimised count prominently.
 					'summary'       => [
@@ -993,6 +995,10 @@ class Logged_In_Dashboard_Resolver {
 
 			// ── QUOTA_EXHAUSTED ──────────────────────────────────────────────
 			case self::STATE_QUOTA_EXHAUSTED:
+				if ( self::CTX_DASHBOARD === $page_context ) {
+					return [];
+				}
+
 				// Credits page: monetisation framing — emphasise the action.
 				// All other pages: status framing — you've used your allocation.
 				$quota_body = self::CTX_CREDITS === $page_context
@@ -1134,6 +1140,10 @@ class Logged_In_Dashboard_Resolver {
 			// ── ALL_CLEAR ────────────────────────────────────────────────────
 			case self::STATE_ALL_CLEAR:
 			default:
+				if ( self::CTX_DASHBOARD === $page_context ) {
+					return [];
+				}
+
 				$all_clear_body = $complete > 0
 					? sprintf(
 						/* translators: %s: total optimised count */

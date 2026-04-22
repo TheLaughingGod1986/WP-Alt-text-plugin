@@ -13826,10 +13826,60 @@
         if (stateId === 'NEEDS_REVIEW') {
             return __('Open review queue', 'beepbeep-ai-alt-text-generator');
         }
-        if (stateId === 'MISSING_ALT' || stateId === 'QUOTA_EXHAUSTED') {
+        if (stateId === 'MISSING_ALT') {
             return __('Click to generate', 'beepbeep-ai-alt-text-generator');
         }
+        if (stateId === 'QUOTA_EXHAUSTED') {
+            return __('Add credits to continue', 'beepbeep-ai-alt-text-generator');
+        }
         return '';
+    }
+
+    function updateLoggedInDashboardUpgradeFloat(stateId) {
+        var dashboardRoot = document.querySelector('[data-bbai-dashboard-root="1"]');
+        var floatNode = document.querySelector('[data-bbai-li-upgrade-float="1"]');
+        var titleNode;
+        var textNode;
+        var stateKey;
+        var titleAttr;
+        var textAttr;
+        var hasConnectedAccount;
+        var isPremium;
+        var isGuestTrial;
+        var show;
+
+        if (!floatNode) {
+            return;
+        }
+
+        hasConnectedAccount = !!(dashboardRoot && dashboardRoot.getAttribute('data-bbai-has-connected-account') === '1');
+        isPremium = !!(dashboardRoot && dashboardRoot.getAttribute('data-bbai-is-premium') === '1');
+        isGuestTrial = !!(dashboardRoot && dashboardRoot.getAttribute('data-bbai-is-guest-trial') === '1');
+        show = hasConnectedAccount && !isPremium && !isGuestTrial && (stateId === 'MISSING_ALT' || stateId === 'ALL_CLEAR');
+
+        if (!show) {
+            floatNode.hidden = true;
+            floatNode.setAttribute('aria-hidden', 'true');
+            floatNode.setAttribute('data-bbai-li-upgrade-state', '');
+            return;
+        }
+
+        stateKey = String(stateId || '').toLowerCase().replace(/_/g, '-');
+        titleAttr = floatNode.getAttribute('data-bbai-li-upgrade-title-' + stateKey) || '';
+        textAttr = floatNode.getAttribute('data-bbai-li-upgrade-text-' + stateKey) || '';
+        titleNode = floatNode.querySelector('.bbai-li-upgrade-float__title');
+        textNode = floatNode.querySelector('.bbai-li-upgrade-float__text');
+
+        if (titleNode && titleAttr) {
+            titleNode.textContent = titleAttr;
+        }
+        if (textNode && textAttr) {
+            textNode.textContent = textAttr;
+        }
+
+        floatNode.hidden = false;
+        floatNode.removeAttribute('aria-hidden');
+        floatNode.setAttribute('data-bbai-li-upgrade-state', stateId);
     }
 
     function renderLoggedInHeroSummary(hero, summary) {
@@ -14111,7 +14161,18 @@
         });
     }
 
-    function applyLoggedInDashboardStatePayload(stateData) {
+    function dispatchLoggedInDashboardEvent(name, detail) {
+        if (typeof document === 'undefined' || typeof window.CustomEvent !== 'function') {
+            return;
+        }
+
+        document.dispatchEvent(new window.CustomEvent(name, {
+            detail: detail || {}
+        }));
+    }
+
+    function renderLoggedInDashboardHeroState(stateData, options) {
+        var opts = options && typeof options === 'object' ? options : {};
         var hero = document.querySelector('[data-bbai-li-hero="1"]');
         var dashboard = document.querySelector('[data-bbai-logged-in-dashboard]');
         var stateId = String(stateData && stateData.state ? stateData.state : '');
@@ -14120,12 +14181,15 @@
         var supportNode;
         var primaryCta;
         var secondaryCta;
+        var previousState;
 
         if (!hero || !stateId) {
-            return;
+            return null;
         }
 
-        if (dashboard) {
+        previousState = hero.getAttribute('data-bbai-li-state') || '';
+
+        if (dashboard && !opts.skipDashboardAttrs) {
             dashboard.setAttribute('data-state', stateId);
             try {
                 dashboard.setAttribute('data-bbai-li-initial-state', JSON.stringify(stateData));
@@ -14147,24 +14211,53 @@
             supportNode.textContent = String(heroData.support);
         }
 
-        primaryCta = ensureLoggedInHeroCtaNode(
-            hero,
-            '[data-bbai-li-primary-cta]',
-            'bbai-li-btn-primary bbai-btn bbai-btn-primary',
-            'data-bbai-li-primary-cta'
-        );
-        secondaryCta = ensureLoggedInHeroCtaNode(
-            hero,
-            '[data-bbai-li-secondary-cta]',
-            'bbai-li-btn-secondary bbai-btn bbai-btn-secondary',
-            'data-bbai-li-secondary-cta'
-        );
-        configureLoggedInHeroCta(primaryCta, heroData.primary_cta || null, true);
-        configureLoggedInHeroCta(secondaryCta, heroData.secondary_cta || null, false);
+        if (!opts.skipCtas) {
+            primaryCta = ensureLoggedInHeroCtaNode(
+                hero,
+                '[data-bbai-li-primary-cta]',
+                'bbai-li-btn-primary bbai-btn bbai-btn-primary',
+                'data-bbai-li-primary-cta'
+            );
+            secondaryCta = ensureLoggedInHeroCtaNode(
+                hero,
+                '[data-bbai-li-secondary-cta]',
+                'bbai-li-btn-secondary bbai-btn bbai-btn-secondary',
+                'data-bbai-li-secondary-cta'
+            );
+            configureLoggedInHeroCta(primaryCta, heroData.primary_cta || null, true);
+            configureLoggedInHeroCta(secondaryCta, heroData.secondary_cta || null, false);
+        }
+
         renderLoggedInHeroSummary(hero, heroData.summary || []);
         updateLoggedInHeroDonut(hero, stateData);
         updateLoggedInHeroProgress(hero, stateId);
-        clearLoggedInReviewSurface(stateId);
+
+        if (!opts.skipUpgradeFloat) {
+            updateLoggedInDashboardUpgradeFloat(stateId);
+        }
+        if (!opts.skipReviewSurface) {
+            clearLoggedInReviewSurface(stateId);
+        }
+
+        return {
+            hero: hero,
+            dashboard: dashboard,
+            previousState: previousState,
+            nextState: stateId
+        };
+    }
+
+    function applyLoggedInDashboardStatePayload(stateData) {
+        var renderResult = renderLoggedInDashboardHeroState(stateData);
+        if (!renderResult) {
+            return;
+        }
+
+        dispatchLoggedInDashboardEvent('bbai:logged-in-dashboard-state-applied', {
+            previousState: renderResult.previousState,
+            nextState: renderResult.nextState,
+            stateData: stateData
+        });
     }
 
     function runDashboardApproveAll(trigger, e) {
@@ -14198,6 +14291,7 @@
             '[data-bbai-li-action="approve-all"], [data-action="approve-all"]',
             __('Approving...', 'beepbeep-ai-alt-text-generator')
         );
+        dispatchLoggedInDashboardEvent('bbai:dashboard-approve-all-pending', {});
 
         $.ajax({
             url: endpoint,
@@ -14227,6 +14321,18 @@
                     applyDashboardCoveragePayload(statsPayload);
                 }
 
+                dispatchLoggedInDashboardEvent('bbai:dashboard-approve-all-success', {
+                    approvedCount: approvedCount,
+                    nextState: dashboardState && dashboardState.state ? String(dashboardState.state) : '',
+                    hasDashboardState: !!dashboardState
+                });
+
+                if (!dashboardState && approvedCount > 0) {
+                    dispatchLoggedInDashboardEvent('bbai:dashboard-review-count-optimistic', {
+                        approvedCount: approvedCount
+                    });
+                }
+
                 if (dashboardState) {
                     applyLoggedInDashboardStatePayload(dashboardState);
                 }
@@ -14242,6 +14348,9 @@
                 );
             })
             .fail(function(xhr) {
+                dispatchLoggedInDashboardEvent('bbai:dashboard-approve-all-failed', {
+                    message: getApproveAllErrorMessage(xhr)
+                });
                 notifyApproveAllFeedback('error', getApproveAllErrorMessage(xhr));
             })
             .always(function() {
@@ -18078,6 +18187,7 @@
 
     // Expose bulk handlers for non-jQuery fallback bindings.
     window.bbaiApplyLoggedInDashboardStatePayload = applyLoggedInDashboardStatePayload;
+    window.bbaiRenderLoggedInDashboardHeroState = renderLoggedInDashboardHeroState;
     window.bbaiHandleGenerateMissing = handleGenerateMissing;
     window.bbaiHandleRegenerateAll = handleRegenerateAll;
     window.bbaiHandleRegenerateSingle = handleRegenerateSingle;

@@ -104,6 +104,13 @@ async function expectHeroState(page: Page, state: string, timeout = 15000) {
   await expect(page.locator('[data-bbai-li-hero]')).toHaveAttribute('data-bbai-li-state', state, { timeout });
 }
 
+function heroSummaryValue(page: Page, label: string) {
+  return page
+    .locator('.bbai-li-summary__item')
+    .filter({ has: page.locator('.bbai-li-summary__label', { hasText: label }) })
+    .locator('.bbai-li-summary__value');
+}
+
 test.describe('Dashboard truth-driven UI', () => {
   test.describe.configure({ mode: 'serial' });
 
@@ -150,8 +157,12 @@ test.describe('Dashboard truth-driven UI', () => {
     await expect(hero.locator('[data-bbai-li-donut-sub]')).not.toContainText('generating now');
     await expect(page.locator('.bbai-li-progress-steps')).toHaveCount(0);
     await expect(hero.locator('[data-bbai-li-action="pause-job"]')).toHaveCount(0);
+    await expect(page.locator('[data-bbai-banner="1"]')).toHaveCount(0);
+    await expect(page.locator('[data-bbai-li-upgrade-float="1"]')).toBeHidden();
     await expect(page.locator('.bbai-li-activity-strip')).toContainText('Queued automatically');
+    await expect(page.locator('.bbai-li-activity-strip')).toHaveClass(/bbai-li-activity-strip--queued/);
     await expect(page.locator('.bbai-li-activity-strip')).toContainText('Last checked');
+    await expect(hero.locator('.bbai-li-hero-status-line')).toContainText('Checking queue');
 
     await page.reload({ waitUntil: 'networkidle' });
     await expect(root).toHaveAttribute('data-state', 'QUEUED');
@@ -211,7 +222,8 @@ test.describe('Dashboard truth-driven UI', () => {
 
       await expect(hero).toHaveAttribute('data-bbai-li-state', 'PROCESSING');
       await expect(hero.locator('[data-bbai-li-donut-sub]')).toContainText('generating now');
-      await expect(page.locator('.bbai-li-activity-strip')).toContainText('Generating ALT text now');
+      await expect(page.locator('.bbai-li-activity-strip')).toContainText('Generation active');
+      await expect(page.locator('[data-bbai-banner="1"]')).toHaveCount(0);
 
       if (scenario.pauseVisible) {
         await expect(pause).toHaveCount(1);
@@ -220,6 +232,28 @@ test.describe('Dashboard truth-driven UI', () => {
         await expect(pause).toHaveCount(0);
       }
     }
+  });
+
+  test('MISSING_ALT free state stays action-led and uses the upgrade prompt without banner duplication', async ({ page }) => {
+    const fixture: TruthFixture = {
+      state: 'MISSING_ALT',
+      counts: { missing: 5, review: 1, complete: 14, failed: 0, total: 20 },
+      credits: { used: 18, total: 50, remaining: 32, plan: 'free', plan_slug: 'free', is_pro: false },
+      job: null,
+      site: { site_hash: 'fixture-site', has_connected_account: true },
+      resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
+    };
+
+    setDashboardTruthFixture(fixture);
+    await loginAsAdmin(page);
+    await openDashboard(page);
+
+    await expectHeroState(page, 'MISSING_ALT');
+    await expect(page.locator('[data-bbai-li-primary-cta]')).toContainText('Generate missing ALT text');
+    await expect(page.locator('[data-bbai-li-secondary-cta]')).toContainText('Open ALT Library');
+    await expect(page.locator('[data-bbai-banner="1"]')).toHaveCount(0);
+    await expect(page.locator('[data-bbai-li-upgrade-float="1"]')).toBeVisible();
+    await expect(page.locator('[data-bbai-li-upgrade-float="1"]')).toContainText('Scale up with BeepBeep Pro');
   });
 
   test('NEEDS_REVIEW, ALL_CLEAR, and QUOTA_EXHAUSTED use truth counts and state-specific CTAs', async ({ page }) => {
@@ -259,7 +293,7 @@ test.describe('Dashboard truth-driven UI', () => {
           last_run_at: '2026-04-22T08:00:00Z',
         },
         state: 'ALL_CLEAR',
-        primaryText: 'Open ALT Library',
+        primaryText: 'Re-scan library',
         missingCount: '0',
         reviewCount: '0',
         creditsValue: '70',
@@ -292,17 +326,27 @@ test.describe('Dashboard truth-driven UI', () => {
       await expect(hero.locator('[data-bbai-li-primary-cta]')).toContainText(scenario.primaryText);
       await expect(root).toHaveAttribute('data-bbai-missing-count', scenario.missingCount);
       await expect(root).toHaveAttribute('data-bbai-weak-count', scenario.reviewCount);
+      await expect(page.locator('[data-bbai-banner="1"]')).toHaveCount(0);
 
       if (scenario.state === 'ALL_CLEAR') {
         await expect(hero.locator('.bbai-li-summary')).toContainText('Credits left');
         await expect(hero.locator('.bbai-li-summary')).toContainText(scenario.creditsValue);
+        await expect(hero.locator('[data-bbai-li-secondary-cta]')).toContainText('Open ALT Library');
+        await expect(page.locator('[data-bbai-li-upgrade-float="1"]')).toBeVisible();
+        await expect(page.locator('[data-bbai-li-upgrade-float="1"]')).toContainText('Keep new uploads moving with Pro');
       } else {
         await expect(hero.locator('.bbai-li-summary')).toContainText('Credits');
         await expect(hero.locator('.bbai-li-summary')).toContainText(scenario.creditsValue);
+        await expect(page.locator('[data-bbai-li-upgrade-float="1"]')).toBeHidden();
+      }
+
+      if (scenario.state === 'NEEDS_REVIEW') {
+        await expect(hero.locator('[data-bbai-li-secondary-cta]')).toContainText('Open review queue');
       }
 
       if (scenario.state === 'QUOTA_EXHAUSTED') {
         await expect(hero.locator('[data-bbai-li-action="generate-missing"]')).toHaveCount(0);
+        await expect(hero.locator('.bbai-li-donut__meta')).toContainText('Add credits to continue');
       }
     }
   });
@@ -351,7 +395,7 @@ test.describe('Dashboard truth-driven UI', () => {
 
     await expectHeroState(page, 'PROCESSING', 10000);
     await expect(page.locator('[data-bbai-li-hero-headline]')).toContainText('1 of 4');
-    await expect(page.locator('.bbai-li-activity-strip')).toContainText('Generating ALT text now');
+    await expect(page.locator('.bbai-li-activity-strip')).toContainText('Generation active');
     await expect(page.locator('[data-bbai-li-action="pause-job"]')).toContainText('Pause');
   });
 
@@ -407,18 +451,27 @@ test.describe('Dashboard truth-driven UI', () => {
 
     setDashboardTruthFixture(processingFixtureB);
 
+    await expect(page.locator('[data-bbai-li-hero]')).toHaveAttribute('data-bbai-li-live-progress', '1', { timeout: 10000 });
     await expect(page.locator('[data-bbai-li-hero-headline]')).toContainText('5 of 10', { timeout: 10000 });
     await expect(page.locator('.bbai-li-activity-strip')).toContainText('5 processed');
     await expect(page.locator('.bbai-li-activity-strip')).toContainText('5 remaining');
     await expect(page.locator('[data-bbai-li-action="pause-job"]')).toHaveCount(0);
+    await expect(page.locator('[data-bbai-li-hero]')).not.toHaveAttribute('data-bbai-li-live-progress', '1');
 
     setDashboardTruthFixture(reviewFixture);
 
+    await expect(page.locator('[data-bbai-logged-in-dashboard]')).toHaveClass(/bbai-li-dashboard--transition-success/, {
+      timeout: 10000,
+    });
     await expectHeroState(page, 'NEEDS_REVIEW', 10000);
+    await expect(page.locator('[data-bbai-li-hero] .bbai-li-hero-status-line')).toContainText(
+      'Batch complete. Ready for review.',
+      { timeout: 10000 }
+    );
     await expect(page.locator('[data-bbai-li-primary-cta]')).toContainText('Approve all');
-    await expect(page.locator('[data-bbai-li-secondary-cta]')).toContainText('Review in ALT Library');
+    await expect(page.locator('[data-bbai-li-secondary-cta]')).toContainText('Open review queue');
     await expect(page.locator('.bbai-li-activity-strip')).toContainText('ready for review');
-    await expect(page.locator('.bbai-li-activity-strip')).not.toContainText('Generating ALT text now');
+    await expect(page.locator('.bbai-li-activity-strip')).not.toContainText('Generation active');
   });
 
   test('review polling reaches ALL_CLEAR and then stops polling', async ({ page }) => {
@@ -428,7 +481,7 @@ test.describe('Dashboard truth-driven UI', () => {
     const reviewFixture: TruthFixture = {
       state: 'NEEDS_REVIEW',
       counts: { missing: 0, review: 3, complete: 17, failed: 0, total: 20 },
-      credits: { used: 24, total: 100, remaining: 76, plan: 'pro', plan_slug: 'pro', is_pro: true },
+      credits: { used: 24, total: 100, remaining: 76, plan: 'free', plan_slug: 'free', is_pro: false },
       job: null,
       site: { site_hash: 'fixture-site', has_connected_account: true },
       resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
@@ -437,7 +490,7 @@ test.describe('Dashboard truth-driven UI', () => {
     const allClearFixture: TruthFixture = {
       state: 'ALL_CLEAR',
       counts: { missing: 0, review: 0, complete: 20, failed: 0, total: 20 },
-      credits: { used: 24, total: 100, remaining: 76, plan: 'pro', plan_slug: 'pro', is_pro: true },
+      credits: { used: 24, total: 100, remaining: 76, plan: 'free', plan_slug: 'free', is_pro: false },
       job: null,
       site: { site_hash: 'fixture-site', has_connected_account: true },
       resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
@@ -457,9 +510,19 @@ test.describe('Dashboard truth-driven UI', () => {
 
     setDashboardTruthFixture(allClearFixture);
 
+    await expect(page.locator('[data-bbai-logged-in-dashboard]')).toHaveClass(/bbai-li-dashboard--transition-success/, {
+      timeout: 20000,
+    });
     await expectHeroState(page, 'ALL_CLEAR', 20000);
-    await expect(page.locator('[data-bbai-li-primary-cta]')).toContainText('Open ALT Library');
-    await expect(page.locator('.bbai-li-activity-strip')).toContainText('All images optimised');
+    await expect(page.locator('[data-bbai-li-hero] .bbai-li-hero-status-line')).toContainText(
+      'Review complete. Library is all clear.',
+      { timeout: 20000 }
+    );
+    await expect(page.locator('[data-bbai-li-primary-cta]')).toContainText('Re-scan library');
+    await expect(page.locator('.bbai-li-activity-strip')).toContainText('Ready for new uploads');
+    await expect(page.locator('[data-bbai-li-upgrade-float="1"]')).toBeVisible();
+    await expect(page.locator('[data-bbai-li-upgrade-float="1"]')).toContainText('Keep new uploads moving with Pro');
+    await expect(page.locator('[data-bbai-banner="1"]')).toHaveCount(0);
 
     const requestsAtAllClear = requestCounts.truth;
     await page.waitForTimeout(5000);
@@ -490,6 +553,7 @@ test.describe('Dashboard truth-driven UI', () => {
     await expectHeroState(page, 'ALL_CLEAR');
     await page.waitForTimeout(5000);
     expect(requestCounts.truth).toBe(1);
+    await expect(page.locator('[data-bbai-banner="1"]')).toHaveCount(0);
   });
 
   test('polling failures back off and recover without dropping the current UI state', async ({ page }) => {
@@ -564,6 +628,49 @@ test.describe('Dashboard truth-driven UI', () => {
 
     await expect(page.locator('[data-bbai-li-hero-headline]')).toContainText('6 of 8', { timeout: 12000 });
     expect(consoleMessages.some((line) => line.includes('[dashboard-ui] polling_failed'))).toBeTruthy();
+  });
+
+  test('approve all gives instant feedback and a one-cycle optimistic review count reduction', async ({ page }) => {
+    const fixture: TruthFixture = {
+      state: 'NEEDS_REVIEW',
+      counts: { missing: 0, review: 3, complete: 17, failed: 0, total: 20 },
+      credits: { used: 18, total: 100, remaining: 82, plan: 'pro', plan_slug: 'pro', is_pro: true },
+      job: null,
+      site: { site_hash: 'fixture-site', has_connected_account: true },
+      resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
+      last_run_at: '2026-04-22T08:00:10Z',
+    };
+
+    setDashboardTruthFixture(fixture);
+    await loginAsAdmin(page);
+
+    await page.route('**/wp-json/bbai/v1/approve-all-alt-text', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            approved_count: 2,
+            approved_ids: [701, 702],
+          },
+        }),
+      });
+    });
+
+    await openDashboard(page);
+    await expectHeroState(page, 'NEEDS_REVIEW');
+    await expect(heroSummaryValue(page, 'To review')).toHaveText('3');
+
+    const primary = page.locator('[data-bbai-li-primary-cta]');
+    await primary.click();
+
+    await expect(primary).toHaveAttribute('aria-busy', 'true');
+    await expect(page.locator('[data-bbai-li-hero] .bbai-li-hero-status-line')).toContainText('Approving');
+    await expect(heroSummaryValue(page, 'To review')).toHaveText('1');
+    await expect(page.locator('[data-bbai-li-hero] .bbai-li-hero-status-line')).toContainText('Updating review queue…');
+    await expectHeroState(page, 'NEEDS_REVIEW');
   });
 
   test('optimistic generate state unwinds safely when truth confirmation fails', async ({ page }) => {

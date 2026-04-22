@@ -224,8 +224,10 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 			$bbai_li_donut_meta = esc_html__( 'Library fully optimised', 'beepbeep-ai-alt-text-generator' );
 		} elseif ( 'NEEDS_REVIEW' === $bbai_li_state_id ) {
 			$bbai_li_donut_meta = esc_html__( 'Open review queue', 'beepbeep-ai-alt-text-generator' );
-		} elseif ( in_array( $bbai_li_state_id, [ 'MISSING_ALT', 'QUOTA_EXHAUSTED' ], true ) ) {
+		} elseif ( 'MISSING_ALT' === $bbai_li_state_id ) {
 			$bbai_li_donut_meta = esc_html__( 'Click to generate', 'beepbeep-ai-alt-text-generator' );
+		} elseif ( 'QUOTA_EXHAUSTED' === $bbai_li_state_id ) {
+			$bbai_li_donut_meta = esc_html__( 'Add credits to continue', 'beepbeep-ai-alt-text-generator' );
 		}
 		if ( $bbai_li_donut_meta ) :
 		?>
@@ -362,6 +364,11 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 	var heroVariant = hero.getAttribute( 'data-bbai-li-variant' ) || '';
 	var safetyTimer = null;
 	var liveSignalTimer = null;
+	var transientStatusTimer = null;
+	var transitionPulseTimer = null;
+	var successHighlightTimer = null;
+	var processingAnimationFrame = null;
+	var processingAnimationToken = 0;
 	var dashboardPolling = {
 		timer: null,
 		inFlight: false,
@@ -403,7 +410,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		'pause-job':        '<?php echo esc_js( __( 'Pausing…', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		'retry-failed':     '<?php echo esc_js( __( 'Retrying failed images…', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		'approve-all':      '<?php echo esc_js( __( 'Approving…', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		'rescan':           '<?php echo esc_js( __( 'Scanning library…', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		'rescan-media-library': '<?php echo esc_js( __( 'Scanning library…', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		'add-credits':      null,
 	};
 
@@ -411,7 +418,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		working: '<?php echo esc_js( __( 'Working…', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		aMoment: '<?php echo esc_js( __( 'a moment', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		generationInProgress: '<?php echo esc_js( __( 'Generation in progress…', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		noActionNeeded: '<?php echo esc_js( __( 'No action needed.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		checkingQueue: '<?php echo esc_js( __( 'Checking queue…', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		lastCheckedJustNow: '<?php echo esc_js( __( 'Last checked just now', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		lastCheckedSecond: '<?php echo esc_js( __( 'Last checked 1 second ago', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		lastCheckedSeconds: '<?php echo esc_js( __( 'Last checked %s seconds ago', 'beepbeep-ai-alt-text-generator' ) ); ?>',
@@ -422,11 +429,11 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		lastRun: '<?php echo esc_js( __( 'Last run %s', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		queuedBadge: '<?php echo esc_js( __( 'Queued', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		processingBadge: '<?php echo esc_js( __( 'Processing', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedSupport: '<?php echo esc_js( __( 'We\'ll start generating these automatically — or kick it off now.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		queuedSupport: '<?php echo esc_js( __( 'Your next batch is lined up. Start it now or leave it queued for automatic processing.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		queuedHeadlineSingular: '<?php echo esc_js( _n( '%s image is queued', '%s images are queued', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		queuedHeadlinePlural: '<?php echo esc_js( _n( '%s image is queued', '%s images are queued', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedPrimarySingular: '<?php echo esc_js( _n( 'Generate queued image', 'Generate queued images', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedPrimaryPlural: '<?php echo esc_js( _n( 'Generate queued image', 'Generate queued images', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		queuedPrimarySingular: '<?php echo esc_js( __( 'Start generating now', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		queuedPrimaryPlural: '<?php echo esc_js( __( 'Start generating now', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		queuedSecondary: '<?php echo esc_js( __( 'View queued images', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		queuedAutomatically: '<?php echo esc_js( __( 'Queued automatically', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		queuedCountSingular: '<?php echo esc_js( _n( '%s queued', '%s queued', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
@@ -443,7 +450,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		missingLabel: '<?php echo esc_js( __( 'Missing', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		reviewLabel: '<?php echo esc_js( __( 'To review', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		creditsLabel: '<?php echo esc_js( __( 'Credits', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		processingStrip: '<?php echo esc_js( __( 'Generating ALT text now', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		processingStrip: '<?php echo esc_js( __( 'Generation active', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		processedCountSingular: '<?php echo esc_js( _n( '%s processed', '%s processed', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		processedCountPlural: '<?php echo esc_js( _n( '%s processed', '%s processed', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		remainingCountSingular: '<?php echo esc_js( _n( '%s remaining', '%s remaining', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
@@ -454,6 +461,9 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		readyReviewPlural: '<?php echo esc_js( _n( '%s ready for review', '%s ready for review', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		allImagesOptimised: '<?php echo esc_js( __( 'All images optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		libraryUpToDate: '<?php echo esc_js( __( 'Library is up to date', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		readyForNewUploads: '<?php echo esc_js( __( 'Ready for new uploads', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		creditLeftSingular: '<?php echo esc_js( _n( '%s credit left', '%s credits left', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		creditLeftPlural: '<?php echo esc_js( _n( '%s credit left', '%s credits left', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		outOfCredits: '<?php echo esc_js( __( 'Out of credits', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		addMoreToContinue: '<?php echo esc_js( __( 'Add more to continue generating', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		generationPaused: '<?php echo esc_js( __( 'Generation paused', 'beepbeep-ai-alt-text-generator' ) ); ?>',
@@ -475,6 +485,9 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		noImagesNeedAlt: '<?php echo esc_js( __( 'No images need ALT text.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		etaSeconds: '<?php echo esc_js( __( '%ds', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		etaMinutes: '<?php echo esc_js( __( '%dm', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		batchReadyForReview: '<?php echo esc_js( __( 'Batch complete. Ready for review.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		reviewComplete: '<?php echo esc_js( __( 'Review complete. Library is all clear.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		approveUpdating: '<?php echo esc_js( __( 'Updating review queue…', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 	};
 
 	var lastStateTruthFailureLogAt = 0;
@@ -856,23 +869,45 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		return null;
 	}
 
-	function showStatusLine( text ) {
+	function clearTransientStatusTimer() {
+		if ( transientStatusTimer ) {
+			window.clearTimeout( transientStatusTimer );
+			transientStatusTimer = null;
+		}
+	}
+
+	function showStatusLine( text, tone, options ) {
+		var opts = options || {};
 		var existing = hero.querySelector( '.bbai-li-hero-status-line' );
+		if ( ! opts.preserveTimer ) {
+			clearTransientStatusTimer();
+		}
 		if ( existing ) {
+			existing.className = 'bbai-li-hero-status-line' + ( tone ? ' bbai-li-hero-status-line--' + tone : '' );
 			if ( existing.textContent !== text ) { existing.textContent = text; }
 			return;
 		}
 		var support = hero.querySelector( '[data-bbai-li-hero-support]' );
 		if ( ! support ) { return; }
 		var line = document.createElement( 'p' );
-		line.className = 'bbai-li-hero-status-line';
+		line.className = 'bbai-li-hero-status-line' + ( tone ? ' bbai-li-hero-status-line--' + tone : '' );
 		line.setAttribute( 'role', 'status' );
 		line.setAttribute( 'aria-live', 'polite' );
 		line.textContent = text;
 		support.insertAdjacentElement( 'afterend', line );
 	}
 
+	function showTransientStatusLine( text, tone, duration ) {
+		clearTransientStatusTimer();
+		showStatusLine( text, tone, { preserveTimer: true } );
+		transientStatusTimer = window.setTimeout( function () {
+			transientStatusTimer = null;
+			syncStatusLineForTruth( dashboardPolling.currentTruth );
+		}, Math.max( 400, parseInt( duration, 10 ) || 1600 ) );
+	}
+
 	function removeStatusLine() {
+		clearTransientStatusTimer();
 		var line = hero.querySelector( '.bbai-li-hero-status-line' );
 		if ( line ) { line.remove(); }
 	}
@@ -902,7 +937,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 	}
 
 	function getQueuedStatusText( seconds ) {
-		return TEXT.noActionNeeded + ' ' + getQueuedSignalText( seconds );
+		return TEXT.checkingQueue + ' ' + getQueuedSignalText( seconds );
 	}
 
 	function updateQueuedStripSignal( text ) {
@@ -956,13 +991,17 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		}
 		var seconds = Math.max( 0, Math.floor( ( Date.now() - lastCheckedAt ) / 1000 ) );
 		var signalText = getQueuedSignalText( seconds );
-		showStatusLine( getQueuedStatusText( seconds ) );
+		showStatusLine( getQueuedStatusText( seconds ), 'queued' );
 		updateQueuedStripSignal( signalText );
 	}
 
 	function syncStatusLineForTruth( truth ) {
 		var state = getStateTruthState( truth );
 		stopLiveSignalTimer();
+
+		if ( transientStatusTimer ) {
+			return;
+		}
 
 		if ( 'QUEUED' === state ) {
 			renderQueuedSignal();
@@ -971,7 +1010,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		}
 
 		if ( 'PROCESSING' === state ) {
-			showStatusLine( TEXT.generationInProgress );
+			showStatusLine( TEXT.generationInProgress, 'scanning' );
 			return;
 		}
 
@@ -1268,10 +1307,47 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		BBAI_HERO_CFG.missingCount = counts.missing;
 	}
 
+	function renderActivityStripItems( strip, tone, items, signalIndex ) {
+		if ( ! strip ) {
+			return;
+		}
+
+		Array.prototype.slice.call( strip.classList ).forEach( function ( className ) {
+			if ( 0 === className.indexOf( 'bbai-li-activity-strip--' ) ) {
+				strip.classList.remove( className );
+			}
+		} );
+		strip.classList.add( 'bbai-li-activity-strip--' + tone );
+		strip.innerHTML = '';
+
+		var dot = document.createElement( 'span' );
+		dot.className = 'bbai-li-activity-strip__dot';
+		dot.setAttribute( 'aria-hidden', 'true' );
+		strip.appendChild( dot );
+
+		items.forEach( function ( text, index ) {
+			var item;
+			if ( index > 0 ) {
+				var sep = document.createElement( 'span' );
+				sep.className = 'bbai-li-activity-strip__sep';
+				sep.setAttribute( 'aria-hidden', 'true' );
+				strip.appendChild( sep );
+			}
+			item = document.createElement( 'span' );
+			item.className = 'bbai-li-activity-strip__item';
+			if ( index === signalIndex ) {
+				item.setAttribute( 'data-bbai-li-queued-signal', '1' );
+			}
+			item.textContent = text;
+			strip.appendChild( item );
+		} );
+	}
+
 	function renderActivityStripFromTruth( truth ) {
 		var strip = document.querySelector( '[data-bbai-li-activity-strip="1"]' );
 		var state = getStateTruthState( truth );
 		var counts = getTruthCounts( truth );
+		var credits = getTruthCredits( truth );
 		var job = getTruthJob( truth );
 		var lastRunAt = getLastRunAt( truth );
 		var items = [];
@@ -1285,7 +1361,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 
 		switch ( state ) {
 			case 'QUEUED':
-				tone = 'neutral';
+				tone = 'queued';
 				items.push( TEXT.queuedAutomatically );
 				if ( job && job.total > 0 ) {
 					items.push( formatSingularPlural( job.total, TEXT.queuedCountSingular, TEXT.queuedCountPlural ) );
@@ -1327,8 +1403,10 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 				break;
 			case 'ALL_CLEAR':
 				tone = 'ok';
-				items.push( TEXT.allImagesOptimised );
-				items.push( TEXT.libraryUpToDate );
+				items.push( TEXT.readyForNewUploads );
+				if ( credits.remaining > 0 ) {
+					items.push( formatSingularPlural( credits.remaining, TEXT.creditLeftSingular, TEXT.creditLeftPlural ) );
+				}
 				if ( lastRunAt ) {
 					items.push( replaceTokens( TEXT.lastRun, { '%s': formatRelativeAge( lastRunAt ) } ) );
 				}
@@ -1349,35 +1427,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		}
 
 		items = items.slice( 0, 3 );
-		Array.prototype.slice.call( strip.classList ).forEach( function ( className ) {
-			if ( 0 === className.indexOf( 'bbai-li-activity-strip--' ) ) {
-				strip.classList.remove( className );
-			}
-		} );
-		strip.classList.add( 'bbai-li-activity-strip--' + tone );
-		strip.innerHTML = '';
-
-		var dot = document.createElement( 'span' );
-		dot.className = 'bbai-li-activity-strip__dot';
-		dot.setAttribute( 'aria-hidden', 'true' );
-		strip.appendChild( dot );
-
-		items.forEach( function ( text, index ) {
-			var item;
-			if ( index > 0 ) {
-				var sep = document.createElement( 'span' );
-				sep.className = 'bbai-li-activity-strip__sep';
-				sep.setAttribute( 'aria-hidden', 'true' );
-				strip.appendChild( sep );
-			}
-			item = document.createElement( 'span' );
-			item.className = 'bbai-li-activity-strip__item';
-			if ( index === signalIndex ) {
-				item.setAttribute( 'data-bbai-li-queued-signal', '1' );
-			}
-			item.textContent = text;
-			strip.appendChild( item );
-		} );
+		renderActivityStripItems( strip, tone, items, signalIndex );
 	}
 
 	function renderImpactLineFromTruth( truth ) {
@@ -1400,12 +1450,6 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 					nextText = formatSingularPlural( complete, TEXT.impactSoFarSingle, TEXT.impactSoFarPlural );
 				}
 				break;
-			case 'QUEUED':
-				nextText = TEXT.impactQueued;
-				break;
-			case 'PROCESSING':
-				nextText = TEXT.impactProcessing;
-				break;
 		}
 
 		if ( ! nextText ) {
@@ -1424,6 +1468,249 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		if ( line ) {
 			line.textContent = nextText;
 		}
+	}
+
+	function getSummaryItemByLabel( labelText ) {
+		var items = hero.querySelectorAll( '.bbai-li-summary__item' );
+		var match = null;
+		Array.prototype.forEach.call( items, function ( item ) {
+			var labelNode = item.querySelector( '.bbai-li-summary__label' );
+			if ( match || ! labelNode ) {
+				return;
+			}
+			if ( labelNode.textContent.trim().toLowerCase() === String( labelText || '' ).trim().toLowerCase() ) {
+				match = item;
+			}
+		} );
+		return match;
+	}
+
+	function updateSummaryValueByLabel( labelText, value, mod ) {
+		var item = getSummaryItemByLabel( labelText );
+		var valueNode;
+
+		if ( ! item ) {
+			return;
+		}
+
+		valueNode = item.querySelector( '.bbai-li-summary__value' );
+		if ( valueNode ) {
+			valueNode.textContent = String( value );
+			valueNode.classList.add( 'bbai-li-summary__value--updating' );
+			window.setTimeout( function () {
+				valueNode.classList.remove( 'bbai-li-summary__value--updating' );
+			}, 420 );
+		}
+
+		if ( mod ) {
+			removeClassesWithPrefix( item, 'bbai-li-summary__item--' );
+			item.classList.add( 'bbai-li-summary__item--' + String( mod ).replace( /[^a-z0-9_-]/gi, '' ) );
+		}
+	}
+
+	function clearDashboardTransitionFeedback() {
+		var dashboard = getLoggedInDashboardRoot();
+		hero.classList.remove( 'bbai-li-hero--state-transition', 'bbai-li-hero--transition-success' );
+		if ( dashboard ) {
+			dashboard.classList.remove( 'bbai-li-dashboard--state-transition', 'bbai-li-dashboard--transition-success' );
+		}
+	}
+
+	function triggerDashboardTransitionFeedback( fromState, toState ) {
+		var dashboard = getLoggedInDashboardRoot();
+		var isSuccessTransition = ( 'PROCESSING' === fromState && 'NEEDS_REVIEW' === toState ) || ( 'NEEDS_REVIEW' === fromState && 'ALL_CLEAR' === toState );
+
+		if ( ! fromState || ! toState || fromState === toState ) {
+			return;
+		}
+
+		if ( transitionPulseTimer ) {
+			window.clearTimeout( transitionPulseTimer );
+			transitionPulseTimer = null;
+		}
+		if ( successHighlightTimer ) {
+			window.clearTimeout( successHighlightTimer );
+			successHighlightTimer = null;
+		}
+
+		clearDashboardTransitionFeedback();
+		void hero.offsetWidth;
+		hero.classList.add( 'bbai-li-hero--state-transition' );
+		if ( dashboard ) {
+			dashboard.classList.add( 'bbai-li-dashboard--state-transition' );
+		}
+
+		transitionPulseTimer = window.setTimeout( function () {
+			hero.classList.remove( 'bbai-li-hero--state-transition' );
+			if ( dashboard ) {
+				dashboard.classList.remove( 'bbai-li-dashboard--state-transition' );
+			}
+			transitionPulseTimer = null;
+		}, 220 );
+
+		if ( ! isSuccessTransition ) {
+			return;
+		}
+
+		hero.classList.add( 'bbai-li-hero--transition-success' );
+		if ( dashboard ) {
+			dashboard.classList.add( 'bbai-li-dashboard--transition-success' );
+		}
+		showTransientStatusLine( 'NEEDS_REVIEW' === toState ? TEXT.batchReadyForReview : TEXT.reviewComplete, 'success', 1700 );
+		successHighlightTimer = window.setTimeout( function () {
+			hero.classList.remove( 'bbai-li-hero--transition-success' );
+			if ( dashboard ) {
+				dashboard.classList.remove( 'bbai-li-dashboard--transition-success' );
+			}
+			successHighlightTimer = null;
+		}, 1700 );
+	}
+
+	function cancelProcessingAnimation() {
+		processingAnimationToken += 1;
+		if ( processingAnimationFrame ) {
+			window.cancelAnimationFrame( processingAnimationFrame );
+			processingAnimationFrame = null;
+		}
+		hero.removeAttribute( 'data-bbai-li-live-progress' );
+		var dashboard = getLoggedInDashboardRoot();
+		if ( dashboard ) {
+			dashboard.removeAttribute( 'data-bbai-li-live-progress' );
+		}
+	}
+
+	function interpolateNumber( start, end, progress ) {
+		return start + ( end - start ) * progress;
+	}
+
+	function interpolateInteger( start, end, progress ) {
+		return Math.round( interpolateNumber( start, end, progress ) );
+	}
+
+	function buildInterpolatedProcessingTruth( previousTruth, nextTruth, progress ) {
+		var previousCounts = getTruthCounts( previousTruth );
+		var nextCounts = getTruthCounts( nextTruth );
+		var previousJob = getTruthJob( previousTruth );
+		var nextJob = getTruthJob( nextTruth );
+		var nextJobRaw = nextTruth && nextTruth.job && typeof nextTruth.job === 'object' ? nextTruth.job : {};
+		var previousEta = previousJob && null !== previousJob.etaSeconds ? previousJob.etaSeconds : null;
+		var nextEta = nextJob && null !== nextJob.etaSeconds ? nextJob.etaSeconds : null;
+		var frameEta = null;
+
+		if ( null !== previousEta || null !== nextEta ) {
+			frameEta = interpolateInteger(
+				null === previousEta ? ( nextEta || 0 ) : previousEta,
+				null === nextEta ? 0 : nextEta,
+				progress
+			);
+			frameEta = Math.max( 0, frameEta );
+		}
+
+		return {
+			state: 'PROCESSING',
+			counts: {
+				missing: interpolateInteger( previousCounts.missing, nextCounts.missing, progress ),
+				review: interpolateInteger( previousCounts.review, nextCounts.review, progress ),
+				complete: interpolateInteger( previousCounts.complete, nextCounts.complete, progress ),
+				failed: nextCounts.failed,
+				total: nextCounts.total,
+			},
+			credits: nextTruth && nextTruth.credits && typeof nextTruth.credits === 'object' ? nextTruth.credits : {},
+			job: {
+				active: !! ( nextJob && nextJob.active ),
+				pausable: !! ( nextJob && nextJob.pausable ),
+				status: nextJob ? nextJob.status : 'processing',
+				done: interpolateInteger( previousJob ? previousJob.done : 0, nextJob ? nextJob.done : 0, progress ),
+				total: nextJob ? nextJob.total : ( previousJob ? previousJob.total : 0 ),
+				eta_seconds: frameEta,
+				last_checked_at: nextJobRaw.last_checked_at || nextJobRaw.lastCheckedAt || nextJobRaw.checked_at || nextJobRaw.checkedAt || '',
+			},
+			last_run_at: nextTruth && ( nextTruth.last_run_at || nextTruth.lastRunAt ) ? ( nextTruth.last_run_at || nextTruth.lastRunAt ) : '',
+		};
+	}
+
+	function canAnimateProcessingUpdate( previousTruth, nextTruth ) {
+		var previousJob = getTruthJob( previousTruth );
+		var nextJob = getTruthJob( nextTruth );
+		var previousCounts = getTruthCounts( previousTruth );
+		var nextCounts = getTruthCounts( nextTruth );
+
+		if ( 'PROCESSING' !== getStateTruthState( previousTruth ) || 'PROCESSING' !== getStateTruthState( nextTruth ) ) {
+			return false;
+		}
+		if ( ! previousJob || ! nextJob || nextJob.total <= 0 ) {
+			return false;
+		}
+
+		return previousJob.done !== nextJob.done ||
+			previousCounts.missing !== nextCounts.missing ||
+			previousCounts.complete !== nextCounts.complete ||
+			previousCounts.review !== nextCounts.review ||
+			previousJob.etaSeconds !== nextJob.etaSeconds;
+	}
+
+	function animateProcessingTruthUpdate( previousTruth, nextTruth ) {
+		var dashboard = getLoggedInDashboardRoot();
+		var startedAt = 0;
+		var duration = 950;
+		var token;
+
+		if ( ! canAnimateProcessingUpdate( previousTruth, nextTruth ) || 'function' !== typeof window.bbaiRenderLoggedInDashboardHeroState ) {
+			cancelProcessingAnimation();
+			return false;
+		}
+
+		cancelProcessingAnimation();
+		token = processingAnimationToken;
+		hero.setAttribute( 'data-bbai-li-live-progress', '1' );
+		if ( dashboard ) {
+			dashboard.setAttribute( 'data-bbai-li-live-progress', '1' );
+		}
+
+		function step( now ) {
+			var frameProgress;
+			var eased;
+			var frameTruth;
+
+			if ( token !== processingAnimationToken ) {
+				return;
+			}
+
+			if ( ! startedAt ) {
+				startedAt = now;
+			}
+
+			frameProgress = Math.min( 1, ( now - startedAt ) / duration );
+			eased = 1 - Math.pow( 1 - frameProgress, 3 );
+			frameTruth = buildInterpolatedProcessingTruth( previousTruth, nextTruth, eased );
+
+			window.bbaiRenderLoggedInDashboardHeroState( buildProcessingStateData( frameTruth ), {
+				skipCtas: true,
+				skipUpgradeFloat: true,
+				skipReviewSurface: true,
+				skipDashboardAttrs: true,
+			} );
+			renderActivityStripFromTruth( frameTruth );
+
+			if ( frameProgress >= 1 ) {
+				cancelProcessingAnimation();
+				window.bbaiRenderLoggedInDashboardHeroState( buildProcessingStateData( nextTruth ), {
+					skipCtas: true,
+					skipUpgradeFloat: true,
+					skipReviewSurface: true,
+					skipDashboardAttrs: true,
+				} );
+				renderActivityStripFromTruth( nextTruth );
+				return;
+			}
+
+			processingAnimationFrame = window.requestAnimationFrame( step );
+		}
+
+		processingAnimationToken += 1;
+		token = processingAnimationToken;
+		processingAnimationFrame = window.requestAnimationFrame( step );
+		return true;
 	}
 
 	function domTruthMismatch( truth ) {
@@ -1488,7 +1775,8 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		return false;
 	}
 
-	function commitTruthSnapshot( truth, context, logApplied ) {
+	function commitTruthSnapshot( truth, context, logApplied, options ) {
+		var opts = options || {};
 		var job = getTruthJob( truth );
 		clearOptimisticAction();
 		dashboardPolling.currentTruth = truth;
@@ -1497,9 +1785,15 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		dashboardPolling.failureCount = 0;
 		dashboardPolling.requiresResolvedSync = false;
 		syncDashboardRootFromTruth( truth );
-		renderActivityStripFromTruth( truth );
-		renderImpactLineFromTruth( truth );
-		syncStatusLineForTruth( truth );
+		if ( ! opts.skipActivityStrip ) {
+			renderActivityStripFromTruth( truth );
+		}
+		if ( ! opts.skipImpactLine ) {
+			renderImpactLineFromTruth( truth );
+		}
+		if ( ! opts.skipStatusLine ) {
+			syncStatusLineForTruth( truth );
+		}
 		if ( logApplied ) {
 			logDashboardUi( 'state_truth_applied', {
 				context: context || '',
@@ -1515,6 +1809,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		if ( ! stateData || 'function' !== typeof window.bbaiApplyLoggedInDashboardStatePayload ) {
 			return false;
 		}
+		cancelProcessingAnimation();
 		clearOptimisticAction();
 		window.bbaiApplyLoggedInDashboardStatePayload( stateData );
 		commitTruthSnapshot( truth, context, true );
@@ -1527,6 +1822,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 				if ( 'function' !== typeof window.bbaiApplyLoggedInDashboardStatePayload ) {
 					throw new Error( 'dashboard_state_applier_missing' );
 				}
+				cancelProcessingAnimation();
 				clearOptimisticAction();
 				window.bbaiApplyLoggedInDashboardStatePayload( stateData );
 				commitTruthSnapshot( truth, context, true );
@@ -1542,12 +1838,21 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 	}
 
 	function commitTruthPayload( truth, context, forceResolved ) {
+		var previousTruth = dashboardPolling.currentTruth;
 		if ( forceResolved ) {
+			cancelProcessingAnimation();
 			return applyResolvedDashboardTruth( truth, context );
+		}
+		if ( previousTruth && animateProcessingTruthUpdate( previousTruth, truth ) ) {
+			commitTruthSnapshot( truth, context, true, {
+				skipActivityStrip: true,
+			} );
+			return Promise.resolve( truth );
 		}
 		if ( applyLocalActiveTruthState( truth, context ) ) {
 			return Promise.resolve( truth );
 		}
+		cancelProcessingAnimation();
 		commitTruthSnapshot( truth, context, false );
 		return Promise.resolve( truth );
 	}
@@ -1848,6 +2153,8 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 			if ( typeof e.stopImmediatePropagation === 'function' ) {
 				e.stopImmediatePropagation();
 			}
+			showStatusLine( ACTION_STATUS[ 'approve-all' ], 'success' );
+			flashSummaryUpdating();
 			if ( typeof window.bbaiApproveAllNeedsReview === 'function' ) {
 				window.bbaiApproveAllNeedsReview( primaryCta, e );
 				return;
@@ -1868,10 +2175,67 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		}, 25000 );
 	} );
 
+	document.addEventListener( 'bbai:logged-in-dashboard-state-applied', function ( event ) {
+		var detail = event && event.detail ? event.detail : {};
+		triggerDashboardTransitionFeedback( detail.previousState || '', detail.nextState || '' );
+	} );
+
+	document.addEventListener( 'bbai:dashboard-approve-all-pending', function () {
+		if ( 'NEEDS_REVIEW' !== ( hero.getAttribute( 'data-bbai-li-state' ) || '' ) ) {
+			return;
+		}
+		showStatusLine( ACTION_STATUS[ 'approve-all' ], 'success' );
+		flashSummaryUpdating();
+	} );
+
+	document.addEventListener( 'bbai:dashboard-approve-all-success', function ( event ) {
+		var detail = event && event.detail ? event.detail : {};
+		var approvedCount = Math.max( 0, parseInt( detail.approvedCount, 10 ) || 0 );
+
+		if ( 'NEEDS_REVIEW' !== ( hero.getAttribute( 'data-bbai-li-state' ) || '' ) ) {
+			return;
+		}
+
+		if ( approvedCount > 0 ) {
+			showTransientStatusLine( TEXT.approveUpdating, 'success', 1400 );
+			return;
+		}
+
+		syncStatusLineForTruth( dashboardPolling.currentTruth );
+	} );
+
+	document.addEventListener( 'bbai:dashboard-review-count-optimistic', function ( event ) {
+		var detail = event && event.detail ? event.detail : {};
+		var approvedCount = Math.max( 0, parseInt( detail.approvedCount, 10 ) || 0 );
+		var currentTruth = dashboardPolling.currentTruth;
+		var counts;
+		var nextReview;
+		var root;
+
+		if ( approvedCount <= 0 || ! currentTruth || 'NEEDS_REVIEW' !== getStateTruthState( currentTruth ) ) {
+			return;
+		}
+
+		counts = getTruthCounts( currentTruth );
+		nextReview = Math.max( 0, counts.review - approvedCount );
+		root = getDashboardRoot();
+
+		if ( root ) {
+			root.setAttribute( 'data-bbai-weak-count', String( nextReview ) );
+		}
+
+		updateSummaryValueByLabel( TEXT.reviewLabel, formatCount( nextReview ), nextReview > 0 ? 'primary' : 'ok' );
+	} );
+
+	document.addEventListener( 'bbai:dashboard-approve-all-failed', function () {
+		syncStatusLineForTruth( dashboardPolling.currentTruth );
+	} );
+
 	document.addEventListener( 'visibilitychange', function () {
 		var primaryCta = getPrimaryCta();
 
 		if ( document.visibilityState === 'hidden' ) {
+			cancelProcessingAnimation();
 			stopPolling( 'hidden' );
 			return;
 		}
@@ -1892,14 +2256,18 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 	} );
 
 	window.addEventListener( 'pagehide', function () {
+		cancelProcessingAnimation();
 		stopPolling( 'pagehide' );
 	} );
 	window.addEventListener( 'beforeunload', function () {
+		cancelProcessingAnimation();
 		stopPolling( 'beforeunload' );
 	} );
 
 	if ( heroVariant === 'running' ) {
-		showStatusLine( TEXT.generationInProgress );
+		showStatusLine( TEXT.generationInProgress, 'scanning' );
+	} else if ( heroVariant === 'queued' ) {
+		renderQueuedSignal();
 	}
 	runPollingTick( 'startup' );
 

@@ -65,9 +65,22 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 	?>
 
 	<?php
-	$bbai_li_show_upgrade_float = ! empty( $bbai_has_connected_account )
+	$bbai_li_upgrade_float_enabled = ! empty( $bbai_has_connected_account )
 		&& empty( $bbai_state_is_pro_plan )
 		&& empty( $bbai_is_anonymous_trial );
+	$bbai_li_upgrade_float_variants = [
+		'MISSING_ALT' => [
+			'title' => __( 'Scale up with BeepBeep Pro', 'beepbeep-ai-alt-text-generator' ),
+			'text'  => __( 'Unlock API key management, faster bulk actions, and priority support as you work through larger libraries.', 'beepbeep-ai-alt-text-generator' ),
+		],
+		'ALL_CLEAR'   => [
+			'title' => __( 'Keep new uploads moving with Pro', 'beepbeep-ai-alt-text-generator' ),
+			'text'  => __( 'Stay ahead as your library grows with faster bulk actions, API key management, and priority support.', 'beepbeep-ai-alt-text-generator' ),
+		],
+	];
+	$bbai_li_upgrade_float_state = isset( $bbai_li_upgrade_float_variants[ $bbai_li_state_raw ] ) ? $bbai_li_state_raw : '';
+	$bbai_li_upgrade_float_copy  = $bbai_li_upgrade_float_variants[ $bbai_li_upgrade_float_state ] ?? reset( $bbai_li_upgrade_float_variants );
+	$bbai_li_show_upgrade_float  = $bbai_li_upgrade_float_enabled && '' !== $bbai_li_upgrade_float_state;
 	?>
 	<?php /* Hero grid — primary action surface */ ?>
 	<div class="bbai-li-hero-shell">
@@ -82,8 +95,18 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 
 	</div><?php /* /.bbai-li-hero-shell */ ?>
 
-	<?php if ( $bbai_li_show_upgrade_float ) : ?>
-	<aside class="bbai-li-upgrade-float bbai-li-upgrade-float--standalone" aria-label="<?php esc_attr_e( 'Upgrade suggestion', 'beepbeep-ai-alt-text-generator' ); ?>">
+	<?php if ( $bbai_li_upgrade_float_enabled ) : ?>
+	<aside
+		class="bbai-li-upgrade-float bbai-li-upgrade-float--standalone"
+		data-bbai-li-upgrade-float="1"
+		data-bbai-li-upgrade-state="<?php echo esc_attr( $bbai_li_upgrade_float_state ); ?>"
+		data-bbai-li-upgrade-title-missing-alt="<?php echo esc_attr( (string) ( $bbai_li_upgrade_float_variants['MISSING_ALT']['title'] ?? '' ) ); ?>"
+		data-bbai-li-upgrade-text-missing-alt="<?php echo esc_attr( (string) ( $bbai_li_upgrade_float_variants['MISSING_ALT']['text'] ?? '' ) ); ?>"
+		data-bbai-li-upgrade-title-all-clear="<?php echo esc_attr( (string) ( $bbai_li_upgrade_float_variants['ALL_CLEAR']['title'] ?? '' ) ); ?>"
+		data-bbai-li-upgrade-text-all-clear="<?php echo esc_attr( (string) ( $bbai_li_upgrade_float_variants['ALL_CLEAR']['text'] ?? '' ) ); ?>"
+		aria-label="<?php esc_attr_e( 'Upgrade suggestion', 'beepbeep-ai-alt-text-generator' ); ?>"
+		<?php echo $bbai_li_show_upgrade_float ? '' : 'hidden'; ?>
+	>
 		<div class="bbai-li-upgrade-float__body">
 			<span class="bbai-li-upgrade-float__icon" aria-hidden="true">
 				<svg width="18" height="18" viewBox="0 0 18 18" fill="none" focusable="false">
@@ -92,8 +115,8 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 				</svg>
 			</span>
 			<div class="bbai-li-upgrade-float__copy">
-				<h2 class="bbai-li-upgrade-float__title"><?php esc_html_e( 'Upgrade to BeepBeep Pro', 'beepbeep-ai-alt-text-generator' ); ?></h2>
-				<p class="bbai-li-upgrade-float__text"><?php esc_html_e( 'Manage API keys, unlock faster bulk actions, and priority support.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+				<h2 class="bbai-li-upgrade-float__title"><?php echo esc_html( (string) ( $bbai_li_upgrade_float_copy['title'] ?? '' ) ); ?></h2>
+				<p class="bbai-li-upgrade-float__text"><?php echo esc_html( (string) ( $bbai_li_upgrade_float_copy['text'] ?? '' ) ); ?></p>
 			</div>
 		</div>
 		<div class="bbai-li-upgrade-float__actions">
@@ -117,8 +140,9 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 	foreach ( $bbai_strip_summary as $bbai_strip_item ) {
 		$bbai_strip_counts[ strtolower( (string) ( $bbai_strip_item['label'] ?? '' ) ) ] = (string) ( $bbai_strip_item['value'] ?? '' );
 	}
-	$bbai_strip_missing = $bbai_strip_counts[ strtolower( __( 'Missing', 'beepbeep-ai-alt-text-generator' ) ) ] ?? '';
-	$bbai_strip_review  = $bbai_strip_counts[ strtolower( __( 'To review', 'beepbeep-ai-alt-text-generator' ) ) ] ?? '';
+	$bbai_strip_missing      = $bbai_strip_counts[ strtolower( __( 'Missing', 'beepbeep-ai-alt-text-generator' ) ) ] ?? '';
+	$bbai_strip_review       = $bbai_strip_counts[ strtolower( __( 'To review', 'beepbeep-ai-alt-text-generator' ) ) ] ?? '';
+	$bbai_strip_credits_left = $bbai_strip_counts[ strtolower( __( 'Credits left', 'beepbeep-ai-alt-text-generator' ) ) ] ?? '';
 
 	// Format relative time (simple, no dependency).
 	$bbai_li_format_relative = static function ( string $raw ): string {
@@ -158,10 +182,10 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 	$bbai_strip_tone         = 'neutral'; // dot colour: neutral | warn | ok | alert
 	$bbai_strip_signal_index = -1;
 
-	switch ( $bbai_li_state_raw ) {
+		switch ( $bbai_li_state_raw ) {
 
 		case 'QUEUED':
-			$bbai_strip_tone  = 'neutral';
+			$bbai_strip_tone  = 'queued';
 			$bbai_strip_total = $bbai_strip_job ? (int) $bbai_strip_job['total'] : 0;
 			$bbai_strip_items[] = __( 'Queued automatically', 'beepbeep-ai-alt-text-generator' );
 			if ( $bbai_strip_total > 0 ) {
@@ -186,7 +210,7 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 			$bbai_strip_done  = $bbai_strip_job ? (int) $bbai_strip_job['done']  : 0;
 			$bbai_strip_total = $bbai_strip_job ? (int) $bbai_strip_job['total'] : 0;
 			$bbai_strip_left  = max( 0, $bbai_strip_total - $bbai_strip_done );
-			$bbai_strip_items[] = __( 'Generating ALT text now', 'beepbeep-ai-alt-text-generator' );
+			$bbai_strip_items[] = __( 'Generation active', 'beepbeep-ai-alt-text-generator' );
 			if ( $bbai_strip_done > 0 ) {
 				$bbai_strip_items[] = sprintf(
 					/* translators: %s: count */
@@ -248,8 +272,15 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 
 		case 'ALL_CLEAR':
 			$bbai_strip_tone    = 'ok';
-			$bbai_strip_items[] = __( 'All images optimised', 'beepbeep-ai-alt-text-generator' );
-			$bbai_strip_items[] = __( 'Library is up to date', 'beepbeep-ai-alt-text-generator' );
+			$bbai_strip_items[] = __( 'Ready for new uploads', 'beepbeep-ai-alt-text-generator' );
+			if ( '' !== $bbai_strip_credits_left && (int) str_replace( ',', '', $bbai_strip_credits_left ) > 0 ) {
+				$bbai_strip_credit_count = (int) str_replace( ',', '', $bbai_strip_credits_left );
+				$bbai_strip_items[]      = sprintf(
+					/* translators: %s: remaining credits */
+					_n( '%s credit left', '%s credits left', $bbai_strip_credit_count, 'beepbeep-ai-alt-text-generator' ),
+					$bbai_strip_credits_left
+				);
+			}
 			if ( $bbai_strip_last_fmt ) {
 				$bbai_strip_items[] = sprintf(
 					/* translators: %s: relative time */
@@ -314,12 +345,6 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 					number_format_i18n( $bbai_impact_complete )
 				);
 			}
-			break;
-		case 'QUEUED':
-			$bbai_impact_line = __( 'We\'ll start generating these automatically.', 'beepbeep-ai-alt-text-generator' );
-			break;
-		case 'PROCESSING':
-			$bbai_impact_line = __( 'BeepBeep is working through your library now.', 'beepbeep-ai-alt-text-generator' );
 			break;
 	}
 	if ( '' !== $bbai_impact_line ) :
