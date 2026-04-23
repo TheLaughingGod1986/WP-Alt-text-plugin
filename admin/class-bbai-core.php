@@ -4284,6 +4284,121 @@ class Core {
 	    }
 
     /**
+     * Return the total number of image attachments available for dashboard
+     * bootstrap inventory sync.
+     *
+     * @return int
+     */
+    public function get_media_inventory_sync_total(): int {
+        return $this->get_alt_coverage_image_total();
+    }
+
+    /**
+     * Build a lightweight page of media inventory items for backend bootstrap
+     * sync. This intentionally avoids sending image binaries.
+     *
+     * @param int $limit Page size.
+     * @param int $offset Offset into the image attachment list.
+     * @return array<int, array<string, mixed>>
+     */
+    public function get_media_inventory_sync_items(int $limit = 100, int $offset = 0): array {
+        $limit = max(1, min(250, $limit));
+        $offset = max(0, $offset);
+        $ids = $this->get_all_attachment_ids($limit, $offset);
+        $items = [];
+
+        foreach ($ids as $attachment_id) {
+            $item = $this->build_media_inventory_sync_item((int) $attachment_id);
+            if (is_array($item) && !empty($item)) {
+                $items[] = $item;
+            }
+        }
+
+        return $items;
+    }
+
+    /**
+     * Build one backend inventory sync item for the given attachment.
+     *
+     * @param int $attachment_id Attachment ID.
+     * @return array<string, mixed>|null
+     */
+    private function build_media_inventory_sync_item(int $attachment_id): ?array {
+        if ($attachment_id <= 0 || !$this->is_image($attachment_id)) {
+            return null;
+        }
+
+        $attachment = get_post($attachment_id);
+        if (!$attachment instanceof \WP_Post) {
+            return null;
+        }
+
+        $image_url = wp_get_attachment_url($attachment_id);
+        $file_path = get_attached_file($attachment_id);
+        $filename = $file_path ? wp_basename($file_path) : '';
+        $title = get_the_title($attachment_id);
+        $caption = wp_get_attachment_caption($attachment_id);
+        $alt_text = trim((string) get_post_meta($attachment_id, '_wp_attachment_image_alt', true));
+        $approved_hash = (string) get_post_meta($attachment_id, '_bbai_user_approved_hash', true);
+        $source_value = sanitize_key((string) get_post_meta($attachment_id, '_bbai_source', true));
+        $metadata = wp_get_attachment_metadata($attachment_id);
+        $width = isset($metadata['width']) ? (int) $metadata['width'] : 0;
+        $height = isset($metadata['height']) ? (int) $metadata['height'] : 0;
+        $mime_type = get_post_mime_type($attachment_id) ?: '';
+        $context = $this->build_generation_context_for_attachment($attachment_id);
+        $row_state = [
+            'status' => '',
+            'user_approved' => false,
+        ];
+
+        if ($alt_text !== '') {
+            $row_state = $this->get_library_workspace_row_state(
+                (object) [
+                    'ID' => $attachment_id,
+                    'alt_text' => $alt_text,
+                ]
+            );
+        }
+
+        $status_hint = 'missing_alt';
+        if ($alt_text !== '') {
+            $status_hint = (($row_state['status'] ?? '') === 'weak') ? 'needs_review' : 'complete';
+        }
+
+        $created_at = get_post_time('c', true, $attachment_id);
+        $updated_at = get_post_modified_time('c', true, $attachment_id);
+
+        return [
+            'attachment_id' => (string) $attachment_id,
+            'attachmentId' => (string) $attachment_id,
+            'image_id' => (string) $attachment_id,
+            'imageId' => (string) $attachment_id,
+            'image' => [
+                'url' => $image_url ? esc_url_raw($image_url) : '',
+                'filename' => sanitize_file_name($filename),
+                'mime_type' => sanitize_text_field($mime_type),
+                'width' => max(0, $width),
+                'height' => max(0, $height),
+            ],
+            'context' => [
+                'title' => sanitize_text_field(is_string($title) ? $title : ''),
+                'caption' => sanitize_text_field(is_string($caption) ? $caption : ''),
+                'pageTitle' => sanitize_text_field((string) ($context['post_title'] ?? '')),
+                'filename' => sanitize_file_name((string) ($context['filename'] ?? $filename)),
+            ],
+            'alt_text' => sanitize_text_field($alt_text),
+            'altText' => sanitize_text_field($alt_text),
+            'status_hint' => $status_hint,
+            'state_hint' => $status_hint,
+            'has_alt' => $alt_text !== '',
+            'user_approved' => !empty($approved_hash) || !empty($row_state['user_approved']),
+            'source' => $source_value,
+            'uploaded_at' => is_string($created_at) ? $created_at : '',
+            'updated_at' => is_string($updated_at) && $updated_at !== '' ? $updated_at : (is_string($created_at) ? $created_at : ''),
+        ];
+    }
+
+    /**
      * Build a compact list of recent, representative trial images for the dashboard preview.
      *
      * @param int $limit Maximum number of rows to return.

@@ -556,6 +556,255 @@ test.describe('Dashboard truth-driven UI', () => {
     await expect(page.locator('[data-bbai-banner="1"]')).toHaveCount(0);
   });
 
+  test('empty backend ledger with local media triggers one bootstrap sync', async ({ page }) => {
+    let bootstrapRequestCount = 0;
+    const fixture: TruthFixture = {
+      state: 'MISSING_ALT',
+      counts: { missing: 0, review: 0, complete: 0, failed: 0, total: 0 },
+      credits: { used: 12, total: 100, remaining: 88, plan: 'pro', plan_slug: 'pro', is_pro: true },
+      job: null,
+      site: { site_hash: 'fixture-site', has_connected_account: true },
+      resolution_sources: {
+        state: 'fixture',
+        counts: 'image_alt_states_empty_unseeded',
+        job: 'fixture',
+        credits: 'fixture',
+        site: 'fixture',
+      },
+    };
+
+    setDashboardTruthFixture(fixture);
+    await loginAsAdmin(page);
+
+    await page.route('**/wp-json/bbai/v1/dashboard/bootstrap-sync', async (route) => {
+      bootstrapRequestCount += 1;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          triggered: true,
+          sent_count: 12,
+          local_total: 12,
+          chunks: 1,
+          truth: fixture,
+        }),
+      });
+    });
+
+    await openDashboard(page);
+    await expectHeroState(page, 'MISSING_ALT');
+    await expect.poll(() => bootstrapRequestCount).toBe(1);
+    await page.waitForTimeout(2500);
+    expect(bootstrapRequestCount).toBe(1);
+  });
+
+  test('successful bootstrap refreshes dashboard truth', async ({ page }) => {
+    let truthRequestCount = 0;
+    const initialFixture: TruthFixture = {
+      state: 'MISSING_ALT',
+      counts: { missing: 0, review: 0, complete: 0, failed: 0, total: 0 },
+      credits: { used: 12, total: 100, remaining: 88, plan: 'pro', plan_slug: 'pro', is_pro: true },
+      job: null,
+      site: { site_hash: 'fixture-site', has_connected_account: true },
+      resolution_sources: {
+        state: 'fixture',
+        counts: 'image_alt_states_empty_unseeded',
+        job: 'fixture',
+        credits: 'fixture',
+        site: 'fixture',
+      },
+    };
+    const refreshedFixture: TruthFixture = {
+      state: 'MISSING_ALT',
+      counts: { missing: 6, review: 2, complete: 12, failed: 0, total: 20 },
+      credits: { used: 12, total: 100, remaining: 88, plan: 'pro', plan_slug: 'pro', is_pro: true },
+      job: null,
+      site: { site_hash: 'fixture-site', has_connected_account: true },
+      resolution_sources: {
+        state: 'fixture',
+        counts: 'image_alt_states',
+        job: 'fixture',
+        credits: 'fixture',
+        site: 'fixture',
+      },
+    };
+
+    setDashboardTruthFixture(initialFixture);
+    await loginAsAdmin(page);
+
+    await page.route('**/wp-json/bbai/v1/dashboard/bootstrap-sync', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          triggered: true,
+          sent_count: 20,
+          local_total: 20,
+          chunks: 1,
+        }),
+      });
+    });
+
+    await page.route('**/wp-json/bbai/v1/dashboard/state-truth', async (route, request) => {
+      if (request.method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+
+      truthRequestCount += 1;
+      if (truthRequestCount >= 2) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(refreshedFixture),
+        });
+        return;
+      }
+
+      await route.continue();
+    });
+
+    await openDashboard(page);
+    await expectHeroState(page, 'MISSING_ALT');
+    await expect(heroSummaryValue(page, 'Missing')).toHaveText('6', { timeout: 10000 });
+    await expect(heroSummaryValue(page, 'To review')).toHaveText('2');
+    expect(truthRequestCount).toBeGreaterThanOrEqual(2);
+  });
+
+  test('already-populated ledger does not re-trigger full sync', async ({ page }) => {
+    let bootstrapRequestCount = 0;
+    const fixture: TruthFixture = {
+      state: 'MISSING_ALT',
+      counts: { missing: 4, review: 1, complete: 15, failed: 0, total: 20 },
+      credits: { used: 12, total: 100, remaining: 88, plan: 'pro', plan_slug: 'pro', is_pro: true },
+      job: null,
+      site: { site_hash: 'fixture-site', has_connected_account: true },
+      resolution_sources: {
+        state: 'fixture',
+        counts: 'image_alt_states',
+        job: 'fixture',
+        credits: 'fixture',
+        site: 'fixture',
+      },
+    };
+
+    setDashboardTruthFixture(fixture);
+    await loginAsAdmin(page);
+
+    await page.route('**/wp-json/bbai/v1/dashboard/bootstrap-sync', async (route) => {
+      bootstrapRequestCount += 1;
+      await route.continue();
+    });
+
+    await openDashboard(page);
+    await expectHeroState(page, 'MISSING_ALT');
+    await expect(heroSummaryValue(page, 'Missing')).toHaveText('4');
+    await page.waitForTimeout(2500);
+    expect(bootstrapRequestCount).toBe(0);
+  });
+
+  test('failed bootstrap sync does not loop endlessly', async ({ page }) => {
+    let bootstrapRequestCount = 0;
+    let truthRequestCount = 0;
+    const fixture: TruthFixture = {
+      state: 'MISSING_ALT',
+      counts: { missing: 0, review: 0, complete: 0, failed: 0, total: 0 },
+      credits: { used: 12, total: 100, remaining: 88, plan: 'pro', plan_slug: 'pro', is_pro: true },
+      job: null,
+      site: { site_hash: 'fixture-site', has_connected_account: true },
+      resolution_sources: {
+        state: 'fixture',
+        counts: 'image_alt_states_empty_unseeded',
+        job: 'fixture',
+        credits: 'fixture',
+        site: 'fixture',
+      },
+    };
+
+    setDashboardTruthFixture(fixture);
+    await loginAsAdmin(page);
+
+    await page.route('**/wp-json/bbai/v1/dashboard/state-truth', async (route, request) => {
+      if (request.method() === 'GET') {
+        truthRequestCount += 1;
+      }
+      await route.continue();
+    });
+
+    await page.route('**/wp-json/bbai/v1/dashboard/bootstrap-sync', async (route) => {
+      bootstrapRequestCount += 1;
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 'dashboard_bootstrap_sync_failed',
+          message: 'bootstrap failed',
+        }),
+      });
+    });
+
+    await openDashboard(page);
+    await expectHeroState(page, 'MISSING_ALT');
+    await expect(heroSummaryValue(page, 'Missing')).toHaveText('0');
+    await page.waitForTimeout(4000);
+    expect(bootstrapRequestCount).toBe(1);
+    expect(truthRequestCount).toBe(1);
+  });
+
+  test('dashboard exits the false zero state after bootstrap truth refresh', async ({ page }) => {
+    const initialFixture: TruthFixture = {
+      state: 'MISSING_ALT',
+      counts: { missing: 0, review: 0, complete: 0, failed: 0, total: 0 },
+      credits: { used: 12, total: 100, remaining: 88, plan: 'pro', plan_slug: 'pro', is_pro: true },
+      job: null,
+      site: { site_hash: 'fixture-site', has_connected_account: true },
+      resolution_sources: {
+        state: 'fixture',
+        counts: 'image_alt_states_empty_unseeded',
+        job: 'fixture',
+        credits: 'fixture',
+        site: 'fixture',
+      },
+    };
+    const refreshedFixture: TruthFixture = {
+      state: 'MISSING_ALT',
+      counts: { missing: 9, review: 0, complete: 11, failed: 0, total: 20 },
+      credits: { used: 12, total: 100, remaining: 88, plan: 'pro', plan_slug: 'pro', is_pro: true },
+      job: null,
+      site: { site_hash: 'fixture-site', has_connected_account: true },
+      resolution_sources: {
+        state: 'fixture',
+        counts: 'image_alt_states',
+        job: 'fixture',
+        credits: 'fixture',
+        site: 'fixture',
+      },
+    };
+
+    setDashboardTruthFixture(initialFixture);
+    await loginAsAdmin(page);
+
+    await page.route('**/wp-json/bbai/v1/dashboard/bootstrap-sync', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          triggered: true,
+          sent_count: 20,
+          local_total: 20,
+          chunks: 1,
+          truth: refreshedFixture,
+        }),
+      });
+    });
+
+    await openDashboard(page);
+    await expectHeroState(page, 'MISSING_ALT');
+    await expect(heroSummaryValue(page, 'Missing')).toHaveText('9', { timeout: 10000 });
+    await expect(heroSummaryValue(page, 'Missing')).not.toHaveText('0');
+    await expect(page.locator('[data-bbai-li-primary-cta]')).toContainText('Generate missing ALT text');
+  });
+
   test('polling failures back off and recover without dropping the current UI state', async ({ page }) => {
     const consoleMessages: string[] = [];
     let truthRequestCount = 0;

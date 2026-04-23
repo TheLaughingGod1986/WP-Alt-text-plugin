@@ -15,6 +15,10 @@ use BeepBeepAI\AltTextGenerator\Input_Validator;
 
 class REST_Controller {
 
+	private const DASHBOARD_BOOTSTRAP_SYNC_LOCK_TTL = 5 * MINUTE_IN_SECONDS;
+	private const DASHBOARD_BOOTSTRAP_SYNC_FAILURE_TTL = 15 * MINUTE_IN_SECONDS;
+	private const DASHBOARD_BOOTSTRAP_SYNC_SUCCESS_TTL = 2 * HOUR_IN_SECONDS;
+
 	/**
 	 * Core plugin implementation.
 	 *
@@ -221,6 +225,16 @@ class REST_Controller {
 			[
 				'methods'             => 'GET',
 				'callback'            => [ $this, 'handle_logged_in_dashboard_state_truth' ],
+				'permission_callback' => [ $this, 'can_edit_media' ],
+			]
+		);
+
+		register_rest_route(
+			'bbai/v1',
+			'/dashboard/bootstrap-sync',
+			[
+				'methods'             => 'POST',
+				'callback'            => [ $this, 'handle_logged_in_dashboard_bootstrap_sync' ],
 				'permission_callback' => [ $this, 'can_edit_media' ],
 			]
 		);
@@ -1392,6 +1406,274 @@ class REST_Controller {
 		}
 
 		return rest_ensure_response( $truth );
+	}
+
+	/**
+	 * Trigger a one-time backend bootstrap sync when dashboard truth is linked but
+	 * still backed by an empty/unseeded image ledger.
+	 *
+	 * @param \WP_REST_Request $request REST request instance.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function handle_logged_in_dashboard_bootstrap_sync( \WP_REST_Request $request ) {
+		$truth = $this->get_logged_in_dashboard_state_truth_payload();
+		if ( ! is_array( $truth ) ) {
+			return new \WP_Error(
+				'dashboard_bootstrap_truth_unavailable',
+				__( 'Dashboard truth is currently unavailable.', 'beepbeep-ai-alt-text-generator' ),
+				[ 'status' => 503 ]
+			);
+		}
+
+		$eligibility = $this->get_dashboard_bootstrap_sync_eligibility( $truth );
+		if ( empty( $eligibility['eligible'] ) ) {
+			return rest_ensure_response(
+				[
+					'triggered' => false,
+					'skipped'   => true,
+					'reason'    => (string) ( $eligibility['reason'] ?? 'not_eligible' ),
+					'truth'     => $truth,
+				]
+			);
+		}
+
+		$site_hash = (string) ( $eligibility['site_hash'] ?? '' );
+		$status    = $this->get_dashboard_bootstrap_sync_status( $site_hash );
+		$now       = time();
+
+		if ( ! empty( $status['status'] ) && ! empty( $status['expires_at'] ) && (int) $status['expires_at'] > $now ) {
+			return rest_ensure_response(
+				[
+					'triggered' => false,
+					'skipped'   => true,
+					'reason'    => (string) $status['status'],
+					'truth'     => $truth,
+				]
+			);
+		}
+
+		$api_client = $this->core->get_api_client();
+		if ( ! $api_client || ! method_exists( $api_client, 'sync_media_inventory_chunk' ) ) {
+			return new \WP_Error(
+				'dashboard_bootstrap_sync_unavailable',
+				__( 'Media inventory bootstrap sync is not available.', 'beepbeep-ai-alt-text-generator' ),
+				[ 'status' => 501 ]
+			);
+		}
+
+		if (
+			! method_exists( $this->core, 'get_media_inventory_sync_total' )
+			|| ! method_exists( $this->core, 'get_media_inventory_sync_items' )
+		) {
+			return new \WP_Error(
+				'dashboard_bootstrap_sync_unavailable',
+				__( 'Media inventory bootstrap sync is not available.', 'beepbeep-ai-alt-text-generator' ),
+				[ 'status' => 501 ]
+			);
+		}
+
+		$local_total = max( 0, (int) $this->core->get_media_inventory_sync_total() );
+		if ( $local_total <= 0 ) {
+			return rest_ensure_response(
+				[
+					'triggered'   => false,
+					'skipped'     => true,
+					'reason'      => 'no_local_media',
+					'local_total' => 0,
+					'truth'       => $truth,
+				]
+			);
+		}
+
+		$chunk_size  = max( 25, min( 250, (int) apply_filters( 'bbai_dashboard_bootstrap_sync_chunk_size', 100 ) ) );
+		$chunk_count = max( 1, (int) ceil( $local_total / $chunk_size ) );
+		$sent_count  = 0;
+		$chunk_index = 0;
+		$offset      = 0;
+
+		$this->set_dashboard_bootstrap_sync_status(
+			$site_hash,
+			[
+				'status'     => 'in_progress',
+				'expires_at' => $now + self::DASHBOARD_BOOTSTRAP_SYNC_LOCK_TTL,
+				'attempted_at' => gmdate( 'c', $now ),
+			],
+			self::DASHBOARD_BOOTSTRAP_SYNC_LOCK_TTL
+		);
+
+		while ( $offset < $local_total ) {
+			$items = $this->core->get_media_inventory_sync_items( $chunk_size, $offset );
+			if ( empty( $items ) ) {
+				break;
+			}
+
+			$chunk_index++;
+			$is_last_chunk = ( $offset + count( $items ) ) >= $local_total;
+			$response      = $api_client->sync_media_inventory_chunk(
+				(array) $items,
+				[
+					'reason'        => 'dashboard_bootstrap',
+					'total_items'   => $local_total,
+					'chunk_index'   => $chunk_index,
+					'chunk_count'   => $chunk_count,
+					'offset'        => $offset,
+					'is_last_chunk' => $is_last_chunk,
+				]
+			);
+
+			if ( is_wp_error( $response ) ) {
+				$this->set_dashboard_bootstrap_sync_status(
+					$site_hash,
+					[
+						'status'     => 'failed',
+						'expires_at' => $now + self::DASHBOARD_BOOTSTRAP_SYNC_FAILURE_TTL,
+						'attempted_at' => gmdate( 'c', $now ),
+					],
+					self::DASHBOARD_BOOTSTRAP_SYNC_FAILURE_TTL
+				);
+
+				return new \WP_Error(
+					'dashboard_bootstrap_sync_failed',
+					$response->get_error_message(),
+					[
+						'status'   => 502,
+						'upstream' => $response->get_error_data(),
+					]
+				);
+			}
+
+			$sent_count += count( $items );
+			$offset     += count( $items );
+
+			if ( count( $items ) < $chunk_size ) {
+				break;
+			}
+		}
+
+		$refreshed_truth = $this->get_logged_in_dashboard_state_truth_payload();
+
+		$this->set_dashboard_bootstrap_sync_status(
+			$site_hash,
+			[
+				'status'     => 'success',
+				'expires_at' => $now + self::DASHBOARD_BOOTSTRAP_SYNC_SUCCESS_TTL,
+				'attempted_at' => gmdate( 'c', $now ),
+			],
+			self::DASHBOARD_BOOTSTRAP_SYNC_SUCCESS_TTL
+		);
+
+		return rest_ensure_response(
+			[
+				'triggered'   => true,
+				'sent_count'  => $sent_count,
+				'local_total' => $local_total,
+				'chunks'      => $chunk_index,
+				'truth'       => is_array( $refreshed_truth ) ? $refreshed_truth : null,
+			]
+		);
+	}
+
+	/**
+	 * Determine whether the current dashboard truth should trigger an inventory
+	 * bootstrap sync.
+	 *
+	 * @param array<string,mixed> $truth Raw dashboard truth payload.
+	 * @return array<string,mixed>
+	 */
+	private function get_dashboard_bootstrap_sync_eligibility( array $truth ): array {
+		$payload = isset( $truth['data'] ) && is_array( $truth['data'] ) ? $truth['data'] : $truth;
+		if ( ! is_array( $payload ) ) {
+			return [
+				'eligible' => false,
+				'reason'   => 'invalid_truth',
+			];
+		}
+
+		if ( ! empty( $payload['fallback'] ) ) {
+			return [
+				'eligible' => false,
+				'reason'   => 'fallback_truth',
+			];
+		}
+
+		$site = is_array( $payload['site'] ?? null ) ? $payload['site'] : [];
+		$site_hash = sanitize_text_field(
+			(string) ( $site['site_hash'] ?? $site['siteHash'] ?? $site['site_id'] ?? $site['siteId'] ?? '' )
+		);
+		if ( '' === $site_hash ) {
+			return [
+				'eligible' => false,
+				'reason'   => 'missing_site_hash',
+			];
+		}
+
+		$state = strtoupper( trim( (string) ( $payload['state'] ?? '' ) ) );
+		$counts = is_array( $payload['counts'] ?? null ) ? $payload['counts'] : [];
+		$missing = max( 0, (int) ( $counts['missing'] ?? $counts['missing_alt'] ?? $counts['missingAlt'] ?? 0 ) );
+		$review = max( 0, (int) ( $counts['review'] ?? $counts['needs_review'] ?? $counts['needsReview'] ?? $counts['weak'] ?? 0 ) );
+		$complete = max( 0, (int) ( $counts['complete'] ?? $counts['optimized'] ?? $counts['optimised'] ?? 0 ) );
+		$failed = max( 0, (int) ( $counts['failed'] ?? 0 ) );
+		$total = max( 0, (int) ( $counts['total'] ?? $counts['total_images'] ?? $counts['totalImages'] ?? 0 ) );
+		$zero_counts = 0 === $missing && 0 === $review && 0 === $complete && 0 === $failed && 0 === $total;
+
+		$sources = $payload['resolution_sources'] ?? $payload['resolutionSources'] ?? $payload['sources'] ?? [];
+		$sources = is_array( $sources ) ? $sources : [];
+		$counts_source = strtolower(
+			trim( (string) ( $sources['counts'] ?? $sources['count_source'] ?? $sources['countSource'] ?? '' ) )
+		);
+		$source_indicates_unseeded = '' !== $counts_source
+			&& 1 === preg_match( '/assumed|empty|unseeded|seed|bootstrap|ledger/', $counts_source );
+
+		return [
+			'eligible'  => $source_indicates_unseeded || ( 'MISSING_ALT' === $state && $zero_counts ),
+			'reason'    => $source_indicates_unseeded ? 'unseeded_counts_source' : ( $zero_counts ? 'missing_alt_zero_counts' : 'not_eligible' ),
+			'site_hash' => $site_hash,
+		];
+	}
+
+	/**
+	 * Read the current bootstrap sync status for a linked site.
+	 *
+	 * @param string $site_hash Linked site identifier.
+	 * @return array<string,mixed>
+	 */
+	private function get_dashboard_bootstrap_sync_status( string $site_hash ): array {
+		if ( '' === $site_hash ) {
+			return [];
+		}
+
+		$status = get_transient( $this->get_dashboard_bootstrap_sync_status_key( $site_hash ) );
+		return is_array( $status ) ? $status : [];
+	}
+
+	/**
+	 * Persist the bootstrap sync status for a linked site.
+	 *
+	 * @param string               $site_hash Linked site identifier.
+	 * @param array<string,mixed> $status Status payload.
+	 * @param int                  $ttl Seconds to retain the status.
+	 * @return void
+	 */
+	private function set_dashboard_bootstrap_sync_status( string $site_hash, array $status, int $ttl ): void {
+		if ( '' === $site_hash ) {
+			return;
+		}
+
+		set_transient(
+			$this->get_dashboard_bootstrap_sync_status_key( $site_hash ),
+			$status,
+			max( 1, $ttl )
+		);
+	}
+
+	/**
+	 * Build the transient key used to guard dashboard bootstrap sync attempts.
+	 *
+	 * @param string $site_hash Linked site identifier.
+	 * @return string
+	 */
+	private function get_dashboard_bootstrap_sync_status_key( string $site_hash ): string {
+		return 'bbai_dashboard_bootstrap_sync_' . md5( $site_hash );
 	}
 
 	/**

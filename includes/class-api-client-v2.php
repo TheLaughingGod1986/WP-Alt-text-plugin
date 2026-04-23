@@ -1615,6 +1615,185 @@ class API_Client_V2 {
     }
 
     /**
+     * Sync a chunk of the current WordPress media inventory to the backend so it
+     * can bootstrap authoritative image state rows for the linked site.
+     *
+     * The exact backend route is still rollout-sensitive, so this method tries a
+     * short list of compatible candidates and stops once one accepts the payload.
+     *
+     * @param array<int, array<string, mixed>> $items Media inventory items.
+     * @param array<string, mixed>             $meta  Chunk metadata.
+     * @return array<string, mixed>|\WP_Error
+     */
+    public function sync_media_inventory_chunk(array $items, array $meta = []) {
+        if (empty($items)) {
+            return [
+                'skipped' => true,
+                'reason' => 'empty_inventory',
+            ];
+        }
+
+        $endpoints = apply_filters(
+            'bbai_dashboard_inventory_sync_endpoints',
+            [
+                '/dashboard/media-inventory/sync',
+                '/api/dashboard/media-inventory/sync',
+                '/dashboard/inventory/sync',
+                '/api/dashboard/inventory/sync',
+                '/dashboard/bootstrap-sync',
+                '/api/dashboard/bootstrap-sync',
+                '/image-alt-states/bootstrap',
+                '/api/image-alt-states/bootstrap',
+                '/image-alt-states/sync',
+                '/api/image-alt-states/sync',
+                '/site-media/sync',
+                '/api/site-media/sync',
+                '/sites/media/sync',
+                '/api/sites/media/sync',
+            ],
+            $items,
+            $meta
+        );
+        $endpoints = array_values(
+            array_unique(
+                array_filter(
+                    array_map(
+                        static function ($endpoint) {
+                            $endpoint = trim((string) $endpoint);
+                            if ($endpoint === '') {
+                                return '';
+                            }
+
+                            return '/' . ltrim($endpoint, '/');
+                        },
+                        (array) $endpoints
+                    )
+                )
+            )
+        );
+
+        if (empty($endpoints)) {
+            return new \WP_Error(
+                'inventory_sync_unavailable',
+                __('No media inventory sync endpoints are configured.', 'beepbeep-ai-alt-text-generator')
+            );
+        }
+
+        $body = $this->build_media_inventory_sync_body($items, $meta);
+        $headers = [
+            'X-BBAI-Client' => 'wp-plugin-dashboard-bootstrap',
+            'X-BBAI-Sync-Reason' => (string) ($body['sync_reason'] ?? 'dashboard_bootstrap'),
+        ];
+        $last_error = null;
+
+        foreach ($endpoints as $endpoint) {
+            $response = $this->request_with_retry($endpoint, 'POST', $body, 2, false, $headers);
+            if (is_wp_error($response)) {
+                $last_error = $response;
+                continue;
+            }
+
+            if (!empty($response['success'])) {
+                $data = isset($response['data']) && is_array($response['data']) ? $response['data'] : [];
+                $data['endpoint'] = $endpoint;
+                return $data;
+            }
+
+            $status_code = isset($response['status_code']) ? (int) $response['status_code'] : 0;
+            $error_data = isset($response['data']) && is_array($response['data']) ? $response['data'] : [];
+            $message = $error_data['message'] ?? $error_data['error'] ?? __('Failed to sync media inventory.', 'beepbeep-ai-alt-text-generator');
+            $error_code = strtoupper((string) ($error_data['code'] ?? ''));
+            $message_lower = strtolower(is_string($message) ? $message : '');
+            $route_missing = in_array($status_code, [404, 405], true)
+                || in_array($error_code, ['NOT_FOUND', 'ROUTE_NOT_FOUND'], true)
+                || strpos($message_lower, 'cannot post') !== false
+                || strpos($message_lower, 'not found') !== false;
+
+            if ($route_missing) {
+                $last_error = new \WP_Error(
+                    'inventory_sync_endpoint_missing',
+                    __('Media inventory sync endpoint was not found.', 'beepbeep-ai-alt-text-generator'),
+                    [
+                        'status_code' => $status_code,
+                        'endpoint' => $endpoint,
+                    ]
+                );
+                continue;
+            }
+
+            return new \WP_Error(
+                'inventory_sync_failed',
+                is_string($message) && $message !== ''
+                    ? $message
+                    : __('Failed to sync media inventory.', 'beepbeep-ai-alt-text-generator'),
+                [
+                    'status_code' => $status_code,
+                    'endpoint' => $endpoint,
+                    'api_response' => $error_data,
+                ]
+            );
+        }
+
+        return $last_error ?: new \WP_Error(
+            'inventory_sync_unavailable',
+            __('Media inventory sync endpoint is currently unavailable.', 'beepbeep-ai-alt-text-generator')
+        );
+    }
+
+    /**
+     * Build the dashboard bootstrap inventory payload sent to the backend.
+     *
+     * @param array<int, array<string, mixed>> $items Media inventory items.
+     * @param array<string, mixed>             $meta  Chunk metadata.
+     * @return array<string, mixed>
+     */
+    private function build_media_inventory_sync_body(array $items, array $meta = []): array {
+        $site_id = $this->get_site_id();
+        $site_url = get_site_url();
+        $chunk_total = count($items);
+        $total_items = max($chunk_total, (int) ($meta['total_items'] ?? $chunk_total));
+        $chunk_index = max(1, (int) ($meta['chunk_index'] ?? 1));
+        $chunk_count = max($chunk_index, (int) ($meta['chunk_count'] ?? 1));
+        $offset = max(0, (int) ($meta['offset'] ?? 0));
+        $sync_reason = sanitize_key((string) ($meta['reason'] ?? 'dashboard_bootstrap'));
+        if ($sync_reason === '') {
+            $sync_reason = 'dashboard_bootstrap';
+        }
+
+        return [
+            'sync_reason' => $sync_reason,
+            'source' => 'wordpress_media_library',
+            'site_hash' => $site_id,
+            'site_id' => $site_id,
+            'install_id' => $site_id,
+            'site_url' => $site_url,
+            'site' => [
+                'site_hash' => $site_id,
+                'site_id' => $site_id,
+                'install_id' => $site_id,
+                'site_url' => $site_url,
+                'plugin_version' => defined('BEEPBEEP_AI_VERSION') ? BEEPBEEP_AI_VERSION : '1.0.0',
+                'wordpress_version' => get_bloginfo('version'),
+            ],
+            'items' => array_values($items),
+            'total_items' => $total_items,
+            'chunk_index' => $chunk_index,
+            'chunk_count' => $chunk_count,
+            'offset' => $offset,
+            'limit' => $chunk_total,
+            'is_last_chunk' => !empty($meta['is_last_chunk']),
+            'inventory' => [
+                'total_items' => $total_items,
+                'chunk_index' => $chunk_index,
+                'chunk_count' => $chunk_count,
+                'offset' => $offset,
+                'limit' => $chunk_total,
+                'is_last_chunk' => !empty($meta['is_last_chunk']),
+            ],
+        ];
+    }
+
+    /**
      * Convert stored license data into a usage payload
      */
     private function format_license_usage_from_cache($license_data) {
