@@ -882,7 +882,7 @@ class Logged_In_Dashboard_Resolver {
 						],
 						[
 							'label' => __( 'Credits left', 'beepbeep-ai-alt-text-generator' ),
-							'value' => number_format_i18n( max( 0, $cr_total - $cr_used ) ),
+							'value' => number_format_i18n( max( 0, $cr_total - $cr_used ) ) . ' / ' . number_format_i18n( $cr_total ),
 							'mod'   => 'muted',
 						],
 					],
@@ -1272,9 +1272,9 @@ class Logged_In_Dashboard_Resolver {
 			'mod'   => $is_review_state ? 'primary' : ( $review > 0 ? 'warn' : 'ok' ),
 		];
 		$items[] = [
-			'label' => __( 'Credits', 'beepbeep-ai-alt-text-generator' ),
-			'value' => number_format_i18n( $cr_used ) . ' / ' . number_format_i18n( $cr_total ),
-			'mod'   => $is_review_state ? 'muted' : ( $cr_pct >= 100 ? 'alert' : ( $cr_pct >= 80 ? 'warn' : 'muted' ) ),
+			'label' => __( 'Credits left', 'beepbeep-ai-alt-text-generator' ),
+			'value' => number_format_i18n( $cr_left ) . ' / ' . number_format_i18n( $cr_total ),
+			'mod'   => $is_review_state ? 'muted' : ( $cr_left <= 0 ? 'alert' : ( $cr_pct >= 80 ? 'warn' : 'muted' ) ),
 		];
 
 		return $items;

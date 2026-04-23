@@ -238,7 +238,7 @@ test.describe('Dashboard truth-driven UI', () => {
     const fixture: TruthFixture = {
       state: 'MISSING_ALT',
       counts: { missing: 5, review: 1, complete: 14, failed: 0, total: 20 },
-      credits: { used: 18, total: 50, remaining: 32, plan: 'free', plan_slug: 'free', is_pro: false },
+      credits: { used: 0, total: 50, remaining: 50, plan: 'free', plan_slug: 'free', is_pro: false },
       job: null,
       site: { site_hash: 'fixture-site', has_connected_account: true },
       resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
@@ -254,6 +254,11 @@ test.describe('Dashboard truth-driven UI', () => {
     await expect(page.locator('[data-bbai-banner="1"]')).toHaveCount(0);
     await expect(page.locator('[data-bbai-li-upgrade-float="1"]')).toBeVisible();
     await expect(page.locator('[data-bbai-li-upgrade-float="1"]')).toContainText('Scale up with BeepBeep Pro');
+    await expect(heroSummaryValue(page, 'Credits left')).toHaveText('50 / 50');
+
+    await page.reload({ waitUntil: 'networkidle' });
+    await expectHeroState(page, 'MISSING_ALT');
+    await expect(heroSummaryValue(page, 'Credits left')).toHaveText('50 / 50');
   });
 
   test('NEEDS_REVIEW, ALL_CLEAR, and QUOTA_EXHAUSTED use truth counts and state-specific CTAs', async ({ page }) => {
@@ -280,7 +285,7 @@ test.describe('Dashboard truth-driven UI', () => {
         primaryText: 'Approve all',
         missingCount: '0',
         reviewCount: '6',
-        creditsValue: '30 / 100',
+        creditsValue: '70 / 100',
       },
       {
         fixture: {
@@ -296,7 +301,7 @@ test.describe('Dashboard truth-driven UI', () => {
         primaryText: 'Re-scan library',
         missingCount: '0',
         reviewCount: '0',
-        creditsValue: '70',
+        creditsValue: '70 / 100',
       },
       {
         fixture: {
@@ -311,7 +316,7 @@ test.describe('Dashboard truth-driven UI', () => {
         primaryText: 'Add credits',
         missingCount: '4',
         reviewCount: '0',
-        creditsValue: '100 / 100',
+        creditsValue: '0 / 100',
       },
     ];
 
@@ -328,15 +333,14 @@ test.describe('Dashboard truth-driven UI', () => {
       await expect(root).toHaveAttribute('data-bbai-weak-count', scenario.reviewCount);
       await expect(page.locator('[data-bbai-banner="1"]')).toHaveCount(0);
 
+      await expect(hero.locator('.bbai-li-summary')).toContainText('Credits left');
+      await expect(hero.locator('.bbai-li-summary')).toContainText(scenario.creditsValue);
+
       if (scenario.state === 'ALL_CLEAR') {
-        await expect(hero.locator('.bbai-li-summary')).toContainText('Credits left');
-        await expect(hero.locator('.bbai-li-summary')).toContainText(scenario.creditsValue);
         await expect(hero.locator('[data-bbai-li-secondary-cta]')).toContainText('Open ALT Library');
         await expect(page.locator('[data-bbai-li-upgrade-float="1"]')).toBeVisible();
         await expect(page.locator('[data-bbai-li-upgrade-float="1"]')).toContainText('Keep new uploads moving with Pro');
       } else {
-        await expect(hero.locator('.bbai-li-summary')).toContainText('Credits');
-        await expect(hero.locator('.bbai-li-summary')).toContainText(scenario.creditsValue);
         await expect(page.locator('[data-bbai-li-upgrade-float="1"]')).toBeHidden();
       }
 
@@ -349,6 +353,34 @@ test.describe('Dashboard truth-driven UI', () => {
         await expect(hero.locator('.bbai-li-donut__meta')).toContainText('Add credits to continue');
       }
     }
+  });
+
+  test('NEEDS_REVIEW impact line stays aligned with truth across reload', async ({ page }) => {
+    const fixture: TruthFixture = {
+      state: 'NEEDS_REVIEW',
+      counts: { missing: 0, review: 19, complete: 42, failed: 0, total: 61 },
+      credits: { used: 30, total: 100, remaining: 70, plan: 'free', plan_slug: 'free', is_pro: false },
+      job: null,
+      site: { site_hash: 'fixture-site', has_connected_account: true },
+      resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
+      last_run_at: '2026-04-22T08:00:00Z',
+    };
+
+    setDashboardTruthFixture(fixture);
+    await loginAsAdmin(page);
+    await openDashboard(page);
+
+    await expectHeroState(page, 'NEEDS_REVIEW');
+    await expect(page.locator('.bbai-li-impact-line')).toHaveText('19 ready for review');
+    await expect(page.locator('.bbai-li-activity-strip')).toContainText('19 ready for review');
+
+    await page.waitForTimeout(2500);
+    await expect(page.locator('.bbai-li-impact-line')).toHaveText('19 ready for review');
+
+    await page.reload({ waitUntil: 'networkidle' });
+    await expectHeroState(page, 'NEEDS_REVIEW');
+    await expect(page.locator('.bbai-li-impact-line')).toHaveText('19 ready for review');
+    await expect(page.locator('.bbai-li-activity-strip')).toContainText('19 ready for review');
   });
 
   test('polling moves QUEUED jobs into PROCESSING without refresh', async ({ page }) => {
@@ -599,6 +631,7 @@ test.describe('Dashboard truth-driven UI', () => {
   });
 
   test('successful bootstrap refreshes dashboard truth', async ({ page }) => {
+    let bootstrapRequestCount = 0;
     let truthRequestCount = 0;
     const initialFixture: TruthFixture = {
       state: 'MISSING_ALT',
@@ -633,6 +666,7 @@ test.describe('Dashboard truth-driven UI', () => {
     await loginAsAdmin(page);
 
     await page.route('**/wp-json/bbai/v1/dashboard/bootstrap-sync', async (route) => {
+      bootstrapRequestCount += 1;
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -669,6 +703,63 @@ test.describe('Dashboard truth-driven UI', () => {
     await expect(heroSummaryValue(page, 'Missing')).toHaveText('6', { timeout: 10000 });
     await expect(heroSummaryValue(page, 'To review')).toHaveText('2');
     expect(truthRequestCount).toBeGreaterThanOrEqual(2);
+    expect(bootstrapRequestCount).toBe(1);
+
+    await page.reload({ waitUntil: 'networkidle' });
+    await expectHeroState(page, 'MISSING_ALT');
+    await page.waitForTimeout(2500);
+    expect(bootstrapRequestCount).toBe(1);
+  });
+
+  test('bootstrap stays retryable when refreshed truth is still empty and unseeded', async ({ page }) => {
+    let bootstrapRequestCount = 0;
+    const fixture: TruthFixture = {
+      state: 'MISSING_ALT',
+      counts: { missing: 0, review: 0, complete: 0, failed: 0, total: 0 },
+      credits: { used: 12, total: 100, remaining: 88, plan: 'pro', plan_slug: 'pro', is_pro: true },
+      job: null,
+      site: { site_hash: 'fixture-site', has_connected_account: true },
+      resolution_sources: {
+        state: 'fixture',
+        counts: 'image_alt_states_empty_unseeded',
+        job: 'fixture',
+        credits: 'fixture',
+        site: 'fixture',
+      },
+    };
+
+    setDashboardTruthFixture(fixture);
+    await loginAsAdmin(page);
+
+    await page.route('**/wp-json/bbai/v1/dashboard/bootstrap-sync', async (route) => {
+      bootstrapRequestCount += 1;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          triggered: true,
+          sent_count: 20,
+          local_total: 20,
+          chunks: 1,
+          truth: fixture,
+        }),
+      });
+    });
+
+    await openDashboard(page);
+    await expectHeroState(page, 'MISSING_ALT');
+    await expect.poll(() => bootstrapRequestCount).toBe(1);
+    await page.waitForTimeout(2500);
+    expect(bootstrapRequestCount).toBe(1);
+
+    const firstGuardState = await page.evaluate(() =>
+      window.localStorage.getItem('bbaiDashboardBootstrapSync:fixture-site')
+    );
+    expect(firstGuardState).toBeNull();
+
+    await page.reload({ waitUntil: 'networkidle' });
+    await expectHeroState(page, 'MISSING_ALT');
+    await expect.poll(() => bootstrapRequestCount).toBe(2);
   });
 
   test('already-populated ledger does not re-trigger full sync', async ({ page }) => {

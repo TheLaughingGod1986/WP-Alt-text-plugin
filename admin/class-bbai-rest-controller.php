@@ -1432,6 +1432,14 @@ class REST_Controller {
 					'triggered' => false,
 					'skipped'   => true,
 					'reason'    => (string) ( $eligibility['reason'] ?? 'not_eligible' ),
+					'debug'     => [
+						'eligibility' => [
+							'eligible'    => false,
+							'reason'      => (string) ( $eligibility['reason'] ?? 'not_eligible' ),
+							'linked_site' => '' !== (string) ( $eligibility['site_hash'] ?? '' ),
+							'site_hash'   => (string) ( $eligibility['site_hash'] ?? '' ),
+						],
+					],
 					'truth'     => $truth,
 				]
 			);
@@ -1447,6 +1455,19 @@ class REST_Controller {
 					'triggered' => false,
 					'skipped'   => true,
 					'reason'    => (string) $status['status'],
+					'debug'     => [
+						'eligibility' => [
+							'eligible'    => true,
+							'reason'      => (string) ( $eligibility['reason'] ?? 'eligible' ),
+							'linked_site' => '' !== $site_hash,
+							'site_hash'   => $site_hash,
+						],
+						'guard'       => [
+							'status'      => (string) ( $status['status'] ?? '' ),
+							'expires_at'  => (int) ( $status['expires_at'] ?? 0 ),
+							'attempted_at'=> (string) ( $status['attempted_at'] ?? '' ),
+						],
+					],
 					'truth'     => $truth,
 				]
 			);
@@ -1480,6 +1501,18 @@ class REST_Controller {
 					'skipped'     => true,
 					'reason'      => 'no_local_media',
 					'local_total' => 0,
+					'debug'       => [
+						'eligibility'     => [
+							'eligible'    => true,
+							'reason'      => (string) ( $eligibility['reason'] ?? 'eligible' ),
+							'linked_site' => '' !== $site_hash,
+							'site_hash'   => $site_hash,
+						],
+						'media_inventory' => [
+							'local_total'  => 0,
+							'sample_items' => [],
+						],
+					],
 					'truth'       => $truth,
 				]
 			);
@@ -1490,6 +1523,26 @@ class REST_Controller {
 		$sent_count  = 0;
 		$chunk_index = 0;
 		$offset      = 0;
+		$inserted_count = 0;
+		$updated_count  = 0;
+		$changed_count  = 0;
+		$unchanged_count = 0;
+		$inventory_sample = [];
+		$last_chunk_count = 0;
+		$upstream_endpoints = [];
+		$bootstrap_started_at = gmdate( 'c', $now );
+
+		Debug_Log::log(
+			'info',
+			'Dashboard bootstrap sync starting',
+			[
+				'site_hash'   => $site_hash,
+				'local_total' => $local_total,
+				'chunk_size'  => $chunk_size,
+				'chunk_count' => $chunk_count,
+			],
+			'api'
+		);
 
 		$this->set_dashboard_bootstrap_sync_status(
 			$site_hash,
@@ -1504,15 +1557,57 @@ class REST_Controller {
 		while ( $offset < $local_total ) {
 			$items = $this->core->get_media_inventory_sync_items( $chunk_size, $offset );
 			if ( empty( $items ) ) {
+				Debug_Log::log(
+					'warning',
+					'Dashboard bootstrap sync returned an empty media page',
+					[
+						'site_hash' => $site_hash,
+						'offset'    => $offset,
+						'chunk_size' => $chunk_size,
+					],
+					'api'
+				);
 				break;
 			}
 
 			$chunk_index++;
 			$is_last_chunk = ( $offset + count( $items ) ) >= $local_total;
+			$last_chunk_count = count( $items );
+			$sample_items  = array_map(
+				static function ( array $item ): array {
+					$image = isset( $item['image'] ) && is_array( $item['image'] ) ? $item['image'] : [];
+
+					return [
+						'attachment_id' => (string) ( $item['attachment_id'] ?? $item['attachmentId'] ?? '' ),
+						'current_state' => (string) ( $item['current_state'] ?? $item['currentState'] ?? '' ),
+						'image_url'     => (string) ( $item['image_url'] ?? $item['imageUrl'] ?? $image['url'] ?? '' ),
+					];
+				},
+				array_slice( $items, 0, 3 )
+			);
+			if ( empty( $inventory_sample ) ) {
+				$inventory_sample = $sample_items;
+			}
+
+			Debug_Log::log(
+				'info',
+				'Dashboard bootstrap sync sending chunk',
+				[
+					'site_hash'     => $site_hash,
+					'chunk_index'   => $chunk_index,
+					'chunk_count'   => $chunk_count,
+					'offset'        => $offset,
+					'item_count'    => count( $items ),
+					'is_last_chunk' => $is_last_chunk,
+					'sample_items'  => $sample_items,
+				],
+				'api'
+			);
 			$response      = $api_client->sync_media_inventory_chunk(
 				(array) $items,
 				[
 					'reason'        => 'dashboard_bootstrap',
+					'scope'         => 'full_site',
 					'total_items'   => $local_total,
 					'chunk_index'   => $chunk_index,
 					'chunk_count'   => $chunk_count,
@@ -1542,6 +1637,33 @@ class REST_Controller {
 				);
 			}
 
+			$inserted_count += max( 0, (int) ( $response['inserted'] ?? 0 ) );
+			$updated_count  += max( 0, (int) ( $response['updated'] ?? 0 ) );
+			$changed_count  += max( 0, (int) ( $response['changed'] ?? 0 ) );
+			$unchanged_count += max( 0, (int) ( $response['unchanged'] ?? 0 ) );
+			if ( ! empty( $response['endpoint'] ) ) {
+				$upstream_endpoints[] = (string) $response['endpoint'];
+				$upstream_endpoints   = array_values( array_unique( $upstream_endpoints ) );
+			}
+
+			Debug_Log::log(
+				'info',
+				'Dashboard bootstrap sync chunk completed',
+				[
+					'site_hash'   => $site_hash,
+					'chunk_index' => $chunk_index,
+					'endpoint'    => (string) ( $response['endpoint'] ?? '' ),
+					'inserted'    => max( 0, (int) ( $response['inserted'] ?? 0 ) ),
+					'updated'     => max( 0, (int) ( $response['updated'] ?? 0 ) ),
+					'changed'     => max( 0, (int) ( $response['changed'] ?? 0 ) ),
+					'unchanged'   => max( 0, (int) ( $response['unchanged'] ?? 0 ) ),
+					'coverage'    => isset( $response['coverage'] ) && is_array( $response['coverage'] )
+						? (string) ( $response['coverage']['status'] ?? '' )
+						: '',
+				],
+				'api'
+			);
+
 			$sent_count += count( $items );
 			$offset     += count( $items );
 
@@ -1551,6 +1673,22 @@ class REST_Controller {
 		}
 
 		$refreshed_truth = $this->get_logged_in_dashboard_state_truth_payload();
+		$refreshed_payload = is_array( $refreshed_truth['data'] ?? null ) ? $refreshed_truth['data'] : ( is_array( $refreshed_truth ) ? $refreshed_truth : [] );
+		$refreshed_counts = is_array( $refreshed_payload['counts'] ?? null ) ? $refreshed_payload['counts'] : [];
+		$refreshed_sources = $refreshed_payload['resolution_sources'] ?? $refreshed_payload['resolutionSources'] ?? $refreshed_payload['sources'] ?? [];
+		$refreshed_sources = is_array( $refreshed_sources ) ? $refreshed_sources : [];
+		$refreshed_resolution = is_array( $refreshed_payload['resolution'] ?? null ) ? $refreshed_payload['resolution'] : [];
+		$refreshed_counts_source = (string) (
+			$refreshed_sources['counts']
+			?? $refreshed_sources['count_source']
+			?? $refreshed_sources['countSource']
+			?? $refreshed_resolution['count_source']
+			?? $refreshed_resolution['countSource']
+			?? ''
+		);
+		$refreshed_missing = max( 0, (int) ( $refreshed_counts['missing'] ?? $refreshed_counts['missing_alt'] ?? $refreshed_counts['missingAlt'] ?? 0 ) );
+		$refreshed_review = max( 0, (int) ( $refreshed_counts['review'] ?? $refreshed_counts['needs_review'] ?? $refreshed_counts['needsReview'] ?? $refreshed_counts['to_review'] ?? $refreshed_counts['toReview'] ?? $refreshed_counts['weak'] ?? 0 ) );
+		$refresh_eligibility = is_array( $refreshed_truth ) ? $this->get_dashboard_bootstrap_sync_eligibility( $refreshed_truth ) : [ 'eligible' => false ];
 
 		$this->set_dashboard_bootstrap_sync_status(
 			$site_hash,
@@ -1562,12 +1700,70 @@ class REST_Controller {
 			self::DASHBOARD_BOOTSTRAP_SYNC_SUCCESS_TTL
 		);
 
+		Debug_Log::log(
+			'info',
+			'Dashboard bootstrap sync finished',
+			[
+				'site_hash'      => $site_hash,
+				'sent_count'     => $sent_count,
+				'local_total'    => $local_total,
+				'chunks'         => $chunk_index,
+				'inserted'       => $inserted_count,
+				'updated'        => $updated_count,
+				'changed'        => $changed_count,
+				'unchanged'      => $unchanged_count,
+				'truth_state'    => is_array( $refreshed_truth ) ? (string) ( $refreshed_truth['state'] ?? '' ) : '',
+				'count_source'   => is_array( $refreshed_truth['resolution_sources'] ?? null )
+					? (string) ( $refreshed_truth['resolution_sources']['counts'] ?? '' )
+					: '',
+			],
+			'api'
+		);
+
 		return rest_ensure_response(
 			[
 				'triggered'   => true,
 				'sent_count'  => $sent_count,
 				'local_total' => $local_total,
 				'chunks'      => $chunk_index,
+				'inserted'    => $inserted_count,
+				'updated'     => $updated_count,
+				'changed'     => $changed_count,
+				'unchanged'   => $unchanged_count,
+				'debug'       => [
+					'eligibility'     => [
+						'eligible'    => true,
+						'reason'      => (string) ( $eligibility['reason'] ?? 'eligible' ),
+						'linked_site' => '' !== $site_hash,
+						'site_hash'   => $site_hash,
+					],
+					'media_inventory' => [
+						'local_total'  => $local_total,
+						'sample_items' => $inventory_sample,
+					],
+					'payload'         => [
+						'request_image_count' => $last_chunk_count,
+						'site_identifier'     => $site_hash,
+					],
+					'network'         => [
+						'request_started_at' => $bootstrap_started_at,
+						'upstream_endpoints' => $upstream_endpoints,
+					],
+					'response'        => [
+						'success'   => true,
+						'inserted'  => $inserted_count,
+						'updated'   => $updated_count,
+						'changed'   => $changed_count,
+						'unchanged' => $unchanged_count,
+					],
+					'truth_refresh'   => [
+						'state'                    => is_array( $refreshed_truth ) ? (string) ( $refreshed_truth['state'] ?? '' ) : '',
+						'counts_source'            => $refreshed_counts_source,
+						'missing'                  => $refreshed_missing,
+						'review'                   => $refreshed_review,
+						'still_bootstrap_eligible' => ! empty( $refresh_eligibility['eligible'] ),
+					],
+				],
 				'truth'       => is_array( $refreshed_truth ) ? $refreshed_truth : null,
 			]
 		);

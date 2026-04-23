@@ -4290,7 +4290,18 @@ class Core {
      * @return int
      */
     public function get_media_inventory_sync_total(): int {
-        return $this->get_alt_coverage_image_total();
+        $total = $this->get_alt_coverage_image_total();
+
+        if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+            Debug_Log::log('info', 'Dashboard bootstrap media inventory total resolved', [
+                'total_images' => $total,
+                'site_id' => function_exists('\BeepBeepAI\AltTextGenerator\get_site_identifier')
+                    ? (string) \BeepBeepAI\AltTextGenerator\get_site_identifier()
+                    : '',
+            ], 'api');
+        }
+
+        return $total;
     }
 
     /**
@@ -4312,6 +4323,16 @@ class Core {
             if (is_array($item) && !empty($item)) {
                 $items[] = $item;
             }
+        }
+
+        if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
+            Debug_Log::log('info', 'Dashboard bootstrap media inventory page collected', [
+                'limit' => $limit,
+                'offset' => $offset,
+                'attachment_ids_sample' => array_slice(array_values(array_map('intval', (array) $ids)), 0, 20),
+                'item_count' => count($items),
+                'sample_items' => $this->summarize_media_inventory_sync_items_for_log($items),
+            ], 'api');
         }
 
         return $items;
@@ -4364,6 +4385,7 @@ class Core {
         if ($alt_text !== '') {
             $status_hint = (($row_state['status'] ?? '') === 'weak') ? 'needs_review' : 'complete';
         }
+        $current_state = $this->map_media_inventory_sync_state($status_hint, $alt_text !== '', !empty($approved_hash) || !empty($row_state['user_approved']));
 
         $created_at = get_post_time('c', true, $attachment_id);
         $updated_at = get_post_modified_time('c', true, $attachment_id);
@@ -4390,12 +4412,66 @@ class Core {
             'altText' => sanitize_text_field($alt_text),
             'status_hint' => $status_hint,
             'state_hint' => $status_hint,
+            'current_state' => $current_state,
+            'currentState' => $current_state,
             'has_alt' => $alt_text !== '',
             'user_approved' => !empty($approved_hash) || !empty($row_state['user_approved']),
             'source' => $source_value,
+            'image_url' => $image_url ? esc_url_raw($image_url) : '',
+            'imageUrl' => $image_url ? esc_url_raw($image_url) : '',
             'uploaded_at' => is_string($created_at) ? $created_at : '',
             'updated_at' => is_string($updated_at) && $updated_at !== '' ? $updated_at : (is_string($created_at) ? $created_at : ''),
         ];
+    }
+
+    /**
+     * Map local library row hints onto backend ledger states.
+     *
+     * @param string $status_hint Local row hint.
+     * @param bool   $has_alt Whether the attachment already has alt text.
+     * @param bool   $user_approved Whether the alt text is user-approved locally.
+     * @return string
+     */
+    private function map_media_inventory_sync_state(string $status_hint, bool $has_alt, bool $user_approved): string {
+        $normalized = sanitize_key($status_hint);
+
+        if (!$has_alt || in_array($normalized, ['missing', 'missing_alt'], true)) {
+            return 'MISSING';
+        }
+
+        if (in_array($normalized, ['needs_review', 'weak', 'review'], true)) {
+            return 'NEEDS_REVIEW';
+        }
+
+        if ($user_approved) {
+            return 'APPROVED';
+        }
+
+        return 'APPROVED';
+    }
+
+    /**
+     * Build a compact log-safe summary for outbound media inventory items.
+     *
+     * @param array<int, array<string, mixed>> $items Full inventory items.
+     * @param int $limit Maximum sample size.
+     * @return array<int, array<string, mixed>>
+     */
+    private function summarize_media_inventory_sync_items_for_log(array $items, int $limit = 3): array {
+        $sample = array_slice($items, 0, max(1, $limit));
+
+        return array_values(array_map(static function (array $item): array {
+            $image = isset($item['image']) && is_array($item['image']) ? $item['image'] : [];
+
+            return [
+                'attachment_id' => (string) ($item['attachment_id'] ?? $item['attachmentId'] ?? ''),
+                'current_state' => (string) ($item['current_state'] ?? $item['currentState'] ?? ''),
+                'has_alt' => !empty($item['has_alt']),
+                'user_approved' => !empty($item['user_approved']),
+                'image_url' => (string) ($item['image_url'] ?? $item['imageUrl'] ?? $image['url'] ?? ''),
+                'filename' => (string) ($image['filename'] ?? ''),
+            ];
+        }, $sample));
     }
 
     /**

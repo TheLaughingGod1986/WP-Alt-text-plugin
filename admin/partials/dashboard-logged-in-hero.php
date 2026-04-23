@@ -549,6 +549,106 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		} );
 	}
 
+	function logBootstrapSync( eventName, context ) {
+		var serialized = '';
+		try {
+			serialized = JSON.stringify( context || {} );
+		} catch ( error ) {
+			serialized = '{"serialization_error":true}';
+		}
+		if ( window.BBAI_LOG && typeof window.BBAI_LOG.log === 'function' ) {
+			window.BBAI_LOG.log( '[bbai-bootstrap] ' + eventName + ' ' + serialized );
+		}
+		if ( window.console && typeof window.console.debug === 'function' ) {
+			window.console.debug( '[bbai-bootstrap] ' + eventName + ' ' + serialized );
+		}
+	}
+
+	function logCredits( eventName, context ) {
+		var serialized = '';
+		try {
+			serialized = JSON.stringify( context || {} );
+		} catch ( error ) {
+			serialized = '{"serialization_error":true}';
+		}
+		if ( window.BBAI_LOG && typeof window.BBAI_LOG.log === 'function' ) {
+			window.BBAI_LOG.log( '[bbai-credits] ' + eventName + ' ' + serialized );
+		}
+		if ( window.console && typeof window.console.debug === 'function' ) {
+			window.console.debug( '[bbai-credits] ' + eventName + ' ' + serialized );
+		}
+	}
+
+	function logStatusStrip( eventName, context ) {
+		var serialized = '';
+		try {
+			serialized = JSON.stringify( context || {} );
+		} catch ( error ) {
+			serialized = '{"serialization_error":true}';
+		}
+		if ( window.BBAI_LOG && typeof window.BBAI_LOG.log === 'function' ) {
+			window.BBAI_LOG.log( '[bbai-status-strip] ' + eventName + ' ' + serialized );
+		}
+		if ( window.console && typeof window.console.debug === 'function' ) {
+			window.console.debug( '[bbai-status-strip] ' + eventName + ' ' + serialized );
+		}
+	}
+
+	function getStatusStripSource( reason ) {
+		var normalized = String( reason || '' ).toLowerCase();
+
+		if ( ! normalized ) {
+			return 'legacy_init';
+		}
+		if ( -1 !== normalized.indexOf( 'bootstrap' ) ) {
+			return 'bootstrap_refresh';
+		}
+		if (
+			-1 !== normalized.indexOf( 'startup' ) ||
+			-1 !== normalized.indexOf( 'scheduled' ) ||
+			-1 !== normalized.indexOf( 'visibility_resume' ) ||
+			-1 !== normalized.indexOf( 'state_' ) ||
+			-1 !== normalized.indexOf( 'poll' )
+		) {
+			return 'polling_tick';
+		}
+		if ( -1 !== normalized.indexOf( 'fallback' ) ) {
+			return 'fallback';
+		}
+		if ( -1 !== normalized.indexOf( 'legacy' ) || -1 !== normalized.indexOf( 'init' ) ) {
+			return 'legacy_init';
+		}
+
+		return 'truth';
+	}
+
+	function buildStatusStripMeta( reason, caller ) {
+		var normalizedReason = String( reason || '' );
+		return {
+			reason: normalizedReason,
+			caller: String( caller || '' ),
+			source: getStatusStripSource( normalizedReason ),
+		};
+	}
+
+	function buildStatusStripLogContext( truth, meta, text, surface, action ) {
+		var payload = normalizeStateTruthPayload( truth || dashboardPolling.currentTruth || {} );
+		var counts = getTruthCounts( payload );
+		var resolvedMeta = meta && typeof meta === 'object' ? meta : {};
+
+		return {
+			surface: surface,
+			action: action || 'write',
+			state: getStateTruthState( payload ) || ( hero.getAttribute( 'data-bbai-li-state' ) || '' ),
+			counts_to_review: counts.review,
+			counts_missing: counts.missing,
+			text_written: String( text || '' ),
+			reason: String( resolvedMeta.reason || '' ),
+			caller: String( resolvedMeta.caller || '' ),
+			source: String( resolvedMeta.source || getStatusStripSource( resolvedMeta.reason || '' ) ),
+		};
+	}
+
 	function getDashboardRoot() {
 		return document.querySelector( '[data-bbai-dashboard-root="1"]' );
 	}
@@ -645,9 +745,25 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		return {};
 	}
 
+	function getTruthRawResolution( payload ) {
+		if ( payload && payload.resolution && typeof payload.resolution === 'object' ) {
+			return payload.resolution;
+		}
+
+		return {};
+	}
+
 	function getTruthSiteHash( payload ) {
 		var site = getTruthSite( payload );
 		return String( firstDefined( site.site_hash, site.siteHash, site.site_id, site.siteId, '' ) || '' );
+	}
+
+	function getTruthRawCounts( payload ) {
+		return payload && payload.counts && typeof payload.counts === 'object' ? payload.counts : {};
+	}
+
+	function getTruthRawCredits( payload ) {
+		return payload && payload.credits && typeof payload.credits === 'object' ? payload.credits : {};
 	}
 
 	function normalizeJobStatus( rawStatus ) {
@@ -743,6 +859,107 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		} catch ( error ) {
 			return;
 		}
+	}
+
+	function clearBootstrapSyncState( truth ) {
+		var key = getBootstrapSyncStorageKey( truth );
+
+		if ( ! key || ! window.localStorage ) {
+			return;
+		}
+
+		try {
+			window.localStorage.removeItem( key );
+		} catch ( error ) {
+			return;
+		}
+	}
+
+	function describeBootstrapSyncGuard( truth ) {
+		var syncState = readBootstrapSyncState( truth );
+		var expiresAt = parseInt( syncState && syncState.expiresAt ? syncState.expiresAt : 0, 10 ) || 0;
+		var expiresInMs = expiresAt > Date.now() ? Math.max( 0, expiresAt - Date.now() ) : 0;
+
+		return {
+			status: String( syncState && syncState.status ? syncState.status : '' ),
+			expires_at: expiresAt || 0,
+			expires_in_ms: expiresInMs,
+			active: !! ( syncState && syncState.status && expiresInMs > 0 ),
+		};
+	}
+
+	function describeBootstrapSyncEligibility( truth ) {
+		var payload = normalizeStateTruthPayload( truth );
+		var state = getStateTruthState( payload );
+		var counts = getTruthCounts( payload );
+		var rawCounts = getTruthRawCounts( payload );
+		var rawCredits = getTruthRawCredits( payload );
+		var sources = getTruthResolutionSources( payload );
+		var rawResolution = getTruthRawResolution( payload );
+		var countsSource = String( firstDefined( sources.counts, sources.count_source, sources.countSource, '' ) || '' );
+		var rawCountsSource = String( firstDefined( rawResolution.count_source, rawResolution.countSource, countsSource ) || '' );
+		var zeroCounts = counts.missing === 0 && counts.review === 0 && counts.complete === 0 && counts.failed === 0 && counts.total === 0;
+		var sourceIndicatesUnseeded = /assumed|empty|unseeded|seed|bootstrap|ledger/.test( countsSource.toLowerCase() );
+		var rawSourceIndicatesUnseeded = /assumed|empty|unseeded|seed|bootstrap|ledger/.test( rawCountsSource.toLowerCase() );
+		var guard = describeBootstrapSyncGuard( payload );
+		var fallback = !! ( payload && payload.fallback );
+		var linkedSite = !! getTruthSiteHash( payload );
+		var stateIsMissingAlt = state === 'MISSING_ALT';
+		var countsConsideredEmpty = zeroCounts;
+		var shouldBootstrap = truthSupportsBootstrapSync( payload );
+		var skipReason = '';
+
+		if ( ! linkedSite ) {
+			skipReason = 'not_linked';
+		} else if ( guard.active ) {
+			skipReason = 'already_ran';
+		} else if ( fallback ) {
+			skipReason = 'fallback_truth';
+		} else if ( sourceIndicatesUnseeded || rawSourceIndicatesUnseeded ) {
+			skipReason = '';
+		} else if ( ! stateIsMissingAlt ) {
+			skipReason = 'state_mismatch';
+		} else if ( ! countsConsideredEmpty ) {
+			skipReason = 'counts_not_considered_empty';
+		} else {
+			skipReason = 'missing_backend_flag';
+		}
+
+		return {
+			state: state,
+			linked_site: linkedSite,
+			site_hash: getTruthSiteHash( payload ),
+			fallback_truth: fallback,
+			logic_counts_source: countsSource,
+			raw_counts_source: rawCountsSource,
+			logic_ledger_empty_or_unseeded: sourceIndicatesUnseeded || ( state === 'MISSING_ALT' && zeroCounts ),
+			raw_ledger_empty_or_unseeded: rawSourceIndicatesUnseeded || ( state === 'MISSING_ALT' && zeroCounts ),
+			zero_counts: zeroCounts,
+			state_is_missing_alt: stateIsMissingAlt,
+			counts_considered_empty: countsConsideredEmpty,
+			raw_counts: rawCounts,
+			raw_credits: rawCredits,
+			counts: {
+				missing: counts.missing,
+				review: counts.review,
+				complete: counts.complete,
+				failed: counts.failed,
+				total: counts.total,
+				total_attention: parseInt( firstDefined( rawCounts.total_attention, rawCounts.totalAttention, counts.missing + counts.review ), 10 ) || 0,
+				to_review: parseInt( firstDefined( rawCounts.to_review, rawCounts.toReview, rawCounts.review, rawCounts.needs_review, rawCounts.needsReview, rawCounts.weak, counts.review ), 10 ) || 0,
+			},
+			guard_already_tripped: guard.active,
+			guard_status: guard.status,
+			guard_expires_in_ms: guard.expires_in_ms,
+			bootstrap_already_ran: guard.active,
+			bootstrap_should_run: shouldBootstrap,
+			final_should_bootstrap: shouldBootstrap && ! guard.active,
+			skip_reason: skipReason,
+			resolution_fields: {
+				resolution_sources: sources,
+				resolution: rawResolution,
+			},
+		};
 	}
 
 	function canAttemptBootstrapSync( truth ) {
@@ -855,6 +1072,21 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 			if ( ! truth || ! truthState ) {
 				throw new Error( 'state_truth_invalid' );
 			}
+			logBootstrapSync( 'state_truth_received', Object.assign(
+				{
+					context: context || '',
+					state: truthState,
+					linked_site: !! getTruthSiteHash( truth ),
+				},
+				describeBootstrapSyncEligibility( truth )
+			) );
+			logCredits( 'raw_truth', {
+				context: context || '',
+				state: truthState,
+				raw_truth_credits: getTruthRawCredits( truth ),
+				resolved_credits: getTruthCredits( truth ),
+				linked_site: !! getTruthSiteHash( truth ),
+			} );
 			if ( options.logLoaded !== false ) {
 				logDashboardUi( 'state_truth_loaded', {
 					context: context || '',
@@ -915,7 +1147,13 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 			if ( ! res.ok ) {
 				throw new Error( 'bootstrap_sync ' + res.status );
 			}
-			return res.json();
+			return res.json()
+				.then( function ( payload ) {
+					if ( payload && typeof payload === 'object' ) {
+						payload.__bbai_http_status = res.status;
+					}
+					return payload;
+				} );
 		} )
 		.then( function ( payload ) {
 			var data = normalizeBootstrapSyncPayload( payload );
@@ -930,6 +1168,13 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		var bootstrapTruth = normalizeStateTruthPayload( bootstrapPayload && bootstrapPayload.truth ? bootstrapPayload.truth : null );
 
 		if ( bootstrapTruth && getStateTruthState( bootstrapTruth ) && ! truthSupportsBootstrapSync( bootstrapTruth ) ) {
+			logBootstrapSync( 'truth_refresh', Object.assign(
+				{
+					context: 'bootstrap_response_truth',
+					still_bootstrap_eligible: truthSupportsBootstrapSync( bootstrapTruth ),
+				},
+				describeBootstrapSyncEligibility( bootstrapTruth )
+			) );
 			return Promise.resolve( bootstrapTruth );
 		}
 
@@ -938,9 +1183,53 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 
 	function maybeBootstrapTruth( truth, context ) {
 		var bootstrapContext = context || 'polling';
+		var eligibility = describeBootstrapSyncEligibility( truth );
+		var canAttempt = canAttemptBootstrapSync( truth );
 
-		if ( ! canAttemptBootstrapSync( truth ) ) {
+		logBootstrapSync( 'eligibility', Object.assign(
+			{
+				context: bootstrapContext,
+				can_attempt: canAttempt,
+			},
+			eligibility
+		) );
+		logBootstrapSync( 'decision', {
+			context: bootstrapContext,
+			state: eligibility.state,
+			counts_total: eligibility.counts.total,
+			counts_total_attention: eligibility.counts.total_attention,
+			counts_missing: eligibility.counts.missing,
+			counts_to_review: eligibility.counts.to_review,
+			bootstrapAlreadyRan: eligibility.bootstrap_already_ran,
+			isLinkedSite: eligibility.linked_site,
+			fallbackTruth: eligibility.fallback_truth,
+			ledgerEmpty: eligibility.logic_ledger_empty_or_unseeded,
+			rawLedgerEmpty: eligibility.raw_ledger_empty_or_unseeded,
+			countsSource: eligibility.logic_counts_source,
+			rawCountsSource: eligibility.raw_counts_source,
+			finalShouldBootstrap: eligibility.final_should_bootstrap,
+		} );
+
+		if ( ! canAttempt ) {
 			dashboardPolling.bootstrapSyncApplied = false;
+			logBootstrapSync( 'skipped', {
+				context: bootstrapContext,
+				reason: eligibility.skip_reason || ( eligibility.guard_already_tripped ? 'already_ran' : 'not_eligible' ),
+				guard_status: eligibility.guard_status,
+				guard_expires_in_ms: eligibility.guard_expires_in_ms,
+				raw_counts_source: eligibility.raw_counts_source,
+				logic_counts_source: eligibility.logic_counts_source,
+				failed_condition: eligibility.skip_reason || 'not_eligible',
+				state: eligibility.state,
+				isLinkedSite: eligibility.linked_site,
+				bootstrapAlreadyRan: eligibility.bootstrap_already_ran,
+				counts_total: eligibility.counts.total,
+				counts_total_attention: eligibility.counts.total_attention,
+				counts_missing: eligibility.counts.missing,
+				counts_to_review: eligibility.counts.to_review,
+				fallbackTruth: eligibility.fallback_truth,
+				ledgerEmpty: eligibility.logic_ledger_empty_or_unseeded,
+			} );
 			return Promise.resolve( truth );
 		}
 
@@ -949,9 +1238,19 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 			status: 'in_progress',
 			expiresAt: Date.now() + BOOTSTRAP_SYNC_LOCK_TTL_MS,
 		} );
+		logBootstrapSync( 'STARTING SYNC', {
+			context: bootstrapContext,
+			site_hash: getTruthSiteHash( truth ),
+		} );
 		logDashboardUi( 'bootstrap_sync_started', {
 			context: bootstrapContext,
 			state: getStateTruthState( truth ),
+			site_hash: getTruthSiteHash( truth ),
+		} );
+		logBootstrapSync( 'request_started', {
+			context: bootstrapContext,
+			endpoint: BBAI_HERO_CFG.bootstrapSyncUrl || '',
+			request_started_at: new Date().toISOString(),
 			site_hash: getTruthSiteHash( truth ),
 		} );
 
@@ -961,11 +1260,41 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 				var immediateTruth = normalizeStateTruthPayload( payload && payload.truth ? payload.truth : null );
 				var cachedStatus = 'skipped';
 				var ttl = BOOTSTRAP_SYNC_FAILURE_COOLDOWN_MS;
+				var payloadDebug = payload && payload.debug && typeof payload.debug === 'object' ? payload.debug : {};
+				var canWriteSuccessGuard = false;
+				var returnedTruth = immediateTruth && getStateTruthState( immediateTruth ) ? immediateTruth : truth;
+				var returnedTruthEligible = truthSupportsBootstrapSync( returnedTruth );
+
+				logBootstrapSync( 'response_received', {
+					context: bootstrapContext,
+					triggered: !! ( payload && payload.triggered ),
+					skipped: !! ( payload && payload.skipped ),
+					reason: skippedReason,
+					local_total: parseInt( payload && payload.local_total ? payload.local_total : 0, 10 ) || 0,
+					sent_count: parseInt( payload && payload.sent_count ? payload.sent_count : 0, 10 ) || 0,
+					inserted: parseInt( payload && payload.inserted ? payload.inserted : 0, 10 ) || 0,
+					updated: parseInt( payload && payload.updated ? payload.updated : 0, 10 ) || 0,
+					changed: parseInt( payload && payload.changed ? payload.changed : 0, 10 ) || 0,
+					unchanged: parseInt( payload && payload.unchanged ? payload.unchanged : 0, 10 ) || 0,
+					media_inventory: payloadDebug.media_inventory || null,
+					payload: payloadDebug.payload || null,
+					network: payloadDebug.network || null,
+					truth_refresh: payloadDebug.truth_refresh || null,
+					response_status: parseInt( payload && payload.__bbai_http_status ? payload.__bbai_http_status : 0, 10 ) || 0,
+					response_body_summary: {
+						triggered: !! ( payload && payload.triggered ),
+						skipped: !! ( payload && payload.skipped ),
+						reason: skippedReason,
+					},
+				} );
 
 				if ( payload && payload.skipped ) {
 					if ( skippedReason === 'success' ) {
-						cachedStatus = 'success';
-						ttl = BOOTSTRAP_SYNC_SUCCESS_TTL_MS;
+						canWriteSuccessGuard = ! returnedTruthEligible;
+						if ( canWriteSuccessGuard ) {
+							cachedStatus = 'success';
+							ttl = BOOTSTRAP_SYNC_SUCCESS_TTL_MS;
+						}
 					} else if ( skippedReason === 'in_progress' ) {
 						cachedStatus = 'in_progress';
 						ttl = BOOTSTRAP_SYNC_LOCK_TTL_MS;
@@ -973,19 +1302,75 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 						cachedStatus = 'failed';
 					}
 
-					writeBootstrapSyncState( truth, {
-						status: cachedStatus,
-						expiresAt: Date.now() + ttl,
+					if ( skippedReason === 'success' && ! canWriteSuccessGuard ) {
+						clearBootstrapSyncState( truth );
+					} else {
+						writeBootstrapSyncState( truth, {
+							status: cachedStatus,
+							expiresAt: Date.now() + ttl,
+						} );
+					}
+
+					logBootstrapSync( 'success_guard_decision', {
+						context: bootstrapContext,
+						skipped_response: true,
+						refreshed_truth_bootstrap_eligible: returnedTruthEligible,
+						success_guard_written: skippedReason === 'success' ? canWriteSuccessGuard : cachedStatus === 'success',
+						success_guard_skipped: skippedReason === 'success' && ! canWriteSuccessGuard,
+						status: skippedReason === 'success' && ! canWriteSuccessGuard ? 'retryable' : cachedStatus,
+						site_hash: getTruthSiteHash( truth ),
 					} );
 
-					return immediateTruth && getStateTruthState( immediateTruth ) ? immediateTruth : truth;
+					logBootstrapSync( 'guard_write', {
+						context: bootstrapContext,
+						status: skippedReason === 'success' && ! canWriteSuccessGuard ? 'retryable' : cachedStatus,
+						expires_in_ms: skippedReason === 'success' && ! canWriteSuccessGuard ? 0 : ttl,
+						site_hash: getTruthSiteHash( truth ),
+						still_bootstrap_eligible: returnedTruthEligible,
+						guard_written: !( skippedReason === 'success' && ! canWriteSuccessGuard ),
+					} );
+
+					return returnedTruth;
 				}
 
 				return resolveTruthAfterBootstrap( payload )
 					.then( function ( updatedTruth ) {
-						writeBootstrapSyncState( truth, {
-							status: 'success',
-							expiresAt: Date.now() + BOOTSTRAP_SYNC_SUCCESS_TTL_MS,
+						var refreshedTruthEligible = truthSupportsBootstrapSync( updatedTruth );
+
+						logBootstrapSync( 'truth_refresh', Object.assign(
+							{
+								context: bootstrapContext,
+								still_bootstrap_eligible: refreshedTruthEligible,
+							},
+							describeBootstrapSyncEligibility( updatedTruth )
+						) );
+
+						logBootstrapSync( 'success_guard_decision', {
+							context: bootstrapContext,
+							skipped_response: false,
+							refreshed_truth_bootstrap_eligible: refreshedTruthEligible,
+							success_guard_written: ! refreshedTruthEligible,
+							success_guard_skipped: refreshedTruthEligible,
+							status: refreshedTruthEligible ? 'retryable' : 'success',
+							site_hash: getTruthSiteHash( truth ),
+						} );
+
+						if ( refreshedTruthEligible ) {
+							clearBootstrapSyncState( truth );
+						} else {
+							writeBootstrapSyncState( truth, {
+								status: 'success',
+								expiresAt: Date.now() + BOOTSTRAP_SYNC_SUCCESS_TTL_MS,
+							} );
+						}
+
+						logBootstrapSync( 'guard_write', {
+							context: bootstrapContext,
+							status: refreshedTruthEligible ? 'retryable' : 'success',
+							expires_in_ms: refreshedTruthEligible ? 0 : BOOTSTRAP_SYNC_SUCCESS_TTL_MS,
+							still_bootstrap_eligible: refreshedTruthEligible,
+							site_hash: getTruthSiteHash( truth ),
+							guard_written: ! refreshedTruthEligible,
 						} );
 						logDashboardUi( 'bootstrap_sync_completed', {
 							context: bootstrapContext,
@@ -999,6 +1384,17 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 				writeBootstrapSyncState( truth, {
 					status: 'failed',
 					expiresAt: Date.now() + BOOTSTRAP_SYNC_FAILURE_COOLDOWN_MS,
+				} );
+				logBootstrapSync( 'guard_write', {
+					context: bootstrapContext,
+					status: 'failed',
+					expires_in_ms: BOOTSTRAP_SYNC_FAILURE_COOLDOWN_MS,
+					site_hash: getTruthSiteHash( truth ),
+				} );
+				logBootstrapSync( 'network_error', {
+					context: bootstrapContext,
+					message: error && error.message ? error.message : String( error || '' ),
+					site_hash: getTruthSiteHash( truth ),
 				} );
 				logDashboardUi( 'bootstrap_sync_failed', {
 					context: bootstrapContext,
@@ -1146,12 +1542,15 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 	function showStatusLine( text, tone, options ) {
 		var opts = options || {};
 		var existing = hero.querySelector( '.bbai-li-hero-status-line' );
+		var meta = opts.meta || buildStatusStripMeta( 'status_line_direct', 'showStatusLine' );
+		var truth = opts.truth || dashboardPolling.currentTruth || null;
 		if ( ! opts.preserveTimer ) {
 			clearTransientStatusTimer();
 		}
 		if ( existing ) {
 			existing.className = 'bbai-li-hero-status-line' + ( tone ? ' bbai-li-hero-status-line--' + tone : '' );
 			if ( existing.textContent !== text ) { existing.textContent = text; }
+			logStatusStrip( 'status_line_write', buildStatusStripLogContext( truth, meta, text, 'status_line', 'write' ) );
 			return;
 		}
 		var support = hero.querySelector( '[data-bbai-li-hero-support]' );
@@ -1162,21 +1561,29 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		line.setAttribute( 'aria-live', 'polite' );
 		line.textContent = text;
 		support.insertAdjacentElement( 'afterend', line );
+		logStatusStrip( 'status_line_write', buildStatusStripLogContext( truth, meta, text, 'status_line', 'write' ) );
 	}
 
-	function showTransientStatusLine( text, tone, duration ) {
+	function showTransientStatusLine( text, tone, duration, meta ) {
+		var stripMeta = meta || buildStatusStripMeta( 'transient_status', 'showTransientStatusLine' );
 		clearTransientStatusTimer();
-		showStatusLine( text, tone, { preserveTimer: true } );
+		showStatusLine( text, tone, {
+			preserveTimer: true,
+			meta: stripMeta,
+		} );
 		transientStatusTimer = window.setTimeout( function () {
 			transientStatusTimer = null;
-			syncStatusLineForTruth( dashboardPolling.currentTruth );
+			syncStatusLineForTruth( dashboardPolling.currentTruth, stripMeta );
 		}, Math.max( 400, parseInt( duration, 10 ) || 1600 ) );
 	}
 
-	function removeStatusLine() {
+	function removeStatusLine( meta ) {
 		clearTransientStatusTimer();
 		var line = hero.querySelector( '.bbai-li-hero-status-line' );
-		if ( line ) { line.remove(); }
+		if ( line ) {
+			logStatusStrip( 'status_line_write', buildStatusStripLogContext( dashboardPolling.currentTruth, meta || buildStatusStripMeta( 'status_line_remove', 'removeStatusLine' ), line.textContent || '', 'status_line', 'remove' ) );
+			line.remove();
+		}
 	}
 
 	function getQueuedSignalText( seconds ) {
@@ -1249,21 +1656,27 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		);
 	}
 
-	function renderQueuedSignal() {
+	function renderQueuedSignal( meta ) {
 		var truth = dashboardPolling.currentTruth;
 		var job = getTruthJob( truth );
 		var lastCheckedAt = job ? job.lastCheckedAt : null;
+		var stripMeta = meta || buildStatusStripMeta( 'queued_signal', 'renderQueuedSignal' );
 		if ( ! lastCheckedAt ) {
 			lastCheckedAt = Date.now();
 		}
 		var seconds = Math.max( 0, Math.floor( ( Date.now() - lastCheckedAt ) / 1000 ) );
 		var signalText = getQueuedSignalText( seconds );
-		showStatusLine( getQueuedStatusText( seconds ), 'queued' );
+		showStatusLine( getQueuedStatusText( seconds ), 'queued', {
+			meta: stripMeta,
+			truth: truth,
+		} );
 		updateQueuedStripSignal( signalText );
+		logStatusStrip( 'activity_strip_write', buildStatusStripLogContext( truth, stripMeta, signalText, 'activity_strip_signal', 'write' ) );
 	}
 
-	function syncStatusLineForTruth( truth ) {
+	function syncStatusLineForTruth( truth, meta ) {
 		var state = getStateTruthState( truth );
+		var stripMeta = meta || buildStatusStripMeta( 'truth_status_sync', 'syncStatusLineForTruth' );
 		stopLiveSignalTimer();
 
 		if ( transientStatusTimer ) {
@@ -1271,18 +1684,23 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		}
 
 		if ( 'QUEUED' === state ) {
-			renderQueuedSignal();
-			liveSignalTimer = window.setInterval( renderQueuedSignal, 5000 );
+			renderQueuedSignal( stripMeta );
+			liveSignalTimer = window.setInterval( function () {
+				renderQueuedSignal( buildStatusStripMeta( stripMeta.reason || 'queued_signal_interval', 'renderQueuedSignalInterval' ) );
+			}, 5000 );
 			return;
 		}
 
 		if ( 'PROCESSING' === state ) {
-			showStatusLine( TEXT.generationInProgress, 'scanning' );
+			showStatusLine( TEXT.generationInProgress, 'scanning', {
+				meta: stripMeta,
+				truth: truth,
+			} );
 			return;
 		}
 
 		if ( ! dashboardPolling.optimisticAction ) {
-			removeStatusLine();
+			removeStatusLine( stripMeta );
 		}
 	}
 
@@ -1357,10 +1775,30 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		return replaceTokens( TEXT.etaMinutes, { '%d': String( Math.ceil( safe / 60 ) ) } );
 	}
 
+	function buildCreditsSummaryItem( state, truth ) {
+		var credits = getTruthCredits( truth );
+		var remainingPct = credits.total > 0 ? Math.round( ( credits.remaining / credits.total ) * 100 ) : 0;
+		var item = {
+			label: TEXT.creditsLeftLabel,
+			value: formatCount( credits.remaining ) + ' / ' + formatCount( credits.total ),
+			mod: 'NEEDS_REVIEW' === state || 'ALL_CLEAR' === state
+				? 'muted'
+				: ( credits.remaining <= 0 ? 'alert' : ( remainingPct <= 20 ? 'warn' : 'muted' ) ),
+		};
+
+		logCredits( 'renderer_value', {
+			state: state,
+			resolved_credits: credits,
+			display_label: item.label,
+			display_value: item.value,
+			display_mod: item.mod,
+		} );
+
+		return item;
+	}
+
 	function buildSummaryFromTruth( state, truth ) {
 		var counts = getTruthCounts( truth );
-		var credits = getTruthCredits( truth );
-		var usedPct = credits.total > 0 ? Math.round( ( credits.used / credits.total ) * 100 ) : 0;
 
 		return [
 			{
@@ -1373,11 +1811,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 				value: formatCount( counts.review ),
 				mod: 'NEEDS_REVIEW' === state ? 'primary' : ( counts.review > 0 ? 'warn' : 'ok' ),
 			},
-			{
-				label: TEXT.creditsLabel,
-				value: formatCount( credits.used ) + ' / ' + formatCount( credits.total ),
-				mod: usedPct >= 100 ? 'alert' : ( usedPct >= 80 ? 'warn' : 'muted' ),
-			},
+			buildCreditsSummaryItem( state, truth ),
 		];
 	}
 
@@ -1532,7 +1966,6 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 
 	function buildStableSummaryFromTruth( state, truth ) {
 		var counts = getTruthCounts( truth );
-		var credits = getTruthCredits( truth );
 
 		if ( 'ALL_CLEAR' === state ) {
 			return [
@@ -1541,11 +1974,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 					value: formatCount( counts.complete ),
 					mod: 'ok',
 				},
-				{
-					label: TEXT.creditsLeftLabel,
-					value: formatCount( credits.remaining ),
-					mod: 'muted',
-				},
+				buildCreditsSummaryItem( state, truth ),
 			];
 		}
 
@@ -1895,7 +2324,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		} );
 	}
 
-	function renderActivityStripFromTruth( truth ) {
+	function renderActivityStripFromTruth( truth, meta ) {
 		var strip = document.querySelector( '[data-bbai-li-activity-strip="1"]' );
 		var state = getStateTruthState( truth );
 		var counts = getTruthCounts( truth );
@@ -1980,15 +2409,17 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 
 		items = items.slice( 0, 3 );
 		renderActivityStripItems( strip, tone, items, signalIndex );
+		logStatusStrip( 'activity_strip_write', buildStatusStripLogContext( truth, meta || buildStatusStripMeta( 'truth_activity_strip', 'renderActivityStripFromTruth' ), items.join( ' | ' ), 'activity_strip', 'write' ) );
 	}
 
-	function renderImpactLineFromTruth( truth ) {
+	function renderImpactLineFromTruth( truth, meta ) {
 		var state = getStateTruthState( truth );
 		var counts = getTruthCounts( truth );
 		var complete = counts.complete;
 		var line = document.querySelector( '.bbai-li-impact-line' );
 		var host = getLoggedInDashboardRoot();
 		var nextText = '';
+		var stripMeta = meta || buildStatusStripMeta( 'truth_impact_line', 'renderImpactLineFromTruth' );
 
 		switch ( state ) {
 			case 'ALL_CLEAR':
@@ -1997,8 +2428,14 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 					: TEXT.impactAllClearFallback;
 				break;
 			case 'MISSING_ALT':
-			case 'NEEDS_REVIEW':
 				if ( complete > 0 ) {
+					nextText = formatSingularPlural( complete, TEXT.impactSoFarSingle, TEXT.impactSoFarPlural );
+				}
+				break;
+			case 'NEEDS_REVIEW':
+				if ( counts.review > 0 ) {
+					nextText = formatSingularPlural( counts.review, TEXT.readyReviewSingular, TEXT.readyReviewPlural );
+				} else if ( complete > 0 ) {
 					nextText = formatSingularPlural( complete, TEXT.impactSoFarSingle, TEXT.impactSoFarPlural );
 				}
 				break;
@@ -2006,6 +2443,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 
 		if ( ! nextText ) {
 			if ( line ) {
+				logStatusStrip( 'impact_line_write', buildStatusStripLogContext( truth, stripMeta, line.textContent || '', 'impact_line', 'remove' ) );
 				line.remove();
 			}
 			return;
@@ -2019,6 +2457,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 
 		if ( line ) {
 			line.textContent = nextText;
+			logStatusStrip( 'impact_line_write', buildStatusStripLogContext( truth, stripMeta, nextText, 'impact_line', 'write' ) );
 		}
 	}
 
@@ -2035,6 +2474,24 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 			}
 		} );
 		return match;
+	}
+
+	function getDisplayedCreditsSummary() {
+		var item = getSummaryItemByLabel( TEXT.creditsLeftLabel ) || getSummaryItemByLabel( TEXT.creditsLabel );
+		var labelNode;
+		var valueNode;
+
+		if ( ! item ) {
+			return null;
+		}
+
+		labelNode = item.querySelector( '.bbai-li-summary__label' );
+		valueNode = item.querySelector( '.bbai-li-summary__value' );
+
+		return {
+			displayed_label: labelNode ? String( labelNode.textContent || '' ).trim() : '',
+			displayed_value: valueNode ? String( valueNode.textContent || '' ).trim() : '',
+		};
 	}
 
 	function updateSummaryValueByLabel( labelText, value, mod ) {
@@ -2108,7 +2565,12 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		if ( dashboard ) {
 			dashboard.classList.add( 'bbai-li-dashboard--transition-success' );
 		}
-		showTransientStatusLine( 'NEEDS_REVIEW' === toState ? TEXT.batchReadyForReview : TEXT.reviewComplete, 'success', 1700 );
+		showTransientStatusLine(
+			'NEEDS_REVIEW' === toState ? TEXT.batchReadyForReview : TEXT.reviewComplete,
+			'success',
+			1700,
+			buildStatusStripMeta( 'transition_success', 'triggerDashboardTransitionFeedback' )
+		);
 		successHighlightTimer = window.setTimeout( function () {
 			hero.classList.remove( 'bbai-li-hero--transition-success' );
 			if ( dashboard ) {
@@ -2242,7 +2704,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 				skipReviewSurface: true,
 				skipDashboardAttrs: true,
 			} );
-			renderActivityStripFromTruth( frameTruth );
+			renderActivityStripFromTruth( frameTruth, buildStatusStripMeta( 'processing_animation_frame', 'animateProcessingTruthUpdate' ) );
 
 			if ( frameProgress >= 1 ) {
 				cancelProcessingAnimation();
@@ -2252,7 +2714,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 					skipReviewSurface: true,
 					skipDashboardAttrs: true,
 				} );
-				renderActivityStripFromTruth( nextTruth );
+				renderActivityStripFromTruth( nextTruth, buildStatusStripMeta( 'processing_animation_complete', 'animateProcessingTruthUpdate' ) );
 				return;
 			}
 
@@ -2330,6 +2792,8 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 	function commitTruthSnapshot( truth, context, logApplied, options ) {
 		var opts = options || {};
 		var job = getTruthJob( truth );
+		var displayedCredits = null;
+		var statusStripMeta = buildStatusStripMeta( context || '', 'commitTruthSnapshot' );
 		clearOptimisticAction();
 		dashboardPolling.currentTruth = truth;
 		dashboardPolling.currentSignature = buildTruthSignature( truth );
@@ -2339,13 +2803,24 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		dashboardPolling.bootstrapSyncApplied = false;
 		syncDashboardRootFromTruth( truth );
 		if ( ! opts.skipActivityStrip ) {
-			renderActivityStripFromTruth( truth );
+			renderActivityStripFromTruth( truth, statusStripMeta );
 		}
 		if ( ! opts.skipImpactLine ) {
-			renderImpactLineFromTruth( truth );
+			renderImpactLineFromTruth( truth, statusStripMeta );
 		}
 		if ( ! opts.skipStatusLine ) {
-			syncStatusLineForTruth( truth );
+			syncStatusLineForTruth( truth, statusStripMeta );
+		}
+		displayedCredits = getDisplayedCreditsSummary();
+		if ( displayedCredits ) {
+			logCredits( 'displayed_value', Object.assign(
+				{
+					context: context || '',
+					state: dashboardPolling.latestState,
+					resolved_credits: getTruthCredits( truth ),
+				},
+				displayedCredits
+			) );
 		}
 		if ( logApplied ) {
 			logDashboardUi( 'state_truth_applied', {
@@ -2459,15 +2934,16 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 				var forceResolved = dashboardPolling.requiresResolvedSync || shouldUseResolvedDashboard( truth, previousTruth );
 
 				if ( ! previousTruth && ! forceResolved && ! dashboardPolling.bootstrapSyncApplied && ! domTruthMismatch( truth ) ) {
+					var unchangedMeta = buildStatusStripMeta( pollContext, 'runPollingTick_state_unchanged' );
 					dashboardPolling.currentTruth = truth;
 					dashboardPolling.currentSignature = nextSignature;
 					dashboardPolling.latestState = nextState;
 					dashboardPolling.failureCount = 0;
 					dashboardPolling.bootstrapSyncApplied = false;
 					syncDashboardRootFromTruth( truth );
-					renderActivityStripFromTruth( truth );
-					renderImpactLineFromTruth( truth );
-					syncStatusLineForTruth( truth );
+					renderActivityStripFromTruth( truth, unchangedMeta );
+					renderImpactLineFromTruth( truth, unchangedMeta );
+					syncStatusLineForTruth( truth, unchangedMeta );
 					logDashboardUi( 'state_unchanged', {
 						context: pollContext,
 						state: nextState,
@@ -2477,14 +2953,15 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 				}
 
 				if ( dashboardPolling.currentSignature && dashboardPolling.currentSignature === nextSignature && ! dashboardPolling.requiresResolvedSync ) {
+					var signatureMeta = buildStatusStripMeta( pollContext, 'runPollingTick_signature_match' );
 					dashboardPolling.currentTruth = truth;
 					dashboardPolling.latestState = nextState;
 					dashboardPolling.failureCount = 0;
 					dashboardPolling.bootstrapSyncApplied = false;
 					syncDashboardRootFromTruth( truth );
-					renderActivityStripFromTruth( truth );
-					renderImpactLineFromTruth( truth );
-					syncStatusLineForTruth( truth );
+					renderActivityStripFromTruth( truth, signatureMeta );
+					renderImpactLineFromTruth( truth, signatureMeta );
+					syncStatusLineForTruth( truth, signatureMeta );
 					logDashboardUi( 'state_unchanged', {
 						context: pollContext,
 						state: nextState,
@@ -2713,20 +3190,26 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 			if ( typeof e.stopImmediatePropagation === 'function' ) {
 				e.stopImmediatePropagation();
 			}
-			showStatusLine( ACTION_STATUS[ 'approve-all' ], 'success' );
+			showStatusLine( ACTION_STATUS[ 'approve-all' ], 'success', {
+				meta: buildStatusStripMeta( 'approve_all_click', 'primary_cta_handler' ),
+			} );
 			flashSummaryUpdating();
 			if ( typeof window.bbaiApproveAllNeedsReview === 'function' ) {
 				window.bbaiApproveAllNeedsReview( primaryCta, e );
 				return;
 			}
-			showStatusLine( '<?php echo esc_js( __( 'Unable to approve these images right now.', 'beepbeep-ai-alt-text-generator' ) ); ?>' );
+			showStatusLine( '<?php echo esc_js( __( 'Unable to approve these images right now.', 'beepbeep-ai-alt-text-generator' ) ); ?>', '', {
+				meta: buildStatusStripMeta( 'approve_all_missing_handler', 'primary_cta_handler' ),
+			} );
 			return;
 		}
 
 		statusText = getActionStatusText( primaryCta );
 		if ( null === statusText ) { return; }
 		setBusy( primaryCta, true );
-		showStatusLine( statusText );
+		showStatusLine( statusText, '', {
+			meta: buildStatusStripMeta( 'primary_cta_busy', 'primary_cta_handler' ),
+		} );
 		flashSummaryUpdating();
 		if ( safetyTimer ) { clearTimeout( safetyTimer ); }
 		safetyTimer = setTimeout( function () {
@@ -2744,7 +3227,9 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		if ( 'NEEDS_REVIEW' !== ( hero.getAttribute( 'data-bbai-li-state' ) || '' ) ) {
 			return;
 		}
-		showStatusLine( ACTION_STATUS[ 'approve-all' ], 'success' );
+		showStatusLine( ACTION_STATUS[ 'approve-all' ], 'success', {
+			meta: buildStatusStripMeta( 'approve_all_pending', 'dashboard_approve_all' ),
+		} );
 		flashSummaryUpdating();
 	} );
 
@@ -2757,11 +3242,11 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		}
 
 		if ( approvedCount > 0 ) {
-			showTransientStatusLine( TEXT.approveUpdating, 'success', 1400 );
+			showTransientStatusLine( TEXT.approveUpdating, 'success', 1400, buildStatusStripMeta( 'approve_all_success', 'dashboard_approve_all' ) );
 			return;
 		}
 
-		syncStatusLineForTruth( dashboardPolling.currentTruth );
+		syncStatusLineForTruth( dashboardPolling.currentTruth, buildStatusStripMeta( 'approve_all_success', 'dashboard_approve_all' ) );
 	} );
 
 	document.addEventListener( 'bbai:dashboard-review-count-optimistic', function ( event ) {
@@ -2788,7 +3273,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 	} );
 
 	document.addEventListener( 'bbai:dashboard-approve-all-failed', function () {
-		syncStatusLineForTruth( dashboardPolling.currentTruth );
+		syncStatusLineForTruth( dashboardPolling.currentTruth, buildStatusStripMeta( 'approve_all_failed', 'dashboard_approve_all' ) );
 	} );
 
 	document.addEventListener( 'visibilitychange', function () {
@@ -2825,9 +3310,11 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 	} );
 
 	if ( heroVariant === 'running' ) {
-		showStatusLine( TEXT.generationInProgress, 'scanning' );
+		showStatusLine( TEXT.generationInProgress, 'scanning', {
+			meta: buildStatusStripMeta( 'legacy_init_running', 'initial_hero_variant' ),
+		} );
 	} else if ( heroVariant === 'queued' ) {
-		renderQueuedSignal();
+		renderQueuedSignal( buildStatusStripMeta( 'legacy_init_queued', 'initial_hero_variant' ) );
 	}
 	runPollingTick( 'startup' );
 

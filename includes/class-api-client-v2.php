@@ -1636,6 +1636,8 @@ class API_Client_V2 {
         $endpoints = apply_filters(
             'bbai_dashboard_inventory_sync_endpoints',
             [
+                '/dashboard/image-states/sync',
+                '/api/dashboard/image-states/sync',
                 '/dashboard/media-inventory/sync',
                 '/api/dashboard/media-inventory/sync',
                 '/dashboard/inventory/sync',
@@ -1686,9 +1688,28 @@ class API_Client_V2 {
         ];
         $last_error = null;
 
+        $this->log_api_event('info', 'Dashboard bootstrap inventory sync request prepared', [
+            'site_id' => (string) ($body['site_id'] ?? ''),
+            'site_hash' => (string) ($body['site_hash'] ?? ''),
+            'site_url' => (string) ($body['site_url'] ?? ''),
+            'scope' => (string) ($body['scope'] ?? ''),
+            'item_count' => count($items),
+            'chunk_index' => (int) ($body['chunk_index'] ?? 1),
+            'chunk_count' => (int) ($body['chunk_count'] ?? 1),
+            'offset' => (int) ($body['offset'] ?? 0),
+            'sample_items' => $this->summarize_media_inventory_sync_items_for_log($items),
+            'endpoints' => $endpoints,
+        ]);
+
         foreach ($endpoints as $endpoint) {
             $response = $this->request_with_retry($endpoint, 'POST', $body, 2, false, $headers);
             if (is_wp_error($response)) {
+                $this->log_api_event('warning', 'Dashboard bootstrap inventory sync request failed before response', [
+                    'endpoint' => $endpoint,
+                    'error_code' => $response->get_error_code(),
+                    'message' => $response->get_error_message(),
+                    'error_data' => $response->get_error_data(),
+                ]);
                 $last_error = $response;
                 continue;
             }
@@ -1696,6 +1717,16 @@ class API_Client_V2 {
             if (!empty($response['success'])) {
                 $data = isset($response['data']) && is_array($response['data']) ? $response['data'] : [];
                 $data['endpoint'] = $endpoint;
+                $this->log_api_event('info', 'Dashboard bootstrap inventory sync request accepted', [
+                    'endpoint' => $endpoint,
+                    'site_id' => (string) ($data['site_id'] ?? ''),
+                    'site_hash' => (string) ($data['site_hash'] ?? ''),
+                    'inserted' => (int) ($data['inserted'] ?? 0),
+                    'updated' => (int) ($data['updated'] ?? 0),
+                    'changed' => (int) ($data['changed'] ?? 0),
+                    'unchanged' => (int) ($data['unchanged'] ?? 0),
+                    'coverage_status' => is_array($data['coverage'] ?? null) ? (string) (($data['coverage']['status'] ?? '')) : '',
+                ]);
                 return $data;
             }
 
@@ -1710,6 +1741,12 @@ class API_Client_V2 {
                 || strpos($message_lower, 'not found') !== false;
 
             if ($route_missing) {
+                $this->log_api_event('warning', 'Dashboard bootstrap inventory sync endpoint missing', [
+                    'endpoint' => $endpoint,
+                    'status_code' => $status_code,
+                    'error_code' => $error_code,
+                    'message' => $message,
+                ]);
                 $last_error = new \WP_Error(
                     'inventory_sync_endpoint_missing',
                     __('Media inventory sync endpoint was not found.', 'beepbeep-ai-alt-text-generator'),
@@ -1721,6 +1758,13 @@ class API_Client_V2 {
                 continue;
             }
 
+            $this->log_api_event('error', 'Dashboard bootstrap inventory sync endpoint returned an error', [
+                'endpoint' => $endpoint,
+                'status_code' => $status_code,
+                'error_code' => $error_code,
+                'message' => $message,
+                'api_response' => $error_data,
+            ]);
             return new \WP_Error(
                 'inventory_sync_failed',
                 is_string($message) && $message !== ''
@@ -1759,9 +1803,14 @@ class API_Client_V2 {
         if ($sync_reason === '') {
             $sync_reason = 'dashboard_bootstrap';
         }
+        $scope = (string) ($meta['scope'] ?? 'full_site');
+        if (!in_array($scope, ['full_site', 'partial'], true)) {
+            $scope = 'full_site';
+        }
 
         return [
             'sync_reason' => $sync_reason,
+            'scope' => $scope,
             'source' => 'wordpress_media_library',
             'site_hash' => $site_id,
             'site_id' => $site_id,
@@ -1775,6 +1824,7 @@ class API_Client_V2 {
                 'plugin_version' => defined('BEEPBEEP_AI_VERSION') ? BEEPBEEP_AI_VERSION : '1.0.0',
                 'wordpress_version' => get_bloginfo('version'),
             ],
+            'images' => array_values($items),
             'items' => array_values($items),
             'total_items' => $total_items,
             'chunk_index' => $chunk_index,
@@ -1791,6 +1841,31 @@ class API_Client_V2 {
                 'is_last_chunk' => !empty($meta['is_last_chunk']),
             ],
         ];
+    }
+
+    /**
+     * Build a compact log-safe sample of outbound inventory items.
+     *
+     * @param array<int, array<string, mixed>> $items Full inventory items.
+     * @param int                              $limit Maximum sample size.
+     * @return array<int, array<string, mixed>>
+     */
+    private function summarize_media_inventory_sync_items_for_log(array $items, int $limit = 3): array {
+        $sample = array_slice($items, 0, max(1, $limit));
+
+        return array_values(array_map(static function ($item): array {
+            $row = is_array($item) ? $item : [];
+            $image = isset($row['image']) && is_array($row['image']) ? $row['image'] : [];
+
+            return [
+                'attachment_id' => (string) ($row['attachment_id'] ?? $row['attachmentId'] ?? ''),
+                'current_state' => (string) ($row['current_state'] ?? $row['currentState'] ?? ''),
+                'image_url' => (string) ($row['image_url'] ?? $row['imageUrl'] ?? $image['url'] ?? ''),
+                'filename' => (string) ($image['filename'] ?? ''),
+                'has_alt' => !empty($row['has_alt']),
+                'user_approved' => !empty($row['user_approved']),
+            ];
+        }, $sample));
     }
 
     /**
