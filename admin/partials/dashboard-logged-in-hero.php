@@ -618,12 +618,19 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		var used = parseInt( firstDefined( credits.used, credits.credits_used, credits.creditsUsed, 0 ), 10 );
 		var total = parseInt( firstDefined( credits.total, credits.limit, credits.credits_total, credits.creditsTotal, 1 ), 10 );
 		var remaining = parseInt( firstDefined( credits.remaining, credits.credits_remaining, credits.creditsRemaining, Math.max( 0, total - used ) ), 10 );
+		var plan = String( firstDefined( credits.plan, credits.plan_slug, credits.planSlug, credits.plan_type, credits.planType, '' ) ).toLowerCase();
+		var isPro = !! ( credits.is_pro || credits.isPro );
+
+		if ( ! isPro && [ 'pro', 'growth', 'agency', 'enterprise' ].indexOf( plan ) !== -1 ) {
+			isPro = true;
+		}
 
 		return {
 			used: Math.max( 0, isNaN( used ) ? 0 : used ),
 			total: Math.max( 1, isNaN( total ) ? 1 : total ),
 			remaining: Math.max( 0, isNaN( remaining ) ? Math.max( 0, total - used ) : remaining ),
-			isPro: !! ( credits.is_pro || credits.isPro ),
+			isPro: isPro,
+			plan: plan,
 		};
 	}
 
@@ -1298,6 +1305,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 			root.setAttribute( 'data-bbai-credits-used', String( credits.used ) );
 			root.setAttribute( 'data-bbai-credits-total', String( credits.total ) );
 			root.setAttribute( 'data-bbai-credits-remaining', String( credits.remaining ) );
+			root.setAttribute( 'data-bbai-is-premium', credits.isPro ? '1' : '0' );
 		}
 
 		if ( loggedInRoot ) {

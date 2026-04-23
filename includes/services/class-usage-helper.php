@@ -61,8 +61,12 @@ class Usage_Helper {
 		}
 
 		$source = strtolower( trim( (string) ( $live_usage['source'] ?? '' ) ) );
-		if ( 'anonymous_trial' === $source ) {
+		if ( in_array( $source, [ 'anonymous_trial', 'local_trial_snapshot' ], true ) ) {
 			return true;
+		}
+
+		if ( ! in_array( $source, [ 'local_snapshot', 'local_trial_snapshot' ], true ) ) {
+			return false;
 		}
 
 		$has_reset_signal = false;
@@ -199,6 +203,7 @@ class Usage_Helper {
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 
         $live_usage = null;
+        $has_backend_usage = false;
         $usage_stats = Usage_Tracker::get_local_usage_snapshot();
         $can_fetch = false;
 
@@ -210,10 +215,11 @@ class Usage_Helper {
             if ($can_fetch) {
                 $live_usage = $api_client->get_usage();
                 if (is_array($live_usage) && !empty($live_usage) && !is_wp_error($live_usage)) {
-                    if (($live_usage['source'] ?? '') !== 'local_snapshot') {
+                    $source = strtolower(trim((string) ($live_usage['source'] ?? 'remote_usage')));
+                    $has_backend_usage = !in_array($source, ['local_snapshot', 'local_trial_snapshot'], true);
+                    if ($has_backend_usage) {
                         Usage_Tracker::update_usage($live_usage);
                     }
-                    $usage_stats = self::normalize_usage($usage_stats, $live_usage);
                 }
             }
         } catch (Exception $e) {
@@ -222,11 +228,12 @@ class Usage_Helper {
             $usage_stats = Usage_Tracker::get_local_usage_snapshot();
         }
 
-        if (isset($live_usage) && is_array($live_usage) && !empty($live_usage) && !is_wp_error($live_usage)) {
+        if ($has_backend_usage && isset($live_usage) && is_array($live_usage) && !empty($live_usage) && !is_wp_error($live_usage)) {
             $usage_stats = self::normalize_usage($usage_stats, $live_usage);
+            return $usage_stats;
         }
 
-        // Trial gating applies even when can_fetch is true (e.g. stray JWT or wrong connected flag).
+        // Local trial is a fallback only when backend/account usage truth is unavailable.
         if ( class_exists( Trial_Quota::class ) && Trial_Quota::is_trial_user() ) {
             return self::get_guest_trial_usage();
         }

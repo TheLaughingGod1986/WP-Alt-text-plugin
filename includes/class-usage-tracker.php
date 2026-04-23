@@ -49,7 +49,10 @@ class Usage_Tracker {
 	 */
 	private static function normalize_plan_slug($plan) {
 		$plan_key = is_scalar($plan) ? sanitize_key((string) $plan) : '';
-		$allowed  = ['free', 'pro', 'growth', 'agency', 'enterprise'];
+		if ('anonymous_trial' === $plan_key) {
+			return 'trial';
+		}
+		$allowed  = ['free', 'trial', 'pro', 'growth', 'agency', 'enterprise'];
 		return in_array($plan_key, $allowed, true) ? $plan_key : 'free';
 	}
 
@@ -67,7 +70,7 @@ class Usage_Tracker {
         $current_ts = (int) current_time('timestamp');
 
         $used = 0;
-        foreach (['used'] as $used_key) {
+        foreach (['used', 'credits_used', 'creditsUsed'] as $used_key) {
             if (isset($usage_data[$used_key]) && is_numeric($usage_data[$used_key])) {
                 $used = max(0, intval($usage_data[$used_key]));
                 break;
@@ -75,7 +78,7 @@ class Usage_Tracker {
         }
 
         $limit = 50;
-        foreach (['limit'] as $limit_key) {
+        foreach (['limit', 'credits_total', 'creditsTotal', 'creditsLimit', 'total_limit', 'monthly_limit'] as $limit_key) {
             if (isset($usage_data[$limit_key]) && is_numeric($usage_data[$limit_key])) {
                 $limit = intval($usage_data[$limit_key]);
                 break;
@@ -86,7 +89,7 @@ class Usage_Tracker {
         }
 
         $remaining = null;
-        foreach (['remaining'] as $remaining_key) {
+        foreach (['remaining', 'credits_remaining', 'creditsRemaining'] as $remaining_key) {
             if (isset($usage_data[$remaining_key]) && is_numeric($usage_data[$remaining_key])) {
                 $remaining = intval($usage_data[$remaining_key]);
                 break;
@@ -413,8 +416,8 @@ class Usage_Tracker {
                 'reset_timestamp' => $reset_timestamp,
                 'plan_type' => $plan,
             ],
-            'is_free' => $plan === 'free',
-            'is_pro' => $plan === 'pro',
+            'is_free' => in_array($plan, ['free', 'trial'], true),
+            'is_pro' => in_array($plan, ['pro', 'growth', 'agency', 'enterprise'], true),
         ];
     }
     

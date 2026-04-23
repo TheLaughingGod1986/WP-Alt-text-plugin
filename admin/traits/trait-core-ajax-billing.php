@@ -168,7 +168,7 @@ trait Core_Ajax_Billing {
             return;
         }
 
-        if (!$this->api_client->is_authenticated()) {
+        if (!$this->api_client->is_authenticated() && !$this->api_client->has_active_license()) {
             wp_send_json_error([
                 'message' => __('Please log in to view subscription information', 'beepbeep-ai-alt-text-generator'),
                 'code' => 'not_authenticated'

@@ -87,6 +87,16 @@ class Logged_In_Dashboard_Resolver {
 	 */
 	public static function resolve_from_truth( array $truth, array $plan = [] ): array {
 		$truth = self::normalize_state_truth_payload( $truth );
+		$truth_plan_slug = sanitize_key( (string) ( $truth['credits']['plan_slug'] ?? '' ) );
+		$truth_is_pro    = ! empty( $truth['credits']['is_pro'] )
+			|| in_array( $truth_plan_slug, [ 'pro', 'growth', 'agency', 'enterprise' ], true );
+		if ( '' !== $truth_plan_slug ) {
+			$plan['plan_slug'] = $truth_plan_slug;
+		}
+		if ( $truth_is_pro ) {
+			$plan['is_pro']    = true;
+			$plan['user_type'] = 'pro';
+		}
 		$ctx   = self::build_ctx(
 			[
 				'used'  => $truth['credits']['used'],
@@ -155,6 +165,11 @@ class Logged_In_Dashboard_Resolver {
 		$used      = self::read_truth_int( $credits, [ 'used', 'credits_used', 'creditsUsed' ], 0 );
 		$limit     = self::read_truth_int( $credits, [ 'total', 'limit', 'credits_total', 'creditsTotal', 'monthly_limit' ], max( 1, $used ) );
 		$remaining = self::read_truth_int( $credits, [ 'remaining', 'credits_remaining', 'creditsRemaining' ], max( 0, $limit - $used ) );
+		$plan_slug = sanitize_key(
+			self::read_truth_string( $credits, [ 'plan_slug', 'planSlug', 'plan_type', 'planType', 'plan' ], '' )
+		);
+		$is_pro = self::read_truth_bool( $credits, [ 'is_pro', 'isPro' ], false )
+			|| in_array( $plan_slug, [ 'pro', 'growth', 'agency', 'enterprise' ], true );
 
 		$job_state = self::normalize_state_truth_state( (string) ( $payload['state'] ?? '' ) );
 		$job_data  = self::normalize_truth_job_payload( $job, $job_state );
@@ -191,6 +206,8 @@ class Logged_In_Dashboard_Resolver {
 				'used'      => max( 0, $used ),
 				'total'     => max( 1, $limit ),
 				'remaining' => max( 0, $remaining ),
+				'plan_slug' => $plan_slug,
+				'is_pro'    => $is_pro,
 			],
 			'job'                => $job_data,
 			'site'               => $site,

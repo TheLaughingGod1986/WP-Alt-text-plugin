@@ -8727,7 +8727,7 @@ class Core {
             return;
         }
 
-        if (!$this->api_client->is_authenticated()) {
+        if (!$this->api_client->is_authenticated() && !$this->api_client->has_active_license()) {
             wp_send_json_error([
                 'message' => __('Please log in to view subscription information', 'beepbeep-ai-alt-text-generator'),
                 'code' => 'not_authenticated'
@@ -8805,9 +8805,22 @@ class Core {
     }
 
     public function get_generation_site_hash(): string {
+        if ( ! function_exists( '\BeepBeepAI\AltTextGenerator\get_site_identifier' ) ) {
+            $site_id_helper = BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
+            if ( is_readable( $site_id_helper ) ) {
+                require_once $site_id_helper;
+            }
+        }
+
+        if ( function_exists( '\BeepBeepAI\AltTextGenerator\get_site_identifier' ) ) {
+            $site_id = sanitize_key( (string) \BeepBeepAI\AltTextGenerator\get_site_identifier() );
+            if ( '' !== $site_id ) {
+                return $site_id;
+            }
+        }
+
         $blog_id = function_exists( 'get_current_blog_id' ) ? (int) get_current_blog_id() : 0;
         $home    = function_exists( 'home_url' ) ? (string) home_url( '/' ) : '';
-
         return md5( $blog_id . '|' . strtolower( $home ) );
     }
 

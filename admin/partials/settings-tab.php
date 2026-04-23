@@ -12,6 +12,12 @@ if (!defined('ABSPATH')) {
 if (!class_exists('\BeepBeepAI\AltTextGenerator\Usage_Tracker')) {
     require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 }
+if (!class_exists('\BeepBeepAI\AltTextGenerator\Auth_State')) {
+    require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-auth-state.php';
+}
+if (!class_exists('\BeepBeepAI\AltTextGenerator\Services\Usage_Helper')) {
+    require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-usage-helper.php';
+}
 
 $bbai_is_authenticated = $this->api_client->is_authenticated();
 $bbai_has_license = $this->api_client->has_active_license();
@@ -271,23 +277,23 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
             <!-- Settings Page -->
             <div class="bbai-container bbai-settings-page">
                 <?php
-                    // Pull fresh usage from backend to avoid stale cache in Settings
-                    if (isset($this->api_client)) {
-                        $bbai_live = $this->api_client->get_usage();
-                        if (is_array($bbai_live) && !empty($bbai_live)) { \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($bbai_live); }
-                    }
-                    $bbai_usage_box = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_stats_display();
+                    $bbai_settings_auth = \BeepBeepAI\AltTextGenerator\Auth_State::resolve($this->api_client);
+                    $bbai_usage_box = \BeepBeepAI\AltTextGenerator\Services\Usage_Helper::get_usage(
+                        $this->api_client,
+                        (bool) ($bbai_settings_auth['has_connected_account'] ?? false)
+                    );
                     $bbai_o = wp_parse_args($opts, []);
                     
                     // Check for license plan first
                     $bbai_license_data = $this->api_client->get_license_data();
                 
-                $bbai_plan = $bbai_usage_box['plan'] ?? 'free';
+                $bbai_plan = sanitize_key((string) ($bbai_usage_box['plan_type'] ?? $bbai_usage_box['plan'] ?? 'free'));
+                $bbai_usage_source = strtolower((string) ($bbai_usage_box['source'] ?? ''));
                 
-                // If license is active, use license plan
+                // License data is only a fallback when backend usage truth was unavailable.
                 if ($bbai_has_license && $bbai_license_data && isset($bbai_license_data['organization'])) {
                     $bbai_license_plan = strtolower($bbai_license_data['organization']['plan'] ?? 'free');
-                    if ($bbai_license_plan !== 'free') {
+                    if ($bbai_license_plan !== 'free' && in_array($bbai_usage_source, ['local_snapshot', 'local_trial_snapshot', ''], true)) {
                         $bbai_plan = $bbai_license_plan;
                     }
                 }
@@ -296,9 +302,11 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                 $bbai_is_agency = $bbai_plan === 'agency';
                 $bbai_is_growth_plan = ($bbai_is_pro || $bbai_is_agency);
 
-                $bbai_plan_label = $bbai_is_growth_plan
+                $bbai_plan_label = !empty($bbai_usage_box['plan_label']) && is_string($bbai_usage_box['plan_label'])
+                    ? sanitize_text_field($bbai_usage_box['plan_label'])
+                    : ($bbai_is_growth_plan
                     ? esc_html__('Growth', 'beepbeep-ai-alt-text-generator')
-                    : esc_html__('Free', 'beepbeep-ai-alt-text-generator');
+                    : esc_html__('Free', 'beepbeep-ai-alt-text-generator'));
 
                 $bbai_used_credits = intval($bbai_usage_box['used'] ?? 0);
                 $bbai_total_credits = intval($bbai_usage_box['limit'] ?? 0);

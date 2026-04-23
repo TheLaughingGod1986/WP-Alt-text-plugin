@@ -84,7 +84,7 @@ trait Api_Billing {
      * Get subscription info
      */
     public function get_subscription_info() {
-        if (!$this->is_authenticated()) {
+        if (!$this->is_authenticated() && !$this->has_active_license()) {
             return new \WP_Error('not_authenticated', __('Authentication required', 'beepbeep-ai-alt-text-generator'));
         }
 

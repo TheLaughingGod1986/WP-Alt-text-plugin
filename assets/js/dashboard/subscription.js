@@ -23,15 +23,6 @@ function loadSubscriptionInfo(forceRefresh) {
     var $info = getCachedElement('#bbai-subscription-info');
     var $freeMessage = getCachedElement('#bbai-free-plan-message');
 
-    // Check cache first (unless force refresh)
-    if (!forceRefresh) {
-        var cached = getCachedSubscriptionInfo();
-        if (cached) {
-            displaySubscriptionInfo(cached.data);
-            return;
-        }
-    }
-
     // Show loading state
     $loading.show();
     $error.hide();
@@ -54,9 +45,14 @@ function loadSubscriptionInfo(forceRefresh) {
             $loading.hide();
 
             if (response.success && response.data) {
+                var subscriptionInfo = normalizeSubscriptionInfo(response.data);
+                if (!subscriptionInfo) {
+                    showSubscriptionError('Subscription information was incomplete. Please refresh the page.');
+                    return;
+                }
                 resetRetryAttempts();
-                cacheSubscriptionInfo(response.data);
-                displaySubscriptionInfo(response.data);
+                cacheSubscriptionInfo(subscriptionInfo);
+                displaySubscriptionInfo(subscriptionInfo);
 
                 // Handle portal return
                 var urlParams = new URLSearchParams(window.location.search);
@@ -70,8 +66,8 @@ function loadSubscriptionInfo(forceRefresh) {
                     }, 2000);
                 }
             } else {
-                var plan = response.data?.plan || 'free';
-                if (plan === 'free') {
+                var fallbackInfo = normalizeSubscriptionInfo(response.data || null);
+                if (fallbackInfo && isExplicitFreeSubscription(fallbackInfo)) {
                     $freeMessage.show();
                 } else {
                     var errorMessage = response.data?.message || 'Failed to load subscription information.';
@@ -83,6 +79,12 @@ function loadSubscriptionInfo(forceRefresh) {
             $loading.hide();
 
             var errorMessage = 'Network error. Please try again.';
+            var cached = !forceRefresh ? getCachedSubscriptionInfo() : null;
+
+            if (cached && cached.data) {
+                displaySubscriptionInfo(cached.data);
+                return;
+            }
 
             if (xhr.status === 401 || xhr.status === 403) {
                 showSubscriptionError('Please log in to view your subscription information.');
@@ -112,9 +114,19 @@ function displaySubscriptionInfo(data) {
     $error.hide();
     $freeMessage.hide();
 
-    // Handle free plan
-    if (!data.plan || data.plan === 'free' || data.status === 'free') {
+    if (!data || typeof data !== 'object') {
+        showSubscriptionError('Subscription information was incomplete. Please refresh the page.');
+        return;
+    }
+
+    // Handle free plan only when backend explicitly reports it.
+    if (isExplicitFreeSubscription(data)) {
         $freeMessage.show();
+        return;
+    }
+
+    if (!data.plan && !data.status) {
+        showSubscriptionError('Subscription information was incomplete. Please refresh the page.');
         return;
     }
 
@@ -182,6 +194,40 @@ function displaySubscriptionInfo(data) {
     }
 
     $info.show();
+}
+
+/**
+ * Normalize backend subscription response wrappers before rendering.
+ */
+function normalizeSubscriptionInfo(payload) {
+    var data = payload;
+
+    if (!data || typeof data !== 'object') {
+        return null;
+    }
+
+    if (data.data && typeof data.data === 'object') {
+        data = data.data;
+    }
+    if (data.subscription && typeof data.subscription === 'object') {
+        data = Object.assign({}, data, data.subscription);
+    }
+
+    if (!data || typeof data !== 'object') {
+        return null;
+    }
+
+    return data;
+}
+
+function isExplicitFreeSubscription(data) {
+    if (!data || typeof data !== 'object') {
+        return false;
+    }
+
+    return String(data.plan || '').toLowerCase() === 'free' ||
+        String(data.plan_type || '').toLowerCase() === 'free' ||
+        String(data.status || '').toLowerCase() === 'free';
 }
 
 /**

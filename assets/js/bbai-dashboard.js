@@ -288,6 +288,9 @@ function bbaiNormalizeUsageObject(rawUsage) {
         if (isPaidPlan || normalizedQuota === 'paid' || upgradeRequired) {
             return false;
         }
+        if (source !== 'local_snapshot' && source !== 'local_trial_snapshot') {
+            return false;
+        }
 
         return limitValue > 0 && limitValue <= getTrialLimitValue() && !hasResetSignal();
     }
@@ -478,6 +481,11 @@ function bbaiIsAnonymousTrialUsage(usage) {
         !!usage.is_trial;
 }
 
+function bbaiHasTruthDrivenLoggedInDashboardRoot(root) {
+    var dashboard = document.querySelector('[data-bbai-logged-in-dashboard][data-bbai-li-ssr="1"]');
+    return !!(root && dashboard);
+}
+
 function bbaiGetUsageObject() {
     var root = document.querySelector('[data-bbai-dashboard-root="1"]');
     var rootUsage = null;
@@ -487,25 +495,43 @@ function bbaiGetUsageObject() {
         (window.BBAI_UPGRADE && window.BBAI_UPGRADE.usage) ||
         null);
 
-        if (root) {
-            var rootUsed = parseInt(root.getAttribute('data-bbai-credits-used') || '0', 10);
-            var rootLimit = parseInt(root.getAttribute('data-bbai-credits-total') || '0', 10);
-            var rootRemaining = parseInt(root.getAttribute('data-bbai-credits-remaining') || '0', 10);
+    if (root) {
+        var rootUsedAttr = root.getAttribute('data-bbai-credits-used');
+        var rootLimitAttr = root.getAttribute('data-bbai-credits-total');
+        var rootRemainingAttr = root.getAttribute('data-bbai-credits-remaining');
+        var hasRootCredits = rootUsedAttr !== null || rootLimitAttr !== null || rootRemainingAttr !== null;
 
-            if (!isNaN(rootUsed) || !isNaN(rootLimit) || !isNaN(rootRemaining)) {
-                rootUsage = bbaiNormalizeUsageObject({
-                    used: isNaN(rootUsed) ? 0 : rootUsed,
-                    limit: isNaN(rootLimit) || rootLimit <= 0 ? 50 : rootLimit,
-                    remaining: isNaN(rootRemaining) ? Math.max(0, (isNaN(rootLimit) || rootLimit <= 0 ? 50 : rootLimit) - (isNaN(rootUsed) ? 0 : rootUsed)) : rootRemaining,
-                    reset_line: root.getAttribute('data-bbai-credits-reset-line') || '',
-                    auth_state: root.getAttribute('data-bbai-auth-state') || '',
-                    quota_type: root.getAttribute('data-bbai-quota-type') || '',
-                    quota_state: root.getAttribute('data-bbai-quota-state') || '',
-                    signup_required: root.getAttribute('data-bbai-signup-required') === '1',
-                    free_plan_offer: root.getAttribute('data-bbai-free-plan-offer') || 50
-                });
-            }
+        if (hasRootCredits) {
+            var rootUsed = parseInt(rootUsedAttr || '0', 10);
+            var rootLimit = parseInt(rootLimitAttr || '0', 10);
+            var rootRemaining = parseInt(rootRemainingAttr || '0', 10);
+            var rootFallbackLimit = isNaN(rootLimit) || rootLimit <= 0 ? 1 : rootLimit;
+            var rootIsPremium = root.getAttribute('data-bbai-is-premium') === '1';
+
+            rootUsage = bbaiNormalizeUsageObject({
+                used: isNaN(rootUsed) ? 0 : rootUsed,
+                limit: rootFallbackLimit,
+                remaining: isNaN(rootRemaining) ? Math.max(0, rootFallbackLimit - (isNaN(rootUsed) ? 0 : rootUsed)) : rootRemaining,
+                plan: rootIsPremium ? 'growth' : '',
+                plan_type: rootIsPremium ? 'growth' : '',
+                plan_label: root.getAttribute('data-bbai-plan-label') || '',
+                is_pro: rootIsPremium,
+                reset_line: root.getAttribute('data-bbai-credits-reset-line') || '',
+                auth_state: root.getAttribute('data-bbai-auth-state') || '',
+                quota_type: root.getAttribute('data-bbai-quota-type') || '',
+                quota_state: root.getAttribute('data-bbai-quota-state') || '',
+                signup_required: root.getAttribute('data-bbai-signup-required') === '1',
+                free_plan_offer: root.getAttribute('data-bbai-free-plan-offer') || 50,
+                source: 'dashboard_root'
+            });
         }
+    }
+
+    if (root && rootUsage && bbaiHasTruthDrivenLoggedInDashboardRoot(root)) {
+        return globalUsage && typeof globalUsage === 'object'
+            ? bbaiNormalizeUsageObject(Object.assign({}, globalUsage, rootUsage))
+            : rootUsage;
+    }
 
     var merged = rootUsage && globalUsage && typeof globalUsage === 'object'
         ? bbaiNormalizeUsageObject(Object.assign({}, rootUsage, globalUsage))
@@ -4331,8 +4357,7 @@ bbaiRunWithJQuery(function($) {
 	}
 
     function hasTruthDrivenLoggedInDashboard(root) {
-        var dashboard = document.querySelector('[data-bbai-logged-in-dashboard][data-bbai-li-ssr="1"]');
-        return !!(root && dashboard);
+        return bbaiHasTruthDrivenLoggedInDashboardRoot(root);
     }
 
     function syncStatsToRoot(stats) {

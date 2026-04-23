@@ -1445,8 +1445,7 @@ class API_Client_V2 {
             return \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_local_usage_snapshot();
         }
 
-        $has_license   = $this->has_active_license();
-        $license_cache = $has_license ? $this->get_license_data() : null;
+        $has_license = $this->has_active_license();
 
         $response = $this->make_request('/api/usage');
 
@@ -1469,25 +1468,47 @@ class API_Client_V2 {
         }
 
         // Handle production API response format
-        if (is_array($api_data) && (isset($api_data['credits_used']) || isset($api_data['used']))) {
-            $usage = [
-                'used' => intval($api_data['used'] ?? $api_data['credits_used'] ?? 0),
-                'remaining' => intval($api_data['remaining'] ?? $api_data['credits_remaining'] ?? 0),
-                'limit' => intval($api_data['limit'] ?? $api_data['total_limit'] ?? 50),
+        if (is_array($api_data) && (isset($api_data['credits_used']) || isset($api_data['creditsUsed']) || isset($api_data['used']))) {
+            $used = max(0, intval($api_data['used'] ?? $api_data['credits_used'] ?? $api_data['creditsUsed'] ?? 0));
+            $limit = intval($api_data['limit'] ?? $api_data['credits_total'] ?? $api_data['creditsTotal'] ?? $api_data['total_limit'] ?? $api_data['monthly_limit'] ?? 0);
+            $remaining = isset($api_data['remaining']) || isset($api_data['credits_remaining']) || isset($api_data['creditsRemaining'])
+                ? intval($api_data['remaining'] ?? $api_data['credits_remaining'] ?? $api_data['creditsRemaining'] ?? 0)
+                : null;
+
+            if ($limit <= 0 && null !== $remaining) {
+                $limit = $used + max(0, $remaining);
+            }
+            if ($limit <= 0) {
+                $limit = 50;
+            }
+            if (null === $remaining) {
+                $remaining = max(0, $limit - $used);
+            }
+            $remaining = max(0, intval($remaining));
+
+            $usage = array_merge($api_data, [
+                'used' => $used,
+                'remaining' => $remaining,
+                'limit' => $limit,
                 'plan' => $api_data['plan'] ?? $api_data['plan_type'] ?? 'free',
                 'plan_type' => $api_data['plan_type'] ?? $api_data['plan'] ?? 'free',
                 'resetDate' => $api_data['resetDate'] ?? $api_data['reset_date'] ?? '',
                 'reset_date' => $api_data['reset_date'] ?? $api_data['resetDate'] ?? '',
-                'credits_used' => intval($api_data['credits_used'] ?? $api_data['used'] ?? 0),
-                'credits_remaining' => intval($api_data['credits_remaining'] ?? $api_data['remaining'] ?? 0),
-                'credits_total' => intval($api_data['credits_total'] ?? $api_data['limit'] ?? $api_data['total_limit'] ?? 50),
-            ];
+                'credits_used' => $used,
+                'credits_remaining' => $remaining,
+                'credits_total' => $limit,
+                'creditsUsed' => $used,
+                'creditsRemaining' => $remaining,
+                'creditsTotal' => $limit,
+                'creditsLimit' => $limit,
+                'source' => $api_data['source'] ?? 'remote_usage',
+            ]);
 
             // Update usage cache
             require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
             \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($usage);
 
-            return \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
+            return $usage;
         }
 
         // Handle legacy/mock API response format (wrapped in success/data/usage)
@@ -1501,13 +1522,11 @@ class API_Client_V2 {
                     $response['data']['site'] ?? []
                 );
             } else {
-                // Update usage cache for non-license accounts
                 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
                 \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($usage);
             }
 
-            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
-            return \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
+            return is_array($usage) ? array_merge($usage, ['source' => $usage['source'] ?? 'remote_usage']) : $usage;
         }
 
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
