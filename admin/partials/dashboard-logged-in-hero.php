@@ -594,6 +594,21 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		}
 	}
 
+	function logCounts( eventName, context ) {
+		var serialized = '';
+		try {
+			serialized = JSON.stringify( context || {} );
+		} catch ( error ) {
+			serialized = '{"serialization_error":true}';
+		}
+		if ( window.BBAI_LOG && typeof window.BBAI_LOG.log === 'function' ) {
+			window.BBAI_LOG.log( '[bbai-counts] ' + eventName + ' ' + serialized );
+		}
+		if ( window.console && typeof window.console.debug === 'function' ) {
+			window.console.debug( '[bbai-counts] ' + eventName + ' ' + serialized );
+		}
+	}
+
 	function getStatusStripSource( reason ) {
 		var normalized = String( reason || '' ).toLowerCase();
 
@@ -780,7 +795,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 	function getTruthCounts( payload ) {
 		var counts = payload && payload.counts && typeof payload.counts === 'object' ? payload.counts : {};
 		var missing = parseInt( firstDefined( counts.missing, counts.missing_alt, counts.missingAlt, 0 ), 10 );
-		var review = parseInt( firstDefined( counts.review, counts.needs_review, counts.needsReview, counts.weak, 0 ), 10 );
+		var review = parseInt( firstDefined( counts.review, counts.to_review, counts.toReview, counts.needs_review, counts.needsReview, counts.weak, 0 ), 10 );
 		var complete = parseInt( firstDefined( counts.complete, counts.optimized, counts.optimised, 0 ), 10 );
 		var failed = parseInt( firstDefined( counts.failed, 0 ), 10 );
 		var total = parseInt( firstDefined( counts.total, counts.total_images, counts.totalImages, missing + review + complete + failed ), 10 );
@@ -1085,6 +1100,13 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 				state: truthState,
 				raw_truth_credits: getTruthRawCredits( truth ),
 				resolved_credits: getTruthCredits( truth ),
+				linked_site: !! getTruthSiteHash( truth ),
+			} );
+			logCounts( 'raw_truth', {
+				context: context || '',
+				state: truthState,
+				raw_truth_counts: getTruthRawCounts( truth ),
+				resolved_counts: getTruthCounts( truth ),
 				linked_site: !! getTruthSiteHash( truth ),
 			} );
 			if ( options.logLoaded !== false ) {
@@ -2793,6 +2815,8 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		var opts = options || {};
 		var job = getTruthJob( truth );
 		var displayedCredits = null;
+		var resolvedCounts = getTruthCounts( truth );
+		var root = null;
 		var statusStripMeta = buildStatusStripMeta( context || '', 'commitTruthSnapshot' );
 		clearOptimisticAction();
 		dashboardPolling.currentTruth = truth;
@@ -2822,6 +2846,17 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 				displayedCredits
 			) );
 		}
+		root = getDashboardRoot();
+		logCounts( 'applied_truth', {
+			context: context || '',
+			state: dashboardPolling.latestState,
+			resolved_counts: resolvedCounts,
+			rendered_counts: {
+				missing: root ? parseInt( root.getAttribute( 'data-bbai-missing-count' ) || '0', 10 ) || 0 : 0,
+				review: root ? parseInt( root.getAttribute( 'data-bbai-weak-count' ) || '0', 10 ) || 0 : 0,
+				total: root ? parseInt( root.getAttribute( 'data-bbai-total-count' ) || '0', 10 ) || 0 : 0,
+			},
+		} );
 		if ( logApplied ) {
 			logDashboardUi( 'state_truth_applied', {
 				context: context || '',

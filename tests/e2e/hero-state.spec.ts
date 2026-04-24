@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { execSync } from 'child_process';
+import { forceLoggedOut } from './utils/auth';
 
 /**
  * Hero / onboarding state tests for the logged-out dashboard.
@@ -96,6 +97,11 @@ test.describe('Hero / onboarding state machine', () => {
   let savedTokens: Record<string, string> = {};
 
   test.describe('Logged-out hero states', () => {
+    test.beforeEach(async ({ page }) => {
+      await forceLoggedOut(page);
+      await page.goto('/wp-admin/admin.php?page=bbai', { waitUntil: 'domcontentloaded' });
+    });
+
     test.beforeAll(async () => {
       // Save and remove auth tokens so dashboard routes to logged-out view.
       for (const key of AUTH_OPTIONS) {
@@ -126,6 +132,7 @@ test.describe('Hero / onboarding state machine', () => {
         await page.goto(`${BASE}${DASHBOARD_PATH}`);
 
         const root = page.locator('.bbai-logged-out');
+        await expect(root).toBeVisible();
         await expect(root).toHaveAttribute('data-hero-state', 'trial_available');
       });
 
@@ -191,6 +198,7 @@ test.describe('Hero / onboarding state machine', () => {
         await page.goto(`${BASE}${DASHBOARD_PATH}`);
 
         const root = page.locator('.bbai-logged-out');
+        await expect(root).toBeVisible();
         await expect(root).toHaveAttribute('data-hero-state', 'trial_complete');
       });
 
@@ -281,6 +289,7 @@ test.describe('Hero / onboarding state machine', () => {
         await page.goto(`${BASE}${DASHBOARD_PATH}`);
 
         const root = page.locator('.bbai-logged-out');
+        await expect(root).toBeVisible();
         await expect(root).toHaveAttribute('data-hero-state', 'trial_complete');
       });
 

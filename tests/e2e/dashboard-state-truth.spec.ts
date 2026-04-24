@@ -383,6 +383,33 @@ test.describe('Dashboard truth-driven UI', () => {
     await expect(page.locator('.bbai-li-activity-strip')).toContainText('19 ready for review');
   });
 
+  test('NEEDS_REVIEW with counts.to_review renders correctly across all dashboard regions', async ({ page }) => {
+    const fixture: TruthFixture = {
+      state: 'NEEDS_REVIEW',
+      counts: { missing: 0, to_review: 19, complete: 42, failed: 0, total: 61 },
+      credits: { used: 30, total: 100, remaining: 70, plan: 'free', plan_slug: 'free', is_pro: false },
+      job: null,
+      site: { site_hash: 'fixture-site', has_connected_account: true },
+      resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
+      last_run_at: '2026-04-22T08:00:00Z',
+    };
+
+    setDashboardTruthFixture(fixture);
+    await loginAsAdmin(page);
+    await openDashboard(page);
+
+    await expectHeroState(page, 'NEEDS_REVIEW');
+    await expect(page.locator('.bbai-li-impact-line')).toHaveText('19 ready for review');
+    await expect(page.locator('.bbai-li-activity-strip')).toContainText('19 ready for review');
+
+    const root = page.locator('[data-bbai-dashboard-root="1"]');
+    await expect(root).toHaveAttribute('data-bbai-weak-count', '19');
+
+    await page.waitForTimeout(2500);
+    await expect(page.locator('.bbai-li-impact-line')).toHaveText('19 ready for review');
+    await expect(page.locator('.bbai-li-activity-strip')).toContainText('19 ready for review');
+  });
+
   test('polling moves QUEUED jobs into PROCESSING without refresh', async ({ page }) => {
     const queuedFixture: TruthFixture = {
       state: 'QUEUED',
