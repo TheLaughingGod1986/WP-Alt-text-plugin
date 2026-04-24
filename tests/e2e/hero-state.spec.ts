@@ -25,9 +25,6 @@ const DASHBOARD_PATH = '/wp-admin/admin.php?page=bbai';
 const CLI_CONTAINER = '06fe8883b07a5e21412cec8c726b075e-cli-1';
 const WP_PATH = '--path=/var/www/html';
 
-// wp_options key for trial usage counter (matches Trial_Quota::option_key()).
-const TRIAL_OPTION = 'bbai_trial_usage_e477b1a11e2076944cc44debe1498e6a';
-
 // Auth options that make dashboard-tab.php route to the authenticated view.
 const AUTH_OPTIONS = ['beepbeepai_jwt_token', 'beepbeepai_license_key'];
 
@@ -44,11 +41,52 @@ function wp(...args: string[]): string {
   }
 }
 
+// Resolve the trial option key for a fresh (cookie-less) browser session.
+// With no anon-id cookie the plugin keys usage by site identifier alone:
+//   bbai_trial_usage_{sanitize_key(beepbeepai_site_id)}
+function getTrialOptionKey(): string {
+  // beepbeepai_site_id is already sanitize_key()-compatible (lowercase hex).
+  const siteId = wp('option', 'get', 'beepbeepai_site_id').trim();
+  if (siteId) return `bbai_trial_usage_${siteId}`;
+  // Fallback: search for any existing usage option.
+  const found = wp('option', 'list', '--search=bbai_trial_usage_*', '--format=csv', '--fields=option_name')
+    .split('\n')
+    .find(l => l.startsWith('bbai_trial_usage_'));
+  return found ?? 'bbai_trial_usage_unknown';
+}
+
 function setTrialUsed(count: number) {
-  if (count === 0) {
-    wp('option', 'delete', TRIAL_OPTION);
-  } else {
-    wp('option', 'set', TRIAL_OPTION, String(count), '--autoload=no');
+  const key = getTrialOptionKey();
+  if (!key || key === 'bbai_trial_usage_unknown') return;
+  // Clear all trial usage options (anon-ID-suffixed variants included).
+  const allKeys = wp('option', 'list', '--search=bbai_trial_usage_*', '--format=csv', '--fields=option_name')
+    .split('\n')
+    .filter(l => l.startsWith('bbai_trial_usage_'));
+  for (const k of allKeys) {
+    wp('option', 'delete', k);
+  }
+  if (count > 0) {
+    wp('option', 'set', key, String(count), '--autoload=no');
+  }
+}
+
+// Fetch the current trial limit from WordPress (respects bbai_trial_limit filter).
+function getTrialLimit(): number {
+  try {
+    // The wp-env CLI container name ends in "-cli-1"; the WordPress container ends in "-wordpress-1".
+    const containerId = execSync(
+      `docker ps --format '{{.Names}}' | grep -- '-cli-1' | head -1`,
+      { encoding: 'utf-8', shell: '/bin/bash' }
+    ).trim();
+    if (!containerId) return 5;
+    const result = execSync(
+      `docker exec ${containerId} wp ${WP_PATH} eval 'echo (int) apply_filters("bbai_trial_limit", 5);'`,
+      { encoding: 'utf-8' }
+    ).trim();
+    const parsed = parseInt(result, 10);
+    return Number.isNaN(parsed) ? 5 : parsed;
+  } catch {
+    return 5;
   }
 }
 
@@ -152,13 +190,14 @@ test.describe('Hero / onboarding state machine', () => {
         await expect(conversionPanel).toBeHidden();
       });
 
-      test('"Generate alt text for 3 images (free)" button is rendered and visible', async ({ page }) => {
+      test('"Generate alt text for N images (free)" button is rendered and visible', async ({ page }) => {
+        const limit = getTrialLimit();
         await loginAsAdmin(page);
         await page.goto(`${BASE}${DASHBOARD_PATH}`);
 
         const btn = page.locator('#bbai-trial-generate-btn');
         await expect(btn).toBeVisible();
-        await expect(btn).toContainText('Generate alt text for 3 images');
+        await expect(btn).toContainText(`Generate alt text for ${limit} image`);
       });
 
       test('conversion CTAs are not in the DOM', async ({ page }) => {
@@ -277,7 +316,7 @@ test.describe('Hero / onboarding state machine', () => {
     // -----------------------------------------------------------------------
     test.describe('trial_complete — quota exhausted (used = limit)', () => {
       test.beforeEach(async () => {
-        setTrialUsed(10); // TRIAL_LIMIT default is 10
+        setTrialUsed(getTrialLimit() + 5); // exceed limit regardless of configured value
       });
 
       test.afterEach(async () => {

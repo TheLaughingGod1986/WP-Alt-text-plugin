@@ -33,11 +33,20 @@ $bbai_usage_stats = Usage_Helper::get_usage($this->api_client, (bool) $bbai_has_
 
 // Partial paths.
 $bbai_dashboard_auth_partial       = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-authenticated.php';
+$bbai_dashboard_logged_out_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-logged-out.php';
 $bbai_is_guest_trial_user = (bool) $bbai_is_anonymous_trial;
 
-// Dashboard-first flow: guests land in the real dashboard with an anonymous trial state.
-if (file_exists($bbai_dashboard_auth_partial)) {
-    include $bbai_dashboard_auth_partial;
+// Route: connected/licensed users get the full dashboard; anonymous trial users get the FTUE panel.
+if ( $bbai_has_connected_account || $bbai_is_authenticated || $bbai_has_license ) {
+    if ( file_exists( $bbai_dashboard_auth_partial ) ) {
+        include $bbai_dashboard_auth_partial;
+    } else {
+        esc_html_e( 'Dashboard content unavailable.', 'beepbeep-ai-alt-text-generator' );
+    }
 } else {
-    esc_html_e('Dashboard content unavailable.', 'beepbeep-ai-alt-text-generator');
+    if ( file_exists( $bbai_dashboard_logged_out_partial ) ) {
+        include $bbai_dashboard_logged_out_partial;
+    } else {
+        esc_html_e( 'Please connect your BeepBeep AI account to access the dashboard.', 'beepbeep-ai-alt-text-generator' );
+    }
 }
